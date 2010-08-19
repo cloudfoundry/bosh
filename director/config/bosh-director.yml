@@ -1,0 +1,16 @@
+---
+port: 8080
+logging:
+  level: DEBUG
+redis:
+  host: 127.0.0.1
+  password:
+dir: /tmp/boshdir
+cloud:
+    plugin: vsphere
+    properties:
+        host: markl-dev4
+        user: administrator
+        password: ca$hc0w
+        clusters:
+            - cluster A

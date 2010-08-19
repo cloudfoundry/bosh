@@ -1,0 +1,39 @@
+require 'rake'
+require 'tempfile'
+
+require File.expand_path(File.join(File.dirname(__FILE__), '..', '.bundle', 'environment'))
+require 'spec/rake/spectask'
+require 'ci/reporter/rake/rspec'
+
+coverage_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
+reports_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
+dump_file = File.join(Dir.tmpdir, "bosh-director.rcov")
+ignore_pattern = 'spec,[.]bundle,[/]gems[/]'
+
+ENV['CI_REPORTS'] = reports_dir
+
+task "spec" => ["ci:setup:rspec"]
+
+desc "Run specs using RCov"
+task "spec:rcov" => ["ci:setup:rspec", "spec:rcov_internal", "convert_rcov_to_clover"]
+
+Spec::Rake::SpecTask.new do |t|
+  t.spec_opts = ["--format", "specdoc", "--colour"]
+  t.spec_files = FileList["**/*_spec.rb"]
+end
+
+desc "Run specs using RCov (internal, use spec:rcov instead)"
+Spec::Rake::SpecTask.new('spec:rcov_internal') do |t|
+  sh("rm -f #{dump_file}")
+  t.spec_files = FileList['**/*.rb']
+  t.rcov = true
+  t.rcov_dir = coverage_dir
+  t.rcov_opts = ['--aggregate', dump_file, '--exclude', ignore_pattern]
+end
+
+task "convert_rcov_to_clover" do |t|
+  analyzer = File.join(File.dirname(__FILE__), "..", "..", "..", "lib", "rcov_analyzer.rb")
+  clover_output = File.join(coverage_dir, "clover.xml")
+  sh("ruby #{analyzer} #{dump_file} #{ignore_pattern} > #{clover_output}")
+  sh("rm -f #{dump_file}")
+end

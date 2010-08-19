@@ -1,0 +1,138 @@
+--- 
+dependencies: 
+  actionpool: 
+    group: 
+    - :default
+    version: ">= 0"
+  uuidtools: 
+    group: 
+    - :default
+    version: ">= 0"
+  rake: 
+    group: 
+    - :default
+    version: ">= 0"
+  SystemTimer: 
+    group: 
+    - :default
+    version: ">= 0"
+  rspec: 
+    group: 
+    - :test
+    version: ">= 0"
+    require: 
+    - spec
+    - spec/interop/test
+  resque: 
+    group: 
+    - :default
+    version: ">= 0"
+  netaddr: 
+    group: 
+    - :default
+    version: ">= 0"
+  thin: 
+    group: 
+    - :default
+    version: ">= 0"
+  sinatra: 
+    group: 
+    - :default
+    version: ">= 0"
+  eventmachine: 
+    group: 
+    - :default
+    version: ">= 0"
+  rcov: 
+    group: 
+    - :test
+    version: ">= 0"
+  minitar: 
+    group: 
+    - :test
+    version: ">= 0"
+    require: 
+    - archive/tar/minitar
+  ci_reporter: 
+    group: 
+    - :test
+    version: ">= 0"
+  systemu: 
+    group: 
+    - :default
+    version: ">= 0"
+  rack-test: 
+    group: 
+    - :test
+    version: ">= 0"
+    require: 
+    - rack/test
+  ohm: 
+    group: 
+    - :default
+    version: = 0.1.0.rc4
+  redis: 
+    group: 
+    - :default
+    version: ">= 0"
+  yajl-ruby: 
+    group: 
+    - :default
+    version: ">= 0"
+    require: 
+    - yajl
+specs: 
+- rake: 
+    version: 0.8.7
+- SystemTimer: 
+    version: "1.2"
+- splib: 
+    version: 1.4.3
+- actionpool: 
+    version: 0.2.3
+- builder: 
+    version: 2.1.2
+- ci_reporter: 
+    version: 1.6.2
+- daemons: 
+    version: 1.1.0
+- eventmachine: 
+    version: 0.12.10
+- json: 
+    version: 1.4.3
+- minitar: 
+    version: 0.5.3
+- netaddr: 
+    version: 1.5.0
+- redis: 
+    version: 2.0.4
+- ohm: 
+    version: 0.1.0.rc4
+- rack: 
+    version: 1.2.1
+- rack-test: 
+    version: 0.5.4
+- rcov: 
+    version: 0.9.8
+- redis-namespace: 
+    version: 0.7.0
+- sinatra: 
+    version: "1.0"
+- vegas: 
+    version: 0.1.7
+- resque: 
+    version: 1.9.8
+- rspec: 
+    version: 1.3.0
+- systemu: 
+    version: 1.2.0
+- thin: 
+    version: 1.2.7
+- uuidtools: 
+    version: 2.1.1
+- yajl-ruby: 
+    version: 0.7.7
+hash: 6815496029e734e2dcc827e4645927e1c1f87aa9
+sources: 
+- Rubygems: 
+    uri: http://rubygems.org

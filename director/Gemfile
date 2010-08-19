@@ -1,0 +1,22 @@
+source "http://rubygems.org"
+gem "actionpool"
+gem "eventmachine"
+gem "ohm", "0.1.0.rc4"
+gem "rake"
+gem "redis"
+gem "resque"
+gem "netaddr"
+gem "sinatra"
+gem "SystemTimer"
+gem "systemu"
+gem "thin"
+gem "uuidtools"
+gem "yajl-ruby", :require => "yajl"
+
+group :test do
+  gem "minitar", :require => "archive/tar/minitar"
+  gem "rack-test", :require => "rack/test"
+  gem "rspec", :require => ["spec", "spec/interop/test"]
+  gem "rcov"
+  gem "ci_reporter"
+end
