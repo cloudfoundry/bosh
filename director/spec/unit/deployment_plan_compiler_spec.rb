@@ -2,6 +2,8 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Director::DeploymentPlanCompiler do
 
+  IP_10_0_0_5 = 167772165
+
   describe "bind_existing_deployment" do
 
     BASIC_STATE = {
@@ -75,7 +77,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.stub!(:job).and_return(@job_spec)
       @instance_spec.stub!(:networks).and_return([@instance_network_spec])
 
-
       @instance_network_spec.stub!(:name).and_return("network-a")
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
@@ -96,11 +97,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
       Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
       Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
 
-      @network_spec.should_receive(:reserve_ip).with(167772165).and_return(:static)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
       @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with(state)
       @instance_spec.should_receive(:vm=).with(@vm)
-      @instance_network_spec.should_receive(:use_reservation).with(167772165, true)
+      @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
       @resource_pool_spec.should_receive(:add_allocated_vm)
 
       @deployment_plan_compiler.bind_existing_deployment
@@ -113,7 +114,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
       Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
 
-      @network_spec.should_receive(:reserve_ip).with(167772165).and_return(nil)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with(state)
       @instance_spec.should_receive(:vm=).with(@vm)
@@ -134,7 +135,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @agent.stub!(:get_state).and_return(state)
 
-      @network_spec.should_receive(:reserve_ip).with(167772165).and_return(:dynamic)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
 
       Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
       Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([])
@@ -144,7 +145,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @resource_pool_spec.should_receive(:add_idle_vm).and_return(idle_vm)
       idle_vm.should_receive(:vm=).with(@vm)
       idle_vm.should_receive(:current_state=).with(state)
-      idle_vm.should_receive(:ip=).with(167772165)
+      idle_vm.should_receive(:ip=).with(IP_10_0_0_5)
 
       @deployment_plan_compiler.bind_existing_deployment
     end
@@ -161,7 +162,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @agent.stub!(:get_state).and_return(state)
 
-      @network_spec.should_receive(:reserve_ip).with(167772165).and_return(:dynamic)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
 
       Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
       Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([])
@@ -181,7 +182,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state["index"] = 6
       @agent.stub!(:get_state).and_return(state)
 
-      @network_spec.should_receive(:reserve_ip).with(167772165).and_return(:dynamic)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
 
       Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
       Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
@@ -269,6 +270,54 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   describe "bind_instance_networks" do
+
+    before(:each) do
+      @deployment_plan = mock("deployment_plan")
+      @instance = mock("instance")
+      @job_spec = mock("job_spec")
+      @instance_spec = mock("instance_spec")
+      @network_spec = mock("network_spec")
+      @instance_network_spec = mock("instance_network_spec")
+
+      @deployment_plan.stub!(:jobs).and_return([@job_spec])
+      @deployment_plan.stub!(:network).with("network-a").and_return(@network_spec)
+
+      @job_spec.stub!(:instances).and_return([@instance_spec])
+
+      @instance_spec.stub!(:networks).and_return([@instance_network_spec])
+
+      @instance_network_spec.stub!(:name).and_return("network-a")
+
+      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    end
+
+    it "should do nothing if the ip is already reserved" do
+      @instance_network_spec.stub(:reserved).and_return(true)
+      @deployment_plan_compiler.bind_instance_networks
+    end
+
+    it "should reserve a static ip" do
+      @instance_network_spec.stub(:reserved).and_return(false)
+      @instance_network_spec.stub(:ip).and_return(IP_10_0_0_5)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
+      @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
+      @deployment_plan_compiler.bind_instance_networks
+    end
+
+    it "should acquire a dynamic ip" do
+      @instance_network_spec.stub(:reserved).and_return(false)
+      @instance_network_spec.stub(:ip).and_return(nil)
+      @network_spec.should_receive(:allocate_dynamic_ip).and_return(1)
+      @instance_network_spec.should_receive(:use_reservation).with(1, false)
+      @deployment_plan_compiler.bind_instance_networks
+    end
+
+    it "should fail reserving a static ip that was not in a static range" do
+      @instance_network_spec.stub(:reserved).and_return(false)
+      @instance_network_spec.stub(:ip).and_return(IP_10_0_0_5)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
+      lambda {@deployment_plan_compiler.bind_instance_networks}.should raise_error
+    end
 
   end
 
