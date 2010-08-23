@@ -2,13 +2,36 @@ module Bosh::Director
 
   class PackageCompiler
 
-    def initialize(deployment_plan, uncompiled_packages)
+    def initialize(deployment_plan)
       @deployment_plan = deployment_plan
-      @uncompiled_packages = uncompiled_packages
       @cloud = Config.cloud
     end
 
+    def find_uncompiled_packages
+      uncompiled_packages = []
+      release_version = @deployment_plan.release.release
+      @deployment_plan.jobs.each do |job|
+        stemcell = job.resource_pool.stemcell.stemcell
+        template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
+        template.packages.each do |package|
+          job.packages[package.name] = package.version
+          compiled_package = Models::CompiledPackage.find(:package_id => package.id,
+                                                          :stemcell_id => stemcell.id).first
+          unless compiled_package
+            uncompiled_packages << {
+              :package => package,
+              :stemcell => stemcell
+            }
+          end
+        end
+      end
+      uncompiled_packages
+    end
+
     def compile
+      uncompiled_packages = find_uncompiled_packages
+      return if uncompiled_packages.empty?
+
       network = @deployment_plan.compilation.network
 
       networks = []
@@ -18,7 +41,7 @@ module Bosh::Director
       end
 
       pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => @deployment_plan.compilation.workers)
-      @uncompiled_packages.each do |uncompiled_package|
+      uncompiled_packages.each do |uncompiled_package|
 
         package = uncompiled_package[:package]
         package_name = package.name

@@ -15,37 +15,18 @@ module Bosh::Director
         raise TaskInvalid if @task.nil?
 
         @manifest_file = manifest_file
+        @manifest = File.open(@manifest_file) {|f| f.read}
+        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
       end
 
       def find_or_create_deployment(name)
         deployment = Models::Deployment.find(:name => name).first
         if deployment.nil?
-          deployment = Models::Deployment.new(:name => name)
-          deployment.save
+          deployment = Models::Deployment.new
+          deployment.name = name
+          deployment.save!
         end
         deployment
-      end
-
-      def compile_packages
-        uncompiled_packages = []
-        release_version = @deployment_plan.release.release
-        @deployment_plan.jobs.each do |job|
-          stemcell = job.resource_pool.stemcell.stemcell
-          template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
-          template.packages.each do |package|
-            job.packages[package.name] = package.version 
-            compiled_package = Models::CompiledPackage.find(:package_id => package.id,
-                                                            :stemcell_id => stemcell.id).first
-            unless compiled_package
-              uncompiled_packages << {
-                :package => package,
-                :stemcell => stemcell
-              }
-            end
-          end
-        end
-
-        PackageCompiler.new(uncompiled_packages).compile unless uncompiled_packages.empty?
       end
 
       def prepare
@@ -57,7 +38,8 @@ module Bosh::Director
         @deployment_plan_compiler.bind_resource_pools
         @deployment_plan_compiler.bind_instance_networks
 
-        compile_packages
+        PackageCompiler.new(@deployment_plan).compile
+
         @deployment_plan_compiler.bind_packages
       end
 
@@ -73,12 +55,19 @@ module Bosh::Director
         end
       end
 
+      def rollback
+        if @deployment_plan.deployment.manifest
+          @manifest = @deployment_plan.deployment.manifest
+          @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
+          prepare
+          update
+        end
+      end
+
       def perform
         @task.state = :processing
         @task.timestamp = Time.now.to_i
-        @task.save
-
-        @deployment_plan = DeploymentPlan.new(YAML.load_file(@manifest_file))
+        @task.save!
 
         begin
           deployment_lock = Lock.new("lock:deployment:#{@deployment_plan.name}")
@@ -90,30 +79,24 @@ module Bosh::Director
 
               begin
                 update
-                deployment.manifest = File.open(@manifest_file) {|f| f.read}
+                deployment.manifest = @manifest
                 deployment.save!
-              rescue Exception
-                # Rollback to the previous deployment manifest if it exists
-                if deployment.manifest
-                  @deployment_plan = DeploymentPlan.new(YAML.load(deployment.manifest))
-                  prepare
-                  update
-                end
+              rescue Exception => e
+                rollback
+                # TODO: record the error
               end
 
               @task.state = :done
               # TODO: generate result
               @task.timestamp = Time.now.to_i
-              @task.save
+              @task.save!
             end
           end
         rescue => e
           @task.state = :error
           @task.result = e.to_s
           @task.timestamp = Time.now.to_i
-          @task.save
-
-          raise e
+          @task.save!
         ensure
           # TODO: cleanup?
         end
