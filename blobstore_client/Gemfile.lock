@@ -1,0 +1,36 @@
+--- 
+dependencies: 
+  httpclient: 
+    group: 
+    - :default
+    version: ">= 0"
+  rspec: 
+    group: 
+    - :test
+    version: ">= 0"
+    require: 
+    - spec
+    - spec/interop/test
+  rcov: 
+    group: 
+    - :test
+    version: ">= 0"
+  ci_reporter: 
+    group: 
+    - :test
+    version: ">= 0"
+specs: 
+- builder: 
+    version: 2.1.2
+- ci_reporter: 
+    version: 1.6.2
+- httpclient: 
+    version: 2.1.5.2
+- rcov: 
+    version: 0.9.8
+- rspec: 
+    version: 1.3.0
+hash: c56ac63e6851e6611ccc4f0a2b4d3d939fc88b6f
+sources: 
+- Rubygems: 
+    uri: http://rubygems.org

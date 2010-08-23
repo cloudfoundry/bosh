@@ -1,0 +1,9 @@
+source "http://rubygems.org"
+
+gem "httpclient"
+
+group :test do
+  gem "rspec", :require => ["spec", "spec/interop/test"]
+  gem "rcov"
+  gem "ci_reporter"
+end
