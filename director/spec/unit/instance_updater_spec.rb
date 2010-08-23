@@ -35,7 +35,7 @@ describe Bosh::Director::InstanceUpdater do
     },
     "properties" => {"key"=>"value"}
   }
-  BASIC_STATE = BASIC_PLAN.merge({"state" => "running"})
+  BASIC_INSTANCE_STATE = BASIC_PLAN.merge({"state" => "running"})
   IDLE_STATE = {
     "deployment" => "test_deployment",
     "resource_pool" => {
@@ -139,7 +139,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_1.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
   end
@@ -178,7 +178,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_1.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update(:canary => true)
   end
@@ -245,7 +245,7 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_2.should_receive(:get_state).and_return(IDLE_STATE)
-    @agent_2.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_2.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
   end
@@ -316,7 +316,7 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_2.should_receive(:get_state).and_return(IDLE_STATE)
-    @agent_2.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_2.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
   end
@@ -356,7 +356,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_1.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
   end
@@ -398,7 +398,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_1.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
   end
@@ -446,7 +446,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_1.should_receive(:get_state).and_return(BASIC_STATE)
+    @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
   end
@@ -455,7 +455,7 @@ describe Bosh::Director::InstanceUpdater do
     plan = BASIC_PLAN._deep_copy
     plan["persistent_disk"] = 0
 
-    state = BASIC_STATE._deep_copy
+    state = BASIC_INSTANCE_STATE._deep_copy
     state["persistent_disk"] = 0
 
     @agent_1 = mock("agent-1")
