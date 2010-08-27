@@ -12,6 +12,8 @@ module Bosh
   end
 end
 
+require "base64"
+
 require "blobstore_client/client"
 require "blobstore_client/simple_blobstore_client"
 
@@ -27,7 +29,7 @@ module Bosh
             raise "Invalid client provider"
         end
       end
-       
+
     end
   end
 end
