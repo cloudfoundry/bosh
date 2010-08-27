@@ -2,7 +2,7 @@ module Bosh
   module Blobstore
       class Client
 
-        def create
+        def create(contents)
 
         end
 
