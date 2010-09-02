@@ -258,6 +258,24 @@ describe Bosh::Director::DeploymentPlan do
       compilation_settings.network.should eql(deployment_plan.network("network_a"))
     end
 
+    it "should parse deployment properties" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["properties"] = {"foo" => "bar"}
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      deployment_plan.properties.should eql({"foo" => "bar"})
+    end
+
+    it "should let you override properties at the job level" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["properties"] = {"foo" => "bar", "test" => {"a" => 5, "b" => 6}}
+      manifest["jobs"][0]["properties"] = {"test" => {"b" => 7}}
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      deployment_plan.properties.should eql({"foo" => "bar", "test" => {"a" => 5, "b" => 6}})
+      deployment_plan.job("job_a").properties.should eql({"foo"=>"bar", "test"=>{"a"=>5, "b"=>7}})      
+    end
+
   end
 
   describe "Resource pools" do

@@ -99,13 +99,13 @@ specs:
 - eventmachine: 
     version: 0.12.10
 - json: 
-    version: 1.4.3
+    version: 1.4.6
 - minitar: 
     version: 0.5.3
 - netaddr: 
     version: 1.5.0
 - redis: 
-    version: 2.0.4
+    version: 2.0.5
 - ohm: 
     version: 0.1.0.rc4
 - rack: 
@@ -115,13 +115,13 @@ specs:
 - rcov: 
     version: 0.9.8
 - redis-namespace: 
-    version: 0.7.0
+    version: 0.8.0
 - sinatra: 
     version: "1.0"
 - vegas: 
     version: 0.1.7
 - resque: 
-    version: 1.9.8
+    version: 1.10.0
 - rspec: 
     version: 1.3.0
 - systemu: 

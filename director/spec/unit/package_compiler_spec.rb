@@ -84,9 +84,21 @@ describe Bosh::Director::PackageCompiler do
       @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
                                              {"ip"=>"1.2.3.4"}).and_return("vm-1")
       @agent.should_receive(:compile_package).with("test_release", "test_pkg",
-                                                   33, "test_pkg source sha1").and_return({"state" => "done"})
+                                                   33, "test_pkg source sha1").and_return(
+              {"state" => "done",
+               "result" => {"sha1" => "some sha 1",
+                            "blobstore_id" => "some blobstore id"}
+              })
       @cloud.should_receive(:delete_vm).with("vm-1")
       @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
+
+      compiled_package = mock("compiled_package")
+      Bosh::Director::Models::CompiledPackage.should_receive(:new).and_return(compiled_package)
+      compiled_package.should_receive(:package=).with(@package)
+      compiled_package.should_receive(:stemcell=).with(@stemcell)
+      compiled_package.should_receive(:sha1=).with("some sha 1")
+      compiled_package.should_receive(:blobstore_id=).with("some blobstore id")
+      compiled_package.should_receive(:save!)
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")      
@@ -152,8 +164,25 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-1").and_return(agent_a)
       Bosh::Director::AgentClient.should_receive(:new).with("agent-2").and_return(agent_b)
 
-      agent_a.should_receive(:compile_package).with("test_release", "a", 1, "sha1-a").and_return({"state" => "done"})
-      agent_b.should_receive(:compile_package).with("test_release", "b", 2, "sha1-b").and_return({"state" => "done"})
+      compiled_package = mock("compiled_package")
+      compiled_package.stub!(:package=)
+      compiled_package.stub!(:stemcell=)
+      compiled_package.stub!(:sha1=)
+      compiled_package.stub!(:blobstore_id=)
+      compiled_package.stub!(:save!)
+
+      Bosh::Director::Models::CompiledPackage.stub!(:new).and_return(compiled_package)
+
+      agent_a.should_receive(:compile_package).with("test_release", "a", 1, "sha1-a").and_return(
+              {"state" => "done",
+               "result" => {"sha1" => "some sha a",
+                            "blobstore_id" => "some blobstore a"}
+              })
+      agent_b.should_receive(:compile_package).with("test_release", "b", 2, "sha1-b").and_return(
+              {"state" => "done",
+               "result" => {"sha1" => "some sha b",
+                            "blobstore_id" => "some blobstore b"}
+              })
 
       cloud.should_receive(:delete_vm).with("vm-1")
       cloud.should_receive(:delete_vm).with("vm-2")

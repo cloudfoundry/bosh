@@ -41,6 +41,7 @@ module Bosh::Director
         PackageCompiler.new(@deployment_plan).compile
 
         @deployment_plan_compiler.bind_packages
+        @deployment_plan_compiler.bind_configuration
       end
 
       def update

@@ -6,6 +6,7 @@ module Bosh::Director::Models
   class Template < Ohm::Model
     reference :release_version, ReleaseVersion
     attribute :name
+    attribute :blobstore_id
     collection :packages, Package
 
     index :release_version

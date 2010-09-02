@@ -6,6 +6,7 @@ module Bosh::Director::Models
   class CompiledPackage < Ohm::Model
     reference :package, Package
     reference :stemcell, Stemcell
+    attribute :blobstore_id
     attribute :sha1
 
     index :package

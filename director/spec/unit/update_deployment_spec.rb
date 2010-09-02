@@ -35,6 +35,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_instance_networks)
       package_compiler.should_receive(:compile)
       deployment_plan_compiler.should_receive(:bind_packages)
+      deployment_plan_compiler.should_receive(:bind_configuration)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
       update_deployment_job.prepare

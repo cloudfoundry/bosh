@@ -30,7 +30,7 @@ module Bosh::Director
         @name = release_spec["name"]
         @version = release_spec["version"]
       end
-      
+
     end
 
     class StemcellSpec
@@ -221,7 +221,7 @@ module Bosh::Director
         raise ArgumentError, "invalid range" unless @range.size > 1
 
         @netmask = @range.wildcard_mask
-        
+
         @gateway = NetAddr::CIDR.create(subnet_spec["gateway"])
         raise ArgumentError, "gateway must be a single ip" unless @gateway.size == 1
         raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
@@ -287,27 +287,36 @@ module Bosh::Director
 
     class JobSpec
       include IpUtil
+      include ValidateHelper
 
       attr_accessor :deployment
       attr_accessor :name
       attr_accessor :persistent_disk
       attr_accessor :resource_pool
       attr_accessor :template
+      attr_accessor :properties
       attr_accessor :packages
       attr_accessor :update
       attr_accessor :update_errors
 
       def initialize(deployment, job_spec)
         @deployment = deployment
-        @name = job_spec["name"]
-        @template = job_spec["template"]
-        @persistent_disk = job_spec["persistent_disk"]
+        @name = safe_property(job_spec, "name", :class => String)
+        @template = safe_property(job_spec, "template", :class => String)
+        @persistent_disk = safe_property(job_spec, "persistent_disk", :class => String)
         @instances = []
         @packages = {}
+        properties = safe_property(job_spec, "properties", :class => Hash, :optional => true)
+        if properties.nil?
+          @properties = deployment.properties
+        else
+          @properties = deployment.properties._deep_copy
+          @properties.recursive_merge!(properties)
+        end
         @resource_pool = deployment.resource_pool(job_spec["resource_pool"])
         @update = UpdateConfig.new(job_spec["update"], deployment.update)
         @rollback = false
-        @update_errors = 0        
+        @update_errors = 0
 
         job_spec["instances"].times do |index|
           @instances[index] = InstanceSpec.new(self, index)
@@ -452,7 +461,7 @@ module Bosh::Director
       end
 
     end
-    
+
     class InstanceNetwork
       include IpUtil
 
@@ -523,17 +532,20 @@ module Bosh::Director
         @network = deployment.network(safe_property(compilation_config, "network", :class => String))
       end
     end
-        
+
     attr_accessor :name
     attr_accessor :release
     attr_accessor :deployment
+    attr_accessor :properties
     attr_accessor :compilation
     attr_accessor :update
 
     def initialize(manifest)
       @name = safe_property(manifest, "name", :class => String)
       @release = ReleaseSpec.new(self, safe_property(manifest, "release", :class => Hash))
-      
+      @properties = safe_property(manifest, "properties", :class => Hash, :optional => true) || {}
+      @properties.extend(DeepCopy)
+
       @networks = {}
       networks = safe_property(manifest, "networks", :class => Array)
       networks.each do |network_spec|
@@ -587,6 +599,14 @@ module Bosh::Director
       resource_pool = @resource_pools[name]
       raise "Resource pool #{name} not found." if resource_pool.nil?
       resource_pool
+    end
+
+    def delete_vm(vm)
+      # TODO: implement
+    end
+
+    def delete_instance(instance)
+      # TODO: implement
     end
 
   end

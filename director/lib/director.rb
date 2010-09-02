@@ -1,5 +1,9 @@
+# TODO: convert to a gem instead?
+$:.unshift(::File.expand_path("../../../blobstore_client/lib", __FILE__))
+require "blobstore_client"
+
 begin
-  require ::File.expand_path('../../.bundle/environment', __FILE__)
+  require ::File.expand_path("../../.bundle/environment", __FILE__)
   Bundler.require
 rescue LoadError
   puts "Can't find bundler environment, please run rake bundler:install"
@@ -12,17 +16,21 @@ module Bosh
 end
 
 require "digest/sha1"
+require "erb"
 require "fileutils"
 require "logger"
+require "ostruct"
 require "pp"
 require "tmpdir"
 require "yaml"
 
 require "director/ext"
+require "director/deep_copy"
 require "director/client"
 require "director/ip_util"
 require "director/agent_client"
 require "director/config"
+require "director/configuration_hasher"
 require "director/deployment_plan"
 require "director/deployment_plan_compiler"
 require "director/errors"

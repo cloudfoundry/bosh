@@ -8,6 +8,7 @@ module Bosh::Director
       attr_accessor :cloud
       attr_accessor :redis_options
       attr_accessor :pubsub_redis
+      attr_accessor :blobstore
 
       def configure(config)
         @base_dir = config["dir"]
