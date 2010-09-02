@@ -67,12 +67,17 @@ module Bosh::Director
             task = agent.get_task(task["id"])
           end
 
-          # TODO: fetch the compiled packages
-
           @cloud.delete_vm(vm_cid)
           networks_mutex.synchronize do
             networks << network_settings
           end
+
+          compiled_package = Models::CompiledPackage.new
+          compiled_package.package = package
+          compiled_package.stemcell = stemcell
+          compiled_package.sha1 = task["result"]["sha1"]
+          compiled_package.blobstore_id = task["result"]["blobstore_id"]
+          compiled_package.save!
         end
       end
 

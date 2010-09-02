@@ -1,11 +1,12 @@
 module Bosh::Director::Models
 
-  class Release < Ohm::Model; end    
+  class Release < Ohm::Model; end
 
   class Package < Ohm::Model
     reference :release, Release
     attribute :name
     attribute :version
+    attribute :blobstore_id
     attribute :sha1
 
     index :release

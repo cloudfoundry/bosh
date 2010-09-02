@@ -17,9 +17,7 @@ bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
 ENV["TMPDIR"] = bosh_tmp_dir
 
 class Object
-  def _deep_copy
-    Marshal::load(Marshal::dump(self))
-  end
+  include Bosh::Director::DeepCopy
 end
 
 Spec::Runner.configure do |rspec_config|
