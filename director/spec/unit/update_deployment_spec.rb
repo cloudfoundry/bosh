@@ -23,7 +23,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment = mock("deployment")
       deployment_plan_compiler = mock("deployment_plan_compiler")
       package_compiler = mock("package_compiler")
-            
+
       Bosh::Director::Models::Deployment.stub!(:find).with(:name => "test_deployment").and_return([deployment])
       Bosh::Director::DeploymentPlanCompiler.stub!(:new).with(@deployment_plan).and_return(deployment_plan_compiler)
       Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan).and_return(package_compiler)
@@ -59,6 +59,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan.stub!(:jobs).and_return([job])
 
       deployment_plan_compiler.should_receive(:bind_instance_vms)
+      deployment_plan_compiler.should_receive(:delete_unneeded_vms)
+      deployment_plan_compiler.should_receive(:delete_unneeded_instances)
       resource_pool_updater.should_receive(:update)
       job_updater.should_receive(:update)
 
@@ -68,7 +70,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         @deployment_plan_compiler = deployment_plan_compiler
       end
 
-      update_deployment_job.update      
+      update_deployment_job.update
     end
 
   end
@@ -82,7 +84,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       @deployment_plan.stub!(:deployment).and_return(deployment)
       deployment.stub!(:manifest).and_return("old manifest")
-            
+
       Bosh::Director::DeploymentPlan.stub!(:new).with(manifest).and_return(old_deployment_plan)
       YAML.stub!(:load).with("old manifest").and_return(manifest)
 
@@ -115,7 +117,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       release_lock = mock("release_lock")
       deployment = mock("deployment")
       release = mock("release")
-      
+
       @deployment_plan.stub!(:release).and_return(release)
       @deployment_plan.stub!(:deployment).and_return(deployment)
       release.stub!(:name).and_return("test_release")
@@ -131,7 +133,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @task.should_receive(:save!)
 
       deployment.should_receive(:manifest=).with("manifest")
-      deployment.should_receive(:save!)          
+      deployment.should_receive(:save!)
 
       @task.should_receive(:state=).with(:done)
       @task.should_receive(:timestamp=)

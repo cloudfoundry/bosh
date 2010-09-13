@@ -254,7 +254,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan_compiler.bind_resource_pools
     end
 
-    it "should preallocate idle vms that currently don't exist" do      
+    it "should preallocate idle vms that currently don't exist" do
       idle_vm_1 = mock("idle_vm_1")
       idle_vm_2 = mock("idle_vm_2")
 
@@ -350,7 +350,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
       @stemcell_spec.stub!(:network).and_return(@network_spec)
-            
+
       @job_spec.stub!(:template).and_return("test_template")
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
 
@@ -397,7 +397,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.stub!(:job).and_return(@job_spec)
       @instance_spec.stub!(:index).and_return(5)
       @instance_spec.stub!(:instance).and_return(@instance)
-      @instance_spec.stub!(:vm).and_return(@vm)      
+      @instance_spec.stub!(:vm).and_return(@vm)
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
@@ -437,6 +437,61 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan_compiler.bind_instance_vms
     end
 
+  end
+
+  describe "delete_unneeded_vms" do
+
+    it "should delete unneeded vms" do
+      deployment_plan = mock("deployment_plan")
+      cloud = mock("cloud")
+      vm = mock("vm")
+
+      Bosh::Director::Config.stub!(:cloud).and_return(cloud)
+
+      vm.stub!(:cid).and_return("vm-cid")
+      vm.should_receive(:delete)
+
+      deployment_plan.stub!(:unneeded_vms).and_return([vm])
+
+      cloud.should_receive(:delete_vm).with("vm-cid")
+
+      deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
+      deployment_plan_compiler.delete_unneeded_vms
+    end
+
+  end
+
+  describe "delete_unneeded_instances" do
+    it "should delete unneeded instances" do
+      deployment_plan = mock("deployment_plan")
+      cloud = mock("cloud")
+      instance = mock("instance")
+      vm = mock("vm")
+      agent = mock("agent")
+
+      Bosh::Director::Config.stub!(:cloud).and_return(cloud)
+
+      instance.stub!(:vm).and_return(vm)
+      instance.stub!(:disk_cid).and_return("disk-cid")
+      instance.should_receive(:delete)
+
+      vm.stub!(:cid).and_return("vm-cid")
+      vm.stub!(:agent_id).and_return("agent-id")
+      vm.should_receive(:delete)
+
+      agent.should_receive(:drain).and_return(0.01)
+      agent.should_receive(:stop)
+
+      Bosh::Director::AgentClient.stub!(:new).with("agent-id").and_return(agent, nil)
+
+      deployment_plan.stub!(:unneeded_instances).and_return([instance])
+
+      cloud.should_receive(:delete_vm).with("vm-cid")
+      cloud.should_receive(:delete_disk).with("disk-cid")
+
+      deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
+      deployment_plan_compiler.delete_unneeded_instances
+    end
   end
 
 end

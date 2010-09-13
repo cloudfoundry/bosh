@@ -4,6 +4,7 @@ module Bosh::Director
 
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
+      @cloud = Config.cloud
     end
 
     def process_ip_reservations(state)
@@ -150,6 +151,47 @@ module Bosh::Director
             instance_spec.current_state = idle_vm.current_state
           end
         end
+      end
+    end
+
+    def delete_unneeded_vms
+      unless @deployment_plan.unneeded_vms.empty?
+        # TODO: make pool size configurable?
+        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 10)
+        @deployment_plan.unneeded_vms.each do |vm|
+          vm_cid = vm.cid
+          pool.process do
+            @cloud.delete_vm(vm_cid)
+            vm.delete
+          end
+        end
+        sleep(0.1) while pool.working + pool.action_size > 0
+      end
+    end
+
+    def delete_unneeded_instances
+      unless @deployment_plan.unneeded_instances.empty?
+        # TODO: make pool size configurable?
+        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 10)
+        @deployment_plan.unneeded_instances.each do |instance|
+          vm = instance.vm
+          disk_cid = instance.disk_cid
+          vm_cid = vm.cid
+          agent_id = vm.agent_id
+
+          pool.process do
+            agent = AgentClient.new(agent_id)
+            drain_time = agent.drain
+            sleep(drain_time)
+            agent.stop
+
+            @cloud.delete_vm(vm_cid)
+            @cloud.delete_disk(disk_cid) if disk_cid
+            vm.delete
+            instance.delete
+          end
+        end
+        sleep(0.1) while pool.working + pool.action_size > 0
       end
     end
 
