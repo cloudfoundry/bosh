@@ -33,7 +33,7 @@ module Bosh::Director
         deployment = find_or_create_deployment(@deployment_plan.name)
         @deployment_plan.deployment = deployment
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        
+
         @deployment_plan_compiler.bind_existing_deployment
         @deployment_plan_compiler.bind_resource_pools
         @deployment_plan_compiler.bind_instance_networks
@@ -50,6 +50,9 @@ module Bosh::Director
         end
 
         @deployment_plan_compiler.bind_instance_vms
+
+        @deployment_plan_compiler.delete_unneeded_vms
+        @deployment_plan_compiler.delete_unneeded_instances
 
         @deployment_plan.jobs.each do |job|
           JobUpdater.new(job).update

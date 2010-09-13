@@ -298,6 +298,7 @@ module Bosh::Director
       attr_accessor :packages
       attr_accessor :update
       attr_accessor :update_errors
+      attr_accessor :unneeded_instances
 
       def initialize(deployment, job_spec)
         @deployment = deployment
@@ -317,6 +318,7 @@ module Bosh::Director
         @update = UpdateConfig.new(job_spec["update"], deployment.update)
         @rollback = false
         @update_errors = 0
+        @unneeded_instances = []
 
         job_spec["instances"].times do |index|
           @instances[index] = InstanceSpec.new(self, index)
@@ -539,6 +541,8 @@ module Bosh::Director
     attr_accessor :properties
     attr_accessor :compilation
     attr_accessor :update
+    attr_accessor :unneeded_instances
+    attr_accessor :unneeded_vms
 
     def initialize(manifest)
       @name = safe_property(manifest, "name", :class => String)
@@ -569,6 +573,9 @@ module Bosh::Director
         job = JobSpec.new(self, job_spec)
         @jobs[job.name] = job
       end
+
+      @unneeded_vms = []
+      @unneeded_instances = []
     end
 
     def jobs
@@ -602,11 +609,15 @@ module Bosh::Director
     end
 
     def delete_vm(vm)
-      # TODO: implement
+      @unneeded_vms << vm
     end
 
     def delete_instance(instance)
-      # TODO: implement
+      if @jobs.has_key?(instance.job)
+        @jobs[instance.job].unneeded_instances << instance
+      else
+        @unneeded_instances << instance
+      end
     end
 
   end
