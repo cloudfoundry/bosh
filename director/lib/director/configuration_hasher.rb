@@ -51,8 +51,6 @@ module Bosh::Director
         digest = Digest::SHA1.new
         digest << @template
 
-        File.open("/tmp/a.tgz", "w") {|f| f.write(@template)}
-
         @job.instances.each do |instance|
           binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct)
           instance_digest = digest.dup
