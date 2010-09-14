@@ -4,7 +4,7 @@ module Bosh::Director
 
     def initialize(resource_pool)
       @resource_pool = resource_pool
-      @cloud = Config.cloud      
+      @cloud = Config.cloud
     end
 
     def update
@@ -57,6 +57,7 @@ module Bosh::Director
             vm.save!
 
             agent = AgentClient.new(vm.agent_id)
+            agent.wait_until_ready
             idle_vm.vm = vm
             idle_vm.current_state = agent.get_state
           end

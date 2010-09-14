@@ -59,6 +59,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
 
     idle_vm.should_receive(:vm=).with(vm)
+    agent.should_receive(:wait_until_ready)
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
 
@@ -149,6 +150,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.should_receive(:vm=).with(nil).and_return {|vm| current_vm = nil}
     idle_vm.should_receive(:current_state=).with(nil)
 
+    agent.should_receive(:wait_until_ready)
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:vm=).with(new_vm).and_return {|vm| current_vm = vm}
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})

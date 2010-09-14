@@ -100,7 +100,7 @@ describe Bosh::Director::InstanceUpdater do
     @deployment_plan.stub!(:name).and_return("test_deployment")
 
     @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-    @resource_pool_spec.stub!(:properties).and_return(BASIC_PLAN["resource_pool"])    
+    @resource_pool_spec.stub!(:properties).and_return(BASIC_PLAN["resource_pool"])
     @resource_pool_spec.stub!(:cloud_properties).and_return(BASIC_PLAN["resource_pool"]["cloud_properties"])
 
     @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
@@ -121,7 +121,7 @@ describe Bosh::Director::InstanceUpdater do
                                 :networks_changed? => false,
                                 :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
-    
+
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
     Bosh::Director::AgentClient.stub!(:new).and_return do |id|
@@ -170,7 +170,7 @@ describe Bosh::Director::InstanceUpdater do
     end
 
     @update_spec.should_not_receive(:update_watch_time)
-    @update_spec.should_receive(:canary_watch_time).and_return(0.01)        
+    @update_spec.should_receive(:canary_watch_time).and_return(0.01)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -212,7 +212,7 @@ describe Bosh::Director::InstanceUpdater do
     new_vm.should_receive(:agent_id).any_number_of_times.and_return("agent-2")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
-    instance_updater.stub!(:generate_agent_id).and_return("agent-2")    
+    instance_updater.stub!(:generate_agent_id).and_return("agent-2")
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     Bosh::Director::Models::Vm.stub!(:new).and_return(new_vm)
@@ -240,6 +240,7 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:vm=).with(new_vm)
     @instance.should_receive(:save!)
 
+    @agent_2.should_receive(:wait_until_ready)
     @agent_2.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
@@ -276,7 +277,7 @@ describe Bosh::Director::InstanceUpdater do
     new_vm.should_receive(:agent_id=).with("agent-2")
     new_vm.should_receive(:cid=).with("vm-id-2")
     new_vm.should_receive(:save!)
-    
+
     new_vm.stub!(:cid).and_return("vm-id-2")
     new_vm.stub!(:agent_id).and_return("agent-2")
 
@@ -306,11 +307,12 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:save!)
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
       BASIC_PLAN["networks"]).and_return("vm-id-2")
-    @cloud.should_receive(:attach_disk).with("vm-id-2", "disk-id")    
+    @cloud.should_receive(:attach_disk).with("vm-id-2", "disk-id")
 
     @instance.should_receive(:vm=).with(new_vm)
     @instance.should_receive(:save!)
 
+    @agent_2.should_receive(:wait_until_ready)
     @agent_2.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
@@ -440,7 +442,7 @@ describe Bosh::Director::InstanceUpdater do
     })
     @instance.should_receive(:disk_cid=).with("disk-id")
     @instance.should_receive(:save!)
-    @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")        
+    @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",

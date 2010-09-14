@@ -9,7 +9,7 @@ describe Bosh::Director::PackageCompiler do
       @release_version = mock("release_version")
       @template = mock("template")
       @package = mock("package")
-      @network = mock("network")      
+      @network = mock("network")
       @agent = mock("agent")
       @deployment_plan = mock("deployment_plan")
       @resource_pool_spec = mock("resource_pool_spec")
@@ -83,6 +83,7 @@ describe Bosh::Director::PackageCompiler do
 
       @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
                                              {"ip"=>"1.2.3.4"}).and_return("vm-1")
+      @agent.should_receive(:wait_until_ready)
       @agent.should_receive(:compile_package).with("test_release", "test_pkg",
                                                    33, "test_pkg source sha1").and_return(
               {"state" => "done",
@@ -101,7 +102,7 @@ describe Bosh::Director::PackageCompiler do
       compiled_package.should_receive(:save!)
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
-      package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")      
+      package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
       package_compiler.compile
     end
   end
@@ -173,11 +174,13 @@ describe Bosh::Director::PackageCompiler do
 
       Bosh::Director::Models::CompiledPackage.stub!(:new).and_return(compiled_package)
 
+      agent_a.should_receive(:wait_until_ready)
       agent_a.should_receive(:compile_package).with("test_release", "a", 1, "sha1-a").and_return(
               {"state" => "done",
                "result" => {"sha1" => "some sha a",
                             "blobstore_id" => "some blobstore a"}
               })
+      agent_b.should_receive(:wait_until_ready)
       agent_b.should_receive(:compile_package).with("test_release", "b", 2, "sha1-b").and_return(
               {"state" => "done",
                "result" => {"sha1" => "some sha b",
@@ -191,7 +194,7 @@ describe Bosh::Director::PackageCompiler do
 
       package_compiler.compile
     end
-    
+
   end
 
 end

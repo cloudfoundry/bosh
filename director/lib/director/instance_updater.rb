@@ -62,6 +62,8 @@ module Bosh::Director
           @cloud.attach_disk(@vm.cid, @instance.disk_cid)
         end
 
+        agent.wait_until_ready
+
         @instance_spec.current_state = agent.get_state
       end
     end
@@ -129,7 +131,7 @@ module Bosh::Director
     end
 
     def generate_agent_id
-      UUIDTools::UUID.random_create.to_s      
+      UUIDTools::UUID.random_create.to_s
     end
 
   end
