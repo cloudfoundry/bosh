@@ -68,7 +68,7 @@ module Bosh::Director
             @task.timestamp = Time.now.to_i
             @task.save!
           end
-        rescue => e
+        rescue Exception => e
           @release.delete if @release && !@release.new?
 
           @task.state = :error

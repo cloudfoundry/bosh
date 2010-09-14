@@ -96,7 +96,7 @@ module Bosh::Director
               @task.save!
             end
           end
-        rescue => e
+        rescue Exception => e
           @task.state = :error
           @task.result = e.to_s
           @task.timestamp = Time.now.to_i
