@@ -19,6 +19,7 @@ require "digest/sha1"
 require "erb"
 require "fileutils"
 require "logger"
+require "optparse"
 require "ostruct"
 require "pp"
 require "tmpdir"
@@ -142,10 +143,18 @@ end
 
                                                                                                                                                                                                                             EM
 if $0 == __FILE__
+  config_file = nil
 
-  #TODO: add -C for config file
+  opts = OptionParser.new do |opts|
+    opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+      config_file = opt
+    end
+  end
 
-  config = YAML.load_file("config/bosh-director.yml")
+  opts.parse!(ARGV.dup)
+
+  config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
+  config = YAML.load_file(config_file)
 
   Bosh::Director::Config.configure(config)
 
