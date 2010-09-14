@@ -1,22 +1,7 @@
 module Bosh::Director
 
-  module ValidateHelper
-    def safe_property(hash, property, options = {})
-      result = nil
-      if hash && hash.has_key?(property)
-        result = hash[property]
-        if options[:class] && !result.kind_of?(options[:class])
-          raise "field: #{property} did not match the required type #{options[:class]} in #{hash.pretty_inspect}."
-        end
-      elsif !options[:optional]
-        raise "required field: #{property} was not specified in #{hash.pretty_inspect}."
-      end
-      result
-    end
-  end
-
   class DeploymentPlan
-    include ValidateHelper
+    include ValidationHelper
 
     class ReleaseSpec
 
@@ -287,7 +272,7 @@ module Bosh::Director
 
     class JobSpec
       include IpUtil
-      include ValidateHelper
+      include ValidationHelper
 
       attr_accessor :deployment
       attr_accessor :name
@@ -494,7 +479,7 @@ module Bosh::Director
     end
 
     class UpdateConfig
-      include ValidateHelper
+      include ValidationHelper
 
       attr_accessor :canaries
       attr_accessor :canary_watch_time
@@ -522,7 +507,7 @@ module Bosh::Director
     end
 
     class CompilationConfig
-      include ValidateHelper
+      include ValidationHelper
 
       attr_accessor :deployment
       attr_accessor :workers
