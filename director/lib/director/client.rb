@@ -24,7 +24,7 @@ module Bosh::Director
       @pubsub_redis.subscribe(message_id) do |*callback_args|
         type = callback_args.shift
         case type
-          when :subscribe          
+          when :subscribe
             payload = {
               :message_id => message_id,
               :method => id,
@@ -57,6 +57,20 @@ module Bosh::Director
 
       raise result["exception"] if result.has_key?("exception")
       result["value"]
+    end
+
+    def wait_until_ready(poll_interval = 1.0)
+      old_timeout = @timeout
+      @timeout = poll_interval
+
+      begin
+        ping
+      rescue TimeoutException
+        retry
+      ensure
+        @timeout = old_timeout
+      end
+
     end
 
   end

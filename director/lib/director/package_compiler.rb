@@ -62,6 +62,7 @@ module Bosh::Director
           agent_id = generate_agent_id
           vm_cid = @cloud.create_vm(agent_id, stemcell_cid, compilation_resources, network_settings)
           agent = AgentClient.new(agent_id)
+          agent.wait_until_ready
           task = agent.compile_package(release_name, package_name, package_version, package_sha1)
           while task["state"] == "running"
             task = agent.get_task(task["id"])

@@ -70,4 +70,19 @@ describe Bosh::Director::Client do
     }.should raise_exception(Bosh::Director::Client::TimeoutException)
   end
 
+  it "should let you wait for the server to be ready" do
+    redis = mock("redis")
+    pubsub_redis = mock("pubsub_redis")
+
+    Bosh::Director::Config.stub!(:redis).and_return(redis)
+    Bosh::Director::Config.stub!(:pubsub_redis).and_return(pubsub_redis)
+
+    @client = Bosh::Director::Client.new("test_service", "test_service_id", :timeout => 0.1)
+    @client.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+    @client.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+    @client.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+    @client.should_receive(:ping).and_return(true)
+    @client.wait_until_ready
+  end
+
 end
