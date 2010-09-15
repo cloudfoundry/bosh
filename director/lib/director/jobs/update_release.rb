@@ -12,7 +12,7 @@ module Bosh::Director
 
       def initialize(task_id, release_dir)
         @task = Models::Task[task_id]
-        raise TaskInvalid if @task.nil?
+        raise TaskNotFound if @task.nil?
 
         @tmp_release_dir = release_dir
 

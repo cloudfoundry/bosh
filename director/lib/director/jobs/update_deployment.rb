@@ -12,7 +12,7 @@ module Bosh::Director
 
       def initialize(task_id, manifest_file)
         @task = Models::Task[task_id]
-        raise TaskInvalid if @task.nil?
+        raise TaskNotFound if @task.nil?
 
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) {|f| f.read}
@@ -102,7 +102,7 @@ module Bosh::Director
           @task.timestamp = Time.now.to_i
           @task.save!
         ensure
-          # TODO: cleanup?
+          FileUtils.rm_rf(@manifest_file)
         end
       end
 
