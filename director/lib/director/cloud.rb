@@ -9,7 +9,7 @@ module Bosh::Director
 
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks)
+    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
 
     end
 
@@ -29,7 +29,7 @@ module Bosh::Director
 
     end
 
-    def create_disk(size)
+    def create_disk(size, vm_locality = nil)
 
     end
 
