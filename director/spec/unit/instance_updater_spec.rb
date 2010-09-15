@@ -235,7 +235,7 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:vm=).with(nil)
     @instance.should_receive(:save!)
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"]).and_return("vm-id-2")
+      BASIC_PLAN["networks"], nil).and_return("vm-id-2")
 
     @instance.should_receive(:vm=).with(new_vm)
     @instance.should_receive(:save!)
@@ -306,7 +306,7 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:vm=).with(nil)
     @instance.should_receive(:save!)
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"]).and_return("vm-id-2")
+      BASIC_PLAN["networks"], "disk-id").and_return("vm-id-2")
     @cloud.should_receive(:attach_disk).with("vm-id-2", "disk-id")
 
     @instance.should_receive(:vm=).with(new_vm)
@@ -392,7 +392,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
     @instance.should_receive(:disk_cid).and_return(nil)
-    @cloud.should_receive(:create_disk).with(1024).and_return("disk-id")
+    @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @instance.should_receive(:disk_cid=).with("disk-id")
     @instance.should_receive(:save!)
@@ -434,7 +434,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
     @instance.should_receive(:disk_cid).and_return("old-disk-id")
-    @cloud.should_receive(:create_disk).with(1024).and_return("disk-id")
+    @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @agent_1.should_receive(:migrate_disk).with(1024).and_return({
       "id" => "task-1",

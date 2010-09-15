@@ -48,7 +48,7 @@ module Bosh::Director
 
         agent_id = generate_agent_id
         vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
-                                 @instance_spec.network_settings)
+                                 @instance_spec.network_settings, @instance.disk_cid)
 
         @vm = Models::Vm.new
         @vm.deployment = @deployment_plan.deployment
@@ -74,7 +74,7 @@ module Bosh::Director
         old_disk_cid = @instance.disk_cid
 
         if @job_spec.persistent_disk > 0
-          disk_cid = @cloud.create_disk(@job_spec.persistent_disk)
+          disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
           @cloud.attach_disk(@vm.cid, disk_cid)
 
           if old_disk_cid
