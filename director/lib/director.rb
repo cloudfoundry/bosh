@@ -65,8 +65,10 @@ module Bosh::Director
 
     def initialize
       super
-      @user_manager = UserManager.new
+      @deployment_manager = DeploymentManager.new
       @release_manager = ReleaseManager.new
+      @stemcell_manager = StemcellManager.new
+      @user_manager = UserManager.new
     end
 
     mime_type :tgz, "application/x-compressed"
@@ -108,6 +110,10 @@ module Bosh::Director
       error(400, error.errors.pretty_inspect)
     end
 
+    error TaskNotFound do
+      error(404, "Task not found")
+    end
+
     error do
       boom = env['sinatra.error']
       msg = ["#{boom.class} - #{boom.message}:", *boom.backtrace].join("\n ")
@@ -138,6 +144,37 @@ module Bosh::Director
       task = @release_manager.create_release(request.body)
       redirect "/tasks/#{task.id}"
     end
+
+    # TODO: get information about an existing release
+    # TODO: delete a release
+
+    post "/deployments", :consumes => :yaml do
+      task = @deployment_manager.create_deployment(request.body)
+      redirect "/tasks/#{task.id}"
+    end
+
+    # TODO: get information about an existing deployment
+    # TODO: delete deployment?
+    # TODO: stop, start, restart jobs/instances
+
+    post "/stemcells", :consumes => :tgz do
+      task = @stemcell_manager.create_stemcell(request.body)
+      redirect "/tasks/#{task.id}"
+    end
+
+    # TODO: get information about an existing stemcell
+    # TODO: delete stemcell
+
+    get "/tasks/:id" do
+      task = Models::Task[params[:id]]
+      raise TaskNotFound if task.nil?
+
+      # TODO: fix output to be in JSON format exporting state, timestamp, and result.
+      content_type("text/plain")
+      task.state
+    end
+
+    # TODO: create an endpoint for task output
   end
 end
 
