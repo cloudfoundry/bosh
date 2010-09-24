@@ -53,17 +53,19 @@ describe Bosh::Director::DeploymentPlan do
       }
     ],
     "jobs" => [
-      "name" => "job_a",
-      "template" => "job_a",
-      "instances" => 5,
-      "resource_pool" => "small",
-      "persistent_disk" => "2gb",
-      "networks" => [
-        {
-          "name" => "network_a",
-          "static_ips" => ["10.0.0.100 - 10.0.0.104"]
-        }
-      ]
+      {
+        "name" => "job_a",
+        "template" => "job_a",
+        "instances" => 5,
+        "resource_pool" => "small",
+        "persistent_disk" => "2gb",
+        "networks" => [
+          {
+            "name" => "network_a",
+            "static_ips" => ["10.0.0.100 - 10.0.0.104"]
+          }
+        ]
+      }
     ]
   }
 
@@ -273,7 +275,7 @@ describe Bosh::Director::DeploymentPlan do
 
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       deployment_plan.properties.should eql({"foo" => "bar", "test" => {"a" => 5, "b" => 6}})
-      deployment_plan.job("job_a").properties.should eql({"foo"=>"bar", "test"=>{"a"=>5, "b"=>7}})      
+      deployment_plan.job("job_a").properties.should eql({"foo"=>"bar", "test"=>{"a"=>5, "b"=>7}})
     end
 
   end
@@ -681,7 +683,7 @@ describe Bosh::Director::DeploymentPlan do
       job = deployment_plan.job("job_a")
       instance = job.instance(0)
       instance.configuration_hash = "config_hash"
-      
+
       current_state = CURRENT_STATE._deep_copy
       current_state["networks"]["network_a"]["ip"] = "10.0.0.20"
       instance.current_state = current_state
@@ -783,7 +785,7 @@ describe Bosh::Director::DeploymentPlan do
       job.package_spec.should eql({"pkg_a"=>{"name"=>"pkg_a", "sha1"=>"a_sha1", "version"=>1},
                                    "pkg_b"=>{"name"=>"pkg_b", "sha1"=>"b_sha1", "version"=>2}})
     end
-    
+
   end
 
   describe "Updates" do
@@ -806,7 +808,7 @@ describe Bosh::Director::DeploymentPlan do
         job.should_rollback?.should be_false
         job.record_update_error("some error")
       end
-      
+
       job.should_rollback?.should be_true
     end
 
