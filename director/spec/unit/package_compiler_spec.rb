@@ -47,6 +47,7 @@ describe Bosh::Director::PackageCompiler do
       @package.stub!(:name).and_return("test_pkg")
       @package.stub!(:version).and_return(33)
       @package.stub!(:release).and_return(@release)
+      @package.stub!(:blobstore_id).and_return("package-id")
       @package.stub!(:sha1).and_return("test_pkg source sha1")
 
       @stemcell.stub!(:id).and_return(24)
@@ -84,8 +85,7 @@ describe Bosh::Director::PackageCompiler do
       @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
                                              {"ip"=>"1.2.3.4"}).and_return("vm-1")
       @agent.should_receive(:wait_until_ready)
-      @agent.should_receive(:compile_package).with("test_release", "test_pkg",
-                                                   33, "test_pkg source sha1").and_return(
+      @agent.should_receive(:compile_package).with("package-id", "test_pkg source sha1").and_return(
               {"state" => "done",
                "result" => {"sha1" => "some sha 1",
                             "blobstore_id" => "some blobstore id"}
@@ -127,11 +127,13 @@ describe Bosh::Director::PackageCompiler do
       package_a.stub!(:name).and_return("a")
       package_a.stub!(:version).and_return(1)
       package_a.stub!(:sha1).and_return("sha1-a")
+      package_a.stub!(:blobstore_id).and_return("package-a-id")
       package_a.stub!(:release).and_return(release)
 
       package_b.stub!(:name).and_return("b")
       package_b.stub!(:version).and_return(2)
       package_b.stub!(:sha1).and_return("sha1-b")
+      package_b.stub!(:blobstore_id).and_return("package-b-id")
       package_b.stub!(:release).and_return(release)
 
       stemcell_a.stub!(:cid).and_return("stemcell_a")
@@ -175,13 +177,13 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::Models::CompiledPackage.stub!(:new).and_return(compiled_package)
 
       agent_a.should_receive(:wait_until_ready)
-      agent_a.should_receive(:compile_package).with("test_release", "a", 1, "sha1-a").and_return(
+      agent_a.should_receive(:compile_package).with("package-a-id", "sha1-a").and_return(
               {"state" => "done",
                "result" => {"sha1" => "some sha a",
                             "blobstore_id" => "some blobstore a"}
               })
       agent_b.should_receive(:wait_until_ready)
-      agent_b.should_receive(:compile_package).with("test_release", "b", 2, "sha1-b").and_return(
+      agent_b.should_receive(:compile_package).with("package-b-id", "sha1-b").and_return(
               {"state" => "done",
                "result" => {"sha1" => "some sha b",
                             "blobstore_id" => "some blobstore b"}
