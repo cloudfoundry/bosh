@@ -1,10 +1,3 @@
-begin
-  require ::File.expand_path('../../.bundle/environment', __FILE__)
-  Bundler.require
-rescue LoadError
-  puts "Can't find bundler environment, please run rake bundler:install"
-  Process.exit
-end
 
 module Bosh
   module Blobstore

@@ -1,4 +1,5 @@
-source "http://rubygems.org"
+source :rubygems
+
 gem "actionpool"
 gem "eventmachine"
 gem "ohm", "0.1.0.rc4"

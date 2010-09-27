@@ -9,8 +9,6 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 
-Bundler.require(:test)
-
 bosh_dir = Dir.mktmpdir("boshdir")
 bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
 
