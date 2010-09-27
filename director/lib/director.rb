@@ -2,14 +2,6 @@
 $:.unshift(::File.expand_path("../../../blobstore_client/lib", __FILE__))
 require "blobstore_client"
 
-begin
-  require ::File.expand_path("../../.bundle/environment", __FILE__)
-  Bundler.require
-rescue LoadError
-  puts "Can't find bundler environment, please run rake bundler:install"
-  Process.exit
-end
-
 module Bosh
   module Director
   end
@@ -24,6 +16,15 @@ require "ostruct"
 require "pp"
 require "tmpdir"
 require "yaml"
+
+require "ohm"
+require "sinatra"
+require "eventmachine"
+require "actionpool"
+require "netaddr"
+require "uuidtools"
+require 'archive/tar/minitar'
+require "yajl"
 
 require "director/ext"
 require "director/deep_copy"
@@ -44,6 +45,8 @@ require "director/pubsub_redis"
 require "director/release_manager"
 require "director/resource_pool_updater"
 require "director/user_manager"
+require "director/deployment_manager"
+require "director/stemcell_manager"
 require "director/jobs/update_deployment"
 require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
