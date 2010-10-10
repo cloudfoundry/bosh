@@ -1,0 +1,34 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    SystemTimer (1.2)
+    builder (2.1.2)
+    ci_reporter (1.6.2)
+      builder (>= 2.1.2)
+    columnize (0.3.1)
+    linecache (0.43)
+    rake (0.8.7)
+    rcov (0.9.9)
+    redis (2.0.10)
+    rspec (1.3.0)
+    ruby-debug (0.10.3)
+      columnize (>= 0.1)
+      ruby-debug-base (~> 0.10.3.0)
+    ruby-debug-base (0.10.3)
+      linecache (>= 0.3)
+    uuidtools (2.1.1)
+    yajl-ruby (0.7.8)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  SystemTimer
+  ci_reporter
+  rake
+  rcov
+  redis
+  rspec
+  ruby-debug
+  uuidtools
+  yajl-ruby
