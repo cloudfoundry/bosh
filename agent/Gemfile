@@ -1,0 +1,15 @@
+source :rubygems
+
+gem "rake"
+gem "redis"
+gem "uuidtools"
+gem "SystemTimer"
+gem "yajl-ruby", :require => "yajl"
+gem "ruby-debug"
+gem "uuidtools"
+
+group :test do
+  gem "rspec", :require => ["spec", "spec/interop/test"]
+  gem "rcov"
+  gem "ci_reporter"
+end
