@@ -5,6 +5,10 @@ module Bosh::Director
       redis_options[:timeout] = 0
       @redis = Redis.new(redis_options)
       @mapping = {}
+
+      # HACK: work around unsubscribe issue in redis.rb
+      subscribe("rpc:dummy") {}
+      sleep 1
     end
 
     def subscribe(*channels, &block)
