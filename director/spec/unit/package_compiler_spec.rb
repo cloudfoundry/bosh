@@ -25,6 +25,8 @@ describe Bosh::Director::PackageCompiler do
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
       @deployment_plan.stub!(:compilation).and_return(@compilation_config)
 
+      @network.stub!(:name).and_return("network_a")
+
       @release_spec.stub!(:release).and_return(@release_version)
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
@@ -83,7 +85,7 @@ describe Bosh::Director::PackageCompiler do
       @packages.should_receive(:[]=).with("test_pkg", 33)
 
       @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
-                                             {"ip"=>"1.2.3.4"}).and_return("vm-1")
+                                             {"network_a"=>{"ip"=>"1.2.3.4"}}).and_return("vm-1")
       @agent.should_receive(:wait_until_ready)
       @agent.should_receive(:compile_package).with("package-id", "test_pkg source sha1").and_return(
               {"state" => "done",
@@ -123,6 +125,7 @@ describe Bosh::Director::PackageCompiler do
       agent_b = mock("agent_b")
 
       release.stub!(:name).and_return("test_release")
+      network.stub!(:name).and_return("network_a")
 
       package_a.stub!(:name).and_return("a")
       package_a.stub!(:version).and_return(1)
@@ -159,10 +162,10 @@ describe Bosh::Director::PackageCompiler do
       package_compiler.stub!(:generate_agent_id).and_return("agent-1", "agent-2", "invalid")
 
       cloud.should_receive(:create_vm).with("agent-1", "stemcell_a", {"ram"=>"2gb"},
-                                            {"ip"=>"1.2.3.4"}).and_return("vm-1")
+                                            {"network_a"=>{"ip"=>"1.2.3.4"}}).and_return("vm-1")
 
       cloud.should_receive(:create_vm).with("agent-2", "stemcell_b", {"ram"=>"2gb"},
-                                            {"ip"=>"1.2.3.4"}).and_return("vm-2")
+                                            {"network_a"=>{"ip"=>"1.2.3.4"}}).and_return("vm-2")
 
       Bosh::Director::AgentClient.should_receive(:new).with("agent-1").and_return(agent_a)
       Bosh::Director::AgentClient.should_receive(:new).with("agent-2").and_return(agent_b)

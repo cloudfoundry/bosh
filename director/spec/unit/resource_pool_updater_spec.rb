@@ -43,11 +43,11 @@ describe Bosh::Director::ResourcePoolUpdater do
     stemcell_spec.stub!(:stemcell).and_return(stemcell)
     stemcell.stub!(:cid).and_return("stemcell-id")
 
-    idle_vm.stub!(:network_settings).and_return({"ip" => "1.2.3.4"})
+    idle_vm.stub!(:network_settings).and_return({"network_a" => {"ip" => "1.2.3.4"}})
     idle_vm.should_receive(:vm).and_return(nil, nil)
 
     cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
-                                          {"ip"=>"1.2.3.4"}).and_return("vm-1")
+                                          {"network_a" => {"ip" => "1.2.3.4"}}).and_return("vm-1")
 
     Bosh::Director::Models::Vm.stub!(:new).and_return(vm)
     vm.stub!(:agent_id).and_return("agent-1")
