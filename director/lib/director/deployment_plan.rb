@@ -188,6 +188,16 @@ module Bosh::Director
         config
       end
 
+      def release_dynamic_ip(ip)
+        ip = ip_to_netaddr(ip)
+        @subnets.each do |subnet|
+          if subnet.range.contains?(ip)
+            subnet.release_dynamic_ip(ip)
+            break
+          end
+        end
+      end
+
     end
 
     class NetworkSubnetSpec
@@ -266,6 +276,12 @@ module Bosh::Director
           @available_dynamic_ips.delete(ip)
         end
         ip
+      end
+
+      def release_dynamic_ip(ip)
+        raise "Invalid dynamic ip" unless @range.contains?(ip)
+        # TODO: would be nice to check if it was really a dynamic ip and not reserved/static/etc
+        @available_dynamic_ips.add(ip.to_i)
       end
 
     end
