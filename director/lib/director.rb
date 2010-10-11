@@ -17,13 +17,12 @@ require "pp"
 require "tmpdir"
 require "yaml"
 
+require "actionpool"
+require "eventmachine"
+require "netaddr"
 require "ohm"
 require "sinatra"
-require "eventmachine"
-require "actionpool"
-require "netaddr"
 require "uuidtools"
-require 'archive/tar/minitar'
 require "yajl"
 
 require "director/ext"
@@ -32,6 +31,8 @@ require "director/validation_helper"
 require "director/client"
 require "director/ip_util"
 require "director/agent_client"
+require "director/cloud"
+require "director/cloud/vsphere"
 require "director/config"
 require "director/configuration_hasher"
 require "director/deployment_plan"
@@ -98,7 +99,7 @@ module Bosh::Director
         @user = @auth.username
         env["REMOTE_USER"] = @user # for logging
       else
-        response['WWW-Authenticate'] = %(Basic realm="Testing HTTP Auth")
+        response["WWW-Authenticate"] = %(Basic realm="Testing HTTP Auth")
         error(401, "Not authorized")
       end
     end
@@ -108,7 +109,7 @@ module Bosh::Director
     end
 
     error UserInvalid do
-      error = env['sinatra.error']
+      error = env["sinatra.error"]
       #TODO: provide real error codes
       error(400, error.errors.pretty_inspect)
     end
@@ -118,9 +119,9 @@ module Bosh::Director
     end
 
     error do
-      boom = env['sinatra.error']
+      boom = env["sinatra.error"]
       msg = ["#{boom.class} - #{boom.message}:", *boom.backtrace].join("\n ")
-      @env['rack.errors'].puts(msg)
+      @env["rack.errors"].puts(msg)
 
       # print error/backtrace for test environment only
       if test?
@@ -178,31 +179,5 @@ module Bosh::Director
     end
 
     # TODO: create an endpoint for task output
-  end
-end
-
-                                                                                                                                                                                                                            EM
-if $0 == __FILE__
-  config_file = nil
-
-  opts = OptionParser.new do |opts|
-    opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
-      config_file = opt
-    end
-  end
-
-  opts.parse!(ARGV.dup)
-
-  config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
-  config = YAML.load_file(config_file)
-
-  Bosh::Director::Config.configure(config)
-
-  Thin::Server.start('0.0.0.0', config["port"]) do
-    use Rack::CommonLogger
-    use Rack::ShowExceptions
-    map "/" do
-      run Bosh::Director::Controller.new
-    end
   end
 end

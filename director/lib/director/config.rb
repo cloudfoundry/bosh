@@ -19,7 +19,15 @@ module Bosh::Director
         self.redis_options= {:host => config["redis"]["host"],
                              :port => config["redis"]["port"],
                              :password => config["redis"]["password"],
-                             :logger => @logger}
+                             :logger => @logger
+        }
+
+        case config["cloud"]["plugin"]
+          when "vsphere"
+            @cloud = VSphereCloud.new(config["cloud"]["properties"])
+          else
+            raise "Could not find Cloud Provider Plugin: #{config["cloud"]["plugin"]}"
+        end
       end
 
       def redis_options=(options)
@@ -34,7 +42,7 @@ module Bosh::Director
       def threaded
         Thread.current[:bosh] ||= {}
       end
-      
+
     end
 
   end
