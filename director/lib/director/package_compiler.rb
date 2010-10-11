@@ -37,7 +37,7 @@ module Bosh::Director
       networks = []
       networks_mutex = Mutex.new
       @deployment_plan.compilation.workers.times do
-        networks << network.network_settings(network.allocate_dynamic_ip)
+        networks << {network.name => network.network_settings(network.allocate_dynamic_ip)}
       end
 
       pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => @deployment_plan.compilation.workers)
@@ -83,7 +83,8 @@ module Bosh::Director
       sleep(0.1) while pool.working + pool.action_size > 0
 
       networks.each do |network_settings|
-        network.release_dynamic_ip(network_settings["ip"])
+        ip = network_settings[network.name]["ip"]
+        network.release_dynamic_ip(ip)
       end
     end
 
