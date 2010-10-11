@@ -162,14 +162,10 @@ module Bosh::Director
 
       fix_device_unit_numbers(devices, config.deviceChange)
 
-      puts "Cloning... #{name}"
-
       task = clone_vm(local_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
                       :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
                       :config => config)
       vm = client.wait_for_task(task)
-
-      puts "Reconfigure... #{name}"
 
       vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device"])
       devices = vm_properties["config.hardware.device"]
@@ -177,11 +173,7 @@ module Bosh::Director
       env = build_agent_env(agent_id, networks, devices)
       set_agent_env(vm, env)
 
-      puts "Power on... #{name}"
-
       power_on_vm(vm)
-
-      puts "Done... #{name}"
       vm
     end
 
@@ -306,8 +298,6 @@ module Bosh::Director
 
         result.unaccounted_memory += memory
       end
-
-      puts "Chose: #{result.name}"
 
       result
     end
