@@ -7,10 +7,22 @@ redis:
   password:
 dir: /tmp/boshdir
 cloud:
-    plugin: vsphere
-    properties:
-        host: markl-dev4
-        user: administrator
-        password: ca$hc0w
-        clusters:
-            - cluster A
+  plugin: vsphere
+  properties:
+    vcenters:
+      - host: localhost:10443
+        user: director
+        password: Dir3ctor
+        datacenters:
+          - name: LAS01
+            vm_folder: BOSH_VMs
+            template_folder: BOSH_Templates
+            clusters:
+              - Cluster01
+              - Cluster02
+              - Cluster03
+              - Cluster04
+              - Cluster05
+              - Cluster06
+              - Cluster07
+              - Cluster08

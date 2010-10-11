@@ -8,11 +8,12 @@ gem "redis"
 gem "resque"
 gem "netaddr"
 gem "sinatra"
+gem "soap4r"
 gem "SystemTimer"
 gem "systemu"
 gem "thin"
 gem "uuidtools"
-gem "yajl-ruby", :require => "yajl"
+gem "yajl-ruby"
 
 group :test do
   gem "minitar", :require => "archive/tar/minitar"

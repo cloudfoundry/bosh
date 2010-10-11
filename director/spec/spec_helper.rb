@@ -7,8 +7,12 @@ Bundler.setup(:default, :test)
 
 ENV['RACK_ENV'] = "test"
 
+require "bundler"
+Bundler.setup(:default, :test)
+
 require "director"
 
+require "archive/tar/minitar"
 require "digest/sha1"
 require "fileutils"
 require "tmpdir"
