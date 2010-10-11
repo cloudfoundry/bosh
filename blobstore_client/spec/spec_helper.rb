@@ -1,5 +1,8 @@
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
+require "bundler"
+require "bundler/setup"
+
 require "blobstore_client"
 
 Bundler.require(:test)

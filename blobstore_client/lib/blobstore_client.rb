@@ -7,6 +7,8 @@ end
 
 require "base64"
 
+require "httpclient"
+
 require "blobstore_client/client"
 require "blobstore_client/simple_blobstore_client"
 
