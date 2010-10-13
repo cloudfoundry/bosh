@@ -54,7 +54,7 @@ describe Bosh::Agent::Handler do
 
     @redis.should_receive(:publish) do |message_id, payload|
       msg = Yajl::Parser.new.parse(payload)
-      msg.should == {"value => "result""}
+      msg.should == {"value" => "result"}
     end
     handler.handle_get_task("another_bogus_id", {"agent_task_id" => agent_task_id})
   end
