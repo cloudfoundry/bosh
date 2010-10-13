@@ -1,4 +1,5 @@
 require "director/cloud/vsphere/defaultDriver"
+require "director/cloud/vsphere/lease_updater"
 
 module Bosh::Director::CloudProviders::VSphere
 

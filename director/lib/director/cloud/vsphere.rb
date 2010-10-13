@@ -62,13 +62,38 @@ module Bosh::Director
       @lock = Mutex.new
       @locks = {}
       @locks_mutex = Mutex.new
+
+      @logger = Config.logger
     end
 
-    def create_stemcell(image, cloud_properties)
-      # extract image
-      # verify OVF
-      # upload OVF
-      # return vm mob id
+    def create_stemcell(image, _)
+      result = nil
+      Dir.mktmpdir do |temp_dir|
+        @logger.debug("extracting stemcell to: #{temp_dir}")
+        `tar -C #{temp_dir} -xzf #{image}`
+        raise "Corrupt image" if $?.exitstatus != 0
+
+        ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf"}
+        raise "Missing OVF" if ovf_file.nil?
+        ovf_file = File.join(temp_dir, ovf_file)
+
+        name = generate_unique_name
+        @logger.debug("generated name: #{name}")
+
+        # TODO: make stemcell friendly version of the calls below
+        cluster = find_least_loaded_cluster(1)
+        datastore = find_least_loaded_datastore(cluster, 1)
+        @logger.debug("deploying to: #{cluster.mob} / #{datastore.mob}")
+
+        import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
+        lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.importSpec,
+                                 cluster.datacenter.template_folder)
+        state = wait_for_nfc_lease(lease)
+        raise 'Could not acquire HTTP NFC lease' unless state == CloudProviders::VSphere::HttpNfcLeaseState::Ready
+
+        result = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
+      end
+      result
     end
 
     def delete_stemcell(stemcell)
@@ -645,6 +670,125 @@ module Bosh::Director
       request = CloudProviders::VSphere::PowerOffVMRequestType.new(vm)
       task = client.service.powerOffVM_Task(request).returnval
       client.wait_for_task(task)
+    end
+
+    def import_ovf(name, ovf, resource_pool, datastore)
+      import_spec_params = CloudProviders::VSphere::OvfCreateImportSpecParams.new
+      import_spec_params.entityName = name
+      import_spec_params.locale = 'US'
+      import_spec_params.deploymentOption = ''
+
+      ovf_file = File.open(ovf)
+      ovf_descriptor = ovf_file.read
+      ovf_file.close
+
+      request = CloudProviders::VSphere::CreateImportSpecRequestType.new(
+              client.service_content.ovfManager, ovf_descriptor, resource_pool, datastore, import_spec_params)
+      client.service.createImportSpec(request).returnval
+    end
+
+    def obtain_nfc_lease(resource_pool, import_spec, folder)
+      request = CloudProviders::VSphere::ImportVAppRequestType.new(resource_pool, import_spec, folder)
+      client.service.importVApp(request).returnval
+    end
+
+    def wait_for_nfc_lease(lease)
+      loop do
+        state = client.get_property(lease, 'HttpNfcLease', 'state')
+        unless state == CloudProviders::VSphere::HttpNfcLeaseState::Initializing
+          return state
+        end
+        sleep(1.0)
+      end
+    end
+
+    def upload_ovf(ovf, lease, file_items)
+      info = client.get_property(lease, 'HttpNfcLease', 'info')
+      lease_updater = CloudProviders::VSphere::LeaseUpdater.new(client, lease)
+
+      info.deviceUrl.each do |device_url|
+        device_key = device_url.importKey
+        file_items.each do |file_item|
+          if device_key == file_item.deviceId
+            http_client = HTTPClient.new
+            http_client.send_timeout = 14400 # 4 hours
+            http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+            disk_file_path = File.join(File.dirname(ovf), file_item.path)
+            disk_file = File.open(disk_file_path)
+            disk_file_size = File.size(disk_file_path)
+
+            progress_thread = Thread.new do
+              loop do
+                # TODO: fix progress calculation to work across multiple disks
+                lease_updater.progress = disk_file.pos * 100 / disk_file_size
+                sleep(2)
+              end
+            end
+
+            @logger.debug("uploading disk to: #{device_url.url}")
+
+            unless @vcenter["tunnel"]
+              http_client.post(device_url.url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
+                                  "Content-Length" => disk_file_size})
+            else
+              # Only used for development
+              ssh_tunnel(device_url.url) do |url|
+                @logger.debug("using tunnel: #{url}")
+                http_client.post(url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
+                                                  "Content-Length" => disk_file_size})
+              end
+            end
+
+            progress_thread.kill
+            disk_file.close
+          end
+        end
+      end
+      lease_updater.finish
+      info.entity
+    end
+
+    def ssh_tunnel(url)
+      port = 10000
+      loop do
+        `lsof -i :#{port}`
+        break if $?.exitstatus == 1
+        port += 1
+      end
+
+      uri = URI.parse(url)
+
+      pid = fork
+      if pid.nil?
+        exec("ssh -n -L #{port}:#{uri.host}:#{uri.port} #{@vcenter["tunnel"]} -N")
+      end
+
+      @logger.debug("ssh tunnel pid: #{pid}")
+
+      begin
+        uri.host = "localhost"
+        uri.port = port
+
+        tries = 4
+        begin
+          @logger.debug("probing ssh tunnel on port: #{port}, tries left: #{tries}")
+          http_client = HTTPClient.new
+          http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          http_client.head(uri.to_s)
+        rescue
+          tries -= 1
+          if tries > 0
+            sleep(5)
+            retry
+          end
+        end
+
+        yield uri.to_s
+      ensure
+        Process.kill(9, pid)
+        @logger.debug("killed ssh tunnel: #{pid}")
+      end
     end
 
   end
