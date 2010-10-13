@@ -7,6 +7,7 @@ gem "SystemTimer"
 gem "yajl-ruby", :require => "yajl"
 gem "ruby-debug"
 gem "uuidtools"
+gem "netaddr"
 
 group :test do
   gem "rspec", :require => ["spec", "spec/interop/test"]
