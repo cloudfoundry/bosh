@@ -1,6 +1,9 @@
 
 module Bosh::Agent
 
+  class MessageHandlerError < StandardError; end
+  class UnknownMessage < StandardError; end
+
   class Handler
     attr_reader :processors
 
@@ -16,6 +19,10 @@ module Bosh::Agent
       @redis = Redis.new(redis_config)
       @agent_id = Config.agent_id
       @logger = Config.logger
+
+      @lock = Mutex.new
+      @long_running_agent_task = []
+      @results = []
       message_processors
     end
 
@@ -38,10 +45,6 @@ module Bosh::Agent
 
       subscription = "rpc:agent:#{@agent_id}"
 
-      @lock = Mutex.new
-      @long_running_agent_task = []
-      @results = []
-
       @pubsub_redis.subscribe(subscription) do |on|
         on.subscribe do |sub, msg|
           @logger.info("Subscribed to #{subscription}")
@@ -54,7 +57,7 @@ module Bosh::Agent
           args = msg['arugments']
 
           if method == "get_task"
-            handle_get_task(message_id, method, args)
+            handle_get_task(message_id, args)
           end
 
           processor = lookup(method)
@@ -62,14 +65,13 @@ module Bosh::Agent
             Thread.new {
               if processor.respond_to?(:long_running?)
                 if @long_running_agent_task.emtpy?
-                  process_long_running(processor)
+                  process_long_running(message_id, processor, args)
                 else
                   payload = {:excpetion => "already running long running task"}
                   publish(message_id, payload)
                 end
               else
-                result = processor.process(args)
-                payload = {:value => result}
+                payload = process(processor, args)
                 publish(message_id, payload)
               end
             }
@@ -90,7 +92,7 @@ module Bosh::Agent
       UUIDTools::UUID.random_create.to_s
     end
 
-    def handle_get_task(message_id, method, args)
+    def handle_get_task(message_id, args)
       agent_task_id = args["agent_task_id"]
 
       if @long_running_agent_task == agent_task_id
@@ -111,7 +113,7 @@ module Bosh::Agent
       @redis.publish(message_id, Yajl::Encoder.encode(payload))
     end
 
-    def process_long_running
+    def process_long_running(message_id, processor, args)
       agent_task_id = generate_agent_task_id
 
       @lock.synchronize do
@@ -121,11 +123,20 @@ module Bosh::Agent
       payload = {:value => {:agent_task_id => agent_task_id}}
       publish(message_id, payload)
 
-      result = processor.process(args)
+      result = process(processor, args)
 
       @lock.synchronize do 
         @results << [Time.now.to_i, agent_task_id, result]
         @long_running_agent_task = []
+      end
+    end
+
+    def process(processor, args)
+      begin
+        result = processor.process(args)
+        return {:value => result}
+      rescue Bosh::Agent::MessageHandlerError => e
+        return {:exception => e.inspect}
       end
     end
 
