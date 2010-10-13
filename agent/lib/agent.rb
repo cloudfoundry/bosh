@@ -30,7 +30,9 @@ module Bosh::Agent
 
     def start
       $stdout.sync = true
-      Bosh::Agent::Message::Configure.process(nil)
+      if options["configure"]
+        Bosh::Agent::Message::Configure.process(nil)
+      end
       Bosh::Agent::Handler.start
     end
   end
@@ -39,6 +41,7 @@ end
 
 if __FILE__ == $0
   options = {
+    "configure" => true,
     "logging" => { "level" => "DEBUG" },
     "redis" => { "host" => "localhost" }
   }
