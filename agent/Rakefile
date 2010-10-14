@@ -1,4 +1,6 @@
 require 'rake'
+require 'erb'
+require File.join(File.dirname(__FILE__), "/lib/agent/version.rb")
 
 desc "Run specs"
 task "spec" => ["bundler:install:test", "test:spec"]
@@ -37,5 +39,66 @@ namespace "test" do
   task "spec:rcov" do |t|
     sh("cd spec && rake spec:rcov")
   end
-    
+
 end
+
+namespace "ubuntu" do
+  # very much a hack that arequires to be run on Ubuntu with vmbuilder.
+  # Don't do this remote as it probably will kill your sshd.
+  desc "Build Ubuntu Stemcell"
+  task "stemcell:build" do
+    version = Bosh::Agent::VERSION
+
+    work_dir = "/var/tmp/bosh/agent-#{version}-#{$$}"
+    mkdir_p work_dir
+
+VMBUILDER_CFG = <<HERE
+[DEFAULT]
+arch = amd64
+firstboot = <%= File.join(work_dir, 'build', 'firstboot.sh') %>
+copy = <%= File.join(work_dir, 'build', 'copy.in') %>
+execscript = <%= File.join(work_dir, 'build', 'execscript.sh') %>
+
+[ubuntu]
+suite = lucid
+# multiverse for open-vm-tools
+components = main,universe,multiverse
+flavor = virtual
+addpkg = runit
+HERE
+
+    template = ERB.new(VMBUILDER_CFG, 0, '%<>')
+    result = template.result(binding)
+    File.open(File.join(work_dir, 'vmbuilder.cfg'),'w') do |f|
+      f.write(result)
+    end
+
+    mkdir_p File.join(work_dir, 'build')
+    File.open(File.join(work_dir, 'build', 'copy.in'), 'w') do |f|
+      f.puts("#{work_dir}/instance /var/b29/bosh/src")
+    end
+
+    cp_r "misc/stemcell/build", work_dir
+    cp_r "misc/stemcell/instance", work_dir
+
+    instance_dir = File.join(work_dir, 'instance')
+    cp_r "lib", instance_dir
+    cp "Gemfile", instance_dir
+    cp "Gemfile.lock", instance_dir
+
+    Dir.chdir(work_dir) do
+      sh "sudo vmbuilder esxi ubuntu -c #{work_dir}/vmbuilder.cfg"
+    end
+
+    # TODO: install bin wrapper
+    # TODO: change location of agent install w/symlink strategy
+    # TODO: install runit service
+    # TODO: convert vmdk with ovftool
+
+    puts "Check #{work_dir} for build artifacts"
+
+  end
+
+
+end
+
