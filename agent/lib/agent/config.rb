@@ -1,14 +1,15 @@
 module Bosh::Agent
   class Config
     class << self
-      attr_accessor :base_dir, :logger, :redis_options, :pubsub_redis, :blobstore, :agent_id
+      attr_accessor :base_dir, :logger, :redis_options, :pubsub_redis, :blobstore, :agent_id, :configure
 
-      def configure(config)
+      def setup(config)
         @base_dir = config["dir"]
         @logger = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @agent_id = "not-configured"
 
+        @configure = false
         @redis_options = {:host => config["redis"]["host"],
                            :port => config["redis"]["port"],
                            :password => config["redis"]["password"],

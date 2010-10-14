@@ -1,7 +1,4 @@
 module Bosh
-  module Agent
-    VERSION = '0.0.1'
-  end
 end
 
 require 'logger'
@@ -10,6 +7,7 @@ require 'redis'
 require "yajl"
 require 'uuidtools'
 
+require "agent/version"
 require "agent/config"
 require "agent/message/configure"
 require "agent/handler"
@@ -25,12 +23,12 @@ module Bosh::Agent
   class Runner < Struct.new(:config, :pubsub_redis, :redis)
 
     def initialize(options)
-      self.config = Bosh::Agent::Config.configure(options)
+      self.config = Bosh::Agent::Config.setup(options)
     end
 
     def start
       $stdout.sync = true
-      if options["configure"]
+      if Config.configure
         Bosh::Agent::Message::Configure.process(nil)
       end
       Bosh::Agent::Handler.start
