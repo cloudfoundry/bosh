@@ -70,7 +70,7 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should return an error if the resource is not found" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should eql(404)      
+      last_response.status.should eql(404)
     end
 
   end
@@ -79,7 +79,7 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should delete an existing resource" do
       resource_file = Tempfile.new("resource")
-      begin      
+      begin
         resource_file.write("test contents")
         resource_file.close
         post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },

@@ -1,16 +1,11 @@
-begin
-  require ::File.expand_path("../../.bundle/environment", __FILE__)
-  Bundler.require
-rescue LoadError
-  puts "Can't find bundler environment, please run rake bundler:install"
-  Process.exit
-end
-
 require "digest/sha1"
 require "fileutils"
 require "set"
 require "optparse"
 require "pp"
+
+require "sinatra"
+require "uuidtools"
 
 module Bosh
   module Blobstore
@@ -67,7 +62,7 @@ module Bosh
           file_name = get_file_name(object_id)
 
           tempfile = params[:content][:tempfile]
-          
+
           FileUtils.mkdir_p(File.dirname(file_name))
           FileUtils.copy_file(tempfile.path, file_name)
 
@@ -100,34 +95,4 @@ module Bosh
 
     end
   end
-end
-
-if $0 == __FILE__
-  config_file = nil
-
-  opts = OptionParser.new do |opts|
-    opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
-      config_file = opt
-    end
-  end
-
-  opts.parse!(ARGV.dup)
-
-  config_file ||= ::File.expand_path("../../config/simple_blobstore_server.yml", __FILE__)
-  config = YAML.load_file(config_file)
-
-  port = config["port"]
-  raise "Invalid port" unless port.kind_of?(Integer)
-
-  puts "Starting Simple Blobstore server on port: #{port}."
-
-  Thin::Logging.silent = true
-  server = Thin::Server.new('0.0.0.0', port) do
-    use Rack::CommonLogger
-    map "/" do
-      run Bosh::Blobstore::SimpleBlobstoreServer.new(config)
-    end
-  end
-  server.threaded = true
-  server.start!
 end
