@@ -328,9 +328,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @release_version = mock("release_version")
       @template = mock("template")
       @package = mock("package")
+      @stemcell = mock("stemcell")
       @deployment_plan = mock("deployment_plan")
       @job_spec = mock("job_spec")
       @release_spec = mock("release_spec")
+      @resource_pool_spec = mock("resource_pool_spec")
+      @stemcell_spec = mock("stemcell_spec")
 
       @release_version.stub!(:id).and_return(2)
 
@@ -350,6 +353,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
       @stemcell_spec.stub!(:network).and_return(@network_spec)
+      @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
 
       @job_spec.stub!(:template).and_return("test_template")
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
