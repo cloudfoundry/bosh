@@ -16,9 +16,9 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
 
       @httpclient.should_receive(:get).with("http://localhost/resources/foo", {},
                                             {"Authorization"=>"Basic am9objpzbWl0aA==\n"}).and_return(response)
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost",
-                                                            :user => "john",
-                                                            :password => "smith"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost",
+                                                            "user" => "john",
+                                                            "password" => "smith"})
       @client.get("foo")
     end
 
@@ -33,7 +33,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       @httpclient.should_receive(:post).with("http://localhost/resources",
                                              {:content=>"some object"}, {}).and_return(response)
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
       @client.create("some object").should eql("content_id")
     end
 
@@ -44,7 +44,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       @httpclient.should_receive(:post).with("http://localhost/resources",
                                              {:content=>"some object"}, {}).and_return(response)
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
       lambda {@client.create("some object")}.should raise_error
     end
 
@@ -54,7 +54,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       response.stub!(:content).and_return("content_id")
       @httpclient.should_receive(:get).with("http://localhost/resources/some object", {}, {}).and_return(response)
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
       @client.get("some object").should eql("content_id")
     end
 
@@ -64,7 +64,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       response.stub!(:content).and_return("error message")
       @httpclient.should_receive(:get).with("http://localhost/resources/some object", {}, {}).and_return(response)
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
       lambda {@client.get("some object")}.should raise_error
     end
 
@@ -74,7 +74,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       response.stub!(:content).and_return("")
       @httpclient.should_receive(:delete).with("http://localhost/resources/some object", {}).and_return(response)
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
       @client.delete("some object")
     end
 
@@ -84,7 +84,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       response.stub!(:content).and_return("")
       @httpclient.should_receive(:delete).with("http://localhost/resources/some object", {}).and_return(response)
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({:endpoint => "http://localhost"})
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
       lambda {@client.delete("some object")}.should raise_error
     end
 

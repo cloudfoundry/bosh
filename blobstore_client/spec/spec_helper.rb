@@ -1,13 +1,13 @@
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+require "rubygems"
 require "bundler"
-require "bundler/setup"
+Bundler.setup(:default, :test)
 
 require "blobstore_client"
 
-Bundler.require(:test)
-
-Spec::Runner.configure do |rspec_config|
+Rspec.configure do |rspec_config|
   rspec_config.before(:each) do
   end
 
