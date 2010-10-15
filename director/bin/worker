@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+
+require "director"
+
+config_file = nil
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
+config = YAML.load_file(config_file)
+
+Bosh::Director::Config.configure(config)
+
+worker = nil
+queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')
+
+begin
+  worker = Resque::Worker.new(*queues)
+  worker.verbose = ENV['LOGGING'] || ENV['VERBOSE']
+  worker.very_verbose = ENV['VVERBOSE']
+rescue Resque::NoQueueError
+  abort "set QUEUE env var, e.g. $ QUEUE=critical,high rake resque:work"
+end
+
+worker.log "Starting worker #{worker}"
+
+worker.work(ENV['INTERVAL'] || 5) # interval, will block

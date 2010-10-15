@@ -5,9 +5,7 @@ module Bosh::Director
 
       attr_accessor :base_dir
       attr_accessor :logger
-      attr_accessor :cloud
       attr_accessor :redis_options
-      attr_accessor :pubsub_redis
       attr_accessor :blobstore
 
       def configure(config)
@@ -22,17 +20,39 @@ module Bosh::Director
                              :logger => @logger
         }
 
-        case config["cloud"]["plugin"]
-          when "vsphere"
-            @cloud = VSphereCloud.new(config["cloud"]["properties"])
-          else
-            raise "Could not find Cloud Provider Plugin: #{config["cloud"]["plugin"]}"
+        @cloud_options = config["cloud"]
+
+        @pubsub_redis = nil
+        @cloud = nil
+        @lock = Mutex.new
+      end
+
+      def pubsub_redis
+        @lock.synchronize do
+          if @pubsub_redis.nil?
+            @pubsub_redis = PubsubRedis.new(@redis_options)
+          end
         end
+        @pubsub_redis
+      end
+
+      def cloud
+        @lock.synchronize do
+          if @cloud.nil?
+            case @cloud_options["plugin"]
+              when "vsphere"
+                @cloud = VSphereCloud.new(@cloud_options["properties"])
+              else
+                raise "Could not find Cloud Provider Plugin: #{@cloud_options["plugin"]}"
+            end
+          end
+        end
+        @cloud
       end
 
       def redis_options=(options)
         @redis_options = options
-        @pubsub_redis = PubsubRedis.new(@redis_options)
+        @pubsub_redis = nil
       end
 
       def redis
