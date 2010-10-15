@@ -24,7 +24,7 @@ class Object
   include Bosh::Director::DeepCopy
 end
 
-Spec::Runner.configure do |rspec_config|
+Rspec.configure do |rspec_config|
   rspec_config.before(:each) do
     FileUtils.mkdir_p(bosh_dir)
   end
