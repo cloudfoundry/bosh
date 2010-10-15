@@ -16,7 +16,6 @@ module Bosh::Director::CloudProviders::VSphere
       @service.options["protocol.http.ssl_config.verify_mode"] = OpenSSL::SSL::VERIFY_NONE
       @service.wiredump_dev = File.open("/tmp/soap_log", "w")
 
-
       service_ref = ManagedObjectReference.new("ServiceInstance")
       service_ref.xmlattr_type = "ServiceInstance"
 
