@@ -4,10 +4,10 @@ module Bosh
 
       def initialize(options)
         @client = HTTPClient.new
-        @endpoint = options[:endpoint]
+        @endpoint = options["endpoint"]
         @headers = {}
-        if options[:user] && options[:password]
-          @headers["Authorization"] = "Basic " + Base64.encode64("#{options[:user]}:#{options[:password]}")
+        if options["user"] && options["password"]
+          @headers["Authorization"] = "Basic " + Base64.encode64("#{options["user"]}:#{options["password"]}")
         end
       end
 

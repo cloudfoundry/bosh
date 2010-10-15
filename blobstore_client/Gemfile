@@ -3,7 +3,7 @@ source :rubygems
 gem "httpclient"
 
 group :test do
-  gem "rspec", :require => ["spec", "spec/interop/test"]
+  gem "rspec"
   gem "rcov"
   gem "ci_reporter"
 end

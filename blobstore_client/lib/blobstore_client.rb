@@ -18,7 +18,7 @@ module Bosh
 
       def self.create(provider, options)
         case provider
-          when :simple
+          when "simple"
             SimpleBlobstoreClient.new(options)
           else
             raise "Invalid client provider"
