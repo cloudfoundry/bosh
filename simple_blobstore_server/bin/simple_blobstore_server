@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+
+require "simple_blobstore_server"
+require "thin"
+
+config_file = nil
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+config_file ||= ::File.expand_path("../../config/simple_blobstore_server.yml", __FILE__)
+config = YAML.load_file(config_file)
+
+port = config["port"]
+raise "Invalid port" unless port.kind_of?(Integer)
+
+puts "Starting Simple Blobstore server on port: #{port}."
+
+Thin::Logging.silent = true
+server = Thin::Server.new('0.0.0.0', port) do
+  use Rack::CommonLogger
+  map "/" do
+    run Bosh::Blobstore::SimpleBlobstoreServer.new(config)
+  end
+end
+server.threaded = true
+server.start!
