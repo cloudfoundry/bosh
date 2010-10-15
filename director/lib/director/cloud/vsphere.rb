@@ -77,7 +77,7 @@ module Bosh::Director
         raise "Missing OVF" if ovf_file.nil?
         ovf_file = File.join(temp_dir, ovf_file)
 
-        name = generate_unique_name
+        name = "sc-#{generate_unique_name}"
         @logger.debug("generated name: #{name}")
 
         # TODO: make stemcell friendly version of the calls below
@@ -91,7 +91,8 @@ module Bosh::Director
         state = wait_for_nfc_lease(lease)
         raise 'Could not acquire HTTP NFC lease' unless state == CloudProviders::VSphere::HttpNfcLeaseState::Ready
 
-        result = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
+        upload_ovf(ovf_file, lease, import_spec_result.fileItem)
+        result = name
       end
       result
     end
@@ -116,17 +117,19 @@ module Bosh::Director
         # TODO: get datastore based on disk locality
       end
 
-      name = generate_unique_name
+      name = "vm-#{generate_unique_name}"
+      stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
+                                                   cluster.datacenter.template_folder_name, stemcell])
 
-      stemcell_vm = CloudProviders::VSphere::ManagedObjectReference.new(stemcell)
-      stemcell_vm.xmlattr_type = "VirtualMachine"
+      @logger.debug("creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
       local_stemcell_vm = nil
       stemcell_properties = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
 
       if stemcell_properties["datastore"] != datastore.mob
+        @logger.debug("cluster doesn't have stemcell #{stemcell}, replicating")
 
-        local_stemcell_name = "#{datastore.mob} / #{stemcell}"
+        local_stemcell_name = "#{stemcell} / #{datastore.mob}"
         local_stemcell_path = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
                                local_stemcell_name]
         local_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
@@ -143,6 +146,7 @@ module Bosh::Director
           lock.synchronize do
             local_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
             if local_stemcell_vm.nil?
+              @logger.debug("cloning #{stemcell_vm} to #{local_stemcell_name}")
               task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
                               cluster.resource_pool, :datastore => datastore.mob)
               local_stemcell_vm = client.wait_for_task(task)
@@ -187,6 +191,8 @@ module Bosh::Director
 
       fix_device_unit_numbers(devices, config.deviceChange)
 
+      @logger.debug("cloning vm: #{local_stemcell_vm} to #{name}")
+
       task = clone_vm(local_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
                       :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
                       :config => config)
@@ -196,9 +202,11 @@ module Bosh::Director
       devices = vm_properties["config.hardware.device"]
 
       env = build_agent_env(agent_id, networks, devices)
+      @logger.debug("setting VM env: #{env.pretty_inspect}")
       set_agent_env(vm, env)
 
-      power_on_vm(vm)
+      @logger.debug("powering on VM: #{vm} (#{name})")
+      power_on_vm(cluster.datacenter.mob, vm)
       vm
     end
 
@@ -271,7 +279,7 @@ module Bosh::Director
     end
 
     def set_agent_env(vm, env)
-      env_property = create_app_property_spec("agent_env", "string", Yajl::Encoder.encode(env))
+      env_property = create_app_property_spec("Bosh_Agent_Properties", "string", Yajl::Encoder.encode(env))
 
       app_config_spec = CloudProviders::VSphere::VmConfigSpec.new
       app_config_spec.property = [env_property]
@@ -660,9 +668,9 @@ module Bosh::Director
       property_spec
     end
 
-    def power_on_vm(vm)
-      request = CloudProviders::VSphere::PowerOnVMRequestType.new(vm)
-      task = client.service.powerOnVM_Task(request).returnval
+    def power_on_vm(datacenter, vm)
+      request = CloudProviders::VSphere::PowerOnMultiVMRequestType.new(datacenter, [vm])
+      task = client.service.powerOnMultiVM_Task(request).returnval
       client.wait_for_task(task)
     end
 
