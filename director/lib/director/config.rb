@@ -6,7 +6,6 @@ module Bosh::Director
       attr_accessor :base_dir
       attr_accessor :logger
       attr_accessor :redis_options
-      attr_accessor :blobstore
 
       def configure(config)
         @base_dir = config["dir"]
@@ -21,10 +20,22 @@ module Bosh::Director
         }
 
         @cloud_options = config["cloud"]
+        @blobstore_options = config["blobstore"]
 
         @pubsub_redis = nil
         @cloud = nil
+        @blobstore = nil
+
         @lock = Mutex.new
+      end
+
+      def blobstore
+        @lock.synchronize do
+          if @blobstore.nil?
+            @blobstore = Bosh::Blobstore::Client.create(@blobstore_options["plugin"], @blobstore_options["properties"])
+          end
+        end
+        @blobstore
       end
 
       def pubsub_redis
