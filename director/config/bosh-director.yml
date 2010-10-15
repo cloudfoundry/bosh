@@ -6,6 +6,12 @@ redis:
   host: 127.0.0.1
   password:
 dir: /tmp/boshdir
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://127.0.0.1
+    user: admin
+    password:
 cloud:
   plugin: vsphere
   properties:
