@@ -7,6 +7,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     @manifest = mock("manifest")
     @file = mock("file")
     @deployment_plan = mock("deployment_plan")
+    @logger = Logger.new(nil)
 
     @deployment_plan.stub!(:name).and_return("test_deployment")
     @file.stub!(:read).and_return("manifest")
@@ -15,6 +16,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     YAML.stub!(:load).with("manifest").and_return(@manifest)
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest).and_return(@deployment_plan)
     Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(@task)
+    Bosh::Director::Config.stub!(:logger).and_return(@logger)
   end
 
   describe "prepare" do

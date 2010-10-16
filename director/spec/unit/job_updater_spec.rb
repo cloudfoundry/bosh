@@ -8,6 +8,7 @@ describe Bosh::Director::JobUpdater do
     @job_spec.stub!(:update).and_return(@update_spec)
     @update_spec.stub!(:max_in_flight).and_return(5)
     @update_spec.stub!(:canaries).and_return(1)
+    Bosh::Director::Config.stub!(:cloud).and_return(nil)
   end
 
   it "should do nothing when the job is up to date" do
