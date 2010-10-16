@@ -17,6 +17,7 @@ module Bosh::Director
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) {|f| f.read}
         @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
+        @logger = Config.logger
       end
 
       def find_or_create_deployment(name)
@@ -97,6 +98,7 @@ module Bosh::Director
             end
           end
         rescue Exception => e
+          @logger.error("#{e} - #{e.backtrace.join("\n")}")
           @task.state = :error
           @task.result = e.to_s
           @task.timestamp = Time.now.to_i
