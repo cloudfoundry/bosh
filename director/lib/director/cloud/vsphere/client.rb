@@ -11,10 +11,10 @@ module Bosh::Director::CloudProviders::VSphere
     attr_accessor :service_content
     attr_accessor :service
 
-    def initialize(host)
+    def initialize(host, options = {})
       @service = VimPortType.new(host)
       @service.options["protocol.http.ssl_config.verify_mode"] = OpenSSL::SSL::VERIFY_NONE
-      @service.wiredump_dev = File.open("/tmp/soap_log", "w")
+      @service.wiredump_dev = File.open(options["soap_log"], "w") if options["soap_log"]
 
       service_ref = ManagedObjectReference.new("ServiceInstance")
       service_ref.xmlattr_type = "ServiceInstance"
