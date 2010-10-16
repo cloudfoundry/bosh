@@ -17,6 +17,7 @@ module Bosh::Director
 
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
+        @logger = Config.logger
       end
 
       def perform
@@ -50,6 +51,7 @@ module Bosh::Director
           @task.timestamp = Time.now.to_i
           @task.save!
         rescue Exception => e
+          @logger.error("#{e} - #{e.backtrace.join("\n")}")
           @task.state = :error
           @task.result = e.to_s
           @task.timestamp = Time.now.to_i

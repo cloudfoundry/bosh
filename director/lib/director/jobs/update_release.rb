@@ -20,6 +20,7 @@ module Bosh::Director
         FileUtils.mkdir_p(File.dirname(@task_status_file))
 
         @blobstore = Config.blobstore
+        @logger = Config.logger        
       end
 
       def perform
@@ -69,6 +70,7 @@ module Bosh::Director
             @task.save!
           end
         rescue Exception => e
+          @logger.error("#{e} - #{e.backtrace.join("\n")}")
           @release.delete if @release && !@release.new?
 
           @task.state = :error
