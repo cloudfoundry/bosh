@@ -87,6 +87,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(@agent)
 
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
     end
 
@@ -246,6 +248,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @network_spec.stub!(:name).and_return("network-a")
 
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
     end
 
@@ -287,6 +291,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.stub!(:networks).and_return([@instance_network_spec])
 
       @instance_network_spec.stub!(:name).and_return("network-a")
+
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
     end
@@ -358,6 +364,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @job_spec.stub!(:template).and_return("test_template")
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
 
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
     end
 
@@ -404,6 +412,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.stub!(:vm).and_return(@vm)
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
+
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
     end

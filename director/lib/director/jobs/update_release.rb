@@ -20,7 +20,7 @@ module Bosh::Director
         FileUtils.mkdir_p(File.dirname(@task_status_file))
 
         @blobstore = Config.blobstore
-        @logger = Config.logger        
+        @logger = Config.logger
       end
 
       def perform
