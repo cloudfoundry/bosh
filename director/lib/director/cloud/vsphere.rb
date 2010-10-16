@@ -56,7 +56,7 @@ module Bosh::Director
       raise "Invalid number of VCenters" unless @vcenters.size == 1
       @vcenter = @vcenters[0]
 
-      @client = CloudProviders::VSphere::Client.new("https://#{@vcenter["host"]}/sdk/vimService")
+      @client = CloudProviders::VSphere::Client.new("https://#{@vcenter["host"]}/sdk/vimService", options["properties"])
       @client.login(@vcenter["user"], @vcenter["password"], "en")
 
       @lock = Mutex.new
@@ -723,6 +723,7 @@ module Bosh::Director
             http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
             disk_file_path = File.join(File.dirname(ovf), file_item.path)
+            # TODO; capture the error if file is not found a provide a more meaningful error
             disk_file = File.open(disk_file_path)
             disk_file_size = File.size(disk_file_path)
 
