@@ -6,7 +6,8 @@ require 'rubygems'
 require 'bundler'
 Bundler.setup(:default, :test)
 
-require 'spec/rake/spectask'
+require 'rspec'
+require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
 
 coverage_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
@@ -21,18 +22,17 @@ task "spec" => ["ci:setup:rspec"]
 desc "Run specs using RCov"
 task "spec:rcov" => ["ci:setup:rspec", "spec:rcov_internal", "convert_rcov_to_clover"]
 
-Spec::Rake::SpecTask.new do |t|
-  t.spec_opts = ["--format", "specdoc", "--colour"]
-  t.spec_files = FileList["**/*_spec.rb"]
+Rspec::Core::RakeTask.new do |t|
+  t.rspec_opts = ["--format", "specdoc", "--colour"]
+  t.pattern = "**/*_spec.rb"
 end
 
 desc "Run specs using RCov (internal, use spec:rcov instead)"
-Spec::Rake::SpecTask.new('spec:rcov_internal') do |t|
+Rspec::Core::RakeTask.new('spec:rcov_internal') do |t|
   sh("rm -f #{dump_file}")
-  t.spec_files = FileList['**/*.rb']
+  t.pattern = '**/*.rb'
   t.rcov = true
-  t.rcov_dir = coverage_dir
-  t.rcov_opts = ['--aggregate', dump_file, '--exclude', ignore_pattern]
+  t.rcov_opts = ['--aggregate', dump_file, '--exclude', ignore_pattern, '--output', coverage_dir]
 end
 
 task "convert_rcov_to_clover" do |t|

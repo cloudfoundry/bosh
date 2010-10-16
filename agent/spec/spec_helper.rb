@@ -4,6 +4,7 @@ ENV['BUNDLE_GEMFILE'] ||= File.expand_path("../../Gemfile", __FILE__)
 require 'rubygems'
 require 'bundler'
 Bundler.setup(:default, :test)
+require 'rspec'
 
 ENV['RACK_ENV'] = "test"
 
@@ -19,7 +20,7 @@ bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
 
 ENV["TMPDIR"] = bosh_tmp_dir
 
-Spec::Runner.configure do |rspec_config|
+Rspec.configure do |rspec_config|
   rspec_config.before(:each) do
     FileUtils.mkdir_p(bosh_dir)
   end
