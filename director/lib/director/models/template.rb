@@ -7,7 +7,7 @@ module Bosh::Director::Models
     reference :release_version, ReleaseVersion
     attribute :name
     attribute :blobstore_id
-    collection :packages, Package
+    set :packages, Package
 
     index :release_version
     index :name
