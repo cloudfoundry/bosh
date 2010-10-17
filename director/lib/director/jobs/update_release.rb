@@ -81,7 +81,7 @@ module Bosh::Director
           raise e
         ensure
           FileUtils.rm_rf(@tmp_release_dir)
-
+          # TODO: delete any templates or other models created
           # TODO: delete task status file or cleanup later?
         end
       end
