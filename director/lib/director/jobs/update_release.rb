@@ -142,9 +142,12 @@ module Bosh::Director
         raise JobInvalid.new(:missing_manifest) unless File.file?(manifest_file)
 
         job_manifest = YAML.load_file(manifest_file)
-        job_manifest["configuration"].each_key do |file|
-          file = File.join(job_dir, "config", file)
-          raise JobInvalid.new(:missing_config_file) unless File.file?(file)
+
+        if job_manifest["configuration"]
+          job_manifest["configuration"].each_key do |file|
+            file = File.join(job_dir, "config", file)
+            raise JobInvalid.new(:missing_config_file) unless File.file?(file)
+          end
         end
 
         template = Models::Template.new(:release_version => @release_version_entry, :name => name)
