@@ -134,6 +134,7 @@ auto lo
 iface lo inet loopback
 
 <% @networks.each do |name, n| %>
+auto <%= n["interface"] %>
 iface <%= n["interface"] %> inet static
     address <%= n["ip"]%>
     network <%= n["network"] %>
