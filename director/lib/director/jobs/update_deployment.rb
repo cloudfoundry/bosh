@@ -89,6 +89,7 @@ module Bosh::Director
                 deployment.manifest = @manifest
                 deployment.save!
               rescue Exception => e
+                @logger.error("#{e} - #{e.backtrace.join("\n")}")
                 rollback
                 # TODO: record the error
               end

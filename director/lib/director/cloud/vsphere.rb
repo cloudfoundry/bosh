@@ -129,14 +129,14 @@ module Bosh::Director
       stemcell_properties = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
 
       if stemcell_properties["datastore"] != datastore.mob
-        @logger.debug("cluster doesn't have stemcell #{stemcell}, replicating")
-
+        @logger.debug("stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
         local_stemcell_name = "#{stemcell} / #{datastore.mob}"
         local_stemcell_path = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
                                local_stemcell_name]
         local_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
 
         if local_stemcell_vm.nil?
+          @logger.debug("cluster doesn't have stemcell #{stemcell}, replicating")
           lock = nil
           @locks_mutex.synchronize do
             lock = @locks[local_stemcell_name]
