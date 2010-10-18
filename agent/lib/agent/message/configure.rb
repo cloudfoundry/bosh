@@ -32,7 +32,7 @@ module Bosh::Agent
       end
 
       def info_get_ovfenv
-        `vmtoolsd --cmd "info-get guestinfo.ovfEnv"`
+        `vmware-rpctool "info-get guestinfo.ovfEnv"`
       end
 
       def update_agent_id
