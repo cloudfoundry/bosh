@@ -56,9 +56,9 @@ module Bosh::Director
       raise "Invalid number of VCenters" unless @vcenters.size == 1
       @vcenter = @vcenters[0]
 
-      @agent_properties = options["agent"]    
+      @agent_properties = options["agent"]
 
-      @client = CloudProviders::VSphere::Client.new("https://#{@vcenter["host"]}/sdk/vimService", options["properties"])
+      @client = CloudProviders::VSphere::Client.new("https://#{@vcenter["host"]}/sdk/vimService", options)
       @client.login(@vcenter["user"], @vcenter["password"], "en")
 
       @lock = Mutex.new
