@@ -71,7 +71,11 @@ module Bosh::Director
           end
         rescue Exception => e
           @logger.error("#{e} - #{e.backtrace.join("\n")}")
-          @release.delete if @release && !@release.new?
+
+          templates = Models::Template.find(:release_version => @release_version_entry)
+          templates.each {|template| template.delete}
+
+          @release_version_entry.delete if @release_version_entry && !@release_version_entry.new?
 
           @task.state = :error
           @task.result = e.to_s
@@ -81,7 +85,6 @@ module Bosh::Director
           raise e
         ensure
           FileUtils.rm_rf(@tmp_release_dir)
-          # TODO: delete any templates or other models created
           # TODO: delete task status file or cleanup later?
         end
       end
