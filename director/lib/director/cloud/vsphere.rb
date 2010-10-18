@@ -56,6 +56,8 @@ module Bosh::Director
       raise "Invalid number of VCenters" unless @vcenters.size == 1
       @vcenter = @vcenters[0]
 
+      @agent_properties = options["agent"]    
+
       @client = CloudProviders::VSphere::Client.new("https://#{@vcenter["host"]}/sdk/vimService", options["properties"])
       @client.login(@vcenter["user"], @vcenter["password"], "en")
 
@@ -274,6 +276,7 @@ module Bosh::Director
       env = {}
       env["agent_id"] = agent_id
       env["networks"] = network_env
+      env.merge!(@agent_properties)
       # TODO: redis location, disk config
       env
     end

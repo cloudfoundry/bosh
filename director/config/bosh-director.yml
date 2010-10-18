@@ -15,6 +15,16 @@ blobstore:
 cloud:
   plugin: vsphere
   properties:
+    agent:
+      blobstore:
+        plugin: simple
+        properties:
+          endpoint: http://127.0.0.1
+          user: agent
+          password:
+      server:
+        host: 127.0.0.1
+        password:
     vcenters:
       - host: localhost:10443
         user: vmware
