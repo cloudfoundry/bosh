@@ -27,7 +27,7 @@ describe Bosh::Director::PackageCompiler do
 
       @network.stub!(:name).and_return("network_a")
 
-      @release_spec.stub!(:release).and_return(@release_version)
+      @release_spec.stub!(:release_version).and_return(@release_version)
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 

@@ -36,6 +36,15 @@ module Bosh::Director
       end
     end
 
+    def bind_release
+      release_spec = @deployment_plan.release
+      release_spec.release = Models::Release.find(:name => release_spec.name).first
+      raise "Can't find release" if release_spec.release.nil?
+      release_spec.release_version = Models::ReleaseVersion.find(:release_id => release_spec.release.id,
+                                                                 :version => release_spec.version).first
+      raise "Can't find release version" if release_spec.release_version.nil?
+    end
+
     def bind_existing_deployment
       vms = Models::Vm.find(:deployment_id => @deployment_plan.deployment.id)
       vms.each do |vm|
@@ -112,7 +121,7 @@ module Bosh::Director
     end
 
     def bind_packages
-      release_version = @deployment_plan.release.release
+      release_version = @deployment_plan.release.release_version
       @deployment_plan.jobs.each do |job|
         stemcell = job.resource_pool.stemcell.stemcell
         template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
@@ -124,8 +133,16 @@ module Bosh::Director
       end
     end
 
+    def bind_stemcells
+      @deployment_plan.resource_pools.each do |resource_pool|
+        stemcell_spec = resource_pool.stemcell
+        stemcell_spec.stemcell = Models::Stemcell.find(:name => stemcell_spec.name,
+                                                       :version => stemcell_spec.version).first
+      end
+    end
+
     def bind_configuration
-      release_version = @deployment_plan.release.release
+      release_version = @deployment_plan.release.release_version
       @deployment_plan.jobs.each do |job|
         template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
         ConfigurationHasher.new(job, template.blobstore_id).hash

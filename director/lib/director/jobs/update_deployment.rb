@@ -35,8 +35,10 @@ module Bosh::Director
         @deployment_plan.deployment = deployment
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
 
+        @deployment_plan_compiler.bind_release
         @deployment_plan_compiler.bind_existing_deployment
         @deployment_plan_compiler.bind_resource_pools
+        @deployment_plan_compiler.bind_stemcells
         @deployment_plan_compiler.bind_instance_networks
 
         PackageCompiler.new(@deployment_plan).compile

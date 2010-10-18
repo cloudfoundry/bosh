@@ -9,7 +9,7 @@ module Bosh::Director
 
     def find_uncompiled_packages
       uncompiled_packages = []
-      release_version = @deployment_plan.release.release
+      release_version = @deployment_plan.release.release_version
       @deployment_plan.jobs.each do |job|
         stemcell = job.resource_pool.stemcell.stemcell
         template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
