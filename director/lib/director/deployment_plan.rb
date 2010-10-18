@@ -9,6 +9,7 @@ module Bosh::Director
       attr_accessor :name
       attr_accessor :version
       attr_accessor :release
+      attr_accessor :release_version
 
       def initialize(deployment, release_spec)
         @deployment = deployment
@@ -569,10 +570,12 @@ module Bosh::Director
       end
 
       @jobs = {}
-      jobs = safe_property(manifest, "jobs", :class => Array)
-      jobs.each do |job_spec|
-        job = JobSpec.new(self, job_spec)
-        @jobs[job.name] = job
+      jobs = safe_property(manifest, "jobs", :class => Array, :optional => true)
+      if jobs
+        jobs.each do |job_spec|
+          job = JobSpec.new(self, job_spec)
+          @jobs[job.name] = job
+        end
       end
 
       @unneeded_vms = []

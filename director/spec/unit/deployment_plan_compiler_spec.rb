@@ -354,7 +354,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
       @deployment_plan.stub!(:release).and_return(@release_spec)
 
-      @release_spec.stub!(:release).and_return(@release_version)
+      @release_spec.stub!(:release_version).and_return(@release_version)
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
