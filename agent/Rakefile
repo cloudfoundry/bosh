@@ -58,13 +58,16 @@ arch = amd64
 firstboot = <%= File.join(work_dir, 'build', 'firstboot.sh') %>
 copy = <%= File.join(work_dir, 'build', 'copy.in') %>
 execscript = <%= File.join(work_dir, 'build', 'execscript.sh') %>
+rootpass = ca$hc0w
+user = b29
+pass = ca$hc0w
 
 [ubuntu]
 suite = lucid
 # multiverse for open-vm-tools
 components = main,universe,multiverse
 flavor = virtual
-addpkg = runit
+addpkg = runit, libssl-dev
 HERE
 
     template = ERB.new(VMBUILDER_CFG, 0, '%<>')
@@ -86,17 +89,18 @@ HERE
     cp "Gemfile", instance_dir
     cp "Gemfile.lock", instance_dir
 
+    iso_option = File.exist?('/var/tmp/ubuntu.iso') ? "--iso /var/tmp/ubuntu.iso" : ""
+
     Dir.chdir(work_dir) do
-      sh "sudo vmbuilder esxi ubuntu -c #{work_dir}/vmbuilder.cfg"
+      sh "sudo vmbuilder esxi ubuntu --debug --rootsize 2048 --swapsize 256 #{iso_option} -c #{work_dir}/vmbuilder.cfg"
     end
 
+    # TODO: guesthw version 7 for esx4
     # TODO: install bin wrapper
     # TODO: change location of agent install w/symlink strategy
     # TODO: install runit service
     # TODO: convert vmdk with ovftool
-
     puts "Check #{work_dir} for build artifacts"
-
   end
 
 

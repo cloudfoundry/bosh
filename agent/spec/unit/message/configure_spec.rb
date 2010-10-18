@@ -41,7 +41,7 @@ describe Bosh::Agent::Message::Configure do
       # FIMXE: clean this mess up 
       case file
       when '/etc/network/interfaces'
-        data.should == "auto lo\niface lo inet loopback\n\niface eth0 inet static\n    address 11.2.3.4\n    network 11.2.3.0\n    netmask 255.255.255.0\n    broadcast 11.2.3.255\n    gateway 11.2.3.1\n\n"
+        data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 11.2.3.4\n    network 11.2.3.0\n    netmask 255.255.255.0\n    broadcast 11.2.3.255\n    gateway 11.2.3.1\n\n"
       when '/etc/resolv.conf'
         data.should == "nameserver 11.1.2.5\nnameserver 11.1.2.6\n"
       end

@@ -23,7 +23,7 @@ desc "Run specs using RCov"
 task "spec:rcov" => ["ci:setup:rspec", "spec:rcov_internal", "convert_rcov_to_clover"]
 
 Rspec::Core::RakeTask.new do |t|
-  t.rspec_opts = ["--format", "specdoc", "--colour"]
+  t.rspec_opts = ["--format", "documentation", "--colour"]
   t.pattern = "**/*_spec.rb"
 end
 
