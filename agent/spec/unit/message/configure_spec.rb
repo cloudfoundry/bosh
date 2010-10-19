@@ -8,6 +8,7 @@ describe Bosh::Agent::Message::Configure do
 
     # We just want to avoid this to accidently be invoked on dev systems
     @processor.stub(:update_file)
+    @processor.stub(:restart_networking_service)
   end
 
   it 'should read ovf xml' do

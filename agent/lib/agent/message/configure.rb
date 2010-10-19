@@ -101,7 +101,15 @@ module Bosh::Agent
       def write_ubuntu_network_interfaces
         template = ERB.new(INTERFACE_TEMPLATE, 0, '%<>')
         result = template.result(binding)
-        update_file(result, '/etc/network/interfaces')
+        network_updated = update_file(result, '/etc/network/interfaces')
+        if network_updated
+          restart_networking_service
+        end
+      end
+
+      def restart_networking_service
+        `/usr/sbin/service networking stop`
+        `/usr/sbin/service networking start`
       end
 
       # TODO: do we need search option?
