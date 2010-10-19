@@ -17,12 +17,13 @@ ignore_pattern = 'spec,[.]bundle,[/]gems[/]'
 
 ENV['CI_REPORTS'] = reports_dir
 
-task "spec" => ["ci:setup:rspec"]
+# Disabled until I can figure out why Rspec2 output is swallowed by ci_reporter
+#task "spec" => ["ci:setup:rspec"]
 
 desc "Run specs using RCov"
 task "spec:rcov" => ["ci:setup:rspec", "spec:rcov_internal", "convert_rcov_to_clover"]
 
-Rspec::Core::RakeTask.new do |t|
+Rspec::Core::RakeTask.new('spec') do |t|
   t.rspec_opts = ["--format", "documentation", "--colour"]
   t.pattern = "**/*_spec.rb"
 end
