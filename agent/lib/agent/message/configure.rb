@@ -18,6 +18,7 @@ module Bosh::Agent
       def configure
         load_ovf
         update_agent_id
+        update_bosh_server
         setup_networking
       end
 
@@ -37,6 +38,15 @@ module Bosh::Agent
 
       def update_agent_id
         Bosh::Agent::Config.agent_id = @settings["agent_id"]
+      end
+
+      def update_bosh_server
+        ovf_redis = {
+          :host => @settings["server"]["host"],
+          :port =>  @settings["server"]["port"].to_s,
+          :password => @settings["server"]["password"]
+        }
+        Bosh::Agent::Config.redis_options.merge!(ovf_redis)
       end
 
       # TODO: factor out into it's own class
@@ -80,7 +90,7 @@ module Bosh::Agent
       def verify_networks
         # This only verifies that the fields has values
         @networks.each do |k, v|
-          %w{ip network netmask broadcast gw}.each do |field|
+          %w{ip network netmask broadcast gateway}.each do |field|
             unless v[field] 
               raise Bosh::Agent::MessageHandlerError, "Missing network value for #{field} in #{v.inspect}"
             end
@@ -140,7 +150,7 @@ iface <%= n["interface"] %> inet static
     network <%= n["network"] %>
     netmask <%= n["netmask"]%>
     broadcast <%= n["broadcast"] %>
-    gateway <%= n["gw"] %>
+    gateway <%= n["gateway"] %>
 <% end %>
 
 TEMPLATE
