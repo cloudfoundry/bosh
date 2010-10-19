@@ -85,14 +85,20 @@ HERE
     cp_r "misc/stemcell/instance", work_dir
 
     instance_dir = File.join(work_dir, 'instance')
+
+    File.open(File.join(instance_dir, "version"),'w') do |f|
+      f.puts(version)
+    end
+
     cp_r "lib", instance_dir
+    cp_r "bin", instance_dir
     cp "Gemfile", instance_dir
     cp "Gemfile.lock", instance_dir
 
     iso_option = File.exist?('/var/tmp/ubuntu.iso') ? "--iso /var/tmp/ubuntu.iso" : ""
 
     Dir.chdir(work_dir) do
-      sh "sudo vmbuilder esxi ubuntu --debug --rootsize 2048 --swapsize 256 #{iso_option} -c #{work_dir}/vmbuilder.cfg"
+      sh "sudo vmbuilder esxi ubuntu --debug --mem 512 --rootsize 1024 --swapsize 512 #{iso_option} -c #{work_dir}/vmbuilder.cfg"
     end
 
     # TODO: guesthw version 7 for esx4

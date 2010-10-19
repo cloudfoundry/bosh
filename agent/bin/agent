@@ -1,0 +1,26 @@
+#!/var/b29/bin/ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+
+require "agent"
+
+# Defaults
+options = {
+  "configure" => true,
+  "logging" => { "level" => "DEBUG" },
+  "redis" => { "host" => "localhost" }
+}
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--configure", "Invoke") do |opt|
+    options["configure"] = true
+  end
+end
+opts.parse!(ARGV.dup)
+
+Bosh::Agent.run(options)
