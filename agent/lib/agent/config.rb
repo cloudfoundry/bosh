@@ -9,7 +9,7 @@ module Bosh::Agent
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @agent_id = "not-configured"
 
-        @configure = false
+        @configure = config["configure"]
         @redis_options = {:host => config["redis"]["host"],
                            :port => config["redis"]["port"],
                            :password => config["redis"]["password"],
