@@ -98,7 +98,9 @@ HERE
     iso_option = File.exist?('/var/tmp/ubuntu.iso') ? "--iso /var/tmp/ubuntu.iso" : ""
 
     Dir.chdir(work_dir) do
-      sh "sudo vmbuilder esxi ubuntu --debug --mem 512 --rootsize 1024 --swapsize 512 #{iso_option} -c #{work_dir}/vmbuilder.cfg"
+      vmbuilder_args = "--debug --mem 512 --rootsize 1024 --swapsize 512 #{iso_option} -c #{work_dir}/vmbuilder.cfg"
+      vmbuilder_args += " --templates #{work_dir}/build/templates"
+      sh "sudo vmbuilder esxi ubuntu #{vmbuilder_args}"
     end
 
     # TODO: guesthw version 7 for esx4
