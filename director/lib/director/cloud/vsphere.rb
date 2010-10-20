@@ -438,9 +438,10 @@ module Bosh::Director
         cluster_properties = global_cluster_properties
 
         hosts = client.get_managed_objects("HostSystem")
-        host_properties = client.get_properties(hosts, "HostSystem", ["parent", "hardware.memorySize"])
+        host_properties = client.get_properties(hosts, "HostSystem", ["parent", "hardware.memorySize",
+                                                                      "runtime.inMaintenanceMode"])
         host_properties.delete_if do |_, properties|
-          !cluster_properties.has_key?(properties["parent"])
+          properties["runtime.inMaintenanceMode"] == "true" || !cluster_properties.has_key?(properties["parent"])
         end
 
         hosts = []
