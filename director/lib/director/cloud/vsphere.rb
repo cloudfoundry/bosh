@@ -762,6 +762,42 @@ module Bosh::Director
       info.entity
     end
 
+    def delete_all_vms
+      clusters = cluster_stats.clusters
+      datacenters = Set.new
+
+      clusters.each do |cluster|
+        datacenters << cluster.datacenter
+      end
+
+      datacenters.each do |datacenter|
+        vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
+        vm_folder = client.find_by_inventory_path(vm_folder_path)
+        vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
+        vm_properties = client.get_properties(vms, "VirtualMachine", ["runtime.powerState"])
+
+        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 32)
+
+        index = 1
+
+        vm_properties.each do |_, properties|
+          pool.process do
+            vm = properties[:obj]
+            @logger.log("Deleting #{index}/#{vms.size}: #{vm}")
+            if properties["runtime.powerState"] != CloudProviders::VSphere::VirtualMachinePowerState::PoweredOff
+              @logger.log("Powering off #{index}/#{vms.size}: #{vm}")
+              power_off_vm(vm)
+            end
+            task = client.service.destroy_Task(CloudProviders::VSphere::DestroyRequestType.new(vm)).returnval
+            client.wait_for_task(task)
+            index += 1
+          end
+        end
+      end
+
+      sleep(0.1) while pool.working + pool.action_size > 0
+    end
+
     def ssh_tunnel(url)
       port = 10000
       loop do
