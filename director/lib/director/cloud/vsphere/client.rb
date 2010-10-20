@@ -48,11 +48,11 @@ module Bosh::Director::CloudProviders::VSphere
       properties_request = RetrievePropertiesExRequestType.new(@service_content.propertyCollector, filter_spec,
                                                                RetrieveOptions.new)
 
-      properties_response = @service.retrievePropertiesEx(properties_request)
+      properties_response = get_all_properties(properties_request)
       result = {}
-      properties_response.returnval.objects.each do |object_content|
-        properties = {:obj => object_content.obj}
 
+      properties_response.each do |object_content|
+        properties = {:obj => object_content.obj}
         if object_content.propSet
           object_content.propSet.each do |property|
             properties[property.name] = property.val
@@ -76,8 +76,7 @@ module Bosh::Director::CloudProviders::VSphere
       filter_spec = get_search_filter_spec(root, property_specs)
       retrieve_properties_request = RetrievePropertiesExRequestType.new(@service_content.propertyCollector,
                                                                         filter_spec, RetrieveOptions.new)
-      retrieve_properties_response = @service.retrievePropertiesEx(retrieve_properties_request)
-      object_specs = retrieve_properties_response.returnval.objects
+      object_specs = get_all_properties(retrieve_properties_request)
 
       result = []
       object_specs.each do |object_spec|
@@ -176,6 +175,21 @@ module Bosh::Director::CloudProviders::VSphere
                                  resource_pool_vm_traversal_spec])
 
       PropertyFilterSpec.new(nil, nil, property_specs, [obj_spec])
+    end
+
+    def get_all_properties(request)
+      response = @service.retrievePropertiesEx(request).returnval
+      result = []
+
+      loop do
+        response.objects.each {|object_content| result << object_content}
+
+        break if response.token.nil?
+
+        request = ContinueRetrievePropertiesExRequestType.new(@service_content.propertyCollector, response.token)
+        response = @service.continueRetrievePropertiesEx(request).returnval
+      end
+      result
     end
 
   end
