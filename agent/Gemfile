@@ -8,6 +8,7 @@ gem "yajl-ruby", :require => "yajl"
 gem "ruby-debug"
 gem "uuidtools"
 gem "netaddr"
+gem "blobstore_client"
 
 group :test do
   gem "rspec", :require => ["spec", "spec/interop/test"]
