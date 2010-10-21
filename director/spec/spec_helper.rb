@@ -5,6 +5,8 @@ require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
 
+require "rspec"
+
 ENV["RACK_ENV"] = "test"
 
 require "director"
