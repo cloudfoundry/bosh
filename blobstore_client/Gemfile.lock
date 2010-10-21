@@ -1,3 +1,9 @@
+PATH
+  remote: .
+  specs:
+    blobstore_client (0.0.1)
+      httpclient
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -22,6 +28,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  blobstore_client!
   ci_reporter
   httpclient
   rcov
