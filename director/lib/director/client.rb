@@ -10,7 +10,7 @@ module Bosh::Director
       @id = id
       @redis = Config.redis
       @pubsub_redis = Config.pubsub_redis
-      @timeout = options[:timeout]
+      @timeout = options[:timeout] || 30
     end
 
     def method_missing(id, *args)
@@ -19,7 +19,7 @@ module Bosh::Director
       result.extend(MonitorMixin)
 
       cond = result.new_cond
-      timeout_time = Time.now.to_f + @timeout if @timeout
+      timeout_time = Time.now.to_f + @timeout
 
       @pubsub_redis.subscribe(message_id) do |*callback_args|
         type = callback_args.shift
@@ -43,13 +43,10 @@ module Bosh::Director
 
       result.synchronize do
         while result.empty?
-          timeout = nil
-          if @timeout
-            timeout = timeout_time - Time.now.to_f
-            unless timeout > 0
-              @pubsub_redis.unsubscribe(message_id)
-              raise TimeoutException
-            end
+          timeout = timeout_time - Time.now.to_f
+          unless timeout > 0
+            @pubsub_redis.unsubscribe(message_id)
+            raise TimeoutException
           end
           cond.wait(timeout)
         end
