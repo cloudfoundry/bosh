@@ -59,14 +59,20 @@ module Bosh::Director
       result["value"]
     end
 
-    def wait_until_ready(poll_interval = 1.0)
+    def wait_until_ready(deadline = 300)
       old_timeout = @timeout
-      @timeout = poll_interval
+      @timeout = 1.0
+      @deadline = Time.now.to_i + deadline
 
       begin
         ping
-      rescue TimeoutException
-        retry
+      rescue TimeoutException => e
+        @timeout = [@timeout * 2, 30].min
+        if @deadline - Time.now.to_i > 0
+          retry
+        else
+          raise(e)
+        end
       ensure
         @timeout = old_timeout
       end
