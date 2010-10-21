@@ -675,7 +675,13 @@ module Bosh::Director
     def power_on_vm(datacenter, vm)
       request = CloudProviders::VSphere::PowerOnMultiVMRequestType.new(datacenter, [vm])
       task = client.service.powerOnMultiVM_Task(request).returnval
-      client.wait_for_task(task)
+      result = client.wait_for_task(task)
+      if result.attempted.nil?
+        raise "Could not power on VM: #{result.notAttempted.localizedMessage}"
+      else
+        task = result.attempted.first.task
+        client.wait_for_task(task)
+      end
     end
 
     def power_off_vm(vm)
@@ -783,7 +789,7 @@ module Bosh::Director
 
         vm_properties.each do |_, properties|
           pool.process do
-            index += 1
+            @lock.synchronize {index += 1}
             vm = properties[:obj]
             @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
             if properties["runtime.powerState"] != CloudProviders::VSphere::VirtualMachinePowerState::PoweredOff
