@@ -770,21 +770,20 @@ module Bosh::Director
         datacenters << cluster.datacenter
       end
 
+      pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 32)
+      index = 0
+
       datacenters.each do |datacenter|
         vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
         vm_folder = client.find_by_inventory_path(vm_folder_path)
         vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
-
-        return if vms.empty?
+        next if vms.empty?
 
         vm_properties = client.get_properties(vms, "VirtualMachine", ["runtime.powerState"])
 
-        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 32)
-
-        index = 1
-
         vm_properties.each do |_, properties|
           pool.process do
+            index += 1
             vm = properties[:obj]
             @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
             if properties["runtime.powerState"] != CloudProviders::VSphere::VirtualMachinePowerState::PoweredOff
@@ -793,7 +792,6 @@ module Bosh::Director
             end
             task = client.service.destroy_Task(CloudProviders::VSphere::DestroyRequestType.new(vm)).returnval
             client.wait_for_task(task)
-            index += 1
           end
         end
       end
