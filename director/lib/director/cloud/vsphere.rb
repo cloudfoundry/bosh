@@ -786,9 +786,9 @@ module Bosh::Director
         vm_properties.each do |_, properties|
           pool.process do
             vm = properties[:obj]
-            @logger.log("Deleting #{index}/#{vms.size}: #{vm}")
+            @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
             if properties["runtime.powerState"] != CloudProviders::VSphere::VirtualMachinePowerState::PoweredOff
-              @logger.log("Powering off #{index}/#{vms.size}: #{vm}")
+              @logger.debug("Powering off #{index}/#{vms.size}: #{vm}")
               power_off_vm(vm)
             end
             task = client.service.destroy_Task(CloudProviders::VSphere::DestroyRequestType.new(vm)).returnval
