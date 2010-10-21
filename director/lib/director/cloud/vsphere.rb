@@ -774,6 +774,9 @@ module Bosh::Director
         vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
         vm_folder = client.find_by_inventory_path(vm_folder_path)
         vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
+
+        return if vms.empty?
+
         vm_properties = client.get_properties(vms, "VirtualMachine", ["runtime.powerState"])
 
         pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 32)
