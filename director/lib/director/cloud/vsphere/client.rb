@@ -181,7 +181,7 @@ module Bosh::Director::CloudProviders::VSphere
       response = @service.retrievePropertiesEx(request).returnval
       result = []
 
-      loop do
+      until response.nil?
         response.objects.each {|object_content| result << object_content}
 
         break if response.token.nil?
