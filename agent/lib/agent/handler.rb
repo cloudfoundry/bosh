@@ -33,7 +33,9 @@ module Bosh::Agent
       message_consts.each do |c|
         klazz = Bosh::Agent::Message.const_get(c)
         if klazz.respond_to?(:process)
-          @processors[c.downcase] = klazz
+          # CamelCase -> under_score -> downcased
+          processor_key = c.gsub(/(.)([A-Z])/,'\1_\2').downcase
+          @processors[processor_key] = klazz
         end
       end
     end

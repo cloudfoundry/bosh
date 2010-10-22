@@ -1,15 +1,15 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
+#class Bosh::Agent::Message::CamelCasedMessageHandler
+#  def self.process(args)
+#  end
+#end
+
 describe Bosh::Agent::Handler do 
 
   before(:each) do
     @redis = mock("redis")
     Redis.stub(:new).and_return(@redis)
-  end
-
-  it "should load 3 default message processors" do
-    handler = Bosh::Agent::Handler.new
-    handler.processors.size.should == 3
   end
 
   # FIXME: break more stuff out of the redis subscribe or see if we can enhance
@@ -60,5 +60,13 @@ describe Bosh::Agent::Handler do
   end
 
   it "should have running state for long running task"
+
+  it "should support CamelCase message handler class names" do
+    ::Bosh::Agent::Message::CamelCasedMessageHandler = Class.new do
+      def self.process(args); end
+    end
+    handler = Bosh::Agent::Handler.new
+    handler.processors.keys.should include("camel_cased_message_handler")
+  end
 
 end
