@@ -1,7 +1,8 @@
 module Bosh::Agent
   class Config
     class << self
-      attr_accessor :base_dir, :logger, :redis_options, :pubsub_redis, :blobstore, :agent_id, :configure
+      attr_accessor :base_dir, :logger, :redis_options, :pubsub_redis
+      attr_accessor :blobstore, :agent_id, :configure, :blobstore_options
 
       def setup(config)
         @base_dir = config["dir"]
@@ -14,6 +15,9 @@ module Bosh::Agent
                            :port => config["redis"]["port"],
                            :password => config["redis"]["password"],
                            :logger => @logger, :timeout => 0}
+
+        # TODO: right now this will only appy the the simple blobstore type
+        @blobstore_options = config["blobstore"]
       end
 
 

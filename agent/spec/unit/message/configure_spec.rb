@@ -54,12 +54,20 @@ describe Bosh::Agent::Message::Configure do
 
   # This doesn't quite belong here
   it "should configure redis with bosh server ovf data" do
-    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "redis" => {}})
+    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "redis" => {}, "blobstore" => {}})
     @processor.load_ovf
     @processor.update_bosh_server
     redis_options = Bosh::Agent::Config.redis_options
     redis_options[:host].should == "172.30.40.11"
     redis_options[:port].should == "25255"
+  end
+
+  it "should configure blobstore with ovf data" do
+    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "redis" => {}, "blobstore" => {}})
+    @processor.load_ovf
+    @processor.update_blobstore
+    blobstore_options = Bosh::Agent::Config.blobstore_options
+    blobstore_options["user"].should == "agent"
   end
 
 

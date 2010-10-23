@@ -19,6 +19,7 @@ module Bosh::Agent
         load_ovf
         update_agent_id
         update_bosh_server
+        update_blobstore
         setup_networking
       end
 
@@ -47,6 +48,11 @@ module Bosh::Agent
           :password => @settings["server"]["password"]
         }
         Bosh::Agent::Config.redis_options.merge!(ovf_redis)
+      end
+
+      def update_blobstore
+        ovf_blobstore = @settings["blobstore"]["properties"]
+        Bosh::Agent::Config.blobstore_options.merge!(ovf_blobstore)
       end
 
       # TODO: factor out into it's own class
