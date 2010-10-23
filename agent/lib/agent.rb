@@ -9,7 +9,11 @@ require 'uuidtools'
 
 require "agent/version"
 require "agent/config"
+
+# TODO the message handlers will be loaded dynamically
 require "agent/message/configure"
+require "agent/message/compile_package"
+
 require "agent/handler"
 
 module Bosh::Agent
