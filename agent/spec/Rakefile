@@ -17,8 +17,7 @@ ignore_pattern = 'spec,[.]bundle,[/]gems[/]'
 
 ENV['CI_REPORTS'] = reports_dir
 
-# Disabled until I can figure out why Rspec2 output is swallowed by ci_reporter
-#task "spec" => ["ci:setup:rspec"]
+task "spec" => ["ci:setup:rspec"]
 
 desc "Run specs using RCov"
 task "spec:rcov" => ["ci:setup:rspec", "spec:rcov_internal", "convert_rcov_to_clover"]
