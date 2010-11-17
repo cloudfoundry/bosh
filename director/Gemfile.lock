@@ -7,11 +7,13 @@ GEM
     builder (3.0.0)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
+    columnize (0.3.1)
     daemons (1.1.0)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
     httpclient (2.1.5.2)
     json (1.4.6)
+    linecache (0.43)
     minitar (0.5.3)
     netaddr (1.5.0)
     ohm (0.1.0.rc4)
@@ -40,6 +42,11 @@ GEM
     rspec-expectations (2.1.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.1.0)
+    ruby-debug (0.10.4)
+      columnize (>= 0.1)
+      ruby-debug-base (~> 0.10.4.0)
+    ruby-debug-base (0.10.4)
+      linecache (>= 0.3)
     sinatra (1.1.0)
       rack (~> 1.1)
       tilt (~> 1.1)
@@ -75,12 +82,10 @@ DEPENDENCIES
   redis
   resque
   rspec
+  ruby-debug
   sinatra
   soap4r
   systemu
   thin
   uuidtools
   yajl-ruby
-
-METADATA
-  version: 1.0.6

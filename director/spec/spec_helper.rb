@@ -26,6 +26,10 @@ class Object
   include Bosh::Director::DeepCopy
 end
 
+def spec_asset(filename)
+  File.read(File.dirname(__FILE__) + "/assets/#{filename}")
+end
+
 Rspec.configure do |rspec_config|
   rspec_config.before(:each) do
     FileUtils.mkdir_p(bosh_dir)

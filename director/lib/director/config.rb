@@ -13,10 +13,11 @@ module Bosh::Director
         @logger = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
 
-        self.redis_options= {:host => config["redis"]["host"],
-                             :port => config["redis"]["port"],
-                             :password => config["redis"]["password"],
-                             :logger => @logger
+        self.redis_options= {
+          :host     => config["redis"]["host"],
+          :port     => config["redis"]["port"],
+          :password => config["redis"]["password"],
+          :logger   => @logger
         }
 
         @cloud_options = config["cloud"]

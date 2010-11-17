@@ -71,9 +71,9 @@ module Bosh::Director
     def initialize
       super
       @deployment_manager = DeploymentManager.new
-      @release_manager = ReleaseManager.new
-      @stemcell_manager = StemcellManager.new
-      @user_manager = UserManager.new
+      @release_manager    = ReleaseManager.new
+      @stemcell_manager   = StemcellManager.new
+      @user_manager       = UserManager.new
     end
 
     mime_type :tgz, "application/x-compressed"
@@ -95,6 +95,7 @@ module Bosh::Director
 
     before do
       @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+
       if @auth.provided? && @auth.basic? && @auth.credentials && @auth.credentials.length == 2 &&
               @user_manager.authenticate(*@auth.credentials)
         @user = @auth.username

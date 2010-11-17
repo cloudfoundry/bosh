@@ -1,0 +1,22 @@
+---
+port: 8080
+
+logging:
+  level: ERROR
+
+redis:
+  host: 127.0.0.1
+  password:
+  db: bosh_director_redis_test_db
+
+dir: /tmp/boshdir
+
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://127.0.0.1
+    user: admin
+    password:
+
+cloud:
+  # to be added
