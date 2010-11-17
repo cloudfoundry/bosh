@@ -22,4 +22,5 @@ group :test do
   gem "rcov"
   gem "rcov_analyzer"
   gem "rspec"
+  gem "ruby-debug"
 end
