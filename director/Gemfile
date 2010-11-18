@@ -2,11 +2,11 @@ source :rubygems
 
 gem "actionpool"
 gem "eventmachine"
+gem "netaddr"
 gem "ohm", "0.1.0.rc4"
 gem "rake"
 gem "redis"
 gem "resque"
-gem "netaddr"
 gem "sinatra"
 gem "soap4r"
 gem "SystemTimer"
@@ -16,9 +16,10 @@ gem "uuidtools"
 gem "yajl-ruby"
 
 group :test do
+  gem "ci_reporter"
   gem "minitar"
   gem "rack-test"
-  gem "rspec"
   gem "rcov"
-  gem "ci_reporter"
+  gem "rcov_analyzer"
+  gem "rspec"
 end

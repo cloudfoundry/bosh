@@ -6,6 +6,9 @@ task "spec" => ["bundler:install:test", "test:spec"]
 desc "Run specs using RCov"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
+desc "Run specs for CI"
+task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
+
 namespace "bundler" do
   desc "Install gems"
   task "install" do
@@ -29,7 +32,6 @@ namespace "bundler" do
 end
 
 namespace "test" do
-
   task "spec" do |t|
     sh("cd spec && rake spec")
   end
@@ -37,5 +39,8 @@ namespace "test" do
   task "spec:rcov" do |t|
     sh("cd spec && rake spec:rcov")
   end
-    
+
+  task "spec:ci" do |t|
+    sh("cd spec && rake spec:ci")
+  end
 end
