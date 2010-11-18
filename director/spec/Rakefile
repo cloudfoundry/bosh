@@ -20,12 +20,14 @@ desc "Run specs for CI"
 task "spec:ci" => ["ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover"]
 
 RSpec::Core::RakeTask.new do |t|
+  t.gemfile = "../Gemfile"
   t.pattern = "**/*_spec.rb"
   t.rspec_opts = ["--format", "documentation", "--colour"]
 end
 
 RSpec::Core::RakeTask.new("spec:rcov") do |t|
   sh("rm -f #{dump_file}")
+  t.gemfile = "../Gemfile"
   t.pattern = "**/*_spec.rb"
   t.rspec_opts = ["--format", "progress", "--colour"]
   t.rcov = true
