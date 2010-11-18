@@ -21,6 +21,9 @@ GEM
       rack (>= 1.0)
     rake (0.8.7)
     rcov (0.9.9)
+    rcov_analyzer (0.1)
+      builder
+      rcov
     redis (2.0.11)
     redis-namespace (0.8.0)
       redis (< 3.0.0)
@@ -68,6 +71,7 @@ DEPENDENCIES
   rack-test
   rake
   rcov
+  rcov_analyzer
   redis
   resque
   rspec
@@ -77,3 +81,6 @@ DEPENDENCIES
   thin
   uuidtools
   yajl-ruby
+
+METADATA
+  version: 1.0.6
