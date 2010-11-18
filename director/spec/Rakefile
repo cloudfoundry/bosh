@@ -9,33 +9,96 @@ Bundler.setup(:default, :test)
 require "rspec/core/rake_task"
 require "ci/reporter/rake/rspec"
 
-coverage_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
-reports_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
-dump_file = File.join(Dir.tmpdir, "bosh-director.rcov")
-ignore_pattern = "spec,[.]bundle,[/]gems[/]"
+coverage_dir   = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
+reports_dir    = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
+dump_file      = File.join(Dir.tmpdir, "bosh-director.rcov")
 
 ENV["CI_REPORTS"] = reports_dir
 
-desc "Run specs for CI"
-task "spec:ci" => ["ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover"]
+namespace "redis" do
 
-RSpec::Core::RakeTask.new do |t|
-  t.gemfile = "../Gemfile"
-  t.pattern = "**/*_spec.rb"
-  t.rspec_opts = ["--format", "documentation", "--colour"]
+  REDIS_DIR = File.dirname(__FILE__) + "/assets"
+  REDIS_CNF = REDIS_DIR + "/redis_test.conf"
+  REDIS_PID = REDIS_DIR + "/redis_db/redis.pid"
+
+  desc "Start Redis instance"
+  task :start do
+    redis_running = \
+    begin
+      File.exists?(REDIS_PID) && Process.kill(0, File.read(REDIS_PID).to_i)
+    rescue Errno::ESRCH
+      FileUtils.rm REDIS_PID
+      false
+    end
+
+    system "redis-server #{REDIS_CNF}" unless redis_running    
+  end
+
+  desc "Stop Redis instance"
+  task :stop do
+    if File.exists?(REDIS_PID)
+      Process.kill "INT", File.read(REDIS_PID).to_i
+      FileUtils.rm REDIS_PID
+    end
+  end
+  
 end
 
-RSpec::Core::RakeTask.new("spec:rcov") do |t|
-  sh("rm -f #{dump_file}")
-  t.gemfile = "../Gemfile"
-  t.pattern = "**/*_spec.rb"
-  t.rspec_opts = ["--format", "progress", "--colour"]
-  t.rcov = true
-  t.rcov_opts = %W{--aggregate #{dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{coverage_dir}"}
+task :spec => [ "spec:all" ]
+
+namespace "spec" do
+  gemfile   = "../Gemfile"
+  spec_opts = ["--format", "documentation", "--colour"]
+
+  desc "Run unit tests"
+  task "unit" => [ "run_unit" ]
+
+  desc "Run functional tests"
+  task "functional" => ["redis:start", "run_functional", "redis:stop" ]
+
+  task "all" => [ "redis:start", "run_all", "redis:stop" ]
+
+  desc "Run specs for rcov"
+  task "rcov" => [ "redis:start", "run_rcov", "redis:stop" ]
+
+  desc "Run specs for ci"
+  task "ci" => [ "ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover" ]
+
+  RSpec::Core::RakeTask.new("run_all") do |t|
+    t.gemfile    = gemfile
+    t.rspec_opts = spec_opts
+    t.pattern    = "**/*_spec.rb"    
+  end
+
+  RSpec::Core::RakeTask.new("run_unit") do |t|
+    t.gemfile    = gemfile
+    t.rspec_opts = spec_opts
+    t.pattern    = "unit/*_spec.rb"
+  end
+
+  RSpec::Core::RakeTask.new("run_functional") do |t|
+    t.gemfile    = gemfile
+    t.rspec_opts = spec_opts
+    t.pattern    = "functional/*_spec.rb"
+  end
+
+  RSpec::Core::RakeTask.new("run_rcov") do |t|
+    FileUtils.rm_rf(dump_file)
+    t.gemfile    = gemfile
+    t.pattern    = "**/*_spec.rb"
+    t.rspec_opts = ["--format", "progress", "--colour"]
+    t.rcov       = true
+    t.rcov_opts  = %W{--aggregate #{dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{coverage_dir}"}
+  end
+
+  task "convert_rcov_to_clover" do |t|
+    ignore_pattern = "spec,[.]bundle,[/]gems[/]"
+    clover_output  = File.join(coverage_dir, "clover.xml")
+
+    sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
+    FileUtils.rm_rf(dump_file)    
+  end
+ 
 end
 
-task "convert_rcov_to_clover" do |t|
-  clover_output = File.join(coverage_dir, "clover.xml")
-  sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
-  sh("rm -f #{dump_file}")
-end
+

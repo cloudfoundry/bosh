@@ -1,13 +1,13 @@
 ---
-port: 8080
+port: 8081
 
 logging:
   level: ERROR
 
 redis:
   host: 127.0.0.1
+  port: 63790
   password:
-  db: bosh_director_redis_test_db
 
 dir: /tmp/boshdir
 

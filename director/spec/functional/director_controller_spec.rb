@@ -14,10 +14,10 @@ describe Bosh::Director::Controller do
   before(:each) do
     test_config = spec_asset("test-director-config.yml")
     Bosh::Director::Config.configure(YAML.load(test_config))
-  end
 
-  after(:each) do
-    Bosh::Director::Config.redis.flushdb
+    redis = Bosh::Director::Config.redis
+    redis.select(15)
+    redis.flushdb
   end
 
   def app
