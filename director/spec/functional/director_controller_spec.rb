@@ -89,7 +89,7 @@ describe Bosh::Director::Controller do
         post "/deployments", {}, { "CONTENT_TYPE" => "text/plain", :input => spec_asset("test_conf.yaml") }
         last_response.status.should == 404
       end
-    end    
+    end
 
     describe "polling task status" do
       it "has API call that return task status" do
@@ -128,7 +128,7 @@ describe Bosh::Director::Controller do
         post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
 
         login_as("john", "123")
-        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }        
+        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
 
         last_response.status.should == 400
         Bosh::Director::Models::User.all.size.should == 1
@@ -150,7 +150,7 @@ describe Bosh::Director::Controller do
         change_name = Yajl::Encoder.encode({ "username" => "john2", "password" => "123" })
         put "/users/john", {}, { "CONTENT_TYPE" => "application/json", :input => change_name }
         last_response.status.should == 400
-        last_response.body.should == "[[:username, :immutable]]\n"
+        last_response.body.should == "{\"code\":20001,\"description\":\"The username is immutable\"}"
       end
 
       it "deletes user" do
