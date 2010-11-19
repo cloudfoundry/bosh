@@ -1,0 +1,5 @@
+---
+packages:
+  - mutator
+configuration:
+  - test.conf

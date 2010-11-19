@@ -1,0 +1,7 @@
+---
+packages:
+  - stuff
+configuration:
+  - file1.conf
+  - file2.conf
+ 
