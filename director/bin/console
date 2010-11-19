@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+
+APP_DIR = File.expand_path(File.join("..", ".."), __FILE__)
+ENV["BUNDLE_GEMFILE"] ||= File.join(APP_DIR, "Gemfile")
+
+DEFAULT_DIRECTOR_CONFIG = File.join(APP_DIR, "config", "bosh-director.yml")
+
+$:.unshift(File.join(APP_DIR, "lib"))
+
+require 'rubygems'
+require 'bundler/setup'
+require 'director'
+require 'irb'
+require 'irb/completion'
+require 'rack/test'
+
+module Bosh
+  module Director
+
+    class TestApplication
+      include Rack::Test::Methods
+
+      def app
+        Bosh::Director::Controller.new        
+      end
+    end
+    
+    class Console
+      def self.start
+        new.start
+      end
+
+      def start
+        options = {}
+
+        OptionParser.new do |opt|
+          opt.banner = "Usage: console [options]"
+          opt.on('-c', '--config [ARG]', 'configuration file') { |v| options[:config] = v }
+          opt.parse!(ARGV)
+        end
+
+        config_file = \
+        if options[:config]
+          File.expand_path(options[:config])
+        else
+          DEFAULT_DIRECTOR_CONFIG
+        end
+
+        puts "=> Loading #{config_file}"
+        Bosh::Director::Config.configure(YAML.load(File.read(config_file)))
+        
+        begin
+          require 'ruby-debug'
+          puts "=> Debugger enabled"
+        rescue LoadError
+          puts "=> ruby-debug not found, debugger disabled"
+        end
+
+        puts "=> Welcome to Bosh Director console\n=> You can use 'app' to access REST API or 'redis' to query Redis instance"
+
+        IRB.start
+      end
+      
+    end
+  end
+end
+
+def app
+  Bosh::Director::TestApplication.new
+end
+
+def redis
+  Bosh::Director::Config.redis
+end
+
+Bosh::Director::Console.start
+
