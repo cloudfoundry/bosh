@@ -1,0 +1,18 @@
+# For sha1 we used "#{package_name}_contents"
+---
+name: appcloud
+version: 0.1
+
+packages:
+  - name: stuff
+    version: 0.1.17
+    sha1: 8914f14d1e57c3c2d177330de8f48379066c74d5
+  - name: mutator
+    version: 2.99.7
+    sha1: 0157bf37c3c6983d2725472a2d47f6b599caf6d7
+    
+jobs:
+  - cacher
+  - sweeper
+  - tester
+  
