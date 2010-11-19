@@ -15,11 +15,11 @@ module Bosh::Director
       raise UserNotFound if user.nil?
       user.mutex do
         user.delete
-      end      
+      end
     end
 
     def create_user(user)
-      raise UserInvalid.new(user.errors) unless user.valid?
+      raise UserInvalid.new(user.errors.join(" ")) unless user.valid?
       user.create
     end
 
@@ -27,7 +27,7 @@ module Bosh::Director
       original_user = Models::User.find(:username => user.username).first
       raise UserNotFound if original_user.nil?
       user.id = original_user.id
-      raise UserInvalid.new(user.errors) unless user.valid?
+      raise UserInvalid.new(user.errors.join(" ")) unless user.valid?
       user.save
     end
 
