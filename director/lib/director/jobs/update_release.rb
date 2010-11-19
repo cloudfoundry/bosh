@@ -15,18 +15,21 @@ module Bosh::Director
         raise TaskNotFound if @task.nil?
 
         @tmp_release_dir = release_dir
-
-        @task_status_file = File.join(Config.base_dir, "tasks", task_id.to_s)
-        FileUtils.mkdir_p(File.dirname(@task_status_file))
-
         @blobstore = Config.blobstore
-        @logger = Config.logger
+
+        task_status_file = File.join(Config.base_dir, "tasks", task_id.to_s)
+        FileUtils.mkdir_p(File.dirname(task_status_file))
+        @logger = Logger.new(task_status_file)
+        @logger.level= Config.logger.level
+        Config.logger = @logger
+
+        @task.output = task_status_file
+        @task.save!
       end
 
       def perform
         @task.state = :processing
         @task.timestamp = Time.now.to_i
-        @task.output = @task_status_file
         @task.save!
 
         begin
