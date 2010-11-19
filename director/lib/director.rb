@@ -76,6 +76,7 @@ module Bosh::Director
       @release_manager    = ReleaseManager.new
       @stemcell_manager   = StemcellManager.new
       @user_manager       = UserManager.new
+      @logger             = Config.logger
     end
 
     mime_type :tgz, "application/x-compressed"
@@ -111,20 +112,20 @@ module Bosh::Director
     error do
       exception = request.env['sinatra.error']
       if exception.kind_of?(DirectorError)
-        logger.debug("Request failed with response code: #{exception.response_code} error code: " +
+        @logger.debug("Request failed with response code: #{exception.response_code} error code: " +
                          "#{exception.error_code} error: #{exception.message}")
         status(exception.response_code)
         error_payload                = Hash.new
         error_payload['code']        = exception.error_code
         error_payload['description'] = exception.message
-        error_payload.to_json
+        Yajl::Encoder.encode(error_payload)
       else
         msg = ["#{exception.class} - #{exception.message}"]
         unless exception.kind_of?(ServerError) && exception.omit_stack
           msg[0] = msg[0] + ":"
           msg.concat(exception.backtrace)
         end
-        logger.warn(msg.join("\n"))
+        @logger.warn(msg.join("\n"))
         status(500)
       end
     end
