@@ -72,13 +72,9 @@ def app
   BD::TestApplication.new
 end
 
-def config
-  BD::Config
-end
-
 [:redis, :blobstore, :pubsub_redis, :cloud].each do |helper|
   self.class.send(:define_method, helper) do
-    config.send(helper)
+    BD::Config.send(helper)
   end
 end
 
