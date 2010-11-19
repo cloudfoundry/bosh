@@ -26,9 +26,11 @@ require "sinatra"
 require "uuidtools"
 require "yajl"
 
-require "director/ext"
 require "director/deep_copy"
+require "director/ext"
+require "director/http_constants"
 require "director/validation_helper"
+
 require "director/client"
 require "director/ip_util"
 require "director/agent_client"
@@ -102,32 +104,28 @@ module Bosh::Director
         env["REMOTE_USER"] = @user # for logging
       else
         response["WWW-Authenticate"] = %(Basic realm="Testing HTTP Auth")
-        error(401, "Not authorized")
+        error(UNAUTHORIZED, "Not authorized")
       end
     end
 
-    error UserNotFound do
-      error(404, "User not found")
-    end
-
-    error UserInvalid do
-      error = env["sinatra.error"]
-      #TODO: provide real error codes
-      error(400, error.errors.pretty_inspect)
-    end
-
-    error TaskNotFound do
-      error(404, "Task not found")
-    end
-
     error do
-      boom = env["sinatra.error"]
-      msg = ["#{boom.class} - #{boom.message}:", *boom.backtrace].join("\n ")
-      @env["rack.errors"].puts(msg)
-
-      # print error/backtrace for test environment only
-      if test?
-        puts msg
+      exception = request.env['sinatra.error']
+      if exception.kind_of?(DirectorError)
+        logger.debug("Request failed with response code: #{exception.response_code} error code: " +
+                         "#{exception.error_code} error: #{exception.message}")
+        status(exception.response_code)
+        error_payload                = Hash.new
+        error_payload['code']        = exception.error_code
+        error_payload['description'] = exception.message
+        error_payload.to_json
+      else
+        msg = ["#{exception.class} - #{exception.message}"]
+        unless exception.kind_of?(ServerError) && exception.omit_stack
+          msg[0] = msg[0] + ":"
+          msg.concat(exception.backtrace)
+        end
+        logger.warn(msg.join("\n"))
+        status(500)
       end
     end
 
@@ -138,7 +136,7 @@ module Bosh::Director
 
     put "/users/:username", :consumes => [:json] do
       user = @user_manager.get_user_from_request(request)
-      raise UserInvalid.new([[:username, :immutable]]) unless user.username == params[:username]
+      raise UserImmutableUsername unless user.username == params[:username]
       @user_manager.update_user(user)
     end
 
@@ -173,7 +171,7 @@ module Bosh::Director
 
     get "/tasks/:id" do
       task = Models::Task[params[:id]]
-      raise TaskNotFound if task.nil?
+      raise TaskNotFound.new(params[:id]) if task.nil?
 
       # TODO: fix output to be in JSON format exporting state, timestamp, and result.
       content_type("text/plain")
