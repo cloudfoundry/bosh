@@ -17,7 +17,15 @@ module Bosh::Director
 
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
-        @logger = Config.logger
+
+        task_status_file = File.join(Config.base_dir, "tasks", task_id.to_s)
+        FileUtils.mkdir_p(File.dirname(task_status_file))
+        @logger = Logger.new(task_status_file)
+        @logger.level= Config.logger.level
+        Config.logger = @logger
+
+        @task.output = task_status_file
+        @task.save!
       end
 
       def perform

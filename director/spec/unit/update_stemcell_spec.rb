@@ -35,6 +35,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     @cloud = mock("cloud")
 
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
+    Bosh::Director::Config.stub!(:base_dir).and_return(Dir.mktmpdir("base_dir"))
+    Bosh::Director::Config.stub!(:logger).and_return(Logger.new(nil))
     Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(@task)
 
     stemcell_contents = create_stemcell("jeos", 5, {"ram" => "2gb"}, "image contents")
@@ -47,6 +49,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should upload the stemcell" do
+    @task.should_receive(:output=)
+    @task.should_receive(:save!)
+
     @task.should_receive(:state=).with(:processing)
     @task.should_receive(:timestamp=)
     @task.should_receive(:save!)
@@ -73,6 +78,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should cleanup the stemcell file" do
+    @task.should_receive(:output=)
+    @task.should_receive(:save!)
+
     @task.should_receive(:state=).with(:processing)
     @task.should_receive(:timestamp=)
     @task.should_receive(:save!)

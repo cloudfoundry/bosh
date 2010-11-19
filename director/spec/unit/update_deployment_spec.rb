@@ -17,6 +17,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest).and_return(@deployment_plan)
     Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(@task)
     Bosh::Director::Config.stub!(:logger).and_return(@logger)
+    Bosh::Director::Config.stub!(:base_dir).and_return(Dir.mktmpdir("base_dir"))
+
+    @task.should_receive(:output=)
+    @task.should_receive(:save!)
   end
 
   describe "prepare" do
