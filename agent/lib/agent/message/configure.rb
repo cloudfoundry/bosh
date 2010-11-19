@@ -21,6 +21,7 @@ module Bosh::Agent
         update_bosh_server
         update_blobstore
         setup_networking
+        setup_data_disk
       end
 
       def load_ovf
@@ -145,6 +146,38 @@ module Bosh::Agent
         end
         if_tmp_file.close
         updated
+      end
+
+      def setup_data_disk
+        swap_partition = "#{DATA_DISK}1"
+        data_partition = "#{DATA_DISK}2"
+
+        if File.blockdevice?(DATA_DISK) && Dir["#{DATA_DISK}[1-9]"].empty?
+          partition_disk(DATA_DISK, data_sfdisk_input)
+          %x[mkswap #{swap_partition}]
+          %x[mkfs.ext4 #{data_partition}]
+        end
+
+        # TODO error handling / handle exit codes - if we need it I'll pull in
+        # popen3 from chef
+        %x[swapon #{swap_partition}]
+        %x[mkdir -p /var/b29/data]
+        %x[mount #{data_partition} /var/b29/data]
+      end
+
+      def partition_disk(dev, sfdisk_input)
+        if File.blockdev?(dev)
+          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uK #{dev}"
+        end
+      end
+
+      def data_sfdisk_input
+        ",#{mem_total},S\n,,L\n"
+      end
+
+      def mem_total
+        # MemTotal:        3952180 kB
+        File.readlines('/proc/meminfo').first.split(/\s+/)[1]
       end
 
       def print_settings

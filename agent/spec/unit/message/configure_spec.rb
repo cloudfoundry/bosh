@@ -9,6 +9,9 @@ describe Bosh::Agent::Message::Configure do
     # We just want to avoid this to accidently be invoked on dev systems
     @processor.stub(:update_file)
     @processor.stub(:restart_networking_service)
+    @processor.stub(:setup_data_disk)
+    @processor.stub(:partition_disk)
+    @processor.stub(:mem_total).and_return('3952181')
   end
 
   it 'should read ovf xml' do
@@ -68,6 +71,10 @@ describe Bosh::Agent::Message::Configure do
     @processor.update_blobstore
     blobstore_options = Bosh::Agent::Config.blobstore_options
     blobstore_options["user"].should == "agent"
+  end
+
+  it "should swap on data disk" do
+    @processor.data_sfdisk_input.should == ",3952181,S\n,,L\n"
   end
 
 
