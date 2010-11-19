@@ -12,7 +12,7 @@ describe Bosh::Director::Lock do
     redis.should_receive(:setnx).with("foo", anything).and_return do |_, value|
       stored_value = value
       timestamp = stored_value.split(":")[0].to_f
-      timestamp.should be_close(started + 10, 2.0)
+      timestamp.should be_within(started + 10).of(2.0)
     end
 
     redis.should_receive(:watch).with("foo").any_number_of_times
@@ -48,7 +48,7 @@ describe Bosh::Director::Lock do
     stored_value = nil
     redis.should_receive(:setnx).with("foo", anything).any_number_of_times.and_return do |_, value|
       timestamp = value.split(":")[0].to_f
-      timestamp.should be_close(Time.now.to_f + 10, 2.0)
+      timestamp.should be_within(Time.now.to_f + 10).of(2.0)
       if stored_value.nil?
         stored_value = value
         true
