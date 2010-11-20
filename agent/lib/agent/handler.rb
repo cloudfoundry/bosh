@@ -66,7 +66,7 @@ module Bosh::Agent
           if processor
             Thread.new {
               if processor.respond_to?(:long_running?)
-                if @long_running_agent_task.emtpy?
+                if @long_running_agent_task.empty?
                   process_long_running(message_id, processor, args)
                 else
                   payload = {:excpetion => "already running long running task"}
