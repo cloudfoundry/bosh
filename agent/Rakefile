@@ -99,6 +99,7 @@ HERE
 
     cp_r "lib", instance_dir
     cp_r "bin", instance_dir
+    cp_r "vendor", instance_dir
     cp "Gemfile", instance_dir
     cp "Gemfile.lock", instance_dir
 
