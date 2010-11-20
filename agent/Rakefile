@@ -74,7 +74,7 @@ suite = lucid
 # multiverse for open-vm-tools
 components = main,universe,multiverse
 flavor = virtual
-addpkg = runit, libssl-dev
+addpkg = runit
 HERE
 
     template = ERB.new(VMBUILDER_CFG, 0, '%<>')
@@ -108,13 +108,25 @@ HERE
       vmbuilder_args = "--debug --mem 512 #{iso_option} -c #{work_dir}/vmbuilder.cfg"
       vmbuilder_args += " --templates #{work_dir}/build/templates --part #{work_dir}/build/part.in"
       sh "sudo vmbuilder esxi ubuntu #{vmbuilder_args}"
-    end
 
+      sh "/usr/lib/vmware/ovftool/ovftool ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
+      mkdir_p 'stemcell'
+      Dir.chdir('ubuntu-esxi') do
+        sh 'tar zcf ../stemcell/image image*'
+      end
+
+      File.open('stemcell/stemcell.MF', 'w') do |f|
+        f.write("---\nname: bosh-stemcell-#{version}\nversion: 1")
+      end
+
+      Dir.chdir('stemcell') do
+        sh "tar zcf ../bosh-stemcell-#{version}.tgz *"
+      end
+
+    end
     # TODO: guesthw version 7 for esx4
     # TODO: install bin wrapper
     # TODO: change location of agent install w/symlink strategy
-    # TODO: install runit service
-    # TODO: convert vmdk with ovftool
     puts "Check #{work_dir} for build artifacts"
   end
 

@@ -4,7 +4,7 @@ export PATH=/var/b29/bin:$PATH
 export HOME=/root
 
 apt-get install -y --force-yes --no-install-recommends \
-  build-essential openssh-server linux-headers-virtual \
+  build-essential libssl-dev openssh-server linux-headers-virtual \
   open-vm-dkms open-vm-tools monit
 
 cd /var/b29/bosh/src
