@@ -1,0 +1,8 @@
+source :rubygems
+
+gem "main"
+
+group :test do
+  gem "rspec"
+  gem "ruby-debug"
+end
