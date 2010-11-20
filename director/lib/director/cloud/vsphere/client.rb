@@ -1,5 +1,6 @@
 require "director/cloud/vsphere/defaultDriver"
 require "director/cloud/vsphere/lease_updater"
+require "director/cloud/vsphere/resources"
 
 module Bosh::Director::CloudProviders::VSphere
 
@@ -12,15 +13,17 @@ module Bosh::Director::CloudProviders::VSphere
     attr_accessor :service
 
     def initialize(host, options = {})
-      @service = VimPortType.new(host)
+      @service                                                 = VimPortType.new(host)
       @service.options["protocol.http.ssl_config.verify_mode"] = OpenSSL::SSL::VERIFY_NONE
       @service.wiredump_dev = File.open(options["soap_log"], "w") if options["soap_log"]
 
-      service_ref = ManagedObjectReference.new("ServiceInstance")
-      service_ref.xmlattr_type = "ServiceInstance"
+      service_ref                      = ManagedObjectReference.new("ServiceInstance")
+      service_ref.xmlattr_type         = "ServiceInstance"
 
       retrieve_service_content_request = RetrieveServiceContentRequestType.new(service_ref)
-      @service_content = @service.retrieveServiceContent(retrieve_service_content_request).returnval
+      @service_content                 = @service.retrieveServiceContent(retrieve_service_content_request).returnval
+      @metrics_cache                   = {}
+      @lock                            = Mutex.new
     end
 
     def login(username, password, locale)
@@ -192,6 +195,77 @@ module Bosh::Director::CloudProviders::VSphere
       result
     end
 
+    def get_perf_counters(mobs, names, options = {})
+      metrics           = find_perf_metric_names(mobs.first, names)
+      metric_ids        = metrics.values
+
+      metric_name_by_id = {}
+      metrics.each { |name, metric| metric_name_by_id[metric.counterId] = name }
+
+      queries    = []
+      mobs.each do |mob|
+        query            = PerfQuerySpec.new
+        query.entity     = mob
+        query.metricId   = metric_ids
+        query.format     = PerfFormat::Csv
+        query.intervalId = options[:interval_id] || 20
+        query.maxSample  = options[:max_sample]
+        queries << query
+      end
+
+      query_perf_request  = QueryPerfRequestType.new(service_content.perfManager, queries)
+      # TODO: shard and send requests in parallel for better performance
+      query_perf_response = service.queryPerf(query_perf_request)
+
+      result = {}
+      query_perf_response.each do |mob_stats|
+        mob_entry = {}
+        counters  = mob_stats.value
+        counters.each do |counter_stats|
+          counter_id = counter_stats.id.counterId
+          values     = counter_stats.value
+          mob_entry[metric_name_by_id[counter_id]] = values
+        end
+        result[mob_stats.entity] = mob_entry
+      end
+      result
+    end
+
+    def find_perf_metric_names(mob, names)
+      type = mob.xmlattr_type
+      @lock.synchronize do
+        unless @metrics_cache.has_key?(type)
+          @metrics_cache[type] = fetch_perf_metric_names(mob)
+        end
+      end
+
+      result = {}
+      @metrics_cache[type].each do |name, metric|
+        result[name] = metric if names.include?(name)
+      end
+
+      result
+    end
+
+    def fetch_perf_metric_names(mob)
+      request            = QueryAvailablePerfMetricRequestType.new(service_content.perfManager, mob)
+      request.intervalId = 300
+      metrics            = service.queryAvailablePerfMetric(request)
+
+      metric_ids         = metrics.collect { |metric| metric.counterId }
+      request            = QueryPerfCounterRequestType.new(service_content.perfManager, metric_ids)
+      metrics_info       = service.queryPerfCounter(request)
+
+      metric_names       = {}
+      metrics_info.each do |perf_counter_info|
+        name = "#{perf_counter_info.groupInfo.key}.#{perf_counter_info.nameInfo.key}.#{perf_counter_info.rollupType}"
+        metric_names[perf_counter_info.key] = name
+      end
+
+      result = {}
+      metrics.each { |metric| result[metric_names[metric.counterId]] = metric }
+      result
+    end
   end
 
 end
