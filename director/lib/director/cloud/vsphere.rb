@@ -8,47 +8,6 @@ module Bosh::Director
 
   class VSphereCloud
 
-    class ClusterStats
-
-      class Datastore
-        attr_accessor :mob
-        attr_accessor :name
-        attr_accessor :total_space
-        attr_accessor :free_space
-        attr_accessor :unaccounted_space
-      end
-
-      class Datacenter
-        attr_accessor :mob
-        attr_accessor :vm_folder
-        attr_accessor :vm_folder_name
-        attr_accessor :template_folder
-        attr_accessor :template_folder_name
-        attr_accessor :name
-      end
-
-      class Cluster
-        attr_accessor :mob
-        attr_accessor :name
-        attr_accessor :datacenter
-        attr_accessor :resource_pool
-        attr_accessor :datastores
-        attr_accessor :idle_cpu
-        attr_accessor :total_memory
-        attr_accessor :free_memory
-        attr_accessor :unaccounted_memory
-      end
-
-      attr_accessor :timestamp
-      attr_accessor :clusters
-
-      def initialize
-        @clusters = {}
-        @timestamp = 0
-      end
-
-    end
-
     attr_accessor :client
 
     def initialize(options)
@@ -60,6 +19,8 @@ module Bosh::Director
 
       @client = CloudProviders::VSphere::Client.new("https://#{@vcenter["host"]}/sdk/vimService", options)
       @client.login(@vcenter["user"], @vcenter["password"], "en")
+
+      @resources = CloudProviders::VSphere::Resources.new(@client, @vcenter)
 
       @lock = Mutex.new
       @locks = {}
@@ -83,8 +44,8 @@ module Bosh::Director
         @logger.debug("generated name: #{name}")
 
         # TODO: make stemcell friendly version of the calls below
-        cluster = find_least_loaded_cluster(1)
-        datastore = find_least_loaded_datastore(cluster, 1)
+        cluster = @resources.find_least_loaded_cluster(1)
+        datastore = @resources.find_least_loaded_datastore(cluster, 1)
         @logger.debug("deploying to: #{cluster.mob} / #{datastore.mob}")
 
         import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
@@ -112,8 +73,8 @@ module Bosh::Director
       datastore = nil
 
       if disk_locality.nil?
-        cluster = find_least_loaded_cluster(memory)
-        datastore = find_least_loaded_datastore(cluster, disk)
+        cluster = @resources.find_least_loaded_cluster(1)
+        datastore = @resources.find_least_loaded_datastore(cluster, 1)
       else
         # TODO: get cluster based on disk locality
         # TODO: get datastore based on disk locality
@@ -297,78 +258,6 @@ module Bosh::Director
       client.wait_for_task(task)
     end
 
-    def find_least_loaded_cluster(memory)
-      result = nil
-      @lock.synchronize do
-        max_free_memory = 0.0
-
-        clusters = cluster_stats.clusters
-        clusters = clusters.select do |cluster|
-          free_memory = cluster.free_memory - cluster.unaccounted_memory
-          max_free_memory = free_memory if free_memory > max_free_memory
-          cluster.free_memory - cluster.unaccounted_memory - memory > 128
-        end
-
-        # TODO: what if there are no free clusters?
-
-        clusters.sort! {|c1, c2| score_cluster(c2, memory, max_free_memory) - score_cluster(c1, memory, max_free_memory)}
-        clusters = clusters[0..2]
-
-        scores = []
-        score_sum = 0
-        clusters.each do |cluster|
-          scores << score_cluster(cluster, memory, max_free_memory)
-          score_sum += scores.last
-        end
-
-        scores.map! {|score| score / score_sum}
-        rand_sample = rand
-
-        result = if rand_sample < scores[0]
-          clusters[0]
-        elsif rand_sample < scores[0] + scores[1]
-          clusters[1]
-        else
-          clusters[2]
-        end
-
-        result.unaccounted_memory += memory
-      end
-
-      result
-    end
-
-    def find_least_loaded_datastore(cluster, space)
-      result = nil
-      @lock.synchronize do
-        datastores = cluster.datastores
-        datastores = datastores.select do |datastore|
-          datastore.free_space - datastore.unaccounted_space - space > 512
-        end
-
-        # TODO: what if there is no free datastore?
-
-        datastores.sort!{|ds1, ds2| score_datastore(ds2, space) - score_datastore(ds1, space)}
-        result = datastores.first
-
-        result.unaccounted_space += space
-      end
-      result
-    end
-
-    def score_datastore(datastore, space)
-      datastore.free_space - datastore.unaccounted_space - space
-    end
-
-    def score_cluster(cluster, memory, max_free_memory)
-      # 50% based on how much free memory this cluster has relative to other clusters
-      # 25% based on cpu usage
-      # 25% based on how much free memory this cluster has as a whole
-      free_memory = cluster.free_memory - cluster.unaccounted_memory - memory
-      free_memory = free_memory.to_f
-      free_memory / max_free_memory * 0.5 + cluster.idle_cpu * 0.25 + (free_memory / cluster.total_memory) * 0.25
-    end
-
     def clone_vm(vm, name, folder, resource_pool, options={})
       relocation_spec = CloudProviders::VSphere::VirtualMachineRelocateSpec.new
       relocation_spec.datastore = options[:datastore] if options[:datastore]
@@ -395,196 +284,6 @@ module Bosh::Director
       request.memory = false
       request.quiesce = false
       client.service.createSnapshot_Task(request).returnval
-    end
-
-    def cluster_stats
-      @cluster_stats = ClusterStats.new if @cluster_stats.nil?
-
-      if Time.now.to_i - @cluster_stats.timestamp > 60
-        datacenters = client.get_managed_objects("Datacenter")
-        datacenter_properties = client.get_properties(datacenters, "Datacenter", ["name"])
-
-        datacenter_names = Set.new
-        @vcenter["datacenters"].each {|datacenter| datacenter_names << datacenter["name"]}
-        datacenter_properties.delete_if {|_, properties| !datacenter_names.include?(properties["name"])}
-
-        datacenters = {}
-        datacenter_properties.each_value do |properties|
-          datacenter = ClusterStats::Datacenter.new
-          datacenter.mob = properties[:obj]
-          datacenter.name = properties["name"]
-          datacenters[datacenter.name] = datacenter
-        end
-
-        global_cluster_properties = {}
-        @vcenter["datacenters"].each do |datacenter_spec|
-          datacenter = datacenters[datacenter_spec["name"]]
-          datacenter.vm_folder = client.find_by_inventory_path([datacenter.name, "vm", datacenter_spec["vm_folder"]])
-          datacenter.vm_folder_name = datacenter_spec["vm_folder"]
-          datacenter.template_folder = client.find_by_inventory_path([datacenter.name, "vm",
-                                                                      datacenter_spec["template_folder"]])
-          datacenter.template_folder_name = datacenter_spec["template_folder"]
-          cluster_mobs = client.get_managed_objects("ClusterComputeResource", :root => datacenter.mob)
-          cluster_properties = client.get_properties(cluster_mobs, "ClusterComputeResource", ["name", "datastore",
-                                                                                              "resourcePool"])
-
-          cluster_names = Set.new(datacenter_spec["clusters"])
-          cluster_properties.delete_if {|_, properties| !cluster_names.include?(properties["name"])}
-          cluster_properties.each do |name, properties|
-            properties[:datacenter] = datacenter
-            global_cluster_properties[name] = properties
-          end
-        end
-        cluster_properties = global_cluster_properties
-
-        hosts = client.get_managed_objects("HostSystem")
-        host_properties = client.get_properties(hosts, "HostSystem", ["parent", "hardware.memorySize",
-                                                                      "runtime.inMaintenanceMode"])
-        host_properties.delete_if do |_, properties|
-          properties["runtime.inMaintenanceMode"] == "true" || !cluster_properties.has_key?(properties["parent"])
-        end
-
-        hosts = []
-        host_properties.each_value do |properties|
-          hosts << properties[:obj]
-        end
-
-        cluster_resources = {}
-        perf_counters = get_perf_counters(hosts, ["cpu.usage.average", "mem.usage.average"], :max_sample => 5)
-        perf_counters.each do |host_mob, perf_counter|
-          host = host_properties[host_mob]
-          cluster_mob = host["parent"]
-          resources = cluster_resources[cluster_mob] || {
-            :samples => 0,
-            :total_memory => 0,
-            :free_memory => 0,
-            :cpu_usage => 0
-          }
-
-          host_memory = host["hardware.memorySize"].to_i
-          host_memory_used = (average_csv(perf_counter["mem.usage.average"]) / 10000)
-
-          resources[:samples] += 1
-          resources[:total_memory] += host_memory
-          resources[:free_memory] += ((1 - host_memory_used) * host_memory).to_i
-          resources[:cpu_usage] += average_csv(perf_counter["cpu.usage.average"]) / 100
-          cluster_resources[cluster_mob] = resources
-        end
-
-        datastores = []
-        cluster_properties.each_value {|properties| datastores.concat(properties["datastore"])}
-        datastore_properties = client.get_properties(datastores, "Datastore", ["summary.freeSpace", "summary.capacity",
-                                                                               "summary.multipleHostAccess", "name"])
-        datastore_properties.delete_if {|_, properties| properties["summary.multipleHostAccess"] == "false"}
-
-        clusters = []
-        cluster_properties.each_value do |properties|
-          cluster = ClusterStats::Cluster.new
-          cluster.mob = properties[:obj]
-          cluster.name = properties["name"]
-          cluster.resource_pool = properties["resourcePool"]
-          cluster.datacenter = properties[:datacenter]
-
-          resources = cluster_resources[cluster.mob]
-          cluster.idle_cpu = (100 - resources[:cpu_usage]/resources[:samples]) / 100
-          cluster.total_memory = resources[:total_memory]/(1024 * 1024)
-          cluster.free_memory = resources[:free_memory]/(1024 * 1024)
-          cluster.unaccounted_memory = 0
-
-          cluster_datastores = []
-          properties["datastore"].each do |datastore|
-            datastore = datastore_properties[datastore]
-            if datastore
-              cluster_datastore = ClusterStats::Datastore.new
-              cluster_datastore.mob = datastore[:obj]
-              cluster_datastore.name = datastore["name"]
-              cluster_datastore.free_space = datastore["summary.freeSpace"].to_i / (1024 * 1024)
-              cluster_datastore.total_space = datastore["summary.capacity"].to_i / (1024 * 1024)
-              cluster_datastore.unaccounted_space = 0
-              cluster_datastores << cluster_datastore
-            end
-          end
-          cluster.datastores = cluster_datastores
-
-          clusters << cluster
-        end
-
-        @cluster_stats.clusters = clusters
-        @cluster_stats.timestamp = Time.now.to_i
-      end
-
-      @cluster_stats
-    end
-
-    def get_perf_counters(mobs, names, options = {})
-      counters = find_perf_counters(mobs.first, names)
-      counter_reverse_map = {}
-      counters.each do |key, value|
-        counter_reverse_map[value.counterId] = key
-      end
-
-      metric_ids = counters.values
-
-      queries = []
-      mobs.each do |mob|
-        query = CloudProviders::VSphere::PerfQuerySpec.new
-        query.entity = mob
-        query.metricId = metric_ids
-        query.format = CloudProviders::VSphere::PerfFormat::Csv
-        query.intervalId = options[:interval_id] || 20
-        query.maxSample = options[:max_sample]
-        queries << query
-      end
-
-      query_perf_request = CloudProviders::VSphere::QueryPerfRequestType.new(client.service_content.perfManager,
-                                                                             queries)
-      # TODO: shard and send requests in parallel for better performance
-      query_perf_response = client.service.queryPerf(query_perf_request)
-
-
-      result = {}
-      query_perf_response.each do |mob_stats|
-        mob_entry = {}
-        counters = mob_stats.value
-        counters.each do |counter_stats|
-          counter_id = counter_stats.id.counterId
-          values = counter_stats.value
-          mob_entry[counter_reverse_map[counter_id]] = values
-        end
-        result[mob_stats.entity] = mob_entry
-      end
-      result
-    end
-
-    def find_perf_counters(mob, names)
-      request = CloudProviders::VSphere::QueryAvailablePerfMetricRequestType.new(
-              client.service_content.perfManager, mob)
-      request.intervalId = 300
-      metrics = client.service.queryAvailablePerfMetric(request)
-
-      metric_ids = metrics.collect {|metric| metric.counterId}
-      request = CloudProviders::VSphere::QueryPerfCounterRequestType.new(client.service_content.perfManager, metric_ids)
-      metrics_info = client.service.queryPerfCounter(request)
-
-      selected_metrics_info = {}
-      metrics_info.each do |perf_counter_info|
-        name = "#{perf_counter_info.groupInfo.key}.#{perf_counter_info.nameInfo.key}.#{perf_counter_info.rollupType}"
-        selected_metrics_info[perf_counter_info.key] = name if names.include?(name)
-      end
-
-      result = {}
-      metrics.select do |metric|
-        metric_info = selected_metrics_info[metric.counterId]
-        result[metric_info] = metric if metric_info
-      end
-      result
-    end
-
-    def average_csv(csv)
-      values = csv.split(",")
-      result = 0
-      values.each {|v| result += v.to_f}
-      result / values.size
     end
 
     def generate_unique_name
