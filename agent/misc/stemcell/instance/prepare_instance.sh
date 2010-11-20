@@ -3,6 +3,12 @@
 export PATH=/var/b29/bin:$PATH
 export HOME=/root
 
+# Shady work aroud vmbuilder in combination with ubuntu iso cache corrupting
+# the debian list caches. There is s discussion in:
+#  https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
+rm /var/lib/apt/lists/{archive,security,lock}*
+apt-get update
+
 apt-get install -y --force-yes --no-install-recommends \
   build-essential libssl-dev openssh-server linux-headers-virtual \
   open-vm-dkms open-vm-tools monit
@@ -28,13 +34,13 @@ version=$(cat version)
 agent_path=/var/b29/bosh/agent_${version}_builtin
 
 mkdir -p ${agent_path}
-cp -a bin lib Gemfile* ${agent_path}
+cp -a bin lib Gemfile* vendor ${agent_path}
 ln -s ${agent_path} /var/b29/bosh/agent
 chmod +x /var/b29/bosh/agent/bin/agent
 
 (
   cd /var/b29/bosh/agent
-  bundle install /var/b29/gems
+  bundle install --path /var/b29/gems
 )
 
 cp -a runit/agent /etc/sv/agent
