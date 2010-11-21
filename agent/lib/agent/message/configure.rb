@@ -13,25 +13,32 @@ module Bosh::Agent
 
       # TODO: set up iptables
       def initialize(args)
+        @logger = Bosh::Agent::Config.logger
       end
 
       def configure
         load_ovf
-        update_agent_id
-        update_bosh_server
-        update_blobstore
-        setup_networking
+        if @settings
+          update_agent_id
+          update_bosh_server
+          update_blobstore
+          setup_networking
+        end
         setup_data_disk
       end
 
       def load_ovf
         ovf_env = info_get_ovfenv
-        doc = REXML::Document.new(ovf_env)
-        xpath = '//oe:Environment/oe:PropertySection/oe:Property[@key="Bosh_Agent_Properties"]'
-        element = REXML::XPath.first(doc, xpath,
-                                        {'oe' => 'http://schemas.dmtf.org/ovf/environment/1'})
-        json_props = element.attribute('value', 'http://schemas.dmtf.org/ovf/environment/1').value
-        @settings = Yajl::Parser.new.parse(json_props)
+        unless ovf_env.empty?
+          doc = REXML::Document.new(ovf_env)
+          xpath = '//oe:Environment/oe:PropertySection/oe:Property[@key="Bosh_Agent_Properties"]'
+          element = REXML::XPath.first(doc, xpath,
+                                          {'oe' => 'http://schemas.dmtf.org/ovf/environment/1'})
+          json_props = element.attribute('value', 'http://schemas.dmtf.org/ovf/environment/1').value
+          @settings = Yajl::Parser.new.parse(json_props)
+        else
+          @logger.info("Unable to read OVF properties")
+        end
       end
 
       def info_get_ovfenv
@@ -148,31 +155,43 @@ module Bosh::Agent
         updated
       end
 
+      DATA_DISK = "/dev/sdb"
       def setup_data_disk
         swap_partition = "#{DATA_DISK}1"
         data_partition = "#{DATA_DISK}2"
 
-        if File.blockdevice?(DATA_DISK) && Dir["#{DATA_DISK}[1-9]"].empty?
-          partition_disk(DATA_DISK, data_sfdisk_input)
-          %x[mkswap #{swap_partition}]
-          %x[mkfs.ext4 #{data_partition}]
-        end
+        if File.blockdev?(DATA_DISK) 
 
-        # TODO error handling / handle exit codes - if we need it I'll pull in
-        # popen3 from chef
-        %x[swapon #{swap_partition}]
-        %x[mkdir -p /var/b29/data]
-        %x[mount #{data_partition} /var/b29/data]
+          if Dir["#{DATA_DISK}[1-9]"].empty?
+            @logger.info("Found unformatted drive")
+            @logger.info("Partition #{DATA_DISK}")
+            partition_disk(DATA_DISK, data_sfdisk_input)
+
+            @logger.info("Create swap and data partitions")
+            %x[mkswap #{swap_partition}]
+            %x[mkfs.ext4 #{data_partition}]
+          end
+
+          @logger.info("Swapon and mount data partition")
+          %x[swapon #{swap_partition}]
+          %x[mkdir -p /var/b29/data]
+          %x[mount #{data_partition} /var/b29/data]
+        end
       end
 
       def partition_disk(dev, sfdisk_input)
         if File.blockdev?(dev)
-          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uK #{dev}"
+          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uM #{dev}"
+          output = %x[#{sfdisk_cmd}]
+          unless $? == 0
+            @logger.info("failed to parition #{dev}")
+            @logger.info(ouput)
+          end
         end
       end
 
       def data_sfdisk_input
-        ",#{mem_total},S\n,,L\n"
+        ",#{mem_total/1024},S\n,,L\n"
       end
 
       def mem_total

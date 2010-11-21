@@ -50,6 +50,3 @@ DEPENDENCIES
   ruby-debug
   uuidtools
   yajl-ruby
-
-METADATA
-  version: 1.0.6
