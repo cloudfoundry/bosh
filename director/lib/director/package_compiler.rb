@@ -46,6 +46,8 @@ module Bosh::Director
         package = uncompiled_package[:package]
         package_sha1 = package.sha1
         package_blobstore_id = package.blobstore_id
+        package_name = package.name
+        package_version = package.version
 
         stemcell = uncompiled_package[:stemcell]
         stemcell_cid = stemcell.cid
@@ -61,7 +63,7 @@ module Bosh::Director
           vm_cid = @cloud.create_vm(agent_id, stemcell_cid, compilation_resources, network_settings)
           agent = AgentClient.new(agent_id)
           agent.wait_until_ready
-          task = agent.compile_package(package_blobstore_id, package_sha1)
+          task = agent.compile_package(package_blobstore_id, package_sha1, package_name, package_version)
           while task["state"] == "running"
             task = agent.get_task(task["id"])
           end
