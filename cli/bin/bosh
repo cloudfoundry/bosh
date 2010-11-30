@@ -20,13 +20,14 @@ def display_usage
   sep = ' ' * $0.size
   puts <<-USAGE
 
-usage: #$0 [--dry-run] [--verbose|-v] [--target=<name>]
-       #{sep} [--user=<username] [--password=<password>]
+usage: #$0 [--dry-run] [--verbose|-v]
        #{sep} command [<args>]
 
 Currently available bosh commands are:
 
-  target <name>                            Choose default target to work with (will be used if no explicit --target option given)
+  target <name>                            Choose target to work with
+
+  deployment <name>                        Choose deployment to work with (it also updates current target)
 
   user create <username> <password>        Create user (password provided)
   user create <username>                   Create user (ask for password)
@@ -42,9 +43,7 @@ Currently available bosh commands are:
 
   status                                   Show current status (current target, user, deployment info etc.)
 
-  deploy                                   Deploy according to the currently selected target
-
-  exec <command>                           Execute named command using the currently selected target (i.e. #$0 exec router restart)
+  deploy                                   Deploy according to the currently selected deployment
 
 USAGE
 end
@@ -80,7 +79,7 @@ Main {
       mode(mode_name) { yield }
     end
   end
-  
+
   def run
     display_usage
   end
@@ -90,40 +89,44 @@ Main {
   end
 
   mode "target" do
-    usage = "usage: #$0 target <name>"
-
-    argument :target do
+    argument :name do
       optional
     end
 
     def run
-      if params["target"].given?
-        puts "Setting target to %s\n\n" % [ params['target'].value ]
+      if params['name'].given?
+        puts "Setting target to %s\n\n" % [ params['name'].value ]
       else
         puts "Current target is 'default'\n\n"
       end
     end
   end
 
+  # 'deploy' mode needs to be above 'deployment',
+  # otherwise main considers it unambigious (bug?)
   mode "deploy" do
     def run
-      run_cmd(:deploy) # TODO: add target
+      run_cmd(:deploy)
     end
+  end
+
+  mode "deployment" do
+    argument :name do
+      optional
+    end
+
+    def run
+      if params['name'].given?
+        puts "Setting deployment to %s\n\n" % [ params['name'].value ]
+      else
+        puts "Current deployment is 'default'\n\n"
+      end
+    end    
   end
 
   mode "status" do
     def run
       run_cmd(:status)
-    end
-  end
-
-  mode "exec" do
-    argument "command" do
-      arity -1
-    end
-    
-    def run
-      run_cmd(:execute, params["command"].values.join(" "))
     end
   end
 
