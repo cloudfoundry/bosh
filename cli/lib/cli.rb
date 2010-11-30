@@ -1,0 +1,2 @@
+require "cli/runner"
+

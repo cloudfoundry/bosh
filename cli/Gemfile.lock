@@ -5,6 +5,7 @@ GEM
     columnize (0.3.2)
     diff-lcs (1.1.2)
     fattr (2.2.0)
+    highline (1.6.1)
     linecache (0.43)
     main (4.3.0)
       arrayfields (>= 4.7.4)
@@ -27,6 +28,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  highline
   main
   rspec
   ruby-debug

@@ -1,0 +1,24 @@
+* Typical workflows
+
+* Verifying a release
+* Uploading a release
+* Deployment
+* (?) Targeting different deployments
+* (?) Managing inner shell components lifecycle (start/stop/restart)
+
+* Pluggable architecture (?)
+
+* Workflow example:
+
+1. Choose target
+2. Store credentials (?)
+3. Perform operation
+
+
+* Uploading a release
+
+bosh target /path/to/deployment.MF (or bosh target deployment?)  
+bosh release upload /path/to/release_bundle.tar.gz
+bosh release verify /path/to/release_bundle.tar.gz
+
+Should our input be a tarball or a manifest?
