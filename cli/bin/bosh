@@ -1,3 +1,205 @@
 #!/usr/bin/env ruby
 
+require "rubygems"
+require "main"
+require "highline/import"
 
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
+# require "cli"
+# @cli = Bosh::Cli::Runner.new
+
+def display_usage
+  sep = ' ' * $0.size
+  puts <<-USAGE
+
+usage: #$0 [--dry-run] [--verbose|-v] [--target=<name>]
+       #{sep} [--user=<username] [--password=<password>]
+       #{sep} command [<args>]
+
+Currently available bosh commands are:
+
+  target <name>                            Choose default target to work with (will be used if no explicit --target option given)
+
+  user create <username> <password>        Create user (password provided)
+  user create <username>                   Create user (ask for password)
+
+  login <username> <password>              Use given username and password for the subsequent interactions
+  login <username>                         Use given username for the subsequent interactions, ask for password every time
+
+  release upload /path/to/release.tgz      Upload the release
+  release verify /path/to/release.tgz      Verify the release
+
+  stemcell upload /path/to/stemcell.tgz    Upload the stemcell
+  stemcell verify /path/to/stemcell.tgz    Verify the stemcell
+
+  status                                   Show current status (current target, user, deployment info etc.)
+
+  deploy                                   Deploy according to the currently selected target
+
+  exec <command>                           Execute named command using the currently selected target (i.e. #$0 exec router restart)
+
+USAGE
+end
+
+Main {
+
+  def self.mode_aliases(*mode_names, &block)
+    mode_names.each do |mode_name|
+      mode(mode_name) do
+        block.call
+      end
+    end
+  end
+
+  def run
+    display_usage
+  end
+
+  mode_aliases("help", "-h", "--help") do
+    display_usage
+  end
+
+  mode "target" do
+    usage = "usage: #$0 target <name>"
+
+    argument :target do
+      optional
+    end
+
+    def run
+      if params["target"].given?
+        puts "Setting target to %s\n\n" % [ params['target'].value ]
+      else
+        puts "Current target is 'default'\n\n"
+      end
+    end
+  end
+
+  mode "deploy" do
+    def run
+      puts "Deploying stuff...\n\n"
+    end
+  end
+
+  mode "status" do
+    def run
+      puts "Locked and loaded, sir!\n\n"
+    end
+  end
+
+  mode "exec" do
+    argument "command" do
+      arity -1
+    end
+    
+    def run
+      puts "Executing '%s'\n\n" % [ params["command"].values.join(" ") ]
+    end
+  end
+
+  mode "login" do
+    usage = "usage: #$0 login <username> [<password>]"
+
+    argument :username do
+      error { puts "missing username\n#{usage}\n\n" }
+    end
+
+    argument :password do
+      optional
+    end
+
+    def run
+      username  = params["username"].value
+
+      password = \
+      if params["password"].given?
+        params["password"].value
+      else
+        ask("Enter password: ") { |q| q.echo = "*" }
+      end
+
+      puts "Logged in as #{username}:#{password}\n\n"
+    end    
+  end
+
+  mode "user" do
+    usage = "usage: #$0 user create <username> [<password>]"
+    
+    argument :operation do
+      validate { |op| [ "create" ].include?(op) }
+      error { puts "#{usage}\n\n" }
+    end
+
+    argument :username do
+      error { puts "missing username\n#{usage}\n\n" }
+    end
+
+    argument :password do
+      optional
+    end
+
+    def run
+      operation = params["operation"].value
+      username  = params["username"].value
+
+      password = \
+      if params["password"].given?
+        params["password"].value
+      else
+        ask("Enter password: ") { |q| q.echo = "*" }
+      end
+
+      case operation
+        when "create": puts "Creating user #{username}:#{password}\n\n"
+      end
+    end
+  end
+
+  mode "stemcell" do
+    usage = "usage: #$0 stemcell (upload|verify) /path/to/stemcell.tgz"
+    
+    argument :operation do
+      validate { |op| [ "verify", "upload" ].include?(op) }
+      error { puts "#{usage}\n\n" }
+    end
+
+    argument :stemcell_bundle do
+      error { puts "missing stemcell filename\n#{usage}\n\n" }
+    end
+
+    def run
+      operation    = params["operation"].value
+      tarball_path = params["stemcell_bundle"].value
+
+      case operation
+      when "verify": puts "Verifying stemcell #{tarball_path}..."
+      when "upload": puts "Uploading stemcell #{tarball_path}..."
+      end
+    end    
+  end
+
+  mode "release" do
+    usage = "usage: #$0 release (upload|verify) /path/to/release.tgz"
+    
+    argument :operation do
+      validate { |op| [ "verify", "upload" ].include?(op) }
+      error { puts "#{usage}\n\n" }
+    end
+
+    argument :release_bundle do
+      error { puts "missing release filename\n#{usage}\n\n" }
+    end
+
+    def run
+      operation    = params["operation"].value
+      tarball_path = params["release_bundle"].value
+
+      case operation
+      when "verify": puts "Verifying release #{tarball_path}..."
+      when "upload": puts "Uploading release #{tarball_path}..."
+      end
+    end    
+  end
+
+}

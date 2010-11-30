@@ -1,6 +1,7 @@
 source :rubygems
 
 gem "main"
+gem "highline"
 
 group :test do
   gem "rspec"

@@ -1,4 +1,3 @@
-# For sha1 we used "#{package_name}_contents"
 ---
 name: appcloud
 version: 0.1
