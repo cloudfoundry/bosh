@@ -6,9 +6,15 @@ require "main"
 require "highline/import"
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
+require "cli"
 
-# require "cli"
-# @cli = Bosh::Cli::Runner.new
+def run_cmd(*args)
+  command = args.shift
+  output  = $stdout
+
+  output.puts("Running #{command} with #{args.inspect}")
+  # Bosh::Cli::Runner.run(command, *args)
+end
 
 def display_usage
   sep = ' ' * $0.size
@@ -43,7 +49,6 @@ Currently available bosh commands are:
 USAGE
 end
 
-
 global_options = {}
 
 opt_parser = OptionParser.new do |opts|
@@ -66,14 +71,13 @@ end
 
 opt_parser.parse!(ARGV)
 
-# Handling modes with main gem
+# ARGV now contains options not parsed by OptionParser, and that's exactly
+# what we need for handling different modes with main gem.
 Main {
 
   def self.mode_aliases(*mode_names, &block)
-    mode_names.each do |mode_name|
-      mode(mode_name) do
-        block.call
-      end
+    for mode_name in mode_names
+      mode(mode_name) { yield }
     end
   end
   
@@ -103,13 +107,13 @@ Main {
 
   mode "deploy" do
     def run
-      puts "Deploying stuff...\n\n"
+      run_cmd(:deploy) # TODO: add target
     end
   end
 
   mode "status" do
     def run
-      puts "Locked and loaded, sir!\n\n"
+      run_cmd(:status)
     end
   end
 
@@ -119,7 +123,7 @@ Main {
     end
     
     def run
-      puts "Executing '%s'\n\n" % [ params["command"].values.join(" ") ]
+      run_cmd(:execute, params["command"].values.join(" "))
     end
   end
 
@@ -144,7 +148,7 @@ Main {
         ask("Enter password: ") { |q| q.echo = "*" }
       end
 
-      puts "Logged in as #{username}:#{password}\n\n"
+      run_cmd(:login, username, password)
     end    
   end
 
@@ -176,7 +180,7 @@ Main {
       end
 
       case operation
-        when "create": puts "Creating user #{username}:#{password}\n\n"
+        when "create": run_cmd(:create_user, username, password)
       end
     end
   end
@@ -198,8 +202,8 @@ Main {
       tarball_path = params["stemcell_bundle"].value
 
       case operation
-      when "verify": puts "Verifying stemcell #{tarball_path}..."
-      when "upload": puts "Uploading stemcell #{tarball_path}..."
+      when "verify": run_cmd(:verify_stemcell, tarball_path)
+      when "upload": run_cmd(:upload_stemcell, tarball_path)
       end
     end    
   end
@@ -221,10 +225,9 @@ Main {
       tarball_path = params["release_bundle"].value
 
       case operation
-      when "verify": puts "Verifying release #{tarball_path}..."
-      when "upload": puts "Uploading release #{tarball_path}..."
+      when "verify": run_cmd(:verify_release, tarball_path)
+      when "upload": run_cmd(:upload_release, tarball_path)
       end
     end    
   end
-
 }
