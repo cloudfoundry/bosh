@@ -8,16 +8,20 @@ require "highline/import"
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
-$debug = true
+$debug = false
 
 def run_cmd(*args)
   command = args.shift
   output  = $stdout
  
   output.puts("Running #{command} with #{args.inspect}") if $debug
-  Bosh::Cli::Runner.run(command, *args)
+  Bosh::Cli::Runner.run(command, output, *args)
+
 rescue Bosh::Cli::CliError => e
   output.puts("ERROR: #{e}")
+ensure
+  output.write("\n");
+  output.flush
 end
 
 def display_usage
