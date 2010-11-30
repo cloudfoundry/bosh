@@ -81,63 +81,26 @@ module Bosh::Director
       end
 
       name = "vm-#{generate_unique_name}"
-      stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
-                                                   cluster.datacenter.template_folder_name, stemcell])
-
       @logger.debug("creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
-      local_stemcell_vm = nil
-      stemcell_properties = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
-
-      if stemcell_properties["datastore"] != datastore.mob
-        @logger.debug("stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
-        local_stemcell_name = "#{stemcell} / #{datastore.mob}"
-        local_stemcell_path = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
-                               local_stemcell_name]
-        local_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
-
-        if local_stemcell_vm.nil?
-          @logger.debug("cluster doesn't have stemcell #{stemcell}, replicating")
-          lock = nil
-          @locks_mutex.synchronize do
-            lock = @locks[local_stemcell_name]
-            if lock.nil?
-              lock = @locks[local_stemcell_name] = Mutex.new
-            end
-          end
-
-          lock.synchronize do
-            local_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
-            if local_stemcell_vm.nil?
-              @logger.debug("cloning #{stemcell_vm} to #{local_stemcell_name}")
-              task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
-                              cluster.resource_pool, :datastore => datastore.mob)
-              local_stemcell_vm = client.wait_for_task(task)
-              task = take_snapshot(local_stemcell_vm, "initial")
-              client.wait_for_task(task)
-            end
-          end
-        end
-      else
-        local_stemcell_vm = stemcell_vm
-      end
-
-      local_stemcell_properties = client.get_properties(local_stemcell_vm, "VirtualMachine",
+      replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
+      replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, "VirtualMachine",
                                                         ["config.hardware.device", "snapshot"])
-      devices = local_stemcell_properties["config.hardware.device"]
-      snapshot = local_stemcell_properties["snapshot"]
+      devices = replicated_stemcell_properties["config.hardware.device"]
+      snapshot = replicated_stemcell_properties["snapshot"]
 
       config = CloudProviders::VSphere::VirtualMachineConfigSpec.new
       config.memoryMB = memory
       config.numCPUs = cpu
       config.deviceChange = []
 
-      primary_disk = devices.find {|device| device.kind_of?(CloudProviders::VSphere::VirtualDisk)}
+      system_disk = devices.find {|device| device.kind_of?(CloudProviders::VSphere::VirtualDisk)}
       existing_nic = devices.find {|device| device.kind_of?(CloudProviders::VSphere::VirtualEthernetCard)}
 
       file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
-      disk_config = create_disk_config_spec(datastore, file_name, primary_disk.controllerKey, disk, :create => true)
-      config.deviceChange << disk_config
+      ephemeral_disk_config = create_disk_config_spec(datastore, file_name, system_disk.controllerKey, disk,
+                                                      :create => true)
+      config.deviceChange << ephemeral_disk_config
 
       networks.each_value do |network|
         v_network_name = network["cloud_properties"]["name"]
@@ -154,9 +117,9 @@ module Bosh::Director
 
       fix_device_unit_numbers(devices, config.deviceChange)
 
-      @logger.debug("cloning vm: #{local_stemcell_vm} to #{name}")
+      @logger.debug("cloning vm: #{replicated_stemcell_vm} to #{name}")
 
-      task = clone_vm(local_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
+      task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
                       :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
                       :config => config)
       vm = client.wait_for_task(task)
@@ -164,7 +127,7 @@ module Bosh::Director
       vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device"])
       devices = vm_properties["config.hardware.device"]
 
-      env = build_agent_env(agent_id, networks, devices)
+      env = build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
       @logger.debug("setting VM env: #{env.pretty_inspect}")
       set_agent_env(vm, env)
 
@@ -213,7 +176,48 @@ module Bosh::Director
       # TODO: still needed? what does it verify? cloud properties? should be replaced by normalize cloud properties?
     end
 
-    def build_agent_env(agent_id, networks, devices)
+    def replicate_stemcell(cluster, datastore, stemcell)
+      stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
+                                                   cluster.datacenter.template_folder_name, stemcell])
+      stemcell_properties    = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
+
+      if stemcell_properties["datastore"] != datastore.mob
+        @logger.debug("stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
+        local_stemcell_name    = "#{stemcell} / #{datastore.mob}"
+        local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
+                                  local_stemcell_name]
+        replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
+
+        if replicated_stemcell_vm.nil?
+          @logger.debug("cluster doesn't have stemcell #{stemcell}, replicating")
+          lock = nil
+          @locks_mutex.synchronize do
+            lock = @locks[local_stemcell_name]
+            if lock.nil?
+              lock = @locks[local_stemcell_name] = Mutex.new
+            end
+          end
+
+          lock.synchronize do
+            replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
+            if replicated_stemcell_vm.nil?
+              @logger.debug("cloning #{stemcell_vm} to #{local_stemcell_name}")
+              task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
+                              cluster.resource_pool, :datastore => datastore.mob)
+              replicated_stemcell_vm = client.wait_for_task(task)
+              task = take_snapshot(replicated_stemcell_vm, "initial")
+              client.wait_for_task(task)
+            end
+          end
+        end
+        result = replicated_stemcell_vm
+      else
+        result = stemcell_vm
+      end
+      result
+    end
+
+    def build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk)
       nics = {}
 
       devices.each do |device|
@@ -234,11 +238,16 @@ module Bosh::Director
         network_env[network_name] = network_entry
       end
 
+      disk_env = {
+        "system" => system_disk.unitNumber,
+        "ephemeral" => ephemeral_disk.unitNumber
+      }
+
       env = {}
       env["agent_id"] = agent_id
       env["networks"] = network_env
+      env["disks"] = disk_env
       env.merge!(@agent_properties)
-      # TODO: redis location, disk config
       env
     end
 
@@ -446,17 +455,8 @@ module Bosh::Director
 
             @logger.debug("uploading disk to: #{device_url.url}")
 
-            unless @vcenter["tunnel"]
-              http_client.post(device_url.url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
-                                  "Content-Length" => disk_file_size})
-            else
-              # Only used for development
-              ssh_tunnel(device_url.url) do |url|
-                @logger.debug("using tunnel: #{url}")
-                http_client.post(url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
-                                                  "Content-Length" => disk_file_size})
-              end
-            end
+            http_client.post(device_url.url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
+                                "Content-Length" => disk_file_size})
 
             progress_thread.kill
             disk_file.close
@@ -502,48 +502,6 @@ module Bosh::Director
       end
 
       sleep(0.1) while pool.working + pool.action_size > 0
-    end
-
-    def ssh_tunnel(url)
-      port = 10000
-      loop do
-        `lsof -i :#{port}`
-        break if $?.exitstatus == 1
-        port += 1
-      end
-
-      uri = URI.parse(url)
-
-      pid = fork
-      if pid.nil?
-        exec("ssh -n -L #{port}:#{uri.host}:#{uri.port} #{@vcenter["tunnel"]} -N")
-      end
-
-      @logger.debug("ssh tunnel pid: #{pid}")
-
-      begin
-        uri.host = "localhost"
-        uri.port = port
-
-        tries = 4
-        begin
-          @logger.debug("probing ssh tunnel on port: #{port}, tries left: #{tries}")
-          http_client = HTTPClient.new
-          http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-          http_client.head(uri.to_s)
-        rescue
-          tries -= 1
-          if tries > 0
-            sleep(5)
-            retry
-          end
-        end
-
-        yield uri.to_s
-      ensure
-        Process.kill(9, pid)
-        @logger.debug("killed ssh tunnel: #{pid}")
-      end
     end
 
   end
