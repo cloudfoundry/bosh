@@ -8,12 +8,16 @@ require "highline/import"
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
+$debug = true
+
 def run_cmd(*args)
   command = args.shift
   output  = $stdout
-
-  output.puts("Running #{command} with #{args.inspect}")
-  # Bosh::Cli::Runner.run(command, *args)
+ 
+  output.puts("Running #{command} with #{args.inspect}") if $debug
+  Bosh::Cli::Runner.run(command, *args)
+rescue Bosh::Cli::CliError => e
+  output.puts("ERROR: #{e}")
 end
 
 def display_usage
@@ -95,9 +99,9 @@ Main {
 
     def run
       if params['name'].given?
-        puts "Setting target to %s\n\n" % [ params['name'].value ]
+        run_cmd(:set_target, params['name'].value)
       else
-        puts "Current target is 'default'\n\n"
+        run_cmd(:show_target)
       end
     end
   end
