@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require "rubygems"
+require "optparse"
 require "main"
 require "highline/import"
 
@@ -42,6 +43,30 @@ Currently available bosh commands are:
 USAGE
 end
 
+
+global_options = {}
+
+opt_parser = OptionParser.new do |opts|
+  opts.on("-v", "--[no-]verbose") do |v|
+    global_options[:verbose] = v
+  end
+
+  opts.on("--dry-run") do |v|
+    global_options[:dry_run] = v
+  end
+
+  opts.on("-u", "--username USER", String) do |v|
+    global_options[:username] = v
+  end
+
+  opts.on("-u", "--password PASSWORD", String) do |v|
+    global_options[:password] = v
+  end  
+end
+
+opt_parser.parse!(ARGV)
+
+# Handling modes with main gem
 Main {
 
   def self.mode_aliases(*mode_names, &block)
@@ -51,7 +76,7 @@ Main {
       end
     end
   end
-
+  
   def run
     display_usage
   end
