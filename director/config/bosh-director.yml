@@ -29,7 +29,6 @@ cloud:
       - host: localhost:10443
         user: vmware
         password:
-        tunnel: las-jump
         datacenters:
           - name: LAS01
             vm_folder: BOSH_VMs
