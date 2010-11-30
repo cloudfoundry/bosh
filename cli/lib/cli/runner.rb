@@ -1,16 +1,21 @@
+require "yaml"
+
 module Bosh
   module Cli
 
     class Runner
+
+      CONFIG_PATH = File.expand_path("~/.bosh_config")
 
       def self.run(cmd, output, *args)
         new(cmd, output, *args).run
       end
 
       def initialize(cmd, output, *args)
-        @cmd  = cmd
-        @args = args
-        @out  = output
+        @cmd         = cmd
+        @args        = args
+        @out         = output
+        @work_dir    = Dir.pwd
       end
 
       def run
@@ -25,23 +30,37 @@ module Bosh
       end
 
       def cmd_status
-        say("Locked and loaded, sir!")
+        say("Target: %s" % [ config['target'] || "not set" ])
+        say("Deployment: %s" % [ config['deployment'] || "not set" ])
+        say("User: %s" % [ config['user'] || "not set" ])
       end
 
       def cmd_set_target(name)
-        say("Set target to %s" % [ name ])
+        config['target'] = name
+        save_config
+        say("Target set to '%s'" % [ name ])
       end
 
       def cmd_show_target
-        say("Current target is %s" % [ 'dummy' ])
+        if config['target']
+          say("Current target is %s" % [ config['target'] ] )
+        else
+          say("Target not set")
+        end
       end
 
       def cmd_set_deployment(name)
-        say("Set deployment to %s" % [ name ])
+        config['deployment'] = name
+        save_config
+        say("Deployment set to '%s'" % [ name ])
       end
 
       def cmd_show_deployment
-        say("Current deployment is %s" % [ 'dummy' ])
+        if config['deployment']
+          say("Current target is %s" % [ config['deployment'] ] )
+        else
+          say("Deployment not set")
+        end
       end
 
       def cmd_login(username, password)
@@ -74,6 +93,38 @@ module Bosh
 
       def say(message)
         @out.puts(message)
+      end
+
+      def config
+        @config ||= all_configs[@work_dir] || {}
+      end
+
+      def save_config
+        File.open(CONFIG_PATH, "w") do |f|
+          YAML.dump(all_configs, f)
+        end
+      rescue SystemCallError => e
+        raise ConfigError, "Cannot save config: %s" % [ e.message ]
+      end
+
+      def all_configs
+        return @_all_configs unless @_all_configs.nil?
+        
+        unless File.exists?(CONFIG_PATH)
+          File.open(CONFIG_PATH, "w") { |f| YAML.dump({}, f) }
+          File.chmod(0600, CONFIG_PATH)
+        end
+
+        configs = YAML.load_file(CONFIG_PATH)
+
+        unless configs.is_a?(Hash)
+          raise ConfigError, "Malformed config file: %s" % [ CONFIG_PATH ]
+        end
+
+        @_all_configs = configs
+
+      rescue SystemCallError => e
+        raise ConfigError, "Cannot read config file: %s" % [ e.message ]        
       end
 
       def find_cmd_implementation

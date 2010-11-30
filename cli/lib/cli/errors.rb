@@ -3,6 +3,7 @@ module Bosh
 
     class CliError < StandardError; end
     class UnknownCommand < CliError; end
+    class ConfigError < CliError; end
     
   end
 end

@@ -4,6 +4,7 @@ require "rubygems"
 require "optparse"
 require "main"
 require "highline/import"
+require "yajl"
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
@@ -25,11 +26,9 @@ ensure
 end
 
 def display_usage
-  sep = ' ' * $0.size
   puts <<-USAGE
 
-usage: #$0 [--dry-run] [--verbose|-v]
-       #{sep} command [<args>]
+usage: #$0 [--verbose|-v] command [<args>]
 
 Currently available bosh commands are:
 
@@ -125,9 +124,9 @@ Main {
 
     def run
       if params['name'].given?
-        puts "Setting deployment to %s\n\n" % [ params['name'].value ]
+        run_cmd(:set_deployment, params['name'].value)
       else
-        puts "Current deployment is 'default'\n\n"
+        run_cmd(:show_deployment)
       end
     end    
   end

@@ -2,6 +2,7 @@ source :rubygems
 
 gem "main"
 gem "highline"
+gem "yajl-ruby"
 
 group :test do
   gem "rspec"
