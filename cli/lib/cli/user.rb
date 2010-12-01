@@ -1,11 +1,13 @@
+require "json"
+
 module Bosh
   module Cli
 
     class User
 
       def self.create(api_client, username, password)
-        payload = Yajl::Encoder.encode("username" => username, "password" => password)        
-        status, body = api_client.request(:post, "/users", payload, "application/json")
+        payload = JSON.generate("username" => username, "password" => password)
+        status, body = api_client.post("/users", "application/json", payload)
 
         created = status == 200
 
@@ -14,9 +16,15 @@ module Bosh
           "User #{username} has been created"
         elsif status == 401
           "Error 401: Authentication failed"
+        elsif status == 500
+          begin
+            decoded_body = JSON.parse(body.to_s)
+            "Director error %s: %s" % [ decoded_body["code"], decoded_body["description"] ]
+          rescue JSON::ParserError
+            "Director error: #{body}"
+          end
         else
-          decoded_body = Yajl::Parser.parse(body.to_s)
-          "Error %s: %s" % [ decoded_body["code"], decoded_body["description"] ]
+          "Director response: #{status} #{body}"
         end
 
         [ created, message ]
