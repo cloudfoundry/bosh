@@ -37,6 +37,15 @@ module Bosh
 
       def cmd_set_target(name)
         config['target'] = name
+
+        if config['deployment']
+          deployment = Deployment.new(@work_dir, config['deployment'])
+          if !deployment.exists? || deployment.target != name
+            say("WARNING! Your deployment has been unset")
+            config['deployment'] = nil
+          end
+        end
+        
         save_config
         say("Target set to '%s'" % [ name ])
       end
@@ -50,14 +59,43 @@ module Bosh
       end
 
       def cmd_set_deployment(name)
+        deployment = Deployment.new(@work_dir, name)
+
+        if deployment.exists?
+          config['deployment'] = name
+
+          if deployment.target != config['target']
+            config['target'] = deployment.target
+            say("WARNING! Your target has been changed to '%s'" % [ deployment.target ])
+          end
+
+          say("Deployment set to '%s'" % [ name ])          
+        else
+          say("Cannot find deployment '%s'" % [ deployment.path ])
+          cmd_list_deployments
+        end
+        
         config['deployment'] = name
         save_config
-        say("Deployment set to '%s'" % [ name ])
+      end
+
+      def cmd_list_deployments
+        deployments = Deployment.all(@work_dir)
+
+        if deployments.size > 0
+          say("Available deployments are:")
+
+          for deployment in Deployment.all(@work_dir)
+            say("  %s" % [ deployment.name ])
+          end
+        else
+          say("No deployments available")
+        end        
       end
 
       def cmd_show_deployment
         if config['deployment']
-          say("Current target is %s" % [ config['deployment'] ] )
+          say("Current deployment is %s" % [ config['deployment'] ] )
         else
           say("Deployment not set")
         end
@@ -100,9 +138,12 @@ module Bosh
       end
 
       def save_config
+        all_configs[@work_dir] = config
+        
         File.open(CONFIG_PATH, "w") do |f|
           YAML.dump(all_configs, f)
         end
+        
       rescue SystemCallError => e
         raise ConfigError, "Cannot save config: %s" % [ e.message ]
       end
