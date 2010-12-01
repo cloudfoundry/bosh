@@ -5,7 +5,7 @@ describe Bosh::Cli::User do
   describe "creating a user" do
 
     before do
-      @client = Bosh::Cli::ApiClient.new("target", "user", "pass")
+      @client  = Bosh::Cli::ApiClient.new("target", "user", "pass")
       @payload = JSON.generate("username" => "joe", "password" => "secret")      
     end
 
