@@ -21,7 +21,7 @@ module Bosh
       private
 
       def request(method, uri, content_type, payload = nil)
-        response = @client.request(verb, @base_uri + uri, nil, payload, "Content-Type" => content_type)
+        response = @client.request(method, @base_uri + uri, nil, payload, "Content-Type" => content_type)
         [ response.status, response.content ]
       end
       

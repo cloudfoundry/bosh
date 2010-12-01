@@ -34,9 +34,9 @@ module Bosh
       end
 
       def cmd_status
-        say("Target: %s" % [ config['target'] || "not set" ])
+        say("Target:     %s" % [ config['target'] || "not set" ])
+        say("User:       %s" % [ credentials && credentials["username"] || "not set" ])
         say("Deployment: %s" % [ config['deployment'] || "not set" ])
-        say("User: %s" % [ credentials && credentials["username"] || "not set" ])
       end
 
       def cmd_set_target(name)
