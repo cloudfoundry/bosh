@@ -1,8 +1,9 @@
 source :rubygems
 
-gem "main"
+gem "main", ">= 4.3.0"
 gem "highline"
 gem "yajl-ruby"
+gem "httpclient", :path => "vendor/gems/httpclient-2.1.5.2"
 
 group :test do
   gem "rspec"

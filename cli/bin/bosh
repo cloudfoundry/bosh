@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
 require "rubygems"
+require "bundler/setup"
 require "optparse"
 require "main"
 require "highline/import"
-require "yajl"
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"

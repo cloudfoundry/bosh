@@ -1,3 +1,8 @@
+PATH
+  remote: vendor/gems/httpclient-2.1.5.2
+  specs:
+    httpclient (2.1.5.2)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -30,7 +35,8 @@ PLATFORMS
 
 DEPENDENCIES
   highline
-  main
+  httpclient!
+  main (>= 4.3.0)
   rspec
   ruby-debug
   yajl-ruby
