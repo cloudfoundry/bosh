@@ -12,10 +12,14 @@ module Bosh
       end
 
       def initialize(cmd, output, *args)
-        @cmd         = cmd
-        @args        = args
-        @out         = output
-        @work_dir    = Dir.pwd
+        @cmd      = cmd
+        @args     = args
+        @out      = output
+        @work_dir = Dir.pwd
+
+        if logged_in?
+          @api_client = ApiClient.new(config["target"], credentials["username"], credentials["password"])
+        end
       end
 
       def run
@@ -32,7 +36,7 @@ module Bosh
       def cmd_status
         say("Target: %s" % [ config['target'] || "not set" ])
         say("Deployment: %s" % [ config['deployment'] || "not set" ])
-        say("User: %s" % [ config['user'] || "not set" ])
+        say("User: %s" % [ credentials && credentials["username"] || "not set" ])
       end
 
       def cmd_set_target(name)
@@ -40,7 +44,7 @@ module Bosh
 
         if config['deployment']
           deployment = Deployment.new(@work_dir, config['deployment'])
-          if !deployment.exists? || deployment.target != name
+          if !deployment.manifest_exists? || deployment.target != name
             say("WARNING! Your deployment has been unset")
             config['deployment'] = nil
           end
@@ -61,7 +65,7 @@ module Bosh
       def cmd_set_deployment(name)
         deployment = Deployment.new(@work_dir, name)
 
-        if deployment.exists?
+        if deployment.manifest_exists?
           config['deployment'] = name
 
           if deployment.target != config['target']
@@ -69,14 +73,13 @@ module Bosh
             say("WARNING! Your target has been changed to '%s'" % [ deployment.target ])
           end
 
-          say("Deployment set to '%s'" % [ name ])          
+          say("Deployment set to '%s'" % [ name ])
+          config['deployment'] = name
+          save_config          
         else
           say("Cannot find deployment '%s'" % [ deployment.path ])
           cmd_list_deployments
-        end
-        
-        config['deployment'] = name
-        save_config
+        end        
       end
 
       def cmd_list_deployments
@@ -102,23 +105,46 @@ module Bosh
       end
 
       def cmd_login(username, password)
-        say("Logged in as %s:%s" % [ username, password ])
+        if config["target"].nil?
+          say("Please choose target first")
+          return
+        end
+
+        all_configs["auth"] ||= {}
+        all_configs["auth"][config["target"]] = { "username" => username, "password" => password }
+        save_config
+        
+        say("Saved credentials for %s" % [ username ])
       end
 
       def cmd_create_user(username, password)
-        say("Created user %s:%s" % [ username, password ])
+        if !logged_in?
+          say("Please login first")
+          return
+        end
+
+        created, message = User.create(@api_client, username, password)
+        say(message)
       end
 
-      def verify_stemcell(tarball_path)
+      def cmd_verify_stemcell(tarball_path)
       end
 
-      def upload_stemcell(tarball_path)
+      def cmd_upload_stemcell(tarball_path)
+        if !logged_in?
+          say("Please login first")
+          return
+        end
       end
 
-      def verify_release(tarball_path)
+      def cmd_verify_release(tarball_path)
       end
 
-      def upload_release(tarball_path)
+      def cmd_upload_release(tarball_path)
+        if !logged_in?
+          say("Please login first")
+          return
+        end        
       end
 
       def cmd_deploy
@@ -166,6 +192,18 @@ module Bosh
 
       rescue SystemCallError => e
         raise ConfigError, "Cannot read config file: %s" % [ e.message ]        
+      end
+
+      def credentials
+        if config["target"].nil? || all_configs["auth"].nil? || all_configs["auth"][config["target"]].nil?
+          nil
+        else
+          all_configs["auth"][config["target"]]
+        end
+      end
+
+      def logged_in?
+        !credentials.nil?
       end
 
       def find_cmd_implementation

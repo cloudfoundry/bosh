@@ -20,7 +20,7 @@ module Bosh
         File.expand_path(work_dir + "/deployments/#{self.name}.yml")
       end
 
-      def exists?
+      def manifest_exists?
         File.exists?(self.path)
       end
 
