@@ -1,4 +1,3 @@
-$:.unshift File.expand_path('../../../vendor/gems/httpclient/lib', __FILE__)
 require "httpclient"
 
 module Bosh

@@ -66,7 +66,7 @@ class HTTPClient
     def to_s # :nodoc:
       addr
     end
-
+    
     # Returns true if scheme, host and port of the given URI matches with this.
     def match(uri)
       (@scheme == uri.scheme) and (@host == uri.host) and (@port == uri.port.to_i)
@@ -590,7 +590,6 @@ class HTTPClient
         elsif @content_length
           read_body_length(&block)
         else
-          return nil if @status == HTTP::Status::NO_CONTENT
           read_body_rest(&block)
         end
       rescue
