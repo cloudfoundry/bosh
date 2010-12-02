@@ -128,6 +128,22 @@ module Bosh
       end
 
       def cmd_verify_stemcell(tarball_path)
+        stemcell = Stemcell.new(tarball_path)
+
+        say("\nVerifying stemcell...")
+        stemcell.validate do |name, passed|
+          say("%-60s %s" % [ name, passed ? "OK" : "FAILED" ])
+        end
+        say("\n")        
+
+        if stemcell.valid?
+          say("'%s' is a valid stemcell" % [ tarball_path] )
+        else
+          say("'%s' is not a valid stemcell:" % [ tarball_path] )
+          for error in stemcell.errors
+            say("- %s" % [ error ])
+          end
+        end        
       end
 
       def cmd_upload_stemcell(tarball_path)
@@ -135,6 +151,22 @@ module Bosh
           say("Please login first")
           return
         end
+
+        say("\nUploading stemcell...\n")
+        stemcell = Stemcell.new(tarball_path)
+
+        uploaded, message = stemcell.upload(@api_client) do |poll_number, status|
+          if poll_number % 10 == 0
+            ts = Time.now.strftime("%H:%M:%S")
+            say("[#{ts}] Stemcell creation job status is '#{status}' (#{poll_number} polls)...")
+          end
+        end
+
+        if uploaded
+          say("Stemcell uploaded and updated")
+        else
+          say(message)
+        end        
       end
 
       def cmd_verify_release(tarball_path)
