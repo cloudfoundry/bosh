@@ -8,31 +8,11 @@ module Bosh
         @stemcell_file = File.expand_path(tarball_path, Dir.pwd)
       end
 
-      #TODO: this is very similar to Release#upload, can be refactored to module
       def upload(api_client)
-        return [ false, "Stemcell is invalid, please fix and verify it before uploading" ] unless valid?
+        return :invalid unless valid?
 
-        status, body, headers = api_client.post("/stemcells", "application/x-compressed", File.read(@stemcell_file))
-        location = headers["Location"]
-
-        scheduled = status == 302
-
-        if scheduled
-          if location !~ /^.+(\d+)\/?$/ # Doesn't look like we received URI
-            return [ false, "Stemcell uploaded but director doesn't support stemcell creation progress tracking"]
-          end
-
-          poll_result = api_client.poll_job_status(location) do |polls, status|
-            yield(polls, status) if block_given?
-          end
-
-          case poll_result
-          when :done: [ true, "Stemcell successfully uploaded and updated" ]
-          when :timeout: [ false, "Uploaded but timed out while tracking creation status" ]
-          when :error: [ false, "Uploaded but received an error while tracking creation status" ]
-          end
-        else
-          [ false, "Cannot upload stemcell: #{status} #{body}" ]
+        api_client.upload_and_track("/stemcells", "application/x-compressed", @stemcell_file) do |polls, status|
+          yield polls, status if block_given?
         end
       end
 

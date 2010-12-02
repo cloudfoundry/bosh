@@ -155,18 +155,22 @@ module Bosh
         say("\nUploading stemcell...\n")
         stemcell = Stemcell.new(tarball_path)
 
-        uploaded, message = stemcell.upload(@api_client) do |poll_number, status|
+        status = stemcell.upload(@api_client) do |poll_number, status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
             say("[#{ts}] Stemcell creation job status is '#{status}' (#{poll_number} polls)...")
           end
         end
 
-        if uploaded
-          say("Stemcell uploaded and updated")
-        else
-          say(message)
-        end        
+        responses = {
+          :done          => "Stemcell uploaded and created",
+          :non_trackable => "Uploaded stemcell but director at #{config['target']} doesn't support creation tracking",
+          :track_timeout => "Uploaded stemcell but timed out out while tracking status",
+          :track_error   => "Uploaded stemcell but received an error while tracking status",
+          :invalid       => "Stemcell is invalid, please fix, verify and upload again"
+        }
+
+        say responses[status] || "Cannot upload stemcell"
       end
 
       def cmd_verify_release(tarball_path)
@@ -197,25 +201,73 @@ module Bosh
         say("\nUploading release...\n")        
         release = Release.new(tarball_path)
 
-        uploaded, message = release.upload(@api_client) do |poll_number, status|
+        status = release.upload(@api_client) do |poll_number, status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
             say("[#{ts}] Release update job status is '#{status}' (#{poll_number} polls)...")
           end
         end
 
-        if uploaded
-          say("Release uploaded and updated")
-        else
-          say(message)
-        end
-        
+        responses = {
+          :done          => "Release uploaded and updated",
+          :non_trackable => "Uploaded release but director at #{config['target']} doesn't support update tracking",
+          :track_timeout => "Uploaded release but timed out out while tracking status",
+          :track_error   => "Uploaded release but received an error while tracking status",
+          :invalid       => "Release is invalid, please fix, verify and upload again"
+        }
+
+        say responses[status] || "Cannot upload release"
       end
 
       def cmd_deploy
-        say("Deploying...")
-        sleep(0.5)
-        say("Deploy OK.")
+        if config["deployment"].nil?
+          say("Please choose deployment first")
+          cmd_list_deployments
+          return
+        end
+
+        if !logged_in?
+          say("You should be logged in")
+          return
+        end
+        
+        deployment = Deployment.new(@work_dir, config["deployment"])
+
+        if !deployment.manifest_exists?
+          say("Missing manifest for %s" % [ config["deployment"] ])
+          return
+        end
+
+        if !deployment.valid?
+          say("Invalid manifest for '%s'" % [ config["deployment"] ])
+          return
+        end
+        
+        desc = "'%s' (version %s) to '%s' using '%s' deployment manifest" %
+          [ deployment.name,
+            deployment.version,
+            deployment.target,
+            config["deployment"]
+          ]
+        
+        say("Deploying #{desc}...")
+        say("\n")
+        status = deployment.perform(@api_client) do |poll_number, status|
+          if poll_number % 10 == 0
+            ts = Time.now.strftime("%H:%M:%S")
+            say("[#{ts}] Deployment job status is '#{status}' (#{poll_number} polls)...")
+          end          
+        end
+
+        responses = {
+          :done          => "Deployed #{desc}",
+          :non_trackable => "Started deployment but director at '#{deployment.target}' doesn't support deployment tracking",
+          :track_timeout => "Started deployment but timed out out while tracking status",
+          :track_error   => "Started deployment but received an error while tracking status",
+          :invalid       => "Deployment is invalid, please fix it and deploy again"
+        }
+
+        say responses[status] || "Cannot deploy"
       end
 
       private
