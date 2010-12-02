@@ -138,6 +138,22 @@ module Bosh
       end
 
       def cmd_verify_release(tarball_path)
+        release = Release.new(tarball_path)
+
+        say("\nVerifying release...")
+        release.validate do |name, passed|
+          say("%-60s %s" % [ name, passed ? "OK" : "FAILED" ])
+        end
+        say("\n")        
+
+        if release.valid?
+          say("'%s' is a valid release" % [ tarball_path] )
+        else
+          say("'%s' is not a valid release:" % [ tarball_path] )
+          for error in release.errors
+            say("- %s" % [ error ])
+          end
+        end
       end
 
       def cmd_upload_release(tarball_path)
