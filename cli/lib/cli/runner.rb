@@ -160,7 +160,24 @@ module Bosh
         if !logged_in?
           say("Please login first")
           return
-        end        
+        end
+
+        say("\nUploading release...\n")        
+        release = Release.new(tarball_path)
+
+        uploaded, message = release.upload(@api_client) do |poll_number, status|
+          if poll_number % 10 == 0
+            ts = Time.now.strftime("%H:%M:%S")
+            say("[#{ts}] Release update job status is '#{status}' (#{poll_number} polls)...")
+          end
+        end
+
+        if uploaded
+          say("Release uploaded and updated")
+        else
+          say(message)
+        end
+        
       end
 
       def cmd_deploy

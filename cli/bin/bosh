@@ -36,11 +36,9 @@ Currently available bosh commands are:
 
   deployment <name>                        Choose deployment to work with (it also updates current target)
 
-  user create <username> <password>        Create user (password provided)
-  user create <username>                   Create user (ask for password)
+  user create <username> [<password>]      Create user
 
-  login <username> <password>              Use given username and password for the subsequent interactions
-  login <username>                         Use given username for the subsequent interactions, ask for password every time
+  login <username> [<password>]            Use given username for the subsequent interactions
 
   release upload /path/to/release.tgz      Upload the release
   release verify /path/to/release.tgz      Verify the release
@@ -93,6 +91,12 @@ Main {
 
   mode_aliases("help", "-h", "--help") do
     display_usage
+  end
+
+  mode "version" do
+    def run
+      puts "Bosh %s" % [ Bosh::Cli::VERSION ]
+    end
   end
 
   mode "target" do

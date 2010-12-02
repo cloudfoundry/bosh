@@ -1,6 +1,6 @@
 require 'rubygems'
 
-SPEC = Gem::Specification.new do |s|
+Gem::Specification::new do |s|
   s.name         = "httpclient"
   s.version      = "2.1.5.2"
   s.date         = "2010-03-25"
