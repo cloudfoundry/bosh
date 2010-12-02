@@ -22,7 +22,7 @@ describe Bosh::Cli::ApiClient do
       @client.stub(:get).and_return [ 200, "processing" ]
       @client.should_receive(:get).with("/jobs/1").exactly(10).times
       
-      @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :timeout
+      @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :track_timeout
     end
 
     it "respects poll interval setting" do
@@ -31,7 +31,7 @@ describe Bosh::Cli::ApiClient do
       @client.should_receive(:get).exactly(10).times
       @client.should_receive(:wait).with(5).exactly(9).times.and_return(nil)
       
-      @client.poll_job_status("/jobs/1", :poll_interval => 5, :max_polls => 10).should == :timeout
+      @client.poll_job_status("/jobs/1", :poll_interval => 5, :max_polls => 10).should == :track_timeout
     end
 
     it "stops polling and returns error if status is not HTTP 200" do
@@ -40,7 +40,7 @@ describe Bosh::Cli::ApiClient do
 
       @client.should_receive(:get).exactly(3).times
       
-      @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :error
+      @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :track_error
     end
 
     it "stops polling and returns error if task state is error" do
@@ -48,7 +48,7 @@ describe Bosh::Cli::ApiClient do
 
       @client.should_receive(:get).exactly(1).times
       
-      @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :error
+      @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :track_error
     end    
   end
   

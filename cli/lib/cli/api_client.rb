@@ -21,6 +21,25 @@ module Bosh
         end
       end
 
+      def upload_and_track(uri, content_type, file, options = {})
+        status, body, headers = post(uri, content_type, File.read(file))
+        location = headers["Location"]
+
+        uploaded = status == 302
+
+        if uploaded
+          if location !~ /^.+(\d+)\/?$/ # Doesn't look like we received URI
+            return :non_trackable
+          end
+
+          self.poll_job_status(location, options) do |polls, status|
+            yield(polls, status) if block_given?
+          end
+        else
+          :failed
+        end        
+      end
+
       def poll_job_status(job_status_uri, options = {})
         polls = 0
 
@@ -33,9 +52,9 @@ module Bosh
 
           yield polls, body if block_given? # For tracking progress
 
-          return :error   if status != 200 || body == "error"
-          return :done    if body == "done"
-          return :timeout if polls >= max_polls
+          return :track_error   if status != 200 || body == "error"
+          return :done          if body == "done"
+          return :track_timeout if polls >= max_polls
 
           wait(poll_interval)
         end

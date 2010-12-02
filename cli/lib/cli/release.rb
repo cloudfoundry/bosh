@@ -13,29 +13,10 @@ module Bosh
       end
 
       def upload(api_client)
-        return [ false, "Release is invalid, please fix and verify it before uploading" ] unless valid?
+        return :invalid unless valid?
 
-        status, body, headers = api_client.post("/releases", "application/x-compressed", File.read(@release_file))
-        location = headers["Location"]
-
-        scheduled = status == 302
-
-        if scheduled
-          if location !~ /^.+(\d+)\/?$/ # Doesn't look like we received URI
-            return [ false, "Release uploaded but director doesn't support update progress tracking"]
-          end
-
-          poll_result = api_client.poll_job_status(location) do |polls, status|
-            yield(polls, status) if block_given?
-          end
-
-          case poll_result
-          when :done: [ true, "Release successfully uploaded and updated" ]
-          when :timeout: [ false, "Uploaded but timed out while tracking update status" ]
-          when :error: [ false, "Uploaded but received an error while tracking release update status" ]
-          end
-        else
-          [ false, "Cannot upload release: #{status} #{body}" ]
+        api_client.upload_and_track("/releases", "application/x-compressed", @release_file) do |polls, status|
+          yield polls, status if block_given?
         end
       end
 
