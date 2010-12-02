@@ -5,13 +5,13 @@ version: 0.1
 packages:
   - name: stuff
     version: 0.1.17
-    sha1: 8914f14d1e57c3c2d177330de8f48379066c74d5
+    sha1: 6bbd4a12e3a59e10b96ecb9aac3d73ec4f819783
   - name: mutator
     version: 2.99.7
-    sha1: 0157bf37c3c6983d2725472a2d47f6b599caf6d7
+    sha1: 86bd8b15562cde007f030a303fa64779af5fa4e7
     
 jobs:
   - cacher
+  - cleaner
   - sweeper
-  - tester
   
