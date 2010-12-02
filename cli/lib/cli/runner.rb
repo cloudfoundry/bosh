@@ -155,10 +155,10 @@ module Bosh
         say("\nUploading stemcell...\n")
         stemcell = Stemcell.new(tarball_path)
 
-        status = stemcell.upload(@api_client) do |poll_number, status|
+        status, body = stemcell.upload(@api_client) do |poll_number, job_status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
-            say("[#{ts}] Stemcell creation job status is '#{status}' (#{poll_number} polls)...")
+            say("[#{ts}] Stemcell creation job status is '#{job_status}' (#{poll_number} polls)...")
           end
         end
 
@@ -170,7 +170,7 @@ module Bosh
           :invalid       => "Stemcell is invalid, please fix, verify and upload again"
         }
 
-        say responses[status] || "Cannot upload stemcell"
+        say responses[status] || "Cannot upload stemcell: #{body}"
       end
 
       def cmd_verify_release(tarball_path)
@@ -201,10 +201,10 @@ module Bosh
         say("\nUploading release...\n")        
         release = Release.new(tarball_path)
 
-        status = release.upload(@api_client) do |poll_number, status|
+        status, body = release.upload(@api_client) do |poll_number, job_status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
-            say("[#{ts}] Release update job status is '#{status}' (#{poll_number} polls)...")
+            say("[#{ts}] Release update job status is '#{job_status}' (#{poll_number} polls)...")
           end
         end
 
@@ -216,7 +216,7 @@ module Bosh
           :invalid       => "Release is invalid, please fix, verify and upload again"
         }
 
-        say responses[status] || "Cannot upload release"
+        say responses[status] || "Cannot upload release: #{body}"
       end
 
       def cmd_deploy
@@ -252,10 +252,10 @@ module Bosh
         
         say("Deploying #{desc}...")
         say("\n")
-        status = deployment.perform(@api_client) do |poll_number, status|
+        status, body = deployment.perform(@api_client) do |poll_number, job_status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
-            say("[#{ts}] Deployment job status is '#{status}' (#{poll_number} polls)...")
+            say("[#{ts}] Deployment job status is '#{job_status}' (#{poll_number} polls)...")
           end          
         end
 
@@ -267,7 +267,7 @@ module Bosh
           :invalid       => "Deployment is invalid, please fix it and deploy again"
         }
 
-        say responses[status] || "Cannot deploy"
+        say responses[status] || "Cannot deploy: #{body}"
       end
 
       private
