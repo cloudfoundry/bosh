@@ -22,22 +22,25 @@ module Bosh
       end
 
       def upload_and_track(uri, content_type, file, options = {})
-        status, body, headers = post(uri, content_type, File.read(file))
+        http_status, body, headers = post(uri, content_type, File.read(file))
         location = headers["Location"]
 
-        uploaded = status == 302
+        uploaded = http_status == 302
 
+        status = \
         if uploaded
           if location !~ /^.+(\d+)\/?$/ # Doesn't look like we received URI
-            return :non_trackable
-          end
-
-          self.poll_job_status(location, options) do |polls, status|
-            yield(polls, status) if block_given?
+            :non_trackable
+          else
+            self.poll_job_status(location, options) do |polls, status|
+              yield(polls, status) if block_given?
+            end
           end
         else
           :failed
-        end        
+        end
+
+        [ status, body ]
       end
 
       def poll_job_status(job_status_uri, options = {})
