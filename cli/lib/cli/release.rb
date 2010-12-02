@@ -39,7 +39,7 @@ module Bosh
         end
       end
 
-      def perform_validation(&block)
+      def perform_validation
         tmp_dir = Dir.mktmpdir
 
         step("File exists and readable", "Cannot find release file #{@release_file}", :fatal) do
