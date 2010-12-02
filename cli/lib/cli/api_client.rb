@@ -4,6 +4,9 @@ module Bosh
   module Cli
     class ApiClient
 
+      DEFAULT_MAX_POLLS     = 300
+      DEFAULT_POLL_INTERVAL = 1
+
       def initialize(base_uri, username, password)
         @base_uri  = URI.parse(base_uri)
         @client    = HTTPClient.new(:agent_name => "bosh-cli #{Bosh::Cli::VERSION}")
@@ -18,11 +21,47 @@ module Bosh
         end
       end
 
+      def poll_job_status(job_status_uri, options = {})
+        polls = 0
+
+        poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
+        max_polls     = options[:max_polls] || DEFAULT_MAX_POLLS
+
+        while true
+          polls += 1          
+          status, body = self.get(job_status_uri)
+
+          yield polls, body if block_given? # For tracking progress
+
+          return :error   if status != 200 || body == "error"
+          return :done    if body == "done"
+          return :timeout if polls >= max_polls
+
+          wait(poll_interval)
+        end
+      end
+
+      def wait(interval) # Extracted for easier testing
+        sleep(interval)
+      end
+
       private
 
-      def request(method, uri, content_type, payload = nil)
-        response = @client.request(method, @base_uri + uri, nil, payload, "Content-Type" => content_type)
-        [ response.status, response.content ]
+      def request(method, uri, content_type = nil, payload = nil)
+        headers = {}
+        headers["Content-Type"] = content_type if content_type
+
+        response = @client.request(method, @base_uri + uri, nil, payload, headers)
+
+        status  = response.status_code
+        body    = response.content
+
+        # httpclient uses  array format for storing headers,
+        # so we just convert it to hash for be
+        headers = response.header.get.inject({}) { |h, e| h[e[0]] = e[1]; h }
+
+        [ status, body, headers ]
+        # TODO: rescue URI::Error?
       end
       
     end
