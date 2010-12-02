@@ -6,18 +6,10 @@ module Bosh
   module Cli
 
     class Release
-
-      POLL_TASK_INTERVAL = 1
-      MAX_POLLS = 300
-
-      class ValidationHalted < StandardError; end
-
-      attr_reader :validation_log, :errors
+      include Validation
 
       def initialize(tarball_path)
-        @errors         = []
-        @release_file   = File.expand_path(tarball_path, Dir.pwd)
-        @validated      = false
+        @release_file = File.expand_path(tarball_path, Dir.pwd)
       end
 
       def upload(api_client)
@@ -47,16 +39,9 @@ module Bosh
         end
       end
 
-      def valid?
-        validate unless @validated
-        errors.empty?        
-      end
+      def perform_validation(&block)
+        tmp_dir = Dir.mktmpdir
 
-      def validate(&block)
-        tmp_dir = Dir.mktmpdir("release")
-
-        @step_callback = block if block_given?
-        
         step("File exists and readable", "Cannot find release file #{@release_file}", :fatal) do
           File.exists?(@release_file) && File.readable?(@release_file)          
         end
@@ -151,25 +136,7 @@ module Bosh
           end
           
         end
-
-      rescue ValidationHalted
-        # Basically just kind of 'goto'
-      ensure
-        @validated = true
       end
-
-      private
-
-      def step(name, error_message, kind = :non_fatal, &block)
-        passed = yield
-        if !passed
-          @errors << error_message
-          raise ValidationHalted if kind == :fatal
-        end
-      ensure
-        @step_callback.call(name, passed) if @step_callback
-      end
-      
     end
 
   end

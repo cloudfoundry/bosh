@@ -1,0 +1,6 @@
+---
+name: ubuntu-stemcell
+version: 1
+cloud_properties:
+  property1: test
+  property2: test
