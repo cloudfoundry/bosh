@@ -72,54 +72,6 @@ module Bosh::Agent
           ENV['BOSH_COMPILE_TARGET'] = compile_dir
           ENV['BOSH_INSTALL_TARGET'] = install_dir
           if File.exist?('packaging')
-            puts `bash packaging`
-          end
-        end
-      end
-
-      def compiled_package
-        File.join(@source_file + ".compiled")
-      end
-
-      def pack
-        Dir.chdir(install_dir) do
-          `tar -zcf #{compiled_package} .`
-        end
-      end
-
-      def compiled_package
-        File.open(compiled_package, 'r') do |f|
-          @blobstore_client.create(f)
-        end
-      end
-
-      def compile_dir
-        @compile_dir ||= File.join(@compile_base, @package_name)
-      end
-
-      def install_dir
-        @install_dir ||= File.join(@install_base, @package_name, @package_version.to_s)
-      end
-
-      def unpack_source_package
-        FileUtils.rm_rf compile_dir if File.directory?(compile_dir)
-
-        FileUtils.mkdir_p compile_dir
-        Dir.chdir(compile_dir) do
-          # TODO: error handling
-          `tar -zxf #{@source_file}`
-        end
-      end
-
-      def compile
-        FileUtils.rm_rf install_dir if File.directory?(install_dir)
-        FileUtils.mkdir_p install_dir
-
-        Dir.chdir(compile_dir) do
-          # TODO: error handling
-          ENV['BOSH_COMPILE_TARGET'] = compile_dir
-          ENV['BOSH_INSTALL_TARGET'] = install_dir
-          if File.exist?('packaging')
             `bash packaging`
           end
         end
