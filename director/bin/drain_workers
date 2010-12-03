@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+
+require "director"
+
+config_file = nil
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
+config = YAML.load_file(config_file)
+
+Bosh::Director::Config.configure(config)
+
+logger = Bosh::Director::Config.logger
+
+loop do
+  logger.info("Checking for any workers that are still processing..")
+  worker = Resque::Worker.all.find {|worker| worker.idle? }
+  if worker.nil?
+    logger.info("All workers are idle")
+    break
+  end
+  logger.info("Found worker: #{worker}, sleeping for 60 seconds.")
+  sleep 60
+end
