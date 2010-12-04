@@ -1,0 +1,10 @@
+*~
+.idea
+\#*\#
+.\#*
+.bundle
+spec_reports
+spec_coverage
+*.rbc
+*.swp
+.rvmrc
