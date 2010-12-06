@@ -10,7 +10,7 @@ module Bosh::Director
       def configure(config)
         @base_dir = config["dir"]
 
-        @logger = Logger.new(STDOUT)
+        @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
 
         self.redis_options= {
