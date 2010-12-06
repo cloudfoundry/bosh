@@ -75,9 +75,13 @@ describe Bosh::Agent::Message::CompilePackage do
     @handler.compile
     @handler.pack
 
+    # This should probably just be stubbed
+    sha1 = Digest::SHA1.hexdigest(File.read(@handler.compiled_package))
     File.open(@handler.compiled_package) do |f|
-      @handler.blobstore_client.stub(:create).with(instance_of(File))
-      @handler.upload
+      stub_blobstore_id = "bfa8e2e1-d386-4df7-ad5e-fd21f49333d6"
+
+      @handler.blobstore_client.stub(:create).with(instance_of(File)).and_return(stub_blobstore_id)
+      @handler.upload.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id}
     end
   end
 

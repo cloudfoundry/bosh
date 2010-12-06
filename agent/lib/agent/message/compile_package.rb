@@ -28,9 +28,10 @@ module Bosh::Agent
           get_source_package
           unpack_source_package
           compile
+          upload
         rescue RuntimeError => e
-          # TODO: propagate errors
           # TODO: logging
+          raise Bosh::Agent::MessageHandlerError, e
         end
       end
 
@@ -88,9 +89,12 @@ module Bosh::Agent
       end
 
       def upload
+        compiled_blobstore_id = nil
         File.open(compiled_package, 'r') do |f|
-          @blobstore_client.create(f)
+          compiled_blobstore_id = @blobstore_client.create(f)
         end
+        compiled_sha1 = Digest::SHA1.hexdigest(File.read(compiled_package))
+        { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id }
       end
 
     end
