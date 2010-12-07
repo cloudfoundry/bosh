@@ -48,7 +48,7 @@ module Bosh::Director
             end
 
             @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
-            raise ReleaseBundleInvalid, :release_already_exists unless @release_version_entry.valid?
+            raise ReleaseAlreadyExists unless @release_version_entry.valid?
             @release_version_entry.save!
 
             @packages = {}
@@ -58,7 +58,7 @@ module Bosh::Director
               if package.nil?
                 package = create_package(package_meta)
               else
-                raise ReleaseBundleInvalid.new(:existing_package_sha1_mismatch) if package.sha1 != package_meta["sha1"]
+                raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
               end
               @packages[package_meta["name"]] = package
             end
@@ -96,14 +96,14 @@ module Bosh::Director
         @task.events << [Time.now.to_i, :extracting].join(":")
 
         `tar -C #{@tmp_release_dir} -xzf #{@release_tgz}`
-        raise ReleaseBundleInvalid.new(:invalid_archive) if $?.exitstatus != 0
+        raise ReleaseInvalidArchive if $?.exitstatus != 0
         FileUtils.rm(@release_tgz)
       end
 
       def verify_manifest
         @task.events << [Time.now.to_i, :verifying].join(":")
 
-        raise ReleaseBundleInvalid.new(:release_manifest_not_found) unless File.file?(@release_manifest_file)
+        raise ReleaseManifestNotFound unless File.file?(@release_manifest_file)
         @release_manifest = YAML.load_file(@release_manifest_file)
 
         @release_name = @release_manifest["name"]

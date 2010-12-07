@@ -28,6 +28,13 @@ module Bosh::Director
     ["UserNotFound",          NOT_FOUND,    20000, "User \"%s\" doesn't exist"],
     ["UserImmutableUsername", BAD_REQUEST,  20001, "The username is immutable"],
     ["UserInvalid",           BAD_REQUEST,  20002, "The user is invalid: %s"],
+
+    ["ReleaseAlreadyExists",    BAD_REQUEST, 30000, "Release already exists"],
+    ["ReleaseExistingPackageHashMismatch", BAD_REQUEST, 30001,
+        "The existing package with the same name and version has a different hash"],
+    ["ReleaseInvalidArchive",   BAD_REQUEST, 30002, "Invalid release archive"],
+    ["ReleaseManifestNotFound", BAD_REQUEST, 30003, "Release manifest not found"],
+
   ].each do |e|
     class_name, response_code, error_code, format = e
 
