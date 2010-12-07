@@ -1,7 +1,7 @@
 require "config/capistrano-ext/multicloud"
 
 set :application, "bosh_director"
-set :repository,  "git@github.com:b20nine/bosh.git"
+set :repository,  "git@github.com:vmware-ac/bosh.git"
 
 set :use_sudo, false
 set :deploy_to,   "/var/b29/bosh"
