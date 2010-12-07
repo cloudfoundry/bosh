@@ -182,6 +182,16 @@ module Bosh::Director
       task.state
     end
 
+    get "/tasks/:id/output" do
+      task = Models::Task[params[:id]]
+      raise TaskNotFound.new(params[:id]) if task.nil?
+      if task.output && File.file?(task.output)
+        send_file(task.output, :type => "text/plain")
+      else
+        status(NO_CONTENT)
+      end
+    end
+
     # TODO: create an endpoint for task output
   end
 end
