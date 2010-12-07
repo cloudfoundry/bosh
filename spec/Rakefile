@@ -5,7 +5,16 @@ require "rspec/core/rake_task"
 
 $:.unshift(File.expand_path("../../bosh/cli/bin"), __FILE__)
 
-RSpec::Core::RakeTask.new(:spec) do |t|
+task :spec => [:bundle_install, :run_spec]
+
+task :bundle_install do
+  [ "director", "simple_blobstore_server", "cli" ].each do |component|
+    component_dir = File.expand_path("../#{component}")
+    sh("cd #{component_dir} && bundle install")
+  end
+end
+
+RSpec::Core::RakeTask.new(:run_spec) do |t|
   t.pattern    = "*_spec.rb"      
   t.rspec_opts = %w[--color]
 end

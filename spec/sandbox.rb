@@ -28,16 +28,27 @@ module Bosh
       end
 
       def start
-        run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
-
         director_env  = { "BUNDLE_GEMFILE" => "#{DIRECTOR_PATH}/Gemfile" }
         blobstore_env = { "BUNDLE_GEMFILE" => "#{BLOBSTORE_PATH}/Gemfile" }
         worker_env   = director_env.merge("QUEUE" => "*")
-        
+
+        run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
         run_with_pid("#{DIRECTOR_PATH}/bin/director -c #{DIRECTOR_CONF}", DIRECTOR_PID, director_env)
         run_with_pid("#{DIRECTOR_PATH}/bin/worker -c #{DIRECTOR_CONF}", WORKER_PID, worker_env)
-        run_with_pid("#{DIRECTOR_PATH}/bin/worker -c #{DIRECTOR_CONF}", WORKER_PID, worker_env)
         run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID, blobstore_env)
+
+        tries = 0
+        while true
+          tries += 1
+          begin
+            Redis.new(:host => "localhost", :port => 63795).info
+            break
+          rescue Errno::ECONNREFUSED => e
+            raise e if tries >= 20
+            sleep(0.1)
+          end
+        end
+
       end
 
       def stop

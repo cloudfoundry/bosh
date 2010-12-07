@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
-if ENV["BUNDLE_GEMFILE"]
+gemfile = File.expand_path("../../Gemfile", __FILE__)
+
+if File.exists?(gemfile)
+  ENV["BUNDLE_GEMFILE"] = gemfile
   require "rubygems"
   require "bundler/setup"
 end
