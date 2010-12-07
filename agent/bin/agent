@@ -11,7 +11,7 @@ require "agent"
 
 # Defaults
 options = {
-  "configure" => true,
+  "configure" => false,
   "logging" => { "level" => "DEBUG" },
   "redis" => { "host" => "localhost" }
 }
