@@ -20,7 +20,6 @@ gemspec = Gem::Specification.new do |s|
   s.executables  = %w(bosh)
   s.bindir       = "bin"
   s.require_path = "lib"
-  s.autorequire  = "cli"
   s.files        = %w(README Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
 
   s.add_dependency "main",      "~> 4.3.0"
