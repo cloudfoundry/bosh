@@ -32,6 +32,8 @@ module Bosh::Director
         @task.timestamp = Time.now.to_i
         @task.save!
 
+        @logger.info("Processing update release")
+
         begin
           @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
           extract_release
@@ -93,7 +95,7 @@ module Bosh::Director
       end
 
       def extract_release
-        @task.events << [Time.now.to_i, :extracting].join(":")
+        @logger.info("Extracting release")
 
         `tar -C #{@tmp_release_dir} -xzf #{@release_tgz}`
         raise Bosh::Director::ReleaseInvalidArchive if $?.exitstatus != 0
@@ -101,7 +103,7 @@ module Bosh::Director
       end
 
       def verify_manifest
-        @task.events << [Time.now.to_i, :verifying].join(":")
+        @logger.info("Verifying manifest")
 
         raise Bosh::Director::ReleaseManifestNotFound unless File.file?(@release_manifest_file)
         @release_manifest = YAML.load_file(@release_manifest_file)
@@ -120,7 +122,7 @@ module Bosh::Director
         package = Models::Package.new(:release => @release, :name => package_meta["name"],
                                       :version => package_meta["version"], :sha1 => package_meta["sha1"])
 
-        @task.events << [Time.now.to_i, "creating package: #{package.name}"].join(":")
+        @logger.info("Creating package: #{package.name}")
 
         package_tgz = File.join(@tmp_release_dir, "packages", "#{package.name}.tgz")
         `tar -tzf #{package_tgz}`
@@ -135,7 +137,7 @@ module Bosh::Director
       end
 
       def create_job(name)
-        @task.events << [Time.now.to_i, "processing job: #{name}"].join(":")
+        @logger.info("Processing job: #{name}")
         job_tgz = File.join(@tmp_release_dir, "jobs", "#{name}.tgz")
         job_dir = File.join(@tmp_release_dir, "jobs", "#{name}")
 
