@@ -2,7 +2,7 @@ require "rubygems"
 require "rake/gempackagetask"
 
 $:.unshift File.join(File.dirname(__FILE__), "lib")
-require "cli"
+require "cli/version"
 
 GEM = "bosh_cli"
 GEM_VERSION = Bosh::Cli::VERSION
@@ -21,7 +21,7 @@ gemspec = Gem::Specification.new do |s|
   s.bindir       = "bin"
   s.require_path = "lib"
   s.autorequire  = "cli"
-  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec}/**/*")
+  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
 
   s.add_dependency "main",      "~> 4.3.0"
   s.add_dependency "json_pure", "~> 1.4.6"
