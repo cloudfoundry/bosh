@@ -3,7 +3,6 @@ source :rubygems
 gem "main", ">= 4.3.0"
 gem "highline"
 gem "json_pure"
-gem "httpclient", :path => "vendor/gems/httpclient-2.1.5.2"
 
 group :test do
   gem "rspec"
