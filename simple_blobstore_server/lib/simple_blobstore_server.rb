@@ -57,7 +57,7 @@ module Bosh
       end
 
       post "/resources" do
-        if params[:content] && params[:content] && params[:content][:tempfile]
+        if params[:content] && params[:content][:tempfile]
           object_id = generate_object_id
           file_name = get_file_name(object_id)
 

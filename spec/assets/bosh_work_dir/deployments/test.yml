@@ -1,0 +1,4 @@
+---
+name: appcloud
+version: 0.1
+target: http://localhost:8085

@@ -1,0 +1,29 @@
+---
+port: 8085
+logging:
+  level: DEBUG
+redis:
+  host: 127.0.0.1
+  port: 63795
+  password:
+dir: /tmp/boshdir
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://127.0.0.1:9590
+    user: bs_admin
+    password: bs_pass
+cloud:
+  plugin: dummy
+  properties:
+    dir: /tmp/bosh_test_cloud
+    agent:
+      blobstore:
+        plugin: simple
+        properties:
+          endpoint: http://127.0.0.1:9590
+          user: bs_admin
+          password: bs_pass
+      server:
+        host: 127.0.0.1
+        password:

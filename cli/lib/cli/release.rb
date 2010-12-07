@@ -95,7 +95,7 @@ module Bosh
               end
 
               if job_manifest_valid && job_manifest["configuration"]
-                job_manifest["configuration"].each do |config|
+                job_manifest["configuration"].each_key do |config|
                   step("Check config '#{config}' for '#{name}'", "No config named '#{config}' for '#{name}'") do
                     File.exists?(File.expand_path(config, job_tmp_dir + "/config"))
                   end

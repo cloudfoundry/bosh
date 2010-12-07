@@ -5,17 +5,20 @@ module Bosh
 
     class Runner
 
-      CONFIG_PATH = File.expand_path("~/.bosh_config")
+      DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_config")
 
       def self.run(cmd, output, *args)
         new(cmd, output, *args).run
       end
 
-      def initialize(cmd, output, *args)
-        @cmd      = cmd
-        @args     = args
-        @out      = output
-        @work_dir = Dir.pwd
+      def initialize(cmd, output, options, *args)
+        @options = options || {}
+
+        @cmd         = cmd
+        @args        = args
+        @out         = output
+        @work_dir    = Dir.pwd
+        @config_path = @options[:config] || DEFAULT_CONFIG_PATH
 
         if logged_in?
           @api_client = ApiClient.new(config["target"], credentials["username"], credentials["password"])
@@ -56,7 +59,7 @@ module Bosh
 
       def cmd_show_target
         if config['target']
-          say("Current target is %s" % [ config['target'] ] )
+          say("Current target is '%s'" % [ config['target'] ] )
         else
           say("Target not set")
         end
@@ -98,7 +101,7 @@ module Bosh
 
       def cmd_show_deployment
         if config['deployment']
-          say("Current deployment is %s" % [ config['deployment'] ] )
+          say("Current deployment is '%s'" % [ config['deployment'] ] )
         else
           say("Deployment not set")
         end
@@ -283,7 +286,7 @@ module Bosh
       def save_config
         all_configs[@work_dir] = config
         
-        File.open(CONFIG_PATH, "w") do |f|
+        File.open(@config_path, "w") do |f|
           YAML.dump(all_configs, f)
         end
         
@@ -294,15 +297,15 @@ module Bosh
       def all_configs
         return @_all_configs unless @_all_configs.nil?
         
-        unless File.exists?(CONFIG_PATH)
-          File.open(CONFIG_PATH, "w") { |f| YAML.dump({}, f) }
-          File.chmod(0600, CONFIG_PATH)
+        unless File.exists?(@config_path)
+          File.open(@config_path, "w") { |f| YAML.dump({}, f) }
+          File.chmod(0600, @config_path)
         end
 
-        configs = YAML.load_file(CONFIG_PATH)
+        configs = YAML.load_file(@config_path)
 
         unless configs.is_a?(Hash)
-          raise ConfigError, "Malformed config file: %s" % [ CONFIG_PATH ]
+          raise ConfigError, "Malformed config file: %s" % [ @config_path ]
         end
 
         @_all_configs = configs

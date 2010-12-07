@@ -38,6 +38,7 @@ require "director/ip_util"
 require "director/agent_client"
 require "director/cloud"
 require "director/cloud/vsphere"
+require "director/cloud/dummy"
 require "director/config"
 require "director/configuration_hasher"
 require "director/deployment_plan"
@@ -184,3 +185,4 @@ module Bosh::Director
     # TODO: create an endpoint for task output
   end
 end
+

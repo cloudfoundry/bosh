@@ -9,13 +9,13 @@ describe Bosh::Cli::Runner do
   end
 
   it "dispatches commands to appropriate methods" do
-    runner = Bosh::Cli::Runner.new(:dummy_cmd, $stdout, 1, 2, 3)
+    runner = Bosh::Cli::Runner.new(:dummy_cmd, $stdout, {}, 1, 2, 3)
     runner.should_receive(:cmd_dummy_cmd).with(1, 2, 3)
     runner.run
   end
 
   it "whines on invalid arity" do
-    runner = Bosh::Cli::Runner.new(:dummy_cmd, $stdout, 1, 2)
+    runner = Bosh::Cli::Runner.new(:dummy_cmd, $stdout, {}, 1, 2)
 
     lambda {
       runner.run
@@ -23,7 +23,7 @@ describe Bosh::Cli::Runner do
   end
 
   it "whines on invalid command" do
-    runner = Bosh::Cli::Runner.new(:do_stuff, $stdout, 1, 2)
+    runner = Bosh::Cli::Runner.new(:do_stuff, $stdout, {}, 1, 2)
 
     lambda {
       runner.run
