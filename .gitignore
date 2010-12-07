@@ -11,3 +11,4 @@ spec_coverage
 spec/assets/*.pid
 spec/assets/bosh_config.yml
 agent/spec/tmp
+cli/pkg

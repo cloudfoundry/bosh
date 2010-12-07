@@ -8,6 +8,7 @@ describe Bosh::Spec::IntegrationTest do
   BOSH_CONFIG   = File.expand_path("../assets/bosh_config.yml", __FILE__)
   BOSH_WORK_DIR = File.expand_path("../assets/bosh_work_dir", __FILE__)
   CLOUD_DIR     = "/tmp/bosh_test_cloud"
+  CLI_DIR       = File.expand_path("../../cli", __FILE__)
   
   before(:all) do
     puts "Starting sandboxed environment for Bosh tests..."
@@ -21,7 +22,8 @@ describe Bosh::Spec::IntegrationTest do
 
   def run_bosh(cmd)
     Dir.chdir(BOSH_WORK_DIR) do
-      `bosh --config #{BOSH_CONFIG} #{cmd}`
+      ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
+      `#{CLI_DIR}/bin/bosh --config #{BOSH_CONFIG} #{cmd}`
     end
   end
 

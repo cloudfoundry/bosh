@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
 
-require "rubygems"
-require "bundler/setup"
+if ENV["BUNDLE_GEMFILE"]
+  require "rubygems"
+  require "bundler/setup"
+end
+
 require "optparse"
 require "main"
 require "highline/import"
