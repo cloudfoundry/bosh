@@ -4,7 +4,6 @@ module Bosh::Director::Models
     attribute :timestamp
     attribute :result
     attribute :output
-    list :events
 
     def validate
       assert_present :state
