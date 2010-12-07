@@ -1,0 +1,4 @@
+#!/bin/bash
+
+exec 2>&1
+exec chpst -u <%= runner %> env QUEUE=normal <%= current_path %>/director/bin/worker -c <%= shared_path %>/config/bosh-worker-<%= index %>.yml

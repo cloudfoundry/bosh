@@ -1,0 +1,4 @@
+#!/bin/bash
+
+exec 2>&1
+exec chpst -u <%= runner %> <%= current_path %>/director/bin/director -c <%= shared_path %>/config/bosh-director.yml
