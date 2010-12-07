@@ -1,5 +1,43 @@
+require "rubygems"
+require "rake/gempackagetask"
+
+$:.unshift File.join(File.dirname(__FILE__), "lib")
+require "cli"
+
+GEM = "bosh_cli"
+GEM_VERSION = Bosh::Cli::VERSION
+
+gemspec = Gem::Specification.new do |s|
+  s.name         = GEM
+  s.version      = GEM_VERSION
+  s.platform     = Gem::Platform::RUBY
+  s.has_rdoc     = false
+  s.summary      = "Bosh CLI"
+  s.description  = s.summary
+  s.author       = "Oleg Shaldybin"
+  s.email        = "olegs@vmware.com"
+  s.homepage     = "http://vmware.com"
+  s.executables  = %w(bosh)
+  s.bindir       = "bin"
+  s.require_path = "lib"
+  s.autorequire  = "cli"
+  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec}/**/*")
+
+  s.add_dependency "main",      "~> 4.3.0"
+  s.add_dependency "json_pure", "~> 1.4.6"
+  s.add_dependency "highline",  "~> 1.6.1"
+end
+
+Rake::GemPackageTask.new(gemspec) do |pkg|
+  pkg.gem_spec = gemspec
+end
+
+task :install => [ :package ] do
+  sh "gem install pkg/#{GEM}-#{GEM_VERSION}"
+end
+
 desc "Run specs"
-task "spec" => [ "bundler:install:test", "test:spec" ]
+task :spec => [ "bundler:install:test", "test:spec" ]
 
 environments = %w(test development production)
 
