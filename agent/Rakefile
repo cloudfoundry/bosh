@@ -117,7 +117,7 @@ HERE
       end
 
       File.open('stemcell/stemcell.MF', 'w') do |f|
-        f.write("---\nname: bosh-stemcell-#{version}\nversion: 1")
+        f.write("---\nname: bosh-stemcell-#{version}\nversion: 1\ncloud_properties: {}")
       end
 
       Dir.chdir('stemcell') do
