@@ -9,14 +9,13 @@ require "highline/import"
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
-$debug = false
+GLOBAL_OPTIONS = {}
 
 def run_cmd(*args)
   command = args.shift
   output  = $stdout
  
-  output.puts("Running #{command} with #{args.inspect}") if $debug
-  Bosh::Cli::Runner.run(command, output, *args)
+  Bosh::Cli::Runner.run(command, output, GLOBAL_OPTIONS, *args)
 
 rescue Bosh::Cli::CliError => e
   output.puts("ERROR: #{e}")
@@ -28,7 +27,7 @@ end
 def display_usage
   puts <<-USAGE
 
-usage: #$0 [--verbose|-v] command [<args>]
+usage: #$0 [--verbose|-v] [--config|-c <FILE>] command [<args>]
 
 Currently available bosh commands are:
 
@@ -53,23 +52,25 @@ Currently available bosh commands are:
 USAGE
 end
 
-global_options = {}
-
 opt_parser = OptionParser.new do |opts|
+  opts.on("-c", "--config FILE") do |v|
+    GLOBAL_OPTIONS[:config] = v
+  end
+  
   opts.on("-v", "--[no-]verbose") do |v|
-    global_options[:verbose] = v
+    GLOBAL_OPTIONS[:verbose] = v
   end
 
   opts.on("--dry-run") do |v|
-    global_options[:dry_run] = v
+    GLOBAL_OPTIONS[:dry_run] = v
   end
 
   opts.on("-u", "--username USER", String) do |v|
-    global_options[:username] = v
+    GLOBAL_OPTIONS[:username] = v
   end
 
   opts.on("-u", "--password PASSWORD", String) do |v|
-    global_options[:password] = v
+    GLOBAL_OPTIONS[:password] = v
   end  
 end
 

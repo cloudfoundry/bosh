@@ -1,0 +1,12 @@
+require "rubygems"
+require "rake"
+
+require "rspec/core/rake_task"
+
+$:.unshift(File.expand_path("../../bosh/cli/bin"), __FILE__)
+
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.pattern    = "*_spec.rb"      
+  t.rspec_opts = %w[--color]
+end
+

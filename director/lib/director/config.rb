@@ -52,10 +52,12 @@ module Bosh::Director
         @lock.synchronize do
           if @cloud.nil?
             case @cloud_options["plugin"]
-              when "vsphere"
-                @cloud = VSphereCloud.new(@cloud_options["properties"])
-              else
-                raise "Could not find Cloud Provider Plugin: #{@cloud_options["plugin"]}"
+            when "vsphere"
+              @cloud = VSphereCloud.new(@cloud_options["properties"])
+            when "dummy"
+              @cloud = DummyCloud.new(@cloud_options["properties"])
+            else
+              raise "Could not find Cloud Provider Plugin: #{@cloud_options["plugin"]}"
             end
           end
         end

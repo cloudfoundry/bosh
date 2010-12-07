@@ -1,0 +1,4 @@
+---
+name: vmforce
+version: 0.2.1
+target: http://vmforce-target:2560

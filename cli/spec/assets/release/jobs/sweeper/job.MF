@@ -2,4 +2,4 @@
 packages:
   - mutator
 configuration:
-  - test.conf
+  test.conf: config/test
