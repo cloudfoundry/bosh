@@ -5,10 +5,10 @@ module Bosh::Director
       if hash && hash.has_key?(property)
         result = hash[property]
         if options[:class] && !result.kind_of?(options[:class])
-          raise "field: #{property} did not match the required type #{options[:class]} in #{hash.pretty_inspect}."
+          raise Bosh::Director::ValidationInvalidType.new(property, options[:class], hash.pretty_inspect)
         end
       elsif !options[:optional]
-        raise "required field: #{property} was not specified in #{hash.pretty_inspect}."
+        raise Bosh::Director::ValidationMissingField.new(property, hash.pretty_inspect)
       end
       result
     end

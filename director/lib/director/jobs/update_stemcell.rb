@@ -29,6 +29,8 @@ module Bosh::Director
       end
 
       def perform
+        @logger.info("Processing update stemcell")
+
         @task.state = :processing
         @task.timestamp = Time.now.to_i
         @task.save!
@@ -36,8 +38,11 @@ module Bosh::Director
         stemcell_dir = Dir.mktmpdir("stemcell")
 
         begin
+          @logger.info("Extracting stemcell archive")
           `tar -C #{stemcell_dir} -xzf #{@stemcell_file}`
+          raise Bosh::Director::StemcellInvalidArchive if $?.exitstatus != 0
 
+          @logger.info("Verifying stemcell manifest")
           stemcell_manifest_file = File.join(stemcell_dir, "stemcell.MF")
           stemcell_manifest = YAML.load_file(stemcell_manifest_file)
 
@@ -46,14 +51,20 @@ module Bosh::Director
           @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
           @stemcell_image = File.join(stemcell_dir, "image")
 
-          raise "Invalid image" unless File.file?(@stemcell_image)
+          @logger.info("Verifying stemcell image")
+          raise Bosh::Director::StemcellInvalidImage unless File.file?(@stemcell_image)
 
+          @logger.info("Uploading stemcell to the cloud")
           cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
+          @logger.info("Cloud created stemcell: #{cid}")
+
           stemcell = Models::Stemcell.new
           stemcell.name = @name
           stemcell.version = @version
           stemcell.cid = cid
           stemcell.save!
+
+          @logger.info("Done")
 
           @task.state = :done
           @task.timestamp = Time.now.to_i

@@ -35,6 +35,8 @@ module Bosh::Director
     ["ReleaseInvalidArchive",   BAD_REQUEST, 30002, "Invalid release archive"],
     ["ReleaseManifestNotFound", BAD_REQUEST, 30003, "Release manifest not found"],
 
+    ["ValidationInvalidType",   BAD_REQUEST, 40000, "Field: \"%s\" did not match the required type: \"%s\" in: %s"],
+    ["ValidationMissingField",  BAD_REQUEST, 40001, "Required field: \"%s\" was not specified in: %s"],
   ].each do |e|
     class_name, response_code, error_code, format = e
 
