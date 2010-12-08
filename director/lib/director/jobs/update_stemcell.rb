@@ -39,7 +39,7 @@ module Bosh::Director
 
         begin
           @logger.info("Extracting stemcell archive")
-          output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file}`
+          output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1`
           raise Bosh::Director::StemcellInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
 
           @logger.info("Verifying stemcell manifest")
