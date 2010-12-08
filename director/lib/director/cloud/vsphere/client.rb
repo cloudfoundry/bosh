@@ -1,8 +1,4 @@
-require "director/cloud/vsphere/defaultDriver"
-require "director/cloud/vsphere/lease_updater"
-require "director/cloud/vsphere/resources"
-
-module Bosh::Director::CloudProviders::VSphere
+module VSphereCloud
 
   class Client
 

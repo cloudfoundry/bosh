@@ -1,4 +1,4 @@
-module Bosh::Director::CloudProviders::VSphere
+module VSphereCloud
   class LeaseUpdater
     attr_accessor :progress
 

@@ -1,8 +1,8 @@
-require "director/cloud/vsphere/default"
-require "director/cloud/vsphere/defaultMappingRegistry"
+require 'director/cloud/vsphere/default.rb'
+require 'director/cloud/vsphere/defaultMappingRegistry.rb'
 require 'soap/rpc/driver'
 
-module Bosh::Director::CloudProviders::VSphere
+module VSphereCloud
 
 class VimPortType < ::SOAP::RPC::Driver
   DefaultEndpointUrl = "https://localhost/sdk/vimService"
@@ -14,7 +14,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyPropertyFilterResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createFilter",
@@ -22,7 +22,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateFilterResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveProperties",
@@ -30,7 +30,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrievePropertiesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkForUpdates",
@@ -38,7 +38,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckForUpdatesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidCollectorVersionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidCollectorVersionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidCollectorVersionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidCollectorVersionFault"}} }
     ],
     [ "urn:vim25/4.1",
       "waitForUpdates",
@@ -46,7 +46,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "WaitForUpdatesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidCollectorVersionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidCollectorVersionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidCollectorVersionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidCollectorVersionFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cancelWaitForUpdates",
@@ -54,7 +54,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CancelWaitForUpdatesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "waitForUpdatesEx",
@@ -62,7 +62,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "WaitForUpdatesExResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidCollectorVersionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidCollectorVersionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidCollectorVersionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidCollectorVersionFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrievePropertiesEx",
@@ -70,7 +70,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrievePropertiesExResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}} }
     ],
     [ "urn:vim25/4.1",
       "continueRetrievePropertiesEx",
@@ -78,7 +78,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ContinueRetrievePropertiesExResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cancelRetrievePropertiesEx",
@@ -86,7 +86,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CancelRetrievePropertiesExResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPropertyFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPropertyFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createPropertyCollector",
@@ -94,7 +94,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreatePropertyCollectorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyPropertyCollector",
@@ -102,7 +102,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyPropertyCollectorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addAuthorizationRole",
@@ -110,7 +110,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddAuthorizationRoleResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeAuthorizationRole",
@@ -118,7 +118,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveAuthorizationRoleResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RemoveFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RemoveFailedFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RemoveFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RemoveFailedFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateAuthorizationRole",
@@ -126,7 +126,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateAuthorizationRoleResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "mergePermissions",
@@ -134,7 +134,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MergePermissionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveRolePermissions",
@@ -142,7 +142,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveRolePermissionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveEntityPermissions",
@@ -150,7 +150,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveEntityPermissionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveAllPermissions",
@@ -158,7 +158,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveAllPermissionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setEntityPermissions",
@@ -166,7 +166,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetEntityPermissionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetEntityPermissions",
@@ -174,7 +174,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetEntityPermissionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeEntityPermission",
@@ -182,7 +182,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveEntityPermissionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureCluster_Task",
@@ -190,7 +190,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureCluster_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "applyRecommendation",
@@ -198,7 +198,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ApplyRecommendationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cancelRecommendation",
@@ -206,7 +206,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CancelRecommendationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "recommendHostsForVm",
@@ -214,7 +214,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RecommendHostsForVmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addHost_Task",
@@ -222,7 +222,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveInto_Task",
@@ -230,7 +230,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveInto_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TooManyHostsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TooManyHostsFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::TooManyHostsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TooManyHostsFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveHostInto_Task",
@@ -238,7 +238,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveHostInto_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TooManyHostsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TooManyHostsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::TooManyHostsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TooManyHostsFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshRecommendation",
@@ -246,7 +246,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshRecommendationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveDasAdvancedRuntimeInfo",
@@ -254,7 +254,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveDasAdvancedRuntimeInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureComputeResource_Task",
@@ -262,7 +262,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureComputeResource_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addCustomFieldDef",
@@ -270,7 +270,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddCustomFieldDefResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPrivilegeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPrivilegeFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidPrivilegeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPrivilegeFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeCustomFieldDef",
@@ -278,7 +278,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveCustomFieldDefResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "renameCustomFieldDef",
@@ -286,7 +286,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RenameCustomFieldDefResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setField",
@@ -294,7 +294,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetFieldResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "doesCustomizationSpecExist",
@@ -302,7 +302,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DoesCustomizationSpecExistResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "getCustomizationSpec",
@@ -310,7 +310,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "GetCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createCustomizationSpec",
@@ -318,7 +318,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "overwriteCustomizationSpec",
@@ -326,7 +326,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "OverwriteCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "deleteCustomizationSpec",
@@ -334,7 +334,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DeleteCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "duplicateCustomizationSpec",
@@ -342,7 +342,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DuplicateCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "renameCustomizationSpec",
@@ -350,7 +350,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RenameCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "customizationSpecItemToXml",
@@ -358,7 +358,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CustomizationSpecItemToXmlResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "xmlToCustomizationSpecItem",
@@ -366,7 +366,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "XmlToCustomizationSpecItemResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkCustomizationResources",
@@ -374,7 +374,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckCustomizationResourcesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryConnectionInfo",
@@ -382,7 +382,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryConnectionInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerOnMultiVM_Task",
@@ -390,7 +390,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerOnMultiVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshDatastore",
@@ -398,7 +398,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshDatastoreStorageInfo",
@@ -406,7 +406,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshDatastoreStorageInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateVirtualMachineFiles_Task",
@@ -414,7 +414,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateVirtualMachineFiles_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "renameDatastore",
@@ -422,7 +422,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RenameDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyDatastore",
@@ -430,7 +430,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDescriptions",
@@ -438,7 +438,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDescriptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "browseDiagnosticLog",
@@ -446,7 +446,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "BrowseDiagnosticLogResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::CannotAccessFileFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CannotAccessFileFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::CannotAccessFileFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CannotAccessFileFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "generateLogBundles_Task",
@@ -454,7 +454,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "GenerateLogBundles_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::LogBundlingFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LogBundlingFailedFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::LogBundlingFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LogBundlingFailedFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "fetchDVPortKeys",
@@ -462,7 +462,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FetchDVPortKeysResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "fetchDVPorts",
@@ -470,7 +470,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FetchDVPortsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryUsedVlanIdInDvs",
@@ -478,7 +478,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryUsedVlanIdInDvsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureDvs_Task",
@@ -486,7 +486,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureDvs_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceNotAvailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceNotAvailableFault"}, "Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::DvsNotAuthorizedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsNotAuthorizedFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::LimitExceededFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LimitExceededFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ResourceNotAvailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceNotAvailableFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::LimitExceededFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LimitExceededFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "VSphereCloud::DvsNotAuthorizedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsNotAuthorizedFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "performDvsProductSpecOperation_Task",
@@ -494,7 +494,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PerformDvsProductSpecOperation_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "mergeDvs_Task",
@@ -502,7 +502,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MergeDvs_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidHostStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidHostStateFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "VSphereCloud::InvalidHostStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidHostStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addDVPortgroup_Task",
@@ -510,7 +510,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddDVPortgroup_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveDVPort_Task",
@@ -518,7 +518,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveDVPort_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateDvsCapability",
@@ -526,7 +526,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateDvsCapabilityResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureDVPort_Task",
@@ -534,7 +534,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureDVPort_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshDVPortState",
@@ -542,7 +542,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshDVPortStateResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rectifyDvsHost_Task",
@@ -550,7 +550,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RectifyDvsHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateNetworkResourcePool",
@@ -558,7 +558,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateNetworkResourcePoolResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableNetworkResourceManagement",
@@ -566,7 +566,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableNetworkResourceManagementResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryConfigOptionDescriptor",
@@ -574,7 +574,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryConfigOptionDescriptorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryConfigOption",
@@ -582,7 +582,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryConfigOptionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryConfigTarget",
@@ -590,7 +590,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryConfigTargetResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryTargetCapabilities",
@@ -598,7 +598,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryTargetCapabilitiesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setCustomValue",
@@ -606,7 +606,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "setCustomValueResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unregisterExtension",
@@ -614,7 +614,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UnregisterExtensionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findExtension",
@@ -622,7 +622,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindExtensionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "registerExtension",
@@ -630,7 +630,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RegisterExtensionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateExtension",
@@ -638,7 +638,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateExtensionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "getPublicKey",
@@ -646,7 +646,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "GetPublicKeyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setPublicKey",
@@ -654,7 +654,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetPublicKeyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setExtensionCertificate",
@@ -662,7 +662,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetExtensionCertificateResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NoClientCertificateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoClientCertificateFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NoClientCertificateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoClientCertificateFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveDatastoreFile_Task",
@@ -670,7 +670,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveDatastoreFile_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "copyDatastoreFile_Task",
@@ -678,7 +678,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CopyDatastoreFile_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "deleteDatastoreFile_Task",
@@ -686,7 +686,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DeleteDatastoreFile_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "makeDirectory",
@@ -694,7 +694,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MakeDirectoryResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "changeOwner",
@@ -702,7 +702,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ChangeOwnerResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createFolder",
@@ -710,7 +710,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateFolderResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveIntoFolder_Task",
@@ -718,7 +718,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveIntoFolder_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidFolderFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidFolderFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidFolderFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidFolderFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createVM_Task",
@@ -726,7 +726,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "registerVM_Task",
@@ -734,7 +734,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RegisterVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createCluster",
@@ -742,7 +742,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateClusterResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createClusterEx",
@@ -750,7 +750,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateClusterExResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addStandaloneHost_Task",
@@ -758,7 +758,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddStandaloneHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createDatacenter",
@@ -766,7 +766,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateDatacenterResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unregisterAndDestroy_Task",
@@ -774,7 +774,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UnregisterAndDestroy_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createDVS_Task",
@@ -782,7 +782,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateDVS_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::DvsNotAuthorizedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsNotAuthorizedFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "VSphereCloud::DvsNotAuthorizedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsNotAuthorizedFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setCollectorPageSize",
@@ -790,7 +790,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetCollectorPageSizeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rewindCollector",
@@ -798,7 +798,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RewindCollectorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetCollector",
@@ -806,7 +806,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetCollectorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyCollector",
@@ -814,7 +814,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyCollectorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryHostConnectionInfo",
@@ -822,7 +822,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryHostConnectionInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateSystemResources",
@@ -830,7 +830,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateSystemResourcesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconnectHost_Task",
@@ -838,7 +838,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconnectHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::HostConnectFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConnectFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "disconnectHost_Task",
@@ -846,7 +846,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DisconnectHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enterMaintenanceMode_Task",
@@ -854,7 +854,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnterMaintenanceMode_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "exitMaintenanceMode_Task",
@@ -862,7 +862,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExitMaintenanceMode_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rebootHost_Task",
@@ -870,7 +870,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RebootHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "shutdownHost_Task",
@@ -878,7 +878,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ShutdownHost_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerDownHostToStandBy_Task",
@@ -886,7 +886,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerDownHostToStandBy_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotSupportedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotSupportedFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::HostPowerOpFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostPowerOpFailedFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::NotSupportedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotSupportedFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::HostPowerOpFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostPowerOpFailedFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerUpHostFromStandBy_Task",
@@ -894,7 +894,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerUpHostFromStandBy_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotSupportedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotSupportedFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::HostPowerOpFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostPowerOpFailedFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::NotSupportedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotSupportedFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::HostPowerOpFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostPowerOpFailedFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryMemoryOverhead",
@@ -902,7 +902,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryMemoryOverheadResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryMemoryOverheadEx",
@@ -910,7 +910,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryMemoryOverheadExResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureHostForDAS_Task",
@@ -918,7 +918,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureHostForDAS_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::DasConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DasConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DasConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DasConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateFlags",
@@ -926,7 +926,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateFlagsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enterLockdownMode",
@@ -934,7 +934,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnterLockdownModeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "exitLockdownMode",
@@ -942,7 +942,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExitLockdownModeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "acquireCimServicesTicket",
@@ -950,7 +950,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AcquireCimServicesTicketResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateIpmi",
@@ -958,7 +958,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateIpmiResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidIpmiMacAddressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidIpmiMacAddressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidIpmiLoginInfoFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidIpmiLoginInfoFault"}} }
+        :faults => {"VSphereCloud::InvalidIpmiMacAddressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidIpmiMacAddressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidIpmiLoginInfoFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidIpmiLoginInfoFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveHardwareUptime",
@@ -966,7 +966,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveHardwareUptimeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "httpNfcLeaseGetManifest",
@@ -974,7 +974,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "HttpNfcLeaseGetManifestResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "httpNfcLeaseComplete",
@@ -982,7 +982,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "HttpNfcLeaseCompleteResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "httpNfcLeaseAbort",
@@ -990,7 +990,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "HttpNfcLeaseAbortResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "httpNfcLeaseProgress",
@@ -998,7 +998,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "HttpNfcLeaseProgressResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryIpPools",
@@ -1006,7 +1006,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryIpPoolsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createIpPool",
@@ -1014,7 +1014,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateIpPoolResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateIpPool",
@@ -1022,7 +1022,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateIpPoolResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyIpPool",
@@ -1030,7 +1030,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyIpPoolResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateAssignedLicense",
@@ -1038,7 +1038,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateAssignedLicenseResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::LicenseEntityNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseEntityNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::LicenseEntityNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseEntityNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeAssignedLicense",
@@ -1046,7 +1046,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveAssignedLicenseResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::LicenseEntityNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseEntityNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::LicenseEntityNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseEntityNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryAssignedLicenses",
@@ -1054,7 +1054,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryAssignedLicensesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "querySupportedFeatures",
@@ -1062,7 +1062,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QuerySupportedFeaturesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryLicenseSourceAvailability",
@@ -1070,7 +1070,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryLicenseSourceAvailabilityResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryLicenseUsage",
@@ -1078,7 +1078,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryLicenseUsageResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setLicenseEdition",
@@ -1086,7 +1086,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetLicenseEditionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkLicenseFeature",
@@ -1094,7 +1094,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckLicenseFeatureResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableFeature",
@@ -1102,7 +1102,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableFeatureResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "disableFeature",
@@ -1110,7 +1110,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DisableFeatureResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "configureLicenseSource",
@@ -1118,7 +1118,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ConfigureLicenseSourceResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::CannotAccessLocalSourceFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CannotAccessLocalSourceFault"}, "Bosh::Director::CloudProviders::VSphere::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLicenseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLicenseFault"}} }
+        :faults => {"VSphereCloud::CannotAccessLocalSourceFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CannotAccessLocalSourceFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::LicenseServerUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"LicenseServerUnavailableFault"}, "VSphereCloud::InvalidLicenseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLicenseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateLicense",
@@ -1126,7 +1126,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateLicenseResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addLicense",
@@ -1134,7 +1134,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddLicenseResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeLicense",
@@ -1142,7 +1142,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveLicenseResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "decodeLicense",
@@ -1150,7 +1150,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DecodeLicenseResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateLicenseLabel",
@@ -1158,7 +1158,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateLicenseLabelResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeLicenseLabel",
@@ -1166,7 +1166,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveLicenseLabelResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reload",
@@ -1174,7 +1174,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReloadResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rename_Task",
@@ -1182,7 +1182,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "Rename_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroy_Task",
@@ -1190,7 +1190,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "Destroy_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::VimFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VimFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::VimFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VimFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyNetwork",
@@ -1198,7 +1198,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyNetworkResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "validateHost",
@@ -1206,7 +1206,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ValidateHostResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "parseDescriptor",
@@ -1214,7 +1214,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ParseDescriptorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createImportSpec",
@@ -1222,7 +1222,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateImportSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createDescriptor",
@@ -1230,7 +1230,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateDescriptorResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPerfProviderSummary",
@@ -1238,7 +1238,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPerfProviderSummaryResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryAvailablePerfMetric",
@@ -1246,7 +1246,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryAvailablePerfMetricResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPerfCounter",
@@ -1254,7 +1254,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPerfCounterResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPerfCounterByLevel",
@@ -1262,7 +1262,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPerfCounterByLevelResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPerf",
@@ -1270,7 +1270,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPerfResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPerfComposite",
@@ -1278,7 +1278,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPerfCompositeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createPerfInterval",
@@ -1286,7 +1286,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreatePerfIntervalResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removePerfInterval",
@@ -1294,7 +1294,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemovePerfIntervalResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updatePerfInterval",
@@ -1302,7 +1302,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdatePerfIntervalResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "estimateDatabaseSize",
@@ -1310,7 +1310,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EstimateDatabaseSizeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateConfig",
@@ -1318,7 +1318,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveIntoResourcePool",
@@ -1326,7 +1326,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveIntoResourcePoolResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateChildResourceConfiguration",
@@ -1334,7 +1334,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateChildResourceConfigurationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createResourcePool",
@@ -1342,7 +1342,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateResourcePoolResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyChildren",
@@ -1350,7 +1350,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyChildrenResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createVApp",
@@ -1358,7 +1358,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateVAppResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createChildVM_Task",
@@ -1366,7 +1366,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateChildVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "registerChildVM_Task",
@@ -1374,7 +1374,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RegisterChildVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "importVApp",
@@ -1382,7 +1382,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ImportVAppResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryResourceConfigOption",
@@ -1390,7 +1390,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryResourceConfigOptionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshRuntime",
@@ -1398,7 +1398,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshRuntimeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findByUuid",
@@ -1406,7 +1406,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindByUuidResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findByDatastorePath",
@@ -1414,7 +1414,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindByDatastorePathResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findByDnsName",
@@ -1422,7 +1422,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindByDnsNameResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findByIp",
@@ -1430,7 +1430,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindByIpResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findByInventoryPath",
@@ -1438,7 +1438,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindByInventoryPathResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findChild",
@@ -1446,7 +1446,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindChildResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findAllByUuid",
@@ -1454,7 +1454,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindAllByUuidResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findAllByDnsName",
@@ -1462,7 +1462,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindAllByDnsNameResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findAllByIp",
@@ -1470,7 +1470,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindAllByIpResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "currentTime",
@@ -1478,7 +1478,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CurrentTimeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveServiceContent",
@@ -1486,7 +1486,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveServiceContentResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "validateMigration",
@@ -1494,7 +1494,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ValidateMigrationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVMotionCompatibility",
@@ -1502,7 +1502,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVMotionCompatibilityResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveProductComponents",
@@ -1510,7 +1510,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveProductComponentsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateServiceMessage",
@@ -1518,7 +1518,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateServiceMessageResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "login",
@@ -1526,7 +1526,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LoginResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "loginBySSPI",
@@ -1534,7 +1534,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LoginBySSPIResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::SSPIChallengeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SSPIChallengeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::SSPIChallengeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SSPIChallengeFault"}, "VSphereCloud::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "logout",
@@ -1542,7 +1542,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LogoutResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "acquireLocalTicket",
@@ -1550,7 +1550,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AcquireLocalTicketResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "terminateSession",
@@ -1558,7 +1558,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "TerminateSessionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setLocale",
@@ -1566,7 +1566,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetLocaleResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "loginExtensionBySubjectName",
@@ -1574,7 +1574,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LoginExtensionBySubjectNameResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NoClientCertificateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoClientCertificateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::NoSubjectNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoSubjectNameFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NoClientCertificateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoClientCertificateFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::NoSubjectNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoSubjectNameFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "loginExtensionByCertificate",
@@ -1582,7 +1582,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LoginExtensionByCertificateResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NoClientCertificateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoClientCertificateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NoClientCertificateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoClientCertificateFault"}, "VSphereCloud::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "impersonateUser",
@@ -1590,7 +1590,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ImpersonateUserResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidLocaleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLocaleFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "sessionIsActive",
@@ -1598,7 +1598,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SessionIsActiveResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "acquireCloneTicket",
@@ -1606,7 +1606,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AcquireCloneTicketResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cloneSession",
@@ -1614,7 +1614,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CloneSessionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "configureDatastoreIORM_Task",
@@ -1622,7 +1622,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ConfigureDatastoreIORM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InaccessibleDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InaccessibleDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::IORMNotSupportedHostOnDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"IORMNotSupportedHostOnDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::IORMNotSupportedHostOnDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"IORMNotSupportedHostOnDatastoreFault"}, "VSphereCloud::InaccessibleDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InaccessibleDatastoreFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryIORMConfigOption",
@@ -1630,7 +1630,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryIORMConfigOptionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cancelTask",
@@ -1638,7 +1638,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CancelTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateProgress",
@@ -1646,7 +1646,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateProgressResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::OutOfBoundsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"OutOfBoundsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setTaskState",
@@ -1654,7 +1654,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetTaskStateResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setTaskDescription",
@@ -1662,7 +1662,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetTaskDescriptionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "readNextTasks",
@@ -1670,7 +1670,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReadNextTasksResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "readPreviousTasks",
@@ -1678,7 +1678,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReadPreviousTasksResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createCollectorForTasks",
@@ -1686,7 +1686,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateCollectorForTasksResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createTask",
@@ -1694,7 +1694,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveUserGroups",
@@ -1702,7 +1702,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveUserGroupsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateVAppConfig",
@@ -1710,7 +1710,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateVAppConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateLinkedChildren",
@@ -1718,7 +1718,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateLinkedChildrenResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cloneVApp_Task",
@@ -1726,7 +1726,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CloneVApp_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "exportVApp",
@@ -1734,7 +1734,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExportVAppResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerOnVApp_Task",
@@ -1742,7 +1742,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerOnVApp_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VAppConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VAppConfigFaultFault"}} }
+        :faults => {"VSphereCloud::VAppConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VAppConfigFaultFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerOffVApp_Task",
@@ -1750,7 +1750,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerOffVApp_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VAppConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VAppConfigFaultFault"}} }
+        :faults => {"VSphereCloud::VAppConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VAppConfigFaultFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "suspendVApp_Task",
@@ -1758,7 +1758,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SuspendVApp_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VAppConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VAppConfigFaultFault"}} }
+        :faults => {"VSphereCloud::VAppConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VAppConfigFaultFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unregisterVApp_Task",
@@ -1766,7 +1766,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "unregisterVApp_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createVirtualDisk_Task",
@@ -1774,7 +1774,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "deleteVirtualDisk_Task",
@@ -1782,7 +1782,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DeleteVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "moveVirtualDisk_Task",
@@ -1790,7 +1790,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MoveVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "copyVirtualDisk_Task",
@@ -1798,7 +1798,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CopyVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "extendVirtualDisk_Task",
@@ -1806,7 +1806,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExtendVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVirtualDiskFragmentation",
@@ -1814,7 +1814,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVirtualDiskFragmentationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "defragmentVirtualDisk_Task",
@@ -1822,7 +1822,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DefragmentVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "shrinkVirtualDisk_Task",
@@ -1830,7 +1830,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ShrinkVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "inflateVirtualDisk_Task",
@@ -1838,7 +1838,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "InflateVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "eagerZeroVirtualDisk_Task",
@@ -1846,7 +1846,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EagerZeroVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "zeroFillVirtualDisk_Task",
@@ -1854,7 +1854,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ZeroFillVirtualDisk_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setVirtualDiskUuid",
@@ -1862,7 +1862,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetVirtualDiskUuidResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVirtualDiskUuid",
@@ -1870,7 +1870,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVirtualDiskUuidResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVirtualDiskGeometry",
@@ -1878,7 +1878,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVirtualDiskGeometryResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshStorageInfo",
@@ -1886,7 +1886,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshStorageInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createSnapshot_Task",
@@ -1894,7 +1894,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateSnapshot_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "revertToCurrentSnapshot_Task",
@@ -1902,7 +1902,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RevertToCurrentSnapshot_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeAllSnapshots_Task",
@@ -1910,7 +1910,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveAllSnapshots_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigVM_Task",
@@ -1918,7 +1918,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "upgradeVM_Task",
@@ -1926,7 +1926,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpgradeVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyUpgradedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyUpgradedFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::NoDiskFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoDiskFoundFault"}} }
+        :faults => {"VSphereCloud::AlreadyUpgradedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyUpgradedFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::NoDiskFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoDiskFoundFault"}} }
     ],
     [ "urn:vim25/4.1",
       "extractOvfEnvironment",
@@ -1934,7 +1934,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExtractOvfEnvironmentResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerOnVM_Task",
@@ -1942,7 +1942,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerOnVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "powerOffVM_Task",
@@ -1950,7 +1950,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PowerOffVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "suspendVM_Task",
@@ -1958,7 +1958,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SuspendVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetVM_Task",
@@ -1966,7 +1966,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "shutdownGuest",
@@ -1974,7 +1974,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ShutdownGuestResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rebootGuest",
@@ -1982,7 +1982,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RebootGuestResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "standbyGuest",
@@ -1990,7 +1990,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StandbyGuestResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "answerVM",
@@ -1998,7 +1998,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AnswerVMResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "customizeVM_Task",
@@ -2006,7 +2006,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CustomizeVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkCustomizationSpec",
@@ -2014,7 +2014,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckCustomizationSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "migrateVM_Task",
@@ -2022,7 +2022,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MigrateVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "relocateVM_Task",
@@ -2030,7 +2030,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RelocateVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TimedoutFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TimedoutFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "cloneVM_Task",
@@ -2038,7 +2038,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CloneVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::CustomizationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"CustomizationFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}, "VSphereCloud::MigrationFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MigrationFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "exportVm",
@@ -2046,7 +2046,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExportVmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "markAsTemplate",
@@ -2054,7 +2054,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MarkAsTemplateResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "markAsVirtualMachine",
@@ -2062,7 +2062,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MarkAsVirtualMachineResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unregisterVM",
@@ -2070,7 +2070,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UnregisterVMResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetGuestInformation",
@@ -2078,7 +2078,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetGuestInformationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "mountToolsInstaller",
@@ -2086,7 +2086,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MountToolsInstallerResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unmountToolsInstaller",
@@ -2094,7 +2094,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UnmountToolsInstallerResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "upgradeTools_Task",
@@ -2102,7 +2102,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpgradeTools_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::VmToolsUpgradeFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmToolsUpgradeFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmToolsUpgradeFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmToolsUpgradeFaultFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "acquireMksTicket",
@@ -2110,7 +2110,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AcquireMksTicketResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "acquireTicket",
@@ -2118,7 +2118,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AcquireTicketResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setScreenResolution",
@@ -2126,7 +2126,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetScreenResolutionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "defragmentAllDisks",
@@ -2134,7 +2134,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DefragmentAllDisksResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createSecondaryVM_Task",
@@ -2142,7 +2142,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateSecondaryVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "VSphereCloud::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
     ],
     [ "urn:vim25/4.1",
       "turnOffFaultToleranceForVM_Task",
@@ -2150,7 +2150,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "TurnOffFaultToleranceForVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
     ],
     [ "urn:vim25/4.1",
       "makePrimaryVM_Task",
@@ -2158,7 +2158,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "MakePrimaryVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
     ],
     [ "urn:vim25/4.1",
       "terminateFaultTolerantVM_Task",
@@ -2166,7 +2166,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "TerminateFaultTolerantVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
     ],
     [ "urn:vim25/4.1",
       "disableSecondaryVM_Task",
@@ -2174,7 +2174,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DisableSecondaryVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableSecondaryVM_Task",
@@ -2182,7 +2182,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableSecondaryVM_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::VmFaultToleranceIssueFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmFaultToleranceIssueFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setDisplayTopology",
@@ -2190,7 +2190,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetDisplayTopologyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ToolsUnavailableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ToolsUnavailableFault"}} }
     ],
     [ "urn:vim25/4.1",
       "startRecording_Task",
@@ -2198,7 +2198,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StartRecording_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::HostIncompatibleForRecordReplayFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostIncompatibleForRecordReplayFault"}, "Bosh::Director::CloudProviders::VSphere::RecordReplayDisabledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RecordReplayDisabledFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::HostIncompatibleForRecordReplayFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostIncompatibleForRecordReplayFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::RecordReplayDisabledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RecordReplayDisabledFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "stopRecording_Task",
@@ -2206,7 +2206,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StopRecording_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "startReplaying_Task",
@@ -2214,7 +2214,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StartReplaying_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::HostIncompatibleForRecordReplayFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostIncompatibleForRecordReplayFault"}, "Bosh::Director::CloudProviders::VSphere::RecordReplayDisabledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RecordReplayDisabledFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::HostIncompatibleForRecordReplayFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostIncompatibleForRecordReplayFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::RecordReplayDisabledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RecordReplayDisabledFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "stopReplaying_Task",
@@ -2222,7 +2222,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StopReplaying_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::SnapshotFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"SnapshotFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "promoteDisks_Task",
@@ -2230,7 +2230,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PromoteDisks_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createScreenshot_Task",
@@ -2238,7 +2238,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateScreenshot_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryChangedDiskAreas",
@@ -2246,7 +2246,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryChangedDiskAreasResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryUnownedFiles",
@@ -2254,7 +2254,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryUnownedFilesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reloadVirtualMachineFromPath_Task",
@@ -2262,7 +2262,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "reloadVirtualMachineFromPath_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidPowerStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidPowerStateFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryFaultToleranceCompatibility",
@@ -2270,7 +2270,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryFaultToleranceCompatibilityResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeAlarm",
@@ -2278,7 +2278,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveAlarmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureAlarm",
@@ -2286,7 +2286,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureAlarmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createAlarm",
@@ -2294,7 +2294,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateAlarmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "getAlarm",
@@ -2302,7 +2302,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "GetAlarmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "areAlarmActionsEnabled",
@@ -2310,7 +2310,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AreAlarmActionsEnabledResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableAlarmActions",
@@ -2318,7 +2318,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableAlarmActionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "getAlarmState",
@@ -2326,7 +2326,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "GetAlarmStateResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "acknowledgeAlarm",
@@ -2334,7 +2334,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AcknowledgeAlarmResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureDVPortgroup_Task",
@@ -2342,7 +2342,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureDVPortgroup_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::ConcurrentAccessFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ConcurrentAccessFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DvsFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DvsFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryAvailableDvsSpec",
@@ -2350,7 +2350,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryAvailableDvsSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryCompatibleHostForNewDvs",
@@ -2358,7 +2358,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryCompatibleHostForNewDvsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryCompatibleHostForExistingDvs",
@@ -2366,7 +2366,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryCompatibleHostForExistingDvsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDvsCompatibleHostSpec",
@@ -2374,7 +2374,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDvsCompatibleHostSpecResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDvsFeatureCapability",
@@ -2382,7 +2382,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDvsFeatureCapabilityResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDvsByUuid",
@@ -2390,7 +2390,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDvsByUuidResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDvsConfigTarget",
@@ -2398,7 +2398,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDvsConfigTargetResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDvsCheckCompatibility",
@@ -2406,7 +2406,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDvsCheckCompatibilityResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "readNextEvents",
@@ -2414,7 +2414,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReadNextEventsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "readPreviousEvents",
@@ -2422,7 +2422,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReadPreviousEventsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveArgumentDescription",
@@ -2430,7 +2430,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveArgumentDescriptionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createCollectorForEvents",
@@ -2438,7 +2438,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateCollectorForEventsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "logUserEvent",
@@ -2446,7 +2446,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LogUserEventResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryEvents",
@@ -2454,7 +2454,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryEventsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "postEvent",
@@ -2462,7 +2462,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "PostEventResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidEventFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidEventFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidEventFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidEventFault"}} }
     ],
     [ "urn:vim25/4.1",
       "joinDomain_Task",
@@ -2470,7 +2470,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "JoinDomain_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}, "Bosh::Director::CloudProviders::VSphere::ActiveDirectoryFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ActiveDirectoryFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::ActiveDirectoryFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ActiveDirectoryFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::InvalidLoginFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidLoginFault"}} }
     ],
     [ "urn:vim25/4.1",
       "leaveCurrentDomain_Task",
@@ -2478,7 +2478,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "LeaveCurrentDomain_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ActiveDirectoryFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ActiveDirectoryFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::ActiveDirectoryFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ActiveDirectoryFaultFault"}, "VSphereCloud::AuthMinimumAdminPermissionFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AuthMinimumAdminPermissionFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureAutostart",
@@ -2486,7 +2486,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureAutostartResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "autoStartPowerOn",
@@ -2494,7 +2494,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AutoStartPowerOnResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "autoStartPowerOff",
@@ -2502,7 +2502,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AutoStartPowerOffResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryBootDevices",
@@ -2510,7 +2510,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryBootDevicesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateBootDevice",
@@ -2518,7 +2518,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateBootDeviceResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableHyperThreading",
@@ -2526,7 +2526,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableHyperThreadingResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "disableHyperThreading",
@@ -2534,7 +2534,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DisableHyperThreadingResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "searchDatastore_Task",
@@ -2542,7 +2542,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SearchDatastore_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "searchDatastoreSubFolders_Task",
@@ -2550,7 +2550,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SearchDatastoreSubFolders_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "deleteFile",
@@ -2558,7 +2558,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DeleteFileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
+        :faults => {"VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidDatastoreFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateLocalSwapDatastore",
@@ -2566,7 +2566,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateLocalSwapDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DatastoreNotWritableOnHostFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DatastoreNotWritableOnHostFault"}, "Bosh::Director::CloudProviders::VSphere::InaccessibleDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InaccessibleDatastoreFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::DatastoreNotWritableOnHostFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DatastoreNotWritableOnHostFault"}, "VSphereCloud::InaccessibleDatastoreFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InaccessibleDatastoreFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryAvailableDisksForVmfs",
@@ -2574,7 +2574,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryAvailableDisksForVmfsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVmfsDatastoreCreateOptions",
@@ -2582,7 +2582,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVmfsDatastoreCreateOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createVmfsDatastore",
@@ -2590,7 +2590,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateVmfsDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVmfsDatastoreExtendOptions",
@@ -2598,7 +2598,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVmfsDatastoreExtendOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVmfsDatastoreExpandOptions",
@@ -2606,7 +2606,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVmfsDatastoreExpandOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "extendVmfsDatastore",
@@ -2614,7 +2614,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExtendVmfsDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "expandVmfsDatastore",
@@ -2622,7 +2622,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExpandVmfsDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createNasDatastore",
@@ -2630,7 +2630,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateNasDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createLocalDatastore",
@@ -2638,7 +2638,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateLocalDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::FileNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::FileNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileNotFoundFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeDatastore",
@@ -2646,7 +2646,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveDatastoreResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "configureDatastorePrincipal",
@@ -2654,7 +2654,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ConfigureDatastorePrincipalResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryUnresolvedVmfsVolumes",
@@ -2662,7 +2662,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryUnresolvedVmfsVolumesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resignatureUnresolvedVmfsVolume_Task",
@@ -2670,7 +2670,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResignatureUnresolvedVmfsVolume_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::VmfsAmbiguousMountFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmfsAmbiguousMountFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::VmfsAmbiguousMountFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmfsAmbiguousMountFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateDateTimeConfig",
@@ -2678,7 +2678,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateDateTimeConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryAvailableTimeZones",
@@ -2686,7 +2686,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryAvailableTimeZonesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryDateTime",
@@ -2694,7 +2694,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryDateTimeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateDateTime",
@@ -2702,7 +2702,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateDateTimeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshDateTimeSystem",
@@ -2710,7 +2710,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshDateTimeSystemResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryAvailablePartition",
@@ -2718,7 +2718,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryAvailablePartitionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "selectActivePartition",
@@ -2726,7 +2726,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SelectActivePartitionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPartitionCreateOptions",
@@ -2734,7 +2734,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPartitionCreateOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPartitionCreateDesc",
@@ -2742,7 +2742,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPartitionCreateDescResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createDiagnosticPartition",
@@ -2750,7 +2750,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateDiagnosticPartitionResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateDefaultPolicy",
@@ -2758,7 +2758,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateDefaultPolicyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableRuleset",
@@ -2766,7 +2766,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableRulesetResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "disableRuleset",
@@ -2774,7 +2774,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DisableRulesetResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshFirewall",
@@ -2782,7 +2782,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshFirewallResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetFirmwareToFactoryDefaults",
@@ -2790,7 +2790,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetFirmwareToFactoryDefaultsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "backupFirmwareConfiguration",
@@ -2798,7 +2798,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "BackupFirmwareConfigurationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryFirmwareConfigUploadURL",
@@ -2806,7 +2806,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryFirmwareConfigUploadURLResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "restoreFirmwareConfiguration",
@@ -2814,7 +2814,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RestoreFirmwareConfigurationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::MismatchedBundleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MismatchedBundleFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidBundleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidBundleFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::MismatchedBundleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"MismatchedBundleFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidBundleFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidBundleFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshHealthStatusSystem",
@@ -2822,7 +2822,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshHealthStatusSystemResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetSystemHealthInfo",
@@ -2830,7 +2830,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetSystemHealthInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryModules",
@@ -2838,7 +2838,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryModulesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateModuleOptionString",
@@ -2846,7 +2846,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateModuleOptionStringResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryConfiguredModuleOptionString",
@@ -2854,7 +2854,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryConfiguredModuleOptionStringResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createUser",
@@ -2862,7 +2862,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateUserResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateUser",
@@ -2870,7 +2870,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateUserResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createGroup",
@@ -2878,7 +2878,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeUser",
@@ -2886,7 +2886,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveUserResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeGroup",
@@ -2894,7 +2894,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "assignUserToGroup",
@@ -2902,7 +2902,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AssignUserToGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unassignUserFromGroup",
@@ -2910,7 +2910,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UnassignUserFromGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::UserNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"UserNotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureServiceConsoleReservation",
@@ -2918,7 +2918,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureServiceConsoleReservationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureVirtualMachineReservation",
@@ -2926,7 +2926,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureVirtualMachineReservationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateNetworkConfig",
@@ -2934,7 +2934,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateNetworkConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateDnsConfig",
@@ -2942,7 +2942,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateDnsConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateIpRouteConfig",
@@ -2950,7 +2950,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateIpRouteConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateConsoleIpRouteConfig",
@@ -2958,7 +2958,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateConsoleIpRouteConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateIpRouteTableConfig",
@@ -2966,7 +2966,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateIpRouteTableConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addVirtualSwitch",
@@ -2974,7 +2974,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddVirtualSwitchResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeVirtualSwitch",
@@ -2982,7 +2982,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveVirtualSwitchResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateVirtualSwitch",
@@ -2990,7 +2990,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateVirtualSwitchResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addPortGroup",
@@ -2998,7 +2998,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddPortGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removePortGroup",
@@ -3006,7 +3006,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemovePortGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updatePortGroup",
@@ -3014,7 +3014,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdatePortGroupResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updatePhysicalNicLinkSpeed",
@@ -3022,7 +3022,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdatePhysicalNicLinkSpeedResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryNetworkHint",
@@ -3030,7 +3030,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryNetworkHintResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addVirtualNic",
@@ -3038,7 +3038,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeVirtualNic",
@@ -3046,7 +3046,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateVirtualNic",
@@ -3054,7 +3054,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addServiceConsoleVirtualNic",
@@ -3062,7 +3062,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddServiceConsoleVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeServiceConsoleVirtualNic",
@@ -3070,7 +3070,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveServiceConsoleVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateServiceConsoleVirtualNic",
@@ -3078,7 +3078,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateServiceConsoleVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::ResourceInUseFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ResourceInUseFault"}} }
     ],
     [ "urn:vim25/4.1",
       "restartServiceConsoleVirtualNic",
@@ -3086,7 +3086,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RestartServiceConsoleVirtualNicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshNetworkSystem",
@@ -3094,7 +3094,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshNetworkSystemResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkHostPatch_Task",
@@ -3102,7 +3102,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckHostPatch_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "scanHostPatch_Task",
@@ -3110,7 +3110,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ScanHostPatch_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::PatchMetadataInvalidFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchMetadataInvalidFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}, "VSphereCloud::PatchMetadataInvalidFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchMetadataInvalidFault"}} }
     ],
     [ "urn:vim25/4.1",
       "scanHostPatchV2_Task",
@@ -3118,7 +3118,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ScanHostPatchV2_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "stageHostPatch_Task",
@@ -3126,7 +3126,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StageHostPatch_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "installHostPatch_Task",
@@ -3134,7 +3134,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "InstallHostPatch_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::PatchBinariesNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchBinariesNotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RebootRequiredFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RebootRequiredFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::PatchNotApplicableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchNotApplicableFault"}, "Bosh::Director::CloudProviders::VSphere::NoDiskSpaceFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoDiskSpaceFault"}, "Bosh::Director::CloudProviders::VSphere::PatchMetadataInvalidFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchMetadataInvalidFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PatchInstallFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchInstallFailedFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::PatchInstallFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchInstallFailedFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RebootRequiredFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RebootRequiredFault"}, "VSphereCloud::NoDiskSpaceFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoDiskSpaceFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PatchNotApplicableFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchNotApplicableFault"}, "VSphereCloud::PatchMetadataInvalidFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchMetadataInvalidFault"}, "VSphereCloud::PatchBinariesNotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PatchBinariesNotFoundFault"}} }
     ],
     [ "urn:vim25/4.1",
       "installHostPatchV2_Task",
@@ -3142,7 +3142,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "InstallHostPatchV2_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "uninstallHostPatch_Task",
@@ -3150,7 +3150,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UninstallHostPatch_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryHostPatch_Task",
@@ -3158,7 +3158,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryHostPatch_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RequestCanceledFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RequestCanceledFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::PlatformConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"PlatformConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refresh",
@@ -3166,7 +3166,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updatePassthruConfig",
@@ -3174,7 +3174,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdatePassthruConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "configurePowerPolicy",
@@ -3182,7 +3182,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ConfigurePowerPolicyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateServicePolicy",
@@ -3190,7 +3190,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateServicePolicyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "startService",
@@ -3198,7 +3198,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StartServiceResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "stopService",
@@ -3206,7 +3206,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "StopServiceResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "restartService",
@@ -3214,7 +3214,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RestartServiceResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "uninstallService",
@@ -3222,7 +3222,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UninstallServiceResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshServices",
@@ -3230,7 +3230,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshServicesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureSnmpAgent",
@@ -3238,7 +3238,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureSnmpAgentResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "sendTestNotification",
@@ -3246,7 +3246,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SendTestNotificationResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveDiskPartitionInfo",
@@ -3254,7 +3254,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveDiskPartitionInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "computeDiskPartitionInfo",
@@ -3262,7 +3262,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ComputeDiskPartitionInfoResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "computeDiskPartitionInfoForResize",
@@ -3270,7 +3270,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ComputeDiskPartitionInfoForResizeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateDiskPartitions",
@@ -3278,7 +3278,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateDiskPartitionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "formatVmfs",
@@ -3286,7 +3286,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FormatVmfsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::AlreadyExistsFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"AlreadyExistsFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rescanVmfs",
@@ -3294,7 +3294,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RescanVmfsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "attachVmfsExtent",
@@ -3302,7 +3302,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AttachVmfsExtentResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "expandVmfsExtent",
@@ -3310,7 +3310,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExpandVmfsExtentResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "upgradeVmfs",
@@ -3318,7 +3318,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpgradeVmfsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "upgradeVmLayout",
@@ -3326,7 +3326,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpgradeVmLayoutResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryUnresolvedVmfsVolume",
@@ -3334,7 +3334,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryUnresolvedVmfsVolumeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resolveMultipleUnresolvedVmfsVolumes",
@@ -3342,7 +3342,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResolveMultipleUnresolvedVmfsVolumesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "unmountForceMountedVmfsVolume",
@@ -3350,7 +3350,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UnmountForceMountedVmfsVolumeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rescanHba",
@@ -3358,7 +3358,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RescanHbaResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "rescanAllHba",
@@ -3366,7 +3366,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RescanAllHbaResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateSoftwareInternetScsiEnabled",
@@ -3374,7 +3374,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateSoftwareInternetScsiEnabledResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiDiscoveryProperties",
@@ -3382,7 +3382,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiDiscoveryPropertiesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiAuthenticationProperties",
@@ -3390,7 +3390,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiAuthenticationPropertiesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiDigestProperties",
@@ -3398,7 +3398,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiDigestPropertiesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiAdvancedOptions",
@@ -3406,7 +3406,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiAdvancedOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiIPProperties",
@@ -3414,7 +3414,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiIPPropertiesResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiName",
@@ -3422,7 +3422,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiNameResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateInternetScsiAlias",
@@ -3430,7 +3430,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateInternetScsiAliasResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addInternetScsiSendTargets",
@@ -3438,7 +3438,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddInternetScsiSendTargetsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeInternetScsiSendTargets",
@@ -3446,7 +3446,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveInternetScsiSendTargetsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "addInternetScsiStaticTargets",
@@ -3454,7 +3454,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AddInternetScsiStaticTargetsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeInternetScsiStaticTargets",
@@ -3462,7 +3462,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveInternetScsiStaticTargetsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "enableMultipathPath",
@@ -3470,7 +3470,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "EnableMultipathPathResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "disableMultipathPath",
@@ -3478,7 +3478,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DisableMultipathPathResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "setMultipathLunPolicy",
@@ -3486,7 +3486,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SetMultipathLunPolicyResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPathSelectionPolicyOptions",
@@ -3494,7 +3494,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPathSelectionPolicyOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryStorageArrayTypePolicyOptions",
@@ -3502,7 +3502,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryStorageArrayTypePolicyOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateScsiLunDisplayName",
@@ -3510,7 +3510,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateScsiLunDisplayNameResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "refreshStorageSystem",
@@ -3518,7 +3518,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RefreshStorageSystemResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateIpConfig",
@@ -3526,7 +3526,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateIpConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::NotFoundFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NotFoundFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "selectVnic",
@@ -3534,7 +3534,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SelectVnicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "deselectVnic",
@@ -3542,7 +3542,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DeselectVnicResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryNetConfig",
@@ -3550,7 +3550,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryNetConfigResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidArgumentFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidArgumentFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidArgumentFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidArgumentFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "selectVnicForNicType",
@@ -3558,7 +3558,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "SelectVnicForNicTypeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidArgumentFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidArgumentFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidArgumentFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidArgumentFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "deselectVnicForNicType",
@@ -3566,7 +3566,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DeselectVnicForNicTypeResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidArgumentFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidArgumentFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
+        :faults => {"VSphereCloud::InvalidArgumentFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidArgumentFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::HostConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryOptions",
@@ -3574,7 +3574,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateOptions",
@@ -3582,7 +3582,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateOptionsResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkCompliance_Task",
@@ -3590,7 +3590,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckCompliance_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryComplianceStatus",
@@ -3598,7 +3598,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryComplianceStatusResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "clearComplianceStatus",
@@ -3606,7 +3606,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ClearComplianceStatusResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryExpressionMetadata",
@@ -3614,7 +3614,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryExpressionMetadataResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyProfile",
@@ -3622,7 +3622,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "associateProfile",
@@ -3630,7 +3630,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "AssociateProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "dissociateProfile",
@@ -3638,7 +3638,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DissociateProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkProfileCompliance_Task",
@@ -3646,7 +3646,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckProfileCompliance_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "exportProfile",
@@ -3654,7 +3654,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExportProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createProfile",
@@ -3662,7 +3662,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryPolicyMetadata",
@@ -3670,7 +3670,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryPolicyMetadataResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "findAssociatedProfile",
@@ -3678,7 +3678,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "FindAssociatedProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateClusterProfile",
@@ -3686,7 +3686,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateClusterProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateReferenceHost",
@@ -3694,7 +3694,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateReferenceHostResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "updateHostProfile",
@@ -3702,7 +3702,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "UpdateHostProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::ProfileUpdateFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ProfileUpdateFailedFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::ProfileUpdateFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"ProfileUpdateFailedFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "executeHostProfile",
@@ -3710,7 +3710,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ExecuteHostProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "applyHostConfig_Task",
@@ -3718,7 +3718,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ApplyHostConfig_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::HostConfigFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFailedFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::HostConfigFailedFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"HostConfigFailedFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "generateConfigTaskList",
@@ -3726,7 +3726,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "GenerateConfigTaskListResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryHostProfileMetadata",
@@ -3734,7 +3734,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryHostProfileMetadataResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createDefaultProfile",
@@ -3742,7 +3742,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateDefaultProfileResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeScheduledTask",
@@ -3750,7 +3750,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "reconfigureScheduledTask",
@@ -3758,7 +3758,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ReconfigureScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "runScheduledTask",
@@ -3766,7 +3766,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RunScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createScheduledTask",
@@ -3774,7 +3774,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveEntityScheduledTask",
@@ -3782,7 +3782,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveEntityScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createObjectScheduledTask",
@@ -3790,7 +3790,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateObjectScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}, "VSphereCloud::DuplicateNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"DuplicateNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "retrieveObjectScheduledTask",
@@ -3798,7 +3798,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RetrieveObjectScheduledTaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "openInventoryViewFolder",
@@ -3806,7 +3806,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "OpenInventoryViewFolderResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "closeInventoryViewFolder",
@@ -3814,7 +3814,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CloseInventoryViewFolderResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "modifyListView",
@@ -3822,7 +3822,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ModifyListViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetListView",
@@ -3830,7 +3830,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetListViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "resetListViewFromView",
@@ -3838,7 +3838,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "ResetListViewFromViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "destroyView",
@@ -3846,7 +3846,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "DestroyViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createInventoryView",
@@ -3854,7 +3854,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateInventoryViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createContainerView",
@@ -3862,7 +3862,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateContainerViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createListView",
@@ -3870,7 +3870,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateListViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "createListViewFromView",
@@ -3878,7 +3878,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CreateListViewFromViewResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "revertToSnapshot_Task",
@@ -3886,7 +3886,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RevertToSnapshot_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "Bosh::Director::CloudProviders::VSphere::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::VmConfigFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"VmConfigFaultFault"}, "VSphereCloud::FileFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"FileFaultFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InsufficientResourcesFaultFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InsufficientResourcesFaultFault"}} }
     ],
     [ "urn:vim25/4.1",
       "removeSnapshot_Task",
@@ -3894,7 +3894,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RemoveSnapshot_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "renameSnapshot",
@@ -3902,7 +3902,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "RenameSnapshotResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "Bosh::Director::CloudProviders::VSphere::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::TaskInProgressFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"TaskInProgressFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}, "VSphereCloud::InvalidNameFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidNameFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkCompatibility_Task",
@@ -3910,7 +3910,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckCompatibility_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::NoActiveHostInClusterFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoActiveHostInClusterFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::NoActiveHostInClusterFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"NoActiveHostInClusterFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "queryVMotionCompatibilityEx_Task",
@@ -3918,7 +3918,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "QueryVMotionCompatibilityEx_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkMigrate_Task",
@@ -3926,7 +3926,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckMigrate_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ],
     [ "urn:vim25/4.1",
       "checkRelocate_Task",
@@ -3934,7 +3934,7 @@ class VimPortType < ::SOAP::RPC::Driver
         ["out", "parameters", ["::SOAP::SOAPElement", "urn:vim25", "CheckRelocate_TaskResponse"]] ],
       { :request_style =>  :document, :request_use =>  :literal,
         :response_style => :document, :response_use => :literal,
-        :faults => {"Bosh::Director::CloudProviders::VSphere::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "Bosh::Director::CloudProviders::VSphere::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
+        :faults => {"VSphereCloud::InvalidStateFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"InvalidStateFault"}, "VSphereCloud::RuntimeFault"=>{:encodingstyle=>"document", :ns=>"urn:vim25", :use=>"literal", :namespace=>nil, :name=>"RuntimeFault"}} }
     ]
   ]
 
