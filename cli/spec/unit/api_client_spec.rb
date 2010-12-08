@@ -8,6 +8,20 @@ describe Bosh::Cli::ApiClient do
     @client = Bosh::Cli::ApiClient.new(DUMMY_TARGET, "user", "pass")
   end
 
+  describe "checking status" do
+
+    it "considers target valid if it responds with 401" do
+      @client.stub(:get).with("/status").and_return([401, "Not authorized"])
+      @client.can_access_director?.should be_true
+    end
+
+    it "considers target valid if it responds with 200" do
+      @client.stub(:get).with("/status").and_return([200, JSON.generate("status" => "Bosh Director (logged in as admin)")])
+      @client.can_access_director?.should be_true
+    end
+
+  end
+
   describe "polling jobs" do
     it "polls until success" do
       n_calls = 0
@@ -49,7 +63,7 @@ describe Bosh::Cli::ApiClient do
       @client.should_receive(:get).exactly(1).times
       
       @client.poll_job_status("/jobs/1", :poll_interval => 0, :max_polls => 10).should == :track_error
-    end    
+    end
   end
   
 end

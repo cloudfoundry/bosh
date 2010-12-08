@@ -15,7 +15,9 @@ require "highline/import"
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
-GLOBAL_OPTIONS = {}
+GLOBAL_OPTIONS = {
+  :director_checks => true
+}
 
 def run_cmd(*args)
   command = args.shift
@@ -67,17 +69,9 @@ opt_parser = OptionParser.new do |opts|
     GLOBAL_OPTIONS[:verbose] = v
   end
 
-  opts.on("--dry-run") do |v|
-    GLOBAL_OPTIONS[:dry_run] = v
-  end
-
-  opts.on("-u", "--username USER", String) do |v|
-    GLOBAL_OPTIONS[:username] = v
-  end
-
-  opts.on("-u", "--password PASSWORD", String) do |v|
-    GLOBAL_OPTIONS[:password] = v
-  end  
+  opts.on("--skip-director-checks", String) do |v|
+    GLOBAL_OPTIONS[:director_checks] = false
+  end    
 end
 
 opt_parser.parse!(ARGV)

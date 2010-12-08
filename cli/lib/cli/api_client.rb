@@ -13,7 +13,19 @@ module Bosh
         @client    = HTTPClient.new(:agent_name => "bosh-cli #{Bosh::Cli::VERSION}")
         @client.set_auth(nil, username, password)
       rescue URI::Error
-        raise ArgumentError, "#{base_uri} is an invalid URI, cannot perform API calls"
+        raise ArgumentError, "'#{base_uri}' is an invalid URI, cannot perform API calls"
+      end
+
+      def can_access_director?
+        [401, 200].include?(get("/status")[0])
+      rescue StandardError => e
+        false
+      end
+
+      def authenticated?
+        get("/status")[0] == 200
+      rescue StandardError => e
+        false
       end
 
       [ :post, :put, :get, :delete ].each do |method_name|

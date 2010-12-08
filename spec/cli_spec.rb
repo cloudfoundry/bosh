@@ -49,17 +49,27 @@ describe Bosh::Spec::IntegrationTest do
     OUT
   end
 
-  it "sets and reads target" do
+  it "whines on inaccessible target" do
     expect_output("target http://nowhere.com", <<-OUT)
-      Target set to 'http://nowhere.com'
+      Cannot talk to director at 'http://nowhere.com', please set correct target
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is 'http://nowhere.com'
+      Target not set
     OUT
   end
 
-  it "sets and reads existing deployment (also updating target in process)" do
+  it "sets correct target" do
+    expect_output("target http://localhost:8085", <<-OUT)
+      Target set to 'http://localhost:8085'
+    OUT
+
+    expect_output("target", <<-OUT)
+      Current target is 'http://localhost:8085'
+    OUT
+  end  
+
+  it "sets and reads existing deployment (also updating target in process, even if it's cannot be accessed!)" do
     expect_output("deployment vmforce", <<-OUT)
       WARNING! Your target has been changed to 'http://vmforce-target:2560'
       Deployment set to 'vmforce'
@@ -76,20 +86,20 @@ describe Bosh::Spec::IntegrationTest do
 
   it "unsets deployment when target is changed" do
     run_bosh("deployment 'vmforce'")
-    expect_output("target somewhere", <<-OUT)
+    expect_output("target http://localhost:8085", <<-OUT)
       WARNING! Your deployment has been unset
-      Target set to 'somewhere'
+      Target set to 'http://localhost:8085'
     OUT
-    expect_output("target", "Current target is 'somewhere'")
+    expect_output("target", "Current target is 'http://localhost:8085'")
     expect_output("deployment", "Deployment not set")
   end
 
   it "keeps track of user associated with target" do
-    run_bosh("target foo")
-    run_bosh("login john pass")
+    run_bosh("--skip-director-checks target foo")
+    run_bosh("--skip-director-checks login john pass")
 
-    run_bosh("target bar")
-    run_bosh("login jane pass")
+    run_bosh("--skip-director-checks target bar")
+    run_bosh("--skip-director-checks login jane pass")
 
     expect_output("status", <<-OUT)
       Target:     bar
@@ -97,7 +107,7 @@ describe Bosh::Spec::IntegrationTest do
       Deployment: not set
     OUT
 
-    run_bosh("target foo")
+    run_bosh("--skip-director-checks target foo")
     expect_output("status", <<-OUT)
       Target:     foo
       User:       john
