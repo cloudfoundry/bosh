@@ -12,20 +12,20 @@ module Bosh::Director
       end
 
       def initialize(task_id, stemcell_file)
-        @task = Models::Task[task_id]
-        raise Bosh::Director::TaskNotFound if @task.nil?
-
-        @stemcell_file = stemcell_file
-        @cloud = Config.cloud
-
         task_status_file = File.join(Config.base_dir, "tasks", task_id.to_s)
         FileUtils.mkdir_p(File.dirname(task_status_file))
         @logger = Logger.new(task_status_file)
         @logger.level= Config.logger.level
         Config.logger = @logger
 
+        @task = Models::Task[task_id]
+        raise Bosh::Director::TaskNotFound if @task.nil?
+
         @task.output = task_status_file
         @task.save!
+
+        @stemcell_file = stemcell_file
+        @cloud = Config.cloud
       end
 
       def perform
