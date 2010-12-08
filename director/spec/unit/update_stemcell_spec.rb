@@ -49,8 +49,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should upload the stemcell" do
-    @task.should_receive(:output=)
-    @task.should_receive(:save!)
+    @task.should_receive(:output).and_return("test_file")
 
     @task.should_receive(:state=).with(:processing)
     @task.should_receive(:timestamp=)
@@ -78,8 +77,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should cleanup the stemcell file" do
-    @task.should_receive(:output=)
-    @task.should_receive(:save!)
+    @task.should_receive(:output).and_return("test_file")
 
     @task.should_receive(:state=).with(:processing)
     @task.should_receive(:timestamp=)
