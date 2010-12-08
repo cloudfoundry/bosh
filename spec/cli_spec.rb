@@ -67,7 +67,13 @@ describe Bosh::Spec::IntegrationTest do
     expect_output("target", <<-OUT)
       Current target is 'http://localhost:8085'
     OUT
-  end  
+  end
+
+  it "allows omitting http" do
+    expect_output("target localhost:8085", <<-OUT)
+      Target set to 'localhost:8085'
+    OUT
+  end
 
   it "sets and reads existing deployment (also updating target in process, even if it's cannot be accessed!)" do
     expect_output("deployment vmforce", <<-OUT)
