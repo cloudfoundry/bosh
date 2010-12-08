@@ -15,6 +15,7 @@ module Bosh::Director
         FileUtils.mkdir_p(File.dirname(task_status_file))
         @logger = Logger.new(task_status_file)
         @logger.level= Config.logger.level
+        @logger.info("Starting task: #{task_id}")
         Config.logger = @logger
 
         @task = Models::Task[task_id]
