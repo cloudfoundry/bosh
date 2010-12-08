@@ -55,9 +55,14 @@ module Bosh::Director
           @version = safe_property(stemcell_manifest, "version", :class => Integer)
           @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
           @stemcell_image = File.join(stemcell_dir, "image")
+          @logger.info("Found: name=>#{@name}, version=>#{@version}, cloud_properties=>#{@cloud_properties}")
 
           @logger.info("Verifying stemcell image")
           raise Bosh::Director::StemcellInvalidImage unless File.file?(@stemcell_image)
+
+          @logger.info("Checking if this stemcell already exists")
+          stemcells = Models::Stemcell.find(:name => @name, :version => @version)
+          raise Bosh::Director::StemcellAlreadyExists unless stemcells.empty?
 
           @logger.info("Uploading stemcell to the cloud")
           cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
