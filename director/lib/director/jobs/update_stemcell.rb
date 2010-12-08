@@ -13,7 +13,7 @@ module Bosh::Director
 
       def initialize(task_id, stemcell_file)
         @task = Models::Task[task_id]
-        raise TaskNotFound if @task.nil?
+        raise Bosh::Director::TaskNotFound if @task.nil?
 
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
