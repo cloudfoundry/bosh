@@ -8,7 +8,7 @@ module Bosh::Agent
         @base_dir = config["dir"]
         @logger = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
-        @agent_id = "not-configured"
+        @agent_id = config["agent_id"]
 
         @configure = config["configure"]
         @redis_options = {:host => config["redis"]["host"],

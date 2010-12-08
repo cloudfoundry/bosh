@@ -13,12 +13,17 @@ require "agent"
 options = {
   "configure" => false,
   "logging" => { "level" => "DEBUG" },
-  "redis" => { "host" => "localhost" }
+  "redis" => { "host" => "localhost" },
+  "agent_id" => "not_configured"
 }
 
 opts = OptionParser.new do |opts|
   opts.on("-c", "--configure", "Invoke") do |opt|
     options["configure"] = true
+  end
+
+  opts.on("-a", "--agent_id String", "Agent ID") do |opt|
+    options["agent_id"] = opt
   end
 end
 opts.parse!(ARGV.dup)

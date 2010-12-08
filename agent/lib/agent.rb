@@ -45,7 +45,8 @@ if __FILE__ == $0
   options = {
     "configure" => true,
     "logging" => { "level" => "DEBUG" },
-    "redis" => { "host" => "localhost" }
+    "redis" => { "host" => "localhost" },
+    "agent_id" => "not_configured"
   }
   Bosh::Agent.run(options)
 end
