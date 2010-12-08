@@ -8,8 +8,12 @@ module Bosh
       DEFAULT_MAX_POLLS     = 300
       DEFAULT_POLL_INTERVAL = 1
 
+      attr_reader :base_uri
+
       def initialize(base_uri, username, password)
+        base_uri   = "http://#{base_uri}" unless base_uri =~ /^[^:]*:\/\//
         @base_uri  = URI.parse(base_uri)
+
         @client    = HTTPClient.new(:agent_name => "bosh-cli #{Bosh::Cli::VERSION}")
         @client.set_auth(nil, username, password)
       rescue URI::Error

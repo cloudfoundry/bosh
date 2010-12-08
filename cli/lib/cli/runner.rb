@@ -39,7 +39,9 @@ module Bosh
       end
 
       def cmd_set_target(name)
-        if @options[:director_checks] && !api_client(name).can_access_director?
+        client = api_client(name)
+
+        if @options[:director_checks] && !client.can_access_director?
           say("Cannot talk to director at '#{name}', please set correct target")
           return
         end
