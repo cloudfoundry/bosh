@@ -29,6 +29,7 @@ module Bosh::Director
           @task.result = e.to_s
           @task.timestamp = Time.now.to_i
           @task.save!
+          raise e
         end
       end
 
