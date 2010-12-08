@@ -10,6 +10,7 @@ end
 require "digest/sha1"
 require "erb"
 require "fileutils"
+require "forwardable"
 require "logger"
 require "monitor"
 require "optparse"
@@ -196,7 +197,7 @@ module Bosh::Director
       # TODO: add version to director
       Yajl::Encoder.encode("status" => "Bosh Director (logged in as #{@user})")
     end
-    
+
     # TODO: create an endpoint for task output
   end
 
