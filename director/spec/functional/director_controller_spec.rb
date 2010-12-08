@@ -52,6 +52,23 @@ describe Bosh::Director::Controller do
     last_response.status.should == 404
   end
 
+  describe "Fetching status" do
+
+    it "not authenticated" do
+      get "/status"
+      last_response.status.should == 401
+    end
+
+    it "authenticated" do
+      login_as_admin
+      get "/status"
+
+      last_response.status.should == 200
+      last_response.body.should == Yajl::Encoder.encode("status" => "Bosh Director (logged in as admin)")
+    end
+
+  end  
+
   describe "API calls" do
     before(:each) { login_as_admin }
 
@@ -224,6 +241,6 @@ describe Bosh::Director::Controller do
         user.should be_nil
       end
     end
-
   end
+  
 end

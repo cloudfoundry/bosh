@@ -19,10 +19,6 @@ module Bosh
         @out         = output
         @work_dir    = Dir.pwd
         @config_path = @options[:config] || DEFAULT_CONFIG_PATH
-
-        if logged_in?
-          @api_client = ApiClient.new(config["target"], credentials["username"], credentials["password"])
-        end
       end
 
       def run
@@ -38,12 +34,17 @@ module Bosh
 
       def cmd_status
         say("Target:     %s" % [ config['target'] || "not set" ])
-        say("User:       %s" % [ credentials && credentials["username"] || "not set" ])
+        say("User:       %s" % [ logged_in? && saved_credentials["username"] || "not set" ])
         say("Deployment: %s" % [ config['deployment'] || "not set" ])
       end
 
       def cmd_set_target(name)
-        config['target'] = name
+        if @options[:director_checks] && !api_client(name).can_access_director?
+          say("Cannot talk to director at '#{name}', please set correct target")
+          return
+        end
+
+        config["target"] = name
 
         if config['deployment']
           deployment = Deployment.new(@work_dir, config['deployment'])
@@ -113,6 +114,11 @@ module Bosh
           return
         end
 
+        if @options[:director_checks] && !api_client(config['target'], username, password).authenticated?
+          say("Cannot login as '#{username}', please try again")
+          return
+        end
+
         all_configs["auth"] ||= {}
         all_configs["auth"][config["target"]] = { "username" => username, "password" => password }
         save_config
@@ -126,7 +132,7 @@ module Bosh
           return
         end
 
-        created, message = User.create(@api_client, username, password)
+        created, message = User.create(api_client, username, password)
         say(message)
       end
 
@@ -158,7 +164,7 @@ module Bosh
         say("\nUploading stemcell...\n")
         stemcell = Stemcell.new(tarball_path)
 
-        status, body = stemcell.upload(@api_client) do |poll_number, job_status|
+        status, body = stemcell.upload(api_client) do |poll_number, job_status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
             say("[#{ts}] Stemcell creation job status is '#{job_status}' (#{poll_number} polls)...")
@@ -204,7 +210,7 @@ module Bosh
         say("\nUploading release...\n")        
         release = Release.new(tarball_path)
 
-        status, body = release.upload(@api_client) do |poll_number, job_status|
+        status, body = release.upload(api_client) do |poll_number, job_status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
             say("[#{ts}] Release update job status is '#{job_status}' (#{poll_number} polls)...")
@@ -255,7 +261,7 @@ module Bosh
         
         say("Deploying #{desc}...")
         say("\n")
-        status, body = deployment.perform(@api_client) do |poll_number, job_status|
+        status, body = deployment.perform(api_client) do |poll_number, job_status|
           if poll_number % 10 == 0
             ts = Time.now.strftime("%H:%M:%S")
             say("[#{ts}] Deployment job status is '#{job_status}' (#{poll_number} polls)...")
@@ -309,12 +315,11 @@ module Bosh
         end
 
         @_all_configs = configs
-
       rescue SystemCallError => e
         raise ConfigError, "Cannot read config file: %s" % [ e.message ]        
       end
 
-      def credentials
+      def saved_credentials
         if config["target"].nil? || all_configs["auth"].nil? || all_configs["auth"][config["target"]].nil?
           nil
         else
@@ -323,7 +328,16 @@ module Bosh
       end
 
       def logged_in?
-        !credentials.nil?
+        !saved_credentials.nil?
+      end
+
+      def api_client(target = nil, username = nil, password = nil)
+        if logged_in?
+          username ||= saved_credentials["username"]
+          password ||= saved_credentials["password"]
+        end
+        
+        ApiClient.new(target || config["target"], username, password)
       end
 
       def find_cmd_implementation

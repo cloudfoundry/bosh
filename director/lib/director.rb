@@ -192,7 +192,13 @@ module Bosh::Director
       end
     end
 
+    get "/status" do
+      # TODO: add version to director
+      Yajl::Encoder.encode("status" => "Bosh Director (logged in as #{@user})")
+    end
+    
     # TODO: create an endpoint for task output
   end
+
 end
 
