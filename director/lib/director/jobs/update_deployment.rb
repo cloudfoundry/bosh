@@ -11,21 +11,21 @@ module Bosh::Director
       end
 
       def initialize(task_id, manifest_file)
-        @task = Models::Task[task_id]
-        raise TaskNotFound if @task.nil?
-
-        @manifest_file = manifest_file
-        @manifest = File.open(@manifest_file) {|f| f.read}
-        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
-
         task_status_file = File.join(Config.base_dir, "tasks", task_id.to_s)
         FileUtils.mkdir_p(File.dirname(task_status_file))
         @logger = Logger.new(task_status_file)
         @logger.level= Config.logger.level
         Config.logger = @logger
 
+        @task = Models::Task[task_id]
+        raise TaskNotFound if @task.nil?
+
         @task.output = task_status_file
         @task.save!
+
+        @manifest_file = manifest_file
+        @manifest = File.open(@manifest_file) {|f| f.read}
+        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
       end
 
       def find_or_create_deployment(name)
