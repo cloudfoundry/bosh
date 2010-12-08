@@ -70,6 +70,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     stemcell.should_receive(:cid=)
     stemcell.should_receive(:save!)
 
+    Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => 5).and_return([])
     Bosh::Director::Models::Stemcell.stub!(:new).and_return(stemcell, nil)
 
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(1, @stemcell_file.path)
@@ -98,12 +99,33 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     stemcell.should_receive(:cid=)
     stemcell.should_receive(:save!)
 
+    Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => 5).and_return([])
     Bosh::Director::Models::Stemcell.stub!(:new).and_return(stemcell, nil)
 
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(1, @stemcell_file.path)
     update_stemcell_job.perform
 
     File.exist?(@stemcell_file.path).should be_false
+  end
+
+  it "should fail if the stemcell exists" do
+    @task.should_receive(:output).and_return("test_file")
+
+    @task.should_receive(:state=).with(:processing)
+    @task.should_receive(:timestamp=)
+    @task.should_receive(:save!)
+
+    @task.should_receive(:state=).with(:error)
+    @task.should_receive(:timestamp=)
+    @task.should_receive(:result=).with("Stemcell already exists, increment the version if it has changed")
+    @task.should_receive(:save!)
+
+    existing_stemcell = stub("existing_stemcell")
+
+    Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => 5).and_return([existing_stemcell])
+
+    update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(1, @stemcell_file.path)
+    update_stemcell_job.perform
   end
 
 end

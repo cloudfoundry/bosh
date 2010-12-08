@@ -40,6 +40,7 @@ module Bosh::Director
 
     ["StemcellInvalidArchive",  BAD_REQUEST, 50000, "Invalid stemcell archive, tar exit status: %s, output: %s"],
     ["StemcellInvalidImage",    BAD_REQUEST, 50001, "Invalid stemcell image"],
+    ["StemcellAlreadyExists",   BAD_REQUEST, 50002, "Stemcell already exists, increment the version if it has changed"],
   ].each do |e|
     class_name, response_code, error_code, format = e
 
