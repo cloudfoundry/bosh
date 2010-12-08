@@ -33,8 +33,8 @@ module Bosh::Director
       result = nil
       Dir.mktmpdir do |temp_dir|
         @logger.debug("extracting stemcell to: #{temp_dir}")
-        `tar -C #{temp_dir} -xzf #{image}`
-        raise "Corrupt image" if $?.exitstatus != 0
+        output = `tar -C #{temp_dir} -xzf #{image}`
+        raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
 
         ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf"}
         raise "Missing OVF" if ovf_file.nil?
