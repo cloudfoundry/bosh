@@ -11,21 +11,24 @@ module Bosh::Director
       end
 
       def initialize(task_id, release_dir)
-        task_status_file = File.join(Config.base_dir, "tasks", task_id.to_s)
-        FileUtils.mkdir_p(File.dirname(task_status_file))
-        @logger = Logger.new(task_status_file)
+        @task = Models::Task[task_id]
+        raise Bosh::Director::TaskNotFound if @task.nil?
+
+        @logger = Logger.new(@task.output)
         @logger.level= Config.logger.level
         @logger.info("Starting task: #{task_id}")
         Config.logger = @logger
 
-        @task = Models::Task[task_id]
-        raise Bosh::Director::TaskNotFound if @task.nil?
-
-        @task.output = task_status_file
-        @task.save!
-
-        @tmp_release_dir = release_dir
-        @blobstore = Config.blobstore
+        begin
+          @tmp_release_dir = release_dir
+          @blobstore = Config.blobstore
+        rescue Exception => e
+          @logger.error("#{e} - #{e.backtrace.join("\n")}")
+          @task.state = :error
+          @task.result = e.to_s
+          @task.timestamp = Time.now.to_i
+          @task.save!
+        end
       end
 
       def perform

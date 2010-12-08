@@ -12,12 +12,18 @@ describe Bosh::Director::Controller do
   include Rack::Test::Methods
 
   before(:each) do
-    test_config = spec_asset("test-director-config.yml")
-    Bosh::Director::Config.configure(YAML.load(test_config))
-
+    @temp_dir = Dir.mktmpdir
+    FileUtils.mkdir_p(@temp_dir)
+    test_config = YAML.load(spec_asset("test-director-config.yml"))
+    test_config["dir"] = @temp_dir
+    Bosh::Director::Config.configure(test_config)
     redis = Bosh::Director::Config.redis
     redis.select(15)
     redis.flushdb
+  end
+
+  after(:each) do
+    FileUtils.rm_rf(@temp_dir)
   end
 
   def app
@@ -131,9 +137,6 @@ describe Bosh::Director::Controller do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
-        get "/tasks/#{new_task_id}/output"
-        last_response.status.should == 204
-
         output_file = Tempfile.new("task_output")
         begin
           output_file.print("Test output")
@@ -154,9 +157,6 @@ describe Bosh::Director::Controller do
       it "has API call that return task output with ranges" do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
-
-        get "/tasks/#{new_task_id}/output"
-        last_response.status.should == 204
 
         output_file = Tempfile.new("task_output")
         begin
