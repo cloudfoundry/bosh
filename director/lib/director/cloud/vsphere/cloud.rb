@@ -2,6 +2,7 @@ require "director/cloud/vsphere/client"
 require "director/cloud/vsphere/defaultDriver"
 require "director/cloud/vsphere/lease_updater"
 require "director/cloud/vsphere/resources"
+require "director/cloud/vsphere/models/disk"
 
 module VSphereCloud
 
@@ -162,13 +163,27 @@ module VSphereCloud
       # detach disk from VM
     end
 
-    def create_disk(size, vm_locality = nil)
-      # find cluster, either by vm locality or cluster with most resources
-      # create disk
+    def create_disk(size, _ = nil)
+      disk = Models::Disk.new
+      disk.size = size
+      disk.save!
+      disk.id
     end
 
-    def delete_disk(disk)
-      # delete disk by disk id
+    def delete_disk(disk_cid)
+      disk = Models::Disk[disk_cid]
+      if disk
+        if disk.path
+          request = DeleteDatastoreFileRequestType.new(client.service_content.fileManager)
+          request.name = disk.path
+          request.datacenter = client.find_by_inventory_path(disk.datacenter)
+          task = client.service.deleteDatastoreFile_Task(request).returnval
+          client.wait_for_task(task)
+        end
+        disk.delete
+      else
+        raise "Could not find disk: #{disk_cid}"
+      end
     end
 
     def validate_deployment(old_manifest, new_manifest)
