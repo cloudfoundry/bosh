@@ -278,8 +278,6 @@ describe Bosh::Spec::IntegrationTest do
 
   it "can deploy release" do
     pending
-    #run_bosh("deployment test")
-    #run_bosh("login admin admin")
   end
 
 end
