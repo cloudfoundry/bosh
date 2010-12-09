@@ -43,9 +43,9 @@ Currently available bosh commands are:
 
   deployment <name>                        Choose deployment to work with (it also updates current target)
 
-  user create <username> [<password>]      Create user
+  user create [<username>] [<password>]    Create user
 
-  login <username> [<password>]            Use given username for the subsequent interactions
+  login [<username>] [<password>]          Use given username for the subsequent interactions
 
   release upload /path/to/release.tgz      Upload the release
   release verify /path/to/release.tgz      Verify the release
@@ -90,8 +90,10 @@ Main {
     display_usage
   end
 
-  mode_aliases("help", "-h", "--help") do
-    display_usage
+  mode "help" do
+    def run
+      display_usage
+    end
   end
 
   mode "version" do
@@ -143,10 +145,10 @@ Main {
   end
 
   mode "login" do
-    usage = "usage: #$0 login <username> [<password>]"
+    usage = "usage: #$0 login [<username>] [<password>]"
 
     argument :username do
-      error { puts "missing username\n#{usage}\n\n" }
+      optional
     end
 
     argument :password do
@@ -154,7 +156,12 @@ Main {
     end
 
     def run
-      username  = params["username"].value
+      username = \
+      if params["username"].given?
+        params["username"].value
+      else
+        ask("You username: ")
+      end
 
       password = \
       if params["password"].given?
@@ -163,12 +170,16 @@ Main {
         ask("Enter password: ") { |q| q.echo = "*" }
       end
 
-      run_cmd(:login, username, password)
+      logged_in = run_cmd(:login, username, password)
+
+      if logged_in == :retry
+        exec "#$0 login #{username}"
+      end
     end    
   end
 
   mode "user" do
-    usage = "usage: #$0 user create <username> [<password>]"
+    usage = "usage: #$0 user create [<username>] [<password>]"
     
     argument :operation do
       validate { |op| [ "create" ].include?(op) }
@@ -176,7 +187,7 @@ Main {
     end
 
     argument :username do
-      error { puts "missing username\n#{usage}\n\n" }
+      optional
     end
 
     argument :password do
@@ -185,7 +196,12 @@ Main {
 
     def run
       operation = params["operation"].value
-      username  = params["username"].value
+      username  = \
+      if params["username"].given?
+        params["username"].value
+      else
+        ask("Enter username: ")
+      end
 
       password = \
       if params["password"].given?
