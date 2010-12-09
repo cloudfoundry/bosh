@@ -114,6 +114,8 @@ module Bosh
           end
           
         end
+      ensure
+        FileUtils.rm_rf(tmp_dir)
       end
     end
 
