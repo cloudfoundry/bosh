@@ -43,6 +43,8 @@ module Bosh
         step("Stemcell image file", "Stemcell image file is missing") do
           File.exists?(File.expand_path("image", tmp_dir))
         end
+      ensure
+        FileUtils.rm_rf(tmp_dir)
       end        
     end
 

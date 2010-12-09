@@ -172,7 +172,7 @@ Main {
 
       logged_in = run_cmd(:login, username, password)
 
-      if logged_in == :retry
+      if logged_in == :retry && !params["password"].given?
         exec "#$0 login #{username}"
       end
     end    
