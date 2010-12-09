@@ -1,11 +1,4 @@
-# TODO: convert to a gem instead?
-$:.unshift(::File.expand_path("../../../blobstore_client/lib", __FILE__))
-require "blobstore_client"
-
-module Bosh
-  module Director
-  end
-end
+module Bosh; module Director; end; end
 
 require "digest/sha1"
 require "erb"
@@ -21,6 +14,7 @@ require "tmpdir"
 require "yaml"
 
 require "actionpool"
+require "blobstore_client"
 require "eventmachine"
 require "netaddr"
 require "ohm"

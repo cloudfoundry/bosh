@@ -1,6 +1,7 @@
 source :rubygems
 
 gem "actionpool"
+gem "blobstore_client"
 gem "eventmachine"
 gem "netaddr"
 gem "ohm", "0.1.0.rc4"

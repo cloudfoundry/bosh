@@ -4,6 +4,8 @@ GEM
     SystemTimer (1.2.1)
     actionpool (0.2.3)
       splib (~> 1.4)
+    blobstore_client (0.0.1)
+      httpclient
     builder (3.0.0)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
@@ -70,6 +72,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer
   actionpool
+  blobstore_client
   ci_reporter
   eventmachine
   minitar
