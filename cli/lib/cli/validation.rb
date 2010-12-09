@@ -14,8 +14,7 @@ module Bosh
         errors.empty?        
       end
 
-      def validate(&block)
-        @step_callback = block if block_given?
+      def validate
         perform_validation
       rescue ValidationHalted
       ensure
@@ -29,12 +28,13 @@ module Bosh
 
       def step(name, error_message, kind = :non_fatal, &block)
         passed = yield
-        if !passed
+
+        bosh_say("%-60s %s" % [ name, passed ? "OK" : "FAILED" ])
+        
+        unless passed
           errors << error_message
           raise ValidationHalted if kind == :fatal
         end
-      ensure
-        @step_callback.call(name, passed) if @step_callback
       end
       
     end

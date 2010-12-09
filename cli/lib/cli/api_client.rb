@@ -5,7 +5,7 @@ module Bosh
   module Cli
     class ApiClient
 
-      DEFAULT_MAX_POLLS     = 300
+      DEFAULT_MAX_POLLS     = nil # Not limited
       DEFAULT_POLL_INTERVAL = 1
 
       attr_reader :base_uri
@@ -46,12 +46,10 @@ module Bosh
 
         status = \
         if uploaded
-          if location !~ /^.+(\d+)\/?$/ # Doesn't look like we received URI
-            :non_trackable
+          if location =~ /\/tasks\/(\d+)\/?$/ # Doesn't look like we received URI
+            poll_task($1, options)
           else
-            self.poll_job_status(location, options) do |polls, status|
-              yield(polls, status) if block_given?
-            end
+            :non_trackable
           end
         else
           :failed
@@ -60,24 +58,47 @@ module Bosh
         [ status, body ]
       end
 
-      def poll_job_status(job_status_uri, options = {})
+      def poll_task(task_id, options = {})
         polls = 0
 
         poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
-        max_polls     = options[:max_polls] || DEFAULT_MAX_POLLS
+        max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
+
+        task = DirectorTask.new(self, task_id)
+
+        bosh_say("Tracking job output for job##{task_id}...")
+
+        no_output_yet = true
 
         while true
-          polls += 1          
-          status, body = self.get(job_status_uri)
+          polls += 1
+          state, output = task.state, task.output
+          
+          if output
+            no_output_yet = false            
+            bosh_say(output)
+          end
 
-          yield polls, body if block_given? # For tracking progress
-
-          return :track_error   if status != 200 || body == "error"
-          return :done          if body == "done"
-          return :track_timeout if polls >= max_polls
+          if no_output_yet && polls % 10 == 0
+            bosh_say("Job state is '%s', waiting for output..." % [ state ])
+          end
+          
+          if state == "done"
+            result = :done
+            break
+          elsif state == "error"
+            result = :error
+            break
+          elsif !max_polls.nil? && polls >= max_polls
+            result = :track_timeout
+            break
+          end
 
           wait(poll_interval)
         end
+
+        bosh_say(task.flush_output)
+        return result
       end
 
       def wait(interval) # Extracted for easier testing
@@ -86,8 +107,11 @@ module Bosh
 
       private
 
-      def request(method, uri, content_type = nil, payload = nil)
-        headers = {}
+      def say(message)
+        Config.output.puts(message)
+      end
+
+      def request(method, uri, content_type = nil, payload = nil, headers = {})
         headers["Content-Type"] = content_type if content_type
 
         response = @client.request(method, @base_uri + uri, nil, payload, headers)

@@ -21,15 +21,15 @@ GLOBAL_OPTIONS = {
 
 def run_cmd(*args)
   command = args.shift
-  output  = $stdout
- 
-  Bosh::Cli::Runner.run(command, output, GLOBAL_OPTIONS, *args)
+
+  Bosh::Cli::Config.output = STDOUT
+  Bosh::Cli::Runner.run(command, GLOBAL_OPTIONS, *args)
 
 rescue Bosh::Cli::CliError => e
-  output.puts("ERROR: #{e}")
+  bosh_say("ERROR: #{e}")
 ensure
-  output.write("\n");
-  output.flush
+  Bosh::Cli::Config.output.write("\n")
+  Bosh::Cli::Config.output.flush
 end
 
 def display_usage

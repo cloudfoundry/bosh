@@ -10,10 +10,7 @@ module Bosh
 
       def upload(api_client)
         return :invalid unless valid?
-
-        api_client.upload_and_track("/stemcells", "application/x-compressed", @stemcell_file) do |polls, status|
-          yield polls, status if block_given?
-        end
+        api_client.upload_and_track("/stemcells", "application/x-compressed", @stemcell_file)
       end
 
       def perform_validation
