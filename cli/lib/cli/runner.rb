@@ -117,7 +117,7 @@ module Bosh
 
         if @options[:director_checks] && !api_client(config['target'], username, password).authenticated?
           say("Cannot login as '#{username}', please try again")
-          return
+          return :retry
         end
 
         all_configs["auth"] ||= {}
