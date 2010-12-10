@@ -1,9 +1,18 @@
 module Bosh
   module Cli
 
-    class CliError < StandardError; end
-    class UnknownCommand < CliError; end
-    class ConfigError < CliError; end
+    class CliError < StandardError
+      def self.error_code(code = nil)
+        define_method(:error_code) { code }
+      end
+    end
+
+    class UnknownCommand       < CliError; error_code(100); end
+    class ConfigError          < CliError; error_code(101); end
+    class DirectorInaccessible < CliError; error_code(102); end
+
+    class DirectorError        < CliError; error_code(103); end
+    class AuthError            < DirectorError; error_code(104); end
     
   end
 end

@@ -6,6 +6,8 @@ describe Bosh::Cli::Runner do
     Bosh::Cli::Runner.class_eval do
       def cmd_dummy_cmd(arg1, arg2, arg3); end
     end
+    @out = StringIO.new
+    Bosh::Cli::Config.output = @out    
   end
 
   it "dispatches commands to appropriate methods" do
@@ -20,14 +22,6 @@ describe Bosh::Cli::Runner do
     lambda {
       runner.run
     }.should raise_error(ArgumentError, "wrong number of arguments for Bosh::Cli::Runner#cmd_dummy_cmd (2 for 3)")
-  end
-
-  it "whines on invalid command" do
-    runner = Bosh::Cli::Runner.new(:do_stuff, {}, 1, 2)
-
-    lambda {
-      runner.run
-    }.should raise_error(Bosh::Cli::UnknownCommand, "unknown command 'do_stuff'")
   end
   
 end

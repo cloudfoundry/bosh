@@ -29,11 +29,13 @@ module Bosh
           $?.exitstatus == 0
         end
 
+        manifest_file = File.expand_path("release.MF", tmp_dir)
+
         step("Manifest exists", "Cannot find release manifest", :fatal) do
-          File.exists?(File.expand_path("release.MF", tmp_dir))
+          File.exists?(manifest_file)
         end
 
-        manifest = YAML.load_file(File.expand_path("release.MF", tmp_dir))
+        manifest = YAML.load_file(manifest_file)
 
         step("Release name/version", "Manifest doesn't contain release name and/or version") do
           manifest.is_a?(Hash) && manifest.has_key?("name") && manifest.has_key?("version")
