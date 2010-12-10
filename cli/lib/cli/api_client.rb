@@ -5,31 +5,29 @@ module Bosh
   module Cli
     class ApiClient
 
+      DIRECTOR_ERROR_CODES = [ 400, 403, 404, 500 ]
+
       DEFAULT_MAX_POLLS     = nil # Not limited
       DEFAULT_POLL_INTERVAL = 1
 
-      attr_reader :base_uri
+      attr_reader :director_uri
 
-      def initialize(base_uri, username, password)
-        base_uri   = "http://#{base_uri}" unless base_uri =~ /^[^:]*:\/\//
-        @base_uri  = URI.parse(base_uri)
+      def initialize(director_uri, username, password)
+        director_uri  = "http://#{director_uri}" unless director_uri =~ /^[^:]*:\/\//
+        @director_uri = URI.parse(director_uri)
 
-        @client    = HTTPClient.new(:agent_name => "bosh-cli #{Bosh::Cli::VERSION}")
+        @client = HTTPClient.new(:agent_name => "bosh-cli #{Bosh::Cli::VERSION}")
         @client.set_auth(nil, username, password)
       rescue URI::Error
-        raise ArgumentError, "'#{base_uri}' is an invalid URI, cannot perform API calls"
+        raise DirectorError, "Invalid director URI '#{director_uri}'"
       end
 
       def can_access_director?
         [401, 200].include?(get("/status")[0])
-      rescue StandardError => e
-        false
       end
 
       def authenticated?
         get("/status")[0] == 200
-      rescue StandardError => e
-        false
       end
 
       [ :post, :put, :get, :delete ].each do |method_name|
@@ -107,24 +105,37 @@ module Bosh
 
       private
 
-      def say(message)
-        Config.output.puts(message)
-      end
-
       def request(method, uri, content_type = nil, payload = nil, headers = {})
         headers["Content-Type"] = content_type if content_type
 
-        response = @client.request(method, @base_uri + uri, nil, payload, headers)
-
-        status  = response.status_code
-        body    = response.content
-
+        response = @client.request(method, @director_uri + uri, nil, payload, headers)
+        status   = response.status_code
+        body     = response.content
         # httpclient uses  array format for storing headers,
-        # so we just convert it to hash for be
-        headers = response.header.get.inject({}) { |h, e| h[e[0]] = e[1]; h }
+        # so we just convert it to hash for easier access
+        headers  = response.header.get.inject({}) { |h, e| h[e[0]] = e[1]; h }
+
+        if DIRECTOR_ERROR_CODES.include?(status)
+          raise DirectorError, director_error_message(status, body)
+        end
 
         [ status, body, headers ]
-        # TODO: rescue URI::Error?
+
+      rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
+        raise DirectorInaccessible, "cannot access director (%s)" % [ e.message ]
+      end
+
+      
+      def director_error_message(status, body)
+        parsed_body = JSON.parse(body.to_s)
+        
+        if parsed_body["code"] && parsed_body["description"]
+          "Director error %s: %s" % [ parsed_body["code"], parsed_body["description"] ]
+        else
+          "Director error (HTTP %s): %s" % [ status, body ]
+        end
+      rescue JSON::ParserError
+        "Director error (HTTP %s): %s" % [ status, body ]
       end
       
     end

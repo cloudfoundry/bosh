@@ -25,7 +25,7 @@ module Bosh
           $?.exitstatus == 0
         end
 
-        manifest_file = File.expand_path("stemcell.MF", tmp_dir) 
+        manifest_file = File.expand_path("stemcell.MF", tmp_dir)
 
         step("Manifest exists", "Cannot find stemcell manifest", :fatal) do
           File.exists?(manifest_file)

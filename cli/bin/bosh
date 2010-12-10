@@ -21,12 +21,8 @@ GLOBAL_OPTIONS = {
 
 def run_cmd(*args)
   command = args.shift
-
-  Bosh::Cli::Config.output = STDOUT
+  Bosh::Cli::Config.output = $stdout
   Bosh::Cli::Runner.run(command, GLOBAL_OPTIONS, *args)
-
-rescue Bosh::Cli::CliError => e
-  bosh_say("ERROR: #{e}")
 ensure
   Bosh::Cli::Config.output.write("\n")
   Bosh::Cli::Config.output.flush
@@ -35,7 +31,7 @@ end
 def display_usage
   puts <<-USAGE
 
-usage: #$0 [--verbose|-v] [--config|-c <FILE>] command [<args>]
+usage: bosh [--verbose|-v] [--config|-c <FILE>] command [<args>]
 
 Currently available bosh commands are:
 
@@ -46,6 +42,7 @@ Currently available bosh commands are:
   user create [<username>] [<password>]    Create user
 
   login [<username>] [<password>]          Use given username for the subsequent interactions
+  logout                                   Forgets currently saved credentials
 
   release upload /path/to/release.tgz      Upload the release
   release verify /path/to/release.tgz      Verify the release
@@ -175,7 +172,14 @@ Main {
       if logged_in == :retry && !params["password"].given?
         exec "#$0 login #{username}"
       end
+      
     end    
+  end
+
+  mode "logout" do
+    def run
+      run_cmd(:logout)
+    end
   end
 
   mode "user" do

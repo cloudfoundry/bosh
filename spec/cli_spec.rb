@@ -50,9 +50,8 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "whines on inaccessible target" do
-    expect_output("target http://nowhere.com", <<-OUT)
-      Cannot talk to director at 'http://nowhere.com', please set correct target
-    OUT
+    out = run_bosh("target http://nowhere.com")
+    out.should =~ /Error 102: cannot access director/
 
     expect_output("target", <<-OUT)
       Target not set
@@ -209,7 +208,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "asks to login if no user set and operation requires talking to director" do
     expect_output("user create john pass", <<-OUT)
-      Please login first
+      Error 103: Invalid director URI 'http://'
     OUT
   end
 
@@ -237,10 +236,9 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("target http://localhost:8085")
     run_bosh("login admin admin")
     run_bosh("user create jane pass")
-    run_bosh("login jane foo")
-    
-    expect_output("user create john pass", <<-OUT)
-      Error 401: Authentication failed
+    run_bosh("logout")
+    expect_output("login jane foo", <<-OUT)
+      Cannot log in as 'jane', please try again
     OUT
   end
 

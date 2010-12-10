@@ -20,7 +20,16 @@ module Bosh
         @config_path = @options[:config] || DEFAULT_CONFIG_PATH
       end
 
+      def login_required
+        @login_required = true
+      end
+
       def run
+        if @login_required && !logged_in?
+          bosh_say("Please log in first")
+          return
+        end
+        
         method   = find_cmd_implementation
         expected = method.arity
 
@@ -29,6 +38,10 @@ module Bosh
         end
 
         method.call(*@args)
+      rescue AuthError
+        bosh_say("Director auth error")
+      rescue CliError => e
+        bosh_say("Error #{e.error_code}: #{e.message}")
       end
 
       def cmd_status
@@ -115,26 +128,39 @@ module Bosh
           return
         end
 
-        if @options[:director_checks] && !api_client(config['target'], username, password).authenticated?
-          say("Cannot login as '#{username}', please try again")
-          return :retry
+        if @options[:director_checks]
+          if !api_client(config['target'], username, password).authenticated?
+            say("Cannot log in as '#{username}', please try again")
+            return :retry
+          else
+            say("Logged in as '#{username}'")
+          end
         end
 
         all_configs["auth"] ||= {}
         all_configs["auth"][config["target"]] = { "username" => username, "password" => password }
         save_config
-        
-        say("Saved credentials for %s" % [ username ])
       end
 
-      def cmd_create_user(username, password)
-        if !logged_in?
-          say("Please login first")
+      def cmd_logout
+        if config["target"].nil?
+          say("Please choose target first")
           return
         end
 
-        created, message = User.create(api_client, username, password)
-        say(message)
+        all_configs["auth"] ||= {}
+        all_configs["auth"][config["target"]] = nil
+        save_config
+        say("You are no longer logged in to '#{config['target']}'")
+      end
+
+      def cmd_create_user(username, password)
+        created = User.create(api_client, username, password)
+        if created
+          bosh_say "User #{username} has been created"
+        else
+          bosh_say "Error creating user"
+        end
       end
 
       def cmd_verify_stemcell(tarball_path)
@@ -155,10 +181,7 @@ module Bosh
       end
 
       def cmd_upload_stemcell(tarball_path)
-        if !logged_in?
-          say("Please login first")
-          return
-        end
+        login_required
 
         stemcell = Stemcell.new(tarball_path)
 
@@ -199,18 +222,14 @@ module Bosh
       end
 
       def cmd_upload_release(tarball_path)
-        if !logged_in?
-          say("Please login first")
-          return
-        end
-
+        login_required
         release = Release.new(tarball_path)
 
         say("\nVerifying release...")
         release.validate
         say("\n")
 
-        say("\nUploading release...\n")        
+        say("\nUploading release...\n")
 
         status, message = release.upload(api_client)
 
@@ -294,7 +313,7 @@ module Bosh
         end
         
       rescue SystemCallError => e
-        raise ConfigError, "Cannot save config: %s" % [ e.message ]
+        raise ConfigError, e.message
       end
 
       def all_configs
