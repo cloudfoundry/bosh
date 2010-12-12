@@ -5,7 +5,7 @@ module Bosh::Agent
       attr_accessor :blobstore, :agent_id, :configure, :blobstore_options
 
       def setup(config)
-        @base_dir = config["dir"]
+        @base_dir = config["base_dir"]
         @logger = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @agent_id = config["agent_id"]

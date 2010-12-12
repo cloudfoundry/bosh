@@ -16,8 +16,9 @@ module Bosh::Agent
         @blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
         @blobstore_id, @sha1, @package_name, @package_version = args
 
-        @compile_base = "/var/b29/data/compile"
-        @install_base = "/var/b29/data/packages"
+        @base_dir = Bosh::Agent::Config.base_dir
+        @compile_base = "#{@base_dir}/data/compile"
+        @install_base = "#{@base_dir}/data/packages"
       end
 
       def start

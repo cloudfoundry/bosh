@@ -1,4 +1,4 @@
-#!/var/b29/bin/ruby
+#!/var/vmc/bin/ruby
 #
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
@@ -15,6 +15,7 @@ options = {
   "logging" => { "level" => "DEBUG" },
   "redis" => { "host" => "localhost" },
   "agent_id" => "not_configured"
+  "base_dir" => "/var/vmc"
 }
 
 opts = OptionParser.new do |opts|
@@ -24,6 +25,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("-a", "--agent_id String", "Agent ID") do |opt|
     options["agent_id"] = opt
+  end
+
+  opts.on("-b", "--base_dir String", "Base directory") do |opt|
+    options["base_dir"] = opt
   end
 end
 opts.parse!(ARGV.dup)
