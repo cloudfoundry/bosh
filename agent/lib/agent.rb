@@ -46,7 +46,8 @@ if __FILE__ == $0
     "configure" => true,
     "logging" => { "level" => "DEBUG" },
     "redis" => { "host" => "localhost" },
-    "agent_id" => "not_configured"
+    "agent_id" => "not_configured",
+    "base_dir" => "/var/vmc"
   }
   Bosh::Agent.run(options)
 end

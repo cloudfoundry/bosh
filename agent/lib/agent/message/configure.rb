@@ -14,6 +14,7 @@ module Bosh::Agent
       # TODO: set up iptables
       def initialize(args)
         @logger = Bosh::Agent::Config.logger
+        @base_dir = Bosh::Agent::Config.base_dir
       end
 
       def configure
@@ -174,8 +175,8 @@ module Bosh::Agent
 
           @logger.info("Swapon and mount data partition")
           %x[swapon #{swap_partition}]
-          %x[mkdir -p /var/b29/data]
-          %x[mount #{data_partition} /var/b29/data]
+          %x[mkdir -p #{@base_dir}/data]
+          %x[mount #{data_partition} #{@base_dir}/data]
         end
       end
 
