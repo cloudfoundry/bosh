@@ -33,6 +33,7 @@ cloud:
           - name: LAS01
             vm_folder: BOSH_VMs
             template_folder: BOSH_Templates
+            disk_path: BOSH_Disks
             clusters:
               - Cluster01
               - Cluster02
