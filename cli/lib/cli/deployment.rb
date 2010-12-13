@@ -17,7 +17,7 @@ module Bosh
       end
 
       def valid?
-        !(name.nil? || version.nil?)
+        !(name.nil? || release.nil? || target.nil?)
       end
 
       def perform(api_client)
@@ -37,7 +37,7 @@ module Bosh
         File.exists?(self.path)
       end
 
-      [ :target, :name, :version ].each do |property|
+      [ :target, :name, :release ].each do |property|
         define_method(property) do
           manifest[property.to_s]
         end

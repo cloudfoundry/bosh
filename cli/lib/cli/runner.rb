@@ -267,14 +267,13 @@ module Bosh
         end
 
         if !deployment.valid?
-          say("Invalid manifest for '%s': name, release, version and target are all required" % [ config["deployment"] ])
+          say("Invalid manifest for '%s': name, release and target are all required" % [ config["deployment"] ])
         end
         
-        desc = "'%s' (version %s) to '%s' using '%s' deployment manifest" %
-          [ deployment.name,
-            deployment.version,
-            deployment.target,
-            config["deployment"]
+        desc = "to '%s' using '%s' deployment manifest" %
+          [
+           deployment.target,
+           config["deployment"]
           ]
         
         say("Deploying #{desc}...")
