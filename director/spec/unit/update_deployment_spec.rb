@@ -62,6 +62,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       Bosh::Director::ResourcePoolUpdater.stub!(:new).with(resource_pool).and_return(resource_pool_updater)
       Bosh::Director::JobUpdater.stub!(:new).with(job).and_return(job_updater)
 
+      resource_pool.stub!(:name).and_return("resource_pool_name")
+
+      job.stub!(:name).and_return("job_name")
+
       @deployment_plan.stub!(:resource_pools).and_return([resource_pool])
       @deployment_plan.stub!(:jobs).and_return([job])
 

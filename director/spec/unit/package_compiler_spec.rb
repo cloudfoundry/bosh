@@ -2,6 +2,11 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Director::PackageCompiler do
 
+  before(:each) do
+    @logger = Logger.new(nil)
+    Bosh::Director::Config.stub!(:logger).and_return(@logger)
+  end
+
   describe "basic cases" do
 
     before(:each) do
@@ -54,6 +59,8 @@ describe Bosh::Director::PackageCompiler do
 
       @stemcell.stub!(:id).and_return(24)
       @stemcell.stub!(:cid).and_return("stemcell-id")
+      @stemcell.stub!(:name).and_return("stemcell-name")
+      @stemcell.stub!(:version).and_return("stemcell-version")
       @stemcell.stub!(:compilation_resources).and_return({"ram" => "2gb"})
 
       Bosh::Director::Models::Template.stub!(:find).with(:release_version_id => 42,
@@ -102,6 +109,7 @@ describe Bosh::Director::PackageCompiler do
       compiled_package.should_receive(:sha1=).with("some sha 1")
       compiled_package.should_receive(:blobstore_id=).with("some blobstore id")
       compiled_package.should_receive(:save!)
+      compiled_package.stub!(:blobstore_id).and_return("some blobstore id")
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
@@ -140,9 +148,13 @@ describe Bosh::Director::PackageCompiler do
       package_b.stub!(:release).and_return(release)
 
       stemcell_a.stub!(:cid).and_return("stemcell_a")
+      stemcell_a.stub!(:name).and_return("stemcell-a-name")
+      stemcell_a.stub!(:version).and_return("stemcell-a-version")
       stemcell_a.stub!(:compilation_resources).and_return({"ram" => "2gb"})
 
       stemcell_b.stub!(:cid).and_return("stemcell_b")
+      stemcell_b.stub!(:name).and_return("stemcell-b-name")
+      stemcell_b.stub!(:version).and_return("stemcell-b-version")
       stemcell_b.stub!(:compilation_resources).and_return({"ram" => "2gb"})
 
       deployment_plan.stub!(:compilation).and_return(compilation_config)
@@ -176,6 +188,7 @@ describe Bosh::Director::PackageCompiler do
       compiled_package.stub!(:sha1=)
       compiled_package.stub!(:blobstore_id=)
       compiled_package.stub!(:save!)
+      compiled_package.stub!(:blobstore_id).and_return("compiled blobstore id")
 
       Bosh::Director::Models::CompiledPackage.stub!(:new).and_return(compiled_package)
 

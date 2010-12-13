@@ -5,6 +5,7 @@ module Bosh::Director
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
+      @logger = Config.logger
     end
 
     def process_ip_reservations(state)
