@@ -20,16 +20,7 @@ module Bosh
         @config_path = @options[:config] || DEFAULT_CONFIG_PATH
       end
 
-      def login_required
-        @login_required = true
-      end
-
       def run
-        if @login_required && !logged_in?
-          bosh_say("Please log in first")
-          return
-        end
-        
         method   = find_cmd_implementation
         expected = method.arity
 
@@ -155,6 +146,11 @@ module Bosh
       end
 
       def cmd_create_user(username, password)
+        if !logged_in?
+          say("Please log in first")
+          return
+        end
+
         created = User.create(api_client, username, password)
         if created
           bosh_say "User #{username} has been created"
@@ -181,7 +177,10 @@ module Bosh
       end
 
       def cmd_upload_stemcell(tarball_path)
-        login_required
+        if !logged_in?
+          bosh_say("Please log in first")
+          return
+        end
 
         stemcell = Stemcell.new(tarball_path)
 
@@ -222,7 +221,11 @@ module Bosh
       end
 
       def cmd_upload_release(tarball_path)
-        login_required
+        if !logged_in?
+          bosh_say("Please log in first")
+          return
+        end
+        
         release = Release.new(tarball_path)
 
         say("\nVerifying release...")

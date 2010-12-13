@@ -51,7 +51,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "whines on inaccessible target" do
     out = run_bosh("target http://nowhere.com")
-    out.should =~ /Error 102: cannot access director/
+    out.should =~ /Error 103: cannot access director/
 
     expect_output("target", <<-OUT)
       Target not set
@@ -208,7 +208,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "asks to login if no user set and operation requires talking to director" do
     expect_output("user create john pass", <<-OUT)
-      Error 103: Invalid director URI 'http://'
+      Please log in first
     OUT
   end
 

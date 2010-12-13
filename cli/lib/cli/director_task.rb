@@ -19,7 +19,7 @@ module Bosh
       def output
         status, body, headers = @client.get(output_uri, nil, nil, { "Range" => "bytes=%d-" % [ @offset ] })
 
-        if status == 206 && headers["Content-Range"].to_s =~ /bytes \d+-(\d+)\/\d+/
+        if status == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
           @buf << body
           @offset = $1.to_i + 1
         else

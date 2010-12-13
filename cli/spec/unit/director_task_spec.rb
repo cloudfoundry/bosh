@@ -10,15 +10,15 @@ describe Bosh::Cli::DirectorTask do
   it "tracks partial output responses from director" do
     @client.stub!(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=0-").
-      and_return([206, "test\nout", {"Content-Range" => "bytes 0-7/100"}])
+      and_return([206, "test\nout", {:content_range => "bytes 0-7/100"}])
 
     @client.stub!(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=8-").
-      and_return([206, "put", {"Content-Range" => "bytes 8-10/100"}])
+      and_return([206, "put", {:content_range => "bytes 8-10/100"}])
 
     @client.stub!(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=11-").
-      and_return([206, "\nsuccess", {"Content-Range" => "bytes 11-18/100"}])
+      and_return([206, "\nsuccess", {:content_range => "bytes 11-18/100"}])
 
     @client.stub!(:get).
       with("/tasks/10/output", nil, nil, "Range" => "bytes=19-").
