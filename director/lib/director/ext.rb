@@ -1,6 +1,6 @@
 module Ohm
   class Model
-    
+
     def save!
       raise "Could not save #{self}: #{errors.pretty_inspect}" unless save
     end
@@ -51,4 +51,24 @@ class Hash
    each{ |key,value| mapped[key] = value.to_openstruct }
    OpenStruct.new(mapped)
  end
+end
+
+class Redis
+  class Client
+
+    def logging(commands)
+      return yield unless @logger && @logger.debug?
+
+      t1 = Time.now
+      begin
+        commands.each do |name, *args|
+          @logger.debug("Redis >> #{name.to_s.upcase} #{args.join(" ")}")
+        end
+        yield
+      ensure
+        @logger.debug("Redis >> %0.2fms" % ((Time.now - t1) * 1000))
+      end
+    end
+
+  end
 end
