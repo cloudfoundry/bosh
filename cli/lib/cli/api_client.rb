@@ -1,5 +1,8 @@
-$:.unshift(File.expand_path("../../../vendor/gems/httpclient-2.1.5.2/lib", __FILE__))
-require "httpclient"
+# $:.unshift(File.expand_path("../../../vendor/gems/httpclient-2.1.5.2/lib", __FILE__))
+# require "httpclient"
+
+require "restclient"
+require "progressbar"
 
 module Bosh
   module Cli
@@ -12,14 +15,14 @@ module Bosh
 
       attr_reader :director_uri
 
-      def initialize(director_uri, username, password)
-        director_uri  = "http://#{director_uri}" unless director_uri =~ /^[^:]*:\/\//
-        @director_uri = URI.parse(director_uri)
-
-        @client = HTTPClient.new(:agent_name => "bosh-cli #{Bosh::Cli::VERSION}")
-        @client.set_auth(nil, username, password)
-      rescue URI::Error
-        raise DirectorError, "Invalid director URI '#{director_uri}'"
+      def initialize(director_uri, user, password)
+        if director_uri.nil? || director_uri =~ /^\s*$/
+          raise DirectorMissing, "no director URI given"
+        end
+        
+        @director_uri = director_uri
+        @user         = user
+        @password     = password
       end
 
       def can_access_director?
@@ -36,15 +39,16 @@ module Bosh
         end
       end
 
-      def upload_and_track(uri, content_type, file, options = {})
-        http_status, body, headers = post(uri, content_type, File.read(file))
-        location = headers["Location"]
+      def upload_and_track(uri, content_type, filename, options = {})
+        file = FileWithProgressBar.open(filename, "r")
 
+        http_status, body, headers = post(uri, content_type, file)
+        location = headers[:location]
         uploaded = http_status == 302
 
         status = \
         if uploaded
-          if location =~ /\/tasks\/(\d+)\/?$/ # Doesn't look like we received URI
+          if location =~ /\/tasks\/(\d+)\/?$/ # Doesn't look like we received task URI
             poll_task($1, options)
           else
             :non_trackable
@@ -106,25 +110,30 @@ module Bosh
       private
 
       def request(method, uri, content_type = nil, payload = nil, headers = {})
+        headers = headers.dup
         headers["Content-Type"] = content_type if content_type
 
-        response = @client.request(method, @director_uri + uri, nil, payload, headers)
-        status   = response.status_code
-        body     = response.content
-        # httpclient uses  array format for storing headers,
-        # so we just convert it to hash for easier access
-        headers  = response.header.get.inject({}) { |h, e| h[e[0]] = e[1]; h }
+        req = {
+          :method => method, :url => @director_uri + uri,
+          :payload => payload, :headers => headers,
+          :user => @user, :password => @password
+        }
+
+        status = body = response_headers = nil
+        
+        RestClient::Request.execute(req) do |response, request, result|
+          status, body, response_headers = response.code, response.body, response.headers
+        end
 
         if DIRECTOR_ERROR_CODES.include?(status)
           raise DirectorError, director_error_message(status, body)
         end
 
-        [ status, body, headers ]
+        [ status, body, response_headers ]
 
       rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
         raise DirectorInaccessible, "cannot access director (%s)" % [ e.message ]
       end
-
       
       def director_error_message(status, body)
         parsed_body = JSON.parse(body.to_s)
@@ -137,7 +146,29 @@ module Bosh
       rescue JSON::ParserError
         "Director error (HTTP %s): %s" % [ status, body ]
       end
-      
     end
+
+    class FileWithProgressBar < ::File
+      def progress_bar
+        return @progress_bar if @progress_bar
+        @progress_bar = ProgressBar.new(File.basename(self.path), File.size(self.path), Config.output)
+        @progress_bar.file_transfer_mode
+        @progress_bar
+      end
+
+      def read(*args)
+        buf_len = args[0]
+        result  = super(*args)
+
+        if result && result.size > 0
+          progress_bar.inc(result.size)
+        else
+          progress_bar.finish
+        end
+
+        result
+      end
+    end
+    
   end
 end

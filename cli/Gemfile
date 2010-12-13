@@ -3,6 +3,8 @@ source :rubygems
 gem "main", ">= 4.3.0"
 gem "highline"
 gem "json_pure"
+gem "progressbar"
+gem "rest-client"
 
 group :test do
   gem "rspec"
