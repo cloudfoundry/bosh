@@ -1,6 +1,3 @@
-# $:.unshift(File.expand_path("../../../vendor/gems/httpclient-2.1.5.2/lib", __FILE__))
-# require "httpclient"
-
 require "restclient"
 require "progressbar"
 
@@ -58,6 +55,8 @@ module Bosh
         end
 
         [ status, body ]
+      ensure
+        file.progress_bar.halt
       end
 
       def poll_task(task_id, options = {})
@@ -116,7 +115,8 @@ module Bosh
         req = {
           :method => method, :url => @director_uri + uri,
           :payload => payload, :headers => headers,
-          :user => @user, :password => @password
+          :user => @user, :password => @password,
+          :timeout => 86400 * 3, :open_timeout => 300
         }
 
         status = body = response_headers = nil
@@ -133,6 +133,8 @@ module Bosh
 
       rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
         raise DirectorInaccessible, "cannot access director (%s)" % [ e.message ]
+      rescue SystemCallError => e
+        raise DirectorError, "System call error while talking to director: #{e}"
       end
       
       def director_error_message(status, body)
