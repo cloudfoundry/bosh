@@ -144,6 +144,7 @@ module VSphereCloud
     end
 
     def delete_vm(vm_cid)
+      # TODO: detach any persistent disks
       vm = ManagedObjectReference.new(vm_cid)
       vm.xmlattr_type = "VirtualMachine"
 
