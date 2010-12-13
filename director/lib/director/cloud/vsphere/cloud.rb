@@ -8,6 +8,8 @@ module VSphereCloud
 
   class Cloud
 
+    BOSH_AGENT_PROPERTIES_ID = "Bosh_Agent_Properties"
+
     attr_accessor :client
 
     def initialize(options)
@@ -98,7 +100,7 @@ module VSphereCloud
       existing_nic = devices.find {|device| device.kind_of?(VirtualEthernetCard)}
 
       file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
-      ephemeral_disk_config = create_disk_config_spec(datastore, file_name, system_disk.controllerKey, disk,
+      ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controllerKey, disk,
                                                       :create => true)
       config.deviceChange << ephemeral_disk_config
 
@@ -124,15 +126,20 @@ module VSphereCloud
                       :config => config)
       vm = client.wait_for_task(task)
 
-      vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device"])
+      vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
+                                                                   "config.vAppConfig.property"])
       devices = vm_properties["config.hardware.device"]
-
+      existing_app_properties = vm_properties["config.vAppConfig.property"]
       env = build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
       @logger.debug("setting VM env: #{env.pretty_inspect}")
-      set_agent_env(vm, env)
+
+      vm_config_spec = VirtualMachineConfigSpec.new
+      set_agent_env(vm_config_spec, existing_app_properties, env)
+      client.reconfig_vm(vm, vm_config_spec)
+
 
       @logger.debug("powering on VM: #{vm} (#{name})")
-      power_on_vm(cluster.datacenter.mob, vm)
+      client.power_on_vm(cluster.datacenter.mob, vm)
       vm
     end
 
@@ -142,7 +149,7 @@ module VSphereCloud
 
       power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
       if power_state != VirtualMachinePowerState::PoweredOff
-        power_off_vm(vm)
+        client.power_off_vm(vm)
       end
 
       task = client.service.destroy_Task(DestroyRequestType.new(vm)).returnval
@@ -153,14 +160,112 @@ module VSphereCloud
 
     end
 
-    def attach_disk(vm, disk)
-      # make sure vm and disk are in the same cluster
-      # if not move the disk to the VM cluster
-      # attach disk
+    def attach_disk(vm_cid, disk_cid)
+      @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
+      disk = Models::Disk[disk_cid]
+      raise "Disk not found: #{disk_cid}" if disk.nil?
+
+      vm = ManagedObjectReference.new(vm_cid)
+      vm.xmlattr_type = "VirtualMachine"
+
+      datacenter = client.find_parent(vm, "Datacenter")
+      datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+
+      vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "config.vAppConfig.property",
+                                                                   "config.hardware.device"])
+      datastores = vm_properties["datastore"]
+      raise "Can't find datastore for: #{vm}" if datastores.empty?
+      datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
+
+      vm_datastore_by_name = {}
+      datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
+
+      create_disk = false
+      if disk.path
+        if disk.datacenter == datacenter_name && datastore_properties.has_key?(disk.datastore)
+          @logger.info("Disk already in the right datastore")
+        else
+          @logger.info("Disk needs to move")
+          # need to move disk to right datastore
+          source_datacenter = client.find_by_inventory_path(disk.datacenter)
+          source_path = disk.path
+          destination_datastore = datastores.first.first
+          datacenter_disk_path = @resources.datacenters[disk.datacenter]
+          destination_path = "[#{destination_datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+          @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
+          client.move_disk(source_datacenter, source_path, datacenter, destination_path)
+          @logger.info("Moved disk successfully")
+
+          disk.datacenter = datacenter_name
+          disk.datastore = destination_datastore
+          disk.path = destination_path
+          disk.save!
+        end
+      else
+        @logger.info("Need to create disk")
+        # need to create disk
+        disk.datacenter = datacenter_name
+        disk.datastore = vm_datastore_by_name.first.first
+        datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
+        disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+        disk.save!
+        create_disk = true
+      end
+
+      devices = vm_properties["config.hardware.device"]
+
+      config = VirtualMachineConfigSpec.new
+      config.deviceChange = []
+
+      system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
+
+      attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], disk.path,
+                                                     system_disk.controllerKey, disk.size.to_i,
+                                                     :create => create_disk, :independent => true)
+      config.deviceChange << attached_disk_config
+      fix_device_unit_numbers(devices, config.deviceChange)
+
+      existing_app_properties = vm_properties["config.vAppConfig.property"]
+      env = get_current_agent_env(existing_app_properties)
+      @logger.info("Reading current agent env: #{env.pretty_inspect}")
+      env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unitNumber
+      @logger.info("Updating agent env to: #{env.pretty_inspect}")
+      set_agent_env(config, existing_app_properties, env)
+      @logger.info("Attaching disk")
+      client.reconfig_vm(vm, config)
+      @logger.info("Finished attaching disk")
+      # reboot?
     end
 
-    def detach_disk(vm, disk)
-      # detach disk from VM
+    def detach_disk(vm_cid, disk_cid)
+      @logger.info("Detaching disk: #{disk_cid} from vm: #{vm_cid}")
+      disk = Models::Disk[disk_cid]
+      raise "Disk not found: #{disk_cid}" if disk.nil?
+
+      vm = ManagedObjectReference.new(vm_cid)
+      vm.xmlattr_type = "VirtualMachine"
+
+      vm_properties = client.get_properties(vm, "VirtualMachine", ["config.vAppConfig.property",
+                                                                   "config.hardware.device"])
+
+      devices = vm_properties["config.hardware.device"]
+      virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
+
+      raise "Disk is not attached to this VM" if virtual_disk.nil?
+
+      config = VirtualMachineConfigSpec.new
+      config.deviceChange << create_delete_device_spec(virtual_disk)
+
+      existing_app_properties = vm_properties["config.vAppConfig.property"]
+      env = get_current_agent_env(existing_app_properties)
+      @logger.info("Reading current agent env: #{env.pretty_inspect}")
+      env["disks"]["persistent"].delete(disk.id.to_s)
+      @logger.info("Updating agent env to: #{env.pretty_inspect}")
+      set_agent_env(config, existing_app_properties, env)
+      @logger.info("Detaching disk")
+      client.reconfig_vm(vm, config)
+      @logger.info("Finished detaching disk")
+      # reboot?
     end
 
     def create_disk(size, _ = nil)
@@ -171,16 +276,15 @@ module VSphereCloud
     end
 
     def delete_disk(disk_cid)
+      @logger.info("Deleting disk: #{disk_cid}")
       disk = Models::Disk[disk_cid]
       if disk
         if disk.path
-          request = DeleteDatastoreFileRequestType.new(client.service_content.fileManager)
-          request.name = disk.path
-          request.datacenter = client.find_by_inventory_path(disk.datacenter)
-          task = client.service.deleteDatastoreFile_Task(request).returnval
-          client.wait_for_task(task)
+          datacenter = client.find_by_inventory_path(disk.datacenter)
+          client.delete_disk(datacenter, disk.path)
         end
         disk.delete
+        @logger.info("Finished deleting disk")
       else
         raise "Could not find disk: #{disk_cid}"
       end
@@ -254,7 +358,8 @@ module VSphereCloud
 
       disk_env = {
         "system" => system_disk.unitNumber,
-        "ephemeral" => ephemeral_disk.unitNumber
+        "ephemeral" => ephemeral_disk.unitNumber,
+        "persistent" => {}
       }
 
       env = {}
@@ -265,20 +370,42 @@ module VSphereCloud
       env
     end
 
-    def set_agent_env(vm, env)
-      env_property = create_app_property_spec("Bosh_Agent_Properties", "string", Yajl::Encoder.encode(env))
+    def get_current_agent_env(existing_app_properties)
+      property = existing_app_properties.find { |property_info| property_info.id == BOSH_AGENT_PROPERTIES_ID }
+      property ? Yajl::Parser.parse(property.value) : nil
+    end
+
+    def set_agent_env(vm_config_spec, existing_app_properties, env)
+      # TODO: scan vm_config_spec for new properties being added when calculating max_key, otherwise it will only allow
+      # one property per reconfig
+
+      max_key = -1
+      existing_property = nil
+      existing_app_properties.each do |property_info|
+        if property_info.id == BOSH_AGENT_PROPERTIES_ID
+          existing_property = property_info
+          break
+        end
+        max_key = property_info.key if property_info.key > max_key
+      end
+
+      if existing_property
+        operation = :edit
+        key = existing_property.key
+      else
+        operation = :add
+        key = max_key + 1
+      end
+
+      env_property = create_app_property_spec(key, BOSH_AGENT_PROPERTIES_ID, "string",
+                                              Yajl::Encoder.encode(env), operation)
 
       app_config_spec = VmConfigSpec.new
       app_config_spec.property = [env_property]
       # make sure the transport is set correctly, needed for guest to access these properties
       app_config_spec.ovfEnvironmentTransport = ["com.vmware.guestInfo"]
 
-      vm_config_spec = VirtualMachineConfigSpec.new
       vm_config_spec.vAppConfig = app_config_spec
-
-      request = ReconfigVMRequestType.new(vm, vm_config_spec)
-      task = client.service.reconfigVM_Task(request).returnval
-      client.wait_for_task(task)
     end
 
     def clone_vm(vm, name, folder, resource_pool, options={})
@@ -314,8 +441,9 @@ module VSphereCloud
 
     def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})
       backing_info = VirtualDiskFlatVer2BackingInfo.new
-      backing_info.datastore = datastore.mob
-      backing_info.diskMode = VirtualDiskMode::Persistent
+      backing_info.datastore = datastore
+      backing_info.diskMode = options[:independent] ?
+                              VirtualDiskMode::Independent_persistent : VirtualDiskMode::Persistent
       backing_info.fileName = file_name
 
       virtual_disk = VirtualDisk.new
@@ -380,35 +508,17 @@ module VSphereCloud
       end
     end
 
-    def create_app_property_spec(id, type, value)
+    def create_app_property_spec(key, id, type, value, operation)
       property_info = VAppPropertyInfo.new
-      property_info.key = -1
+      property_info.key = key
       property_info.id = id
       property_info.type = type
       property_info.value = value
 
       property_spec = VAppPropertySpec.new
-      property_spec.operation = ArrayUpdateOperation::Add
+      property_spec.operation = operation == :add ? ArrayUpdateOperation::Add : ArrayUpdateOperation::Edit
       property_spec.info = property_info
       property_spec
-    end
-
-    def power_on_vm(datacenter, vm)
-      request = PowerOnMultiVMRequestType.new(datacenter, [vm])
-      task = client.service.powerOnMultiVM_Task(request).returnval
-      result = client.wait_for_task(task)
-      if result.attempted.nil?
-        raise "Could not power on VM: #{result.notAttempted.localizedMessage}"
-      else
-        task = result.attempted.first.task
-        client.wait_for_task(task)
-      end
-    end
-
-    def power_off_vm(vm)
-      request = PowerOffVMRequestType.new(vm)
-      task = client.service.powerOffVM_Task(request).returnval
-      client.wait_for_task(task)
     end
 
     def import_ovf(name, ovf, resource_pool, datastore)
@@ -506,7 +616,7 @@ module VSphereCloud
             @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
             if properties["runtime.powerState"] != VirtualMachinePowerState::PoweredOff
               @logger.debug("Powering off #{index}/#{vms.size}: #{vm}")
-              power_off_vm(vm)
+              client.power_off_vm(vm)
             end
             task = client.service.destroy_Task(DestroyRequestType.new(vm)).returnval
             client.wait_for_task(task)

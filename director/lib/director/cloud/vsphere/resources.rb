@@ -10,6 +10,7 @@ module VSphereCloud
       attr_accessor :vm_folder_name
       attr_accessor :template_folder
       attr_accessor :template_folder_name
+      attr_accessor :disk_path
       attr_accessor :spec
 
       def inspect
@@ -85,6 +86,7 @@ module VSphereCloud
                                                                           datacenter.spec["template_folder"]])
         datacenter.vm_folder            = @client.find_by_inventory_path([datacenter.name, "vm",
                                                                           datacenter.spec["vm_folder"]])
+        datacenter.disk_path            = datacenter.spec["disk_path"]
         datacenter.clusters             = fetch_clusters(datacenter)
         datacenters[datacenter.name]    = datacenter
       end

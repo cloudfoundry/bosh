@@ -98,6 +98,58 @@ module VSphereCloud
       result[0]
     end
 
+    def find_parent(obj, parent_type)
+      loop do
+        obj = get_property(obj, obj.xmlattr_type, "parent")
+        break if obj.nil? || obj.xmlattr_type == parent_type
+      end
+      obj
+    end
+
+    def reconfig_vm(vm, config)
+      request = ReconfigVMRequestType.new(vm)
+      request.spec = config
+
+      task = @service.reconfigVM_Task(request).returnval
+      wait_for_task(task)
+    end
+
+    def power_on_vm(datacenter, vm)
+      request = PowerOnMultiVMRequestType.new(datacenter, [vm])
+      task = @service.powerOnMultiVM_Task(request).returnval
+      result = wait_for_task(task)
+      if result.attempted.nil?
+        raise "Could not power on VM: #{result.notAttempted.localizedMessage}"
+      else
+        task = result.attempted.first.task
+        wait_for_task(task)
+      end
+    end
+
+    def power_off_vm(vm)
+      request = PowerOffVMRequestType.new(vm)
+      task = @service.powerOffVM_Task(request).returnval
+      wait_for_task(task)
+    end
+
+    def delete_disk(datacenter, path)
+      request = DeleteDatastoreFileRequestType.new(@service_content.fileManager)
+      request.name = path
+      request.datacenter = datacenter
+      task = @service.deleteDatastoreFile_Task(request).returnval
+      wait_for_task(task)
+    end
+
+    def move_disk(source_datacenter, source_path, destination_datacenter, destination_path)
+      request = MoveDatastoreFileRequestType.new(@service_content.fileManager)
+      request.sourceName = source_path
+      request.sourceDatacenter = source_datacenter
+      request.destinationName = destination_path
+      request.destinationDatacenter = destination_datacenter
+      task = @service.moveDatastoreFile_Task(request).returnval
+      wait_for_task(task)
+    end
+
     def find_by_inventory_path(path)
       path = path.collect {|name| name.gsub("/", "%2f")}.join("/")
       find_request = FindByInventoryPathRequestType.new(@service_content.searchIndex, path)
