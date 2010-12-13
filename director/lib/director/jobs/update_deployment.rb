@@ -135,6 +135,7 @@ module Bosh::Director
               # TODO: generate result
               @task.timestamp = Time.now.to_i
               @task.save!
+              @logger.info("Done")
             end
           end
         rescue Exception => e

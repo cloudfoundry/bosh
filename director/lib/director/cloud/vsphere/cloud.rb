@@ -34,7 +34,7 @@ module VSphereCloud
     def create_stemcell(image, _)
       result = nil
       Dir.mktmpdir do |temp_dir|
-        @logger.debug("extracting stemcell to: #{temp_dir}")
+        @logger.debug("Extracting stemcell to: #{temp_dir}")
         output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
         raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
 
@@ -43,18 +43,18 @@ module VSphereCloud
         ovf_file = File.join(temp_dir, ovf_file)
 
         name = "sc-#{generate_unique_name}"
-        @logger.debug("generated name: #{name}")
+        @logger.debug("Generated name: #{name}")
 
         # TODO: make stemcell friendly version of the calls below
         cluster = @resources.find_least_loaded_cluster(1)
         datastore = @resources.find_least_loaded_datastore(cluster, 1)
-        @logger.debug("deploying to: #{cluster.mob} / #{datastore.mob}")
+        @logger.debug("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
         import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
         lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.importSpec,
                                  cluster.datacenter.template_folder)
         state = wait_for_nfc_lease(lease)
-        raise 'Could not acquire HTTP NFC lease' unless state == HttpNfcLeaseState::Ready
+        raise "Could not acquire HTTP NFC lease" unless state == HttpNfcLeaseState::Ready
 
         upload_ovf(ovf_file, lease, import_spec_result.fileItem)
         result = name
@@ -83,7 +83,7 @@ module VSphereCloud
       end
 
       name = "vm-#{generate_unique_name}"
-      @logger.debug("creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
+      @logger.debug("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
       replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
       replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, "VirtualMachine",
@@ -119,7 +119,7 @@ module VSphereCloud
 
       fix_device_unit_numbers(devices, config.deviceChange)
 
-      @logger.debug("cloning vm: #{replicated_stemcell_vm} to #{name}")
+      @logger.debug("Cloning vm: #{replicated_stemcell_vm} to #{name}")
 
       task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
                       :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
@@ -131,14 +131,14 @@ module VSphereCloud
       devices = vm_properties["config.hardware.device"]
       existing_app_properties = vm_properties["config.vAppConfig.property"]
       env = build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
-      @logger.debug("setting VM env: #{env.pretty_inspect}")
+      @logger.debug("Setting VM env: #{env.pretty_inspect}")
 
       vm_config_spec = VirtualMachineConfigSpec.new
       set_agent_env(vm_config_spec, existing_app_properties, env)
       client.reconfig_vm(vm, vm_config_spec)
 
 
-      @logger.debug("powering on VM: #{vm} (#{name})")
+      @logger.debug("Powering on VM: #{vm} (#{name})")
       client.power_on_vm(cluster.datacenter.mob, vm)
       vm
     end
@@ -301,14 +301,14 @@ module VSphereCloud
       stemcell_properties    = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
 
       if stemcell_properties["datastore"] != datastore.mob
-        @logger.debug("stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
+        @logger.debug("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
         local_stemcell_name    = "#{stemcell} / #{datastore.mob}"
         local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
                                   local_stemcell_name]
         replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
 
         if replicated_stemcell_vm.nil?
-          @logger.debug("cluster doesn't have stemcell #{stemcell}, replicating")
+          @logger.debug("Cluster doesn't have stemcell #{stemcell}, replicating")
           lock = nil
           @locks_mutex.synchronize do
             lock = @locks[local_stemcell_name]
@@ -320,7 +320,7 @@ module VSphereCloud
           lock.synchronize do
             replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
             if replicated_stemcell_vm.nil?
-              @logger.debug("cloning #{stemcell_vm} to #{local_stemcell_name}")
+              @logger.debug("Cloning #{stemcell_vm} to #{local_stemcell_name}")
               task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
                               cluster.resource_pool, :datastore => datastore.mob)
               replicated_stemcell_vm = client.wait_for_task(task)
@@ -577,7 +577,7 @@ module VSphereCloud
               end
             end
 
-            @logger.debug("uploading disk to: #{device_url.url}")
+            @logger.debug("Uploading disk to: #{device_url.url}")
 
             http_client.post(device_url.url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
                                 "Content-Length" => disk_file_size})

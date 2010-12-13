@@ -64,6 +64,16 @@ module Bosh::Director
         @cloud
       end
 
+      def logger=(logger)
+        @logger = logger
+        if @redis_options
+          @redis_options[:logger] = @logger
+        end
+        if redis?
+          redis.client.logger = @logger
+        end
+      end
+
       def redis_options=(options)
         @redis_options = options
         @pubsub_redis = nil
@@ -71,6 +81,10 @@ module Bosh::Director
 
       def redis
         threaded[:redis] ||= Redis.new(@redis_options)
+      end
+
+      def redis?
+        !threaded[:redis].nil?
       end
 
       def threaded
