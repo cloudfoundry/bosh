@@ -22,10 +22,7 @@ module Bosh
 
       def perform(api_client)
         return :invalid unless valid?
-
-        api_client.upload_and_track("/deployments", "text/yaml", self.path) do |polls, status|
-          yield polls, status if block_given?
-        end        
+        api_client.upload_and_track("/deployments", "text/yaml", self.path)
       end
       
       def path
