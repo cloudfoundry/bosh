@@ -78,6 +78,7 @@ module Bosh::Director
             @task.result = "/releases/#{@release_name}/#{@release_version}"
             @task.timestamp = Time.now.to_i
             @task.save!
+            @logger.info("Done")
           end
         rescue Exception => e
           @logger.error("#{e} - #{e.backtrace.join("\n")}")

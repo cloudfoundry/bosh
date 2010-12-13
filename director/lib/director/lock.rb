@@ -76,7 +76,7 @@ module Bosh::Director
         end
       else
         redis.unwatch
-      end        
+      end
     end
 
     def lock_expired?(lock)
