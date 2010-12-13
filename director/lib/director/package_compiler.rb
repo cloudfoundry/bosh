@@ -5,6 +5,7 @@ module Bosh::Director
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
+      @logger = Config.logger
     end
 
     def find_uncompiled_packages
@@ -29,7 +30,9 @@ module Bosh::Director
     end
 
     def compile
+      @logger.info("Looking for packages that need to be compiled")
       uncompiled_packages = find_uncompiled_packages
+      @logger.info("Found: #{uncompiled_packages.join(",")}")
       return if uncompiled_packages.empty?
 
       network = @deployment_plan.compilation.network
@@ -51,9 +54,13 @@ module Bosh::Director
 
         stemcell = uncompiled_package[:stemcell]
         stemcell_cid = stemcell.cid
+        stemcell_name = stemcell.name
+        stemcell_version = stemcell.version
         compilation_resources = stemcell.compilation_resources
 
         pool.process do
+          @logger.info("Compiling package: #{package_name}/#{package_version} on " +
+                           "stemcell: #{stemcell_name}/#{stemcell_version}")
           network_settings = nil
           networks_mutex.synchronize do
             network_settings = networks.shift
@@ -79,6 +86,8 @@ module Bosh::Director
           compiled_package.sha1 = task["result"]["sha1"]
           compiled_package.blobstore_id = task["result"]["blobstore_id"]
           compiled_package.save!
+          @logger.info("Compiled package #{package_name}/#{package_version} on " +
+                           "stemcell: #{stemcell_name}/#{stemcell_version}, saved in #{compiled_package.blobstore_id}")
         end
       end
 
