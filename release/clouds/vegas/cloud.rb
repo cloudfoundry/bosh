@@ -8,8 +8,8 @@ set :ftp_proxy,   "http://squid01.las01.emcatmos.com:3128"
 set :no_proxy,    ".emcatmos.com,localhost,127.0.0.0/8,172.16.0.0/16"
 set :sudo,        "/usr/bin/sudo -i"
 
-set :user,        "b29"
-set :runner,      "b29"
+set :user,        "vmc"
+set :runner,      "vmc"
 set :workers,     2
 
 role :director,   "172.30.252.113"

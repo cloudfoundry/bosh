@@ -4,7 +4,8 @@ set :application, "bosh_director"
 set :repository,  "git@github.com:vmware-ac/bosh.git"
 
 set :use_sudo, false
-set :deploy_to,   "/var/b29/bosh"
+set :deploy_to,   "/var/vmc/bosh"
+set :tmp_dir,     "/var/vmc/tmp"
 set :shared_children, %w(system config log pids)
 set :scm, :git
 set :deploy_via, :copy
@@ -124,8 +125,8 @@ namespace :deploy do
     CMD
 
     run <<-CMD
-      #{sudo} mkdir -p /var/b29/bosh /var/b29/tmp &&
-      #{sudo} chown #{runner}:#{runner} /var/b29/bosh /var/b29/tmp
+      #{sudo} mkdir -p #{deploy_to} #{tmp_dir} &&
+      #{sudo} chown #{runner}:#{runner} #{deploy_to} #{tmp_dir}
     CMD
   end
 
@@ -136,13 +137,13 @@ namespace :deploy do
   after "deploy:setup", "deploy:setup_runit"
 
   task :setup_director_runit, :roles => :director, :except => {:no_release => true} do
-    put(template("director/run"), "/var/b29/tmp/director.run")
-    put(template("director/log/run"), "/var/b29/tmp/director.log.run")
+    put(template("director/run"), "#{tmp_dir}/director.run")
+    put(template("director/log/run"), "#{tmp_dir}/director.log.run")
 
     run <<-CMD
       #{sudo} mkdir -p /etc/service /etc/sv/director /etc/sv/director/log /etc/sv/director/log/main &&
-      #{sudo} mv /var/b29/tmp/director.run /etc/sv/director/run &&
-      #{sudo} mv /var/b29/tmp/director.log.run /etc/sv/director/log/run &&
+      #{sudo} mv #{tmp_dir}/director.run /etc/sv/director/run &&
+      #{sudo} mv #{tmp_dir}/director.log.run /etc/sv/director/log/run &&
       #{sudo} chmod 755 /etc/sv/director/run /etc/sv/director/log/run &&
       #{sudo} chown root:root /etc/sv/director/run /etc/sv/director/log/run &&
       #{sudo} ln -fs /etc/sv/director /etc/service/
@@ -151,13 +152,13 @@ namespace :deploy do
 
   task :setup_workers_runit, :roles => :workers, :except => {:no_release => true} do
     workers.times do |index|
-      put(template("worker/run", binding), "/var/b29/tmp/worker-#{index}.run")
-      put(template("worker/log/run", binding), "/var/b29/tmp/worker-#{index}.log.run")
+      put(template("worker/run", binding), "#{tmp_dir}/worker-#{index}.run")
+      put(template("worker/log/run", binding), "#{tmp_dir}/worker-#{index}.log.run")
 
       run <<-CMD
         #{sudo} mkdir -p /etc/service /etc/sv/worker-#{index} /etc/sv/worker-#{index}/log /etc/sv/worker-#{index}/log/main &&
-        #{sudo} mv /var/b29/tmp/worker-#{index}.run /etc/sv/worker-#{index}/run &&
-        #{sudo} mv /var/b29/tmp/worker-#{index}.log.run /etc/sv/worker-#{index}/log/run &&
+        #{sudo} mv #{tmp_dir}/worker-#{index}.run /etc/sv/worker-#{index}/run &&
+        #{sudo} mv #{tmp_dir}/worker-#{index}.log.run /etc/sv/worker-#{index}/log/run &&
         #{sudo} chmod 755 /etc/sv/worker-#{index}/run /etc/sv/worker-#{index}/log/run &&
         #{sudo} chown root:root /etc/sv/worker-#{index}/run /etc/sv/worker-#{index}/log/run &&
         #{sudo} ln -fs /etc/sv/worker-#{index} /etc/service/
