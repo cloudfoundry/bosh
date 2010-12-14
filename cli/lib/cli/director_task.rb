@@ -12,6 +12,7 @@ module Bosh
       def state
         response_code, body = @client.get(state_uri)
 
+        raise MissingTask, "No task##{@task_id} found" if response_code == 404
         return "error" if response_code != 200
         return body
       end

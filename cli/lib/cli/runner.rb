@@ -72,6 +72,19 @@ module Bosh
         end
       end
 
+      def cmd_show_task(task_id)
+        task = DirectorTask.new(api_client, task_id)
+        say("Task state: #{task.state}")
+
+        say("Task log:")
+        begin
+          state, output = task.state, task.output
+          bosh_say(output) if output
+          sleep(1)
+        end while ["queued", "processing"].include?(state)
+        bosh_say(task.flush_output)
+      end
+
       def cmd_set_deployment(name)
         deployment = Deployment.new(@work_dir, name)
 

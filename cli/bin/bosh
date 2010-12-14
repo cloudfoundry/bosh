@@ -19,6 +19,8 @@ GLOBAL_OPTIONS = {
   :director_checks => true
 }
 
+trap("INT") { puts "Exiting..."; exit(0) }
+
 def run_cmd(*args)
   command = args.shift
   Bosh::Cli::Config.output = $stdout
@@ -45,6 +47,8 @@ Currently available bosh commands are:
   logout                                   Forgets currently saved credentials
 
   purge                                    Purge cached data
+
+  task <id>                                Show task status (monitor if not done)
 
   release upload /path/to/release.tgz      Upload the release
   release verify /path/to/release.tgz      Verify the release
@@ -253,6 +257,14 @@ Main {
       when "upload": run_cmd(:upload_stemcell, tarball_path)
       end
     end    
+  end
+
+  mode "task" do
+    argument :task_id
+
+    def run
+      run_cmd(:show_task, params["task_id"].value)
+    end
   end
 
   mode "release" do

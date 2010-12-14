@@ -67,7 +67,7 @@ module Bosh
 
         task = DirectorTask.new(self, task_id)
 
-        bosh_say("Tracking job output for job##{task_id}...")
+        bosh_say("Tracking task output for task##{task_id}...")
 
         no_output_yet = true
 
@@ -81,7 +81,7 @@ module Bosh
           end
 
           if no_output_yet && polls % 10 == 0
-            bosh_say("Job state is '%s', waiting for output..." % [ state ])
+            bosh_say("Task state is '%s', waiting for output..." % [ state ])
           end
           
           if state == "done"
