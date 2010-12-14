@@ -4,6 +4,33 @@ require "director/cloud/vsphere/lease_updater"
 require "director/cloud/vsphere/resources"
 require "director/cloud/vsphere/models/disk"
 
+module SOAP
+
+  module Mapping
+    def self.fault2exception(fault, registry = nil)
+      registry ||= Mapping::DefaultRegistry
+      detail = if fault.detail
+          soap2obj(fault.detail, registry) || ""
+        else
+          ""
+        end
+      if detail.is_a?(Mapping::SOAPException)
+        begin
+          e = detail.to_e
+    remote_backtrace = e.backtrace
+          e.set_backtrace(nil)
+          raise e # ruby sets current caller as local backtrace of e => e2.
+        rescue Exception => e
+    e.set_backtrace(remote_backtrace + e.backtrace[1..-1])
+          raise
+        end
+      else
+        raise fault
+      end
+    end
+  end
+end
+
 module VSphereCloud
 
   class Cloud
