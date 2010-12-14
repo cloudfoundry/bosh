@@ -632,7 +632,7 @@ module VSphereCloud
         datacenters << cluster.datacenter
       end
 
-      pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 32)
+      pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
       index = 0
 
       datacenters.each do |datacenter|
@@ -658,7 +658,7 @@ module VSphereCloud
         end
       end
 
-      sleep(0.1) while pool.working + pool.action_size > 0
+      pool.wait
     end
 
   end

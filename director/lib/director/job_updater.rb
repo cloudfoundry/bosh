@@ -11,7 +11,7 @@ module Bosh::Director
 
     def delete_unneeded_instances
       unless @job.unneeded_instances.empty?
-        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
+        pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
         @job.unneeded_instances.each do |instance|
           vm = instance.vm
           disk_cid = instance.disk_cid
@@ -30,7 +30,7 @@ module Bosh::Director
             instance.delete
           end
         end
-        sleep(0.1) while pool.working + pool.action_size > 0
+        pool.wait
       end
     end
 
@@ -43,7 +43,7 @@ module Bosh::Director
       end
 
       unless instances.empty?
-        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
+        pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
         num_canaries = [@job.update.canaries, instances.size].min
 
         # canaries first
@@ -60,7 +60,7 @@ module Bosh::Director
           end
         end
 
-        sleep(0.1) while pool.working + pool.action_size > 0
+        pool.wait
 
         raise RollbackException if @job.should_rollback?
 
@@ -77,7 +77,7 @@ module Bosh::Director
           end
         end
 
-        sleep(0.1) while pool.working + pool.action_size > 0
+        pool.wait
 
         raise RollbackException if @job.should_rollback?
       end
