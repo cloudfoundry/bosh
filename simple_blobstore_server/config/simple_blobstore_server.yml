@@ -1,6 +1,5 @@
 ---
-path: /var/b29/bosh/blob
+path: /var/vmc/bosh/blob
 port: 9999
 users:
   admin: admin
-  
