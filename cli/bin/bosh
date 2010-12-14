@@ -44,6 +44,8 @@ Currently available bosh commands are:
   login [<username>] [<password>]          Use given username for the subsequent interactions
   logout                                   Forgets currently saved credentials
 
+  purge                                    Purge cached data
+
   release upload /path/to/release.tgz      Upload the release
   release verify /path/to/release.tgz      Verify the release
 
@@ -61,7 +63,11 @@ opt_parser = OptionParser.new do |opts|
   opts.on("-c", "--config FILE") do |v|
     GLOBAL_OPTIONS[:config] = v
   end
-  
+
+  opts.on("--cache-dir DIR") do |v|
+    GLOBAL_OPTIONS[:cache_dir] = v
+  end
+
   opts.on("-v", "--[no-]verbose") do |v|
     GLOBAL_OPTIONS[:verbose] = v
   end
@@ -182,6 +188,12 @@ Main {
     end
   end
 
+  mode "purge" do
+    def run
+      run_cmd(:purge)
+    end
+  end
+  
   mode "user" do
     usage = "usage: #$0 user create [<username>] [<password>]"
     
