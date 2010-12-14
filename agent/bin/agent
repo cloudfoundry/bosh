@@ -14,7 +14,7 @@ options = {
   "configure" => false,
   "logging" => { "level" => "DEBUG" },
   "redis" => { "host" => "localhost" },
-  "agent_id" => "not_configured"
+  "agent_id" => "not_configured",
   "base_dir" => "/var/vmc"
 }
 
