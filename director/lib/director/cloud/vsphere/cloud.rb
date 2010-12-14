@@ -80,11 +80,17 @@ module VSphereCloud
         import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
         lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.importSpec,
                                  cluster.datacenter.template_folder)
+        @logger.info("Waiting for NFC lease")
         state = wait_for_nfc_lease(lease)
         raise "Could not acquire HTTP NFC lease" unless state == HttpNfcLeaseState::Ready
 
-        upload_ovf(ovf_file, lease, import_spec_result.fileItem)
+        @logger.info("Uploading")
+        vm = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
         result = name
+
+        @logger.info("Taking initial snapshot")
+        task = take_snapshot(vm, "initial")
+        client.wait_for_task(task)
       end
       result
     end
