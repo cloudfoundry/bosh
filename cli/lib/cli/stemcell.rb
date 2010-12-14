@@ -59,12 +59,20 @@ module Bosh
             manifest["cloud_properties"].is_a?(Hash)
         end
 
-        bosh_say("\nStemcell manifest:")
-        bosh_say(manifest_yaml)
+        print_info(manifest)
 
       ensure
         FileUtils.rm_rf(tmp_dir)
-      end        
+      end
+
+      def print_info(manifest)
+        bosh_say("\nStemcell info")
+        bosh_say("-------------")
+        
+        bosh_say "Name:    %s" % [ manifest["name"] || "missing".red ]
+        bosh_say "Version: %s" % [ manifest["version"] || "missing".red ]
+      end
+
     end
 
   end

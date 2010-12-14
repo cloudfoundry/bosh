@@ -19,6 +19,30 @@ module BoshExtensions
   end
 end
 
+module ColorizeOutput
+
+  def red
+    colorize(self, "\e[0m\e[31m")
+  end
+
+  def green
+    colorize(self, "\e[0m\e[32m")    
+  end
+
+  def colorize(text, color_code)
+    if Bosh::Cli::Config.colorize
+      "#{color_code}#{text}\e[0m"
+    else
+      text
+    end
+  end
+  
+end
+
 class Object
   include BoshExtensions
+end
+
+class String
+  include ColorizeOutput
 end

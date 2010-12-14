@@ -16,14 +16,16 @@ $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
 GLOBAL_OPTIONS = {
-  :director_checks => true
+  :director_checks => true,
+  :colorize        => true
 }
 
 trap("INT") { puts "Exiting..."; exit(0) }
 
 def run_cmd(*args)
   command = args.shift
-  Bosh::Cli::Config.output = $stdout
+  Bosh::Cli::Config.output   = $stdout
+  Bosh::Cli::Config.colorize = GLOBAL_OPTIONS.delete(:colorize)
   Bosh::Cli::Runner.run(command, GLOBAL_OPTIONS, *args)
 ensure
   Bosh::Cli::Config.output.write("\n")
@@ -76,7 +78,11 @@ opt_parser = OptionParser.new do |opts|
     GLOBAL_OPTIONS[:verbose] = v
   end
 
-  opts.on("--skip-director-checks", String) do |v|
+  opts.on("--no-color") do
+    GLOBAL_OPTIONS[:colorize] = false
+  end
+
+  opts.on("--skip-director-checks") do
     GLOBAL_OPTIONS[:director_checks] = false
   end    
 end

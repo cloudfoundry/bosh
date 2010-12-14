@@ -114,11 +114,43 @@ module Bosh
               end
             end
           end
-          
         end
+
+        print_info(manifest)
       ensure
         FileUtils.rm_rf(tmp_dir)
       end
+
+      def print_info(manifest)
+        bosh_say("\nRelease info")
+        bosh_say("------------")
+
+        bosh_say "Name:    %s" % [ manifest["name"] ]
+        bosh_say "Version: %s" % [ manifest["version"] ]
+
+        bosh_say "\n"
+        bosh_say "Packages"
+
+        if manifest["packages"].size == 0
+          bosh_say "  - none"
+        end
+        
+        for package in manifest["packages"]
+          bosh_say "  - %s (%s)" % [ package["name"], package["version"] ]
+        end
+
+        bosh_say "\n"
+        bosh_say "Jobs"
+
+        if manifest["jobs"].size == 0
+          bosh_say "  - none"
+        end        
+
+        for job in manifest["jobs"]
+          bosh_say "  - %s" % [ job ]
+        end
+      end
+      
     end
 
   end

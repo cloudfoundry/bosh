@@ -25,7 +25,7 @@ describe Bosh::Spec::IntegrationTest do
   def run_bosh(cmd)
     Dir.chdir(BOSH_WORK_DIR) do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-      `#{CLI_DIR}/bin/bosh --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
+      `#{CLI_DIR}/bin/bosh --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
     end
   end
 
@@ -134,14 +134,13 @@ describe Bosh::Spec::IntegrationTest do
       Stemcell image file                                          OK
       Writing manifest to cache...
       Stemcell properties                                          OK
-      Stemcell manifest:
-      ---
-      name: ubuntu-stemcell
-      version: 1
-      cloud_properties:
-      property1: test
-      property2: test
-      '#{stemcell_filename}' is a valid stemcell
+
+      Stemcell info
+      -------------
+      Name:    ubuntu-stemcell
+      Version: 1
+
+     '#{stemcell_filename}' is a valid stemcell
     OUT
   end
 
@@ -156,12 +155,12 @@ describe Bosh::Spec::IntegrationTest do
       Stemcell image file                                          OK
       Writing manifest to cache...
       Stemcell properties                                          FAILED
-      Stemcell manifest:
-      ---
-      name: ubuntu-stemcell
-      cloud_properties:
-      property1: test
-      property2: test
+
+      Stemcell info
+      -------------
+      Name:    ubuntu-stemcell
+      Version: missing
+
       '#{stemcell_filename}' is not a valid stemcell:
       - Manifest should contain valid name, version and cloud properties
     OUT
@@ -213,6 +212,19 @@ describe Bosh::Spec::IntegrationTest do
      Check config 'test.conf' for 'sweeper'                       OK
      Job 'sweeper' needs 'mutator' package                        OK
      Monit file for 'sweeper'                                     OK
+
+     Release info
+     ------------
+     Name:    appcloud
+     Version: 0.1
+     Packages
+     - stuff (0.1.17)
+     - mutator (2.99.7)
+     Jobs
+     - cacher
+     - cleaner
+     - sweeper
+
      '#{release_filename}' is a valid release
     OUT
   end
@@ -232,6 +244,19 @@ describe Bosh::Spec::IntegrationTest do
      Read job 'cacher' (1 of 3)                                   FAILED
      Read job 'sweeper' (2 of 3)                                  FAILED
      Read job 'tester' (3 of 3)                                   FAILED
+
+     Release info
+     ------------
+     Name:    appcloud
+     Version: 0.1
+     Packages
+     - stuff (0.1.17)
+     - mutator (2.99.7)
+     Jobs
+     - cacher
+     - sweeper
+     - tester
+
      '#{release_filename}' is not a valid release:
      - Incorrect checksum for package 'stuff'
      - Incorrect checksum for package 'mutator'
