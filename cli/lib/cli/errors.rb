@@ -14,6 +14,8 @@ module Bosh
 
     class DirectorError        < CliError; error_code(201); end
     class AuthError            < DirectorError; error_code(202); end
+
+    class CacheDirectoryError  < CliError; error_code(301); end
     
   end
 end

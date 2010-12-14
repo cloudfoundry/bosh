@@ -2,13 +2,15 @@ require "spec_helper"
 require "fileutils"
 require "redis"
 require "digest/sha1"
+require "tmpdir"
 
 describe Bosh::Spec::IntegrationTest do
 
-  BOSH_CONFIG   = File.expand_path("../assets/bosh_config.yml", __FILE__)
-  BOSH_WORK_DIR = File.expand_path("../assets/bosh_work_dir", __FILE__)
-  CLOUD_DIR     = "/tmp/bosh_test_cloud"
-  CLI_DIR       = File.expand_path("../../cli", __FILE__)
+  BOSH_CONFIG    = File.expand_path("../assets/bosh_config.yml", __FILE__)
+  BOSH_CACHE_DIR = Dir.mktmpdir
+  BOSH_WORK_DIR  = File.expand_path("../assets/bosh_work_dir", __FILE__)
+  CLOUD_DIR      = "/tmp/bosh_test_cloud"
+  CLI_DIR        = File.expand_path("../../cli", __FILE__)
   
   before(:all) do
     puts "Starting sandboxed environment for Bosh tests..."
@@ -23,7 +25,7 @@ describe Bosh::Spec::IntegrationTest do
   def run_bosh(cmd)
     Dir.chdir(BOSH_WORK_DIR) do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-      `#{CLI_DIR}/bin/bosh --config #{BOSH_CONFIG} #{cmd}`
+      `#{CLI_DIR}/bin/bosh --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
     end
   end
 
@@ -39,6 +41,7 @@ describe Bosh::Spec::IntegrationTest do
     Redis.new(:host => "localhost", :port => 63795).flushdb
     FileUtils.rm_rf(BOSH_CONFIG)
     FileUtils.rm_rf(CLOUD_DIR)
+    FileUtils.rm_rf(BOSH_CACHE_DIR)
   end
 
   it "shows status" do
@@ -125,10 +128,19 @@ describe Bosh::Spec::IntegrationTest do
     expect_output("stemcell verify #{stemcell_filename}", <<-OUT)
       Verifying stemcell...
       File exists and readable                                     OK
+      Manifest not found in cache, verifying tarball...
       Extract tarball                                              OK
       Manifest exists                                              OK
-      Stemcell properties                                          OK
       Stemcell image file                                          OK
+      Writing manifest to cache...
+      Stemcell properties                                          OK
+      Stemcell manifest:
+      ---
+      name: ubuntu-stemcell
+      version: 1
+      cloud_properties:
+      property1: test
+      property2: test
       '#{stemcell_filename}' is a valid stemcell
     OUT
   end
@@ -138,13 +150,36 @@ describe Bosh::Spec::IntegrationTest do
     expect_output("stemcell verify #{stemcell_filename}", <<-OUT)
       Verifying stemcell...
       File exists and readable                                     OK
+      Manifest not found in cache, verifying tarball...
       Extract tarball                                              OK
       Manifest exists                                              OK
-      Stemcell properties                                          FAILED
       Stemcell image file                                          OK
+      Writing manifest to cache...
+      Stemcell properties                                          FAILED
+      Stemcell manifest:
+      ---
+      name: ubuntu-stemcell
+      cloud_properties:
+      property1: test
+      property2: test
       '#{stemcell_filename}' is not a valid stemcell:
       - Manifest should contain valid name, version and cloud properties
     OUT
+  end
+
+  it "uses cache when verifying stemcell for the second time" do
+    stemcell_filename = spec_asset("valid_stemcell.tgz")    
+    run_1 = run_bosh("stemcell verify #{stemcell_filename}")
+    run_2 = run_bosh("stemcell verify #{stemcell_filename}")
+
+    run_1.should =~ /Manifest not found in cache, verifying tarball/
+    run_1.should =~ /Writing manifest to cache/
+
+    run_2.should =~ /Using cached manifest/
+  end
+
+  it "doesn't allow purging when using non-default directory" do
+    run_bosh("purge").should =~ Regexp.new(Regexp.escape("Cache directory '#{BOSH_CACHE_DIR}' differs from default, please remove manually"))
   end
 
   it "verifies a sample valid release" do

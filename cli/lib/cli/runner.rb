@@ -18,6 +18,7 @@ module Bosh
         @args        = args
         @work_dir    = Dir.pwd
         @config_path = @options[:config] || DEFAULT_CONFIG_PATH
+        @cache       = Cache.new(@options[:cache_dir])
       end
 
       def run
@@ -133,6 +134,15 @@ module Bosh
         save_config
       end
 
+      def cmd_purge
+        if @cache.cache_dir != Cache::DEFAULT_CACHE_DIR
+          say("Cache directory '#{@cache.cache_dir}' differs from default, please remove manually")
+        else
+          FileUtils.rm_rf(@cache.cache_dir)
+          say("Purged cache")          
+        end
+      end
+
       def cmd_logout
         if config["target"].nil?
           say("Please choose target first")
@@ -160,7 +170,7 @@ module Bosh
       end
 
       def cmd_verify_stemcell(tarball_path)
-        stemcell = Stemcell.new(tarball_path)
+        stemcell = Stemcell.new(tarball_path, @cache)
 
         say("\nVerifying stemcell...")
         stemcell.validate
@@ -182,7 +192,7 @@ module Bosh
           return
         end
 
-        stemcell = Stemcell.new(tarball_path)
+        stemcell = Stemcell.new(tarball_path, @cache)
 
         say("\nVerifying stemcell...")
         stemcell.validate
