@@ -76,6 +76,12 @@ module Bosh
         deployment = Deployment.new(@work_dir, name)
 
         if deployment.manifest_exists?
+
+          if deployment.target.nil? || deployment.target =~ /^\s*$/
+            say("Deployment manifest for '#{name}' has no target, please add target to manifest before proceeding")
+            return
+          end
+
           config['deployment'] = name
 
           if deployment.target != config['target']
