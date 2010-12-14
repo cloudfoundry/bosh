@@ -175,7 +175,7 @@ module Bosh::Director
     def delete_unneeded_vms
       unless @deployment_plan.unneeded_vms.empty?
         # TODO: make pool size configurable?
-        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 10)
+        pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
         @deployment_plan.unneeded_vms.each do |vm|
           vm_cid = vm.cid
           pool.process do
@@ -183,14 +183,14 @@ module Bosh::Director
             vm.delete
           end
         end
-        sleep(0.1) while pool.working + pool.action_size > 0
+        pool.wait
       end
     end
 
     def delete_unneeded_instances
       unless @deployment_plan.unneeded_instances.empty?
         # TODO: make pool size configurable?
-        pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => 10)
+        pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
         @deployment_plan.unneeded_instances.each do |instance|
           vm = instance.vm
           disk_cid = instance.disk_cid
@@ -209,7 +209,7 @@ module Bosh::Director
             instance.delete
           end
         end
-        sleep(0.1) while pool.working + pool.action_size > 0
+        pool.wait
       end
     end
 

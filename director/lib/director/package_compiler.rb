@@ -43,7 +43,7 @@ module Bosh::Director
         networks << {network.name => network.network_settings(network.allocate_dynamic_ip)}
       end
 
-      pool = ActionPool::Pool.new(:min_threads => 1, :max_threads => @deployment_plan.compilation.workers)
+      pool = ThreadPool.new(:min_threads => 1, :max_threads => @deployment_plan.compilation.workers)
       uncompiled_packages.each do |uncompiled_package|
 
         package = uncompiled_package[:package]
@@ -91,7 +91,7 @@ module Bosh::Director
         end
       end
 
-      sleep(0.1) while pool.working + pool.action_size > 0
+      pool.wait
 
       networks.each do |network_settings|
         ip = network_settings[network.name]["ip"]

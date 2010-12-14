@@ -11,6 +11,7 @@ module Bosh::Director
       @pool = ActionPool::Pool.new(actionpool_options)
       @logger = Config.logger
       @boom = nil
+      @lock = Mutex.new
     end
 
     def process(*args, &block)
@@ -19,7 +20,9 @@ module Bosh::Director
 
     def raise(exception)
       @logger.debug("Worker thread raised exception: #{exception}")
-      @boom = exception if @boom.nil?
+      @lock.synchronize do
+        @boom = exception if @boom.nil?
+      end
     end
 
     def wait(interval = 0.1)
