@@ -101,6 +101,8 @@ module Bosh::Director
           @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
           prepare
           update
+        else
+          @logger.info("Nothing to rollback to since this is the initial deployment")
         end
       end
 
@@ -116,14 +118,16 @@ module Bosh::Director
             @logger.info("Acquiring release lock: #{@deployment_plan.release.name}")
             release_lock = Lock.new("lock:release:#{@deployment_plan.release.name}")
             release_lock.lock do
-              @logger.info("Updating deployment")
+              @logger.info("Preparing deployment")
               prepare
               deployment = @deployment_plan.deployment
-
+              @logger.info("Finished preparing deployment")
               begin
+                @logger.info("Updating deployment")
                 update
                 deployment.manifest = @manifest
                 deployment.save!
+                @logger.info("Finished updating deployment")
               rescue Exception => e
                 @logger.info("Update failed, rolling back")
                 @logger.error("#{e} - #{e.backtrace.join("\n")}")

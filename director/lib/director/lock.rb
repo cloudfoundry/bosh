@@ -9,6 +9,7 @@ module Bosh::Director
       @id = UUIDTools::UUID.random_create.to_s
       @timeout = opts[:timeout] || 1.0
       @expiration = opts[:expiration] || 10.0
+      @logger = Config.logger
     end
 
     def lock
@@ -19,6 +20,7 @@ module Bosh::Director
         sleep_interval = [1.0, @expiration/2].max
         begin
           loop do
+            @logger.debug("Renewing lock: #{@name}")
             redis.watch(@name)
             existing_lock = redis.get(@name)
             lock_id = existing_lock.split(":")[1]
@@ -30,6 +32,7 @@ module Bosh::Director
             sleep(sleep_interval)
           end
         ensure
+          @logger.info("Lock renewal thread exiting")
           redis.quit
         end
       end
@@ -43,6 +46,7 @@ module Bosh::Director
     end
 
     def acquire
+      @logger.debug("Acquiring lock: #{@name}")
       redis = Config.redis
       started = Time.now
 
@@ -62,9 +66,11 @@ module Bosh::Director
       end
 
       @lock_expiration = lock_expiration
+      @logger.debug("Acquired lock: #{@name}")
     end
 
     def delete
+      @logger.debug("Deleting lock: #{@name}")
       redis = Config.redis
 
       redis.watch(@name)
@@ -77,6 +83,7 @@ module Bosh::Director
       else
         redis.unwatch
       end
+      @logger.debug("Deleted lock: #{@name}")
     end
 
     def lock_expired?(lock)
