@@ -44,6 +44,8 @@ module VSphereCloud
       raise "Invalid number of VCenters" unless @vcenters.size == 1
       @vcenter = @vcenters[0]
 
+      @logger = Bosh::Director::Config.logger
+
       @agent_properties = options["agent"]
 
       @client = Client.new("https://#{@vcenter["host"]}/sdk/vimService", options)
@@ -54,45 +56,45 @@ module VSphereCloud
       @lock = Mutex.new
       @locks = {}
       @locks_mutex = Mutex.new
-
-      @logger = Bosh::Director::Config.logger
     end
 
     def create_stemcell(image, _)
-      result = nil
-      Dir.mktmpdir do |temp_dir|
-        @logger.debug("Extracting stemcell to: #{temp_dir}")
-        output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
-        raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
+      with_thread_name("create_stemcell(#{image}, _)") do
+        result = nil
+        Dir.mktmpdir do |temp_dir|
+          @logger.info("Extracting stemcell to: #{temp_dir}")
+          output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
+          raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
 
-        ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf"}
-        raise "Missing OVF" if ovf_file.nil?
-        ovf_file = File.join(temp_dir, ovf_file)
+          ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf"}
+          raise "Missing OVF" if ovf_file.nil?
+          ovf_file = File.join(temp_dir, ovf_file)
 
-        name = "sc-#{generate_unique_name}"
-        @logger.debug("Generated name: #{name}")
+          name = "sc-#{generate_unique_name}"
+          @logger.info("Generated name: #{name}")
 
-        # TODO: make stemcell friendly version of the calls below
-        cluster = @resources.find_least_loaded_cluster(1)
-        datastore = @resources.find_least_loaded_datastore(cluster, 1)
-        @logger.debug("Deploying to: #{cluster.mob} / #{datastore.mob}")
+          # TODO: make stemcell friendly version of the calls below
+          cluster = @resources.find_least_loaded_cluster(1)
+          datastore = @resources.find_least_loaded_datastore(cluster, 1)
+          @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
-        import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
-        lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.importSpec,
-                                 cluster.datacenter.template_folder)
-        @logger.info("Waiting for NFC lease")
-        state = wait_for_nfc_lease(lease)
-        raise "Could not acquire HTTP NFC lease" unless state == HttpNfcLeaseState::Ready
+          import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
+          lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.importSpec,
+                                   cluster.datacenter.template_folder)
+          @logger.info("Waiting for NFC lease")
+          state = wait_for_nfc_lease(lease)
+          raise "Could not acquire HTTP NFC lease" unless state == HttpNfcLeaseState::Ready
 
-        @logger.info("Uploading")
-        vm = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
-        result = name
+          @logger.info("Uploading")
+          vm = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
+          result = name
 
-        @logger.info("Taking initial snapshot")
-        task = take_snapshot(vm, "initial")
-        client.wait_for_task(task)
+          @logger.info("Taking initial snapshot")
+          task = take_snapshot(vm, "initial")
+          client.wait_for_task(task)
+        end
+        result
       end
-      result
     end
 
     def delete_stemcell(stemcell)
@@ -100,94 +102,112 @@ module VSphereCloud
     end
 
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
-      memory = resource_pool["ram"]
-      disk = resource_pool["disk"]
-      cpu = resource_pool["cpu"]
+      with_thread_name("create_vm(#{agent_id}, ...)") do
+        memory = resource_pool["ram"]
+        disk = resource_pool["disk"]
+        cpu = resource_pool["cpu"]
 
-      cluster = nil
-      datastore = nil
+        cluster = nil
+        datastore = nil
 
-      if disk_locality.nil?
-        cluster = @resources.find_least_loaded_cluster(1)
-        datastore = @resources.find_least_loaded_datastore(cluster, 1)
-      else
-        # TODO: get cluster based on disk locality
-        # TODO: get datastore based on disk locality
+        if disk_locality.nil?
+          cluster = @resources.find_least_loaded_cluster(1)
+          datastore = @resources.find_least_loaded_datastore(cluster, 1)
+        else
+          # TODO: get cluster based on disk locality
+          # TODO: get datastore based on disk locality
+        end
+
+        name = "vm-#{generate_unique_name}"
+        @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
+
+        replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
+        replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, "VirtualMachine",
+                                                          ["config.hardware.device", "snapshot"])
+        devices = replicated_stemcell_properties["config.hardware.device"]
+        snapshot = replicated_stemcell_properties["snapshot"]
+
+        config = VirtualMachineConfigSpec.new
+        config.memoryMB = memory
+        config.numCPUs = cpu
+        config.deviceChange = []
+
+        system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
+        existing_nic = devices.find {|device| device.kind_of?(VirtualEthernetCard)}
+
+        file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
+        ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controllerKey, disk,
+                                                        :create => true)
+        config.deviceChange << ephemeral_disk_config
+
+        networks.each_value do |network|
+          v_network_name = network["cloud_properties"]["name"]
+          network_mob = client.find_by_inventory_path([cluster.datacenter.name, "network", v_network_name])
+          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey)
+          config.deviceChange << nic_config
+        end
+
+        nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+        nics.each do |nic|
+          nic_config = create_delete_device_spec(nic)
+          config.deviceChange << nic_config
+        end
+
+        fix_device_unit_numbers(devices, config.deviceChange)
+
+        @logger.info("Cloning vm: #{replicated_stemcell_vm} to #{name}")
+
+        task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
+                        :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
+                        :config => config)
+        vm = client.wait_for_task(task)
+
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
+                                                                     "config.vAppConfig.property"])
+        devices = vm_properties["config.hardware.device"]
+        existing_app_properties = vm_properties["config.vAppConfig.property"]
+        env = build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
+        @logger.info("Setting VM env: #{env.pretty_inspect}")
+
+        vm_config_spec = VirtualMachineConfigSpec.new
+        set_agent_env(vm_config_spec, existing_app_properties, env)
+        client.reconfig_vm(vm, vm_config_spec)
+
+
+        @logger.info("Powering on VM: #{vm} (#{name})")
+        client.power_on_vm(cluster.datacenter.mob, vm)
+        vm
       end
-
-      name = "vm-#{generate_unique_name}"
-      @logger.debug("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
-
-      replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
-      replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, "VirtualMachine",
-                                                        ["config.hardware.device", "snapshot"])
-      devices = replicated_stemcell_properties["config.hardware.device"]
-      snapshot = replicated_stemcell_properties["snapshot"]
-
-      config = VirtualMachineConfigSpec.new
-      config.memoryMB = memory
-      config.numCPUs = cpu
-      config.deviceChange = []
-
-      system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
-      existing_nic = devices.find {|device| device.kind_of?(VirtualEthernetCard)}
-
-      file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
-      ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controllerKey, disk,
-                                                      :create => true)
-      config.deviceChange << ephemeral_disk_config
-
-      networks.each_value do |network|
-        v_network_name = network["cloud_properties"]["name"]
-        network_mob = client.find_by_inventory_path([cluster.datacenter.name, "network", v_network_name])
-        nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey)
-        config.deviceChange << nic_config
-      end
-
-      nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
-      nics.each do |nic|
-        nic_config = create_delete_device_spec(nic)
-        config.deviceChange << nic_config
-      end
-
-      fix_device_unit_numbers(devices, config.deviceChange)
-
-      @logger.debug("Cloning vm: #{replicated_stemcell_vm} to #{name}")
-
-      task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
-                      :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
-                      :config => config)
-      vm = client.wait_for_task(task)
-
-      vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
-                                                                   "config.vAppConfig.property"])
-      devices = vm_properties["config.hardware.device"]
-      existing_app_properties = vm_properties["config.vAppConfig.property"]
-      env = build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
-      @logger.debug("Setting VM env: #{env.pretty_inspect}")
-
-      vm_config_spec = VirtualMachineConfigSpec.new
-      set_agent_env(vm_config_spec, existing_app_properties, env)
-      client.reconfig_vm(vm, vm_config_spec)
-
-
-      @logger.debug("Powering on VM: #{vm} (#{name})")
-      client.power_on_vm(cluster.datacenter.mob, vm)
-      vm
     end
 
     def delete_vm(vm_cid)
-      # TODO: detach any persistent disks
-      vm = ManagedObjectReference.new(vm_cid)
-      vm.xmlattr_type = "VirtualMachine"
+      with_thread_name("delete_vm(#{vm_cid})") do
+        # TODO: detach any persistent disks
+        vm = ManagedObjectReference.new(vm_cid)
+        vm.xmlattr_type = "VirtualMachine"
 
-      power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
-      if power_state != VirtualMachinePowerState::PoweredOff
-        client.power_off_vm(vm)
+        @logger.info("Deleting vm: #{vm_cid}")
+        properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question"])
+
+        question = properties["runtime.question"]
+        if question
+          choices = question.choice
+          @logger.info("VM is blocked on a question: #{question.text}, " +
+                           "providing default answer: #{choices.choiceInfo[choices.defaultIndex].label}")
+          client.answer_vm(vm, question.id, choices.choiceInfo[choices.defaultIndex].key)
+          power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
+        else
+          power_state = properties["runtime.powerState"]
+        end
+
+        if power_state != VirtualMachinePowerState::PoweredOff
+          @logger.info("Powering off vm: #{vm_cid}")
+          client.power_off_vm(vm)
+        end
+
+        client.delete_vm(vm)
+        @logger.info("Deleted vm: #{vm_cid}")
       end
-
-      task = client.service.destroy_Task(DestroyRequestType.new(vm)).returnval
-      client.wait_for_task(task)
     end
 
     def configure_networks(vm, networks)
@@ -195,132 +215,142 @@ module VSphereCloud
     end
 
     def attach_disk(vm_cid, disk_cid)
-      @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
-      disk = Models::Disk[disk_cid]
-      raise "Disk not found: #{disk_cid}" if disk.nil?
+      with_thread_name("attach_disk(#{vm_cid}, #{disk_cid})") do
+        @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
+        disk = Models::Disk[disk_cid]
+        raise "Disk not found: #{disk_cid}" if disk.nil?
 
-      vm = ManagedObjectReference.new(vm_cid)
-      vm.xmlattr_type = "VirtualMachine"
+        vm = ManagedObjectReference.new(vm_cid)
+        vm.xmlattr_type = "VirtualMachine"
 
-      datacenter = client.find_parent(vm, "Datacenter")
-      datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+        datacenter = client.find_parent(vm, "Datacenter")
+        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
 
-      vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "config.vAppConfig.property",
-                                                                   "config.hardware.device"])
-      datastores = vm_properties["datastore"]
-      raise "Can't find datastore for: #{vm}" if datastores.empty?
-      datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "config.vAppConfig.property",
+                                                                     "config.hardware.device"])
+        datastores = vm_properties["datastore"]
+        raise "Can't find datastore for: #{vm}" if datastores.empty?
+        datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
 
-      vm_datastore_by_name = {}
-      datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
+        vm_datastore_by_name = {}
+        datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
 
-      create_disk = false
-      if disk.path
-        if disk.datacenter == datacenter_name && datastore_properties.has_key?(disk.datastore)
-          @logger.info("Disk already in the right datastore")
+        create_disk = false
+        if disk.path
+          if disk.datacenter == datacenter_name && datastore_properties.has_key?(disk.datastore)
+            @logger.info("Disk already in the right datastore")
+          else
+            @logger.info("Disk needs to move")
+            # need to move disk to right datastore
+            source_datacenter = client.find_by_inventory_path(disk.datacenter)
+            source_path = disk.path
+            destination_datastore = datastores.first.first
+            datacenter_disk_path = @resources.datacenters[disk.datacenter]
+            destination_path = "[#{destination_datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+            @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
+            client.move_disk(source_datacenter, source_path, datacenter, destination_path)
+            @logger.info("Moved disk successfully")
+
+            disk.datacenter = datacenter_name
+            disk.datastore = destination_datastore
+            disk.path = destination_path
+            disk.save!
+          end
         else
-          @logger.info("Disk needs to move")
-          # need to move disk to right datastore
-          source_datacenter = client.find_by_inventory_path(disk.datacenter)
-          source_path = disk.path
-          destination_datastore = datastores.first.first
-          datacenter_disk_path = @resources.datacenters[disk.datacenter]
-          destination_path = "[#{destination_datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
-          @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
-          client.move_disk(source_datacenter, source_path, datacenter, destination_path)
-          @logger.info("Moved disk successfully")
-
+          @logger.info("Need to create disk")
+          # need to create disk
           disk.datacenter = datacenter_name
-          disk.datastore = destination_datastore
-          disk.path = destination_path
+          disk.datastore = vm_datastore_by_name.first.first
+          datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
+          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
           disk.save!
+          create_disk = true
         end
-      else
-        @logger.info("Need to create disk")
-        # need to create disk
-        disk.datacenter = datacenter_name
-        disk.datastore = vm_datastore_by_name.first.first
-        datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-        disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
-        disk.save!
-        create_disk = true
+
+        devices = vm_properties["config.hardware.device"]
+
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange = []
+
+        system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
+
+        attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], disk.path,
+                                                       system_disk.controllerKey, disk.size.to_i,
+                                                       :create => create_disk, :independent => true)
+        config.deviceChange << attached_disk_config
+        fix_device_unit_numbers(devices, config.deviceChange)
+
+        existing_app_properties = vm_properties["config.vAppConfig.property"]
+        env = get_current_agent_env(existing_app_properties)
+        @logger.info("Reading current agent env: #{env.pretty_inspect}")
+        env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unitNumber
+        @logger.info("Updating agent env to: #{env.pretty_inspect}")
+        set_agent_env(config, existing_app_properties, env)
+        @logger.info("Attaching disk")
+        client.reconfig_vm(vm, config)
+        @logger.info("Finished attaching disk")
+        # reboot?
       end
-
-      devices = vm_properties["config.hardware.device"]
-
-      config = VirtualMachineConfigSpec.new
-      config.deviceChange = []
-
-      system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
-
-      attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], disk.path,
-                                                     system_disk.controllerKey, disk.size.to_i,
-                                                     :create => create_disk, :independent => true)
-      config.deviceChange << attached_disk_config
-      fix_device_unit_numbers(devices, config.deviceChange)
-
-      existing_app_properties = vm_properties["config.vAppConfig.property"]
-      env = get_current_agent_env(existing_app_properties)
-      @logger.info("Reading current agent env: #{env.pretty_inspect}")
-      env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unitNumber
-      @logger.info("Updating agent env to: #{env.pretty_inspect}")
-      set_agent_env(config, existing_app_properties, env)
-      @logger.info("Attaching disk")
-      client.reconfig_vm(vm, config)
-      @logger.info("Finished attaching disk")
-      # reboot?
     end
 
     def detach_disk(vm_cid, disk_cid)
-      @logger.info("Detaching disk: #{disk_cid} from vm: #{vm_cid}")
-      disk = Models::Disk[disk_cid]
-      raise "Disk not found: #{disk_cid}" if disk.nil?
+      with_thread_name("detach_disk(#{vm_cid}, #{disk_cid})") do
+        @logger.info("Detaching disk: #{disk_cid} from vm: #{vm_cid}")
+        disk = Models::Disk[disk_cid]
+        raise "Disk not found: #{disk_cid}" if disk.nil?
 
-      vm = ManagedObjectReference.new(vm_cid)
-      vm.xmlattr_type = "VirtualMachine"
+        vm = ManagedObjectReference.new(vm_cid)
+        vm.xmlattr_type = "VirtualMachine"
 
-      vm_properties = client.get_properties(vm, "VirtualMachine", ["config.vAppConfig.property",
-                                                                   "config.hardware.device"])
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.vAppConfig.property",
+                                                                     "config.hardware.device"])
 
-      devices = vm_properties["config.hardware.device"]
-      virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
+        devices = vm_properties["config.hardware.device"]
+        virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
 
-      raise "Disk is not attached to this VM" if virtual_disk.nil?
+        raise "Disk is not attached to this VM" if virtual_disk.nil?
 
-      config = VirtualMachineConfigSpec.new
-      config.deviceChange << create_delete_device_spec(virtual_disk)
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange << create_delete_device_spec(virtual_disk)
 
-      existing_app_properties = vm_properties["config.vAppConfig.property"]
-      env = get_current_agent_env(existing_app_properties)
-      @logger.info("Reading current agent env: #{env.pretty_inspect}")
-      env["disks"]["persistent"].delete(disk.id.to_s)
-      @logger.info("Updating agent env to: #{env.pretty_inspect}")
-      set_agent_env(config, existing_app_properties, env)
-      @logger.info("Detaching disk")
-      client.reconfig_vm(vm, config)
-      @logger.info("Finished detaching disk")
-      # reboot?
+        existing_app_properties = vm_properties["config.vAppConfig.property"]
+        env = get_current_agent_env(existing_app_properties)
+        @logger.info("Reading current agent env: #{env.pretty_inspect}")
+        env["disks"]["persistent"].delete(disk.id.to_s)
+        @logger.info("Updating agent env to: #{env.pretty_inspect}")
+        set_agent_env(config, existing_app_properties, env)
+        @logger.info("Detaching disk")
+        client.reconfig_vm(vm, config)
+        @logger.info("Finished detaching disk")
+        # reboot?
+      end
     end
 
     def create_disk(size, _ = nil)
-      disk = Models::Disk.new
-      disk.size = size
-      disk.save!
-      disk.id
+      with_thread_name("create_disk(#{size}, _)") do
+        @logger.info("Creating disk with size: #{size}")
+        disk = Models::Disk.new
+        disk.size = size
+        disk.save!
+        @logger.info("Created disk: #{disk.pretty_inspect}")
+        disk.id
+      end
     end
 
     def delete_disk(disk_cid)
-      @logger.info("Deleting disk: #{disk_cid}")
-      disk = Models::Disk[disk_cid]
-      if disk
-        if disk.path
-          datacenter = client.find_by_inventory_path(disk.datacenter)
-          client.delete_disk(datacenter, disk.path)
+      with_thread_name("delete_disk(#{disk_cid})") do
+        @logger.info("Deleting disk: #{disk_cid}")
+        disk = Models::Disk[disk_cid]
+        if disk
+          if disk.path
+            datacenter = client.find_by_inventory_path(disk.datacenter)
+            client.delete_disk(datacenter, disk.path)
+          end
+          disk.delete
+          @logger.info("Finished deleting disk")
+        else
+          raise "Could not find disk: #{disk_cid}"
         end
-        disk.delete
-        @logger.info("Finished deleting disk")
-      else
-        raise "Could not find disk: #{disk_cid}"
       end
     end
 
@@ -334,14 +364,14 @@ module VSphereCloud
       stemcell_properties    = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
 
       if stemcell_properties["datastore"] != datastore.mob
-        @logger.debug("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
+        @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
         local_stemcell_name    = "#{stemcell} / #{datastore.mob}"
         local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
                                   local_stemcell_name]
         replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
 
         if replicated_stemcell_vm.nil?
-          @logger.debug("Cluster doesn't have stemcell #{stemcell}, replicating")
+          @logger.info("Cluster doesn't have stemcell #{stemcell}, replicating")
           lock = nil
           @locks_mutex.synchronize do
             lock = @locks[local_stemcell_name]
@@ -353,15 +383,15 @@ module VSphereCloud
           lock.synchronize do
             replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
             if replicated_stemcell_vm.nil?
-              @logger.debug("Replicating #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}")
+              @logger.info("Replicating #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}")
               task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
                               cluster.resource_pool, :datastore => datastore.mob)
               replicated_stemcell_vm = client.wait_for_task(task)
-              @logger.debug("Replicated #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}/#{replicated_stemcell_vm}")
-              @logger.debug("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
+              @logger.info("Replicated #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}/#{replicated_stemcell_vm}")
+              @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
               task = take_snapshot(replicated_stemcell_vm, "initial")
               client.wait_for_task(task)
-              @logger.debug("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
+              @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
             end
           end
         end
@@ -613,7 +643,7 @@ module VSphereCloud
               end
             end
 
-            @logger.debug("Uploading disk to: #{device_url.url}")
+            @logger.info("Uploading disk to: #{device_url.url}")
 
             http_client.post(device_url.url, disk_file, {"Content-Type" => "application/x-vnd.vmware-streamVmdk",
                                 "Content-Length" => disk_file_size})
@@ -628,17 +658,10 @@ module VSphereCloud
     end
 
     def delete_all_vms
-      clusters = cluster_stats.clusters
-      datacenters = Set.new
-
-      clusters.each do |cluster|
-        datacenters << cluster.datacenter
-      end
-
-      pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
+      pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
       index = 0
 
-      datacenters.each do |datacenter|
+      @resources.datacenters.each_value do |datacenter|
         vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
         vm_folder = client.find_by_inventory_path(vm_folder_path)
         vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
@@ -651,12 +674,11 @@ module VSphereCloud
             @lock.synchronize {index += 1}
             vm = properties[:obj]
             @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
-            if properties["runtime.powerState"] != VirtualMachinePowerState::PoweredOff
-              @logger.debug("Powering off #{index}/#{vms.size}: #{vm}")
-              client.power_off_vm(vm)
+            begin
+              delete_vm(vm)
+            rescue => e
+              @logger.info("#{e} - #{e.backtrace.join("\n")}")
             end
-            task = client.service.destroy_Task(DestroyRequestType.new(vm)).returnval
-            client.wait_for_task(task)
           end
         end
       end

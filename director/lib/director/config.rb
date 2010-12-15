@@ -12,6 +12,7 @@ module Bosh::Director
 
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
+        @logger.formatter = ThreadFormatter.new
 
         self.redis_options= {
           :host     => config["redis"]["host"],
