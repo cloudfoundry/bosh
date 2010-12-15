@@ -6,7 +6,7 @@ set :repository,  "git@github.com:vmware-ac/bosh.git"
 set :use_sudo, false
 set :deploy_to,   "/var/vmc/bosh"
 set :tmp_dir,     "/var/vmc/tmp"
-set :shared_children, %w(system config log pids)
+set :shared_children, %w(system config log pids gems)
 set :scm, :git
 set :deploy_via, :copy
 
@@ -24,7 +24,7 @@ namespace :deploy do
   end
 
   task :update_gems, :except => {:no_release => true} do
-    run "cd #{current_path}/director && bundle install --deployment --without test,development"
+    run "cd #{current_path}/director && bundle install --deployment --without test,development --path #{shared_path}/gems"
   end
 
   task :configure, :except => {:no_release => true} do
