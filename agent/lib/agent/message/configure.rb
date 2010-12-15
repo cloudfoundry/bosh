@@ -192,7 +192,7 @@ module Bosh::Agent
       end
 
       def data_sfdisk_input
-        ",#{mem_total/1024},S\n,,L\n"
+        ",#{mem_total.to_i/1024},S\n,,L\n"
       end
 
       def mem_total
