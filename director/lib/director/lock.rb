@@ -52,13 +52,13 @@ module Bosh::Director
 
       lock_expiration = Time.now.to_f + @expiration + 1
       until redis.setnx(@name, "#{lock_expiration}:#{@id}")
-        raise TimeoutError if Time.now - started > @timeout
-
         existing_lock = redis.get(@name)
         if lock_expired?(existing_lock)
           existing_lock = redis.getset(@name, "#{lock_expiration}:#{@id}")
           break if lock_expired?(existing_lock)
         end
+
+        raise TimeoutError if Time.now - started > @timeout
 
         sleep(0.5)
 
