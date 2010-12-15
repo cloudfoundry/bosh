@@ -353,12 +353,15 @@ module VSphereCloud
           lock.synchronize do
             replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
             if replicated_stemcell_vm.nil?
-              @logger.debug("Cloning #{stemcell_vm} to #{local_stemcell_name}")
+              @logger.debug("Replicating #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}")
               task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
                               cluster.resource_pool, :datastore => datastore.mob)
               replicated_stemcell_vm = client.wait_for_task(task)
+              @logger.debug("Replicated #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}/#{replicated_stemcell_vm}")
+              @logger.debug("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
               task = take_snapshot(replicated_stemcell_vm, "initial")
               client.wait_for_task(task)
+              @logger.debug("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
             end
           end
         end
