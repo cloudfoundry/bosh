@@ -70,6 +70,8 @@ namespace :deploy do
     end
 
     environment = []
+    environment << "TZ=UTC"
+
     if http_proxy
       environment << "HTTP_PROXY=\"#{http_proxy}\""
       environment << "http_proxy=\"#{http_proxy}\""
@@ -101,7 +103,7 @@ namespace :deploy do
       wget -q ftp://ftp.ruby-lang.org/pub/ruby/1.8/ruby-1.8.7-p302.tar.gz &&
       tar -xzf ruby-1.8.7-p302.tar.gz &&
       cd ruby-1.8.7-p302 &&
-      ./configure &&
+      ./configure --disable-pthread &&
       make &&
       #{sudo} bash -c "echo; cd /tmp/ruby-1.8.7-p302; make install" &&
 
