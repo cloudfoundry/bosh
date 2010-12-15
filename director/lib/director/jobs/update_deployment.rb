@@ -15,7 +15,8 @@ module Bosh::Director
         raise TaskNotFound if @task.nil?
 
         @logger = Logger.new(@task.output)
-        @logger.level= Config.logger.level
+        @logger.level = Config.logger.level
+        @logger.formatter = ThreadFormatter.new
         @logger.info("Starting task: #{task_id}")
         Config.logger = @logger
 
