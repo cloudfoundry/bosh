@@ -47,6 +47,8 @@ cp -a runit/agent /etc/sv/agent
 chmod +x /etc/sv/agent/run /etc/sv/agent/log/run
 ln -s /etc/sv/agent /etc/service/agent
 
+ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
+
 # vmbuilder will default to dhcp when no IP is specified - wipe
 echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 
