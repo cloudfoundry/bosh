@@ -38,7 +38,7 @@ module Bosh::Director
           @pool.shutdown
 
           @logger.debug("Re-raising: #{@boom}")
-          @original_thread.raise (@boom)
+          @original_thread.raise(@boom)
         end
       end
     end
