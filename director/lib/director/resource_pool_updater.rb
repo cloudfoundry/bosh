@@ -46,20 +46,37 @@ module Bosh::Director
       @resource_pool.idle_vms.each do |idle_vm|
         unless idle_vm.vm
           @pool.process do
-            agent_id = generate_agent_id
-            vm_cid = @cloud.create_vm(agent_id, @resource_pool.stemcell.stemcell.cid, @resource_pool.cloud_properties,
-                                      idle_vm.network_settings)
+            begin
+              agent_id = generate_agent_id
+              vm_cid = @cloud.create_vm(agent_id, @resource_pool.stemcell.stemcell.cid, @resource_pool.cloud_properties,
+                                        idle_vm.network_settings)
 
-            vm = Models::Vm.new
-            vm.deployment = @resource_pool.deployment.deployment
-            vm.agent_id = agent_id
-            vm.cid = vm_cid
-            vm.save!
+              vm = Models::Vm.new
+              vm.deployment = @resource_pool.deployment.deployment
+              vm.agent_id = agent_id
+              vm.cid = vm_cid
+              vm.save!
 
-            agent = AgentClient.new(vm.agent_id)
-            agent.wait_until_ready
-            idle_vm.vm = vm
-            idle_vm.current_state = agent.get_state
+              agent = AgentClient.new(vm.agent_id)
+              agent.wait_until_ready
+              idle_vm.vm = vm
+              idle_vm.current_state = agent.get_state
+            rescue => e
+              @logger.info("Cleaning up the created VM due to an error: #{e}")
+              begin
+                @cloud.delete_vm(vm_cid) if vm_cid
+              rescue
+                @logger.info("Could not cleanup VM: #{vm_cid}")
+              end
+
+              begin
+                vm.delete if vm.id
+              rescue
+                @logger.info("Could not delete VM model: #{vm.pretty_inspect}")
+              end
+
+              raise e
+            end
           end
         end
       end
