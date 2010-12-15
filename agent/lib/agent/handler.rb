@@ -62,6 +62,10 @@ module Bosh::Agent
             handle_get_task(message_id, args)
           end
 
+          if method == "get_state"
+            method == "state"
+          end
+
           processor = lookup(method)
           if processor
             Thread.new {
