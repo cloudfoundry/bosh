@@ -53,9 +53,16 @@ module Bosh::Director
       lock_expiration = Time.now.to_f + @expiration + 1
       until redis.setnx(@name, "#{lock_expiration}:#{@id}")
         existing_lock = redis.get(@name)
+        @logger.debug("Lock #{@name} is already locked by someone else: #{existing_lock}")
         if lock_expired?(existing_lock)
-          existing_lock = redis.getset(@name, "#{lock_expiration}:#{@id}")
-          break if lock_expired?(existing_lock)
+          @logger.debug("Lock #{@name} is already expired, trying to take it back")
+          replaced_lock = redis.getset(@name, "#{lock_expiration}:#{@id}")
+          if replaced_lock == existing_lock
+            @logger.debug("Lock #{@name} was revoked and relocked")
+            break
+          else
+            @logger.debug("Lock #{@name} was acquired by someone else, trying again")
+          end
         end
 
         raise TimeoutError if Time.now - started > @timeout
@@ -88,7 +95,9 @@ module Bosh::Director
 
     def lock_expired?(lock)
       existing_lock_expiration = lock.split(":")[0].to_f
-      Time.now.to_f - existing_lock_expiration > @expiration
+      lock_time_left = existing_lock_expiration - Time.now.to_f
+      @logger.info("Lock: #{lock} expires in #{lock_time_left} seconds")
+      lock_time_left < 0
     end
 
   end
