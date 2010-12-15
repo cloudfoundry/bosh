@@ -114,6 +114,18 @@ module VSphereCloud
       wait_for_task(task)
     end
 
+    def delete_vm(vm)
+      task = @service.destroy_Task(DestroyRequestType.new(vm)).returnval
+      wait_for_task(task)
+    end
+
+    def answer_vm(vm, question, answer)
+      request = AnswerVMRequestType.new(vm)
+      request.questionId = question
+      request.answerChoice = answer
+      @service.answerVM(request)
+    end
+
     def power_on_vm(datacenter, vm)
       request = PowerOnMultiVMRequestType.new(datacenter, [vm])
       task = @service.powerOnMultiVM_Task(request).returnval
