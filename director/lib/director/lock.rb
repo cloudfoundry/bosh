@@ -32,7 +32,7 @@ module Bosh::Director
             sleep(sleep_interval)
           end
         ensure
-          @logger.info("Lock renewal thread exiting")
+          @logger.debug("Lock renewal thread exiting")
           redis.quit
         end
       end
