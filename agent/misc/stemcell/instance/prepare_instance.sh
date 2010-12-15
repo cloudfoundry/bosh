@@ -54,3 +54,5 @@ echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 
 echo 'export PATH=/var/vmc/bin:$PATH' >> /root/.bashrc
 echo 'export PATH=/var/vmc/bin:$PATH' >> /home/vmc/.bashrc
+
+cp empty_state.yml /var/vmc/bosh/state.yml
