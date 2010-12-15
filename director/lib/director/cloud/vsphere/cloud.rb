@@ -176,15 +176,14 @@ module VSphereCloud
 
         @logger.info("Powering on VM: #{vm} (#{name})")
         client.power_on_vm(cluster.datacenter.mob, vm)
-        vm
+        name
       end
     end
 
     def delete_vm(vm_cid)
       with_thread_name("delete_vm(#{vm_cid})") do
         # TODO: detach any persistent disks
-        vm = ManagedObjectReference.new(vm_cid)
-        vm.xmlattr_type = "VirtualMachine"
+        vm = get_vm_by_cid(vm_cid)
 
         @logger.info("Deleting vm: #{vm_cid}")
         properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question"])
@@ -220,8 +219,7 @@ module VSphereCloud
         disk = Models::Disk[disk_cid]
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
-        vm = ManagedObjectReference.new(vm_cid)
-        vm.xmlattr_type = "VirtualMachine"
+        vm = get_vm_by_cid(vm_cid)
 
         datacenter = client.find_parent(vm, "Datacenter")
         datacenter_name = client.get_property(datacenter, "Datacenter", "name")
@@ -299,8 +297,7 @@ module VSphereCloud
         disk = Models::Disk[disk_cid]
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
-        vm = ManagedObjectReference.new(vm_cid)
-        vm.xmlattr_type = "VirtualMachine"
+        vm = get_vm_by_cid(vm_cid)
 
         vm_properties = client.get_properties(vm, "VirtualMachine", ["config.vAppConfig.property",
                                                                      "config.hardware.device"])
@@ -358,9 +355,16 @@ module VSphereCloud
       # TODO: still needed? what does it verify? cloud properties? should be replaced by normalize cloud properties?
     end
 
+    def get_vm_by_cid(vm_cid)
+      # TODO: fix when we go to multiple DCs
+      datacenter = @resources.datacenters.values.first
+      client.find_by_inventory_path([datacenter.name, "vm", datacenter.vm_folder_name, vm_cid])
+    end
+
     def replicate_stemcell(cluster, datastore, stemcell)
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
                                                    cluster.datacenter.template_folder_name, stemcell])
+      raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
       stemcell_properties    = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
 
       if stemcell_properties["datastore"] != datastore.mob
@@ -383,11 +387,12 @@ module VSphereCloud
           lock.synchronize do
             replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
             if replicated_stemcell_vm.nil?
-              @logger.info("Replicating #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}")
+              @logger.info("Replicating #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name}")
               task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
                               cluster.resource_pool, :datastore => datastore.mob)
               replicated_stemcell_vm = client.wait_for_task(task)
-              @logger.info("Replicated #{stemcell}/#{stemcell_vm} to #{local_stemcell_name}/#{replicated_stemcell_vm}")
+              @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to " +
+                               "#{local_stemcell_name} (#{replicated_stemcell_vm})")
               @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
               task = take_snapshot(replicated_stemcell_vm, "initial")
               client.wait_for_task(task)
@@ -667,12 +672,12 @@ module VSphereCloud
         vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
         next if vms.empty?
 
-        vm_properties = client.get_properties(vms, "VirtualMachine", ["runtime.powerState"])
+        vm_properties = client.get_properties(vms, "VirtualMachine", ["name"])
 
         vm_properties.each do |_, properties|
           pool.process do
             @lock.synchronize {index += 1}
-            vm = properties[:obj]
+            vm = properties["name"]
             @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
             begin
               delete_vm(vm)
