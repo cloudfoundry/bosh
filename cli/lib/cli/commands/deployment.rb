@@ -7,8 +7,13 @@ module Bosh::Cli::Command
 
     def set_current(name)
       manifest_filename = File.expand_path(work_dir + "/deployments/#{name}.yml")
-      manifest          = read_manifest(manifest_filename)
-      new_target        = manifest["target"]
+
+      if !File.exists?(manifest_filename)
+        err("Missing manifest for #{name}")
+      end
+      
+      manifest   = YAML.load_file(manifest_filename)
+      new_target = manifest["target"]
 
       if !new_target
         err("Deployment manifest '#{name}' has no target, please add it before proceeding")
@@ -29,7 +34,11 @@ module Bosh::Cli::Command
       err("Please choose deployment first") unless deployment
 
       manifest_filename = File.expand_path(work_dir + "/deployments/#{deployment}.yml")
-      manifest = read_manifest(manifest_filename)
+      if !File.exists?(manifest_filename)
+        err("Missing manifest for #{name}")
+      end
+      
+      manifest = YAML.load_file(manifest_filename)      
 
       if manifest["name"].blank? || manifest["release"].blank? || manifest["target"].blank?
         err("Invalid manifest for '#{deployment}': name, release and target are all required")
@@ -52,17 +61,6 @@ module Bosh::Cli::Command
 
       say responses[status] || "Cannot deploy: #{body}"      
     end
-
-    private
-
-    def read_manifest(filename)
-      if !File.exists?(filename)
-        err("Missing manifest for #{name}")
-      end
-
-      YAML.load_file(filename)
-    end
-    
   end
 end
 
