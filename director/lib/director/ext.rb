@@ -52,3 +52,31 @@ class Hash
    OpenStruct.new(mapped)
  end
 end
+
+module ActionPool
+  class Pool
+    def shutdown
+        status(:closed)
+        @logger.info("Pool is now shutting down")
+        @queue.clear
+        @queue.wait_empty
+        @threads.each{|t|t.stop}
+        @threads.each{|t|t.join}
+        nil
+    end
+  end
+
+  class Thread
+    def join
+      if @action_timeout.zero?
+        @thread.join
+      else
+        @thread.join(@action_timeout)
+        if @thread.alive?
+          @thread.kill
+          @thread.join
+        end
+      end
+    end
+  end
+end
