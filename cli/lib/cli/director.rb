@@ -1,9 +1,10 @@
 require "restclient"
 require "progressbar"
+require "json"
 
 module Bosh
   module Cli
-    class ApiClient
+    class Director
 
       DIRECTOR_ERROR_CODES = [ 400, 403, 404, 500 ]
 
@@ -12,7 +13,7 @@ module Bosh
 
       attr_reader :director_uri
 
-      def initialize(director_uri, user, password)
+      def initialize(director_uri, user = nil, password = nil)
         if director_uri.nil? || director_uri =~ /^\s*$/
           raise DirectorMissing, "no director URI given"
         end
@@ -22,12 +23,48 @@ module Bosh
         @password     = password
       end
 
-      def can_access_director?
+      def exists?
         [401, 200].include?(get("/status")[0])
       end
 
       def authenticated?
         get("/status")[0] == 200
+      end
+
+      def create_user(username, password)
+        payload = JSON.generate("username" => username, "password" => password)        
+        response_code, body = post("/users", "application/json", payload)
+        response_code == 200
+      end
+
+      def upload_stemcell(filename)
+        upload_and_track("/stemcells", "application/x-compressed", filename)
+      end
+
+      def upload_release(filename)
+        upload_and_track("/releases", "application/x-compressed", filename)
+      end
+
+      def deploy(filename)
+        upload_and_track("/deployments", "text/yaml", filename)
+      end
+
+      def get_task_state(task_id)
+        response_code, body = get("/tasks/#{task_id}")
+        raise MissingTask, "No task##{@task_id} found" if response_code == 404
+        return "error" if response_code != 200
+        return body
+      end
+
+      def get_task_output(task_id, offset)
+        response_code, body, headers = get("/tasks/#{task_id}/output", nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
+        new_offset = \
+        if response_code == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
+          $1.to_i + 1
+        else
+          nil
+        end
+        [ body, new_offset ]
       end
 
       [ :post, :put, :get, :delete ].each do |method_name|
@@ -56,7 +93,7 @@ module Bosh
 
         [ status, body ]
       ensure
-        file.progress_bar.halt
+        file.stop_progress_bar if file
       end
 
       def poll_task(task_id, options = {})
@@ -67,7 +104,7 @@ module Bosh
 
         task = DirectorTask.new(self, task_id)
 
-        bosh_say("Tracking task output for task##{task_id}...")
+        say("Tracking task output for task##{task_id}...")
 
         no_output_yet = true
 
@@ -77,11 +114,11 @@ module Bosh
           
           if output
             no_output_yet = false            
-            bosh_say(output)
+            say(output)
           end
 
           if no_output_yet && polls % 10 == 0
-            bosh_say("Task state is '%s', waiting for output..." % [ state ])
+            say("Task state is '%s', waiting for output..." % [ state ])
           end
           
           if state == "done"
@@ -98,7 +135,7 @@ module Bosh
           wait(poll_interval)
         end
 
-        bosh_say(task.flush_output)
+        say(task.flush_output)
         return result
       end
 
@@ -153,13 +190,17 @@ module Bosh
     class FileWithProgressBar < ::File
       def progress_bar
         return @progress_bar if @progress_bar
-        @progress_bar = ProgressBar.new(File.basename(self.path), File.size(self.path), Config.output)
+        out = Bosh::Cli::Config.output || StringIO.new
+        @progress_bar = ProgressBar.new(File.basename(self.path), File.size(self.path), out)
         @progress_bar.file_transfer_mode
         @progress_bar
       end
 
+      def stop_progress_bar
+        progress_bar.halt unless progress_bar.finished?        
+      end
+
       def read(*args)
-        buf_len = args[0]
         result  = super(*args)
 
         if result && result.size > 0

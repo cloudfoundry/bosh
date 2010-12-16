@@ -3,15 +3,12 @@ module Bosh
 
     class Stemcell
       include Validation
+
+      attr_reader :stemcell_file
       
       def initialize(tarball_path, cache)
         @stemcell_file = File.expand_path(tarball_path, Dir.pwd)
         @cache = cache
-      end
-
-      def upload(api_client)
-        return :invalid unless valid?
-        api_client.upload_and_track("/stemcells", "application/x-compressed", @stemcell_file)
       end
 
       def perform_validation
@@ -26,9 +23,9 @@ module Bosh
         manifest_yaml = @cache.read(cache_key)
 
         if manifest_yaml
-          bosh_say("Using cached manifest...")
+          say("Using cached manifest...")
         else
-          bosh_say("Manifest not found in cache, verifying tarball...")
+          say("Manifest not found in cache, verifying tarball...")
 
           step("Extract tarball", "Cannot extract tarball #{@stemcell_file}", :fatal) do
             `tar -C #{tmp_dir} -xzf #{@stemcell_file} &> /dev/null`
@@ -45,7 +42,7 @@ module Bosh
             File.exists?(File.expand_path("image", tmp_dir))
           end          
 
-          bosh_say("Writing manifest to cache...")
+          say("Writing manifest to cache...")
           manifest_yaml = File.read(manifest_file)
           @cache.write(cache_key, manifest_yaml)
         end
@@ -66,11 +63,11 @@ module Bosh
       end
 
       def print_info(manifest)
-        bosh_say("\nStemcell info")
-        bosh_say("-------------")
+        say("\nStemcell info")
+        say("-------------")
         
-        bosh_say "Name:    %s" % [ manifest["name"] || "missing".red ]
-        bosh_say "Version: %s" % [ manifest["version"] || "missing".red ]
+        say "Name:    %s" % [ manifest["name"] || "missing".red ]
+        say "Version: %s" % [ manifest["version"] || "missing".red ]
       end
 
     end

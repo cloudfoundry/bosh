@@ -21,15 +21,12 @@ module Bosh
         @validated = true
       end
 
-      def perform_validation
-      end
-
       private
 
       def step(name, error_message, kind = :non_fatal, &block)
         passed = yield
 
-        bosh_say("%-60s %s" % [ name, passed ? "OK".green : "FAILED".red ])
+        say("%-60s %s" % [ name, passed ? "OK".green : "FAILED".red ])
         
         unless passed
           errors << error_message

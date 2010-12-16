@@ -1,6 +1,5 @@
 source :rubygems
 
-gem "main", ">= 4.3.0"
 gem "highline"
 gem "json_pure"
 gem "progressbar"

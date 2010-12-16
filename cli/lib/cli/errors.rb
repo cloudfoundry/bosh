@@ -16,6 +16,8 @@ module Bosh
     class AuthError            < DirectorError; error_code(202); end
     class MissingTask          < DirectorError; error_code(203); end
 
+    class CliExit              < CliError; error_code(400); end
+
     class CacheDirectoryError  < CliError; error_code(301); end
     
   end

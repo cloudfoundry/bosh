@@ -2,27 +2,23 @@ module Bosh
   module Cli
     class DirectorTask
 
-      def initialize(api_client, task_id)
-        @client   = api_client
+      def initialize(director, task_id)
+        @director = director
         @task_id  = task_id
         @offset   = 0
         @buf      = ""
       end
 
       def state
-        response_code, body = @client.get(state_uri)
-
-        raise MissingTask, "No task##{@task_id} found" if response_code == 404
-        return "error" if response_code != 200
-        return body
+        @director.get_task_state(@task_id)
       end
 
       def output
-        status, body, headers = @client.get(output_uri, nil, nil, { "Range" => "bytes=%d-" % [ @offset ] })
+        body, new_offset = @director.get_task_output(@task_id, @offset)
 
-        if status == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
+        if new_offset
           @buf << body
-          @offset = $1.to_i + 1
+          @offset = new_offset
         else
           return nil
         end
@@ -46,16 +42,6 @@ module Bosh
         out = @buf
         @buf = ""
         out + "\n"
-      end
-
-      private
-
-      def state_uri
-        "/tasks/%d" % [ @task_id ]
-      end      
-
-      def output_uri
-        "/tasks/%d/output" % [ @task_id ]
       end
 
     end

@@ -1,4 +1,3 @@
-require "json"
 require "tmpdir"
 require "digest/sha1"
 
@@ -10,11 +9,6 @@ module Bosh
 
       def initialize(tarball_path)
         @release_file = File.expand_path(tarball_path, Dir.pwd)
-      end
-
-      def upload(api_client)
-        return :invalid unless valid?
-        api_client.upload_and_track("/releases", "application/x-compressed", @release_file)
       end
 
       def perform_validation
@@ -122,32 +116,32 @@ module Bosh
       end
 
       def print_info(manifest)
-        bosh_say("\nRelease info")
-        bosh_say("------------")
+        say("\nRelease info")
+        say("------------")
 
-        bosh_say "Name:    %s" % [ manifest["name"] ]
-        bosh_say "Version: %s" % [ manifest["version"] ]
+        say "Name:    %s" % [ manifest["name"] ]
+        say "Version: %s" % [ manifest["version"] ]
 
-        bosh_say "\n"
-        bosh_say "Packages"
+        say "\n"
+        say "Packages"
 
         if manifest["packages"].size == 0
-          bosh_say "  - none"
+          say "  - none"
         end
         
         for package in manifest["packages"]
-          bosh_say "  - %s (%s)" % [ package["name"], package["version"] ]
+          say "  - %s (%s)" % [ package["name"], package["version"] ]
         end
 
-        bosh_say "\n"
-        bosh_say "Jobs"
+        say "\n"
+        say "Jobs"
 
         if manifest["jobs"].size == 0
-          bosh_say "  - none"
+          say "  - none"
         end        
 
         for job in manifest["jobs"]
-          bosh_say "  - %s" % [ job ]
+          say "  - %s" % [ job ]
         end
       end
       

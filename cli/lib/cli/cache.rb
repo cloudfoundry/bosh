@@ -8,8 +8,6 @@ module Bosh
 
       attr_reader :cache_dir
 
-      DEFAULT_CACHE_DIR = File.expand_path("~/.bosh_cache")
-
       def initialize(cache_dir = nil)
         @cache_dir = cache_dir || DEFAULT_CACHE_DIR
         
