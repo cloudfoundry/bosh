@@ -72,7 +72,7 @@ module Bosh::Director
           agent.wait_until_ready
           task = agent.compile_package(package_blobstore_id, package_sha1, package_name, package_version)
           while task["state"] == "running"
-            task = agent.get_task(task["id"])
+            task = agent.get_task(task["agent_task_id"])
           end
 
           @cloud.delete_vm(vm_cid)

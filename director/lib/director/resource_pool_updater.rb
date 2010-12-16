@@ -60,19 +60,27 @@ module Bosh::Director
 
               agent = AgentClient.new(vm.agent_id)
               agent.wait_until_ready
+
+              task = agent.apply({
+                "deployment" => @resource_pool.deployment.name
+              })
+              while task["state"] == "running"
+                task = agent.get_task(task["agent_task_id"])
+              end
+
               idle_vm.vm = vm
               idle_vm.current_state = agent.get_state
-            rescue => e
+            rescue Exception => e
               @logger.info("Cleaning up the created VM due to an error: #{e}")
               begin
                 @cloud.delete_vm(vm_cid) if vm_cid
-              rescue
+              rescue Exception
                 @logger.info("Could not cleanup VM: #{vm_cid}")
               end
 
               begin
                 vm.delete if vm.id
-              rescue
+              rescue Exception
                 @logger.info("Could not delete VM model: #{vm.pretty_inspect}")
               end
 
