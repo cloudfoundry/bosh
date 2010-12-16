@@ -681,7 +681,7 @@ module VSphereCloud
             @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
             begin
               delete_vm(vm)
-            rescue => e
+            rescue Exception => e
               @logger.info("#{e} - #{e.backtrace.join("\n")}")
             end
           end

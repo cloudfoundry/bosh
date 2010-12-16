@@ -33,6 +33,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     Bosh::Director::Config.stub!(:cloud).and_return(cloud)
 
     deployment_plan.stub!(:deployment).and_return(deployment)
+    deployment_plan.stub!(:name).and_return("deployment_name")
 
     resource_pool_spec.stub!(:deployment).and_return(deployment_plan)
     resource_pool_spec.stub!(:unallocated_vms).and_return(0)
@@ -60,6 +61,8 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     idle_vm.should_receive(:vm=).with(vm)
     agent.should_receive(:wait_until_ready)
+    agent.should_receive(:apply).with({"deployment" => "deployment_name"}).
+        and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
 
@@ -71,7 +74,6 @@ describe Bosh::Director::ResourcePoolUpdater do
   it "should delete any extra vms" do
     cloud = mock("cloud")
     deployment = mock("deployment")
-    stemcell = mock("stemcell")
     vm = mock("vm")
     deployment_plan = mock("deployment_plan")
     resource_pool_spec = mock("resource_pool_spec")
@@ -118,6 +120,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     Bosh::Director::Config.stub!(:cloud).and_return(cloud)
 
     deployment_plan.stub!(:deployment).and_return(deployment)
+    deployment_plan.stub!(:name).and_return("deployment_name")
 
     resource_pool_spec.stub!(:deployment).and_return(deployment_plan)
     resource_pool_spec.stub!(:unallocated_vms).and_return(0)
@@ -147,10 +150,12 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
 
-    idle_vm.should_receive(:vm=).with(nil).and_return {|vm| current_vm = nil}
+    idle_vm.should_receive(:vm=).with(nil).and_return {|vm| current_vm = vm}
     idle_vm.should_receive(:current_state=).with(nil)
 
     agent.should_receive(:wait_until_ready)
+    agent.should_receive(:apply).with({"deployment" => "deployment_name"}).
+        and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:vm=).with(new_vm).and_return {|vm| current_vm = vm}
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
