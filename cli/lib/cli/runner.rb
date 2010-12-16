@@ -62,6 +62,8 @@ module Bosh
           opts.on("--skip-director-checks") {         @options[:director_checks] = false }
           opts.on("--quiet")                {         @options[:quiet] = true }
           opts.on("--non-interactive")      {         @options[:non_interactive] = true }
+          opts.on("--version")              {         set_cmd(:dashboard, :version) }
+          opts.on("--help")                 {}
         end.parse!(@args)
       rescue OptionParser::ParseError
         @args = saved_args
@@ -70,7 +72,9 @@ module Bosh
       def display_usage
         puts <<-USAGE
 
-usage: bosh [--verbose|-v] [--config|-c <FILE>] command [<args>]
+usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR]
+            [--no-color] [--skip-director-checks] [--quiet] [--non-interactive]
+            command [<args>]
 
 Currently available bosh commands are:
 
