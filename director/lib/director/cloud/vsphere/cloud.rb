@@ -182,10 +182,10 @@ module VSphereCloud
 
     def delete_vm(vm_cid)
       with_thread_name("delete_vm(#{vm_cid})") do
+        @logger.info("Deleting vm: #{vm_cid}")
         # TODO: detach any persistent disks
         vm = get_vm_by_cid(vm_cid)
 
-        @logger.info("Deleting vm: #{vm_cid}")
         properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question"])
 
         question = properties["runtime.question"]
@@ -209,8 +209,55 @@ module VSphereCloud
       end
     end
 
-    def configure_networks(vm, networks)
+    def configure_networks(vm_cid, networks)
+      with_thread_name("configure_networks(#{vm_cid}, ...)") do
+        @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
+        vm = get_vm_by_cid(vm_cid)
+        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device")
 
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange = []
+
+        existing_nic = devices.find {|device| device.kind_of?(VirtualEthernetCard)}
+
+        datacenter = client.find_parent(vm, "Datacenter")
+        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+
+        networks.each_value do |network|
+          v_network_name = network["cloud_properties"]["name"]
+          network_mob = client.find_by_inventory_path([datacenter_name, "network", v_network_name])
+          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey)
+          config.deviceChange << nic_config
+        end
+
+        nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+        nics.each do |nic|
+          nic_config = create_delete_device_spec(nic)
+          config.deviceChange << nic_config
+        end
+
+        fix_device_unit_numbers(devices, config.deviceChange)
+        @logger.info("Reconfiguring the networks")
+        @client.reconfig_vm(vm, config)
+
+        config = VirtualMachineConfigSpec.new
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
+                                                                     "config.vAppConfig.property"])
+        devices = vm_properties["config.hardware.device"]
+        existing_app_properties = vm_properties["config.vAppConfig.property"]
+
+        env = get_current_agent_env(existing_app_properties)
+        @logger.info("Reading current agent env: #{env.pretty_inspect}")
+
+        env["networks"] = build_agent_network_env(devices, networks)
+
+        @logger.info("Updating agent env to: #{env.pretty_inspect}")
+        set_agent_env(config, existing_app_properties, env)
+
+        client.reconfig_vm(vm, config)
+
+        # reboot?
+      end
     end
 
     def attach_disk(vm_cid, disk_cid)
@@ -407,12 +454,12 @@ module VSphereCloud
       result
     end
 
-    def build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk)
+    def build_agent_network_env(devices, networks)
       nics = {}
 
       devices.each do |device|
         if device.kind_of?(VirtualEthernetCard)
-          v_network_name = device.backing.deviceName
+          v_network_name     = device.backing.deviceName
           allocated_networks = nics[v_network_name] || []
           allocated_networks << device
           nics[v_network_name] = allocated_networks
@@ -421,12 +468,17 @@ module VSphereCloud
 
       network_env = {}
       networks.each do |network_name, network|
-        network_entry = network.dup
-        v_network_name = network["cloud_properties"]["name"]
-        nic = nics[v_network_name].pop
-        network_entry["mac"] = nic.macAddress
+        network_entry             = network.dup
+        v_network_name            = network["cloud_properties"]["name"]
+        nic                       = nics[v_network_name].pop
+        network_entry["mac"]      = nic.macAddress
         network_env[network_name] = network_entry
       end
+      network_env
+    end
+
+    def build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk)
+      network_env = build_agent_network_env(devices, networks)
 
       disk_env = {
         "system" => system_disk.unitNumber,
