@@ -5,6 +5,7 @@ module Bosh::Agent
       def self.process(args)
         self.new(args).apply
       end
+      def self.long_running?; true; end
 
       def initialize(args)
         @apply_spec = args
