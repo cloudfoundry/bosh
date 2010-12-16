@@ -25,7 +25,7 @@ describe Bosh::Spec::IntegrationTest do
   def run_bosh(cmd)
     Dir.chdir(BOSH_WORK_DIR) do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-      `#{CLI_DIR}/bin/bosh --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
+      `#{CLI_DIR}/bin/bosh --non-interactive --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
     end
   end
 

@@ -1,16 +1,11 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    arrayfields (4.7.4)
     columnize (0.3.2)
     diff-lcs (1.1.2)
-    fattr (2.2.0)
     highline (1.6.1)
     json_pure (1.4.6)
     linecache (0.43)
-    main (4.3.0)
-      arrayfields (>= 4.7.4)
-      fattr (>= 2.1.0)
     mime-types (1.16)
     progressbar (0.9.0)
     rest-client (1.6.1)
@@ -35,7 +30,6 @@ PLATFORMS
 DEPENDENCIES
   highline
   json_pure
-  main (>= 4.3.0)
   progressbar
   rest-client
   rspec
