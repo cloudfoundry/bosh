@@ -54,7 +54,7 @@ module Bosh::Director
           stemcell_manifest = YAML.load_file(stemcell_manifest_file)
 
           @name = safe_property(stemcell_manifest, "name", :class => String)
-          @version = safe_property(stemcell_manifest, "version", :class => Integer)
+          @version = safe_property(stemcell_manifest, "version", :class => String)
           @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
           @stemcell_image = File.join(stemcell_dir, "image")
           @logger.info("Found: name=>#{@name}, version=>#{@version}, cloud_properties=>#{@cloud_properties}")

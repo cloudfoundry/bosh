@@ -5,7 +5,11 @@ module Bosh::Director
       if hash && hash.has_key?(property)
         result = hash[property]
         if options[:class] && !result.kind_of?(options[:class])
-          raise Bosh::Director::ValidationInvalidType.new(property, options[:class], hash.pretty_inspect)
+          if options[:class] == String && result.kind_of?(Numeric)
+            result = result.to_s
+          else
+            raise Bosh::Director::ValidationInvalidType.new(property, options[:class], hash.pretty_inspect)
+          end
         end
       elsif !options[:optional]
         raise Bosh::Director::ValidationMissingField.new(property, hash.pretty_inspect)
