@@ -5,6 +5,7 @@ module Bosh::Director
     def initialize(resource_pool)
       @resource_pool = resource_pool
       @cloud = Config.cloud
+      @logger = Config.logger
     end
 
     def update
