@@ -13,6 +13,7 @@ require "agent/config"
 # TODO the message handlers will be loaded dynamically
 require "agent/message/configure"
 require "agent/message/state"
+require "agent/message/apply"
 require "agent/message/compile_package"
 
 require "agent/handler"

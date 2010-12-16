@@ -1,7 +1,6 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 require 'fileutils'
 
-
 describe Bosh::Agent::Message::State do
 
   before(:each) do

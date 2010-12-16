@@ -15,7 +15,7 @@ module Bosh::Agent
       def state
         state_file = File.join(@base_dir, 'bosh', 'state.yml')
         if File.exist?(state_file)
-          state = File.read(state_file)
+          state = YAML.load_file(state_file)
         else
           state = {
            "deployment"=>"",
@@ -29,7 +29,7 @@ module Bosh::Agent
            "properties"=>{}
           }
           File.open(state_file, 'w') do |f|
-            f.write(state.to_yaml)
+            f.puts(state.to_yaml)
           end
         end
         @logger.info("Agent state: #{state.inspect}")
