@@ -83,7 +83,11 @@ module Bosh::Agent
                 publish(message_id, payload)
               end
             }
+          else
+            payload = {:exception => "unknown message #{msg.inspect}"}
+            publish(message_id, payload)
           end
+
         end
         on.unsubscribe do |sub, msg|
           puts "unsubscribing"
@@ -104,7 +108,7 @@ module Bosh::Agent
       agent_task_id = args["agent_task_id"]
 
       if @long_running_agent_task == agent_task_id
-        publish(message_id, {"state" => "running"})
+        publish(message_id, {"value" => {"state" => "running", "agent_task_id" => agent_task_id}})
       else
         rs = @results.find { |time, task_id, result| task_id == agent_task_id }
         if rs
