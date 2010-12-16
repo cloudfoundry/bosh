@@ -10,6 +10,10 @@ describe Bosh::Agent::Handler do
   before(:each) do
     @redis = mock("redis")
     Redis.stub(:new).and_return(@redis)
+
+    logger = mock('logger')
+    logger.stub!(:info)
+    Bosh::Agent::Config.logger = logger
   end
 
   # FIXME: break more stuff out of the redis subscribe or see if we can enhance

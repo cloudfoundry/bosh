@@ -38,6 +38,7 @@ module Bosh::Agent
           @processors[processor_key] = klazz
         end
       end
+      @logger.info("Message processors: #{@processors.inspect}")
     end
 
     def start
@@ -54,6 +55,7 @@ module Bosh::Agent
         on.message do |sub, raw_msg|
           msg = Yajl::Parser.new.parse(raw_msg)
 
+          @logger.info("Message: #{msg.inspect}")
           message_id = msg['message_id']
           method = msg['method']
           args = msg['arugments']
@@ -63,7 +65,7 @@ module Bosh::Agent
           end
 
           if method == "get_state"
-            method == "state"
+            method = "state"
           end
 
           processor = lookup(method)
