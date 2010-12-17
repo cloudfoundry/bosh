@@ -14,7 +14,7 @@ describe Bosh::Agent::Message::Apply do
 
   it 'should set deployment in agents state if blank' do
     state = Bosh::Agent::Message::State.new(nil)
-    handler = Bosh::Agent::Message::Apply.new({"deployment" => "foo"})
+    handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
     handler.apply
     state.state['deployment'].should == "foo"
   end
