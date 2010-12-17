@@ -22,6 +22,7 @@ module Bosh::Agent
           @state["deployment"] = @apply_spec["deployment"]
           write_state
         end
+        @state
       end
 
       def write_state
