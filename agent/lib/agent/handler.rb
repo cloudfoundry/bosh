@@ -58,10 +58,10 @@ module Bosh::Agent
           @logger.info("Message: #{msg.inspect}")
           message_id = msg['message_id']
           method = msg['method']
-          args = msg['arugments']
+          args = msg['arguments']
 
           if method == "get_task"
-            handle_get_task(message_id, args)
+            handle_get_task(message_id, args.first)
           end
 
           if method == "get_state"
@@ -115,8 +115,7 @@ module Bosh::Agent
           time, task_id, result = rs
           publish(message_id, result)
         else
-          # FIXME: figure out exception strategy - currently the director wouldn't
-          # deal with the exceptions raises if 
+          publish(message_id, {"exception" => "unknown agent_task_id" })
         end
       end
     end
