@@ -8,14 +8,14 @@ module Bosh::Agent
       def self.long_running?; true; end
 
       def initialize(args)
-        @apply_spec = args
+        @apply_spec = args.first
         @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
         @state_file = File.join(@base_dir, '/bosh/state.yml')
       end
 
       def apply
-        @logger.info('Applying: #{@apply_spec.inspect}')
+        @logger.info("Applying: #{@apply_spec.inspect}")
         @state = YAML.load_file(@state_file)
 
         if @state["deployment"].empty?
