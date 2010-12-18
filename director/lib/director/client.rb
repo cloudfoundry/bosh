@@ -46,7 +46,7 @@ module Bosh::Director
           timeout = timeout_time - Time.now.to_f
           unless timeout > 0
             @pubsub_redis.unsubscribe(message_id)
-            raise TimeoutException
+            raise TimeoutException, "Timed out sending #{id} to #{@id} after #{@timeout} seconds"
           end
           cond.wait(timeout)
         end
