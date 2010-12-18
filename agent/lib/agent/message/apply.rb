@@ -21,6 +21,7 @@ module Bosh::Agent
         if @state["deployment"].empty?
           @state["deployment"] = @apply_spec["deployment"]
           @state["resource_pool"] = @apply_spec['resource_pool']
+          @state["networks"] = @apply_spec['networks']
           write_state
         end
         @state
