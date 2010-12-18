@@ -12,7 +12,7 @@ module Bosh::Director
 
       def initialize(task_id, release_dir)
         @task = Models::Task[task_id]
-        raise Bosh::Director::TaskNotFound if @task.nil?
+        raise TaskNotFound if @task.nil?
 
         @logger = Logger.new(@task.output)
         @logger.level = Config.logger.level
@@ -33,6 +33,10 @@ module Bosh::Director
         end
       end
 
+      # used for testing only
+      def initialize
+      end
+
       def perform
         @task.state = :processing
         @task.timestamp = Time.now.to_i
@@ -49,31 +53,8 @@ module Bosh::Director
 
           release_lock = Lock.new("lock:release:#{@release_name}")
           release_lock.lock do
-            @release = Models::Release.find(:name => @release_name)[0]
-            if @release.nil?
-              @release = Models::Release.new(:name => @release_name)
-              @release.save!
-            end
-
-            @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
-            raise Bosh::Director::ReleaseAlreadyExists unless @release_version_entry.valid?
-            @release_version_entry.save!
-
-            @packages = {}
-            @release_manifest["packages"].each do |package_meta|
-              package = Models::Package.find(:release_id => @release.id, :name => package_meta["name"],
-                                             :version => package_meta["version"])[0]
-              if package.nil?
-                package = create_package(package_meta)
-              else
-                raise Bosh::Director::ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
-              end
-              @packages[package_meta["name"]] = package
-            end
-
-            @release_manifest["jobs"].each do |job_name|
-              create_job(job_name)
-            end
+            find_release
+            process_release
 
             @task.state = :done
             @task.result = "/releases/#{@release_name}/#{@release_version}"
@@ -101,18 +82,70 @@ module Bosh::Director
         end
       end
 
+      def find_release
+        @logger.info("Looking up release: #{@release_name}")
+        @release = Models::Release.find(:name => @release_name).first
+        if @release.nil?
+          @logger.info("Release \"#{@release_name}\" did not exist, creating")
+          @release = Models::Release.new(:name => @release_name)
+          @release.save!
+        end
+      end
+
+      def process_release
+        @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
+        raise ReleaseAlreadyExists unless @release_version_entry.valid?
+        @release_version_entry.save!
+
+        resolve_package_dependencies(@release_manifest["packages"])
+
+        @packages = {}
+        @release_manifest["packages"].each do |package_meta|
+          package = Models::Package.find(:release_id => @release.id, :name => package_meta["name"],
+                                         :version => package_meta["version"])[0]
+          if package.nil?
+            package = create_package(package_meta)
+          else
+            # TODO: make sure package dependencies have not changed
+            raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
+          end
+          @packages[package_meta["name"]] = package
+        end
+
+        @release_manifest["jobs"].each do |job_name|
+          create_job(job_name)
+        end
+      end
+
+      def resolve_package_dependencies(packages)
+        packages_by_name = {}
+        packages.each do |package|
+          packages_by_name[package["name"]] = package
+          package["dependencies"] ||= []
+        end
+        dependency_lookup = lambda {|package_name| packages_by_name[package_name]["dependencies"]}
+        result = CycleHelper.check_for_cycle(packages_by_name.keys, :connected_vertices=> true, &dependency_lookup)
+        packages.each do |package|
+          @logger.info("Resolving package dependencies for: #{package["name"]}, " +
+                           "found: #{package["dependencies"].pretty_inspect}")
+          package["dependencies"] = result[:connected_vertices][package["name"]]
+          @logger.info("Resolved package dependencies for: #{package["name"]}, " +
+                           "to: #{package["dependencies"].pretty_inspect}")
+        end
+      end
+
       def extract_release
         @logger.info("Extracting release")
 
-        `tar -C #{@tmp_release_dir} -xzf #{@release_tgz}`
-        raise Bosh::Director::ReleaseInvalidArchive if $?.exitstatus != 0
+        output = `tar -C #{@tmp_release_dir} -xzf #{@release_tgz} 2>&1`
+        raise ReleaseInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
         FileUtils.rm(@release_tgz)
       end
 
       def verify_manifest
         @logger.info("Verifying manifest")
 
-        raise Bosh::Director::ReleaseManifestNotFound unless File.file?(@release_manifest_file)
+        raise ReleaseManifestNotFound unless File.file?(@release_manifest_file)
         @release_manifest = YAML.load_file(@release_manifest_file)
 
         @release_name = @release_manifest["name"]
@@ -132,12 +165,15 @@ module Bosh::Director
         @logger.info("Creating package: #{package.name}")
 
         package_tgz = File.join(@tmp_release_dir, "packages", "#{package.name}.tgz")
-        `tar -tzf #{package_tgz}`
-        raise PackageInvalid.new(:invalid_archive) if $?.exitstatus != 0
+        output = `tar -tzf #{package_tgz} 2>&1`
+        raise PackageInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
 
         File.open(package_tgz) do |f|
           package.blobstore_id = @blobstore.create(f)
         end
+
+        dependencies = package.dependencies
+        package_meta["dependencies"].each {|dependency| dependencies << dependency}
 
         package.save!
         package
