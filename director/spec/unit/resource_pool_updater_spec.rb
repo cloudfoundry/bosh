@@ -39,6 +39,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_spec.stub!(:unallocated_vms).and_return(0)
     resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
     resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
+    resource_pool_spec.stub!(:properties).and_return({"name" => "foo"})
     resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
     stemcell_spec.stub!(:stemcell).and_return(stemcell)
@@ -61,7 +62,8 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     idle_vm.should_receive(:vm=).with(vm)
     agent.should_receive(:wait_until_ready)
-    agent.should_receive(:apply).with({"deployment" => "deployment_name"}).
+    agent.should_receive(:apply).with({"resource_pool"=>{"name"=>"foo"}, "networks"=>{"network_a"=>{"ip"=>"1.2.3.4"}},
+                                       "deployment"=>"deployment_name"}).
         and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
@@ -126,6 +128,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_spec.stub!(:unallocated_vms).and_return(0)
     resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
     resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
+    resource_pool_spec.stub!(:properties).and_return({"name" => "foo"})
     resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
     stemcell_spec.stub!(:stemcell).and_return(stemcell)
@@ -154,7 +157,8 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.should_receive(:current_state=).with(nil)
 
     agent.should_receive(:wait_until_ready)
-    agent.should_receive(:apply).with({"deployment" => "deployment_name"}).
+    agent.should_receive(:apply).with({"resource_pool"=>{"name"=>"foo"}, "networks"=>{"ip"=>"1.2.3.4"},
+                                       "deployment"=>"deployment_name"}).
         and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:vm=).with(new_vm).and_return {|vm| current_vm = vm}
