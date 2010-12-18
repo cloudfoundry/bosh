@@ -85,15 +85,53 @@ describe Bosh::Director::Jobs::UpdateRelease do
       Bosh::Director::Models::Package.stub!(:new).with(:release => @release, :name => "test_package", :version => "1.0",
                                                        :sha1    => "some-sha").and_return(package)
       FileUtils.mkdir_p(File.join(@release_dir, "packages"))
-      File.open(File.join(@release_dir, "packages", "test_package.tgz"), "w") do |f|
+      package_path = File.join(@release_dir, "packages", "test_package.tgz")
+      File.open(package_path, "w") do |f|
         f.write(create_package({"test" => "test contents"}))
       end
 
-      @blobstore.should_receive(:create).with()
+      @blobstore.should_receive(:create).with(have_a_path_of(package_path)).and_return("blob_id")
 
-      @update_release_job.create_package({"name" => "test_package", "version" => "1.0", "sha1" => "some-sha"})
+      dependencies = Set.new
+      package.should_receive(:blobstore_id=).with("blob_id")
+      package.should_receive(:dependencies).and_return(dependencies)
+      package.should_receive(:save!)
+
+      @update_release_job.create_package({"name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
+                                          "dependencies" => ["foo_package", "bar_package"]})
+      dependencies.should eql(Set.new(["foo_package", "bar_package"]))
     end
 
   end
+
+  describe "resolve_package_dependencies" do
+
+    before(:each) do
+      @update_release_job = Bosh::Director::Jobs::UpdateRelease.new
+      @update_release_job.instance_eval do
+        @logger = Logger.new(STDOUT)
+      end
+    end
+
+    it "should normalize nil dependencies" do
+      packages = [{"name" => "A"}, {"name" => "B", "dependencies" => ["A"]}]
+      @update_release_job.resolve_package_dependencies(packages)
+      packages.should eql([{"dependencies"=>[], "name"=>"A"}, {"dependencies"=>["A"], "name"=>"B"}])
+    end
+
+    it "should not allow cycles" do
+      packages = [{"name" => "A", "dependencies" => ["B"]}, {"name" => "B", "dependencies" => ["A"]}]
+      lambda {@update_release_job.resolve_package_dependencies(packages)}.should raise_exception
+    end
+
+    it "should resolve nested dependencies" do
+      packages = [{"name" => "A", "dependencies" => ["B"]}, {"name" => "B", "dependencies" => ["C"]}, {"name" => "C"}]
+      @update_release_job.resolve_package_dependencies(packages)
+      packages.should eql([{"dependencies"=>["B", "C"], "name"=>"A"}, {"dependencies"=>["C"], "name"=>"B"},
+                           {"dependencies"=>[], "name"=>"C"}])
+    end
+
+  end
+
 
 end

@@ -45,3 +45,10 @@ Rspec.configure do |rspec_config|
     FileUtils.rm_rf(bosh_tmp_dir)
   end
 end
+
+RSpec::Matchers.define :have_a_path_of do |expected|
+  match do |actual|
+    actual.path == expected
+  end
+end
+
