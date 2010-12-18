@@ -62,7 +62,8 @@ module Bosh::Director
               agent.wait_until_ready
 
               task = agent.apply({
-                "deployment" => @resource_pool.deployment.name
+                "deployment" => @resource_pool.deployment.name,
+                "resource_pool" => @resource_pool.properties
               })
               while task["state"] == "running"
                 task = agent.get_task(task["agent_task_id"])
