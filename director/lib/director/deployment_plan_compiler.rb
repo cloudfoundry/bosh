@@ -49,9 +49,11 @@ module Bosh::Director
     def bind_existing_deployment
       vms = Models::Vm.find(:deployment_id => @deployment_plan.deployment.id)
       vms.each do |vm|
+        @logger.debug("Requesting current VM state for: #{vm.agent_id}")
         instance = Models::Instance.find(:vm_id => vm.id).first
         agent = AgentClient.new(vm.agent_id)
         state = agent.get_state
+        @logger.debug("Received VM state: #{state.pretty_inspect}")
 
         verify_state(instance, state, vm)
 

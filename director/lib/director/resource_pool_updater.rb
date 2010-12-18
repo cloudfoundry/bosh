@@ -63,7 +63,8 @@ module Bosh::Director
 
               task = agent.apply({
                 "deployment" => @resource_pool.deployment.name,
-                "resource_pool" => @resource_pool.properties
+                "resource_pool" => @resource_pool.properties,
+                "networks" => idle_vm.network_settings
               })
               while task["state"] == "running"
                 task = agent.get_task(task["agent_task_id"])
