@@ -39,7 +39,9 @@ describe Bosh::Director::CycleHelper do
 
     result = Bosh::Director::CycleHelper.check_for_cycle(
         [:A, :B, :C], :connected_vertices => true) {|vertex| graph[vertex]}
-    result.should eql({:connected_vertices=>{:C=>[], :A=>[:C, :B], :B=>[:C]}})
+
+    result[:connected_vertices].each {|key, value| result[:connected_vertices][key] = Set.new(value)}
+    result.should eql({:connected_vertices=>{:C=>Set.new([]), :A=>Set.new([:C, :B]), :B=>Set.new([:C])}})
   end
 
 end
