@@ -10,6 +10,7 @@ module Bosh::Agent
       def self.process(args)
         self.new(args).start
       end
+      def self.long_running?; true; end
 
       def initialize(args)
         bsc_options = Bosh::Agent::Config.blobstore_options
@@ -22,14 +23,14 @@ module Bosh::Agent
       end
 
       def start
-        # TODO make long running
         # TODO implement sha1 verification
         # TODO propagate erros
         begin
           get_source_package
           unpack_source_package
           compile
-          upload
+          result = upload
+          return {"result" => result}
         rescue RuntimeError => e
           # TODO: logging
           raise Bosh::Agent::MessageHandlerError, e
