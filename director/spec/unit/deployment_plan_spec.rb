@@ -10,7 +10,12 @@ describe Bosh::Director::DeploymentPlan do
     },
     "compilation" => {
       "workers" => 2,
-      "network" => "network_a"
+      "network" => "network_a",
+      "cloud_properties" => {
+        "ram" => "512mb",
+        "disk" => "2gb",
+        "cpu" => 1
+      }
     },
     "update" => {
       "canaries" => 1,
@@ -258,6 +263,7 @@ describe Bosh::Director::DeploymentPlan do
       compilation_settings = deployment_plan.compilation
       compilation_settings.workers.should eql(2)
       compilation_settings.network.should eql(deployment_plan.network("network_a"))
+      compilation_settings.cloud_properties.should eql({"ram"=>"512mb", "cpu"=>1, "disk"=>"2gb"})
     end
 
     it "should parse deployment properties" do
