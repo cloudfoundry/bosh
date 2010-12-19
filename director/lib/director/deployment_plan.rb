@@ -44,6 +44,7 @@ module Bosh::Director
     end
 
     class ResourcePoolSpec
+      include ValidationHelper
 
       attr_accessor :name
       attr_accessor :deployment
@@ -56,7 +57,7 @@ module Bosh::Director
         @deployment = deployment
         @name = resource_pool_spec["name"]
         @size = resource_pool_spec["size"]
-        @cloud_properties = resource_pool_spec["cloud_properties"]
+        @cloud_properties = safe_property(resource_pool_spec, "cloud_properties", :class => Hash)
         @stemcell = StemcellSpec.new(self, resource_pool_spec["stemcell"])
         @idle_vms = []
         @allocated_vms = 0
@@ -203,6 +204,7 @@ module Bosh::Director
 
     class NetworkSubnetSpec
       include IpUtil
+      include ValidationHelper
 
       attr_accessor :network
       attr_accessor :range
@@ -229,7 +231,7 @@ module Bosh::Director
           @dns << dns.ip
         end
 
-        @cloud_properties = subnet_spec["cloud_properties"]
+        @cloud_properties = safe_property(subnet_spec, "cloud_properties", :class => Hash)
 
         @available_dynamic_ips = Set.new
         @available_static_ips = Set.new
@@ -529,11 +531,13 @@ module Bosh::Director
       attr_accessor :deployment
       attr_accessor :workers
       attr_accessor :network
+      attr_accessor :cloud_properties
 
       def initialize(deployment, compilation_config)
         @deployment = deployment
         @workers = safe_property(compilation_config, "workers", :class => Integer)
         @network = deployment.network(safe_property(compilation_config, "network", :class => String))
+        @cloud_properties = safe_property(compilation_config, "cloud_properties", :class => Hash)
       end
     end
 

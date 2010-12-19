@@ -56,7 +56,7 @@ module Bosh::Director
         stemcell_cid = stemcell.cid
         stemcell_name = stemcell.name
         stemcell_version = stemcell.version
-        compilation_resources = stemcell.compilation_resources
+        compilation_resources = @deployment_plan.compilation.cloud_properties
 
         pool.process do
           @logger.info("Compiling package: #{package_name}/#{package_version} on " +
