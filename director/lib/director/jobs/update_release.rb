@@ -10,31 +10,34 @@ module Bosh::Director
         UpdateRelease.new(task_id, release_dir).perform
       end
 
-      def initialize(task_id, release_dir)
-        @task = Models::Task[task_id]
-        raise TaskNotFound if @task.nil?
+      def initialize(*args)
+        if args.length == 2
+          task_id, release_dir = args
+          @task = Models::Task[task_id]
+          raise TaskNotFound if @task.nil?
 
-        @logger = Logger.new(@task.output)
-        @logger.level = Config.logger.level
-        @logger.formatter = ThreadFormatter.new
-        @logger.info("Starting task: #{task_id}")
-        Config.logger = @logger
+          @logger = Logger.new(@task.output)
+          @logger.level = Config.logger.level
+          @logger.formatter = ThreadFormatter.new
+          @logger.info("Starting task: #{task_id}")
+          Config.logger = @logger
 
-        begin
-          @tmp_release_dir = release_dir
-          @blobstore = Config.blobstore
-        rescue Exception => e
-          @logger.error("#{e} - #{e.backtrace.join("\n")}")
-          @task.state = :error
-          @task.result = e.to_s
-          @task.timestamp = Time.now.to_i
-          @task.save!
-          raise e
+          begin
+            @tmp_release_dir = release_dir
+            @blobstore = Config.blobstore
+          rescue Exception => e
+            @logger.error("#{e} - #{e.backtrace.join("\n")}")
+            @task.state = :error
+            @task.result = e.to_s
+            @task.timestamp = Time.now.to_i
+            @task.save!
+            raise e
+          end
+        elsif args.empty?
+          # used for testing only
+        else
+          raise ArgumentError, "wrong number of arguments (#{args.length} for 2)"
         end
-      end
-
-      # used for testing only
-      def initialize
       end
 
       def perform
