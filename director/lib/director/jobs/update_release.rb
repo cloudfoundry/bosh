@@ -175,10 +175,11 @@ module Bosh::Director
           package.blobstore_id = @blobstore.create(f)
         end
 
+        package.save!
+
         dependencies = package.dependencies
         package_meta["dependencies"].each {|dependency| dependencies << dependency}
 
-        package.save!
         package
       end
 
