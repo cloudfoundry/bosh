@@ -61,7 +61,6 @@ describe Bosh::Director::PackageCompiler do
       @stemcell.stub!(:cid).and_return("stemcell-id")
       @stemcell.stub!(:name).and_return("stemcell-name")
       @stemcell.stub!(:version).and_return("stemcell-version")
-      @stemcell.stub!(:compilation_resources).and_return({"ram" => "2gb"})
 
       Bosh::Director::Models::Template.stub!(:find).with(:release_version_id => 42,
                                                          :name => "test_job").and_return([@template])
@@ -81,6 +80,7 @@ describe Bosh::Director::PackageCompiler do
     it "should compile a package if it's not already compiled" do
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
+      @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
       @network.should_receive(:allocate_dynamic_ip).and_return(255)
       @network.should_receive(:network_settings).with(255).and_return({"ip" => "1.2.3.4"})
@@ -160,6 +160,7 @@ describe Bosh::Director::PackageCompiler do
       deployment_plan.stub!(:compilation).and_return(compilation_config)
       compilation_config.stub!(:network).and_return(network)
       compilation_config.stub!(:workers).and_return(1)
+      compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
       network.should_receive(:allocate_dynamic_ip).and_return(255)
       network.should_receive(:network_settings).with(255).and_return({"ip" => "1.2.3.4"})
 
