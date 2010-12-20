@@ -35,8 +35,7 @@ describe Bosh::Director::InstanceUpdater do
     },
     "properties" => {"key"=>"value"}
   }
-  BASIC_INSTANCE_STATE = BASIC_PLAN.merge({"state" => "running"})
-  IDLE_STATE = {
+  IDLE_PLAN = {
     "deployment" => "test_deployment",
     "resource_pool" => {
       "stemcell" => {
@@ -44,7 +43,12 @@ describe Bosh::Director::InstanceUpdater do
         "network" => "network-a",
         "version" => 3
       },
-      "name" => "test_resource_pool"
+      "name" => "test_resource_pool",
+      "cloud_properties" => {
+        "ram" => "2GB",
+        "disk" => "10GB",
+        "cores" => 2
+      }
     },
     "networks" => {
       "network-a" => {
@@ -54,9 +58,10 @@ describe Bosh::Director::InstanceUpdater do
         "cloud_properties" => {"name" => "network-a"},
         "dns" => ["1.2.3.4"]
       }
-    },
-    "state" => "idle"
+    }
   }
+  BASIC_INSTANCE_STATE = BASIC_PLAN.merge({"state" => "running"})
+  IDLE_STATE = IDLE_PLAN.merge({"state" => "idle"})
 
   def stub_object(stub, options = {})
     options.each do |key, value|
@@ -203,6 +208,7 @@ describe Bosh::Director::InstanceUpdater do
                                 :network_settings =>BASIC_PLAN["networks"])
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
+    @instance_spec.should_receive(:current_state).and_return(IDLE_STATE)
 
     new_vm = mock("vm-2")
     new_vm.should_receive(:deployment=).with(@deployment)
@@ -241,6 +247,10 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:save!)
 
     @agent_2.should_receive(:wait_until_ready)
+    @agent_2.should_receive(:apply).with(IDLE_PLAN).and_return({
+      "id" => "task-1",
+      "state" => "done"
+    })
     @agent_2.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
@@ -271,6 +281,7 @@ describe Bosh::Director::InstanceUpdater do
                                 :network_settings =>BASIC_PLAN["networks"])
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
+    @instance_spec.should_receive(:current_state).and_return(IDLE_STATE.merge({"persistent_disk" => "1gb"}))
 
     new_vm = mock("vm-2")
     new_vm.should_receive(:deployment=).with(@deployment)
@@ -313,6 +324,10 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:save!)
 
     @agent_2.should_receive(:wait_until_ready)
+    @agent_2.should_receive(:apply).with(IDLE_PLAN.merge({"persistent_disk" => "1gb"})).and_return({
+      "id" => "task-1",
+      "state" => "done"
+    })
     @agent_2.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
