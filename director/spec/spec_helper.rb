@@ -17,7 +17,7 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 
-Bosh::Director::Config.logger = Logger.new(STDOUT)
+Bosh::Director::Config.logger = Logger.new(ENV['DEBUG'] ? STDOUT : nil)
 
 bosh_dir = Dir.mktmpdir("boshdir")
 bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
