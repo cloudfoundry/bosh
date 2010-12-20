@@ -113,6 +113,7 @@ module Bosh::Director
             raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
           end
           @packages[package_meta["name"]] = package
+          @release_version_entry.packages << package
         end
 
         @release_manifest["jobs"].each do |job_name|

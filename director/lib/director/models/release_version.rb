@@ -3,6 +3,7 @@ module Bosh::Director::Models
   class ReleaseVersion < Ohm::Model
     reference :release, Release
     attribute :version
+    set :packages, Package
 
     index :release
     index :version
