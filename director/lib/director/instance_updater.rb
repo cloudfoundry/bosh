@@ -64,6 +64,16 @@ module Bosh::Director
 
         agent.wait_until_ready
 
+        task = agent.apply({
+          "deployment" => @deployment_plan.name,
+          "networks" => @instance_spec.network_settings,
+          "resource_pool" => @job_spec.resource_pool.properties,
+          "persistent_disk" => @instance_spec.current_state["persistent_disk"]
+        })
+        while task["state"] == "running"
+          task = agent.get_task(task["agent_task_id"])
+        end
+
         @instance_spec.current_state = agent.get_state
       end
     end
