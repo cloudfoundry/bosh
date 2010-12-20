@@ -14,7 +14,8 @@ module Bosh::Agent
         @redis_options = {:host => config["redis"]["host"],
                            :port => config["redis"]["port"],
                            :password => config["redis"]["password"],
-                           :logger => @logger, :timeout => 0}
+                           :logger => @logger, :timeout => 0,
+                           :thread_safe => true}
 
         # TODO: right now this will only appy the the simple blobstore type
         @blobstore_options = config["blobstore"]
