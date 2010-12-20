@@ -40,8 +40,12 @@ module Bosh::Director
       end
     end
 
+    def working?
+      !@boom.nil? || @pool.working + @pool.action_size > 0
+    end
+
     def wait(interval = 0.1)
-      sleep(interval) while !@boom.nil? || @pool.working + @pool.action_size > 0
+      sleep(interval) while working?
     end
 
   end
