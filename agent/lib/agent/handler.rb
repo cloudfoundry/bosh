@@ -75,7 +75,7 @@ module Bosh::Agent
                 if @long_running_agent_task.empty?
                   process_long_running(message_id, processor, args)
                 else
-                  payload = {:excpetion => "already running long running task"}
+                  payload = {:exception => "already running long running task"}
                   publish(message_id, payload)
                 end
               else
