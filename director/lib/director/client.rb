@@ -11,6 +11,7 @@ module Bosh::Director
       @redis = Config.redis
       @pubsub_redis = Config.pubsub_redis
       @timeout = options[:timeout] || 30
+      @logger = Config.logger
     end
 
     def method_missing(id, *args)
@@ -31,9 +32,11 @@ module Bosh::Director
               :arguments => args
             }
             @redis.publish("rpc:#{@service_name}:#{@id}", Yajl::Encoder.encode(payload))
+            @logger.debug("Sent: #{payload.pretty_inspect}")
           when :message
             msg = callback_args.shift
             result.synchronize do
+              @logger.debug("Received reply: #{msg} for: #{message_id}")
               result.merge!(Yajl::Parser.new.parse(msg))
               @pubsub_redis.unsubscribe(message_id)
               cond.signal
