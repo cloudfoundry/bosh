@@ -1,3 +1,5 @@
+require "yaml"
+
 module Bosh::Cli
   module Command
     class Base

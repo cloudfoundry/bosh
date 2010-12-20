@@ -40,12 +40,12 @@ module Bosh
           display_usage
         end
 
-      rescue ArgumentError => e
-        say("Invalid arguments for '%s'" % [ @namespace, @action ].compact.join(" "))
+#      rescue ArgumentError => e
+#        say("Invalid arguments for '%s'" % [ @namespace, @action ].compact.join(" "))
       rescue Bosh::Cli::AuthError
         say("Director auth error")
       rescue Bosh::Cli::CliExit => e
-        say(e.message)
+        say(e.message.red)
       rescue Bosh::Cli::CliError => e
         say("Error #{e.error_code}: #{e.message}")
       ensure
@@ -93,6 +93,8 @@ Currently available bosh commands are:
 
   release upload /path/to/release.tgz      Upload the release
   release verify /path/to/release.tgz      Verify the release
+
+  package create  <name>|<path>|all        Build a package
 
   stemcell upload /path/to/stemcell.tgz    Upload the stemcell
   stemcell verify /path/to/stemcell.tgz    Verify the stemcell
@@ -145,11 +147,17 @@ USAGE
           when "upload": set_cmd(:stemcell, :upload, *params)
           when "verify", "validate": set_cmd(:stemcell, :verify, *params)
           end
+        when "package"
+          op, name, *params = args
+          case op
+          when "create", "build": set_cmd(:package, :create, name)
+          end          
         when "release"
           op, *params = args
           case op
           when "upload": set_cmd(:release, :upload, *params)
           when "verify", "validate": set_cmd(:release, :verify, *params)
+          when "create": set_cmd(:release, :create)
           end
         end
       end
