@@ -45,6 +45,29 @@ module Bosh::Cli::Command
 
       say responses[status] || "Cannot upload release: #{message}"
     end
-    
+
+    def create
+      # Release directory expectations:
+      # releases/#{version}   Generated releases
+      # packages/#{package_name}.pkg
+      # packages/#{package_name}/{packaging,migrations,...} Package-specific files (will be bundled with package)
+      # src/ Source code for packages
+
+      # For each package:
+        # If package has changed since last release, regenerate it (increment version)
+
+      # For each job:
+        # Check if all configuration files are present
+        # Check if monit file is present
+        # Check if update and restart scripts in job spec are present
+        # Check if all referenced packages are present
+
+      # Generate manifest
+      # Generate bundle
+
+      # Save bundle in releases/#{version}, create a git tag (?)
+
+      Bosh::Cli::ReleaseBuilder.new(work_dir).build
+    end
   end
 end

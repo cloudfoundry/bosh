@@ -4,6 +4,8 @@ module Bosh
   module Cli
     class Config
 
+      VALID_ID = /^[-a-z0-9_]+$/i
+
       class << self
         attr_accessor :colorize
         attr_accessor :output

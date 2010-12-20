@@ -19,6 +19,9 @@ module Bosh
     class CliExit              < CliError; error_code(400); end
 
     class CacheDirectoryError  < CliError; error_code(301); end
-    
+
+    class InvalidPackage       < CliError; error_code(500); end
+    class ReleaseBundleInvalid < CliError; error_code(501); end
+
   end
 end
