@@ -8,7 +8,7 @@ module Bosh::Director::Models
     attribute :version
     attribute :blobstore_id
     attribute :sha1
-    set :dependencies
+    set :dependencies, String
 
     index :release
     index :name
