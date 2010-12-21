@@ -71,7 +71,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       @update_release_job = Bosh::Director::Jobs::UpdateRelease.new
       @update_release_job.instance_eval do
-        @logger = Logger.new(STDOUT)
+        @logger = Bosh::Director::Config.logger
         @release = release
         @tmp_release_dir = release_dir
         @blobstore = blobstore
@@ -109,7 +109,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     before(:each) do
       @update_release_job = Bosh::Director::Jobs::UpdateRelease.new
       @update_release_job.instance_eval do
-        @logger = Logger.new(STDOUT)
+        @logger = Bosh::Director::Config.logger
       end
     end
 
