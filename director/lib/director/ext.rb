@@ -1,8 +1,18 @@
 module Ohm
+
+  class ValidationException < StandardError
+    attr_reader :errors
+
+    def initialize(obj, errors)
+      super("Could not save #{obj}: #{errors.pretty_inspect}")
+      @errors = errors
+    end
+  end
+
   class Model
 
     def save!
-      raise "Could not save #{self}: #{errors.pretty_inspect}" unless save
+      raise ValidationException.new(self, errors) unless save
     end
 
   end

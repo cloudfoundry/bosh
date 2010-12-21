@@ -4,6 +4,7 @@ GEM
     SystemTimer (1.2.1)
     actionpool (0.2.3)
       splib (~> 1.4)
+    bcrypt-ruby (2.1.2)
     blobstore_client (0.0.1)
       httpclient
     builder (3.0.0)
@@ -74,6 +75,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer
   actionpool
+  bcrypt-ruby
   blobstore_client
   ci_reporter
   eventmachine

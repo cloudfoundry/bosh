@@ -28,6 +28,7 @@ module Bosh::Director
     ["UserNotFound",          NOT_FOUND,    20000, "User \"%s\" doesn't exist"],
     ["UserImmutableUsername", BAD_REQUEST,  20001, "The username is immutable"],
     ["UserInvalid",           BAD_REQUEST,  20002, "The user is invalid: %s"],
+    ["UserNameTaken",         BAD_REQUEST,  20003, "The username: %s is already taken"],
 
     ["ReleaseAlreadyExists",    BAD_REQUEST, 30000, "Release already exists"],
     ["ReleaseExistingPackageHashMismatch", BAD_REQUEST, 30001,
