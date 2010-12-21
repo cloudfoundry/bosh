@@ -12,6 +12,7 @@ module Bosh::Cli::Command
         sleep(1)
       end while ["queued", "processing"].include?(state)
       say(task.flush_output)
+      say("Task #{task_id}: state is '#{state}'")
     end
 
   end
