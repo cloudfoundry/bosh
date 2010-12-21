@@ -16,7 +16,13 @@ module Bosh::Agent
 
       def apply
         @logger.info("Applying: #{@apply_spec.inspect}")
-        @state = YAML.load_file(@state_file)
+
+        if File.exist?(@state_file)
+          @state = YAML.load_file(@state_file)
+        else
+          @state = {}
+          @state["deployment"] = ""
+        end
 
         if @state["deployment"].empty?
           @state["deployment"] = @apply_spec["deployment"]
