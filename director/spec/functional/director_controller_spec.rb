@@ -73,7 +73,7 @@ describe Bosh::Director::Controller do
       last_response.body.should == Yajl::Encoder.encode("status" => "Bosh Director (logged in as admin)")
     end
 
-  end  
+  end
 
   describe "API calls" do
     before(:each) { login_as_admin }
@@ -195,7 +195,7 @@ describe Bosh::Director::Controller do
 
         new_user = Bosh::Director::Models::User.find(:username => "john").first
         new_user.should_not be_nil
-        new_user.password.should == "123"
+        BCrypt::Password.new(new_user.password).should == "123"
       end
 
       it "doesn't create a user with exising username" do
@@ -219,7 +219,7 @@ describe Bosh::Director::Controller do
 
         last_response.status.should == 200
         user = Bosh::Director::Models::User.find(:username => "john").first
-        user.password.should == "456"
+        BCrypt::Password.new(user.password).should == "456"
 
         login_as("john", "456")
         change_name = Yajl::Encoder.encode({ "username" => "john2", "password" => "123" })
@@ -242,5 +242,5 @@ describe Bosh::Director::Controller do
       end
     end
   end
-  
+
 end

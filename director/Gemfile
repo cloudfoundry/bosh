@@ -1,6 +1,7 @@
 source :rubygems
 
 gem "actionpool"
+gem "bcrypt-ruby"
 gem "blobstore_client"
 gem "eventmachine"
 gem "netaddr"
