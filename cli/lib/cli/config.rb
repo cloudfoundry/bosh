@@ -51,17 +51,17 @@ module Bosh
 
       [ :target, :deployment ].each do |attr|
         define_method attr do
-          read(attr)
+          read(attr, false)
         end
 
         define_method "#{attr}=" do |value|
-          write(attr, value)
+          write_global(attr, value)
         end
       end
 
-      def read(attr)
+      def read(attr, try_local_first = true)
         attr = attr.to_s
-        if @config_file[@work_dir].is_a?(Hash) && @config_file[@work_dir].has_key?(attr)
+        if try_local_first && @config_file[@work_dir].is_a?(Hash) && @config_file[@work_dir].has_key?(attr)
           @config_file[@work_dir][attr]
         else
           @config_file[attr]
@@ -71,6 +71,10 @@ module Bosh
       def write(attr, value)
         @config_file[@work_dir] ||= {}
         @config_file[@work_dir][attr.to_s] = value
+      end
+
+      def write_global(attr, value)
+        @config_file[attr.to_s] = value
       end
 
       def save

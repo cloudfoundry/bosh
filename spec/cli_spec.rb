@@ -69,6 +69,12 @@ describe Bosh::Spec::IntegrationTest do
     expect_output("target", <<-OUT)
       Current target is 'http://localhost:8085'
     OUT
+
+    Dir.chdir("/tmp") do
+      expect_output("target", <<-OUT)
+        Current target is 'http://localhost:8085'
+      OUT
+    end
   end
 
   it "allows omitting http" do
@@ -78,13 +84,15 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "sets and reads existing deployment (also updating target in process, even if it's cannot be accessed!)" do
+    deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
+    
     expect_output("deployment vmforce", <<-OUT)
       WARNING! Your target has been changed to 'http://vmforce-target:2560'
-      Deployment set to 'vmforce'
+      Deployment set to '#{deployment_manifest_path}'
     OUT
 
     expect_output("deployment", <<-OUT)
-      Current deployment is 'vmforce'
+      Current deployment is '#{deployment_manifest_path}'
     OUT
 
     expect_output("target", <<-OUT)
