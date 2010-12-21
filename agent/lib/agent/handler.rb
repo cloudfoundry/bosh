@@ -131,7 +131,7 @@ module Bosh::Agent
         @long_running_agent_task = [agent_task_id]
       end
 
-      payload = {:value => {:agent_task_id => agent_task_id}}
+      payload = {:value => {:state => "running", :agent_task_id => agent_task_id}}
       publish(message_id, payload)
 
       result = process(processor, args)
