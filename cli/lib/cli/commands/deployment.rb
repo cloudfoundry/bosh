@@ -6,10 +6,10 @@ module Bosh::Cli::Command
     end
 
     def set_current(name)
-      manifest_filename = File.expand_path(work_dir + "/deployments/#{name}.yml")
+      manifest_filename = find_deployment(name)
 
       if !File.exists?(manifest_filename)
-        err("Missing manifest for #{name}")
+        err("Missing manifest for #{name} (tried '#{manifest_filename}')")
       end
       
       manifest   = YAML.load_file(manifest_filename)
@@ -24,8 +24,8 @@ module Bosh::Cli::Command
         say("WARNING! Your target has been changed to '#{new_target}'")
       end
 
-      say("Deployment set to '#{name}'")
-      config.deployment = name
+      say("Deployment set to '#{manifest_filename}'")
+      config.deployment = manifest_filename
       config.save
     end
     
@@ -33,9 +33,9 @@ module Bosh::Cli::Command
       err("Please log in first") unless logged_in?
       err("Please choose deployment first") unless deployment
 
-      manifest_filename = File.expand_path(work_dir + "/deployments/#{deployment}.yml")
+      manifest_filename = deployment
       if !File.exists?(manifest_filename)
-        err("Missing manifest for #{name}")
+        err("Missing deployment at '#{deployment}'")
       end
       
       manifest = YAML.load_file(manifest_filename)      
@@ -61,6 +61,17 @@ module Bosh::Cli::Command
 
       say responses[status] || "Cannot deploy: #{body}"      
     end
+
+    private
+
+    def find_deployment(name)
+      if File.exists?(name)
+        File.expand_path(name)
+      else
+        File.expand_path(File.join(work_dir, "deployments", "#{name}.yml"))
+      end
+    end
+    
   end
 end
 
