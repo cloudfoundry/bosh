@@ -17,14 +17,8 @@ describe Bosh::Agent::Message::State do
     handler = Bosh::Agent::Message::State.new(nil)
     initial_state = {
       "deployment"=>"",
-      "job"=>"",
-      "index"=>"",
       "networks"=>{},
-      "resource_pool"=>{},
-      "packages"=>{},
-      "persistent_disk"=>{},
-      "configuration_hash"=>{},
-      "properties"=>{}
+      "resource_pool"=>{}
     }
     handler.state.should == initial_state
   end

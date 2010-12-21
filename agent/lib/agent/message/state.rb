@@ -19,14 +19,8 @@ module Bosh::Agent
         else
           state = {
            "deployment"=>"",
-           "job"=>"",
-           "index"=>"",
            "networks"=>{},
-           "resource_pool"=>{},
-           "packages"=>{},
-           "persistent_disk"=>{},
-           "configuration_hash"=>{},
-           "properties"=>{}
+           "resource_pool"=>{}
           }
           File.open(state_file, 'w') do |f|
             f.puts(state.to_yaml)
