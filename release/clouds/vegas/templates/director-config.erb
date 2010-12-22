@@ -20,6 +20,9 @@ cloud:
   plugin: vsphere
   properties:
     agent:
+      ntp:
+       - ntp01.las01.emcatmos.com
+       - ntp02.las01.emcatmos.com
       blobstore:
         plugin: simple
         properties:
