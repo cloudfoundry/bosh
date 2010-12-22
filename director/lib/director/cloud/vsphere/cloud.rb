@@ -98,7 +98,26 @@ module VSphereCloud
     end
 
     def delete_stemcell(stemcell)
-      # delete VM by mob id
+      with_thread_name("delete_stemcell(#{stemcell})") do
+        pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
+        @resources.datacenters.each_value do |datacenter|
+          @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
+          templates = client.get_property(datacenter.template_folder, "Folder", "childEntity")
+          template_properties = client.get_properties(templates, "VirtualMachine", ["name"])
+          template_properties.each do |template, properties|
+            template_name = properties["name"].gsub("%2f", "/")
+            if template_name.split("/").first.strip == stemcell
+              @logger.info("Found: #{template_name}")
+              pool.process do
+                @logger.info("Deleting: #{template_name}")
+                client.delete_vm(properties[:obj])
+                @logger.info("Deleted: #{template_name}")
+              end
+            end
+          end
+        end
+        pool.wait
+      end
     end
 
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
