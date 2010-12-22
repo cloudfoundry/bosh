@@ -9,11 +9,10 @@ module Bosh::Director::Models
     attribute :blobstore_id
     set :packages, Package
 
-    index :release_version
     index :name
 
     def validate
-      assert_present :release_version
+      assert_present :release_version_id
       assert_present :name
       assert_unique [:release_version_id, :name]
     end

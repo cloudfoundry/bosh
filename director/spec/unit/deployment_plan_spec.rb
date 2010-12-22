@@ -178,7 +178,6 @@ describe Bosh::Director::DeploymentPlan do
       instance_1.should eql(job.instance(0))
       instance_1.job.should eql(job)
       instance_1.index.should eql(0)
-      instance_1.vm.should be_nil
       instance_1.current_state.should be_nil
     end
 

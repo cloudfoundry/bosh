@@ -7,12 +7,11 @@ module Bosh::Director::Models
     attribute :agent_id
     attribute :cid
 
-    index :deployment
-
     def validate
-      assert_present :deployment
+      assert_present :deployment_id
       assert_present :agent_id
       assert_present :cid
+      assert_unique :agent_id
     end
   end
 end

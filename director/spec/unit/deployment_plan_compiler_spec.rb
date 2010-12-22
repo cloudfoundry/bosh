@@ -102,7 +102,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
       @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with(state)
-      @instance_spec.should_receive(:vm=).with(@vm)
       @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
       @resource_pool_spec.should_receive(:add_allocated_vm)
 
@@ -119,7 +118,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with(state)
-      @instance_spec.should_receive(:vm=).with(@vm)
       @instance_network_spec.should_not_receive(:use_reservation)
       @resource_pool_spec.should_receive(:add_allocated_vm)
 
@@ -423,30 +421,26 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should create a new instance model when needed" do
+      idle_vm = mock("idle_vm")
+      idle_vm.stub!(:vm).and_return(@vm)
+      idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
+
       @instance_spec.should_receive(:instance).and_return(nil)
 
       new_instance = mock("instance")
       new_instance.should_receive(:deployment=).with(@deployment)
       new_instance.should_receive(:job=).with("test_job")
       new_instance.should_receive(:index=).with(5)
+      new_instance.should_receive(:vm).and_return(nil)
+      new_instance.should_receive(:vm=).with(@vm)
       new_instance.should_receive(:save!)
 
       @instance_spec.should_receive(:instance=).with(new_instance)
+      @instance_spec.should_receive(:current_state=).with({"deployment" => "test_deployment"})
+
+      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
       Bosh::Director::Models::Instance.stub!(:new).and_return(new_instance)
-
-      @deployment_plan_compiler.bind_instance_vms
-    end
-
-    it "should allocate a new VM when an instance is missing a VM" do
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(@vm)
-      idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
-
-      @instance_spec.should_receive(:vm).and_return(nil)
-      @instance_spec.should_receive(:vm=).with(@vm)
-      @instance_spec.should_receive(:current_state=).with({"deployment" => "test_deployment"})
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
       @deployment_plan_compiler.bind_instance_vms
     end

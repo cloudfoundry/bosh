@@ -72,7 +72,6 @@ module Bosh::Director
             end
 
             # copy resource pool reservation
-            instance_spec.vm = instance.vm
             instance_spec.job.resource_pool.add_allocated_vm
           else
             @deployment_plan.delete_instance(instance)
@@ -156,18 +155,20 @@ module Bosh::Director
       @deployment_plan.jobs.each do |job|
         job.instances.each do |instance_spec|
           # create the instance model if this is a new instance
-          if instance_spec.instance.nil?
+          instance = instance_spec.instance
+
+          if instance.nil?
             instance = Models::Instance.new
             instance.deployment = @deployment_plan.deployment
             instance.job = job.name
             instance.index = instance_spec.index
-            instance.save!
             instance_spec.instance = instance
           end
 
-          unless instance_spec.vm
+          unless instance.vm
             idle_vm = instance_spec.job.resource_pool.allocate_vm
-            instance_spec.vm = idle_vm.vm
+            instance.vm = idle_vm.vm
+            instance.save!
             instance_spec.current_state = idle_vm.current_state
           end
         end

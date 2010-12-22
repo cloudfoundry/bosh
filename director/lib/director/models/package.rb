@@ -10,16 +10,14 @@ module Bosh::Director::Models
     attribute :sha1
     set :dependencies, String
 
-    index :release
     index :name
     index :version
 
     def validate
-      assert_present :release
+      assert_present :release_id
       assert_present :name
       assert_present :version
       assert_present :sha1
-
       assert_unique [:release_id, :name, :version]
     end
   end
