@@ -9,6 +9,10 @@ describe Bosh::Agent::Message::CompilePackage do
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
 
+    @logger = mock('logger')
+    @logger.stub!(:info)
+    Bosh::Agent::Config.logger = @logger
+
     args = "some_blobstore_id", "some_sha1", "some_name", 1
     @handler = Bosh::Agent::Message::CompilePackage.new(args)
 

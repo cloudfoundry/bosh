@@ -17,6 +17,7 @@ module Bosh::Agent
         @blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
         @blobstore_id, @sha1, @package_name, @package_version = args
 
+        @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
         @compile_base = "#{@base_dir}/data/compile"
         @install_base = "#{@base_dir}/data/packages"
@@ -29,6 +30,7 @@ module Bosh::Agent
           get_source_package
           unpack_source_package
           compile
+          pack
           result = upload
           return {"result" => result}
         rescue RuntimeError => e
@@ -75,7 +77,9 @@ module Bosh::Agent
           ENV['BOSH_COMPILE_TARGET'] = compile_dir
           ENV['BOSH_INSTALL_TARGET'] = install_dir
           if File.exist?('packaging')
-            `bash packaging`
+            @logger.info("Compiling #{@package_name} #{@package_version}")
+            output = `bash packaging`
+            @logger.info(output)
           end
         end
       end
@@ -85,6 +89,7 @@ module Bosh::Agent
       end
 
       def pack
+        @logger.info("Packing #{@package_name} #{@package_version}")
         Dir.chdir(install_dir) do
           `tar -zcf #{compiled_package} .`
         end
@@ -96,6 +101,9 @@ module Bosh::Agent
           compiled_blobstore_id = @blobstore_client.create(f)
         end
         compiled_sha1 = Digest::SHA1.hexdigest(File.read(compiled_package))
+        @logger.info("Uploaded #{@package_name} #{@package_version} 
+                     (sha1: #{compiled_sha1}, blobstore_id: #{compiled_blobstore_id})")
+
         { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id }
       end
 
