@@ -74,6 +74,7 @@ module Bosh::Director
 
         task = agent.apply(state)
         while task["state"] == "running"
+          sleep(1.0)
           task = agent.get_task(task["agent_task_id"])
         end
 
@@ -93,6 +94,7 @@ module Bosh::Director
           if old_disk_cid
             task = agent.migrate_disk(@job_spec.persistent_disk)
             while task["state"] == "running"
+              sleep(1.0)
               task = agent.get_task(task["agent_task_id"])
             end
           end
@@ -130,6 +132,7 @@ module Bosh::Director
         "properties" => @instance_spec.properties
       })
       while task["state"] == "running"
+        sleep(1.0)
         task = agent.get_task(task["agent_task_id"])
       end
     end

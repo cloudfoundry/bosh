@@ -104,6 +104,7 @@ module Bosh::Director
                 agent_task = agent.compile_package(package_blobstore_id, package_sha1, package_name, package_version,
                                                    dependencies)
                 while agent_task["state"] == "running"
+                  sleep(1.0)
                   agent_task = agent.get_task(agent_task["agent_task_id"])
                 end
               ensure
@@ -243,6 +244,7 @@ module Bosh::Director
         "networks"      => network_settings
       })
       while task["state"] == "running"
+        sleep(1.0)
         task = agent.get_task(task["agent_task_id"])
       end
     end
