@@ -3,8 +3,8 @@ module Bosh::Director
   class DeploymentManager
 
     def create_deployment(deployment_manifest)
-      deployment_manifest_file = Tempfile.new("deployment_manifest")
-      File.open(deployment_manifest_file.path, "w") do |f|
+      deployment_manifest_file = File.join(Dir::tmpdir, "deployment-#{UUIDTools::UUID.random_create}")
+      File.open(deployment_manifest_file, "w") do |f|
         buffer = ""
         f.write(buffer) until deployment_manifest.read(16384, buffer).nil?
       end
@@ -21,7 +21,7 @@ module Bosh::Director
       task.output = task_status_file
       task.save!
 
-      Resque.enqueue(Jobs::UpdateDeployment, task.id, deployment_manifest_file.path)
+      Resque.enqueue(Jobs::UpdateDeployment, task.id, deployment_manifest_file)
 
       task
     end

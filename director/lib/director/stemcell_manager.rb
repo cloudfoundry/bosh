@@ -3,8 +3,8 @@ module Bosh::Director
   class StemcellManager
 
     def create_stemcell(stemcell)
-      stemcell_file = Tempfile.new("stemcell")
-      File.open(stemcell_file.path, "w") do |f|
+      stemcell_file = File.join(Dir::tmpdir, "stemcell-#{UUIDTools::UUID.random_create}")
+      File.open(stemcell_file, "w") do |f|
         buffer = ""
         f.write(buffer) until stemcell.read(16384, buffer).nil?
       end
@@ -21,7 +21,7 @@ module Bosh::Director
       task.output = task_status_file
       task.save!
 
-      Resque.enqueue(Jobs::UpdateStemcell, task.id, stemcell_file.path)
+      Resque.enqueue(Jobs::UpdateStemcell, task.id, stemcell_file)
 
       task
     end
