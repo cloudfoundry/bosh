@@ -111,11 +111,11 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "keeps track of user associated with target" do
-    run_bosh("--skip-director-checks target foo")
-    run_bosh("--skip-director-checks login john pass")
+    run_bosh("--force target foo")
+    run_bosh("--force login john pass")
 
-    run_bosh("--skip-director-checks target bar")
-    run_bosh("--skip-director-checks login jane pass")
+    run_bosh("--force target bar")
+    run_bosh("--force login jane pass")
 
     expect_output("status", <<-OUT)
       Target:     bar

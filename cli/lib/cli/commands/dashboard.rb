@@ -25,20 +25,24 @@ module Bosh::Cli::Command
       end
 
       err("Please provide username and password") if username.blank? || password.blank?
-
+      logged_in = false
+      
       if options[:director_checks]
         director = Bosh::Cli::Director.new(target, username, password)
         
         if director.authenticated?
-          say("Logged in as '#{username}'")          
+          say("Logged in as '#{username}'")
+          logged_in = true
         else
           say("Cannot log in as '#{username}', please try again")
-          return login(username, nil) unless options[:non_interactive]
+          redirect(:dashboard, :login, username, nil) unless options[:non_interactive]
         end
       end
 
-      config.set_credentials(target, username, password)
-      config.save
+      if logged_in || !options[:director_checks]
+        config.set_credentials(target, username, password)
+        config.save        
+      end
     end
 
     def logout

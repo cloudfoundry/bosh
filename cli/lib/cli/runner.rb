@@ -9,7 +9,7 @@ module Bosh
 
       attr_reader   :namespace
       attr_reader   :action
-      attr_reader   :cmd_args
+      attr_reader   :args
 
       def self.run(args)
         new(args).run
@@ -23,31 +23,52 @@ module Bosh
         }
       end
 
-      def set_cmd(*args)
-        @namespace, @action, *@cmd_args = args
+      def set_cmd(namespace, action, args_range = 0)
+        unless args_range == "*" || args_range.is_a?(Range)
+          args_range = (args_range.to_i..args_range.to_i)
+        end
+        
+        if args_range == "*" || args_range.include?(@args.size)
+          @namespace = namespace
+          @action    = action
+        elsif @args.size > args_range.last
+          usage_error("Too many arguments: %s" % [ @args[args_range.last..-1].map{|a| "'#{a}'"}.join(', ') ])
+        else
+          usage_error("Not enough arguments")
+        end
+      end
+
+      def unknown_operation(op)
+        if op.blank?
+          usage_error("No operation given")
+        else
+          usage_error("Unknown operation: '#{op}'")
+        end
       end
 
       def run
         parse_options!
         parse_command!
 
-        Config.colorize   = @options.delete(:colorize)
+        Config.colorize  = @options.delete(:colorize)
         Config.output   ||= STDOUT unless @options[:quiet]
 
         if @namespace && @action
-          eval("Bosh::Cli::Command::#{@namespace.to_s.capitalize}").new(@options).send(@action.to_sym, *@cmd_args)
+          eval("Bosh::Cli::Command::#{@namespace.to_s.capitalize}").new(@options).send(@action.to_sym, *@args)
         else
           display_usage
         end
 
-#      rescue ArgumentError => e
-#        say("Invalid arguments for '%s'" % [ @namespace, @action ].compact.join(" "))
+      rescue OptionParser::InvalidOption => e
+        puts(e.message.red)
+        puts("\n")
+        puts(basic_usage)
       rescue Bosh::Cli::AuthError
         say("Director auth error")
       rescue Bosh::Cli::GracefulExit => e
-        # Redirected tasks end up generating this exception
+        # Redirected bosh commands end up generating this exception (kind of goto)
       rescue Bosh::Cli::CliExit => e
-        say(e.message.red)
+        say(e.message)
       rescue Bosh::Cli::CliError => e
         say("Error #{e.error_code}: #{e.message}")
       ensure
@@ -71,12 +92,24 @@ module Bosh
         @args = opts_parser.order!(@args)
       end
 
-      def display_usage
-        puts <<-USAGE
-
-usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR]
+      def basic_usage
+        <<-OUT
+usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
             [--no-color] [--skip-director-checks] [--quiet] [--non-interactive]
             command [<args>]
+        OUT
+      end
+
+      def display_usage
+        if @usage
+          say @usage_error if @usage_error
+          say "Usage: #{@usage}"
+          return
+        end
+
+        say <<-USAGE
+
+#{basic_usage}
 
 Currently available bosh commands are:
 
@@ -109,65 +142,101 @@ USAGE
       end      
 
       def parse_command!
-        head, *args = @args
+        head = @args.shift
 
         case head
         when "version"
+          usage("bosh version")
           set_cmd(:dashboard, :version)
         when "target"
-          if args.size > 0
-            set_cmd(:dashboard, :set_target, *args)
+          usage("bosh target [<name>]")
+          if @args.size == 1
+            set_cmd(:dashboard, :set_target, 1)
           else
             set_cmd(:dashboard, :show_target)
           end
         when "deploy"
+          usage("bosh deploy")
           set_cmd(:deployment, :perform)
         when "deployment"
-          if args.size > 0
-            set_cmd(:deployment, :set_current, *args)
+          usage("bosh deployment [<name>]")
+          if @args.size == 1
+            set_cmd(:deployment, :set_current, 1)
           else
             set_cmd(:deployment, :show_current)
           end
         when "status", "st"
+          usage("bosh status")
           set_cmd(:dashboard, :status)
         when "login"
-          set_cmd(:dashboard, :login, *args)
+          usage("bosh login [<name>] [<password>]")
+          set_cmd(:dashboard, :login, 0..2)
         when "logout"
+          usage("bosh logout")
           set_cmd(:dashboard, :logout)
         when "purge"
+          usage("bosh purge")
           set_cmd(:dashboard, :purge_cache)
         when "user"
-          op, *params = args
+          usage("bosh user create [<name>] [<password>]")
+          op = @args.shift
           case op
-          when "create": set_cmd(:user, :create, *params)
+          when "create": set_cmd(:user, :create, 0..2)
+          else unknown_operation(op)
           end
         when "task"
-          set_cmd(:task, :track, *args)
+          usage("bosh task <task_id>")
+          set_cmd(:task, :track, 1)
         when "stemcell"
-          op, *params = args
+          usage("bosh stemcell upload|verify <path>")
+          op = @args.shift
           case op
-          when "upload": set_cmd(:stemcell, :upload, *params)
-          when "verify", "validate": set_cmd(:stemcell, :verify, *params)
+          when "upload": set_cmd(:stemcell, :upload, 1)
+          when "verify", "validate": set_cmd(:stemcell, :verify, 1)
+          else unknown_operation(op)            
           end
         when "package"
-          op, name, *params = args
+          usage("bosh package create <name>|<path>")
+          op = @args.shift
           case op
-          when "create", "build": set_cmd(:package, :create, name)
-          end
-        when "job"
-          op, name, *params = args
-          case op
-          when "create", "build": set_cmd(:job, :create, name)
+          when "create", "build": set_cmd(:package, :create, 1)
+          else unknown_operation(op)
           end
         when "release"
-          op, *params = args
+          usage("bosh release (upload|verify <path>)|create ")
+          op = @args.shift
           case op
-          when "upload": set_cmd(:release, :upload, *params)
-          when "verify", "validate": set_cmd(:release, :verify, *params)
-          when "create": set_cmd(:release, :create)
+          when "upload"
+            usage("bosh release upload <path>")
+            set_cmd(:release, :upload, 1)
+          when "verify", "validate":
+            usage("bosh release verify <path>")            
+            set_cmd(:release, :verify, 1)
+          when "create"
+            usage("bosh release create")
+            set_cmd(:release, :create)
+          else
+            unknown_operation(op)
           end
         end
       end
+
+      def usage(msg = nil)
+        if msg
+          @usage = msg
+        else
+          @usage
+        end
+      end
+
+      def usage_error(msg = nil)
+        if msg
+          @usage_error = msg
+        else
+          @usage_error
+        end
+      end
+      
     end
     
   end

@@ -12,7 +12,7 @@ describe Bosh::Cli::Runner do
     runner.parse_command!
     runner.namespace.should == namespace
     runner.action.should    == action
-    runner.cmd_args.should  == cmd_args
+    runner.args.should  == cmd_args
   end
 
   it "dispatches commands to appropriate methods" do
@@ -35,13 +35,20 @@ describe Bosh::Cli::Runner do
     test_cmd(["stemcell", "upload", "/path"], :stemcell, :upload, ["/path"])    
   end
 
-  it "sometimes ignores tail" do
-    test_cmd(["deploy", "--mutator", "me", "heaven", "bzzz"], :deployment, :perform, [])
-    test_cmd(["stemcell", "upload", "/path/to/file", "AAAA"], :stemcell, :upload, ["/path/to/file", "AAAA"])
+  it "whines on extra arguments" do
+    runner = Bosh::Cli::Runner.new(["deploy", "--mutator", "me", "bla"])
+    runner.parse_command!
+    runner.namespace.should == nil
+    runner.action.should == nil
+    runner.usage_error.should == "Too many arguments: '--mutator', 'me', 'bla'"
   end
 
-  it "ignores weirdness" do
-    test_cmd(["blablabla", "--mutator", "/path/to/adsa"], nil, nil, nil)
+  it "whines on too few arguments" do
+    runner = Bosh::Cli::Runner.new(["release", "upload"])
+    runner.parse_command!
+    runner.namespace.should == nil
+    runner.action.should == nil    
+    runner.usage_error.should == "Not enough arguments"
   end
-  
+
 end

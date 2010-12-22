@@ -99,8 +99,9 @@ describe Bosh::Cli::Director do
       @director.stub(:get).and_return { n_calls += 1; [ n_calls == 5 ? 500 : 200, "processing" ] }
 
       @director.should_receive(:get).exactly(3).times
-      
-      @director.poll_task(1, :poll_interval => 0, :max_polls => 10).should == :error
+      lambda { 
+        @director.poll_task(1, :poll_interval => 0, :max_polls => 10)
+      }.should raise_error(Bosh::Cli::TaskTrackError, "Got HTTP 500 while tracking task state")
     end
 
     it "stops polling and returns error if task state is error" do
