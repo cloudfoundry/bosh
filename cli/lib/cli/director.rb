@@ -51,8 +51,9 @@ module Bosh
 
       def get_task_state(task_id)
         response_code, body = get("/tasks/#{task_id}")
+        raise AuthError if response_code == 401
         raise MissingTask, "No task##{@task_id} found" if response_code == 404
-        return "error" if response_code != 200
+        raise TaskTrackError, "Got HTTP #{response_code} while tracking task state" if response_code != 200
         return body
       end
 
