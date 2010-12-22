@@ -104,13 +104,18 @@ module Bosh::Director
 
         @packages = {}
         @release_manifest["packages"].each do |package_meta|
+          @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
+                           "exists in release #{@release.pretty_inspect}")
           package = Models::Package.find(:release_id => @release.id, :name => package_meta["name"],
-                                         :version => package_meta["version"])[0]
+                                         :version => package_meta["version"]).first
           if package.nil?
+            @logger.info("Creating new package")
             package = create_package(package_meta)
           else
+            @logger.info("Package already exists: #{package.pretty_inspect}, verifying that it's the same")
             # TODO: make sure package dependencies have not changed
             raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
+            @logger.info("Package verified")
           end
           @packages[package_meta["name"]] = package
           @release_version_entry.packages << package
