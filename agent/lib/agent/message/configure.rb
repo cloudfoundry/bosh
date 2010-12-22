@@ -25,6 +25,7 @@ module Bosh::Agent
           update_blobstore
           setup_networking
         end
+        update_time
         setup_data_disk
       end
 
@@ -154,6 +155,10 @@ module Bosh::Agent
         end
         if_tmp_file.close
         updated
+      end
+
+      def update_time
+        `ntpdate ntp01.las01.emcatmos.com ntp02.las01.emcatmos.com`
       end
 
       DATA_DISK = "/dev/sdb"
