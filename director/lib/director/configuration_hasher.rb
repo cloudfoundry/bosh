@@ -44,8 +44,10 @@ module Bosh::Director
         monit_template = ERB.new(File.new(File.join(@template_dir, "monit")).read)
         config_templates = []
 
-        manifest["configuration"].each_key do |config_file|
-          config_templates << ERB.new(File.new(File.join(@template_dir, "configuration", config_file)).read)
+        if manifest["configuration"]
+          manifest["configuration"].each_key do |config_file|
+            config_templates << ERB.new(File.new(File.join(@template_dir, "configuration", config_file)).read)
+          end
         end
 
         digest = Digest::SHA1.new
