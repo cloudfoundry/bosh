@@ -5,12 +5,10 @@ module Bosh::Director::Models
     attribute :version
     set :packages, Package
 
-    index :release
     index :version
 
     def validate
       assert_present :version
-
       assert_unique [:release_id, :version]
     end
   end

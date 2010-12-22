@@ -10,16 +10,15 @@ module Bosh::Director::Models
     reference :vm, Vm
     attribute :disk_cid
 
-    index :deployment
     index :job
     index :index
-    index :vm
 
     def validate
-      assert_present :deployment
+      assert_present :deployment_id
       assert_present :job
       assert_present :index
-      assert_unique :vm
+      assert_unique_if_present :vm_id
+      assert_unique [:deployment_id, :job, :index]
     end
   end
 end

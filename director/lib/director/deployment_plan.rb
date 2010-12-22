@@ -407,7 +407,6 @@ module Bosh::Director
       attr_accessor :job
       attr_accessor :index
       attr_accessor :instance
-      attr_accessor :vm
       attr_accessor :configuration_hash
       attr_accessor :current_state
 

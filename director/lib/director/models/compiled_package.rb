@@ -9,14 +9,10 @@ module Bosh::Director::Models
     attribute :blobstore_id
     attribute :sha1
 
-    index :package
-    index :stemcell
-
     def validate
-      assert_present :package
-      assert_present :stemcell
+      assert_present :package_id
+      assert_present :stemcell_id
       assert_present :sha1
-
       assert_unique [:package_id, :stemcell_id]
     end
   end

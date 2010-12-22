@@ -24,6 +24,17 @@ module Ohm
   end
 
   module_function :redis
+
+  module Validations
+
+  protected
+    def assert_unique_if_present(att, error = [att, :not_unique_if_present])
+      if !send(att).to_s.empty?
+        assert_unique(att, error)
+      end
+    end
+
+  end
 end
 
 module Resque
