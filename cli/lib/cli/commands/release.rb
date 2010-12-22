@@ -47,27 +47,52 @@ module Bosh::Cli::Command
     end
 
     def create
-      # Release directory expectations:
-      # releases/#{version}   Generated releases
-      # packages/#{package_name}.pkg
-      # packages/#{package_name}/{packaging,migrations,...} Package-specific files (will be bundled with package)
-      # src/ Source code for packages
+      packages = []
+      jobs = []
 
-      # For each package:
-        # If package has changed since last release, regenerate it (increment version)
+      if !in_release_dir?
+        err "Sorry, your current directory doesn't look like release directory"
+      end
+      
+      header "Building packages"
+      Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
 
-      # For each job:
-        # Check if all configuration files are present
-        # Check if monit file is present
-        # Check if update and restart scripts in job spec are present
-        # Check if all referenced packages are present
+        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir)
+        say "Building #{package.name}..."
+        package.build
 
-      # Generate manifest
-      # Generate bundle
+        if package.new_version?
+          say "Package '#{package.name}' generated"
+          say "New version is #{package.version}"
+        else
+          say "Found previously generated version of '#{package.name}'"
+          say "Version is #{package.version}"
+        end
+        
+        packages << package
+      end
 
-      # Save bundle in releases/#{version}, create a git tag (?)
+      built_package_names = packages.map { |package| package.name }
 
-      Bosh::Cli::ReleaseBuilder.new(work_dir).build
+      header "Building jobs"
+      Dir[File.join(work_dir, "jobs", "*", "spec")].each do |job_spec|
+        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, built_package_names)
+        say "Building #{job.name}..."
+        job.build
+        jobs << job
+      end
+
+      release = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs)
+      release.build
+
+      say("Built release #{release.version} at '#{release.tarball_path}'")
     end
+
+    private
+
+    def in_release_dir?
+      File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
+    end
+
   end
 end

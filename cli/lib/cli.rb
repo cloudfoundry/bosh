@@ -10,6 +10,7 @@ require "cli/director"
 require "cli/director_task"
 
 require "cli/package_builder"
+require "cli/job_builder"
 require "cli/release_builder"
 
 require "cli/runner"

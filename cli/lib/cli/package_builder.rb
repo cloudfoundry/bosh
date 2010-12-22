@@ -2,9 +2,11 @@ module Bosh::Cli
 
   class PackageBuilder
 
-    attr_reader :name, :globs, :package_dir, :sources_dir, :metadata_dir
+    attr_reader :name, :globs, :package_dir, :sources_dir, :metadata_dir, :tarball_path
 
     def initialize(spec, release_dir, sources_dir = nil)
+      spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
+      
       @name  = spec["name"]
       @globs = spec["files"]
       
@@ -75,12 +77,12 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      FileUtils.mkdir_p(File.dirname(tarball_path))
+      FileUtils.mkdir_p(File.dirname(last_build_path))
 
       copy_files unless @files_copied
 
       in_build_dir do
-        `tar -czf #{tarball_path} .`
+        `tar -czf #{last_build_path} .`
         raise InvalidPackage, "Cannot create package tarball" unless $?.exitstatus == 0
       end
 
@@ -89,9 +91,19 @@ module Bosh::Cli
     
     def copy_tarball
       generate_tarball unless @tarball_generated
+      FileUtils.mv(last_build_path, tarball_path)
+    end
 
-      package_path = File.join(@tarballs_dir, "#{name}-#{guess_version}.tgz")
-      FileUtils.mv(tarball_path, package_path)
+    def tarball_checksum
+      if File.exists?(tarball_path)
+        @tarball_checkum ||= Digest::SHA1.hexdigest(File.read(tarball_path))
+      else
+        raise RuntimeError, "cannot read checksum for not yet generated package"
+      end
+    end
+
+    def tarball_path
+      File.join(@tarballs_dir, "#{name}-#{guess_version}.tgz")      
     end
 
     def files
@@ -148,7 +160,7 @@ module Bosh::Cli
 
     private
 
-    def tarball_path
+    def last_build_path
       File.join(@tarballs_dir, "#{name}_last_build.tgz")
     end
 
@@ -160,10 +172,10 @@ module Bosh::Cli
 
     def make_signature
       contents = ""
-      # First, source files
+      # First, source files (+ permissions)
       in_sources_dir do
         contents << files.sort.map { |file|
-          "%s%s" % [ file, File.directory?(file) ? nil : File.read(file) ]
+          "%s%s%s" % [ file, File.directory?(file) ? nil : File.read(file), File.stat(file).mode.to_s(8) ]
         }.join("")
       end
       # Second, metadata files (packaging, migrations, whatsoever)

@@ -58,7 +58,7 @@ describe Bosh::Cli::PackageBuilder do
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
     builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
-    builder.signature.should == "3d04140672e5d6bc64d240dac2a003cece11e754"
+    builder.signature.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
   end
 
   it "has stable signature" do

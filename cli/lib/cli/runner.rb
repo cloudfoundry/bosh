@@ -44,6 +44,8 @@ module Bosh
 #        say("Invalid arguments for '%s'" % [ @namespace, @action ].compact.join(" "))
       rescue Bosh::Cli::AuthError
         say("Director auth error")
+      rescue Bosh::Cli::GracefulExit => e
+        # Redirected tasks end up generating this exception
       rescue Bosh::Cli::CliExit => e
         say(e.message.red)
       rescue Bosh::Cli::CliError => e
@@ -53,20 +55,20 @@ module Bosh
       end
 
       def parse_options!
-        saved_args = @args.dup
-        OptionParser.new do |opts|
+        opts_parser = OptionParser.new do |opts|
           opts.on("-c", "--config FILE")    { |file|  @options[:config] = file }
           opts.on("--cache-dir DIR")        { |dir|   @options[:cache_dir] = dir }
           opts.on("-v", "--verbose")        {         @options[:verbose] = true }
           opts.on("--no-color")             {         @options[:colorize] = false }
           opts.on("--skip-director-checks") {         @options[:director_checks] = false }
+          opts.on("--force")                {         @options[:director_checks] = false }
           opts.on("--quiet")                {         @options[:quiet] = true }
           opts.on("--non-interactive")      {         @options[:non_interactive] = true }
           opts.on("--version")              {         set_cmd(:dashboard, :version) }
           opts.on("--help")                 {}
-        end.parse!(@args)
-      rescue OptionParser::ParseError
-        @args = saved_args
+        end
+
+        @args = opts_parser.order!(@args)
       end
 
       def display_usage
@@ -151,7 +153,12 @@ USAGE
           op, name, *params = args
           case op
           when "create", "build": set_cmd(:package, :create, name)
-          end          
+          end
+        when "job"
+          op, name, *params = args
+          case op
+          when "create", "build": set_cmd(:job, :create, name)
+          end
         when "release"
           op, *params = args
           case op

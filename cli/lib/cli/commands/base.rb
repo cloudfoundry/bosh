@@ -35,6 +35,15 @@ module Bosh::Cli
         options[:dry_run]
       end
 
+      def run(namespace, action, *args)
+        eval(namespace.to_s.capitalize).new(options).send(action.to_sym, *args)
+      end
+
+      def redirect(*args)
+        run(*args)
+        raise Bosh::Cli::GracefulExit, "redirected to %s" % [ args.join(" ") ]
+      end
+
       private
 
       [:username, :password, :target, :deployment].each do |attr_name|

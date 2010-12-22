@@ -17,11 +17,13 @@ module Bosh
     class MissingTask          < DirectorError; error_code(203); end
 
     class CliExit              < CliError; error_code(400); end
+    class GracefulExit         < CliExit;  error_code(401); end
 
     class CacheDirectoryError  < CliError; error_code(301); end
 
     class InvalidPackage       < CliError; error_code(500); end
-    class ReleaseBundleInvalid < CliError; error_code(501); end
+    class InvalidJob           < CliError; error_code(501); end
+    class InvalidRelease       < CliError; error_code(503); end
 
   end
 end
