@@ -67,6 +67,7 @@ module Bosh::Director
                 "networks" => idle_vm.network_settings
               })
               while task["state"] == "running"
+                sleep(1.0)
                 task = agent.get_task(task["agent_task_id"])
               end
 
