@@ -71,6 +71,7 @@ module Bosh
 
           if job_exists
             job_tmp_dir = "#{tmp_dir}/jobs/#{name}"
+            FileUtils.mkdir_p(job_tmp_dir)
             `tar -C #{job_tmp_dir} -xzf #{job_file} &> /dev/null`
             job_extracted = $?.exitstatus == 0
             

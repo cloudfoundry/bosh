@@ -10,7 +10,9 @@ module Bosh::Cli::Command
     end 
 
     def create(name_or_path)
-      return create_all if name_or_path == "all"
+      if name_or_path == "--all"
+        redirect(:package, :create_all)
+      end
       
       spec = read_spec(name_or_path)
 
@@ -33,6 +35,8 @@ module Bosh::Cli::Command
         say "Found previously generated version of '#{package_name}'"
         say "Version is #{builder.version}"
       end
+
+      builder
     end
 
     private
