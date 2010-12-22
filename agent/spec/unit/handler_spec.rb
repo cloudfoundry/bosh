@@ -60,7 +60,7 @@ describe Bosh::Agent::Handler do
       msg = Yajl::Parser.new.parse(payload)
       msg.should == {"value" => "result"}
     end
-    handler.handle_get_task("another_bogus_id", {"agent_task_id" => agent_task_id})
+    handler.handle_get_task("another_bogus_id", agent_task_id)
   end
 
   it "should have running state for long running task"
