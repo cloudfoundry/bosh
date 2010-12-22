@@ -17,6 +17,7 @@ describe Bosh::Director::Controller do
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     Bosh::Director::Config.configure(test_config)
+    Bosh::Director::Config.logger = Logger.new(ENV['DEBUG'] ? STDOUT : nil)
     redis = Bosh::Director::Config.redis
     redis.select(15)
     redis.flushdb

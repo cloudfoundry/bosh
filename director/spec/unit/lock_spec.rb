@@ -2,11 +2,6 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Director::Lock do
 
-  before(:each) do
-    logger = Logger.new(nil)
-    Bosh::Director::Config.stub!(:logger).and_return(logger)
-  end
-
   it "should acquire a lock" do
     redis = mock("redis")
     Bosh::Director::Config.stub!(:redis).and_return(redis)

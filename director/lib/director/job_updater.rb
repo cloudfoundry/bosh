@@ -7,9 +7,11 @@ module Bosh::Director
     def initialize(job)
       @job = job
       @cloud = Config.cloud
+      @logger = Config.logger
     end
 
     def delete_unneeded_instances
+      @logger.info("Deleting no longer needed instances")
       unless @job.unneeded_instances.empty?
         pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
         @job.unneeded_instances.each do |instance|
@@ -32,6 +34,7 @@ module Bosh::Director
         end
         pool.wait
       end
+      @logger.info("Deleted no longer needed instances")
     end
 
     def update
@@ -46,6 +49,7 @@ module Bosh::Director
         pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
         num_canaries = [@job.update.canaries, instances.size].min
 
+        @logger.info("Starting canary update")
         # canaries first
         num_canaries.times do
           instance = instances.shift
@@ -54,6 +58,7 @@ module Bosh::Director
               begin
                 InstanceUpdater.new(instance).update(:canary => true)
               rescue Exception => e
+                @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
                 @job.record_update_error(e, :canary => true)
               end
             end
@@ -61,16 +66,22 @@ module Bosh::Director
         end
 
         pool.wait
+        @logger.info("Finished canary update")
 
-        raise RollbackException if @job.should_rollback?
+        if @job.should_rollback?
+          @logger.warn("Rolling back due to a canary failure")
+          raise RollbackException
+        end
 
         # continue with the rest of the updates
+        @logger.info("Continuing the rest of the update")
         instances.each do |instance|
           pool.process do
             unless @job.should_rollback?
               begin
                 InstanceUpdater.new(instance).update
               rescue Exception => e
+                @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
                 @job.record_update_error(e)
               end
             end
@@ -78,8 +89,12 @@ module Bosh::Director
         end
 
         pool.wait
+        @logger.info("Finished the rest of the update")
 
-        raise RollbackException if @job.should_rollback?
+        if @job.should_rollback?
+          @logger.warn("Rolling back due to an update failure")
+          raise RollbackException
+        end
       end
     end
 
