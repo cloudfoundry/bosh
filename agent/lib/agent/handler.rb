@@ -104,9 +104,7 @@ module Bosh::Agent
       UUIDTools::UUID.random_create.to_s
     end
 
-    def handle_get_task(message_id, args)
-      agent_task_id = args["agent_task_id"]
-
+    def handle_get_task(message_id, agent_task_id)
       if @long_running_agent_task == agent_task_id
         publish(message_id, {"value" => {"state" => "running", "agent_task_id" => agent_task_id}})
       else
