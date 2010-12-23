@@ -182,7 +182,7 @@ module Bosh::Agent
 
     class UpdatePersistentDisk
       def self.process(args)
-        ture
+        true
       end
     end
 
