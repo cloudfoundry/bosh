@@ -105,7 +105,7 @@ module Bosh::Agent
     end
 
     def handle_get_task(message_id, agent_task_id)
-      if @long_running_agent_task == agent_task_id
+      if @long_running_agent_task == [agent_task_id]
         publish(message_id, {"value" => {"state" => "running", "agent_task_id" => agent_task_id}})
       else
         rs = @results.find { |time, task_id, result| task_id == agent_task_id }
