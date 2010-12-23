@@ -137,6 +137,7 @@ module Bosh
         end
 
         say(task.flush_output)
+        say("Task #{task_id}: state is '#{state}'")
         return result
       end
 
