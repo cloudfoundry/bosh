@@ -6,6 +6,9 @@ gem "progressbar"
 gem "rest-client"
 
 group :test do
+  gem "ci_reporter"
+  gem "rcov"
+  gem "rcov_analyzer"
   gem "rspec"
   gem "ruby-debug"
 end
