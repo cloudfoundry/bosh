@@ -129,7 +129,7 @@ module Bosh::Director
         "packages" => @job_spec.package_spec,
         "persistent_disk" => @job_spec.persistent_disk,
         "configuration_hash" => @instance_spec.configuration_hash,
-        "properties" => @instance_spec.properties
+        "properties" => @job_spec.properties
       })
       while task["state"] == "running"
         sleep(1.0)

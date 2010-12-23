@@ -97,6 +97,7 @@ describe Bosh::Director::InstanceUpdater do
     @job_spec.stub!(:name).and_return("test_job")
     @job_spec.stub!(:package_spec).and_return(BASIC_PLAN["packages"])
     @job_spec.stub!(:persistent_disk).and_return(BASIC_PLAN["persistent_disk"])
+    @job_spec.stub!(:properties).and_return(BASIC_PLAN["properties"])
 
     @update_spec.stub!(:update_watch_time).and_return(0.01)
 
@@ -124,7 +125,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -160,7 +160,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -204,7 +203,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => true,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
@@ -277,7 +275,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => true,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
@@ -349,7 +346,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => true,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -389,7 +385,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
                                 :networks_changed? => false,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -431,7 +426,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
                                 :networks_changed? => false,
-                                :properties => BASIC_PLAN["properties"],
                                 :network_settings =>BASIC_PLAN["networks"])
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -485,7 +479,6 @@ describe Bosh::Director::InstanceUpdater do
                                 :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
                                 :networks_changed? => false,
-                                :properties => plan["properties"],
                                 :network_settings =>plan["networks"])
 
     @job_spec.stub!(:persistent_disk).and_return(plan["persistent_disk"])
