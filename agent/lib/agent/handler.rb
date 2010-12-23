@@ -180,7 +180,25 @@ module Bosh::Agent
       end
     end
 
+    class UpdatePersistentDisk
+      def self.process(args)
+        ture
+      end
+    end
 
+    class PrepareNetworkChange
+      def self.process(args)
+        `rm /etc/udev/rules.d/70-persistent-net.rules`
+        true
+      end
+    end
+
+    class CommitNetworkChange
+      def self.process(args)
+        ::Bosh::Agent::Message::Configure.process(nil)
+        true
+      end
+    end
   end
 
 end
