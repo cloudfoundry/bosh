@@ -48,7 +48,7 @@ module Bosh::Director
         stemcell.version = @version
         stemcell.cid = cid
         stemcell.save!
-        "/stemcells/#{stemcell.name}"
+        "/stemcells/#{stemcell.name}/#{stemcell.version}"
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
         FileUtils.rm_rf(@stemcell_file) if @stemcell_file
