@@ -39,6 +39,9 @@ end
 desc "Run specs"
 task :spec => [ "bundler:install:test", "test:spec" ]
 
+desc "Run specs for CI"
+task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
+
 environments = %w(test development production)
 
 namespace "bundler" do
@@ -61,7 +64,7 @@ end
 
 namespace "test" do
 
-  ["spec", "spec:unit", "spec:functional" ].each do |task_name|
+  ["spec", "spec:unit", "spec:functional", "spec:ci" ].each do |task_name|
     task task_name do
       sh("cd spec && rake #{task_name}")
     end
