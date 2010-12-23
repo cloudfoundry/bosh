@@ -52,8 +52,9 @@ module Bosh
         step("Stemcell properties", "Manifest should contain valid name, version and cloud properties") do
           manifest.is_a?(Hash) && manifest.has_key?("name") && manifest.has_key?("version") &&
             manifest.has_key?("cloud_properties") &&
-            manifest["name"].is_a?(String) && manifest["version"].is_a?(Integer) &&
-            manifest["cloud_properties"].is_a?(Hash)
+            manifest["name"].is_a?(String) &&
+            (manifest["version"].is_a?(String) || manifest["version"].kind_of?(Numeric)) &&
+            (manifest["cloud_properties"].nil? || manifest["cloud_properties"].is_a?(Hash))
         end
 
         print_info(manifest)
