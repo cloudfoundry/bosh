@@ -57,6 +57,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     stemcell.should_receive(:cid=)
     stemcell.should_receive(:save!)
     stemcell.should_receive(:name).and_return("jeos")
+    stemcell.should_receive(:version).and_return("5")
 
     Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => "5").and_return([])
     Bosh::Director::Models::Stemcell.stub!(:new).and_return(stemcell, nil)
@@ -77,6 +78,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     stemcell.should_receive(:cid=)
     stemcell.should_receive(:save!)
     stemcell.should_receive(:name).and_return("jeos")
+    stemcell.should_receive(:version).and_return("5")
 
     Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => "5").and_return([])
     Bosh::Director::Models::Stemcell.stub!(:new).and_return(stemcell, nil)
