@@ -3,7 +3,6 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Director::Jobs::UpdateDeployment do
 
   before(:each) do
-    @task = mock("task")
     @manifest = mock("manifest")
     @file = mock("file")
     @deployment_plan = mock("deployment_plan")
@@ -14,10 +13,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     File.stub!(:open).with("test_file").and_yield(@file)
     YAML.stub!(:load).with("manifest").and_return(@manifest)
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest).and_return(@deployment_plan)
-    Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(@task)
     Bosh::Director::Config.stub!(:base_dir).and_return(Dir.mktmpdir("base_dir"))
-
-    @task.should_receive(:output).and_return("test_file")
   end
 
   describe "prepare" do
@@ -42,7 +38,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_packages)
       deployment_plan_compiler.should_receive(:bind_configuration)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.prepare
     end
 
@@ -73,7 +69,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       resource_pool_updater.should_receive(:update)
       job_updater.should_receive(:update)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
 
       update_deployment_job.instance_eval do
         @deployment_plan_compiler = deployment_plan_compiler
@@ -97,7 +93,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       Bosh::Director::DeploymentPlan.stub!(:new).with(manifest).and_return(old_deployment_plan)
       YAML.stub!(:load).with("old manifest").and_return(manifest)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update)
       update_deployment_job.rollback
@@ -110,7 +106,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan.stub!(:deployment).and_return(deployment)
       deployment.stub!(:manifest).and_return(nil)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_not_receive(:prepare)
       update_deployment_job.should_not_receive(:update)
       update_deployment_job.rollback
@@ -137,21 +133,14 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_lock.should_receive(:lock).and_yield
       release_lock.should_receive(:lock).and_yield
 
-      @task.should_receive(:state=).with(:processing)
-      @task.should_receive(:timestamp=)
-      @task.should_receive(:save!)
-
       deployment.should_receive(:manifest=).with("manifest")
+      deployment.should_receive(:name).and_return("test_deployment")
       deployment.should_receive(:save!)
 
-      @task.should_receive(:state=).with(:done)
-      @task.should_receive(:timestamp=)
-      @task.should_receive(:save!)
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update)
-      update_deployment_job.perform
+      update_deployment_job.perform.should eql("/deployments/test_deployment")
     end
 
     it "should rollback if there was an error during the update step" do
@@ -170,15 +159,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_lock.should_receive(:lock).and_yield
       release_lock.should_receive(:lock).and_yield
 
-      @task.should_receive(:state=).with(:processing)
-      @task.should_receive(:timestamp=)
-      @task.should_receive(:save!)
-
-      @task.should_receive(:state=).with(:done)
-      @task.should_receive(:timestamp=)
-      @task.should_receive(:save!)
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update).and_raise("rollback exception")
       update_deployment_job.should_receive(:rollback)
@@ -201,20 +182,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_lock.should_receive(:lock).and_yield
       release_lock.should_receive(:lock).and_yield
 
-      @task.should_receive(:state=).with(:processing)
-      @task.should_receive(:timestamp=)
-      @task.should_receive(:save!)
-
-      @task.should_receive(:state=).with(:error)
-      @task.should_receive(:result=).with("prepare exception")
-      @task.should_receive(:timestamp=)
-      @task.should_receive(:save!)
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(1, "test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare).and_raise("prepare exception")
       update_deployment_job.should_not_receive(:update)
       update_deployment_job.should_not_receive(:rollback)
-      update_deployment_job.perform
+      lambda { update_deployment_job.perform }.should raise_exception("prepare exception")
     end
 
   end

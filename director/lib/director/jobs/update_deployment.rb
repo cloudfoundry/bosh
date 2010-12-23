@@ -1,41 +1,19 @@
 module Bosh::Director
-
   module Jobs
-
     class UpdateDeployment
+      extend BaseJob
 
       @queue = :normal
 
-      def self.perform(task_id, manifest_file)
-        UpdateDeployment.new(task_id, manifest_file).perform
-      end
-
-      def initialize(task_id, manifest_file)
-        @task = Models::Task[task_id]
-        raise TaskNotFound if @task.nil?
-
-        @logger = Logger.new(@task.output)
-        @logger.level = Config.logger.level
-        @logger.formatter = ThreadFormatter.new
-        @logger.info("Starting task: #{task_id}")
-        Config.logger = @logger
-
-        begin
-          @logger.info("Reading deployment manifest")
-          @manifest_file = manifest_file
-          @manifest = File.open(@manifest_file) {|f| f.read}
-          @logger.debug("Manifest:\n#{@manifest}")
-          @logger.info("Creating deployment plan")
-          @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
-          @logger.info("Created deployment plan")
-        rescue Exception => e
-          @logger.error("#{e} - #{e.backtrace.join("\n")}")
-          @task.state = :error
-          @task.result = e.to_s
-          @task.timestamp = Time.now.to_i
-          @task.save!
-          raise e
-        end
+      def initialize(manifest_file)
+        @logger = Config.logger
+        @logger.info("Reading deployment manifest")
+        @manifest_file = manifest_file
+        @manifest = File.open(@manifest_file) {|f| f.read}
+        @logger.debug("Manifest:\n#{@manifest}")
+        @logger.info("Creating deployment plan")
+        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
+        @logger.info("Created deployment plan")
       end
 
       def find_or_create_deployment(name)
@@ -109,52 +87,34 @@ module Bosh::Director
       end
 
       def perform
-        @task.state = :processing
-        @task.timestamp = Time.now.to_i
-        @task.save!
-
-        begin
-          @logger.info("Acquiring deployment lock: #{@deployment_plan.name}")
-          deployment_lock = Lock.new("lock:deployment:#{@deployment_plan.name}")
-          deployment_lock.lock do
-            @logger.info("Acquiring release lock: #{@deployment_plan.release.name}")
-            release_lock = Lock.new("lock:release:#{@deployment_plan.release.name}")
-            release_lock.lock do
-              @logger.info("Preparing deployment")
-              prepare
-              deployment = @deployment_plan.deployment
-              @logger.info("Finished preparing deployment")
-              begin
-                @logger.info("Updating deployment")
-                update
-                deployment.manifest = @manifest
-                deployment.save!
-                @logger.info("Finished updating deployment")
-              rescue Exception => e
-                @logger.info("Update failed, rolling back")
-                @logger.error("#{e} - #{e.backtrace.join("\n")}")
-                rollback
-                # TODO: record the error
-              end
-
-              @task.state = :done
-              # TODO: generate result
-              @task.timestamp = Time.now.to_i
-              @task.save!
-              @logger.info("Done")
+        @logger.info("Acquiring deployment lock: #{@deployment_plan.name}")
+        deployment_lock = Lock.new("lock:deployment:#{@deployment_plan.name}")
+        deployment_lock.lock do
+          @logger.info("Acquiring release lock: #{@deployment_plan.release.name}")
+          release_lock = Lock.new("lock:release:#{@deployment_plan.release.name}")
+          release_lock.lock do
+            @logger.info("Preparing deployment")
+            prepare
+            deployment = @deployment_plan.deployment
+            @logger.info("Finished preparing deployment")
+            begin
+              @logger.info("Updating deployment")
+              update
+              deployment.manifest = @manifest
+              deployment.save!
+              @logger.info("Finished updating deployment")
+              "/deployments/#{deployment.name}"
+            rescue Exception => e
+              @logger.info("Update failed, rolling back")
+              @logger.error("#{e} - #{e.backtrace.join("\n")}")
+              # TODO: record the error
+              rollback
             end
           end
-        rescue Exception => e
-          @logger.error("#{e} - #{e.backtrace.join("\n")}")
-          @task.state = :error
-          @task.result = e.to_s
-          @task.timestamp = Time.now.to_i
-          @task.save!
-        ensure
-          FileUtils.rm_rf(@manifest_file)
         end
+      ensure
+        FileUtils.rm_rf(@manifest_file)
       end
-
     end
   end
 end
