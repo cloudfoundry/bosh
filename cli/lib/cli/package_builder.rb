@@ -1,14 +1,18 @@
+require "set"
+
 module Bosh::Cli
 
   class PackageBuilder
 
-    attr_reader :name, :globs, :package_dir, :sources_dir, :metadata_dir, :tarball_path
+    attr_reader :name, :globs, :dependencies, :package_dir, :sources_dir, :metadata_dir, :tarball_path
 
     def initialize(spec, release_dir, sources_dir = nil)
       spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
       
       @name  = spec["name"]
       @globs = spec["files"]
+
+      @dependencies = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []
       
       if @name.blank?
         raise InvalidPackage, "Package name is missing"
