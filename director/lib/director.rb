@@ -171,6 +171,13 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    delete "/stemcells/:name/:version" do
+      stemcell = Models::Stemcell.find(:name => params[:name], :version => params[:version]).first
+      raise StemcellNotFound.new(params[:name], params[:version]) if stemcell.nil?
+      task = @stemcell_manager.delete_stemcell(stemcell)
+      redirect "/tasks/#{task.id}"
+    end
+
     # TODO: get information about an existing stemcell
     # TODO: delete stemcell
 
