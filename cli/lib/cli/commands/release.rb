@@ -1,5 +1,6 @@
 module Bosh::Cli::Command
   class Release < Base
+    include Bosh::Cli::DependencyHelper
 
     def verify(tarball_path)
       release = Bosh::Cli::Release.new(tarball_path)
@@ -70,6 +71,15 @@ module Bosh::Cli::Command
         end
         
         packages << package
+      end
+
+      if packages.size > 0
+        sorted_packages = tsort_packages(packages.inject({}) { |h, p| h[p.name] = p.dependencies; h })
+        header "Resolving dependencies"
+        say "Dependencies resolved, correct build order is:"
+        for package_name in sorted_packages
+          say("- %s" % [ package_name ])
+        end
       end
 
       built_package_names = packages.map { |package| package.name }

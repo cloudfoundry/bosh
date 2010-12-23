@@ -26,7 +26,7 @@ module Bosh::Cli::Command
 
       err("Please provide username and password") if username.blank? || password.blank?
       logged_in = false
-      
+
       if options[:director_checks]
         director = Bosh::Cli::Director.new(target, username, password)
         
