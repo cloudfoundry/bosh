@@ -153,6 +153,7 @@ module Bosh::Agent
 
   # Built-in message handlers
   module Message
+
     class Ping
       def self.process(args)
         "pong"
@@ -164,6 +165,22 @@ module Bosh::Agent
         "nope"
       end
     end
+
+    # FIXME: temporary drain method
+    class Drain
+      def self.process(args)
+        2
+      end
+    end
+
+    # FIXME: temporary stop method
+    class Stop
+      def self.process(args)
+        "stopped"
+      end
+    end
+
+
   end
 
 end
