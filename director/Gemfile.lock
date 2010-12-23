@@ -4,11 +4,11 @@ GEM
     SystemTimer (1.2.1)
     actionpool (0.2.3)
       splib (~> 1.4)
-    bcrypt-ruby (2.1.2)
+    bcrypt-ruby (2.1.3)
     blobstore_client (0.0.1)
       httpclient
     builder (3.0.0)
-    ci_reporter (1.6.3)
+    ci_reporter (1.6.4)
       builder (>= 2.1.2)
     columnize (0.3.2)
     daemons (1.1.0)
