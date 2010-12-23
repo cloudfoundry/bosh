@@ -546,7 +546,7 @@ module VSphereCloud
       app_config_spec = VmConfigSpec.new
       app_config_spec.property = [env_property]
       # make sure the transport is set correctly, needed for guest to access these properties
-      app_config_spec.ovfEnvironmentTransport = ["com.vmware.guestInfo"]
+      app_config_spec.ovfEnvironmentTransport = ["iso", "com.vmware.guestInfo"]
 
       vm_config_spec.vAppConfig = app_config_spec
     end
