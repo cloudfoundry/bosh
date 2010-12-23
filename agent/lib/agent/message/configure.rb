@@ -27,6 +27,7 @@ module Bosh::Agent
         end
         update_time
         setup_data_disk
+        { "settings" => @settings }
       end
 
       def load_ovf
@@ -158,7 +159,12 @@ module Bosh::Agent
       end
 
       def update_time
-        `ntpdate ntp01.las01.emcatmos.com ntp02.las01.emcatmos.com`
+        ntp_servers = @settings['ntp'].join(" ")
+        unless ntp_servers.empty?
+          @logger.info("Configure ntp-servers: #{ntp_servers}")
+          output = `ntpdate #{ntp_servers}`
+          @logger.info(output)
+        end
       end
 
       DATA_DISK = "/dev/sdb"
