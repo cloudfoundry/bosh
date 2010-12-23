@@ -169,7 +169,19 @@ module Bosh::Director
             idle_vm = instance_spec.job.resource_pool.allocate_vm
             instance.vm = idle_vm.vm
             instance.save!
-            instance_spec.current_state = idle_vm.current_state
+
+            # Apply the assignment to the VM
+            state = idle_vm.current_state
+            state["job"] = instance.job
+            state["index"] = instance.index
+            agent = AgentClient.new(idle_vm.vm.agent_id)
+            task = agent.apply(state)
+            while task["state"] == "running"
+              sleep(1.0)
+              task = agent.get_task(task["agent_task_id"])
+            end
+
+            instance_spec.current_state = state
           end
         end
       end

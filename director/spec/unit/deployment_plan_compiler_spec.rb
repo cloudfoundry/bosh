@@ -421,6 +421,15 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should create a new instance model when needed" do
+      @vm.stub!(:agent_id).and_return("test_id")
+
+      agent = mock("agent")
+      agent.should_receive(:apply).with({"index"=>5, "job"=>"test_job", "deployment"=>"test_deployment"}).and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      Bosh::Director::AgentClient.stub!(:new).with("test_id").and_return(agent)
+
       idle_vm = mock("idle_vm")
       idle_vm.stub!(:vm).and_return(@vm)
       idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
@@ -434,9 +443,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
       new_instance.should_receive(:vm).and_return(nil)
       new_instance.should_receive(:vm=).with(@vm)
       new_instance.should_receive(:save!)
+      new_instance.stub!(:job).and_return("test_job")
+      new_instance.stub!(:index).and_return(5)
 
       @instance_spec.should_receive(:instance=).with(new_instance)
-      @instance_spec.should_receive(:current_state=).with({"deployment" => "test_deployment"})
+      @instance_spec.should_receive(:current_state=).with({"index"=>5, "job"=>"test_job",
+                                                           "deployment"=>"test_deployment"})
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
