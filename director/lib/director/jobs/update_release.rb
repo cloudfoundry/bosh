@@ -1,88 +1,46 @@
 module Bosh::Director
-
   module Jobs
-
     class UpdateRelease
+      extend BaseJob
 
       @queue = :normal
 
-      def self.perform(task_id, release_dir)
-        UpdateRelease.new(task_id, release_dir).perform
-      end
-
       def initialize(*args)
-        if args.length == 2
-          task_id, release_dir = args
-          @task = Models::Task[task_id]
-          raise TaskNotFound if @task.nil?
-
-          @logger = Logger.new(@task.output)
-          @logger.level = Config.logger.level
-          @logger.formatter = ThreadFormatter.new
-          @logger.info("Starting task: #{task_id}")
-          Config.logger = @logger
-
-          begin
-            @tmp_release_dir = release_dir
-            @blobstore = Config.blobstore
-          rescue Exception => e
-            @logger.error("#{e} - #{e.backtrace.join("\n")}")
-            @task.state = :error
-            @task.result = e.to_s
-            @task.timestamp = Time.now.to_i
-            @task.save!
-            raise e
-          end
+        if args.length == 1
+          release_dir = args.first
+          @tmp_release_dir = release_dir
+          @blobstore = Config.blobstore
         elsif args.empty?
           # used for testing only
         else
-          raise ArgumentError, "wrong number of arguments (#{args.length} for 2)"
+          raise ArgumentError, "wrong number of arguments (#{args.length} for 1)"
         end
       end
 
       def perform
-        @task.state = :processing
-        @task.timestamp = Time.now.to_i
-        @task.save!
-
         @logger.info("Processing update release")
 
-        begin
-          @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
-          extract_release
+        @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
+        extract_release
 
-          @release_manifest_file = File.join(@tmp_release_dir, "release.MF")
-          verify_manifest
+        @release_manifest_file = File.join(@tmp_release_dir, "release.MF")
+        verify_manifest
 
-          release_lock = Lock.new("lock:release:#{@release_name}")
-          release_lock.lock do
-            find_release
-            process_release
-
-            @task.state = :done
-            @task.result = "/releases/#{@release_name}/#{@release_version}"
-            @task.timestamp = Time.now.to_i
-            @task.save!
-            @logger.info("Done")
-          end
-        rescue Exception => e
-          @logger.error("#{e} - #{e.backtrace.join("\n")}")
-
-          templates = Models::Template.find(:release_version => @release_version_entry)
-          templates.each {|template| template.delete}
-
-          @release_version_entry.delete if @release_version_entry && !@release_version_entry.new?
-
-          @task.state = :error
-          @task.result = e.to_s
-          @task.timestamp = Time.now.to_i
-          @task.save!
-
-          raise e
-        ensure
-          FileUtils.rm_rf(@tmp_release_dir)
-          # TODO: delete task status file or cleanup later?
+        release_lock = Lock.new("lock:release:#{@release_name}")
+        release_lock.lock do
+          find_release
+          process_release
         end
+        "/releases/#{@release_name}/#{@release_version}"
+      rescue Exception => e
+        # cleanup
+        templates = Models::Template.find(:release_version => @release_version_entry)
+        templates.each {|template| template.delete}
+        @release_version_entry.delete if @release_version_entry && !@release_version_entry.new?
+        raise e
+      ensure
+        FileUtils.rm_rf(@tmp_release_dir)
+        # TODO: delete task status file or cleanup later?
       end
 
       def find_release

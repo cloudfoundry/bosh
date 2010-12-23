@@ -41,7 +41,9 @@ module Bosh::Director
 
     ["StemcellInvalidArchive",  BAD_REQUEST, 50000, "Invalid stemcell archive, tar exit status: %s, output: %s"],
     ["StemcellInvalidImage",    BAD_REQUEST, 50001, "Invalid stemcell image"],
-    ["StemcellAlreadyExists",   BAD_REQUEST, 50002, "Stemcell already exists, increment the version if it has changed"],
+    ["StemcellAlreadyExists",   BAD_REQUEST, 50002,
+        "Stemcell \"%s\":\"%s\" already exists, increment the version if it has changed"],
+    ["StemcellNotFound",        BAD_REQUEST, 50003, "Stemcell: \"%s\":\"%s\" doesn't exist"],
 
     ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
   ].each do |e|
