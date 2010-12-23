@@ -308,7 +308,7 @@ module Bosh::Director
         @deployment = deployment
         @name = safe_property(job_spec, "name", :class => String)
         @template = safe_property(job_spec, "template", :class => String)
-        @persistent_disk = safe_property(job_spec, "persistent_disk", :class => String, :optional => true)
+        @persistent_disk = safe_property(job_spec, "persistent_disk", :class => Integer, :optional => true) || 0
         @instances = []
         @packages = {}
         properties = safe_property(job_spec, "properties", :class => Hash, :optional => true)

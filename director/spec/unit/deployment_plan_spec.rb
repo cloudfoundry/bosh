@@ -63,7 +63,7 @@ describe Bosh::Director::DeploymentPlan do
         "template" => "job_a",
         "instances" => 5,
         "resource_pool" => "small",
-        "persistent_disk" => "2gb",
+        "persistent_disk" => 2048,
         "networks" => [
           {
             "name" => "network_a",
@@ -159,7 +159,7 @@ describe Bosh::Director::DeploymentPlan do
       job = jobs[0]
       job.should eql(deployment_plan.job("job_a"))
       job.name.should eql("job_a")
-      job.persistent_disk.should eql("2gb")
+      job.persistent_disk.should eql(2048)
       job.resource_pool.should eql(resource_pool)
       job.template.should eql("job_a")
       job.package_spec.should eql({})
@@ -663,7 +663,7 @@ describe Bosh::Director::DeploymentPlan do
       "packages" => {
 
       },
-      "persistent_disk" => "2gb"
+      "persistent_disk" => 2048
     }
 
     it "should track instance changes compared to the current state (no change)" do
