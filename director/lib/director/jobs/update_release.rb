@@ -10,6 +10,7 @@ module Bosh::Director
           release_dir = args.first
           @tmp_release_dir = release_dir
           @blobstore = Config.blobstore
+          @logger = Config.logger
         elsif args.empty?
           # used for testing only
         else
@@ -34,7 +35,7 @@ module Bosh::Director
         "/releases/#{@release_name}/#{@release_version}"
       rescue Exception => e
         # cleanup
-        templates = Models::Template.find(:release_version => @release_version_entry)
+        templates = Models::Template.find(:release_version_id => @release_version_entry.id)
         templates.each {|template| template.delete}
         @release_version_entry.delete if @release_version_entry && !@release_version_entry.new?
         raise e
