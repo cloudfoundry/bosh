@@ -7,14 +7,15 @@ module Bosh::Cli
     def tsort_packages(map)
       resolved = Set.new
       in_degree = { }
-      graph     = { } # Reverse edges to avoid dfs
+      graph     = { }
 
       map.each_pair do |package, dependencies|
         graph[package]     ||= Set.new
         in_degree[package]   = dependencies.size
 
         resolved << package if in_degree[package] == 0
-        
+
+        # Reverse edges to avoid dfs
         dependencies.each do |dependency|
           unless map.has_key?(dependency)
             raise MissingDependency, "Package '%s' depends on missing package '%s'" % [ package, dependency ]

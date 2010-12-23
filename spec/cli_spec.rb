@@ -201,6 +201,7 @@ describe Bosh::Spec::IntegrationTest do
      Package 'stuff' checksum                                     OK
      Read package 'mutator' (2 of 2)                              OK
      Package 'mutator' checksum                                   OK
+     Package dependencies                                         OK
      Read job 'cacher' (1 of 3)                                   OK
      Extract job 'cacher                                          OK
      Read job 'cacher' manifest                                   OK
@@ -249,6 +250,7 @@ describe Bosh::Spec::IntegrationTest do
      Package 'stuff' checksum                                     FAILED
      Read package 'mutator' (2 of 2)                              OK
      Package 'mutator' checksum                                   FAILED
+     Package dependencies                                         OK
      Read job 'cacher' (1 of 3)                                   FAILED
      Read job 'sweeper' (2 of 3)                                  FAILED
      Read job 'tester' (3 of 3)                                   FAILED
