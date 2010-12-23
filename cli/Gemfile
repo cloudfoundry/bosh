@@ -4,6 +4,7 @@ gem "highline"
 gem "json_pure"
 gem "progressbar"
 gem "rest-client"
+gem "rake"
 
 group :test do
   gem "ci_reporter"
