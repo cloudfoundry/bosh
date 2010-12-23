@@ -11,6 +11,7 @@ GEM
     linecache (0.43)
     mime-types (1.16)
     progressbar (0.9.0)
+    rake (0.8.7)
     rcov (0.9.9)
     rcov_analyzer (0.2)
       builder
@@ -39,6 +40,7 @@ DEPENDENCIES
   highline
   json_pure
   progressbar
+  rake
   rcov
   rcov_analyzer
   rest-client
