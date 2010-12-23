@@ -68,9 +68,9 @@ module Bosh
       rescue Bosh::Cli::GracefulExit => e
         # Redirected bosh commands end up generating this exception (kind of goto)
       rescue Bosh::Cli::CliExit => e
-        say(e.message)
+        say(e.message.red)
       rescue Bosh::Cli::CliError => e
-        say("Error #{e.error_code}: #{e.message}")
+        say("Error #{e.error_code}: #{e.message}".red)
       ensure
         say("\n")
       end

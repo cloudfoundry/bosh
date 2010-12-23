@@ -6,6 +6,7 @@ module Bosh
 
     class Release
       include Validation
+      include DependencyHelper
 
       def initialize(tarball_path)
         @release_file = File.expand_path(tarball_path, Dir.pwd)
@@ -54,6 +55,19 @@ module Bosh
             available_packages[name] = true
             step("Package '#{name}' checksum", "Incorrect checksum for package '#{name}'") do
               Digest::SHA1.hexdigest(File.read(package_file)) == package["sha1"]
+            end
+          end
+        end
+
+        # Check package dependencies
+        if total_packages > 0
+          step("Package dependencies", "Package dependencies couldn't be resolved") do
+            begin
+              tsort_packages(manifest["packages"].inject({}) { |h, p| h[p["name"]] = p["dependencies"] || []; h })
+              true
+            rescue Bosh::Cli::CircularDependency, Bosh::Cli::MissingDependency => e
+              errors << e.message
+              false
             end
           end
         end
