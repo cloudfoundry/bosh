@@ -324,6 +324,21 @@ describe Bosh::Spec::IntegrationTest do
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
   end
 
+  it "can delete a stemcell" do
+    stemcell_filename = spec_asset("valid_stemcell.tgz")
+    expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
+    
+    run_bosh("target http://localhost:8085")
+    run_bosh("login admin admin")
+    out = run_bosh("stemcell upload #{stemcell_filename}")
+    out.should =~ /Stemcell uploaded and created/
+
+    File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true    
+    out = run_bosh("stemcell delete ubuntu-stemcell 1")
+    out.should =~ /Deleted stemcell ubuntu-stemcell \(1\)/
+    File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_false
+  end
+  
   it "can upload a release" do
     release_filename = spec_asset("valid_release.tgz")
     
