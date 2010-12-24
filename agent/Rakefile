@@ -19,17 +19,17 @@ namespace "bundler" do
 
   desc "Install gems for test"
   task "install:test" do
-    sh("bundle install --without development production")
+    sh("bundle install --local --without development production")
   end
 
   desc "Install gems for production"
   task "install:production" do
-    sh("bundle install --without development test")
+    sh("bundle install --local --without development test")
   end
 
   desc "Install gems for development"
   task "install:development" do
-    sh("bundle install --without test production")
+    sh("bundle install --local --without test production")
   end
 end
 
