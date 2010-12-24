@@ -188,11 +188,18 @@ USAGE
           usage("bosh task <task_id>")
           set_cmd(:task, :track, 1)
         when "stemcell"
-          usage("bosh stemcell upload|verify <path>")
+
           op = @args.shift
           case op
-          when "upload": set_cmd(:stemcell, :upload, 1)
-          when "verify", "validate": set_cmd(:stemcell, :verify, 1)
+          when "upload"
+            usage("bosh stemcell upload <path>")
+            set_cmd(:stemcell, :upload, 1)
+          when "verify", "validate"
+            usage("bosh stemcell verify <path>")
+            set_cmd(:stemcell, :verify, 1)
+          when "delete"
+            usage("bosh stemcell verify <name> <version>")
+            set_cmd(:stemcell, :delete, 2)
           else unknown_operation(op)            
           end
         when "package"

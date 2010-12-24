@@ -45,6 +45,10 @@ module Bosh
         upload_and_track("/releases", "application/x-compressed", filename)
       end
 
+      def delete_stemcell(name, version)
+        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil)
+      end
+
       def deploy(filename)
         upload_and_track("/deployments", "text/yaml", filename)
       end
@@ -74,10 +78,8 @@ module Bosh
         end
       end
 
-      def upload_and_track(uri, content_type, filename, options = {})
-        file = FileWithProgressBar.open(filename, "r")
-
-        http_status, body, headers = post(uri, content_type, file)
+      def request_and_track(method, uri, content_type, payload, options = {})
+        http_status, body, headers = request(method, uri, content_type, payload)
         location = headers[:location]
         uploaded = http_status == 302
 
@@ -92,7 +94,12 @@ module Bosh
           :failed
         end
 
-        [ status, body ]
+        [ status, body ]        
+      end
+
+      def upload_and_track(uri, content_type, filename, options = {})
+        file = FileWithProgressBar.open(filename, "r")
+        request_and_track(:post, uri, content_type, file)
       ensure
         file.stop_progress_bar if file
       end

@@ -24,6 +24,11 @@ describe Bosh::Cli::Director do
       @director.upload_release("/path")
     end
 
+    it "deletes stemcell" do
+      @director.should_receive(:request_and_track).with(:delete, "/stemcells/ubuntu/123", nil, nil).and_return(true)
+      @director.delete_stemcell("ubuntu", "123")      
+    end
+
     it "deploys" do
       @director.should_receive(:upload_and_track).with("/deployments", "text/yaml", "/path").and_return(true)
       @director.deploy("/path")
