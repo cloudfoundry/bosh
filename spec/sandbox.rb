@@ -64,7 +64,7 @@ module Bosh
         unless process_running?(pidfile)
 
           pid = fork do
-            [ 0, 1, 2 ].each { |fd| IO.for_fd(fd, 'w').reopen("/dev/null") } # closing fds leads to problems with worker
+            [ $stdout, $stdin, $stderr ].each { |stream| stream.reopen("/dev/null") } # closing fds leads to problems with worker
             env.each_pair { |k, v| ENV[k] = v }
             exec cmd
           end
