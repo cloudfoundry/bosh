@@ -1,5 +1,5 @@
 ---
-port: 8085
+port: 57523
 logging:
   level: DEBUG
 redis:
