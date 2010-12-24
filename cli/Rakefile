@@ -56,7 +56,7 @@ namespace "bundler" do
   environments.each do |env|
     desc "Install gems for #{env}"
     task "install:#{env}" do
-      sh("bundle install --without #{(environments - [env]).join(' ')}")
+      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
     end
   end
 
