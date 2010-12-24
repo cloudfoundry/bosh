@@ -62,24 +62,24 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "sets correct target" do
-    expect_output("target http://localhost:8085", <<-OUT)
-      Target set to 'http://localhost:8085'
+    expect_output("target http://localhost:57523", <<-OUT)
+      Target set to 'http://localhost:57523'
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is 'http://localhost:8085'
+      Current target is 'http://localhost:57523'
     OUT
 
     Dir.chdir("/tmp") do
       expect_output("target", <<-OUT)
-        Current target is 'http://localhost:8085'
+        Current target is 'http://localhost:57523'
       OUT
     end
   end
 
   it "allows omitting http" do
-    expect_output("target localhost:8085", <<-OUT)
-      Target set to 'localhost:8085'
+    expect_output("target localhost:57523", <<-OUT)
+      Target set to 'localhost:57523'
     OUT
   end
 
@@ -102,11 +102,11 @@ describe Bosh::Spec::IntegrationTest do
 
   it "unsets deployment when target is changed" do
     run_bosh("deployment 'vmforce'")
-    expect_output("target http://localhost:8085", <<-OUT)
+    expect_output("target http://localhost:57523", <<-OUT)
       WARNING! Your deployment has been unset
-      Target set to 'http://localhost:8085'
+      Target set to 'http://localhost:57523'
     OUT
-    expect_output("target", "Current target is 'http://localhost:8085'")
+    expect_output("target", "Current target is 'http://localhost:57523'")
     expect_output("deployment", "Deployment not set")
   end
 
@@ -283,7 +283,7 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "creates a user when correct target accessed" do
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     
     expect_output("user create john pass", <<-OUT)
@@ -292,7 +292,7 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "can log in as a freshly created user and issue commands" do
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     run_bosh("user create jane pass")
     run_bosh("login jane pass")
@@ -303,7 +303,7 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "cannot log in if password is invalid" do
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     run_bosh("user create jane pass")
     run_bosh("logout")
@@ -316,7 +316,7 @@ describe Bosh::Spec::IntegrationTest do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
     
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("stemcell upload #{stemcell_filename}")
 
@@ -328,7 +328,7 @@ describe Bosh::Spec::IntegrationTest do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
     
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("stemcell upload #{stemcell_filename}")
     out.should =~ /Stemcell uploaded and created/
@@ -342,7 +342,7 @@ describe Bosh::Spec::IntegrationTest do
   it "can upload a release" do
     release_filename = spec_asset("valid_release.tgz")
     
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("release upload #{release_filename}")
 
@@ -352,7 +352,7 @@ describe Bosh::Spec::IntegrationTest do
   it "can't upload malformed release" do
     release_filename = spec_asset("release_invalid_checksum.tgz")
     
-    run_bosh("target http://localhost:8085")
+    run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("release upload #{release_filename}")
 
