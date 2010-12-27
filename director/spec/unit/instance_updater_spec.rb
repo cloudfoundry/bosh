@@ -60,8 +60,8 @@ describe Bosh::Director::InstanceUpdater do
       }
     }
   }
-  BASIC_INSTANCE_STATE = BASIC_PLAN.merge({"state" => "running"})
-  IDLE_STATE = IDLE_PLAN.merge({"state" => "idle"})
+  BASIC_INSTANCE_STATE = BASIC_PLAN.merge({"job_state" => "running"})
+  IDLE_STATE = IDLE_PLAN.merge({"job_state" => "idle"})
 
   def stub_object(stub, options = {})
     options.each do |key, value|
