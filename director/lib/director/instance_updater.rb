@@ -24,7 +24,7 @@ module Bosh::Director
       sleep(watch_time)
 
       state = agent.get_state
-      raise "updated instance not health" unless state["state"] == "running"
+      raise "updated instance not healthy" unless state["job_state"] == "running"
     end
 
     def stop
