@@ -31,7 +31,7 @@ module Bosh::Director
           raise "Vm/Instance models out of sync: #{state.pretty_inspect}"
         end
 
-        if state["job"] != instance.job || state["index"] != instance.index
+        if state["job"] != instance.job || state["index"] != instance.index.to_i
           raise "Instance state out of sync: #{state.pretty_inspect}"
         end
       end
@@ -61,7 +61,7 @@ module Bosh::Director
 
         # does the job instance exist in the new deployment?
         if instance
-          if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index))
+          if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index.to_i))
             instance_spec.instance = instance
             instance_spec.current_state = state
 
@@ -173,7 +173,7 @@ module Bosh::Director
             # Apply the assignment to the VM
             state = idle_vm.current_state
             state["job"] = instance.job
-            state["index"] = instance.index
+            state["index"] = instance.index.to_i
             agent = AgentClient.new(idle_vm.vm.agent_id)
             task = agent.apply(state)
             while task["state"] == "running"
