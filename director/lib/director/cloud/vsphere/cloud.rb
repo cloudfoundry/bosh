@@ -1,5 +1,5 @@
-require "director/cloud/vsphere/client"
 require "director/cloud/vsphere/defaultDriver"
+require "director/cloud/vsphere/client"
 require "director/cloud/vsphere/lease_updater"
 require "director/cloud/vsphere/resources"
 require "director/cloud/vsphere/models/disk"
@@ -540,8 +540,9 @@ module VSphereCloud
         key = max_key + 1
       end
 
+      env_json = Yajl::Encoder.encode(env)
       env_property = create_app_property_spec(key, BOSH_AGENT_PROPERTIES_ID, "string",
-                                              Yajl::Encoder.encode(env), operation)
+                                              env_json, operation)
 
       app_config_spec = VmConfigSpec.new
       app_config_spec.property = [env_property]
@@ -549,6 +550,16 @@ module VSphereCloud
       app_config_spec.ovfEnvironmentTransport = ["iso", "com.vmware.guestInfo"]
 
       vm_config_spec.vAppConfig = app_config_spec
+
+      extra_config = OptionValue.new
+      extra_config.key = "guestinfo.bosh"
+
+      # need to manually create SOAPElement to work around anyType encoding bug
+      value = SOAP::SOAPElement.new(XSD::QName.new(VSphereCloud::DefaultMappingRegistry::NsVim25, "value"), env_json)
+      value.extraattr[XSD::AttrTypeName] = XSD::XSDString::Type
+
+      extra_config.value = value
+      vm_config_spec.extraConfig = [extra_config]
     end
 
     def clone_vm(vm, name, folder, resource_pool, options={})
