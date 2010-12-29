@@ -115,6 +115,7 @@ module Bosh::Director
         network_settings = @instance_spec.network_settings
         agent.prepare_network_change(network_settings)
         @cloud.configure_networks(@vm.cid, network_settings)
+        agent.wait_until_ready
         agent.commit_network_change(network_settings)
       end
     end
