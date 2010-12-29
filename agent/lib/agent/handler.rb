@@ -60,10 +60,6 @@ module Bosh::Agent
           method = msg['method']
           args = msg['arguments']
 
-          if method == "get_task"
-            handle_get_task(message_id, args.first)
-          end
-
           if method == "get_state"
             method = "state"
           end
@@ -81,8 +77,13 @@ module Bosh::Agent
               else
                 payload = process(processor, args)
                 publish(message_id, payload)
+                if method == "commit_network_change"
+                  exit
+                end
               end
             }
+          elsif method == "get_task"
+            handle_get_task(message_id, args.first)
           else
             payload = {:exception => "unknown message #{msg.inspect}"}
             publish(message_id, payload)
@@ -188,14 +189,29 @@ module Bosh::Agent
 
     class PrepareNetworkChange
       def self.process(args)
-        `rm /etc/udev/rules.d/70-persistent-net.rules`
+        udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
+        if File.exist?(udev_file)
+          `rm #{udev_file}`
+        end
+
+        base_dir = Bosh::Agent::Config.base_dir
+        settings_file = File.join(base_dir, 'bosh', 'settings.json')
+        settings = Yajl::Parser.new.parse(File.read(settings_file))
+
+        # FIXME: temporary - assume overwrite networks
+        networks = args.first
+        settings['networks'] = networks
+
+        File.open(settings_file, 'w') do |f|
+          f.puts(Yajl::Encoder.encode(settings))
+        end
+
         true
       end
     end
 
     class CommitNetworkChange
       def self.process(args)
-        ::Bosh::Agent::Message::Configure.process(nil)
         true
       end
     end

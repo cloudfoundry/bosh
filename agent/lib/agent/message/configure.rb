@@ -15,19 +15,32 @@ module Bosh::Agent
       def initialize(args)
         @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
+
+        FileUtils.mkdir_p(File.join(@base_dir, 'bosh'))
+        @settings_file = File.join(@base_dir, 'bosh', 'settings.json')
       end
 
       def configure
-        load_ovf
+        if File.exist?(@settings_file)
+          load_settings
+        else
+          load_ovf
+        end
+
         if @settings
           update_agent_id
           update_bosh_server
           update_blobstore
           setup_networking
+          update_time
+          setup_data_disk
         end
-        update_time
-        setup_data_disk
         { "settings" => @settings }
+      end
+
+      def load_settings
+        json_props = File.read(@settings_file)
+        @settings = Yajl::Parser.new.parse(json_props)
       end
 
       def load_ovf
@@ -38,6 +51,11 @@ module Bosh::Agent
           element = REXML::XPath.first(doc, xpath,
                                           {'oe' => 'http://schemas.dmtf.org/ovf/environment/1'})
           json_props = element.attribute('value', 'http://schemas.dmtf.org/ovf/environment/1').value
+
+          File.open(@settings_file, 'w') do |sfh|
+            sfh.write(json_props)
+          end
+
           @settings = Yajl::Parser.new.parse(json_props)
         else
           @logger.info("Unable to read OVF properties")
@@ -78,14 +96,17 @@ module Bosh::Agent
       end
 
       def setup_networking
-        mac_addresses = detect_mac_addresses
+        #mac_addresses = detect_mac_addresses
+        mac_addresses = { "foo" => "eth0" }
 
         # last to update wins for now
         @dns = []
 
         @networks = @settings["networks"]
         @networks.each do |k, v|
-          mac = v["mac"]
+          # mac = v["mac"]
+          mac = "foo"
+
           if mac_addresses.key?(mac)
             v["interface"] = mac_addresses[mac]
 
@@ -125,8 +146,7 @@ module Bosh::Agent
       end
 
       def restart_networking_service
-        `/usr/sbin/service networking stop`
-        `/usr/sbin/service networking start`
+        `/etc/init.d/networking restart`
       end
 
       # TODO: do we need search option?

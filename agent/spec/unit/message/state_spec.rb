@@ -25,6 +25,11 @@ describe Bosh::Agent::Message::State do
       "networks"=>{},
       "resource_pool"=>{}
     }
+
+    # FIXME: initial state will _not_ be running when job handling is
+    # implemented
+    initial_state["job_state"] = "running"
+
     handler.state.should == initial_state
   end
 end

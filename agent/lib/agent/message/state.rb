@@ -27,6 +27,7 @@ module Bosh::Agent
           end
         end
         @logger.info("Agent state: #{state.inspect}")
+        state["job_state"] = "running"
         state
       end
 
