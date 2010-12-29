@@ -30,6 +30,14 @@ module Bosh::Agent
           @state["networks"] = @apply_spec['networks']
         end
 
+        unless @state["deployment"] == @apply_spec["deployment"]
+          raise Bosh::Agent::MessageHandlerError, 
+            "attempt to apply #{@apply_spec["deployment"]} to #{@state["deployment"]}"
+        end
+
+        # FIXME: assumption right now: if apply succeeds @state should be
+        # identical with apply spec
+        @state = @apply_spec
         write_state
         @state
       end

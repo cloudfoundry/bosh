@@ -116,9 +116,8 @@ HERE
         sh 'tar zcf ../stemcell/image image*'
       end
 
-      build_version = ENV['BUILD_VERSION'] ? ENV['BUILD_VERSION'] : 1
       File.open('stemcell/stemcell.MF', 'w') do |f|
-        f.write("---\nname: bosh-stemcell-#{version}\nversion: #{build_version}\ncloud_properties: {}")
+        f.write("---\nname: bosh-stemcell\nversion: #{version}\ncloud_properties: {}")
       end
 
       Dir.chdir('stemcell') do
