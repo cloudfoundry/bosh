@@ -364,7 +364,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:prepare_network_change).with(BASIC_PLAN["networks"])
     @cloud.should_receive(:configure_networks).with("vm-id", BASIC_PLAN["networks"])
-    @agent_1.should_receive(:commit_network_change).with(BASIC_PLAN["networks"])
+    @agent_1.should_receive(:wait_until_ready)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
