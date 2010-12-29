@@ -21,7 +21,7 @@ module Bosh::Director
       update_config = @job_spec.update
 
       watch_time = options[:canary] ? update_config.canary_watch_time : update_config.update_watch_time
-      sleep(watch_time)
+      sleep(watch_time / 1000)
 
       state = agent.get_state
       raise "updated instance not healthy" unless state["job_state"] == "running"
