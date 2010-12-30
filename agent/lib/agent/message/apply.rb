@@ -35,11 +35,18 @@ module Bosh::Agent
             "attempt to apply #{@apply_spec["deployment"]} to #{@state["deployment"]}"
         end
 
+        apply_packages
+
+
         # FIXME: assumption right now: if apply succeeds @state should be
         # identical with apply spec
         @state = @apply_spec
         write_state
         @state
+      end
+
+      def apply_packages
+        @apply_spec['packages']
       end
 
       def write_state
