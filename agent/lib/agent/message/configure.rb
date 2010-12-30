@@ -21,11 +21,13 @@ module Bosh::Agent
       end
 
       def configure
+        @logger.info("Configuring instance")
         if File.exist?(@settings_file)
           load_settings
         else
           load_ovf
         end
+        @logger.info("Loaded settings: #{@settings}")
 
         if @settings
           update_agent_id
@@ -145,12 +147,14 @@ module Bosh::Agent
         result = template.result(binding)
         network_updated = update_file(result, '/etc/network/interfaces')
         if network_updated
+          @logger.info("Updated networking")
           restart_networking_service
         end
       end
 
       def restart_networking_service
-        `/etc/init.d/networking restart`
+        output = `/etc/init.d/networking restart`
+        @logger.info("Restarted networking: #{output}")
       end
 
       # TODO: do we need search option?
