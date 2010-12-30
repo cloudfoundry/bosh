@@ -424,7 +424,9 @@ module VSphereCloud
     def get_vm_by_cid(vm_cid)
       # TODO: fix when we go to multiple DCs
       datacenter = @resources.datacenters.values.first
-      client.find_by_inventory_path([datacenter.name, "vm", datacenter.vm_folder_name, vm_cid])
+      vm = client.find_by_inventory_path([datacenter.name, "vm", datacenter.vm_folder_name, vm_cid])
+      raise "VM: #{vm_cid} not found" if vm.nil?
+      vm
     end
 
     def replicate_stemcell(cluster, datastore, stemcell)
