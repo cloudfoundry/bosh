@@ -43,7 +43,7 @@ describe Bosh::Agent::Message::Configure do
     @processor.stub!(:info_get_ovfenv).and_return(incomplete_ovf_xml)
     @processor.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
     @processor.load_ovf
-    lambda { @processor.setup_networking }.should raise_error(Bosh::Agent::MessageHandlerError, /Missing network value for netmask in/)
+    lambda { @processor.setup_networking }.should raise_error(Bosh::Agent::MessageHandlerError, /contains invalid characters/)
   end
 
   it "should generate ubuntu network files" do
@@ -52,7 +52,7 @@ describe Bosh::Agent::Message::Configure do
       # FIMXE: clean this mess up 
       case file
       when '/etc/network/interfaces'
-        data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 172.30.41.40\n    network 172.30.41.0\n    netmask 255.255.248.0\n    broadcast 172.30.41.255\n    gateway 172.30.40.1\n\n"
+        data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 172.30.41.40\n    network 172.30.40.0\n    netmask 255.255.248.0\n    broadcast 172.30.47.255\n    gateway 172.30.40.1\n\n"
       when '/etc/resolv.conf'
         data.should == "nameserver 192.168.0.2\nnameserver 192.168.0.3\n"
       end
