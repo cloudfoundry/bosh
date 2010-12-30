@@ -12,19 +12,22 @@ module Bosh::Director
 
     def subscribe(*channels, &block)
       @lock.synchronize do
-        channels.each {|channel| @mapping[channel] = block}
         setup_loop unless @redis.subscribed?
+        channels.each {|channel| @mapping[channel] = block}
         @redis.subscribe(*channels)
       end
     end
 
     def unsubscribe(*channels)
-      channels.each {|channel| @mapping.delete(channel)}
-      raise "need to be subscribed before you can unsubscribe" unless @redis.subscribed?
-      @redis.unsubscribe(*channels)
+      @lock.synchronize do
+        channels.each {|channel| @mapping.delete(channel)}
+        # no reason to unsubscribe if redis is not subscribed
+        @redis.unsubscribe(*channels)
+      end
     end
 
     def setup_loop
+      @mapping.clear
       lock = Mutex.new
       cv = ConditionVariable.new
 
