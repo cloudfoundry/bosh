@@ -67,7 +67,6 @@ module Bosh::Director
       begin
         ping
       rescue TimeoutException => e
-        @timeout = [@timeout * 2, 30].min
         if @deadline - Time.now.to_i > 0
           retry
         else
