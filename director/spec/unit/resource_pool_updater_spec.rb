@@ -95,9 +95,10 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     vm.stub!(:cid).and_return("vm-1")
 
-    idle_vm.should_receive(:vm).and_return(vm)
+    idle_vm.stub!(:vm).and_return(vm)
 
     cloud.should_receive(:delete_vm).with("vm-1")
+    vm.should_receive(:delete)
 
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
 
@@ -139,6 +140,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.stub!(:vm).and_return {current_vm}
 
     old_vm.stub!(:cid).and_return("vm-1")
+    old_vm.should_receive(:delete)
 
     cloud.should_receive(:delete_vm).with("vm-1")
     cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
