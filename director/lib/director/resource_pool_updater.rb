@@ -20,30 +20,37 @@ module Bosh::Director
 
     def delete_extra_vms
       extra_vms = -@resource_pool.unallocated_vms
+      @logger.info("Deleting #{extra_vms} extra VMs")
       extra_vms.times do
         idle_vm = @resource_pool.idle_vms.shift
         vm_cid = idle_vm.vm.cid
+        @logger.info("Deleting extra VM: #{vm_cid}")
         @pool.process do
           @cloud.delete_vm(vm_cid)
+          idle_vm.vm.delete
         end
       end
     end
 
     def delete_outdated_vms
+      @logger.info("Deleting outdated VMs")
       @resource_pool.idle_vms.each do |idle_vm|
         if idle_vm.vm && idle_vm.changed?
-          vm = idle_vm.vm
-          vm_cid = vm.cid
+          vm_cid = idle_vm.vm.cid
+          @logger.info("Deleting outdated VM: #{vm_cid}")
           @pool.process do
             @cloud.delete_vm(vm_cid)
+            vm = idle_vm.vm
             idle_vm.vm = nil
             idle_vm.current_state = nil
+            vm.delete
           end
         end
       end
     end
 
     def create_missing_vms
+      @logger.info("Creating missing VMs")
       @resource_pool.idle_vms.each do |idle_vm|
         unless idle_vm.vm
           @pool.process do
