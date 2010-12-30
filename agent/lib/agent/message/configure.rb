@@ -110,11 +110,15 @@ module Bosh::Agent
           if mac_addresses.key?(mac)
             v["interface"] = mac_addresses[mac]
 
-            net_cidr = NetAddr::CIDR.create("#{v['ip']} 255.255.255.0")
-            v["network"] = net_cidr.network
-            v["broadcast"] = net_cidr.broadcast
+            begin
+              net_cidr = NetAddr::CIDR.create("#{v['ip']} #{v['netmask']}")
+              v["network"] = net_cidr.network
+              v["broadcast"] = net_cidr.broadcast
 
-            @dns = v["dns"]
+              @dns = v["dns"]
+            rescue NetAddr::ValidationError => e
+              raise Bosh::Agent::MessageHandlerError, e.to_s
+            end
           else
             raise Bosh::Agent::MessageHandlerError, "#{mac} from OVF not present in instance"
           end
