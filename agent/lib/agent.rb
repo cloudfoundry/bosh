@@ -34,9 +34,12 @@ module Bosh::Agent
 
     def start
       $stdout.sync = true
+      @logger = Bosh::Agent::Config.logger
+      @logger.info("Configuring agent #{Bosh::Agent::VERSION}")
       if Config.configure
         Bosh::Agent::Message::Configure.process(nil)
       end
+      @logger.info("Starting agent")
       Bosh::Agent::Handler.start
     end
   end
