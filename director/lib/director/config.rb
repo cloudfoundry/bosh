@@ -5,7 +5,9 @@ module Bosh::Director
 
       attr_accessor :base_dir
       attr_accessor :logger
-      attr_accessor :redis_options
+
+      attr_reader :redis_options
+      attr_reader :cloud_options
 
       def configure(config)
         @base_dir = config["dir"]
@@ -78,6 +80,13 @@ module Bosh::Director
       def redis_options=(options)
         @redis_options = options
         @pubsub_redis = nil
+      end
+
+      def cloud_options=(options)
+        @lock.synchronize do
+          @cloud_options = options
+          @cloud = nil
+        end
       end
 
       def redis
