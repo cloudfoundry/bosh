@@ -77,7 +77,10 @@ module Bosh::Agent
               else
                 payload = process(processor, args)
                 publish(message_id, payload)
-                if method == "commit_network_change"
+                if method == "prepare_network_change"
+                  while `vmware-rpctool "info-get guestinfo.bosh"`.strip == "nada"
+                    sleep 0.1
+                  end
                   exit
                 end
               end
@@ -189,6 +192,8 @@ module Bosh::Agent
 
     class PrepareNetworkChange
       def self.process(args)
+        `vmware-rpctool "info-set guestinfo.bosh nada"`
+
         udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
         if File.exist?(udev_file)
           `rm #{udev_file}`
@@ -198,7 +203,6 @@ module Bosh::Agent
         settings_file = File.join(base_dir, 'bosh', 'settings.json')
         settings = Yajl::Parser.new.parse(File.read(settings_file))
 
-        # FIXME: temporary - assume overwrite networks
         networks = args.first
         settings['networks'] = networks
 
@@ -210,11 +214,6 @@ module Bosh::Agent
       end
     end
 
-    class CommitNetworkChange
-      def self.process(args)
-        true
-      end
-    end
   end
 
 end
