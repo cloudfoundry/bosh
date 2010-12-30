@@ -1,0 +1,13 @@
+#!/usr/bin/ruby
+
+require 'autotest/restart'
+require 'autotest/timestamp'
+
+Autotest.add_hook :initialize do |at|
+  %w{.git vendor spec/functional}.each {|exception| at.add_exception(exception)}
+  at.clear_mappings
+
+  at.add_mapping(%r%^spec/unit/.*_spec\.rb$%) { |filename, _| filename }
+  at.add_mapping(%r%^lib/director/(.*)\.rb$%) { |_, m| ["spec/unit/#{m[1]}_spec.rb"] }
+  at.add_mapping(%r%^spec/(spec_helper|shared/.*)\.rb$%) { at.files_matching %r%^spec/unit/.*_spec\.rb$% }
+end

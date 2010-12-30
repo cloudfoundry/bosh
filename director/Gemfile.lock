@@ -2,8 +2,11 @@ GEM
   remote: http://rubygems.org/
   specs:
     SystemTimer (1.2.1)
+    ZenTest (4.4.2)
     actionpool (0.2.3)
       splib (~> 1.4)
+    autotest (4.4.6)
+      ZenTest (>= 4.4.1)
     bcrypt-ruby (2.1.3)
     blobstore_client (0.0.1)
       httpclient
@@ -75,6 +78,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer
   actionpool
+  autotest
   bcrypt-ruby
   blobstore_client
   ci_reporter

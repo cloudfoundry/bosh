@@ -18,6 +18,7 @@ gem "uuidtools"
 gem "yajl-ruby"
 
 group :test do
+  gem "autotest"
   gem "ci_reporter"
   gem "minitar"
   gem "rack-test"
