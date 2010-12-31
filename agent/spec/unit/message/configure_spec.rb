@@ -10,6 +10,10 @@ describe Bosh::Agent::Message::Configure do
     end
     Bosh::Agent::Config.base_dir = tmp_base_dir
 
+    @logger = mock('logger')
+    @logger.stub!(:info)
+    Bosh::Agent::Config.logger = @logger
+
     @processor = Bosh::Agent::Message::Configure.new(nil)
     @processor.stub!(:info_get_ovfenv).and_return(ovf_xml)
 
