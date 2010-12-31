@@ -31,6 +31,7 @@ module Bosh::Agent
 
         if @settings
           update_agent_id
+          update_hostname
           update_bosh_server
           update_blobstore
           setup_networking
@@ -70,6 +71,11 @@ module Bosh::Agent
 
       def update_agent_id
         Bosh::Agent::Config.agent_id = @settings["agent_id"]
+      end
+
+      def update_hostname
+        `hostname #{@settings["agent_id"]}`
+        File.open('/etc/hostname', 'w') { |f| f.puts(@settings["agent_id"]) }
       end
 
       def update_bosh_server
