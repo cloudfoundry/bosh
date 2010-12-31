@@ -153,7 +153,10 @@ module Bosh::Agent
       end
 
       def restart_networking_service
-        output = `/etc/init.d/networking restart`
+        # ubuntu 10.04 networking startup/upstart stuff is quite borked
+        # FIXME: add multi interface support later
+        output = `service network-interface stop INTERFACE=eth0`
+        output += `service network-interface start INTERFACE=eth0`
         @logger.info("Restarted networking: #{output}")
       end
 
