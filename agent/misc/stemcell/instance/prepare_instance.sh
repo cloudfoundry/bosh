@@ -18,7 +18,9 @@ tar zxvf ruby-1.8.7-p302.tar.gz
 
 (
   cd ruby-1.8.7-p302
-  ./configure --prefix=/var/vmc
+  ./configure \
+    --disable-pthread \
+    --prefix=/var/vmc
   make && make install
 )
 
