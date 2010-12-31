@@ -185,7 +185,7 @@ module VSphereCloud
                                                                      "config.vAppConfig.property"])
         devices = vm_properties["config.hardware.device"]
         existing_app_properties = vm_properties["config.vAppConfig.property"]
-        env = build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
+        env = build_agent_env(name, vm, agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
         @logger.info("Setting VM env: #{env.pretty_inspect}")
 
         vm_config_spec = VirtualMachineConfigSpec.new
@@ -498,7 +498,7 @@ module VSphereCloud
       network_env
     end
 
-    def build_agent_env(agent_id, networks, devices, system_disk, ephemeral_disk)
+    def build_agent_env(name, vm, agent_id, networks, devices, system_disk, ephemeral_disk)
       network_env = build_agent_network_env(devices, networks)
 
       disk_env = {
@@ -507,7 +507,13 @@ module VSphereCloud
         "persistent" => {}
       }
 
+      vm_env = {
+        "name" => name,
+        "id" => vm
+      }
+
       env = {}
+      env["vm"] = vm_env
       env["agent_id"] = agent_id
       env["networks"] = network_env
       env["disks"] = disk_env
