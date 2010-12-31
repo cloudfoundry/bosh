@@ -27,7 +27,7 @@ module Bosh::Agent
         else
           load_ovf
         end
-        @logger.info("Loaded settings: #{@settings}")
+        @logger.info("Loaded settings: #{@settings.inspect}")
 
         if @settings
           update_agent_id
