@@ -785,10 +785,25 @@ describe Bosh::Director::DeploymentPlan do
       manifest = BASIC_MANIFEST._deep_copy
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       job = deployment_plan.job("job_a")
-      job.add_package("pkg_a", 1, "a_sha1")
-      job.add_package("pkg_b", 2, "b_sha1")
-      job.package_spec.should eql({"pkg_a"=>{"name"=>"pkg_a", "sha1"=>"a_sha1", "version"=>1},
-                                   "pkg_b"=>{"name"=>"pkg_b", "sha1"=>"b_sha1", "version"=>2}})
+
+      package_a = stub("package_a")
+      package_a.stub!(:name).and_return("a")
+      package_a.stub!(:version).and_return("1")
+      compiled_package_a = stub("compiled_package_a")
+      compiled_package_a.stub!(:sha1).and_return("sha-a")
+      compiled_package_a.stub!(:blobstore_id).and_return("blob-a")
+
+      package_b = stub("package_b")
+      package_b.stub!(:name).and_return("b")
+      package_b.stub!(:version).and_return("2")
+      compiled_package_b = stub("compiled_package_b")
+      compiled_package_b.stub!(:sha1).and_return("sha-b")
+      compiled_package_b.stub!(:blobstore_id).and_return("blob-b")
+
+      job.add_package(package_a, compiled_package_a)
+      job.add_package(package_b, compiled_package_b)
+      job.package_spec.should eql({"a"=>{"name"=>"a", "blobstore_id"=>"blob-a", "sha1"=>"sha-a", "version"=>"1"},
+                                   "b"=>{"name"=>"b", "blobstore_id"=>"blob-b", "sha1"=>"sha-b", "version"=>"2"}})
     end
 
   end

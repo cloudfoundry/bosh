@@ -130,7 +130,7 @@ module Bosh::Director
         template.packages.each do |package|
           compiled_package = Models::CompiledPackage.find(:package_id => package.id,
                                                           :stemcell_id => stemcell.id).first
-          job.add_package(package.name, package.version, compiled_package.sha1)
+          job.add_package(package, compiled_package)
         end
       end
     end

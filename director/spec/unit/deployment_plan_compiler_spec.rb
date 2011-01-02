@@ -378,7 +378,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 13,
                                                                 :stemcell_id => 10).and_return([compiled_package])
 
-      @job_spec.should_receive(:add_package).with("test_package", 7, "some sha1")
+      @job_spec.should_receive(:add_package).with(@package, compiled_package)
 
       @deployment_plan_compiler.bind_packages
     end

@@ -354,8 +354,8 @@ module Bosh::Director
         @instances[index]
       end
 
-      def add_package(name, version, sha1)
-        package = Package.new(name, version, sha1)
+      def add_package(package, compiled_package)
+        package = Package.new(package.name, package.version, compiled_package.sha1, compiled_package.blobstore_id)
         @packages[package.name] = package
       end
 
@@ -386,17 +386,19 @@ module Bosh::Director
       attr_accessor :version
       attr_accessor :sha1
 
-      def initialize(name, version, sha1)
+      def initialize(name, version, sha1, blobstore_id)
         @name = name
         @version = version
         @sha1 = sha1
+        @blobstore_id = blobstore_id
       end
 
       def properties
         {
           "name" => @name,
           "version" => @version,
-          "sha1" => @sha1
+          "sha1" => @sha1,
+          "blobstore_id" => @blobstore_id
         }
       end
 
