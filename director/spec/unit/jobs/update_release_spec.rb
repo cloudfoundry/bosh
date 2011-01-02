@@ -82,8 +82,11 @@ describe Bosh::Director::Jobs::UpdateRelease do
       package = stub("package")
       package.stub!(:name).and_return("test_package")
 
-      Bosh::Director::Models::Package.stub!(:new).with(:release => @release, :name => "test_package", :version => "1.0",
-                                                       :sha1    => "some-sha").and_return(package)
+      Bosh::Director::Models::Package.stub!(:new).with(:release     => @release,
+                                                       :name        => "test_package",
+                                                       :version     => "1.0",
+                                                       :sha1        => "some-sha").and_return(package)
+      package.should_receive(:dependency_set=).with(["foo_package", "bar_package"])
       FileUtils.mkdir_p(File.join(@release_dir, "packages"))
       package_path = File.join(@release_dir, "packages", "test_package.tgz")
       File.open(package_path, "w") do |f|
@@ -92,14 +95,11 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       @blobstore.should_receive(:create).with(have_a_path_of(package_path)).and_return("blob_id")
 
-      dependencies = Set.new
       package.should_receive(:blobstore_id=).with("blob_id")
-      package.should_receive(:dependencies).and_return(dependencies)
       package.should_receive(:save!)
 
       @update_release_job.create_package({"name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
                                           "dependencies" => ["foo_package", "bar_package"]})
-      dependencies.should eql(Set.new(["foo_package", "bar_package"]))
     end
 
   end

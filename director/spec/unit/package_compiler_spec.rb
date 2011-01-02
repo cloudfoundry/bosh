@@ -10,7 +10,7 @@ describe Bosh::Director::PackageCompiler do
     package.stub!(:release).and_return(release)
     package.stub!(:blobstore_id).and_return(blobstore_id)
     package.stub!(:sha1).and_return(sha1)
-    package.stub!(:dependencies).and_return(Set.new(dependencies))
+    package.stub!(:dependency_set).and_return(Set.new(dependencies))
     package
   end
 
@@ -126,7 +126,7 @@ describe Bosh::Director::PackageCompiler do
     it "should compile a package and it's dependencies" do
       dependent_package = create_package("dependency", 44, 77, @release, "dep-blb-id", "dep-sha1", [])
       package = create_package("test_pkg", 7, 33, @release, "package-blob", "package sha1", [])
-      package.stub!(:dependencies).and_return(Set.new(["dependency"]))
+      package.stub!(:dependency_set).and_return(Set.new(["dependency"]))
 
       @template.stub!(:packages).and_return([package])
 
@@ -212,5 +212,5 @@ describe Bosh::Director::PackageCompiler do
       package_compiler.compile
     end
   end
-  
+
 end

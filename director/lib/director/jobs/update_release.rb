@@ -127,8 +127,11 @@ module Bosh::Director
       end
 
       def create_package(package_meta)
-        package = Models::Package.new(:release => @release, :name => package_meta["name"],
-                                      :version => package_meta["version"], :sha1 => package_meta["sha1"])
+        package = Models::Package.new(:release => @release,
+                                      :name => package_meta["name"],
+                                      :version => package_meta["version"],
+                                      :sha1 => package_meta["sha1"])
+        package.dependency_set = package_meta["dependencies"]
 
         @logger.info("Creating package: #{package.name}")
 
@@ -141,10 +144,6 @@ module Bosh::Director
         end
 
         package.save!
-
-        dependencies = package.dependencies
-        package_meta["dependencies"].each {|dependency| dependencies << dependency}
-
         package
       end
 
