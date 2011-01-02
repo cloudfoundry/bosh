@@ -21,10 +21,10 @@ module Bosh
       include Rack::Test::Methods
 
       def app
-        Bosh::Director::Controller.new        
+        Bosh::Director::Controller.new
       end
     end
-    
+
     class Console
       def self.start
         new.start
@@ -48,7 +48,7 @@ module Bosh
 
         puts "=> Loading #{config_file}"
         Bosh::Director::Config.configure(YAML.load(File.read(config_file)))
-        
+
         begin
           require 'ruby-debug'
           puts "=> Debugger enabled"
@@ -61,7 +61,7 @@ module Bosh
 
         IRB.start
       end
-      
+
     end
   end
 end
@@ -81,6 +81,8 @@ end
     config.send(helper)
   end
 end
+
+include BD::Models
 
 BD::Console.start
 
