@@ -8,10 +8,19 @@ module Bosh::Director::Models
     attribute :version
     attribute :blobstore_id
     attribute :sha1
-    set :dependencies, String
+    attribute :dependencies
 
     index :name
     index :version
+
+    def dependency_set
+      result = self.dependencies
+      ::Set.new(result ? Yajl::Parser.parse(result) : nil)
+    end
+
+    def dependency_set=(deps)
+      self.dependencies = Yajl::Encoder.encode(deps.to_a)
+    end
 
     def validate
       assert_present :release_id

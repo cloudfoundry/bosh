@@ -183,7 +183,7 @@ module Bosh::Director
           compile_task.dependencies = []
 
           @logger.info("Processing dependencies")
-          package.dependencies.each do |dependency|
+          package.dependency_set.each do |dependency|
             @logger.info("Processing dependency: #{dependency}")
             dependent_task = compile_tasks[[dependency, stemcell.id]]
             if dependent_task.nil?
@@ -210,7 +210,7 @@ module Bosh::Director
           task.compiled_package = compiled_package
           task.dependencies = []
 
-          package.dependencies.each { |dependency| task.dependencies << compile_tasks[[dependency, stemcell_id]] }
+          package.dependency_set.each { |dependency| task.dependencies << compile_tasks[[dependency, stemcell_id]] }
         end
       end
 
