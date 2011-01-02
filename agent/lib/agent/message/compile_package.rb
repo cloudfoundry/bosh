@@ -15,7 +15,7 @@ module Bosh::Agent
       def initialize(args)
         bsc_options = Bosh::Agent::Config.blobstore_options
         @blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
-        @blobstore_id, @sha1, @package_name, @package_version = args
+        @blobstore_id, @sha1, @package_name, @package_version, @dependencies = args
 
         @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
@@ -27,6 +27,7 @@ module Bosh::Agent
         # TODO implement sha1 verification
         # TODO propagate erros
         begin
+          install_dependencies
           get_source_package
           unpack_source_package
           compile
@@ -36,6 +37,13 @@ module Bosh::Agent
         rescue RuntimeError => e
           # TODO: logging
           raise Bosh::Agent::MessageHandlerError, e
+        end
+      end
+
+      def install_dependencies
+        @dependencies.each do |k, v|
+          @logger.info("key: #{k.inspect}")
+          @logger.info("val: #{v.inspect}")
         end
       end
 
