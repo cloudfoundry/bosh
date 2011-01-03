@@ -144,6 +144,8 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
       @job.should_receive(:delete_vm).with(vm_a)
 
+      deployment.should_receive(:delete)
+
       @job.perform
     end
 
