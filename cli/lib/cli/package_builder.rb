@@ -1,5 +1,3 @@
-require "set"
-
 module Bosh::Cli
 
   class PackageBuilder
@@ -69,7 +67,7 @@ module Bosh::Cli
         Dir["*"].each do |filename|
           destination = File.join(build_dir, filename)
           if File.exists?(destination)
-            raise InvalidPackage, "Package #{name} has '#{filename}' file that conflicts with one of its metadata files"
+            raise InvalidPackage, "Package '#{name}' has '#{filename}' file that conflicts with one of its metadata files"
           end
           FileUtils.cp(filename, destination)
           copied += 1
@@ -216,8 +214,6 @@ module Bosh::Cli
     def in_metadata_dir(&block)
       if File.directory?(metadata_dir)
         Dir.chdir(metadata_dir) { yield }
-      else
-        # No metadata, nothing to do
       end
     end
 

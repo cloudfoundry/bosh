@@ -6,10 +6,12 @@ module Bosh
   module Cli
     class Director
 
-      DIRECTOR_ERROR_CODES = [ 400, 403, 404, 500 ]
+      DIRECTOR_HTTP_ERROR_CODES = [ 400, 403, 404, 500 ]
 
       DEFAULT_MAX_POLLS     = nil # Not limited
       DEFAULT_POLL_INTERVAL = 1
+      API_TIMEOUT           = 86400 * 3
+      OPEN_TIMEOUT          = 30
 
       attr_reader :director_uri
 
@@ -80,11 +82,11 @@ module Bosh
 
       def request_and_track(method, uri, content_type, payload, options = {})
         http_status, body, headers = request(method, uri, content_type, payload)
-        location = headers[:location]
-        uploaded = http_status == 302
+        location   = headers[:location]
+        redirected = http_status == 302
 
         status = \
-        if uploaded
+        if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Doesn't look like we received task URI
             poll_task($1, options)
           else
@@ -152,8 +154,6 @@ module Bosh
         sleep(interval)
       end
 
-      private
-
       def request(method, uri, content_type = nil, payload = nil, headers = {})
         headers = headers.dup
         headers["Content-Type"] = content_type if content_type
@@ -162,17 +162,13 @@ module Bosh
           :method => method, :url => @director_uri + uri,
           :payload => payload, :headers => headers,
           :user => @user, :password => @password,
-          :timeout => 86400 * 3, :open_timeout => 300
+          :timeout => API_TIMEOUT, :open_timeout => OPEN_TIMEOUT
         }
 
-        status = body = response_headers = nil
+        status, body, response_headers = perform_http_request(req)
         
-        RestClient::Request.execute(req) do |response, request, result|
-          status, body, response_headers = response.code, response.body, response.headers
-        end
-
-        if DIRECTOR_ERROR_CODES.include?(status)
-          raise DirectorError, director_error_message(status, body)
+        if DIRECTOR_HTTP_ERROR_CODES.include?(status)
+          raise DirectorError, parse_error_message(status, body)
         end
 
         [ status, body, response_headers ]
@@ -182,8 +178,18 @@ module Bosh
       rescue SystemCallError => e
         raise DirectorError, "System call error while talking to director: #{e}"
       end
-      
-      def director_error_message(status, body)
+
+      private
+
+      def perform_http_request(req)
+        result = nil
+        RestClient::Request.execute(req) do |response, request, result|
+          result = [ response.code, response.body, response.headers ]
+        end
+        result
+      end
+
+      def parse_error_message(status, body)
         parsed_body = JSON.parse(body.to_s)
         
         if parsed_body["code"] && parsed_body["description"]

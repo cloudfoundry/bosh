@@ -47,6 +47,34 @@ describe Bosh::Cli::PackageBuilder do
     }.should raise_error(Bosh::Cli::InvalidPackage, "Package 'aa' doesn't include any files")
   end
 
+  it "whines on metadata file having the same name as one of package files" do
+    lambda {
+      builder = make_builder("aa", ["*.rb", "packaging"])
+      add_sources("1.rb", "packaging")
+      builder.files.include?("packaging").should be_true
+
+      FileUtils.mkdir_p("#{@release_dir}/packages/aa/data/")
+      File.open("#{@release_dir}/packages/aa/data/packaging", "w") { |f| f.puts("make install") }
+
+      builder.copy_files
+    }.should raise_error(Bosh::Cli::InvalidPackage, "Package 'aa' has 'packaging' file that conflicts with one of its metadata files")
+  end
+
+  it "has no way to calculate checksum for not yet generated package" do
+    lambda {
+      builder = make_builder("aa", ["*.rb", "packaging"])
+      add_sources("1.rb", "packaging")
+      builder.tarball_checksum
+    }.should raise_error(RuntimeError, "cannot read checksum for not yet generated package")    
+  end
+
+  it "has a checksum for a generated package" do
+    builder = make_builder("aa", ["*.rb"])
+    add_sources("1.rb", "2.rb")
+    builder.build
+    builder.tarball_checksum.should =~ /[0-9a-f]+/
+  end
+
   it "is created with name and globs" do
     builder = make_builder("aa", ["1", "*/*"])
     builder.name.should  == "aa"
@@ -151,7 +179,7 @@ describe Bosh::Cli::PackageBuilder do
     builder = make_builder("bar", globs)
     builder.generate_tarball.should be_true
   end
-  
+
   it "creates a new version tarball" do
     add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")    
     globs = ["foo/**/*", "baz"]
