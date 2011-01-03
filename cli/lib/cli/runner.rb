@@ -10,6 +10,7 @@ module Bosh
       attr_reader   :namespace
       attr_reader   :action
       attr_reader   :args
+      attr_reader   :options
 
       def self.run(args)
         new(args).run
