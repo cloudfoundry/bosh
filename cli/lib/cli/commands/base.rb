@@ -15,7 +15,6 @@ module Bosh::Cli
         @work_dir    = Dir.pwd
         @config      = Config.new(@options[:config] || DEFAULT_CONFIG_PATH)
         @cache       = Cache.new(@options[:cache_dir] || DEFAULT_CACHE_DIR)
-        @out         = out
       end
 
       def director
@@ -43,8 +42,6 @@ module Bosh::Cli
         run(*args)
         raise Bosh::Cli::GracefulExit, "redirected to %s" % [ args.join(" ") ]
       end
-
-      private
 
       [:username, :password, :target, :deployment].each do |attr_name|
         define_method attr_name do

@@ -83,7 +83,7 @@ describe Bosh::Spec::IntegrationTest do
     OUT
   end
 
-  it "sets and reads existing deployment (also updating target in process, even if it's cannot be accessed!)" do
+  it "sets and reads existing deployment (also updating target in process, even if it cannot be accessed!)" do
     deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
     
     expect_output("deployment vmforce", <<-OUT)
