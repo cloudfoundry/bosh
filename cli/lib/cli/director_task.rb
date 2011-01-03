@@ -2,6 +2,8 @@ module Bosh
   module Cli
     class DirectorTask
 
+      attr_accessor :offset
+
       def initialize(director, task_id)
         @director = director
         @task_id  = task_id
@@ -16,11 +18,14 @@ module Bosh
       def output
         body, new_offset = @director.get_task_output(@task_id, @offset)
 
+        # require "ruby-debug"; debugger if @offset == 20
+
+        @buf << body if body
+
         if new_offset
-          @buf << body
           @offset = new_offset
         else
-          return nil
+          return flush_output
         end
 
         last_nl = @buf.rindex("\n")
@@ -41,7 +46,7 @@ module Bosh
       def flush_output
         out = @buf
         @buf = ""
-        out + "\n"
+        out.blank? ? nil : "#{out}\n"
       end
 
     end
