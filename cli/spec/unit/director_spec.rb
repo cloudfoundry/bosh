@@ -8,6 +8,33 @@ describe Bosh::Cli::Director do
     @director = Bosh::Cli::Director.new(DUMMY_TARGET, "user", "pass")
   end
 
+  describe "fetching status" do
+    it "tells if user is authenticated" do
+      @director.should_receive(:get).with("/status").and_return([200, "OK"])
+      @director.authenticated?.should == true
+    end
+
+    it "tells if user not authenticated" do
+      @director.should_receive(:get).with("/status").and_return([403, "Forbidden"])
+      @director.authenticated?.should == false
+
+      @director.should_receive(:get).with("/status").and_return([500, "Error"])
+      @director.authenticated?.should == false
+
+      @director.should_receive(:get).with("/status").and_return([404, "Not Found"])
+      @director.authenticated?.should == false
+    end    
+  end
+
+  describe "interface REST API" do
+    it "has helper methods for HTTP verbs which just blindly delegate to generic request" do
+      [:get, :put, :post, :delete].each do |verb|
+        @director.should_receive(:request).with(verb, :arg1, :arg2)
+        @director.send(verb, :arg1, :arg2)
+      end
+    end
+  end
+
   describe "API calls" do
     it "creates user" do
       @director.should_receive(:post).with("/users", "application/json", JSON.generate("username" => "joe", "password" => "pass")).and_return(true)
@@ -70,6 +97,102 @@ describe Bosh::Cli::Director do
       @director.exists?.should be_true
     end
 
+  end
+
+  describe "tracking request" do
+    it "starts polling a task if request responded with a redirect to task URL" do
+      @director.should_receive(:request).with(:get, "/stuff", "text/plain", "abc").and_return([302, "body", { :location => "/tasks/502" }])
+      @director.should_receive(:poll_task).with("502", :arg1 => 1, :arg2 => 2).and_return("polling result")
+      @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ "polling result", "body" ]
+    end
+
+    it "considers all reponses but 302 a failure" do
+      [200, 404, 403].each do |code|
+        @director.should_receive(:request).with(:get, "/stuff", "text/plain", "abc").and_return([code, "body", { }])
+        @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ :failed, "body" ]
+      end
+    end
+
+    it "reports task as non trackable if its URL is unfamiliar" do
+      @director.should_receive(:request).with(:get, "/stuff", "text/plain", "abc").and_return([302, "body", { :location => "/track-task/502" }])
+      @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ :non_trackable, "body" ]
+    end
+
+    it "suppports uploading with progress bar" do
+      file = spec_asset("valid_release.tgz")
+      f = Bosh::Cli::FileWithProgressBar.open(file, "r")
+
+      Bosh::Cli::FileWithProgressBar.stub!(:open).with(file, "r").and_return(f)
+      @director.should_receive(:request_and_track).with(:post, "/stuff", "application/x-compressed", f)
+      @director.upload_and_track("/stuff", "application/x-compressed", file)
+      f.progress_bar.finished?.should be_true
+    end
+  end
+
+  describe "performing HTTP requests" do
+    it "delegates to RestClient" do
+      req = {
+        :user         => "user",
+        :password     => "pass",
+        :timeout      => 86400 * 3,
+        :open_timeout => 30,
+        :url          => "http://target/stuff",
+        :headers      => { "Content-Type" => "app/zb", "a" => "b", "c" => "d"}
+      }
+      RestClient::Request.should_receive(:execute).with(req)
+      @director.send(:perform_http_request, req)
+    end
+  end
+
+  describe "talking to REST API" do
+    def req(options = {})
+      {
+        :user => "user", :password => "pass", :timeout => 86400 * 3, :open_timeout => 30
+      }.merge(options)
+    end
+
+    it "performs HTTP request" do
+      @director.should_receive(:perform_http_request).
+        with(req(:method => :get, :url => "http://target/stuff",
+                 :payload => "payload", :headers => { "Content-Type" => "app/zb", "h1" => "a", "h2" => "b"}))
+
+      @director.request(:get, "/stuff", "app/zb", "payload", { "h1" => "a", "h2" => "b"})
+    end
+    
+    it "nicely wraps director error response" do
+      [400, 403, 404, 500].each do |code|
+        lambda {
+          # Familiar JSON
+          @director.should_receive(:perform_http_request).and_return([code, JSON.generate("code" => "40422", "description" => "Weird stuff happened"), { }])
+          @director.request(:get, "/stuff", "application/octet-stream", "payload", { :hdr1 => "a", :hdr2 => "b"})
+        }.should raise_error(Bosh::Cli::DirectorError, "Director error 40422: Weird stuff happened")
+
+        lambda {
+          # Not JSON
+          @director.should_receive(:perform_http_request).and_return([code, "error message goes here", { }])
+          @director.request(:get, "/stuff", "application/octet-stream", "payload", { :hdr1 => "a", :hdr2 => "b"})
+        }.should raise_error(Bosh::Cli::DirectorError, "Director error (HTTP #{code}): error message goes here")
+
+        lambda {
+          # JSON but weird
+          @director.should_receive(:perform_http_request).and_return([code, JSON.generate("a" => "b", "c" => "d"), { }])
+          @director.request(:get, "/stuff", "application/octet-stream", "payload", { :hdr1 => "a", :hdr2 => "b"})
+        }.should raise_error(Bosh::Cli::DirectorError, %Q[Director error (HTTP #{code}): {"a":"b","c":"d"}])
+      end
+    end
+
+    it "wraps director access exceptions" do
+      [URI::Error, SocketError, Errno::ECONNREFUSED].each do |err|
+        @director.should_receive(:perform_http_request).and_raise(err.new("err message"))
+        lambda {
+          @director.request(:get, "/stuff", "app/zb", "payload", { })          
+        }.should raise_error(Bosh::Cli::DirectorInaccessible)
+      end
+      @director.should_receive(:perform_http_request).and_raise(SystemCallError.new("err message"))
+      lambda {
+        @director.request(:get, "/stuff", "app/zb", "payload", { })
+      }.should raise_error Bosh::Cli::DirectorError
+    end
   end
 
   describe "polling jobs" do
