@@ -46,6 +46,8 @@ module Bosh::Director
     ["StemcellNotFound",        BAD_REQUEST, 50003, "Stemcell: \"%s\":\"%s\" doesn't exist"],
 
     ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
+
+    ["DeploymentNotFound",      NOT_FOUND,   70000, "Deployment \"%s\" doesn't exist"]
   ].each do |e|
     class_name, response_code, error_code, format = e
 
