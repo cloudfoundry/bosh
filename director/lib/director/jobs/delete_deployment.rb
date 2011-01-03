@@ -61,6 +61,7 @@ module Bosh::Director
               delete_instance(instance)
             end
           end
+          pool.wait
 
           vms = Models::Vm.find(:deployment_id => deployment.id)
           @logger.info("Deleting idle VMs")
@@ -69,6 +70,7 @@ module Bosh::Director
               delete_vm(vm)
             end
           end
+          pool.wait
         end
       end
     end
