@@ -2,11 +2,6 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe Bosh::Director::Jobs::DeleteStemcell do
 
-  before(:each) do
-    @logger = Bosh::Director::Config.logger
-    Bosh::Director::Config.stub!(:logger).and_return(@logger)
-  end
-
   describe "perform" do
 
     before(:each) do

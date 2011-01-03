@@ -7,9 +7,7 @@ module Bosh::Director
 
       def initialize(*args)
         if args.length == 2
-          stemcell_name, stemcell_version = args
-          @name = stemcell_name
-          @version = stemcell_version
+          @name, @version = args
           @cloud = Config.cloud
           @logger = Config.logger
         elsif args.empty?
