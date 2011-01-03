@@ -11,5 +11,62 @@ describe String do
       id.bosh_valid_id?.should be_false
     end
   end
+
+  it "can tell blank string from non-blank" do
+    [" ", "\t\t", "\n", ""].each do |string|
+      string.should be_blank
+    end
+
+    ["a", " a", "a ", "  a  ", "___", "z\tb"].each do |string|
+      string.should_not be_blank
+    end
+  end
+
+  it "has colorization helpers" do
+    "string".red.should   == "string"
+    "string".green.should == "string"
+    "string".colorize("a").should == "string"
+
+    Bosh::Cli::Config.colorize = true
+    "string".red.should == "\e[0m\e[31mstring\e[0m"
+    "string".green.should == "\e[0m\e[32mstring\e[0m"
+    "string".colorize("a").should == "astring\e[0m"    
+  end
+end
+
+describe Object do
+
+  it "has output helpers" do
+    s = StringIO.new
+    Bosh::Cli::Config.output = s
+    say("yea")
+    say("yea")
+    s.rewind
+    s.read.should == "yea\nyea\n"
+
+    s.rewind
+    header("test")
+    s.rewind
+    s.read.should == "\ntest\n----\n"
+
+    s.rewind
+    header("test", "a")
+    s.rewind
+    s.read.should == "\ntest\naaaa\n"
+  end
+
+  it "raises a special exception to signal a premature exit" do
+    lambda {
+      err("Done")
+    }.should raise_error(Bosh::Cli::CliExit, "Done")
+  end
+
+  it "can tell if object is blank" do
+    o = Object.new
+    o.stub!(:to_s).and_return("  ")
+    o.should be_blank
+    o.stub!(:to_s).and_return("Object 1")
+    o.should_not be_blank    
+  end
   
 end
