@@ -163,8 +163,14 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    delete "/deployments/:name" do
+      deployment = Models::Deployment.find(:name => params[:name]).first
+      raise DeploymentNotFound.new(params[:name]) if deployment.nil?
+      task = @deployment_manager.delete_deployment(deployment)
+      redirect "/tasks/#{task.id}"
+    end
+
     # TODO: get information about an existing deployment
-    # TODO: delete deployment?
     # TODO: stop, start, restart jobs/instances
 
     post "/stemcells", :consumes => :tgz do
@@ -180,7 +186,6 @@ module Bosh::Director
     end
 
     # TODO: get information about an existing stemcell
-    # TODO: delete stemcell
 
     get "/tasks/:id" do
       task = Models::Task[params[:id]]
