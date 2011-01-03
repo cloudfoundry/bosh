@@ -85,7 +85,7 @@ module Bosh::Director
       lock_id = existing_lock.split(":")[1]
       if lock_id == @id
         redis.multi do
-          redis.del(@name) if @lock_expiration > Time.now.to_f
+          redis.del(@name)
         end
       else
         redis.unwatch
