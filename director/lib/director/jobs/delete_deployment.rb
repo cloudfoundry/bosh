@@ -71,6 +71,8 @@ module Bosh::Director
             end
           end
           pool.wait
+
+          deployment.delete
         end
       end
     end
