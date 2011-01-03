@@ -40,11 +40,7 @@ module BoshStringExtensions
   end
 
   def bosh_valid_id?
-    self =~ Bosh::Cli::Config::VALID_ID        
-  end
-
-  def starts_with?(string)
-    self[0..string.to_s.size - 1] == string.to_s
+    self =~ Bosh::Cli::Config::VALID_ID
   end
 end
 
