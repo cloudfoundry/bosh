@@ -3,11 +3,12 @@ require 'spec_helper'
 describe Bosh::Cli::Stemcell do
 
   describe "verifying a stemcell" do
-    pending
+    it "verifies and reports a valid stemcell" do
+      sc = Bosh::Cli::Stemcell.new(spec_asset("valid_stemcell.tgz"), Bosh::Cli::Cache.new(Dir.mktmpdir))
+      sc.should be_valid
+    end    
   end
 
-  describe "uploading a stemcell" do
-    pending
-  end
+  # TODO: add whining on potential errors
   
 end
