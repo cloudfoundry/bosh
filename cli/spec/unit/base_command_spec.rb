@@ -7,9 +7,9 @@ describe Bosh::Cli::Command::Base do
     @cache_dir = Dir.mktmpdir
   end
 
-  def add_config(hash)
+  def add_config(object)
     File.open(@config, "w") do |f|
-      f.write(YAML.dump(hash))
+      f.write(YAML.dump(object))
     end
   end
 
@@ -89,6 +89,21 @@ describe Bosh::Cli::Command::Base do
     lambda {
       cmd.redirect("dashboard", "status", :arg1, :arg2)
     }.should raise_error(Bosh::Cli::GracefulExit, "redirected to dashboard status arg1 arg2")
+  end
+
+  it "effectively ignores config file if it is malformed" do
+    add_config([1, 2, 3])
+    cmd = make_command()
+
+    cmd.target.should == nil
+    cmd.deployment.should == nil
+  end
+
+  it "whines on missing config file" do
+    lambda {
+      File.should_receive(:open).with(@config, "w").and_raise(Errno::EACCES)
+      make_command      
+    }.should raise_error(Bosh::Cli::ConfigError)
   end
   
 end
