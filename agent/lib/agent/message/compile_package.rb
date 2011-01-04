@@ -17,8 +17,12 @@ module Bosh::Agent
         @blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
         @blobstore_id, @sha1, @package_name, @package_version, @dependencies = args
 
-        @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
+
+        FileUtils.mkdir_p(File.join(@base_dir, 'data', 'tmp'))
+
+        @log_file = "#{@base_dir}/data/tmp/#{Bosh::Agent::Config.agent_id}"
+        @logger = Logger.new(@log_file)
         @compile_base = "#{@base_dir}/data/compile"
         @install_base = "#{@base_dir}/data/packages"
       end
@@ -111,8 +115,8 @@ module Bosh::Agent
         compiled_sha1 = Digest::SHA1.hexdigest(File.read(compiled_package))
         @logger.info("Uploaded #{@package_name} #{@package_version} 
                      (sha1: #{compiled_sha1}, blobstore_id: #{compiled_blobstore_id})")
-
-        { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id }
+        @logger = nil
+        { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id, "compile_log" => File.read(@log_file) }
       end
 
     end
