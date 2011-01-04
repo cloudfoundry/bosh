@@ -122,7 +122,7 @@ module Bosh::Director
     def apply_deployment
       task = agent.apply({
         "deployment" => @deployment_plan.name,
-        "job" => @job_spec.name,
+        "job" => @job_spec.spec,
         "index" => @instance_spec.index,
         "networks" => @instance_spec.network_settings,
         "resource_pool" => @job_spec.resource_pool.properties,

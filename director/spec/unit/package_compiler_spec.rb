@@ -45,7 +45,7 @@ describe Bosh::Director::PackageCompiler do
       @stemcell_spec.stub!(:name).and_return("test_stemcell")
 
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
-      @job_spec.stub!(:template).and_return("test_job")
+      @job_spec.stub!(:template).and_return(@template)
       @job_spec.stub!(:name).and_return("test_job_name")
 
       @release.stub!(:name).and_return("test_release")
@@ -59,8 +59,6 @@ describe Bosh::Director::PackageCompiler do
       @stemcell.stub!(:name).and_return("stemcell-name")
       @stemcell.stub!(:version).and_return("stemcell-version")
 
-      Bosh::Director::Models::Template.stub!(:find).with(:release_version_id => 42,
-                                                         :name => "test_job").and_return([@template])
       Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
     end
 

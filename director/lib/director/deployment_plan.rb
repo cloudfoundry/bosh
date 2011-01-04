@@ -298,6 +298,7 @@ module Bosh::Director
       attr_accessor :persistent_disk
       attr_accessor :resource_pool
       attr_accessor :template
+      attr_accessor :template_name
       attr_accessor :properties
       attr_accessor :packages
       attr_accessor :update
@@ -307,7 +308,7 @@ module Bosh::Director
       def initialize(deployment, job_spec)
         @deployment = deployment
         @name = safe_property(job_spec, "name", :class => String)
-        @template = safe_property(job_spec, "template", :class => String)
+        @template_name = safe_property(job_spec, "template", :class => String)
         @persistent_disk = safe_property(job_spec, "persistent_disk", :class => Integer, :optional => true) || 0
         @instances = []
         @packages = {}
@@ -376,6 +377,13 @@ module Bosh::Director
         if options[:canary] || (@update.max_errors > 0 && @update.max_errors < @update_errors)
           @rollback = true
         end
+      end
+
+      def spec
+        {
+          "name" => @name,
+          "blobstore_id" => @template.blobstore_id
+        }
       end
 
     end

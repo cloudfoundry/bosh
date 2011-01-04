@@ -159,7 +159,7 @@ module Bosh::Director
         @logger.info("Processing job: #{job.name}")
         stemcell = job.resource_pool.stemcell.stemcell
         @logger.info("Job will be deployed on: #{job.resource_pool.stemcell.name}")
-        template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
+        template = job.template
         template.packages.each do |package|
           @logger.info("Processing package: #{package.name}")
           compiled_package = Models::CompiledPackage.find(:package_id => package.id,

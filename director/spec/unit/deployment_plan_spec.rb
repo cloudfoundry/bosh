@@ -161,7 +161,7 @@ describe Bosh::Director::DeploymentPlan do
       job.name.should eql("job_a")
       job.persistent_disk.should eql(2048)
       job.resource_pool.should eql(resource_pool)
-      job.template.should eql("job_a")
+      job.template_name.should eql("job_a")
       job.package_spec.should eql({})
     end
 

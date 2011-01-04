@@ -325,6 +325,56 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   end
 
+  describe "bind_jobs" do
+
+    before(:each) do
+      @deployment = mock("deployment")
+      @release_version = mock("release_version")
+      @template = mock("template")
+      @package = mock("package")
+      @stemcell = mock("stemcell")
+      @deployment_plan = mock("deployment_plan")
+      @job_spec = mock("job_spec")
+      @release_spec = mock("release_spec")
+      @resource_pool_spec = mock("resource_pool_spec")
+      @stemcell_spec = mock("stemcell_spec")
+
+      @release_version.stub!(:id).and_return(2)
+
+      @template.stub!(:packages).and_return([@package])
+
+      @package.stub!(:name).and_return("test_package")
+      @package.stub!(:version).and_return(7)
+      @package.stub!(:id).and_return(13)
+
+      @stemcell.stub!(:id).and_return(10)
+
+      @deployment_plan.stub!(:jobs).and_return([@job_spec])
+      @deployment_plan.stub!(:release).and_return(@release_spec)
+
+      @release_spec.stub!(:release_version).and_return(@release_version)
+
+      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
+
+      @stemcell_spec.stub!(:network).and_return(@network_spec)
+      @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
+
+      @job_spec.stub!(:template_name).and_return("test_template")
+      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
+
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+
+      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    end
+
+    it "should bind the compiled packages to the job" do
+      Bosh::Director::Models::Template.stub!(:find).with(:release_version_id => 2,
+                                                         :name => "test_template").and_return([@template])
+      @job_spec.should_receive(:template=).with(@template)
+      @deployment_plan_compiler.bind_jobs
+    end
+  end
+
   describe "bind_packages" do
 
     before(:each) do
@@ -359,7 +409,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @stemcell_spec.stub!(:network).and_return(@network_spec)
       @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
 
-      @job_spec.stub!(:template).and_return("test_template")
+      @job_spec.stub!(:template).and_return(@template)
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
 
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
@@ -371,9 +421,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       compiled_package = mock("compiled_package")
       compiled_package.stub!(:sha1).and_return("some sha1")
-
-      Bosh::Director::Models::Template.stub!(:find).with(:release_version_id => 2,
-                                                         :name => "test_template").and_return([@template])
 
       Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 13,
                                                                 :stemcell_id => 10).and_return([compiled_package])
