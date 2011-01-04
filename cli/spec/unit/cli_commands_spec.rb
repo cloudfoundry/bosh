@@ -71,9 +71,25 @@ describe Bosh::Cli::Command::Base do
       @cmd.username.should == "user"
       @cmd.password.should == "pass"      
     end
-
   end
 
+  describe Bosh::Cli::Command::Deployment do
+    before :each do
+      @cmd = Bosh::Cli::Command::Deployment.new(@opts)
+    end
+
+    it "allows deleting the deployment" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_receive(:delete_deployment).with("foo")
+      
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.delete("foo")
+    end
+  end
+  
 end
 
 

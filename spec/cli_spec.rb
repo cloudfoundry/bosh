@@ -363,4 +363,8 @@ describe Bosh::Spec::IntegrationTest do
     pending
   end
 
+  it "can delete deployment" do
+    pending
+  end
+
 end

@@ -56,6 +56,11 @@ describe Bosh::Cli::Director do
       @director.delete_stemcell("ubuntu", "123")      
     end
 
+    it "deletes deployment" do
+      @director.should_receive(:request_and_track).with(:delete, "/deployments/foo", nil, nil).and_return(true)
+      @director.delete_deployment("foo")
+    end    
+
     it "deploys" do
       @director.should_receive(:upload_and_track).with("/deployments", "text/yaml", "/path").and_return(true)
       @director.deploy("/path")
