@@ -10,6 +10,10 @@ describe Bosh::Agent::Message::Apply do
     logger = mock('logger')
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
+
+    Bosh::Agent::Config.blobstore_options = {}
+    @httpclient = mock("httpclient")
+    HTTPClient.stub!(:new).and_return(@httpclient)
   end
 
   it 'should set deployment in agents state if blank' do
