@@ -117,7 +117,7 @@ describe Bosh::Director::Controller do
 
     describe "listing stemcells" do
       it "has API call that returns a list of stemcells in JSON" do
-        @stemcells = (1..10).map do |i|
+        stemcells = (1..10).map do |i|
           Bosh::Director::Models::Stemcell.create(:name => "stemcell-#{i}", :version => i,  :cid => rand(25000 * i))
         end
 
@@ -130,7 +130,7 @@ describe Bosh::Director::Controller do
         body.size.should == 10
 
         response_collection = body.map{ |e| [ e["name"], e["version"], e["cid"] ] }
-        expected_collection = @stemcells.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.version.to_s, e.cid.to_s ] }
+        expected_collection = stemcells.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.version.to_s, e.cid.to_s ] }
 
         response_collection.should == expected_collection
       end
@@ -142,6 +142,38 @@ describe Bosh::Director::Controller do
         body = Yajl::Parser.parse(last_response.body)
         body.should == []
       end
+    end
+
+    describe "listing releases" do
+      it "has API call that returns a list of releases in JSON" do
+        releases = (1..10).map do |i|
+          release = Bosh::Director::Models::Release.create(:name => "release-#{i}")
+          (0..rand(3)).each do |v|
+            Bosh::Director::Models::ReleaseVersion.create(:release => release, :version => v)
+          end
+          release
+        end
+
+        get "/releases", {}, {}
+        last_response.status.should == 200
+
+        body = Yajl::Parser.parse(last_response.body)
+        body.kind_of?(Array).should be_true
+        body.size.should == 10
+
+        response_collection = body.map{ |e| [ e["name"], e["versions"].join(" ") ] }
+        expected_collection = releases.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.versions.map{ |v| v.version.to_s }.join(" ") ] }
+
+        response_collection.should == expected_collection        
+      end
+
+      it "returns empty collection if there are no releases" do
+        get "/releases", {}, {}
+        last_response.status.should == 200
+
+        body = Yajl::Parser.parse(last_response.body)
+        body.should == []
+      end      
     end
 
     describe "polling task status" do
