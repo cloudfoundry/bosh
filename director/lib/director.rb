@@ -155,7 +155,17 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    # TODO: get information about an existing release
+    get "/releases" do
+      releases = Models::Release.all.sort_by(:name, :order => "ASC ALPHA").map do |release|
+        {
+          "name"     => release.name,
+          "versions" => release.versions.sort_by(:version).map { |rv| rv.version.to_s }
+        }
+      end
+
+      Yajl::Encoder.encode(releases)
+    end
+
     # TODO: delete a release
 
     post "/deployments", :consumes => :yaml do
