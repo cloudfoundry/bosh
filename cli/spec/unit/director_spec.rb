@@ -56,6 +56,11 @@ describe Bosh::Cli::Director do
       @director.list_releases
     end
 
+    it "lists deployments" do
+      @director.should_receive(:get).with("/deployments", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.list_deployments
+    end
+
     it "uploads release" do
       @director.should_receive(:upload_and_track).with("/releases", "application/x-compressed", "/path").and_return(true)
       @director.upload_release("/path")

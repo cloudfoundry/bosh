@@ -51,6 +51,10 @@ module Bosh
         get_json("/releases")
       end
 
+      def list_deployments
+        get_json("/deployments")
+      end
+
       def upload_release(filename)
         upload_and_track("/releases", "application/x-compressed", filename)
       end

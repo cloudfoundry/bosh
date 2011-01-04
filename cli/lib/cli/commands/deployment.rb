@@ -72,10 +72,30 @@ module Bosh::Cli::Command
         :done          => "Deleted deployment '%s'" % [ name ],
         :non_trackable => "Deployment delete in progress but director at '#{target}' doesn't support task tracking",
         :track_timeout => "Timed out out while tracking deployment deletion progress",
-        :error         => "Attemted to delete deployment but received an error while tracking status",
+        :error         => "Attempted to delete deployment but received an error while tracking status",
       }
 
       say responses[status] || "Cannot delete deployment: #{message}"
+    end
+
+    def list
+      err("Please log in first") unless logged_in?
+      err("Please choose target") unless target
+      deployments = director.list_deployments
+
+      err("No deployments") if deployments.size == 0
+
+      deployments_table = table do |t|
+        t.headings = "Name"
+        deployments.each do |r|
+          t << [ r["name"] ]
+        end
+      end
+
+      say("\n")
+      say(deployments_table)
+      say("\n")
+      say("Deployments total: %d" % deployments.size)
     end
 
     private
