@@ -115,6 +115,35 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "listing stemcells" do
+      it "has API call that returns a list of stemcells in JSON" do
+        @stemcells = (1..10).map do |i|
+          Bosh::Director::Models::Stemcell.create(:name => "stemcell-#{i}", :version => i,  :cid => rand(25000 * i))
+        end
+
+        get "/stemcells", {}, {}
+        last_response.status.should == 200
+
+        body = Yajl::Parser.parse(last_response.body)
+
+        body.kind_of?(Array).should be_true
+        body.size.should == 10
+
+        response_collection = body.map{ |e| [ e["name"], e["version"], e["cid"] ] }
+        expected_collection = @stemcells.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.version.to_s, e.cid.to_s ] }
+
+        response_collection.should == expected_collection
+      end
+
+      it "returns empty collection if there are no stemcells" do
+        get "/stemcells", {}, {}
+        last_response.status.should == 200
+
+        body = Yajl::Parser.parse(last_response.body)
+        body.should == []
+      end
+    end
+
     describe "polling task status" do
       it "has API call that return task status" do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }

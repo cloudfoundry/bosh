@@ -178,14 +178,23 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    get "/stemcells" do
+      stemcells = Models::Stemcell.all.sort_by(:name, :order => "ASC ALPHA").map do |stemcell|
+        {
+          "name"    => stemcell.name,
+          "version" => stemcell.version,
+          "cid"     => stemcell.cid
+        }
+      end
+      Yajl::Encoder.encode(stemcells)
+    end
+
     delete "/stemcells/:name/:version" do
       stemcell = Models::Stemcell.find(:name => params[:name], :version => params[:version]).first
       raise StemcellNotFound.new(params[:name], params[:version]) if stemcell.nil?
       task = @stemcell_manager.delete_stemcell(stemcell)
       redirect "/tasks/#{task.id}"
     end
-
-    # TODO: get information about an existing stemcell
 
     get "/tasks/:id" do
       task = Models::Task[params[:id]]
@@ -211,7 +220,6 @@ module Bosh::Director
       Yajl::Encoder.encode("status" => "Bosh Director (logged in as #{@user})")
     end
 
-    # TODO: create an endpoint for task output
   end
 
 end
