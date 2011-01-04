@@ -218,8 +218,8 @@ module Bosh::Director
 
     get "/running_tasks/:count" do
       count = params[:count].to_i
-      count = 1   if count <= 0
-      count = 100 if count >= 100
+      count = 1   if count < 1
+      count = 100 if count > 100
       tasks = Models::Task.find(:state => "processing").sort_by(:timestamp, :limit => count).map do |task|
         { "state" => task.state, "timestamp" => task.timestamp.to_i }
       end
@@ -228,8 +228,8 @@ module Bosh::Director
 
     get "/recent_tasks/:count" do
       count = params[:count].to_i
-      count = 1   if count <= 0
-      count = 100 if count >= 100
+      count = 1   if count < 1
+      count = 100 if count > 100
       tasks = Models::Task.all.sort_by(:timestamp, :limit => count).map do |task|
         { "state" => task.state, "timestamp" => task.timestamp.to_i, "result" => task.result }
       end

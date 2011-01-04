@@ -55,6 +55,9 @@ describe Bosh::Cli::Runner do
     test_cmd(["stemcell", "verify", "/path"], :stemcell, :verify, ["/path"])
     test_cmd(["stemcell", "upload", "/path"], :stemcell, :upload, ["/path"])
     test_cmd(["stemcell", "delete", "a", "1"], :stemcell, :delete, ["a", "1"])
+    test_cmd(["stemcells"], :stemcell, :list)
+#    test_cmd(["releases"], :release, :list)
+#    test_cmd(["deployments"], :deployment, :list)
   end
 
   it "whines on extra arguments" do

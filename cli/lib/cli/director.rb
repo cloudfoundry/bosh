@@ -43,6 +43,11 @@ module Bosh
         upload_and_track("/stemcells", "application/x-compressed", filename)
       end
 
+      def list_stemcells
+        status, body, headers = get("/stemcells", "application/json")
+        JSON.parse(body)
+      end
+
       def upload_release(filename)
         upload_and_track("/releases", "application/x-compressed", filename)
       end
@@ -84,7 +89,7 @@ module Bosh
         end
       end
 
-      def request_and_track(method, uri, content_type, payload, options = {})
+      def request_and_track(method, uri, content_type, payload = nil, options = {})
         http_status, body, headers = request(method, uri, content_type, payload)
         location   = headers[:location]
         redirected = http_status == 302

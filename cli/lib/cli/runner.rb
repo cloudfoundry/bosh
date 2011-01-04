@@ -119,6 +119,12 @@ Currently available bosh commands are:
   deployment <name>                        Choose deployment to work with (it also updates current target)
   deployment delete <name>                 Delete deployment
 
+  deployments                              Show the list of deployments
+  releases                                 Show the list of releases
+  stemcells                                Show the list of stemcells
+  tasks [running]                          Show the list of running tasks
+  tasks recent                             Show the list of recent tasks
+
   user create [<username>] [<password>]    Create user
 
   login [<username>] [<password>]          Use given username for the subsequent interactions
@@ -235,6 +241,9 @@ USAGE
           else
             unknown_operation(op)
           end
+        when "stemcells"
+          usage("bosh stemcells")
+          set_cmd(:stemcell, :list, 0)
         end
       end
 
