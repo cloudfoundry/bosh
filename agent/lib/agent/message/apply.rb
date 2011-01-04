@@ -11,7 +11,14 @@ module Bosh::Agent
         @apply_spec = args.first
         @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
+
+        @packages_data = File.join(@base_dir, 'data', 'packages')
+
+
         @state_file = File.join(@base_dir, '/bosh/state.yml')
+
+        bsc_options = Bosh::Agent::Config.blobstore_options
+        @blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
       end
 
       def apply
@@ -46,7 +53,36 @@ module Bosh::Agent
       end
 
       def apply_packages
-        @apply_spec['packages']
+
+        if @apply_spec['packages'] == nil
+          @logger.info("No packages")
+          return
+        end
+
+        @apply_spec['packages'].each do |pkg_name, pkg|
+          @logger.info("Installing: #{pkg.inspect}")
+
+          blobstore_id = pkg['blobstore_id']
+
+          data_tmp = File.join(@base_dir, 'data', 'tmp')
+          FileUtils.mkdir_p(data_tmp)
+
+          pkg_data_file = File.join(data_tmp, blobstore_id)
+
+          File.open(pkg_data_file, 'w') do |f|
+            f.write(@blobstore_client.get(blobstore_id))
+          end
+
+          install_dir = File.join(@packages_data, pkg['name'], pkg['version'])
+          FileUtils.mkdir_p(install_dir)
+
+          Dir.chdir(install_dir) do
+            output = `tar zxvf #{pkg_data_file}`
+            raise Bosh::Agent::MessageHandlerError, 
+              "Failed to unpack package: #{output}" unless $?.exitstatus == 0
+          end
+        end
+
       end
 
       def write_state

@@ -11,6 +11,7 @@ describe Bosh::Agent::Message::CompilePackage do
 
     @logger = mock('logger')
     @logger.stub!(:info)
+    Bosh::Agent::Config.agent_id = Time.now.to_i
     Bosh::Agent::Config.logger = @logger
 
     args = "some_blobstore_id", "some_sha1", "some_name", 1
