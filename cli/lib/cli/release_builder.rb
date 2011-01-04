@@ -6,6 +6,8 @@ module Bosh::Cli
 
   class ReleaseBuilder
 
+    DEFAULT_RELEASE_NAME = "bosh_release"
+
     attr_reader :work_dir, :version, :packages, :jobs
 
     def initialize(work_dir, packages, jobs)
@@ -67,7 +69,12 @@ module Bosh::Cli
       end
 
       manifest["jobs"]    = jobs.map { |job| job.name }
-      manifest["name"]    = "appcloud"
+      manifest["name"]    = release_name
+
+      unless manifest["name"].bosh_valid_id?
+        raise InvalidRelease, "Release name '%s' is not a valid Bosh identifier" % [ manifest["name"] ]
+      end
+
       manifest["version"] = version
 
       say "Writing manifest..."
@@ -104,9 +111,22 @@ module Bosh::Cli
       File.join(work_dir, "VERSION")
     end
 
+    def release_name_file
+      File.join(work_dir, "NAME")
+    end
+
     def save_version
       File.open(counter_file, "w") do |f|
         f.write(version)
+      end
+    end
+
+    def release_name
+      if File.file?(release_name_file) && File.readable?(release_name_file)
+        name = File.read(release_name_file).split("\n")[0]
+        name.blank? ? DEFAULT_RELEASE_NAME : name
+      else
+        DEFAULT_RELEASE_NAME
       end
     end
 
