@@ -176,6 +176,26 @@ describe Bosh::Director::Controller do
       end      
     end
 
+    describe "listing deployments" do
+      it "has API call that returns a list of deployments in JSON" do
+        deployments = (1..10).map do |i|
+          Bosh::Director::Models::Deployment.create(:name => "deployment-#{i}")
+        end
+
+        get "/deployments", {}, {}
+        last_response.status.should == 200
+
+        body = Yajl::Parser.parse(last_response.body)
+        body.kind_of?(Array).should be_true
+        body.size.should == 10
+
+        response_collection = body.map{ |e| [ e["name"] ] }
+        expected_collection = deployments.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s ] }
+
+        response_collection.should == expected_collection
+      end
+    end
+
     describe "polling task status" do
       it "has API call that return task status" do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
