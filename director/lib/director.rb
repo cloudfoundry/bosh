@@ -173,6 +173,16 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    get "/deployments" do
+      deployments = Models::Deployment.all.sort_by(:name, :order => "ASC ALPHA").map do |deployment|
+        {
+          "name" => deployment.name
+        }
+      end
+
+      Yajl::Encoder.encode(deployments)
+    end
+
     delete "/deployments/:name" do
       deployment = Models::Deployment.find(:name => params[:name]).first
       raise DeploymentNotFound.new(params[:name]) if deployment.nil?
