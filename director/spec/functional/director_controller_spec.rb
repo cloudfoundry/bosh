@@ -196,6 +196,28 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "listing tasks" do
+      it "has API call that returns a list of running tasks" do
+        ["queued", "processing"].each do |state|
+          (1..20).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
+        end
+        get "/running_tasks/10"
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+        body.size.should == 10
+      end
+
+      it "has API call that returns a list of recent tasks" do
+        ["queued", "processing"].each do |state|
+          (1..10).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
+        end
+        get "/recent_tasks/20"
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+        body.size.should == 20
+      end
+    end
+
     describe "polling task status" do
       it "has API call that return task status" do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }

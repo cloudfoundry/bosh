@@ -5,6 +5,9 @@ module Bosh::Director::Models
     attribute :result
     attribute :output
 
+    index :state
+    index :timestamp
+
     def validate
       assert_present :state
       assert_present :timestamp
