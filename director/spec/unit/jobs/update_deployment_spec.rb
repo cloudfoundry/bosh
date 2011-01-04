@@ -33,6 +33,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_resource_pools)
       deployment_plan_compiler.should_receive(:bind_release)
       deployment_plan_compiler.should_receive(:bind_stemcells)
+      deployment_plan_compiler.should_receive(:bind_jobs)
       deployment_plan_compiler.should_receive(:bind_instance_networks)
       package_compiler.should_receive(:compile)
       deployment_plan_compiler.should_receive(:bind_packages)

@@ -123,15 +123,22 @@ module Bosh::Director
     end
 
     def bind_packages
-      release_version = @deployment_plan.release.release_version
       @deployment_plan.jobs.each do |job|
         stemcell = job.resource_pool.stemcell.stemcell
-        template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
+        template = job.template
         template.packages.each do |package|
           compiled_package = Models::CompiledPackage.find(:package_id => package.id,
                                                           :stemcell_id => stemcell.id).first
           job.add_package(package, compiled_package)
         end
+      end
+    end
+
+    def bind_jobs
+      release_version = @deployment_plan.release.release_version
+      @deployment_plan.jobs.each do |job|
+        job.template = Models::Template.find(:release_version_id => release_version.id,
+                                             :name => job.template_name).first
       end
     end
 

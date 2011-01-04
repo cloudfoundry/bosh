@@ -40,6 +40,8 @@ module Bosh::Director
         @deployment_plan_compiler.bind_resource_pools
         @logger.info("Binding stemcells")
         @deployment_plan_compiler.bind_stemcells
+        @logger.info("Binding jobs")
+        @deployment_plan_compiler.bind_jobs
         @logger.info("Binding instance networks")
         @deployment_plan_compiler.bind_instance_networks
 

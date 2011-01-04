@@ -4,7 +4,10 @@ describe Bosh::Director::InstanceUpdater do
 
   BASIC_PLAN = {
     "deployment" => "test_deployment",
-    "job" => "test_job",
+    "job" => {
+      "name" => "test_job",
+      "blobstore_id" => "job_blob"
+    },
     "index" => 5,
     "configuration_hash" => "config_hash",
     "packages" => {
@@ -98,6 +101,7 @@ describe Bosh::Director::InstanceUpdater do
     @job_spec.stub!(:package_spec).and_return(BASIC_PLAN["packages"])
     @job_spec.stub!(:persistent_disk).and_return(BASIC_PLAN["persistent_disk"])
     @job_spec.stub!(:properties).and_return(BASIC_PLAN["properties"])
+    @job_spec.stub!(:spec).and_return(BASIC_PLAN["job"])
 
     @update_spec.stub!(:update_watch_time).and_return(0.01)
 
