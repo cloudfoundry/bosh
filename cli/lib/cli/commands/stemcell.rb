@@ -46,6 +46,29 @@ module Bosh::Cli::Command
       say responses[status] || "Cannot upload stemcell: #{message}"
     end
 
+    def list
+      err("Please log in first") unless logged_in?
+      err("Please choose target") unless target
+      stemcells = director.list_stemcells
+
+      if stemcells.size == 0
+        say("No stemcells")
+        return
+      end
+
+      stemcells_table = table do |t|
+        t.headings = "Name", "Version"
+        stemcells.each do |sc|
+          t << [ sc["name"], sc["version"] ]
+        end
+      end
+
+      say("\n")
+      say(stemcells_table)
+      say("\n")
+      say("Stemcells total: %d" % stemcells.size)
+    end
+
     def delete(name, version)
       err("Please log in first") unless logged_in?
       err("Please choose target") unless target
