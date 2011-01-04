@@ -98,6 +98,26 @@ module Bosh::Cli::Command
       say("Built release #{release.version} at '#{release.tarball_path}'")
     end
 
+    def list
+      err("Please log in first") unless logged_in?
+      err("Please choose target") unless target
+      releases = director.list_releases
+
+      err("No releases") if releases.size == 0
+
+      releases_table = table do |t|
+        t.headings = "Name", "Versions"
+        releases.each do |r|
+          t << [ r["name"], r["versions"].join(", ") ]
+        end
+      end
+
+      say("\n")
+      say(releases_table)
+      say("\n")
+      say("Releases total: %d" % releases.size)      
+    end
+
     private
 
     def in_release_dir?
