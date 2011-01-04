@@ -51,6 +51,11 @@ describe Bosh::Cli::Director do
       @director.list_stemcells
     end
 
+    it "lists releases" do
+      @director.should_receive(:get).with("/releases", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.list_releases
+    end
+
     it "uploads release" do
       @director.should_receive(:upload_and_track).with("/releases", "application/x-compressed", "/path").and_return(true)
       @director.upload_release("/path")

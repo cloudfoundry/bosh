@@ -51,15 +51,12 @@ module Bosh::Cli::Command
       err("Please choose target") unless target
       stemcells = director.list_stemcells
 
-      if stemcells.size == 0
-        say("No stemcells")
-        return
-      end
+      err("No stemcells") if stemcells.size == 0
 
       stemcells_table = table do |t|
-        t.headings = "Name", "Version"
+        t.headings = "Name", "Version", "CID"
         stemcells.each do |sc|
-          t << [ sc["name"], sc["version"] ]
+          t << [ sc["name"], sc["version"], sc["cid"] ]
         end
       end
 

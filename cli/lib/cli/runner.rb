@@ -204,7 +204,6 @@ USAGE
           usage("bosh task <task_id>")
           set_cmd(:task, :track, 1)
         when "stemcell"
-
           op = @args.shift
           case op
           when "upload"
@@ -244,6 +243,9 @@ USAGE
         when "stemcells"
           usage("bosh stemcells")
           set_cmd(:stemcell, :list, 0)
+        when "releases"
+          usage("bosh releases")
+          set_cmd(:release, :list, 0)
         end
       end
 

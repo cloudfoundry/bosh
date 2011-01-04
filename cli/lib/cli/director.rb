@@ -44,8 +44,11 @@ module Bosh
       end
 
       def list_stemcells
-        status, body, headers = get("/stemcells", "application/json")
-        JSON.parse(body)
+        get_json("/stemcells")
+      end
+
+      def list_releases
+        get_json("/releases")
       end
 
       def upload_release(filename)
@@ -196,6 +199,11 @@ module Bosh
           result = [ response.code, response.body, response.headers ]
         end
         result
+      end
+
+      def get_json(url)
+        status, body, headers = get(url, "application/json")
+        JSON.parse(body)
       end
 
       def parse_error_message(status, body)
