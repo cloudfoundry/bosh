@@ -43,6 +43,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["deploy"], :deployment, :perform)
     test_cmd(["deployment"], :deployment, :show_current)
     test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])
+    test_cmd(["deployment", "delete", "foo"], :deployment, :delete, ["foo"])    
     test_cmd(["user", "create", "admin"], :user, :create, ["admin"])
     test_cmd(["user", "create", "admin", "12321"], :user, :create, ["admin", "12321"])
     test_cmd(["login", "admin", "12321"], :dashboard, :login, ["admin", "12321"])
@@ -53,6 +54,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["release", "verify", "/path"], :release, :verify, ["/path"])
     test_cmd(["stemcell", "verify", "/path"], :stemcell, :verify, ["/path"])
     test_cmd(["stemcell", "upload", "/path"], :stemcell, :upload, ["/path"])
+    test_cmd(["stemcell", "delete", "a", "1"], :stemcell, :delete, ["a", "1"])
   end
 
   it "whines on extra arguments" do

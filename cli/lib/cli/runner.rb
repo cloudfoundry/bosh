@@ -117,6 +117,7 @@ Currently available bosh commands are:
   target <name>                            Choose target to work with
 
   deployment <name>                        Choose deployment to work with (it also updates current target)
+  deployment delete <name>                 Delete deployment
 
   user create [<username>] [<password>]    Create user
 
@@ -131,6 +132,7 @@ Currently available bosh commands are:
   release verify /path/to/release.tgz      Verify the release
 
   package create  <name>|<path>|all        Build a package
+  release create                           Attempt to create release (assumes current directory to contain release)
 
   stemcell upload /path/to/stemcell.tgz    Upload the stemcell
   stemcell verify /path/to/stemcell.tgz    Verify the stemcell
@@ -160,11 +162,18 @@ USAGE
           usage("bosh deploy")
           set_cmd(:deployment, :perform)
         when "deployment"
-          usage("bosh deployment [<name>]")
-          if @args.size == 1
-            set_cmd(:deployment, :set_current, 1)
+          op = @args.shift
+          if op == "delete"
+            usage("bosh deployment delete <name>")
+            set_cmd(:deployment, :delete, 1)
           else
-            set_cmd(:deployment, :show_current)
+            @args.unshift(op) if op
+            usage("bosh deployment [<name>]")
+            if @args.size == 1
+              set_cmd(:deployment, :set_current, 1)
+            else
+              set_cmd(:deployment, :show_current)
+            end
           end
         when "status", "st"
           usage("bosh status")

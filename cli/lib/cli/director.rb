@@ -51,6 +51,10 @@ module Bosh
         request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil)
       end
 
+      def delete_deployment(name)
+        request_and_track(:delete, "/deployments/%s" % [ name ], nil, nil)
+      end
+
       def deploy(filename)
         upload_and_track("/deployments", "text/yaml", filename)
       end

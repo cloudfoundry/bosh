@@ -62,6 +62,22 @@ module Bosh::Cli::Command
       say responses[status] || "Cannot deploy: #{body}"      
     end
 
+    def delete(name)
+      err("Please choose target") unless target
+      err("Please log in first")  unless logged_in?
+
+      status, message = director.delete_deployment(name)
+
+      responses = {
+        :done          => "Deleted deployment '%s'" % [ name ],
+        :non_trackable => "Deployment delete in progress but director at '#{target}' doesn't support task tracking",
+        :track_timeout => "Timed out out while tracking deployment deletion progress",
+        :error         => "Attemted to delete deployment but received an error while tracking status",
+      }
+
+      say responses[status] || "Cannot delete deployment: #{message}"
+    end
+
     private
 
     def find_deployment(name)
