@@ -76,7 +76,7 @@ module Bosh::Cli::Command
         :done          => "Deleted stemcell %s (%s)" % [ name, version ],
         :non_trackable => "Stemcell delete in progress but director at '#{target}' doesn't support task tracking",
         :track_timeout => "Timed out out while tracking stemcell deletion progress",
-        :error         => "Attemted to delete stemcell but received an error while tracking status",
+        :error         => "Attempted to delete stemcell but received an error while tracking status",
       }
 
       say responses[status] || "Cannot delete stemcell: #{message}"

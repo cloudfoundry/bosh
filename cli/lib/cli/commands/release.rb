@@ -115,7 +115,7 @@ module Bosh::Cli::Command
       say("\n")
       say(releases_table)
       say("\n")
-      say("Releases total: %d" % releases.size)      
+      say("Releases total: %d" % releases.size)
     end
 
     private

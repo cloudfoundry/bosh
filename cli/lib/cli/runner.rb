@@ -246,6 +246,9 @@ USAGE
         when "releases"
           usage("bosh releases")
           set_cmd(:release, :list, 0)
+        when "deployments"
+          usage("bosh deployments")
+          set_cmd(:deployment, :list, 0)
         end
       end
 
