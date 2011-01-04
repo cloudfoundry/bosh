@@ -216,6 +216,26 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    get "/running_tasks/:count" do
+      count = params[:count].to_i
+      count = 1   if count <= 0
+      count = 100 if count >= 100
+      tasks = Models::Task.find(:state => "processing").sort_by(:timestamp, :limit => count).map do |task|
+        { "state" => task.state, "timestamp" => task.timestamp.to_i }
+      end
+      Yajl::Encoder.encode(tasks)
+    end
+
+    get "/recent_tasks/:count" do
+      count = params[:count].to_i
+      count = 1   if count <= 0
+      count = 100 if count >= 100
+      tasks = Models::Task.all.sort_by(:timestamp, :limit => count).map do |task|
+        { "state" => task.state, "timestamp" => task.timestamp.to_i, "result" => task.result }
+      end
+      Yajl::Encoder.encode(tasks)
+    end
+
     get "/tasks/:id" do
       task = Models::Task[params[:id]]
       raise TaskNotFound.new(params[:id]) if task.nil?
