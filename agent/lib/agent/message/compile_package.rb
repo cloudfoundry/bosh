@@ -45,9 +45,16 @@ module Bosh::Agent
       end
 
       def install_dependencies
-        @dependencies.each do |k, v|
-          @logger.info("key: #{k.inspect}")
-          @logger.info("val: #{v.inspect}")
+        @dependencies.each do |pkg_name, pkg|
+          @logger.info("Installing depdendency: #{pkg.inspect}")
+
+          blobstore_id = pkg['blobstore_id']
+          install_dir = File.join(@packages_data, pkg['name'], pkg['version'])
+
+          Util.unpack_blob(blobstore_id, install_dir)
+
+          pkg_link_dst = File.join(@base_dir, 'packages', pkg['name'])
+          FileUtils.ln_sf(install_dir, pkg_link_dst)
         end
       end
 

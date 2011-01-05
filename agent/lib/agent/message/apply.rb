@@ -14,6 +14,8 @@ module Bosh::Agent
 
         @packages_data = File.join(@base_dir, 'data', 'packages')
 
+        # package symlink target dir vmc/data/packages/pkg -> vmc/packages/pkg
+        FileUtils.mkdir_p(File.join(@base_dir, 'packages'))
 
         @state_file = File.join(@base_dir, '/bosh/state.yml')
 
@@ -63,24 +65,12 @@ module Bosh::Agent
           @logger.info("Installing: #{pkg.inspect}")
 
           blobstore_id = pkg['blobstore_id']
-
-          data_tmp = File.join(@base_dir, 'data', 'tmp')
-          FileUtils.mkdir_p(data_tmp)
-
-          pkg_data_file = File.join(data_tmp, blobstore_id)
-
-          File.open(pkg_data_file, 'w') do |f|
-            f.write(@blobstore_client.get(blobstore_id))
-          end
-
           install_dir = File.join(@packages_data, pkg['name'], pkg['version'])
-          FileUtils.mkdir_p(install_dir)
 
-          Dir.chdir(install_dir) do
-            output = `tar zxvf #{pkg_data_file}`
-            raise Bosh::Agent::MessageHandlerError, 
-              "Failed to unpack package: #{output}" unless $?.exitstatus == 0
-          end
+          Util.unpack_blob(blobstore_id, install_dir)
+
+          pkg_link_dst = File.join(@base_dir, 'packages', pkg['name'])
+          FileUtils.ln_sf(install_dir, pkg_link_dst)
         end
 
       end
