@@ -5,7 +5,7 @@ describe Bosh::Director::ConfigurationHasher do
   def gzip(string)
     result = StringIO.new
     zio = Zlib::GzipWriter.new(result)
-    zio.mtime = 1    
+    zio.mtime = 1
     zio.write(string)
     zio.close
     result.string
@@ -42,12 +42,15 @@ describe Bosh::Director::ConfigurationHasher do
 
   it "should hash a simple job" do
     instance = mock("instance")
+    template = mock("template")
     job = mock("job")
     blobstore_client = mock("blobstore_client")
 
+    template.stub!(:blobstore_id).and_return("b_id")
     job.stub!(:name).and_return("foo")
     job.stub!(:instances).and_return([instance])
     job.stub!(:properties).and_return({"foo" => "bar"})
+    job.stub!(:template).and_return(template)
     instance.stub!(:index).and_return(0)
     instance.stub!(:index).and_return(0)
 
@@ -59,18 +62,21 @@ describe Bosh::Director::ConfigurationHasher do
 
     instance.should_receive(:configuration_hash=).with("fe041c2ddf59c5e2603ab137c05023b9d7c5b983")
 
-    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job, "b_id")
+    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job)
     configuration_hasher.hash
   end
 
   it "should expose the job context to the templates" do
     instance = mock("instance")
+    template = mock("template")
     job = mock("job")
     blobstore_client = mock("blobstore_client")
 
+    template.stub!(:blobstore_id).and_return("b_id")
     job.stub!(:name).and_return("foo")
     job.stub!(:instances).and_return([instance])
     job.stub!(:properties).and_return({"foo" => "bar"})
+    job.stub!(:template).and_return(template)
     instance.stub!(:index).and_return(0)
 
     template_contents = create_release("foo", "<%= name %> <%= index %> <%= properties.foo %>",
@@ -81,7 +87,7 @@ describe Bosh::Director::ConfigurationHasher do
 
     instance.should_receive(:configuration_hash=).with("1c3819edb5214fd53026b09dc1e262158be3c828")
 
-    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job, "b_id")
+    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job)
     configuration_hasher.hash
   end
 

@@ -151,11 +151,7 @@ module Bosh::Director
     end
 
     def bind_configuration
-      release_version = @deployment_plan.release.release_version
-      @deployment_plan.jobs.each do |job|
-        template = Models::Template.find(:release_version_id => release_version.id, :name => job.template).first
-        ConfigurationHasher.new(job, template.blobstore_id).hash
-      end
+      @deployment_plan.jobs.each { |job| ConfigurationHasher.new(job).hash }
     end
 
     def bind_instance_vms

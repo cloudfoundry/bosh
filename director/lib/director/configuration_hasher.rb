@@ -19,9 +19,9 @@ module Bosh::Director
 
     end
 
-    def initialize(job, template_blobstore_id)
+    def initialize(job)
       @job = job
-      @template = Config.blobstore.get(template_blobstore_id)
+      @template = Config.blobstore.get(job.template.blobstore_id)
     end
 
     def extract_template
