@@ -271,6 +271,57 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   end
 
+  describe "bind_configuration" do
+
+    before(:each) do
+      @deployment = mock("deployment")
+      @release_version = mock("release_version")
+      @template = mock("template")
+      @package = mock("package")
+      @stemcell = mock("stemcell")
+      @deployment_plan = mock("deployment_plan")
+      @job_spec = mock("job_spec")
+      @release_spec = mock("release_spec")
+      @resource_pool_spec = mock("resource_pool_spec")
+      @stemcell_spec = mock("stemcell_spec")
+
+      @release_version.stub!(:id).and_return(2)
+
+      @template.stub!(:packages).and_return([@package])
+
+      @package.stub!(:name).and_return("test_package")
+      @package.stub!(:version).and_return(7)
+      @package.stub!(:id).and_return(13)
+
+      @stemcell.stub!(:id).and_return(10)
+
+      @deployment_plan.stub!(:jobs).and_return([@job_spec])
+      @deployment_plan.stub!(:release).and_return(@release_spec)
+
+      @release_spec.stub!(:release_version).and_return(@release_version)
+
+      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
+
+      @stemcell_spec.stub!(:network).and_return(@network_spec)
+      @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
+
+      @job_spec.stub!(:template_name).and_return("test_template")
+      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
+
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+
+      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    end
+
+    it "should bind the configuration hash" do
+      configuration_hasher = mock("configuration_hasher")
+      configuration_hasher.should_receive(:hash)
+      Bosh::Director::ConfigurationHasher.stub!(:new).with(@job_spec).and_return(configuration_hasher)
+      @deployment_plan_compiler.bind_configuration
+    end
+
+  end
+
   describe "bind_instance_networks" do
 
     before(:each) do
