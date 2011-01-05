@@ -240,7 +240,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "points to an error on invalid release" do
     release_filename = spec_asset("release_invalid_checksum.tgz")
-    expect_output("release verify #{release_filename}", <<-OUT)
+    expect_output("release verify #{release_filename}", <<-OUT )
      Verifying release...
      File exists and readable                                     OK
      Extract tarball                                              OK
@@ -322,6 +322,16 @@ describe Bosh::Spec::IntegrationTest do
 
     out.should =~ /Stemcell uploaded and created/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
+ 
+    expect_output("stemcells", <<-OUT )
+    +-----------------+---------+------------------------------------------+
+    | Name            | Version | CID                                      |
+    +-----------------+---------+------------------------------------------+
+    | ubuntu-stemcell | 1       | #{expected_id} |
+    +-----------------+---------+------------------------------------------+
+
+    Stemcells total: 1
+    OUT
   end
 
   it "can delete a stemcell" do
@@ -347,6 +357,16 @@ describe Bosh::Spec::IntegrationTest do
     out = run_bosh("release upload #{release_filename}")
 
     out.should =~ /Release uploaded and updated/
+
+    expect_output("releases", <<-OUT )
+    +----------+----------+
+    | Name     | Versions |
+    +----------+----------+
+    | appcloud | 0.1      |
+    +----------+----------+
+
+    Releases total: 1
+    OUT
   end
 
   it "can't upload malformed release" do
