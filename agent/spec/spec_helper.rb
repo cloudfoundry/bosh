@@ -33,3 +33,12 @@ Rspec.configure do |rspec_config|
     FileUtils.rm_rf(bosh_tmp_dir)
   end
 end
+
+def setup_tmp_base_dir
+  Bosh::Agent::Config.base_dir = File.dirname(__FILE__) + "/tmp/#{Time.now.to_i}"
+  FileUtils.mkdir_p Bosh::Agent::Config.base_dir + '/bosh'
+end
+
+def dummy_package_data
+  dummy_package_data = File.open(File.dirname(__FILE__) + '/fixtures/dummy.package').read
+end

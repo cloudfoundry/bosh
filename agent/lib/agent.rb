@@ -9,6 +9,7 @@ require 'uuidtools'
 
 require "agent/version"
 require "agent/config"
+require "agent/util"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/configure"
