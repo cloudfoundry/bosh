@@ -42,6 +42,18 @@ module BoshStringExtensions
   def bosh_valid_id?
     self =~ Bosh::Cli::Config::VALID_ID
   end
+
+  def truncate(limit = 30)
+    return "" if self.blank?
+    etc = "..."
+    stripped = self.strip[0..limit]
+    if stripped.length > limit
+      stripped.gsub(/\s+?(\S+)?$/, "") + etc
+    else
+      stripped
+    end
+  end
+  
 end
 
 class Object

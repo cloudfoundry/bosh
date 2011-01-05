@@ -201,10 +201,10 @@ describe Bosh::Director::Controller do
         ["queued", "processing"].each do |state|
           (1..20).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
         end
-        get "/running_tasks/10"
+        get "/running_tasks"
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
-        body.size.should == 10
+        body.size.should == 20
       end
 
       it "has API call that returns a list of recent tasks" do

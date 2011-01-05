@@ -55,6 +55,14 @@ module Bosh
         get_json("/deployments")
       end
 
+      def list_running_tasks
+        get_json("/running_tasks")
+      end
+
+      def list_recent_tasks(count = 30)
+        get_json("/recent_tasks/#{count.to_i}")
+      end
+
       def upload_release(filename)
         upload_and_track("/releases", "application/x-compressed", filename)
       end
