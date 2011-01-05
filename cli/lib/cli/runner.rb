@@ -123,7 +123,7 @@ Currently available bosh commands are:
   releases                                 Show the list of releases
   stemcells                                Show the list of stemcells
   tasks [running]                          Show the list of running tasks
-  tasks recent                             Show the list of recent tasks
+  tasks recent [<number>]                  Show <number> recent tasks
 
   user create [<username>] [<password>]    Create user
 
@@ -249,6 +249,19 @@ USAGE
         when "deployments"
           usage("bosh deployments")
           set_cmd(:deployment, :list, 0)
+        when "tasks"
+          args.unshift("running") if args.size == 0
+          kind = args.shift
+          case kind
+          when "running"
+            usage("bosh tasks [running]")
+            set_cmd(:task, :list_running, 0)
+          when "recent"
+            usage("bosh tasks recent [<number>]")
+            set_cmd(:task, :list_recent, 0..1)
+          else
+            unknown_operation(kind)
+          end
         end
       end
 

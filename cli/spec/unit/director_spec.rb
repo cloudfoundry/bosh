@@ -61,6 +61,16 @@ describe Bosh::Cli::Director do
       @director.list_deployments
     end
 
+    it "lists currently running tasks" do
+      @director.should_receive(:get).with("/running_tasks", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.list_running_tasks
+    end
+
+    it "lists recent tasks" do
+      @director.should_receive(:get).with("/recent_tasks/30", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.list_recent_tasks
+    end    
+
     it "uploads release" do
       @director.should_receive(:upload_and_track).with("/releases", "application/x-compressed", "/path").and_return(true)
       @director.upload_release("/path")

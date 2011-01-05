@@ -58,6 +58,10 @@ describe Bosh::Cli::Runner do
     test_cmd(["stemcells"], :stemcell, :list)
     test_cmd(["releases"], :release, :list)
     test_cmd(["deployments"], :deployment, :list)
+    test_cmd(["tasks"], :task, :list_running)
+    test_cmd(["tasks", "running"], :task, :list_running)
+    test_cmd(["tasks", "recent"], :task, :list_recent)
+    test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
   end
 
   it "whines on extra arguments" do
