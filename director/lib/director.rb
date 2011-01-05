@@ -226,7 +226,7 @@ module Bosh::Director
     get "/recent_tasks/:count" do
       count = params[:count].to_i
       count = 1 if count < 1
-      tasks = Models::Task.all.sort_by(:timestamp, :limit => count).map do |task|
+      tasks = Models::Task.all.sort_by(:timestamp, :order => "DESC", :limit => count).map do |task|
         { "id" => task.id, "state" => task.state, "timestamp" => task.timestamp.to_i, "result" => task.result }
       end
       Yajl::Encoder.encode(tasks)
