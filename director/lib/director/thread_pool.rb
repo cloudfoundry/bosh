@@ -48,6 +48,10 @@ module Bosh::Director
       sleep(interval) while working?
     end
 
+    def shutdown
+      @pool.shutdown
+    end
+
   end
 
 end

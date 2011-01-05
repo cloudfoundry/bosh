@@ -194,14 +194,18 @@ module Bosh::Director
       unless @deployment_plan.unneeded_vms.empty?
         # TODO: make pool size configurable?
         pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
-        @deployment_plan.unneeded_vms.each do |vm|
-          vm_cid = vm.cid
-          pool.process do
-            @cloud.delete_vm(vm_cid)
-            vm.delete
+        begin
+          @deployment_plan.unneeded_vms.each do |vm|
+            vm_cid = vm.cid
+            pool.process do
+              @cloud.delete_vm(vm_cid)
+              vm.delete
+            end
           end
+          pool.wait
+        ensure
+          pool.shutdown
         end
-        pool.wait
       end
     end
 
@@ -209,25 +213,29 @@ module Bosh::Director
       unless @deployment_plan.unneeded_instances.empty?
         # TODO: make pool size configurable?
         pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
-        @deployment_plan.unneeded_instances.each do |instance|
-          vm = instance.vm
-          disk_cid = instance.disk_cid
-          vm_cid = vm.cid
-          agent_id = vm.agent_id
+        begin
+          @deployment_plan.unneeded_instances.each do |instance|
+            vm = instance.vm
+            disk_cid = instance.disk_cid
+            vm_cid = vm.cid
+            agent_id = vm.agent_id
 
-          pool.process do
-            agent = AgentClient.new(agent_id)
-            drain_time = agent.drain
-            sleep(drain_time)
-            agent.stop
+            pool.process do
+              agent = AgentClient.new(agent_id)
+              drain_time = agent.drain
+              sleep(drain_time)
+              agent.stop
 
-            @cloud.delete_vm(vm_cid)
-            @cloud.delete_disk(disk_cid) if disk_cid
-            vm.delete
-            instance.delete
+              @cloud.delete_vm(vm_cid)
+              @cloud.delete_disk(disk_cid) if disk_cid
+              vm.delete
+              instance.delete
+            end
           end
+          pool.wait
+        ensure
+          pool.shutdown
         end
-        pool.wait
       end
     end
 

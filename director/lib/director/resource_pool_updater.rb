@@ -16,6 +16,8 @@ module Bosh::Director
       create_missing_vms
 
       @pool.wait
+    ensure
+      @pool.shutdown
     end
 
     def delete_extra_vms
