@@ -54,23 +54,27 @@ module Bosh::Director
           raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
           pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
-          instances = Models::Instance.find(:deployment_id => deployment.id)
-          @logger.info("Deleting instances")
-          instances.each do |instance|
-            pool.process do
-              delete_instance(instance)
+          begin
+            instances = Models::Instance.find(:deployment_id => deployment.id)
+            @logger.info("Deleting instances")
+            instances.each do |instance|
+              pool.process do
+                delete_instance(instance)
+              end
             end
-          end
-          pool.wait
+            pool.wait
 
-          vms = Models::Vm.find(:deployment_id => deployment.id)
-          @logger.info("Deleting idle VMs")
-          vms.each do |vm|
-            pool.process do
-              delete_vm(vm)
+            vms = Models::Vm.find(:deployment_id => deployment.id)
+            @logger.info("Deleting idle VMs")
+            vms.each do |vm|
+              pool.process do
+                delete_vm(vm)
+              end
             end
+            pool.wait
+          ensure
+            pool.shutdown
           end
-          pool.wait
 
           deployment.delete
         end

@@ -100,23 +100,27 @@ module VSphereCloud
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
         pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
-        @resources.datacenters.each_value do |datacenter|
-          @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-          templates = client.get_property(datacenter.template_folder, "Folder", "childEntity")
-          template_properties = client.get_properties(templates, "VirtualMachine", ["name"])
-          template_properties.each do |template, properties|
-            template_name = properties["name"].gsub("%2f", "/")
-            if template_name.split("/").first.strip == stemcell
-              @logger.info("Found: #{template_name}")
-              pool.process do
-                @logger.info("Deleting: #{template_name}")
-                client.delete_vm(properties[:obj])
-                @logger.info("Deleted: #{template_name}")
+        begin
+          @resources.datacenters.each_value do |datacenter|
+            @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
+            templates = client.get_property(datacenter.template_folder, "Folder", "childEntity")
+            template_properties = client.get_properties(templates, "VirtualMachine", ["name"])
+            template_properties.each do |template, properties|
+              template_name = properties["name"].gsub("%2f", "/")
+              if template_name.split("/").first.strip == stemcell
+                @logger.info("Found: #{template_name}")
+                pool.process do
+                  @logger.info("Deleting: #{template_name}")
+                  client.delete_vm(properties[:obj])
+                  @logger.info("Deleted: #{template_name}")
+                end
               end
             end
           end
+          pool.wait
+        ensure
+          pool.shutdown
         end
-        pool.wait
       end
     end
 
@@ -754,31 +758,36 @@ module VSphereCloud
 
     def delete_all_vms
       pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
-      index = 0
 
-      @resources.datacenters.each_value do |datacenter|
-        vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
-        vm_folder = client.find_by_inventory_path(vm_folder_path)
-        vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
-        next if vms.empty?
+      begin
+        index = 0
 
-        vm_properties = client.get_properties(vms, "VirtualMachine", ["name"])
+        @resources.datacenters.each_value do |datacenter|
+          vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
+          vm_folder = client.find_by_inventory_path(vm_folder_path)
+          vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
+          next if vms.empty?
 
-        vm_properties.each do |_, properties|
-          pool.process do
-            @lock.synchronize {index += 1}
-            vm = properties["name"]
-            @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
-            begin
-              delete_vm(vm)
-            rescue Exception => e
-              @logger.info("#{e} - #{e.backtrace.join("\n")}")
+          vm_properties = client.get_properties(vms, "VirtualMachine", ["name"])
+
+          vm_properties.each do |_, properties|
+            pool.process do
+              @lock.synchronize {index += 1}
+              vm = properties["name"]
+              @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
+              begin
+                delete_vm(vm)
+              rescue Exception => e
+                @logger.info("#{e} - #{e.backtrace.join("\n")}")
+              end
             end
           end
         end
-      end
 
-      pool.wait
+        pool.wait
+      ensure
+        pool.shutdown
+      end
     end
 
   end
