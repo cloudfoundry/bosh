@@ -1,6 +1,8 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 require 'fileutils'
 
+dummy_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/dummy.package').read
+
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
@@ -21,6 +23,25 @@ describe Bosh::Agent::Message::Apply do
     handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
     handler.apply
     state.state['deployment'].should == "foo"
+  end
+
+  it 'should install packages' do
+    response = mock("response")
+    response.stub!(:status).and_return(200)
+    response.stub!(:content).and_return(dummy_package_data)
+
+    state = Bosh::Agent::Message::State.new(nil)
+
+    apply_data = {
+      "deployment" => "foo",
+      "packages" => 
+        {"bubba" => { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id" } 
+      }
+    }
+    @httpclient.should_receive(:get).with("/resources/some_blobstore_id", {}, {}).and_return(response)
+
+    handler = Bosh::Agent::Message::Apply.new([apply_data])
+    handler.apply
   end
 
 end
