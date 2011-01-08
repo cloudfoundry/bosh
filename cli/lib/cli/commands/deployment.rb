@@ -13,6 +13,11 @@ module Bosh::Cli::Command
       end
       
       manifest   = YAML.load_file(manifest_filename)
+
+      unless manifest.is_a?(Hash) && manifest.has_key?("target")
+        err("Deployment '#{name}' has no target defined")
+      end
+      
       new_target = manifest["target"]
 
       if !new_target

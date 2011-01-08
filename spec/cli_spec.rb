@@ -37,6 +37,90 @@ describe Bosh::Spec::IntegrationTest do
     format_output(run_bosh(cmd)).should == format_output(expected_output)
   end
 
+  def yaml_file(name, object)
+    f = Tempfile.new(name)
+    f.write(YAML.dump(object))
+    f.close
+    f.path
+  end
+
+  def minimal_deployment_manifest
+    # This is a minimal manifest I was actually being able to deploy with. It doesn't even have any jobs,
+    # so it's not very realistic though
+    {
+      "name" => "simple",
+      "release" => {
+        "name"    => "appcloud",
+        "version" => "0.1" # It's our dummy valid release from spec/assets/valid_release.tgz
+      },
+      "target" => "http://localhost:57523",
+      "networks" => [
+                     {
+                       "name" => "a",
+                       "subnets" => [  ]
+                     },
+                    ],
+      "compilation" => { "workers" => 1, "network" => "a", "cloud_properties" => { } },
+      "update" => {
+        "canaries"          => 2,
+        "canary_watch_time" => 4000,
+        "max_in_flight"     => 1,
+        "update_watch_time" => 20,
+        "max_errors"        => 1
+      },
+      "resource_pools" => [
+                          ]
+    }
+  end
+
+  def simple_deployment_manifest
+    extras = {
+      "networks" => [
+                     {
+                       "name" => "a",
+                       "subnets" => [
+                                     {
+                                       "range"    => "192.168.1.0/24",
+                                       "gateway"  => "192.168.1.1",
+                                       "dns"      => [ "192.168.1.1", "192.168.1.2" ],
+                                       "static"   => [ "192.168.1.10" ],
+                                       "reserved" => [ ],
+                                       "cloud_properties" => { }
+                                     }
+                                    ]
+                     },
+                    ],
+      "resource_pools" => [
+                           {
+                             "name" => "a",
+                             "size" => 10,
+                             "cloud_properties" => { },
+                             "stemcell" => {
+                               "network" => "a",
+                               "name"    => "ubuntu-stemcell",
+                               "version" => "1"
+                             }
+                           }
+                          ],
+      "jobs" => [
+                 {
+                   "name"          => "supercacher",
+                   "template"      => "cacher",
+                   "resource_pool" => "a",
+                   "instances"     => 3,
+                   "networks" => [
+                                  {
+                                    "name" => "a",
+                                    # "static_ips => "0-5"
+                                  }
+                                 ]
+                 }
+                ]
+    }
+
+    minimal_deployment_manifest.merge(extras)
+  end
+
   before :each do
     Redis.new(:host => "localhost", :port => 63795).flushdb
     FileUtils.rm_rf(BOSH_CONFIG)
@@ -85,7 +169,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "sets and reads existing deployment (also updating target in process, even if it cannot be accessed!)" do
     deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
-    
+
     expect_output("deployment vmforce", <<-OUT)
       WARNING! Your target has been changed to 'http://vmforce-target:2560'
       Deployment set to '#{deployment_manifest_path}'
@@ -175,7 +259,7 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "uses cache when verifying stemcell for the second time" do
-    stemcell_filename = spec_asset("valid_stemcell.tgz")    
+    stemcell_filename = spec_asset("valid_stemcell.tgz")
     run_1 = run_bosh("stemcell verify #{stemcell_filename}")
     run_2 = run_bosh("stemcell verify #{stemcell_filename}")
 
@@ -285,7 +369,7 @@ describe Bosh::Spec::IntegrationTest do
   it "creates a user when correct target accessed" do
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    
+
     expect_output("user create john pass", <<-OUT)
       User john has been created
     OUT
@@ -315,14 +399,14 @@ describe Bosh::Spec::IntegrationTest do
   it "can upload a stemcell" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
-    
+
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("stemcell upload #{stemcell_filename}")
 
     out.should =~ /Stemcell uploaded and created/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
- 
+
     expect_output("stemcells", <<-OUT )
     +-----------------+---------+------------------------------------------+
     | Name            | Version | CID                                      |
@@ -337,21 +421,21 @@ describe Bosh::Spec::IntegrationTest do
   it "can delete a stemcell" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
-    
+
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("stemcell upload #{stemcell_filename}")
     out.should =~ /Stemcell uploaded and created/
 
-    File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true    
+    File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
     out = run_bosh("stemcell delete ubuntu-stemcell 1")
     out.should =~ /Deleted stemcell ubuntu-stemcell \(1\)/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_false
   end
-  
+
   it "can upload a release" do
     release_filename = spec_asset("valid_release.tgz")
-    
+
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("release upload #{release_filename}")
@@ -371,7 +455,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "can't upload malformed release" do
     release_filename = spec_asset("release_invalid_checksum.tgz")
-    
+
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
     out = run_bosh("release upload #{release_filename}")
@@ -379,9 +463,48 @@ describe Bosh::Spec::IntegrationTest do
     out.should =~ /Release is invalid, please fix, verify and upload again/
   end
 
-  it "can deploy release" do
-    pending
+  describe "deployment prequisites" do
+    it "requires login" do
+      run_bosh("deploy").should =~ /Please log in first/
+    end
+
+    it "requires deployment to be chosen" do
+      run_bosh("target http://localhost:57523")
+      run_bosh("login admin admin")
+      run_bosh("deploy").should =~ /Please choose deployment first/
+    end
   end
+
+  describe "deployment process" do
+    it "successfully performed with minimal manifest" do
+      release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
+      deployment_manifest_filename = yaml_file("minimal", minimal_deployment_manifest)
+
+      run_bosh("deployment #{deployment_manifest_filename}")
+      run_bosh("login admin admin")
+      run_bosh("release upload #{release_filename}")
+
+      out = run_bosh("deploy")
+      out.should =~ Regexp.new(Regexp.escape("Deployed to 'http://localhost:57523' using '#{deployment_manifest_filename}' deployment manifest"))
+    end
+
+    it "successfully performed with simple manifest" do
+      pending "Done up to the part where agent interaction begins (for package compilation)"
+
+      release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
+      stemcell_filename = spec_asset("valid_stemcell.tgz") # It's a dummy stemcell (ubuntu-stemcell 1)
+      deployment_manifest_filename = yaml_file("simple", simple_deployment_manifest)
+
+      run_bosh("deployment #{deployment_manifest_filename}")
+      run_bosh("login admin admin")
+      run_bosh("stemcell upload #{stemcell_filename}")
+      run_bosh("release upload #{release_filename}")
+
+      out = run_bosh("deploy")
+      out.should =~ Regexp.new(Regexp.escape("Deployed to 'http://localhost:57523' using '#{deployment_manifest_filename}' deployment manifest"))      
+    end
+  end
+
 
   it "can delete deployment" do
     pending
