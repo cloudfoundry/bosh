@@ -12,11 +12,11 @@ require "agent"
 # Defaults
 options = {
   "configure" => false,
-  "logging" => { "level" => "DEBUG" },
-  "redis" => { "host" => "localhost" },
-  "agent_id" => "not_configured",
+  "logging"   => { "level" => "DEBUG" },
+  "redis"     => { "host" => "localhost" },
+  "agent_id"  => "not_configured",
   "blobstore" => {}, # FIXME - make configurable
-  "base_dir" => "/var/vmc"
+  "base_dir"  => "/var/vmc"
 }
 
 opts = OptionParser.new do |opts|

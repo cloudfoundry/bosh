@@ -33,27 +33,39 @@ module Bosh
       end
 
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
+        # raise NotImplemented, "create_vm"
+        # Should start agent with given id
+        # Should return "vm" name  ("vm-#{generate_unique_name}")
+        # Should create some artifacts so integration tests can tell if "vm" has been "created"
       end
 
       def delete_vm(vm)
+        raise NotImplemented, "delete_vm"
       end
 
       def configure_networks(vm, networks)
+        raise NotImplemented, "configure_networks"
       end
 
       def attach_disk(vm, disk)
+        raise NotImplemented, "attach_disk"
       end
 
       def detach_disk(vm, disk)
+        raise NotImplemented, "detach_disk"
       end
 
       def create_disk(size, vm_locality = nil)
+        raise NotImplemented, "create_disk"
       end
 
       def delete_disk(disk)
+        raise NotImplemented, "delete_disk"
       end
 
       def validate_deployment(old_manifest, new_manifest)
+        # There is TODO in vSphere CPI that questions the necessity of this method
+        raise NotImplemented, "validate_deployment"
       end
 
     end
