@@ -58,4 +58,8 @@ echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 echo 'export PATH=/var/vmc/bin:$PATH' >> /root/.bashrc
 echo 'export PATH=/var/vmc/bin:$PATH' >> /home/vmc/.bashrc
 
+echo -e "startup=1\n" > /etc/default/monit
+mkidr -p /var/vmc/monit
+echo -e "include /var/vmc/monit/*.monitrc\n" > /etc/monit/monitrc
+
 cp empty_state.yml /var/vmc/bosh/state.yml
