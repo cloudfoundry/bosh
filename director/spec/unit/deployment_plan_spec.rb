@@ -658,123 +658,119 @@ describe Bosh::Director::DeploymentPlan do
       "resource_pool" => {
         "name"=>"small",
         "stemcell" => {"name" => "jeos", "version" => 1},
-        "cloud_properties" => {"ram" => "512mb", "cpu" => 1, "disk" => "2gb"}},
-      "configuration_hash" => "config_hash",
-      "packages" => {
-
+        "cloud_properties" => {"ram" => "512mb", "cpu" => 1, "disk" => "2gb"}
       },
-      "persistent_disk" => 2048
+      "configuration_hash" => "config_hash",
+      "packages" => {},
+      "persistent_disk" => 2048,
+      "job" => {"name" => "job_a", "blobstore_id" => "template_blob"}
     }
 
-    it "should track instance changes compared to the current state (no change)" do
-      manifest = BASIC_MANIFEST._deep_copy
-      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      job = deployment_plan.job("job_a")
-      instance = job.instance(0)
-      instance.configuration_hash = "config_hash"
-      instance.current_state = CURRENT_STATE._deep_copy
+    before(:each) do
+      @template = stub("template")
+      @template.stub!(:blobstore_id).and_return("template_blob")
+      @manifest = BASIC_MANIFEST._deep_copy
+      @deployment_plan = Bosh::Director::DeploymentPlan.new(@manifest)
+      @job = @deployment_plan.job("job_a")
+      @job.template = @template
+      @instance = @job.instance(0)
+      @instance.configuration_hash = "config_hash"
+    end
 
-      instance.networks_changed?.should be_false
-      instance.resource_pool_changed?.should be_false
-      instance.configuration_changed?.should be_false
-      instance.packages_changed?.should be_false
-      instance.persistent_disk_changed?.should be_false
-      instance.changed?.should be_false
+    it "should track instance changes compared to the current state (no change)" do
+      @instance.current_state = CURRENT_STATE._deep_copy
+
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_false
+      @instance.changed?.should be_false
+    end
+
+    it "should track instance changes compared to the current state (job change)" do
+      current_state = CURRENT_STATE._deep_copy
+      current_state["job"]["blobstore_id"] = "old_blob"
+      @instance.current_state = current_state
+
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_true
+      @instance.changed?.should be_true
     end
 
     it "should track instance changes compared to the current state (networks change)" do
-      manifest = BASIC_MANIFEST._deep_copy
-      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      job = deployment_plan.job("job_a")
-      instance = job.instance(0)
-      instance.configuration_hash = "config_hash"
-
       current_state = CURRENT_STATE._deep_copy
       current_state["networks"]["network_a"]["ip"] = "10.0.0.20"
-      instance.current_state = current_state
+      @instance.current_state = current_state
 
-      instance.networks_changed?.should be_true
-      instance.resource_pool_changed?.should be_false
-      instance.configuration_changed?.should be_false
-      instance.packages_changed?.should be_false
-      instance.persistent_disk_changed?.should be_false
-      instance.changed?.should be_true
+      @instance.networks_changed?.should be_true
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_false
+      @instance.changed?.should be_true
     end
 
     it "should track instance changes compared to the current state (resource pool change)" do
-      manifest = BASIC_MANIFEST._deep_copy
-      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      job = deployment_plan.job("job_a")
-      instance = job.instance(0)
-      instance.configuration_hash = "config_hash"
-
       current_state = CURRENT_STATE._deep_copy
       current_state["resource_pool"]["name"] = "medium"
-      instance.current_state = current_state
+      @instance.current_state = current_state
 
-      instance.networks_changed?.should be_false
-      instance.resource_pool_changed?.should be_true
-      instance.configuration_changed?.should be_false
-      instance.packages_changed?.should be_false
-      instance.persistent_disk_changed?.should be_false
-      instance.changed?.should be_true
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_true
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_false
+      @instance.changed?.should be_true
     end
 
     it "should track instance changes compared to the current state (configuration change)" do
-      manifest = BASIC_MANIFEST._deep_copy
-      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      job = deployment_plan.job("job_a")
-      instance = job.instance(0)
-      instance.configuration_hash = "config_hash"
-
       current_state = CURRENT_STATE._deep_copy
       current_state["configuration_hash"] = "some other hash"
-      instance.current_state = current_state
+      @instance.current_state = current_state
 
-      instance.networks_changed?.should be_false
-      instance.resource_pool_changed?.should be_false
-      instance.configuration_changed?.should be_true
-      instance.packages_changed?.should be_false
-      instance.persistent_disk_changed?.should be_false
-      instance.changed?.should be_true
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_true
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_false
+      @instance.changed?.should be_true
     end
 
     it "should track instance changes compared to the current state (packages change)" do
-      manifest = BASIC_MANIFEST._deep_copy
-      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      job = deployment_plan.job("job_a")
-      instance = job.instance(0)
-      instance.configuration_hash = "config_hash"
-
       current_state = CURRENT_STATE._deep_copy
       current_state["packages"] = {"pkg_a"=>{"name"=>"pkg_a", "sha1"=>"a_sha1", "version"=>1}}
-      instance.current_state = current_state
+      @instance.current_state = current_state
 
-      instance.networks_changed?.should be_false
-      instance.resource_pool_changed?.should be_false
-      instance.configuration_changed?.should be_false
-      instance.packages_changed?.should be_true
-      instance.persistent_disk_changed?.should be_false
-      instance.changed?.should be_true
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_true
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_false
+      @instance.changed?.should be_true
     end
 
     it "should track instance changes compared to the current state (disk change)" do
-      manifest = BASIC_MANIFEST._deep_copy
-      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      job = deployment_plan.job("job_a")
-      instance = job.instance(0)
-      instance.configuration_hash = "config_hash"
-
       current_state = CURRENT_STATE._deep_copy
       current_state["persistent_disk"] = "4gb"
-      instance.current_state = current_state
+      @instance.current_state = current_state
 
-      instance.networks_changed?.should be_false
-      instance.resource_pool_changed?.should be_false
-      instance.configuration_changed?.should be_false
-      instance.packages_changed?.should be_false
-      instance.persistent_disk_changed?.should be_true
-      instance.changed?.should be_true
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_true
+      @instance.job_changed?.should be_false
+      @instance.changed?.should be_true
     end
 
   end

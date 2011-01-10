@@ -462,6 +462,10 @@ module Bosh::Director
         configuration_hash != @current_state["configuration_hash"]
       end
 
+      def job_changed?
+        @job.spec != @current_state["job"]
+      end
+
       def packages_changed?
         @job.package_spec != @current_state["packages"]
       end
@@ -472,7 +476,7 @@ module Bosh::Director
 
       def changed?
         resource_pool_changed? || networks_changed? || packages_changed? || persistent_disk_changed? ||
-                configuration_changed?
+                configuration_changed? || job_changed?
       end
 
     end

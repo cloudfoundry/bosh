@@ -8,7 +8,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
     BASIC_STATE = {
       "deployment" => "test_deployment",
-      "job" => "test_job",
+      "job" => {"name" => "test_job", "blobstore_id" => "job_blob"},
       "index" => 5,
       "configuration_hash" => "config_hash",
       "packages" => {
