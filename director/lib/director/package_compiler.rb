@@ -71,6 +71,7 @@ module Bosh::Director
           dependencies = {}
           task.dependencies.each do |dependency|
             dependencies[dependency.package.name] = {
+              "name" => dependency.package.name,
               "version" => dependency.package.version,
               "sha1" => dependency.compiled_package.sha1,
               "blobstore_id" => dependency.compiled_package.blobstore_id
