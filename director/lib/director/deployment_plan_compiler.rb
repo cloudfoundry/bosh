@@ -31,7 +31,7 @@ module Bosh::Director
           raise "Vm/Instance models out of sync: #{state.pretty_inspect}"
         end
 
-        if state["job"] != instance.job || state["index"] != instance.index.to_i
+        if state["job"]["name"] != instance.job || state["index"] != instance.index.to_i
           raise "Instance state out of sync: #{state.pretty_inspect}"
         end
       end

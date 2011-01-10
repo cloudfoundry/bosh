@@ -97,7 +97,7 @@ module Bosh::Director
         ensure
           pool.shutdown
         end
-        
+
         @logger.info("Finished the rest of the update")
 
         if @job.should_rollback?
