@@ -93,12 +93,16 @@ module Bosh::Agent
         FileUtils.mkdir_p install_dir
 
         Dir.chdir(compile_dir) do
+
+          # Prevent these from getting inhereted from the agent
+          %w{GEM_HOME BUNDLE_GEMFILE RUBYOPT}.each { |key| ENV.delete(key) }
+
           # TODO: error handling
           ENV['BOSH_COMPILE_TARGET'] = compile_dir
           ENV['BOSH_INSTALL_TARGET'] = install_dir
           if File.exist?('packaging')
             @logger.info("Compiling #{@package_name} #{@package_version}")
-            output = `bash packaging`
+            output = `bash -x packaging 2>&1`
             @logger.info(output)
           end
         end
