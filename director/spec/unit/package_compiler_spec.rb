@@ -168,8 +168,10 @@ describe Bosh::Director::PackageCompiler do
                                            "deployment"=>"test_deployment"})).and_return({"state" => "done"})
 
       agent_b.should_receive(:compile_package).with("package-blob", "package sha1", "test_pkg", 33,
-                                                    {"dependency" => {"blobstore_id" => "compiled-dep-blb-id",
-                                                                      "sha1" => "compiled-dep-sha1", "version" => 77}}).
+                                                    {"dependency" => {"name"=>"dependency",
+                                                                      "blobstore_id" => "compiled-dep-blb-id",
+                                                                      "sha1" => "compiled-dep-sha1",
+                                                                      "version" => 77}}).
           and_return({
             "state" => "done",
             "result" => {"sha1" => "compiled-sha1",
