@@ -33,14 +33,27 @@ module Bosh
       end
 
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
-        # raise NotImplemented, "create_vm"
-        # Should start agent with given id
-        # Should return "vm" name  ("vm-#{generate_unique_name}")
-        # Should create some artifacts so integration tests can tell if "vm" has been "created"
+        vm_name   = "vm-%d-%d" % [ rand(30000), rand(30000) ]
+        agent_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "..", "agent"))
+        
+        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -r localhost:63795 -s bs_admin:bs_pass@http://127.0.0.1:9590")
+
+        @agent_pid = fork do
+          exec "ruby #{agent_cmd}"
+        end
+
+        Process.detach(@agent_pid)
+
+        FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
+        FileUtils.touch(File.join(@base_dir, "running_vms", vm_name))
+        vm_name
       end
 
-      def delete_vm(vm)
-        raise NotImplemented, "delete_vm"
+      def delete_vm(vm_cid)
+        if @agent_pid
+          Process.kill("INT", @agent_pid)
+        end
+        FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_cid))
       end
 
       def configure_networks(vm, networks)

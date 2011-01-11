@@ -16,6 +16,7 @@ module Bosh::Agent
 
         # package symlink target dir vmc/data/packages/pkg -> vmc/packages/pkg
         FileUtils.mkdir_p(File.join(@base_dir, 'packages'))
+        FileUtils.mkdir_p(File.join(@base_dir, 'bosh'))
 
         @state_file = File.join(@base_dir, '/bosh/state.yml')
 

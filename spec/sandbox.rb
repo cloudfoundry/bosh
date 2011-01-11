@@ -52,6 +52,7 @@ module Bosh
       end
 
       def stop
+        # At the moment we assume that agent processes will die by themselves once Redis stops
         kill_process(WORKER_PID, "QUIT")
         kill_process(DIRECTOR_PID)
         kill_process(BLOBSTORE_PID)        
