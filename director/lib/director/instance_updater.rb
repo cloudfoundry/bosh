@@ -67,7 +67,7 @@ module Bosh::Director
         state = {
           "deployment" => @deployment_plan.name,
           "networks" => @instance_spec.network_settings,
-          "resource_pool" => @job_spec.resource_pool.properties,
+          "resource_pool" => @job_spec.resource_pool.spec,
           "persistent_disk" =>  @instance_spec.current_state["persistent_disk"]
         }
         state.delete("persistent_disk") if state["persistent_disk"].nil?
@@ -122,10 +122,11 @@ module Bosh::Director
     def apply_deployment
       task = agent.apply({
         "deployment" => @deployment_plan.name,
+        "release" => @deployment_plan.release.spec,
         "job" => @job_spec.spec,
         "index" => @instance_spec.index,
         "networks" => @instance_spec.network_settings,
-        "resource_pool" => @job_spec.resource_pool.properties,
+        "resource_pool" => @job_spec.resource_pool.spec,
         "packages" => @job_spec.package_spec,
         "persistent_disk" => @job_spec.persistent_disk,
         "configuration_hash" => @instance_spec.configuration_hash,

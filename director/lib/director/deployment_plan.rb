@@ -17,6 +17,13 @@ module Bosh::Director
         @version = release_spec["version"]
       end
 
+      def spec
+        {
+          "name" => @name,
+          "version" => @version
+        }
+      end
+
     end
 
     class StemcellSpec
@@ -34,7 +41,7 @@ module Bosh::Director
         @network = resource_pool.deployment.network(stemcell_spec["network"])
       end
 
-      def properties
+      def spec
         {
           "name" => @name,
           "version" => @version
@@ -88,11 +95,11 @@ module Bosh::Director
         @idle_vms.shift
       end
 
-      def properties
+      def spec
         {
           "name" => @name,
           "cloud_properties" => @cloud_properties,
-          "stemcell" => @stemcell.properties
+          "stemcell" => @stemcell.spec
         }
       end
 
@@ -121,7 +128,7 @@ module Bosh::Director
       end
 
       def resource_pool_changed?
-        resource_pool.properties != @current_state["resource_pool"]
+        resource_pool.spec != @current_state["resource_pool"]
       end
 
       def changed?
@@ -363,7 +370,7 @@ module Bosh::Director
       def package_spec
         result = {}
         @packages.each do |name, package|
-          result[name] = package.properties
+          result[name] = package.spec
         end
         result
       end
@@ -401,7 +408,7 @@ module Bosh::Director
         @blobstore_id = blobstore_id
       end
 
-      def properties
+      def spec
         {
           "name" => @name,
           "version" => @version,
@@ -455,7 +462,7 @@ module Bosh::Director
       end
 
       def resource_pool_changed?
-        @job.resource_pool.properties != @current_state["resource_pool"]
+        @job.resource_pool.spec != @current_state["resource_pool"]
       end
 
       def configuration_changed?

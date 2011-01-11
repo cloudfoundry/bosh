@@ -8,6 +8,10 @@ describe Bosh::Director::InstanceUpdater do
       "name" => "test_job",
       "blobstore_id" => "job_blob"
     },
+    "release"=> {
+      "name"=>"test_release",
+      "version"=>99
+    },
     "index" => 5,
     "configuration_hash" => "config_hash",
     "packages" => {
@@ -84,6 +88,7 @@ describe Bosh::Director::InstanceUpdater do
     @resource_pool_spec = mock("resource_pool_spec")
     @update_spec = mock("update_spec")
     @stemcell_spec = mock("stemcell_spec")
+    @release_spec = mock("release_spec")
 
     @instance.stub!(:vm).and_return(@vm)
 
@@ -105,12 +110,17 @@ describe Bosh::Director::InstanceUpdater do
 
     @update_spec.stub!(:update_watch_time).and_return(0.01)
 
+    @release_spec.stub!(:name).and_return("test_release")
+    @release_spec.stub!(:version).and_return(99)
+    @release_spec.stub!(:spec).and_return({"name" => "test_release", "version" => 99})
+
     @deployment_plan.stub!(:resource_pool).with("small").and_return(@resource_pool_spec)
     @deployment_plan.stub!(:deployment).and_return(@deployment)
     @deployment_plan.stub!(:name).and_return("test_deployment")
+    @deployment_plan.stub!(:release).and_return(@release_spec)
 
     @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-    @resource_pool_spec.stub!(:properties).and_return(BASIC_PLAN["resource_pool"])
+    @resource_pool_spec.stub!(:spec).and_return(BASIC_PLAN["resource_pool"])
     @resource_pool_spec.stub!(:cloud_properties).and_return(BASIC_PLAN["resource_pool"]["cloud_properties"])
 
     @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
