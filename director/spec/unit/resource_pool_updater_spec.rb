@@ -39,7 +39,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_spec.stub!(:unallocated_vms).and_return(0)
     resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
     resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
-    resource_pool_spec.stub!(:properties).and_return({"name" => "foo"})
+    resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
     resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
     stemcell_spec.stub!(:stemcell).and_return(stemcell)
@@ -129,7 +129,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_spec.stub!(:unallocated_vms).and_return(0)
     resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
     resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
-    resource_pool_spec.stub!(:properties).and_return({"name" => "foo"})
+    resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
     resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
     stemcell_spec.stub!(:stemcell).and_return(stemcell)

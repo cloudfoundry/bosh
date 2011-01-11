@@ -124,7 +124,7 @@ describe Bosh::Director::DeploymentPlan do
       resource_pool.size.should eql(10)
       resource_pool.idle_vms.should eql([])
       resource_pool.deployment.should eql(deployment_plan)
-      resource_pool.properties.should eql({"stemcell" => {"name" => "jeos", "version" => 1},
+      resource_pool.spec.should eql({"stemcell" => {"name" => "jeos", "version" => 1},
                                            "name" => "small",
                                            "cloud_properties" => {"cpu" => 1, "ram" => "512mb", "disk" => "2gb"}})
     end
@@ -143,7 +143,7 @@ describe Bosh::Director::DeploymentPlan do
       stemcell.network.should eql(network)
       stemcell.stemcell.should be_nil
       stemcell.resource_pool.should eql(resource_pool)
-      stemcell.properties.should eql({"name" => "jeos", "version" => 1})
+      stemcell.spec.should eql({"name" => "jeos", "version" => 1})
     end
 
     it "should parse the jobs from the deployment manifest" do
