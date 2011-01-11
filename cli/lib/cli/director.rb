@@ -211,6 +211,8 @@ module Bosh
           result = [ response.code, response.body, response.headers ]
         end
         result
+      rescue Net::HTTPBadResponse => e
+        err("Received bad HTTP response from director: #{e}")
       end
 
       def get_json(url)
