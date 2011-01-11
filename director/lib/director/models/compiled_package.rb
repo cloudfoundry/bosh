@@ -8,12 +8,15 @@ module Bosh::Director::Models
     reference :stemcell, Stemcell
     attribute :blobstore_id
     attribute :sha1
+    attribute :dependency_key
+
+    index :dependency_key
 
     def validate
       assert_present :package_id
       assert_present :stemcell_id
       assert_present :sha1
-      assert_unique [:package_id, :stemcell_id]
+      assert_unique [:package_id, :stemcell_id, :dependency_key]
     end
   end
 end
