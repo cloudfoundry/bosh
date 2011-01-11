@@ -213,6 +213,8 @@ module Bosh
         result
       rescue Net::HTTPBadResponse => e
         err("Received bad HTTP response from director: #{e}")
+      rescue RestClient::Exception => e
+        err("REST API call exception: #{e}")        
       end
 
       def get_json(url)
