@@ -46,7 +46,7 @@ module Bosh::Director
 
         if manifest["configuration"]
           manifest["configuration"].each_key do |config_file|
-            config_templates << ERB.new(File.new(File.join(@template_dir, "configuration", config_file)).read)
+            config_templates << ERB.new(File.new(File.join(@template_dir, "config", config_file)).read)
           end
         end
 
