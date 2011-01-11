@@ -35,9 +35,11 @@ module Bosh::Director
         "/releases/#{@release_name}/#{@release_version}"
       rescue Exception => e
         # cleanup
-        templates = Models::Template.find(:release_version_id => @release_version_entry.id)
-        templates.each {|template| template.delete}
-        @release_version_entry.delete if @release_version_entry && !@release_version_entry.new?
+        if @release_version_entry && !@release_version_entry.new?
+          templates = Models::Template.find(:release_version_id => @release_version_entry.id)
+          templates.each {|template| template.delete}
+          @release_version_entry.delete if @release_version_entry
+        end
         raise e
       ensure
         FileUtils.rm_rf(@tmp_release_dir)
