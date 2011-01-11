@@ -136,11 +136,13 @@ module Bosh::Agent
       payload = {:value => {:state => "running", :agent_task_id => agent_task_id}}
       publish(message_id, payload)
 
-      result = process(processor, args)
-
-      @lock.synchronize do 
-        @results << [Time.now.to_i, agent_task_id, result]
-        @long_running_agent_task = []
+      begin
+        result = process(processor, args)
+      ensure
+        @lock.synchronize do 
+          @results << [Time.now.to_i, agent_task_id, result]
+          @long_running_agent_task = []
+        end
       end
     end
 
