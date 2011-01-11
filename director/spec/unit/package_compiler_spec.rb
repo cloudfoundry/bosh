@@ -65,12 +65,15 @@ describe Bosh::Director::PackageCompiler do
     it "should do nothing if all of the packages are already compiled" do
       package = create_package("test_pkg", 7, 33, @release, "package-blob", "package sha1", [])
       @template.stub!(:packages).and_return([package])
+      @release_version.stub!(:packages).and_return([package])
 
       compiled_package = mock("compiled_package")
       compiled_package.stub!(:id).and_return(40)
 
       Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 7,
-                                                                :stemcell_id => 24).and_return([compiled_package])
+                                                                :dependency_key=>"[]",
+                                                                :stemcell_id => 24).
+          and_return([compiled_package])
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.compile
     end
@@ -78,6 +81,7 @@ describe Bosh::Director::PackageCompiler do
     it "should compile a package if it's not already compiled" do
       package = create_package("test_pkg", 7, 33, @release, "package-blob", "package sha1", [])
       @template.stub!(:packages).and_return([package])
+      @release_version.stub!(:packages).and_return([package])
 
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
@@ -87,7 +91,9 @@ describe Bosh::Director::PackageCompiler do
       @network.should_receive(:network_settings).with(255).and_return({"ip" => "1.2.3.4"})
 
       Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 7,
-                                                                :stemcell_id => 24).and_return([])
+                                                                :dependency_key=>"[]",
+                                                                :stemcell_id => 24).
+          and_return([])
 
       agent = mock("agent")
       Bosh::Director::AgentClient.should_receive(:new).with("agent-1").and_return(agent)
@@ -113,6 +119,7 @@ describe Bosh::Director::PackageCompiler do
       compiled_package.should_receive(:stemcell=).with(@stemcell)
       compiled_package.should_receive(:sha1=).with("some sha 1")
       compiled_package.should_receive(:blobstore_id=).with("some blobstore id")
+      compiled_package.should_receive(:dependency_key=).with("[]")
       compiled_package.should_receive(:save!)
       compiled_package.stub!(:blobstore_id).and_return("some blobstore id")
 
@@ -127,6 +134,7 @@ describe Bosh::Director::PackageCompiler do
       package.stub!(:dependency_set).and_return(Set.new(["dependency"]))
 
       @template.stub!(:packages).and_return([package])
+      @release_version.stub!(:packages).and_return([package, dependent_package])
 
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
@@ -136,7 +144,9 @@ describe Bosh::Director::PackageCompiler do
       @network.should_receive(:network_settings).with(255).and_return({"ip" => "1.2.3.4"})
 
       Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 7,
-                                                                :stemcell_id => 24).and_return([])
+                                                                :stemcell_id => 24,
+                                                                :dependency_key=>"[[\"dependency\",77]]").
+          and_return([])
 
       agent_a = mock("agent")
       Bosh::Director::AgentClient.should_receive(:new).with("agent-a").and_return(agent_a)
@@ -182,16 +192,16 @@ describe Bosh::Director::PackageCompiler do
       @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
 
       Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 44,
-                                                      :stemcell_id => 24).and_return([])
-      packages = mock("packages")
-      packages.should_receive(:find).with(:name => "dependency").and_return([dependent_package])
-      @release_version.stub!(:packages).and_return(packages)
+                                                                :stemcell_id => 24,
+                                                                :dependency_key=>"[]").
+          and_return([])
 
       dependent_compiled_package = mock("dep-compiled-package")
       dependent_compiled_package.should_receive(:package=).with(dependent_package)
       dependent_compiled_package.should_receive(:stemcell=).with(@stemcell)
       dependent_compiled_package.should_receive(:sha1=).with("compiled-dep-sha1")
       dependent_compiled_package.should_receive(:blobstore_id=).with("compiled-dep-blb-id")
+      dependent_compiled_package.should_receive(:dependency_key=).with("[]")
       dependent_compiled_package.should_receive(:save!)
       dependent_compiled_package.stub!(:blobstore_id).and_return("compiled-dep-blb-id")
       dependent_compiled_package.stub!(:sha1).and_return("compiled-dep-sha1")
@@ -201,11 +211,11 @@ describe Bosh::Director::PackageCompiler do
       compiled_package.should_receive(:stemcell=).with(@stemcell)
       compiled_package.should_receive(:sha1=).with("compiled-sha1")
       compiled_package.should_receive(:blobstore_id=).with("compiled-blb-id")
+      compiled_package.should_receive(:dependency_key=).with("[[\"dependency\",77]]")
       compiled_package.should_receive(:save!)
 
       Bosh::Director::Models::CompiledPackage.should_receive(:new).and_return(dependent_compiled_package,
                                                                               compiled_package)
-
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-a", "agent-b", "invalid")

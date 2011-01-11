@@ -7,6 +7,7 @@ module Bosh::Director
       attr_accessor :package
       attr_accessor :stemcell
       attr_accessor :compiled_package
+      attr_accessor :dependency_key
       attr_accessor :dependencies
 
       def dependencies_satisfied?
@@ -118,8 +119,8 @@ module Bosh::Director
               end
 
               task_result = agent_task["result"]
-              task.compiled_package = create_compiled_package(package, stemcell,
-                                                              task_result["blobstore_id"], task_result["sha1"])
+              task.compiled_package = create_compiled_package(
+                  package, stemcell, task_result["blobstore_id"], task_result["sha1"], task.dependency_key)
 
               @logger.info("Looking for packages waiting for this compilation")
               tasks_mutex.synchronize do
@@ -150,9 +151,25 @@ module Bosh::Director
       end
     end
 
+    def generate_dependency_key(dependencies, packages_by_name)
+      dependency_key = []
+      dependencies.each do |dependency|
+        package = packages_by_name[dependency]
+        dependency_key << [package.name, package.version]
+      end
+      dependency_key.sort! { |a, b| a.first <=> b.first }
+      dependency_key = Yajl::Encoder.encode(dependency_key)
+      dependency_key
+    end
+
     def get_compile_tasks
       compile_tasks = {}
       release_version = @deployment_plan.release.release_version
+
+      @logger.info("Building package index for this release")
+      packages = release_version.packages
+      packages_by_name = {}
+      packages.each { |package| packages_by_name[package.name] = package}
 
       @logger.info("Generating a list of compile tasks")
 
@@ -163,8 +180,11 @@ module Bosh::Director
         template = job.template
         template.packages.each do |package|
           @logger.info("Processing package: #{package.name}")
+          dependencies = package.dependency_set
+          dependency_key = generate_dependency_key(dependencies, packages_by_name)
           compiled_package = Models::CompiledPackage.find(:package_id => package.id,
-                                                          :stemcell_id => stemcell.id).first
+                                                          :stemcell_id => stemcell.id,
+                                                          :dependency_key => dependency_key).first
           if compiled_package
             @logger.info("Found compiled_package: #{compiled_package.id}")
           else
@@ -180,11 +200,12 @@ module Bosh::Director
           end
 
           compile_task.package = package
+          compile_task.dependency_key = dependency_key
           compile_task.compiled_package = compiled_package
           compile_task.dependencies = []
 
           @logger.info("Processing dependencies")
-          package.dependency_set.each do |dependency|
+          dependencies.each do |dependency|
             @logger.info("Processing dependency: #{dependency}")
             dependent_task = compile_tasks[[dependency, stemcell.id]]
             if dependent_task.nil?
@@ -199,23 +220,31 @@ module Bosh::Director
         end
       end
 
+      bind_compile_tasks(compile_tasks, packages_by_name)
+
+      compile_tasks
+    end
+
+    def bind_compile_tasks(compile_tasks, packages_by_name)
       @logger.info("Filling in compile tasks for dependencies")
       compile_tasks.each do |key, task|
         package_name, stemcell_id = key
         if task.package.nil?
           @logger.info("Filling in dependencies for package: #{package_name}")
-          package = release_version.packages.find(:name => package_name).first
-          compiled_package = Models::CompiledPackage.find(:package_id => package.id,
-                                                          :stemcell_id => stemcell_id).first
-          task.package = package
+          package               = packages_by_name[package_name]
+          dependencies          = package.dependency_set
+          dependency_key        = generate_dependency_key(dependencies, packages_by_name)
+          compiled_package      = Models::CompiledPackage.find(:package_id  => package.id,
+                                                               :stemcell_id => stemcell_id,
+                                                               :dependency_key => dependency_key).first
+          task.package          = package
+          task.dependency_key   = dependency_key
           task.compiled_package = compiled_package
-          task.dependencies = []
+          task.dependencies     = []
 
-          package.dependency_set.each { |dependency| task.dependencies << compile_tasks[[dependency, stemcell_id]] }
+          dependencies.each { |dependency| task.dependencies << compile_tasks[[dependency, stemcell_id]] }
         end
       end
-
-      compile_tasks
     end
 
     def generate_reverse_dependencies(compile_tasks)
@@ -228,12 +257,13 @@ module Bosh::Director
       reverse_dependencies
     end
 
-    def create_compiled_package(package, stemcell, blobstore_id, sha1)
-      compiled_package              = Models::CompiledPackage.new
-      compiled_package.package      = package
-      compiled_package.stemcell     = stemcell
-      compiled_package.sha1         = sha1
-      compiled_package.blobstore_id = blobstore_id
+    def create_compiled_package(package, stemcell, blobstore_id, sha1, dependency_key)
+      compiled_package                = Models::CompiledPackage.new
+      compiled_package.package        = package
+      compiled_package.stemcell       = stemcell
+      compiled_package.sha1           = sha1
+      compiled_package.blobstore_id   = blobstore_id
+      compiled_package.dependency_key = dependency_key
       compiled_package.save!
       compiled_package
     end
