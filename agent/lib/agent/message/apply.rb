@@ -14,10 +14,9 @@ module Bosh::Agent
 
         @packages_data = File.join(@base_dir, 'data', 'packages')
 
-        # package symlink target dir vmc/data/packages/pkg -> vmc/packages/pkg
-        FileUtils.mkdir_p(File.join(@base_dir, 'packages'))
-        FileUtils.mkdir_p(File.join(@base_dir, 'bosh'))
-        FileUtils.mkdir_p(File.join(@base_dir, 'jobs'))
+        %w{ packages bosh jobs monit }.each do |dir|
+          FileUtils.mkdir_p(File.join(@base_dir, dir))
+        end
 
         @state_file = File.join(@base_dir, '/bosh/state.yml')
 
@@ -46,9 +45,12 @@ module Bosh::Agent
             "attempt to apply #{@apply_spec["deployment"]} to #{@state["deployment"]}"
         end
 
-        apply_packages
-        apply_job
-
+        begin
+          apply_packages
+          apply_job
+        rescue Exception => e
+          raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
+        end
 
         # FIXME: assumption right now: if apply succeeds @state should be
         # identical with apply spec
@@ -85,9 +87,13 @@ module Bosh::Agent
           return
         end
 
+        # temporary hack
+        unless @apply_spec['job'].is_a?(Hash)
+          return
+        end
 
         job = @apply_spec['job']
-        version = @apply_spec['release']['version']
+        version = @apply_spec['release']['version'].to_s
         blobstore_id = job['blobstore_id']
         name = job['name']
 
@@ -96,6 +102,14 @@ module Bosh::Agent
 
         job_link_dst = File.join(@base_dir, 'jobs', name)
         FileUtils.ln_sf(install_dir, job_link_dst)
+
+        # TODO ERB/Template
+        monit_file = File.join(install_dir, 'monit')
+        if File.exist?(monit_file)
+          monit_link = File.join(@base_dir, 'monit', "#{name}.monitrc")
+          FileUtils.ln_sf(monit_file, monit_link)
+        end
+
       end
 
       def write_state

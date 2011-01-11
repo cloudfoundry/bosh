@@ -62,4 +62,8 @@ echo -e "startup=1\n" > /etc/default/monit
 mkidr -p /var/vmc/monit
 echo -e "include /var/vmc/monit/*.monitrc\n" > /etc/monit/monitrc
 
+# monit refuses to start without an include file present
+mkdir -p /var/vmc/monit
+touch /var/vmc/monit/empty.monitrc
+
 cp empty_state.yml /var/vmc/bosh/state.yml
