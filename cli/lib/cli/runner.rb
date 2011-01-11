@@ -142,6 +142,7 @@ Currently available bosh commands are:
 
   stemcell upload /path/to/stemcell.tgz    Upload the stemcell
   stemcell verify /path/to/stemcell.tgz    Verify the stemcell
+  stemcell delete <name> <version>         Delete the stemcell
 
   status                                   Show current status (current target, user, deployment info etc.)
 
@@ -213,7 +214,7 @@ USAGE
             usage("bosh stemcell verify <path>")
             set_cmd(:stemcell, :verify, 1)
           when "delete"
-            usage("bosh stemcell verify <name> <version>")
+            usage("bosh stemcell delete <name> <version>")
             set_cmd(:stemcell, :delete, 2)
           else unknown_operation(op)            
           end
