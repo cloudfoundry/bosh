@@ -77,7 +77,7 @@ module Bosh::Agent
               else
                 payload = process(processor, args)
                 publish(message_id, payload)
-                if method == "prepare_network_change"
+                if Config.configure && method == "prepare_network_change"
                   while `vmware-rpctool "info-get guestinfo.bosh"`.strip == "nada"
                     sleep 0.1
                   end
