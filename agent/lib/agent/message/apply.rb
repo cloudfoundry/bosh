@@ -17,6 +17,7 @@ module Bosh::Agent
         # package symlink target dir vmc/data/packages/pkg -> vmc/packages/pkg
         FileUtils.mkdir_p(File.join(@base_dir, 'packages'))
         FileUtils.mkdir_p(File.join(@base_dir, 'bosh'))
+        FileUtils.mkdir_p(File.join(@base_dir, 'jobs'))
 
         @state_file = File.join(@base_dir, '/bosh/state.yml')
 
@@ -46,6 +47,7 @@ module Bosh::Agent
         end
 
         apply_packages
+        apply_job
 
 
         # FIXME: assumption right now: if apply succeeds @state should be
@@ -74,6 +76,26 @@ module Bosh::Agent
           FileUtils.ln_sf(install_dir, pkg_link_dst)
         end
 
+      end
+
+      def apply_job
+
+        if @apply_spec['job'] == nil
+          @logger.info("No job")
+          return
+        end
+
+
+        job = @apply_spec['job']
+        version = @apply_spec['release']['version']
+        blobstore_id = job['blobstore_id']
+        name = job['name']
+
+        install_dir = File.join(@base_dir, 'data', 'jobs', name, version)
+        Util.unpack_blob(blobstore_id, install_dir)
+
+        job_link_dst = File.join(@base_dir, 'jobs', name)
+        FileUtils.ln_sf(install_dir, job_link_dst)
       end
 
       def write_state
