@@ -196,13 +196,15 @@ module Bosh::Agent
       def self.process(args)
         logger = Bosh::Agent::Config.logger
 
-        `vmware-rpctool "info-set guestinfo.bosh nada"`
-        read_back_value = `vmware-rpctool "info-get guestinfo.bosh`
-        logger.info('Setting guestinfo.bosh: #{read_back_value}')
+        if Bosh::Agent::Config.configure
+          `vmware-rpctool "info-set guestinfo.bosh nada"`
+          read_back_value = `vmware-rpctool "info-get guestinfo.bosh`
+          logger.info('Setting guestinfo.bosh: #{read_back_value}')
 
-        udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
-        if File.exist?(udev_file)
-          `rm #{udev_file}`
+          udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
+          if File.exist?(udev_file)
+            `rm #{udev_file}`
+          end
         end
 
         base_dir = Bosh::Agent::Config.base_dir
