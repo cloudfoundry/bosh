@@ -118,7 +118,7 @@ describe Bosh::Cli::JobBuilder do
     end
 
     builder.generate_tarball
-    File.file?(File.join(@release_dir, "jobs", "foo", "foo.tgz")).should be_true
+    File.file?(File.join(@release_dir, "tmp", "jobs", "foo.tgz")).should be_true
   end
 
 end

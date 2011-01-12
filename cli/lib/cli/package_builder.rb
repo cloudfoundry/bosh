@@ -24,10 +24,14 @@ module Bosh::Cli
         raise InvalidPackage, "Package '#{@name}' doesn't include any files"
       end
 
-      @package_dir   = File.join(release_dir, "packages", @name)
+      @packages_dir  = File.join(release_dir, "packages")
+      @package_dir   = File.join(@packages_dir, @name)
       @metadata_dir  = File.join(@package_dir, "data")
       @sources_dir   = sources_dir || File.join(release_dir, "src")
-      @tarballs_dir  = @package_dir
+      @tarballs_dir  = File.join(release_dir, "tmp", "packages")
+
+      FileUtils.mkdir_p(@metadata_dir)
+      FileUtils.mkdir_p(@tarballs_dir)
     end
 
     def build
@@ -191,7 +195,7 @@ module Bosh::Cli
     end
 
     def versions_file
-      File.join(@tarballs_dir, "versions")      
+      File.join(@package_dir, "versions")
     end
 
     def read_versions
