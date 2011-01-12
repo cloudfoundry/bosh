@@ -28,7 +28,7 @@ module Bosh
           say("Manifest not found in cache, verifying tarball...")
 
           step("Extract tarball", "Cannot extract tarball #{@stemcell_file}", :fatal) do
-            `tar -C #{tmp_dir} -xzf #{@stemcell_file} &> /dev/null`
+            `tar -C #{tmp_dir} -xzf #{@stemcell_file} 2>&1`
             $?.exitstatus == 0
           end
 

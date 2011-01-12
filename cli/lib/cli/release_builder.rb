@@ -91,7 +91,7 @@ module Bosh::Cli
       generate_manifest unless @manifest_generated
 
       in_build_dir do
-        `tar -czf #{tarball_path} .`
+        `tar -czf #{tarball_path} . 2>&1`
         raise InvalidRelease, "Cannot create release tarball" unless $?.exitstatus == 0
         say "Generated #{tarball_path}"
       end

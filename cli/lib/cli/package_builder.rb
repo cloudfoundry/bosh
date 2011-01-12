@@ -88,7 +88,7 @@ module Bosh::Cli
       copy_files unless @files_copied
 
       in_build_dir do
-        `tar -czf #{last_build_path} .`
+        `tar -czf #{last_build_path} . 2>&1`
         raise InvalidPackage, "Cannot create package tarball" unless $?.exitstatus == 0
       end
 
