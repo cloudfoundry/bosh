@@ -107,7 +107,12 @@ module Bosh::Agent
         monit_file = File.join(install_dir, 'monit')
         if File.exist?(monit_file)
           monit_link = File.join(@base_dir, 'monit', "#{name}.monitrc")
-          FileUtils.ln_sf(monit_file, monit_link)
+
+          # FileUtils doesn have 'no-deference' for links - causing ln_sf to
+          # attempt to create target link in dst rather than to overwrite it.
+          # BROKEN: FileUtils.ln_sf(monit_file, monit_link)
+          `ln -nsf #{monit_file} #{monit_link}`
+          `monit reload`
         end
 
       end
