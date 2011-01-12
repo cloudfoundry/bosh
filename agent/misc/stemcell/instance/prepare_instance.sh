@@ -60,7 +60,7 @@ echo 'export PATH=/var/vmc/bin:$PATH' >> /home/vmc/.bashrc
 
 echo -e "startup=1\n" > /etc/default/monit
 mkidr -p /var/vmc/monit
-echo -e "include /var/vmc/monit/*.monitrc\n" > /etc/monit/monitrc
+echo -e "set daemon 10\nset logfile /var/vmc/monit/monit.log\ninclude /var/vmc/monit/*.monitrc\n" > /etc/monit/monitrc
 
 # monit refuses to start without an include file present
 mkdir -p /var/vmc/monit
