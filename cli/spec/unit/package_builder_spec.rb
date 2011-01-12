@@ -185,23 +185,23 @@ describe Bosh::Cli::PackageBuilder do
     globs = ["foo/**/*", "baz"]
     builder = make_builder("bar", globs)
 
-    File.exists?(@release_dir + "/packages/bar/bar-1.tgz").should be_false
+    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_false
     builder.build
-    File.exists?(@release_dir + "/packages/bar/bar-1.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
 
     builder = make_builder("bar", globs)
     builder.build
     v1_signature = builder.signature
     
-    File.exists?(@release_dir + "/packages/bar/bar-1.tgz").should be_true
-    File.exists?(@release_dir + "/packages/bar/bar-2.tgz").should be_false
+    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-2.tgz").should be_false
 
     add_sources("foo/3.rb")
     builder = make_builder("bar", globs)
     builder.build
 
-    File.exists?(@release_dir + "/packages/bar/bar-1.tgz").should be_true
-    File.exists?(@release_dir + "/packages/bar/bar-2.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-2.tgz").should be_true
 
     remove_sources("foo/3.rb")
     builder = make_builder("bar", globs)    
@@ -209,18 +209,18 @@ describe Bosh::Cli::PackageBuilder do
 
     builder.signature.should == v1_signature
     
-    File.exists?(@release_dir + "/packages/bar/bar-1.tgz").should be_true
-    File.exists?(@release_dir + "/packages/bar/bar-2.tgz").should be_true
-    File.exists?(@release_dir + "/packages/bar/bar-3.tgz").should be_false
+    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-2.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-3.tgz").should be_false
 
     # Now add some metadata
-    FileUtils.mkdir("#{@release_dir}/packages/bar/data/")
+    FileUtils.mkdir_p("#{@release_dir}/packages/bar/data/")
     File.open("#{@release_dir}/packages/bar/data/packaging", "w") { |f| f.puts("make install") }
     builder = make_builder("bar", globs)
     builder.guess_version.should == 3
     builder.build
     
-    File.exists?(@release_dir + "/packages/bar/bar-3.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-3.tgz").should be_true
 
     # And more metadata
     File.open("#{@release_dir}/packages/bar/data/migrations", "w") { |f| f.puts("rake db:migrate") }
@@ -228,14 +228,15 @@ describe Bosh::Cli::PackageBuilder do
     builder.guess_version.should == 4
     builder.build
     
-    File.exists?(@release_dir + "/packages/bar/bar-4.tgz").should be_true    
+    File.exists?(@release_dir + "/tmp/packages/bar-4.tgz").should be_true    
 
     # And remove all metadata
     FileUtils.rm_rf("#{@release_dir}/packages/bar/data/")
     builder = make_builder("bar", globs)
     builder.guess_version.should == 1
     builder.build
-    File.exists?(@release_dir + "/packages/bar/bar-5.tgz").should be_false
+    File.exists?(@release_dir + "/tmp/packages/bar-4.tgz").should be_true
+    File.exists?(@release_dir + "/tmp/packages/bar-5.tgz").should be_false
   end
 
 end

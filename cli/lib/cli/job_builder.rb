@@ -29,7 +29,9 @@ module Bosh::Cli
       @release_dir    = release_dir
       @job_dir        = File.join(release_dir, "jobs", @name)
       @configs_dir    = File.join(job_dir, "config")
-      @tarballs_dir   = @job_dir
+      @tarballs_dir   = File.join(release_dir, "tmp", "jobs")
+
+      FileUtils.mkdir_p(@tarballs_dir)
     end
 
     def build
