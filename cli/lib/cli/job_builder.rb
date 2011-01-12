@@ -88,7 +88,7 @@ module Bosh::Cli
       copy_manifest unless @manifest_copied
 
       in_build_dir do
-        `tar -czf #{tarball_path} .`
+        `tar -czf #{tarball_path} . 2>&1`
         raise InvalidJob, "Cannot create job tarball" unless $?.exitstatus == 0
       end
 

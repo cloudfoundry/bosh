@@ -20,7 +20,7 @@ module Bosh
         end
 
         step("Extract tarball", "Cannot extract tarball #{@release_file}", :fatal) do
-          `tar -C #{tmp_dir} -xzf #{@release_file} &> /dev/null`
+          `tar -C #{tmp_dir} -xzf #{@release_file} 2>&1`
           $?.exitstatus == 0
         end
 
@@ -86,7 +86,7 @@ module Bosh
           if job_exists
             job_tmp_dir = "#{tmp_dir}/jobs/#{name}"
             FileUtils.mkdir_p(job_tmp_dir)
-            `tar -C #{job_tmp_dir} -xzf #{job_file} &> /dev/null`
+            `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
             job_extracted = $?.exitstatus == 0
             
             step("Extract job '#{name}", "Cannot extract job '#{name}'") do
