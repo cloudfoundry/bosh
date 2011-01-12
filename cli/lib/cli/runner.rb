@@ -306,10 +306,10 @@ USAGE
 
       def verb_usage(verb)
         options = {
-          "create" => "user, package, release",
-          "upload" => "release, stemcell",
-          "verify" => "release, stemcell",
-          "delete" => "deployment, stemcell"
+          "create" => "user [<name>] [<password>]\npackage <path>\nrelease",
+          "upload" => "release <path>\nstemcell <path>",
+          "verify" => "release <path>\nstemcell <path>",
+          "delete" => "deployment <name>\nstemcell <name> <version>"
         }
 
         @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])
