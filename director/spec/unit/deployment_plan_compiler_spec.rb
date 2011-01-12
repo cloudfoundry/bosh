@@ -492,11 +492,15 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @job_spec = mock("job_spec")
       @resource_pool_spec = mock("resource_pool_spec")
       @instance_spec = mock("instance_spec")
+      @release = mock("release")
 
       @instance.stub!(:vm).and_return(@vm)
 
       @deployment_plan.stub!(:deployment).and_return(@deployment)
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
+      @deployment_plan.stub!(:release).and_return(@release)
+
+      @release.stub!(:spec).and_return({"name" => "test_release", "version" => 23})
 
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
       @job_spec.stub!(:instances).and_return([@instance_spec])
@@ -526,7 +530,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       agent.should_receive(:apply).with({
         "index"=>5,
         "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
-        "deployment"=>"test_deployment"
+        "deployment"=>"test_deployment",
+        "release" => {"name" => "test_release", "version" => 23}
       }).and_return({
         "id" => "task-1",
         "state" => "done"
@@ -553,7 +558,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.should_receive(:current_state=).with({
         "index"=>5,
         "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
-        "deployment"=>"test_deployment"
+        "deployment"=>"test_deployment",
+        "release" => {"name" => "test_release", "version" => 23}
       })
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
