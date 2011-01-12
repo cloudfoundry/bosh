@@ -156,18 +156,18 @@ module Bosh::Director
 
         FileUtils.mkdir_p(job_dir)
 
-        `tar -C #{job_dir} -xzf #{job_tgz}`
-        raise JobInvalid.new(:invalid_archive) if $?.exitstatus != 0
+        output = `tar -C #{job_dir} -xzf #{job_tgz} 2>&1`
+        raise JobInvalidArchive.new(name, $?.exitstatus, output) if $?.exitstatus != 0
 
         manifest_file = File.join(job_dir, "job.MF")
-        raise JobInvalid.new(:missing_manifest) unless File.file?(manifest_file)
+        raise JobMissingManifest.new(name) unless File.file?(manifest_file)
 
         job_manifest = YAML.load_file(manifest_file)
 
         if job_manifest["configuration"]
-          job_manifest["configuration"].each_key do |file|
-            file = File.join(job_dir, "config", file)
-            raise JobInvalid.new(:missing_config_file) unless File.file?(file)
+          job_manifest["configuration"].each_key do |relative_path|
+            path = File.join(job_dir, "config", relative_path)
+            raise JobMissingConfigFile.new(name, relative_path) unless File.file?(path)
           end
         end
 
@@ -176,11 +176,11 @@ module Bosh::Director
 
         job_manifest["packages"].each do |package_name|
           package = @packages[package_name]
-          raise JobInvalid.new(:missing_package) if package.nil?
+          raise JobMissingPackage.new(name, package_name) if package.nil?
           template.packages << package
         end
 
-        raise JobInvalid.new(:missing_monit_file) unless File.file?(File.join(job_dir, "monit"))
+        raise JobMissingMonit.new(name) unless File.file?(File.join(job_dir, "monit"))
 
         File.open(job_tgz) do |f|
           template.blobstore_id = @blobstore.create(f)
