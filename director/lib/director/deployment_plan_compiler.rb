@@ -175,7 +175,7 @@ module Bosh::Director
 
             # Apply the assignment to the VM
             state = idle_vm.current_state
-            state["job"] = instance.job
+            state["job"] = job.spec
             state["index"] = instance.index.to_i
             agent = AgentClient.new(idle_vm.vm.agent_id)
             task = agent.apply(state)
