@@ -20,7 +20,7 @@ module Bosh
         @args = args
         @options = {
           :director_checks => true,
-          :colorize        => true,          
+          :colorize        => true,
         }
       end
 
@@ -28,7 +28,7 @@ module Bosh
         unless args_range == "*" || args_range.is_a?(Range)
           args_range = (args_range.to_i..args_range.to_i)
         end
-        
+
         if args_range == "*" || args_range.include?(@args.size)
           @namespace = namespace
           @action    = action
@@ -51,7 +51,7 @@ module Bosh
         parse_options!
         parse_command!
 
-        Config.colorize  = @options.delete(:colorize)
+        Config.colorize   = @options.delete(:colorize)
         Config.output   ||= STDOUT unless @options[:quiet]
 
         if @namespace && @action
@@ -106,6 +106,9 @@ usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
           say @usage_error if @usage_error
           say "Usage: #{@usage}"
           return
+        elsif @verb_usage
+          say @verb_usage
+          return
         end
 
         say <<-USAGE
@@ -114,50 +117,52 @@ usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
 
 Currently available bosh commands are:
 
-  target <name>                            Choose target to work with
+  Deployment
+    deployment <name>                        Choose deployment to work with (it also updates current target)
+    delete deployment <name>                 Delete deployment
+    deployments                              Show the list of available deployments
+    deploy                                   Deploy according to the currently selected deployment
 
-  deployment <name>                        Choose deployment to work with (it also updates current target)
-  deployment delete <name>                 Delete deployment
+  Releases
+    create release                           Attempt to create release (assumes current directory to contain release)
+    create package <name>|<path>             Build a single package
+    verify release /path/to/release.tgz      Verify the release
+    upload release /path/to/release.tgz      Upload the release
+    releases                                 Show the list of uploaded releases
 
-  deployments                              Show the list of deployments
-  releases                                 Show the list of releases
-  stemcells                                Show the list of stemcells
-  tasks [running]                          Show the list of running tasks
-  tasks recent [<number>]                  Show <number> recent tasks
+  Stemcells
+    verify stemcell /path/to/stemcell.tgz    Verify the stemcell
+    upload stemcell /path/to/stemcell.tgz    Upload the stemcell
+    stemcells                                Show the list of uploaded stemcells
+    delete stemcell <name> <version>         Delete the stemcell
 
-  user create [<username>] [<password>]    Create user
+  User management
+    create user [<username>] [<password>]    Create user
 
-  login [<username>] [<password>]          Use given username for the subsequent interactions
-  logout                                   Forgets currently saved credentials
+  Monitoring
+    tasks [running]                          Show the list of running tasks
+    tasks recent [<number>]                  Show <number> recent tasks
+    task <id>                                Show task status (monitor if not done)
 
-  purge                                    Purge cached data
-
-  task <id>                                Show task status (monitor if not done)
-
-  release upload /path/to/release.tgz      Upload the release
-  release verify /path/to/release.tgz      Verify the release
-
-  package create  <name>|<path>|all        Build a package
-  release create                           Attempt to create release (assumes current directory to contain release)
-
-  stemcell upload /path/to/stemcell.tgz    Upload the stemcell
-  stemcell verify /path/to/stemcell.tgz    Verify the stemcell
-  stemcell delete <name> <version>         Delete the stemcell
-
-  status                                   Show current status (current target, user, deployment info etc.)
-
-  deploy                                   Deploy according to the currently selected deployment
+  Misc
+    status                                   Show current status (current target, user, deployment info etc.)
+    target <name>                            Choose director to talk to
+    login [<username>] [<password>]          Use given credentials for the subsequent interactions with director
+    logout                                   Forgets currently saved credentials
+    purge                                    Purge local manifest cache
 
 USAGE
-      end      
+      end
 
       def parse_command!
         head = @args.shift
 
         case head
+
         when "version"
           usage("bosh version")
           set_cmd(:dashboard, :version)
+
         when "target"
           usage("bosh target [<name>]")
           if @args.size == 1
@@ -165,91 +170,107 @@ USAGE
           else
             set_cmd(:dashboard, :show_target)
           end
+
         when "deploy"
           usage("bosh deploy")
           set_cmd(:deployment, :perform)
+
         when "deployment"
-          op = @args.shift
-          if op == "delete"
-            usage("bosh deployment delete <name>")
-            set_cmd(:deployment, :delete, 1)
-          else
-            @args.unshift(op) if op
-            usage("bosh deployment [<name>]")
-            if @args.size == 1
-              set_cmd(:deployment, :set_current, 1)
-            else
-              set_cmd(:deployment, :show_current)
+          usage("bosh deployment [<name>]")
+          if @args.size >= 1
+            if @args[0] == "delete"
+              @args.unshift(head)
+              @args[0], @args[1] = @args[1], @args[0]
+              return parse_command!
             end
+            set_cmd(:deployment, :set_current, 1)
+          else
+            set_cmd(:deployment, :show_current)
           end
+
         when "status", "st"
           usage("bosh status")
           set_cmd(:dashboard, :status)
+
         when "login"
           usage("bosh login [<name>] [<password>]")
           set_cmd(:dashboard, :login, 0..2)
+
         when "logout"
           usage("bosh logout")
           set_cmd(:dashboard, :logout)
+
         when "purge"
           usage("bosh purge")
           set_cmd(:dashboard, :purge_cache)
-        when "user"
-          usage("bosh user create [<name>] [<password>]")
-          op = @args.shift
-          case op
-          when "create": set_cmd(:user, :create, 0..2)
-          else unknown_operation(op)
+
+        when "create", "build"
+          verb_usage("create")
+          what = @args.shift
+          case what
+          when "release"
+            usage("bosh create release")
+            set_cmd(:release, :create)
+          when "user"
+            usage("bosh create user [<name>] [<password>]")
+            set_cmd(:user, :create, 0..2)
+          when "package"
+            usage("bosh create package <name>|<path>")
+            set_cmd(:package, :create, 1)
           end
+
+        when "upload"
+          verb_usage("upload")
+          what = @args.shift
+          case what
+          when "stemcell"
+            usage("bosh upload stemcell <path>")
+            set_cmd(:stemcell, :upload, 1)
+          when "release"
+            usage("bosh upload release <path>")
+            set_cmd(:release, :upload, 1)
+          end
+
+        when "verify", "validate"
+          verb_usage("verify")
+          what = @args.shift
+          case what
+          when "stemcell"
+            usage("bosh verify stemcell <path>")
+            set_cmd(:stemcell, :verify, 1)
+          when "release"
+            usage("bosh verify release <path>")
+            set_cmd(:release, :verify, 1)
+          end
+
+        when "delete"
+          verb_usage("delete")
+          what = @args.shift
+          case what
+          when "deployment"
+            usage("bosh delete deployment <name>")
+            set_cmd(:deployment, :delete, 1)
+          when "stemcell"
+            usage("bosh delete stemcell <name> <version>")
+            set_cmd(:stemcell, :delete, 2)
+          end
+
         when "task"
           usage("bosh task <task_id>")
           set_cmd(:task, :track, 1)
-        when "stemcell"
-          op = @args.shift
-          case op
-          when "upload"
-            usage("bosh stemcell upload <path>")
-            set_cmd(:stemcell, :upload, 1)
-          when "verify", "validate"
-            usage("bosh stemcell verify <path>")
-            set_cmd(:stemcell, :verify, 1)
-          when "delete"
-            usage("bosh stemcell delete <name> <version>")
-            set_cmd(:stemcell, :delete, 2)
-          else unknown_operation(op)            
-          end
-        when "package"
-          usage("bosh package create <name>|<path>")
-          op = @args.shift
-          case op
-          when "create", "build": set_cmd(:package, :create, 1)
-          else unknown_operation(op)
-          end
-        when "release"
-          usage("bosh release (upload|verify <path>)|create ")
-          op = @args.shift
-          case op
-          when "upload"
-            usage("bosh release upload <path>")
-            set_cmd(:release, :upload, 1)
-          when "verify", "validate":
-            usage("bosh release verify <path>")            
-            set_cmd(:release, :verify, 1)
-          when "create"
-            usage("bosh release create")
-            set_cmd(:release, :create)
-          else
-            unknown_operation(op)
-          end
+
         when "stemcells"
           usage("bosh stemcells")
           set_cmd(:stemcell, :list, 0)
+
         when "releases"
           usage("bosh releases")
           set_cmd(:release, :list, 0)
+
         when "deployments"
           usage("bosh deployments")
           set_cmd(:deployment, :list, 0)
+
         when "tasks"
           args.unshift("running") if args.size == 0
           kind = args.shift
@@ -263,6 +284,15 @@ USAGE
           else
             unknown_operation(kind)
           end
+
+        else
+          # Try alternate verb noun order before giving up
+          verbs = ["upload", "build", "verify", "validate", "create", "delete"]
+          if @args.size >= 1 && !verbs.include?(head) && verbs.include?(@args[0])
+            @args.unshift(head)
+            @args[0], @args[1] = @args[1], @args[0]
+            return parse_command!
+          end
         end
       end
 
@@ -274,6 +304,17 @@ USAGE
         end
       end
 
+      def verb_usage(verb)
+        options = {
+          "create" => "user, package, release",
+          "upload" => "release, stemcell",
+          "verify" => "release, stemcell",
+          "delete" => "deployment, stemcell"
+        }
+
+        @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])
+      end
+
       def usage_error(msg = nil)
         if msg
           @usage_error = msg
@@ -281,8 +322,8 @@ USAGE
           @usage_error
         end
       end
-      
+
     end
-    
+
   end
 end

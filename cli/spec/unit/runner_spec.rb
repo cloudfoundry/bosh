@@ -35,7 +35,7 @@ describe Bosh::Cli::Runner do
     runner.options[:non_interactive].should == true
   end
 
-  it "dispatches commands to appropriate methods" do
+  it "dispatches commands to appropriate methods (nu school)" do
     test_cmd(["version"], :dashboard, :version)
     test_cmd(["status"], :dashboard, :status)    
     test_cmd(["target"], :dashboard, :show_target)
@@ -43,7 +43,45 @@ describe Bosh::Cli::Runner do
     test_cmd(["deploy"], :deployment, :perform)
     test_cmd(["deployment"], :deployment, :show_current)
     test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])
-    test_cmd(["deployment", "delete", "foo"], :deployment, :delete, ["foo"])    
+
+    test_cmd(["delete", "deployment", "foo"], :deployment, :delete, ["foo"])
+    test_cmd(["delete", "stemcell", "a", "1"], :stemcell, :delete, ["a", "1"])    
+
+    test_cmd(["create", "user", "admin"], :user, :create, ["admin"])
+    test_cmd(["create", "user", "admin", "12321"], :user, :create, ["admin", "12321"])
+    test_cmd(["create", "release"], :release, :create)
+    test_cmd(["create", "package", "bla"], :package, :create, ["bla"])
+
+    test_cmd(["login", "admin", "12321"], :dashboard, :login, ["admin", "12321"])
+    test_cmd(["logout"], :dashboard, :logout)
+    test_cmd(["purge"], :dashboard, :purge_cache)
+
+    test_cmd(["upload", "release", "/path"], :release, :upload, ["/path"])
+    test_cmd(["upload", "stemcell", "/path"], :stemcell, :upload, ["/path"])    
+
+    test_cmd(["verify", "release", "/path"], :release, :verify, ["/path"])
+    test_cmd(["verify", "stemcell", "/path"], :stemcell, :verify, ["/path"])
+
+    test_cmd(["stemcells"], :stemcell, :list)
+    test_cmd(["releases"], :release, :list)
+    test_cmd(["deployments"], :deployment, :list)
+
+    test_cmd(["tasks"], :task, :list_running)
+    test_cmd(["task", "500"], :task, :track, ["500"])    
+    test_cmd(["tasks", "running"], :task, :list_running)
+    test_cmd(["tasks", "recent"], :task, :list_recent)
+    test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
+  end
+
+  it "dispatches commands to appropriate methods (old school)" do
+    test_cmd(["version"], :dashboard, :version)
+    test_cmd(["status"], :dashboard, :status)    
+    test_cmd(["target"], :dashboard, :show_target)
+    test_cmd(["target", "test"], :dashboard, :set_target, ["test"])
+    test_cmd(["deploy"], :deployment, :perform)
+    test_cmd(["deployment"], :deployment, :show_current)
+    test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])
+    test_cmd(["deployment", "delete", "foo"], :deployment, :delete, ["foo"])
     test_cmd(["user", "create", "admin"], :user, :create, ["admin"])
     test_cmd(["user", "create", "admin", "12321"], :user, :create, ["admin", "12321"])
     test_cmd(["login", "admin", "12321"], :dashboard, :login, ["admin", "12321"])
