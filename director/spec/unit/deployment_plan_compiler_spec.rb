@@ -501,6 +501,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
       @job_spec.stub!(:instances).and_return([@instance_spec])
       @job_spec.stub!(:name).and_return("test_job")
+      @job_spec.stub!(:spec).and_return({"name" => "test_job", "blobstore_id" => "blob"})
 
       @instance_spec.stub!(:job).and_return(@job_spec)
       @instance_spec.stub!(:index).and_return(5)
@@ -522,7 +523,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @vm.stub!(:agent_id).and_return("test_id")
 
       agent = mock("agent")
-      agent.should_receive(:apply).with({"index"=>5, "job"=>"test_job", "deployment"=>"test_deployment"}).and_return({
+      agent.should_receive(:apply).with({
+        "index"=>5,
+        "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
+        "deployment"=>"test_deployment"
+      }).and_return({
         "id" => "task-1",
         "state" => "done"
       })
@@ -545,8 +550,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
       new_instance.stub!(:index).and_return(5)
 
       @instance_spec.should_receive(:instance=).with(new_instance)
-      @instance_spec.should_receive(:current_state=).with({"index"=>5, "job"=>"test_job",
-                                                           "deployment"=>"test_deployment"})
+      @instance_spec.should_receive(:current_state=).with({
+        "index"=>5,
+        "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
+        "deployment"=>"test_deployment"
+      })
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
