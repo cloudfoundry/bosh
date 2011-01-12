@@ -66,4 +66,6 @@ echo -e "set daemon 10\nset logfile /var/vmc/monit/monit.log\ninclude /var/vmc/m
 mkdir -p /var/vmc/monit
 touch /var/vmc/monit/empty.monitrc
 
+mkdir -p /var/vmc/sys/run
+
 cp empty_state.yml /var/vmc/bosh/state.yml
