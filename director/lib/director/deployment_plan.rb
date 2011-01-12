@@ -62,10 +62,10 @@ module Bosh::Director
 
       def initialize(deployment, resource_pool_spec)
         @deployment = deployment
-        @name = resource_pool_spec["name"]
-        @size = resource_pool_spec["size"]
+        @name = safe_property(resource_pool_spec, "name", :class => String)
+        @size = safe_property(resource_pool_spec, "size", :class => Integer)
         @cloud_properties = safe_property(resource_pool_spec, "cloud_properties", :class => Hash)
-        @stemcell = StemcellSpec.new(self, resource_pool_spec["stemcell"])
+        @stemcell = StemcellSpec.new(self, safe_property(resource_pool_spec, "stemcell", :class => Hash))
         @idle_vms = []
         @allocated_vms = 0
         @reserved_vms = 0

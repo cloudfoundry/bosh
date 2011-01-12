@@ -47,7 +47,13 @@ module Bosh::Director
 
     ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
 
-    ["DeploymentNotFound",      NOT_FOUND,   70000, "Deployment \"%s\" doesn't exist"]
+    ["DeploymentNotFound",      NOT_FOUND,   70000, "Deployment \"%s\" doesn't exist"],
+
+    ["JobInvalidArchive",       BAD_REQUEST, 80000, "Job: \"%s\" invalid archive, tar exit status: %s, output: %s"],
+    ["JobMissingManifest",      BAD_REQUEST, 80001, "Job: \"%s\" missing job manifest"],
+    ["JobMissingConfigFile",    BAD_REQUEST, 80002, "Job: \"%s\" missing config file: \"%s\""],
+    ["JobMissingPackage",       BAD_REQUEST, 80003, "Job: \"%s\" missing package: \"%s\""],
+    ["JobMissingMonit",         BAD_REQUEST, 80004, "Job: \"%s\" missing monit configuration"],
   ].each do |e|
     class_name, response_code, error_code, format = e
 
