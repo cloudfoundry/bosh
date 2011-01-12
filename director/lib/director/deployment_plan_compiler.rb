@@ -177,6 +177,7 @@ module Bosh::Director
             state = idle_vm.current_state
             state["job"] = job.spec
             state["index"] = instance.index.to_i
+            state["release"] = @deployment_plan.release.spec
             agent = AgentClient.new(idle_vm.vm.agent_id)
             task = agent.apply(state)
             while task["state"] == "running"
