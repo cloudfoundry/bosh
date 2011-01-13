@@ -24,4 +24,17 @@ describe Bosh::Agent::Util do
     Bosh::Agent::Util.unpack_blob(blobstore_id, install_dir)
   end
 
+  it "should return a binding with config variable" do
+    config_hash = { "job" => { "name" => "funky_job_name"} }
+    config_binding = Bosh::Agent::Util.config_binding(config_hash)
+
+    template = ERB.new("job name: <%= config['job']['name'] %>")
+
+    lambda {
+      template.result(binding)
+    }.should raise_error(NameError)
+
+    template.result(config_binding).should == "job name: funky_job_name"
+  end
+
 end

@@ -26,6 +26,13 @@ module Bosh::Agent
         end
 
       end
+
+      # Provide binding for a particular variable
+      def config_binding(config)
+        config = config
+        binding
+      end
+
     end
   end
 end
