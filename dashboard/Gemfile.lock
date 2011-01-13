@@ -6,7 +6,10 @@ GEM
     daemons (1.1.0)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
+    haml (3.0.25)
+    json (1.4.6)
     linecache (0.43)
+    mime-types (1.16)
     rack (1.2.1)
     rack-test (0.5.6)
       rack (>= 1.0)
@@ -15,6 +18,8 @@ GEM
     rcov_analyzer (0.2)
       builder
       rcov
+    rest-client (1.6.1)
+      mime-types (>= 1.16)
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
       rspec-expectations (~> 2.3.0)
@@ -41,10 +46,13 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  haml
+  json
   rack-test
   rake
   rcov
   rcov_analyzer
+  rest-client
   rspec
   ruby-debug
   sinatra

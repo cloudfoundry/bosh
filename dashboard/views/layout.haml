@@ -1,0 +1,14 @@
+%html
+  %head
+    %title Bosh Dashboard
+
+    %link{ :rel => "stylesheet", :href => versioned_css("common") }
+    %script{ :type => "text/javascript", :src => "/js/jquery-1.4.4.min.js" }
+    %script{ :type => "text/javascript", :src => versioned_js("common") }
+
+  %body
+    #header
+
+    #content= yield
+
+    #footer

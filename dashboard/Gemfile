@@ -3,6 +3,9 @@ source :rubygems
 gem "rake"
 gem "sinatra"
 gem "thin"
+gem "haml"
+gem "json"
+gem "rest-client"
 
 group :test do
   gem "rack-test"
