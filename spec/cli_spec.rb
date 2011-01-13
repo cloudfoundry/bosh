@@ -218,7 +218,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "verifies a sample valid stemcell" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
-    expect_output("stemcell verify #{stemcell_filename}", <<-OUT)
+    expect_output("verify stemcell #{stemcell_filename}", <<-OUT)
       Verifying stemcell...
       File exists and readable                                     OK
       Manifest not found in cache, verifying tarball...
@@ -239,7 +239,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "points to an error when verifying an invalid stemcell" do
     stemcell_filename = spec_asset("stemcell_invalid_mf.tgz")
-    expect_output("stemcell verify #{stemcell_filename}", <<-OUT)
+    expect_output("verify stemcell #{stemcell_filename}", <<-OUT)
       Verifying stemcell...
       File exists and readable                                     OK
       Manifest not found in cache, verifying tarball...
@@ -261,8 +261,8 @@ describe Bosh::Spec::IntegrationTest do
 
   it "uses cache when verifying stemcell for the second time" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
-    run_1 = run_bosh("stemcell verify #{stemcell_filename}")
-    run_2 = run_bosh("stemcell verify #{stemcell_filename}")
+    run_1 = run_bosh("verify stemcell #{stemcell_filename}")
+    run_2 = run_bosh("verify stemcell #{stemcell_filename}")
 
     run_1.should =~ /Manifest not found in cache, verifying tarball/
     run_1.should =~ /Writing manifest to cache/
@@ -276,7 +276,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "verifies a sample valid release" do
     release_filename = spec_asset("valid_release.tgz")
-    expect_output("release verify #{release_filename}", <<-OUT)
+    expect_output("verify release #{release_filename}", <<-OUT)
      Verifying release...
      File exists and readable                                     OK
      Extract tarball                                              OK
@@ -325,7 +325,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "points to an error on invalid release" do
     release_filename = spec_asset("release_invalid_checksum.tgz")
-    expect_output("release verify #{release_filename}", <<-OUT )
+    expect_output("verify release #{release_filename}", <<-OUT )
      Verifying release...
      File exists and readable                                     OK
      Extract tarball                                              OK
@@ -362,7 +362,7 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "asks to login if no user set and operation requires talking to director" do
-    expect_output("user create john pass", <<-OUT)
+    expect_output("create user john pass", <<-OUT)
       Please log in first
     OUT
   end
@@ -371,7 +371,7 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
 
-    expect_output("user create john pass", <<-OUT)
+    expect_output("create user john pass", <<-OUT)
       User john has been created
     OUT
   end
@@ -379,10 +379,10 @@ describe Bosh::Spec::IntegrationTest do
   it "can log in as a freshly created user and issue commands" do
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    run_bosh("user create jane pass")
+    run_bosh("create user jane pass")
     run_bosh("login jane pass")
 
-    expect_output("user create tester testpass", <<-OUT)
+    expect_output("create user tester testpass", <<-OUT)
       User tester has been created
     OUT
   end
@@ -390,7 +390,7 @@ describe Bosh::Spec::IntegrationTest do
   it "cannot log in if password is invalid" do
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    run_bosh("user create jane pass")
+    run_bosh("create user jane pass")
     run_bosh("logout")
     expect_output("login jane foo", <<-OUT)
       Cannot log in as 'jane', please try again
@@ -403,7 +403,7 @@ describe Bosh::Spec::IntegrationTest do
 
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    out = run_bosh("stemcell upload #{stemcell_filename}")
+    out = run_bosh("upload stemcell #{stemcell_filename}")
 
     out.should =~ /Stemcell uploaded and created/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
@@ -425,11 +425,11 @@ describe Bosh::Spec::IntegrationTest do
 
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    out = run_bosh("stemcell upload #{stemcell_filename}")
+    out = run_bosh("upload stemcell #{stemcell_filename}")
     out.should =~ /Stemcell uploaded and created/
 
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
-    out = run_bosh("stemcell delete ubuntu-stemcell 1")
+    out = run_bosh("delete stemcell ubuntu-stemcell 1")
     out.should =~ /Deleted stemcell ubuntu-stemcell \(1\)/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_false
   end
@@ -439,7 +439,7 @@ describe Bosh::Spec::IntegrationTest do
 
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    out = run_bosh("release upload #{release_filename}")
+    out = run_bosh("upload release #{release_filename}")
 
     out.should =~ /Release uploaded and updated/
 
@@ -459,7 +459,7 @@ describe Bosh::Spec::IntegrationTest do
 
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-    out = run_bosh("release upload #{release_filename}")
+    out = run_bosh("upload release #{release_filename}")
 
     out.should =~ /Release is invalid, please fix, verify and upload again/
   end
@@ -483,7 +483,7 @@ describe Bosh::Spec::IntegrationTest do
 
       run_bosh("deployment #{deployment_manifest_filename}")
       run_bosh("login admin admin")
-      run_bosh("release upload #{release_filename}")
+      run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
       out.should =~ Regexp.new(Regexp.escape("Deployed to 'http://localhost:57523' using '#{deployment_manifest_filename}' deployment manifest"))
@@ -496,8 +496,8 @@ describe Bosh::Spec::IntegrationTest do
 
       run_bosh("deployment #{deployment_manifest_filename}")
       run_bosh("login admin admin")
-      run_bosh("stemcell upload #{stemcell_filename}")
-      run_bosh("release upload #{release_filename}")
+      run_bosh("upload stemcell #{stemcell_filename}")
+      run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
       out.should =~ Regexp.new(Regexp.escape("Deployed to 'http://localhost:57523' using '#{deployment_manifest_filename}' deployment manifest"))
