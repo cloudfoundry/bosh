@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$:.unshift(File.dirname(__FILE__) + "/..")
+
+require "dashboard"
+require "thin"
+
+Thin::Server.start("0.0.0.0", "8081") do
+  map "/" do
+    run Bosh::Dashboard::App.new
+  end
+end

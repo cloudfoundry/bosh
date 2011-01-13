@@ -1,0 +1,13 @@
+source :rubygems
+
+gem "rake"
+gem "sinatra"
+gem "thin"
+
+group :test do
+  gem "rack-test"
+  gem "rcov"
+  gem "rcov_analyzer"
+  gem "rspec"
+  gem "ruby-debug"
+end

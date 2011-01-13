@@ -1,0 +1,7 @@
+task :bundle_install do
+  sh("bundle --local install")
+end
+
+task :start => :bundle_install do
+  sh("./bin/dashboard")
+end
