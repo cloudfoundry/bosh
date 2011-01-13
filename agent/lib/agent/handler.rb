@@ -182,6 +182,7 @@ module Bosh::Agent
     # FIXME: temporary stop method
     class Stop
       def self.process(args)
+        `monit -g vmc stop`
         "stopped"
       end
     end

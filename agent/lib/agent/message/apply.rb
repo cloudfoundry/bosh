@@ -75,7 +75,10 @@ module Bosh::Agent
           Util.unpack_blob(blobstore_id, install_dir)
 
           pkg_link_dst = File.join(@base_dir, 'packages', pkg['name'])
-          FileUtils.ln_sf(install_dir, pkg_link_dst)
+          `ln -nsf #{install_dir} #{pkg_link_dst}`
+          unless $?.exitstatus == 0
+            raise Bosh::Agent::MessageHandlerError, "Failed to link package: #{install_dir} #{pkg_link_dst}"
+          end
         end
 
       end
@@ -112,7 +115,13 @@ module Bosh::Agent
           # attempt to create target link in dst rather than to overwrite it.
           # BROKEN: FileUtils.ln_sf(monit_file, monit_link)
           `ln -nsf #{monit_file} #{monit_link}`
+          unless $?.exitstatus == 0
+            raise Bosh::Agent::MessageHandlerError, "Failed to link monit file: #{monit_file} #{monit_link}"
+          end
+
           `monit reload`
+          `monit -g vmc monitor`
+          `monit -g vmc start`
         end
 
       end

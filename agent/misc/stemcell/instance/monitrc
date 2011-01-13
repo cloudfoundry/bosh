@@ -1,0 +1,7 @@
+set daemon 10
+set logfile /var/vmc/monit/monit.log
+
+set httpd port 2822 and use address 127.0.0.1
+  allow localhost # FIXME not authenticated
+
+include /var/vmc/monit/*.monitrc
