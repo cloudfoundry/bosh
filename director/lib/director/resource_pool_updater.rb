@@ -32,6 +32,7 @@ module Bosh::Director
           idle_vm.vm.delete
         end
       end
+      @pool.wait
     end
 
     def delete_outdated_vms
@@ -49,6 +50,7 @@ module Bosh::Director
           end
         end
       end
+      @pool.wait
     end
 
     def create_missing_vms
@@ -101,6 +103,7 @@ module Bosh::Director
           end
         end
       end
+      @pool.wait
     end
 
     def generate_agent_id
