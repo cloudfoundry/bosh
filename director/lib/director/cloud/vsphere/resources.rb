@@ -156,6 +156,7 @@ module VSphereCloud
       perf_counters = @client.get_perf_counters(host_mobs, ["cpu.usage.average", "mem.usage.average"], :max_sample => 5)
       perf_counters.each do |host_mob, perf_counter|
         host_properties          = properties[host_mob]
+        next if host_properties.nil?
         host_total_memory        = host_properties["hardware.memorySize"].to_i
         host_percent_memory_used = average_csv(perf_counter["mem.usage.average"]) / 10000
         host_free_memory         = (1.0 - host_percent_memory_used) * host_total_memory
