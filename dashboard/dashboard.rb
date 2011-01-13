@@ -38,6 +38,14 @@ module Bosh::Dashboard
     get "/stemcells" do
       JSON.generate(@director.list_stemcells)
     end
+
+    get "/releases" do
+      JSON.generate(@director.list_releases)      
+    end
+
+    get "/deployments" do
+      JSON.generate(@director.list_deployments)
+    end
     
   end
 end
