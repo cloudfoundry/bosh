@@ -27,7 +27,7 @@ module Bosh::Dashboard
         if logged_in?
           @director = Bosh::Dashboard::Director.new(target, username, password)
         elsif request.xhr?
-          raise NotFound
+          error(403, "Forbidden")
         else
           redirect "/login"
         end
@@ -35,7 +35,15 @@ module Bosh::Dashboard
     end
 
     error do
-      # Provide recovery from director errors
+      exception = request.env["sinatra.error"]
+      
+      if request.xhr?
+        status(500)
+        JSON.generate(:error => exception.error_code, :message => exception.message)
+      else
+        session[:error] = exception
+        redirect "/"
+      end
     end
 
     get "/" do
@@ -65,29 +73,29 @@ module Bosh::Dashboard
       end
     end
 
-    get "/stemcells" do
+    get "/stemcells", :provides => "json" do
       @stemcells = @director.list_stemcells
-      haml :stemcells
+      JSON.generate(:html => haml(:stemcells))
     end
 
-    get "/releases" do
+    get "/releases", :provides => "json" do
       @releases = @director.list_releases
-      haml :releases
+      JSON.generate(:html => haml(:releases))      
     end
 
-    get "/deployments" do
+    get "/deployments", :provides => "json" do
       @deployments = @director.list_deployments
-      haml :deployments
+      JSON.generate(:html => haml(:deployments))      
     end
 
-    get "/running_tasks" do
+    get "/running_tasks", :provides => "json" do
       @tasks = @director.list_running_tasks
-      haml :tasks
+      JSON.generate(:html => haml(:tasks))
     end
 
-    get "/recent_tasks" do
+    get "/recent_tasks", :provides => "json" do
       @tasks = @director.list_recent_tasks
-      haml :tasks
+      JSON.generate(:html => haml(:tasks))
     end
     
   end

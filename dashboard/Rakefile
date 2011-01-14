@@ -5,3 +5,7 @@ end
 task :start => :bundle_install do
   sh("./bin/dashboard")
 end
+
+task :production => :bundle_install do
+  sh("env RACK_ENV=production ./bin/dashboard")
+end

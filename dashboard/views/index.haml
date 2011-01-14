@@ -18,6 +18,10 @@
           %a(href="/logout") Logout
 
     #content
+
+      - if session[:error]
+        #error= show_error
+
       #deployments.block
         .header 
           .title Deployments

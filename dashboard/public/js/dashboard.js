@@ -13,9 +13,25 @@ jQuery(document).ready(function($) {
     var loader = element.find(".loader");
     loader.show();
 
-    $.get(url, function(html) {
-      element.find(".body").html(html);
-      loader.hide();
+    $.ajax({
+      url: url,
+      type: "GET",
+      dataType: "json",
+      success: function(data) {
+        element.find(".body").html(data.html);
+        loader.hide();
+      },
+      error: function(xhr, err) {
+        var message = "";
+        if (xhr.readyState == 4) {
+          var response = eval("(" + xhr.responseText + ")");
+          message = response.message;
+        } else {
+          message = "Error fetching data";
+        }
+        element.find(".body").html("<div class='error'>" + message + "</div>");
+        loader.hide();
+      }
     });
   };
 

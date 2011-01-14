@@ -15,6 +15,9 @@
     #content
 
       #login_form
+        - if session[:error]
+          #error= show_error
+
         %form(action="/login" method="post")
           .field
             .label 
@@ -29,7 +32,7 @@
           .field
             .label 
               Password
-            .input 
+            .input
               %input(type="password" name="password" class="text")
           .field.submit
             %input(type="submit" value="Log In")

@@ -13,16 +13,12 @@ module Bosh
 
       def initialize(director_uri, user = nil, password = nil)
         if director_uri.nil? || director_uri =~ /^\s*$/
-          raise DirectorMissing, "no director URI given"
+          raise DirectorMissing, "Please provide director URI"
         end
         
         @director_uri = director_uri
         @user         = user
         @password     = password
-      end
-
-      def exists?
-        [401, 200].include?(get("/status")[0])
       end
 
       def authenticated?

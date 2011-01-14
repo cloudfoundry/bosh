@@ -1,6 +1,12 @@
 module Bosh::Dashboard
   module Helpers
 
+    def show_error
+      error = session[:error]
+      session[:error] = nil
+      h(error)
+    end
+
     def auth_required?
       request.path_info != "/login"      
     end
