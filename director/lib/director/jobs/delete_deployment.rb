@@ -76,6 +76,9 @@ module Bosh::Director
             pool.shutdown
           end
 
+          stemcells = Models::Stemcell.find(:deployments => deployment)
+          stemcells.each { |stemcell| stemcell.deployments.delete(deployment) }
+
           deployment.delete
         end
       end

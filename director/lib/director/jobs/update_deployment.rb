@@ -88,6 +88,22 @@ module Bosh::Director
         end
       end
 
+      def update_stemcell_references
+        current_stemcells = Set.new
+        @deployment_plan.resource_pools.each do |resource_pool|
+          current_stemcells << resource_pool.stemcell.stemcell
+        end
+
+        deployment = @deployment_plan.deployment
+        stemcells = deployment.stemcells
+        stemcells.each do |stemcell|
+          unless current_stemcells.include?(stemcell)
+            stemcell.deployments.delete(deployment)
+            deployment.stemcells.delete(stemcell)
+          end
+        end
+      end
+
       def perform
         @logger.info("Acquiring deployment lock: #{@deployment_plan.name}")
         deployment_lock = Lock.new("lock:deployment:#{@deployment_plan.name}")
@@ -97,20 +113,24 @@ module Bosh::Director
           release_lock.lock do
             @logger.info("Preparing deployment")
             prepare
-            deployment = @deployment_plan.deployment
-            @logger.info("Finished preparing deployment")
             begin
-              @logger.info("Updating deployment")
-              update
-              deployment.manifest = @manifest
-              deployment.save!
-              @logger.info("Finished updating deployment")
-              "/deployments/#{deployment.name}"
-            rescue Exception => e
-              @logger.info("Update failed, rolling back")
-              @logger.error("#{e} - #{e.backtrace.join("\n")}")
-              # TODO: record the error
-              rollback
+              deployment = @deployment_plan.deployment
+              @logger.info("Finished preparing deployment")
+              begin
+                @logger.info("Updating deployment")
+                update
+                deployment.manifest = @manifest
+                deployment.save!
+                @logger.info("Finished updating deployment")
+                "/deployments/#{deployment.name}"
+              rescue Exception => e
+                @logger.info("Update failed, rolling back")
+                @logger.error("#{e} - #{e.backtrace.join("\n")}")
+                # TODO: record the error
+                rollback
+              end
+            ensure
+              update_stemcell_references
             end
           end
         end

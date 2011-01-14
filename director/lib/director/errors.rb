@@ -44,6 +44,7 @@ module Bosh::Director
     ["StemcellAlreadyExists",   BAD_REQUEST, 50002,
         "Stemcell \"%s\":\"%s\" already exists, increment the version if it has changed"],
     ["StemcellNotFound",        BAD_REQUEST, 50003, "Stemcell: \"%s\":\"%s\" doesn't exist"],
+    ["StemcellInUse",           BAD_REQUEST, 50004, "Stemcell: \"%s\":\"%s\" is in use by these deployments: %s"],
 
     ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
 

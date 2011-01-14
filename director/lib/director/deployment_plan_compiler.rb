@@ -143,10 +143,17 @@ module Bosh::Director
     end
 
     def bind_stemcells
+      deployment = @deployment_plan.deployment
       @deployment_plan.resource_pools.each do |resource_pool|
         stemcell_spec = resource_pool.stemcell
-        stemcell_spec.stemcell = Models::Stemcell.find(:name => stemcell_spec.name,
-                                                       :version => stemcell_spec.version).first
+        lock = Lock.new("lock:stemcells:#{stemcell_spec.name}:#{stemcell_spec.version}", :timeout => 10)
+        lock.lock do
+          stemcell = Models::Stemcell.find(:name => stemcell_spec.name,
+                                           :version => stemcell_spec.version).first
+          stemcell.deployments << @deployment_plan.deployment
+          deployment.stemcells << stemcell
+          stemcell_spec.stemcell = stemcell
+        end
       end
     end
 
