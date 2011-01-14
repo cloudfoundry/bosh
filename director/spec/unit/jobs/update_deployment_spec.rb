@@ -116,6 +116,37 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
   end
 
+  describe "update_stemcell_references" do
+
+    it "should delete references to no longer used stemcells" do
+      deployment = stub("deployment")
+      resource_pool_spec = stub("resource_pool_spec")
+      stemcell_spec = stub("stemcell_spec")
+      new_stemcell = stub("new_stemcell")
+      old_stemcell = stub("old_stemcell")
+
+      old_stemcell_deployments = stub("old_stemcell_deployments")
+      old_stemcell.stub!(:deployments).and_return(old_stemcell_deployments)
+
+      deployment_stemcells = stub("deployment_stemcells")
+      deployment_stemcells.stub!(:each).and_yield(new_stemcell).and_yield(old_stemcell)
+
+      @deployment_plan.stub!(:deployment).and_return(deployment)
+      @deployment_plan.stub!(:resource_pools).and_return([resource_pool_spec])
+      deployment.stub!(:stemcells).and_return(deployment_stemcells)
+
+      resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
+      stemcell_spec.stub!(:stemcell).and_return(new_stemcell)
+
+      old_stemcell_deployments.should_receive(:delete).with(deployment)
+      deployment_stemcells.should_receive(:delete).with(old_stemcell)
+
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
+      update_deployment_job.update_stemcell_references
+    end
+
+  end
+
   describe "perform" do
 
     it "should do a basic update" do
@@ -141,6 +172,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update)
+      update_deployment_job.should_receive(:update_stemcell_references)
       update_deployment_job.perform.should eql("/deployments/test_deployment")
     end
 
@@ -164,6 +196,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update).and_raise("rollback exception")
       update_deployment_job.should_receive(:rollback)
+      update_deployment_job.should_receive(:update_stemcell_references)
       update_deployment_job.perform
     end
 

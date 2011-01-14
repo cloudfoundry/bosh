@@ -146,6 +146,12 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
       deployment.should_receive(:delete)
 
+      stemcell = stub("stemcell")
+      stemcell_deployments = stub("stemcell_deployments")
+      stemcell.stub!(:deployments).and_return(stemcell_deployments)
+      Bosh::Director::Models::Stemcell.stub!(:find).with(:deployments => deployment).and_return([stemcell])
+      stemcell_deployments.should_receive(:delete).with(deployment)
+
       @job.perform
     end
 
