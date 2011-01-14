@@ -12,7 +12,6 @@ require "dashboard"
 
 Thin::Server.start("0.0.0.0", "8081") do
   use Rack::CommonLogger
-  use Rack::ShowExceptions
   
   map "/" do
     run Bosh::Dashboard::App.new

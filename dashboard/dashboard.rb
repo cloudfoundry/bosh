@@ -13,6 +13,8 @@ module Bosh::Dashboard
   class App < Sinatra::Base
     set :haml, :format => :html5, :ugly => true
     set :app_file, __FILE__
+    set :show_exceptions, false
+    set :dump_errors, false
 
     use Rack::Session::Pool
 
