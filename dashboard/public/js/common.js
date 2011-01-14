@@ -44,9 +44,9 @@ jQuery(document).ready(function($) {
   };
 
   update_data();
-/*  setInterval(update_stemcells, 30000);
+  setInterval(update_stemcells, 30000);
   setInterval(update_releases, 30000);
   setInterval(update_deployments, 30000);
   setInterval(update_running_tasks, 5000);
-  setInterval(update_recent_tasks, 10000); */
+  setInterval(update_recent_tasks, 10000);
 });
