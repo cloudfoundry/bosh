@@ -1,10 +1,17 @@
 * {margin: 0; padding:0;}
-body {width: 100%; font-family: Helvetica, sans-serif; background-color: #f7f7f7; font-size: 14px;}
+body {width: 100%; height: 100%; font-family: Helvetica, sans-serif; background-color: #f7f7f7; font-size: 14px;}
 
 #header {margin: 20px;}
 #content {margin: 0 auto; overflow: hidden; _height: 1%; min-width: 1200px;}
 
-h1 {font-size: 18px; margin-bottom: 5px;}
+#logo {font-size: 18px; margin-bottom: 5px;}
+
+#login_form {margin: 15% auto 0; width: 260px; height: 130px; border: 2px solid #d2d2d2; padding: 15px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #e3e3e3}
+#login_form .field {margin: 10px 0;}
+#login_form .field .label {float: left; width: 100px; font-size: 15px; padding-top: 2px;}
+#login_form .field input.text {padding: 1px; font-size: 12px; width: 140px;}
+#login_form .submit {margin-left: 100px;}
+#login_form .submit input {font-size: 12px;}
 
 /* Data block look and feel */
 .block {width: 40%; margin: 20px;}

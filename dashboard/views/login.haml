@@ -1,12 +1,35 @@
-%form(action="/login" method="post")
-  %label
-    Target:
-    %input(type="text" name="target")
-  %label
-    Username:
-    %input(type="text" name="username")
-  %label
-    Password:
-    %input(type="password" name="password")
+!!!<!DOCTYPE html>
+%html
+  %head
+    %meta(http-equiv="Content-type" content="text/html; charset=utf-8")
+    %title Bosh Dashboard - Sign In
+    %link{ :rel => "stylesheet", :href => versioned_css("common") }
+    %script{ :type => "text/javascript", :src => "/js/jquery-1.4.4.min.js" }
+    %script{ :type => "text/javascript", :src => versioned_js("login") }
 
-  %input(type="submit" value="Login")
+  %body
+
+    #header
+      %h1#logo Bosh Dashboard
+
+    #content
+
+      #login_form
+        %form(action="/login" method="post")
+          .field
+            .label 
+              Target
+            .input 
+              %input(type="text" name="target" id="login_target" class="text")
+          .field
+            .label
+              Username
+            .input 
+              %input(type="text" name="username" class="text")
+          .field
+            .label 
+              Password
+            .input 
+              %input(type="password" name="password" class="text")
+          .field.submit
+            %input(type="submit" value="Log In")

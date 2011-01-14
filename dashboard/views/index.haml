@@ -3,14 +3,15 @@
   %head
     %title Bosh Dashboard
 
+    %meta(http-equiv="Content-type" content="text/html; charset=utf-8")
     %link{ :rel => "stylesheet", :href => versioned_css("common") }
     %script{ :type => "text/javascript", :src => "/js/jquery-1.4.4.min.js" }
-    %script{ :type => "text/javascript", :src => versioned_js("common") }
+    %script{ :type => "text/javascript", :src => versioned_js("dashboard") }
 
   %body
 
     #header
-      %h1 Bosh Dashboard
+      %h1#logo Bosh Dashboard
       - if logged_in?
         #current_user
           = "Logged in to '%s' as '%s'" % [ target, username ]

@@ -5,12 +5,16 @@ jQuery(document).ready(function($) {
   var running_tasks = $("#running_tasks");
   var recent_tasks  = $("#recent_tasks");
 
-  var update_block = function(block, url) {
-    var loader = block.find(".loader");
+  var update_block = function(element, url) {
+    if (element.length == 0) {
+      return;
+    }
+
+    var loader = element.find(".loader");
     loader.show();
 
     $.get(url, function(html) {
-      block.find(".body").html(html);
+      element.find(".body").html(html);
       loader.hide();
     });
   };
