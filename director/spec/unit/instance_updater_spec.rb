@@ -134,12 +134,9 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => false,
+    stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
-                                :networks_changed? => false,
-                                :network_settings =>BASIC_PLAN["networks"])
+                                :networks_changed? => false)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
@@ -151,6 +148,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -169,12 +168,9 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => false,
+    stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
-                                :networks_changed? => false,
-                                :network_settings =>BASIC_PLAN["networks"])
+                                :networks_changed? => false)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
@@ -186,6 +182,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @update_spec.should_not_receive(:update_watch_time)
     @update_spec.should_receive(:canary_watch_time).and_return(0.01)
@@ -212,12 +210,10 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.should_receive(:agent_id).any_number_of_times.and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => true,
+    stub_object(@instance_spec, :resource_pool_changed? => true,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false,
-                                :network_settings =>BASIC_PLAN["networks"])
+                                :network_settings => BASIC_PLAN["networks"])
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
     @instance_spec.should_receive(:current_state).and_return(IDLE_STATE)
@@ -245,6 +241,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -284,12 +282,10 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => true,
+    stub_object(@instance_spec, :resource_pool_changed? => true,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false,
-                                :network_settings =>BASIC_PLAN["networks"])
+                                :network_settings => BASIC_PLAN["networks"])
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
     @instance_spec.should_receive(:current_state).and_return(IDLE_STATE.merge({"persistent_disk" => "1gb"}))
@@ -319,6 +315,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -355,9 +353,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => false,
+    stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => true,
                                 :network_settings =>BASIC_PLAN["networks"])
@@ -373,6 +369,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -394,12 +392,9 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => false,
+    stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
-                                :networks_changed? => false,
-                                :network_settings =>BASIC_PLAN["networks"])
+                                :networks_changed? => false)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
@@ -412,6 +407,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -435,12 +432,9 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => false,
+    stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
-                                :networks_changed? => false,
-                                :network_settings =>BASIC_PLAN["networks"])
+                                :networks_changed? => false)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
@@ -453,6 +447,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -488,12 +484,9 @@ describe Bosh::Director::InstanceUpdater do
 
     @vm.stub!(:agent_id).and_return("agent-1")
 
-    stub_object(@instance_spec, :index => 5,
-                                :configuration_hash => "config_hash",
-                                :resource_pool_changed? => false,
+    stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
-                                :networks_changed? => false,
-                                :network_settings =>plan["networks"])
+                                :networks_changed? => false)
 
     @job_spec.stub!(:persistent_disk).and_return(plan["persistent_disk"])
 
@@ -508,6 +501,8 @@ describe Bosh::Director::InstanceUpdater do
           raise "invalid agent id"
       end
     end
+
+    @instance_spec.stub!(:spec).and_return(plan)
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)

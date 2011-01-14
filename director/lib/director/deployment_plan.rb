@@ -486,6 +486,22 @@ module Bosh::Director
                 configuration_changed? || job_changed?
       end
 
+      def spec
+        deployment_plan = @job.deployment
+        {
+          "deployment" => deployment_plan.name,
+          "release" => deployment_plan.release.spec,
+          "job" => job.spec,
+          "index" => index,
+          "networks" => network_settings,
+          "resource_pool" => job.resource_pool.spec,
+          "packages" => job.package_spec,
+          "persistent_disk" => job.persistent_disk,
+          "configuration_hash" => configuration_hash,
+          "properties" => job.properties
+        }
+      end
+
     end
 
     class InstanceNetwork

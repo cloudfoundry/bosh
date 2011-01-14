@@ -71,7 +71,8 @@ describe Bosh::Director::DeploymentPlan do
           }
         ]
       }
-    ]
+    ],
+    "properties" => {"test" => "property"}
   }
 
   describe "Basic parsing" do
@@ -661,7 +662,14 @@ describe Bosh::Director::DeploymentPlan do
         "cloud_properties" => {"ram" => "512mb", "cpu" => 1, "disk" => "2gb"}
       },
       "configuration_hash" => "config_hash",
-      "packages" => {},
+      "packages" => {
+        "test_package"=> {
+          "name"=>"test_package",
+          "blobstore_id"=>"pkg-blob-id",
+          "sha1"=>"pkg-sha1",
+          "version"=>"33"
+        }
+      },
       "persistent_disk" => 2048,
       "job" => {"name" => "job_a", "blobstore_id" => "template_blob"}
     }
@@ -674,6 +682,13 @@ describe Bosh::Director::DeploymentPlan do
       @job = @deployment_plan.job("job_a")
       @job.template = @template
       @instance = @job.instance(0)
+      @package = stub("package")
+      @package.stub!(:name).and_return("test_package")
+      @package.stub!(:version).and_return("33")
+      @compiled_package = stub("compiled_package")
+      @compiled_package.stub!(:sha1).and_return("pkg-sha1")
+      @compiled_package.stub!(:blobstore_id).and_return("pkg-blob-id")
+      @job.add_package(@package, @compiled_package)
       @instance.configuration_hash = "config_hash"
     end
 
@@ -771,6 +786,40 @@ describe Bosh::Director::DeploymentPlan do
       @instance.persistent_disk_changed?.should be_true
       @instance.job_changed?.should be_false
       @instance.changed?.should be_true
+    end
+
+    it "should generate the proper apply spec" do
+      @instance.spec.should eql({
+        "configuration_hash" => "config_hash",
+        "packages" => {
+          "test_package"=> {
+            "name"=>"test_package",
+            "blobstore_id"=>"pkg-blob-id",
+            "sha1"=>"pkg-sha1",
+            "version"=>"33"
+          }
+        },
+        "resource_pool" => {
+          "stemcell" => {"name" => "jeos", "version" => 1},
+          "name" => "small",
+          "cloud_properties" => { "ram" => "512mb", "cpu"=>1, "disk"=>"2gb" }
+        },
+        "networks" => {
+          "network_a" => {
+            "netmask" => "255.255.255.0",
+            "ip" => "10.0.0.100",
+            "gateway" => "10.0.0.1",
+            "cloud_properties" => { "name"=>"net_a" },
+            "dns" => [ "1.2.3.4" ]
+          }
+        },
+        "index" => 0,
+        "job" => { "name" => "job_a", "blobstore_id"=>"template_blob" },
+        "persistent_disk" => 2048,
+        "release" => { "name"=>"test_release", "version"=>1 },
+        "deployment" => "test_deployment",
+        "properties" => { "test" => "property" }
+      })
     end
 
   end

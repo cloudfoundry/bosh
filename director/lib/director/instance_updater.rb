@@ -120,18 +120,7 @@ module Bosh::Director
     end
 
     def apply_deployment
-      task = agent.apply({
-        "deployment" => @deployment_plan.name,
-        "release" => @deployment_plan.release.spec,
-        "job" => @job_spec.spec,
-        "index" => @instance_spec.index,
-        "networks" => @instance_spec.network_settings,
-        "resource_pool" => @job_spec.resource_pool.spec,
-        "packages" => @job_spec.package_spec,
-        "persistent_disk" => @job_spec.persistent_disk,
-        "configuration_hash" => @instance_spec.configuration_hash,
-        "properties" => @job_spec.properties
-      })
+      task = agent.apply(@instance_spec.spec)
       while task["state"] == "running"
         sleep(1.0)
         task = agent.get_task(task["agent_task_id"])

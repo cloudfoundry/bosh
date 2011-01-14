@@ -52,7 +52,7 @@ describe Bosh::Director::ConfigurationHasher do
     job.stub!(:properties).and_return({"foo" => "bar"})
     job.stub!(:template).and_return(template)
     instance.stub!(:index).and_return(0)
-    instance.stub!(:index).and_return(0)
+    instance.stub!(:spec).and_return({"test" => "spec"})
 
     template_contents = create_release("foo", "monit file",
                                        {"test" => {"destination" => "test_dst", "contents" => "test contents"}})
@@ -78,14 +78,15 @@ describe Bosh::Director::ConfigurationHasher do
     job.stub!(:properties).and_return({"foo" => "bar"})
     job.stub!(:template).and_return(template)
     instance.stub!(:index).and_return(0)
+    instance.stub!(:spec).and_return({"test" => "spec"})
 
-    template_contents = create_release("foo", "<%= name %> <%= index %> <%= properties.foo %>",
+    template_contents = create_release("foo", "<%= name %> <%= index %> <%= properties.foo %> <%= spec.test %>",
                                        {"test" => {"destination" => "test_dst", "contents" => "<%= index %>"}})
 
     Bosh::Director::Config.stub!(:blobstore).and_return(blobstore_client)
     blobstore_client.should_receive(:get).with("b_id").and_return(template_contents)
 
-    instance.should_receive(:configuration_hash=).with("8938a11ba7e00c634f36f9cfef0ffa051e8c519a")
+    instance.should_receive(:configuration_hash=).with("a9b748673e26ae8047b4c326ce2bdbd586ba597c")
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job)
     configuration_hasher.hash
