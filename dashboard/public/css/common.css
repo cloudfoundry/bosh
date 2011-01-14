@@ -2,16 +2,16 @@
 body {width: 100%; font-family: Helvetica, sans-serif; background-color: #f7f7f7; font-size: 14px;}
 
 #header {}
-#content {margin: 0 auto; margin-top: 20px; overflow: hidden; _height: 1%;}
+#content {margin: 0 auto; margin-top: 20px; overflow: hidden; _height: 1%; min-width: 1200px;}
 
 /* Data block look and feel */
 .block {width: 40%; margin: 20px;}
 .block .header {background-color: #dadada; padding: 5px 10px; overflow: hidden; _height: 1%; -moz-border-radius-topleft: 4px; -webkit-border-radius-topleft: 4px;  -moz-border-radius-topright: 4px; -webkit-border-radius-topright: 4px;}
 .block .header .title {float: left; padding-top: 4px; font-weight: bold; color: #333;}
-.block .header .loader {float: right; font-size: 12px; color: #333; padding-top: 4px;}
-.block .body {padding: 5px 2px; height: 400px; overflow: auto; -moz-border-radius-bottomleft: 4px; -webkit-border-radius-bottomleft: 4px;  -moz-border-radius-bottomright: 4px; -webkit-border-radius-bottomright: 4px; border: 1px solid #dadada;}
+.block .header .loader {float: right; font-size: 12px; color: #333; padding-top: 3px; background: url(/images/loader.gif) transparent no-repeat; padding-left: 20px;}
+.block .body {padding: 5px 2px; height: 300px; overflow: auto; -moz-border-radius-bottomleft: 4px; -webkit-border-radius-bottomleft: 4px;  -moz-border-radius-bottomright: 4px; -webkit-border-radius-bottomright: 4px; border: 1px solid #dadada;}
 
-.block .body table {font-size: 12px; color: #343434;}
+.block .body table {width: 100%; font-size: 12px; color: #343434;}
 .block .body table tr.odd {background-color: #d8d8d8;}
 .block .body table th {padding: 4px 10px; text-align: left; font-weight: bold;}
 .block .body table td {padding: 4px 10px;}
@@ -31,5 +31,9 @@ body {width: 100%; font-family: Helvetica, sans-serif; background-color: #f7f7f7
 #stemcells th.version {width: 90px;}
 #stemcells th.cid {width: 250px;}
 
-
-
+.tasks {float: left; 650px;}
+.tasks td.error {color: red;}
+.tasks td.done {color: green;}
+.tasks th.id {width: 30px;}
+.tasks th.state {width: 50px;}
+.tasks th.timestamp {width: 180px;}

@@ -10,7 +10,7 @@ require "director"
 
 module Bosh::Dashboard
   class App < Sinatra::Base
-    set :haml, :format => :html5
+    set :haml, :format => :html5, :ugly => true
     set :app_file, __FILE__
 
     before do
@@ -18,12 +18,19 @@ module Bosh::Dashboard
     end
 
     helpers do
+      include Rack::Utils
+      alias_method :h, :escape_html
+      
       def versioned_js(name)
         "/js/#{name}.js?" + File.mtime(File.join(Sinatra::Application.public, "js", "#{name}.js")).to_i.to_s
       end
 
       def versioned_css(name)
         "/css/#{name}.css?" + File.mtime(File.join(Sinatra::Application.public, "css", "#{name}.css")).to_i.to_s
+      end
+
+      def row_class(i)
+        i.to_i % 2 == 0 ? "even" : "odd"
       end
     end
 
@@ -36,15 +43,28 @@ module Bosh::Dashboard
     end
 
     get "/stemcells" do
-      JSON.generate(@director.list_stemcells)
+      @stemcells = @director.list_stemcells
+      haml :stemcells, :layout => false
     end
 
     get "/releases" do
-      JSON.generate(@director.list_releases)      
+      @releases = @director.list_releases
+      haml :releases, :layout => false
     end
 
     get "/deployments" do
-      JSON.generate(@director.list_deployments)
+      @deployments = @director.list_deployments
+      haml :deployments, :layout => false
+    end
+
+    get "/running_tasks" do
+      @tasks = @director.list_running_tasks
+      haml :tasks, :layout => false
+    end
+
+    get "/recent_tasks" do
+      @tasks = @director.list_recent_tasks
+      haml :tasks, :layout => false      
     end
     
   end
