@@ -1,5 +1,26 @@
 module Bosh::Dashboard
   module Helpers
+
+    def auth_required?
+      request.path_info != "/login"      
+    end
+
+    def logged_in?
+      target && username && password
+    end
+
+    def target
+      session[:target]
+    end
+
+    def username
+      session[:username]
+    end
+
+    def password
+      session[:password]
+    end
+    
     def versioned_js(name)
       "/js/#{name}.js?" + File.mtime(File.join(Sinatra::Application.public, "js", "#{name}.js")).to_i.to_s
     end

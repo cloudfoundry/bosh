@@ -1,28 +1,48 @@
-#deployments.block
-  .header 
-    .title Deployments
-    .loader Updating deployments list...    
-  .body
+!!!<!DOCTYPE html>
+%html
+  %head
+    %title Bosh Dashboard
 
-#stemcells.block
-  .header 
-    .title Stemcells
-    .loader Updating stemcells list...
-  .body
+    %link{ :rel => "stylesheet", :href => versioned_css("common") }
+    %script{ :type => "text/javascript", :src => "/js/jquery-1.4.4.min.js" }
+    %script{ :type => "text/javascript", :src => versioned_js("common") }
 
-#releases.block
-  .header 
-    .title Releases
-    .loader Updating releases list...    
-  .body
+  %body
 
-#running_tasks.block.tasks
-  .header
-    .title Running tasks
-  .body
+    #header
+      %h1 Bosh Dashboard
+      - if logged_in?
+        #current_user
+          = "Logged in to '%s' as '%s'" % [ target, username ]
+          %a(href="/logout") Logout
 
-#recent_tasks.block.tasks
-  .header
-    .title Recent tasks
-    .loader &nbsp;
-  .body
+    #content
+      #deployments.block
+        .header 
+          .title Deployments
+          .loader Updating deployments list...    
+        .body
+
+      #stemcells.block
+        .header 
+          .title Stemcells
+          .loader Updating stemcells list...
+        .body
+
+      #releases.block
+        .header 
+          .title Releases
+          .loader Updating releases list...    
+        .body
+
+      #running_tasks.block.tasks
+        .header
+          .title Running tasks
+          .loader &nbsp;
+        .body
+
+      #recent_tasks.block.tasks
+        .header
+          .title Recent tasks
+          .loader &nbsp;
+        .body

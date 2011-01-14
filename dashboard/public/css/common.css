@@ -1,8 +1,10 @@
 * {margin: 0; padding:0;}
 body {width: 100%; font-family: Helvetica, sans-serif; background-color: #f7f7f7; font-size: 14px;}
 
-#header {}
-#content {margin: 0 auto; margin-top: 20px; overflow: hidden; _height: 1%; min-width: 1200px;}
+#header {margin: 20px;}
+#content {margin: 0 auto; overflow: hidden; _height: 1%; min-width: 1200px;}
+
+h1 {font-size: 18px; margin-bottom: 5px;}
 
 /* Data block look and feel */
 .block {width: 40%; margin: 20px;}

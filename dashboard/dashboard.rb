@@ -14,6 +14,8 @@ module Bosh::Dashboard
     set :haml, :format => :html5, :ugly => true
     set :app_file, __FILE__
 
+    use Rack::Session::Pool
+
     helpers do
       include Rack::Utils
       include Helpers
@@ -21,7 +23,15 @@ module Bosh::Dashboard
     end
 
     before do
-      @director = Bosh::Dashboard::Director.new("http://localhost:55420", "admin", "admin")
+      if auth_required?
+        if logged_in?
+          @director = Bosh::Dashboard::Director.new(target, username, password)
+        elsif request.xhr?
+          raise NotFound
+        else
+          redirect "/login"
+        end
+      end
     end
 
     error do
@@ -32,29 +42,52 @@ module Bosh::Dashboard
       haml :index
     end
 
+    get "/login" do
+      haml :login
+    end
+
+    get "/logout" do
+      session[:target]   = nil
+      session[:username] = nil
+      session[:password] = nil
+      redirect "/login"
+    end
+
+    post "/login" do
+      @director = Bosh::Dashboard::Director.new(params[:target], params[:username], params[:password])
+      if @director.authenticated?
+        session[:target]   = params[:target]
+        session[:username] = params[:username]
+        session[:password] = params[:password]
+        redirect "/"
+      else
+        redirect "/login"
+      end
+    end
+
     get "/stemcells" do
       @stemcells = @director.list_stemcells
-      haml :stemcells, :layout => false
+      haml :stemcells
     end
 
     get "/releases" do
       @releases = @director.list_releases
-      haml :releases, :layout => false
+      haml :releases
     end
 
     get "/deployments" do
       @deployments = @director.list_deployments
-      haml :deployments, :layout => false
+      haml :deployments
     end
 
     get "/running_tasks" do
       @tasks = @director.list_running_tasks
-      haml :tasks, :layout => false
+      haml :tasks
     end
 
     get "/recent_tasks" do
       @tasks = @director.list_recent_tasks
-      haml :tasks, :layout => false      
+      haml :tasks
     end
     
   end
