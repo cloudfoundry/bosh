@@ -97,7 +97,7 @@ module VSphereCloud
       datacenter_spec = datacenter.spec
       cluster_mobs    = @client.get_managed_objects("ClusterComputeResource", :root => datacenter.mob)
       properties      = @client.get_properties(cluster_mobs, "ClusterComputeResource",
-                                               ["name", "datastore", "resourcePool", "host"])
+                                               ["name", "datastore", "resourcePool", "host"], :ensure_all => true)
 
       cluster_names   = Set.new(datacenter_spec["clusters"])
       properties.delete_if { |_, cluster_properties| !cluster_names.include?(cluster_properties["name"]) }
@@ -145,7 +145,7 @@ module VSphereCloud
 
     def fetch_cluster_utilization(cluster, host_mobs)
       properties = @client.get_properties(host_mobs, "HostSystem",
-                                         ["hardware.memorySize", "runtime.inMaintenanceMode"])
+                                          ["hardware.memorySize", "runtime.inMaintenanceMode"], :ensure_all => true)
       properties.delete_if { |_, host_properties| host_properties["runtime.inMaintenanceMode"] == "true" }
 
       samples       = 0
