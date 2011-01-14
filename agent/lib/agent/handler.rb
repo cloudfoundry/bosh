@@ -199,7 +199,7 @@ module Bosh::Agent
 
         if Bosh::Agent::Config.configure
           `vmware-rpctool "info-set guestinfo.bosh nada"`
-          read_back_value = `vmware-rpctool "info-get guestinfo.bosh`
+          read_back_value = `vmware-rpctool "info-get guestinfo.bosh"`
           logger.info('Setting guestinfo.bosh: #{read_back_value}')
 
           udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
