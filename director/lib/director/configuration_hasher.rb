@@ -6,11 +6,13 @@ module Bosh::Director
       attr_reader :name
       attr_reader :index
       attr_reader :properties
+      attr_reader :spec
 
-      def initialize(name, index, properties)
+      def initialize(name, index, properties, spec)
         @name = name
         @index = index
         @properties = properties
+        @spec = spec
       end
 
       def get_binding
@@ -54,7 +56,8 @@ module Bosh::Director
         digest << @template
 
         @job.instances.each do |instance|
-          binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct)
+          binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct,
+                                             instance.spec.to_openstruct)
           instance_digest = digest.dup
           instance_digest << monit_template.result(binding_helper.get_binding)
           config_templates.each do |template|
