@@ -6,7 +6,9 @@ require 'logger'
 require 'redis'
 require "yajl"
 require 'uuidtools'
+require 'ostruct'
 
+require "agent/ext"
 require "agent/version"
 require "agent/config"
 require "agent/util"

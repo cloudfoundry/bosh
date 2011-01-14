@@ -29,7 +29,10 @@ module Bosh::Agent
 
       # Provide binding for a particular variable
       def config_binding(config)
-        config = config
+        @name = config['job']['name']
+        @index = config['index']
+        @properties = config['properties']
+        @spec = config.to_openstruct
         binding
       end
 
