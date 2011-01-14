@@ -69,6 +69,7 @@ module Bosh::Dashboard
         session[:password] = params[:password]
         redirect "/"
       else
+        session[:error] = "Cannot log in with these credentials"
         redirect "/login"
       end
     end
