@@ -2,6 +2,7 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 require 'fileutils'
 
 dummy_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/dummy.package').read
+dummy_job_data= File.open(File.dirname(__FILE__) + '/../../fixtures/job.tgz').read
 
 describe Bosh::Agent::Message::Apply do
 
@@ -48,14 +49,15 @@ describe Bosh::Agent::Message::Apply do
   it 'should install a job' do
     response = mock("response")
     response.stub!(:status).and_return(200)
-    response.stub!(:content).and_return(dummy_package_data)
+    response.stub!(:content).and_return(dummy_job_data)
 
     state = Bosh::Agent::Message::State.new(nil)
 
     apply_data = {
       "deployment" => "foo",
       "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id"},
-      "release" => { "version" => "99" }
+      "release" => { "version" => "99" },
+      "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }
     @httpclient.should_receive(:get).with("/resources/some_blobstore_id", {}, {}).and_return(response)
 

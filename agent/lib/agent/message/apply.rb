@@ -45,6 +45,9 @@ module Bosh::Agent
             "attempt to apply #{@apply_spec["deployment"]} to #{@state["deployment"]}"
         end
 
+        # FIXME: tests
+        #return @state if @state['configuraton_hash'] == @apply_spec['configuration_hash']
+
         begin
           apply_packages
           apply_job
@@ -106,6 +109,17 @@ module Bosh::Agent
         job_link_dst = File.join(@base_dir, 'jobs', name)
         FileUtils.ln_sf(install_dir, job_link_dst)
 
+        job_mf = YAML.load_file(File.join(install_dir, 'job.MF'))
+
+        job_mf['configuration'].each do |src, dst|
+          template = ERB.new(File.read(File.join(install_dir, 'config', src)))
+
+          out_file = File.join(install_dir, dst)
+          File.open(out_file, 'w') do |fh|
+            fh.write(template.result(Util.config_binding(@apply_spec)))
+          end
+        end
+
         # TODO ERB/Template
         monit_file = File.join(install_dir, 'monit')
         if File.exist?(monit_file)
@@ -119,9 +133,11 @@ module Bosh::Agent
             raise Bosh::Agent::MessageHandlerError, "Failed to link monit file: #{monit_file} #{monit_link}"
           end
 
-          `monit reload`
-          `monit -g vmc monitor`
-          `monit -g vmc start`
+          if Bosh::Agent::Config.configure
+            `monit reload`
+            `monit -g vmc monitor`
+            `monit -g vmc start`
+          end
         end
 
       end
