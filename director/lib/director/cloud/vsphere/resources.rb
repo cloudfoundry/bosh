@@ -11,6 +11,7 @@ module VSphereCloud
       attr_accessor :template_folder
       attr_accessor :template_folder_name
       attr_accessor :disk_path
+      attr_accessor :datastore_pattern
       attr_accessor :spec
 
       def inspect
@@ -87,6 +88,7 @@ module VSphereCloud
         datacenter.vm_folder            = @client.find_by_inventory_path([datacenter.name, "vm",
                                                                           datacenter.spec["vm_folder"]])
         datacenter.disk_path            = datacenter.spec["disk_path"]
+        datacenter.datastore_pattern    = Regexp.new(datacenter.spec["datastore_pattern"])
         datacenter.clusters             = fetch_clusters(datacenter)
         datacenters[datacenter.name]    = datacenter
       end
@@ -112,7 +114,7 @@ module VSphereCloud
 
         cluster.resource_pool      = cluster_properties["resourcePool"]
         cluster.datacenter         = datacenter
-        cluster.datastores         = fetch_datastores(cluster_properties["datastore"])
+        cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"])
 
         fetch_cluster_utilization(cluster, cluster_properties["host"])
 
@@ -121,11 +123,10 @@ module VSphereCloud
       clusters
     end
 
-    def fetch_datastores(datastore_mobs)
+    def fetch_datastores(datacenter, datastore_mobs)
       properties = @client.get_properties(datastore_mobs, "Datastore",
-                                          ["summary.freeSpace", "summary.capacity",
-                                           "summary.multipleHostAccess", "name"])
-      properties.delete_if { |_, datastore_properties| datastore_properties["summary.multipleHostAccess"] == "false" }
+                                          ["summary.freeSpace", "summary.capacity", "name"])
+      properties.delete_if { |_, datastore_properties| datastore_properties["name"] !~ datacenter.datastore_pattern }
 
       datastores = []
       properties.each_value do |datastore_properties|
