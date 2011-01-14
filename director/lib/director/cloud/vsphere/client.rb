@@ -20,6 +20,7 @@ module VSphereCloud
       @service_content                 = @service.retrieveServiceContent(retrieve_service_content_request).returnval
       @metrics_cache                   = {}
       @lock                            = Mutex.new
+      @logger                          = Bosh::Director::Config.logger
     end
 
     def login(username, password, locale)
@@ -34,7 +35,7 @@ module VSphereCloud
       @service.logout(LogoutRequestType.new(@service_content.sessionManager))
     end
 
-    def get_properties(obj, type, properties)
+    def get_properties(obj, type, properties, options = {})
       property_specs = [PropertySpec.new(nil, nil, type, false, properties)]
 
       if obj.is_a?(ManagedObjectReference)
@@ -47,25 +48,45 @@ module VSphereCloud
       properties_request = RetrievePropertiesExRequestType.new(@service_content.propertyCollector, filter_spec,
                                                                RetrieveOptions.new)
 
-      properties_response = get_all_properties(properties_request)
-      result = {}
+      # TODO: cache partial results
+      attempts = 5
+      begin
+        properties_response = get_all_properties(properties_request)
+        result = {}
 
-      properties_response.each do |object_content|
-        properties = {:obj => object_content.obj}
-        if object_content.propSet
-          object_content.propSet.each do |property|
-            properties[property.name] = property.val
+        properties_response.each do |object_content|
+          object_properties = {:obj => object_content.obj}
+          if options[:ensure_all]
+            remaining_properties = Set.new(properties)
+          else
+            remaining_properties = Set.new(options[:ensure])
           end
+          if object_content.propSet
+            object_content.propSet.each do |property|
+              object_properties[property.name] = property.val
+              remaining_properties.delete(property.name)
+            end
+          end
+          raise "Not all required properties were returned" unless remaining_properties.empty?
+          result[object_content.obj] = object_properties
         end
-        result[object_content.obj] = properties
-      end
 
-      result = result.values[0] if obj.is_a?(String)
-      result
+        result = result.values[0] if obj.is_a?(String)
+        result
+      rescue => e
+        attempts -= 1
+        if attempts > 0
+          @logger.warn("Error retrieving properties: #{e} - #{e.backtrace.join("\n")}")
+          sleep(3.0)
+          retry
+        else
+          raise e
+        end
+      end
     end
 
-    def get_property(obj, type, property)
-      get_properties(obj, type, property)[property]
+    def get_property(obj, type, property, options = {})
+      get_properties(obj, type, property, options)[property]
     end
 
     def get_managed_objects(type, options={})
@@ -100,7 +121,7 @@ module VSphereCloud
 
     def find_parent(obj, parent_type)
       loop do
-        obj = get_property(obj, obj.xmlattr_type, "parent")
+        obj = get_property(obj, obj.xmlattr_type, "parent", :ensure_all => true)
         break if obj.nil? || obj.xmlattr_type == parent_type
       end
       obj
@@ -171,7 +192,9 @@ module VSphereCloud
     def wait_for_task(task, options = {})
       interval = options[:interval] || 1.0
       loop do
-        properties = get_properties([task], "Task", ["info.progress", "info.state", "info.result", "info.error"])[task]
+        properties = get_properties([task], "Task",
+                                    ["info.progress", "info.state",
+                                     "info.result", "info.error"], :ensure => ["info.state"])[task]
         case properties["info.state"]
           when TaskInfoState::Running
             sleep(interval)

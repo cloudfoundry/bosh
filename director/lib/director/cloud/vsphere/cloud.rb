@@ -103,7 +103,7 @@ module VSphereCloud
         begin
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-            templates = client.get_property(datacenter.template_folder, "Folder", "childEntity")
+            templates = client.get_property(datacenter.template_folder, "Folder", "childEntity", :ensure_all => true)
             template_properties = client.get_properties(templates, "VirtualMachine", ["name"])
             template_properties.each do |template, properties|
               template_name = properties["name"].gsub("%2f", "/")
@@ -146,7 +146,7 @@ module VSphereCloud
 
         replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
         replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, "VirtualMachine",
-                                                          ["config.hardware.device", "snapshot"])
+                                                          ["config.hardware.device", "snapshot"], :ensure_all => true)
         devices = replicated_stemcell_properties["config.hardware.device"]
         snapshot = replicated_stemcell_properties["snapshot"]
 
@@ -186,7 +186,7 @@ module VSphereCloud
         vm = client.wait_for_task(task)
 
         vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
-                                                                     "config.vAppConfig.property"])
+                                                                     "config.vAppConfig.property"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
         existing_app_properties = vm_properties["config.vAppConfig.property"]
         env = build_agent_env(name, vm, agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
@@ -236,7 +236,7 @@ module VSphereCloud
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         vm = get_vm_by_cid(vm_cid)
-        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device")
+        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
 
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
@@ -265,7 +265,7 @@ module VSphereCloud
 
         config = VirtualMachineConfigSpec.new
         vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
-                                                                     "config.vAppConfig.property"])
+                                                                     "config.vAppConfig.property"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
         existing_app_properties = vm_properties["config.vAppConfig.property"]
 
@@ -295,7 +295,7 @@ module VSphereCloud
         datacenter_name = client.get_property(datacenter, "Datacenter", "name")
 
         vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "config.vAppConfig.property",
-                                                                     "config.hardware.device"])
+                                                                     "config.hardware.device"], :ensure_all => true)
         datastores = vm_properties["datastore"]
         raise "Can't find datastore for: #{vm}" if datastores.empty?
         datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
@@ -370,7 +370,7 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
 
         vm_properties = client.get_properties(vm, "VirtualMachine", ["config.vAppConfig.property",
-                                                                     "config.hardware.device"])
+                                                                     "config.hardware.device"], :ensure_all => true)
 
         devices = vm_properties["config.hardware.device"]
         virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
@@ -437,9 +437,9 @@ module VSphereCloud
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
                                                    cluster.datacenter.template_folder_name, stemcell])
       raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
-      stemcell_properties    = client.get_properties(stemcell_vm, "VirtualMachine", ["datastore"])
+      stemcell_datastore = client.get_property(stemcell_vm, "VirtualMachine", "datastore", :ensure_all => true)
 
-      if stemcell_properties["datastore"] != datastore.mob
+      if stemcell_datastore != datastore.mob
         @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
         local_stemcell_name    = "#{stemcell} / #{datastore.mob}"
         local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
@@ -718,7 +718,7 @@ module VSphereCloud
     end
 
     def upload_ovf(ovf, lease, file_items)
-      info = client.get_property(lease, 'HttpNfcLease', 'info')
+      info = client.get_property(lease, 'HttpNfcLease', 'info', :ensure_all => true)
       lease_updater = LeaseUpdater.new(client, lease)
 
       info.deviceUrl.each do |device_url|
