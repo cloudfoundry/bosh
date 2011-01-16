@@ -107,7 +107,14 @@ module Bosh::Agent
         Util.unpack_blob(blobstore_id, install_dir)
 
         job_link_dst = File.join(@base_dir, 'jobs', name)
-        FileUtils.ln_sf(install_dir, job_link_dst)
+        `ln -nsf #{install_dir} #{job_link_dst}`
+        unless $?.exitstatus == 0
+          raise Bosh::Agent::MessageHandlerError, 
+            "Failed to link job: #{install_dir} #{job_link_dst}"
+        end
+
+        bin_dir = File.join(install_dir, 'bin')
+        FileUtils.mkdir_p(bin_dir)
 
         job_mf = YAML.load_file(File.join(install_dir, 'job.MF'))
 
@@ -117,6 +124,10 @@ module Bosh::Agent
           out_file = File.join(install_dir, dst)
           File.open(out_file, 'w') do |fh|
             fh.write(template.result(Util.config_binding(@apply_spec)))
+
+            if File.dirname(out_file) == bin_dir
+              FileUtils.chmod(0755, out_file)
+            end
           end
         end
 

@@ -64,6 +64,12 @@ describe Bosh::Agent::Message::Apply do
     handler = Bosh::Agent::Message::Apply.new([apply_data])
     handler.stub!(:apply_packages)
     handler.apply
+
+    bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '99', 'bin')
+    File.directory?(bin_dir).should == true
+
+    bin_file = File.join(bin_dir, 'my_sinatra_app')
+    File.executable?(bin_file).should == true
   end
 
 end
