@@ -1,16 +1,4 @@
-source :rubygems
+source 'http://rubygems.org'
 
-gem "rake"
-gem "sinatra"
-gem "thin"
-gem "haml"
-gem "json"
-gem "rest-client"
+gem 'rails', '3.0.3'
 
-group :test do
-  gem "rack-test"
-  gem "rcov"
-  gem "rcov_analyzer"
-  gem "rspec"
-  gem "ruby-debug"
-end
