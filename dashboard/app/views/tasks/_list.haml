@@ -1,0 +1,17 @@
+%table(cellpadding=0 cellspacing=0)
+  %tr
+    %th.id #
+    %th.state State
+    %th.timestamp Timestamp
+    %th.result Result
+    
+  - @tasks.each do |task|
+    %tr{:class => cycle("odd", "even")}
+      %td= h task.id
+      %td{:class => task.state}= h task.state
+      %td= Time.at(task.timestamp).utc
+      %td= h task.result
+
+  %tr
+    %td.total(colspan=4)= "Total: %s" % [ @tasks.size ]
+

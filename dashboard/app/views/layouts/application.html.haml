@@ -1,0 +1,20 @@
+!!!<!DOCTYPE html>
+%html
+%head
+  %title= page_title
+  = stylesheet_link_tag :all
+  = javascript_include_tag "jquery-1.4.4.min", "application"
+  - if @javascripts.present?
+    = javascript_include_tag *@javascripts
+  = csrf_meta_tag
+
+%body
+
+  #header
+    %h1#logo Bosh Dashboard
+    - if credentials_saved?
+      #current_user
+        = "Logged in to '%s' as '%s'" % [ target, username ]
+        = link_to "Logout", logout_url
+
+  = yield

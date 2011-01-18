@@ -1,0 +1,11 @@
+%table(cellpadding=0 cellspacing=0)
+  %tr
+    %th.name Name
+    %th.version Versions
+    
+  - @releases.each do |release|
+    %tr{:class => cycle("odd", "even")}
+      %td= h release.name
+      %td= release.versions{ |version| content_tag(:span, version) }.join(", ")
+  %tr
+    %td.total(colspan=2)= "Total: %s" % [ @releases.size ]

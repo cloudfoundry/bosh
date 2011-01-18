@@ -1,0 +1,34 @@
+#content
+
+  - if flash[:error].present?
+    #error= h flash[:error]
+
+  #deployments.block
+    .header 
+      .title Deployments
+      .loader Updating deployments list...    
+    .body
+
+  #stemcells.block
+    .header 
+      .title Stemcells
+      .loader Updating stemcells list...
+    .body
+
+  #releases.block
+    .header 
+      .title Releases
+      .loader Updating releases list...    
+    .body
+
+  #running_tasks.block.tasks
+    .header
+      .title Running tasks
+      .loader &nbsp;
+    .body
+
+  #recent_tasks.block.tasks
+    .header
+      .title Recent tasks
+      .loader &nbsp;
+    .body
