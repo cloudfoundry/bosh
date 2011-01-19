@@ -1,0 +1,4 @@
+#!/bin/bash
+ulimit -n 65536
+exec 2>&1
+exec chpst -u <%= runner %> env TMPDIR=<%= tmp_dir %> <%= redis_deploy_to %>/redis-server <%= redis_deploy_to %>/redis.conf

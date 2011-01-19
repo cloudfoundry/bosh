@@ -14,3 +14,5 @@ set :workers,     2
 
 role :director,   "172.30.252.113"
 role :workers,    "172.30.252.113"
+role :redis,      "172.30.40.12"
+role :blobstore,  "172.30.40.12"
