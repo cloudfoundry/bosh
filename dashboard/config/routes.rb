@@ -5,10 +5,13 @@ Dashboard::Application.routes.draw do
   match "login"  => "sessions#login", :via => :post
   match "logout" => "sessions#logout", :via => :get
 
-  match "/running_tasks" => "tasks#running", :via => :get
-  match "/recent_tasks"  => "tasks#recent",  :via => :get  
-
   resources :stemcells,   :only => :index
   resources :releases,    :only => :index
   resources :deployments, :only => :index
+  resources :tasks, :only => :show do
+    collection do
+      get "running"
+      get "recent"
+    end
+  end
 end

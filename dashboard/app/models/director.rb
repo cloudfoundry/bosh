@@ -43,6 +43,26 @@ class Director
     get_json("/recent_tasks/#{count.to_i}")
   end
 
+  def get_task_state(task_id)
+    response_code, body = get("/tasks/#{task_id}")
+    #raise AuthError if response_code == 401
+    #raise MissingTask, "No task##{@task_id} found" if response_code == 404
+    #raise TaskTrackError, "Got HTTP #{response_code} while tracking task state" if response_code != 200
+    body
+  end  
+
+  def get_task_output(task_id, offset)
+    response_code, body, headers = get("/tasks/#{task_id}/output", nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
+
+    new_offset = \
+    if response_code == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
+      $1.to_i + 1
+    else
+      nil
+    end
+    [ body, new_offset ]    
+  end
+
   [ :post, :put, :get, :delete ].each do |method_name|
     define_method method_name do |*args|
       request(method_name, *args)

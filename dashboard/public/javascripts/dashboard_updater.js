@@ -5,6 +5,23 @@ jQuery(document).ready(function($) {
   var running_tasks = $("#running_tasks");
   var recent_tasks  = $("#recent_tasks");
 
+  $(".task").live("mouseenter", function() {
+    $(this).addClass("selected");
+  });
+
+  $(".task").live("mouseleave", function() {
+    $(this).removeClass("selected");
+  });
+
+  $(".task").live("click", function(e) {
+    e.preventDefault();
+    var task_id = parseInt($(this).attr("rel"));
+    $.facebox("<h4>Task output for " + task_id + "</h4><div class='task-output'><table cellpadding='0' cellspacing='0' class='task-log'></table>");
+    $.getJSON("/tasks/" + task_id + ".json", function(data) {
+      $("#facebox .task-log").append(data.html);
+    });
+  });
+
   var update_block = function(element, url) {
     if (element.length == 0) {
       return;
@@ -20,7 +37,7 @@ jQuery(document).ready(function($) {
       success: function(data) {
         if (data.error) {
           element.find(".body").html("<div class='error'>" + data.error + "</div>");
-        } else {
+        } else if (data.html) {
           element.find(".body").html(data.html);
         }
         loader.hide();
@@ -45,11 +62,11 @@ jQuery(document).ready(function($) {
   };
 
   var update_running_tasks = function() {
-    update_block(running_tasks, "/running_tasks.json");
+    update_block(running_tasks, "/tasks/running.json");
   };
 
   var update_recent_tasks = function() {
-    update_block(recent_tasks, "/recent_tasks.json");
+    update_block(recent_tasks, "/tasks/recent.json");
   };
 
   var update_data = function() {

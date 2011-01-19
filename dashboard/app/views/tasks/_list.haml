@@ -6,7 +6,7 @@
     %th.result Result
     
   - @tasks.each do |task|
-    %tr{:class => cycle("odd", "even")}
+    %tr{:class => "task %s" % [ cycle("odd", "even") ], :rel => task.id }
       %td= h task.id
       %td{:class => task.state}= h task.state
       %td= Time.at(task.timestamp).utc

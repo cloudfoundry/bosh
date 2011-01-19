@@ -1,0 +1,5 @@
+- @lines.each_with_index do |line, i|
+  %tr{:class => cycle("odd", "even")}
+    %td{:width => "50", :class=>"ln"}= i+1
+    %td
+      %pre= h(line)

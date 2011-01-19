@@ -1,6 +1,6 @@
 #content
 
-  - form_tag login_url, :method => :post, :id => "login_form" do
+  = form_tag login_url, :method => :post, :id => "login_form" do
     - if flash[:error].present?
       #error= h flash[:error]
 

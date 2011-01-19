@@ -3,7 +3,7 @@
 %head
   %title= page_title
   = stylesheet_link_tag :all
-  = javascript_include_tag "jquery-1.4.4.min", "application"
+  = javascript_include_tag "jquery-1.4.4.min", "facebox", "application"
   - if @javascripts.present?
     = javascript_include_tag *@javascripts
   = csrf_meta_tag
