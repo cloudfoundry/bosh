@@ -134,6 +134,7 @@ module Bosh::Agent
 
         verify_networks
         write_ubuntu_network_interfaces
+        gratuitous_arp
         write_resolv_conf
       end
 
@@ -164,6 +165,16 @@ module Bosh::Agent
         output = `service network-interface stop INTERFACE=eth0`
         output += `service network-interface start INTERFACE=eth0`
         @logger.info("Restarted networking: #{output}")
+      end
+
+      def gratuitous_arp
+        @networks.each do |name, n|
+          until File.exist?("/sys/class/net/#{n['interface']}")
+            sleep 0.1
+          end
+          @logger.info("arping -c 1 -U -I #{n['interface']} #{n['ip']}")
+          `arping -c 1 -U -I #{n['interface']} #{n['ip']}`
+        end
       end
 
       # TODO: do we need search option?
