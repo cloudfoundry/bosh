@@ -78,7 +78,13 @@ module Bosh::Agent
                 payload = process(processor, args)
                 publish(message_id, payload)
                 if Config.configure && method == "prepare_network_change"
+
+                  # DEBUG
+                  guestinfo_bosh = `vmware-rpctool "info-get guestinfo.bosh"`.strip
+                  @logger.info("guestinfo_bosh: #{guestinfo_bosh}")
+
                   while `vmware-rpctool "info-get guestinfo.bosh"`.strip == "nada"
+                    @logger.info("Waiting for guestinfo.bosh")
                     sleep 0.1
                   end
                   exit
@@ -200,7 +206,7 @@ module Bosh::Agent
         if Bosh::Agent::Config.configure
           `vmware-rpctool "info-set guestinfo.bosh nada"`
           read_back_value = `vmware-rpctool "info-get guestinfo.bosh"`
-          logger.info('Setting guestinfo.bosh: #{read_back_value}')
+          logger.info("Setting guestinfo.bosh: #{read_back_value}")
 
           udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
           if File.exist?(udev_file)
