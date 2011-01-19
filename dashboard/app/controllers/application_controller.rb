@@ -9,7 +9,10 @@ class ApplicationController < ActionController::Base
   end
 
   def ask_for_credentials
-    redirect_to login_url
+    respond_to do |format|
+      format.html { redirect_to login_url }
+      format.json { render :status => 403, :text => "Forbidden" }
+    end
   end
 
   def credentials_saved?
