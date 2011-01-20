@@ -1,3 +1,5 @@
+require "httpclient"
+
 module Bosh
   module Blobstore
     class SimpleBlobstoreClient < Client
@@ -13,21 +15,26 @@ module Bosh
 
       def create(contents)
         response = @client.post("#{@endpoint}/resources", {:content => contents}, @headers)
-        raise "Could not create object, #{response.status}/#{response.content}" if response.status != 200
+        if response.status != 200
+          raise BlobstoreError, "Could not create object, #{response.status}/#{response.content}"
+        end
         response.content
       end
 
       def get(id)
         response = @client.get("#{@endpoint}/resources/#{id}", {}, @headers)
-        raise "Could not fetch object, #{response.status}/#{response.content}" if response.status != 200
+        if response.status != 200
+          raise BlobstoreError, "Could not fetch object, #{response.status}/#{response.content}"
+        end
         response.content
       end
 
       def delete(id)
         response = @client.delete("#{@endpoint}/resources/#{id}", @headers)
-        raise "Could not delete object, #{response.status}/#{response.content}" if response.status != 204
+        if response.status != 204
+          raise "Could not delete object, #{response.status}/#{response.content}"
+        end
       end
-
     end
   end
 end

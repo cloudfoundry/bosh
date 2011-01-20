@@ -1,2 +1,15 @@
 source :rubygems
-gemspec
+
+gem "rake"
+gem "httpclient"
+gem "aws-s3"
+gem "uuidtools"
+
+group :test do
+  gem "ci_reporter"
+  gem "rcov"
+  gem "rcov_analyzer"
+  gem "rspec"
+  gem "ruby-debug"
+end
+

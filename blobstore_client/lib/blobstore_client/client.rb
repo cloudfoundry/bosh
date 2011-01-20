@@ -1,18 +1,14 @@
 module Bosh
   module Blobstore
-      class Client
+    class Client
+      def create(contents)
+      end
 
-        def create(contents)
+      def get(id)
+      end
 
-        end
-
-        def get(id)
-
-        end
-
-        def delete(id)
-
-        end
+      def delete(id)
+      end
     end
   end
 end
