@@ -35,6 +35,9 @@ describe Bosh::Agent::Message::Apply do
 
     apply_data = {
       "deployment" => "foo",
+      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id"},
+      "release" => { "version" => "99" },
+      "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
       "packages" => 
         {"bubba" => { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id" } 
       },
@@ -43,6 +46,10 @@ describe Bosh::Agent::Message::Apply do
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
     handler.stub!(:apply_job)
+
+    job_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '99', 'packages')
+    FileUtils.mkdir_p(job_dir)
+
     handler.apply
   end
 

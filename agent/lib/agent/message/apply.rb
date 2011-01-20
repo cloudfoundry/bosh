@@ -60,8 +60,8 @@ module Bosh::Agent
         #return @state if @state['configuraton_hash'] == @apply_spec['configuration_hash']
 
         begin
-          apply_packages
           apply_job
+          apply_packages
         rescue Exception => e
           raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
         end
@@ -71,6 +71,25 @@ module Bosh::Agent
         @state = @apply_spec
         write_state
         @state
+      end
+
+      def apply_job
+
+        unless @job
+          @logger.info("No job")
+          return
+        end
+
+        blobstore_id = @job['blobstore_id']
+        Util.unpack_blob(blobstore_id, @job_install_dir)
+
+        job_link_dst = File.join(@base_dir, 'jobs', @job_name)
+        link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
+
+        template_configurations
+        configure_monit
+
+        FileUtils.mkdir_p(File.join(@job_install_dir, 'packages'))
       end
 
       def apply_packages
@@ -89,30 +108,15 @@ module Bosh::Agent
           Util.unpack_blob(blobstore_id, install_dir)
 
           pkg_link_dst = File.join(@base_dir, 'packages', pkg['name'])
-          `ln -nsf #{install_dir} #{pkg_link_dst}`
-          unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed to link package: #{install_dir} #{pkg_link_dst}"
+          job_pkg_link_dst = File.join(@job_install_dir, 'packages', pkg['name'])
+
+          [ pkg_link_dst, job_pkg_link_dst ].each do |dst|
+            link_installed(install_dir, dst, "Failed to link package: #{install_dir} #{dst}")
           end
         end
 
       end
 
-      def apply_job
-
-        unless @job
-          @logger.info("No job")
-          return
-        end
-
-        blobstore_id = @job['blobstore_id']
-        Util.unpack_blob(blobstore_id, @job_install_dir)
-
-        job_link_dst = File.join(@base_dir, 'jobs', @job_name)
-        link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
-
-        template_configurations
-        configure_monit
-      end
 
       def link_installed(src, dst, error_msg="Failed to link #{src} to #{dst}")
         # FileUtils doesn have 'no-deference' for links - causing ln_sf to
