@@ -8,9 +8,20 @@ module Bosh::Agent
       def self.long_running?; true; end
 
       def initialize(args)
-        @apply_spec = args.first
         @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
+
+        @apply_spec = args.first
+        @job = @apply_spec['job']
+
+        if @apply_spec.has_key?('release')
+          @release_version = @apply_spec['release']['version'].to_s
+        end
+
+        if @job
+          @job_name = @job['name']
+          @job_install_dir = File.join(@base_dir, 'data', 'jobs', @job_name, @release_version)
+        end
 
         @packages_data = File.join(@base_dir, 'data', 'packages')
 
@@ -88,40 +99,40 @@ module Bosh::Agent
 
       def apply_job
 
-        if @apply_spec['job'] == nil
+        unless @job
           @logger.info("No job")
           return
         end
 
-        # temporary hack
-        unless @apply_spec['job'].is_a?(Hash)
-          return
-        end
+        blobstore_id = @job['blobstore_id']
+        Util.unpack_blob(blobstore_id, @job_install_dir)
 
-        job = @apply_spec['job']
-        version = @apply_spec['release']['version'].to_s
-        blobstore_id = job['blobstore_id']
-        name = job['name']
+        job_link_dst = File.join(@base_dir, 'jobs', @job_name)
+        link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
 
-        install_dir = File.join(@base_dir, 'data', 'jobs', name, version)
-        Util.unpack_blob(blobstore_id, install_dir)
+        template_configurations
+        configure_monit
+      end
 
-        job_link_dst = File.join(@base_dir, 'jobs', name)
-        `ln -nsf #{install_dir} #{job_link_dst}`
+      def link_installed(src, dst, error_msg="Failed to link #{src} to #{dst}")
+        # FileUtils doesn have 'no-deference' for links - causing ln_sf to
+        # attempt to create target link in dst rather than to overwrite it.
+        # BROKEN: FileUtils.ln_sf(monit_file, monit_link)
+        `ln -nsf #{src} #{dst}`
         unless $?.exitstatus == 0
-          raise Bosh::Agent::MessageHandlerError, 
-            "Failed to link job: #{install_dir} #{job_link_dst}"
+          raise Bosh::Agent::MessageHandlerError, error_msg
         end
+      end
 
-        bin_dir = File.join(install_dir, 'bin')
+      def template_configurations
+        bin_dir = File.join(@job_install_dir, 'bin')
         FileUtils.mkdir_p(bin_dir)
 
-        job_mf = YAML.load_file(File.join(install_dir, 'job.MF'))
-
+        job_mf = YAML.load_file(File.join(@job_install_dir, 'job.MF'))
         job_mf['configuration'].each do |src, dst|
-          template = ERB.new(File.read(File.join(install_dir, 'config', src)))
+          template = ERB.new(File.read(File.join(@job_install_dir, 'config', src)))
 
-          out_file = File.join(install_dir, dst)
+          out_file = File.join(@job_install_dir, dst)
           File.open(out_file, 'w') do |fh|
             fh.write(template.result(Util.config_binding(@apply_spec)))
 
@@ -130,19 +141,15 @@ module Bosh::Agent
             end
           end
         end
+      end
 
+      def configure_monit
         # TODO ERB/Template
-        monit_file = File.join(install_dir, 'monit')
+        monit_file = File.join(@job_install_dir, 'monit')
         if File.exist?(monit_file)
-          monit_link = File.join(@base_dir, 'monit', "#{name}.monitrc")
+          monit_link = File.join(@base_dir, 'monit', "#{@job_name}.monitrc")
 
-          # FileUtils doesn have 'no-deference' for links - causing ln_sf to
-          # attempt to create target link in dst rather than to overwrite it.
-          # BROKEN: FileUtils.ln_sf(monit_file, monit_link)
-          `ln -nsf #{monit_file} #{monit_link}`
-          unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed to link monit file: #{monit_file} #{monit_link}"
-          end
+          link_installed(monit_file, monit_link, "Failed to link monit file: #{monit_file} #{monit_link}" )
 
           if Bosh::Agent::Config.configure
             `monit reload`
@@ -150,7 +157,6 @@ module Bosh::Agent
             `monit -g vmc start`
           end
         end
-
       end
 
       def write_state
