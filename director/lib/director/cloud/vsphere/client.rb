@@ -49,7 +49,7 @@ module VSphereCloud
                                                                RetrieveOptions.new)
 
       # TODO: cache partial results
-      attempts = 5
+      attempts = 10
       begin
         properties_response = get_all_properties(properties_request)
         result = {}
