@@ -66,7 +66,7 @@ module Bosh
       def encrypt(clear_text)
         cipher = OpenSSL::Cipher::Cipher.new(DEFAULT_CIPHER_NAME)
         cipher.encrypt
-        cipher.key = Digest::SHA1.digest(encryption_key[0..cipher.key_len-1])
+        cipher.key = Digest::SHA1.digest(encryption_key)[0..cipher.key_len-1]
         encrypted = cipher.update(clear_text)
 
         encrypted << cipher.final
@@ -78,7 +78,7 @@ module Bosh
       def decrypt(encrypted)
         cipher = OpenSSL::Cipher::Cipher.new(DEFAULT_CIPHER_NAME)
         cipher.decrypt
-        cipher.key = Digest::SHA1.digest(encryption_key[0..cipher.key_len-1])
+        cipher.key = Digest::SHA1.digest(encryption_key)[0..cipher.key_len-1]
 
         decrypted = cipher.update(encrypted)
         decrypted << cipher.final
