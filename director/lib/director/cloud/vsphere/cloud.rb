@@ -163,10 +163,11 @@ module VSphereCloud
                                                         :create => true)
         config.deviceChange << ephemeral_disk_config
 
+        dvs_index = {}
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([cluster.datacenter.name, "network", v_network_name])
-          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey)
+          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey, dvs_index)
           config.deviceChange << nic_config
         end
 
@@ -189,7 +190,8 @@ module VSphereCloud
                                                                      "config.vAppConfig.property"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
         existing_app_properties = vm_properties["config.vAppConfig.property"]
-        env = build_agent_env(name, vm, agent_id, networks, devices, system_disk, ephemeral_disk_config.device)
+        env = build_agent_env(name, vm, agent_id, system_disk, ephemeral_disk_config.device)
+        env["networks"] = build_agent_network_env(devices, networks, dvs_index)
         @logger.info("Setting VM env: #{env.pretty_inspect}")
 
         vm_config_spec = VirtualMachineConfigSpec.new
@@ -246,10 +248,11 @@ module VSphereCloud
         datacenter = client.find_parent(vm, "Datacenter")
         datacenter_name = client.get_property(datacenter, "Datacenter", "name")
 
+        dvs_index = {}
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([datacenter_name, "network", v_network_name])
-          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey)
+          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey, dvs_index)
           config.deviceChange << nic_config
         end
 
@@ -272,7 +275,7 @@ module VSphereCloud
         env = get_current_agent_env(existing_app_properties)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
 
-        env["networks"] = build_agent_network_env(devices, networks)
+        env["networks"] = build_agent_network_env(devices, networks, dvs_index)
 
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(config, existing_app_properties, env)
@@ -479,12 +482,17 @@ module VSphereCloud
       result
     end
 
-    def build_agent_network_env(devices, networks)
+    def build_agent_network_env(devices, networks, dvs_index)
       nics = {}
 
       devices.each do |device|
         if device.kind_of?(VirtualEthernetCard)
-          v_network_name     = device.backing.deviceName
+          backing = device.backing
+          if backing.kind_of?(VirtualEthernetCardDistributedVirtualPortBackingInfo)
+            v_network_name = dvs_index[device.backing.port.portgroupKey]
+          else
+            v_network_name = device.backing.deviceName
+          end
           allocated_networks = nics[v_network_name] || []
           allocated_networks << device
           nics[v_network_name] = allocated_networks
@@ -502,9 +510,7 @@ module VSphereCloud
       network_env
     end
 
-    def build_agent_env(name, vm, agent_id, networks, devices, system_disk, ephemeral_disk)
-      network_env = build_agent_network_env(devices, networks)
-
+    def build_agent_env(name, vm, agent_id, system_disk, ephemeral_disk)
       disk_env = {
         "system" => system_disk.unitNumber,
         "ephemeral" => ephemeral_disk.unitNumber,
@@ -519,7 +525,6 @@ module VSphereCloud
       env = {}
       env["vm"] = vm_env
       env["agent_id"] = agent_id
-      env["networks"] = network_env
       env["disks"] = disk_env
       env.merge!(@agent_properties)
       env
@@ -627,10 +632,28 @@ module VSphereCloud
       device_config_spec
     end
 
-    def create_nic_config_spec(name, network, controller_key)
-      backing_info = VirtualEthernetCardNetworkBackingInfo.new
-      backing_info.deviceName = name
-      backing_info.network = network
+    def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)
+      if network.xmlattr_type == "DistributedVirtualPortgroup"
+        portgroup_properties = client.get_properties(network, "DistributedVirtualPortgroup",
+                                                     ["config.key", "config.distributedVirtualSwitch"],
+                                                     :ensure_all => true)
+
+        switch = portgroup_properties["config.distributedVirtualSwitch"]
+        switch_uuid = client.get_property(switch, "DistributedVirtualSwitch", "uuid", :ensure_all => true)
+
+        port = DistributedVirtualSwitchPortConnection.new
+        port.switchUuid = switch_uuid
+        port.portgroupKey = portgroup_properties["config.key"]
+
+        backing_info = VirtualEthernetCardDistributedVirtualPortBackingInfo.new
+        backing_info.port = port
+
+        dvs_index[port.portgroupKey] = v_network_name
+      else
+        backing_info = VirtualEthernetCardNetworkBackingInfo.new
+        backing_info.deviceName = v_network_name
+        backing_info.network = network
+      end
 
       nic = VirtualVmxnet3.new
       nic.key = -1
