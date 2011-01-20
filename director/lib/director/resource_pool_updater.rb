@@ -88,14 +88,9 @@ module Bosh::Director
               @logger.info("Cleaning up the created VM due to an error: #{e}")
               begin
                 @cloud.delete_vm(vm_cid) if vm_cid
-              rescue Exception
-                @logger.info("Could not cleanup VM: #{vm_cid}")
-              end
-
-              begin
                 vm.delete if vm.id
               rescue Exception
-                @logger.info("Could not delete VM model: #{vm.pretty_inspect}")
+                @logger.info("Could not cleanup VM: #{vm_cid}")
               end
 
               raise e
