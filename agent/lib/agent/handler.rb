@@ -199,6 +199,13 @@ module Bosh::Agent
       end
     end
 
+    class MigrateDisk
+      def self.process(args)
+        true
+      end
+      def self.long_running?; true; end
+    end
+
     class PrepareNetworkChange
       def self.process(args)
         logger = Bosh::Agent::Config.logger
