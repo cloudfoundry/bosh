@@ -110,6 +110,12 @@ HERE
       vmbuilder_args += " --templates #{work_dir}/build/templates --part #{work_dir}/build/part.in"
       sh "sudo vmbuilder esxi ubuntu #{vmbuilder_args}"
 
+      ovftool_bin = ENV['OVFTOOL'] ||= '/usr/lib/vmware/ovftool/ovftool'
+      unless File.exist?(ovftool_bin)
+        puts "stemcell builder expects #{ovftool_bin} or the OVFTOOL environment variable to be set"
+        exit 1
+      end
+
       sh "/usr/lib/vmware/ovftool/ovftool ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
       mkdir_p 'stemcell'
       Dir.chdir('ubuntu-esxi') do
@@ -128,6 +134,7 @@ HERE
     # TODO: guesthw version 7 for esx4
     # TODO: install bin wrapper
     # TODO: change location of agent install w/symlink strategy
+    puts "Generated stemcell: #{work_dir}/bosh-stemcell-#{version}.tgz"
     puts "Check #{work_dir} for build artifacts"
   end
 
