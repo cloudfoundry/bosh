@@ -6,6 +6,7 @@ gem "progressbar"
 gem "rest-client"
 gem "terminal-table"
 gem "rake"
+gem "blobstore_client", "~>0.1" # 0.1 has s3 support
 
 group :test do
   gem "ci_reporter"
