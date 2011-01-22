@@ -125,6 +125,7 @@ Currently available bosh commands are:
 
   Releases
     create release                           Attempt to create release (assumes current directory to contain release)
+    create release --final                   Create production-ready release (stores artefacts in blobstore, ignores dev build numbers)
     create package <name>|<path>             Build a single package
     verify release /path/to/release.tgz      Verify the release
     upload release /path/to/release.tgz      Upload the release
@@ -210,7 +211,7 @@ USAGE
           case what
           when "release"
             usage("bosh create release")
-            set_cmd(:release, :create)
+            set_cmd(:release, :create, 0..1)
           when "user"
             usage("bosh create user [<name>] [<password>]")
             set_cmd(:user, :create, 0..2)

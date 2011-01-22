@@ -47,29 +47,30 @@ module Bosh::Cli::Command
       say responses[status] || "Cannot upload release: #{message}"
     end
 
-    def create
-      packages = []
-      jobs = []
+    def create(flags = "")
+      packages  = []
+      jobs      = []
+      final     = flags.to_s =~ /\s*--final\s*/i
 
       if !in_release_dir?
         err "Sorry, your current directory doesn't look like release directory"
       end
-      
+
+      if final
+        header "Building FINAL release".green
+      else
+        header "Building DEV release".green
+      end
+
+      blobstore = init_blobstore
+
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
 
-        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir)
+        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, blobstore)
         say "Building #{package.name}..."
         package.build
 
-        if package.new_version?
-          say "Package '#{package.name}' generated"
-          say "New version is #{package.version}"
-        else
-          say "Found previously generated version of '#{package.name}'"
-          say "Version is #{package.version}"
-        end
-        
         packages << package
       end
 
@@ -92,7 +93,7 @@ module Bosh::Cli::Command
         jobs << job
       end
 
-      release = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs)
+      release = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, final)
       release.build
 
       say("Built release #{release.version} at '#{release.tarball_path}'")
@@ -122,6 +123,28 @@ module Bosh::Cli::Command
 
     def in_release_dir?
       File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
+    end
+
+    def init_blobstore
+      storage_config = File.join(@work_dir, "storage.yml")
+
+      if !File.file?(storage_config)
+        raise Bosh::Cli::ConfigError, "No storage config file found at `#{storage_config}'"
+      end
+
+      storage_options = YAML.load_file(storage_config)
+      storage_options = { } unless storage_options.is_a?(Hash)
+
+      bs_options = {
+        :access_key_id     => storage_options["access_key_id"].to_s,
+        :secret_access_key => storage_options["secret_access_key"].to_s,
+        :encryption_key    => storage_options["encryption_key"].to_s,
+        :bucket_name       => storage_options["bucket_name"].to_s
+      }
+
+      Bosh::Blobstore::Client.create("s3", bs_options)
+    rescue Bosh::Blobstore::BlobstoreError => e
+      err "Cannot init blobstore: #{e}"
     end
 
   end

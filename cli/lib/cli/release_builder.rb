@@ -10,12 +10,18 @@ module Bosh::Cli
 
     attr_reader :work_dir, :version, :packages, :jobs
 
-    def initialize(work_dir, packages, jobs)
-      @work_dir = work_dir
-      @packages = packages
-      @jobs     = jobs
-      @version  = assign_version
+    def initialize(work_dir, packages, jobs, final = false)
+      @work_dir  = work_dir
+      @packages  = packages
+      @jobs      = jobs
+      @final     = final
+
       create_release_build_dir
+      @version  = assign_version      
+    end
+
+    def final?
+      @final
     end
 
     def build
@@ -63,7 +69,7 @@ module Bosh::Cli
         {
           "name"         => package.name,
           "version"      => package.version,
-          "sha1"         => package.tarball_checksum,
+          "sha1"         => package.checksum,
           "dependencies" => package.dependencies
         }
       end
@@ -90,6 +96,8 @@ module Bosh::Cli
       copy_jobs unless @jobs_copied
       generate_manifest unless @manifest_generated
 
+      FileUtils.mkdir_p(File.dirname(tarball_path))
+
       in_build_dir do
         `tar -czf #{tarball_path} . 2>&1`
         raise InvalidRelease, "Cannot create release tarball" unless $?.exitstatus == 0
@@ -98,7 +106,8 @@ module Bosh::Cli
     end
 
     def tarball_path
-      File.join(work_dir, "release-#{version}.tgz")
+      dirname = final? ? "releases" : "dev_releases"
+      File.join(work_dir, dirname, "release-#{version}.tgz")
     end
 
     private
@@ -108,11 +117,17 @@ module Bosh::Cli
     end
 
     def counter_file
-      File.join(work_dir, "VERSION")
+      dev_version   = File.join(work_dir, "DEV_VERSION")
+      final_version = File.join(work_dir, "VERSION")
+      
+      final? ? final_version : dev_version
     end
 
     def release_name_file
-      File.join(work_dir, "NAME")
+      dev_name   = File.join(work_dir, "DEV_NAME")
+      final_name = File.join(work_dir, "NAME")
+
+      final? ? final_name : dev_name
     end
 
     def save_version
