@@ -25,7 +25,7 @@ module Bosh::Cli::Command
       print_spec(spec)
       header("Building package...")
 
-      builder = Bosh::Cli::PackageBuilder.new(spec, work_dir)
+      builder = Bosh::Cli::PackageBuilder.new(spec, work_dir, false, nil)
       builder.build
       builder
     end
