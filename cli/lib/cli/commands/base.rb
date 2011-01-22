@@ -1,6 +1,5 @@
 require "yaml"
 require "terminal-table/import"
-require "blobstore_client"
 
 module Bosh::Cli
   module Command
@@ -21,10 +20,6 @@ module Bosh::Cli
 
       def director
         @director ||= Bosh::Cli::Director.new(target, username, password)
-      end
-
-      def blobstore
-        @blobstore ||= init_blobstore
       end
 
       def logged_in?
