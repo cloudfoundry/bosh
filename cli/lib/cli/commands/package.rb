@@ -27,15 +27,6 @@ module Bosh::Cli::Command
 
       builder = Bosh::Cli::PackageBuilder.new(spec, work_dir)
       builder.build
-
-      if builder.new_version?
-        say "Package '#{package_name}' generated"
-        say "New version is #{builder.version}"
-      else
-        say "Found previously generated version of '#{package_name}'"
-        say "Version is #{builder.version}"
-      end
-
       builder
     end
 

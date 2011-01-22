@@ -20,7 +20,7 @@ describe Bosh::Cli::ReleaseBuilder do
     builder = new_builder
     builder.build
 
-    expected_tarball_path = File.join(@work_dir, "release-1.tgz")
+    expected_tarball_path = File.join(@work_dir, "dev_releases", "release-1.tgz")
     
     builder.tarball_path.should == expected_tarball_path
     File.file?(expected_tarball_path).should be_true
@@ -32,8 +32,8 @@ describe Bosh::Cli::ReleaseBuilder do
       builder.build      
     }
 
-    File.file?(File.join(@work_dir, "release-1.tgz")).should be_true
-    File.file?(File.join(@work_dir, "release-2.tgz")).should be_true    
+    File.file?(File.join(@work_dir, "dev_releases", "release-1.tgz")).should be_true
+    File.file?(File.join(@work_dir, "dev_releases", "release-2.tgz")).should be_true    
   end
 
 end

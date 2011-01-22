@@ -1,7 +1,7 @@
 require "spec_helper"
 require "fileutils"
 
-describe Bosh::Cli::PackageBuilder do
+describe Bosh::Cli::PackageBuilder, "dev build" do
 
   before(:each) do
     @release_dir = Dir.mktmpdir
@@ -26,7 +26,8 @@ describe Bosh::Cli::PackageBuilder do
   end
 
   def make_builder(name, files, sources_dir = nil)
-    Bosh::Cli::PackageBuilder.new({"name" => name, "files" => files}, @release_dir, sources_dir)
+    blobstore = mock("blobstore")
+    Bosh::Cli::PackageBuilder.new({"name" => name, "files" => files}, @release_dir, false, blobstore, sources_dir)
   end
 
   it "whines on missing name" do
@@ -64,7 +65,7 @@ describe Bosh::Cli::PackageBuilder do
     lambda {
       builder = make_builder("aa", ["*.rb", "packaging"])
       add_sources("1.rb", "packaging")
-      builder.tarball_checksum
+      builder.checksum
     }.should raise_error(RuntimeError, "cannot read checksum for not yet generated package")    
   end
 
@@ -72,7 +73,7 @@ describe Bosh::Cli::PackageBuilder do
     builder = make_builder("aa", ["*.rb"])
     add_sources("1.rb", "2.rb")
     builder.build
-    builder.tarball_checksum.should =~ /[0-9a-f]+/
+    builder.checksum.should =~ /[0-9a-f]+/
   end
 
   it "is created with name and globs" do
@@ -81,71 +82,71 @@ describe Bosh::Cli::PackageBuilder do
     builder.globs.should == ["1", "*/*"]
   end
 
-  it "resolves globs and generates signature" do
+  it "resolves globs and generates fingerprint" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
     builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
-    builder.signature.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
   end
 
-  it "has stable signature" do
+  it "has stable fingerprint" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
     builder = make_builder("A", ["lib/*.rb", "README.*"])
-    s1 = builder.signature
+    s1 = builder.fingerprint
 
-    builder.reload.signature.should == s1    
+    builder.reload.fingerprint.should == s1    
   end
 
-  it "changes signature when new file that matches glob is added" do
+  it "changes fingerprint when new file that matches glob is added" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
-    s1 = builder.signature
+    s1 = builder.fingerprint
     add_sources("lib/3.rb")
-    builder.reload.signature.should_not == s1
+    builder.reload.fingerprint.should_not == s1
 
     remove_sources("lib/3.rb")
-    builder.reload.signature.should == s1    
+    builder.reload.fingerprint.should == s1    
   end
 
-  it "changes signature when one of the matched files changes" do
+  it "changes fingerprint when one of the matched files changes" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
     File.open("#{@release_dir}/src/lib/1.rb", "w") { |f| f.write("1") }
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
-    s1 = builder.signature
+    s1 = builder.fingerprint
 
     File.open("#{@release_dir}/src/lib/1.rb", "w+") { |f| f.write("2") }
     
-    builder.reload.signature.should_not == s1
+    builder.reload.fingerprint.should_not == s1
 
     File.open("#{@release_dir}/src/lib/1.rb", "w") { |f| f.write("1") }
-    builder.reload.signature.should == s1
+    builder.reload.fingerprint.should == s1
   end
 
-  it "changes signature when empty directory added" do
+  it "changes fingerprint when empty directory added" do
     add_sources("lib/1.rb", "lib/2.rb", "baz")
     builder = make_builder("foo", ["lib/*.rb", "baz", "bar"])
-    s1 = builder.signature
+    s1 = builder.fingerprint
 
     FileUtils.mkdir_p(@release_dir + "/src/bar")
-    s2 = builder.reload.signature
+    s2 = builder.reload.fingerprint
     s2.should_not == s1
 
     add_sources("bar/baz")
-    builder.reload.signature.should == s2
+    builder.reload.fingerprint.should == s2
     FileUtils.rm_rf(@release_dir + "/src/bar")
-    builder.reload.signature.should == s1    
+    builder.reload.fingerprint.should == s1    
   end
 
-  it "doesn't change signature when files that doesn't match glob is added" do
+  it "doesn't change fingerprint when files that doesn't match glob is added" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
-    s1 = builder.signature
+    s1 = builder.fingerprint
     add_sources("lib/a.out")
-    builder.reload.signature.should == s1
+    builder.reload.fingerprint.should == s1
   end
 
   it "strips package name from filename" do
@@ -169,7 +170,7 @@ describe Bosh::Cli::PackageBuilder do
     builder2 = make_builder("bar", globs, builder.build_dir)
 
     # Also turned out to be a nice test for directory portability    
-    builder.signature.should == builder2.signature
+    builder.fingerprint.should == builder2.fingerprint
   end
   
   it "generates tarball" do
@@ -185,58 +186,59 @@ describe Bosh::Cli::PackageBuilder do
     globs = ["foo/**/*", "baz"]
     builder = make_builder("bar", globs)
 
-    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_false
+    File.exists?(@release_dir + "/packages/bar/dev_builds/1.tgz").should be_false
     builder.build
-    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/1.tgz").should be_true    
 
     builder = make_builder("bar", globs)
     builder.build
-    v1_signature = builder.signature
+    v1_fingerprint = builder.fingerprint
     
-    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
-    File.exists?(@release_dir + "/tmp/packages/bar-2.tgz").should be_false
+    File.exists?(@release_dir + "/packages/bar/dev_builds/1.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/2.tgz").should be_false
 
     add_sources("foo/3.rb")
     builder = make_builder("bar", globs)
     builder.build
 
-    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
-    File.exists?(@release_dir + "/tmp/packages/bar-2.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/1.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/2.tgz").should be_true
 
     remove_sources("foo/3.rb")
-    builder = make_builder("bar", globs)    
-    builder.guess_version.should == 1
+    builder = make_builder("bar", globs)
+    builder.build
+    builder.version.should == 1
 
-    builder.signature.should == v1_signature
+    builder.fingerprint.should == v1_fingerprint
     
-    File.exists?(@release_dir + "/tmp/packages/bar-1.tgz").should be_true
-    File.exists?(@release_dir + "/tmp/packages/bar-2.tgz").should be_true
-    File.exists?(@release_dir + "/tmp/packages/bar-3.tgz").should be_false
+    File.exists?(@release_dir + "/packages/bar/dev_builds/1.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/2.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/3.tgz").should be_false
 
     # Now add some metadata
     FileUtils.mkdir_p("#{@release_dir}/packages/bar/data/")
     File.open("#{@release_dir}/packages/bar/data/packaging", "w") { |f| f.puts("make install") }
     builder = make_builder("bar", globs)
-    builder.guess_version.should == 3
-    builder.build
-    
-    File.exists?(@release_dir + "/tmp/packages/bar-3.tgz").should be_true
+    builder.build    
+    builder.version.should == 3
+
+    File.exists?(@release_dir + "/packages/bar/dev_builds/3.tgz").should be_true
 
     # And more metadata
     File.open("#{@release_dir}/packages/bar/data/migrations", "w") { |f| f.puts("rake db:migrate") }
     builder = make_builder("bar", globs)
-    builder.guess_version.should == 4
     builder.build
+    builder.version.should == 4
     
-    File.exists?(@release_dir + "/tmp/packages/bar-4.tgz").should be_true    
+    File.exists?(@release_dir + "/packages/bar/dev_builds/4.tgz").should be_true    
 
     # And remove all metadata
     FileUtils.rm_rf("#{@release_dir}/packages/bar/data/")
     builder = make_builder("bar", globs)
-    builder.guess_version.should == 1
     builder.build
-    File.exists?(@release_dir + "/tmp/packages/bar-4.tgz").should be_true
-    File.exists?(@release_dir + "/tmp/packages/bar-5.tgz").should be_false
+    builder.version.should == 1
+    File.exists?(@release_dir + "/packages/bar/dev_builds/4.tgz").should be_true
+    File.exists?(@release_dir + "/packages/bar/dev_builds/5.tgz").should be_false
   end
 
 end
