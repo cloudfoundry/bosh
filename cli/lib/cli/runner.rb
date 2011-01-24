@@ -127,8 +127,8 @@ Currently available bosh commands are:
     create release                           Attempt to create release (assumes current directory to contain release)
     create release --final                   Create production-ready release (stores artefacts in blobstore, ignores dev build numbers)
     create package <name>|<path>             Build a single package
-    verify release /path/to/release.tgz      Verify the release
-    upload release /path/to/release.tgz      Upload the release
+    verify release /path/to/release.tgz      Verify release tarball
+    upload release /path/to/release.tgz      Upload release tarball
     releases                                 Show the list of uploaded releases
 
   Stemcells
