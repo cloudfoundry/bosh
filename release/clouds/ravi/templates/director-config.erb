@@ -1,0 +1,47 @@
+---
+port: 25555
+logging:
+  level: DEBUG
+<% unless log_to_stdout %>
+  file: <%= shared_path %>/log/<%= process_name %>.debug.log
+<% end %>
+redis:
+  host: 10.135.200.10
+  port: 25255
+  password: R3d!S
+dir: <%= shared_path %>/system
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://10.135.200.10:25250
+    user: director
+    password: d!r3ct0r
+cloud:
+  plugin: vsphere
+  properties:
+    agent:
+      ntp:
+       - wdc-ntp01.cso.vmware.com
+      blobstore:
+        plugin: simple
+        properties:
+          endpoint: http://10.135.200.10:25250
+          user: agent
+          password: Ag3Nt
+      server:
+        host: 10.135.200.10
+        port: 25255
+        password: R3d!S
+    soap_log: <%= shared_path %>/log/<%= process_name %>.soap.log
+    vcenters:
+      - host: 10.135.192.1
+        user: administrator
+        password: ca$hc0w
+        datacenters:
+          - name: AppCloud
+            vm_folder: AppCloudVMs
+            template_folder: AppCloudTemplates
+            disk_path: AppCloudDisks
+            datastore_pattern: cloud12NfsDatastore
+            clusters:
+              - AppCloudCluster
