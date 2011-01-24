@@ -53,6 +53,7 @@ namespace :redis do
       #{sudo} mv #{tmp_dir}/redis.log.run /etc/sv/redis/log/run &&
       #{sudo} chmod 755 /etc/sv/redis/run /etc/sv/redis/log/run &&
       #{sudo} chown root:root /etc/sv/redis/run /etc/sv/redis/log/run &&
+      #{sudo} chown #{runner}:#{runner} #{redis_deploy_to} &&
       #{sudo} ln -fs /etc/sv/redis /etc/service/
     CMD
   end
