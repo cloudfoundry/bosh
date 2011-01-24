@@ -156,7 +156,7 @@ module VSphereCloud
         config.deviceChange = []
 
         system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
-        existing_nic = devices.find {|device| device.kind_of?(VirtualEthernetCard)}
+        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
 
         file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
         ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controllerKey, disk,
@@ -167,7 +167,7 @@ module VSphereCloud
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([cluster.datacenter.name, "network", v_network_name])
-          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey, dvs_index)
+          nic_config = create_nic_config_spec(v_network_name, network_mob, pci_controller.key, dvs_index)
           config.deviceChange << nic_config
         end
 
@@ -243,7 +243,7 @@ module VSphereCloud
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
 
-        existing_nic = devices.find {|device| device.kind_of?(VirtualEthernetCard)}
+        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
 
         datacenter = client.find_parent(vm, "Datacenter")
         datacenter_name = client.get_property(datacenter, "Datacenter", "name")
@@ -252,7 +252,7 @@ module VSphereCloud
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([datacenter_name, "network", v_network_name])
-          nic_config = create_nic_config_spec(v_network_name, network_mob, existing_nic.controllerKey, dvs_index)
+          nic_config = create_nic_config_spec(v_network_name, network_mob, pci_controller.key, dvs_index)
           config.deviceChange << nic_config
         end
 
