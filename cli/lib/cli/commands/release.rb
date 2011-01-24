@@ -3,7 +3,7 @@ module Bosh::Cli::Command
     include Bosh::Cli::DependencyHelper
 
     def verify(tarball_path)
-      release = Bosh::Cli::Release.new(tarball_path)
+      release = Bosh::Cli::ReleaseUploader.new(tarball_path)
 
       say("\nVerifying release...")
       release.validate
@@ -23,7 +23,7 @@ module Bosh::Cli::Command
       err("Please log in first") unless logged_in?
       err("Please choose target") unless target
       
-      release = Bosh::Cli::Release.new(tarball_path)
+      release = Bosh::Cli::ReleaseUploader.new(tarball_path)
 
       say("\nVerifying release...")
       release.validate
@@ -48,13 +48,11 @@ module Bosh::Cli::Command
     end
 
     def create(flags = "")
+      check_if_release_dir
+
       packages  = []
       jobs      = []
-      final     = flags.to_s =~ /\s*--final\s*/i
-
-      if !in_release_dir?
-        err "Sorry, your current directory doesn't look like release directory"
-      end
+      final     = flags.to_s =~ /^\s*--final\s*$/i
 
       if final
         header "Building FINAL release".green
@@ -93,10 +91,10 @@ module Bosh::Cli::Command
         jobs << job
       end
 
-      release = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, final)
-      release.build
+      builder = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, final)
+      builder.build
 
-      say("Built release #{release.version} at '#{release.tarball_path}'")
+      say("Built release #{builder.version} at '#{builder.tarball_path}'")
     end
 
     def list
@@ -120,10 +118,6 @@ module Bosh::Cli::Command
     end
 
     private
-
-    def in_release_dir?
-      File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
-    end
 
     def init_blobstore
       storage_config = File.join(@work_dir, "storage.yml")

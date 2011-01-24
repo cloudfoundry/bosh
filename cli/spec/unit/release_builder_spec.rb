@@ -5,7 +5,6 @@ describe Bosh::Cli::ReleaseBuilder do
 
   before(:each) do
     @work_dir = Dir.mktmpdir
-    FileUtils.mkdir(File.join(@work_dir, "releases"))
   end
 
   def new_builder

@@ -8,16 +8,26 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :work_dir, :version, :packages, :jobs
+    attr_reader :work_dir, :release, :packages, :jobs
 
     def initialize(work_dir, packages, jobs, final = false)
       @work_dir  = work_dir
+
+      @release   = Release.new(@work_dir)
       @packages  = packages
       @jobs      = jobs
       @final     = final
 
       create_release_build_dir
-      @version  = assign_version      
+    end
+
+    def release_name
+      name = final? ? @release.final_name : @release.dev_name
+      name.blank? ? DEFAULT_RELEASE_NAME : name
+    end
+
+    def version
+      @version ||= assign_version
     end
 
     def final?
@@ -112,44 +122,20 @@ module Bosh::Cli
 
     private
 
+    def assign_version
+      current_version = final? ? @release.final_version : @release.dev_version
+      current_version.to_i + 1
+    end
+
     def build_dir
       @build_dir ||= Dir.mktmpdir
     end
 
-    def counter_file
-      dev_version   = File.join(work_dir, "DEV_VERSION")
-      final_version = File.join(work_dir, "VERSION")
-      
-      final? ? final_version : dev_version
-    end
-
-    def release_name_file
-      dev_name   = File.join(work_dir, "DEV_NAME")
-      final_name = File.join(work_dir, "NAME")
-
-      final? ? final_name : dev_name
-    end
-
     def save_version
-      File.open(counter_file, "w") do |f|
-        f.write(version)
-      end
-    end
-
-    def release_name
-      if File.file?(release_name_file) && File.readable?(release_name_file)
-        name = File.read(release_name_file).split("\n")[0]
-        name.blank? ? DEFAULT_RELEASE_NAME : name
+      if final?
+        @release.save_final_version(version)
       else
-        DEFAULT_RELEASE_NAME
-      end
-    end
-
-    def assign_version
-      if File.exists?(counter_file)
-        File.read(counter_file).to_i + 1
-      else
-        1
+        @release.save_dev_version(version)
       end
     end
 

@@ -49,6 +49,18 @@ module Bosh::Cli
           config.send(attr_name)
         end
       end
+
+      protected
+
+      def check_if_release_dir
+        if !in_release_dir?
+          err "Sorry, your current directory doesn't look like release directory"        
+        end      
+      end
+
+      def in_release_dir?
+        File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
+      end
     end
   end
 end

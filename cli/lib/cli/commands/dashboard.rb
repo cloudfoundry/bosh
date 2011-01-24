@@ -9,6 +9,54 @@ module Bosh::Cli::Command
       say("Target:     %s" % [ target || "not set" ])
       say("User:       %s" % [ logged_in? ? username : "not set" ])
       say("Deployment: %s" % [ deployment || "not set" ])
+
+      if in_release_dir?
+        header("You are in release directory")
+        release = Bosh::Cli::Release.new(work_dir)
+
+        dev_name    = release.dev_name
+        dev_version = release.dev_version
+
+        final_name    = release.final_name
+        final_version = release.final_version
+
+        say("Dev name:      %s" % [ dev_name ? dev_name.green : "not set".red ])
+        say("Dev version:   %s" % [ dev_version && dev_version > 0 ? dev_version.to_s.green : "no versions yet".red ])
+        say("\n")
+        say("Final name:    %s" % [ final_name ? final_name.green : "not set".red ])
+        say("Final version: %s" % [ final_version && final_version > 0 ? final_version.to_s.green : "no versions yet".red ])
+
+        header("Packages")
+
+        package_specs = Dir[File.join(work_dir, "packages", "*", "spec")]
+
+        if package_specs.empty?
+          say("No package specs found".red)
+          return
+        end
+
+        package_specs.each do |spec_file|
+          if spec_file.is_a?(String) && File.file?(spec_file)
+            package_dir = File.dirname(spec_file)
+            spec        = YAML.load_file(spec_file) 
+
+            package_desc = ""
+            package_desc << spec["name"].green
+
+            begin
+              dev_index   = Bosh::Cli::PackagesIndex.new(File.join(package_dir, "dev_builds.yml"), File.join(package_dir, "dev_builds"))
+              final_index = Bosh::Cli::PackagesIndex.new(File.join(package_dir, "final_builds.yml"), File.join(package_dir, "final_builds"))
+              package_desc << "\n  last dev build:   %s" % [ dev_index.current_version ]
+              package_desc << "\n  last final build: %s" % [ final_index.current_version ]
+              say(package_desc)
+            rescue Bosh::Cli::InvalidPackage => e
+              say "Problem with package %s: %s".red % [ spec["name"], e.message ]
+            end
+          else
+            say("Spec file #{spec_file} is invalid")
+          end
+        end
+      end
     end
 
     def login(username = nil, password = nil)
