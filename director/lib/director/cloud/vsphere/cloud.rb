@@ -89,6 +89,18 @@ module VSphereCloud
           vm = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
           result = name
 
+          @logger.info("Removing NICs")
+          devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+          config = VirtualMachineConfigSpec.new
+          config.deviceChange = []
+
+          nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+          nics.each do |nic|
+            nic_config = create_delete_device_spec(nic)
+            config.deviceChange << nic_config
+          end
+          client.reconfig_vm(vm, config)
+
           @logger.info("Taking initial snapshot")
           task = take_snapshot(vm, "initial")
           client.wait_for_task(task)
