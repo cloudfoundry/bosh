@@ -36,6 +36,11 @@ module Bosh::Director
     def update_resource_pool
       if @instance_spec.resource_pool_changed?
         if @instance.disk_cid
+          task = agent.unmount_disk(@instance.disk_cid)
+          while task["state"] == "running"
+            sleep(1.0)
+            task = agent.get_task(task["agent_task_id"])
+          end
           @cloud.detach_disk(@vm.cid, @instance.disk_cid)
         end
 
@@ -60,6 +65,11 @@ module Bosh::Director
 
         if @instance.disk_cid
           @cloud.attach_disk(@vm.cid, @instance.disk_cid)
+          task = agent.mount_disk(@instance.disk_cid)
+          while task["state"] == "running"
+            sleep(1.0)
+            task = agent.get_task(task["agent_task_id"])
+          end
         end
 
         agent.wait_until_ready
@@ -90,9 +100,14 @@ module Bosh::Director
         if @job_spec.persistent_disk > 0
           disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
           @cloud.attach_disk(@vm.cid, disk_cid)
+          task = agent.mount_disk(disk_cid)
+          while task["state"] == "running"
+            sleep(1.0)
+            task = agent.get_task(task["agent_task_id"])
+          end
 
           if old_disk_cid
-            task = agent.migrate_disk(@job_spec.persistent_disk)
+            task = agent.migrate_disk(old_disk_cid, disk_cid)
             while task["state"] == "running"
               sleep(1.0)
               task = agent.get_task(task["agent_task_id"])
@@ -104,6 +119,11 @@ module Bosh::Director
         @instance.save!
 
         if old_disk_cid
+          task = agent.unmount_disk(old_disk_cid)
+          while task["state"] == "running"
+            sleep(1.0)
+            task = agent.get_task(task["agent_task_id"])
+          end
           @cloud.detach_disk(@vm.cid, old_disk_cid)
           @cloud.delete_disk(old_disk_cid) if old_disk_cid
         end

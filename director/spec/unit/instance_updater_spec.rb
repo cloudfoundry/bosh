@@ -320,6 +320,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @agent_1.should_receive(:drain).and_return(0.01)
     @agent_1.should_receive(:stop)
+    @agent_1.should_receive(:unmount_disk).with("disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "disk-id")
     @cloud.should_receive(:delete_vm).with("vm-id")
     @vm.should_receive(:delete)
@@ -337,6 +338,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
+    @agent_2.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
     @agent_2.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
@@ -415,6 +417,7 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:disk_cid).and_return(nil)
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
+    @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
     @instance.should_receive(:disk_cid=).with("disk-id")
     @instance.should_receive(:save!)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
@@ -455,12 +458,14 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:disk_cid).and_return("old-disk-id")
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
-    @agent_1.should_receive(:migrate_disk).with(1024).and_return({
+    @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
+    @agent_1.should_receive(:migrate_disk).with("old-disk-id", "disk-id").and_return({
       "id" => "task-1",
       "state" => "done"
     })
     @instance.should_receive(:disk_cid=).with("disk-id")
     @instance.should_receive(:save!)
+    @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
@@ -509,6 +514,7 @@ describe Bosh::Director::InstanceUpdater do
     @instance.should_receive(:disk_cid).and_return("old-disk-id")
     @instance.should_receive(:disk_cid=).with(nil)
     @instance.should_receive(:save!)
+    @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
     @agent_1.should_receive(:apply).with(plan).and_return({
