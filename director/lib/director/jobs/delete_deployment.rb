@@ -19,6 +19,7 @@ module Bosh::Director
 
           if instance.disk_cid
             if vm
+              # TODO: by default we should not ignore this, only support this when we support a forceful delete
               begin
                 @logger.info("Detaching found disk: #{instance.disk_cid}")
                 @cloud.detach_disk(vm.cid, instance.disk_cid)
@@ -26,8 +27,14 @@ module Bosh::Director
                 @logger.warn("Could not detach disk from VM: #{e} - #{e.backtrace.join("")}")
               end
             end
-            @logger.info("Deleting found disk: #{instance.disk_cid}")
-            @cloud.delete_disk(instance.disk_cid)
+
+            # TODO: by default we should not ignore this, only support this when we support a forceful delete
+            begin
+              @logger.info("Deleting found disk: #{instance.disk_cid}")
+              @cloud.delete_disk(instance.disk_cid)
+            rescue => e
+              @logger.warn("Could not delete disk: #{e} - #{e.backtrace.join("")}")
+            end
           end
 
           if vm
