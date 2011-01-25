@@ -184,6 +184,7 @@ module VSphereCloud
     end
 
     def find_by_inventory_path(path)
+      path = [path] unless path.kind_of?(Array)
       path = path.flatten.collect {|name| name.gsub("/", "%2f")}.join("/")
       find_request = FindByInventoryPathRequestType.new(@service_content.searchIndex, path)
       @service.findByInventoryPath(find_request).returnval
