@@ -48,7 +48,12 @@ module Bosh::Director
       def delete_vm(vm)
         with_thread_name("delete_vm(#{vm.cid})") do
           @logger.info("Deleting VM: #{vm.cid}")
-          @cloud.delete_vm(vm.cid)
+          # TODO: by default we should not ignore this, only support this when we support a forceful delete
+          begin
+            @cloud.delete_vm(vm.cid)
+          rescue => e
+            @logger.warn("Could not delete VM: #{e} - #{e.backtrace.join("")}")
+          end
           vm.delete
         end
       end
