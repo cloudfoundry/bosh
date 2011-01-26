@@ -4,7 +4,7 @@ module Bosh::Cli
 
   class PackageBuilder
 
-    attr_reader :name, :globs, :version, :dependencies, :tarball_path, :checksum
+    attr_reader :name, :globs, :version, :dependencies, :tarball_path
 
     # We have two ways of getting/storing a package:
     # development versions of packages, kept in release directory
@@ -83,7 +83,7 @@ module Bosh::Cli
       else
         say "Fetching `#{name}' (final version #{version}) from blobstore (#{blobstore_id})"
         payload = @blobstore.get(blobstore_id)        
-        @tarball_path = @final_packages.add_package(fingerprint, package_attrs, payload)        
+        @tarball_path = @final_packages.add_version(fingerprint, package_attrs, payload)        
       end
 
       @version = version
@@ -145,7 +145,7 @@ module Bosh::Cli
         "sha1"    => Digest::SHA1.hexdigest(payload)
       }
 
-      @dev_packages.add_package(fingerprint, package_attrs, payload)
+      @dev_packages.add_version(fingerprint, package_attrs, payload)
 
       @tarball_path = @dev_packages.filename(version)
       @version      = version      
@@ -177,7 +177,7 @@ module Bosh::Cli
       }
 
       say "`#{name}' (final version #{version}) uploaded, blobstore id #{blobstore_id}"
-      @final_packages.add_package(fingerprint, package_attrs, payload)
+      @final_packages.add_version(fingerprint, package_attrs, payload)
       @tarball_path = @final_packages.filename(version)
       @version      = version
       true
@@ -233,7 +233,7 @@ module Bosh::Cli
 
     def final_builds_index_file
       File.join(package_dir, "final_builds.yml")
-    end    
+    end
 
     def final_builds_dir
       File.join(package_dir, "final_builds")

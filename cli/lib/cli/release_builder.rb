@@ -84,8 +84,14 @@ module Bosh::Cli
         }
       end
 
-      manifest["jobs"]    = jobs.map { |job| job.name }
-      manifest["name"]    = release_name
+      manifest["jobs"] = jobs.map do |job|
+        {
+          "name"    => job.name,
+          "version" => job.version,
+          "sha1"    => job.checksum,
+        }
+      end
+      manifest["name"] = release_name
 
       unless manifest["name"].bosh_valid_id?
         raise InvalidRelease, "Release name '%s' is not a valid Bosh identifier" % [ manifest["name"] ]

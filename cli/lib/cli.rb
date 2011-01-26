@@ -9,7 +9,7 @@ require "cli/stemcell"
 require "cli/director"
 require "cli/director_task"
 
-require "cli/packages_index"
+require "cli/versions_index"
 require "cli/package_builder"
 require "cli/job_builder"
 

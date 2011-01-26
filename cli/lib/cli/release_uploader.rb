@@ -75,21 +75,32 @@ module Bosh
         # Check jobs
         total_jobs = manifest["jobs"].size
 
-        manifest["jobs"].each_with_index do |name, i|
+        step("Checking jobs format", "Jobs are not versioned, please re-create release with current CLI version (or any CLI >= 0.4.4)", :fatal) do
+          total_jobs > 0 && manifest["jobs"][0].is_a?(Hash)
+        end
+
+        manifest["jobs"].each_with_index do |job, i|
+          name    = job["name"]
+          version = job["version"]
+          
           job_file   = File.expand_path(name + ".tgz", tmp_dir + "/jobs")
           job_exists = File.exists?(job_file)
 
-          step("Read job '%s' (%d of %d)" % [ name, i+1, total_jobs ], "Job '#{name}' not found") do
+          step("Read job '%s' (%d of %d), version %s" % [ name, i+1, total_jobs, version ], "Job '#{name}' not found") do
             job_exists
           end
 
           if job_exists
+            step("Job '#{name}' checksum", "Incorrect checksum for job '#{name}'") do
+              Digest::SHA1.hexdigest(File.read(job_file)) == job["sha1"]
+            end
+            
             job_tmp_dir = "#{tmp_dir}/jobs/#{name}"
             FileUtils.mkdir_p(job_tmp_dir)
             `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
             job_extracted = $?.exitstatus == 0
             
-            step("Extract job '#{name}", "Cannot extract job '#{name}'") do
+            step("Extract job '#{name}'", "Cannot extract job '#{name}'") do
               job_extracted
             end
 
@@ -156,7 +167,7 @@ module Bosh
         end        
 
         for job in manifest["jobs"]
-          say "  - %s" % [ job ]
+          say "  - %s (%s)" % [ job["name"], job["version"] ]
         end
       end
       

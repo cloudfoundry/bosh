@@ -85,7 +85,7 @@ module Bosh::Cli::Command
 
       header "Building jobs"
       Dir[File.join(work_dir, "jobs", "*", "spec")].each do |job_spec|
-        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, built_package_names)
+        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final, blobstore, built_package_names)
         say "Building #{job.name}..."
         job.build
         jobs << job
