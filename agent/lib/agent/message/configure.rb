@@ -3,6 +3,7 @@ require 'netaddr'
 require 'erb'
 require 'tempfile'
 require 'fileutils'
+require 'pathname'
 
 module Bosh::Agent
   module Message
@@ -235,7 +236,11 @@ module Bosh::Agent
           @logger.info("Swapon and mount data partition")
           %x[swapon #{swap_partition}]
           %x[mkdir -p #{@base_dir}/data]
-          %x[mount #{data_partition} #{@base_dir}/data]
+
+          data_mount = "#{@base_dir}/data"
+          unless Pathname.new(data_mount).mountpoint?
+            %x[mount #{data_partition} #{data_mount}]
+          end
         end
       end
 
