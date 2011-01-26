@@ -44,8 +44,8 @@ module Bosh::Cli
       FileUtils.mkdir_p(dev_builds_dir)
       FileUtils.mkdir_p(final_builds_dir)
       
-      @dev_packages   = PackagesIndex.new(dev_builds_index_file, dev_builds_dir)
-      @final_packages = PackagesIndex.new(final_builds_index_file, final_builds_dir)
+      @dev_packages   = VersionsIndex.new(dev_builds_index_file, dev_builds_dir)
+      @final_packages = VersionsIndex.new(final_builds_index_file, final_builds_dir)
     end
 
     def build

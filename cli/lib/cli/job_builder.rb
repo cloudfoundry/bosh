@@ -14,15 +14,19 @@ module Bosh::Cli
       when Hash
         spec["configuration"].keys
       else
-        spec["configuration"]
+        raise InvalidJob, "Incorrect configuration section in `#{@name}' job spec (should resolve to a hash)"
       end
 
       if @name.blank?
         raise InvalidJob, "Job name is missing"
       end
 
+      if @configs.nil?
+        raise InvalidJob, "Please include configuration section with at least 1 (possibly dummy) file into `#{@name}' job spec"
+      end
+
       unless @name.bosh_valid_id?
-        raise InvalidJob, "Job name should be a valid Bosh identifier"
+        raise InvalidJob, "`#{@name}' is not a valid Bosh identifier"
       end
 
       @built_packages = built_packages

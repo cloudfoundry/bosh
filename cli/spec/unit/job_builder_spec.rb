@@ -8,6 +8,12 @@ describe Bosh::Cli::JobBuilder do
   end
 
   def new_builder(name, packages = [], configs = { }, built_packages = [])
+
+    # Workaround for Hash requirement
+    if configs.is_a?(Array)
+      configs = configs.inject({ }) { |h, e| h[e] = 1; h }
+    end
+    
     spec = {
       "name"          => name,
       "packages"      => packages,
@@ -43,7 +49,7 @@ describe Bosh::Cli::JobBuilder do
   it "creates a new builder" do
     builder = new_builder("foo", ["foo", "bar", "baz"], ["a.conf", "b.yml"])
     builder.packages.should    == ["foo", "bar", "baz"]
-    builder.configs.should     == ["a.conf", "b.yml"]
+    builder.configs.should     =~ ["a.conf", "b.yml"]
     builder.release_dir.should == @release_dir
   end
 
@@ -61,7 +67,7 @@ describe Bosh::Cli::JobBuilder do
   it "whines on funny characters in name" do
     lambda {
       new_builder("@#!", [])
-    }.should raise_error(Bosh::Cli::InvalidJob, "Job name should be a valid Bosh identifier")
+    }.should raise_error(Bosh::Cli::InvalidJob, "`@#!' is not a valid Bosh identifier")
   end  
 
   it "whines if some configs are missing" do

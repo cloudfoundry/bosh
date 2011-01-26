@@ -1,16 +1,16 @@
 module Bosh::Cli
 
-  class PackagesIndex
+  class VersionsIndex
     def initialize(index_file, storage_dir)
       @index_file  = File.expand_path(index_file)
       @storage_dir = File.expand_path(storage_dir)
 
       unless File.file?(index_file) && File.readable?(index_file)
-        raise InvalidPackage, "Cannot read package index file: #{index_file}"
+        raise InvalidIndex, "Cannot read index file: #{index_file}"
       end
 
       unless File.directory?(storage_dir)
-        raise InvalidPackage, "Cannot read package storage directory: #{storage_dir}"
+        raise InvalidIndex, "Cannot read index storage directory: #{storage_dir}"
       end
 
       @data = YAML.load_file(@index_file)
@@ -41,7 +41,7 @@ module Bosh::Cli
       version = package_attrs["version"]
       
       if version.blank?
-        raise InvalidPackage, "Cannot save package without knowing its version"
+        raise InvalidIndex, "Cannot save index entry without knowing its version"
       end
 
       File.open(filename(version), "w") do |f|
