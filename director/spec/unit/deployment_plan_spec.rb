@@ -671,11 +671,13 @@ describe Bosh::Director::DeploymentPlan do
         }
       },
       "persistent_disk" => 2048,
-      "job" => {"name" => "job_a", "blobstore_id" => "template_blob"}
+      "job" => {"name" => "job_a", "version" => "1", "sha1" => "job-sha1", "blobstore_id" => "template_blob"}
     }
 
     before(:each) do
       @template = stub("template")
+      @template.stub!(:version).and_return("1")
+      @template.stub!(:sha1).and_return("job-sha1")
       @template.stub!(:blobstore_id).and_return("template_blob")
       @manifest = BASIC_MANIFEST._deep_copy
       @deployment_plan = Bosh::Director::DeploymentPlan.new(@manifest)
@@ -814,7 +816,7 @@ describe Bosh::Director::DeploymentPlan do
           }
         },
         "index" => 0,
-        "job" => { "name" => "job_a", "blobstore_id"=>"template_blob" },
+        "job" => { "name" => "job_a", "blobstore_id"=>"template_blob", "sha1" => "job-sha1", "version" => "1" },
         "persistent_disk" => 2048,
         "release" => { "name"=>"test_release", "version"=>1 },
         "deployment" => "test_deployment",

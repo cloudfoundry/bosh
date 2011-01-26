@@ -389,6 +389,8 @@ module Bosh::Director
       def spec
         {
           "name" => @name,
+          "version" => @template.version,
+          "sha1" => @template.sha1,
           "blobstore_id" => @template.blobstore_id
         }
       end
