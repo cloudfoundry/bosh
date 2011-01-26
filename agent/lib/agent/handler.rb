@@ -87,6 +87,9 @@ module Bosh::Agent
                     @logger.info("Waiting for guestinfo.bosh")
                     sleep 0.1
                   end
+                  @logger.info("Reboot after networking change")
+                  `/sbin/shutdown -r now`
+                  @logger.info("Exit after networking change")
                   exit
                 end
               end
@@ -193,15 +196,29 @@ module Bosh::Agent
       end
     end
 
-    class UpdatePersistentDisk
-      def self.process(args)
-        true
-      end
-    end
-
     class MigrateDisk
       def self.process(args)
-        true
+        logger = Bosh::Agent::Config.logger
+        logger.info("MigrateDisk:" + args.inspect)
+        {}
+      end
+      def self.long_running?; true; end
+    end
+
+    class MountDisk
+      def self.process(args)
+        logger = Bosh::Agent::Config.logger
+        logger.info("MountDisk:" + args.inspect)
+        {}
+      end
+      def self.long_running?; true; end
+    end
+
+    class UnmountDisk
+      def self.process(args)
+        logger = Bosh::Agent::Config.logger
+        logger.info("UnmountDisk:" + args.inspect)
+        {}
       end
       def self.long_running?; true; end
     end
