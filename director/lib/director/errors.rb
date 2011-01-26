@@ -35,6 +35,8 @@ module Bosh::Director
         "The existing package with the same name and version has a different hash"],
     ["ReleaseInvalidArchive",   BAD_REQUEST, 30002, "Invalid release archive, tar exit status: %s, output: %s"],
     ["ReleaseManifestNotFound", BAD_REQUEST, 30003, "Release manifest not found"],
+    ["ReleaseExistingJobHashMismatch", BAD_REQUEST, 30004,
+        "The existing job with the same name and version has a different hash"],
 
     ["ValidationInvalidType",   BAD_REQUEST, 40000, "Field: \"%s\" did not match the required type: \"%s\" in: %s"],
     ["ValidationMissingField",  BAD_REQUEST, 40001, "Required field: \"%s\" was not specified in: %s"],

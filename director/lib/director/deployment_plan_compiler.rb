@@ -136,9 +136,13 @@ module Bosh::Director
 
     def bind_jobs
       release_version = @deployment_plan.release.release_version
+      templates = release_version.templates
+      template_name_index = {}
+      templates.each do |template|
+        template_name_index[template.name] = template
+      end
       @deployment_plan.jobs.each do |job|
-        job.template = Models::Template.find(:release_version_id => release_version.id,
-                                             :name => job.template_name).first
+        job.template = template_name_index[job.template_name]
       end
     end
 

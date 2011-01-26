@@ -392,6 +392,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @release_version.stub!(:id).and_return(2)
 
+      @template.stub!(:name).and_return("test_template")
       @template.stub!(:packages).and_return([@package])
 
       @package.stub!(:name).and_return("test_package")
@@ -404,6 +405,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan.stub!(:release).and_return(@release_spec)
 
       @release_spec.stub!(:release_version).and_return(@release_version)
+
+      @release_version.stub!(:templates).and_return([@template])
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
@@ -419,8 +422,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should bind the compiled packages to the job" do
-      Bosh::Director::Models::Template.stub!(:find).with(:release_version_id => 2,
-                                                         :name => "test_template").and_return([@template])
       @job_spec.should_receive(:template=).with(@template)
       @deployment_plan_compiler.bind_jobs
     end
