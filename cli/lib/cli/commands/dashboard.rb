@@ -44,13 +44,13 @@ module Bosh::Cli::Command
             package_desc << spec["name"].green
 
             begin
-              dev_index   = Bosh::Cli::PackagesIndex.new(File.join(package_dir, "dev_builds.yml"), File.join(package_dir, "dev_builds"))
-              final_index = Bosh::Cli::PackagesIndex.new(File.join(package_dir, "final_builds.yml"), File.join(package_dir, "final_builds"))
+              dev_index   = Bosh::Cli::VersionsIndex.new(File.join(package_dir, "dev_builds.yml"), File.join(package_dir, "dev_builds"))
+              final_index = Bosh::Cli::VersionsIndex.new(File.join(package_dir, "final_builds.yml"), File.join(package_dir, "final_builds"))
               package_desc << "\n  last dev build:   %s" % [ dev_index.current_version ]
               package_desc << "\n  last final build: %s" % [ final_index.current_version ]
               say(package_desc)
-            rescue Bosh::Cli::InvalidPackage => e
-              say "Problem with package %s: %s".red % [ spec["name"], e.message ]
+            rescue Bosh::Cli::InvalidIndex => e
+              say "Problem with package index for `%s': %s".red % [ spec["name"], e.message ]
             end
           else
             say("Spec file #{spec_file} is invalid")
