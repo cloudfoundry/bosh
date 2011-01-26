@@ -491,6 +491,9 @@ module VSphereCloud
       else
         result = stemcell_vm
       end
+
+      @logger.info("Using stemcell VM: #{result}")
+
       result
     end
 
