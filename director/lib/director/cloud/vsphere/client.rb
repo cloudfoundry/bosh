@@ -49,7 +49,7 @@ module VSphereCloud
                                                                RetrieveOptions.new)
 
       # TODO: cache partial results
-      attempts = 10
+      attempts = 0
       begin
         properties_response = get_all_properties(properties_request)
         result = {}
@@ -67,17 +67,23 @@ module VSphereCloud
               remaining_properties.delete(property.name)
             end
           end
-          raise "Not all required properties were returned" unless remaining_properties.empty?
+          unless remaining_properties.empty?
+            raise "The object[s] #{obj.pretty_inspect} " +
+                      "should have the following properties: #{properties.pretty_inspect}, " +
+                      "but they were missing these: #{remaining_properties.pretty_inspect}."
+          end
           result[object_content.obj] = object_properties
         end
 
         result = result.values[0] if obj.is_a?(String)
         result
       rescue => e
-        attempts -= 1
-        if attempts > 0
-          @logger.warn("Error retrieving properties: #{e} - #{e.backtrace.join("\n")}")
-          sleep(3.0)
+        attempts += 1
+        if attempts < 8
+          sleep_interval = 2 ** attempts
+          @logger.warn("Error retrieving properties, retrying in #{sleep_interval} seconds: " +
+                       "#{e} - #{e.backtrace.join("\n")}")
+          sleep(sleep_interval)
           retry
         else
           raise e
