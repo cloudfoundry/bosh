@@ -37,8 +37,8 @@ module Bosh::Cli
       File.exists?(filename(version))
     end
 
-    def add_package(fingerprint, package_attrs, payload)
-      version = package_attrs["version"]
+    def add_version(fingerprint, attrs, payload)
+      version = attrs["version"]
       
       if version.blank?
         raise InvalidIndex, "Cannot save index entry without knowing its version"
@@ -48,7 +48,7 @@ module Bosh::Cli
         f.write(payload)
       end
 
-      @data[fingerprint] = package_attrs
+      @data[fingerprint] = attrs
 
       File.open(@index_file, "w") do |f|
         f.write(YAML.dump(@data))
