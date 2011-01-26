@@ -36,8 +36,6 @@ module Bosh::Director
       rescue Exception => e
         # cleanup
         if @release_version_entry && !@release_version_entry.new?
-          templates = Models::Template.find(:release_version_id => @release_version_entry.id)
-          templates.each {|template| template.delete}
           @release_version_entry.delete if @release_version_entry
         end
         raise e
@@ -82,8 +80,20 @@ module Bosh::Director
           @release_version_entry.packages << package
         end
 
-        @release_manifest["jobs"].each do |job_name|
-          create_job(job_name)
+        @release_manifest["jobs"].each do |job_meta|
+          @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
+                           "exists in release #{@release.pretty_inspect}")
+          template = Models::Template.find(:release_id => @release.id, :name => job_meta["name"],
+                                           :version => job_meta["version"]).first
+          if template.nil?
+            @logger.info("Creating new template")
+            template = create_job(job_meta)
+          else
+            @logger.info("Template already exists: #{template.pretty_inspect}, verifying that it's the same")
+            raise ReleaseExistingJobHashMismatch if template.sha1 != job_meta["sha1"]
+            @logger.info("Template verified")
+          end
+          @release_version_entry.templates << template
         end
       end
 
@@ -141,6 +151,7 @@ module Bosh::Director
         output = `tar -tzf #{package_tgz} 2>&1`
         raise PackageInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
 
+        # TODO: verify sha1
         File.open(package_tgz) do |f|
           package.blobstore_id = @blobstore.create(f)
         end
@@ -149,10 +160,15 @@ module Bosh::Director
         package
       end
 
-      def create_job(name)
-        @logger.info("Processing job: #{name}")
-        job_tgz = File.join(@tmp_release_dir, "jobs", "#{name}.tgz")
-        job_dir = File.join(@tmp_release_dir, "jobs", "#{name}")
+      def create_job(job_meta)
+        template = Models::Template.new(:release => @release,
+                                        :name => job_meta["name"],
+                                        :version => job_meta["version"],
+                                        :sha1 => job_meta["sha1"])
+
+        @logger.info("Processing job: #{template.name}")
+        job_tgz = File.join(@tmp_release_dir, "jobs", "#{template.name}.tgz")
+        job_dir = File.join(@tmp_release_dir, "jobs", "#{template.name}")
 
         FileUtils.mkdir_p(job_dir)
 
@@ -171,7 +187,13 @@ module Bosh::Director
           end
         end
 
-        template = Models::Template.new(:release_version => @release_version_entry, :name => name)
+        raise JobMissingMonit.new(name) unless File.file?(File.join(job_dir, "monit"))
+
+        # TODO: verify sha1
+        File.open(job_tgz) do |f|
+          template.blobstore_id = @blobstore.create(f)
+        end
+
         template.save!
 
         job_manifest["packages"].each do |package_name|
@@ -180,13 +202,7 @@ module Bosh::Director
           template.packages << package
         end
 
-        raise JobMissingMonit.new(name) unless File.file?(File.join(job_dir, "monit"))
-
-        File.open(job_tgz) do |f|
-          template.blobstore_id = @blobstore.create(f)
-        end
-        template.save!
-
+        template
       end
 
     end

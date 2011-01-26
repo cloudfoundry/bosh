@@ -4,17 +4,22 @@ module Bosh::Director::Models
   class Package < Ohm::Model; end
 
   class Template < Ohm::Model
-    reference :release_version, ReleaseVersion
+    reference :release, Release
     attribute :name
+    attribute :version
     attribute :blobstore_id
+    attribute :sha1
     set :packages, Package
 
     index :name
+    index :version
 
     def validate
-      assert_present :release_version_id
+      assert_present :release_id
       assert_present :name
-      assert_unique [:release_version_id, :name]
+      assert_present :version
+      assert_present :sha1
+      assert_unique [:release_id, :name, :version]
     end
   end
 end
