@@ -296,6 +296,20 @@ module Bosh::Director
 
     end
 
+    class TemplateSpec
+      attr_accessor :deployment
+      attr_accessor :name
+      attr_accessor :version
+      attr_accessor :sha1
+      attr_accessor :blobstore_id
+      attr_accessor :packages
+
+      def initialize(deployment, name)
+        @deployment = deployment
+        @name = name
+      end
+    end
+
     class JobSpec
       include IpUtil
       include ValidationHelper
@@ -305,7 +319,6 @@ module Bosh::Director
       attr_accessor :persistent_disk
       attr_accessor :resource_pool
       attr_accessor :template
-      attr_accessor :template_name
       attr_accessor :properties
       attr_accessor :packages
       attr_accessor :update
@@ -315,7 +328,7 @@ module Bosh::Director
       def initialize(deployment, job_spec)
         @deployment = deployment
         @name = safe_property(job_spec, "name", :class => String)
-        @template_name = safe_property(job_spec, "template", :class => String)
+        @template = deployment.template(safe_property(job_spec, "template", :class => String))
         @persistent_disk = safe_property(job_spec, "persistent_disk", :class => Integer, :optional => true) || 0
         @instances = []
         @packages = {}
@@ -402,6 +415,7 @@ module Bosh::Director
       attr_accessor :name
       attr_accessor :version
       attr_accessor :sha1
+      attr_accessor :blobstore_id
 
       def initialize(name, version, sha1, blobstore_id)
         @name = name
@@ -611,6 +625,7 @@ module Bosh::Director
         @resource_pools[resource_pool.name] = resource_pool
       end
 
+      @templates = {}
       @jobs = {}
       jobs = safe_property(manifest, "jobs", :class => Array, :optional => true)
       if jobs
@@ -632,6 +647,18 @@ module Bosh::Director
       job = @jobs[name]
       raise "Job #{name} not found." if job.nil?
       job
+    end
+
+    def template(name)
+      template = @templates[name]
+      if template.nil?
+        @templates[name] = template = TemplateSpec.new(@deployment, name)
+      end
+      template
+    end
+
+    def templates
+      @templates.values
     end
 
     def networks

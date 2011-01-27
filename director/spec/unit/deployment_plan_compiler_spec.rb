@@ -376,7 +376,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   end
 
-  describe "bind_jobs" do
+  describe "bind_templates" do
 
     before(:each) do
       @deployment = mock("deployment")
@@ -386,6 +386,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @stemcell = mock("stemcell")
       @deployment_plan = mock("deployment_plan")
       @job_spec = mock("job_spec")
+      @template_spec = mock("template_spec")
       @release_spec = mock("release_spec")
       @resource_pool_spec = mock("resource_pool_spec")
       @stemcell_spec = mock("stemcell_spec")
@@ -393,7 +394,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @release_version.stub!(:id).and_return(2)
 
       @template.stub!(:name).and_return("test_template")
-      @template.stub!(:packages).and_return([@package])
+      @template.stub!(:version).and_return("2")
+      @template.stub!(:sha1).and_return("template-sha1")
+      @template.stub!(:blobstore_id).and_return("template-blob")
+      @template.stub!(:packages).and_return(["test_package"])
+
+      @template_spec.stub!(:name).and_return("test_template")
 
       @package.stub!(:name).and_return("test_package")
       @package.stub!(:version).and_return(7)
@@ -402,11 +408,13 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @stemcell.stub!(:id).and_return(10)
 
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
+      @deployment_plan.stub!(:templates).and_return([@template_spec])
       @deployment_plan.stub!(:release).and_return(@release_spec)
 
       @release_spec.stub!(:release_version).and_return(@release_version)
 
       @release_version.stub!(:templates).and_return([@template])
+      @release_version.stub!(:packages).and_return([@package])
 
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
@@ -422,8 +430,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should bind the compiled packages to the job" do
-      @job_spec.should_receive(:template=).with(@template)
-      @deployment_plan_compiler.bind_jobs
+      @template_spec.should_receive(:version=).with("2")
+      @template_spec.should_receive(:sha1=).with("template-sha1")
+      @template_spec.should_receive(:blobstore_id=).with("template-blob")
+      @template_spec.should_receive(:packages=).with([@package])
+      @deployment_plan_compiler.bind_templates
     end
   end
 
@@ -432,7 +443,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     before(:each) do
       @deployment = mock("deployment")
       @release_version = mock("release_version")
-      @template = mock("template")
+      @template_spec = mock("template_spec")
       @package = mock("package")
       @stemcell = mock("stemcell")
       @deployment_plan = mock("deployment_plan")
@@ -443,7 +454,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @release_version.stub!(:id).and_return(2)
 
-      @template.stub!(:packages).and_return([@package])
+      @template_spec.stub!(:packages).and_return([@package])
 
       @package.stub!(:name).and_return("test_package")
       @package.stub!(:version).and_return(7)
@@ -461,7 +472,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @stemcell_spec.stub!(:network).and_return(@network_spec)
       @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
 
-      @job_spec.stub!(:template).and_return(@template)
+      @job_spec.stub!(:template).and_return(@template_spec)
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
 
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
