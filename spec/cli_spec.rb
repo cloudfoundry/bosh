@@ -360,7 +360,6 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "can upload a release" do
-    pending
     release_filename = spec_asset("valid_release.tgz")
 
     run_bosh("target http://localhost:57523")
@@ -404,7 +403,6 @@ describe Bosh::Spec::IntegrationTest do
 
   describe "deployment process" do
     it "successfully performed with minimal manifest" do
-      pending
       release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
       deployment_manifest_filename = yaml_file("minimal", minimal_deployment_manifest)
 
@@ -417,7 +415,6 @@ describe Bosh::Spec::IntegrationTest do
     end
 
     it "successfully performed with simple manifest" do
-      pending
       release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
       stemcell_filename = spec_asset("valid_stemcell.tgz") # It's a dummy stemcell (ubuntu-stemcell 1)
       deployment_manifest_filename = yaml_file("simple", simple_deployment_manifest)
