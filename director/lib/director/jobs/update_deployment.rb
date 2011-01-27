@@ -122,13 +122,13 @@ module Bosh::Director
                 deployment.manifest = @manifest
                 deployment.save!
                 @logger.info("Finished updating deployment")
-                "/deployments/#{deployment.name}"
               rescue Exception => e
                 @logger.info("Update failed, rolling back")
                 @logger.error("#{e} - #{e.backtrace.join("\n")}")
                 # TODO: record the error
                 rollback
               end
+              "/deployments/#{deployment.name}"
             ensure
               update_stemcell_references
             end
