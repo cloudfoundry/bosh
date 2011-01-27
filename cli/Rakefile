@@ -34,6 +34,7 @@ Rake::GemPackageTask.new(gemspec) do |pkg|
 end
 
 task :install => [ :package ] do
+  sh "gem install vendor/cache/blobstore_client-0.1.0.gem"
   sh "gem install pkg/#{GEM}-#{GEM_VERSION}"
 end
 
