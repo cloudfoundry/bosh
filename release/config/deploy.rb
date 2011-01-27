@@ -178,7 +178,7 @@ namespace :deploy do
 
     run "#{sudo} mv /tmp/environment /etc/environment"
 
-    run "#{sudo} apt-get update -qy && #{sudo} apt-get install -qy --no-install-recommends runit build-essential wget libssl-dev zlib1g-dev libreadline5-dev libxml2-dev"
+    run "#{sudo} apt-get update -qy && #{sudo} apt-get install -qy --no-install-recommends runit build-essential wget libssl-dev zlib1g-dev libreadline5-dev libxml2-dev genisoimage"
 
     run <<-CMD
       cd /tmp &&
