@@ -5,7 +5,7 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.1.0)
+    blobstore_client (0.1.1)
       aws-s3
       httpclient
       uuidtools
@@ -48,7 +48,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  blobstore_client (~> 0.1)
+  blobstore_client (>= 0.1.1)
   ci_reporter
   highline
   json_pure
