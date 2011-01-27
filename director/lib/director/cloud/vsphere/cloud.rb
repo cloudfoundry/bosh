@@ -255,10 +255,28 @@ module VSphereCloud
 
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
+        # HACK: temporary workaround
+        sleep(10)
+
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         vm = get_vm_by_cid(vm_cid)
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
 
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange = []
+
+        nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+        nics.each do |nic|
+          nic_config = create_delete_device_spec(nic)
+          config.deviceChange << nic_config
+        end
+
+        client.reconfig_vm(vm, config)
+
+        # HACK: temporary workaround
+        sleep(10)
+
+        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
 
@@ -272,12 +290,6 @@ module VSphereCloud
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([datacenter_name, "network", v_network_name])
           nic_config = create_nic_config_spec(v_network_name, network_mob, pci_controller.key, dvs_index)
-          config.deviceChange << nic_config
-        end
-
-        nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
-        nics.each do |nic|
-          nic_config = create_delete_device_spec(nic)
           config.deviceChange << nic_config
         end
 
