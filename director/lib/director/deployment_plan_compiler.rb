@@ -134,15 +134,29 @@ module Bosh::Director
       end
     end
 
-    def bind_jobs
+    def bind_templates
       release_version = @deployment_plan.release.release_version
-      templates = release_version.templates
+
       template_name_index = {}
-      templates.each do |template|
+      release_version.templates.each do |template|
         template_name_index[template.name] = template
       end
-      @deployment_plan.jobs.each do |job|
-        job.template = template_name_index[job.template_name]
+
+      package_name_index = {}
+      release_version.packages.each do |package|
+        package_name_index[package.name] = package
+      end
+
+      @deployment_plan.templates.each do |template_spec|
+        template = template_name_index[template_spec.name]
+        raise "Can't find template: #{template_spec.name}" if template.nil?
+        template_spec.version = template.version
+        template_spec.sha1 = template.sha1
+        template_spec.blobstore_id = template.blobstore_id
+
+        packages = []
+        template.packages.each { |package_name| packages << package_name_index[package_name] }
+        template_spec.packages = packages
       end
     end
 

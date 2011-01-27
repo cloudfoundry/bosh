@@ -194,13 +194,15 @@ module Bosh::Director
           template.blobstore_id = @blobstore.create(f)
         end
 
-        template.save!
-
+        packages = []
         job_manifest["packages"].each do |package_name|
           package = @packages[package_name]
           raise JobMissingPackage.new(name, package_name) if package.nil?
-          template.packages << package
+          packages << package.name
         end
+        template.packages = packages
+
+        template.save!
 
         template
       end

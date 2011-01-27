@@ -9,10 +9,19 @@ module Bosh::Director::Models
     attribute :version
     attribute :blobstore_id
     attribute :sha1
-    set :packages, Package
+    attribute :package_names
 
     index :name
     index :version
+
+    def packages
+      result = self.package_names
+      result ? Yajl::Parser.parse(result) : nil
+    end
+
+    def packages=(packages)
+      self.package_names = Yajl::Encoder.encode(packages)
+    end
 
     def validate
       assert_present :release_id
