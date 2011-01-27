@@ -14,13 +14,10 @@ module Bosh::Agent
         @apply_spec = args.first
         @job = @apply_spec['job']
 
-        if @apply_spec.has_key?('release')
-          @release_version = @apply_spec['release']['version'].to_s
-        end
-
         if @job
           @job_name = @job['name']
-          @job_install_dir = File.join(@base_dir, 'data', 'jobs', @job_name, @release_version)
+          @job_version = @job['version']
+          @job_install_dir = File.join(@base_dir, 'data', 'jobs', @job_name, @job_version)
         end
 
         @packages_data = File.join(@base_dir, 'data', 'packages')
@@ -116,7 +113,6 @@ module Bosh::Agent
         end
 
       end
-
 
       def link_installed(src, dst, error_msg="Failed to link #{src} to #{dst}")
         # FileUtils doesn have 'no-deference' for links - causing ln_sf to

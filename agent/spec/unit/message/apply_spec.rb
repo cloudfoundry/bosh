@@ -35,7 +35,7 @@ describe Bosh::Agent::Message::Apply do
 
     apply_data = {
       "deployment" => "foo",
-      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id"},
+      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77" },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
       "packages" => 
@@ -47,7 +47,7 @@ describe Bosh::Agent::Message::Apply do
     handler = Bosh::Agent::Message::Apply.new([apply_data])
     handler.stub!(:apply_job)
 
-    job_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '99', 'packages')
+    job_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'packages')
     FileUtils.mkdir_p(job_dir)
 
     handler.apply
@@ -62,7 +62,7 @@ describe Bosh::Agent::Message::Apply do
 
     apply_data = {
       "deployment" => "foo",
-      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id"},
+      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77"},
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }
@@ -72,7 +72,7 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     handler.apply
 
-    bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '99', 'bin')
+    bin_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'bin')
     File.directory?(bin_dir).should == true
 
     bin_file = File.join(bin_dir, 'my_sinatra_app')
