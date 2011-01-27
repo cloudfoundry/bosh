@@ -667,13 +667,15 @@ module VSphereCloud
       http_client = HTTPClient.new
       http_client.send_timeout = 14400 # 4 hours
       http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      http_client.set_auth("https://#{@vcenter["host"]}", @vcenter["user"], @vcenter["password"])
 
       url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
             "&dsName=#{URI.escape(datastore_name)}"
 
+      credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
+
       response = http_client.put(url, contents, {"Content-Type" => "application/octet-stream",
-                                                 "Content-Length" => contents.length})
+                                                 "Content-Length" => contents.length,
+                                                 "Authorization" => "Basic #{credentials}"})
 
       raise "Could not upload file: #{url}, status code: #{response.code}" unless response.code < 400
     end
