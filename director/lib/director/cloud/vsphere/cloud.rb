@@ -198,6 +198,8 @@ module VSphereCloud
                         :config => config)
         vm = client.wait_for_task(task)
 
+        upload_file(cluster.datacenter.name, datastore.name, "#{name}/env.iso", "")
+
         vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
                                                                      "config.vAppConfig.property"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
@@ -206,10 +208,15 @@ module VSphereCloud
         env["networks"] = build_agent_network_env(devices, networks, dvs_index)
         @logger.info("Setting VM env: #{env.pretty_inspect}")
 
-        vm_config_spec = VirtualMachineConfigSpec.new
-        set_agent_env(vm_config_spec, existing_app_properties, env)
-        client.reconfig_vm(vm, vm_config_spec)
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange = []
 
+        file_name = "[#{datastore.name}] #{name}/env.iso"
+        cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
+        config.deviceChange << cdrom_change
+
+        set_agent_env(vm, config, existing_app_properties, env)
+        client.reconfig_vm(vm, config)
 
         @logger.info("Powering on VM: #{vm} (#{name})")
         client.power_on_vm(cluster.datacenter.mob, vm)
@@ -290,7 +297,7 @@ module VSphereCloud
         env["networks"] = build_agent_network_env(devices, networks, dvs_index)
 
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(config, existing_app_properties, env)
+        set_agent_env(vm, config, existing_app_properties, env)
 
         client.reconfig_vm(vm, config)
 
@@ -368,7 +375,7 @@ module VSphereCloud
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unitNumber
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(config, existing_app_properties, env)
+        set_agent_env(vm, config, existing_app_properties, env)
         @logger.info("Attaching disk")
         client.reconfig_vm(vm, config)
         @logger.info("Finished attaching disk")
@@ -400,7 +407,7 @@ module VSphereCloud
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env["disks"]["persistent"].delete(disk.id.to_s)
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(config, existing_app_properties, env)
+        set_agent_env(vm, config, existing_app_properties, env)
         @logger.info("Detaching disk")
         client.reconfig_vm(vm, config)
         @logger.info("Finished detaching disk")
@@ -550,7 +557,7 @@ module VSphereCloud
       property ? Yajl::Parser.parse(property.value) : nil
     end
 
-    def set_agent_env(vm_config_spec, existing_app_properties, env)
+    def set_agent_env(vm, vm_config_spec, existing_app_properties, env)
       # TODO: scan vm_config_spec for new properties being added when calculating max_key, otherwise it will only allow
       # one property per reconfig
 
@@ -579,7 +586,7 @@ module VSphereCloud
       app_config_spec = VmConfigSpec.new
       app_config_spec.property = [env_property]
       # make sure the transport is set correctly, needed for guest to access these properties
-      app_config_spec.ovfEnvironmentTransport = ["iso", "com.vmware.guestInfo"]
+      app_config_spec.ovfEnvironmentTransport = ["com.vmware.guestInfo"]
 
       vm_config_spec.vAppConfig = app_config_spec
 
@@ -592,6 +599,71 @@ module VSphereCloud
 
       extra_config.value = value
       vm_config_spec.extraConfig = [extra_config]
+
+      datacenter = client.find_parent(vm, "Datacenter")
+      datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+
+      vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "name"])
+      vm_name = vm_properties["name"]
+      datastore = vm_properties["datastore"].first
+      datastore_name = client.get_property(datastore, "Datastore", "name")
+
+      connect_cdrom(vm, false)
+      upload_file(datacenter_name, datastore_name, "#{vm_name}/env.iso", generate_env_iso(env_json))
+      connect_cdrom(vm, true)
+    end
+
+    def connect_cdrom(vm, connected = true)
+      devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+      cdrom = devices.find { |device| device.kind_of?(VirtualCdrom) }
+      cdrom.connectable.connected = connected
+
+      config = VirtualMachineConfigSpec.new
+      config.deviceChange = [create_edit_device_spec(cdrom)]
+      client.reconfig_vm(vm, config)
+    end
+
+    def configure_env_cdrom(datastore, devices, file_name)
+      backing_info = VirtualCdromIsoBackingInfo.new
+      backing_info.datastore = datastore
+      backing_info.fileName = file_name
+
+      connect_info = VirtualDeviceConnectInfo.new
+      connect_info.allowGuestControl = false
+      connect_info.startConnected = true
+      connect_info.connected = true
+
+      cdrom = devices.find { |device| device.kind_of?(VirtualCdrom) }
+      cdrom.connectable = connect_info
+      cdrom.backing = backing_info
+
+      create_edit_device_spec(cdrom)
+    end
+
+    def generate_env_iso(env)
+      Dir.mktmpdir do |path|
+        env_path = File.join(path, "env")
+        iso_path = File.join(path, "env.iso")
+        File.open(env_path, "w") {|f| f.write(env)}
+        output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
+        raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
+        File.open(iso_path, "r") {|f| f.read}
+      end
+    end
+
+    def upload_file(datacenter_name, datastore_name, path, contents)
+      http_client = HTTPClient.new
+      http_client.send_timeout = 14400 # 4 hours
+      http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      http_client.set_auth("https://#{@vcenter["host"]}", @vcenter["user"], @vcenter["password"])
+
+      url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
+            "&dsName=#{URI.escape(datastore_name)}"
+
+      response = http_client.put(url, contents, {"Content-Type" => "application/octet-stream",
+                                                 "Content-Length" => contents.length})
+
+      raise "Could not upload file: #{url}, status code: #{response.code}" unless response.code < 400
     end
 
     def clone_vm(vm, name, folder, resource_pool, options={})
@@ -688,6 +760,13 @@ module VSphereCloud
       if options[:destroy]
         device_config_spec.fileOperation = VirtualDeviceConfigSpecFileOperation::Destroy
       end
+      device_config_spec
+    end
+
+    def create_edit_device_spec(device)
+      device_config_spec = VirtualDeviceConfigSpec.new
+      device_config_spec.device = device
+      device_config_spec.operation = VirtualDeviceConfigSpecOperation::Edit
       device_config_spec
     end
 
