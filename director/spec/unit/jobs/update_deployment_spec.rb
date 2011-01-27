@@ -182,6 +182,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment = mock("deployment")
       release = mock("release")
 
+      deployment.stub!(:name).and_return("test_deployment")
+
       @deployment_plan.stub!(:release).and_return(release)
       @deployment_plan.stub!(:deployment).and_return(deployment)
       release.stub!(:name).and_return("test_release")

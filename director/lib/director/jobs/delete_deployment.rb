@@ -94,6 +94,7 @@ module Bosh::Director
 
           deployment.stemcells.each { |stemcell| stemcell.deployments.delete(deployment) }
           deployment.delete
+          "/deployments/#{@deployment_name}"
         end
       end
     end
