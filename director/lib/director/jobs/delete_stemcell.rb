@@ -40,7 +40,7 @@ module Bosh::Director
           @stemcell.delete
         end
 
-        nil
+        "/stemcells/#{@name}/#{@version}"
       end
 
     end

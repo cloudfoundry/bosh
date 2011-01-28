@@ -37,6 +37,8 @@ module Bosh::Director
     ["ReleaseManifestNotFound", BAD_REQUEST, 30003, "Release manifest not found"],
     ["ReleaseExistingJobHashMismatch", BAD_REQUEST, 30004,
         "The existing job with the same name and version has a different hash"],
+    ["ReleaseNotFound",         NOT_FOUND,   30005, "Release: \"%s\" doesn't exist"],
+    ["ReleaseInUse",            BAD_REQUEST, 50006, "Release: \"%s\" is in use by these deployments: %s"],
 
     ["ValidationInvalidType",   BAD_REQUEST, 40000, "Field: \"%s\" did not match the required type: \"%s\" in: %s"],
     ["ValidationMissingField",  BAD_REQUEST, 40001, "Required field: \"%s\" was not specified in: %s"],
@@ -45,7 +47,7 @@ module Bosh::Director
     ["StemcellInvalidImage",    BAD_REQUEST, 50001, "Invalid stemcell image"],
     ["StemcellAlreadyExists",   BAD_REQUEST, 50002,
         "Stemcell \"%s\":\"%s\" already exists, increment the version if it has changed"],
-    ["StemcellNotFound",        BAD_REQUEST, 50003, "Stemcell: \"%s\":\"%s\" doesn't exist"],
+    ["StemcellNotFound",        NOT_FOUND,   50003, "Stemcell: \"%s\":\"%s\" doesn't exist"],
     ["StemcellInUse",           BAD_REQUEST, 50004, "Stemcell: \"%s\":\"%s\" is in use by these deployments: %s"],
 
     ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
