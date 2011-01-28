@@ -644,9 +644,7 @@ module Bosh::Director
     end
 
     def job(name)
-      job = @jobs[name]
-      raise "Job #{name} not found." if job.nil?
-      job
+      @jobs[name]
     end
 
     def template(name)
@@ -666,9 +664,7 @@ module Bosh::Director
     end
 
     def network(name)
-      network = @networks[name]
-      raise "Network #{name} not found." if network.nil?
-      network
+      @networks[name]
     end
 
     def resource_pools
@@ -676,9 +672,7 @@ module Bosh::Director
     end
 
     def resource_pool(name)
-      resource_pool = @resource_pools[name]
-      raise "Resource pool #{name} not found." if resource_pool.nil?
-      resource_pool
+      @resource_pools[name]
     end
 
     def delete_vm(vm)
