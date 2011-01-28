@@ -200,22 +200,25 @@ module VSphereCloud
 
         upload_file(cluster.datacenter.name, datastore.name, "#{name}/env.iso", "")
 
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
-                                                                     "config.vAppConfig.property"], :ensure_all => true)
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
-        existing_app_properties = vm_properties["config.vAppConfig.property"]
-        env = build_agent_env(name, vm, agent_id, system_disk, ephemeral_disk_config.device)
-        env["networks"] = build_agent_network_env(devices, networks, dvs_index)
+
+        network_env = generate_network_env(devices, networks, dvs_index)
+        disk_env = generate_disk_env(system_disk, ephemeral_disk_config.device)
+        env = generate_agent_env(name, vm, agent_id, network_env, disk_env)
         @logger.info("Setting VM env: #{env.pretty_inspect}")
 
+        location = get_vm_location(vm, :datacenter => cluster.datacenter.name,
+                                       :datastore => datastore.name,
+                                       :vm => name)
+        set_agent_env(vm, location, env)
+
+        # Configure the ENV CDROM
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
-
         file_name = "[#{datastore.name}] #{name}/env.iso"
         cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
         config.deviceChange << cdrom_change
-
-        set_agent_env(vm, config, existing_app_properties, env)
         client.reconfig_vm(vm, config)
 
         @logger.info("Powering on VM: #{vm} (#{name})")
@@ -297,23 +300,16 @@ module VSphereCloud
         @logger.info("Reconfiguring the networks")
         @client.reconfig_vm(vm, config)
 
-        config = VirtualMachineConfigSpec.new
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device",
-                                                                     "config.vAppConfig.property"], :ensure_all => true)
-        devices = vm_properties["config.hardware.device"]
-        existing_app_properties = vm_properties["config.vAppConfig.property"]
 
-        env = get_current_agent_env(existing_app_properties)
+        location = get_vm_location(vm, :datacenter => datacenter_name)
+        env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
 
-        env["networks"] = build_agent_network_env(devices, networks, dvs_index)
+        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+        env["networks"] = generate_network_env(devices, networks, dvs_index)
 
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(vm, config, existing_app_properties, env)
-
-        client.reconfig_vm(vm, config)
-
-        # reboot?
+        set_agent_env(vm, location, env)
       end
     end
 
@@ -328,7 +324,7 @@ module VSphereCloud
         datacenter = client.find_parent(vm, "Datacenter")
         datacenter_name = client.get_property(datacenter, "Datacenter", "name")
 
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "config.vAppConfig.property",
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore",
                                                                      "config.hardware.device"], :ensure_all => true)
         datastores = vm_properties["datastore"]
         raise "Can't find datastore for: #{vm}" if datastores.empty?
@@ -382,12 +378,12 @@ module VSphereCloud
         config.deviceChange << attached_disk_config
         fix_device_unit_numbers(devices, config.deviceChange)
 
-        existing_app_properties = vm_properties["config.vAppConfig.property"]
-        env = get_current_agent_env(existing_app_properties)
+        location = get_vm_location(vm, :datacenter => datacenter_name)
+        env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unitNumber
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(vm, config, existing_app_properties, env)
+        set_agent_env(vm, location, env)
         @logger.info("Attaching disk")
         client.reconfig_vm(vm, config)
         @logger.info("Finished attaching disk")
@@ -403,27 +399,23 @@ module VSphereCloud
 
         vm = get_vm_by_cid(vm_cid)
 
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.vAppConfig.property",
-                                                                     "config.hardware.device"], :ensure_all => true)
+        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
 
-        devices = vm_properties["config.hardware.device"]
         virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
-
         raise "Disk is not attached to this VM" if virtual_disk.nil?
 
         config = VirtualMachineConfigSpec.new
         config.deviceChange << create_delete_device_spec(virtual_disk)
 
-        existing_app_properties = vm_properties["config.vAppConfig.property"]
-        env = get_current_agent_env(existing_app_properties)
+        location = get_vm_location(vm)
+        env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env["disks"]["persistent"].delete(disk.id.to_s)
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(vm, config, existing_app_properties, env)
+        set_agent_env(vm, location, env)
         @logger.info("Detaching disk")
         client.reconfig_vm(vm, config)
         @logger.info("Finished detaching disk")
-        # reboot?
       end
     end
 
@@ -505,9 +497,12 @@ module VSphereCloud
               @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
             end
           end
+        else
+          @logger.info("Found local stemcell replica: #{replicated_stemcell_vm}")
         end
         result = replicated_stemcell_vm
       else
+        @logger.info("Stemcell was already local: #{stemcell_vm}")
         result = stemcell_vm
       end
 
@@ -516,7 +511,7 @@ module VSphereCloud
       result
     end
 
-    def build_agent_network_env(devices, networks, dvs_index)
+    def generate_network_env(devices, networks, dvs_index)
       nics = {}
 
       devices.each do |device|
@@ -544,13 +539,15 @@ module VSphereCloud
       network_env
     end
 
-    def build_agent_env(name, vm, agent_id, system_disk, ephemeral_disk)
-      disk_env = {
+    def generate_disk_env(system_disk, ephemeral_disk)
+      {
         "system" => system_disk.unitNumber,
         "ephemeral" => ephemeral_disk.unitNumber,
         "persistent" => {}
       }
+    end
 
+    def generate_agent_env(name, vm, agent_id, networking_env, disk_env)
       vm_env = {
         "name" => name,
         "id" => vm
@@ -559,69 +556,46 @@ module VSphereCloud
       env = {}
       env["vm"] = vm_env
       env["agent_id"] = agent_id
+      env["networks"] = networking_env
       env["disks"] = disk_env
       env.merge!(@agent_properties)
       env
     end
 
-    def get_current_agent_env(existing_app_properties)
-      property = existing_app_properties.find { |property_info| property_info.id == BOSH_AGENT_PROPERTIES_ID }
-      property ? Yajl::Parser.parse(property.value) : nil
+    def get_vm_location(vm, options = {})
+      datacenter_name = options[:datacenter]
+      datastore_name = options[:datastore]
+      vm_name = options[:vm]
+
+      unless datacenter_name
+        datacenter = client.find_parent(vm, "Datacenter")
+        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+      end
+
+      if vm_name.nil? || datastore_name.nil?
+        vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "name"])
+        vm_name = vm_properties["name"]
+
+        unless datastore_name
+          datastore = vm_properties["datastore"].first
+          datastore_name = client.get_property(datastore, "Datastore", "name")
+        end
+      end
+
+      {:datacenter => datacenter_name, :datastore =>datastore_name, :vm =>vm_name}
     end
 
-    def set_agent_env(vm, vm_config_spec, existing_app_properties, env)
-      # TODO: scan vm_config_spec for new properties being added when calculating max_key, otherwise it will only allow
-      # one property per reconfig
+    def get_current_agent_env(location)
+      contents = fetch_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json")
+      contents ? Yajl::Parser.parse(contents) : nil
+    end
 
-      max_key = -1
-      existing_property = nil
-      existing_app_properties.each do |property_info|
-        if property_info.id == BOSH_AGENT_PROPERTIES_ID
-          existing_property = property_info
-          break
-        end
-        max_key = property_info.key if property_info.key > max_key
-      end
-
-      if existing_property
-        operation = :edit
-        key = existing_property.key
-      else
-        operation = :add
-        key = max_key + 1
-      end
-
+    def set_agent_env(vm, location, env)
       env_json = Yajl::Encoder.encode(env)
-      env_property = create_app_property_spec(key, BOSH_AGENT_PROPERTIES_ID, "string",
-                                              env_json, operation)
-
-      app_config_spec = VmConfigSpec.new
-      app_config_spec.property = [env_property]
-      # make sure the transport is set correctly, needed for guest to access these properties
-      app_config_spec.ovfEnvironmentTransport = ["com.vmware.guestInfo"]
-
-      vm_config_spec.vAppConfig = app_config_spec
-
-      extra_config = OptionValue.new
-      extra_config.key = "guestinfo.bosh"
-
-      # need to manually create SOAPElement to work around anyType encoding bug
-      value = SOAP::SOAPElement.new(XSD::QName.new(VSphereCloud::DefaultMappingRegistry::NsVim25, "value"), env_json)
-      value.extraattr[XSD::AttrTypeName] = XSD::XSDString::Type
-
-      extra_config.value = value
-      vm_config_spec.extraConfig = [extra_config]
-
-      datacenter = client.find_parent(vm, "Datacenter")
-      datacenter_name = client.get_property(datacenter, "Datacenter", "name")
-
-      vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "name"])
-      vm_name = vm_properties["name"]
-      datastore = vm_properties["datastore"].first
-      datastore_name = client.get_property(datastore, "Datastore", "name")
 
       connect_cdrom(vm, false)
-      upload_file(datacenter_name, datastore_name, "#{vm_name}/env.iso", generate_env_iso(env_json))
+      upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
+      upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
       connect_cdrom(vm, true)
     end
 
@@ -660,6 +634,27 @@ module VSphereCloud
         output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
         raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
         File.open(iso_path, "r") {|f| f.read}
+      end
+    end
+
+    def fetch_file(datacenter_name, datastore_name, path)
+      http_client = HTTPClient.new
+      http_client.send_timeout = 14400 # 4 hours
+      http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+      url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
+            "&dsName=#{URI.escape(datastore_name)}"
+
+      credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
+
+      response = http_client.get(url, {}, {"Authorization" => "Basic #{credentials}"})
+
+      if response.code < 400
+        response.body.content
+      elsif response.code == 404
+        nil
+      else
+        raise "Could not fetch file: #{url}, status code: #{response.code}"
       end
     end
 
@@ -803,19 +798,6 @@ module VSphereCloud
           max_unit_numbers[device.controllerKey] = device.unitNumber
         end
       end
-    end
-
-    def create_app_property_spec(key, id, type, value, operation)
-      property_info = VAppPropertyInfo.new
-      property_info.key = key
-      property_info.id = id
-      property_info.type = type
-      property_info.value = value
-
-      property_spec = VAppPropertySpec.new
-      property_spec.operation = operation == :add ? ArrayUpdateOperation::Add : ArrayUpdateOperation::Edit
-      property_spec.info = property_info
-      property_spec
     end
 
     def import_ovf(name, ovf, resource_pool, datastore)
