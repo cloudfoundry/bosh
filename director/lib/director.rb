@@ -167,7 +167,16 @@ module Bosh::Director
       Yajl::Encoder.encode(releases)
     end
 
-    # TODO: delete a release
+    delete "/release/:name" do
+      release = Models::Release.find(:name => params[:name]).first
+      raise ReleaseNotFound.new(params[:name]) if release.nil?
+
+      options = {}
+      options["force"] = true if params["force"] == "true"
+
+      task = @release_manager.delete_release(release, options)
+      redirect "/tasks/#{task.id}"
+    end
 
     post "/deployments", :consumes => :yaml do
       task = @deployment_manager.create_deployment(request.body)
