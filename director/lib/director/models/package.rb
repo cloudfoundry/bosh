@@ -1,6 +1,7 @@
 module Bosh::Director::Models
 
   class Release < Ohm::Model; end
+  class CompiledPackage < Ohm::Model; end
 
   class Package < Ohm::Model
     reference :release, Release
@@ -12,6 +13,8 @@ module Bosh::Director::Models
 
     index :name
     index :version
+
+    collection :compiled_packages, CompiledPackage
 
     def dependency_set
       result = self.dependencies

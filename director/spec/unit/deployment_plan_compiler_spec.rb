@@ -472,6 +472,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @stemcell_spec.stub!(:network).and_return(@network_spec)
       @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
 
+      @job_spec.stub!(:name).and_return("test_job")
       @job_spec.stub!(:template).and_return(@template_spec)
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
 
