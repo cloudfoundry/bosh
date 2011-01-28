@@ -38,6 +38,12 @@ module Bosh::Agent
           setup_networking
           update_time
           setup_data_disk
+
+          # HACK HACK HACK - until we can identify store drive
+          if File.blockdev?('/dev/sdc1')
+            @logger.info("HACK: mount /dev/sdc1 /var/vmc/store")
+            `mount /dev/sdc1 /var/vmc/store`
+          end
         end
         { "settings" => @settings }
       end
@@ -226,7 +232,7 @@ module Bosh::Agent
           if Dir["#{DATA_DISK}[1-9]"].empty?
             @logger.info("Found unformatted drive")
             @logger.info("Partition #{DATA_DISK}")
-            partition_disk(DATA_DISK, data_sfdisk_input)
+            Bosh::Agent::Util.partition_disk(DATA_DISK, data_sfdisk_input)
 
             @logger.info("Create swap and data partitions")
             %x[mkswap #{swap_partition}]
@@ -240,17 +246,6 @@ module Bosh::Agent
           data_mount = "#{@base_dir}/data"
           unless Pathname.new(data_mount).mountpoint?
             %x[mount #{data_partition} #{data_mount}]
-          end
-        end
-      end
-
-      def partition_disk(dev, sfdisk_input)
-        if File.blockdev?(dev)
-          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uM #{dev}"
-          output = %x[#{sfdisk_cmd}]
-          unless $? == 0
-            @logger.info("failed to parition #{dev}")
-            @logger.info(ouput)
           end
         end
       end
