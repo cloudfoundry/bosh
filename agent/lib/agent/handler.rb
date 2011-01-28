@@ -84,6 +84,7 @@ module Bosh::Agent
                   begin
                     File.read('/dev/cdrom', 0)
                   rescue Errno::E123 # ENOMEDIUM
+                    sleep 0.1
                     retry
                   end
 
