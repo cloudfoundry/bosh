@@ -133,6 +133,8 @@ module Bosh::Agent
           template = ERB.new(File.read(File.join(@job_install_dir, 'config', src)))
 
           out_file = File.join(@job_install_dir, dst)
+          FileUtils.mkdir_p(File.dirname(dst))
+
           File.open(out_file, 'w') do |fh|
             fh.write(template.result(Util.config_binding(@apply_spec)))
 
