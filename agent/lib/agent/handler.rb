@@ -196,33 +196,6 @@ module Bosh::Agent
       end
     end
 
-    class MigrateDisk
-      def self.process(args)
-        logger = Bosh::Agent::Config.logger
-        logger.info("MigrateDisk:" + args.inspect)
-        {}
-      end
-      def self.long_running?; true; end
-    end
-
-    class MountDisk
-      def self.process(args)
-        logger = Bosh::Agent::Config.logger
-        logger.info("MountDisk:" + args.inspect)
-        {}
-      end
-      def self.long_running?; true; end
-    end
-
-    class UnmountDisk
-      def self.process(args)
-        logger = Bosh::Agent::Config.logger
-        logger.info("UnmountDisk:" + args.inspect)
-        {}
-      end
-      def self.long_running?; true; end
-    end
-
     class PrepareNetworkChange
       def self.process(args)
         logger = Bosh::Agent::Config.logger
