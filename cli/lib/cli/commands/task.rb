@@ -18,7 +18,7 @@ module Bosh::Cli::Command
     def list_running
       tasks = director.list_running_tasks
       err("No running tasks") if tasks.empty?
-      show_tasks_table(tasks)
+      show_tasks_table(tasks.sort_by { |t| t["id"].to_i * -1 })
       say("Total tasks running now: %d" % [ tasks.size ])
     end
 
