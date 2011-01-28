@@ -23,11 +23,8 @@ module Bosh::Agent
 
       def configure
         @logger.info("Configuring instance")
-        if File.exist?(@settings_file)
-          load_settings
-        else
-          load_ovf
-        end
+
+        load_settings
         @logger.info("Loaded settings: #{@settings.inspect}")
 
         if @settings
@@ -49,31 +46,20 @@ module Bosh::Agent
       end
 
       def load_settings
-        json_props = File.read(@settings_file)
-        @settings = Yajl::Parser.new.parse(json_props)
-      end
-
-      def load_ovf
-        ovf_env = info_get_ovfenv
-        unless ovf_env.empty?
-          doc = REXML::Document.new(ovf_env)
-          xpath = '//oe:Environment/oe:PropertySection/oe:Property[@key="Bosh_Agent_Properties"]'
-          element = REXML::XPath.first(doc, xpath,
-                                          {'oe' => 'http://schemas.dmtf.org/ovf/environment/1'})
-          json_props = element.attribute('value', 'http://schemas.dmtf.org/ovf/environment/1').value
-
-          File.open(@settings_file, 'w') do |sfh|
-            sfh.write(json_props)
+        begin
+          @settings = Bosh::Agent::Util.settings
+        rescue LoadSettingsError
+          if File.exist?(@settings_file)
+            load_settings_file
+          else
+            raise LoadSettingsError, "No cdrom or cached settings.json"
           end
-
-          @settings = Yajl::Parser.new.parse(json_props)
-        else
-          @logger.info("Unable to read OVF properties")
         end
       end
 
-      def info_get_ovfenv
-        `vmware-rpctool "info-get guestinfo.ovfEnv"`
+      def load_settings_file
+        settings_json = File.read(@settings_file)
+        @settings = Yajl::Parser.new.parse(settings_json)
       end
 
       def update_agent_id
@@ -86,17 +72,17 @@ module Bosh::Agent
       end
 
       def update_bosh_server
-        ovf_redis = {
+        redis_settings = {
           :host => @settings["server"]["host"],
           :port =>  @settings["server"]["port"].to_s,
           :password => @settings["server"]["password"]
         }
-        Bosh::Agent::Config.redis_options.merge!(ovf_redis)
+        Bosh::Agent::Config.redis_options.merge!(redis_settings)
       end
 
       def update_blobstore
-        ovf_blobstore = @settings["blobstore"]["properties"]
-        Bosh::Agent::Config.blobstore_options.merge!(ovf_blobstore)
+        blobstore_settings = @settings["blobstore"]["properties"]
+        Bosh::Agent::Config.blobstore_options.merge!(blobstore_settings)
       end
 
       # TODO: factor out into it's own class
@@ -135,7 +121,7 @@ module Bosh::Agent
               raise Bosh::Agent::MessageHandlerError, e.to_s
             end
           else
-            raise Bosh::Agent::MessageHandlerError, "#{mac} from OVF not present in instance"
+            raise Bosh::Agent::MessageHandlerError, "#{mac} from settings not present in instance"
           end
         end
 
@@ -257,12 +243,6 @@ module Bosh::Agent
       def mem_total
         # MemTotal:        3952180 kB
         File.readlines('/proc/meminfo').first.split(/\s+/)[1]
-      end
-
-      def print_settings
-        p @settings
-        # For OVF test fixtures
-        p Yajl::Encoder.encode(@settings).gsub(/\"/, "&quot;")
       end
 
       INTERFACE_TEMPLATE = <<TEMPLATE

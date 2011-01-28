@@ -59,14 +59,14 @@ module Bosh::Agent
         begin
           File.read('/dev/cdrom', 0)
         rescue Errno::E123 # ENOMEDIUM
-          raise Bosh::Agent::MessageHandlerError, 'No bosh cdrom env'
+          raise Bosh::Agent::LoadSettingsError, 'No bosh cdrom env'
         end
 
         FileUtils.mkdir_p(settings_dir)
         FileUtils.chmod(700, settings_dir)
 
         output = `mount /dev/cdrom #{settings_dir} 2>&1`
-        raise Bosh::Agent::MessageHandlerError,
+        raise Bosh::Agent::LoadSettingsError,
           "Failed to mount settings on #{settings_dir}: #{output}" unless $?.exitstatus == 0
 
         settings_json = File.read(File.join(settings_dir, 'env'))

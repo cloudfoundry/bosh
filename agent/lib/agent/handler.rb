@@ -3,6 +3,7 @@ module Bosh::Agent
 
   class MessageHandlerError < StandardError; end
   class UnknownMessage < StandardError; end
+  class LoadSettingsError < StandardError; end
 
   class Handler
     attr_reader :processors
@@ -79,14 +80,21 @@ module Bosh::Agent
                 publish(message_id, payload)
                 if Config.configure && method == "prepare_network_change"
 
-                  # DEBUG
-                  guestinfo_bosh = `vmware-rpctool "info-get guestinfo.bosh"`.strip
-                  @logger.info("guestinfo_bosh: #{guestinfo_bosh}")
-
-                  while `vmware-rpctool "info-get guestinfo.bosh"`.strip == "nada"
-                    @logger.info("Waiting for guestinfo.bosh")
-                    sleep 0.1
+                  # Wait until director provides cdrom
+                  begin
+                    File.read('/dev/cdrom', 0)
+                  rescue Errno::E123 # ENOMEDIUM
+                    retry
                   end
+
+                  if Bosh::Agent::Config.configure
+                    udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
+                    if File.exist?(udev_file)
+                      @logger.info("deleting 70-persistent-net.rules - again")
+                      `rm #{udev_file}`
+                    end
+                  end
+
                   @logger.info("Reboot after networking change")
                   `/sbin/shutdown -r now`
                   @logger.info("Exit after networking change")
@@ -201,25 +209,10 @@ module Bosh::Agent
         logger = Bosh::Agent::Config.logger
 
         if Bosh::Agent::Config.configure
-          `vmware-rpctool "info-set guestinfo.bosh nada"`
-          read_back_value = `vmware-rpctool "info-get guestinfo.bosh"`
-          logger.info("Setting guestinfo.bosh: #{read_back_value}")
-
           udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
           if File.exist?(udev_file)
             `rm #{udev_file}`
           end
-        end
-
-        base_dir = Bosh::Agent::Config.base_dir
-        settings_file = File.join(base_dir, 'bosh', 'settings.json')
-        settings = Yajl::Parser.new.parse(File.read(settings_file))
-
-        networks = args.first
-        settings['networks'] = networks
-
-        File.open(settings_file, 'w') do |f|
-          f.puts(Yajl::Encoder.encode(settings))
         end
 
         true
