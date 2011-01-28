@@ -40,6 +40,48 @@ module Bosh::Agent
         binding
       end
 
+      def partition_disk(dev, sfdisk_input)
+        logger = Bosh::Agent::Config.logger
+        if File.blockdev?(dev)
+          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uM #{dev}"
+          output = %x[#{sfdisk_cmd}]
+          unless $? == 0
+            logger.info("failed to parition #{dev}")
+            logger.info(ouput)
+          end
+        end
+      end
+
+      def settings
+        base_dir = Bosh::Agent::Config.base_dir
+        settings_dir = File.join(base_dir, 'bosh', 'settings')
+
+        begin
+          File.read('/dev/cdrom', 0)
+        rescue Errno::E123 # ENOMEDIUM
+          raise Bosh::Agent::MessageHandlerError, 'No bosh cdrom env'
+        end
+
+        FileUtils.mkdir_p(settings_dir)
+        FileUtils.chmod(700, settings_dir)
+
+        output = `mount /dev/cdrom #{settings_dir} 2>&1`
+        raise Bosh::Agent::MessageHandlerError,
+          "Failed to mount settings on #{settings_dir}: #{output}" unless $?.exitstatus == 0
+
+        settings_json = File.read(File.join(settings_dir, 'env'))
+
+        `umount #{settings_dir} 2>&1`
+        `eject /dev/cdrom`
+
+        settings = Yajl::Parser.new.parse(settings_json)
+
+        cache = File.join(base_dir, 'bosh', 'settings.json')
+        File.open(cache, 'w') { |f| f.write(settings_json) }
+
+        settings
+      end
+
     end
   end
 end
