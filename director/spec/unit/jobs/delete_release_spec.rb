@@ -86,64 +86,64 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
   describe "delete_release" do
 
+    before(:each) do
+      @release = stub("release")
+      @release_version = stub("release_version")
+      @package = stub("package")
+      @compiled_package = stub("compiled_package")
+      @template = stub("template")
+      @stemcell = stub("stemcell")
+
+      @template.stub!(:blobstore_id).and_return("template-blb")
+      @template.stub!(:name).and_return("template_name")
+      @template.stub!(:version).and_return("2")
+
+      @package.stub!(:blobstore_id).and_return("package-blb")
+      @package.stub!(:name).and_return("package_name")
+      @package.stub!(:version).and_return("3")
+      @package.stub!(:compiled_packages).and_return([@compiled_package])
+
+      @stemcell.stub!(:name).and_return("stemcell_name")
+      @stemcell.stub!(:version).and_return("4")
+
+      @compiled_package.stub!(:blobstore_id).and_return("compiled-package-blb")
+      @compiled_package.stub!(:stemcell).and_return(@stemcell)
+
+      @release_version.stub!(:version).and_return("1")
+      @release_version.stub!(:packages).and_return([@package])
+      @release_version.stub!(:templates).and_return([@template])
+
+      @release.stub!(:versions).and_return([@release_version])
+    end
+
     it "should delete release and associated objects/meta" do
-      release = stub("release")
-      release_version = stub("release_version")
-      package = stub("package")
-      compiled_package = stub("compiled_package")
-      template = stub("template")
-
-      template.stub!(:blobstore_id).and_return("template-blb")
-      package.stub!(:blobstore_id).and_return("package-blb")
-      compiled_package.stub!(:blobstore_id).and_return("compiled-package-blb")
-
-      release.stub!(:versions).and_return([release_version])
-      release_version.stub!(:packages).and_return([package])
-      release_version.stub!(:templates).and_return([template])
-      package.stub!(:compiled_packages).and_return([compiled_package])
-
       @blobstore.should_receive(:delete).with("template-blb")
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      release.should_receive(:delete)
-      release_version.should_receive(:delete)
-      template.should_receive(:delete)
-      package.should_receive(:delete)
-      compiled_package.should_receive(:delete)
+      @release.should_receive(:delete)
+      @release_version.should_receive(:delete)
+      @template.should_receive(:delete)
+      @package.should_receive(:delete)
+      @compiled_package.should_receive(:delete)
 
       job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
-      job.delete_release(release)
+      job.delete_release(@release)
     end
 
     it "should fail to delete the release if there is a blobstore error" do
-      release = stub("release")
-      release_version = stub("release_version")
-      package = stub("package")
-      compiled_package = stub("compiled_package")
-      template = stub("template")
-
-      template.stub!(:blobstore_id).and_return("template-blb")
-      package.stub!(:blobstore_id).and_return("package-blb")
-      compiled_package.stub!(:blobstore_id).and_return("compiled-package-blb")
-
-      release.stub!(:versions).and_return([release_version])
-      release_version.stub!(:packages).and_return([package])
-      release_version.stub!(:templates).and_return([template])
-      package.stub!(:compiled_packages).and_return([compiled_package])
-
       @blobstore.should_receive(:delete).with("template-blb").and_raise("bad")
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      release.should_not_receive(:delete)
-      release_version.should_not_receive(:delete)
-      template.should_not_receive(:delete)
-      package.should_receive(:delete)
-      compiled_package.should_receive(:delete)
+      @release.should_not_receive(:delete)
+      @release_version.should_not_receive(:delete)
+      @template.should_not_receive(:delete)
+      @package.should_receive(:delete)
+      @compiled_package.should_receive(:delete)
 
       job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
-      job.delete_release(release)
+      job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
       errors.length.should eql(1)
@@ -151,33 +151,18 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should forcefully delete the release when requested even if there is a blobstore error" do
-      release = stub("release")
-      release_version = stub("release_version")
-      package = stub("package")
-      compiled_package = stub("compiled_package")
-      template = stub("template")
-
-      template.stub!(:blobstore_id).and_return("template-blb")
-      package.stub!(:blobstore_id).and_return("package-blb")
-      compiled_package.stub!(:blobstore_id).and_return("compiled-package-blb")
-
-      release.stub!(:versions).and_return([release_version])
-      release_version.stub!(:packages).and_return([package])
-      release_version.stub!(:templates).and_return([template])
-      package.stub!(:compiled_packages).and_return([compiled_package])
-
       @blobstore.should_receive(:delete).with("template-blb").and_raise("bad")
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      release.should_receive(:delete)
-      release_version.should_receive(:delete)
-      template.should_receive(:delete)
-      package.should_receive(:delete)
-      compiled_package.should_receive(:delete)
+      @release.should_receive(:delete)
+      @release_version.should_receive(:delete)
+      @template.should_receive(:delete)
+      @package.should_receive(:delete)
+      @compiled_package.should_receive(:delete)
 
       job = Bosh::Director::Jobs::DeleteRelease.new("test_release", "force" => true)
-      job.delete_release(release)
+      job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
       errors.length.should eql(1)
