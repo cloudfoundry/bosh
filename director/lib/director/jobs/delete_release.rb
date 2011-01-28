@@ -14,36 +14,33 @@ module Bosh::Director
       end
 
       def delete_release(release)
-        @logger.info("Deleting release")
+        @logger.info("Deleting release: #{@name}")
         release.versions.each do |release_version|
-          @logger.info("Deleting release version: #{release_version.pretty_inspect}")
+          @logger.info("Deleting release version: #{release_version.version}")
           release_version.templates.each do |template|
-            @logger.info("Deleting template: #{template.pretty_inspect}")
+            @logger.info("Deleting template: #{template.name}/#{template.version}")
             delete_blobstore_id(template.blobstore_id) { template.delete }
-            @logger.info("Deleted template: #{template.pretty_inspect}")
           end
 
           release_version.packages.each do |package|
-            @logger.info("Deleting package: #{package.pretty_inspect}")
+            @logger.info("Deleting package: #{package.name}/#{package.version}")
             compiled_packages = package.compiled_packages
             compiled_packages.each do |compiled_package|
-              @logger.info("Deleting compiled package: #{compiled_package.pretty_inspect}")
+              stemcell = compiled_package.stemcell
+              @logger.info("Deleting compiled package: #{package.name} for #{stemcell.name}/#{stemcell.version}")
               delete_blobstore_id(compiled_package.blobstore_id) { compiled_package.delete }
             end
 
             delete_blobstore_id(package.blobstore_id) { package.delete }
-            @logger.info("Deleted package: #{package.pretty_inspect}")
           end
 
           if @errors.empty? || @force
             release_version.delete
-            @logger.info("Deleted release version: #{release_version.pretty_inspect}")
           end
         end
 
         if @errors.empty? || @force
           release.delete
-          @logger.info("Deleted release")
         end
       end
 

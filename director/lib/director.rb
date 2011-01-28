@@ -167,7 +167,7 @@ module Bosh::Director
       Yajl::Encoder.encode(releases)
     end
 
-    delete "/release/:name" do
+    delete "/releases/:name" do
       release = Models::Release.find(:name => params[:name]).first
       raise ReleaseNotFound.new(params[:name]) if release.nil?
 
