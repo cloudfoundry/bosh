@@ -27,7 +27,8 @@ module Bosh::Director
             compiled_packages = package.compiled_packages
             compiled_packages.each do |compiled_package|
               stemcell = compiled_package.stemcell
-              @logger.info("Deleting compiled package: #{package.name} for #{stemcell.name}/#{stemcell.version}")
+              @logger.info("Deleting compiled package: #{package.name}/#{package.version} for " +
+                           "#{stemcell.name}/#{stemcell.version}")
               delete_blobstore_id(compiled_package.blobstore_id) { compiled_package.delete }
             end
 
@@ -52,7 +53,7 @@ module Bosh::Director
           @logger.info("Looking up release: #{@name}")
           release = Models::Release.find(:name => @name).first
           raise ReleaseNotFound.new(@name) if release.nil?
-          @logger.info("Found: #{release.pretty_inspect}")
+          @logger.info("Found: #{release.name}")
 
           @logger.info("Checking for any deployments still using the release..")
           unless release.deployments.empty?
