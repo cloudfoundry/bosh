@@ -56,11 +56,13 @@ module Bosh::Agent
         # FIXME: tests
         #return @state if @state['configuraton_hash'] == @apply_spec['configuration_hash']
 
-        begin
-          apply_job
-          apply_packages
-        rescue Exception => e
-          raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
+        if @apply_spec.key?('configuration_hash')
+          begin
+            apply_job
+            apply_packages
+          rescue Exception => e
+            raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
+          end
         end
 
         # FIXME: assumption right now: if apply succeeds @state should be

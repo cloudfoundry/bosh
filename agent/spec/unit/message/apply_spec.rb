@@ -34,6 +34,7 @@ describe Bosh::Agent::Message::Apply do
     state = Bosh::Agent::Message::State.new(nil)
 
     apply_data = {
+      "configuration_hash" => "bogus",
       "deployment" => "foo",
       "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77" },
       "release" => { "version" => "99" },
@@ -61,6 +62,7 @@ describe Bosh::Agent::Message::Apply do
     state = Bosh::Agent::Message::State.new(nil)
 
     apply_data = {
+      "configuration_hash" => "bogus",
       "deployment" => "foo",
       "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77"},
       "release" => { "version" => "99" },
