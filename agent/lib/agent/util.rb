@@ -35,7 +35,7 @@ module Bosh::Agent
       def config_binding(config)
         @name = config['job']['name']
         @index = config['index']
-        @properties = config['properties']
+        @properties = config['properties'].to_openstruct
         @spec = config.to_openstruct
         binding
       end
