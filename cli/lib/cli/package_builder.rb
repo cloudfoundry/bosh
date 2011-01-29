@@ -132,6 +132,7 @@ module Bosh::Cli
       say "Generating `#{name}' (dev version #{version})"
 
       copy_files
+      pre_package
 
       in_build_dir do
         tar_out = `tar -czf #{tmp_file.path} . 2>&1`
@@ -269,6 +270,34 @@ module Bosh::Cli
       copied
     end
 
+    def pre_package
+      pre_packaging_script = File.join(package_dir, "pre_packaging")
+      
+      if File.exists?(pre_packaging_script)
+
+        say("Found pre-packaging script for `#{name}'")
+        FileUtils.cp(pre_packaging_script, build_dir)
+
+        old_env = ENV
+
+        begin
+          %w{ BUNDLE_GEMFILE RUBYOPT }.each { |key| ENV.delete(key) }
+          ENV["BUILD_DIR"] = build_dir
+
+          in_build_dir do
+            system("bash -x pre_packaging 2>&1")
+            raise InvalidPackage, "`#{name}' pre-packaging failed" unless $?.exitstatus == 0
+          end
+          
+        ensure
+          ENV.delete("BUILD_DIR")
+          old_env.each { |k, v| ENV[k] = old_env[k] }
+        end
+
+        FileUtils.rm(File.join(build_dir, "pre_packaging"))
+      end
+    end
+
     private
 
     def make_fingerprint
@@ -284,6 +313,14 @@ module Bosh::Cli
         contents << Dir["*"].sort.map { |file|
           "%s%s" % [ file, File.directory?(file) ? nil : File.read(file) ]
         }.join("")
+      end
+
+      # Third, data that won't be included to package but still affects it's behavior
+      # (pre_packaging)
+      in_package_dir do
+        ["pre_packaging"].each do |file|        
+          contents << "%s%s" % [ file, File.read(file) ] if File.file?(file)
+        end
       end
 
       Digest::SHA1.hexdigest(contents)    
@@ -305,6 +342,10 @@ module Bosh::Cli
 
     def in_metadata_dir(&block)
       Dir.chdir(metadata_dir) { yield }
+    end
+
+    def in_package_dir(&block)
+      Dir.chdir(package_dir) { yield }
     end
 
   end
