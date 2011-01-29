@@ -233,6 +233,9 @@ module Bosh::Agent
           unless Pathname.new(data_mount).mountpoint?
             %x[mount #{data_partition} #{data_mount}]
           end
+
+          %x[mkdir -p #{@base_dir}/data/log]
+          %x[ln -nsf #{@base_dir}/data/log #{@base_dir}/sys/log]
         end
       end
 
