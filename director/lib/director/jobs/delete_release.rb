@@ -16,16 +16,20 @@ module Bosh::Director
       def delete_release(release)
         @logger.info("Deleting release: #{@name}")
         release.versions.each do |release_version|
+          next if release_version.nil?
           @logger.info("Deleting release version: #{release_version.version}")
           release_version.templates.each do |template|
+            next if template.nil?
             @logger.info("Deleting template: #{template.name}/#{template.version}")
             delete_blobstore_id(template.blobstore_id) { template.delete }
           end
 
           release_version.packages.each do |package|
+            next if package.nil?
             @logger.info("Deleting package: #{package.name}/#{package.version}")
             compiled_packages = package.compiled_packages
             compiled_packages.each do |compiled_package|
+              next if compiled_package.nil?
               stemcell = compiled_package.stemcell
               @logger.info("Deleting compiled package: #{package.name}/#{package.version} for " +
                            "#{stemcell.name}/#{stemcell.version}")
