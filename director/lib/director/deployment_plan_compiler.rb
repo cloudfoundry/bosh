@@ -200,10 +200,15 @@ module Bosh::Director
           instance = instance_spec.instance
 
           if instance.nil?
-            instance = Models::Instance.new
-            instance.deployment = @deployment_plan.deployment
-            instance.job = job.name
-            instance.index = instance_spec.index
+            # look up the instance again, in case it wasn't associated with a VM
+            instance = Models::Instance.find(:deployment_id => @deployment_plan.deployment.id, :job => job.name,
+                                             :index => instance_spec.index).first
+            if instance.nil?
+              instance = Models::Instance.new
+              instance.deployment = @deployment_plan.deployment
+              instance.job = job.name
+              instance.index = instance_spec.index
+            end
             instance_spec.instance = instance
           end
 

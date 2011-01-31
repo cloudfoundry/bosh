@@ -509,6 +509,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @instance.stub!(:vm).and_return(@vm)
 
+      @deployment.stub!(:id).and_return("77")
+
       @deployment_plan.stub!(:deployment).and_return(@deployment)
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
       @deployment_plan.stub!(:release).and_return(@release)
@@ -533,6 +535,50 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should do nothing when all the instances already have VMs" do
+      @deployment_plan_compiler.bind_instance_vms
+    end
+
+    it "should late bind instance if the instance was not attached to a VM" do
+      @vm.stub!(:agent_id).and_return("test_id")
+
+      agent = mock("agent")
+      agent.should_receive(:apply).with({
+        "index"=>5,
+        "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
+        "deployment"=>"test_deployment",
+        "release" => {"name" => "test_release", "version" => 23}
+      }).and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      Bosh::Director::AgentClient.stub!(:new).with("test_id").and_return(agent)
+
+      idle_vm = mock("idle_vm")
+      idle_vm.stub!(:vm).and_return(@vm)
+      idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
+
+      @instance_spec.should_receive(:instance).and_return(nil)
+
+      instance = mock("instance")
+      instance.stub!(:vm).and_return(nil)
+      instance.should_receive(:vm=).with(@vm)
+      instance.should_receive(:save!)
+      instance.stub!(:job).and_return("test_job")
+      instance.stub!(:index).and_return(5)
+
+      @instance_spec.should_receive(:instance=).with(instance)
+      @instance_spec.should_receive(:current_state=).with({
+        "index"=>5,
+        "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
+        "deployment"=>"test_deployment",
+        "release" => {"name" => "test_release", "version" => 23}
+      })
+
+      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
+
+      Bosh::Director::Models::Instance.stub!(:find).with(:deployment_id => "77", :job => "test_job", :index => 5).
+          and_return([instance])
+
       @deployment_plan_compiler.bind_instance_vms
     end
 
@@ -577,6 +623,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
+      Bosh::Director::Models::Instance.stub!(:find).with(:deployment_id => "77", :job => "test_job", :index => 5).
+          and_return([])
       Bosh::Director::Models::Instance.stub!(:new).and_return(new_instance)
 
       @deployment_plan_compiler.bind_instance_vms
