@@ -41,15 +41,15 @@ module Bosh::Director
       release_spec = @deployment_plan.release
       release = Models::Release.find(:name => release_spec.name).first
       raise "Can't find release" if release.nil?
-      @logger.info("Found release: #{release.pretty_inspect}")
+      @logger.debug("Found release: #{release.pretty_inspect}")
       release_spec.release = release
       release_version = Models::ReleaseVersion.find(:release_id => release_spec.release.id,
                                                     :version    => release_spec.version).first
       raise "Can't find release version" if release_version.nil?
-      @logger.info("Found release version: #{release_version.pretty_inspect}")
+      @logger.debug("Found release version: #{release_version.pretty_inspect}")
       release_spec.release_version = release_version
 
-      @logger.info("Locking the release from deletion")
+      @logger.debug("Locking the release from deletion")
       deployment = @deployment_plan.deployment
       deployment.release = release
       deployment.save!
@@ -139,7 +139,7 @@ module Bosh::Director
         template.packages.each do |package|
           compiled_package = Models::CompiledPackage.find(:package_id => package.id,
                                                           :stemcell_id => stemcell.id).first
-          @logger.info("Adding package: #{package.pretty_inspect}/#{compiled_package.pretty_inspect}")
+          @logger.debug("Adding package: #{package.pretty_inspect}/#{compiled_package.pretty_inspect}")
           job.add_package(package, compiled_package)
         end
       end
@@ -170,7 +170,7 @@ module Bosh::Director
         template.packages.each { |package_name| packages << package_name_index[package_name] }
         template_spec.packages = packages
 
-        @logger.info("Bound template: #{template_spec.pretty_inspect}")
+        @logger.debug("Bound template: #{template_spec.pretty_inspect}")
       end
     end
 
