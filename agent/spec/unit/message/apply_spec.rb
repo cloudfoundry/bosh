@@ -1,9 +1,6 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 require 'fileutils'
 
-dummy_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/dummy.package').read
-dummy_job_data= File.open(File.dirname(__FILE__) + '/../../fixtures/job.tgz').read
-
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
