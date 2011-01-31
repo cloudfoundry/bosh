@@ -39,6 +39,19 @@ def setup_tmp_base_dir
   FileUtils.mkdir_p Bosh::Agent::Config.base_dir + '/bosh'
 end
 
-def dummy_package_data
-  dummy_package_data = File.open(File.dirname(__FILE__) + '/fixtures/dummy.package').read
+def read_asset(filename)
+  File.open(File.join(File.dirname(__FILE__), 'assets', filename)).read
 end
+
+def dummy_package_data
+  read_asset('dummy.package')
+end
+
+def failing_package_data
+  read_asset('failing.package')
+end
+
+def dummy_job_data
+  read_asset('job.tgz')
+end
+

@@ -1,8 +1,5 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 
-dummy_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/dummy.package').read
-failing_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/failing.package').read
-
 describe Bosh::Agent::Message::CompilePackage do
 
   before(:each) do 
