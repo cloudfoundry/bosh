@@ -117,6 +117,25 @@ module Bosh::Cli::Command
       say("Releases total: %d" % releases.size)
     end
 
+    def delete(name, *options)
+      force = false
+
+      if options.include?("--force")
+        force = true
+        say "Deleting release `#{name}' (FORCED DELETE, WILL IGNORE ERRORS)".red
+      elsif options.size > 0
+        err "Unknown option, currently only '--force' is supported"
+      else
+        say "Deleting release `#{name}'".red
+      end
+
+      if (non_interactive? || ask("Are you sure? (type 'yes' to continue): ") == "yes")
+        director.delete_release(name, :force => force)
+      else
+        say "Canceled deleting release".green
+      end
+    end
+
     private
 
     def init_blobstore

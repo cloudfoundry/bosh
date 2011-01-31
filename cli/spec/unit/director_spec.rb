@@ -84,7 +84,17 @@ describe Bosh::Cli::Director do
     it "deletes deployment" do
       @director.should_receive(:request_and_track).with(:delete, "/deployments/foo", nil, nil).and_return(true)
       @director.delete_deployment("foo")
-    end    
+    end
+
+    it "deletes release (non-force)" do
+      @director.should_receive(:request_and_track).with(:delete, "/releases/za", nil, nil).and_return(true)
+      @director.delete_release("za")
+    end
+
+    it "deletes release (force)" do
+      @director.should_receive(:request_and_track).with(:delete, "/releases/zb?force=true", nil, nil).and_return(true)
+      @director.delete_release("zb", :force => true)
+    end
 
     it "deploys" do
       @director.should_receive(:upload_and_track).with("/deployments", "text/yaml", "/path").and_return(true)
