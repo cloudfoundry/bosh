@@ -103,6 +103,10 @@ module Bosh::Agent
           if File.exist?('packaging')
             @logger.info("Compiling #{@package_name} #{@package_version}")
             output = `bash -x packaging 2>&1`
+            unless $?.exitstatus == 0
+              raise Bosh::Agent::MessageHandlerError, 
+                "Compile Package Failure (exit code: #{$?.exitstatus}): #{output}"
+            end
             @logger.info(output)
           end
         end

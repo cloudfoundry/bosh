@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 
 dummy_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/dummy.package').read
+failing_package_data = File.open(File.dirname(__FILE__) + '/../../fixtures/failing.package').read
 
 describe Bosh::Agent::Message::CompilePackage do
 
@@ -58,6 +59,18 @@ describe Bosh::Agent::Message::CompilePackage do
 
     dummy_file = File.join(@handler.install_base, @handler.package_name, @handler.package_version.to_s, 'dummy.txt')
     File.exist?(dummy_file).should be_true
+  end
+
+  it 'should fail packaing script returns a non-zero exit code' do
+    FileUtils.rm_rf @handler.compile_base
+    @handler.blobstore_client.stub(:get).with(@handler.blobstore_id).and_return(failing_package_data)
+
+    @handler.get_source_package
+    @handler.unpack_source_package
+
+    lambda {
+      @handler.compile
+    }.should raise_error(Bosh::Agent::MessageHandlerError, /Compile Package Failure/)
   end
 
   it 'should pack a compiled package' do
