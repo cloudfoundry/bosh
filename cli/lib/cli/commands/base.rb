@@ -26,6 +26,10 @@ module Bosh::Cli
         username && password
       end
 
+      def non_interactive?
+        options[:non_interactive]
+      end
+
       def verbose?
         options[:verbose]
       end

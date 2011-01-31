@@ -89,6 +89,49 @@ describe Bosh::Cli::Command::Base do
       @cmd.delete("foo")
     end
   end
+
+  describe Bosh::Cli::Command::Release do
+    before :each do
+      @cmd = Bosh::Cli::Command::Release.new(@opts)
+    end
+
+    it "allows deleting the release (non-force)" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_receive(:delete_release).with("foo", :force => false)
+
+      @cmd.stub!(:non_interactive?).and_return(true)
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.delete("foo")
+    end
+
+    it "allows deleting the release (non-force)" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_receive(:delete_release).with("foo", :force => true)
+
+      @cmd.stub!(:ask).and_return("yes")      
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.delete("foo", "--force")
+    end
+
+    it "requires confirmation on deleting release" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_not_receive(:delete_release)
+
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.stub!(:ask).and_return("")
+      @cmd.delete("foo")
+    end    
+    
+  end  
   
 end
 

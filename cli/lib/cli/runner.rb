@@ -130,6 +130,7 @@ Currently available bosh commands are:
     verify release /path/to/release.tgz      Verify release tarball
     upload release /path/to/release.tgz      Upload release tarball
     releases                                 Show the list of uploaded releases
+    delete release <name> [--force]          Delete release <name> (if --force is set all errors while deleting parts of the release are ignored)
 
   Stemcells
     verify stemcell /path/to/stemcell.tgz    Verify the stemcell
@@ -254,6 +255,9 @@ USAGE
           when "stemcell"
             usage("bosh delete stemcell <name> <version>")
             set_cmd(:stemcell, :delete, 2)
+          when "release"
+            usage("bosh delete release <name> [--force]")
+            set_cmd(:release, :delete, 1..2)
           end
 
         when "task"
@@ -310,7 +314,7 @@ USAGE
           "create" => "user [<name>] [<password>]\npackage <path>\nrelease",
           "upload" => "release <path>\nstemcell <path>",
           "verify" => "release <path>\nstemcell <path>",
-          "delete" => "deployment <name>\nstemcell <name> <version>"
+          "delete" => "deployment <name>\nstemcell <name> <version>\nrelease <name> [--force]"
         }
 
         @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])
