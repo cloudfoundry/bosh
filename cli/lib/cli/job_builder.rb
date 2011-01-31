@@ -51,14 +51,11 @@ module Bosh::Cli
         raise InvalidJob, "Cannot find monit file for '#{name}'"
       end
 
-      FileUtils.touch(dev_builds_index_file)
-      FileUtils.touch(final_builds_index_file)
-
       FileUtils.mkdir_p(dev_builds_dir)
-      FileUtils.mkdir_p(final_builds_dir)
-      
-      @dev_jobs   = VersionsIndex.new(dev_builds_index_file, dev_builds_dir)
-      @final_jobs = VersionsIndex.new(final_builds_index_file, final_builds_dir)      
+      FileUtils.mkdir_p(final_builds_dir)      
+
+      @dev_jobs   = VersionsIndex.new(dev_builds_dir)
+      @final_jobs = VersionsIndex.new(final_builds_dir)      
     end
 
     def final?
@@ -219,21 +216,13 @@ module Bosh::Cli
       File.join(@release_dir, "jobs", @name)
     end    
 
-    def dev_builds_index_file
-      File.join(job_dir, "dev_builds.yml")
-    end
-
     def dev_builds_dir
-      File.join(job_dir, "dev_builds")
+      File.join(@release_dir, ".dev_builds", "jobs", name)
     end
-
-    def final_builds_index_file
-      File.join(job_dir, "final_builds.yml")
-    end    
 
     def final_builds_dir
-      File.join(job_dir, "final_builds")
-    end    
+      File.join(@release_dir, ".final_builds", "jobs", name)
+    end
 
     def fingerprint
       @fingerprint ||= make_fingerprint

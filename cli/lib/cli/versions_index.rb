@@ -1,16 +1,20 @@
 module Bosh::Cli
 
   class VersionsIndex
-    def initialize(index_file, storage_dir)
-      @index_file  = File.expand_path(index_file)
+    def initialize(storage_dir)
       @storage_dir = File.expand_path(storage_dir)
+      @index_file  = File.join(@storage_dir, "index.yml")
 
-      unless File.file?(index_file) && File.readable?(index_file)
-        raise InvalidIndex, "Cannot read index file: #{index_file}"
+      unless File.directory?(@storage_dir)
+        raise InvalidIndex, "Cannot read index storage directory: #{@storage_dir}"
       end
 
-      unless File.directory?(storage_dir)
-        raise InvalidIndex, "Cannot read index storage directory: #{storage_dir}"
+      unless File.file?(@index_file) && File.readable?(@index_file)
+        begin
+          FileUtils.touch(@index_file)
+        rescue
+          raise InvalidIndex, "Cannot create index file: #{@index_file}"
+        end
       end
 
       @data = YAML.load_file(@index_file)

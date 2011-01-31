@@ -183,26 +183,26 @@ describe Bosh::Cli::JobBuilder do
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/1.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_false
     builder.build
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/1.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
     v1_fingerprint = builder.fingerprint    
 
     add_configs("foo", "zb.yml")
     builder = new_builder("foo", [], ["bar", "baz", "zb.yml"], [])
     builder.build
 
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/1.tgz").should be_true
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/2.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/2.tgz").should be_true
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
     builder.build
     builder.version.should == 1
 
     builder.fingerprint.should == v1_fingerprint    
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/1.tgz").should be_true
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/2.tgz").should be_true
-    File.exists?(@release_dir + "/jobs/foo/dev_builds/3.tgz").should be_false    
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/2.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/3.tgz").should be_false    
   end
   
 end
