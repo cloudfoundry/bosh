@@ -26,36 +26,13 @@ module Bosh::Cli::Command
         say("Final name:    %s" % [ final_name ? final_name.green : "not set".red ])
         say("Final version: %s" % [ final_version && final_version > 0 ? final_version.to_s.green : "no versions yet".red ])
 
-        header("Packages")
+        say("\n")
+        say "Packages"
+        print_specs("package", "packages")
 
-        package_specs = Dir[File.join(work_dir, "packages", "*", "spec")]
-
-        if package_specs.empty?
-          say("No package specs found".red)
-          return
-        end
-
-        package_specs.each do |spec_file|
-          if spec_file.is_a?(String) && File.file?(spec_file)
-            package_dir = File.dirname(spec_file)
-            spec        = YAML.load_file(spec_file) 
-
-            package_desc = ""
-            package_desc << spec["name"].green
-
-            begin
-              dev_index   = Bosh::Cli::VersionsIndex.new(File.join(package_dir, "dev_builds.yml"), File.join(package_dir, "dev_builds"))
-              final_index = Bosh::Cli::VersionsIndex.new(File.join(package_dir, "final_builds.yml"), File.join(package_dir, "final_builds"))
-              package_desc << "\n  last dev build:   %s" % [ dev_index.current_version ]
-              package_desc << "\n  last final build: %s" % [ final_index.current_version ]
-              say(package_desc)
-            rescue Bosh::Cli::InvalidIndex => e
-              say "Problem with package index for `%s': %s".red % [ spec["name"], e.message ]
-            end
-          else
-            say("Spec file #{spec_file} is invalid")
-          end
-        end
+        say("\n")
+        say "Jobs"
+        print_specs("job", "jobs")
       end
     end
 
@@ -129,6 +106,48 @@ module Bosh::Cli::Command
       
       config.save
       say("Target set to '#{director_url}'")
+    end
+
+    private
+
+    def print_specs(entity, dir)
+
+      specs = Dir[File.join(work_dir, dir, "*", "spec")]
+
+      if specs.empty?
+        say "No #{entity} specs found"
+      end
+
+      t = table [ "Name", "Dev", "Final" ]
+      
+      specs.each do |spec_file|
+        if spec_file.is_a?(String) && File.file?(spec_file)
+          spec = YAML.load_file(spec_file)
+          name = spec["name"]
+
+          unless name.bosh_valid_id?
+            err "`#{name}' is an invalid #{entity} name, please fix before proceeding"
+          end
+          
+          begin
+            dev_index   = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".dev_builds", dir, name))
+            final_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".final_builds", dir, name))
+
+            dev_version   = dev_index.current_version
+            final_version = final_index.current_version
+            dev_version   = "n/a" if dev_version <= 0
+            final_version = "n/a" if final_version <= 0
+
+            t << [ name, dev_version, final_version ]
+          rescue Bosh::Cli::InvalidIndex => e
+            say "Problem with #{entity} index for `%s': %s".red % [ name, e.message ]
+          end
+        else
+          say "Spec file `#{spec_file}' is invalid"
+        end
+      end
+
+      say(t) unless t.rows.empty?
     end
 
   end
