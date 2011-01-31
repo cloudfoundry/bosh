@@ -142,15 +142,12 @@ module VSphereCloud
         disk = resource_pool["disk"]
         cpu = resource_pool["cpu"]
 
-        cluster = nil
-        datastore = nil
-
         if disk_locality.nil?
-          cluster = @resources.find_least_loaded_cluster(1)
-          datastore = @resources.find_least_loaded_datastore(cluster, 1)
+          cluster = @resources.find_least_loaded_cluster(memory)
+          datastore = @resources.find_least_loaded_datastore(cluster, disk)
         else
-          # TODO: get cluster based on disk locality
-          # TODO: get datastore based on disk locality
+          @logger.info("Looking for resources near disk: #{disk_locality}")
+          cluster, datastore = @resources.find_disk_local_resources(disk_locality, memory, disk, cpu)
         end
 
         name = "vm-#{generate_unique_name}"

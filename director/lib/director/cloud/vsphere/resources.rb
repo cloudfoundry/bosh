@@ -2,6 +2,9 @@ module VSphereCloud
 
   class Resources
 
+    MEMORY_THRESHOLD = 128
+    DISK_THRESHOLD = 512
+
     class Datacenter
       attr_accessor :mob
       attr_accessor :name
@@ -200,7 +203,7 @@ module VSphereCloud
         datacenters.each_value do |datacenter|
           datacenter.clusters.each do |cluster|
             free_memory = cluster.real_free_memory
-            if free_memory - memory > 128
+            if free_memory - memory > MEMORY_THRESHOLD
               max_free_memory = free_memory if free_memory > max_free_memory
               clusters << cluster
             end
@@ -233,7 +236,7 @@ module VSphereCloud
       @lock.synchronize do
         datastores = cluster.datastores
         datastores = datastores.select do |datastore|
-          datastore.free_space - datastore.unaccounted_space - space > 512
+          datastore.real_free_space - space > DISK_THRESHOLD
         end
 
         raise "No available datastore" if datastores.empty?
@@ -246,6 +249,54 @@ module VSphereCloud
         result.unaccounted_space += space
       end
       result
+    end
+
+    def find_disk_local_resources(disk_locality, memory, disk_space, _)
+      disk = Models::Disk[disk_locality]
+      raise "Disk not found: #{disk_locality}" if disk.nil?
+
+      cluster = nil
+      datastore = nil
+
+      if disk.path
+        datacenter = datacenters.values.find { |dc| dc.name == disk.datacenter }
+        datacenter.clusters.each do |c|
+          c.datastores.each do |ds|
+            if ds.name == disk.datastore
+              @logger.info("Found #{ds.name} @ #{ds.mob}")
+              datastore = ds
+              break
+            end
+          end
+
+          if datastore
+            @logger.info("Found #{c.name} @ #{c.mob}")
+            cluster = c
+            break
+          end
+        end
+
+        raise "Could not find disk local resources for: #{disk.pretty_inspect}" if cluster.nil? || datastore.nil?
+
+        # Make sure there is enough space
+        @lock.synchronize do
+          if cluster.real_free_memory - memory > MEMORY_THRESHOLD &&
+                 datastore.real_free_space - disk_space > DISK_THRESHOLD
+            datastore.unaccounted_space += disk_space
+            cluster.unaccounted_memory += memory
+          else
+            @logger.info("Resources near disk were out of capacity, allocating elsewhere based on system capacity")
+            cluster   = find_least_loaded_cluster(memory)
+            datastore = find_least_loaded_datastore(cluster, disk_space)
+          end
+        end
+      else
+        @logger.info("Disk was not allocated yet, allocating resources based on system capacity")
+        cluster   = find_least_loaded_cluster(memory)
+        datastore = find_least_loaded_datastore(cluster, disk_space)
+      end
+
+      [cluster, datastore]
     end
 
     def score_datastore(datastore, space)
