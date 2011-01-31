@@ -28,7 +28,7 @@ describe Bosh::Agent::Util do
     config_hash = { "job" => { "name" => "funky_job_name"} }
     config_binding = Bosh::Agent::Util.config_binding(config_hash)
 
-    template = ERB.new("job name: <%= config['job']['name'] %>")
+    template = ERB.new("job name: <%= spec.job.name %>")
 
     lambda {
       template.result(binding)
