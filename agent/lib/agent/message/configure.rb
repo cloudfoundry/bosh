@@ -97,16 +97,14 @@ module Bosh::Agent
       end
 
       def setup_networking
-        #mac_addresses = detect_mac_addresses
-        mac_addresses = { "foo" => "eth0" }
+        mac_addresses = detect_mac_addresses
 
         # last to update wins for now
         @dns = []
 
         @networks = @settings["networks"]
         @networks.each do |k, v|
-          # mac = v["mac"]
-          mac = "foo"
+           mac = v["mac"]
 
           if mac_addresses.key?(mac)
             v["interface"] = mac_addresses[mac]
