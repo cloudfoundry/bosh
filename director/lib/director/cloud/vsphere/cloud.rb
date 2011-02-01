@@ -35,8 +35,6 @@ module VSphereCloud
 
   class Cloud
 
-    BOSH_AGENT_PROPERTIES_ID = "Bosh_Agent_Properties"
-
     attr_accessor :client
 
     def initialize(options)
@@ -51,11 +49,23 @@ module VSphereCloud
       @client = Client.new("https://#{@vcenter["host"]}/sdk/vimService", options)
       @client.login(@vcenter["user"], @vcenter["password"], "en")
 
+      @rest_client = HTTPClient.new
+      @rest_client.send_timeout = 14400 # 4 hours
+      @rest_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+      # HACK: read the session from the SOAP client so we don't leak sessions when using the REST client
+      soap_client = @client.service.instance_eval { @proxy.instance_eval { @streamhandler.instance_eval { @client } } }
+      cookie_str = soap_client.cookie_manager.find(URI.parse("https://#{@vcenter["host"]}/sdk/vimService"))
+      @rest_client.cookie_manager.parse(cookie_str, URI.parse("https://#{@vcenter["host"]}"))
+
       @resources = Resources.new(@client, @vcenter)
 
       @lock = Mutex.new
       @locks = {}
       @locks_mutex = Mutex.new
+
+      # HACK: finalizer not getting called, so we'll rely on at_exit
+      at_exit { @client.logout }
     end
 
     def create_stemcell(image, _)
@@ -635,16 +645,12 @@ module VSphereCloud
     end
 
     def fetch_file(datacenter_name, datastore_name, path)
-      http_client = HTTPClient.new
-      http_client.send_timeout = 14400 # 4 hours
-      http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
       url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
             "&dsName=#{URI.escape(datastore_name)}"
 
-      credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
+      #credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
 
-      response = http_client.get(url, {}, {"Authorization" => "Basic #{credentials}"})
+      response = @rest_client.get(url)
 
       if response.code < 400
         response.body.content
@@ -656,18 +662,15 @@ module VSphereCloud
     end
 
     def upload_file(datacenter_name, datastore_name, path, contents)
-      http_client = HTTPClient.new
-      http_client.send_timeout = 14400 # 4 hours
-      http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
       url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
             "&dsName=#{URI.escape(datastore_name)}"
 
-      credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
+      #credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
 
-      response = http_client.put(url, contents, {"Content-Type" => "application/octet-stream",
-                                                 "Content-Length" => contents.length,
-                                                 "Authorization" => "Basic #{credentials}"})
+      pp @rest_client
+
+      response = @rest_client.put(url, contents, {"Content-Type" => "application/octet-stream",
+                                                  "Content-Length" => contents.length})
 
       raise "Could not upload file: #{url}, status code: #{response.code}" unless response.code < 400
     end

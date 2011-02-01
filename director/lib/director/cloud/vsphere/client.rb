@@ -11,7 +11,11 @@ module VSphereCloud
     def initialize(host, options = {})
       @service                                                 = VimPortType.new(host)
       @service.options["protocol.http.ssl_config.verify_mode"] = OpenSSL::SSL::VERIFY_NONE
-      @service.wiredump_dev = File.open(options["soap_log"], "w") if options["soap_log"]
+      if options["soap_log"]
+        log_file = File.open(options["soap_log"], "w")
+        log_file.sync = true
+        @service.wiredump_dev = log_file
+      end
 
       service_ref                      = ManagedObjectReference.new("ServiceInstance")
       service_ref.xmlattr_type         = "ServiceInstance"
