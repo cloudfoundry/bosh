@@ -33,8 +33,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   before(:each) do
     @cloud = mock("cloud")
 
+    @tmpdir = Dir.mktmpdir("base_dir")
+
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
-    Bosh::Director::Config.stub!(:base_dir).and_return(Dir.mktmpdir("base_dir"))
+    Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
 
     stemcell_contents = create_stemcell("jeos", 5, {"ram" => "2gb"}, "image contents")
     @stemcell_file = Tempfile.new("stemcell_contents")
@@ -42,6 +44,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   after(:each) do
+    FileUtils.rm_rf(@tmpdir)
     FileUtils.rm_rf(@stemcell_file.path)
   end
 

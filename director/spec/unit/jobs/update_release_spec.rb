@@ -78,6 +78,10 @@ describe Bosh::Director::Jobs::UpdateRelease do
       end
     end
 
+    after(:each) do
+      FileUtils.rm_rf(@release_dir)
+    end
+
     it "should create simple packages" do
       package = stub("package")
       package.stub!(:name).and_return("test_package")
