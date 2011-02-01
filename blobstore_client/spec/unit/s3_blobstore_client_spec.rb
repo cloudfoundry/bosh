@@ -36,7 +36,7 @@ describe Bosh::Blobstore::S3BlobstoreClient do
                              :secret_access_key => "SECRET")
 
       @client.encryption_key.should == "bla"
-      @client.bucket_name.should == "test"      
+      @client.bucket_name.should == "test"
     end
 
   end
@@ -50,77 +50,178 @@ describe Bosh::Blobstore::S3BlobstoreClient do
                              :secret_access_key => "SECRET")
     end
 
-    it "should create an object" do
-      @client.should_receive(:generate_object_id).and_return("object_id")
-      @client.should_receive(:encrypt).with("some content").and_return("ENCRYPTED")
+    describe "create" do
 
-      AWS::S3::S3Object.should_receive(:store).with("object_id", Base64.encode64("ENCRYPTED"), "test")
-      @client.create("some content")
+      it "should create an object" do
+        encrypted_file = nil
+        @client.should_receive(:generate_object_id).and_return("object_id")
+        @client.should_receive(:encrypt_stream).with { |from_file, _|
+          from_file.read.should eql("some content")
+          true
+        }.and_return {|_, to_file|
+          encrypted_file = to_file
+          nil
+        }
+
+        AWS::S3::S3Object.should_receive(:store).with { |key, data, bucket|
+          key.should eql("object_id")
+          data.path.should eql(encrypted_file.path)
+          bucket.should eql("test")
+          true
+        }
+        @client.create("some content").should eql("object_id")
+      end
+
+      it "should raise an exception when there is an error creating an object" do
+        encrypted_file = nil
+        @client.should_receive(:generate_object_id).and_return("object_id")
+        @client.should_receive(:encrypt_stream).with { |from_file, _|
+          from_file.read.should eql("some content")
+          true
+        }.and_return {|_, to_file|
+          encrypted_file = to_file
+          nil
+        }
+
+        AWS::S3::S3Object.should_receive(:store).with { |key, data, bucket|
+          key.should eql("object_id")
+          data.path.should eql(encrypted_file.path)
+          bucket.should eql("test")
+          true
+        }.and_raise(AWS::S3::S3Exception.new("Epic Fail"))
+        lambda {
+          @client.create("some content")
+        }.should raise_error(Bosh::Blobstore::BlobstoreError, "Failed to create object, S3 response error: Epic Fail")
+      end
+
     end
 
-    it "should raise an exception when there is an error creating an object" do
-      AWS::S3::S3Object.should_receive(:store).and_raise(AWS::S3::S3Exception.new("Epic Fail"))
-      lambda {
-        @client.create("some content")        
-      }.should raise_error(Bosh::Blobstore::BlobstoreError, "Failed to create object, S3 response error: Epic Fail")
+    describe "fetch" do
+
+      it "should fetch an object" do
+        mock_s3_object = mock("s3_object")
+        mock_s3_object.stub!(:value).and_yield("ENCRYPTED")
+        AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_return(mock_s3_object)
+        @client.should_receive(:decrypt_stream).with { |from, _|
+          encrypted = ""
+          from.call(lambda {|segment| encrypted << segment})
+          encrypted.should eql("ENCRYPTED")
+          true
+        }.and_return {|_, to|
+          to.write("stuff")
+        }
+        @client.get("object_id").should == "stuff"
+      end
+
+      it "should raise an exception when there is an error fetching an object" do
+        AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_raise(AWS::S3::S3Exception.new("Epic Fail"))
+        lambda {
+          @client.get("object_id")
+        }.should raise_error(Bosh::Blobstore::BlobstoreError, "Failed to find object 'object_id', S3 response error: Epic Fail")
+      end
+
+      it "should raise more specific NotFound exception when object is not found" do
+        AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_raise(AWS::S3::NoSuchKey.new("NO KEY", "test"))
+        lambda {
+          @client.get("object_id")
+        }.should raise_error(Bosh::Blobstore::BlobstoreError, "S3 object 'object_id' not found")
+      end
+
     end
 
-    it "should fetch an object" do
-      mock_s3_object = mock("s3_object")
-      mock_s3_object.stub!(:value).and_return(Base64.encode64("ENCRYPTED"))
-      AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_return(mock_s3_object)
-      @client.should_receive(:decrypt).with("ENCRYPTED").and_return("stuff")
-      @client.get("object_id").should == "stuff"
+    describe "delete" do
+
+      it "should delete an object" do
+        AWS::S3::S3Object.should_receive(:delete).with("object_id", "test")
+        @client.delete("object_id")
+      end
+
+      it "should raise an exception when there is an error deleting an object" do
+        AWS::S3::S3Object.should_receive(:delete).with("object_id", "test").and_raise(AWS::S3::S3Exception.new("Epic Fail"))
+        lambda {
+          @client.delete("object_id")
+        }.should raise_error(Bosh::Blobstore::BlobstoreError, "Failed to delete object 'object_id', S3 response error: Epic Fail")
+      end
+
     end
 
-    it "should raise an exception when there is an error fetching an object" do
-      AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_raise(AWS::S3::S3Exception.new("Epic Fail"))
-      lambda {
-        @client.get("object_id")
-      }.should raise_error(Bosh::Blobstore::BlobstoreError, "Failed to find object `object_id', S3 response error: Epic Fail")
-    end
+    describe "encryption" do
 
-    it "should raise more specific NotFound exception when object is not found" do
-      AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_raise(AWS::S3::NoSuchKey.new("NO KEY", "test"))
-      lambda {
-        @client.get("object_id")
-      }.should raise_error(Bosh::Blobstore::BlobstoreError, "S3 object `object_id' not found")
-    end    
+      before :each do
+        @from_path = File.join(Dir::tmpdir, "from-#{UUIDTools::UUID.random_create}")
+        @to_path = File.join(Dir::tmpdir, "to-#{UUIDTools::UUID.random_create}")
+      end
 
-    it "should delete an object" do
-      AWS::S3::S3Object.should_receive(:delete).with("object_id", "test")
-      @client.delete("object_id")
-    end
+      after :each do
+        FileUtils.rm_f(@from_path)
+        FileUtils.rm_f(@to_path)
+      end
 
-    it "should raise an exception when there is an error deleting an object" do
-      AWS::S3::S3Object.should_receive(:delete).with("object_id", "test").and_raise(AWS::S3::S3Exception.new("Epic Fail"))
-      lambda {
-        @client.delete("object_id")        
-      }.should raise_error(Bosh::Blobstore::BlobstoreError, "Failed to delete object `object_id', S3 response error: Epic Fail")
-    end
+      it "encrypt/decrypt works as long as key is the same" do
+        File.open(@from_path, "w") { |f| f.write("clear text") }
+        File.open(@from_path, "r") do |from|
+          File.open(@to_path, "w") do |to|
+            @client.send(:encrypt_stream, from, to)
+          end
+        end
 
-    it "encrypt/decrypt works as long as key is the same" do
-      encrypted = @client.send(:encrypt, "clear text")
-      @client.send(:decrypt, encrypted).should == "clear text"
+        Base64.encode64(File.read(@to_path)).should eql("XCUKDXXzjh43DmNylgVpQQ==\n")
 
-      encrypted.should_not == "clear text" # Sanity check
+        File.open(@from_path, "w") { |f| f.write(File.read(@to_path)) }
+        File.open(@from_path, "r") do |from|
+          File.open(@to_path, "w") do |to|
+            @client.send(:decrypt_stream, from, to)
+          end
+        end
 
-      # Check that we don't have padding issues for very small inputs
-      encrypted = @client.send(:encrypt, "c")
-      @client.send(:decrypt, encrypted).should == "c"
-    end    
+        File.read(@to_path).should eql("clear text")
+      end
 
-    it "should raise an exception if incorrect encryption key is used" do
-      encrypted = @client.send(:encrypt, "clear text")
+      it "encrypt/decrypt doesn't have padding issues for very small inputs" do
+        File.open(@from_path, "w") { |f| f.write("c") }
+        File.open(@from_path, "r") do |from|
+          File.open(@to_path, "w") do |to|
+            @client.send(:encrypt_stream, from, to)
+          end
+        end
 
-      client2 = s3_blobstore(:encryption_key    => "zzz",
-                             :bucket_name       => "test",
-                             :access_key_id     => "KEY",
-                             :secret_access_key => "SECRET")
+        Base64.encode64(File.read(@to_path)).should eql("S1ZnX5gPfm/rQbRCcShHSg==\n")
 
-      lambda {
-        client2.send(:decrypt, encrypted)
-      }.should raise_error(Bosh::Blobstore::BlobstoreError, "Decryption error: bad decrypt")
+        File.open(@from_path, "w") { |f| f.write(File.read(@to_path)) }
+        File.open(@from_path, "r") do |from|
+          File.open(@to_path, "w") do |to|
+            @client.send(:decrypt_stream, from, to)
+          end
+        end
+
+        File.read(@to_path).should eql("c")
+      end
+
+      it "should raise an exception if incorrect encryption key is used" do
+        File.open(@from_path, "w") { |f| f.write("clear text") }
+        File.open(@from_path, "r") do |from|
+          File.open(@to_path, "w") do |to|
+            @client.send(:encrypt_stream, from, to)
+          end
+        end
+
+        Base64.encode64(File.read(@to_path)).should eql("XCUKDXXzjh43DmNylgVpQQ==\n")
+
+        client2 = s3_blobstore(:encryption_key    => "zzz",
+                               :bucket_name       => "test",
+                               :access_key_id     => "KEY",
+                               :secret_access_key => "SECRET")
+
+        File.open(@from_path, "w") { |f| f.write(File.read(@to_path)) }
+        File.open(@from_path, "r") do |from|
+          File.open(@to_path, "w") do |to|
+            lambda {
+              client2.send(:decrypt_stream, from, to)
+            }.should raise_error(Bosh::Blobstore::BlobstoreError, "Decryption error: bad decrypt")
+          end
+        end
+      end
+
     end
 
   end
