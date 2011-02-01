@@ -60,6 +60,7 @@ module Bosh::Agent
           begin
             apply_job
             apply_packages
+            configure_monit
           rescue Exception => e
             raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
           end
@@ -86,7 +87,6 @@ module Bosh::Agent
         link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
 
         template_configurations
-        configure_monit
 
         FileUtils.mkdir_p(File.join(@job_install_dir, 'packages'))
       end
@@ -139,26 +139,39 @@ module Bosh::Agent
 
           File.open(out_file, 'w') do |fh|
             fh.write(template.result(Util.config_binding(@apply_spec)))
+          end
 
-            if File.dirname(out_file) == bin_dir
-              FileUtils.chmod(0755, out_file)
-            end
+          if File.dirname(out_file) == bin_dir
+            FileUtils.chmod(0755, out_file)
           end
         end
       end
 
       def configure_monit
         # TODO ERB/Template
-        monit_file = File.join(@job_install_dir, 'monit')
-        if File.exist?(monit_file)
+        monit_template = File.join(@job_install_dir, 'monit')
+        if File.exist?(monit_template)
+          template = ERB.new(File.read(monit_template))
+          monitrc_name = "#{@job_name}.monitrc"
+
+          out_file = File.join(@job_install_dir, monitrc_name)
+
+          File.open(out_file, 'w') do |fh|
+            fh.write(template.result(Util.config_binding(@apply_spec)))
+          end
+
           monit_link = File.join(@base_dir, 'monit', "#{@job_name}.monitrc")
 
-          link_installed(monit_file, monit_link, "Failed to link monit file: #{monit_file} #{monit_link}" )
+          link_installed(out_file, monit_link, "Failed to link monit file: #{out_file} #{monit_link}" )
 
           if Bosh::Agent::Config.configure
+            # There is really no use trying to do error handling on these -
+            # monit always return 0
             `monit reload`
+            sleep 1
             `monit -g vmc monitor`
-            `monit -g vmc start`
+            output = `monit -g vmc start 2>&1`
+            @logger.info("Monit start: #{output}")
           end
         end
       end
