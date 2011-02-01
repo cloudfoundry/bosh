@@ -4,7 +4,7 @@ module Bosh
       def create(contents)
       end
 
-      def get(id)
+      def get(id, file = nil)
       end
 
       def delete(id)

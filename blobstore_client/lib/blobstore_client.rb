@@ -4,6 +4,7 @@ require "blobstore_client/version"
 require "blobstore_client/errors"
 
 require "blobstore_client/client"
+require "blobstore_client/base"
 require "blobstore_client/simple_blobstore_client"
 require "blobstore_client/s3_blobstore_client"
 
