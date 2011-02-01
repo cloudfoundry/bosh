@@ -341,7 +341,7 @@ module VSphereCloud
             source_path = disk.path
             destination_datastore = datastores.first.first
             datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-            destination_path = "[#{destination_datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+            destination_path = "[#{destination_datastore.name}] #{datacenter_disk_path}/#{disk.id}.vmdk"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
             client.move_disk(source_datacenter, source_path, datacenter, destination_path)
             @logger.info("Moved disk successfully")
