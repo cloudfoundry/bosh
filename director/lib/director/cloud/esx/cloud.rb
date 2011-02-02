@@ -55,7 +55,7 @@ module EsxCloud
       rtn_payload =''
       uri = "nats://esxmgr:esxmgr@10.20.142.82:11009"
       NATS.start(:uri => uri) {
-        b = EsxMQ::Backend.new(@server)
+        b = EsxMQ::Backend.new(@server, 'mpatil-lx.eng.vmware.com', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
         @reqID = @reqID + 1
         @logger.info("ESXMGR: Here before subscribe")
         b.subscribe { |rID, msg|
