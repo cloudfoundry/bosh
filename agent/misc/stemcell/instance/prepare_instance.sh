@@ -32,7 +32,7 @@ tar zxvf rubygems-1.3.7.tgz
   /var/vmc/bin/ruby setup.rb
 )
 
-gem install bundler
+gem install bundler-1.0.7.gem
 
 version=$(cat version)
 agent_path=/var/vmc/bosh/agent_${version}_builtin
