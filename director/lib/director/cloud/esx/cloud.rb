@@ -19,6 +19,21 @@ module EsxCloud
       UUIDTools::UUID.random_create.to_s
     end
 
+    def generate_agent_env(name, vm, agent_id, networking_env, disk_env)
+      vm_env = {
+        "name" => name,
+        "id" => vm
+      }
+
+      env = {}
+      env["vm"] = vm_env
+      env["agent_id"] = agent_id
+      env["networks"] = networking_env
+      env["disks"] = disk_env
+      env.merge!(@agent_properties)
+      env
+    end
+
     def build_agent_network_env(devices, networks)
       network_env = {}
       networks.each do |network_name, network|
@@ -34,29 +49,6 @@ module EsxCloud
       network_env
     end
 
-    def build_agent_env(name, vm, agent_id, networks, devices, system_disk, ephemeral_disk)
-      network_env = build_agent_network_env(devices, networks)
-
-      disk_env = {
-        "system" => system_disk,
-        "ephemeral" => ephemeral_disk, 
-        "persistent" => {}
-      }
-
-      vm_env = {
-        "name" => name,
-        "id" => vm
-      }
-
-      env = {}
-      env["vm"] = vm_env
-      env["agent_id"] = agent_id
-      env["networks"] = network_env
-      env["disks"] = disk_env
-      env.merge!(@agent_properties)
-      env
-    end
-
     def send_request(payload)
       @logger.info("ESXMGR: Inside send req #{payload}")
       rtn = false
@@ -67,7 +59,7 @@ module EsxCloud
         @reqID = @reqID + 1
         @logger.info("ESXMGR: Here before subscribe")
         b.subscribe { |rID, msg|
-           @logger.info("ESXMGR: received msg #{msg}, payload is #{msg.payload}, status is #{msg.returnStatus}")
+          @logger.info("ESXMGR: received msg #{msg}, payload is #{msg.payload}, status is #{msg.returnStatus}")
           raise "bad message #{msg}, rID #{rID} , reqID #{@reqID}" if rID != @reqID.to_s
           if (msg.returnStatus == EsxMQ::ESXReturnStatus::SUCCESS)
             rtn_payload = getPayloadMsg(msg.payload)
@@ -88,7 +80,6 @@ module EsxCloud
       end
       return rtn, rtn_payload
     end
-
 
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
@@ -127,6 +118,34 @@ module EsxCloud
       end
     end
 
+    def generate_network_env(devices, networks, dvs_index)
+      nics = {}
+
+      devices.each do |device|
+        if device.kind_of?(VirtualEthernetCard)
+          backing = device.backing
+          if backing.kind_of?(VirtualEthernetCardDistributedVirtualPortBackingInfo)
+            v_network_name = dvs_index[device.backing.port.portgroupKey]
+          else
+            v_network_name = device.backing.deviceName
+          end
+          allocated_networks = nics[v_network_name] || []
+          allocated_networks << device
+          nics[v_network_name] = allocated_networks
+        end
+      end
+
+      network_env = {}
+      networks.each do |network_name, network|
+        network_entry             = network.dup
+        v_network_name            = network["cloud_properties"]["name"]
+        nic                       = nics[v_network_name].pop
+        network_entry["mac"]      = nic.macAddress
+        network_env[network_name] = network_entry
+      end
+      network_env
+    end
+
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
@@ -144,21 +163,25 @@ module EsxCloud
         createVM = EsxMQ::CreateVmMsg.new(name)
         createVM.cpu = resource_pool["cpu"]
         createVM.ram = resource_pool["ram"]
-        createVM.networks = Array.new
         networks.each_value do |network|
           net = Hash.new
           net["vswitch"] = network["cloud_properties"]["name"]
           net["mac"] =  @vmMac + @vmMacID.to_s
           @vmMacID = @vmMacID + 1
-          createVM.networks << net
         end
         createVM.stemcell = stemcell
         # TODO fix these
         system_disk = 0
         ephemeral_disk = 1
-        
-        createVM.guestInfo = build_agent_env(name, name, agent_id, networks, createVM.networks, system_disk, ephemeral_disk)
-        
+
+        network_env = build_agent_network_env(devices, networks)
+        # TODO fix disk_env
+        disk_env = { "system" => system_disk,
+                     "ephemeral" => ephemeral_disk,
+                     "persistent" => {}
+                   }
+        createVM.guestInfo = generate_agent_env(name, name, agent_id, network_env, disk_env)
+
         if send_request(createVM)
           result = name
         end
