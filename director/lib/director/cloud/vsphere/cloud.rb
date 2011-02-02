@@ -210,6 +210,14 @@ module VSphereCloud
         vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
 
+        # Configure the ENV CDROM
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange = []
+        file_name = "[#{datastore.name}] #{name}/env.iso"
+        cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
+        config.deviceChange << cdrom_change
+        client.reconfig_vm(vm, config)
+
         network_env = generate_network_env(devices, networks, dvs_index)
         disk_env = generate_disk_env(system_disk, ephemeral_disk_config.device)
         env = generate_agent_env(name, vm, agent_id, network_env, disk_env)
@@ -219,14 +227,6 @@ module VSphereCloud
                                        :datastore => datastore.name,
                                        :vm => name)
         set_agent_env(vm, location, env)
-
-        # Configure the ENV CDROM
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = []
-        file_name = "[#{datastore.name}] #{name}/env.iso"
-        cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
-        config.deviceChange << cdrom_change
-        client.reconfig_vm(vm, config)
 
         @logger.info("Powering on VM: #{vm} (#{name})")
         client.power_on_vm(cluster.datacenter.mob, vm)
@@ -609,11 +609,13 @@ module VSphereCloud
     def connect_cdrom(vm, connected = true)
       devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
       cdrom = devices.find { |device| device.kind_of?(VirtualCdrom) }
-      cdrom.connectable.connected = connected
 
-      config = VirtualMachineConfigSpec.new
-      config.deviceChange = [create_edit_device_spec(cdrom)]
-      client.reconfig_vm(vm, config)
+      if cdrom.connectable.connected != connected
+        cdrom.connectable.connected = connected
+        config = VirtualMachineConfigSpec.new
+        config.deviceChange = [create_edit_device_spec(cdrom)]
+        client.reconfig_vm(vm, config)
+      end
     end
 
     def configure_env_cdrom(datastore, devices, file_name)
@@ -648,8 +650,6 @@ module VSphereCloud
       url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
             "&dsName=#{URI.escape(datastore_name)}"
 
-      #credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
-
       response = @rest_client.get(url)
 
       if response.code < 400
@@ -664,10 +664,6 @@ module VSphereCloud
     def upload_file(datacenter_name, datastore_name, path, contents)
       url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
             "&dsName=#{URI.escape(datastore_name)}"
-
-      #credentials = ["#{@vcenter["user"]}:#{@vcenter["password"]}"].pack('m').tr("\n", '')
-
-      pp @rest_client
 
       response = @rest_client.put(url, contents, {"Content-Type" => "application/octet-stream",
                                                   "Content-Length" => contents.length})
