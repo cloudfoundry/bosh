@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PATH=/var/vmc/bin:$PATH
+export PATH=/var/vmc/bosh/bin:$PATH
 export HOME=/root
 
 # Shady work aroud vmbuilder in combination with ubuntu iso cache corrupting
@@ -22,14 +22,16 @@ tar zxvf ruby-1.8.7-p302.tar.gz
   cd ruby-1.8.7-p302
   ./configure \
     --disable-pthread \
-    --prefix=/var/vmc
+    --prefix=/var/vmc/bosh
   make && make install
 )
+
+echo "gem: --no-ri --no-rdoc" > /etc/gemrc
 
 tar zxvf rubygems-1.3.7.tgz
 (
   cd rubygems-1.3.7
-  /var/vmc/bin/ruby setup.rb
+  /var/vmc/bosh/bin/ruby setup.rb
 )
 
 gem install bundler-1.0.7.gem
@@ -44,7 +46,7 @@ chmod +x /var/vmc/bosh/agent/bin/agent
 
 (
   cd /var/vmc/bosh/agent
-  bundle install --path /var/vmc/gems
+  bundle install --path /var/vmc/bosh/gems
 )
 
 cp -a runit/agent /etc/sv/agent
@@ -56,8 +58,8 @@ ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
 # vmbuilder will default to dhcp when no IP is specified - wipe
 echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 
-echo 'export PATH=/var/vmc/bin:$PATH' >> /root/.bashrc
-echo 'export PATH=/var/vmc/bin:$PATH' >> /home/vmc/.bashrc
+echo 'export PATH=/var/vmc/bosh/bin:$PATH' >> /root/.bashrc
+echo 'export PATH=/var/vmc/bosh/bin:$PATH' >> /home/vmc/.bashrc
 
 echo -e "startup=1\n" > /etc/default/monit
 mkidr -p /var/vmc/monit

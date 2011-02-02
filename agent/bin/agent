@@ -1,4 +1,4 @@
-#!/var/vmc/bin/ruby
+#!/var/vmc/bosh/bin/ruby
 #
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
