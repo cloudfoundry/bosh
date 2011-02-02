@@ -118,34 +118,6 @@ module EsxCloud
       end
     end
 
-    def generate_network_env(devices, networks, dvs_index)
-      nics = {}
-
-      devices.each do |device|
-        if device.kind_of?(VirtualEthernetCard)
-          backing = device.backing
-          if backing.kind_of?(VirtualEthernetCardDistributedVirtualPortBackingInfo)
-            v_network_name = dvs_index[device.backing.port.portgroupKey]
-          else
-            v_network_name = device.backing.deviceName
-          end
-          allocated_networks = nics[v_network_name] || []
-          allocated_networks << device
-          nics[v_network_name] = allocated_networks
-        end
-      end
-
-      network_env = {}
-      networks.each do |network_name, network|
-        network_entry             = network.dup
-        v_network_name            = network["cloud_properties"]["name"]
-        nic                       = nics[v_network_name].pop
-        network_entry["mac"]      = nic.macAddress
-        network_env[network_name] = network_entry
-      end
-      network_env
-    end
-
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
