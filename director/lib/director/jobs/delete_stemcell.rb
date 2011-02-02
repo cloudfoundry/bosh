@@ -9,6 +9,7 @@ module Bosh::Director
         if args.length == 2
           @name, @version = args
           @cloud = Config.cloud
+          @blobstore = Config.blobstore
           @logger = Config.logger
         elsif args.empty?
           # used for testing only
@@ -36,6 +37,17 @@ module Bosh::Director
 
           @logger.info("Deleting stemcell from the cloud")
           @cloud.delete_stemcell(@stemcell.cid)
+
+          @logger.info("Looking for any compiled packages on this stemcell")
+          compiled_packages = Models::CompiledPackage.find(:stemcell_id => @stemcell.id)
+          compiled_packages.each do |compiled_package|
+            next unless compiled_package
+            package = compiled_package.package
+            @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
+            @blobstore.delete(compiled_package.blobstore_id)
+            compiled_package.delete
+          end
+
           @logger.info("Deleting stemcell meta")
           @stemcell.delete
         end
