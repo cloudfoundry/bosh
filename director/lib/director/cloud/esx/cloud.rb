@@ -135,18 +135,20 @@ module EsxCloud
         createVM = EsxMQ::CreateVmMsg.new(name)
         createVM.cpu = resource_pool["cpu"]
         createVM.ram = resource_pool["ram"]
+        devices = []
         networks.each_value do |network|
           net = Hash.new
           net["vswitch"] = network["cloud_properties"]["name"]
           net["mac"] =  @vmMac + @vmMacID.to_s
           @vmMacID = @vmMacID + 1
+          devices << net
         end
         createVM.stemcell = stemcell
         # TODO fix these
         system_disk = 0
         ephemeral_disk = 1
 
-        network_env = build_agent_network_env(createVM.networks, networks)
+        network_env = build_agent_network_env(devices, networks)
         # TODO fix disk_env
         disk_env = { "system" => system_disk,
                      "ephemeral" => ephemeral_disk,
