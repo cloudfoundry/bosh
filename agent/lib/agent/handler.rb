@@ -55,68 +55,13 @@ module Bosh::Agent
         end
         on.message do |sub, raw_msg|
           msg = Yajl::Parser.new.parse(raw_msg)
-
-          @logger.info("Message: #{msg.inspect}")
-          message_id = msg['message_id']
-          method = msg['method']
-          args = msg['arguments']
-
-          if method == "get_state"
-            method = "state"
-          end
-
-          processor = lookup(method)
-          if processor
-            Thread.new {
-              if processor.respond_to?(:long_running?)
-                if @long_running_agent_task.empty?
-                  process_long_running(message_id, processor, args)
-                else
-                  payload = {:exception => "already running long running task"}
-                  publish(message_id, payload)
-                end
-              else
-                payload = process(processor, args)
-                publish(message_id, payload)
-                if Config.configure && method == "prepare_network_change"
-
-                  # Wait until director provides cdrom
-                  begin
-                    File.read('/dev/cdrom', 0)
-                  rescue Errno::E123 # ENOMEDIUM
-                    sleep 0.1
-                    retry
-                  end
-
-                  if Bosh::Agent::Config.configure
-                    udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
-                    if File.exist?(udev_file)
-                      @logger.info("deleting 70-persistent-net.rules - again")
-                      `rm #{udev_file}`
-                    end
-                    @logger.info("Removing settings.json")
-                    `rm /var/vmc/bosh/settings.json`
-                  end
-
-                  @logger.info("Reboot after networking change")
-                  `/sbin/shutdown -r now`
-                  @logger.info("Exit after networking change")
-                  exit
-                end
-              end
-            }
-          elsif method == "get_task"
-            handle_get_task(message_id, args.first)
-          else
-            payload = {:exception => "unknown message #{msg.inspect}"}
-            publish(message_id, payload)
-          end
-
+          handle_message(msg)
         end
         on.unsubscribe do |sub, msg|
           puts "unsubscribing"
         end
       end
+
     end
 
     # TODO:
@@ -126,6 +71,42 @@ module Bosh::Agent
 
     def generate_agent_task_id
       UUIDTools::UUID.random_create.to_s
+    end
+    
+    def handle_message(msg)
+      @logger.info("Message: #{msg.inspect}")
+      message_id = msg['message_id']
+      method = msg['method']
+      args = msg['arguments']
+
+      if method == "get_state"
+        method = "state"
+      end
+
+      processor = lookup(method)
+      if processor
+        Thread.new {
+          if processor.respond_to?(:long_running?)
+            if @long_running_agent_task.empty?
+              process_long_running(message_id, processor, args)
+            else
+              payload = {:exception => "already running long running task"}
+              publish(message_id, payload)
+            end
+          else
+            payload = process(processor, args)
+            publish(message_id, payload)
+            if Config.configure && method == "prepare_network_change"
+              post_prepare_network_change
+            end
+          end
+        }
+      elsif method == "get_task"
+        handle_get_task(message_id, args.first)
+      else
+        payload = {:exception => "unknown message #{msg.inspect}"}
+        publish(message_id, payload)
+      end
     end
 
     def handle_get_task(message_id, agent_task_id)
@@ -174,6 +155,32 @@ module Bosh::Agent
         return {:exception => e.inspect}
       end
     end
+
+    def post_prepare_network_change
+      # Wait until director provides cdrom
+      begin
+        File.read('/dev/cdrom', 0)
+      rescue Errno::E123 # ENOMEDIUM
+        sleep 0.1
+        retry
+      end
+
+      if Bosh::Agent::Config.configure
+        udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
+        if File.exist?(udev_file)
+          @logger.info("deleting 70-persistent-net.rules - again")
+          `rm #{udev_file}`
+        end
+        @logger.info("Removing settings.json")
+        `rm /var/vmc/bosh/settings.json`
+      end
+
+      @logger.info("Reboot after networking change")
+      `/sbin/shutdown -r now`
+      @logger.info("Exit after networking change")
+      exit
+    end
+
 
   end
 
