@@ -12,7 +12,8 @@ apt-get update
 apt-get install -y --force-yes --no-install-recommends \
   build-essential libssl-dev openssh-server linux-headers-virtual \
   open-vm-dkms open-vm-tools monit lsof strace scsitools bind9-host \
-  dnsutils tcpdump tshark iputils-arping curl wget
+  dnsutils tcpdump tshark iputils-arping curl wget libcurl3 libcurl3-dev \
+  bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev
 
 cd /var/vmc/bosh/src
 tar zxvf ruby-1.8.7-p302.tar.gz
