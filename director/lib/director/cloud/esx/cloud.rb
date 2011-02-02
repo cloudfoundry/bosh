@@ -174,7 +174,7 @@ module EsxCloud
         system_disk = 0
         ephemeral_disk = 1
 
-        network_env = build_agent_network_env(devices, networks)
+        network_env = build_agent_network_env(createVM.networks, networks)
         # TODO fix disk_env
         disk_env = { "system" => system_disk,
                      "ephemeral" => ephemeral_disk,
