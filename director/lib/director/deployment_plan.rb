@@ -347,6 +347,7 @@ module Bosh::Director
 
         job_spec["instances"].times do |index|
           @instances[index] = InstanceSpec.new(self, index)
+          @resource_pool.reserve_vm
         end
 
         job_spec["networks"].each do |network_spec|
