@@ -16,6 +16,7 @@ gem "systemu"
 gem "thin"
 gem "uuidtools"
 gem "yajl-ruby"
+gem "esxmq"
 
 group :test do
   gem "autotest"
