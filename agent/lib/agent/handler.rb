@@ -94,6 +94,8 @@ module Bosh::Agent
                       @logger.info("deleting 70-persistent-net.rules - again")
                       `rm #{udev_file}`
                     end
+                    @logger.info("Removing settings.json")
+                    `rm /var/vmc/bosh/settings.json`
                   end
 
                   @logger.info("Reboot after networking change")
