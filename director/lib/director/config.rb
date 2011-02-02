@@ -57,6 +57,8 @@ module Bosh::Director
             case @cloud_options["plugin"]
             when "vsphere"
               @cloud = Clouds::VSphere.new(@cloud_options["properties"])
+            when "esx"
+              @cloud = Clouds::Esx.new(@cloud_options["properties"])
             when "dummy"
               @cloud = DummyCloud.new(@cloud_options["properties"])
             else
