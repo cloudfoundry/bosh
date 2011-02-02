@@ -286,6 +286,38 @@ describe Bosh::Director::DeploymentPlan do
 
   end
 
+  describe "Jobs" do
+
+    it "should preserve job order" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+      job["instances"] = 1
+      job["networks"] = [ { "name" => "network_a" } ]
+
+      5.times do |index|
+        new_job = job._deep_copy
+        new_job["name"] = "job_a_#{index}"
+        manifest["jobs"] << new_job
+      end
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      jobs = deployment_plan.jobs
+      jobs[0].name.should eql("job_a")
+      jobs[1].name.should eql("job_a_0")
+      jobs[2].name.should eql("job_a_1")
+      jobs[3].name.should eql("job_a_2")
+      jobs[4].name.should eql("job_a_3")
+      jobs[5].name.should eql("job_a_4")
+    end
+
+    it "should fail when the number of instances exceeds resource pool capacity" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["jobs"].first["instances"] = 15
+      lambda { Bosh::Director::DeploymentPlan.new(manifest) }.should raise_error "resource pool too small"
+    end
+
+  end
+
   describe "Resource pools" do
 
     it "should manage resource pool allocations" do

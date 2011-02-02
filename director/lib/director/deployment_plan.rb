@@ -83,7 +83,7 @@ module Bosh::Director
 
       def reserve_vm
         @reserved_vms += 1
-        raise "Resource pool too small." if @reserved_vms > @size
+        raise "resource pool too small" if @reserved_vms > @size
       end
 
       def unallocated_vms
@@ -451,13 +451,13 @@ module Bosh::Director
       end
 
       def add_network(name)
-        raise "Network #{name} already exists." if @networks.has_key?(name)
+        raise "network #{name} already exists" if @networks.has_key?(name)
         @networks[name] = InstanceNetwork.new(self, name)
       end
 
       def network(name)
         network = @networks[name]
-        raise "Network #{name} not found." if network.nil?
+        raise "network #{name} not found" if network.nil?
         network
       end
 
@@ -627,12 +627,14 @@ module Bosh::Director
       end
 
       @templates = {}
-      @jobs = {}
+      @jobs = []
+      @jobs_name_index = {}
       jobs = safe_property(manifest, "jobs", :class => Array, :optional => true)
       if jobs
         jobs.each do |job_spec|
           job = JobSpec.new(self, job_spec)
-          @jobs[job.name] = job
+          @jobs << job
+          @jobs_name_index[job.name] = job
         end
       end
 
@@ -641,11 +643,11 @@ module Bosh::Director
     end
 
     def jobs
-      @jobs.values
+      @jobs
     end
 
     def job(name)
-      @jobs[name]
+      @jobs_name_index[name]
     end
 
     def template(name)
