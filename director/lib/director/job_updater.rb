@@ -50,6 +50,7 @@ module Bosh::Director
       end
 
       unless instances.empty?
+
         pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
         begin
           num_canaries = [@job.update.canaries, instances.size].min
@@ -59,12 +60,14 @@ module Bosh::Director
           num_canaries.times do
             instance = instances.shift
             pool.process do
-              unless @job.should_rollback?
-                begin
-                  InstanceUpdater.new(instance).update(:canary => true)
-                rescue Exception => e
-                  @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
-                  @job.record_update_error(e, :canary => true)
+              with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
+                unless @job.should_rollback?
+                  begin
+                    InstanceUpdater.new(instance).update(:canary => true)
+                  rescue Exception => e
+                    @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
+                    @job.record_update_error(e, :canary => true)
+                  end
                 end
               end
             end
@@ -82,12 +85,14 @@ module Bosh::Director
           @logger.info("Continuing the rest of the update")
           instances.each do |instance|
             pool.process do
-              unless @job.should_rollback?
-                begin
-                  InstanceUpdater.new(instance).update
-                rescue Exception => e
-                  @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
-                  @job.record_update_error(e)
+              with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
+                unless @job.should_rollback?
+                  begin
+                    InstanceUpdater.new(instance).update
+                  rescue Exception => e
+                    @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
+                    @job.record_update_error(e)
+                  end
                 end
               end
             end

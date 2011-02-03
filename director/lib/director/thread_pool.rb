@@ -45,10 +45,12 @@ module Bosh::Director
     end
 
     def wait(interval = 0.1)
+      @logger.debug("Waiting for tasks to complete")
       sleep(interval) while working?
     end
 
     def shutdown
+      @logger.debug("Shutting down pool")
       @pool.shutdown
     end
 
