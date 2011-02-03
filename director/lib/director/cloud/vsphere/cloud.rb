@@ -239,8 +239,9 @@ module VSphereCloud
         @logger.info("Deleting vm: #{vm_cid}")
         # TODO: detach any persistent disks
         vm = get_vm_by_cid(vm_cid)
-
-        properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question"])
+        datacenter = client.find_parent(vm, "Datacenter")
+        properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question",
+                                                                  "name", "datastore"], :ensure => ["datastore"])
 
         question = properties["runtime.question"]
         if question
@@ -260,6 +261,12 @@ module VSphereCloud
 
         client.delete_vm(vm)
         @logger.info("Deleted vm: #{vm_cid}")
+
+        # Delete env.iso and VM specific files managed by the director
+        datastore = properties["datastore"].first
+        datastore_name = client.get_property(datastore, "Datastore", "name")
+        vm_name = properties["name"]
+        client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
       end
     end
 
