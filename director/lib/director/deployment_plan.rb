@@ -563,7 +563,8 @@ module Bosh::Director
         optional = !default_update_config.nil?
         @canaries = safe_property(update_config, "canaries", :class => Integer, :optional => optional)
         @canary_watch_time = safe_property(update_config, "canary_watch_time", :class => Integer, :optional => optional)
-        @max_in_flight = safe_property(update_config, "max_in_flight", :class => Integer, :optional => optional)
+        @max_in_flight = safe_property(update_config, "max_in_flight", :class => Integer, :optional => optional,
+                                       :min => 1, :max => 32)
         @update_watch_time = safe_property(update_config, "update_watch_time", :class => Integer, :optional => optional)
         @max_errors = safe_property(update_config, "max_errors", :class => Integer, :optional => optional)
 
