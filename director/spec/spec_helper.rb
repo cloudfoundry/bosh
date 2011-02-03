@@ -18,7 +18,6 @@ require "tmpdir"
 require "zlib"
 
 logger = nil
-
 if ENV['DEBUG']
   logger = Logger.new(STDOUT)
 else
@@ -27,6 +26,7 @@ else
   log_file.sync = true
   logger = Logger.new(log_file)
 end
+logger.formatter = ThreadFormatter.new
 
 bosh_dir = Dir.mktmpdir("boshdir")
 bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
