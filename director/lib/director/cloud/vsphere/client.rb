@@ -176,21 +176,28 @@ module VSphereCloud
     end
 
     def delete_disk(datacenter, path)
-      request = DeleteDatastoreFileRequestType.new(@service_content.fileManager)
-      request.name = path
-      request.datacenter = datacenter
-      task = @service.deleteDatastoreFile_Task(request).returnval
-      wait_for_task(task)
+      tasks = []
+      [".vmdk", "-flat.vmdk"].each do |extension|
+        request = DeleteDatastoreFileRequestType.new(@service_content.fileManager)
+        request.name = "#{path}#{extension}"
+        request.datacenter = datacenter
+        tasks << @service.deleteDatastoreFile_Task(request).returnval
+      end
+      tasks.each { |task| wait_for_task(task) }
     end
 
     def move_disk(source_datacenter, source_path, destination_datacenter, destination_path)
-      request = MoveDatastoreFileRequestType.new(@service_content.fileManager)
-      request.sourceName = source_path
-      request.sourceDatacenter = source_datacenter
-      request.destinationName = destination_path
-      request.destinationDatacenter = destination_datacenter
-      task = @service.moveDatastoreFile_Task(request).returnval
-      wait_for_task(task)
+      tasks = []
+      [".vmdk", "-flat.vmdk"].each do |extension|
+        request = MoveDatastoreFileRequestType.new(@service_content.fileManager)
+        request.sourceName = "#{source_path}#{extension}"
+        request.sourceDatacenter = source_datacenter
+        request.destinationName = "#{destination_path}#{extension}"
+        request.destinationDatacenter = destination_datacenter
+        tasks << @service.moveDatastoreFile_Task(request).returnval
+      end
+
+      tasks.each { |task| wait_for_task(task) }
     end
 
     def find_by_inventory_path(path)
