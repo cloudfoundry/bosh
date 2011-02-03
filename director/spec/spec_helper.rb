@@ -22,7 +22,6 @@ if ENV['DEBUG']
 else
   path = File.expand_path("../spec.log", __FILE__)
   log_file = File.open(path, "w")
-  log_file.sync = true
   Bosh::Director::Config.logger = Logger.new(log_file)
 end
 
