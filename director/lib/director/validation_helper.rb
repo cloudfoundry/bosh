@@ -8,11 +8,13 @@ module Bosh::Director
           if options[:class] == String && result.kind_of?(Numeric)
             result = result.to_s
           else
-            raise Bosh::Director::ValidationInvalidType.new(property, options[:class], hash.pretty_inspect)
+            raise ValidationInvalidType.new(property, options[:class], hash.pretty_inspect)
           end
         end
+        raise ValidationViolatedMin.new(property, options[:min]) if options[:min] && result < options[:min]
+        raise ValidationViolatedMax.new(property, options[:max]) if options[:max] && result > options[:max]
       elsif !options[:optional]
-        raise Bosh::Director::ValidationMissingField.new(property, hash.pretty_inspect)
+        raise ValidationMissingField.new(property, hash.pretty_inspect)
       end
       result
     end
