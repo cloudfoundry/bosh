@@ -17,7 +17,14 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 
-Bosh::Director::Config.logger = Logger.new(ENV['DEBUG'] ? STDOUT : nil)
+if ENV['DEBUG']
+  Bosh::Director::Config.logger = Logger.new(STDOUT)
+else
+  path = File.expand_path("../spec.log", __FILE__)
+  log_file = File.open(path, "w")
+  log_file.sync = true
+  Bosh::Director::Config.logger = Logger.new(log_file)
+end
 
 bosh_dir = Dir.mktmpdir("boshdir")
 bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
