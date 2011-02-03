@@ -49,17 +49,23 @@ module Bosh::Agent
 
       subscription = "rpc:agent:#{@agent_id}"
 
-      @pubsub_redis.subscribe(subscription) do |on|
-        on.subscribe do |sub, msg|
-          @logger.info("Subscribed to #{subscription}")
+      begin
+        @pubsub_redis.subscribe(subscription) do |on|
+          on.subscribe do |sub, msg|
+            @logger.info("Subscribed to #{subscription}")
+          end
+          on.message do |sub, raw_msg|
+            msg = Yajl::Parser.new.parse(raw_msg)
+            handle_message(msg)
+          end
+          on.unsubscribe do |sub, msg|
+            puts "unsubscribing"
+          end
         end
-        on.message do |sub, raw_msg|
-          msg = Yajl::Parser.new.parse(raw_msg)
-          handle_message(msg)
-        end
-        on.unsubscribe do |sub, msg|
-          puts "unsubscribing"
-        end
+      rescue Errno::ENETUNREACH => e
+        @logger.info("Net unreachable - retry (#{e.inspect})")
+        sleep 0.1
+        retry
       end
 
     end
