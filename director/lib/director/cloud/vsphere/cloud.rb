@@ -335,29 +335,33 @@ module VSphereCloud
                                                                      "config.hardware.device"], :ensure_all => true)
         datastores = vm_properties["datastore"]
         raise "Can't find datastore for: #{vm}" if datastores.empty?
-        datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
+        @logger.warn("Found multiple datastores associated with a single VM: " +
+                     "#{vm.pretty_inspect}/#{datastores.pretty_inspect}") if datastores.size > 1
 
+        datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
         vm_datastore_by_name = {}
         datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
 
+        # Assume that the VM has only one datastore which is it's primary
+        primary_vm_datastore_name = vm_datastore_by_name.keys.first
+
         create_disk = false
         if disk.path
-          if disk.datacenter == datacenter_name && datastore_properties.has_key?(disk.datastore)
+          if disk.datacenter == datacenter_name && disk.datastore == primary_vm_datastore_name
             @logger.info("Disk already in the right datastore")
           else
             @logger.info("Disk needs to move")
             # need to move disk to right datastore
             source_datacenter = client.find_by_inventory_path(disk.datacenter)
             source_path = disk.path
-            destination_datastore = datastores.first.first
             datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-            destination_path = "[#{destination_datastore.name}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+            destination_path = "[#{primary_vm_datastore_name}] #{datacenter_disk_path}/#{disk.id}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
             client.move_disk(source_datacenter, source_path, datacenter, destination_path)
             @logger.info("Moved disk successfully")
 
             disk.datacenter = datacenter_name
-            disk.datastore = destination_datastore
+            disk.datastore = primary_vm_datastore_name
             disk.path = destination_path
             disk.save!
           end
@@ -365,9 +369,9 @@ module VSphereCloud
           @logger.info("Need to create disk")
           # need to create disk
           disk.datacenter = datacenter_name
-          disk.datastore = vm_datastore_by_name.first.first
+          disk.datastore = primary_vm_datastore_name
           datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}"
           disk.save!
           create_disk = true
         end
@@ -379,7 +383,8 @@ module VSphereCloud
 
         system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
 
-        attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], disk.path,
+        vmdk_path = "#{disk.path}.vmdk"
+        attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], vmdk_path,
                                                        system_disk.controllerKey, disk.size.to_i,
                                                        :create => create_disk, :independent => true)
         config.deviceChange << attached_disk_config
@@ -408,7 +413,8 @@ module VSphereCloud
 
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
 
-        virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
+        vmdk_path = "#{disk.path}.vmdk"
+        virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == vmdk_path }
         raise "Disk is not attached to this VM" if virtual_disk.nil?
 
         config = VirtualMachineConfigSpec.new
