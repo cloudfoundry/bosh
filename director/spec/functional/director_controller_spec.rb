@@ -17,7 +17,6 @@ describe Bosh::Director::Controller do
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     Bosh::Director::Config.configure(test_config)
-    Bosh::Director::Config.logger = Logger.new(ENV['DEBUG'] ? STDOUT : nil)
     redis = Bosh::Director::Config.redis
     redis.select(15)
     redis.flushdb
@@ -164,7 +163,7 @@ describe Bosh::Director::Controller do
         response_collection = body.map{ |e| [ e["name"], e["versions"].join(" ") ] }
         expected_collection = releases.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.versions.map{ |v| v.version.to_s }.join(" ") ] }
 
-        response_collection.should == expected_collection        
+        response_collection.should == expected_collection
       end
 
       it "returns empty collection if there are no releases" do
@@ -173,7 +172,7 @@ describe Bosh::Director::Controller do
 
         body = Yajl::Parser.parse(last_response.body)
         body.should == []
-      end      
+      end
     end
 
     describe "listing deployments" do

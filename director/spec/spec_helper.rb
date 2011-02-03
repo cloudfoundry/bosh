@@ -17,12 +17,15 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 
+logger = nil
+
 if ENV['DEBUG']
-  Bosh::Director::Config.logger = Logger.new(STDOUT)
+  logger = Logger.new(STDOUT)
 else
   path = File.expand_path("../spec.log", __FILE__)
   log_file = File.open(path, "w")
-  Bosh::Director::Config.logger = Logger.new(log_file)
+  log_file.sync = true
+  logger = Logger.new(log_file)
 end
 
 bosh_dir = Dir.mktmpdir("boshdir")
@@ -41,6 +44,7 @@ end
 Rspec.configure do |rspec_config|
   rspec_config.before(:each) do
     FileUtils.mkdir_p(bosh_dir)
+    Bosh::Director::Config.logger = logger
   end
 
   rspec_config.after(:each) do
