@@ -114,12 +114,13 @@ describe Bosh::Director::PackageCompiler do
       @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
 
       compiled_package = mock("compiled_package")
-      Bosh::Director::Models::CompiledPackage.should_receive(:new).and_return(compiled_package)
-      compiled_package.should_receive(:package=).with(package)
-      compiled_package.should_receive(:stemcell=).with(@stemcell)
-      compiled_package.should_receive(:sha1=).with("some sha 1")
-      compiled_package.should_receive(:blobstore_id=).with("some blobstore id")
-      compiled_package.should_receive(:dependency_key=).with("[]")
+      Bosh::Director::Models::CompiledPackage.should_receive(:new).
+          with(:package => package,
+               :stemcell => @stemcell,
+               :sha1 => "some sha 1",
+               :blobstore_id => "some blobstore id",
+               :dependency_key => "[]").
+          and_return(compiled_package)
       compiled_package.should_receive(:save!)
       compiled_package.stub!(:blobstore_id).and_return("some blobstore id")
 
@@ -197,25 +198,28 @@ describe Bosh::Director::PackageCompiler do
           and_return([])
 
       dependent_compiled_package = mock("dep-compiled-package")
-      dependent_compiled_package.should_receive(:package=).with(dependent_package)
-      dependent_compiled_package.should_receive(:stemcell=).with(@stemcell)
-      dependent_compiled_package.should_receive(:sha1=).with("compiled-dep-sha1")
-      dependent_compiled_package.should_receive(:blobstore_id=).with("compiled-dep-blb-id")
-      dependent_compiled_package.should_receive(:dependency_key=).with("[]")
       dependent_compiled_package.should_receive(:save!)
       dependent_compiled_package.stub!(:blobstore_id).and_return("compiled-dep-blb-id")
       dependent_compiled_package.stub!(:sha1).and_return("compiled-dep-sha1")
 
       compiled_package = mock("compiled-package")
-      compiled_package.should_receive(:package=).with(package)
-      compiled_package.should_receive(:stemcell=).with(@stemcell)
-      compiled_package.should_receive(:sha1=).with("compiled-sha1")
-      compiled_package.should_receive(:blobstore_id=).with("compiled-blb-id")
-      compiled_package.should_receive(:dependency_key=).with("[[\"dependency\",77]]")
       compiled_package.should_receive(:save!)
 
-      Bosh::Director::Models::CompiledPackage.should_receive(:new).and_return(dependent_compiled_package,
-                                                                              compiled_package)
+      Bosh::Director::Models::CompiledPackage.should_receive(:new).
+          with(:package => dependent_package,
+               :stemcell => @stemcell,
+               :sha1 => "compiled-dep-sha1",
+               :blobstore_id => "compiled-dep-blb-id",
+               :dependency_key => "[]").
+          and_return(dependent_compiled_package)
+
+      Bosh::Director::Models::CompiledPackage.should_receive(:new).
+          with(:package => package,
+               :stemcell => @stemcell,
+               :sha1 => "compiled-sha1",
+               :blobstore_id => "compiled-blb-id",
+               :dependency_key => "[[\"dependency\",77]]").
+          and_return(compiled_package)
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-a", "agent-b", "invalid")
