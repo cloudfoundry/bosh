@@ -62,7 +62,7 @@ module EsxCloud
           @logger.info("ESXMGR: received msg #{msg}, payload is #{msg.payload}, status is #{msg.returnStatus}")
           raise "bad message #{msg}, rID #{rID} , reqID #{@reqID}" if rID != @reqID.to_s
           if (msg.returnStatus == EsxMQ::ESXReturnStatus::SUCCESS)
-            rtn_payload = getPayloadMsg(msg.payload)
+            rtn_payload = EsxMQ::MsgPayload.getPayloadMsg(msg.payload)
             puts "Got payload............#{rtn_payload}, #{rtn_payload.value}" if rtn_payload
             rtn = true
           end
