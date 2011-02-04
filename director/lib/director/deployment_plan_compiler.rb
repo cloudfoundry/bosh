@@ -57,57 +57,67 @@ module Bosh::Director
 
     def bind_existing_deployment
       lock = Mutex.new
-      pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
-      begin
+      ThreadPool.new(:max_threads => 32).wrap do |pool|
         vms = Models::Vm.find(:deployment_id => @deployment_plan.deployment.id)
         vms.each do |vm|
           pool.process do
-            @logger.debug("Requesting current VM state for: #{vm.agent_id}")
-            instance = Models::Instance.find(:vm_id => vm.id).first
-            agent = AgentClient.new(vm.agent_id)
-            state = agent.get_state
-            @logger.debug("Received VM state: #{state.pretty_inspect}")
+            with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
+              @logger.debug("Requesting current VM state for: #{vm.agent_id}")
+              instance = Models::Instance.find(:vm_id => vm.id).first
+              agent = AgentClient.new(vm.agent_id)
+              state = agent.get_state
+              @logger.debug("Received VM state: #{state.pretty_inspect}")
 
-            verify_state(instance, state, vm)
+              verify_state(instance, state, vm)
+              @logger.debug("Verified VM state")
 
-            lock.synchronize do
-              ip_reservations = process_ip_reservations(state)
+              lock.synchronize do
+                @logger.debug("Processing IP reservations")
+                ip_reservations = process_ip_reservations(state)
+                @logger.debug("Processed IP reservations")
 
-              # does the job instance exist in the new deployment?
-              if instance
-                if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index.to_i))
-                  instance_spec.instance = instance
-                  instance_spec.current_state = state
+                # does the job instance exist in the new deployment?
+                if instance
+                  @logger.debug("Binding instance VM")
+                  if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index.to_i))
+                    @logger.debug("Found job and instance spec")
+                    instance_spec.instance = instance
+                    instance_spec.current_state = state
 
-                  # copy network reservations
-                  instance_spec.networks.each do |network_config|
-                    reservation = ip_reservations[network_config.name]
-                    network_config.use_reservation(reservation[:ip], reservation[:static?]) if reservation
+                    @logger.debug("Copying network reservations")
+                    # copy network reservations
+                    instance_spec.networks.each do |network_config|
+                      reservation = ip_reservations[network_config.name]
+                      network_config.use_reservation(reservation[:ip], reservation[:static?]) if reservation
+                    end
+
+                    @logger.debug("Copying resource pool reservation")
+                    # copy resource pool reservation
+                    instance_spec.job.resource_pool.add_allocated_vm
+                  else
+                    @logger.debug("Job/instance not found, marking for deletion")
+                    @deployment_plan.delete_instance(instance)
                   end
-
-                  # copy resource pool reservation
-                  instance_spec.job.resource_pool.add_allocated_vm
                 else
-                  @deployment_plan.delete_instance(instance)
+                  @logger.debug("Binding resource pool VM")
+                  resource_pool = @deployment_plan.resource_pool(state["resource_pool"]["name"])
+                  if resource_pool
+                    @logger.debug("Adding to resource pool")
+                    idle_vm = resource_pool.add_idle_vm
+                    idle_vm.vm = vm
+                    idle_vm.current_state = state
+                    network_reservation = ip_reservations[resource_pool.stemcell.network.name]
+                    idle_vm.ip = network_reservation[:ip] if network_reservation && !network_reservation[:static?]
+                  else
+                    @logger.debug("Resource pool doesn't exist, marking for deletion")
+                    @deployment_plan.delete_vm(vm)
+                  end
                 end
-              else
-                resource_pool = @deployment_plan.resource_pool(state["resource_pool"]["name"])
-                if resource_pool
-                  idle_vm = resource_pool.add_idle_vm
-                  idle_vm.vm = vm
-                  idle_vm.current_state = state
-                  network_reservation = ip_reservations[resource_pool.stemcell.network.name]
-                  idle_vm.ip = network_reservation[:ip] if network_reservation && !network_reservation[:static?]
-                else
-                  @deployment_plan.delete_vm(vm)
-                end
+                @logger.debug("Finished binding VM")
               end
             end
           end
         end
-        pool.wait
-      ensure
-        pool.shutdown
       end
     end
 
@@ -206,8 +216,7 @@ module Bosh::Director
     end
 
     def bind_instance_vms
-      pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
-      begin
+      ThreadPool.new(:max_threads => 32).wrap do |pool|
         @deployment_plan.jobs.each do |job|
           job.instances.each do |instance_spec|
             # create the instance model if this is a new instance
@@ -249,17 +258,13 @@ module Bosh::Director
             end
           end
         end
-        pool.wait
-      ensure
-        pool.shutdown
       end
     end
 
     def delete_unneeded_vms
       unless @deployment_plan.unneeded_vms.empty?
         # TODO: make pool size configurable?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
-        begin
+        ThreadPool.new(:max_threads => 10).wrap do |pool|
           @deployment_plan.unneeded_vms.each do |vm|
             vm_cid = vm.cid
             pool.process do
@@ -267,9 +272,6 @@ module Bosh::Director
               vm.delete
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
     end
@@ -277,8 +279,7 @@ module Bosh::Director
     def delete_unneeded_instances
       unless @deployment_plan.unneeded_instances.empty?
         # TODO: make pool size configurable?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
-        begin
+        ThreadPool.new(:max_threads => 10).wrap do |pool|
           @deployment_plan.unneeded_instances.each do |instance|
             vm = instance.vm
             disk_cid = instance.disk_cid
@@ -297,9 +298,6 @@ module Bosh::Director
               instance.delete
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
     end

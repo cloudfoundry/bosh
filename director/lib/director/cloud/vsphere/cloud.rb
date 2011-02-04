@@ -35,6 +35,8 @@ module VSphereCloud
 
   class Cloud
 
+    class TimeoutException < StandardError; end
+
     attr_accessor :client
 
     def initialize(options)
@@ -121,8 +123,7 @@ module VSphereCloud
 
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
-        pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
-        begin
+        ThreadPool.new(:max_threads => 32).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
             templates = client.get_property(datacenter.template_folder, "Folder", "childEntity", :ensure_all => true)
@@ -139,9 +140,6 @@ module VSphereCloud
               end
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
     end
@@ -239,8 +237,9 @@ module VSphereCloud
         @logger.info("Deleting vm: #{vm_cid}")
         # TODO: detach any persistent disks
         vm = get_vm_by_cid(vm_cid)
-
-        properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question"])
+        datacenter = client.find_parent(vm, "Datacenter")
+        properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question",
+                                                                  "name", "datastore"], :ensure => ["datastore"])
 
         question = properties["runtime.question"]
         if question
@@ -260,17 +259,49 @@ module VSphereCloud
 
         client.delete_vm(vm)
         @logger.info("Deleted vm: #{vm_cid}")
+
+        # Delete env.iso and VM specific files managed by the director
+        datastore = properties["datastore"].first
+        datastore_name = client.get_property(datastore, "Datastore", "name")
+        vm_name = properties["name"]
+        client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
       end
     end
 
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
-        # HACK: temporary workaround
-        sleep(10)
+        vm = get_vm_by_cid(vm_cid)
+
+        @logger.debug("Waiting for the VM to shutdown")
+        state = :initial
+        begin
+          wait_until_off(vm, 10)
+        rescue TimeoutException
+          case state
+            when :initial
+              @logger.debug("The guest did not shutdown in time, requesting it to shutdown")
+              begin
+                client.service.shutdownGuest(ShutdownGuestRequestType.new(vm))
+              rescue => e
+                @logger.debug("Ignoring possible race condition when a VM has " +
+                              "powered off by the time we ask it to shutdown: #{e.message}")
+              end
+              state = :shutdown_guest
+              retry
+            else
+              @logger.error("The guest did not shutdown in time, even after a request")
+              raise
+          end
+        end
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         vm = get_vm_by_cid(vm_cid)
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+
+        datacenter = client.find_parent(vm, "Datacenter")
+        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+
+        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
 
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
@@ -281,20 +312,6 @@ module VSphereCloud
           config.deviceChange << nic_config
         end
 
-        client.reconfig_vm(vm, config)
-
-        # HACK: temporary workaround
-        sleep(10)
-
-        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = []
-
-        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
-
-        datacenter = client.find_parent(vm, "Datacenter")
-        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
-
         dvs_index = {}
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
@@ -304,19 +321,21 @@ module VSphereCloud
         end
 
         fix_device_unit_numbers(devices, config.deviceChange)
-        @logger.info("Reconfiguring the networks")
+        @logger.debug("Reconfiguring the networks")
         @client.reconfig_vm(vm, config)
-
 
         location = get_vm_location(vm, :datacenter => datacenter_name)
         env = get_current_agent_env(location)
-        @logger.info("Reading current agent env: #{env.pretty_inspect}")
+        @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
         env["networks"] = generate_network_env(devices, networks, dvs_index)
 
-        @logger.info("Updating agent env to: #{env.pretty_inspect}")
+        @logger.debug("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(vm, location, env)
+
+        @logger.debug("Powering the VM back on")
+        client.power_on_vm(datacenter, vm)
       end
     end
 
@@ -335,29 +354,33 @@ module VSphereCloud
                                                                      "config.hardware.device"], :ensure_all => true)
         datastores = vm_properties["datastore"]
         raise "Can't find datastore for: #{vm}" if datastores.empty?
-        datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
+        @logger.warn("Found multiple datastores associated with a single VM: " +
+                     "#{vm.pretty_inspect}/#{datastores.pretty_inspect}") if datastores.size > 1
 
+        datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
         vm_datastore_by_name = {}
         datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
 
+        # Assume that the VM has only one datastore which is it's primary
+        primary_vm_datastore_name = vm_datastore_by_name.keys.first
+
         create_disk = false
         if disk.path
-          if disk.datacenter == datacenter_name && datastore_properties.has_key?(disk.datastore)
+          if disk.datacenter == datacenter_name && disk.datastore == primary_vm_datastore_name
             @logger.info("Disk already in the right datastore")
           else
             @logger.info("Disk needs to move")
             # need to move disk to right datastore
             source_datacenter = client.find_by_inventory_path(disk.datacenter)
             source_path = disk.path
-            destination_datastore = datastores.first.first
             datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-            destination_path = "[#{destination_datastore.name}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+            destination_path = "[#{primary_vm_datastore_name}] #{datacenter_disk_path}/#{disk.id}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
             client.move_disk(source_datacenter, source_path, datacenter, destination_path)
             @logger.info("Moved disk successfully")
 
             disk.datacenter = datacenter_name
-            disk.datastore = destination_datastore
+            disk.datastore = primary_vm_datastore_name
             disk.path = destination_path
             disk.save!
           end
@@ -365,9 +388,9 @@ module VSphereCloud
           @logger.info("Need to create disk")
           # need to create disk
           disk.datacenter = datacenter_name
-          disk.datastore = vm_datastore_by_name.first.first
+          disk.datastore = primary_vm_datastore_name
           datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}.vmdk"
+          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}"
           disk.save!
           create_disk = true
         end
@@ -379,7 +402,8 @@ module VSphereCloud
 
         system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
 
-        attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], disk.path,
+        vmdk_path = "#{disk.path}.vmdk"
+        attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], vmdk_path,
                                                        system_disk.controllerKey, disk.size.to_i,
                                                        :create => create_disk, :independent => true)
         config.deviceChange << attached_disk_config
@@ -408,7 +432,8 @@ module VSphereCloud
 
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
 
-        virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == disk.path }
+        vmdk_path = "#{disk.path}.vmdk"
+        virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == vmdk_path }
         raise "Disk is not attached to this VM" if virtual_disk.nil?
 
         config = VirtualMachineConfigSpec.new
@@ -865,10 +890,18 @@ module VSphereCloud
       info.entity
     end
 
-    def delete_all_vms
-      pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
+    def wait_until_off(vm, timeout)
+        started = Time.now
+        loop do
+          power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
+          break if power_state == VirtualMachinePowerState::PoweredOff
+          raise TimeoutException if Time.now - started > timeout
+          sleep(1.0)
+        end
+    end
 
-      begin
+    def delete_all_vms
+      ThreadPool.new(:max_threads => 32).wrap do |pool|
         index = 0
 
         @resources.datacenters.each_value do |datacenter|
@@ -892,10 +925,6 @@ module VSphereCloud
             end
           end
         end
-
-        pool.wait
-      ensure
-        pool.shutdown
       end
     end
 

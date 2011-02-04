@@ -42,6 +42,8 @@ module Bosh::Director
 
     ["ValidationInvalidType",   BAD_REQUEST, 40000, "Field: \"%s\" did not match the required type: \"%s\" in: %s"],
     ["ValidationMissingField",  BAD_REQUEST, 40001, "Required field: \"%s\" was not specified in: %s"],
+    ["ValidationViolatedMin",   BAD_REQUEST, 40002, "Field: \"%s\" violated min constraint: %s"],
+    ["ValidationViolatedMax",   BAD_REQUEST, 40003, "Field: \"%s\" violated max constraint: %s"],
 
     ["StemcellInvalidArchive",  BAD_REQUEST, 50000, "Invalid stemcell archive, tar exit status: %s, output: %s"],
     ["StemcellInvalidImage",    BAD_REQUEST, 50001, "Invalid stemcell image"],
