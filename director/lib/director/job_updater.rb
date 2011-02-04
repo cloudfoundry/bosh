@@ -13,8 +13,7 @@ module Bosh::Director
     def delete_unneeded_instances
       @logger.info("Deleting no longer needed instances")
       unless @job.unneeded_instances.empty?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
-        begin
+        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
           @job.unneeded_instances.each do |instance|
             vm = instance.vm
             disk_cid = instance.disk_cid
@@ -33,9 +32,6 @@ module Bosh::Director
               instance.delete
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
       @logger.info("Deleted no longer needed instances")
@@ -51,8 +47,7 @@ module Bosh::Director
 
       unless instances.empty?
 
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
-        begin
+        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
           num_canaries = [@job.update.canaries, instances.size].min
 
           @logger.info("Starting canary update")
@@ -97,10 +92,6 @@ module Bosh::Director
               end
             end
           end
-
-          pool.wait
-        ensure
-          pool.shutdown
         end
 
         @logger.info("Finished the rest of the update")

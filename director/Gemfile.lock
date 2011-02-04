@@ -3,8 +3,6 @@ GEM
   specs:
     SystemTimer (1.2.1)
     ZenTest (4.4.2)
-    actionpool (0.2.3)
-      splib (~> 1.4)
     autotest (4.4.6)
       ZenTest (>= 4.4.1)
     bcrypt-ruby (2.1.3)
@@ -60,7 +58,6 @@ GEM
       tilt (~> 1.1)
     soap4r (1.5.8)
       httpclient (>= 2.1.1)
-    splib (1.4.3)
     systemu (1.2.0)
     thin (1.2.7)
       daemons (>= 1.0.9)
@@ -77,7 +74,6 @@ PLATFORMS
 
 DEPENDENCIES
   SystemTimer
-  actionpool
   autotest
   bcrypt-ruby
   blobstore_client

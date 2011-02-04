@@ -13,7 +13,6 @@ require "thread"
 require "tmpdir"
 require "yaml"
 
-require "actionpool"
 require "bcrypt"
 require "blobstore_client"
 require "eventmachine"

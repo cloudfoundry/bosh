@@ -9,7 +9,7 @@ module Bosh::Director
     end
 
     def update
-      @pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
+      @pool = ThreadPool.new(:max_threads => 32)
 
       delete_extra_vms
       delete_outdated_vms
