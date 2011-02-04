@@ -280,7 +280,12 @@ module VSphereCloud
           case state
             when :initial
               @logger.debug("The guest did not shutdown in time, requesting it to shutdown")
-              client.service.shutdownGuest(ShutdownGuestRequestType.new(vm))
+              begin
+                client.service.shutdownGuest(ShutdownGuestRequestType.new(vm))
+              rescue => e
+                @logger.debug("Ignoring possible race condition when a VM has " +
+                              "powered off by the time we ask it to shutdown: #{e.message}")
+              end
               state = :shutdown_guest
               retry
             else
