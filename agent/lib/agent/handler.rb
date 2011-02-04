@@ -163,14 +163,6 @@ module Bosh::Agent
     end
 
     def post_prepare_network_change
-      # Wait until director provides cdrom
-      begin
-        File.read('/dev/cdrom', 0)
-      rescue Errno::E123 # ENOMEDIUM
-        sleep 0.1
-        retry
-      end
-
       if Bosh::Agent::Config.configure
         udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
         if File.exist?(udev_file)
@@ -181,12 +173,11 @@ module Bosh::Agent
         `rm /var/vmc/bosh/settings.json`
       end
 
-      @logger.info("Reboot after networking change")
-      `/sbin/shutdown -r now`
+      @logger.info("Halt after networking change")
+      `/sbin/halt`
       @logger.info("Exit after networking change")
       exit
     end
-
 
   end
 
@@ -222,15 +213,6 @@ module Bosh::Agent
 
     class PrepareNetworkChange
       def self.process(args)
-        logger = Bosh::Agent::Config.logger
-
-        if Bosh::Agent::Config.configure
-          udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
-          if File.exist?(udev_file)
-            `rm #{udev_file}`
-          end
-        end
-
         true
       end
     end
