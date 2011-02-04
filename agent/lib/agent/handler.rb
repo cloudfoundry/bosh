@@ -62,8 +62,8 @@ module Bosh::Agent
             puts "unsubscribing"
           end
         end
-      rescue Errno::ENETUNREACH => e
-        @logger.info("Net unreachable - retry (#{e.inspect})")
+      rescue Errno::ENETUNREACH, Timeout::Error => e
+        @logger.info("Unable to talk to Redis - retry (#{e.inspect})")
         sleep 0.1
         retry
       end
@@ -78,7 +78,7 @@ module Bosh::Agent
     def generate_agent_task_id
       UUIDTools::UUID.random_create.to_s
     end
-    
+
     def handle_message(msg)
       @logger.info("Message: #{msg.inspect}")
       message_id = msg['message_id']

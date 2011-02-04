@@ -1,5 +1,5 @@
 module Bosh
   module Agent
-    VERSION = '0.0.135'
+    VERSION = '0.0.139'
   end
 end
