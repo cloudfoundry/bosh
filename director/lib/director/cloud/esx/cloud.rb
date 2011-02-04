@@ -81,23 +81,35 @@ module EsxCloud
       return rtn, rtn_payload
     end
 
+
+    def send_file(full_file_name)
+      sock = TCPSocket.open('0.0.0.0', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
+      file_name = File.basename(full_file_name)
+      srcFile = open(full_file_name, "rb")
+
+      file_name = file_name.ljust(256)
+      puts "Sending over file name <#{file_name}>"
+      sock.write(file_name)
+
+      while (fileContent = srcFile.read(4096))
+        sock.write(fileContent)
+      end
+      sock.close
+    end
+    
+
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
         result = nil
         Dir.mktmpdir do |temp_dir|
-          @logger.info("Extracting stemcell to: #{temp_dir}")
-          output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
-          raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
-
-          ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf"}
-          raise "Missing OVF" if ovf_file.nil?
-          ovf_file = File.join(temp_dir, ovf_file)
+          @logger.info("Extracting stemcell to: #{temp_dir}, image is #{image}")
+          
 
           name = "sc-#{generate_unique_name}"
           @logger.info("Generated name: #{name}")
 
-
           # upload stemcell to esx controller
+          send_file(image)
 
           # send "create stemcell" command to controller
           createSC = EsxMQ::CreateStemcellMsg.new('sc-1234-abc-xxx', '/var/esxcloud/stemcells/ubuntu.ovf')
