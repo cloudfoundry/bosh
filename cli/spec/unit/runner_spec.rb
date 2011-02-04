@@ -37,7 +37,7 @@ describe Bosh::Cli::Runner do
 
   it "dispatches commands to appropriate methods (nu school)" do
     test_cmd(["version"], :dashboard, :version)
-    test_cmd(["status"], :dashboard, :status)    
+    test_cmd(["status"], :dashboard, :status)
     test_cmd(["target"], :dashboard, :show_target)
     test_cmd(["target", "test"], :dashboard, :set_target, ["test"])
     test_cmd(["deploy"], :deployment, :perform)
@@ -59,7 +59,10 @@ describe Bosh::Cli::Runner do
     test_cmd(["purge"], :dashboard, :purge_cache)
 
     test_cmd(["upload", "release", "/path"], :release, :upload, ["/path"])
-    test_cmd(["upload", "stemcell", "/path"], :stemcell, :upload, ["/path"])    
+    test_cmd(["upload", "stemcell", "/path"], :stemcell, :upload, ["/path"])
+
+    test_cmd(["generate", "package", "foo"], :package, :generate, ["foo"])
+    test_cmd(["generate", "job", "baz"], :job, :generate, ["baz"])
 
     test_cmd(["verify", "release", "/path"], :release, :verify, ["/path"])
     test_cmd(["verify", "stemcell", "/path"], :stemcell, :verify, ["/path"])
@@ -69,7 +72,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["deployments"], :deployment, :list)
 
     test_cmd(["tasks"], :task, :list_running)
-    test_cmd(["task", "500"], :task, :track, ["500"])    
+    test_cmd(["task", "500"], :task, :track, ["500"])
     test_cmd(["tasks", "running"], :task, :list_running)
     test_cmd(["tasks", "recent"], :task, :list_recent)
     test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
@@ -77,7 +80,7 @@ describe Bosh::Cli::Runner do
 
   it "dispatches commands to appropriate methods (old school)" do
     test_cmd(["version"], :dashboard, :version)
-    test_cmd(["status"], :dashboard, :status)    
+    test_cmd(["status"], :dashboard, :status)
     test_cmd(["target"], :dashboard, :show_target)
     test_cmd(["target", "test"], :dashboard, :set_target, ["test"])
     test_cmd(["deploy"], :deployment, :perform)
@@ -116,7 +119,7 @@ describe Bosh::Cli::Runner do
     runner = Bosh::Cli::Runner.new(["release", "upload"])
     runner.parse_command!
     runner.namespace.should == nil
-    runner.action.should == nil    
+    runner.action.should == nil
     runner.usage_error.should == "Not enough arguments"
   end
 

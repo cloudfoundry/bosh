@@ -7,19 +7,19 @@ module Bosh::Cli::Command
       Dir[specs_glob].each do |spec|
         create(spec)
       end
-    end 
+    end
 
     def create(name_or_path)
       if name_or_path == "--all"
         redirect(:package, :create_all)
       end
-      
+
       spec = read_spec(name_or_path)
 
       unless spec.is_a?(Hash) && spec.has_key?("name") && spec.has_key?("files")
         err("Sorry, '#{name_or_path}' doesn't look like a valid package spec")
       end
-      
+
       package_name = spec["name"]
       header("Found '#{package_name}' spec")
       print_spec(spec)
@@ -28,6 +28,45 @@ module Bosh::Cli::Command
       builder = Bosh::Cli::PackageBuilder.new(spec, work_dir, false, nil)
       builder.build
       builder
+    end
+
+    def generate(name)
+      check_if_release_dir
+
+      if !name.bosh_valid_id?
+        err "`#{name}' is not a vaild Bosh id"
+      end
+
+      package_dir = File.join("packages", name)
+
+      if File.exists?(package_dir)
+        err "Package `#{name}' already exists, please pick another name"
+      end
+
+      say "create\t#{package_dir}"
+      FileUtils.mkdir_p(package_dir)
+
+      data_dir = File.join(package_dir, "data")
+      say "create\t#{data_dir}"
+      FileUtils.mkdir_p(data_dir)
+
+      packaging_file = File.join(data_dir, "packaging")
+      say "create\t#{packaging_file}"
+      FileUtils.touch(packaging_file)
+
+      spec_file = File.join(package_dir, "spec")
+      say "create\t#{spec_file}"
+      FileUtils.touch(spec_file)
+
+      pre_packaging_file = File.join(package_dir, "pre_packaging")
+      say "create\t#{pre_packaging_file}"
+      FileUtils.touch(pre_packaging_file)
+
+      File.open(spec_file, "w") do |f|
+        f.write("---\nname: #{name}\n\ndependencies:\n\nfiles:\n")
+      end
+
+      say "\nGenerated skeleton for `#{name}' package in `#{package_dir}'"
     end
 
     private
@@ -43,7 +82,7 @@ module Bosh::Cli::Command
     def read_spec(name)
       YAML.load_file(find_spec(name))
     end
-    
+
     def find_spec(name)
       if File.directory?(name)
         spec_path = File.join(name, "spec")
@@ -64,6 +103,6 @@ module Bosh::Cli::Command
 
       end
     end
-    
+
   end
 end
