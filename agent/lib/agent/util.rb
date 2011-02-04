@@ -34,7 +34,7 @@ module Bosh::Agent
         Tempfile.open(blobstore_id, data_tmp) do |tf|
           logger.info("Retrieving blob: #{blobstore_id}")
 
-          tf.write(blobstore_client.get(blobstore_id))
+          blobstore_client.get(blobstore_id, tf)
           tf.flush
 
           FileUtils.mkdir_p(install_path)

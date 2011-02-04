@@ -17,138 +17,150 @@ module Bosh::Director
       def ready_to_compile?
         @compiled_package.nil? && dependencies_satisfied?
       end
+
+      def dependency_spec
+        spec = {}
+        @dependencies.each do |dependency|
+          spec[dependency.package.name] = {
+              "name"         => dependency.package.name,
+              "version"      => dependency.package.version,
+              "sha1"         => dependency.compiled_package.sha1,
+              "blobstore_id" => dependency.compiled_package.blobstore_id
+          }
+        end
+        spec
+      end
     end
 
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
       @logger = Config.logger
+      @tasks_mutex = Mutex.new
+      @networks_mutex = Mutex.new
     end
 
     def compile
-      compile_tasks = get_compile_tasks
-      reverse_dependencies = generate_reverse_dependencies(compile_tasks)
+      @ready_tasks = []
+      generate_compile_tasks
+      generate_reverse_dependencies
 
-      ready_tasks = []
-      tasks_mutex = Mutex.new
-
-      compile_tasks.each_value do |task|
+      @compile_tasks.each_value do |task|
         if task.ready_to_compile?
           @logger.info("Marking package ready for compilation: #{task.package.name}/#{task.stemcell.name}")
-          ready_tasks << task
+          @ready_tasks << task
         end
       end
 
-      if ready_tasks.empty?
+      if @ready_tasks.empty?
         @logger.info("All packages are already compiled")
         return
       end
 
-      network = @deployment_plan.compilation.network
-      networks = []
-      networks_mutex = Mutex.new
+      @compilation_resources = @deployment_plan.compilation.cloud_properties
+
+      @network = @deployment_plan.compilation.network
+      @networks = []
       @deployment_plan.compilation.workers.times do
-        networks << {network.name => network.network_settings(network.allocate_dynamic_ip)}
+        @networks << {@network.name => @network.network_settings(@network.allocate_dynamic_ip)}
       end
 
       ThreadPool.new(:max_threads => @deployment_plan.compilation.workers).wrap do |pool|
         loop do
           loop do
-            task = ready_tasks.pop
+            task = @ready_tasks.pop
             break if task.nil?
 
             package = task.package
-            package_sha1 = package.sha1
-            package_blobstore_id = package.blobstore_id
-            package_name = package.name
-            package_version = package.version
-
             stemcell = task.stemcell
-            stemcell_cid = stemcell.cid
-            stemcell_name = stemcell.name
-            stemcell_version = stemcell.version
-            compilation_resources = @deployment_plan.compilation.cloud_properties
 
-            dependencies = {}
-            task.dependencies.each do |dependency|
-              dependencies[dependency.package.name] = {
-                "name" => dependency.package.name,
-                "version" => dependency.package.version,
-                "sha1" => dependency.compiled_package.sha1,
-                "blobstore_id" => dependency.compiled_package.blobstore_id
-              }
-            end
-
-            @logger.info("Enqueuing package ready for compilation: #{package_name}/#{stemcell_name}")
+            @logger.info("Enqueuing package ready for compilation: #{package.name}/#{stemcell.name}")
 
             pool.process do
-              with_thread_name("compile_package(#{package_name}/#{package_version}, " +
-                                   "#{stemcell_name}/#{stemcell_version})") do
+              with_thread_name("compile_package(#{package.name}/#{package.version}, " +
+                                   "#{stemcell.name}/#{stemcell.version})") do
 
-                @logger.info("Compiling package: #{package_name}/#{package_version} on " +
-                                 "stemcell: #{stemcell_name}/#{stemcell_version}")
-                network_settings = nil
-                networks_mutex.synchronize do
-                  network_settings = networks.shift
-                end
+                compile_package(task)
+                enqueue_unblocked_tasks(task)
 
-                agent_id = generate_agent_id
-                @logger.info("Creating compilation VM with agent id: #{agent_id}")
-                vm_cid = @cloud.create_vm(agent_id, stemcell_cid, compilation_resources, network_settings)
-                @logger.info("Configuring compilation VM: #{vm_cid}")
-                begin
-                  agent = AgentClient.new(agent_id)
-                  agent.wait_until_ready
-
-                  configure_vm(agent, network_settings)
-
-                  @logger.info("Compiling package on compilation VM")
-                  agent_task = agent.compile_package(package_blobstore_id, package_sha1, package_name, package_version,
-                                                     dependencies)
-                  while agent_task["state"] == "running"
-                    sleep(1.0)
-                    agent_task = agent.get_task(agent_task["agent_task_id"])
-                  end
-                ensure
-                  @logger.info("Deleting compilation VM: #{vm_cid}")
-                  @cloud.delete_vm(vm_cid)
-                end
-
-                networks_mutex.synchronize do
-                  networks << network_settings
-                end
-
-                task_result = agent_task["result"]
-                task.compiled_package = create_compiled_package(
-                    package, stemcell, task_result["blobstore_id"], task_result["sha1"], task.dependency_key)
-
-                @logger.info("Looking for packages waiting for this compilation")
-                tasks_mutex.synchronize do
-                  dependencies = reverse_dependencies[task.key]
-                  if dependencies
-                    dependencies.each do |blocked_task|
-                      if blocked_task.ready_to_compile?
-                        @logger.info("Marking unblocked package for compilation: " +
-                                         "#{task.package.name}/#{task.stemcell.name}")
-                        ready_tasks << blocked_task
-                      end
-                    end
-                  end
-                end
-                @logger.info("Finished compiling package: #{package_name}/#{package_version} on " +
-                                 "stemcell: #{stemcell_name}/#{stemcell_version}")
+                @logger.info("Finished compiling package: #{package.name}/#{package.version} on " +
+                                 "stemcell: #{stemcell.name}/#{stemcell.version}")
               end
             end
           end
 
-          break if !pool.working? && ready_tasks.empty?
+          break if !pool.working? && @ready_tasks.empty?
           sleep(0.1)
         end
       end
 
-      networks.each do |network_settings|
-        ip = network_settings[network.name]["ip"]
-        network.release_dynamic_ip(ip)
+      @networks.each do |network_settings|
+        ip = network_settings[@network.name]["ip"]
+        @network.release_dynamic_ip(ip)
+      end
+    end
+
+    def compile_package(task)
+      package  = task.package
+      stemcell = task.stemcell
+
+      @logger.info("Compiling package: #{package.name}/#{package.version} on " +
+                       "stemcell: #{stemcell.name}/#{stemcell.version}")
+      network_settings = nil
+      @networks_mutex.synchronize do
+        network_settings = @networks.shift
+      end
+
+      agent_id = generate_agent_id
+      @logger.info("Creating compilation VM with agent id: #{agent_id}")
+      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @compilation_resources, network_settings)
+      @logger.info("Configuring compilation VM: #{vm_cid}")
+      begin
+        agent = AgentClient.new(agent_id)
+        agent.wait_until_ready
+
+        configure_vm(agent, network_settings)
+
+        @logger.info("Compiling package on compilation VM")
+        agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name, package.version,
+                                           task.dependency_spec)
+        while agent_task["state"] == "running"
+          sleep(1.0)
+          agent_task = agent.get_task(agent_task["agent_task_id"])
+        end
+      ensure
+        @logger.info("Deleting compilation VM: #{vm_cid}")
+        @cloud.delete_vm(vm_cid)
+      end
+
+      @networks_mutex.synchronize do
+        @networks << network_settings
+      end
+
+      task_result = agent_task["result"]
+
+      compiled_package = Models::CompiledPackage.new(:package => package,
+                                                     :stemcell => stemcell,
+                                                     :sha1 => task_result["sha1"],
+                                                     :blobstore_id => task_result["blobstore_id"],
+                                                     :dependency_key => task.dependency_key)
+      compiled_package.save!
+      task.compiled_package = compiled_package
+    end
+
+    def enqueue_unblocked_tasks(task)
+      @logger.info("Looking for packages waiting for this compilation")
+      @tasks_mutex.synchronize do
+        dependencies = @reverse_dependencies[task.key]
+        if dependencies
+          dependencies.each do |blocked_task|
+            if blocked_task.ready_to_compile?
+              @logger.info("Marking unblocked package for compilation: " +
+                               "#{task.package.name}/#{task.stemcell.name}")
+              @ready_tasks << blocked_task
+            end
+          end
+        end
       end
     end
 
@@ -163,8 +175,21 @@ module Bosh::Director
       dependency_key
     end
 
-    def get_compile_tasks
-      compile_tasks = {}
+    def generate_dependency_spec(task)
+      dependencies = {}
+      task.dependencies.each do |dependency|
+        dependencies[dependency.package.name] = {
+            "name"         => dependency.package.name,
+            "version"      => dependency.package.version,
+            "sha1"         => dependency.compiled_package.sha1,
+            "blobstore_id" => dependency.compiled_package.blobstore_id
+        }
+      end
+      dependencies
+    end
+
+    def generate_compile_tasks
+      @compile_tasks = {}
       release_version = @deployment_plan.release.release_version
 
       @logger.info("Building package index for this release")
@@ -192,12 +217,12 @@ module Bosh::Director
             @logger.info("Package \"#{package.name}\" needs to be compiled on \"#{stemcell.name}\"")
           end
 
-          compile_task = compile_tasks[[package.name, stemcell.id]]
+          compile_task = @compile_tasks[[package.name, stemcell.id]]
           if compile_task.nil?
             compile_task = CompileTask.new
             compile_task.key = [package.name, stemcell.id]
             compile_task.stemcell = stemcell
-            compile_tasks[compile_task.key] = compile_task
+            @compile_tasks[compile_task.key] = compile_task
           end
 
           compile_task.package = package
@@ -208,12 +233,12 @@ module Bosh::Director
           @logger.info("Processing dependencies")
           dependencies.each do |dependency|
             @logger.info("Processing dependency: #{dependency}")
-            dependent_task = compile_tasks[[dependency, stemcell.id]]
+            dependent_task = @compile_tasks[[dependency, stemcell.id]]
             if dependent_task.nil?
               dependent_task = CompileTask.new
               dependent_task.key = [dependency, stemcell.id]
               dependent_task.stemcell = stemcell
-              compile_tasks[dependent_task.key] = dependent_task
+              @compile_tasks[dependent_task.key] = dependent_task
             end
 
             compile_task.dependencies << dependent_task
@@ -221,14 +246,12 @@ module Bosh::Director
         end
       end
 
-      bind_compile_tasks(compile_tasks, packages_by_name)
-
-      compile_tasks
+      bind_compile_tasks(packages_by_name)
     end
 
-    def bind_compile_tasks(compile_tasks, packages_by_name)
+    def bind_compile_tasks(packages_by_name)
       @logger.info("Filling in compile tasks for dependencies")
-      compile_tasks.each do |key, task|
+      @compile_tasks.each do |key, task|
         package_name, stemcell_id = key
         if task.package.nil?
           @logger.info("Filling in dependencies for package: #{package_name}")
@@ -243,30 +266,18 @@ module Bosh::Director
           task.compiled_package = compiled_package
           task.dependencies     = []
 
-          dependencies.each { |dependency| task.dependencies << compile_tasks[[dependency, stemcell_id]] }
+          dependencies.each { |dependency| task.dependencies << @compile_tasks[[dependency, stemcell_id]] }
         end
       end
     end
 
-    def generate_reverse_dependencies(compile_tasks)
-      reverse_dependencies = {}
-      compile_tasks.each_value do |task|
+    def generate_reverse_dependencies
+      @reverse_dependencies = {}
+      @compile_tasks.each_value do |task|
         task.dependencies.each do |dependent_task|
-          (reverse_dependencies[dependent_task.key] ||= []) << task
+          (@reverse_dependencies[dependent_task.key] ||= []) << task
         end
       end
-      reverse_dependencies
-    end
-
-    def create_compiled_package(package, stemcell, blobstore_id, sha1, dependency_key)
-      compiled_package                = Models::CompiledPackage.new
-      compiled_package.package        = package
-      compiled_package.stemcell       = stemcell
-      compiled_package.sha1           = sha1
-      compiled_package.blobstore_id   = blobstore_id
-      compiled_package.dependency_key = dependency_key
-      compiled_package.save!
-      compiled_package
     end
 
     def configure_vm(agent, network_settings)

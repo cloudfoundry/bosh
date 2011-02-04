@@ -66,7 +66,7 @@ module Bosh::Agent
         FileUtils.rm @source_file if File.exist?(@source_file)
 
         File.open(@source_file, 'w') do |f|
-          f.write(@blobstore_client.get(@blobstore_id))
+          @blobstore_client.get(@blobstore_id, f)
         end
       end
 
