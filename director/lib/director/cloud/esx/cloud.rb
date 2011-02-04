@@ -82,14 +82,13 @@ module EsxCloud
     end
 
 
-    def send_file(full_file_name)
-      sock = TCPSocket.open('0.0.0.0', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
-      file_name = File.basename(full_file_name)
+    def send_file(name, full_file_name)
+      sock = TCPSocket.open('10.20.142.82', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
       srcFile = open(full_file_name, "rb")
 
-      file_name = file_name.ljust(256)
-      puts "Sending over file name <#{file_name}>"
-      sock.write(file_name)
+      name = name.ljust(256)
+      puts "Sending over file name <#{name}>"
+      sock.write(name)
 
       while (fileContent = srcFile.read(4096))
         sock.write(fileContent)
@@ -109,7 +108,7 @@ module EsxCloud
           @logger.info("Generated name: #{name}")
 
           # upload stemcell to esx controller
-          send_file(image)
+          send_file(name, image)
 
           # send "create stemcell" command to controller
           createSC = EsxMQ::CreateStemcellMsg.new(name, File.basename(image))
