@@ -93,7 +93,12 @@ module EsxCloud
       while (fileContent = srcFile.read(4096))
         sock.write(fileContent)
       end
+      sock.flush
       sock.close
+
+      # XXX, Wait for server to receive the last bits, The flush above does not
+      #      seem to be working well.
+      sleep(5)
     end
     
 
