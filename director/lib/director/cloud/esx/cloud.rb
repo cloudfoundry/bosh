@@ -111,7 +111,7 @@ module EsxCloud
           send_file(name, image)
 
           # send "create stemcell" command to controller
-          createSC = EsxMQ::CreateStemcellMsg.new(name, File.basename(image))
+          createSC = EsxMQ::CreateStemcellMsg.new(name, name)
           if (send_request(createSC))
             # on success set result to name
             result = name
