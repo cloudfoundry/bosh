@@ -2,15 +2,22 @@ GEM
   remote: http://rubygems.org/
   specs:
     SystemTimer (1.2)
-    blobstore_client (0.0.1)
+    aws-s3 (0.6.2)
+      builder
+      mime-types
+      xml-simple
+    blobstore_client (0.2.0)
+      aws-s3
       httpclient
+      uuidtools
     builder (2.1.2)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
     columnize (0.3.1)
     diff-lcs (1.1.2)
-    httpclient (2.1.5.2)
+    httpclient (2.1.6.1)
     linecache (0.43)
+    mime-types (1.16)
     netaddr (1.5.0)
     rake (0.8.7)
     rcov (0.9.9)
@@ -32,6 +39,7 @@ GEM
     ruby-debug-base (0.10.3)
       linecache (>= 0.3)
     uuidtools (2.1.1)
+    xml-simple (1.0.12)
     yajl-ruby (0.7.8)
 
 PLATFORMS
@@ -39,7 +47,7 @@ PLATFORMS
 
 DEPENDENCIES
   SystemTimer
-  blobstore_client
+  blobstore_client (~> 0.2)
   ci_reporter
   netaddr
   rake

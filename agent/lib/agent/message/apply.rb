@@ -27,9 +27,6 @@ module Bosh::Agent
         end
 
         @state_file = File.join(@base_dir, '/bosh/state.yml')
-
-        bsc_options = Bosh::Agent::Config.blobstore_options
-        @blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
       end
 
       def apply

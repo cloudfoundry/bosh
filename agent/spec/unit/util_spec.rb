@@ -15,9 +15,9 @@ describe Bosh::Agent::Util do
   it "should unpack a blob" do
     response = mock("response")
     response.stub!(:status).and_return(200)
-    response.stub!(:content).and_return(dummy_package_data)
 
-    @httpclient.should_receive(:get).with("/resources/some_blobstore_id", {}, {}).and_return(response)
+    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"

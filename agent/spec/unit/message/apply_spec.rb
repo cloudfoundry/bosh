@@ -26,7 +26,6 @@ describe Bosh::Agent::Message::Apply do
   it 'should install packages' do
     response = mock("response")
     response.stub!(:status).and_return(200)
-    response.stub!(:content).and_return(dummy_package_data)
 
     state = Bosh::Agent::Message::State.new(nil)
 
@@ -40,7 +39,8 @@ describe Bosh::Agent::Message::Apply do
         {"bubba" => { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id" } 
       },
     }
-    @httpclient.should_receive(:get).with("/resources/some_blobstore_id", {}, {}).and_return(response)
+    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
     handler.stub!(:apply_job)
@@ -54,7 +54,6 @@ describe Bosh::Agent::Message::Apply do
   it 'should install a job' do
     response = mock("response")
     response.stub!(:status).and_return(200)
-    response.stub!(:content).and_return(dummy_job_data)
 
     state = Bosh::Agent::Message::State.new(nil)
 
@@ -65,7 +64,8 @@ describe Bosh::Agent::Message::Apply do
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }
-    @httpclient.should_receive(:get).with("/resources/some_blobstore_id", {}, {}).and_return(response)
+    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_job_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
     handler.stub!(:apply_packages)

@@ -27,12 +27,7 @@ describe Bosh::Agent::Message::CompilePackage do
 
   # TODO: this is essentially re-testing the blobstore client, but I didn't know the API well enough
   it 'should unpack a package' do
-    response = mock("response")
-    response.stub!(:status).and_return(200)
-    response.stub!(:content).and_return(dummy_package_data)
-    @httpclient.should_receive(:get).with("/resources/some_blobstore_id", {}, {}).and_return(response)
-
-    FileUtils.rm_rf @handler.compile_base
+    dummy_compile_data
 
     package_file = File.join(@handler.compile_base, 'tmp', @handler.blobstore_id)
     File.exist?(package_file).should be_false
@@ -47,8 +42,7 @@ describe Bosh::Agent::Message::CompilePackage do
   end
 
   it 'should compile a package' do
-    FileUtils.rm_rf @handler.compile_base
-    @handler.blobstore_client.stub(:get).with(@handler.blobstore_id).and_return(dummy_package_data)
+    dummy_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
@@ -59,8 +53,7 @@ describe Bosh::Agent::Message::CompilePackage do
   end
 
   it 'should fail packaing script returns a non-zero exit code' do
-    FileUtils.rm_rf @handler.compile_base
-    @handler.blobstore_client.stub(:get).with(@handler.blobstore_id).and_return(failing_package_data)
+    dummy_failing_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
@@ -71,8 +64,7 @@ describe Bosh::Agent::Message::CompilePackage do
   end
 
   it 'should pack a compiled package' do
-    FileUtils.rm_rf @handler.compile_base
-    @handler.blobstore_client.stub(:get).with(@handler.blobstore_id).and_return(dummy_package_data)
+    dummy_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
@@ -81,9 +73,7 @@ describe Bosh::Agent::Message::CompilePackage do
   end
 
   it 'should upload compiled package' do
-    FileUtils.rm_rf @handler.compile_base
-
-    @handler.blobstore_client.stub(:get).with(@handler.blobstore_id).and_return(dummy_package_data)
+    dummy_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
@@ -100,6 +90,22 @@ describe Bosh::Agent::Message::CompilePackage do
       result.delete('compile_log')
       result.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id}
     end
+  end
+
+  def dummy_compile_data
+    dummy_compile_setup(dummy_package_data)
+  end
+
+  def dummy_failing_compile_data
+    dummy_compile_setup(failing_package_data)
+  end
+
+  def dummy_compile_setup(data)
+    FileUtils.rm_rf @handler.compile_base
+    response = mock("response")
+    response.stub!(:status).and_return(200)
+    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    @httpclient.should_receive(:get).with(*get_args).and_yield(data).and_return(response)
   end
 
 end
