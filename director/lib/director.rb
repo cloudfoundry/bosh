@@ -28,6 +28,7 @@ require "director/thread_formatter"
 require "director/deep_copy"
 require "director/ext"
 require "director/http_constants"
+require "director/task_helper"
 require "director/validation_helper"
 
 require "director/client"
