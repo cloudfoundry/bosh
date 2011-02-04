@@ -132,6 +132,9 @@ Currently available bosh commands are:
     releases                                 Show the list of uploaded releases
     delete release <name> [--force]          Delete release <name> (if --force is set all errors while deleting parts of the release are ignored)
 
+    generate package <name>                  Generate package template
+    generate job <name>                      Generate job template
+
   Stemcells
     verify stemcell /path/to/stemcell.tgz    Verify the stemcell
     upload stemcell /path/to/stemcell.tgz    Upload the stemcell
@@ -219,6 +222,18 @@ USAGE
           when "package"
             usage("bosh create package <name>|<path>")
             set_cmd(:package, :create, 1)
+          end
+
+        when "generate", "gen"
+          verb_usage("generate")
+          what = @args.shift
+          case what
+          when "package"
+            usage("bosh generate package <name>")
+            set_cmd(:package, :generate, 1)
+          when "job"
+            usage("bosh generate job <name>")
+            set_cmd(:job, :generate, 1)
           end
 
         when "upload"
@@ -311,10 +326,11 @@ USAGE
 
       def verb_usage(verb)
         options = {
-          "create" => "user [<name>] [<password>]\npackage <path>\nrelease",
-          "upload" => "release <path>\nstemcell <path>",
-          "verify" => "release <path>\nstemcell <path>",
-          "delete" => "deployment <name>\nstemcell <name> <version>\nrelease <name> [--force]"
+          "create"   => "user [<name>] [<password>]\npackage <path>\nrelease",
+          "upload"   => "release <path>\nstemcell <path>",
+          "verify"   => "release <path>\nstemcell <path>",
+          "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [--force]",
+          "generate" => "package <name>\njob <name>"
         }
 
         @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])
