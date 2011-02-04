@@ -1,6 +1,7 @@
 module Bosh::Director::Models
   class Task < Ohm::Model
     attribute :state
+    attribute :description
     attribute :timestamp
     attribute :result
     attribute :output
