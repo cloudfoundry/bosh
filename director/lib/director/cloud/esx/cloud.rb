@@ -50,44 +50,38 @@ module EsxCloud
     end
 
     def send_request(payload)
-      @logger.info("ESXMGR: Inside send req #{payload}")
       rtn = false
-      rtn_payload =''
+      rtn_payload = nil
+
+      # XXX 
       uri = "nats://esxmgr:esxmgr@10.20.142.82:11009"
+
       NATS.start(:uri => uri) {
+        # XXX
         b = EsxMQ::Backend.new(@server, 'mpatil-lx.eng.vmware.com', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
         @reqID = @reqID + 1
-        @logger.info("ESXMGR: Here before subscribe")
         b.subscribe { |rID, msg|
-          @logger.info("ESXMGR: received msg #{msg}, payload is #{msg.payload}, status is #{msg.returnStatus}")
           raise "bad message #{msg}, rID #{rID} , reqID #{@reqID}" if rID != @reqID.to_s
           if (msg.returnStatus == EsxMQ::ESXReturnStatus::SUCCESS)
             rtn_payload = EsxMQ::MsgPayload.getPayloadMsg(msg.payload)
-            puts "Got payload............#{rtn_payload}, #{rtn_payload.value}" if rtn_payload
             rtn = true
           end
           NATS.stop
         }
         req = EsxMQ::RequestMsg.new(@reqID)
         req.payload = payload
-        @logger.info("ESXMGR: sending req #{req}")
         b.publish(req)
       }
-      if rtn
-        puts "successfully sent message #{payload}, got back #{rtn_payload}"
-      else
-        puts "request failed #{payload}"
-      end
       return rtn, rtn_payload
     end
 
 
     def send_file(name, full_file_name)
+      # XXX
       sock = TCPSocket.open('10.20.142.82', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
       srcFile = open(full_file_name, "rb")
 
       name = name.ljust(256)
-      puts "Sending over file name <#{name}>"
       sock.write(name)
 
       while (fileContent = srcFile.read(4096))
@@ -117,10 +111,8 @@ module EsxCloud
 
           # send "create stemcell" command to controller
           createSC = EsxMQ::CreateStemcellMsg.new(name, name)
-          if (send_request(createSC))
-            # on success set result to name
-            result = name
-          end
+          rtn, rtn_payload = send_request(createSC)
+          result = name if rtn
         end
         result
       end
@@ -141,10 +133,7 @@ module EsxCloud
         disk = resource_pool["disk"]
         cpu = resource_pool["cpu"]
 
-        # TODO find least loaded host (could be done transparently by the ESX controller)
-
         # TODO do we need to worry about disk locality
-
         name = "vm-#{generate_unique_name}"
         @logger.info("Creating vm: #{name}")
 
@@ -159,6 +148,7 @@ module EsxCloud
           @vmMacID = @vmMacID + 1
           devices << net
         end
+
         createVM.stemcell = stemcell
         # TODO fix these
         system_disk = 0
@@ -172,9 +162,8 @@ module EsxCloud
                    }
         createVM.guestInfo = generate_agent_env(name, name, agent_id, network_env, disk_env)
 
-        if send_request(createVM)
-          result = name
-        end
+        rtn, dummy = send_request(createVM)
+        result = name if rtn
         result
       end
     end
