@@ -35,6 +35,8 @@ module VSphereCloud
 
   class Cloud
 
+    class TimeoutException < StandardError; end
+
     attr_accessor :client
 
     def initialize(options)
@@ -272,12 +274,33 @@ module VSphereCloud
 
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
-        # HACK: temporary workaround
-        sleep(10)
+        vm = get_vm_by_cid(vm_cid)
+
+        @logger.debug("Waiting for the VM to shutdown")
+        state = :initial
+        begin
+          wait_until_off(vm, 10)
+        rescue TimeoutException
+          case state
+            when :initial
+              @logger.debug("The guest did not shutdown in time, requesting it to shutdown")
+              client.service.shutdownGuest(ShutdownGuestRequestType.new(vm))
+              state = :shutdown_guest
+              retry
+            else
+              @logger.error("The guest did not shutdown in time, even after a request")
+              raise
+          end
+        end
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         vm = get_vm_by_cid(vm_cid)
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+
+        datacenter = client.find_parent(vm, "Datacenter")
+        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+
+        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
 
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
@@ -288,20 +311,6 @@ module VSphereCloud
           config.deviceChange << nic_config
         end
 
-        client.reconfig_vm(vm, config)
-
-        # HACK: temporary workaround
-        sleep(10)
-
-        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = []
-
-        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
-
-        datacenter = client.find_parent(vm, "Datacenter")
-        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
-
         dvs_index = {}
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
@@ -311,19 +320,21 @@ module VSphereCloud
         end
 
         fix_device_unit_numbers(devices, config.deviceChange)
-        @logger.info("Reconfiguring the networks")
+        @logger.debug("Reconfiguring the networks")
         @client.reconfig_vm(vm, config)
-
 
         location = get_vm_location(vm, :datacenter => datacenter_name)
         env = get_current_agent_env(location)
-        @logger.info("Reading current agent env: #{env.pretty_inspect}")
+        @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
         devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
         env["networks"] = generate_network_env(devices, networks, dvs_index)
 
-        @logger.info("Updating agent env to: #{env.pretty_inspect}")
+        @logger.debug("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(vm, location, env)
+
+        @logger.debug("Powering the VM back on")
+        client.power_on_vm(datacenter, vm)
       end
     end
 
@@ -876,6 +887,16 @@ module VSphereCloud
       end
       lease_updater.finish
       info.entity
+    end
+
+    def wait_until_off(vm, timeout)
+        started = Time.now
+        loop do
+          power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
+          break if power_state == VirtualMachinePowerState::PoweredOff
+          raise TimeoutException if Time.now - started > timeout
+          sleep(1.0)
+        end
     end
 
     def delete_all_vms
