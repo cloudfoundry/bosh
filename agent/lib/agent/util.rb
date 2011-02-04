@@ -92,12 +92,14 @@ module Bosh::Agent
         settings_json = File.read(File.join(settings_dir, 'env'))
 
         `umount #{settings_dir} 2>&1`
-        `eject /dev/cdrom`
 
         settings = Yajl::Parser.new.parse(settings_json)
 
         cache = File.join(base_dir, 'bosh', 'settings.json')
         File.open(cache, 'w') { |f| f.write(settings_json) }
+
+        # Only eject cdrom after we have written the settings cache
+        `eject /dev/cdrom`
 
         settings
       end

@@ -6,6 +6,7 @@ describe Bosh::Director::JobUpdater do
     @job_spec = mock("job_spec")
     @update_spec = mock("update_spec")
     @job_spec.stub!(:update).and_return(@update_spec)
+    @job_spec.stub!(:name).and_return("job_name")
     @update_spec.stub!(:max_in_flight).and_return(5)
     @update_spec.stub!(:canaries).and_return(1)
     Bosh::Director::Config.stub!(:cloud).and_return(nil)
@@ -13,7 +14,9 @@ describe Bosh::Director::JobUpdater do
 
   it "should do nothing when the job is up to date" do
     instance_1 = mock("instance-1")
+    instance_1.stub!(:index).and_return(1)
     instance_2 = mock("instance-1")
+    instance_2.stub!(:index).and_return(2)
 
     instances = [instance_1, instance_2]
 
@@ -28,7 +31,9 @@ describe Bosh::Director::JobUpdater do
 
   it "should update the job with canaries" do
     instance_1 = mock("instance-1")
-    instance_2 = mock("instance-2")
+    instance_1.stub!(:index).and_return(1)
+    instance_2 = mock("instance-1")
+    instance_2.stub!(:index).and_return(2)
     instances = [instance_1, instance_2]
 
     instance_updater_1 = mock("instance_updater_1")
@@ -61,7 +66,9 @@ describe Bosh::Director::JobUpdater do
 
   it "should rollback the job if the canaries failed" do
     instance_1 = mock("instance-1")
-    instance_2 = mock("instance-2")
+    instance_1.stub!(:index).and_return(1)
+    instance_2 = mock("instance-1")
+    instance_2.stub!(:index).and_return(2)
     instances = [instance_1, instance_2]
 
     instance_updater_1 = mock("instance_updater_1")
@@ -95,7 +102,9 @@ describe Bosh::Director::JobUpdater do
 
   it "should rollback the job if it exceeded max number of errors" do
     instance_1 = mock("instance-1")
-    instance_2 = mock("instance-2")
+    instance_1.stub!(:index).and_return(1)
+    instance_2 = mock("instance-1")
+    instance_2.stub!(:index).and_return(2)
     instances = [instance_1, instance_2]
 
     instance_updater_1 = mock("instance_updater_1")

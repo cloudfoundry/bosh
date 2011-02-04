@@ -31,8 +31,15 @@ module Bosh::Director
             compiled_packages.each do |compiled_package|
               next if compiled_package.nil?
               stemcell = compiled_package.stemcell
-              @logger.info("Deleting compiled package: #{package.name}/#{package.version} for " +
-                           "#{stemcell.name}/#{stemcell.version}")
+
+              if stemcell
+                @logger.info("Deleting compiled package: #{package.name}/#{package.version} for " +
+                             "#{stemcell.name}/#{stemcell.version}")
+              else
+                # TODO: should not happen any more since we delete compiled packages along with the stemcells
+                @logger.info("Deleting compiled package: #{package.name}/#{package.version} for a deleted stemcell")
+              end
+
               delete_blobstore_id(compiled_package.blobstore_id) { compiled_package.delete }
             end
 

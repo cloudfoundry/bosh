@@ -13,8 +13,7 @@ module Bosh::Director
     def delete_unneeded_instances
       @logger.info("Deleting no longer needed instances")
       unless @job.unneeded_instances.empty?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
-        begin
+        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
           @job.unneeded_instances.each do |instance|
             vm = instance.vm
             disk_cid = instance.disk_cid
@@ -33,9 +32,6 @@ module Bosh::Director
               instance.delete
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
       @logger.info("Deleted no longer needed instances")
@@ -50,8 +46,8 @@ module Bosh::Director
       end
 
       unless instances.empty?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => @job.update.max_in_flight)
-        begin
+
+        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
           num_canaries = [@job.update.canaries, instances.size].min
 
           @logger.info("Starting canary update")
@@ -59,12 +55,14 @@ module Bosh::Director
           num_canaries.times do
             instance = instances.shift
             pool.process do
-              unless @job.should_rollback?
-                begin
-                  InstanceUpdater.new(instance).update(:canary => true)
-                rescue Exception => e
-                  @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
-                  @job.record_update_error(e, :canary => true)
+              with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
+                unless @job.should_rollback?
+                  begin
+                    InstanceUpdater.new(instance).update(:canary => true)
+                  rescue Exception => e
+                    @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
+                    @job.record_update_error(e, :canary => true)
+                  end
                 end
               end
             end
@@ -82,20 +80,18 @@ module Bosh::Director
           @logger.info("Continuing the rest of the update")
           instances.each do |instance|
             pool.process do
-              unless @job.should_rollback?
-                begin
-                  InstanceUpdater.new(instance).update
-                rescue Exception => e
-                  @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
-                  @job.record_update_error(e)
+              with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
+                unless @job.should_rollback?
+                  begin
+                    InstanceUpdater.new(instance).update
+                  rescue Exception => e
+                    @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
+                    @job.record_update_error(e)
+                  end
                 end
               end
             end
           end
-
-          pool.wait
-        ensure
-          pool.shutdown
         end
 
         @logger.info("Finished the rest of the update")
