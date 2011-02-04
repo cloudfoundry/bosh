@@ -684,8 +684,8 @@ module Bosh::Director
     end
 
     def delete_instance(instance)
-      if @jobs.has_key?(instance.job)
-        @jobs[instance.job].unneeded_instances << instance
+      if @jobs_name_index.has_key?(instance.job)
+        @jobs_name_index[instance.job].unneeded_instances << instance
       else
         @unneeded_instances << instance
       end
