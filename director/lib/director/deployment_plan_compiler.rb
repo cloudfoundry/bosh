@@ -57,8 +57,7 @@ module Bosh::Director
 
     def bind_existing_deployment
       lock = Mutex.new
-      pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
-      begin
+      ThreadPool.new(:max_threads => 32).wrap do |pool|
         vms = Models::Vm.find(:deployment_id => @deployment_plan.deployment.id)
         vms.each do |vm|
           pool.process do
@@ -119,9 +118,6 @@ module Bosh::Director
             end
           end
         end
-        pool.wait
-      ensure
-        pool.shutdown
       end
     end
 
@@ -220,8 +216,7 @@ module Bosh::Director
     end
 
     def bind_instance_vms
-      pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
-      begin
+      ThreadPool.new(:max_threads => 32).wrap do |pool|
         @deployment_plan.jobs.each do |job|
           job.instances.each do |instance_spec|
             # create the instance model if this is a new instance
@@ -263,17 +258,13 @@ module Bosh::Director
             end
           end
         end
-        pool.wait
-      ensure
-        pool.shutdown
       end
     end
 
     def delete_unneeded_vms
       unless @deployment_plan.unneeded_vms.empty?
         # TODO: make pool size configurable?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
-        begin
+        ThreadPool.new(:max_threads => 10).wrap do |pool|
           @deployment_plan.unneeded_vms.each do |vm|
             vm_cid = vm.cid
             pool.process do
@@ -281,9 +272,6 @@ module Bosh::Director
               vm.delete
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
     end
@@ -291,8 +279,7 @@ module Bosh::Director
     def delete_unneeded_instances
       unless @deployment_plan.unneeded_instances.empty?
         # TODO: make pool size configurable?
-        pool = ThreadPool.new(:min_threads => 1, :max_threads => 10)
-        begin
+        ThreadPool.new(:max_threads => 10).wrap do |pool|
           @deployment_plan.unneeded_instances.each do |instance|
             vm = instance.vm
             disk_cid = instance.disk_cid
@@ -311,9 +298,6 @@ module Bosh::Director
               instance.delete
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
     end

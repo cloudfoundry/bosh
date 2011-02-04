@@ -123,8 +123,7 @@ module VSphereCloud
 
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
-        pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
-        begin
+        ThreadPool.new(:max_threads => 32).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
             templates = client.get_property(datacenter.template_folder, "Folder", "childEntity", :ensure_all => true)
@@ -141,9 +140,6 @@ module VSphereCloud
               end
             end
           end
-          pool.wait
-        ensure
-          pool.shutdown
         end
       end
     end
@@ -900,9 +896,7 @@ module VSphereCloud
     end
 
     def delete_all_vms
-      pool = Bosh::Director::ThreadPool.new(:min_threads => 1, :max_threads => 32)
-
-      begin
+      ThreadPool.new(:max_threads => 32).wrap do |pool|
         index = 0
 
         @resources.datacenters.each_value do |datacenter|
@@ -926,10 +920,6 @@ module VSphereCloud
             end
           end
         end
-
-        pool.wait
-      ensure
-        pool.shutdown
       end
     end
 

@@ -69,8 +69,7 @@ module Bosh::Director
           deployment = Models::Deployment.find(:name => @deployment_name).first
           raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
-          pool = ThreadPool.new(:min_threads => 1, :max_threads => 32)
-          begin
+          ThreadPool.new(:max_threads => 32).wrap do |pool|
             instances = Models::Instance.find(:deployment_id => deployment.id)
             @logger.info("Deleting instances")
             instances.each do |instance|
@@ -87,9 +86,6 @@ module Bosh::Director
                 delete_vm(vm)
               end
             end
-            pool.wait
-          ensure
-            pool.shutdown
           end
 
           deployment.stemcells.each { |stemcell| stemcell.deployments.delete(deployment) }
