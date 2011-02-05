@@ -175,8 +175,6 @@ module Bosh::Agent
 
       @logger.info("Halt after networking change")
       `/sbin/halt`
-      @logger.info("Exit after networking change")
-      exit
     end
 
   end
