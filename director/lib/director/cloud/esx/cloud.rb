@@ -15,7 +15,8 @@ module EsxCloud
       @esxmgr = options["esxmgr"]
       @vm_mac = "00:00:00:00:00:00"
 
-      @logger.info("ESXCLOUD: options #{options}")
+      @logger.info("ESXCLOUD: options #{@nats}")
+      @logger.info("ESXCLOUD: options #{@esxmgr}")
     end
 
     def generate_unique_name
