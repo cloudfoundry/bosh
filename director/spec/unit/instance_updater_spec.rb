@@ -151,7 +151,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(0.01)
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
@@ -188,7 +188,7 @@ describe Bosh::Director::InstanceUpdater do
     @update_spec.should_not_receive(:update_watch_time)
     @update_spec.should_receive(:canary_watch_time).and_return(0.01)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(0.01)
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
@@ -244,7 +244,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:delete_vm).with("vm-id")
     @vm.should_receive(:delete)
@@ -318,7 +318,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:unmount_disk).with("disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "disk-id")
@@ -374,7 +374,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:prepare_network_change).with(BASIC_PLAN["networks"])
     @cloud.should_receive(:configure_networks).with("vm-id", BASIC_PLAN["networks"])
@@ -412,7 +412,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @instance.should_receive(:disk_cid).and_return(nil)
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
@@ -453,7 +453,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @instance.should_receive(:disk_cid).and_return("old-disk-id")
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
@@ -509,7 +509,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(plan)
 
-    @agent_1.should_receive(:drain).and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @instance.should_receive(:disk_cid).and_return("old-disk-id")
     @instance.should_receive(:disk_cid=).with(nil)
