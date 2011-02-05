@@ -58,9 +58,11 @@ describe Bosh::Director::ConfigurationHasher do
                                        {"test" => {"destination" => "test_dst", "contents" => "test contents"}})
 
     Bosh::Director::Config.stub!(:blobstore).and_return(blobstore_client)
-    blobstore_client.should_receive(:get).with("b_id").and_return(template_contents)
+    blobstore_client.should_receive(:get).with("b_id", an_instance_of(File)).and_return do |_, file|
+      file.write(template_contents)
+    end
 
-    instance.should_receive(:configuration_hash=).with("6baf348a9d309a244bfdc17a92dd382f448bf224")
+    instance.should_receive(:configuration_hash=).with("d4b58a62d2102a315f27bf8c41b4dfef672f785b")
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job)
     configuration_hasher.hash
@@ -84,9 +86,11 @@ describe Bosh::Director::ConfigurationHasher do
                                        {"test" => {"destination" => "test_dst", "contents" => "<%= index %>"}})
 
     Bosh::Director::Config.stub!(:blobstore).and_return(blobstore_client)
-    blobstore_client.should_receive(:get).with("b_id").and_return(template_contents)
+    blobstore_client.should_receive(:get).with("b_id", an_instance_of(File)).and_return do |_, file|
+      file.write(template_contents)
+    end
 
-    instance.should_receive(:configuration_hash=).with("a9b748673e26ae8047b4c326ce2bdbd586ba597c")
+    instance.should_receive(:configuration_hash=).with("1ec0fb915dd041e4e121ccd1464b88a9aed1ee60")
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job)
     configuration_hasher.hash

@@ -23,19 +23,18 @@ module Bosh::Director
 
     def initialize(job)
       @job = job
-      @template = Config.blobstore.get(job.template.blobstore_id)
     end
 
     def extract_template
       @template_dir = Dir.mktmpdir("template_dir")
-      temp_file = Tempfile.new("template")
+      temp_path = File.join(Dir::tmpdir, "template-#{UUIDTools::UUID.random_create}")
       begin
-        File.open(temp_file.path, "w") do |f|
-          f.write(@template)
+        File.open(temp_path, "w") do |file|
+          Config.blobstore.get(@job.template.blobstore_id, file)
         end
-        `tar -C #{@template_dir} -xzf #{temp_file.path}`
+        `tar -C #{@template_dir} -xzf #{temp_path}`
       ensure
-        FileUtils.rm_f(temp_file.path) if temp_file
+        FileUtils.rm_f(temp_path)
       end
     end
 
@@ -52,18 +51,15 @@ module Bosh::Director
           end
         end
 
-        digest = Digest::SHA1.new
-        digest << @template
-
         @job.instances.each do |instance|
           binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct,
                                              instance.spec.to_openstruct)
-          instance_digest = digest.dup
-          instance_digest << monit_template.result(binding_helper.get_binding)
+          digest = Digest::SHA1.new
+          digest << monit_template.result(binding_helper.get_binding)
           config_templates.each do |template|
-            instance_digest << template.result(binding_helper.get_binding)
+            digest << template.result(binding_helper.get_binding)
           end
-          instance.configuration_hash = instance_digest.hexdigest
+          instance.configuration_hash = digest.hexdigest
         end
       ensure
         FileUtils.rm_rf(@template_dir) if @template_dir
