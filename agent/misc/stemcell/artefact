@@ -1,0 +1,78 @@
+require 'blobstore_client'
+
+# TODO: progressbar - but we dont' want that cruft in the agent, so move this
+# as a subcommand of bosh cli - but this will do for now.
+
+trap("INT") { puts "Exiting..."; exit(0) }
+
+BS_S3_OPTS = {
+  :access_key_id     => "AKIAIHA3PEXABKY2KKGA",
+  :secret_access_key => "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",
+  :encryption_key    => "ps$asda123$kdasj31231",
+  :bucket_name       => "0c738ff0"
+}
+
+
+class Runner
+
+  def self.run(args)
+    new(args).run
+  end
+
+  def initialize(args)
+    @args = args
+    @blobstore_client = Bosh::Blobstore::Client.create("s3", BS_S3_OPTS)
+  end
+
+  def run
+    parse_command!
+  end
+
+  def parse_command!
+    head = @args.shift
+
+    case head
+    when "upload"
+      if (file = @args.shift) && @args.size == 0 && File.exist?(file)
+        File.open(file, 'r') do |fh|
+          blobstore_id = @blobstore_client.create(fh)
+          puts "#{blobstore_id} #{File.basename(file)}"
+        end
+      else
+        usage
+      end
+    when "download"
+      if @args.size == 2
+        blobstore_id = @args.shift
+        outfile = @args.shift
+
+        File.open(outfile, 'w') do |fh|
+          @blobstore_client.get(blobstore_id, fh)
+        end
+      else
+        usage
+      end
+    else
+      usage
+    end
+
+  end
+
+  def usage
+    puts <<-USAGE
+
+Simple S3 blobstore upload/download:
+USAGE:
+  > bundle exec ruby misc/stemcell/artefact upload /var/tmp/bosh/agent-0.0.144-19811/bosh-stemcell-0.0.144.tgz
+  6431046c-4d20-4071-8969-b289beccd206 bosh-stemcell-0.0.144.tgz
+
+  > bundle exec ruby misc/stemcell/artefact download 6431046c-4d20-4071-8969-b289beccd206 /var/tmp/bosh-stemcell-0.0.144.tgz
+  /var/tmp/bosh-stemcell-0.0.144.tgz
+USAGE
+  end
+
+end
+
+Runner.run(ARGV.dup)
+
+# vim:syntax=ruby
