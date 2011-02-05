@@ -11,8 +11,12 @@ module EsxCloud
       @reqID = 0
       @server = "middle"
       @agent_properties = options["agent"]
+      @nats = options["nats"]
+      @esxmgr = options["esxmgr"]
       @vmMac = "00:50:56:00:09:"
       @vmMacID = 10
+
+      @logger.info("ESXCLOUD: options #{options}"
     end
 
     def generate_unique_name
@@ -53,12 +57,11 @@ module EsxCloud
       rtn = false
       rtn_payload = nil
 
-      # XXX 
-      uri = "nats://esxmgr:esxmgr@10.20.142.82:11009"
+      uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}.#{@nats["port"]}"
+      @logger.info("ESXCLOUD: connecting to #{uri}"
 
       NATS.start(:uri => uri) {
-        # XXX
-        b = EsxMQ::Backend.new(@server, 'mpatil-lx.eng.vmware.com', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
+        b = EsxMQ::Backend.new(@server, 'dummy_unused', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
         @reqID = @reqID + 1
         b.subscribe { |rID, msg|
           raise "bad message #{msg}, rID #{rID} , reqID #{@reqID}" if rID != @reqID.to_s
@@ -77,8 +80,7 @@ module EsxCloud
 
 
     def send_file(name, full_file_name)
-      # XXX
-      sock = TCPSocket.open('10.20.142.82', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
+      sock = TCPSocket.open(@esxmgr["host"], EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
       srcFile = open(full_file_name, "rb")
 
       name = name.ljust(256)
