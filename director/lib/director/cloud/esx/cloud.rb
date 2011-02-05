@@ -8,15 +8,14 @@ module EsxCloud
 
     def initialize(options)
       @logger = Bosh::Director::Config.logger
-      @reqID = 0
+      @req_id = 0
       @server = "middle"
       @agent_properties = options["agent"]
       @nats = options["nats"]
       @esxmgr = options["esxmgr"]
-      @vmMac = "00:50:56:00:09:"
-      @vmMacID = 10
+      @vm_mac = "00:00:00:00:00:00"
 
-      @logger.info("ESXCLOUD: options #{options}"
+      @logger.info("ESXCLOUD: options #{options}")
     end
 
     def generate_unique_name
@@ -25,10 +24,9 @@ module EsxCloud
 
     def generate_agent_env(name, vm, agent_id, networking_env, disk_env)
       vm_env = {
-        "name" => name,
-        "id" => vm
+          "name" => name,
+          "id" => vm
       }
-
       env = {}
       env["vm"] = vm_env
       env["agent_id"] = agent_id
@@ -62,16 +60,16 @@ module EsxCloud
 
       NATS.start(:uri => uri) {
         b = EsxMQ::Backend.new(@server, 'dummy_unused', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
-        @reqID = @reqID + 1
-        b.subscribe { |rID, msg|
-          raise "bad message #{msg}, rID #{rID} , reqID #{@reqID}" if rID != @reqID.to_s
+        @req_id = @req_id + 1
+        b.subscribe { |r_id, msg|
+          raise "bad message #{msg}, r_id #{r_id} , req_id #{@req_id}" if r_id != @req_id.to_s
           if (msg.returnStatus == EsxMQ::ESXReturnStatus::SUCCESS)
             rtn_payload = EsxMQ::MsgPayload.getPayloadMsg(msg.payload)
             rtn = true
           end
           NATS.stop
         }
-        req = EsxMQ::RequestMsg.new(@reqID)
+        req = EsxMQ::RequestMsg.new(@req_id)
         req.payload = payload
         b.publish(req)
       }
@@ -81,13 +79,13 @@ module EsxCloud
 
     def send_file(name, full_file_name)
       sock = TCPSocket.open(@esxmgr["host"], EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
-      srcFile = open(full_file_name, "rb")
+      src_file = open(full_file_name, "rb")
 
       name = name.ljust(256)
       sock.write(name)
 
-      while (fileContent = srcFile.read(4096))
-        sock.write(fileContent)
+      while (file_content = src_file.read(4096))
+        sock.write(file_content)
       end
       sock.flush
       sock.close
@@ -96,14 +94,14 @@ module EsxCloud
       #      seem to be working well.
       sleep(5)
     end
-    
+
 
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
         result = nil
         Dir.mktmpdir do |temp_dir|
           @logger.info("Extracting stemcell to: #{temp_dir}, image is #{image}")
-          
+
 
           name = "sc-#{generate_unique_name}"
           @logger.info("Generated name: #{name}")
@@ -112,8 +110,8 @@ module EsxCloud
           send_file(name, image)
 
           # send "create stemcell" command to controller
-          createSC = EsxMQ::CreateStemcellMsg.new(name, name)
-          rtn, rtn_payload = send_request(createSC)
+          create_sc = EsxMQ::CreateStemcellMsg.new(name, name)
+          rtn, rtn_payload = send_request(create_sc)
           result = name if rtn
         end
         result
@@ -123,35 +121,31 @@ module EsxCloud
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
         # send delete stemcell command to esx controller
-        deleteSC = EsxMQ::DeleteStemcellMsg.new(stemcell)
-        send_request(deleteSC)
+        delete_sc = EsxMQ::DeleteStemcellMsg.new(stemcell)
+        send_request(delete_sc)
       end
     end
 
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
-        memory = resource_pool["ram"]
-        disk = resource_pool["disk"]
-        cpu = resource_pool["cpu"]
 
         # TODO do we need to worry about disk locality
         name = "vm-#{generate_unique_name}"
         @logger.info("Creating vm: #{name}")
 
-        createVM = EsxMQ::CreateVmMsg.new(name)
-        createVM.cpu = resource_pool["cpu"]
-        createVM.ram = resource_pool["ram"]
+        create_vm = EsxMQ::CreateVmMsg.new(name)
+        create_vm.cpu = resource_pool["cpu"]
+        create_vm.ram = resource_pool["ram"]
         devices = []
         networks.each_value do |network|
           net = Hash.new
           net["vswitch"] = network["cloud_properties"]["name"]
-          net["mac"] =  @vmMac + @vmMacID.to_s
-          @vmMacID = @vmMacID + 1
+          net["mac"] =  @vm_mac
           devices << net
         end
 
-        createVM.stemcell = stemcell
+        create_vm.stemcell = stemcell
         # TODO fix these
         system_disk = 0
         ephemeral_disk = 1
@@ -161,10 +155,10 @@ module EsxCloud
         disk_env = { "system" => system_disk,
                      "ephemeral" => ephemeral_disk,
                      "persistent" => {}
-                   }
-        createVM.guestInfo = generate_agent_env(name, name, agent_id, network_env, disk_env)
+        }
+        create_vm.guestInfo = generate_agent_env(name, name, agent_id, network_env, disk_env)
 
-        rtn, dummy = send_request(createVM)
+        rtn, dummy = send_request(create_vm)
         result = name if rtn
         result
       end
@@ -174,8 +168,8 @@ module EsxCloud
       with_thread_name("delete_vm(#{vm_cid})") do
         @logger.info("Deleting vm: #{vm_cid}")
 
-        deleteVM = EsxMQ::DeleteVmMsg.new(vm_cid)
-        send_request(deleteVM)
+        delete_vm = EsxMQ::DeleteVmMsg.new(vm_cid)
+        send_request(delete_vm)
       end
     end
 
