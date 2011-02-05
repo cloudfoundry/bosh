@@ -58,7 +58,7 @@ module EsxCloud
       rtn_payload = nil
 
       uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}.#{@nats["port"]}"
-      @logger.info("ESXCLOUD: connecting to #{uri}"
+      @logger.info("ESXCLOUD: connecting to #{uri}")
 
       NATS.start(:uri => uri) {
         b = EsxMQ::Backend.new(@server, 'dummy_unused', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
