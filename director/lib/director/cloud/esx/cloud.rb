@@ -74,6 +74,7 @@ module EsxCloud
         req.payload = payload
         b.publish(req)
       }
+      @logger.info("ESXCLOUD: finished with rtn #{rtn}")
       return rtn, rtn_payload
     end
 
@@ -161,6 +162,7 @@ module EsxCloud
 
         rtn, dummy = send_request(create_vm)
         result = name if rtn
+        raise "Create vm Failed" unless rtn
         result
       end
     end
