@@ -28,7 +28,12 @@ module Bosh::Director
     end
 
     def stop
-      drain_time = agent.drain
+      if @instance_spec.resource_pool_changed? || @instance_spec.persistent_disk_changed? ||
+          @instance_spec.networks_changed?
+        drain_time = agent.drain("shutdown")
+      else
+        drain_time = agent.drain("update", @instance_spec.spec)
+      end
       sleep(drain_time)
       agent.stop
     end
