@@ -56,7 +56,7 @@ module EsxCloud
       rtn = false
       rtn_payload = nil
 
-      uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}.#{@nats["port"]}"
+      uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}:#{@nats["port"]}"
       @logger.info("ESXCLOUD: connecting to #{uri}")
 
       NATS.start(:uri => uri) {
