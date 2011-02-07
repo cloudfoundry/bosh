@@ -288,7 +288,7 @@ module Bosh::Director
 
             pool.process do
               agent = AgentClient.new(agent_id)
-              drain_time = agent.drain
+              drain_time = agent.drain("shutdown")
               sleep(drain_time)
               agent.stop
 
