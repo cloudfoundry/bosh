@@ -35,12 +35,13 @@ cloud:
         password: R3d!S
     soap_log: <%= shared_path %>/log/<%= process_name %>.soap.log
     esxmgr:
-      host: 10.20.142.82
+      host: 10.24.25.207
     nats:
-      host: 10.20.142.82
+      host: 10.24.25.207
       port: 11009
       user: esxmgr
       password: esxmgr
+      qname: middle
       datacenters:
         - name: AppCloud
           vm_folder: BOSH_VMs

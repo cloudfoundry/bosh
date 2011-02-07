@@ -1,12 +1,59 @@
+require 'pp'
+
+module NATS
+  class << self
+   
+    def timed_request(subject, data=nil, opts={})
+      # args
+      expected = opts[:expected] || 2
+      timeout  = opts[:timeout]  || 200
+
+      results = []
+      results.extend(MonitorMixin)
+      done = results.new_cond
+
+      # Subscribe to responses
+      inbox = NATS.create_inbox
+      s = NATS.subscribe(inbox) do |msg|
+        # This callback happens in the EM.reactor thread.
+        results.synchronize do
+          done.signal if (results << msg).length == expected
+        end
+      end
+
+      data.qname = inbox
+
+      # Send request
+      publish(subject, data.to_json, inbox)      
+
+      # Wait for results or timeout
+      results.synchronize do
+        r = done.wait(timeout)
+        NATS.unsubscribe(s)
+        return r, results.slice(0, expected)
+      end
+    end
+
+  end
+end
+
 module EsxCloud
 
   class Cloud
+
+    class << self
+      attr_accessor :nats_started, :req_id, :lock 
+    end
 
     BOSH_AGENT_PROPERTIES_ID = "Bosh_Agent_Properties"
 
     attr_accessor :client
 
     def initialize(options)
+      self.class.nats_started = false unless self.class.nats_started
+      self.class.req_id = 0 unless self.class.req_id
+      self.class.lock = Mutex.new unless self.class.lock
+
       @logger = Bosh::Director::Config.logger
       @req_id = 0
       @server = "middle"
@@ -53,28 +100,37 @@ module EsxCloud
     end
 
     def send_request(payload)
-      rtn = false
+      req_id = 0
       rtn_payload = nil
 
-      uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}:#{@nats["port"]}"
-      @logger.info("ESXCLOUD: connecting to #{uri}")
+      self.class.lock.synchronize do
+        unless self.class.nats_started
+          Thread.new { 
+            uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}:#{@nats["port"]}"
+            NATS.start(:uri => uri) { }
+          }
+          self.class.nats_started = true
+        end
+        req_id = self.class.req_id
+        self.class.req_id = self.class.req_id + 1
+      end
 
-      NATS.start(:uri => uri) {
-        b = EsxMQ::Backend.new(@server, 'dummy_unused', EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
-        @req_id = @req_id + 1
-        b.subscribe { |r_id, msg|
-          raise "bad message #{msg}, r_id #{r_id} , req_id #{@req_id}" if r_id != @req_id.to_s
-          if (msg.returnStatus == EsxMQ::ESXReturnStatus::SUCCESS)
-            rtn_payload = EsxMQ::MsgPayload.getPayloadMsg(msg.payload)
-            rtn = true
-          end
-          NATS.stop
-        }
-        req = EsxMQ::RequestMsg.new(@req_id)
-        req.payload = payload
-        b.publish(req)
-      }
-      @logger.info("ESXCLOUD: finished with rtn #{rtn}")
+      req = EsxMQ::RequestMsg.new(req_id)
+      req.payload = payload
+
+      rtn, results = NATS.timed_request(@nats["qname"], req)
+      if rtn
+        raise "Bad taskID #{results}" unless results[0]["@taskID"] == results[1]["@taskID"]
+
+        if results[1]["@returnStatus"].downcase == "failure"
+          @logger.info("ESXCloud, request #{payload} failed #{results}")
+          raise "ESXCloud, request #{payload} failed #{results}"
+          rtn = false
+        end
+      else
+          @logger.info("ESXCloud, request #{payload} timedout #{results}")
+          raise "ESXCloud, request #{payload} timedout #{results}"
+      end
       return rtn, rtn_payload
     end
 
