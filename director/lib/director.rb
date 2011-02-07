@@ -51,6 +51,7 @@ require "director/package_compiler"
 require "director/pubsub_redis"
 require "director/release_manager"
 require "director/resource_pool_updater"
+require "director/task_manager"
 require "director/thread_pool"
 require "director/user_manager"
 require "director/deployment_manager"
@@ -83,6 +84,7 @@ module Bosh::Director
       @deployment_manager = DeploymentManager.new
       @release_manager    = ReleaseManager.new
       @stemcell_manager   = StemcellManager.new
+      @task_manager       = TaskManager.new
       @user_manager       = UserManager.new
       @logger             = Config.logger
     end
@@ -228,29 +230,33 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    get "/running_tasks" do
-      tasks = Models::Task.find(:state => "processing").sort_by(:timestamp).map do |task|
-        { "id" => task.id, "state" => task.state, "timestamp" => task.timestamp.to_i, "result" => task.result }
+    get "/tasks" do
+      limit = params["limit"]
+      if limit
+        limit = limit.to_i
+        limit = 1 if limit < 1
       end
-      Yajl::Encoder.encode(tasks)
-    end
 
-    get "/recent_tasks/:count" do
-      count = params[:count].to_i
-      count = 1 if count < 1
-      tasks = Models::Task.all.sort_by(:timestamp, :order => "DESC", :limit => count).map do |task|
-        { "id" => task.id, "state" => task.state, "timestamp" => task.timestamp.to_i, "result" => task.result }
+      tasks = Models::Task.all
+      state = params["state"]
+      if state
+        tasks = tasks.find(:state => state)
       end
-      Yajl::Encoder.encode(tasks)
+
+      tasks_json = tasks.sort_by(:timestamp, :order => "DESC", :limit => limit).map do |task|
+        @task_manager.task_to_json(task)
+      end
+
+      content_type(:json)
+      Yajl::Encoder.encode(tasks_json)
     end
 
     get "/tasks/:id" do
       task = Models::Task[params[:id]]
       raise TaskNotFound.new(params[:id]) if task.nil?
-
-      # TODO: fix output to be in JSON format exporting state, timestamp, and result.
-      content_type("text/plain")
-      task.state
+      content_type(:json)
+      task_json = @task_manager.task_to_json(task)
+      Yajl::Encoder.encode(task_json)
     end
 
     get "/tasks/:id/output" do
