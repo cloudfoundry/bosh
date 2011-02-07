@@ -67,7 +67,7 @@ module Bosh::Cli
       jobs.each do |job|
         say "Copying #{job.tarball_path}..."
         FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"))
-      end      
+      end
       @jobs_copied = true
     end
 
@@ -123,7 +123,7 @@ module Bosh::Cli
 
     def tarball_path
       dirname = final? ? "releases" : "dev_releases"
-      File.join(work_dir, dirname, "release-#{version}.tgz")
+      File.join(work_dir, dirname, "#{release_name}-#{version}.tgz")
     end
 
     private
@@ -161,5 +161,5 @@ module Bosh::Cli
     end
 
   end
-  
+
 end
