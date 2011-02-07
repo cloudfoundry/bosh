@@ -53,7 +53,6 @@ module EsxCloud
       self.class.lock = Mutex.new unless self.class.lock
 
       @logger = Bosh::Director::Config.logger
-      @req_id = 0
       @server = "middle"
       @agent_properties = options["agent"]
       @nats = options["nats"]
