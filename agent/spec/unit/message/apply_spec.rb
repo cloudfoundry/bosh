@@ -4,9 +4,7 @@ require 'fileutils'
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
-    Bosh::Agent::Config.base_dir = File.dirname(__FILE__) + "/../../tmp/#{Time.now.to_i}"
-    FileUtils.mkdir_p Bosh::Agent::Config.base_dir + '/bosh'
-
+    setup_tmp_base_dir
     logger = mock('logger')
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
