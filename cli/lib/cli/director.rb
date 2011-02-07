@@ -19,7 +19,7 @@ module Bosh
         if director_uri.nil? || director_uri =~ /^\s*$/
           raise DirectorMissing, "no director URI given"
         end
-        
+
         @director_uri = director_uri
         @user         = user
         @password     = password
@@ -34,7 +34,7 @@ module Bosh
       end
 
       def create_user(username, password)
-        payload = JSON.generate("username" => username, "password" => password)        
+        payload = JSON.generate("username" => username, "password" => password)
         response_code, body = post("/users", "application/json", payload)
         response_code == 200
       end
@@ -56,11 +56,12 @@ module Bosh
       end
 
       def list_running_tasks
-        get_json("/running_tasks")
+        get_json("/tasks?state=processing")
       end
 
       def list_recent_tasks(count = 30)
-        get_json("/recent_tasks/#{count.to_i}")
+        count = [count.to_i, 100].min
+        get_json("/tasks/?limit=#{count}")
       end
 
       def upload_release(filename)
@@ -90,7 +91,9 @@ module Bosh
         raise AuthError if response_code == 401
         raise MissingTask, "No task##{@task_id} found" if response_code == 404
         raise TaskTrackError, "Got HTTP #{response_code} while tracking task state" if response_code != 200
-        return body
+        JSON.parse(body)["state"]
+      rescue JSON::ParserError
+        raise TaskTrackError, "Cannot parse task JSON, incompatible director version"
       end
 
       def get_task_output(task_id, offset)
@@ -126,7 +129,7 @@ module Bosh
           :failed
         end
 
-        [ status, body ]        
+        [ status, body ]
       end
 
       def upload_and_track(uri, content_type, filename, options = {})
@@ -151,16 +154,16 @@ module Bosh
         while true
           polls += 1
           state, output = task.state, task.output
-          
+
           if output
-            no_output_yet = false            
+            no_output_yet = false
             say(output)
           end
 
           if no_output_yet && polls % 10 == 0
             say("Task state is '%s', waiting for output..." % [ state ])
           end
-          
+
           if state == "done"
             result = :done
             break
@@ -196,7 +199,7 @@ module Bosh
         }
 
         status, body, response_headers = perform_http_request(req)
-        
+
         if DIRECTOR_HTTP_ERROR_CODES.include?(status)
           raise DirectorError, parse_error_message(status, body)
         end
@@ -220,7 +223,7 @@ module Bosh
       rescue Net::HTTPBadResponse => e
         err("Received bad HTTP response from director: #{e}")
       rescue RestClient::Exception => e
-        err("REST API call exception: #{e}")        
+        err("REST API call exception: #{e}")
       end
 
       def get_json(url)
@@ -230,7 +233,7 @@ module Bosh
 
       def parse_error_message(status, body)
         parsed_body = JSON.parse(body.to_s)
-        
+
         if parsed_body["code"] && parsed_body["description"]
           "Director error %s: %s" % [ parsed_body["code"], parsed_body["description"] ]
         else
@@ -251,7 +254,7 @@ module Bosh
       end
 
       def stop_progress_bar
-        progress_bar.halt unless progress_bar.finished?        
+        progress_bar.halt unless progress_bar.finished?
       end
 
       def read(*args)
@@ -266,6 +269,6 @@ module Bosh
         result
       end
     end
-    
+
   end
 end

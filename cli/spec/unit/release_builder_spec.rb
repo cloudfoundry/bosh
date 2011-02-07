@@ -19,8 +19,8 @@ describe Bosh::Cli::ReleaseBuilder do
     builder = new_builder
     builder.build
 
-    expected_tarball_path = File.join(@work_dir, "dev_releases", "release-1.tgz")
-    
+    expected_tarball_path = File.join(@work_dir, "dev_releases", "bosh_release-1.tgz")
+
     builder.tarball_path.should == expected_tarball_path
     File.file?(expected_tarball_path).should be_true
   end
@@ -28,11 +28,11 @@ describe Bosh::Cli::ReleaseBuilder do
   it "blindly builds a new release (even if nothing has changed)" do
     2.times {
       builder = new_builder
-      builder.build      
+      builder.build
     }
 
-    File.file?(File.join(@work_dir, "dev_releases", "release-1.tgz")).should be_true
-    File.file?(File.join(@work_dir, "dev_releases", "release-2.tgz")).should be_true    
+    File.file?(File.join(@work_dir, "dev_releases", "bosh_release-1.tgz")).should be_true
+    File.file?(File.join(@work_dir, "dev_releases", "bosh_release-2.tgz")).should be_true
   end
 
 end

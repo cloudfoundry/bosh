@@ -23,7 +23,7 @@ describe Bosh::Cli::Director do
 
       @director.should_receive(:get).with("/status").and_return([404, "Not Found"])
       @director.authenticated?.should == false
-    end    
+    end
   end
 
   describe "interface REST API" do
@@ -62,14 +62,17 @@ describe Bosh::Cli::Director do
     end
 
     it "lists currently running tasks" do
-      @director.should_receive(:get).with("/running_tasks", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.should_receive(:get).with("/tasks?state=processing", "application/json").and_return([ 200, JSON.generate([]), {}])
       @director.list_running_tasks
     end
 
     it "lists recent tasks" do
-      @director.should_receive(:get).with("/recent_tasks/30", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.should_receive(:get).with("/tasks/?limit=30", "application/json").and_return([ 200, JSON.generate([]), {}])
       @director.list_recent_tasks
-    end    
+
+      @director.should_receive(:get).with("/tasks/?limit=100", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.list_recent_tasks(100000)
+    end
 
     it "uploads release" do
       @director.should_receive(:upload_and_track).with("/releases", "application/x-compressed", "/path").and_return(true)
@@ -78,7 +81,7 @@ describe Bosh::Cli::Director do
 
     it "deletes stemcell" do
       @director.should_receive(:request_and_track).with(:delete, "/stemcells/ubuntu/123", nil, nil).and_return(true)
-      @director.delete_stemcell("ubuntu", "123")      
+      @director.delete_stemcell("ubuntu", "123")
     end
 
     it "deletes deployment" do
@@ -102,7 +105,7 @@ describe Bosh::Cli::Director do
     end
 
     it "gets task state" do
-      @director.should_receive(:get).with("/tasks/232").and_return([200, "done"])
+      @director.should_receive(:get).with("/tasks/232").and_return([200, JSON.generate({"state" => "done"})])
       @director.get_task_state(232).should == "done"
     end
 
@@ -121,8 +124,8 @@ describe Bosh::Cli::Director do
     it "doesn't set task output new offset if it wasn't a partial response" do
       @director.should_receive(:get).with("/tasks/232/output", nil, nil, { "Range" => "bytes=42-" }).and_return([200, "test"])
       @director.get_task_output(232, 42).should == ["test", nil]
-    end    
-    
+    end
+
   end
 
   describe "checking status" do
@@ -198,7 +201,7 @@ describe Bosh::Cli::Director do
 
       @director.request(:get, "/stuff", "app/zb", "payload", { "h1" => "a", "h2" => "b"})
     end
-    
+
     it "nicely wraps director error response" do
       [400, 403, 404, 500].each do |code|
         lambda {
@@ -225,7 +228,7 @@ describe Bosh::Cli::Director do
       [URI::Error, SocketError, Errno::ECONNREFUSED].each do |err|
         @director.should_receive(:perform_http_request).and_raise(err.new("err message"))
         lambda {
-          @director.request(:get, "/stuff", "app/zb", "payload", { })          
+          @director.request(:get, "/stuff", "app/zb", "payload", { })
         }.should raise_error(Bosh::Cli::DirectorInaccessible)
       end
       @director.should_receive(:perform_http_request).and_raise(SystemCallError.new("err message"))
@@ -239,46 +242,46 @@ describe Bosh::Cli::Director do
     it "polls until success" do
       n_calls = 0
 
-      @director.should_receive(:get).with("/tasks/1").exactly(5).times.and_return { n_calls += 1; [ 200, n_calls == 5 ? "done" : "processing" ] }
+      @director.should_receive(:get).with("/tasks/1").exactly(5).times.and_return { n_calls += 1; [ 200, JSON.generate("state" => n_calls == 5 ? "done" : "processing") ] }
       @director.should_receive(:get).with("/tasks/1/output", nil, nil, "Range" => "bytes=0-").exactly(5).times.and_return(nil)
 
       @director.poll_task(1, :poll_interval => 0, :max_polls => 1000).should == :done
     end
 
     it "respects max polls setting" do
-      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, "processing" ]
+      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, JSON.generate("state" => "processing") ]
       @director.should_receive(:get).with("/tasks/1/output", nil, nil, "Range" => "bytes=0-").exactly(10).times.and_return(nil)
-      
+
       @director.poll_task(1, :poll_interval => 0, :max_polls => 10).should == :track_timeout
     end
 
     it "respects poll interval setting" do
       @director.stub(:get).and_return [ 200, "processing" ]
 
-      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, "processing" ]
+      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, JSON.generate("state" => "processing") ]
       @director.should_receive(:get).with("/tasks/1/output", nil, nil, "Range" => "bytes=0-").exactly(10).times.and_return(nil)
       @director.should_receive(:wait).with(5).exactly(9).times.and_return(nil)
-      
+
       @director.poll_task(1, :poll_interval => 5, :max_polls => 10).should == :track_timeout
     end
 
     it "stops polling and returns error if status is not HTTP 200" do
       n_calls = 0
-      @director.stub(:get).and_return { n_calls += 1; [ n_calls == 5 ? 500 : 200, "processing" ] }
+      @director.stub(:get).and_return { n_calls += 1; [ n_calls == 5 ? 500 : 200, JSON.generate("state" => "processing") ] }
 
       @director.should_receive(:get).exactly(3).times
-      lambda { 
+      lambda {
         @director.poll_task(1, :poll_interval => 0, :max_polls => 10)
       }.should raise_error(Bosh::Cli::TaskTrackError, "Got HTTP 500 while tracking task state")
     end
 
     it "stops polling and returns error if task state is error" do
-      @director.stub(:get).and_return { [ 200, "error" ] }
+      @director.stub(:get).and_return { [ 200, JSON.generate("state" => "error") ] }
 
       @director.should_receive(:get).exactly(1).times
-      
+
       @director.poll_task(1, :poll_interval => 0, :max_polls => 10).should == :error
     end
   end
-  
+
 end
