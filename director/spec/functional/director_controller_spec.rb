@@ -200,7 +200,7 @@ describe Bosh::Director::Controller do
         ["queued", "processing"].each do |state|
           (1..20).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
         end
-        get "/running_tasks"
+        get "/tasks?state=processing"
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
         body.size.should == 20
@@ -208,9 +208,9 @@ describe Bosh::Director::Controller do
 
       it "has API call that returns a list of recent tasks" do
         ["queued", "processing"].each do |state|
-          (1..10).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
+          (1..20).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
         end
-        get "/recent_tasks/20"
+        get "/tasks?limit=20"
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
         body.size.should == 20
@@ -225,7 +225,10 @@ describe Bosh::Director::Controller do
         get "/tasks/#{new_task_id}"
 
         last_response.status.should == 200
-        last_response.body.should == "queued"
+        task_json = Yajl::Parser.parse(last_response.body)
+        task_json["id"].should == "1"
+        task_json["state"].should == "queued"
+        task_json["description"].should == "create release"
 
         task = Bosh::Director::Models::Task[new_task_id]
         task.state = "processed"
@@ -233,7 +236,10 @@ describe Bosh::Director::Controller do
 
         get "/tasks/#{new_task_id}"
         last_response.status.should == 200
-        last_response.body.should == "processed"
+        task_json = Yajl::Parser.parse(last_response.body)
+        task_json["id"].should == "1"
+        task_json["state"].should == "processed"
+        task_json["description"].should == "create release"
       end
 
       it "has API call that return task output and task output with ranges" do
