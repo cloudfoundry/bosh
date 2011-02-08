@@ -25,10 +25,22 @@ config = YAML.load_file(config_file)
 
 Bosh::Director::Config.configure(config)
 
-Thin::Server.start("0.0.0.0", config["port"]) do
+event_thread = Thread.new { EM.run }
+
+thin_server = Thin::Server.new("0.0.0.0", config["port"], :signals => false) do
   use Rack::CommonLogger
   use Rack::ShowExceptions
   map "/" do
     run Bosh::Director::Controller.new
   end
 end
+
+["TERM", "INT", "QUIT"].each do |signal|
+  trap(signal) do
+    thin_server.stop!
+    EM.stop
+  end
+end
+
+thin_server.start!
+event_thread.join

@@ -57,7 +57,7 @@ module Bosh
         end
 
         puts "=> Welcome to Bosh Director console\n=> You can use 'app' to access REST API"
-        puts "=> You can also use 'cloud', 'blobstore', 'pubsub_redis' helpers to query these services"
+        puts "=> You can also use 'cloud', 'blobstore', 'nats' helpers to query these services"
 
         IRB.start
       end
@@ -76,7 +76,7 @@ def config
   BD::Config
 end
 
-[:redis, :blobstore, :pubsub_redis, :cloud].each do |helper|
+[:redis, :blobstore, :nats, :cloud].each do |helper|
   self.class.send(:define_method, helper) do
     config.send(helper)
   end
@@ -84,5 +84,7 @@ end
 
 include BD::Models
 
-BD::Console.start
+EM.run do
+  BD::Console.start
+end
 

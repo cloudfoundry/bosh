@@ -3,6 +3,7 @@ source :rubygems
 gem "bcrypt-ruby"
 gem "blobstore_client"
 gem "eventmachine"
+gem "nats"
 gem "netaddr"
 gem "pg"
 gem "rake"
