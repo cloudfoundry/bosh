@@ -28,7 +28,7 @@ module NATS
       results.synchronize do
         r = done.wait(timeout)
         NATS.unsubscribe(s)
-        NATS.stop
+        #NATS.stop
         return r, results.slice(0, expected)
       end
     end
@@ -101,10 +101,9 @@ module EsxCloud
       req_id = 0
       rtn_payload = nil
 
-
+      # Start NATS 
       self.class.lock.synchronize do
         unless self.class.nats_started
-          #with_thread_name("esx_start_nats") do
           Thread.new {
             uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}:#{@nats["port"]}"
             @logger.info("ESXCLOUD: starting NATS at #{uri}")
@@ -114,19 +113,17 @@ module EsxCloud
             }
             @logger.info("ESXCLOUD: NATS is  S T O P P E D")
           }
-         #end
+          while !self.class.nats_started
+            @logger.info("ESXCLOUD: waiting for nats to start")
+            sleep(0.1)
+          end
         end
+        raise "NATS could not be started" unless self.class.nats_started
+
+        # While we have the lock, get our own unique request id
         req_id = self.class.req_id
         self.class.req_id = self.class.req_id + 1
-        @logger.info("ESXCLOUD: created NATS start thread")
       end
-
-      @logger.info("ESXCLOUD: going to wait for NATS to start")
-      while !self.class.nats_started
-        @logger.info("ESXCLOUD: waiting for nats to start")
-        sleep(0.1)
-      end
-      @logger.info("ESXCLOUD: ok NATS should be started now")
 
       req = EsxMQ::RequestMsg.new(req_id)
       req.payload = payload
@@ -190,6 +187,7 @@ module EsxCloud
           rtn, rtn_payload = send_request(create_sc, 3600)
           result = name if rtn
         end
+        @logger.info("ESXCLOUD: create_stemcell is returnng <#{result}>")
         result
       end
     end
@@ -208,7 +206,7 @@ module EsxCloud
 
         # TODO do we need to worry about disk locality
         name = "vm-#{generate_unique_name}"
-        @logger.info("Creating vm: #{name}")
+        @logger.info("ESXCLOUD: Creating vm: #{name}")
 
         create_vm = EsxMQ::CreateVmMsg.new(name)
         create_vm.cpu = resource_pool["cpu"]
@@ -243,7 +241,7 @@ module EsxCloud
 
     def delete_vm(vm_cid)
       with_thread_name("delete_vm(#{vm_cid})") do
-        @logger.info("Deleting vm: #{vm_cid}")
+        @logger.info("ESXCLOUD: Deleting vm: #{vm_cid}")
 
         delete_vm = EsxMQ::DeleteVmMsg.new(vm_cid)
         send_request(delete_vm)
