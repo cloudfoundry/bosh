@@ -67,10 +67,10 @@ describe Bosh::Cli::Director do
     end
 
     it "lists recent tasks" do
-      @director.should_receive(:get).with("/tasks/?limit=30", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.should_receive(:get).with("/tasks?limit=30", "application/json").and_return([ 200, JSON.generate([]), {}])
       @director.list_recent_tasks
 
-      @director.should_receive(:get).with("/tasks/?limit=100", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.should_receive(:get).with("/tasks?limit=100", "application/json").and_return([ 200, JSON.generate([]), {}])
       @director.list_recent_tasks(100000)
     end
 
