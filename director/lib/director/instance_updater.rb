@@ -68,6 +68,8 @@ module Bosh::Director
         @instance.vm = @vm
         @instance.save!
 
+        agent.wait_until_ready
+
         if @instance.disk_cid
           @cloud.attach_disk(@vm.cid, @instance.disk_cid)
           task = agent.mount_disk(@instance.disk_cid)
@@ -76,8 +78,6 @@ module Bosh::Director
             task = agent.get_task(task["agent_task_id"])
           end
         end
-
-        agent.wait_until_ready
 
         state = {
           "deployment" => @deployment_plan.name,
