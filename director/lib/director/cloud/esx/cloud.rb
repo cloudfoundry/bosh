@@ -28,6 +28,7 @@ module NATS
       results.synchronize do
         r = done.wait(timeout)
         NATS.unsubscribe(s)
+        NATS.stop
         return r, results.slice(0, expected)
       end
     end
@@ -96,26 +97,45 @@ module EsxCloud
       network_env
     end
 
-    def send_request(payload)
+    def send_request(payload, timeout=nil)
       req_id = 0
       rtn_payload = nil
 
+
       self.class.lock.synchronize do
         unless self.class.nats_started
-          Thread.new { 
+          #with_thread_name("esx_start_nats") do
+          Thread.new {
             uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}:#{@nats["port"]}"
-            NATS.start(:uri => uri) { }
+            @logger.info("ESXCLOUD: starting NATS at #{uri}")
+            NATS.start(:uri => uri) {
+              @logger.info("ESXCLOUD: now nats_started is true")
+              self.class.nats_started = true
+            }
+            @logger.info("ESXCLOUD: NATS is  S T O P P E D")
           }
-          self.class.nats_started = true
+         #end
         end
         req_id = self.class.req_id
         self.class.req_id = self.class.req_id + 1
+        @logger.info("ESXCLOUD: created NATS start thread")
       end
+
+      @logger.info("ESXCLOUD: going to wait for NATS to start")
+      while !self.class.nats_started
+        @logger.info("ESXCLOUD: waiting for nats to start")
+        sleep(0.1)
+      end
+      @logger.info("ESXCLOUD: ok NATS should be started now")
 
       req = EsxMQ::RequestMsg.new(req_id)
       req.payload = payload
 
-      rtn, results = NATS.timed_request(@nats["qname"], req)
+      opts = Hash.new
+      opts[:timeout] = timeout if timeout
+
+      @logger.info("ESXCLOUD: sending request #{payload}")
+      rtn, results = NATS.timed_request(@nats["qname"], req, opts)
       if rtn
         raise "Bad taskID #{results}" unless results[0]["@taskID"] == results[1]["@taskID"]
 
@@ -128,6 +148,7 @@ module EsxCloud
           @logger.info("ESXCloud, request #{payload} timedout #{results}")
           raise "ESXCloud, request #{payload} timedout #{results}"
       end
+      @logger.info("ESXCloud, request #{payload} rtn #{rtn}, rtn_payload #{rtn_payload}")
       return rtn, rtn_payload
     end
 
@@ -166,7 +187,7 @@ module EsxCloud
 
           # send "create stemcell" command to controller
           create_sc = EsxMQ::CreateStemcellMsg.new(name, name)
-          rtn, rtn_payload = send_request(create_sc)
+          rtn, rtn_payload = send_request(create_sc, 3600)
           result = name if rtn
         end
         result
