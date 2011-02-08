@@ -61,7 +61,7 @@ module Bosh
 
       def list_recent_tasks(count = 30)
         count = [count.to_i, 100].min
-        get_json("/tasks/?limit=#{count}")
+        get_json("/tasks?limit=#{count}")
       end
 
       def upload_release(filename)
