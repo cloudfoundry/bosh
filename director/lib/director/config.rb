@@ -5,6 +5,7 @@ module Bosh::Director
 
       attr_accessor :base_dir
       attr_accessor :logger
+      attr_accessor :uuid
       attr_accessor :db
 
       attr_reader :redis_options
@@ -24,11 +25,13 @@ module Bosh::Director
           :logger   => @logger
         }
 
+        @uuid = UUIDTools::UUID.random_create.to_s
+        @nats_uri = config["mbus"]
+
         @cloud_options = config["cloud"]
         @blobstore_options = config["blobstore"]
 
-        @pubsub_redis = nil
-        @cloud = nil
+
         @blobstore = nil
         @db = Sequel.connect(config["db"])
         @db.logger = @logger
@@ -43,15 +46,6 @@ module Bosh::Director
           end
         end
         @blobstore
-      end
-
-      def pubsub_redis
-        @lock.synchronize do
-          if @pubsub_redis.nil?
-            @pubsub_redis = PubsubRedis.new(@redis_options)
-          end
-        end
-        @pubsub_redis
       end
 
       def cloud
@@ -84,7 +78,6 @@ module Bosh::Director
 
       def redis_options=(options)
         @redis_options = options
-        @pubsub_redis = nil
       end
 
       def cloud_options=(options)
@@ -92,6 +85,24 @@ module Bosh::Director
           @cloud_options = options
           @cloud = nil
         end
+      end
+
+      def nats
+        @lock.synchronize do
+          if @nats.nil?
+            @nats = NATS.connect(:uri => @nats_uri, :autostart => false)
+          end
+        end
+        @nats
+      end
+
+      def nats_rpc
+        @lock.synchronize do
+          if @nats_rpc.nil?
+            @nats_rpc = NatsRpc.new
+          end
+        end
+        @nats_rpc
       end
 
       def redis
