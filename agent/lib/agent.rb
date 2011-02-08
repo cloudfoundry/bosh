@@ -17,6 +17,7 @@ require "agent/util"
 require "agent/message/disk"
 require "agent/message/configure"
 require "agent/message/state"
+require "agent/message/drain"
 require "agent/message/apply"
 require "agent/message/compile_package"
 

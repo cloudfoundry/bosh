@@ -194,13 +194,6 @@ module Bosh::Agent
       end
     end
 
-    # FIXME: temporary drain method
-    class Drain
-      def self.process(args)
-        2
-      end
-    end
-
     # FIXME: temporary stop method
     class Stop
       def self.process(args)
