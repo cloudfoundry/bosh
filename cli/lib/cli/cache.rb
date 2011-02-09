@@ -10,7 +10,7 @@ module Bosh
 
       def initialize(cache_dir = nil)
         @cache_dir = cache_dir || DEFAULT_CACHE_DIR
-        
+
         if File.exists?(@cache_dir) && !File.directory?(@cache_dir)
           raise CacheDirectoryError, "Bosh cache directory error: '#{@cache_dir}' is a file, not directory"
         end
@@ -44,6 +44,6 @@ module Bosh
       end
 
     end
-    
+
   end
 end

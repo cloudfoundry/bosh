@@ -1,18 +1,46 @@
 module Bosh::Cli::Command
   class Task < Base
 
-    def track(task_id)
+    def track(task_id, *flags)
       task = Bosh::Cli::DirectorTask.new(director, task_id)
       say("Task state: #{task.state}")
+
+      cached_output = get_cached_task_output(task_id) unless flags.include?("--no-cache")
+
+      if cached_output
+        say cached_output
+        return
+      end
+
+      complete_output = ""
 
       say("Task log:")
       begin
         state, output = task.state, task.output
-        say(output) if output
-        sleep(1)
+
+        if output
+          say(output)
+          complete_output << output
+        end
+
+        sleep(0.5)
+
       end while ["queued", "processing"].include?(state)
-      say(task.flush_output)
-      say("Task #{task_id}: state is '#{state}'")
+
+      final_out = task.flush_output
+
+      if final_out
+        say(final_out)
+        complete_output << final_out
+      end
+
+      status = "Task #{task_id}: state is '#{state}'"
+      complete_output << "\n" << status << "\n"
+
+      say "\n"
+      say status
+
+      save_task_output(task_id, complete_output)
     end
 
     def list_running
@@ -43,6 +71,14 @@ module Bosh::Cli::Command
       say("\n")
       say(tasks_table)
       say("\n")
+    end
+
+    def get_cached_task_output(task_id)
+      cache.read("task/#{task_id}")
+    end
+
+    def save_task_output(task_id, output)
+      cache.write("task/#{task_id}", output)
     end
 
   end
