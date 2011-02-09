@@ -116,6 +116,10 @@ HERE
         exit 1
       end
 
+      Dir.chdir('ubuntu-esxi') do
+        sh "tar zcf ../bosh-esxcloud-stemcell-#{version}.tgz *.vmdk *.vmx"
+      end
+
       sh "/usr/lib/vmware/ovftool/ovftool ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
       mkdir_p 'stemcell'
       Dir.chdir('ubuntu-esxi') do
@@ -135,6 +139,7 @@ HERE
     # TODO: install bin wrapper
     # TODO: change location of agent install w/symlink strategy
     puts "Generated stemcell: #{work_dir}/bosh-stemcell-#{version}.tgz"
+    puts "Generated esxcloud stemcell: #{work_dir}/bosh-esxcloud-stemcell-#{version}.tgz"
     puts "Check #{work_dir} for build artifacts"
   end
 
