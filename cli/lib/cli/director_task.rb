@@ -18,8 +18,6 @@ module Bosh
       def output
         body, new_offset = @director.get_task_output(@task_id, @offset)
 
-        # require "ruby-debug"; debugger if @offset == 20
-
         @buf << body if body
 
         if new_offset
