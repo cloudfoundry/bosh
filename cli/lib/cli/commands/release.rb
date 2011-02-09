@@ -16,13 +16,13 @@ module Bosh::Cli::Command
         for error in release.errors
           say("- %s" % [ error ])
         end
-      end      
+      end
     end
 
     def upload(tarball_path)
       err("Please log in first") unless logged_in?
       err("Please choose target") unless target
-      
+
       release = Bosh::Cli::ReleaseUploader.new(tarball_path)
 
       say("\nVerifying release...")
@@ -58,6 +58,16 @@ module Bosh::Cli::Command
         header "Building FINAL release".green
       else
         header "Building DEV release".green
+      end
+
+      if final && !File.exists?("NAME")
+        name = ask("Please enter final release name: ")
+        err("Canceled release creation, no name given") if name.blank?
+        File.open("NAME", "w") { |f| f.write(name) }
+      elsif !File.exists?("DEV_NAME")
+        name = ask("Please enter development release name: ")
+        err("Canceled release creation, no name given") if name.blank?
+        File.open("DEV_NAME", "w") { |f| f.write(name) }
       end
 
       blobstore = init_blobstore
