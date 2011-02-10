@@ -1,41 +1,3 @@
-module NATS
-  class << self
-   
-    def timed_request(subject, data=nil, opts={})
-      # args
-      expected = opts[:expected] || 2
-      timeout  = opts[:timeout]  || 200
-
-      results = []
-      results.extend(MonitorMixin)
-      done = results.new_cond
-
-      # Subscribe to responses
-      inbox = NATS.create_inbox
-      s = NATS.subscribe(inbox) do |msg|
-        # This callback happens in the EM.reactor thread.
-        results.synchronize do
-          done.signal if (results << msg).length == expected
-        end
-      end
-
-      data.qname = inbox
-
-      # Send request
-      publish(subject, data.to_json, inbox)      
-
-      # Wait for results or timeout
-      results.synchronize do
-        r = done.wait(timeout)
-        NATS.unsubscribe(s)
-        #NATS.stop
-        return r, results.slice(0, expected)
-      end
-    end
-
-  end
-end
-
 module EsxCloud
 
   class Cloud
@@ -128,61 +90,6 @@ module EsxCloud
       @logger.info("ESXCloud, request #{payload} results #{results}")
       return rtn, results
     end
-
-=begin
-    def send_request(payload, timeout=nil)
-      req_id = 0
-      rtn_payload = nil
-
-      # Start NATS 
-      self.class.lock.synchronize do
-        unless self.class.nats_started
-          Thread.new {
-            uri = "nats://#{@nats["user"]}:#{@nats["password"]}@#{@nats["host"]}:#{@nats["port"]}"
-            @logger.info("ESXCLOUD: starting NATS at #{uri}")
-            NATS.start(:uri => uri) {
-              @logger.info("ESXCLOUD: now nats_started is true")
-              self.class.nats_started = true
-            }
-            @logger.info("ESXCLOUD: NATS is  S T O P P E D")
-          }
-          while !self.class.nats_started
-            @logger.info("ESXCLOUD: waiting for nats to start")
-            sleep(0.1)
-          end
-        end
-        raise "NATS could not be started" unless self.class.nats_started
-
-        # While we have the lock, get our own unique request id
-        req_id = self.class.req_id
-        self.class.req_id = self.class.req_id + 1
-      end
-
-      req = EsxMQ::RequestMsg.new(req_id)
-      req.payload = payload
-
-      opts = Hash.new
-      opts[:timeout] = timeout if timeout
-
-      @logger.info("ESXCLOUD: sending request #{payload}")
-      rtn, results = NATS.timed_request(@nats["qname"], req, opts)
-      if rtn
-        raise "Bad taskID #{results}" unless results[0]["@taskID"] == results[1]["@taskID"]
-
-        if results[1]["@returnStatus"].downcase == "failure"
-          @logger.info("ESXCloud, request #{payload} failed #{results}")
-          raise "ESXCloud, request #{payload} failed #{results}"
-          rtn = false
-        end
-      else
-          @logger.info("ESXCloud, request #{payload} timedout #{results}")
-          raise "ESXCloud, request #{payload} timedout #{results}"
-      end
-      @logger.info("ESXCloud, request #{payload} rtn #{rtn}, rtn_payload #{rtn_payload}")
-      return rtn, rtn_payload
-    end
-=end
-
 
     def send_file(name, full_file_name)
       sock = TCPSocket.open(@esxmgr["host"], EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
