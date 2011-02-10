@@ -4,7 +4,7 @@ module Bosh::Cli
 
   class PackageBuilder
 
-    attr_reader :name, :globs, :version, :dependencies, :tarball_path
+    attr_reader :name, :globs, :version, :public_version, :dependencies, :tarball_path
 
     # We have two ways of getting/storing a package:
     # development versions of packages, kept in release directory
@@ -15,10 +15,10 @@ module Bosh::Cli
 
     def initialize(spec, release_dir, final, blobstore, sources_dir = nil)
       spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
-      
+
       @name         = spec["name"]
       @globs        = spec["files"]
-      @dependencies = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []      
+      @dependencies = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []
       @release_dir  = release_dir
       @sources_dir  = sources_dir || File.join(@release_dir, "src")
       @final        = final
@@ -36,18 +36,18 @@ module Bosh::Cli
         raise InvalidPackage, "Package '#{@name}' doesn't include any files"
       end
 
-      FileUtils.mkdir_p(metadata_dir)      
+      FileUtils.mkdir_p(metadata_dir)
 
       FileUtils.mkdir_p(dev_builds_dir)
       FileUtils.mkdir_p(final_builds_dir)
-      
+
       @dev_packages   = VersionsIndex.new(dev_builds_dir)
       @final_packages = VersionsIndex.new(final_builds_dir)
     end
 
     def build
       use_final_version || use_dev_version || generate_tarball
-      upload_tarball(@tarball_path) if final_build?      
+      upload_tarball(@tarball_path) if final_build?
     end
 
     def final_build?
@@ -79,11 +79,11 @@ module Bosh::Cli
         @tarball_path = @final_packages.filename(version)
       else
         say "Fetching `#{name}' (final version #{version}) from blobstore (#{blobstore_id})"
-        payload = @blobstore.get(blobstore_id)        
-        @tarball_path = @final_packages.add_version(fingerprint, package_attrs, payload)        
+        payload = @blobstore.get(blobstore_id)
+        @tarball_path = @final_packages.add_version(fingerprint, package_attrs, payload)
       end
 
-      @version = version
+      @version = @public_version = version
       true
 
     rescue Bosh::Blobstore::NotFound => e
@@ -102,20 +102,21 @@ module Bosh::Cli
       end
 
       version = package_attrs["version"]
-      
+
       if @dev_packages.version_exists?(version)
         say "Found dev version `#{name}' (#{version})"
-        @tarball_path = @dev_packages.filename(version)
-        @version      = version
-        true        
+        @tarball_path   = @dev_packages.filename(version)
+        @version        = version
+        @public_version = "#{version}_dev"
+        true
       else
-        say "Tarball for `#{name}' (dev version `#{version}') not found"        
+        say "Tarball for `#{name}' (dev version `#{version}') not found"
         nil
       end
     end
 
     def generate_tarball
-      package_attrs = @dev_packages[fingerprint]      
+      package_attrs = @dev_packages[fingerprint]
 
       version  = \
       if package_attrs.nil?
@@ -137,7 +138,7 @@ module Bosh::Cli
       end
 
       payload = tmp_file.read
-      
+
       package_attrs = {
         "version" => version,
         "sha1"    => Digest::SHA1.hexdigest(payload)
@@ -145,8 +146,9 @@ module Bosh::Cli
 
       @dev_packages.add_version(fingerprint, package_attrs, payload)
 
-      @tarball_path = @dev_packages.filename(version)
-      @version      = version      
+      @tarball_path   = @dev_packages.filename(version)
+      @version        = version
+      @public_version = "#{version}_dev"
 
       say "Generated `#{name}' (dev version #{version}): `#{@tarball_path}'"
       true
@@ -160,14 +162,14 @@ module Bosh::Cli
         say "`#{name}' (final version #{version}) already uploaded"
         return
       end
-      
+
       version = @final_packages.next_version
       payload = File.read(path)
 
       say "Uploading `#{path}' as `#{name}' (final version #{version})"
 
       blobstore_id = @blobstore.create(payload)
-      
+
       package_attrs = {
         "blobstore_id" => blobstore_id,
         "sha1"         => Digest::SHA1.hexdigest(payload),
@@ -177,7 +179,7 @@ module Bosh::Cli
       say "`#{name}' (final version #{version}) uploaded, blobstore id #{blobstore_id}"
       @final_packages.add_version(fingerprint, package_attrs, payload)
       @tarball_path = @final_packages.filename(version)
-      @version      = version
+      @version      = @public_version = version
       true
     rescue Bosh::Blobstore::BlobstoreError => e
       raise InvalidPackage, "Blobstore error: #{e}"
@@ -261,7 +263,7 @@ module Bosh::Cli
 
     def pre_package
       pre_packaging_script = File.join(package_dir, "pre_packaging")
-      
+
       if File.exists?(pre_packaging_script)
 
         say("Found pre-packaging script for `#{name}'")
@@ -277,7 +279,7 @@ module Bosh::Cli
             system("bash -x pre_packaging 2>&1")
             raise InvalidPackage, "`#{name}' pre-packaging failed" unless $?.exitstatus == 0
           end
-          
+
         ensure
           ENV.delete("BUILD_DIR")
           old_env.each { |k, v| ENV[k] = old_env[k] }
@@ -307,19 +309,19 @@ module Bosh::Cli
       # Third, data that won't be included to package but still affects it's behavior
       # (pre_packaging)
       in_package_dir do
-        ["pre_packaging"].each do |file|        
+        ["pre_packaging"].each do |file|
           contents << "%s%s" % [ file, File.read(file) ] if File.file?(file)
         end
       end
 
-      Digest::SHA1.hexdigest(contents)    
+      Digest::SHA1.hexdigest(contents)
     end
 
     def resolve_globs
       in_sources_dir do
         @globs.map { |glob| Dir[glob] }.flatten.sort
       end
-    end    
+    end
 
     def in_sources_dir(&block)
       Dir.chdir(@sources_dir) { yield }

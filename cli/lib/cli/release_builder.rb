@@ -1,6 +1,5 @@
 require "fileutils"
 require "yaml"
-require "ostruct"
 
 module Bosh::Cli
 
@@ -78,7 +77,7 @@ module Bosh::Cli
       manifest["packages"] = packages.map do |package|
         {
           "name"         => package.name,
-          "version"      => package.version,
+          "version"      => package.public_version,
           "sha1"         => package.checksum,
           "dependencies" => package.dependencies
         }
@@ -87,7 +86,7 @@ module Bosh::Cli
       manifest["jobs"] = jobs.map do |job|
         {
           "name"    => job.name,
-          "version" => job.version,
+          "version" => job.public_version,
           "sha1"    => job.checksum,
         }
       end
