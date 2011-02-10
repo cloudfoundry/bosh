@@ -39,9 +39,11 @@ end
 module EsxCloud
 
   class Cloud
+    @req_id = 0
+    @lock = Mutex.new
 
     class << self
-      attr_accessor :nats_started, :req_id, :lock 
+      attr_accessor :req_id, :lock 
     end
 
     BOSH_AGENT_PROPERTIES_ID = "Bosh_Agent_Properties"
@@ -49,19 +51,30 @@ module EsxCloud
     attr_accessor :client
 
     def initialize(options)
-      self.class.nats_started = false unless self.class.nats_started
-      self.class.req_id = 0 unless self.class.req_id
-      self.class.lock = Mutex.new unless self.class.lock
-
       @logger = Bosh::Director::Config.logger
-      @server = "middle"
       @agent_properties = options["agent"]
       @nats = options["nats"]
       @esxmgr = options["esxmgr"]
       @vm_mac = "00:00:00:00:00:00"
 
-      @logger.info("ESXCLOUD: options #{@nats}")
-      @logger.info("ESXCLOUD: options #{@esxmgr}")
+      @logger.info("ESXCLOUD: nats <#{@nats}> esxmgr <#{@esxmgr}>")
+
+      # Start EM (if required)
+      self.class.lock.synchronize do
+        unless EM.reactor_running? 
+          Thread.new {
+            EM.run{}
+          }
+          while !EM.reactor_running?
+            @logger.info("ESXCLOUD: waiting for EM to start")
+            sleep(0.1)
+          end
+        end
+        raise "EM could not be started" unless EM.reactor_running?
+      end
+
+      # Call after EM is running
+      EsxMQ::TimedRequest.init(@nats)
     end
 
     def generate_unique_name
@@ -97,6 +110,26 @@ module EsxCloud
       network_env
     end
 
+    def send_request(payload, timeout=nil)
+      req_id = 0
+      self.class.lock.synchronize do
+        req_id = self.class.req_id
+        self.class.req_id = self.class.req_id + 1
+      end
+
+      req = EsxMQ::RequestMsg.new(req_id)
+      req.payload = payload
+
+      @logger.info("ESXCLOUD: sending request #{payload}")
+      rtn, results = EsxMQ::TimedRequest.send(payload, timeout)
+
+      raise "ESXCloud, request #{payload} failed #{results}" unless rtn
+
+      @logger.info("ESXCloud, request #{payload} results #{results}")
+      return rtn, results
+    end
+
+=begin
     def send_request(payload, timeout=nil)
       req_id = 0
       rtn_payload = nil
@@ -148,6 +181,7 @@ module EsxCloud
       @logger.info("ESXCloud, request #{payload} rtn #{rtn}, rtn_payload #{rtn_payload}")
       return rtn, rtn_payload
     end
+=end
 
 
     def send_file(name, full_file_name)
