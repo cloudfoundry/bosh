@@ -11,7 +11,7 @@ describe Bosh::Spec::IntegrationTest do
   BOSH_WORK_DIR  = File.expand_path("../assets/bosh_work_dir", __FILE__)
   CLOUD_DIR      = "/tmp/bosh_test_cloud"
   CLI_DIR        = File.expand_path("../../cli", __FILE__)
-  
+
   before(:all) do
     puts "Starting sandboxed environment for Bosh tests..."
     Bosh::Spec::Sandbox.start
@@ -31,7 +31,7 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   def format_output(out)
-    out.gsub(/^\s*/, '').gsub(/\s*$/, '')    
+    out.gsub(/^\s*/, '').gsub(/\s*$/, '')
   end
 
   def expect_output(cmd, expected_output)
@@ -288,6 +288,11 @@ describe Bosh::Spec::IntegrationTest do
 
   it "asks to login if no user set and operation requires talking to director" do
     expect_output("create user john pass", <<-OUT)
+      Please choose target first
+    OUT
+
+    run_bosh("target http://localhost:57523")
+    expect_output("create user john pass", <<-OUT)
       Please log in first
     OUT
   end
@@ -390,7 +395,9 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   describe "deployment prequisites" do
-    it "requires login" do
+    it "requires target and login" do
+      run_bosh("deploy").should =~ /Please choose target first/
+      run_bosh("target http://localhost:57523")
       run_bosh("deploy").should =~ /Please log in first/
     end
 

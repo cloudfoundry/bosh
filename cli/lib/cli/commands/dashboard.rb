@@ -37,7 +37,7 @@ module Bosh::Cli::Command
     end
 
     def login(username = nil, password = nil)
-      err("Please choose target first") if target.nil?
+      target_required
 
       unless options[:non_interactive]
         username = ask("Your username: ") if username.blank?
@@ -71,7 +71,7 @@ module Bosh::Cli::Command
     end
 
     def logout
-      err("Please choose target first") unless target
+      target_required
       config.set_credentials(target, nil, nil)
       config.save
       say("You are no longer logged in to '#{target}'")
