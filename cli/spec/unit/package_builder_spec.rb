@@ -16,7 +16,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
       path = source_path(file)
       FileUtils.mkdir_p(File.dirname(path))
       FileUtils.touch(path)
-    end    
+    end
   end
 
   def remove_sources(*files)
@@ -66,7 +66,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
       builder = make_builder("aa", ["*.rb", "packaging"])
       add_sources("1.rb", "packaging")
       builder.checksum
-    }.should raise_error(RuntimeError, "cannot read checksum for not yet generated package")    
+    }.should raise_error(RuntimeError, "cannot read checksum for not yet generated package")
   end
 
   it "has a checksum for a generated package" do
@@ -95,7 +95,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder = make_builder("A", ["lib/*.rb", "README.*"])
     s1 = builder.fingerprint
 
-    builder.reload.fingerprint.should == s1    
+    builder.reload.fingerprint.should == s1
   end
 
   it "changes fingerprint when new file that matches glob is added" do
@@ -107,7 +107,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.reload.fingerprint.should_not == s1
 
     remove_sources("lib/3.rb")
-    builder.reload.fingerprint.should == s1    
+    builder.reload.fingerprint.should == s1
   end
 
   it "changes fingerprint when one of the matched files changes" do
@@ -118,7 +118,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     s1 = builder.fingerprint
 
     File.open("#{@release_dir}/src/lib/1.rb", "w+") { |f| f.write("2") }
-    
+
     builder.reload.fingerprint.should_not == s1
 
     File.open("#{@release_dir}/src/lib/1.rb", "w") { |f| f.write("1") }
@@ -137,7 +137,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     add_sources("bar/baz")
     builder.reload.fingerprint.should == s2
     FileUtils.rm_rf(@release_dir + "/src/bar")
-    builder.reload.fingerprint.should == s1    
+    builder.reload.fingerprint.should == s1
   end
 
   it "doesn't change fingerprint when files that doesn't match glob is added" do
@@ -156,7 +156,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.strip_package_name("bar/dir/file.txt").should == "bar/dir/file.txt"
     builder.strip_package_name("foo").should == "foo"
     builder.strip_package_name("bar/foo").should == "bar/foo"
-    builder.strip_package_name("foo/foo").should == "foo"    
+    builder.strip_package_name("foo/foo").should == "foo"
     builder.strip_package_name("/foo/foo").should == "/foo/foo"
   end
 
@@ -169,10 +169,10 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     builder2 = make_builder("bar", globs, builder.build_dir)
 
-    # Also turned out to be a nice test for directory portability    
+    # Also turned out to be a nice test for directory portability
     builder.fingerprint.should == builder2.fingerprint
   end
-  
+
   it "generates tarball" do
     add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
     globs = ["foo/**/*", "baz"]
@@ -181,19 +181,45 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.generate_tarball.should be_true
   end
 
+  it "can point to either dev or a final version of a package" do
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
+    globs = ["foo/**/*", "baz"]
+
+    fingerprint = "9c956631508dfc0ccd677434c18e093912682414"
+
+    final_versions = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".final_builds", "packages", "bar"))
+    dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "packages", "bar"))
+
+    final_versions.add_version(fingerprint, { "version" => "4" }, "payload")
+    dev_versions.add_version(fingerprint, { "version" => "7" }, "dev_payload")
+
+    builder = make_builder("bar", globs)
+    builder.fingerprint.should == "9c956631508dfc0ccd677434c18e093912682414"
+
+    builder.use_final_version
+    builder.version.should == "4"
+    builder.public_version.should == "4"
+    builder.tarball_path.should == File.join(@release_dir, ".final_builds", "packages", "bar", "4.tgz")
+
+    builder.use_dev_version
+    builder.public_version.should == "7_dev"
+    builder.version.should == "7"
+    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "packages", "bar", "7.tgz")
+  end
+
   it "creates a new version tarball" do
-    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")    
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
     globs = ["foo/**/*", "baz"]
     builder = make_builder("bar", globs)
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_false
     builder.build
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true    
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
 
     builder = make_builder("bar", globs)
     builder.build
     v1_fingerprint = builder.fingerprint
-    
+
     File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/packages/bar/2.tgz").should be_false
 
@@ -210,7 +236,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.version.should == 1
 
     builder.fingerprint.should == v1_fingerprint
-    
+
     File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/packages/bar/2.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/packages/bar/3.tgz").should be_false
@@ -219,7 +245,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     FileUtils.mkdir_p("#{@release_dir}/packages/bar/data/")
     File.open("#{@release_dir}/packages/bar/data/packaging", "w") { |f| f.puts("make install") }
     builder = make_builder("bar", globs)
-    builder.build    
+    builder.build
     builder.version.should == 3
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/3.tgz").should be_true
@@ -229,8 +255,8 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder = make_builder("bar", globs)
     builder.build
     builder.version.should == 4
-    
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/4.tgz").should be_true    
+
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/4.tgz").should be_true
 
     # And remove all metadata
     FileUtils.rm_rf("#{@release_dir}/packages/bar/data/")
