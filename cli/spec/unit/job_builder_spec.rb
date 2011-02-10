@@ -12,7 +12,7 @@ describe Bosh::Cli::JobBuilder do
     if configs.is_a?(Array)
       configs = configs.inject({ }) { |h, e| h[e] = 1; h }
     end
-    
+
     spec = {
       "name"          => name,
       "packages"      => packages,
@@ -35,7 +35,7 @@ describe Bosh::Cli::JobBuilder do
 
   def add_spec(job_name)
     add_file(job_name, "spec")
-  end  
+  end
 
   def add_monit(job_name)
     add_file(job_name, "monit")
@@ -81,7 +81,7 @@ describe Bosh::Cli::JobBuilder do
     add_configs("foo", "a.conf", "b.yml")
     add_monit("foo")
 
-    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])    
+    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
     f1 = b1.fingerprint
 
     add_configs("foo", "baz")
@@ -93,12 +93,12 @@ describe Bosh::Cli::JobBuilder do
     add_configs("foo", "a.conf", "b.yml")
     add_monit("foo")
 
-    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])    
+    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
     f1 = b1.fingerprint
 
     add_file("foo", "config/a.conf", "bzz")
     b1.reload.fingerprint.should_not == f1
-  end  
+  end
 
   it "can read config file names from hash" do
     add_configs("foo", "a.conf", "b.yml")
@@ -117,19 +117,19 @@ describe Bosh::Cli::JobBuilder do
     lambda {
       new_builder("@#!", [])
     }.should raise_error(Bosh::Cli::InvalidJob, "`@#!' is not a valid Bosh identifier")
-  end  
+  end
 
   it "whines if some configs are missing" do
     add_configs("foo", "a.conf", "b.conf")
 
     lambda {
-      new_builder("foo", [], ["a.conf", "b.conf", "c.conf"])      
+      new_builder("foo", [], ["a.conf", "b.conf", "c.conf"])
     }.should raise_error(Bosh::Cli::InvalidJob, "Some config files required by 'foo' job are missing: c.conf")
-  end  
+  end
 
   it "whines if some packages are missing" do
     lambda {
-      new_builder("foo", ["foo", "bar", "baz", "app42"], { }, ["foo", "bar"])      
+      new_builder("foo", ["foo", "bar", "baz", "app42"], { }, ["foo", "bar"])
     }.should raise_error(Bosh::Cli::InvalidJob, "Some packages required by 'foo' job are missing: baz, app42")
   end
 
@@ -147,13 +147,13 @@ describe Bosh::Cli::JobBuilder do
 
     add_monit("foo")
     lambda {
-      new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])      
+      new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
     }.should_not raise_error
   end
 
   it "copies job files" do
     add_configs("foo", "a.conf", "b.yml")
-    add_monit("foo")    
+    add_monit("foo")
     builder = new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
 
     builder.copy_files.should == 4
@@ -186,7 +186,7 @@ describe Bosh::Cli::JobBuilder do
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_false
     builder.build
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
-    v1_fingerprint = builder.fingerprint    
+    v1_fingerprint = builder.fingerprint
 
     add_configs("foo", "zb.yml")
     builder = new_builder("foo", [], ["bar", "baz", "zb.yml"], [])
@@ -199,10 +199,37 @@ describe Bosh::Cli::JobBuilder do
     builder.build
     builder.version.should == 1
 
-    builder.fingerprint.should == v1_fingerprint    
+    builder.fingerprint.should == v1_fingerprint
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/2.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/3.tgz").should be_false    
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/3.tgz").should be_false
   end
-  
+
+
+  it "can point to either dev or a final version of a job" do
+    add_configs("foo", "bar", "baz")
+    add_monit("foo")
+    fingerprint = "ea9931b04f6a736b8806d2f56c68096fb4dc1ee6"
+
+    final_versions = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".final_builds", "jobs", "foo"))
+    dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "jobs", "foo"))
+
+    final_versions.add_version(fingerprint, { "version" => "4" }, "payload")
+    dev_versions.add_version(fingerprint, { "version" => "7" }, "dev_payload")
+
+    builder = new_builder("foo", [], ["bar", "baz"], [])
+
+    builder.fingerprint.should == fingerprint
+
+    builder.use_final_version
+    builder.version.should == "4"
+    builder.public_version.should == "4"
+    builder.tarball_path.should == File.join(@release_dir, ".final_builds", "jobs", "foo", "4.tgz")
+
+    builder.use_dev_version
+    builder.public_version.should == "7_dev"
+    builder.version.should == "7"
+    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "jobs", "foo", "7.tgz")
+  end
+
 end
