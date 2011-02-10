@@ -56,10 +56,19 @@ module Bosh::Cli
 
       protected
 
+      def auth_required
+        target_required
+        err("Please log in first") unless logged_in?
+      end
+
+      def target_required
+        err("Please choose target first") if target.nil?
+      end
+
       def check_if_release_dir
         if !in_release_dir?
-          err "Sorry, your current directory doesn't look like release directory"        
-        end      
+          err "Sorry, your current directory doesn't look like release directory"
+        end
       end
 
       def in_release_dir?

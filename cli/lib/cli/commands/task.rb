@@ -2,6 +2,8 @@ module Bosh::Cli::Command
   class Task < Base
 
     def track(task_id, *flags)
+      auth_required
+
       task = Bosh::Cli::DirectorTask.new(director, task_id)
       say("Task state: #{task.state}")
 
@@ -44,6 +46,7 @@ module Bosh::Cli::Command
     end
 
     def list_running
+      auth_required
       tasks = director.list_running_tasks
       err("No running tasks") if tasks.empty?
       show_tasks_table(tasks.sort_by { |t| t["id"].to_i * -1 })
@@ -51,6 +54,7 @@ module Bosh::Cli::Command
     end
 
     def list_recent(count = 30)
+      auth_required
       tasks = director.list_recent_tasks(count)
       err("No recent tasks") if tasks.empty?
       show_tasks_table(tasks)
@@ -74,11 +78,15 @@ module Bosh::Cli::Command
     end
 
     def get_cached_task_output(task_id)
-      cache.read("task/#{task_id}")
+      cache.read(task_cache_key(task_id))
     end
 
     def save_task_output(task_id, output)
-      cache.write("task/#{task_id}", output)
+      cache.write(task_cache_key(task_id), output)
+    end
+
+    def task_cache_key(task_id)
+      "task/#{target}/#{task_id}"
     end
 
   end

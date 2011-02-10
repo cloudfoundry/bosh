@@ -11,13 +11,13 @@ module Bosh::Cli::Command
       if !File.exists?(manifest_filename)
         err("Missing manifest for #{name} (tried '#{manifest_filename}')")
       end
-      
+
       manifest   = YAML.load_file(manifest_filename)
 
       unless manifest.is_a?(Hash) && manifest.has_key?("target")
         err("Deployment '#{name}' has no target defined")
       end
-      
+
       new_target = manifest["target"]
 
       if !new_target
@@ -33,24 +33,24 @@ module Bosh::Cli::Command
       config.deployment = manifest_filename
       config.save
     end
-    
+
     def perform
-      err("Please log in first") unless logged_in?
+      auth_required
       err("Please choose deployment first") unless deployment
 
       manifest_filename = deployment
       if !File.exists?(manifest_filename)
         err("Missing deployment at '#{deployment}'")
       end
-      
-      manifest = YAML.load_file(manifest_filename)      
+
+      manifest = YAML.load_file(manifest_filename)
 
       if manifest["name"].blank? || manifest["release"].blank? || manifest["target"].blank?
         err("Invalid manifest for '#{deployment}': name, release and target are all required")
       end
 
       desc = "to '#{target}' using '#{deployment}' deployment manifest"
-      
+
       say("Deploying #{desc}...")
       say("\n")
 
@@ -64,12 +64,11 @@ module Bosh::Cli::Command
         :invalid       => "Deployment is invalid, please fix it and deploy again"
       }
 
-      say responses[status] || "Cannot deploy: #{body}"      
+      say responses[status] || "Cannot deploy: #{body}"
     end
 
     def delete(name)
-      err("Please choose target") unless target
-      err("Please log in first")  unless logged_in?
+      auth_required
 
       status, message = director.delete_deployment(name)
 
@@ -84,8 +83,8 @@ module Bosh::Cli::Command
     end
 
     def list
-      err("Please log in first") unless logged_in?
-      err("Please choose target") unless target
+      auth_required
+
       deployments = director.list_deployments
 
       err("No deployments") if deployments.size == 0
@@ -112,7 +111,7 @@ module Bosh::Cli::Command
         File.expand_path(File.join(work_dir, "deployments", "#{name}.yml"))
       end
     end
-    
+
   end
 end
 

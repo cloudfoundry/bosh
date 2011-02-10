@@ -15,12 +15,11 @@ module Bosh::Cli::Command
         for error in stemcell.errors
           say("- %s" % [ error ])
         end
-      end      
+      end
     end
 
     def upload(tarball_path)
-      err("Please log in first") unless logged_in?
-      err("Please choose target") unless target
+      auth_required
 
       stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
 
@@ -47,8 +46,7 @@ module Bosh::Cli::Command
     end
 
     def list
-      err("Please log in first") unless logged_in?
-      err("Please choose target") unless target
+      auth_required
       stemcells = director.list_stemcells
 
       err("No stemcells") if stemcells.size == 0
@@ -67,8 +65,7 @@ module Bosh::Cli::Command
     end
 
     def delete(name, version)
-      err("Please log in first") unless logged_in?
-      err("Please choose target") unless target
+      auth_required
 
       status, message = director.delete_stemcell(name, version)
 

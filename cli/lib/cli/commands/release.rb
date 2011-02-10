@@ -20,8 +20,7 @@ module Bosh::Cli::Command
     end
 
     def upload(tarball_path)
-      err("Please log in first") unless logged_in?
-      err("Please choose target") unless target
+      auth_required
 
       release = Bosh::Cli::ReleaseUploader.new(tarball_path)
 
@@ -108,8 +107,7 @@ module Bosh::Cli::Command
     end
 
     def list
-      err("Please log in first") unless logged_in?
-      err("Please choose target") unless target
+      auth_required
       releases = director.list_releases
 
       err("No releases") if releases.size == 0
@@ -128,6 +126,7 @@ module Bosh::Cli::Command
     end
 
     def delete(name, *options)
+      auth_required
       force = false
 
       if options.include?("--force")
