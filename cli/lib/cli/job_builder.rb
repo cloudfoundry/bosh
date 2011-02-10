@@ -1,11 +1,11 @@
 module Bosh::Cli
   class JobBuilder
 
-    attr_reader :name, :version, :packages, :configs, :release_dir, :built_packages, :tarball_path
+    attr_reader :name, :version, :public_version, :packages, :configs, :release_dir, :built_packages, :tarball_path
 
     def initialize(spec, release_dir, final, blobstore, built_packages = [])
       spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
-      
+
       @name           = spec["name"]
       @packages       = spec["packages"]
       @built_packages = built_packages
@@ -52,10 +52,10 @@ module Bosh::Cli
       end
 
       FileUtils.mkdir_p(dev_builds_dir)
-      FileUtils.mkdir_p(final_builds_dir)      
+      FileUtils.mkdir_p(final_builds_dir)
 
       @dev_jobs   = VersionsIndex.new(dev_builds_dir)
-      @final_jobs = VersionsIndex.new(final_builds_dir)      
+      @final_jobs = VersionsIndex.new(final_builds_dir)
     end
 
     def final?
@@ -67,7 +67,7 @@ module Bosh::Cli
         Digest::SHA1.hexdigest(File.read(@tarball_path))
       else
         raise RuntimeError, "cannot read checksum for not yet generated job"
-      end      
+      end
     end
 
     def build
@@ -96,7 +96,7 @@ module Bosh::Cli
         @tarball_path = @final_jobs.add_version(fingerprint, job_attrs, payload)
       end
 
-      @version = version
+      @version = @public_version = version
       true
     rescue Bosh::Blobstore::NotFound => e
       raise InvalidJob, "Final version of `#{name}' not found in blobstore"
@@ -114,14 +114,15 @@ module Bosh::Cli
       end
 
       version = job_attrs["version"]
-      
+
       if @dev_jobs.version_exists?(version)
         say "Found dev version `#{name}' (#{version})"
-        @tarball_path = @dev_jobs.filename(version)
-        @version      = version
-        true        
+        @tarball_path   = @dev_jobs.filename(version)
+        @version        = version
+        @public_version = "#{version}_dev"
+        true
       else
-        say "Tarball for `#{name}' (dev version `#{version}') not found"        
+        say "Tarball for `#{name}' (dev version `#{version}') not found"
         nil
       end
     end
@@ -148,15 +149,16 @@ module Bosh::Cli
       end
 
       payload = tmp_file.read
-      
+
       job_attrs = {
         "version" => version,
         "sha1"    => Digest::SHA1.hexdigest(payload)
       }
 
       @dev_jobs.add_version(fingerprint, job_attrs, payload)
-      @tarball_path = @dev_jobs.filename(version)
-      @version      = version
+      @tarball_path   = @dev_jobs.filename(version)
+      @version        = version
+      @public_version = "#{version}_dev"
 
       say "Generated `#{name}' (dev version #{version}): `#{@tarball_path}'"
       true
@@ -170,14 +172,14 @@ module Bosh::Cli
         say "`#{name}' (final version #{version}) already uploaded"
         return
       end
-      
+
       version = @final_jobs.next_version
       payload = File.read(path)
 
       say "Uploading `#{path}' as `#{name}' (final version #{version})"
 
       blobstore_id = @blobstore.create(payload)
-      
+
       job_attrs = {
         "blobstore_id" => blobstore_id,
         "sha1"         => Digest::SHA1.hexdigest(payload),
@@ -187,7 +189,7 @@ module Bosh::Cli
       say "`#{name}' (final version #{version}) uploaded, blobstore id #{blobstore_id}"
       @final_jobs.add_version(fingerprint, job_attrs, payload)
       @tarball_path = @final_jobs.filename(version)
-      @version      = version
+      @version      = @public_version = version
       true
     rescue Bosh::Blobstore::BlobstoreError => e
       raise InvalidJob, "Blobstore error: #{e}"
@@ -214,7 +216,7 @@ module Bosh::Cli
 
     def job_dir
       File.join(@release_dir, "jobs", @name)
-    end    
+    end
 
     def dev_builds_dir
       File.join(@release_dir, ".dev_builds", "jobs", name)
@@ -245,14 +247,14 @@ module Bosh::Cli
       end.sort
 
       files << File.join(job_dir, "monit")
-      files << File.join(job_dir, "spec")      
+      files << File.join(job_dir, "spec")
 
       files.each do |filename|
         contents << "%s%s%s" % [ File.basename(filename), File.read(filename), File.stat(filename).mode.to_s(8) ]
       end
 
-      Digest::SHA1.hexdigest(contents)    
-    end    
+      Digest::SHA1.hexdigest(contents)
+    end
 
     def missing_packages
       @missing_packages ||= packages - built_packages
@@ -267,6 +269,6 @@ module Bosh::Cli
     def in_build_dir(&block)
       Dir.chdir(build_dir) { yield }
     end
-    
+
   end
 end

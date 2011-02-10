@@ -39,7 +39,7 @@ module Bosh::Cli::Command
     def login(username = nil, password = nil)
       err("Please choose target first") if target.nil?
 
-      unless options[:non_interactive]      
+      unless options[:non_interactive]
         username = ask("Your username: ") if username.blank?
 
         password_retries = 0
@@ -54,7 +54,7 @@ module Bosh::Cli::Command
 
       if options[:director_checks]
         director = Bosh::Cli::Director.new(target, username, password)
-        
+
         if director.authenticated?
           say("Logged in as '#{username}'")
           logged_in = true
@@ -66,7 +66,7 @@ module Bosh::Cli::Command
 
       if logged_in || !options[:director_checks]
         config.set_credentials(target, username, password)
-        config.save        
+        config.save
       end
     end
 
@@ -82,8 +82,8 @@ module Bosh::Cli::Command
         say("Cache directory '#{@cache.cache_dir}' differs from default, please remove manually")
       else
         FileUtils.rm_rf(cache.cache_dir)
-        say("Purged cache")          
-      end      
+        say("Purged cache")
+      end
     end
 
     def show_target
@@ -92,7 +92,7 @@ module Bosh::Cli::Command
 
     def set_target(director_url)
       director = Bosh::Cli::Director.new(director_url)
-      
+
       if options[:director_checks] && !director.exists?
         err("Cannot talk to director at '#{director_url}', please set correct target")
       end
@@ -103,7 +103,7 @@ module Bosh::Cli::Command
         say("WARNING! Your deployment has been unset")
         config.deployment = nil
       end
-      
+
       config.save
       say("Target set to '#{director_url}'")
     end
@@ -119,7 +119,7 @@ module Bosh::Cli::Command
       end
 
       t = table [ "Name", "Dev", "Final" ]
-      
+
       specs.each do |spec_file|
         if spec_file.is_a?(String) && File.file?(spec_file)
           spec = YAML.load_file(spec_file)
@@ -128,7 +128,7 @@ module Bosh::Cli::Command
           unless name.bosh_valid_id?
             err "`#{name}' is an invalid #{entity} name, please fix before proceeding"
           end
-          
+
           begin
             dev_index   = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".dev_builds", dir, name))
             final_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".final_builds", dir, name))

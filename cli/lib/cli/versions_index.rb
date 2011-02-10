@@ -6,7 +6,11 @@ module Bosh::Cli
       @index_file  = File.join(@storage_dir, "index.yml")
 
       unless File.directory?(@storage_dir)
-        raise InvalidIndex, "Cannot read index storage directory: #{@storage_dir}"
+        begin
+          FileUtils.mkdir_p(@storage_dir)
+        rescue
+          raise InvalidIndex, "Cannot create index storage directory: #{@storage_dir}"
+        end
       end
 
       unless File.file?(@index_file) && File.readable?(@index_file)
@@ -34,7 +38,7 @@ module Bosh::Cli
     end
 
     def next_version
-      current_version + 1      
+      current_version + 1
     end
 
     def version_exists?(version)
@@ -43,7 +47,7 @@ module Bosh::Cli
 
     def add_version(fingerprint, attrs, payload)
       version = attrs["version"]
-      
+
       if version.blank?
         raise InvalidIndex, "Cannot save index entry without knowing its version"
       end
@@ -62,8 +66,8 @@ module Bosh::Cli
     end
 
     def filename(version)
-      File.join(@storage_dir, "#{version}.tgz")      
+      File.join(@storage_dir, "#{version}.tgz")
     end
-    
+
   end
 end
