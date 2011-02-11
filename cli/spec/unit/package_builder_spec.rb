@@ -265,4 +265,25 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.5-dev.tgz").should be_false
   end
 
+  it "bumps major dev version in sync with final version" do
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
+    globs = ["foo/**/*", "baz"]
+    builder = make_builder("bar", globs)
+    builder.build
+
+    builder.version.should == "0.1-dev"
+
+    blobstore = mock("blobstore")
+    blobstore.should_receive(:create).and_return("object_id")
+    final_builder = Bosh::Cli::PackageBuilder.new({"name" => "bar", "files" => globs}, @release_dir, true, blobstore)
+    final_builder.build
+
+    final_builder.version.should == 1
+
+    add_sources("foo/foo15.rb")
+    builder2 = make_builder("bar", globs)
+    builder2.build
+    builder2.version.should == "1.1-dev"
+  end
+
 end
