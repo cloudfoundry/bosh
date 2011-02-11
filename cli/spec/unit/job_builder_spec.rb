@@ -183,26 +183,26 @@ describe Bosh::Cli::JobBuilder do
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_false
     builder.build
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
     v1_fingerprint = builder.fingerprint
 
     add_configs("foo", "zb.yml")
     builder = new_builder("foo", [], ["bar", "baz", "zb.yml"], [])
     builder.build
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/2.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_true
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
     builder.build
-    builder.version.should == 1
+    builder.version.should == "0.1-dev"
 
     builder.fingerprint.should == v1_fingerprint
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/1.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/2.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/3.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.3-dev.tgz").should be_false
   end
 
 
@@ -215,7 +215,7 @@ describe Bosh::Cli::JobBuilder do
     dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "jobs", "foo"))
 
     final_versions.add_version(fingerprint, { "version" => "4" }, "payload")
-    dev_versions.add_version(fingerprint, { "version" => "7" }, "dev_payload")
+    dev_versions.add_version(fingerprint, { "version" => "0.7-dev" }, "dev_payload")
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
@@ -223,13 +223,11 @@ describe Bosh::Cli::JobBuilder do
 
     builder.use_final_version
     builder.version.should == "4"
-    builder.public_version.should == "4"
     builder.tarball_path.should == File.join(@release_dir, ".final_builds", "jobs", "foo", "4.tgz")
 
     builder.use_dev_version
-    builder.public_version.should == "7_dev"
-    builder.version.should == "7"
-    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "jobs", "foo", "7.tgz")
+    builder.version.should == "0.7-dev"
+    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "jobs", "foo", "0.7-dev.tgz")
   end
 
 end

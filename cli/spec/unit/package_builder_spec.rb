@@ -191,20 +191,18 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "packages", "bar"))
 
     final_versions.add_version(fingerprint, { "version" => "4" }, "payload")
-    dev_versions.add_version(fingerprint, { "version" => "7" }, "dev_payload")
+    dev_versions.add_version(fingerprint, { "version" => "0.7-dev" }, "dev_payload")
 
     builder = make_builder("bar", globs)
     builder.fingerprint.should == "9c956631508dfc0ccd677434c18e093912682414"
 
     builder.use_final_version
     builder.version.should == "4"
-    builder.public_version.should == "4"
     builder.tarball_path.should == File.join(@release_dir, ".final_builds", "packages", "bar", "4.tgz")
 
     builder.use_dev_version
-    builder.public_version.should == "7_dev"
-    builder.version.should == "7"
-    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "packages", "bar", "7.tgz")
+    builder.version.should == "0.7-dev"
+    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "packages", "bar", "0.7-dev.tgz")
   end
 
   it "creates a new version tarball" do
@@ -212,59 +210,59 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     globs = ["foo/**/*", "baz"]
     builder = make_builder("bar", globs)
 
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_false
     builder.build
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
 
     builder = make_builder("bar", globs)
     builder.build
     v1_fingerprint = builder.fingerprint
 
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/2.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").should be_false
 
     add_sources("foo/3.rb")
     builder = make_builder("bar", globs)
     builder.build
 
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/2.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").should be_true
 
     remove_sources("foo/3.rb")
     builder = make_builder("bar", globs)
     builder.build
-    builder.version.should == 1
+    builder.version.should == "0.1-dev"
 
     builder.fingerprint.should == v1_fingerprint
 
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/1.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/2.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/3.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.3-dev.tgz").should be_false
 
     # Now add some metadata
     FileUtils.mkdir_p("#{@release_dir}/packages/bar/data/")
     File.open("#{@release_dir}/packages/bar/data/packaging", "w") { |f| f.puts("make install") }
     builder = make_builder("bar", globs)
     builder.build
-    builder.version.should == 3
+    builder.version.should == "0.3-dev"
 
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/3.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.3-dev.tgz").should be_true
 
     # And more metadata
     File.open("#{@release_dir}/packages/bar/data/migrations", "w") { |f| f.puts("rake db:migrate") }
     builder = make_builder("bar", globs)
     builder.build
-    builder.version.should == 4
+    builder.version.should == "0.4-dev"
 
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/4.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.4-dev.tgz").should be_true
 
     # And remove all metadata
     FileUtils.rm_rf("#{@release_dir}/packages/bar/data/")
     builder = make_builder("bar", globs)
     builder.build
-    builder.version.should == 1
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/4.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/5.tgz").should be_false
+    builder.version.should == "0.1-dev"
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.4-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.5-dev.tgz").should be_false
   end
 
 end
