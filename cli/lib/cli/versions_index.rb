@@ -30,18 +30,8 @@ module Bosh::Cli
       @data["builds"][fingerprint]
     end
 
-    def last_build
-      @data["last_build"].to_i
-    end
-
-    def current_version
-      @data["current_version"]
-    end
-
-    def current_fingerprint
-      @data["builds"].each do |k, v|
-        return k if v["version"] == current_version
-      end
+    def latest_version
+      @data["latest_version"]
     end
 
     def version_exists?(version)
@@ -60,8 +50,7 @@ module Bosh::Cli
       end
 
       @data["builds"][fingerprint] = attrs
-      @data["last_build"] = @data["last_build"].to_i + 1
-      @data["current_version"] = version
+      @data["latest_version"] = version
 
       File.open(@index_file, "w") do |f|
         f.write(YAML.dump(@data))
