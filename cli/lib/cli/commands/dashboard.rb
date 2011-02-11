@@ -134,8 +134,8 @@ module Bosh::Cli::Command
             dev_index   = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".dev_builds", dir, name))
             final_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".final_builds", dir, name))
 
-            dev_version   = dev_index.current_version || "n/a"
-            final_version = final_index.current_version || "n/a"
+            dev_version   = dev_index.latest_version || "n/a"
+            final_version = final_index.latest_version || "n/a"
 
             t << [ name, dev_version.gsub(/\-dev$/, "").rjust(8), final_version.to_s.rjust(8) ]
           rescue Bosh::Cli::InvalidIndex => e

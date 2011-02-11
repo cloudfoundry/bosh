@@ -115,8 +115,16 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      major   = @final_packages.last_build
-      minor   = @dev_packages.last_build + 1
+      current_final = @final_packages.latest_version.to_i
+
+      if @dev_packages.latest_version.to_s =~ /^(\d+)\.(\d+)/
+        major, minor = $1.to_i, $2.to_i
+        minor = major == current_final ? minor + 1 : 1
+        major = current_final
+      else
+        major, minor = 0, 1
+      end
+
       version = "#{major}.#{minor}-dev"
 
       tmp_file = Tempfile.new(name)
@@ -156,7 +164,7 @@ module Bosh::Cli
         return
       end
 
-      version = @final_packages.last_build + 1
+      version = @final_packages.latest_version.to_i + 1
       payload = File.read(path)
 
       say "Uploading `#{path}' as `#{name}' (final version #{version})"
