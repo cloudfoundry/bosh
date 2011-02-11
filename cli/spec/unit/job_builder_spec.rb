@@ -7,7 +7,7 @@ describe Bosh::Cli::JobBuilder do
     @release_dir = Dir.mktmpdir
   end
 
-  def new_builder(name, packages = [], configs = { }, built_packages = [], create_spec = true)
+  def new_builder(name, packages = [], configs = { }, built_packages = [], create_spec = true, final = false, blobstore = mock("blobstore"))
     # Workaround for Hash requirement
     if configs.is_a?(Array)
       configs = configs.inject({ }) { |h, e| h[e] = 1; h }
@@ -20,8 +20,7 @@ describe Bosh::Cli::JobBuilder do
     }
     add_spec(name) if create_spec
 
-    blobstore = mock("blobstore")
-    Bosh::Cli::JobBuilder.new(spec, @release_dir, false, blobstore, built_packages)
+    Bosh::Cli::JobBuilder.new(spec, @release_dir, final, blobstore, built_packages)
   end
 
   def add_file(job_name, file, contents = nil)
@@ -205,7 +204,6 @@ describe Bosh::Cli::JobBuilder do
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.3-dev.tgz").should be_false
   end
 
-
   it "can point to either dev or a final version of a job" do
     add_configs("foo", "bar", "baz")
     add_monit("foo")
@@ -228,6 +226,28 @@ describe Bosh::Cli::JobBuilder do
     builder.use_dev_version
     builder.version.should == "0.7-dev"
     builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "jobs", "foo", "0.7-dev.tgz")
+  end
+
+  it "bumps major dev version in sync with final version" do
+    add_configs("foo", "bar", "baz")
+    add_monit("foo")
+
+    builder = new_builder("foo", [], ["bar", "baz"], [])
+    builder.build
+
+    builder.version.should == "0.1-dev"
+
+    blobstore = mock("blobstore")
+    blobstore.should_receive(:create).and_return("object_id")
+    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder.build
+
+    final_builder.version.should == 1
+
+    add_configs("foo", "bzz")
+    builder2 = new_builder("foo", [], ["bar", "baz", "bzz"], [])
+    builder2.build
+    builder2.version.should == "1.1-dev"
   end
 
 end
