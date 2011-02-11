@@ -4,7 +4,7 @@ module Bosh::Cli
 
   class PackageBuilder
 
-    attr_reader :name, :globs, :version, :public_version, :dependencies, :tarball_path
+    attr_reader :name, :globs, :version, :dependencies, :tarball_path
 
     # We have two ways of getting/storing a package:
     # development versions of packages, kept in release directory
@@ -83,7 +83,7 @@ module Bosh::Cli
         @tarball_path = @final_packages.add_version(fingerprint, package_attrs, payload)
       end
 
-      @version = @public_version = version
+      @version = version
       true
 
     rescue Bosh::Blobstore::NotFound => e
@@ -107,7 +107,6 @@ module Bosh::Cli
         say "Found dev version `#{name}' (#{version})"
         @tarball_path   = @dev_packages.filename(version)
         @version        = version
-        @public_version = "#{version}_dev"
         true
       else
         say "Tarball for `#{name}' (dev version `#{version}') not found"
@@ -116,14 +115,9 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      package_attrs = @dev_packages[fingerprint]
-
-      version  = \
-      if package_attrs.nil?
-        @dev_packages.next_version
-      else
-        package_attrs["version"]
-      end
+      major   = @final_packages.last_build
+      minor   = @dev_packages.last_build + 1
+      version = "#{major}.#{minor}-dev"
 
       tmp_file = Tempfile.new(name)
 
@@ -148,7 +142,6 @@ module Bosh::Cli
 
       @tarball_path   = @dev_packages.filename(version)
       @version        = version
-      @public_version = "#{version}_dev"
 
       say "Generated `#{name}' (dev version #{version}): `#{@tarball_path}'"
       true
@@ -163,7 +156,7 @@ module Bosh::Cli
         return
       end
 
-      version = @final_packages.next_version
+      version = @final_packages.last_build + 1
       payload = File.read(path)
 
       say "Uploading `#{path}' as `#{name}' (final version #{version})"
@@ -179,7 +172,7 @@ module Bosh::Cli
       say "`#{name}' (final version #{version}) uploaded, blobstore id #{blobstore_id}"
       @final_packages.add_version(fingerprint, package_attrs, payload)
       @tarball_path = @final_packages.filename(version)
-      @version      = @public_version = version
+      @version      = version
       true
     rescue Bosh::Blobstore::BlobstoreError => e
       raise InvalidPackage, "Blobstore error: #{e}"
@@ -234,6 +227,7 @@ module Bosh::Cli
     def copy_files
       copied = 0
       in_sources_dir do
+
         resolved_globs.each do |filename|
           destination = File.join(build_dir, strip_package_name(filename))
 

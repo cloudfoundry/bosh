@@ -118,6 +118,7 @@ module Bosh::Cli::Command
         say "No #{entity} specs found"
       end
 
+
       t = table [ "Name", "Dev", "Final" ]
 
       specs.each do |spec_file|
@@ -133,12 +134,10 @@ module Bosh::Cli::Command
             dev_index   = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".dev_builds", dir, name))
             final_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".final_builds", dir, name))
 
-            dev_version   = dev_index.current_version
-            final_version = final_index.current_version
-            dev_version   = "n/a" if dev_version <= 0
-            final_version = "n/a" if final_version <= 0
+            dev_version   = dev_index.current_version || "n/a"
+            final_version = final_index.current_version || "n/a"
 
-            t << [ name, dev_version, final_version ]
+            t << [ name, dev_version.gsub(/\-dev$/, "").rjust(8), final_version.to_s.rjust(8) ]
           rescue Bosh::Cli::InvalidIndex => e
             say "Problem with #{entity} index for `%s': %s".red % [ name, e.message ]
           end

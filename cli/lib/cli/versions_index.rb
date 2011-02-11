@@ -23,22 +23,25 @@ module Bosh::Cli
 
       @data = YAML.load_file(@index_file)
       @data = { } unless @data.is_a?(Hash)
+      @data["builds"] ||= {}
     end
 
     def [](fingerprint)
-      @data[fingerprint]
+      @data["builds"][fingerprint]
     end
 
-    def all_versions
-      @data.values.map{ |v| v["version"].to_i }.sort
+    def last_build
+      @data["last_build"].to_i
     end
 
     def current_version
-      all_versions.max.to_i
+      @data["current_version"]
     end
 
-    def next_version
-      current_version + 1
+    def current_fingerprint
+      @data["builds"].each do |k, v|
+        return k if v["version"] == current_version
+      end
     end
 
     def version_exists?(version)
@@ -56,7 +59,9 @@ module Bosh::Cli
         f.write(payload)
       end
 
-      @data[fingerprint] = attrs
+      @data["builds"][fingerprint] = attrs
+      @data["last_build"] = @data["last_build"].to_i + 1
+      @data["current_version"] = version
 
       File.open(@index_file, "w") do |f|
         f.write(YAML.dump(@data))

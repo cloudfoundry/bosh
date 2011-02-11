@@ -1,7 +1,7 @@
 module Bosh::Cli
   class JobBuilder
 
-    attr_reader :name, :version, :public_version, :packages, :configs, :release_dir, :built_packages, :tarball_path
+    attr_reader :name, :version, :packages, :configs, :release_dir, :built_packages, :tarball_path
 
     def initialize(spec, release_dir, final, blobstore, built_packages = [])
       spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
@@ -96,7 +96,7 @@ module Bosh::Cli
         @tarball_path = @final_jobs.add_version(fingerprint, job_attrs, payload)
       end
 
-      @version = @public_version = version
+      @version = version
       true
     rescue Bosh::Blobstore::NotFound => e
       raise InvalidJob, "Final version of `#{name}' not found in blobstore"
@@ -119,7 +119,6 @@ module Bosh::Cli
         say "Found dev version `#{name}' (#{version})"
         @tarball_path   = @dev_jobs.filename(version)
         @version        = version
-        @public_version = "#{version}_dev"
         true
       else
         say "Tarball for `#{name}' (dev version `#{version}') not found"
@@ -128,14 +127,9 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      job_attrs = @dev_jobs[fingerprint]
-
-      version  = \
-      if job_attrs.nil?
-        @dev_jobs.next_version
-      else
-        job_attrs["version"]
-      end
+      major   = @final_jobs.last_build
+      minor   = @dev_jobs.last_build + 1
+      version = "#{major}.#{minor}-dev"
 
       tmp_file = Tempfile.new(name)
 
@@ -158,7 +152,6 @@ module Bosh::Cli
       @dev_jobs.add_version(fingerprint, job_attrs, payload)
       @tarball_path   = @dev_jobs.filename(version)
       @version        = version
-      @public_version = "#{version}_dev"
 
       say "Generated `#{name}' (dev version #{version}): `#{@tarball_path}'"
       true
@@ -173,7 +166,7 @@ module Bosh::Cli
         return
       end
 
-      version = @final_jobs.next_version
+      version = @final_jobs.last_build + 1
       payload = File.read(path)
 
       say "Uploading `#{path}' as `#{name}' (final version #{version})"
@@ -189,7 +182,7 @@ module Bosh::Cli
       say "`#{name}' (final version #{version}) uploaded, blobstore id #{blobstore_id}"
       @final_jobs.add_version(fingerprint, job_attrs, payload)
       @tarball_path = @final_jobs.filename(version)
-      @version      = @public_version = version
+      @version      = version
       true
     rescue Bosh::Blobstore::BlobstoreError => e
       raise InvalidJob, "Blobstore error: #{e}"
