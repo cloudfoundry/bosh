@@ -106,6 +106,24 @@ module Bosh::Cli::Command
       say("Built release #{builder.version} at '#{builder.tarball_path}'")
     end
 
+    def reset
+      check_if_release_dir
+      say "Your dev release environment will be completely reset".red
+      if (non_interactive? || ask("Are you sure? (type 'yes' to continue): ") == "yes")
+        say "Removing dev_builds index..."
+        FileUtils.rm_rf(".dev_builds")
+        say "Clearing dev name and version..."
+        FileUtils.rm_rf("DEV_VERSION")
+        FileUtils.rm_rf("DEV_NAME")
+        say "Removing dev tarballs..."
+        FileUtils.rm_rf("dev_releases")
+
+        say "Release has been reset".green
+      else
+        say "Canceled"
+      end
+    end
+
     def list
       auth_required
       releases = director.list_releases

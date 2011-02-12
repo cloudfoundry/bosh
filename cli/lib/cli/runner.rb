@@ -131,6 +131,7 @@ Currently available bosh commands are:
     upload release /path/to/release.tgz      Upload release tarball
     releases                                 Show the list of uploaded releases
     delete release <name> [--force]          Delete release <name> (if --force is set all errors while deleting parts of the release are ignored)
+    reset release                            Reset release development environment (deletes all dev artefacts)
 
     generate package <name>                  Generate package template
     generate job <name>                      Generate job template
@@ -273,6 +274,14 @@ USAGE
           when "release"
             usage("bosh delete release <name> [--force]")
             set_cmd(:release, :delete, 1..2)
+          end
+
+        when "reset"
+          what = @args.shift
+          case what
+          when "release"
+            usage("bosh reset release")
+            set_cmd(:release, :reset, 0)
           end
 
         when "task"
