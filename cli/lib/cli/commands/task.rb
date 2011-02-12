@@ -66,9 +66,9 @@ module Bosh::Cli::Command
     def show_tasks_table(tasks)
       return if tasks.empty?
       tasks_table = table do |t|
-        t.headings = "#", "State", "Timestamp", "Result"
+        t.headings = "#", "State", "Timestamp", "Description", "Result"
         tasks.map do |task|
-          t << [ task["id"], task["state"], Time.at(task["timestamp"]).utc, task["result"].to_s.truncate(80) ]
+          t << [ task["id"], task["state"], Time.at(task["timestamp"]).utc, task["description"].to_s, task["result"].to_s.truncate(80) ]
         end
       end
 
