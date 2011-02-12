@@ -52,6 +52,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["create", "user", "admin"], :user, :create, ["admin"])
     test_cmd(["create", "user", "admin", "12321"], :user, :create, ["admin", "12321"])
     test_cmd(["create", "release"], :release, :create)
+    test_cmd(["reset", "release"], :release, :reset)
     test_cmd(["create", "package", "bla"], :package, :create, ["bla"])
 
     test_cmd(["login", "admin", "12321"], :dashboard, :login, ["admin", "12321"])
