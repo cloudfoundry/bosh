@@ -24,6 +24,8 @@ module Bosh::Cli
       @final        = final
       @blobstore    = blobstore
 
+      @metadata_files = %w(packaging pre_packaging)
+
       if @name.blank?
         raise InvalidPackage, "Package name is missing"
       end
@@ -36,8 +38,7 @@ module Bosh::Cli
         raise InvalidPackage, "Package '#{@name}' doesn't include any files"
       end
 
-      FileUtils.mkdir_p(metadata_dir)
-
+      FileUtils.mkdir_p(package_dir)
       FileUtils.mkdir_p(dev_builds_dir)
       FileUtils.mkdir_p(final_builds_dir)
 
@@ -217,11 +218,7 @@ module Bosh::Cli
     end
 
     def package_dir
-      File.join(@release_dir, "packages", @name)
-    end
-
-    def metadata_dir
-      File.join(package_dir, "data")
+      File.join(@release_dir, "packages", name)
     end
 
     def dev_builds_dir
@@ -249,11 +246,12 @@ module Bosh::Cli
         end
       end
 
-      in_metadata_dir do
-        Dir["*"].each do |filename|
+      in_package_dir do
+        @metadata_files.each do |filename|
           destination = File.join(build_dir, filename)
+          next unless File.exists?(filename)
           if File.exists?(destination)
-            raise InvalidPackage, "Package '#{name}' has '#{filename}' file that conflicts with one of its metadata files"
+            raise InvalidPackage, "Package '#{name}' has '#{filename}' file which conflicts with BOSH packaging"
           end
           FileUtils.cp(filename, destination)
           copied += 1
@@ -278,7 +276,8 @@ module Bosh::Cli
           ENV["BUILD_DIR"] = build_dir
 
           in_build_dir do
-            system("bash -x pre_packaging 2>&1")
+            pre_packaging_out = `bash -x pre_packaging 2>&1`
+            say pre_packaging_out
             raise InvalidPackage, "`#{name}' pre-packaging failed" unless $?.exitstatus == 0
           end
 
@@ -301,17 +300,9 @@ module Bosh::Cli
           "%s%s%s" % [ file, File.directory?(file) ? nil : File.read(file), File.stat(file).mode.to_s(8) ]
         }.join("")
       end
-      # Second, metadata files (packaging, migrations, whatsoever)
-      in_metadata_dir do
-        contents << Dir["*"].sort.map { |file|
-          "%s%s" % [ file, File.directory?(file) ? nil : File.read(file) ]
-        }.join("")
-      end
 
-      # Third, data that won't be included to package but still affects it's behavior
-      # (pre_packaging)
       in_package_dir do
-        ["pre_packaging"].each do |file|
+        @metadata_files.each do |file|
           contents << "%s%s" % [ file, File.read(file) ] if File.file?(file)
         end
       end
@@ -331,10 +322,6 @@ module Bosh::Cli
 
     def in_build_dir(&block)
       Dir.chdir(build_dir) { yield }
-    end
-
-    def in_metadata_dir(&block)
-      Dir.chdir(metadata_dir) { yield }
     end
 
     def in_package_dir(&block)
