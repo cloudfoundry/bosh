@@ -54,11 +54,10 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
       add_sources("1.rb", "packaging")
       builder.files.include?("packaging").should be_true
 
-      FileUtils.mkdir_p("#{@release_dir}/packages/aa/data/")
-      File.open("#{@release_dir}/packages/aa/data/packaging", "w") { |f| f.puts("make install") }
+      File.open("#{@release_dir}/packages/aa/packaging", "w") { |f| f.puts("make install") }
 
       builder.copy_files
-    }.should raise_error(Bosh::Cli::InvalidPackage, "Package 'aa' has 'packaging' file that conflicts with one of its metadata files")
+    }.should raise_error(Bosh::Cli::InvalidPackage, "Package 'aa' has 'packaging' file which conflicts with BOSH packaging")
   end
 
   it "has no way to calculate checksum for not yet generated package" do
@@ -239,30 +238,37 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.3-dev.tgz").should be_false
 
-    # Now add some metadata
-    FileUtils.mkdir_p("#{@release_dir}/packages/bar/data/")
-    File.open("#{@release_dir}/packages/bar/data/packaging", "w") { |f| f.puts("make install") }
+    # Now add packaging
+    File.open("#{@release_dir}/packages/bar/packaging", "w") { |f| f.puts("make install") }
     builder = make_builder("bar", globs)
     builder.build
     builder.version.should == "0.3-dev"
 
+    # Add prepackaging
+    File.open("#{@release_dir}/packages/bar/pre_packaging", "w") { |f| f.puts("exit 0") }
+    builder = make_builder("bar", globs)
+    builder.build
+
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.3-dev.tgz").should be_true
 
-    # And more metadata
-    File.open("#{@release_dir}/packages/bar/data/migrations", "w") { |f| f.puts("rake db:migrate") }
+    # And remove all
     builder = make_builder("bar", globs)
     builder.build
     builder.version.should == "0.4-dev"
-
-    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.4-dev.tgz").should be_true
-
-    # And remove all metadata
-    FileUtils.rm_rf("#{@release_dir}/packages/bar/data/")
-    builder = make_builder("bar", globs)
-    builder.build
-    builder.version.should == "0.1-dev"
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.4-dev.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.5-dev.tgz").should be_false
+  end
+
+  it "stops if pre_packaging fails" do
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
+    globs = ["foo/**/*", "baz"]
+
+    builder = make_builder("bar", globs)
+    File.open("#{@release_dir}/packages/bar/pre_packaging", "w") { |f| f.puts("rake db:migrate") }
+
+    lambda {
+      builder.build
+    }.should raise_error(Bosh::Cli::InvalidPackage, "`bar' pre-packaging failed")
   end
 
   it "bumps major dev version in sync with final version" do
