@@ -38,8 +38,9 @@ module Bosh::Agent
 
           # HACK HACK HACK - until we can identify store drive
           if File.blockdev?('/dev/sdc1')
-            @logger.info("HACK: mount /dev/sdc1 /var/vmc/store")
-            `mount /dev/sdc1 /var/vmc/store`
+            store_mount_point = File.join(@base_dir, 'store')
+            @logger.info("HACK: mount /dev/sdc1 #{store_mount_point}")
+            `mount /dev/sdc1 #{store_mount_point}`
           end
         end
         { "settings" => @settings }

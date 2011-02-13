@@ -66,7 +66,7 @@ firstboot = <%= File.join(work_dir, 'build', 'firstboot.sh') %>
 copy = <%= File.join(work_dir, 'build', 'copy.in') %>
 execscript = <%= File.join(work_dir, 'build', 'execscript.sh') %>
 rootpass = ca$hc0w
-user = vmc
+user = vcap
 pass = ca$hc0w
 
 [ubuntu]
@@ -85,7 +85,7 @@ HERE
 
     mkdir_p File.join(work_dir, 'build')
     File.open(File.join(work_dir, 'build', 'copy.in'), 'w') do |f|
-      f.puts("#{work_dir}/instance /var/vmc/bosh/src")
+      f.puts("#{work_dir}/instance /var/vcap/bosh/src")
     end
 
     cp_r "misc/stemcell/build", work_dir

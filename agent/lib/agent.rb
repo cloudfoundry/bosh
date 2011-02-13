@@ -25,6 +25,8 @@ require "agent/handler"
 
 module Bosh::Agent
 
+  BOSH_APP = BOSH_APP_USER = BOSH_APP_GROUP = "vcap"
+
   class << self
     def run(options = {})
       Runner.new(options).start
@@ -57,7 +59,7 @@ if __FILE__ == $0
     "logging" => { "level" => "DEBUG" },
     "redis" => { "host" => "localhost" },
     "agent_id" => "not_configured",
-    "base_dir" => "/var/vmc"
+    "base_dir" => "/var/vcap"
   }
   Bosh::Agent.run(options)
 end

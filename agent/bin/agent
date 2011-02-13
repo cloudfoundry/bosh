@@ -1,4 +1,4 @@
-#!/var/vmc/bosh/bin/ruby
+#!/var/vcap/bosh/bin/ruby
 #
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
@@ -16,7 +16,7 @@ options = {
   "redis"     => { "host" => "localhost" },
   "agent_id"  => "not_configured",
   "blobstore" => {}, # FIXME - make configurable
-  "base_dir"  => "/var/vmc"
+  "base_dir"  => "/var/vcap"
 }
 
 opts = OptionParser.new do |opts|

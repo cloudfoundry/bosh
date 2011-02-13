@@ -1,3 +1,3 @@
 #!/bin/bash
 exec 2>&1
-exec /var/vmc/bosh/agent/bin/agent -c
+exec /var/vcap/bosh/agent/bin/agent -c
