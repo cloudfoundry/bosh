@@ -1,7 +1,10 @@
 #!/bin/bash
 
-export PATH=/var/vmc/bosh/bin:$PATH
+bosh_app_dir=/var/vcap
+
+export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
+
 
 # Shady work aroud vmbuilder in combination with ubuntu iso cache corrupting
 # the debian list caches. There is s discussion in:
@@ -16,16 +19,16 @@ apt-get install -y --force-yes --no-install-recommends \
   bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
   zip unzip nfs-common
 
-dpkg -l > /var/vmc/bosh/stemcell_dpkg_l.out
+dpkg -l > ${bosh_app_dir}/bosh/stemcell_dpkg_l.out
 
-cd /var/vmc/bosh/src
+cd ${bosh_app_dir}/bosh/src
 tar zxvf ruby-1.8.7-p302.tar.gz
 
 (
   cd ruby-1.8.7-p302
   ./configure \
     --disable-pthread \
-    --prefix=/var/vmc/bosh
+    --prefix=${bosh_app_dir}/bosh
   make && make install
 )
 
@@ -34,22 +37,22 @@ echo "gem: --no-ri --no-rdoc" > /etc/gemrc
 tar zxvf rubygems-1.3.7.tgz
 (
   cd rubygems-1.3.7
-  /var/vmc/bosh/bin/ruby setup.rb
+  ${bosh_app_dir}/bosh/bin/ruby setup.rb
 )
 
 gem install bundler-1.0.7.gem
 
 version=$(cat version)
-agent_path=/var/vmc/bosh/agent_${version}_builtin
+agent_path=${bosh_app_dir}/bosh/agent_${version}_builtin
 
 mkdir -p ${agent_path}
 cp -a bin lib Gemfile* vendor ${agent_path}
-ln -s ${agent_path} /var/vmc/bosh/agent
-chmod +x /var/vmc/bosh/agent/bin/agent
+ln -s ${agent_path} ${bosh_app_dir}/bosh/agent
+chmod +x ${bosh_app_dir}/bosh/agent/bin/agent
 
 (
-  cd /var/vmc/bosh/agent
-  bundle install --path /var/vmc/bosh/gems
+  cd ${bosh_app_dir}/bosh/agent
+  bundle install --path ${bosh_app_dir}/bosh/gems
 )
 
 cp -a runit/agent /etc/sv/agent
@@ -61,19 +64,17 @@ ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
 # vmbuilder will default to dhcp when no IP is specified - wipe
 echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 
-echo 'export PATH=/var/vmc/bosh/bin:$PATH' >> /root/.bashrc
-echo 'export PATH=/var/vmc/bosh/bin:$PATH' >> /home/vmc/.bashrc
+echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc
+echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
 
 echo -e "startup=1\n" > /etc/default/monit
-mkidr -p /var/vmc/monit
+mkidr -p ${bosh_app_dir}/monit
 cp monitrc /etc/monit/monitrc
 
-#echo -e "set daemon 10\nset logfile /var/vmc/monit/monit.log\ninclude /var/vmc/monit/*.monitrc\n" > /etc/monit/monitrc
-
 # monit refuses to start without an include file present
-mkdir -p /var/vmc/monit
-touch /var/vmc/monit/empty.monitrc
+mkdir -p ${bosh_app_dir}/monit
+touch ${bosh_app_dir}/monit/empty.monitrc
 
-mkdir -p /var/vmc/sys/run
+mkdir -p ${bosh_app_dir}/sys/run
 
-cp empty_state.yml /var/vmc/bosh/state.yml
+cp empty_state.yml ${bosh_app_dir}/bosh/state.yml

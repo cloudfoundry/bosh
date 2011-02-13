@@ -166,8 +166,8 @@ module Bosh::Agent
             # monit always return 0
             `monit reload`
             sleep 1
-            `monit -g vmc monitor`
-            output = `monit -g vmc start 2>&1`
+            `monit -g #{BOSH_APP_GROUP} monitor`
+            output = `monit -g #{BOSH_APP_GROUP} start 2>&1`
             @logger.info("Monit start: #{output}")
           end
         end

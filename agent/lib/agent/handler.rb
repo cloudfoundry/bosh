@@ -20,6 +20,7 @@ module Bosh::Agent
       @redis = Redis.new(redis_config)
       @agent_id = Config.agent_id
       @logger = Config.logger
+      @base_dir = Config.base_dir
 
       @lock = Mutex.new
       @long_running_agent_task = []
@@ -170,7 +171,8 @@ module Bosh::Agent
           `rm #{udev_file}`
         end
         @logger.info("Removing settings.json")
-        `rm /var/vmc/bosh/settings.json`
+        settings_file = File.join(@base_dir, 'bosh', 'settings.json')
+        `rm #{settings_file}`
       end
 
       @logger.info("Halt after networking change")
@@ -197,7 +199,7 @@ module Bosh::Agent
     # FIXME: temporary stop method
     class Stop
       def self.process(args)
-        `monit -g vmc stop`
+        `monit -g #{BOSH_APP_GROUP} stop`
         "stopped"
       end
     end
