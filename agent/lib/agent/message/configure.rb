@@ -56,6 +56,7 @@ module Bosh::Agent
             raise LoadSettingsError, "No cdrom or cached settings.json"
           end
         end
+        Bosh::Agent::Config.settings = @settings
       end
 
       def load_settings_file
