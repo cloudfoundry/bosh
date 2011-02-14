@@ -1,5 +1,5 @@
 ---
 packages:
   - mutator
-configuration:
+templates:
   test.conf: config/test

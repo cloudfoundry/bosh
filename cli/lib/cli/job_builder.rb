@@ -1,7 +1,7 @@
 module Bosh::Cli
   class JobBuilder
 
-    attr_reader :name, :version, :packages, :configs, :release_dir, :built_packages, :tarball_path
+    attr_reader :name, :version, :packages, :templates, :release_dir, :built_packages, :tarball_path
 
     def initialize(spec, release_dir, final, blobstore, built_packages = [])
       spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
@@ -10,25 +10,25 @@ module Bosh::Cli
       @packages       = spec["packages"]
       @built_packages = built_packages
       @release_dir    = release_dir
-      @configs_dir    = File.join(job_dir, "config")
+      @templates_dir  = File.join(job_dir, "templates")
       @tarballs_dir   = File.join(release_dir, "tmp", "jobs")
       @final          = final
       @blobstore      = blobstore
 
-      @configs = \
-      case spec["configuration"]
+      @templates = \
+      case spec["templates"]
       when Hash
-        spec["configuration"].keys
+        spec["templates"].keys
       else
-        raise InvalidJob, "Incorrect configuration section in `#{@name}' job spec (should resolve to a hash)"
+        raise InvalidJob, "Incorrect templates section in `#{@name}' job spec (should resolve to a hash)"
       end
 
       if @name.blank?
         raise InvalidJob, "Job name is missing"
       end
 
-      if @configs.nil?
-        raise InvalidJob, "Please include configuration section with at least 1 (possibly dummy) file into `#{@name}' job spec"
+      if @templates.nil?
+        raise InvalidJob, "Please include templates section with at least 1 (possibly dummy) file into `#{@name}' job spec"
       end
 
       unless @name.bosh_valid_id?
@@ -43,8 +43,8 @@ module Bosh::Cli
         raise InvalidJob, "Some packages required by '#{name}' job are missing: %s" % [ missing_packages.join(", ") ]
       end
 
-      if missing_configs.size > 0
-        raise InvalidJob, "Some config files required by '#{name}' job are missing: %s" % [ missing_configs.join(", ")]
+      if missing_templates.size > 0
+        raise InvalidJob, "Some template files required by '#{name}' job are missing: %s" % [ missing_templates.join(", ")]
       end
 
       unless File.exists?(File.join(job_dir, "monit"))
@@ -196,11 +196,11 @@ module Bosh::Cli
     end
 
     def copy_files
-      FileUtils.mkdir_p(File.join(build_dir, "config"))
+      FileUtils.mkdir_p(File.join(build_dir, "templates"))
       copied = 0
 
-      configs.each do |config|
-        FileUtils.cp(File.join(@configs_dir, config), File.join(build_dir, "config"))
+      templates.each do |template|
+        FileUtils.cp(File.join(@templates_dir, template), File.join(build_dir, "templates"))
         copied += 1
       end
 
@@ -241,9 +241,9 @@ module Bosh::Cli
     def make_fingerprint
       contents = ""
 
-      # configs, monit, spec
-      files = configs.map do |config|
-        File.join(@configs_dir, config)
+      # templates, monit, spec
+      files = templates.map do |template|
+        File.join(@templates_dir, template)
       end.sort
 
       files << File.join(job_dir, "monit")
@@ -260,9 +260,9 @@ module Bosh::Cli
       @missing_packages ||= packages - built_packages
     end
 
-    def missing_configs
-      configs.select do |config|
-        !File.exists?(File.join(@configs_dir, config))
+    def missing_templates
+      templates.select do |template|
+        !File.exists?(File.join(@templates_dir, template))
       end
     end
 

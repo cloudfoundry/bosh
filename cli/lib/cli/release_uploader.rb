@@ -16,7 +16,7 @@ module Bosh
         tmp_dir = Dir.mktmpdir
 
         step("File exists and readable", "Cannot find release file #{@release_file}", :fatal) do
-          File.exists?(@release_file) && File.readable?(@release_file)          
+          File.exists?(@release_file) && File.readable?(@release_file)
         end
 
         step("Extract tarball", "Cannot extract tarball #{@release_file}", :fatal) do
@@ -42,7 +42,7 @@ module Bosh
 
         manifest["packages"].each_with_index do |package, i|
           name, version = package['name'], package['version']
-          
+
           package_file   = File.expand_path(name + ".tgz", tmp_dir + "/packages")
           package_exists = File.exists?(package_file)
 
@@ -82,7 +82,7 @@ module Bosh
         manifest["jobs"].each_with_index do |job, i|
           name    = job["name"]
           version = job["version"]
-          
+
           job_file   = File.expand_path(name + ".tgz", tmp_dir + "/jobs")
           job_exists = File.exists?(job_file)
 
@@ -94,12 +94,12 @@ module Bosh
             step("Job '#{name}' checksum", "Incorrect checksum for job '#{name}'") do
               Digest::SHA1.hexdigest(File.read(job_file)) == job["sha1"]
             end
-            
+
             job_tmp_dir = "#{tmp_dir}/jobs/#{name}"
             FileUtils.mkdir_p(job_tmp_dir)
             `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
             job_extracted = $?.exitstatus == 0
-            
+
             step("Extract job '#{name}'", "Cannot extract job '#{name}'") do
               job_extracted
             end
@@ -108,15 +108,15 @@ module Bosh
               job_manifest_file   = File.expand_path("job.MF", job_tmp_dir)
               job_manifest        = YAML.load_file(job_manifest_file) if File.exists?(job_manifest_file)
               job_manifest_valid  = job_manifest.is_a?(Hash)
-              
+
               step("Read job '#{name}' manifest", "Invalid job '#{name}' manifest") do
                 job_manifest_valid
               end
 
-              if job_manifest_valid && job_manifest["configuration"]
-                job_manifest["configuration"].each_key do |config|
-                  step("Check config '#{config}' for '#{name}'", "No config named '#{config}' for '#{name}'") do
-                    File.exists?(File.expand_path(config, job_tmp_dir + "/config"))
+              if job_manifest_valid && job_manifest["templates"]
+                job_manifest["templates"].each_key do |template|
+                  step("Check template '#{template}' for '#{name}'", "No template named '#{template}' for '#{name}'") do
+                    File.exists?(File.expand_path(template, job_tmp_dir + "/templates"))
                   end
                 end
               end
@@ -154,7 +154,7 @@ module Bosh
         if manifest["packages"].size == 0
           say "  - none"
         end
-        
+
         for package in manifest["packages"]
           say "  - %s (%s)" % [ package["name"], package["version"] ]
         end
@@ -164,13 +164,13 @@ module Bosh
 
         if manifest["jobs"].size == 0
           say "  - none"
-        end        
+        end
 
         for job in manifest["jobs"]
           say "  - %s (%s)" % [ job["name"], job["version"] ]
         end
       end
-      
+
     end
 
   end

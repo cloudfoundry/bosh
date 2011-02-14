@@ -30,7 +30,7 @@ module Bosh::Cli::Command
       FileUtils.touch(monit_file)
 
       File.open(spec_file, "w") do |f|
-        f.write("---\nname: #{name}\n\nconfiguration:\n\npackages:\n")
+        f.write("---\nname: #{name}\ntemplates:\n\npackages:\n")
       end
 
       say "\nGenerated skeleton for `#{name}' job in `#{job_dir}'"
