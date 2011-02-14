@@ -27,6 +27,13 @@ module Bosh::Agent
           end
         end
         @logger.info("Agent state: #{state.inspect}")
+
+        settings = Bosh::Agent::Config.settings
+        if settings
+          state["agent_id"] = settings["agent_id"]
+          state["vm"] = settings["vm"]
+        end
+
         state["job_state"] = "running"
         state
       end
