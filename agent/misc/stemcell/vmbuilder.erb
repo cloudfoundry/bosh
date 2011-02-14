@@ -1,0 +1,15 @@
+[DEFAULT]
+arch = amd64
+firstboot = <%= args[:firstboot] %>
+copy = <%= args[:copyin] %>
+execscript = <%= args[:execscript] %>
+rootpass = ca$hc0w
+user = vmc
+pass = ca$hc0w
+
+[ubuntu]
+suite = lucid
+# multiverse for open-vm-tools
+components = main,universe,multiverse
+flavor = virtual
+addpkg = runit

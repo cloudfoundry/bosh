@@ -50,34 +50,40 @@ namespace "test" do
 end
 
 namespace "ubuntu" do
+  desc "Build Ubuntu stemcell"
+  task "stemcell:build" do
+    Rake::Task["ubuntu:cell"].invoke("stemcell")
+  end
+
   # very much a hack that arequires to be run on Ubuntu with vmbuilder.
   # Don't do this remote as it probably will kill your sshd.
-  desc "Build Ubuntu Stemcell"
-  task "stemcell:build" do
+  desc "Build Ubuntu cell"
+  task "cell", :type do |t, args|
+    type = args[:type]
     version = Bosh::Agent::VERSION
 
     work_dir = "/var/tmp/bosh/agent-#{version}-#{$$}"
     mkdir_p work_dir
 
-VMBUILDER_CFG = <<HERE
-[DEFAULT]
-arch = amd64
-firstboot = <%= File.join(work_dir, 'build', 'firstboot.sh') %>
-copy = <%= File.join(work_dir, 'build', 'copy.in') %>
-execscript = <%= File.join(work_dir, 'build', 'execscript.sh') %>
-rootpass = ca$hc0w
-user = vcap
-pass = ca$hc0w
+    # fail sooner rather than later
+    ovftool_bin = ENV['OVFTOOL'] ||= '/usr/lib/vmware/ovftool/ovftool'
+    unless File.exist?(ovftool_bin)
+      puts "stemcell builder expects #{ovftool_bin} or the OVFTOOL environment variable to be set"
+      exit 1
+    end
 
-[ubuntu]
-suite = lucid
-# multiverse for open-vm-tools
-components = main,universe,multiverse
-flavor = virtual
-addpkg = runit
-HERE
+    vmbuilder_cfg = ""
+    File.open("misc/#{type}/vmbuilder.erb") do |f|
+      vmbuilder_cfg = f.read # TODO won't read the whole file if it is large
+    end
 
-    template = ERB.new(VMBUILDER_CFG, 0, '%<>')
+    args = {
+      :firstboot => File.join(work_dir, 'build', 'firstboot.sh'),
+      :copyin => File.join(work_dir, 'build', 'copy.in'),
+      :execscript => File.join(work_dir, 'build', 'execscript.sh')
+    }
+
+    template = ERB.new(vmbuilder_cfg, 0, '%<>')
     result = template.result(binding)
     File.open(File.join(work_dir, 'vmbuilder.cfg'),'w') do |f|
       f.write(result)
@@ -88,8 +94,8 @@ HERE
       f.puts("#{work_dir}/instance /var/vcap/bosh/src")
     end
 
-    cp_r "misc/stemcell/build", work_dir
-    cp_r "misc/stemcell/instance", work_dir
+    cp_r "misc/#{type}/build", work_dir
+    cp_r "misc/#{type}/instance", work_dir
 
     instance_dir = File.join(work_dir, 'instance')
 
@@ -110,36 +116,31 @@ HERE
       vmbuilder_args += " --templates #{work_dir}/build/templates --part #{work_dir}/build/part.in"
       sh "sudo vmbuilder esxi ubuntu #{vmbuilder_args}"
 
-      ovftool_bin = ENV['OVFTOOL'] ||= '/usr/lib/vmware/ovftool/ovftool'
-      unless File.exist?(ovftool_bin)
-        puts "stemcell builder expects #{ovftool_bin} or the OVFTOOL environment variable to be set"
-        exit 1
-      end
-
       Dir.chdir('ubuntu-esxi') do
-        sh "tar zcf ../bosh-esxcloud-stemcell-#{version}.tgz *.vmdk *.vmx"
+        sh "tar zcf ../bosh-esxcloud-#{type}-#{version}.tgz *.vmdk *.vmx"
       end
 
       sh "/usr/lib/vmware/ovftool/ovftool ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
-      mkdir_p 'stemcell'
+      mkdir_p "#{type}"
       Dir.chdir('ubuntu-esxi') do
-        sh 'tar zcf ../stemcell/image image*'
+        sh "tar zcf ../#{type}/image image*"
       end
 
-      File.open('stemcell/stemcell.MF', 'w') do |f|
+      File.open("#{type}/stemcell.MF", 'w') do |f|
         f.write("---\nname: bosh-stemcell\nversion: #{version}\ncloud_properties: {}")
       end
 
-      Dir.chdir('stemcell') do
-        sh "tar zcf ../bosh-stemcell-#{version}.tgz *"
+      Dir.chdir("#{type}") do
+        sh "tar zcf ../bosh-#{type}-#{version}.tgz *"
       end
 
     end
     # TODO: guesthw version 7 for esx4
     # TODO: install bin wrapper
     # TODO: change location of agent install w/symlink strategy
-    puts "Generated stemcell: #{work_dir}/bosh-stemcell-#{version}.tgz"
-    puts "Generated esxcloud stemcell: #{work_dir}/bosh-esxcloud-stemcell-#{version}.tgz"
+    # TODO clean up lingering ISO mount which vmbuilder leaves behind
+    puts "Generated #{type}: #{work_dir}/bosh-#{type}-#{version}.tgz"
+    puts "Generated esxcloud #{type}: #{work_dir}/bosh-esxcloud-#{type}-#{version}.tgz"
     puts "Check #{work_dir} for build artifacts"
   end
 
