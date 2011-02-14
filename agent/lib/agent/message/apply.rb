@@ -128,11 +128,11 @@ module Bosh::Agent
         FileUtils.mkdir_p(bin_dir)
 
         job_mf = YAML.load_file(File.join(@job_install_dir, 'job.MF'))
-        job_mf['configuration'].each do |src, dst|
-          template = ERB.new(File.read(File.join(@job_install_dir, 'config', src)))
+        job_mf['templates'].each do |src, dst|
+          template = ERB.new(File.read(File.join(@job_install_dir, 'templates', src)))
 
           out_file = File.join(@job_install_dir, dst)
-          FileUtils.mkdir_p(File.dirname(dst))
+          FileUtils.mkdir_p(File.dirname(out_file))
 
           File.open(out_file, 'w') do |fh|
             fh.write(template.result(Util.config_binding(@apply_spec)))
