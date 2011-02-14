@@ -24,7 +24,7 @@ module Bosh::Director
         lock = Lock.new("lock:stemcells:#{@name}:#{@version}", :timeout => 10)
         lock.lock do
           @logger.info("Looking up stemcell: #{@name}:#{@version}")
-          @stemcell = Models::Stemcell.find(:name => @name, :version => @version).first
+          @stemcell = Models::Stemcell[:name => @name, :version => @version]
           raise StemcellNotFound.new(@name, @version) if @stemcell.nil?
           @logger.info("Found: #{@stemcell.pretty_inspect}")
 
@@ -39,17 +39,17 @@ module Bosh::Director
           @cloud.delete_stemcell(@stemcell.cid)
 
           @logger.info("Looking for any compiled packages on this stemcell")
-          compiled_packages = Models::CompiledPackage.find(:stemcell_id => @stemcell.id)
+          compiled_packages = Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
           compiled_packages.each do |compiled_package|
             next unless compiled_package
             package = compiled_package.package
             @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
             @blobstore.delete(compiled_package.blobstore_id)
-            compiled_package.delete
+            compiled_package.destroy
           end
 
           @logger.info("Deleting stemcell meta")
-          @stemcell.delete
+          @stemcell.destroy
         end
 
         "/stemcells/#{@name}/#{@version}"

@@ -50,9 +50,12 @@ module Bosh::Director
         end
 
         @cloud.delete_vm(@vm.cid)
-        @instance.vm = nil
-        @instance.save!
-        @vm.delete
+
+        @instance.db.transaction do
+          @instance.vm = nil
+          @instance.save
+          @vm.destroy
+        end
 
         stemcell = @resource_pool_spec.stemcell.stemcell
 
@@ -64,9 +67,14 @@ module Bosh::Director
         @vm.deployment = @deployment_plan.deployment
         @vm.agent_id = agent_id
         @vm.cid = vm_cid
-        @vm.save!
-        @instance.vm = @vm
-        @instance.save!
+
+        @instance.db.transaction do
+          @vm.save
+          @instance.vm = @vm
+          @instance.save
+        end
+
+        # TODO: delete the VM if it wasn't saved
 
         agent.wait_until_ready
 
@@ -121,7 +129,7 @@ module Bosh::Director
         end
 
         @instance.disk_cid = disk_cid
-        @instance.save!
+        @instance.save
 
         if old_disk_cid
           task = agent.unmount_disk(old_disk_cid)

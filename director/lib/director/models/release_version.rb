@@ -1,20 +1,13 @@
 module Bosh::Director::Models
-
-  class Release < Ohm::Model; end
-  class Package < Ohm::Model; end
-  class Template < Ohm::Model; end
-
-  class ReleaseVersion < Ohm::Model
-    reference :release, Release
-    attribute :version
-    set :packages, Package
-    set :templates, Template
-
-    index :version
+  class ReleaseVersion < Sequel::Model
+    many_to_one  :release
+    many_to_many :packages
+    many_to_many :templates
 
     def validate
-      assert_present :version
-      assert_unique [:release_id, :version]
+      validates_presence [:release_id, :version]
+      validates_unique [:release_id, :version]
+      validates_format VALID_ID, :version
     end
   end
 end

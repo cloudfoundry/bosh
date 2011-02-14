@@ -25,11 +25,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   describe "prepare" do
 
     it "should prepare the deployment plan" do
-      deployment = mock("deployment")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
       deployment_plan_compiler = mock("deployment_plan_compiler")
       package_compiler = mock("package_compiler")
 
-      Bosh::Director::Models::Deployment.stub!(:find).with(:name => "test_deployment").and_return([deployment])
       Bosh::Director::DeploymentPlanCompiler.stub!(:new).with(@deployment_plan).and_return(deployment_plan_compiler)
       Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan).and_return(package_compiler)
 
@@ -42,7 +41,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_templates)
       deployment_plan_compiler.should_receive(:bind_instance_networks)
       package_compiler.should_receive(:compile)
-      deployment_plan_compiler.should_receive(:bind_packages)
       deployment_plan_compiler.should_receive(:bind_configuration)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
@@ -90,12 +88,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   describe "rollback" do
 
     it "should rollback" do
-      deployment = mock("deployment")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => "old manifest")
       manifest = mock("manifest")
       old_deployment_plan = mock("old_deployment_plan")
 
       @deployment_plan.stub!(:deployment).and_return(deployment)
-      deployment.stub!(:manifest).and_return("old manifest")
 
       Bosh::Director::DeploymentPlan.stub!(:new).with(manifest).and_return(old_deployment_plan)
       YAML.stub!(:load).with("old manifest").and_return(manifest)
@@ -108,10 +105,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     end
 
     it "should not rollback if there was no previous manifest" do
-      deployment = mock("deployment")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => nil)
 
       @deployment_plan.stub!(:deployment).and_return(deployment)
-      deployment.stub!(:manifest).and_return(nil)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_not_receive(:prepare)
@@ -125,30 +121,23 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   describe "update_stemcell_references" do
 
     it "should delete references to no longer used stemcells" do
-      deployment = stub("deployment")
+      deployment = Bosh::Director::Models::Deployment.make
       resource_pool_spec = stub("resource_pool_spec")
       stemcell_spec = stub("stemcell_spec")
-      new_stemcell = stub("new_stemcell")
-      old_stemcell = stub("old_stemcell")
-
-      old_stemcell_deployments = stub("old_stemcell_deployments")
-      old_stemcell.stub!(:deployments).and_return(old_stemcell_deployments)
-
-      deployment_stemcells = stub("deployment_stemcells")
-      deployment_stemcells.stub!(:each).and_yield(new_stemcell).and_yield(old_stemcell)
+      new_stemcell = Bosh::Director::Models::Stemcell.make
+      old_stemcell = Bosh::Director::Models::Stemcell.make
+      deployment.add_stemcell(old_stemcell)
 
       @deployment_plan.stub!(:deployment).and_return(deployment)
       @deployment_plan.stub!(:resource_pools).and_return([resource_pool_spec])
-      deployment.stub!(:stemcells).and_return(deployment_stemcells)
 
       resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
       stemcell_spec.stub!(:stemcell).and_return(new_stemcell)
 
-      old_stemcell_deployments.should_receive(:delete).with(deployment)
-      deployment_stemcells.should_receive(:delete).with(old_stemcell)
-
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.update_stemcell_references
+
+      old_stemcell.deployments.should be_empty
     end
 
   end
@@ -158,8 +147,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     it "should do a basic update" do
       deployment_lock = mock("deployment_lock")
       release_lock = mock("release_lock")
-      deployment = mock("deployment")
-      release = mock("release")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
+      release = Bosh::Director::Models::Release.make(:name => "test_release")
 
       @deployment_plan.stub!(:release).and_return(release)
       @deployment_plan.stub!(:deployment).and_return(deployment)
@@ -171,28 +160,24 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_lock.should_receive(:lock).and_yield
       release_lock.should_receive(:lock).and_yield
 
-      deployment.should_receive(:manifest=).with("manifest")
-      deployment.should_receive(:name).and_return("test_deployment")
-      deployment.should_receive(:save!)
-
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update)
       update_deployment_job.should_receive(:update_stemcell_references)
       update_deployment_job.perform.should eql("/deployments/test_deployment")
+
+      deployment.refresh
+      deployment.manifest.should == "manifest"
     end
 
     it "should rollback if there was an error during the update step" do
       deployment_lock = mock("deployment_lock")
       release_lock = mock("release_lock")
-      deployment = mock("deployment")
-      release = mock("release")
-
-      deployment.stub!(:name).and_return("test_deployment")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
+      release = Bosh::Director::Models::Release.make(:name => "test_release")
 
       @deployment_plan.stub!(:release).and_return(release)
       @deployment_plan.stub!(:deployment).and_return(deployment)
-      release.stub!(:name).and_return("test_release")
 
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(deployment_lock)
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release").and_return(release_lock)
@@ -211,8 +196,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     it "should not rollback if there was an error during the prepare step" do
       deployment_lock = mock("deployment_lock")
       release_lock = mock("release_lock")
-      deployment = mock("deployment")
-      release = mock("release")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
+      release = Bosh::Director::Models::Release.make(:name => "test_release")
 
       @deployment_plan.stub!(:release).and_return(release)
       @deployment_plan.stub!(:deployment).and_return(deployment)

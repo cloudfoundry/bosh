@@ -77,11 +77,13 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   before(:each) do
+    @deployment = Bosh::Director::Models::Deployment.make
+    @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-id")
+    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :disk_cid => nil)
+    @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
+
     @cloud = mock("cloud")
-    @instance = mock("instance")
-    @vm = mock("vm")
-    @stemcell = mock("stemcell")
-    @deployment = mock("deployment")
+    @agent_1 = mock("agent-1")
     @instance_spec = mock("instance_spec")
     @job_spec = mock("job_spec")
     @deployment_plan = mock("deployment_plan")
@@ -89,12 +91,6 @@ describe Bosh::Director::InstanceUpdater do
     @update_spec = mock("update_spec")
     @stemcell_spec = mock("stemcell_spec")
     @release_spec = mock("release_spec")
-
-    @instance.stub!(:vm).and_return(@vm)
-
-    @vm.stub!(:cid).and_return("vm-id")
-
-    @stemcell.stub!(:cid).and_return("stemcell-id")
 
     @instance_spec.stub!(:job).and_return(@job_spec)
     @instance_spec.stub!(:instance).and_return(@instance)
@@ -126,28 +122,17 @@ describe Bosh::Director::InstanceUpdater do
     @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
 
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
+
+    @agent_1.stub!(:id).and_return("agent-1")
+    Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(@agent_1)
   end
 
   it "should do a basic update" do
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
-
     stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
-
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        else
-          raise "invalid agent id"
-      end
-    end
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
@@ -163,25 +148,11 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   it "should do a basic canary update" do
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
-
     stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => false)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
-
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        else
-          raise "invalid agent id"
-      end
-    end
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
@@ -200,15 +171,9 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   it "should do a resource pool update" do
-    @instance.stub!(:disk_cid).and_return(nil)
-
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
     @agent_2 = mock("agent-2")
     @agent_2.stub!(:id).and_return("agent-2")
-
-    @vm.should_receive(:agent_id).any_number_of_times.and_return("agent-1")
+    Bosh::Director::AgentClient.stub!(:new).with("agent-2").and_return(@agent_2)
 
     stub_object(@instance_spec, :resource_pool_changed? => true,
                                 :persistent_disk_changed? => false,
@@ -218,43 +183,17 @@ describe Bosh::Director::InstanceUpdater do
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
     @instance_spec.should_receive(:current_state).and_return(IDLE_STATE)
 
-    new_vm = mock("vm-2")
-    new_vm.should_receive(:deployment=).with(@deployment)
-    new_vm.should_receive(:agent_id=).with("agent-2")
-    new_vm.should_receive(:cid=).with("vm-id-2")
-    new_vm.should_receive(:save!)
-    new_vm.should_receive(:agent_id).any_number_of_times.and_return("agent-2")
-
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:generate_agent_id).and_return("agent-2")
     instance_updater.stub!(:cloud).and_return(@cloud)
-
-    Bosh::Director::Models::Vm.stub!(:new).and_return(new_vm)
-
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        when "agent-2"
-          @agent_2
-        else
-          raise "invalid agent id"
-      end
-    end
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:delete_vm).with("vm-id")
-    @vm.should_receive(:delete)
-    @instance.should_receive(:vm=).with(nil)
-    @instance.should_receive(:save!)
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
       BASIC_PLAN["networks"], nil).and_return("vm-id-2")
-
-    @instance.should_receive(:vm=).with(new_vm)
-    @instance.should_receive(:save!)
 
     @agent_2.should_receive(:wait_until_ready)
     @agent_2.should_receive(:apply).with(IDLE_PLAN).and_return({
@@ -269,18 +208,21 @@ describe Bosh::Director::InstanceUpdater do
     @agent_2.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
+
+    @instance.refresh
+    vm = @instance.vm
+    vm.cid.should == "vm-id-2"
+    vm.agent_id.should == "agent-2"
+    Bosh::Director::Models::Vm[@vm.id].should be_nil
   end
 
   it "should do a resource pool update with an existing disk" do
-    @instance.stub!(:disk_cid).and_return("disk-id")
-
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
+    @instance.disk_cid = "disk-id"
+    @instance.save
 
     @agent_2 = mock("agent-2")
     @agent_2.stub!(:id).and_return("agent-2")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
+    Bosh::Director::AgentClient.stub!(:new).with("agent-2").and_return(@agent_2)
 
     stub_object(@instance_spec, :resource_pool_changed? => true,
                                 :persistent_disk_changed? => false,
@@ -290,31 +232,9 @@ describe Bosh::Director::InstanceUpdater do
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
     @instance_spec.should_receive(:current_state).and_return(IDLE_STATE.merge({"persistent_disk" => "1gb"}))
 
-    new_vm = mock("vm-2")
-    new_vm.should_receive(:deployment=).with(@deployment)
-    new_vm.should_receive(:agent_id=).with("agent-2")
-    new_vm.should_receive(:cid=).with("vm-id-2")
-    new_vm.should_receive(:save!)
-
-    new_vm.stub!(:cid).and_return("vm-id-2")
-    new_vm.stub!(:agent_id).and_return("agent-2")
-
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:generate_agent_id).and_return("agent-2")
     instance_updater.stub!(:cloud).and_return(@cloud)
-
-    Bosh::Director::Models::Vm.stub!(:new).and_return(new_vm)
-
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        when "agent-2"
-          @agent_2
-        else
-          raise "invalid agent id"
-      end
-    end
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
@@ -323,15 +243,9 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:unmount_disk).with("disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "disk-id")
     @cloud.should_receive(:delete_vm).with("vm-id")
-    @vm.should_receive(:delete)
-    @instance.should_receive(:vm=).with(nil)
-    @instance.should_receive(:save!)
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
       BASIC_PLAN["networks"], "disk-id").and_return("vm-id-2")
     @cloud.should_receive(:attach_disk).with("vm-id-2", "disk-id")
-
-    @instance.should_receive(:vm=).with(new_vm)
-    @instance.should_receive(:save!)
 
     @agent_2.should_receive(:wait_until_ready)
     @agent_2.should_receive(:apply).with(IDLE_PLAN.merge({"persistent_disk" => "1gb"})).and_return({
@@ -347,14 +261,16 @@ describe Bosh::Director::InstanceUpdater do
     @agent_2.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
+
+    @instance.refresh
+    @instance.disk_cid.should == "disk-id"
+    vm = @instance.vm
+    vm.cid.should == "vm-id-2"
+    vm.agent_id.should == "agent-2"
+    Bosh::Director::Models::Vm[@vm.id].should be_nil
   end
 
   it "should update the networks when needed" do
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
-
     stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => false,
                                 :networks_changed? => true,
@@ -362,15 +278,6 @@ describe Bosh::Director::InstanceUpdater do
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
-
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        else
-          raise "invalid agent id"
-      end
-    end
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
@@ -389,11 +296,6 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   it "should create a persistent disk when needed" do
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
-
     stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
                                 :networks_changed? => false)
@@ -401,25 +303,13 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
 
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        else
-          raise "invalid agent id"
-      end
-    end
-
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
-    @instance.should_receive(:disk_cid).and_return(nil)
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
-    @instance.should_receive(:disk_cid=).with("disk-id")
-    @instance.should_receive(:save!)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
       "state" => "done"
@@ -427,13 +317,15 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
+
+    @instance.refresh
+    @instance.vm.should == @vm
+    @instance.disk_cid.should == "disk-id"
   end
 
   it "should migrate a persistent disk when needed" do
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
+    @instance.disk_cid = "old-disk-id"
+    @instance.save
 
     stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
@@ -442,20 +334,10 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
 
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        else
-          raise "invalid agent id"
-      end
-    end
-
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
-    @instance.should_receive(:disk_cid).and_return("old-disk-id")
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
     @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
@@ -463,8 +345,6 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
-    @instance.should_receive(:disk_cid=).with("disk-id")
-    @instance.should_receive(:save!)
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
@@ -475,19 +355,21 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
+
+    @instance.refresh
+    @instance.vm.should == @vm
+    @instance.disk_cid.should == "disk-id"
   end
 
   it "should delete a persistent disk when needed" do
+    @instance.disk_cid = "old-disk-id"
+    @instance.save
+
     plan = BASIC_PLAN._deep_copy
     plan["persistent_disk"] = 0
 
     state = BASIC_INSTANCE_STATE._deep_copy
     state["persistent_disk"] = 0
-
-    @agent_1 = mock("agent-1")
-    @agent_1.stub!(:id).and_return("agent-1")
-
-    @vm.stub!(:agent_id).and_return("agent-1")
 
     stub_object(@instance_spec, :resource_pool_changed? => false,
                                 :persistent_disk_changed? => true,
@@ -498,22 +380,10 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
 
-    Bosh::Director::AgentClient.stub!(:new).and_return do |id|
-      case id
-        when "agent-1"
-          @agent_1
-        else
-          raise "invalid agent id"
-      end
-    end
-
     @instance_spec.stub!(:spec).and_return(plan)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
-    @instance.should_receive(:disk_cid).and_return("old-disk-id")
-    @instance.should_receive(:disk_cid=).with(nil)
-    @instance.should_receive(:save!)
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
@@ -524,6 +394,10 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:get_state).and_return(state)
 
     instance_updater.update
+
+    @instance.refresh
+    @instance.vm.should == @vm
+    @instance.disk_cid.should be_nil
   end
 
 end

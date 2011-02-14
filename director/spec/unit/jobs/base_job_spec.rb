@@ -10,24 +10,16 @@ describe Bosh::Director::Jobs::BaseJob do
       end
     end
 
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
+
     logger = Logger.new(nil)
     Logger.stub!(:new).with("/some/path").and_return(logger)
 
-    task = stub("task")
-    task.should_receive(:output).and_return("/some/path")
-
-    task.should_receive(:state=).with(:processing)
-    task.should_receive(:timestamp=)
-    task.should_receive(:save!)
-
-    task.should_receive(:state=).with(:done)
-    task.should_receive(:result=).with(5)
-    task.should_receive(:timestamp=)
-    task.should_receive(:save!)
-
-    Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(task)
-
     test.perform(1)
+
+    task.refresh
+    task.state.should == "done"
+    task.result.should == "5"
 
     Bosh::Director::Config.logger.should eql(logger)
   end
@@ -40,28 +32,20 @@ describe Bosh::Director::Jobs::BaseJob do
       end
 
       define_method :perform do
-        @args
+        Yajl::Encoder.encode(@args)
       end
     end
 
     logger = Logger.new(nil)
     Logger.stub!(:new).with("/some/path").and_return(logger)
 
-    task = stub("task")
-    task.should_receive(:output).and_return("/some/path")
-
-    task.should_receive(:state=).with(:processing)
-    task.should_receive(:timestamp=)
-    task.should_receive(:save!)
-
-    task.should_receive(:state=).with(:done)
-    task.should_receive(:result=).with(["a", [:b], {:c => 5}])
-    task.should_receive(:timestamp=)
-    task.should_receive(:save!)
-
-    Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(task)
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 
     test.perform(1, "a", [:b], {:c => 5})
+
+    task.refresh
+    task.state.should == "done"
+    Yajl::Parser.parse(task.result).should == ["a", ["b"], {"c" => 5}]
   end
 
   it "should record the error when there is an exception" do
@@ -75,32 +59,23 @@ describe Bosh::Director::Jobs::BaseJob do
     logger = Logger.new(nil)
     Logger.stub!(:new).with("/some/path").and_return(logger)
 
-    task = stub("task")
-    task.should_receive(:output).and_return("/some/path")
-
-    task.should_receive(:state=).with(:processing)
-    task.should_receive(:timestamp=)
-    task.should_receive(:save!)
-
-    task.should_receive(:state=).with(:error)
-    task.should_receive(:result=).with("test")
-    task.should_receive(:timestamp=)
-    task.should_receive(:save!)
-
-    Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(task)
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 
     test.perform(1)
+
+    task.refresh
+    task.state.should == "error"
+    task.result.should == "test"
   end
 
   it "should raise an exception when the task was not found" do
     test = Class.new do
       extend(Bosh::Director::Jobs::BaseJob)
       define_method :perform do
-        raise "test"
+        fail
       end
     end
 
-    Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(nil)
     lambda { test.perform(1) }.should raise_exception(Bosh::Director::TaskNotFound)
   end
 

@@ -12,9 +12,6 @@ describe Bosh::Director::Jobs::DeleteStemcell do
     end
 
     it "should fail for unknown stemcells" do
-      Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "test_stemcell", :version => "test_version").
-          and_return([])
-
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:stemcells:test_stemcell:test_version", :timeout => 10).
           and_return(lock)
@@ -25,16 +22,11 @@ describe Bosh::Director::Jobs::DeleteStemcell do
     end
 
     it "should fail if CPI can't delete the stemcell" do
-      stemcell = stub("stemcell")
-      stemcell.stub!(:name).and_return("test_stemcell")
-      stemcell.stub!(:version).and_return("test_version")
-      stemcell.stub!(:cid).and_return("stemcell_cid")
-      stemcell.stub!(:deployments).and_return(Set.new)
+      Bosh::Director::Models::Stemcell.make(:name => "test_stemcell",
+                                            :version => "test_version",
+                                            :cid => "stemcell_cid")
 
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid").and_raise("error")
-
-      Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "test_stemcell", :version => "test_version").
-          and_return([stemcell])
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:stemcells:test_stemcell:test_version", :timeout => 10).
@@ -46,17 +38,12 @@ describe Bosh::Director::Jobs::DeleteStemcell do
     end
 
     it "should fail if the deployments still reference this stemcell" do
-      deployment = stub("deployment")
-      deployment.stub!(:name).and_return("test_deployment")
+      stemcell = Bosh::Director::Models::Stemcell.make(:name => "test_stemcell",
+                                                       :version => "test_version",
+                                                       :cid => "stemcell_cid")
 
-      stemcell = stub("stemcell")
-      stemcell.stub!(:name).and_return("test_stemcell")
-      stemcell.stub!(:version).and_return("test_version")
-      stemcell.stub!(:cid).and_return("stemcell_cid")
-      stemcell.stub!(:deployments).and_return(Set.new([deployment]))
-
-      Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "test_stemcell", :version => "test_version").
-          and_return([stemcell])
+      deployment = Bosh::Director::Models::Deployment.make
+      deployment.add_stemcell(stemcell)
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:stemcells:test_stemcell:test_version", :timeout => 10).
@@ -68,22 +55,11 @@ describe Bosh::Director::Jobs::DeleteStemcell do
     end
 
     it "should delete the stemcell meta if the CPI deleted the stemcell" do
-      stemcell = stub("stemcell")
-      stemcell.stub!(:id).and_return("33")
-      stemcell.stub!(:name).and_return("test_stemcell")
-      stemcell.stub!(:version).and_return("test_version")
-      stemcell.stub!(:cid).and_return("stemcell_cid")
-      stemcell.stub!(:deployments).and_return(Set.new)
+      stemcell = Bosh::Director::Models::Stemcell.make(:name => "test_stemcell",
+                                                       :version => "test_version",
+                                                       :cid => "stemcell_cid")
 
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid")
-
-      Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "test_stemcell", :version => "test_version").
-          and_return([stemcell])
-
-      Bosh::Director::Models::CompiledPackage.stub!(:find).with(:stemcell_id => "33").
-          and_return([])
-
-      stemcell.should_receive(:delete)
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:stemcells:test_stemcell:test_version", :timeout => 10).
@@ -92,35 +68,23 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
       job = Bosh::Director::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
       job.perform
+
+      Bosh::Director::Models::Stemcell[stemcell.id].should be_nil
     end
 
     it "should delete the associated compiled packages" do
-      stemcell = stub("stemcell")
-      stemcell.stub!(:id).and_return("33")
-      stemcell.stub!(:name).and_return("test_stemcell")
-      stemcell.stub!(:version).and_return("test_version")
-      stemcell.stub!(:cid).and_return("stemcell_cid")
-      stemcell.stub!(:deployments).and_return(Set.new)
+      stemcell = Bosh::Director::Models::Stemcell.make(:name => "test_stemcell",
+                                                       :version => "test_version",
+                                                       :cid => "stemcell_cid")
 
-      package = stub("package")
-      package.stub!(:name).and_return("test_package")
-      package.stub!(:version).and_return("2")
-      compiled_package = stub("compiled_package")
-      compiled_package.stub!(:blobstore_id).and_return("compiled-package-blb-id")
-      compiled_package.stub!(:package).and_return(package)
+      package = Bosh::Director::Models::Package.make
+      compiled_package = Bosh::Director::Models::CompiledPackage.make(:package => package,
+                                                                      :stemcell => stemcell,
+                                                                      :blobstore_id => "compiled-package-blb-id")
 
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid")
 
-      Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "test_stemcell", :version => "test_version").
-          and_return([stemcell])
-
-      Bosh::Director::Models::CompiledPackage.stub!(:find).with(:stemcell_id => "33").
-          and_return([compiled_package])
-
       @blobstore.should_receive(:delete).with("compiled-package-blb-id")
-      compiled_package.should_receive(:delete)
-
-      stemcell.should_receive(:delete)
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:stemcells:test_stemcell:test_version", :timeout => 10).
@@ -129,6 +93,9 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
       job = Bosh::Director::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
       job.perform
+
+      Bosh::Director::Models::Stemcell[stemcell.id].should be_nil
+      Bosh::Director::Models::CompiledPackage[compiled_package.id].should be_nil
     end
 
   end

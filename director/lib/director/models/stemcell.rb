@@ -1,23 +1,12 @@
 module Bosh::Director::Models
-
-  class Deployment < Ohm::Model; end
-
-  class Stemcell < Ohm::Model
-    attribute :name
-    attribute :version
-    attribute :cid
-
-    set :deployments, Deployment
-
-    index :name
-    index :version
+  class Stemcell < Sequel::Model
+    many_to_many :deployments
+    one_to_many :compiled_packages
 
     def validate
-      assert_present :name
-      assert_present :version
-      assert_present :cid
-
-      assert_unique [:name, :version]
+      validates_presence [:name, :version, :cid]
+      validates_unique [:name, :version]
+      validates_format VALID_ID, [:name, :version]
     end
   end
 end

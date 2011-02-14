@@ -29,14 +29,14 @@ module Bosh::Director
 
         release_lock = Lock.new("lock:release:#{@release_name}")
         release_lock.lock do
-          find_release
+          @release = Models::Release.find_or_create(:name => @release_name)
           process_release
         end
         "/releases/#{@release_name}/#{@release_version}"
       rescue Exception => e
         # cleanup
         if @release_version_entry && !@release_version_entry.new?
-          @release_version_entry.delete if @release_version_entry
+          @release_version_entry.destroy if @release_version_entry
         end
         raise e
       ensure
@@ -44,20 +44,10 @@ module Bosh::Director
         # TODO: delete task status file or cleanup later?
       end
 
-      def find_release
-        @logger.info("Looking up release: #{@release_name}")
-        @release = Models::Release.find(:name => @release_name).first
-        if @release.nil?
-          @logger.info("Release \"#{@release_name}\" did not exist, creating")
-          @release = Models::Release.new(:name => @release_name)
-          @release.save!
-        end
-      end
-
       def process_release
         @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
         raise ReleaseAlreadyExists unless @release_version_entry.valid?
-        @release_version_entry.save!
+        @release_version_entry.save
 
         resolve_package_dependencies(@release_manifest["packages"])
 
@@ -65,8 +55,9 @@ module Bosh::Director
         @release_manifest["packages"].each do |package_meta|
           @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
                            "exists in release #{@release.pretty_inspect}")
-          package = Models::Package.find(:release_id => @release.id, :name => package_meta["name"],
-                                         :version => package_meta["version"]).first
+          package = Models::Package[:release_id => @release.id,
+                                    :name => package_meta["name"],
+                                    :version => package_meta["version"]]
           if package.nil?
             @logger.info("Creating new package")
             package = create_package(package_meta)
@@ -77,14 +68,15 @@ module Bosh::Director
             @logger.info("Package verified")
           end
           @packages[package_meta["name"]] = package
-          @release_version_entry.packages << package
+          @release_version_entry.add_package(package)
         end
 
         @release_manifest["jobs"].each do |job_meta|
           @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
                            "exists in release #{@release.pretty_inspect}")
-          template = Models::Template.find(:release_id => @release.id, :name => job_meta["name"],
-                                           :version => job_meta["version"]).first
+          template = Models::Template[:release_id => @release.id,
+                                      :name => job_meta["name"],
+                                      :version => job_meta["version"]]
           if template.nil?
             @logger.info("Creating new template")
             template = create_job(job_meta)
@@ -93,7 +85,7 @@ module Bosh::Director
             raise ReleaseExistingJobHashMismatch if template.sha1 != job_meta["sha1"]
             @logger.info("Template verified")
           end
-          @release_version_entry.templates << template
+          @release_version_entry.add_template(template)
         end
       end
 
@@ -156,8 +148,7 @@ module Bosh::Director
           package.blobstore_id = @blobstore.create(f)
         end
 
-        package.save!
-        package
+        package.save
       end
 
       def create_job(job_meta)
@@ -194,17 +185,15 @@ module Bosh::Director
           template.blobstore_id = @blobstore.create(f)
         end
 
-        packages = []
+        package_names = []
         job_manifest["packages"].each do |package_name|
           package = @packages[package_name]
           raise JobMissingPackage.new(name, package_name) if package.nil?
-          packages << package.name
+          package_names << package.name
         end
-        template.packages = packages
+        template.package_names = package_names
 
-        template.save!
-
-        template
+        template.save
       end
 
     end

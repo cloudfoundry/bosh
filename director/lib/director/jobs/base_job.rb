@@ -26,20 +26,20 @@ module Bosh::Director
             logger.info("Performing task: #{task_id}")
             task.state = :processing
             task.timestamp = Time.now.to_i
-            task.save!
+            task.save
             result = job.perform
 
             logger.info("Done")
             task.state = :done
             task.result = result
             task.timestamp = Time.now.to_i
-            task.save!
+            task.save
           rescue Exception => e
             logger.error("#{e} - #{e.backtrace.join("\n")}")
             task.state = :error
             task.result = e.to_s
             task.timestamp = Time.now.to_i
-            task.save!
+            task.save
           end
         end
       end

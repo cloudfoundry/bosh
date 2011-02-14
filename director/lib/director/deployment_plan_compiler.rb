@@ -39,12 +39,12 @@ module Bosh::Director
 
     def bind_release
       release_spec = @deployment_plan.release
-      release = Models::Release.find(:name => release_spec.name).first
+      release = Models::Release[:name => release_spec.name]
       raise "Can't find release" if release.nil?
       @logger.debug("Found release: #{release.pretty_inspect}")
       release_spec.release = release
-      release_version = Models::ReleaseVersion.find(:release_id => release_spec.release.id,
-                                                    :version    => release_spec.version).first
+      release_version = Models::ReleaseVersion[:release_id => release_spec.release.id,
+                                               :version    => release_spec.version]
       raise "Can't find release version" if release_version.nil?
       @logger.debug("Found release version: #{release_version.pretty_inspect}")
       release_spec.release_version = release_version
@@ -52,18 +52,18 @@ module Bosh::Director
       @logger.debug("Locking the release from deletion")
       deployment = @deployment_plan.deployment
       deployment.release = release
-      deployment.save!
+      deployment.save
     end
 
     def bind_existing_deployment
       lock = Mutex.new
       ThreadPool.new(:max_threads => 32).wrap do |pool|
-        vms = Models::Vm.find(:deployment_id => @deployment_plan.deployment.id)
+        vms = Models::Vm.filter(:deployment_id => @deployment_plan.deployment.id)
         vms.each do |vm|
           pool.process do
             with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
               @logger.debug("Requesting current VM state for: #{vm.agent_id}")
-              instance = Models::Instance.find(:vm_id => vm.id).first
+              instance = vm.instance
               agent = AgentClient.new(vm.agent_id)
               state = agent.get_state
               @logger.debug("Received VM state: #{state.pretty_inspect}")
@@ -152,20 +152,6 @@ module Bosh::Director
       end
     end
 
-    def bind_packages
-      @deployment_plan.jobs.each do |job|
-        @logger.info("Binding packages for: #{job.name}")
-        stemcell = job.resource_pool.stemcell.stemcell
-        template = job.template
-        template.packages.each do |package|
-          compiled_package = Models::CompiledPackage.find(:package_id => package.id,
-                                                          :stemcell_id => stemcell.id).first
-          @logger.debug("Adding package: #{package.pretty_inspect}/#{compiled_package.pretty_inspect}")
-          job.add_package(package, compiled_package)
-        end
-      end
-    end
-
     def bind_templates
       release_version = @deployment_plan.release.release_version
 
@@ -183,12 +169,10 @@ module Bosh::Director
         @logger.info("Binding template: #{template_spec.name}")
         template = template_name_index[template_spec.name]
         raise "Can't find template: #{template_spec.name}" if template.nil?
-        template_spec.version = template.version
-        template_spec.sha1 = template.sha1
-        template_spec.blobstore_id = template.blobstore_id
+        template_spec.template = template
 
         packages = []
-        template.packages.each { |package_name| packages << package_name_index[package_name] }
+        template.package_names.each { |package_name| packages << package_name_index[package_name] }
         template_spec.packages = packages
 
         @logger.debug("Bound template: #{template_spec.pretty_inspect}")
@@ -201,11 +185,9 @@ module Bosh::Director
         stemcell_spec = resource_pool.stemcell
         lock = Lock.new("lock:stemcells:#{stemcell_spec.name}:#{stemcell_spec.version}", :timeout => 10)
         lock.lock do
-          stemcell = Models::Stemcell.find(:name => stemcell_spec.name,
-                                           :version => stemcell_spec.version).first
+          stemcell = Models::Stemcell[:name => stemcell_spec.name, :version => stemcell_spec.version]
           raise "Can't find stemcell: #{stemcell_spec.name}/#{stemcell_spec.version}" unless stemcell
-          stemcell.deployments << @deployment_plan.deployment
-          deployment.stemcells << stemcell
+          stemcell.add_deployment(@deployment_plan.deployment)
           stemcell_spec.stemcell = stemcell
         end
       end
@@ -224,21 +206,16 @@ module Bosh::Director
 
             if instance.nil?
               # look up the instance again, in case it wasn't associated with a VM
-              instance = Models::Instance.find(:deployment_id => @deployment_plan.deployment.id, :job => job.name,
-                                               :index => instance_spec.index).first
-              if instance.nil?
-                instance = Models::Instance.new
-                instance.deployment = @deployment_plan.deployment
-                instance.job = job.name
-                instance.index = instance_spec.index
-              end
+              instance = Models::Instance.find_or_create(:deployment_id => @deployment_plan.deployment.id,
+                                                         :job => job.name,
+                                                         :index => instance_spec.index)
               instance_spec.instance = instance
             end
 
             unless instance.vm
               idle_vm = instance_spec.job.resource_pool.allocate_vm
               instance.vm = idle_vm.vm
-              instance.save!
+              instance.save
 
               pool.process do
                 # Apply the assignment to the VM
@@ -269,7 +246,7 @@ module Bosh::Director
             vm_cid = vm.cid
             pool.process do
               @cloud.delete_vm(vm_cid)
-              vm.delete
+              vm.destroy
             end
           end
         end
@@ -294,8 +271,8 @@ module Bosh::Director
 
               @cloud.delete_vm(vm_cid)
               @cloud.delete_disk(disk_cid) if disk_cid
-              vm.delete
-              instance.delete
+              vm.destroy
+              instance.destroy
             end
           end
         end

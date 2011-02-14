@@ -41,10 +41,14 @@ describe Bosh::Director::DeploymentPlanCompiler do
     }
 
     before(:each) do
-      @deployment = mock("deployment")
+      @deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
+      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1")
+      @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
+                                                        :vm => @vm,
+                                                        :job => "test_job",
+                                                        :index => 5)
+
       @deployment_plan = mock("deployment_plan")
-      @vm = mock("vm")
-      @instance = mock("instance")
       @agent = mock("agent")
       @job_spec = mock("job_spec")
       @resource_pool_spec = mock("resource_pool_spec")
@@ -52,19 +56,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec = mock("instance_spec")
       @network_spec = mock("network_spec")
       @instance_network_spec = mock("instance_network_spec")
-
-      @deployment.stub!(:id).and_return(1)
-      @deployment.stub!(:name).and_return("test_deployment")
-
-      @vm.stub!(:id).and_return(2)
-      @vm.stub!(:agent_id).and_return("agent-1")
-      @vm.stub!(:deployment).and_return(@deployment)
-
-      @instance.stub(:id).and_return(3)
-      @instance.stub!(:deployment).and_return(@deployment)
-      @instance.stub!(:job).and_return("test_job")
-      @instance.stub!(:index).and_return(5)
-      @instance.stub!(:vm).and_return(@vm)
 
       @deployment_plan.stub!(:deployment).and_return(@deployment)
       @deployment_plan.stub!(:job).with("test_job").and_return(@job_spec)
@@ -78,15 +69,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.stub!(:networks).and_return([@instance_network_spec])
 
       @instance_network_spec.stub!(:name).and_return("network-a")
-
       @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-
       @stemcell_spec.stub!(:network).and_return(@network_spec)
-
       @network_spec.stub!(:name).and_return("network-a")
 
       Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(@agent)
-
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
@@ -95,9 +82,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should bind the valid resources" do
       state = BASIC_STATE._deep_copy
       @agent.stub!(:get_state).and_return(state)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
 
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
       @instance_spec.should_receive(:instance=).with(@instance)
@@ -111,9 +95,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should not bind invalid networks" do
       state = BASIC_STATE._deep_copy
       @agent.stub!(:get_state).and_return(state)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
 
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
@@ -133,15 +114,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state.delete("persistent_disk")
       state.delete("properties")
 
-      @agent.stub!(:get_state).and_return(state)
+      @instance.destroy
 
+      @agent.stub!(:get_state).and_return(state)
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
 
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([])
-
       idle_vm = mock("idle_vm")
-
       @resource_pool_spec.should_receive(:add_idle_vm).and_return(idle_vm)
       idle_vm.should_receive(:vm=).with(@vm)
       idle_vm.should_receive(:current_state=).with(state)
@@ -160,22 +138,19 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state.delete("properties")
       state["resource_pool"]["name"] = "unknown_resource_pool"
 
+      @instance.destroy
+
       @agent.stub!(:get_state).and_return(state)
 
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([])
-
       @deployment_plan.stub!(:resource_pool).with("unknown_resource_pool").and_return(nil)
-
       @deployment_plan.should_receive(:delete_vm).with(@vm)
 
       @deployment_plan_compiler.bind_existing_deployment
     end
 
     it "should mark the VM for deletion if it's no longer needed" do
-      @instance.stub!(:index).and_return(6)
+      @instance.update(:index => 6)
       @job_spec.stub!(:instance).with(6).and_return(nil)
 
       state = BASIC_STATE._deep_copy
@@ -183,10 +158,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @agent.stub!(:get_state).and_return(state)
 
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
-
       @deployment_plan.should_receive(:delete_instance).with(@instance)
 
       @deployment_plan_compiler.bind_existing_deployment
@@ -235,7 +206,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @stemcell_spec = mock("stemcell_spec")
       @network_spec = mock("network_spec")
 
-      @deployment_plan.stub!(:deployment).and_return(@deployment)
       @deployment_plan.stub!(:network).with("network-a").and_return(@network_spec)
       @deployment_plan.stub!(:resource_pool).with("test_resource_pool").and_return(@resource_pool_spec)
       @deployment_plan.stub!(:resource_pools).and_return([@resource_pool_spec])
@@ -274,39 +244,9 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe "bind_configuration" do
 
     before(:each) do
-      @deployment = mock("deployment")
-      @release_version = mock("release_version")
-      @template = mock("template")
-      @package = mock("package")
-      @stemcell = mock("stemcell")
       @deployment_plan = mock("deployment_plan")
       @job_spec = mock("job_spec")
-      @release_spec = mock("release_spec")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @stemcell_spec = mock("stemcell_spec")
-
-      @release_version.stub!(:id).and_return(2)
-
-      @template.stub!(:packages).and_return([@package])
-
-      @package.stub!(:name).and_return("test_package")
-      @package.stub!(:version).and_return(7)
-      @package.stub!(:id).and_return(13)
-
-      @stemcell.stub!(:id).and_return(10)
-
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
-      @deployment_plan.stub!(:release).and_return(@release_spec)
-
-      @release_spec.stub!(:release_version).and_return(@release_version)
-
-      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-
-      @stemcell_spec.stub!(:network).and_return(@network_spec)
-      @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
-
-      @job_spec.stub!(:template_name).and_return("test_template")
-      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
 
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
@@ -326,7 +266,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
     before(:each) do
       @deployment_plan = mock("deployment_plan")
-      @instance = mock("instance")
       @job_spec = mock("job_spec")
       @instance_spec = mock("instance_spec")
       @network_spec = mock("network_spec")
@@ -347,29 +286,29 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should do nothing if the ip is already reserved" do
-      @instance_network_spec.stub(:reserved).and_return(true)
+      @instance_network_spec.stub!(:reserved).and_return(true)
       @deployment_plan_compiler.bind_instance_networks
     end
 
     it "should reserve a static ip" do
-      @instance_network_spec.stub(:reserved).and_return(false)
-      @instance_network_spec.stub(:ip).and_return(IP_10_0_0_5)
+      @instance_network_spec.stub!(:reserved).and_return(false)
+      @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
       @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
       @deployment_plan_compiler.bind_instance_networks
     end
 
     it "should acquire a dynamic ip" do
-      @instance_network_spec.stub(:reserved).and_return(false)
-      @instance_network_spec.stub(:ip).and_return(nil)
+      @instance_network_spec.stub!(:reserved).and_return(false)
+      @instance_network_spec.stub!(:ip).and_return(nil)
       @network_spec.should_receive(:allocate_dynamic_ip).and_return(1)
       @instance_network_spec.should_receive(:use_reservation).with(1, false)
       @deployment_plan_compiler.bind_instance_networks
     end
 
     it "should fail reserving a static ip that was not in a static range" do
-      @instance_network_spec.stub(:reserved).and_return(false)
-      @instance_network_spec.stub(:ip).and_return(IP_10_0_0_5)
+      @instance_network_spec.stub!(:reserved).and_return(false)
+      @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
       lambda {@deployment_plan_compiler.bind_instance_networks}.should raise_error
     end
@@ -379,143 +318,61 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe "bind_templates" do
 
     before(:each) do
-      @deployment = mock("deployment")
-      @release_version = mock("release_version")
-      @template = mock("template")
-      @package = mock("package")
-      @stemcell = mock("stemcell")
+      @deployment = Bosh::Director::Models::Deployment.make
+      @release = Bosh::Director::Models::Release.make
+      @release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release)
+      @template = Bosh::Director::Models::Template.make(:release => @release, :name => "test_template")
+      @template.package_names = ["test_package"]
+      @template.save
+      @release_version.add_template(@template)
+      @package = Bosh::Director::Models::Package.make(:release => @release, :name => "test_package")
+      @release_version.add_package(@package)
+
       @deployment_plan = mock("deployment_plan")
       @job_spec = mock("job_spec")
       @template_spec = mock("template_spec")
       @release_spec = mock("release_spec")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @stemcell_spec = mock("stemcell_spec")
-
-      @release_version.stub!(:id).and_return(2)
-
-      @template.stub!(:name).and_return("test_template")
-      @template.stub!(:version).and_return("2")
-      @template.stub!(:sha1).and_return("template-sha1")
-      @template.stub!(:blobstore_id).and_return("template-blob")
-      @template.stub!(:packages).and_return(["test_package"])
 
       @template_spec.stub!(:name).and_return("test_template")
 
-      @package.stub!(:name).and_return("test_package")
-      @package.stub!(:version).and_return(7)
-      @package.stub!(:id).and_return(13)
-
-      @stemcell.stub!(:id).and_return(10)
-
-      @deployment_plan.stub!(:jobs).and_return([@job_spec])
       @deployment_plan.stub!(:templates).and_return([@template_spec])
       @deployment_plan.stub!(:release).and_return(@release_spec)
 
       @release_spec.stub!(:release_version).and_return(@release_version)
 
-      @release_version.stub!(:templates).and_return([@template])
-      @release_version.stub!(:packages).and_return([@package])
-
-      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-
-      @stemcell_spec.stub!(:network).and_return(@network_spec)
-      @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
-
-      @job_spec.stub!(:template_name).and_return("test_template")
-      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
-
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
     end
 
     it "should bind the compiled packages to the job" do
-      @template_spec.should_receive(:version=).with("2")
-      @template_spec.should_receive(:sha1=).with("template-sha1")
-      @template_spec.should_receive(:blobstore_id=).with("template-blob")
+      @template_spec.should_receive(:template=).with(@template)
       @template_spec.should_receive(:packages=).with([@package])
       @deployment_plan_compiler.bind_templates
-    end
-  end
-
-  describe "bind_packages" do
-
-    before(:each) do
-      @deployment = mock("deployment")
-      @release_version = mock("release_version")
-      @template_spec = mock("template_spec")
-      @package = mock("package")
-      @stemcell = mock("stemcell")
-      @deployment_plan = mock("deployment_plan")
-      @job_spec = mock("job_spec")
-      @release_spec = mock("release_spec")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @stemcell_spec = mock("stemcell_spec")
-
-      @release_version.stub!(:id).and_return(2)
-
-      @template_spec.stub!(:packages).and_return([@package])
-
-      @package.stub!(:name).and_return("test_package")
-      @package.stub!(:version).and_return(7)
-      @package.stub!(:id).and_return(13)
-
-      @stemcell.stub!(:id).and_return(10)
-
-      @deployment_plan.stub!(:jobs).and_return([@job_spec])
-      @deployment_plan.stub!(:release).and_return(@release_spec)
-
-      @release_spec.stub!(:release_version).and_return(@release_version)
-
-      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-
-      @stemcell_spec.stub!(:network).and_return(@network_spec)
-      @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
-
-      @job_spec.stub!(:name).and_return("test_job")
-      @job_spec.stub!(:template).and_return(@template_spec)
-      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
-    end
-
-    it "should bind the compiled packages to the job" do
-
-      compiled_package = mock("compiled_package")
-      compiled_package.stub!(:sha1).and_return("some sha1")
-
-      Bosh::Director::Models::CompiledPackage.stub!(:find).with(:package_id => 13,
-                                                                :stemcell_id => 10).and_return([compiled_package])
-
-      @job_spec.should_receive(:add_package).with(@package, compiled_package)
-
-      @deployment_plan_compiler.bind_packages
     end
   end
 
   describe "bind_instance_vms" do
 
     before(:each) do
-      @deployment = mock("deployment")
+      @deployment = Bosh::Director::Models::Deployment.make
+      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment)
+      @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
+                                                        :vm => nil,
+                                                        :job => "test_job",
+                                                        :index => 5)
+
       @deployment_plan = mock("deployment_plan")
-      @vm = mock("vm")
-      @instance = mock("instance")
       @job_spec = mock("job_spec")
       @resource_pool_spec = mock("resource_pool_spec")
       @instance_spec = mock("instance_spec")
-      @release = mock("release")
-
-      @instance.stub!(:vm).and_return(@vm)
-
-      @deployment.stub!(:id).and_return("77")
+      @release_spec = mock("release_spec")
 
       @deployment_plan.stub!(:deployment).and_return(@deployment)
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
-      @deployment_plan.stub!(:release).and_return(@release)
+      @deployment_plan.stub!(:release).and_return(@release_spec)
 
-      @release.stub!(:spec).and_return({"name" => "test_release", "version" => 23})
+      @release_spec.stub!(:spec).and_return({"name" => "test_release", "version" => 23})
 
       @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
       @job_spec.stub!(:instances).and_return([@instance_spec])
@@ -524,10 +381,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @instance_spec.stub!(:job).and_return(@job_spec)
       @instance_spec.stub!(:index).and_return(5)
-      @instance_spec.stub!(:instance).and_return(@instance)
-      @instance_spec.stub!(:vm).and_return(@vm)
-
-      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
 
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
@@ -535,11 +388,13 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should do nothing when all the instances already have VMs" do
+      @instance.update(:vm => @vm)
+      @instance_spec.should_receive(:instance).and_return(@instance)
       @deployment_plan_compiler.bind_instance_vms
     end
 
     it "should late bind instance if the instance was not attached to a VM" do
-      @vm.stub!(:agent_id).and_return("test_id")
+      @vm.update(:agent_id => "test_id")
 
       agent = mock("agent")
       agent.should_receive(:apply).with({
@@ -558,15 +413,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
 
       @instance_spec.should_receive(:instance).and_return(nil)
-
-      instance = mock("instance")
-      instance.stub!(:vm).and_return(nil)
-      instance.should_receive(:vm=).with(@vm)
-      instance.should_receive(:save!)
-      instance.stub!(:job).and_return("test_job")
-      instance.stub!(:index).and_return(5)
-
-      @instance_spec.should_receive(:instance=).with(instance)
+      @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with({
         "index"=>5,
         "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
@@ -576,14 +423,15 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
-      Bosh::Director::Models::Instance.stub!(:find).with(:deployment_id => "77", :job => "test_job", :index => 5).
-          and_return([instance])
-
       @deployment_plan_compiler.bind_instance_vms
+
+      @instance.refresh
+      @instance.vm.should == @vm
     end
 
     it "should create a new instance model when needed" do
-      @vm.stub!(:agent_id).and_return("test_id")
+      @vm.update(:agent_id => "test_id")
+      @instance.destroy
 
       agent = mock("agent")
       agent.should_receive(:apply).with({
@@ -602,18 +450,14 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
 
       @instance_spec.should_receive(:instance).and_return(nil)
-
-      new_instance = mock("instance")
-      new_instance.should_receive(:deployment=).with(@deployment)
-      new_instance.should_receive(:job=).with("test_job")
-      new_instance.should_receive(:index=).with(5)
-      new_instance.should_receive(:vm).and_return(nil)
-      new_instance.should_receive(:vm=).with(@vm)
-      new_instance.should_receive(:save!)
-      new_instance.stub!(:job).and_return("test_job")
-      new_instance.stub!(:index).and_return(5)
-
-      @instance_spec.should_receive(:instance=).with(new_instance)
+      new_instance = nil
+      @instance_spec.should_receive(:instance=).with do |instance|
+        new_instance = instance
+        instance.deployment.should == @deployment
+        instance.job.should == "test_job"
+        instance.index.should == 5
+        true
+      end
       @instance_spec.should_receive(:current_state=).with({
         "index"=>5,
         "job"=>{"name"=>"test_job", "blobstore_id"=>"blob"},
@@ -622,12 +466,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       })
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
-      Bosh::Director::Models::Instance.stub!(:find).with(:deployment_id => "77", :job => "test_job", :index => 5).
-          and_return([])
-      Bosh::Director::Models::Instance.stub!(:new).and_return(new_instance)
-
       @deployment_plan_compiler.bind_instance_vms
+      new_instance.vm.should == @vm
     end
 
   end
@@ -637,7 +477,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should delete unneeded vms" do
       deployment_plan = mock("deployment_plan")
       cloud = mock("cloud")
-      vm = mock("vm")
+      vm = Bosh::Director::Models::Vm.make
 
       Bosh::Director::Config.stub!(:cloud).and_return(cloud)
 
@@ -658,8 +498,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should delete unneeded instances" do
       deployment_plan = mock("deployment_plan")
       cloud = mock("cloud")
-      instance = mock("instance")
-      vm = mock("vm")
+      instance = Bosh::Director::Models::Instance.make
+      vm = Bosh::Director::Models::Vm.make
       agent = mock("agent")
 
       Bosh::Director::Config.stub!(:cloud).and_return(cloud)

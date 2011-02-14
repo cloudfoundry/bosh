@@ -1,14 +1,9 @@
 module Bosh::Director::Models
-  class User < Ohm::Model
-    attribute :username
-    attribute :password
-
-    index :username
-
+  class User < Sequel::Model
     def validate
-      assert_present :username
-      assert_present :password
-      assert_unique :username
+      validates_presence :username
+      validates_presence :password
+      validates_unique :username
     end
   end
 end

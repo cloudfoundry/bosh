@@ -137,8 +137,8 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should delete the unneeded instances" do
-    instance = mock("instance")
-    vm = mock("vm")
+    instance = Bosh::Director::Models::Instance.make
+    vm = Bosh::Director::Models::Vm.make
     agent = mock("agent")
     cloud = mock("cloud")
 

@@ -29,7 +29,7 @@ module Bosh::Director
         @logger.info("Deleting extra VM: #{vm_cid}")
         @pool.process do
           @cloud.delete_vm(vm_cid)
-          idle_vm.vm.delete
+          idle_vm.vm.destroy
         end
       end
       @pool.wait
@@ -46,7 +46,7 @@ module Bosh::Director
             vm = idle_vm.vm
             idle_vm.vm = nil
             idle_vm.current_state = nil
-            vm.delete
+            vm.destroy
           end
         end
       end
@@ -67,7 +67,9 @@ module Bosh::Director
               vm.deployment = @resource_pool.deployment.deployment
               vm.agent_id = agent_id
               vm.cid = vm_cid
-              vm.save!
+              vm.save
+
+              # TODO: delete the VM if it wasn't saved
 
               agent = AgentClient.new(vm.agent_id)
               agent.wait_until_ready
@@ -88,7 +90,7 @@ module Bosh::Director
               @logger.info("Cleaning up the created VM due to an error: #{e}")
               begin
                 @cloud.delete_vm(vm_cid) if vm_cid
-                vm.delete if vm.id
+                vm.destroy if vm.id
               rescue Exception
                 @logger.info("Could not cleanup VM: #{vm_cid}")
               end

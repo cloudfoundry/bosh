@@ -17,9 +17,6 @@ describe Bosh::Director::Controller do
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     Bosh::Director::Config.configure(test_config)
-    redis = Bosh::Director::Config.redis
-    redis.select(15)
-    redis.flushdb
   end
 
   after(:each) do
@@ -198,7 +195,7 @@ describe Bosh::Director::Controller do
     describe "listing tasks" do
       it "has API call that returns a list of running tasks" do
         ["queued", "processing"].each do |state|
-          (1..20).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
+          (1..20).map { |i| Bosh::Director::Models::Task.make(:state => state, :timestamp => Time.now.to_i - i) }
         end
         get "/tasks?state=processing"
         last_response.status.should == 200
@@ -208,7 +205,7 @@ describe Bosh::Director::Controller do
 
       it "has API call that returns a list of recent tasks" do
         ["queued", "processing"].each do |state|
-          (1..20).map { |i| Bosh::Director::Models::Task.create(:state => state, :timestamp => Time.now.to_i - i) }
+          (1..20).map { |i| Bosh::Director::Models::Task.make(:state => state, :timestamp => Time.now.to_i - i) }
         end
         get "/tasks?limit=20"
         last_response.status.should == 200
@@ -226,18 +223,18 @@ describe Bosh::Director::Controller do
 
         last_response.status.should == 200
         task_json = Yajl::Parser.parse(last_response.body)
-        task_json["id"].should == "1"
+        task_json["id"].should == 1
         task_json["state"].should == "queued"
         task_json["description"].should == "create release"
 
         task = Bosh::Director::Models::Task[new_task_id]
         task.state = "processed"
-        task.save!
+        task.save
 
         get "/tasks/#{new_task_id}"
         last_response.status.should == 200
         task_json = Yajl::Parser.parse(last_response.body)
-        task_json["id"].should == "1"
+        task_json["id"].should == 1
         task_json["state"].should == "processed"
         task_json["description"].should == "create release"
       end
@@ -253,7 +250,7 @@ describe Bosh::Director::Controller do
 
           task = Bosh::Director::Models::Task[new_task_id]
           task.output = output_file.path
-          task.save!
+          task.save
 
           get "/tasks/#{new_task_id}/output"
           last_response.status.should == 200
@@ -274,7 +271,7 @@ describe Bosh::Director::Controller do
 
           task = Bosh::Director::Models::Task[new_task_id]
           task.output = output_file.path
-          task.save!
+          task.save
 
           # Range test
           get "/tasks/#{new_task_id}/output", {}, {"HTTP_RANGE" => "bytes=0-3"}
@@ -302,7 +299,7 @@ describe Bosh::Director::Controller do
         user_data = Yajl::Encoder.encode({ "username" => "john", "password" => "123" })
         post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
 
-        new_user = Bosh::Director::Models::User.find(:username => "john").first
+        new_user = Bosh::Director::Models::User[:username => "john"]
         new_user.should_not be_nil
         BCrypt::Password.new(new_user.password).should == "123"
       end
@@ -326,8 +323,8 @@ describe Bosh::Director::Controller do
         new_data = Yajl::Encoder.encode({ "username" => "john", "password" => "456" })
         put "/users/john", {}, { "CONTENT_TYPE" => "application/json", :input => new_data }
 
-        last_response.status.should == 200
-        user = Bosh::Director::Models::User.find(:username => "john").first
+        last_response.status.should == 204
+        user = Bosh::Director::Models::User[:username => "john"]
         BCrypt::Password.new(user.password).should == "456"
 
         login_as("john", "456")
@@ -344,9 +341,9 @@ describe Bosh::Director::Controller do
         login_as("john", "123")
         delete "/users/john"
 
-        last_response.status.should == 200
+        last_response.status.should == 204
 
-        user = Bosh::Director::Models::User.find(:username => "john").first
+        user = Bosh::Director::Models::User[:username => "john"]
         user.should be_nil
       end
     end

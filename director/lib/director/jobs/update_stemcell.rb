@@ -36,8 +36,8 @@ module Bosh::Director
         raise StemcellInvalidImage unless File.file?(@stemcell_image)
 
         @logger.info("Checking if this stemcell already exists")
-        stemcells = Models::Stemcell.find(:name => @name, :version => @version)
-        raise StemcellAlreadyExists.new(@name, @version) unless stemcells.empty?
+        stemcell = Models::Stemcell[:name => @name, :version => @version]
+        raise StemcellAlreadyExists.new(@name, @version) if stemcell
 
         @logger.info("Uploading stemcell to the cloud")
         cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
@@ -47,7 +47,7 @@ module Bosh::Director
         stemcell.name = @name
         stemcell.version = @version
         stemcell.cid = cid
-        stemcell.save!
+        stemcell.save
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir

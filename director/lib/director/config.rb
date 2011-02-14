@@ -5,6 +5,7 @@ module Bosh::Director
 
       attr_accessor :base_dir
       attr_accessor :logger
+      attr_accessor :db
 
       attr_reader :redis_options
       attr_reader :cloud_options
@@ -29,6 +30,8 @@ module Bosh::Director
         @pubsub_redis = nil
         @cloud = nil
         @blobstore = nil
+        @db = Sequel.connect(config["db"])
+        @db.logger = @logger
 
         @lock = Mutex.new
       end

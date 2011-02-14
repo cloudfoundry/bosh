@@ -4,10 +4,11 @@ gem "bcrypt-ruby"
 gem "blobstore_client"
 gem "eventmachine"
 gem "netaddr"
-gem "ohm"
+gem "pg"
 gem "rake"
 gem "redis"
 gem "resque"
+gem "sequel"
 gem "sinatra"
 gem "soap4r"
 gem "SystemTimer"
@@ -17,13 +18,24 @@ gem "uuidtools"
 gem "yajl-ruby"
 gem "esxmq" , "0.0.11"
 
+group :development do
+  gem "sqlite3"
+end
+
+group :production do
+  gem "pg"
+end
+
 group :test do
   gem "autotest"
   gem "ci_reporter"
+  gem "faker"
+  gem "machinist"
   gem "minitar"
   gem "rack-test"
   gem "rcov"
   gem "rcov_analyzer"
   gem "rspec"
   gem "ruby-debug"
+  gem "sqlite3"
 end

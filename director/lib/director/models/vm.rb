@@ -1,19 +1,11 @@
 module Bosh::Director::Models
-
-  class Deployment < Ohm::Model; end
-
-  class Vm < Ohm::Model
-    reference :deployment, Deployment
-    attribute :agent_id
-    attribute :cid
-
-    index :agent_id
+  class Vm < Sequel::Model
+    many_to_one :deployment
+    one_to_one  :instance
 
     def validate
-      assert_present :deployment_id
-      assert_present :agent_id
-      assert_present :cid
-      assert_unique :agent_id
+      validates_presence [:deployment_id, :agent_id, :cid]
+      validates_unique :agent_id
     end
   end
 end

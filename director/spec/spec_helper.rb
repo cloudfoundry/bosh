@@ -9,15 +9,7 @@ require "rspec"
 
 ENV["RACK_ENV"] = "test"
 
-require "director"
-
-require "archive/tar/minitar"
-require "digest/sha1"
-require "fileutils"
-require "tmpdir"
-require "zlib"
-
-logger = nil
+require "logger"
 if ENV['DEBUG']
   logger = Logger.new(STDOUT)
 else
@@ -26,12 +18,35 @@ else
   log_file.sync = true
   logger = Logger.new(log_file)
 end
-logger.formatter = ThreadFormatter.new
+
+require "sequel"
+migrate_dir = File.expand_path("../../db/migrations", __FILE__)
+Sequel.extension :migration
+db = Sequel.sqlite
+db.loggers << logger
+Sequel::Model.db = db
+
+Sequel::Migrator.apply(db, migrate_dir, nil)
+
+require "director"
+
+require "archive/tar/minitar"
+require "digest/sha1"
+require "fileutils"
+require "tmpdir"
+require "zlib"
+
+require "machinist/sequel"
+require "sham"
+require "faker"
+require "blueprints"
 
 bosh_dir = Dir.mktmpdir("boshdir")
 bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
 
 ENV["TMPDIR"] = bosh_tmp_dir
+
+logger.formatter = ThreadFormatter.new
 
 class Object
   include Bosh::Director::DeepCopy
@@ -41,8 +56,104 @@ def spec_asset(filename)
   File.read(File.dirname(__FILE__) + "/assets/#{filename}")
 end
 
+def gzip(string)
+  result = StringIO.new
+  zio = Zlib::GzipWriter.new(result)
+  zio.mtime = 1
+  zio.write(string)
+  zio.close
+  result.string
+end
+
+def create_stemcell(name, version, cloud_properties, image)
+  io = StringIO.new
+
+  manifest = {
+    "name" => name,
+    "version" => version,
+    "cloud_properties" => cloud_properties
+  }
+
+  Archive::Tar::Minitar::Writer.open(io) do |tar|
+    tar.add_file("stemcell.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
+    tar.add_file("image", {:mode => "0644", :mtime => 0}) {|os, _| os.write(image)}
+  end
+
+  io.close
+  gzip(io.string)
+end
+
+def create_job(name, monit, configuration_files)
+  io = StringIO.new
+
+  manifest = {
+    "name" => name,
+    "templates" => {}
+  }
+
+  configuration_files.each do |path, configuration_file|
+    manifest["templates"][path] = configuration_file["destination"]
+  end
+
+  Archive::Tar::Minitar::Writer.open(io) do |tar|
+    tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
+    tar.add_file("monit", {:mode => "0644", :mtime => 0}) {|os, _| os.write(monit)}
+
+    tar.mkdir("templates", {:mode => "0755", :mtime => 0})
+    configuration_files.each do |path, configuration_file|
+      tar.add_file("templates/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
+        os.write(configuration_file["contents"])
+      end
+    end
+  end
+
+  io.close
+
+  gzip(io.string)
+end
+
+def create_release(name, version, jobs, packages)
+  io = StringIO.new
+
+  manifest = {
+    "name" => name,
+    "version" => version
+  }
+
+  Archive::Tar::Minitar::Writer.open(io) do |tar|
+    tar.add_file("release.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
+    tar.mkdir("packages", {:mode => "0755"})
+    packages.each do |package|
+      tar.add_file("packages/#{package[:name]}.tgz", {:mode => "0644", :mtime => 0}) {|os, _| os.write("package")}
+    end
+    tar.mkdir("jobs", {:mode => "0755"})
+    jobs.each do |job|
+      tar.add_file("jobs/#{job[:name]}.tgz", {:mode => "0644", :mtime => 0}) {|os, _| os.write("job")}
+    end
+  end
+
+  io.close
+  gzip(io.string)
+end
+
+def create_package(files)
+  io = StringIO.new
+
+  Archive::Tar::Minitar::Writer.open(io) do |tar|
+    files.each do |key, value|
+      tar.add_file(key, {:mode => "0644", :mtime => 0}) {|os, _| os.write(value)}
+    end
+  end
+
+  io.close
+  gzip(io.string)
+end
+
 Rspec.configure do |rspec_config|
+
   rspec_config.before(:each) do
+    Sequel::Migrator.apply(db, migrate_dir, 0)
+    Sequel::Migrator.apply(db, migrate_dir, nil)
     FileUtils.mkdir_p(bosh_dir)
     Bosh::Director::Config.logger = logger
   end

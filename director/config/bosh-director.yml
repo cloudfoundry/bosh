@@ -6,6 +6,7 @@ redis:
   host: 127.0.0.1
   password:
 dir: /tmp/boshdir
+db: postgres://postgres:root@localhost/test1
 blobstore:
   plugin: simple
   properties:
