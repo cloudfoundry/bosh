@@ -84,7 +84,11 @@ module Bosh::Agent
         FileUtils.mkdir_p compile_dir
         Dir.chdir(compile_dir) do
           # TODO: error handling
-          `tar -zxf #{@source_file}`
+          output = `tar -zxf #{@source_file} 2>&1`
+          unless $?.exitstatus == 0
+            raise Bosh::Agent::MessageHandlerError, 
+              "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus}): #{output}"
+          end
         end
       end
 
