@@ -11,25 +11,25 @@ describe Bosh::Director::ConfigurationHasher do
     result.string
   end
 
-  def create_release(name, monit, configuration_files)
+  def create_job(name, monit, configuration_files)
     io = StringIO.new
 
     manifest = {
       "name" => name,
-      "configuration" => {}
+      "templates" => {}
     }
 
     configuration_files.each do |path, configuration_file|
-      manifest["configuration"][path] = configuration_file["destination"]
+      manifest["templates"][path] = configuration_file["destination"]
     end
 
     Archive::Tar::Minitar::Writer.open(io) do |tar|
       tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
       tar.add_file("monit", {:mode => "0644", :mtime => 0}) {|os, _| os.write(monit)}
 
-      tar.mkdir("configuration", {:mode => "0755", :mtime => 0})
+      tar.mkdir("templates", {:mode => "0755", :mtime => 0})
       configuration_files.each do |path, configuration_file|
-        tar.add_file("config/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
+        tar.add_file("templates/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
           os.write(configuration_file["contents"])
         end
       end
@@ -54,8 +54,8 @@ describe Bosh::Director::ConfigurationHasher do
     instance.stub!(:index).and_return(0)
     instance.stub!(:spec).and_return({"test" => "spec"})
 
-    template_contents = create_release("foo", "monit file",
-                                       {"test" => {"destination" => "test_dst", "contents" => "test contents"}})
+    template_contents = create_job("foo", "monit file",
+                                   {"test" => {"destination" => "test_dst", "contents" => "test contents"}})
 
     Bosh::Director::Config.stub!(:blobstore).and_return(blobstore_client)
     blobstore_client.should_receive(:get).with("b_id", an_instance_of(File)).and_return do |_, file|
@@ -82,8 +82,8 @@ describe Bosh::Director::ConfigurationHasher do
     instance.stub!(:index).and_return(0)
     instance.stub!(:spec).and_return({"test" => "spec"})
 
-    template_contents = create_release("foo", "<%= name %> <%= index %> <%= properties.foo %> <%= spec.test %>",
-                                       {"test" => {"destination" => "test_dst", "contents" => "<%= index %>"}})
+    template_contents = create_job("foo", "<%= name %> <%= index %> <%= properties.foo %> <%= spec.test %>",
+                                   {"test" => {"destination" => "test_dst", "contents" => "<%= index %>"}})
 
     Bosh::Director::Config.stub!(:blobstore).and_return(blobstore_client)
     blobstore_client.should_receive(:get).with("b_id", an_instance_of(File)).and_return do |_, file|

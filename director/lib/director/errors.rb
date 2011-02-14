@@ -58,7 +58,7 @@ module Bosh::Director
 
     ["JobInvalidArchive",       BAD_REQUEST, 80000, "Job: \"%s\" invalid archive, tar exit status: %s, output: %s"],
     ["JobMissingManifest",      BAD_REQUEST, 80001, "Job: \"%s\" missing job manifest"],
-    ["JobMissingConfigFile",    BAD_REQUEST, 80002, "Job: \"%s\" missing config file: \"%s\""],
+    ["JobMissingTemplateFile",  BAD_REQUEST, 80002, "Job: \"%s\" missing template file: \"%s\""],
     ["JobMissingPackage",       BAD_REQUEST, 80003, "Job: \"%s\" missing package: \"%s\""],
     ["JobMissingMonit",         BAD_REQUEST, 80004, "Job: \"%s\" missing monit configuration"],
   ].each do |e|
