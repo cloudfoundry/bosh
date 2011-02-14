@@ -180,10 +180,10 @@ module Bosh::Director
 
         job_manifest = YAML.load_file(manifest_file)
 
-        if job_manifest["configuration"]
-          job_manifest["configuration"].each_key do |relative_path|
-            path = File.join(job_dir, "config", relative_path)
-            raise JobMissingConfigFile.new(name, relative_path) unless File.file?(path)
+        if job_manifest["templates"]
+          job_manifest["templates"].each_key do |relative_path|
+            path = File.join(job_dir, "templates", relative_path)
+            raise JobMissingTemplateFile.new(name, relative_path) unless File.file?(path)
           end
         end
 
