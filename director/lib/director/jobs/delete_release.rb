@@ -15,44 +15,33 @@ module Bosh::Director
 
       def delete_release(release)
         @logger.info("Deleting release: #{@name}")
-        release.versions.each do |release_version|
-          next if release_version.nil?
-          @logger.info("Deleting release version: #{release_version.version}")
-          release_version.templates.each do |template|
-            next if template.nil?
-            @logger.info("Deleting template: #{template.name}/#{template.version}")
-            delete_blobstore_id(template.blobstore_id) { template.delete }
-          end
 
-          release_version.packages.each do |package|
-            next if package.nil?
-            @logger.info("Deleting package: #{package.name}/#{package.version}")
-            compiled_packages = package.compiled_packages
-            compiled_packages.each do |compiled_package|
-              next if compiled_package.nil?
-              stemcell = compiled_package.stemcell
-
-              if stemcell
-                @logger.info("Deleting compiled package: #{package.name}/#{package.version} for " +
+        release.packages.each do |package|
+          @logger.info("Deleting package: #{package.name}/#{package.version}")
+          compiled_packages = package.compiled_packages
+          compiled_packages.each do |compiled_package|
+            stemcell = compiled_package.stemcell
+            @logger.info("Deleting compiled package: #{package.name}/#{package.version} for " +
                              "#{stemcell.name}/#{stemcell.version}")
-              else
-                # TODO: should not happen any more since we delete compiled packages along with the stemcells
-                @logger.info("Deleting compiled package: #{package.name}/#{package.version} for a deleted stemcell")
-              end
-
-              delete_blobstore_id(compiled_package.blobstore_id) { compiled_package.delete }
-            end
-
-            delete_blobstore_id(package.blobstore_id) { package.delete }
+            delete_blobstore_id(compiled_package.blobstore_id) { compiled_package.destroy }
           end
+          delete_blobstore_id(package.blobstore_id) do
+            package.remove_all_release_versions
+            package.destroy
+          end
+        end
 
-          if @errors.empty? || @force
-            release_version.delete
+        release.templates.each do |template|
+          @logger.info("Deleting template: #{template.name}/#{template.version}")
+          delete_blobstore_id(template.blobstore_id) do
+            template.remove_all_release_versions
+            template.destroy
           end
         end
 
         if @errors.empty? || @force
-          release.delete
+          release.versions.each { |release_version| release_version.destroy }
+          release.destroy
         end
       end
 
@@ -62,7 +51,7 @@ module Bosh::Director
         lock = Lock.new("lock:release:#{@name}", :timeout => 10)
         lock.lock do
           @logger.info("Looking up release: #{@name}")
-          release = Models::Release.find(:name => @name).first
+          release = Models::Release[:name => @name]
           raise ReleaseNotFound.new(@name) if release.nil?
           @logger.info("Found: #{release.name}")
 

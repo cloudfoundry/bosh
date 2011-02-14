@@ -2,34 +2,6 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe Bosh::Director::Jobs::UpdateStemcell do
 
-  def gzip(string)
-    result = StringIO.new
-    zio = Zlib::GzipWriter.new(result)
-    zio.mtime = 1
-    zio.write(string)
-    zio.close
-    result.string
-  end
-
-  def create_stemcell(name, version, cloud_properties, image)
-    io = StringIO.new
-
-    manifest = {
-      "name" => name,
-      "version" => version,
-      "cloud_properties" => cloud_properties
-    }
-
-    Archive::Tar::Minitar::Writer.open(io) do |tar|
-      tar.add_file("stemcell.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
-      tar.add_file("image", {:mode => "0644", :mtime => 0}) {|os, _| os.write(image)}
-    end
-
-    io.close
-    gzip(io.string)
-  end
-
-
   before(:each) do
     @cloud = mock("cloud")
 
@@ -52,39 +24,23 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
       contents = File.open(image) {|f| f.read}
       contents.should eql("image contents")
+      "stemcell-cid"
     end
-
-    stemcell = mock("stemcell")
-    stemcell.should_receive(:name=)
-    stemcell.should_receive(:version=)
-    stemcell.should_receive(:cid=)
-    stemcell.should_receive(:save!)
-    stemcell.should_receive(:name).and_return("jeos")
-    stemcell.should_receive(:version).and_return("5")
-
-    Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => "5").and_return([])
-    Bosh::Director::Models::Stemcell.stub!(:new).and_return(stemcell, nil)
 
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
     update_stemcell_job.perform
+
+    stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
+    stemcell.should_not be_nil
+    stemcell.cid.should == "stemcell-cid"
   end
 
   it "should cleanup the stemcell file" do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
       contents = File.open(image) {|f| f.read}
       contents.should eql("image contents")
+      "stemcell-cid"
     end
-
-    stemcell = mock("stemcell")
-    stemcell.should_receive(:name=)
-    stemcell.should_receive(:version=)
-    stemcell.should_receive(:cid=)
-    stemcell.should_receive(:save!)
-    stemcell.should_receive(:name).and_return("jeos")
-    stemcell.should_receive(:version).and_return("5")
-
-    Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => "5").and_return([])
-    Bosh::Director::Models::Stemcell.stub!(:new).and_return(stemcell, nil)
 
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
     update_stemcell_job.perform
@@ -93,11 +49,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should fail if the stemcell exists" do
-    existing_stemcell = stub("existing_stemcell")
-
-    Bosh::Director::Models::Stemcell.stub!(:find).with(:name => "jeos", :version => "5").and_return([existing_stemcell])
+    Bosh::Director::Models::Stemcell.make(:name => "jeos", :version => "5")
 
     update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+
     lambda { update_stemcell_job.perform }.should raise_exception(Bosh::Director::StemcellAlreadyExists)
   end
 

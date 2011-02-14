@@ -17,8 +17,8 @@ require "bcrypt"
 require "blobstore_client"
 require "eventmachine"
 require "netaddr"
-require "ohm"
 require "resque"
+require "sequel"
 require "sinatra"
 require "uuidtools"
 require "yajl"
@@ -31,6 +31,8 @@ require "director/http_constants"
 require "director/task_helper"
 require "director/validation_helper"
 
+require "director/config"
+
 require "director/client"
 require "director/ip_util"
 require "director/agent_client"
@@ -38,7 +40,6 @@ require "director/cloud"
 require "director/cloud/vsphere"
 require "director/cloud/esx"
 require "director/cloud/dummy"
-require "director/config"
 require "director/configuration_hasher"
 require "director/cycle_helper"
 require "director/deployment_plan"
@@ -47,6 +48,7 @@ require "director/errors"
 require "director/instance_updater"
 require "director/job_updater"
 require "director/lock"
+require "director/models"
 require "director/package_compiler"
 require "director/pubsub_redis"
 require "director/release_manager"
@@ -63,17 +65,6 @@ require "director/jobs/delete_stemcell"
 require "director/jobs/update_deployment"
 require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
-require "director/models/compiled_package"
-require "director/models/deployment"
-require "director/models/instance"
-require "director/models/package"
-require "director/models/release"
-require "director/models/release_version"
-require "director/models/stemcell"
-require "director/models/template"
-require "director/models/task"
-require "director/models/user"
-require "director/models/vm"
 
 module Bosh::Director
 
@@ -143,16 +134,22 @@ module Bosh::Director
     post "/users", :consumes => [:json] do
       user = @user_manager.get_user_from_request(request)
       @user_manager.create_user(user)
+      status(204)
+      nil
     end
 
     put "/users/:username", :consumes => [:json] do
       user = @user_manager.get_user_from_request(request)
       raise UserImmutableUsername unless user.username == params[:username]
       @user_manager.update_user(user)
+      status(204)
+      nil
     end
 
     delete "/users/:username" do
       @user_manager.delete_user(params[:username])
+      status(204)
+      nil
     end
 
     post "/releases", :consumes => :tgz do
@@ -161,10 +158,10 @@ module Bosh::Director
     end
 
     get "/releases" do
-      releases = Models::Release.all.sort_by(:name, :order => "ASC ALPHA").map do |release|
+      releases = Models::Release.order_by(:name.asc).map do |release|
         {
           "name"     => release.name,
-          "versions" => release.versions.sort_by(:version).map { |rv| rv.version.to_s }
+          "versions" => release.versions_dataset.order_by(:version.asc).all.map { |rv| rv.version.to_s }
         }
       end
 
@@ -172,7 +169,7 @@ module Bosh::Director
     end
 
     delete "/releases/:name" do
-      release = Models::Release.find(:name => params[:name]).first
+      release = Models::Release[:name => params[:name]]
       raise ReleaseNotFound.new(params[:name]) if release.nil?
 
       options = {}
@@ -188,7 +185,7 @@ module Bosh::Director
     end
 
     get "/deployments" do
-      deployments = Models::Deployment.all.sort_by(:name, :order => "ASC ALPHA").map do |deployment|
+      deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
         {
           "name" => deployment.name
         }
@@ -198,7 +195,7 @@ module Bosh::Director
     end
 
     delete "/deployments/:name" do
-      deployment = Models::Deployment.find(:name => params[:name]).first
+      deployment = Models::Deployment[:name => params[:name]]
       raise DeploymentNotFound.new(params[:name]) if deployment.nil?
       task = @deployment_manager.delete_deployment(deployment)
       redirect "/tasks/#{task.id}"
@@ -213,7 +210,7 @@ module Bosh::Director
     end
 
     get "/stemcells" do
-      stemcells = Models::Stemcell.all.sort_by(:name, :order => "ASC ALPHA").map do |stemcell|
+      stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
         {
           "name"    => stemcell.name,
           "version" => stemcell.version,
@@ -224,31 +221,32 @@ module Bosh::Director
     end
 
     delete "/stemcells/:name/:version" do
-      stemcell = Models::Stemcell.find(:name => params[:name], :version => params[:version]).first
+      stemcell = Models::Stemcell[:name => params[:name], :version => params[:version]]
       raise StemcellNotFound.new(params[:name], params[:version]) if stemcell.nil?
       task = @stemcell_manager.delete_stemcell(stemcell)
       redirect "/tasks/#{task.id}"
     end
 
     get "/tasks" do
+      dataset = Models::Task.dataset
       limit = params["limit"]
       if limit
         limit = limit.to_i
         limit = 1 if limit < 1
+        dataset = dataset.limit(limit)
       end
 
-      tasks = Models::Task.all
       state = params["state"]
       if state
-        tasks = tasks.find(:state => state)
+        dataset = dataset.filter(:state => state)
       end
 
-      tasks_json = tasks.sort_by(:timestamp, :order => "DESC", :limit => limit).map do |task|
+      tasks = dataset.order_by(:timestamp.desc).map do |task|
         @task_manager.task_to_json(task)
       end
 
       content_type(:json)
-      Yajl::Encoder.encode(tasks_json)
+      Yajl::Encoder.encode(tasks)
     end
 
     get "/tasks/:id" do

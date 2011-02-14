@@ -10,7 +10,7 @@ redis:
   password:
 
 dir: /tmp/boshdir
-
+db: "sqlite:///:memory:"
 blobstore:
   plugin: simple
   properties:

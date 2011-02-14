@@ -28,8 +28,8 @@ module Bosh::Director
 
               @cloud.delete_vm(vm_cid)
               @cloud.delete_disk(disk_cid) if disk_cid
-              vm.delete
-              instance.delete
+              vm.destroy
+              instance.destroy
             end
           end
         end

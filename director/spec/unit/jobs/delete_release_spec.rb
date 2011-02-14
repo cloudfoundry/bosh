@@ -10,9 +10,6 @@ describe Bosh::Director::Jobs::DeleteRelease do
   describe "perform" do
 
     it "should fail for unknown releases" do
-      Bosh::Director::Models::Release.stub!(:find).with(:name => "test_release").
-          and_return([])
-
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
           and_return(lock)
@@ -23,14 +20,9 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should fail if the deployments still reference this release" do
-      deployment = stub("deployment")
-      deployment.stub!(:name).and_return("test_deployment")
 
-      release = stub("release")
-      release.stub!(:name).and_return("test_release")
-      release.stub!(:deployments).and_return(Set.new([deployment]))
-
-      Bosh::Director::Models::Release.stub!(:find).with(:name => "test_release").and_return([release])
+      release = Bosh::Director::Models::Release.make(:name => "test_release")
+      Bosh::Director::Models::Deployment.make(:name => "test_deployment", :release => release)
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
@@ -42,14 +34,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should delete the release and associated jobs, packages, compiled packages and their metadata" do
-      deployment = stub("deployment")
-      deployment.stub!(:name).and_return("test_deployment")
-
-      release = stub("release")
-      release.stub!(:name).and_return("test_release")
-      release.stub!(:deployments).and_return(Set.new([]))
-
-      Bosh::Director::Models::Release.stub!(:find).with(:name => "test_release").and_return([release])
+      release = Bosh::Director::Models::Release.make(:name => "test_release")
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
@@ -62,14 +47,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should fail if the delete was not successful" do
-      deployment = stub("deployment")
-      deployment.stub!(:name).and_return("test_deployment")
-
-      release = stub("release")
-      release.stub!(:name).and_return("test_release")
-      release.stub!(:deployments).and_return(Set.new([]))
-
-      Bosh::Director::Models::Release.stub!(:find).with(:name => "test_release").and_return([release])
+      release = Bosh::Director::Models::Release.make(:name => "test_release")
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
@@ -87,33 +65,15 @@ describe Bosh::Director::Jobs::DeleteRelease do
   describe "delete_release" do
 
     before(:each) do
-      @release = stub("release")
-      @release_version = stub("release_version")
-      @package = stub("package")
-      @compiled_package = stub("compiled_package")
-      @template = stub("template")
-      @stemcell = stub("stemcell")
-
-      @template.stub!(:blobstore_id).and_return("template-blb")
-      @template.stub!(:name).and_return("template_name")
-      @template.stub!(:version).and_return("2")
-
-      @package.stub!(:blobstore_id).and_return("package-blb")
-      @package.stub!(:name).and_return("package_name")
-      @package.stub!(:version).and_return("3")
-      @package.stub!(:compiled_packages).and_return([@compiled_package])
-
-      @stemcell.stub!(:name).and_return("stemcell_name")
-      @stemcell.stub!(:version).and_return("4")
-
-      @compiled_package.stub!(:blobstore_id).and_return("compiled-package-blb")
-      @compiled_package.stub!(:stemcell).and_return(@stemcell)
-
-      @release_version.stub!(:version).and_return("1")
-      @release_version.stub!(:packages).and_return([@package])
-      @release_version.stub!(:templates).and_return([@template])
-
-      @release.stub!(:versions).and_return([@release_version])
+      @release = Bosh::Director::Models::Release.make(:name => "test_release")
+      @release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release)
+      @package = Bosh::Director::Models::Package.make(:release => @release, :blobstore_id => "package-blb")
+      @template = Bosh::Director::Models::Template.make(:release => @release, :blobstore_id => "template-blb")
+      @stemcell = Bosh::Director::Models::Stemcell.make
+      @compiled_package = Bosh::Director::Models::CompiledPackage.make(:package => @package, :stemcell => @stemcell,
+                                                                       :blobstore_id => "compiled-package-blb")
+      @release_version.add_package(@package)
+      @release_version.add_template(@template)
     end
 
     it "should delete release and associated objects/meta" do
@@ -121,14 +81,16 @@ describe Bosh::Director::Jobs::DeleteRelease do
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      @release.should_receive(:delete)
-      @release_version.should_receive(:delete)
-      @template.should_receive(:delete)
-      @package.should_receive(:delete)
-      @compiled_package.should_receive(:delete)
-
       job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
       job.delete_release(@release)
+
+      job.instance_eval {@errors}.should be_empty
+
+      Bosh::Director::Models::Release[@release.id].should be_nil
+      Bosh::Director::Models::ReleaseVersion[@release_version.id].should be_nil
+      Bosh::Director::Models::Package[@package.id].should be_nil
+      Bosh::Director::Models::Template[@template.id].should be_nil
+      Bosh::Director::Models::CompiledPackage[@compiled_package.id].should be_nil
     end
 
     it "should fail to delete the release if there is a blobstore error" do
@@ -136,18 +98,18 @@ describe Bosh::Director::Jobs::DeleteRelease do
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      @release.should_not_receive(:delete)
-      @release_version.should_not_receive(:delete)
-      @template.should_not_receive(:delete)
-      @package.should_receive(:delete)
-      @compiled_package.should_receive(:delete)
-
       job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
       job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
       errors.length.should eql(1)
       errors.first.to_s.should eql("bad")
+
+      Bosh::Director::Models::Release[@release.id].should_not be_nil
+      Bosh::Director::Models::ReleaseVersion[@release_version.id].should_not be_nil
+      Bosh::Director::Models::Package[@package.id].should be_nil
+      Bosh::Director::Models::Template[@template.id].should_not be_nil
+      Bosh::Director::Models::CompiledPackage[@compiled_package.id].should be_nil
     end
 
     it "should forcefully delete the release when requested even if there is a blobstore error" do
@@ -155,18 +117,18 @@ describe Bosh::Director::Jobs::DeleteRelease do
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      @release.should_receive(:delete)
-      @release_version.should_receive(:delete)
-      @template.should_receive(:delete)
-      @package.should_receive(:delete)
-      @compiled_package.should_receive(:delete)
-
       job = Bosh::Director::Jobs::DeleteRelease.new("test_release", "force" => true)
       job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
       errors.length.should eql(1)
       errors.first.to_s.should eql("bad")
+
+      Bosh::Director::Models::Release[@release.id].should be_nil
+      Bosh::Director::Models::ReleaseVersion[@release_version.id].should be_nil
+      Bosh::Director::Models::Package[@package.id].should be_nil
+      Bosh::Director::Models::Template[@template.id].should be_nil
+      Bosh::Director::Models::CompiledPackage[@compiled_package.id].should be_nil
     end
 
   end

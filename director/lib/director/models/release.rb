@@ -1,18 +1,14 @@
 module Bosh::Director::Models
-
-  class Deployment < Ohm::Model; end
-  class ReleaseVersion < Ohm::Model; end
-
-  class Release < Ohm::Model
-    attribute :name
-    collection :versions, ReleaseVersion
-    collection :deployments, Deployment
-
-    index :name
+  class Release < Sequel::Model
+    one_to_many :versions, :class => "Bosh::Director::Models::ReleaseVersion"
+    one_to_many :packages
+    one_to_many :templates
+    one_to_many :deployments
 
     def validate
-      assert_present :name
-      assert_unique [:name]
+      validates_presence :name
+      validates_unique :name
+      validates_format VALID_ID, :name
     end
   end
 end

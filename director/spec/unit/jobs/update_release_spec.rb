@@ -2,61 +2,10 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe Bosh::Director::Jobs::UpdateRelease do
 
-  def gzip(string)
-    result = StringIO.new
-    zio = Zlib::GzipWriter.new(result)
-    zio.mtime = 1
-    zio.write(string)
-    zio.close
-    result.string
-  end
-
-  def create_release(name, version, jobs, packages)
-    io = StringIO.new
-
-    manifest = {
-      "name" => name,
-      "version" => version
-    }
-
-    Archive::Tar::Minitar::Writer.open(io) do |tar|
-      tar.add_file("release.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
-      tar.mkdir("packages", {:mode => "0755"})
-      packages.each do |package|
-        tar.add_file("packages/#{package[:name]}.tgz", {:mode => "0644", :mtime => 0}) {|os, _| os.write("package")}
-      end
-      tar.mkdir("jobs", {:mode => "0755"})
-      jobs.each do |job|
-        tar.add_file("jobs/#{job[:name]}.tgz", {:mode => "0644", :mtime => 0}) {|os, _| os.write("job")}
-      end
-    end
-
-    io.close
-    gzip(io.string)
-  end
-
-  def create_package(files)
-    io = StringIO.new
-
-    Archive::Tar::Minitar::Writer.open(io) do |tar|
-      files.each do |key, value|
-        tar.add_file(key, {:mode => "0644", :mtime => 0}) {|os, _| os.write(value)}
-      end
-    end
-
-    io.close
-    gzip(io.string)
-  end
-
   describe "perform" do
 
     before(:each) do
-      @task = mock("task")
       @blobstore_client = mock("blobstore_client")
-
-      Bosh::Director::Models::Task.stub!(:[]).with(1).and_return(@task)
-      @task.should_receive(:output).and_return(STDOUT)
-
       Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore_client)
     end
 
@@ -65,7 +14,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
   describe "create_package" do
 
     before(:each) do
-      @release = release = mock("release")
+      @release = release = Bosh::Director::Models::Release.make
       @release_dir = release_dir = Dir.mktmpdir("release_dir")
       @blobstore = blobstore = mock("blobstore_client")
 
@@ -83,14 +32,6 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "should create simple packages" do
-      package = stub("package")
-      package.stub!(:name).and_return("test_package")
-
-      Bosh::Director::Models::Package.stub!(:new).with(:release     => @release,
-                                                       :name        => "test_package",
-                                                       :version     => "1.0",
-                                                       :sha1        => "some-sha").and_return(package)
-      package.should_receive(:dependency_set=).with(["foo_package", "bar_package"])
       FileUtils.mkdir_p(File.join(@release_dir, "packages"))
       package_path = File.join(@release_dir, "packages", "test_package.tgz")
       File.open(package_path, "w") do |f|
@@ -99,11 +40,16 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       @blobstore.should_receive(:create).with(have_a_path_of(package_path)).and_return("blob_id")
 
-      package.should_receive(:blobstore_id=).with("blob_id")
-      package.should_receive(:save!)
-
       @update_release_job.create_package({"name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
                                           "dependencies" => ["foo_package", "bar_package"]})
+
+      package = Bosh::Director::Models::Package[:name => "test_package", :version => "1.0"]
+      package.should_not be_nil
+      package.name.should == "test_package"
+      package.version.should == "1.0"
+      package.release.should == @release
+      package.sha1.should == "some-sha"
+      package.blobstore_id.should == "blob_id"
     end
 
   end

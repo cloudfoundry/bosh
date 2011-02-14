@@ -1,34 +1,21 @@
 module Bosh::Director::Models
+  class Template < Sequel::Model
+    many_to_one :release
+    many_to_many :release_versions
 
-  class Release < Ohm::Model; end
-  class Package < Ohm::Model; end
-
-  class Template < Ohm::Model
-    reference :release, Release
-    attribute :name
-    attribute :version
-    attribute :blobstore_id
-    attribute :sha1
-    attribute :package_names
-
-    index :name
-    index :version
-
-    def packages
-      result = self.package_names
+    def package_names
+      result = self.package_names_json
       result ? Yajl::Parser.parse(result) : nil
     end
 
-    def packages=(packages)
-      self.package_names = Yajl::Encoder.encode(packages)
+    def package_names=(packages)
+      self.package_names_json = Yajl::Encoder.encode(packages)
     end
 
     def validate
-      assert_present :release_id
-      assert_present :name
-      assert_present :version
-      assert_present :sha1
-      assert_unique [:release_id, :name, :version]
+      validates_presence [:release_id, :name, :version, :blobstore_id, :sha1]
+      validates_unique [:release_id, :name, :version]
+      validates_format VALID_ID, [:name, :version]
     end
   end
 end

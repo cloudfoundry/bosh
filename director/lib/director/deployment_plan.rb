@@ -48,6 +48,10 @@ module Bosh::Director
         }
       end
 
+      def method_missing(method_name, *args)
+        @stemcell.send(method_name, *args)
+      end
+
     end
 
     class ResourcePoolSpec
@@ -298,15 +302,17 @@ module Bosh::Director
 
     class TemplateSpec
       attr_accessor :deployment
+      attr_accessor :template
       attr_accessor :name
-      attr_accessor :version
-      attr_accessor :sha1
-      attr_accessor :blobstore_id
       attr_accessor :packages
 
       def initialize(deployment, name)
         @deployment = deployment
         @name = name
+      end
+
+      def method_missing(method_name, *args)
+        @template.send(method_name, *args)
       end
     end
 
@@ -377,8 +383,7 @@ module Bosh::Director
       end
 
       def add_package(package, compiled_package)
-        package = Package.new(package.name, package.version, compiled_package.sha1, compiled_package.blobstore_id)
-        @packages[package.name] = package
+        @packages[package.name] = PackageSpec.new(package, compiled_package)
       end
 
       def package_spec
@@ -411,26 +416,21 @@ module Bosh::Director
 
     end
 
-    class Package
+    class PackageSpec
+      attr_accessor :package
+      attr_accessor :compiled_package
 
-      attr_accessor :name
-      attr_accessor :version
-      attr_accessor :sha1
-      attr_accessor :blobstore_id
-
-      def initialize(name, version, sha1, blobstore_id)
-        @name = name
-        @version = version
-        @sha1 = sha1
-        @blobstore_id = blobstore_id
+      def initialize(package, compiled_package)
+        @package = package
+        @compiled_package = compiled_package
       end
 
       def spec
         {
-          "name" => @name,
-          "version" => @version,
-          "sha1" => @sha1,
-          "blobstore_id" => @blobstore_id
+          "name" => @package.name,
+          "version" => "#{@package.version}.#{@compiled_package.build}",
+          "sha1" => @compiled_package.sha1,
+          "blobstore_id" => @compiled_package.blobstore_id
         }
       end
 

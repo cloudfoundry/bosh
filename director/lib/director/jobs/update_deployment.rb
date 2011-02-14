@@ -16,20 +16,9 @@ module Bosh::Director
         @logger.info("Created deployment plan")
       end
 
-      def find_or_create_deployment(name)
-        deployment = Models::Deployment.find(:name => name).first
-        if deployment.nil?
-          deployment = Models::Deployment.new
-          deployment.name = name
-          deployment.save!
-        end
-        deployment
-      end
-
       def prepare
         @logger.info("Looking up deployment record")
-        deployment = find_or_create_deployment(@deployment_plan.name)
-        @deployment_plan.deployment = deployment
+        @deployment_plan.deployment = Models::Deployment.find_or_create(:name => @deployment_plan.name)
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
 
         @logger.info("Binding release")
@@ -44,12 +33,8 @@ module Bosh::Director
         @deployment_plan_compiler.bind_templates
         @logger.info("Binding instance networks")
         @deployment_plan_compiler.bind_instance_networks
-
-        @logger.info("Compiling packages")
+        @logger.info("Compiling and binding packages")
         PackageCompiler.new(@deployment_plan).compile
-
-        @logger.info("Binding packages")
-        @deployment_plan_compiler.bind_packages
         @logger.info("Binding configuration")
         @deployment_plan_compiler.bind_configuration
       end
@@ -98,8 +83,7 @@ module Bosh::Director
         stemcells = deployment.stemcells
         stemcells.each do |stemcell|
           unless current_stemcells.include?(stemcell)
-            stemcell.deployments.delete(deployment)
-            deployment.stemcells.delete(stemcell)
+            stemcell.remove_deployment(deployment)
           end
         end
       end
@@ -120,7 +104,7 @@ module Bosh::Director
                 @logger.info("Updating deployment")
                 update
                 deployment.manifest = @manifest
-                deployment.save!
+                deployment.save
                 @logger.info("Finished updating deployment")
               rescue Exception => e
                 @logger.info("Update failed, rolling back")

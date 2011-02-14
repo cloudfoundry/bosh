@@ -1,22 +1,16 @@
 module Bosh::Director::Models
-
-  class Instance < Ohm::Model; end
-  class Stemcell < Ohm::Model; end
-  class Release < Ohm::Model; end
-
-  class Deployment < Ohm::Model
-    attribute :name
-    attribute :manifest
-
-    collection :job_instances, Instance
-    set :stemcells, Stemcell
-    reference :release, Release
-
-    index :name
+  class Deployment < Sequel::Model
+    many_to_one  :release
+    many_to_many :stemcells
+    one_to_many  :job_instances, :class => "Bosh::Director::Models::Instance"
+    one_to_many  :vms
 
     def validate
-      assert_present :name
-      assert_unique :name
+      validates_presence :name
+      validates_unique :name
+      validates_format VALID_ID, :name
     end
   end
+
+  Deployment.plugin :association_dependencies, :stemcells => :nullify
 end

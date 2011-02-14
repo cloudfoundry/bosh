@@ -1,24 +1,15 @@
 module Bosh::Director::Models
-
-  class Deployment < Ohm::Model; end
-  class Vm < Ohm::Model; end
-
-  class Instance < Ohm::Model
-    reference :deployment, Deployment
-    attribute :job
-    attribute :index
-    reference :vm, Vm
-    attribute :disk_cid
-
-    index :job
-    index :index
+  class Instance < Sequel::Model
+    many_to_one :deployment
+    many_to_one :vm
 
     def validate
-      assert_present :deployment_id
-      assert_present :job
-      assert_present :index
-      assert_unique_if_present :vm_id
-      assert_unique [:deployment_id, :job, :index]
+      validates_presence [:deployment_id, :job, :index]
+      validates_unique [:deployment_id, :job, :index]
+      validates_unique [:vm_id] if vm_id
+      validates_unique [:disk_cid] if disk_cid
+      validates_integer :index
     end
+
   end
 end

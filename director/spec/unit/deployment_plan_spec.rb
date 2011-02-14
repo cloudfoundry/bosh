@@ -363,7 +363,7 @@ describe Bosh::Director::DeploymentPlan do
 
       idle_vm = resource_pool.add_idle_vm
       idle_vm.ip = NetAddr::CIDR.create("10.0.0.20").to_i
-      idle_vm.vm = mock("vm")
+      idle_vm.vm = Bosh::Director::Models::Vm.make
 
       idle_vm.current_state = {
         "networks" => {
@@ -395,7 +395,7 @@ describe Bosh::Director::DeploymentPlan do
 
       idle_vm = resource_pool.add_idle_vm
       idle_vm.ip = NetAddr::CIDR.create("10.0.0.20").to_i
-      idle_vm.vm = mock("vm")
+      idle_vm.vm = Bosh::Director::Models::Vm.make
 
       idle_vm.current_state = {
         "networks" => {
@@ -427,7 +427,7 @@ describe Bosh::Director::DeploymentPlan do
 
       idle_vm = resource_pool.add_idle_vm
       idle_vm.ip = NetAddr::CIDR.create("10.0.0.20").to_i
-      idle_vm.vm = mock("vm")
+      idle_vm.vm = Bosh::Director::Models::Vm.make
 
       idle_vm.current_state = {
         "networks" => {
@@ -699,7 +699,7 @@ describe Bosh::Director::DeploymentPlan do
           "name"=>"test_package",
           "blobstore_id"=>"pkg-blob-id",
           "sha1"=>"pkg-sha1",
-          "version"=>"33"
+          "version"=>"33.1"
         }
       },
       "persistent_disk" => 2048,
@@ -707,21 +707,20 @@ describe Bosh::Director::DeploymentPlan do
     }
 
     before(:each) do
-      @template = stub("template")
-      @template.stub!(:version).and_return("1")
-      @template.stub!(:sha1).and_return("job-sha1")
-      @template.stub!(:blobstore_id).and_return("template_blob")
+      @template = Bosh::Director::Models::Template.make(:version => 1,
+                                                        :sha1 => "job-sha1",
+                                                        :blobstore_id => "template_blob")
+      @package = Bosh::Director::Models::Package.make(:name => "test_package", :version => "33")
+      @compiled_package = Bosh::Director::Models::CompiledPackage.make(:package => @package,
+                                                                       :sha1 => "pkg-sha1",
+                                                                       :blobstore_id => "pkg-blob-id",
+                                                                       :build => 1)
+
       @manifest = BASIC_MANIFEST._deep_copy
       @deployment_plan = Bosh::Director::DeploymentPlan.new(@manifest)
       @job = @deployment_plan.job("job_a")
       @job.template = @template
       @instance = @job.instance(0)
-      @package = stub("package")
-      @package.stub!(:name).and_return("test_package")
-      @package.stub!(:version).and_return("33")
-      @compiled_package = stub("compiled_package")
-      @compiled_package.stub!(:sha1).and_return("pkg-sha1")
-      @compiled_package.stub!(:blobstore_id).and_return("pkg-blob-id")
       @job.add_package(@package, @compiled_package)
       @instance.configuration_hash = "config_hash"
     end
@@ -830,7 +829,7 @@ describe Bosh::Director::DeploymentPlan do
             "name"=>"test_package",
             "blobstore_id"=>"pkg-blob-id",
             "sha1"=>"pkg-sha1",
-            "version"=>"33"
+            "version"=>"33.1"
           }
         },
         "resource_pool" => {
@@ -865,24 +864,22 @@ describe Bosh::Director::DeploymentPlan do
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       job = deployment_plan.job("job_a")
 
-      package_a = stub("package_a")
-      package_a.stub!(:name).and_return("a")
-      package_a.stub!(:version).and_return("1")
-      compiled_package_a = stub("compiled_package_a")
-      compiled_package_a.stub!(:sha1).and_return("sha-a")
-      compiled_package_a.stub!(:blobstore_id).and_return("blob-a")
+      package_a = Bosh::Director::Models::Package.make(:name => "a", :version => "1")
+      compiled_package_a = Bosh::Director::Models::CompiledPackage.make(:package => package_a,
+                                                                        :build => 1,
+                                                                        :blobstore_id => "blob-a",
+                                                                        :sha1 => "sha1-a")
 
-      package_b = stub("package_b")
-      package_b.stub!(:name).and_return("b")
-      package_b.stub!(:version).and_return("2")
-      compiled_package_b = stub("compiled_package_b")
-      compiled_package_b.stub!(:sha1).and_return("sha-b")
-      compiled_package_b.stub!(:blobstore_id).and_return("blob-b")
+      package_b = Bosh::Director::Models::Package.make(:name => "b", :version => "2")
+      compiled_package_b = Bosh::Director::Models::CompiledPackage.make(:package => package_a,
+                                                                        :build => 3,
+                                                                        :blobstore_id => "blob-b",
+                                                                        :sha1 => "sha1-b")
 
       job.add_package(package_a, compiled_package_a)
       job.add_package(package_b, compiled_package_b)
-      job.package_spec.should eql({"a"=>{"name"=>"a", "blobstore_id"=>"blob-a", "sha1"=>"sha-a", "version"=>"1"},
-                                   "b"=>{"name"=>"b", "blobstore_id"=>"blob-b", "sha1"=>"sha-b", "version"=>"2"}})
+      job.package_spec.should eql({"a"=>{"name"=>"a", "blobstore_id"=>"blob-a", "sha1"=>"sha1-a", "version"=>"1.1"},
+                                   "b"=>{"name"=>"b", "blobstore_id"=>"blob-b", "sha1"=>"sha1-b", "version"=>"2.3"}})
     end
 
   end

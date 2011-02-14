@@ -382,7 +382,7 @@ module VSphereCloud
             disk.datacenter = datacenter_name
             disk.datastore = primary_vm_datastore_name
             disk.path = destination_path
-            disk.save!
+            disk.save
           end
         else
           @logger.info("Need to create disk")
@@ -391,7 +391,7 @@ module VSphereCloud
           disk.datastore = primary_vm_datastore_name
           datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
           disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}"
-          disk.save!
+          disk.save
           create_disk = true
         end
 
@@ -418,7 +418,6 @@ module VSphereCloud
         @logger.info("Attaching disk")
         client.reconfig_vm(vm, config)
         @logger.info("Finished attaching disk")
-        # reboot?
       end
     end
 
@@ -456,7 +455,7 @@ module VSphereCloud
         @logger.info("Creating disk with size: #{size}")
         disk = Models::Disk.new
         disk.size = size
-        disk.save!
+        disk.save
         @logger.info("Created disk: #{disk.pretty_inspect}")
         disk.id
       end
@@ -471,7 +470,7 @@ module VSphereCloud
             datacenter = client.find_by_inventory_path(disk.datacenter)
             client.delete_disk(datacenter, disk.path)
           end
-          disk.delete
+          disk.destroy
           @logger.info("Finished deleting disk")
         else
           raise "Could not find disk: #{disk_cid}"

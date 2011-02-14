@@ -41,7 +41,7 @@ module Bosh::Director
             delete_vm(vm)
           end
 
-          instance.delete
+          instance.destroy
         end
       end
 
@@ -54,23 +54,23 @@ module Bosh::Director
           rescue => e
             @logger.warn("Could not delete VM: #{e} - #{e.backtrace.join("")}")
           end
-          vm.delete
+          vm.destroy
         end
       end
 
       def perform
-        deployment = Models::Deployment.find(:name => @deployment_name).first
+        deployment = Models::Deployment[:name => @deployment_name]
         raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
         @logger.info("Acquiring deployment lock: #{deployment.name}")
         deployment_lock = Lock.new("lock:deployment:#{@deployment_name}")
         deployment_lock.lock do
           # Make sure it wasn't deleted
-          deployment = Models::Deployment.find(:name => @deployment_name).first
+          deployment = Models::Deployment[:name => @deployment_name]
           raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
           ThreadPool.new(:max_threads => 32).wrap do |pool|
-            instances = Models::Instance.find(:deployment_id => deployment.id)
+            instances = Models::Instance.filter(:deployment_id => deployment.id)
             @logger.info("Deleting instances")
             instances.each do |instance|
               pool.process do
@@ -79,7 +79,7 @@ module Bosh::Director
             end
             pool.wait
 
-            vms = Models::Vm.find(:deployment_id => deployment.id)
+            vms = Models::Vm.filter(:deployment_id => deployment.id)
             @logger.info("Deleting idle VMs")
             vms.each do |vm|
               pool.process do
@@ -88,8 +88,8 @@ module Bosh::Director
             end
           end
 
-          deployment.stemcells.each { |stemcell| stemcell.deployments.delete(deployment) }
-          deployment.delete
+          deployment.stemcells.each { |stemcell| stemcell.remove_deployment(deployment) }
+          deployment.destroy
           "/deployments/#{@deployment_name}"
         end
       end
