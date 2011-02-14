@@ -8,6 +8,7 @@ describe Bosh::Agent::Message::State do
     logger = mock('logger')
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
+    Bosh::Agent::Config.settings = { "vm" => {}, "agent_id" => nil }
   end
 
   it 'shuold have initial empty state' do
@@ -15,7 +16,9 @@ describe Bosh::Agent::Message::State do
     initial_state = {
       "deployment"=>"",
       "networks"=>{},
-      "resource_pool"=>{}
+      "resource_pool"=>{},
+      "agent_id" => nil,
+      "vm" => {}
     }
 
     # FIXME: initial state will _not_ be running when job handling is
