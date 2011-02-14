@@ -35,13 +35,14 @@ cloud:
         password: R3d!S
     soap_log: <%= shared_path %>/log/<%= process_name %>.soap.log
     esxmgr:
-      host: 10.24.25.30
+      host: mpatil-lx.eng.vmware.com
+      inbox: middle
+      stemcell_upload_port: 9771
     nats:
-      host: 10.24.25.30
+      host: mpatil-lx.eng.vmware.com
       port: 11009
       user: esxmgr
       password: esxmgr
-      qname: middle
       datacenters:
         - name: AppCloud
           vm_folder: BOSH_VMs

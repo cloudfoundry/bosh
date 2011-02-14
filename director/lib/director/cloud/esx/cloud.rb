@@ -15,12 +15,8 @@ module EsxCloud
     def initialize(options)
       @logger = Bosh::Director::Config.logger
       @agent_properties = options["agent"]
-      @nats = options["nats"]
       @esxmgr = options["esxmgr"]
-      @vm_mac = "00:00:00:00:00:00"
-
-      @logger.info("ESXCLOUD: nats <#{@nats}> esxmgr <#{@esxmgr}>")
-
+      
       # Start EM (if required)
       self.class.lock.synchronize do
         unless EM.reactor_running? 
@@ -35,8 +31,15 @@ module EsxCloud
         raise "EM could not be started" unless EM.reactor_running?
       end
 
+      opts = {}
+      opts["nats"] = options["nats"]
+      opts["logger"] = @logger
+
+      @logger.info("ESXCLOUD: nats <#{options["nats"]}> esxmgr <#{@esxmgr}>")
+
       # Call after EM is running
-      EsxMQ::TimedRequest.init(@nats)
+      EsxMQ::Config.configure(opts)
+      EsxMQ::TimedRequest.init(@esxmgr["inbox"])
     end
 
     def generate_unique_name
@@ -92,7 +95,7 @@ module EsxCloud
     end
 
     def send_file(name, full_file_name)
-      sock = TCPSocket.open(@esxmgr["host"], EsxMQ::MQ::DEFAULT_FILE_UPLOAD_PORT)
+      sock = TCPSocket.open(@esxmgr["host"], @esxmgr["stemcell_upload_port"])
       src_file = open(full_file_name, "rb")
 
       name = name.ljust(256)
@@ -156,7 +159,7 @@ module EsxCloud
         networks.each_value do |network|
           net = Hash.new
           net["vswitch"] = network["cloud_properties"]["name"]
-          net["mac"] =  @vm_mac
+          net["mac"] =  "00:00:00:00:00:00"
           devices << net
         end
 
