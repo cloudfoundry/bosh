@@ -46,11 +46,7 @@ module Bosh::Cli::Command
       say "create\t#{package_dir}"
       FileUtils.mkdir_p(package_dir)
 
-      data_dir = File.join(package_dir, "data")
-      say "create\t#{data_dir}"
-      FileUtils.mkdir_p(data_dir)
-
-      packaging_file = File.join(data_dir, "packaging")
+      packaging_file = File.join(package_dir, "packaging")
       say "create\t#{packaging_file}"
       FileUtils.touch(packaging_file)
 
