@@ -13,7 +13,7 @@ dir: <%= shared_path %>/system
 blobstore:
   plugin: simple
   properties:
-    endpoint: http://10.138.68.2:25250
+    endpoint: http://192.168.1.2:25250
     user: director
     password: d!r3ct0r
 cloud:
@@ -26,7 +26,7 @@ cloud:
       blobstore:
         plugin: simple
         properties:
-          endpoint: http://10.138.68.2:25250
+          endpoint: http://192.168.1.2:25250
           user: agent
           password: Ag3Nt
       server:
