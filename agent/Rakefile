@@ -116,10 +116,23 @@ namespace "ubuntu" do
       vmbuilder_args += " --templates #{work_dir}/build/templates --part #{work_dir}/build/part.in"
       sh "sudo vmbuilder esxi ubuntu #{vmbuilder_args}"
 
+      # Generate stemcell image to be used with the esxcloud-cpi
+      tmpdir = "#{type}-esxcloud-tmp"
+      mkdir_p tmpdir
       Dir.chdir('ubuntu-esxi') do
-        sh "tar zcf ../bosh-esxcloud-#{type}-#{version}.tgz *.vmdk *.vmx"
+        sh "tar zcf ../#{tmpdir}/image *.vmdk *.vmx"
       end
 
+      File.open("#{tmpdir}/stemcell.MF", 'w') do |f|
+        f.write("---\nname: bosh-stemcell\nversion: #{version}\ncloud_properties: {}")
+      end
+
+      Dir.chdir(tmpdir) do
+        sh "tar zcf ../bosh-esxcloud-#{type}-#{version}.tgz *"
+      end
+      FileUtils.rm_rf tmpdir
+
+      # Generate stemcell image for the vSphere
       sh "/usr/lib/vmware/ovftool/ovftool ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
       mkdir_p "#{type}"
       Dir.chdir('ubuntu-esxi') do
