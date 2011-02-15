@@ -147,6 +147,10 @@ module EsxCloud
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
+        
+        # SCSI disk unit numbers
+        system_disk = 0 # Always reserved for system disk
+        ephemeral_disk = 1
 
         # TODO do we need to worry about disk locality
         name = "vm-#{generate_unique_name}"
@@ -155,6 +159,10 @@ module EsxCloud
         create_vm = EsxMQ::CreateVmMsg.new(name)
         create_vm.cpu = resource_pool["cpu"]
         create_vm.ram = resource_pool["ram"]
+        create_vm.disk = {}
+        create_vm.disk["size"] = resource_pool["disk"]
+        creaet_vm.disk["unit"] = ephemeral_disk
+
         devices = []
         networks.each_value do |network|
           net = Hash.new
@@ -164,16 +172,12 @@ module EsxCloud
         end
 
         create_vm.stemcell = stemcell
-        # TODO fix these
-        system_disk = 0
-        ephemeral_disk = 1
 
         network_env = build_agent_network_env(devices, networks)
         # TODO fix disk_env
-        disk_env = { "system" => system_disk,
-                     "ephemeral" => ephemeral_disk,
-                     "persistent" => {}
-        }
+        disk_env = {"system" => system_disk,
+                    "ephemeral" => ephemeral_disk,
+                    "persistent" => {}}
         create_vm.guestInfo = generate_agent_env(name, name, agent_id, network_env, disk_env)
 
         rtn, dummy = send_request(create_vm)
