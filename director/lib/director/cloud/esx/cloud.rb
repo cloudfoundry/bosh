@@ -159,9 +159,7 @@ module EsxCloud
         create_vm = EsxMQ::CreateVmMsg.new(name)
         create_vm.cpu = resource_pool["cpu"]
         create_vm.ram = resource_pool["ram"]
-        create_vm.disk = {}
-        create_vm.disk["size"] = resource_pool["disk"]
-        creaet_vm.disk["unit"] = ephemeral_disk
+        create_vm.disk = resource_pool["disk"]
 
         devices = []
         networks.each_value do |network|
