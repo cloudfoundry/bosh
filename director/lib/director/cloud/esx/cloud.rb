@@ -75,6 +75,14 @@ module EsxCloud
       network_env
     end
 
+    def build_agent_network_env_new(networks)
+      network_env = {}
+      networks.each do |network_name, network|
+        network_env[network_name] = network.dup
+      end
+      network_env
+    end
+
     def send_request(payload, timeout=nil)
       req_id = 0
       self.class.lock.synchronize do
@@ -101,7 +109,7 @@ module EsxCloud
       name = name.ljust(256)
       sock.write(name)
 
-      while (file_content = src_file.read(4096))
+      while (file_content = src_file.read(2 * 1024 * 1024))
         sock.write(file_content)
       end
       sock.flush
@@ -115,7 +123,7 @@ module EsxCloud
 
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
-        result = nil
+        result = niu
         Dir.mktmpdir do |temp_dir|
           @logger.info("Extracting stemcell to: #{temp_dir}, image is #{image}")
 
@@ -197,7 +205,9 @@ module EsxCloud
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
-        raise "ESXCLOUD: configure networks is not implemented yet"
+        network_env = build_agent_network_env_new(networks)
+        configure_network = EsxMQ::ConfigureNetworkMsg.new(vm_cid, network_env)
+        send_request(configure_network)
       end
     end
 
