@@ -123,7 +123,7 @@ module EsxCloud
 
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
-        result = niu
+        result = nil
         Dir.mktmpdir do |temp_dir|
           @logger.info("Extracting stemcell to: #{temp_dir}, image is #{image}")
 
