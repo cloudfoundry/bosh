@@ -61,6 +61,10 @@ module Bosh::Cli::Command
         release = Bosh::Cli::Release.dev(work_dir)
       end
 
+      if version_cmp(Bosh::Cli::VERSION, release.min_cli_version) < 0
+        err("You should use CLI >= %s with this release, you have %s" % [ release.min_cli_version, Bosh::Cli::VERSION ])
+      end
+
       if release.name.blank?
         name = ask("Please enter %s release name: " % [ final ? "final" : "development" ])
         err("Canceled release creation, no name given") if name.blank?
@@ -161,6 +165,18 @@ module Bosh::Cli::Command
       else
         say "Canceled deleting release".green
       end
+    end
+
+    private
+
+    def version_cmp(v1, v2)
+      major1, minor1, patch1 = v1.to_s.split(".", 3).map { |v| v.to_i }
+      major2, minor2, patch2 = v2.to_s.split(".", 3).map { |v| v.to_i }
+
+      result = major1.to_i <=> major2.to_i
+      result = minor1.to_i <=> minor2.to_i if result == 0
+      result = patch1.to_i <=> patch2.to_i if result == 0
+      result
     end
 
   end
