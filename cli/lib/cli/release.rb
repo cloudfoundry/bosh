@@ -57,8 +57,12 @@ module Bosh::Cli
           raise InvalidRelease, "Can't read release configuration from `#{@config_file}'"
         end
         config
-      else
+      elsif final?
         DEFAULT_CONFIG
+      else
+        final_release = self.class.final(@release_dir)
+        DEFAULT_CONFIG.merge("jobs_order" => final_release.jobs_order,
+                             "min_cli_version" => final_release.min_cli_version)
       end
     end
 
