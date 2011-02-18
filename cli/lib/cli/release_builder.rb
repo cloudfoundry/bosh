@@ -12,7 +12,7 @@ module Bosh::Cli
     def initialize(work_dir, packages, jobs, final = false)
       @work_dir  = work_dir
 
-      @release   = Release.new(@work_dir)
+      @release   = final ? Release.final(@work_dir) : Release.dev(@work_dir)
       @packages  = packages
       @jobs      = jobs
       @final     = final
@@ -21,7 +21,7 @@ module Bosh::Cli
     end
 
     def release_name
-      name = final? ? @release.final_name : @release.dev_name
+      name = @release.name
       name.blank? ? DEFAULT_RELEASE_NAME : name
     end
 
@@ -128,7 +128,7 @@ module Bosh::Cli
     private
 
     def assign_version
-      current_version = final? ? @release.final_version : @release.dev_version
+      current_version = @release.version
       current_version.to_i + 1
     end
 
@@ -137,11 +137,7 @@ module Bosh::Cli
     end
 
     def save_version
-      if final?
-        @release.save_final_version(version)
-      else
-        @release.save_dev_version(version)
-      end
+      @release.update_config(:version => version)
     end
 
     def create_release_build_dir

@@ -36,10 +36,10 @@ describe Bosh::Cli::Runner do
   end
 
   it "dispatches commands to appropriate methods (nu school)" do
-    test_cmd(["version"], :dashboard, :version)
-    test_cmd(["status"], :dashboard, :status)
-    test_cmd(["target"], :dashboard, :show_target)
-    test_cmd(["target", "test"], :dashboard, :set_target, ["test"])
+    test_cmd(["version"], :misc, :version)
+    test_cmd(["status"], :misc, :status)
+    test_cmd(["target"], :misc, :show_target)
+    test_cmd(["target", "test"], :misc, :set_target, ["test"])
     test_cmd(["deploy"], :deployment, :perform)
     test_cmd(["deployment"], :deployment, :show_current)
     test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])
@@ -55,9 +55,9 @@ describe Bosh::Cli::Runner do
     test_cmd(["reset", "release"], :release, :reset)
     test_cmd(["create", "package", "bla"], :package, :create, ["bla"])
 
-    test_cmd(["login", "admin", "12321"], :dashboard, :login, ["admin", "12321"])
-    test_cmd(["logout"], :dashboard, :logout)
-    test_cmd(["purge"], :dashboard, :purge_cache)
+    test_cmd(["login", "admin", "12321"], :misc, :login, ["admin", "12321"])
+    test_cmd(["logout"], :misc, :logout)
+    test_cmd(["purge"], :misc, :purge_cache)
 
     test_cmd(["upload", "release", "/path"], :release, :upload, ["/path"])
     test_cmd(["upload", "stemcell", "/path"], :stemcell, :upload, ["/path"])
@@ -80,19 +80,19 @@ describe Bosh::Cli::Runner do
   end
 
   it "dispatches commands to appropriate methods (old school)" do
-    test_cmd(["version"], :dashboard, :version)
-    test_cmd(["status"], :dashboard, :status)
-    test_cmd(["target"], :dashboard, :show_target)
-    test_cmd(["target", "test"], :dashboard, :set_target, ["test"])
+    test_cmd(["version"], :misc, :version)
+    test_cmd(["status"], :misc, :status)
+    test_cmd(["target"], :misc, :show_target)
+    test_cmd(["target", "test"], :misc, :set_target, ["test"])
     test_cmd(["deploy"], :deployment, :perform)
     test_cmd(["deployment"], :deployment, :show_current)
     test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])
     test_cmd(["deployment", "delete", "foo"], :deployment, :delete, ["foo"])
     test_cmd(["user", "create", "admin"], :user, :create, ["admin"])
     test_cmd(["user", "create", "admin", "12321"], :user, :create, ["admin", "12321"])
-    test_cmd(["login", "admin", "12321"], :dashboard, :login, ["admin", "12321"])
-    test_cmd(["logout"], :dashboard, :logout)
-    test_cmd(["purge"], :dashboard, :purge_cache)
+    test_cmd(["login", "admin", "12321"], :misc, :login, ["admin", "12321"])
+    test_cmd(["logout"], :misc, :logout)
+    test_cmd(["purge"], :misc, :purge_cache)
     test_cmd(["task", "500"], :task, :track, ["500"])
     test_cmd(["release", "upload", "/path"], :release, :upload, ["/path"])
     test_cmd(["release", "verify", "/path"], :release, :verify, ["/path"])

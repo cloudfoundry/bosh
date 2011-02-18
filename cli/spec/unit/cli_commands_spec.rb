@@ -7,11 +7,11 @@ describe Bosh::Cli::Command::Base do
     @cache  = File.join(Dir.mktmpdir, "bosh_cache")
     @opts   = { :config => @config, :cache_dir => @cache }
   end
-  
-  describe Bosh::Cli::Command::Dashboard do
+
+  describe Bosh::Cli::Command::Misc do
 
     before :each do
-      @cmd = Bosh::Cli::Command::Dashboard.new(@opts)
+      @cmd = Bosh::Cli::Command::Misc.new(@opts)
     end
 
     it "sets the target" do
@@ -62,14 +62,14 @@ describe Bosh::Cli::Command::Base do
       mock_director.stub!(:authenticated?).and_return true
 
       Bosh::Cli::Director.should_receive(:new).with("test").and_return(mock_director)
-      @cmd.set_target("test")      
+      @cmd.set_target("test")
 
       Bosh::Cli::Director.should_receive(:new).with("test", "user", "pass").and_return(mock_director)
-      
+
       @cmd.login("user", "pass")
       @cmd.logged_in?.should be_true
       @cmd.username.should == "user"
-      @cmd.password.should == "pass"      
+      @cmd.password.should == "pass"
     end
   end
 
@@ -81,7 +81,7 @@ describe Bosh::Cli::Command::Base do
     it "allows deleting the deployment" do
       mock_director = mock(Bosh::Cli::Director)
       mock_director.should_receive(:delete_deployment).with("foo")
-      
+
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
@@ -111,7 +111,7 @@ describe Bosh::Cli::Command::Base do
       mock_director = mock(Bosh::Cli::Director)
       mock_director.should_receive(:delete_release).with("foo", :force => true)
 
-      @cmd.stub!(:ask).and_return("yes")      
+      @cmd.stub!(:ask).and_return("yes")
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
@@ -129,10 +129,10 @@ describe Bosh::Cli::Command::Base do
       @cmd.stub!(:director).and_return(mock_director)
       @cmd.stub!(:ask).and_return("")
       @cmd.delete("foo")
-    end    
-    
-  end  
-  
+    end
+
+  end
+
 end
 
 

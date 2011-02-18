@@ -86,7 +86,7 @@ module Bosh
           opts.on("--force")                {         @options[:director_checks] = false }
           opts.on("--quiet")                {         @options[:quiet] = true }
           opts.on("--non-interactive")      {         @options[:non_interactive] = true }
-          opts.on("--version")              {         set_cmd(:dashboard, :version) }
+          opts.on("--version")              {         set_cmd(:misc, :version) }
           opts.on("--help")                 {}
         end
 
@@ -167,14 +167,14 @@ USAGE
 
         when "version"
           usage("bosh version")
-          set_cmd(:dashboard, :version)
+          set_cmd(:misc, :version)
 
         when "target"
           usage("bosh target [<name>]")
           if @args.size == 1
-            set_cmd(:dashboard, :set_target, 1)
+            set_cmd(:misc, :set_target, 1)
           else
-            set_cmd(:dashboard, :show_target)
+            set_cmd(:misc, :show_target)
           end
 
         when "deploy"
@@ -196,19 +196,19 @@ USAGE
 
         when "status", "st"
           usage("bosh status")
-          set_cmd(:dashboard, :status)
+          set_cmd(:misc, :status)
 
         when "login"
           usage("bosh login [<name>] [<password>]")
-          set_cmd(:dashboard, :login, 0..2)
+          set_cmd(:misc, :login, 0..2)
 
         when "logout"
           usage("bosh logout")
-          set_cmd(:dashboard, :logout)
+          set_cmd(:misc, :logout)
 
         when "purge"
           usage("bosh purge")
-          set_cmd(:dashboard, :purge_cache)
+          set_cmd(:misc, :purge_cache)
 
         when "create", "build"
           verb_usage("create")

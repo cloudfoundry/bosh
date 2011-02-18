@@ -19,7 +19,7 @@ describe Bosh::Cli::Command::Base do
 
   it "can access configuration and respects options" do
     add_config("target" => "localhost:8080", "deployment" => "test")
-    
+
     cmd = make_command(:verbose => true, :dry_run => true)
     cmd.verbose?.should be_true
     cmd.dry_run?.should be_true
@@ -72,23 +72,23 @@ describe Bosh::Cli::Command::Base do
   it "can evaluate other commands" do
     cmd     = make_command
     new_cmd = mock(Object)
-    
-    Bosh::Cli::Command::Dashboard.should_receive(:new).and_return(new_cmd)
+
+    Bosh::Cli::Command::Misc.should_receive(:new).and_return(new_cmd)
     new_cmd.should_receive(:status).with(:arg1, :arg2)
-    
-    cmd.run("dashboard", "status", :arg1, :arg2)
+
+    cmd.run("misc", "status", :arg1, :arg2)
   end
 
   it "can redirect to other commands (effectively exiting after running them)" do
     cmd     = make_command
     new_cmd = mock(Object)
 
-    Bosh::Cli::Command::Dashboard.should_receive(:new).and_return(new_cmd)
+    Bosh::Cli::Command::Misc.should_receive(:new).and_return(new_cmd)
     new_cmd.should_receive(:status).with(:arg1, :arg2)
 
     lambda {
-      cmd.redirect("dashboard", "status", :arg1, :arg2)
-    }.should raise_error(Bosh::Cli::GracefulExit, "redirected to dashboard status arg1 arg2")
+      cmd.redirect("misc", "status", :arg1, :arg2)
+    }.should raise_error(Bosh::Cli::GracefulExit, "redirected to misc status arg1 arg2")
   end
 
   it "effectively ignores config file if it is malformed" do
@@ -102,8 +102,8 @@ describe Bosh::Cli::Command::Base do
   it "whines on missing config file" do
     lambda {
       File.should_receive(:open).with(@config, "w").and_raise(Errno::EACCES)
-      make_command      
+      make_command
     }.should raise_error(Bosh::Cli::ConfigError)
   end
-  
+
 end

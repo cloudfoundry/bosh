@@ -1,5 +1,5 @@
 module Bosh::Cli::Command
-  class Dashboard < Base
+  class Misc < Base
 
     def version
       say("Bosh %s" % [ Bosh::Cli::VERSION ])
@@ -12,13 +12,14 @@ module Bosh::Cli::Command
 
       if in_release_dir?
         header("You are in release directory")
-        release = Bosh::Cli::Release.new(work_dir)
+        dev_release = Bosh::Cli::Release.dev(work_dir)
+        final_release = Bosh::Cli::Release.final(work_dir)
 
-        dev_name    = release.dev_name
-        dev_version = release.dev_version
+        dev_name    = dev_release.name
+        dev_version = dev_release.version
 
-        final_name    = release.final_name
-        final_version = release.final_version
+        final_name    = final_release.name
+        final_version = final_release.version
 
         say("Dev name:      %s" % [ dev_name ? dev_name.green : "not set".red ])
         say("Dev version:   %s" % [ dev_version && dev_version > 0 ? dev_version.to_s.green : "no versions yet".red ])
@@ -60,7 +61,7 @@ module Bosh::Cli::Command
           logged_in = true
         else
           say("Cannot log in as '#{username}', please try again")
-          redirect(:dashboard, :login, username, nil) unless options[:non_interactive]
+          redirect(:misc, :login, username, nil) unless options[:non_interactive]
         end
       end
 

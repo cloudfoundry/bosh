@@ -75,21 +75,12 @@ module Bosh::Cli
         File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
       end
 
-      def init_blobstore
-        storage_config = File.join(@work_dir, "storage.yml")
-
-        if !File.file?(storage_config)
-          raise Bosh::Cli::ConfigError, "No storage config file found at `#{storage_config}'"
-        end
-
-        storage_options = YAML.load_file(storage_config)
-        storage_options = { } unless storage_options.is_a?(Hash)
-
+      def init_blobstore(options)
         bs_options = {
-          :access_key_id     => storage_options["access_key_id"].to_s,
-          :secret_access_key => storage_options["secret_access_key"].to_s,
-          :encryption_key    => storage_options["encryption_key"].to_s,
-          :bucket_name       => storage_options["bucket_name"].to_s
+          :access_key_id     => options["access_key_id"].to_s,
+          :secret_access_key => options["secret_access_key"].to_s,
+          :encryption_key    => options["encryption_key"].to_s,
+          :bucket_name       => options["bucket_name"].to_s
         }
 
         Bosh::Blobstore::Client.create("s3", bs_options)
