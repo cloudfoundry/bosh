@@ -1,0 +1,7 @@
+---
+bosh:
+  uri: git@github.com:vmware-ac/bosh.git
+  roles:
+  - blobstore
+  - director
+

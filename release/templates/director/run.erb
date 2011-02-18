@@ -1,4 +1,0 @@
-#!/bin/bash
-
-exec 2>&1
-exec chpst -u <%= runner %> env TMPDIR=<%= tmp_dir %> <%= current_path %>/director/bin/director -c <%= shared_path %>/config/bosh-director.yml

@@ -1,0 +1,108 @@
+{
+  "version": "0.14.2",
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "maintainer": "Opscode, Inc.",
+  "replacing": {
+  },
+  "license": "Apache 2.0",
+  "maintainer_email": "cookbooks@opscode.com",
+  "long_description": "",
+  "groupings": {
+  },
+  "dependencies": {
+  },
+  "attributes": {
+    "runit/sv_dir": {
+      "required": "optional",
+      "calculated": false,
+      "choice": [
+
+      ],
+      "default": "/etc/sv",
+      "type": "string",
+      "recipes": [
+
+      ],
+      "description": "Location of services managed by runit",
+      "display_name": "Runit sv directory"
+    },
+    "runit/service_dir": {
+      "required": "optional",
+      "calculated": false,
+      "choice": [
+
+      ],
+      "default": "/etc/service",
+      "type": "string",
+      "recipes": [
+
+      ],
+      "description": "Symlinks to services managed under runit",
+      "display_name": "Runit service directory"
+    },
+    "runit": {
+      "required": "optional",
+      "calculated": false,
+      "choice": [
+
+      ],
+      "type": "hash",
+      "recipes": [
+
+      ],
+      "description": "Hash of runit attributes",
+      "display_name": "Runit"
+    },
+    "runit/sv_bin": {
+      "required": "optional",
+      "calculated": false,
+      "choice": [
+
+      ],
+      "default": "/usr/bin/sv",
+      "type": "string",
+      "recipes": [
+
+      ],
+      "description": "Location of the sv binary",
+      "display_name": "Runit sv bin"
+    },
+    "runit/chpst_bin": {
+      "required": "optional",
+      "calculated": false,
+      "choice": [
+
+      ],
+      "default": "/usr/bin/chpst",
+      "type": "string",
+      "recipes": [
+
+      ],
+      "description": "Location of the chpst binary",
+      "display_name": "Runit chpst bin"
+    }
+  },
+  "recommendations": {
+  },
+  "name": "runit",
+  "suggestions": {
+  },
+  "description": "Installs runit and provides runit_service definition",
+  "recipes": {
+    "runit": "Installs and configures runit"
+  },
+  "platforms": {
+    "debian": [
+
+    ],
+    "gentoo": [
+
+    ],
+    "ubuntu": [
+
+    ]
+  }
+}

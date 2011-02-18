@@ -1,23 +1,60 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    capistrano (2.5.19)
+    abstract (1.0.0)
+    bunny (0.6.0)
+    chef (0.9.12)
+      bunny (>= 0.6.0)
+      erubis
+      extlib
       highline
-      net-scp (>= 1.0.0)
-      net-sftp (>= 2.0.0)
-      net-ssh (>= 2.0.14)
-      net-ssh-gateway (>= 1.0.0)
+      json (>= 1.4.4, <= 1.4.6)
+      mixlib-authentication (>= 1.1.0)
+      mixlib-cli (>= 1.1.0)
+      mixlib-config (>= 1.1.2)
+      mixlib-log (>= 1.2.0)
+      moneta
+      ohai (>= 0.5.7)
+      rest-client (>= 1.0.4, < 1.7.0)
+      uuidtools
+    erubis (2.6.6)
+      abstract (>= 1.0.0)
+    extlib (0.9.15)
     highline (1.6.1)
+    json (1.4.6)
+    mime-types (1.16)
+    mixlib-authentication (1.1.4)
+      mixlib-log
+    mixlib-cli (1.2.0)
+    mixlib-config (1.1.2)
+    mixlib-log (1.2.0)
+    moneta (0.6.0)
     net-scp (1.0.2)
       net-ssh (>= 1.99.1)
-    net-sftp (2.0.4)
-      net-ssh (>= 2.0.9)
-    net-ssh (2.0.21)
+    net-ssh (2.1.0)
     net-ssh-gateway (1.0.1)
       net-ssh (>= 1.99.1)
+    ohai (0.5.8)
+      extlib
+      json (>= 1.4.4, <= 1.4.6)
+      mixlib-cli
+      mixlib-config
+      mixlib-log
+      systemu
+    rest-client (1.6.1)
+      mime-types (>= 1.16)
+    systemu (1.2.0)
+    thor (0.14.6)
+    uuidtools (2.1.2)
+    yajl-ruby (0.7.8)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  capistrano
+  chef
+  net-scp
+  net-ssh
+  net-ssh-gateway
+  thor
+  yajl-ruby
