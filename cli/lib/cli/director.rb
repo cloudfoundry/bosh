@@ -36,7 +36,7 @@ module Bosh
       def create_user(username, password)
         payload = JSON.generate("username" => username, "password" => password)
         response_code, body = post("/users", "application/json", payload)
-        response_code == 200
+        response_code == 204
       end
 
       def upload_stemcell(filename)

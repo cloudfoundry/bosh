@@ -23,6 +23,13 @@ describe Bosh::Spec::IntegrationTest do
     FileUtils.rm_rf(CLOUD_DIR)
   end
 
+  before :each do |example|
+    Bosh::Spec::Sandbox.reset(example.example.metadata[:description])
+    FileUtils.rm_rf(BOSH_CONFIG)
+    FileUtils.rm_rf(CLOUD_DIR)
+    FileUtils.rm_rf(BOSH_CACHE_DIR)
+  end
+
   def run_bosh(cmd)
     Dir.chdir(BOSH_WORK_DIR) do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
@@ -120,13 +127,6 @@ describe Bosh::Spec::IntegrationTest do
     }
 
     minimal_deployment_manifest.merge(extras)
-  end
-
-  before :each do
-    Redis.new(:host => "localhost", :port => 63795).flushdb
-    FileUtils.rm_rf(BOSH_CONFIG)
-    FileUtils.rm_rf(CLOUD_DIR)
-    FileUtils.rm_rf(BOSH_CACHE_DIR)
   end
 
   it "shows status" do
