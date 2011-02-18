@@ -17,9 +17,9 @@ module Bosh::Cli::Command
       say "create\t#{job_dir}"
       FileUtils.mkdir_p(job_dir)
 
-      config_dir = File.join(job_dir, "config")
-      say "create\t#{config_dir}"
-      FileUtils.mkdir_p(config_dir)
+      templates_dir = File.join(job_dir, "templates")
+      say "create\t#{templates_dir}"
+      FileUtils.mkdir_p(templates_dir)
 
       spec_file = File.join(job_dir, "spec")
       say "create\t#{spec_file}"
