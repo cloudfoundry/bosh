@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "maintainer": "VMware",
+  "replacing": {
+  },
+  "license": "TBD",
+  "maintainer_email": "TBD",
+  "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
+  "groupings": {
+  },
+  "dependencies": {
+    "runit": [
+
+    ],
+    "env": [
+
+    ],
+    "rubygems": [
+
+    ],
+    "ruby": [
+
+    ]
+  },
+  "attributes": {
+  },
+  "recommendations": {
+  },
+  "name": "director",
+  "suggestions": {
+  },
+  "description": "Installs/Configures director and workers",
+  "recipes": {
+  },
+  "platforms": {
+  }
+}

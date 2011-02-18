@@ -1,0 +1,1 @@
+<%= template_args[:work_dir] %>/instance /var/vcap/bosh/src

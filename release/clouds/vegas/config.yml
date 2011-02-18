@@ -1,0 +1,20 @@
+---
+roles:
+  director:   172.30.40.12
+  postgresql: 172.30.40.12
+  redis:      172.30.40.12
+  nats:       172.30.40.12
+  blobstore:  172.30.40.12
+user: vcap
+gateway: las-jump
+paths:
+  repo_cache: /var/vcap/deploy/repos
+  cookbooks: /var/vcap/deploy/cookbooks
+  chef: /var/vcap/deploy/chef
+chef_config:
+  file_cache_path: "/tmp/chef-solo"
+  http_proxy:  "http://squid01.las01.emcatmos.com:3128"
+  https_proxy: "http://squid01.las01.emcatmos.com:3128"
+  no_proxy:    ".emcatmos.com,localhost,127.0.0.0/8,172.16.0.0/16"
+
+

@@ -1,4 +1,0 @@
-#!/bin/bash
-
-exec 2>&1
-exec chpst -u <%= runner %> env TMPDIR=<%= tmp_dir %> <%= current_path %>/simple_blobstore_server/bin/simple_blobstore_server -c <%= shared_path %>/config/simple_blobstore_server.yml

@@ -1,3 +1,8 @@
 source :rubygems
 
-gem "capistrano"
+gem "net-ssh"
+gem "net-scp"
+gem "net-ssh-gateway"
+gem "chef"
+gem "thor"
+gem "yajl-ruby"

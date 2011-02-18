@@ -1,0 +1,14 @@
+[DEFAULT]
+arch = amd64
+firstboot = <%= template_args[:firstboot] %>
+copy = <%= template_args[:copyin] %>
+execscript = <%= template_args[:execscript] %>
+rootpass = ca$hc0w
+user = vcap
+pass = ca$hc0w
+
+[ubuntu]
+suite = lucid
+# multiverse for open-vm-tools
+components = main,universe,multiverse
+flavor = virtual

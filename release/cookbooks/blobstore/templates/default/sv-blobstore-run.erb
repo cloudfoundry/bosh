@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PATH=<%= node[:ruby][:path] %>/bin:$PATH
+
+exec 2>&1
+exec chpst -u <%= node[:blobstore][:runner] %> env TMPDIR=<%= node[:blobstore][:tmp] %> <%= node[:blobstore][:path] %>/current/simple_blobstore_server/bin/simple_blobstore_server -c <%= node[:blobstore][:path] %>/shared/config/simple_blobstore_server.yml

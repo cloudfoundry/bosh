@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PATH=<%= node[:redis][:path] %>/bin:$PATH
+
+exec 2>&1
+exec chpst -u <%= node[:redis][:runner] %> redis-server <%= node[:redis][:path] %>/etc/redis.conf

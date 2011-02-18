@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "maintainer": "VMware",
+  "replacing": {
+  },
+  "license": "N/A",
+  "maintainer_email": "ac-eng@vmware.com",
+  "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
+  "groupings": {
+  },
+  "dependencies": {
+    "ruby": [
+
+    ]
+  },
+  "attributes": {
+  },
+  "recommendations": {
+  },
+  "name": "rubygems",
+  "suggestions": {
+  },
+  "description": "Installs/Configures rubygems",
+  "recipes": {
+  },
+  "platforms": {
+  }
+}

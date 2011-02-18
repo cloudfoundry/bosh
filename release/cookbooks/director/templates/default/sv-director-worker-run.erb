@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PATH=<%= node[:ruby][:path] %>/bin:$PATH
+
+exec 2>&1
+exec chpst -u <%= node[:director][:runner] %> env LOGGING=1 QUEUE=normal TMPDIR=<%= node[:director][:tmp] %> <%= node[:director][:path] %>/current/director/bin/worker -c <%= node[:director][:path] %>/shared/config/director-worker-<%= @options[:index] %>.yml

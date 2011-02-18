@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "maintainer": "VMware",
+  "replacing": {
+  },
+  "license": "N/A",
+  "maintainer_email": "ac-eng@vmware.com",
+  "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
+  "groupings": {
+  },
+  "dependencies": {
+  },
+  "attributes": {
+  },
+  "recommendations": {
+  },
+  "name": "ruby",
+  "suggestions": {
+  },
+  "description": "Installs/Configures ruby",
+  "recipes": {
+  },
+  "platforms": {
+  }
+}
