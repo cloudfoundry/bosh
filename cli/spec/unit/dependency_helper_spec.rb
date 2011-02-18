@@ -2,13 +2,20 @@ require "spec_helper"
 
 describe Bosh::Cli::DependencyHelper do
 
-  def tsort_packages(*args)
+  def sorter
     object = Object.new
     class << object
       include Bosh::Cli::DependencyHelper
     end
+    object
+  end
 
-    object.tsort_packages(*args)
+  def tsort_packages(*args)
+    sorter.tsort_packages(*args)
+  end
+
+  def sort_jobs(*args)
+    sorter.sort_jobs(*args)
   end
 
   it "resolves sorts simple dependencies" do
@@ -32,7 +39,14 @@ describe Bosh::Cli::DependencyHelper do
     sorted.index("B").should <= sorted.index("A")
     sorted.index("C").should <= sorted.index("A")
     sorted.index("D").should <= sorted.index("B")
-    sorted.index("D").should <= sorted.index("C")    
+    sorted.index("D").should <= sorted.index("C")
   end
-  
+
+  it "can sort jobs according to some partial order list" do
+    sort_jobs(%w(a b c d e)).should == %w(a b c d e)
+    sort_jobs(%w(a b c d e), %w(d b a)).should == %w(d b a c e)
+    sort_jobs(%w(a b c d e), %w()).should == %w(a b c d e)
+    sort_jobs(%w(a b c d e), %w(e d c b a)).should == %w(e d c b a)
+  end
+
 end

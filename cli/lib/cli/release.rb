@@ -2,75 +2,75 @@ module Bosh::Cli
 
   class Release
 
-    def initialize(work_dir)
-      @work_dir = work_dir
+    DEFAULT_CONFIG = {
+      "name" => nil,
+      "version" => nil,
+      "jobs_order" => [],
+      "min_cli_version" => "0.5",
+      "s3_options" => { }
+    }
+
+    def self.dev(release_dir)
+      new(release_dir, false)
     end
 
-    def dev_name
-      read_name(dev_name_file)
+    def self.final(release_dir)
+      new(release_dir, true)
     end
 
-    def dev_version
-      read_version(dev_version_file)
-    end    
+    attr_reader :config
 
-    def final_name
-      read_name(final_name_file)
-    end
-    
-    def final_version
-      read_version(final_version_file)
+    def initialize(release_dir, final = false)
+      @release_dir = release_dir
+      @final  = final
+      @config_file = File.join(@release_dir, "config", final ? "final.yml" : "dev.yml")
+      @config = reload_config
     end
 
-    def save_final_version(version)
-      save_version(final_version_file, version)
+    DEFAULT_CONFIG.keys.each do |attr|
+      define_method(attr) do
+        @config[attr.to_s]
+      end
     end
 
-    def save_dev_version(version)
-      save_version(dev_version_file, version)
-    end    
+    def final?
+      @final
+    end
+
+    def update_config(attrs = { })
+      @config = @config.merge(stringify_keys(attrs))
+
+      FileUtils.mkdir_p(File.dirname(@config_file))
+      FileUtils.touch(@config_file)
+
+      File.open(@config_file, "w") do |f|
+        f.write(YAML.dump(@config))
+      end
+
+      reload_config
+    end
+
+    def reload_config
+      if File.exists?(@config_file)
+        config = YAML.load_file(@config_file) rescue nil
+        unless config.is_a?(Hash)
+          raise InvalidRelease, "Can't read release configuration from `#{@config_file}'"
+        end
+        config
+      else
+        DEFAULT_CONFIG
+      end
+    end
 
     private
 
-    def final_name_file
-      File.join(@work_dir, "NAME")      
-    end
-
-    def dev_name_file
-      File.join(@work_dir, "DEV_NAME")
-    end
-
-    def final_version_file
-      File.join(@work_dir, "VERSION")
-    end
-
-    def dev_version_file
-      File.join(@work_dir, "DEV_VERSION")      
-    end
-
-    def save_version(file, version)
-      File.open(file, "w") do |f|
-        f.write(version)
+    def stringify_keys(hash)
+      hash.inject({}) do |h, (key, value)|
+        h[key.to_s] = value
+        h
       end
     end
-    
-    def read_version(file)
-      if File.exists?(file)
-        File.read(file).to_i
-      else
-        nil
-      end      
-    end
 
-    def read_name(file)
-      if File.file?(file) && File.readable?(file)
-        name = File.read(file).split("\n")[0]
-        name.blank? ? nil : name
-      else
-        nil
-      end
-    end
-    
   end
 
 end

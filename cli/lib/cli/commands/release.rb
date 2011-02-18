@@ -55,21 +55,19 @@ module Bosh::Cli::Command
 
       if final
         header "Building FINAL release".green
+        release = Bosh::Cli::Release.final(work_dir)
       else
         header "Building DEV release".green
+        release = Bosh::Cli::Release.dev(work_dir)
       end
 
-      if final && !File.exists?("NAME")
-        name = ask("Please enter final release name: ")
+      if release.name.blank?
+        name = ask("Please enter %s release name: " % [ final ? "final" : "development" ])
         err("Canceled release creation, no name given") if name.blank?
-        File.open("NAME", "w") { |f| f.write(name) }
-      elsif !File.exists?("DEV_NAME")
-        name = ask("Please enter development release name: ")
-        err("Canceled release creation, no name given") if name.blank?
-        File.open("DEV_NAME", "w") { |f| f.write(name) }
+        release.update_config(:name => name)
       end
 
-      blobstore = init_blobstore
+      blobstore = init_blobstore(release.s3_options)
 
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
@@ -108,13 +106,15 @@ module Bosh::Cli::Command
 
     def reset
       check_if_release_dir
+
+      release = Bosh::Cli::Release.dev(work_dir)
+
       say "Your dev release environment will be completely reset".red
       if (non_interactive? || ask("Are you sure? (type 'yes' to continue): ") == "yes")
         say "Removing dev_builds index..."
         FileUtils.rm_rf(".dev_builds")
         say "Clearing dev name and version..."
-        FileUtils.rm_rf("DEV_VERSION")
-        FileUtils.rm_rf("DEV_NAME")
+        release.update_config(:name => nil, :version => nil)
         say "Removing dev tarballs..."
         FileUtils.rm_rf("dev_releases")
 

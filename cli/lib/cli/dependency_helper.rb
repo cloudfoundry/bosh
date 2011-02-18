@@ -49,7 +49,18 @@ module Bosh::Cli
 
       sorted
     end
+
+    def sort_jobs(jobs, partial_order = nil)
+      head, tail, ordered_jobs = [], [], partial_order.to_a.uniq
+
+      jobs.each do |job|
+        (ordered_jobs.include?(job) ? head : tail) << job
+      end
+
+      head = head.sort_by { |job| ordered_jobs.index(job) }
+      head + tail
+    end
   end
-  
+
 end
 
