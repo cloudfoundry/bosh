@@ -4,6 +4,7 @@ require "yaml"
 module Bosh::Cli
 
   class ReleaseBuilder
+    include Bosh::Cli::DependencyHelper
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
@@ -14,7 +15,10 @@ module Bosh::Cli
 
       @release   = final ? Release.final(@work_dir) : Release.dev(@work_dir)
       @packages  = packages
-      @jobs      = jobs
+
+      job_order  = partial_order_sort(jobs.map{ |job| job.name }, @release.jobs_order)
+
+      @jobs      = jobs.sort_by { |job| job_order.index(job.name) }
       @final     = final
 
       create_release_build_dir
