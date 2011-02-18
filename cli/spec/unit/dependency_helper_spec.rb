@@ -14,8 +14,8 @@ describe Bosh::Cli::DependencyHelper do
     sorter.tsort_packages(*args)
   end
 
-  def sort_jobs(*args)
-    sorter.sort_jobs(*args)
+  def partial_order_sort(*args)
+    sorter.partial_order_sort(*args)
   end
 
   it "resolves sorts simple dependencies" do
@@ -43,10 +43,10 @@ describe Bosh::Cli::DependencyHelper do
   end
 
   it "can sort jobs according to some partial order list" do
-    sort_jobs(%w(a b c d e)).should == %w(a b c d e)
-    sort_jobs(%w(a b c d e), %w(d b a)).should == %w(d b a c e)
-    sort_jobs(%w(a b c d e), %w()).should == %w(a b c d e)
-    sort_jobs(%w(a b c d e), %w(e d c b a)).should == %w(e d c b a)
+    partial_order_sort(%w(a b c d e)).should == %w(a b c d e)
+    partial_order_sort(%w(a b c d e), %w(d b a)).should == %w(d b a c e)
+    partial_order_sort(%w(a b c d e), %w()).should == %w(a b c d e)
+    partial_order_sort(%w(a b c d e), %w(e d c b a)).should == %w(e d c b a)
   end
 
 end
