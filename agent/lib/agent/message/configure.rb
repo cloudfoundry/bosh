@@ -30,7 +30,7 @@ module Bosh::Agent
         if @settings
           update_agent_id
           update_hostname
-          update_bosh_server
+          update_mbus
           update_blobstore
           setup_networking
           update_time
@@ -73,13 +73,8 @@ module Bosh::Agent
         File.open('/etc/hostname', 'w') { |f| f.puts(@settings["agent_id"]) }
       end
 
-      def update_bosh_server
-        redis_settings = {
-          :host => @settings["server"]["host"],
-          :port =>  @settings["server"]["port"].to_s,
-          :password => @settings["server"]["password"]
-        }
-        Bosh::Agent::Config.redis_options.merge!(redis_settings)
+      def update_mbus
+        Bosh::Agent::Config.mbus = @settings['mbus']
       end
 
       def update_blobstore

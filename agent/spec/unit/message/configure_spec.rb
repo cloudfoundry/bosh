@@ -52,18 +52,16 @@ describe Bosh::Agent::Message::Configure do
   end
 
   # This doesn't quite belong here
-  it "should configure redis with bosh server settings data" do
+  it "should configure mbus with nats server uri" do
     @processor.load_settings
-    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "redis" => {}, "blobstore" => {}})
-    @processor.update_bosh_server
-    redis_options = Bosh::Agent::Config.redis_options
-    redis_options[:host].should == "172.30.40.11"
-    redis_options[:port].should == "25255"
+    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore" => {}})
+    @processor.update_mbus
+    Bosh::Agent::Config.mbus.should == "nats://user:pass@11.0.0.11:4222"
   end
 
   it "should configure blobstore with settings data" do
     @processor.load_settings
-    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "redis" => {}, "blobstore" => {}})
+    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore" => {}})
     @processor.update_blobstore
     blobstore_options = Bosh::Agent::Config.blobstore_options
     blobstore_options["user"].should == "agent"
@@ -74,8 +72,7 @@ describe Bosh::Agent::Message::Configure do
   end
 
   def complete_settings
-    settings_json = %q[{"vm":{"name":"vm-dbcbd32d-3756-44ea-8fdd-5d8cf7344d3d","id":"vm-51077"},"disks":{"ephemeral":1,"persistent":{"226":2},"system":0},"server":{"port":25255,"host":"172.30.40.11","password":"R3d!S"},"networks":{"network_a":{"netmask":"255.255.248.0","ip":"172.30.40.115","gateway":"172.30.40.1","dns":["172.30.22.153","172.30.22.154"],"cloud_properties":{"name":"VLAN440"}}},"blobstore":{"plugin":"simple","properties":{"password":"Ag3Nt","user":"agent","endpoint":"http://172.30.40.11:25250"}},"ntp":["ntp01.las01.emcatmos.com","ntp02.las01.emcatmos.com"],"agent_id":"f43aab8c-3435-484e-b1fc-73c56017c137"}]
-    settings_json = %q[{"vm":{"name":"vm-273a202e-eedf-4475-a4a1-66c6d2628742","id":"vm-51290"},"disks":{"ephemeral":1,"persistent":{"250":2},"system":0},"server":{"port":25255,"host":"172.30.40.11","password":"R3d!S"},"networks":{"network_a":{"netmask":"255.255.248.0","mac":"00:50:56:89:17:70","ip":"172.30.40.115","gateway":"172.30.40.1","dns":["172.30.22.153","172.30.22.154"],"cloud_properties":{"name":"VLAN440"}}},"blobstore":{"plugin":"simple","properties":{"password":"Ag3Nt","user":"agent","endpoint":"http://172.30.40.11:25250"}},"ntp":["ntp01.las01.emcatmos.com","ntp02.las01.emcatmos.com"],"agent_id":"a26efbe5-4845-44a0-9323-b8e36191a2c8"}]
+    settings_json = %q[{"vm":{"name":"vm-273a202e-eedf-4475-a4a1-66c6d2628742","id":"vm-51290"},"disks":{"ephemeral":1,"persistent":{"250":2},"system":0},"mbus":"nats://user:pass@11.0.0.11:4222","networks":{"network_a":{"netmask":"255.255.248.0","mac":"00:50:56:89:17:70","ip":"172.30.40.115","gateway":"172.30.40.1","dns":["172.30.22.153","172.30.22.154"],"cloud_properties":{"name":"VLAN440"}}},"blobstore":{"plugin":"simple","properties":{"password":"Ag3Nt","user":"agent","endpoint":"http://172.30.40.11:25250"}},"ntp":["ntp01.las01.emcatmos.com","ntp02.las01.emcatmos.com"],"agent_id":"a26efbe5-4845-44a0-9323-b8e36191a2c8"}]
     Yajl::Parser.new.parse(settings_json)
   end
 

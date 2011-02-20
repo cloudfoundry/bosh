@@ -3,7 +3,7 @@ end
 
 require 'logger'
 
-require 'redis'
+require 'nats/client'
 require "yajl"
 require 'uuidtools'
 require 'ostruct'
@@ -33,7 +33,7 @@ module Bosh::Agent
     end
   end
 
-  class Runner < Struct.new(:config, :pubsub_redis, :redis)
+  class Runner < Struct.new(:config)
 
     def initialize(options)
       self.config = Bosh::Agent::Config.setup(options)
@@ -57,7 +57,7 @@ if __FILE__ == $0
   options = {
     "configure" => true,
     "logging" => { "level" => "DEBUG" },
-    "redis" => { "host" => "localhost" },
+    "mbus" => "nats://localhost:4222",
     "agent_id" => "not_configured",
     "base_dir" => "/var/vcap"
   }

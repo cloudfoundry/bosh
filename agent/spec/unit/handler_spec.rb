@@ -1,24 +1,16 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
-#class Bosh::Agent::Message::CamelCasedMessageHandler
-#  def self.process(args)
-#  end
-#end
-
 describe Bosh::Agent::Handler do 
 
   before(:each) do
-    @redis = mock("redis")
-    Redis.stub(:new).and_return(@redis)
+    @nats = mock('nats')
+    NATS.stub(:start).and_yield
+    NATS.stub(:connect).and_return(@nats)
 
     logger = mock('logger')
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
   end
-
-  # FIXME: break more stuff out of the redis subscribe or see if we can enhance
-  # http://github.com/causes/modesty.git mock-redis to include pubsub.
-  #
 
   it "should result in a value payload" do
     handler = Bosh::Agent::Handler.new
@@ -40,6 +32,7 @@ describe Bosh::Agent::Handler do
 
   it "should process long running tasks" do
     handler = Bosh::Agent::Handler.new
+    handler.start
 
     klazz = Class.new do 
       def self.process(args)
@@ -49,14 +42,14 @@ describe Bosh::Agent::Handler do
     end
 
     agent_task_id = nil
-    @redis.should_receive(:publish) do |message_id, payload|
-      message_id.should == "bogus_message_id"
+    @nats.should_receive(:publish) do |reply_to, payload|
+      reply_to.should == "bogus_reply_to"
       msg = Yajl::Parser.new.parse(payload)
       agent_task_id = msg["value"]["agent_task_id"]
     end
-    handler.process_long_running("bogus_message_id", klazz, nil)
+    handler.process_long_running("bogus_reply_to", klazz, nil)
 
-    @redis.should_receive(:publish) do |message_id, payload|
+    @nats.should_receive(:publish) do |reply_to, payload|
       msg = Yajl::Parser.new.parse(payload)
       msg.should == {"value" => "result"}
     end
