@@ -13,7 +13,7 @@ require "agent"
 options = {
   "configure" => false,
   "logging"   => { "level" => "DEBUG" },
-  "redis"     => { "host" => "localhost" },
+  "mbus"      => "nats://localhost:4222",
   "agent_id"  => "not_configured",
   "blobstore" => {}, # FIXME - make configurable
   "base_dir"  => "/var/vcap"
@@ -32,9 +32,8 @@ opts = OptionParser.new do |opts|
     options["base_dir"] = opt
   end
 
-  opts.on("-r", "--redis String", "Redis host:port") do |opt|
-    host, port = opt.split(":", 2)
-    options["redis"] = { "host" => host, "port" => port }
+  opts.on("-n", "--nats String", "Nats/mbus (nats://user:pass@host:port)") do |opt|
+    options["mbus"] = opt
   end
 
   # Needed this customization for integration tests, quirky but seems to work

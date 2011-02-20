@@ -1,7 +1,7 @@
 source :rubygems
 
 gem "rake"
-gem "redis"
+gem "nats"
 gem "uuidtools"
 gem "SystemTimer"
 gem "yajl-ruby", :require => "yajl"

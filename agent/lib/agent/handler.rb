@@ -15,11 +15,9 @@ module Bosh::Agent
     end
 
     def initialize
-      redis_config = Config.redis_options
-      @pubsub_redis = Redis.new(redis_config)
-      @redis = Redis.new(redis_config)
       @agent_id = Config.agent_id
       @logger = Config.logger
+      @nats_uri = Config.mbus
       @base_dir = Config.base_dir
 
       @lock = Mutex.new
@@ -43,46 +41,34 @@ module Bosh::Agent
       @logger.info("Message processors: #{@processors.inspect}")
     end
 
-    def start
-      # FIXME: terminate gracefully by unsubscribing before exit
-      # TODO: deal with signals
-      trap("TERM") { "Shutting down agent" ; exit }
-
-      subscription = "rpc:agent:#{@agent_id}"
-
-      begin
-        @pubsub_redis.subscribe(subscription) do |on|
-          on.subscribe do |sub, msg|
-            @logger.info("Subscribed to #{subscription}")
-          end
-          on.message do |sub, raw_msg|
-            msg = Yajl::Parser.new.parse(raw_msg)
-            handle_message(msg)
-          end
-          on.unsubscribe do |sub, msg|
-            puts "unsubscribing"
-          end
-        end
-      rescue Errno::ENETUNREACH, Timeout::Error => e
-        @logger.info("Unable to talk to Redis - retry (#{e.inspect})")
-        sleep 0.1
-        retry
-      end
-
-    end
-
     # TODO:
     def lookup(method)
       @processors[method]
     end
 
-    def generate_agent_task_id
-      UUIDTools::UUID.random_create.to_s
+    def start
+      begin
+        NATS.start do
+          @nats = NATS.connect(:uri => @nats_uri, :autostart => false) { on_connect }
+        end
+      rescue Errno::ENETUNREACH, Timeout::Error => e
+        @logger.info("Unable to talk to nats - retry (#{e.inspect})")
+        sleep 0.1
+        retry
+      end
     end
 
-    def handle_message(msg)
+    def on_connect
+      subscription = "agent.#{@agent_id}"
+      @nats.subscribe(subscription) { |raw_msg| handle_message(raw_msg) }
+    end
+
+    def handle_message(msg_raw)
+      msg = Yajl::Parser.new.parse(raw_msg)
+
       @logger.info("Message: #{msg.inspect}")
-      message_id = msg['message_id']
+
+      reply_to = msg['reply_to']
       method = msg['method']
       args = msg['arguments']
 
@@ -95,46 +81,47 @@ module Bosh::Agent
         Thread.new {
           if processor.respond_to?(:long_running?)
             if @long_running_agent_task.empty?
-              process_long_running(message_id, processor, args)
+              process_long_running(reply_to, processor, args)
             else
               payload = {:exception => "already running long running task"}
-              publish(message_id, payload)
+              publish(reply_to, payload)
             end
           else
             payload = process(processor, args)
-            publish(message_id, payload)
+            publish(reply_to, payload)
             if Config.configure && method == "prepare_network_change"
               post_prepare_network_change
             end
           end
         }
       elsif method == "get_task"
-        handle_get_task(message_id, args.first)
+        handle_get_task(reply_to, args.first)
       else
         payload = {:exception => "unknown message #{msg.inspect}"}
-        publish(message_id, payload)
+        publish(reply_to, payload)
       end
     end
 
-    def handle_get_task(message_id, agent_task_id)
+
+    def handle_get_task(reply_to, agent_task_id)
       if @long_running_agent_task == [agent_task_id]
-        publish(message_id, {"value" => {"state" => "running", "agent_task_id" => agent_task_id}})
+        publish(reply_to, {"value" => {"state" => "running", "agent_task_id" => agent_task_id}})
       else
         rs = @results.find { |time, task_id, result| task_id == agent_task_id }
         if rs
           time, task_id, result = rs
-          publish(message_id, result)
+          publish(reply_to, result)
         else
-          publish(message_id, {"exception" => "unknown agent_task_id" })
+          publish(reply_to, {"exception" => "unknown agent_task_id" })
         end
       end
     end
 
-    def publish(message_id, payload)
-      @redis.publish(message_id, Yajl::Encoder.encode(payload))
+    def publish(reply_to, payload)
+      @nats.publish(reply_to, Yajl::Encoder.encode(payload))
     end
 
-    def process_long_running(message_id, processor, args)
+    def process_long_running(reply_to, processor, args)
       agent_task_id = generate_agent_task_id
 
       @lock.synchronize do
@@ -142,12 +129,12 @@ module Bosh::Agent
       end
 
       payload = {:value => {:state => "running", :agent_task_id => agent_task_id}}
-      publish(message_id, payload)
+      publish(reply_to, payload)
 
       begin
         result = process(processor, args)
       ensure
-        @lock.synchronize do 
+        @lock.synchronize do
           @results << [Time.now.to_i, agent_task_id, result]
           @long_running_agent_task = []
         end
@@ -161,6 +148,10 @@ module Bosh::Agent
       rescue Bosh::Agent::MessageHandlerError => e
         return {:exception => e.inspect}
       end
+    end
+
+    def generate_agent_task_id
+      UUIDTools::UUID.random_create.to_s
     end
 
     def post_prepare_network_change
