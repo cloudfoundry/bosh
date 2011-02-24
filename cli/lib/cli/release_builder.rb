@@ -21,6 +21,7 @@ module Bosh::Cli
       @jobs      = jobs.sort_by { |job| job_order.index(job.name) }
       @final     = final
 
+      @index = VersionsIndex.new(releases_dir, release_name)
       create_release_build_dir
     end
 
@@ -50,7 +51,7 @@ module Bosh::Cli
       save_version
       @build_complete = true
     ensure
-      rollback unless @build_complete
+      rollback unless @build_complete || @reused_old_version
     end
 
     def rollback
@@ -94,10 +95,26 @@ module Bosh::Cli
           "sha1"    => job.checksum,
         }
       end
+
       manifest["name"] = release_name
 
       unless manifest["name"].bosh_valid_id?
         raise InvalidRelease, "Release name '%s' is not a valid Bosh identifier" % [ manifest["name"] ]
+      end
+
+      fingerprint = make_fingerprint(manifest)
+
+      old_release = @index[fingerprint]
+      unless old_release.nil?
+        old_version = old_release["version"]
+        say "Looks like this version is no different from version #{old_version}"
+        if @index.version_exists?(old_version)
+          @reused_old_version = true
+          say("Found matching version %s: %s".green % [ old_version, @index.filename(old_version) ])
+          quit
+        else
+          say "Cannot find tarball for version #{old_version}, generating a new one..."
+        end
       end
 
       manifest["version"] = version
@@ -107,6 +124,7 @@ module Bosh::Cli
         f.write(YAML.dump(manifest))
       end
 
+      @index.add_version(fingerprint, { "version" => version })
       @manifest_generated = true
     end
 
@@ -124,16 +142,32 @@ module Bosh::Cli
       end
     end
 
+    def releases_dir
+       File.join(work_dir, final? ? "releases" : "dev_releases")
+    end
+
     def tarball_path
-      dirname = final? ? "releases" : "dev_releases"
-      File.join(work_dir, dirname, "#{release_name}-#{version}.tgz")
+      File.join(releases_dir, "#{release_name}-#{version}.tgz")
+    end
+
+    def make_fingerprint(item)
+      source = \
+      case item
+      when Array
+        item.map { |e| make_fingerprint(e) }.sort.join("")
+      when Hash
+        item.keys.sort.map{ |k| make_fingerprint(item[k]) }.join("")
+      else
+        item.to_s
+      end
+      Digest::SHA1.hexdigest(source)
     end
 
     private
 
     def assign_version
-      current_version = @release.version
-      current_version.to_i + 1
+      current_version = @index.latest_version.to_i
+      current_version + 1
     end
 
     def build_dir

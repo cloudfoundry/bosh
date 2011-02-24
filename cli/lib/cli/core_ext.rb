@@ -13,6 +13,10 @@ module BoshExtensions
     raise Bosh::Cli::CliExit, message
   end
 
+  def quit(message = nil)
+    raise Bosh::Cli::GracefulExit, message
+  end
+
   def blank?
     self.to_s.blank?
   end
@@ -24,7 +28,7 @@ module BoshStringExtensions
   end
 
   def green
-    colorize("\e[0m\e[32m")    
+    colorize("\e[0m\e[32m")
   end
 
   def colorize(color_code)
@@ -53,7 +57,7 @@ module BoshStringExtensions
       stripped
     end
   end
-  
+
 end
 
 class Object

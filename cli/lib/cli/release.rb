@@ -4,7 +4,6 @@ module Bosh::Cli
 
     DEFAULT_CONFIG = {
       "name" => nil,
-      "version" => nil,
       "jobs_order" => [],
       "min_cli_version" => "0.5",
       "s3_options" => { }

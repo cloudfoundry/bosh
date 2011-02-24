@@ -14,7 +14,6 @@ describe Bosh::Cli::Release do
     File.exists?(File.join(@dir, "config", "dev.yml")).should be_false
     r = new_release(@dir)
     r.name.should be_nil
-    r.version.should be_nil
     r.min_cli_version.should == "0.5"
     r.jobs_order.should == []
     r.s3_options.should == { }
@@ -41,9 +40,8 @@ describe Bosh::Cli::Release do
     fr = new_release(@dir, true)
     fr.name.should == nil
 
-    fr.update_config(:name => "blabla", "version" => "23")
+    fr.update_config(:name => "blabla")
     fr.name.should == "blabla"
-    fr.version.should == "23"
 
     File.exists?(File.join(@dir, "config", "final.yml")).should be_true
   end

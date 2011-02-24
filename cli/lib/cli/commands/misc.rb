@@ -16,10 +16,10 @@ module Bosh::Cli::Command
         final_release = Bosh::Cli::Release.final(work_dir)
 
         dev_name    = dev_release.name
-        dev_version = dev_release.version
+        dev_version = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "dev_releases")).latest_version
 
         final_name    = final_release.name
-        final_version = final_release.version
+        final_version = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "releases")).latest_version
 
         say("Dev name:      %s" % [ dev_name ? dev_name.green : "not set".red ])
         say("Dev version:   %s" % [ dev_version && dev_version > 0 ? dev_version.to_s.green : "no versions yet".red ])
