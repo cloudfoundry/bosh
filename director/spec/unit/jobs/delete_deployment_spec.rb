@@ -95,8 +95,9 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       vm = Bosh::Director::Models::Vm.make(:deployment => deployment)
       instance = Bosh::Director::Models::Instance.make(:deployment => deployment)
 
-      @job.should_receive(:delete_instance).with(instance)
-      @job.should_receive(:delete_vm).with(vm)
+      @cloud.stub!(:delete_vm)
+      @cloud.stub!(:delete_disk)
+      @cloud.stub!(:detach_disk)
 
       @job.perform
 
@@ -105,6 +106,9 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
       stemcell.refresh
       stemcell.deployments.should be_empty
+
+      Bosh::Director::Models::Vm[vm.id].should be_nil
+      Bosh::Director::Models::Instance[instance.id].should be_nil
     end
 
     it "should fail if the deployment is not found" do

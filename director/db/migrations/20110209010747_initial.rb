@@ -47,8 +47,8 @@ Sequel.migration do
       String :sha1, :null => false
       String :dependency_key, :null => false
       Integer :build, :unsigned => true, :null => false
-      foreign_key :package_id, :releases, :null => false
-      foreign_key :stemcell_id, :releases, :null => false
+      foreign_key :package_id, :packages, :null => false
+      foreign_key :stemcell_id, :stemcells, :null => false
       unique [:package_id, :stemcell_id, :dependency_key]
       unique [:package_id, :stemcell_id, :build]
     end
