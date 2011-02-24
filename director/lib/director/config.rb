@@ -1,3 +1,5 @@
+require "monitor"
+
 module Bosh::Director
   class Config
 
@@ -36,7 +38,7 @@ module Bosh::Director
         @db = Sequel.connect(config["db"])
         @db.logger = @logger
 
-        @lock = Mutex.new
+        @lock = Monitor.new
       end
 
       def blobstore
