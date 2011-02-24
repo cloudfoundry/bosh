@@ -93,7 +93,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       deployment.stemcells << stemcell
 
       vm = Bosh::Director::Models::Vm.make(:deployment => deployment)
-      instance = Bosh::Director::Models::Instance.make(:deployment => deployment)
+      instance = Bosh::Director::Models::Instance.make(:deployment => deployment, :vm => vm)
 
       @cloud.stub!(:delete_vm)
       @cloud.stub!(:delete_disk)
