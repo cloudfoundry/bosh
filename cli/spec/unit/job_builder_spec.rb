@@ -212,7 +212,7 @@ describe Bosh::Cli::JobBuilder do
     final_versions = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".final_builds", "jobs", "foo"))
     dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "jobs", "foo"))
 
-    final_versions.add_version(fingerprint, { "version" => "4" }, "payload")
+    final_versions.add_version(fingerprint, { "version" => "4", "blobstore_id" => "12321" }, "payload")
     dev_versions.add_version(fingerprint, { "version" => "0.7-dev" }, "dev_payload")
 
     builder = new_builder("foo", [], ["bar", "baz"], [])

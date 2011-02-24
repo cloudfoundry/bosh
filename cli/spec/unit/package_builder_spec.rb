@@ -65,7 +65,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
       builder = make_builder("aa", ["*.rb", "packaging"])
       add_sources("1.rb", "packaging")
       builder.checksum
-    }.should raise_error(RuntimeError, "cannot read checksum for not yet generated package")
+    }.should raise_error(RuntimeError, "cannot read checksum for not yet generated package/job")
   end
 
   it "has a checksum for a generated package" do
@@ -189,7 +189,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     final_versions = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".final_builds", "packages", "bar"))
     dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "packages", "bar"))
 
-    final_versions.add_version(fingerprint, { "version" => "4" }, "payload")
+    final_versions.add_version(fingerprint, { "version" => "4", "blobstore_id" => "12321" }, "payload")
     dev_versions.add_version(fingerprint, { "version" => "0.7-dev" }, "dev_payload")
 
     builder = make_builder("bar", globs)

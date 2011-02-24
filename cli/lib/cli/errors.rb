@@ -15,7 +15,7 @@ module Bosh
     class DirectorError        < CliError; error_code(201); end
     class AuthError            < DirectorError; error_code(202); end
     class MissingTask          < DirectorError; error_code(203); end
-    class TaskTrackError       < DirectorError; error_code(204); end    
+    class TaskTrackError       < DirectorError; error_code(204); end
 
     class CliExit              < CliError; error_code(400); end
     class GracefulExit         < CliExit;  error_code(401); end
@@ -25,10 +25,11 @@ module Bosh
     class InvalidPackage       < CliError; error_code(500); end
     class InvalidJob           < CliError; error_code(501); end
     class InvalidRelease       < CliError; error_code(503); end
-    class InvalidIndex         < CliError; error_code(506); end
-
     class MissingDependency    < CliError; error_code(504); end
     class CircularDependency   < CliError; error_code(505); end
+    class InvalidIndex         < CliError; error_code(506); end
+    class BlobstoreError       < CliError; error_code(507); end
+    class PackagingError       < CliError; error_code(508); end
 
   end
 end

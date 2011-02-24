@@ -38,8 +38,8 @@ module Bosh::Cli
       File.exists?(filename(version))
     end
 
-    def add_version(fingerprint, attrs, payload)
-      version = attrs["version"]
+    def add_version(fingerprint, item, payload)
+      version = item["version"]
 
       if version.blank?
         raise InvalidIndex, "Cannot save index entry without knowing its version"
@@ -49,7 +49,8 @@ module Bosh::Cli
         f.write(payload)
       end
 
-      @data["builds"][fingerprint] = attrs
+      @data["builds"][fingerprint] = item
+      @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload)
       @data["latest_version"] = version
 
       File.open(@index_file, "w") do |f|

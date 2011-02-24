@@ -25,7 +25,10 @@ module Bosh::Cli::Command
       print_spec(spec)
       header("Building package...")
 
-      builder = Bosh::Cli::PackageBuilder.new(spec, work_dir, false, nil)
+      release = Bosh::Cli::Release.dev(work_dir)
+      blobstore = init_blobstore(release.s3_options)
+
+      builder = Bosh::Cli::PackageBuilder.new(spec, work_dir, false, blobstore)
       builder.build
       builder
     end
