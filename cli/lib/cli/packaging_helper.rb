@@ -12,8 +12,6 @@ module Bosh
       def use_final_version
         say "Looking for final version of `#{name}'"
 
-        require "ruby-debug"; debugger if $A
-
         item = @final_index[fingerprint]
 
         if item.nil?
