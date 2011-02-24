@@ -37,11 +37,11 @@ module Bosh::Director
             end
           end
 
+          instance.destroy
+
           if vm
             delete_vm(vm)
           end
-
-          instance.destroy
         end
       end
 
