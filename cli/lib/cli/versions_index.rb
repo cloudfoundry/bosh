@@ -1,7 +1,7 @@
 module Bosh::Cli
 
   class VersionsIndex
-    def initialize(storage_dir)
+    def initialize(storage_dir, name_prefix = nil)
       @storage_dir = File.expand_path(storage_dir)
       @index_file  = File.join(@storage_dir, "index.yml")
 
@@ -21,6 +21,7 @@ module Bosh::Cli
         end
       end
 
+      @name_prefix = name_prefix
       @data = YAML.load_file(@index_file)
       @data = { } unless @data.is_a?(Hash)
       @data["builds"] ||= {}
@@ -38,19 +39,21 @@ module Bosh::Cli
       File.exists?(filename(version))
     end
 
-    def add_version(fingerprint, item, payload)
+    def add_version(fingerprint, item, payload = nil)
       version = item["version"]
 
       if version.blank?
         raise InvalidIndex, "Cannot save index entry without knowing its version"
       end
 
-      File.open(filename(version), "w") do |f|
-        f.write(payload)
+      if payload
+        File.open(filename(version), "w") do |f|
+          f.write(payload)
+        end
       end
 
       @data["builds"][fingerprint] = item
-      @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload)
+      @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload) if payload
       @data["latest_version"] = version
 
       File.open(@index_file, "w") do |f|
@@ -61,7 +64,8 @@ module Bosh::Cli
     end
 
     def filename(version)
-      File.join(@storage_dir, "#{version}.tgz")
+      name = @name_prefix.blank? ? "#{version}.tgz" : "#{@name_prefix}-#{version}.tgz"
+      File.join(@storage_dir, name)
     end
 
   end

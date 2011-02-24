@@ -118,7 +118,7 @@ module Bosh::Cli::Command
         say "Removing dev_builds index..."
         FileUtils.rm_rf(".dev_builds")
         say "Clearing dev name and version..."
-        release.update_config(:name => nil, :version => nil)
+        release.update_config(:name => nil)
         say "Removing dev tarballs..."
         FileUtils.rm_rf("dev_releases")
 
