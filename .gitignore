@@ -10,6 +10,8 @@ spec.log
 *.swp
 .rvmrc
 spec/assets/*.pid
+spec/assets/*.db
+spec/assets/**/*.pid
 spec/assets/bosh_config.yml
 agent/spec/tmp
 cli/pkg
