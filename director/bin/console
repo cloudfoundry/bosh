@@ -84,7 +84,9 @@ end
 
 include BD::Models
 
-EM.run do
-  BD::Console.start
-end
+Thread.new do
+  EM.run
+end.join(1)
+
+BD::Console.start
 
