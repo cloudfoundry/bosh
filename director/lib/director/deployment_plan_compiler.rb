@@ -43,7 +43,7 @@ module Bosh::Director
       raise "Can't find release" if release.nil?
       @logger.debug("Found release: #{release.pretty_inspect}")
       release_spec.release = release
-      release_version = Models::ReleaseVersion[:release_id => release_spec.release.id,
+      release_version = Models::ReleaseVersion[:release_id => release.id,
                                                :version    => release_spec.version]
       raise "Can't find release version" if release_version.nil?
       @logger.debug("Found release version: #{release_version.pretty_inspect}")
@@ -180,7 +180,6 @@ module Bosh::Director
     end
 
     def bind_stemcells
-      deployment = @deployment_plan.deployment
       @deployment_plan.resource_pools.each do |resource_pool|
         stemcell_spec = resource_pool.stemcell
         lock = Lock.new("lock:stemcells:#{stemcell_spec.name}:#{stemcell_spec.version}", :timeout => 10)
