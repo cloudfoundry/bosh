@@ -164,7 +164,7 @@ describe Bosh::Spec::IntegrationTest do
 
   it "allows omitting http" do
     expect_output("target localhost:57523", <<-OUT)
-      Target set to 'localhost:57523'
+      Target set to 'http://localhost:57523'
     OUT
   end
 
@@ -203,14 +203,14 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("--force login jane pass")
 
     expect_output("status", <<-OUT)
-      Target:     bar
+      Target:     http://bar
       User:       jane
       Deployment: not set
     OUT
 
     run_bosh("--skip-director-checks target foo")
     expect_output("status", <<-OUT)
-      Target:     foo
+      Target:     http://foo
       User:       john
       Deployment: not set
     OUT

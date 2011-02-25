@@ -18,7 +18,7 @@ module Bosh::Cli::Command
         err("Deployment '#{name}' has no target defined")
       end
 
-      new_target = manifest["target"]
+      new_target = normalize_url(manifest["target"])
 
       if !new_target
         err("Deployment manifest '#{name}' has no target, please add it before proceeding")

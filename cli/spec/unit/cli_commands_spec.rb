@@ -16,8 +16,14 @@ describe Bosh::Cli::Command::Base do
 
     it "sets the target" do
       @cmd.target.should == nil
+      @cmd.set_target("http://example.com:232")
+      @cmd.target.should == "http://example.com:232"
+    end
+
+    it "normalizes target" do
+      @cmd.target.should == nil
       @cmd.set_target("test")
-      @cmd.target.should == "test"
+      @cmd.target.should == "http://test"
     end
 
     it "respects director checks option when setting target" do
@@ -26,17 +32,17 @@ describe Bosh::Cli::Command::Base do
       lambda {
         mock_director = mock(Object)
         mock_director.stub!(:exists?).and_return false
-        Bosh::Cli::Director.should_receive(:new).with("test").and_return(mock_director)
+        Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
         @cmd.set_target("test")
-      }.should raise_error(Bosh::Cli::CliExit, "Cannot talk to director at 'test', please set correct target")
+      }.should raise_error(Bosh::Cli::CliExit, "Cannot talk to director at 'http://test', please set correct target")
 
       @cmd.target.should == nil
 
       mock_director = mock(Object)
       mock_director.stub!(:exists?).and_return true
-      Bosh::Cli::Director.should_receive(:new).with("test").and_return(mock_director)
+      Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
       @cmd.set_target("test")
-      @cmd.target.should == "test"
+      @cmd.target.should == "http://test"
     end
 
     it "logs user in" do
@@ -61,10 +67,10 @@ describe Bosh::Cli::Command::Base do
       mock_director.stub!(:exists?).and_return true
       mock_director.stub!(:authenticated?).and_return true
 
-      Bosh::Cli::Director.should_receive(:new).with("test").and_return(mock_director)
+      Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
       @cmd.set_target("test")
 
-      Bosh::Cli::Director.should_receive(:new).with("test", "user", "pass").and_return(mock_director)
+      Bosh::Cli::Director.should_receive(:new).with("http://test", "user", "pass").and_return(mock_director)
 
       @cmd.login("user", "pass")
       @cmd.logged_in?.should be_true
