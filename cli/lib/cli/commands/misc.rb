@@ -92,6 +92,7 @@ module Bosh::Cli::Command
     end
 
     def set_target(director_url)
+      director_url = normalize_url(director_url)
       director = Bosh::Cli::Director.new(director_url)
 
       if options[:director_checks] && !director.exists?

@@ -88,6 +88,11 @@ module Bosh::Cli
         err "Cannot init blobstore: #{e}"
       end
 
+      def normalize_url(url)
+        url = "http://#{url}" unless url.match(/^https?/)
+        URI.parse(url).to_s
+      end
+
     end
   end
 end
