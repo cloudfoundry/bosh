@@ -11,6 +11,7 @@ module Bosh::Director
         logger.formatter = ThreadFormatter.new
         logger.info("Starting task: #{task_id}")
         Config.logger = logger
+        Sequel::Model.db.logger = logger
 
         cloud_options = Config.cloud_options
         if cloud_options && cloud_options["plugin"] == "vsphere"
