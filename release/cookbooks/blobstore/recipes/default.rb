@@ -18,7 +18,7 @@ directory "#{node[:blobstore][:path]}/shared" do
 end
 
 directory node[:blobstore][:tmp] do
-  mode "0777"
+  mode "1777"
   recursive true
   action :create
 end
