@@ -91,7 +91,7 @@ describe Bosh::Director::DeploymentPlan do
 
       release_spec = deployment_plan.release
       release_spec.name.should eql("test_release")
-      release_spec.version.should eql(1)
+      release_spec.version.should eql("1")
       release_spec.release.should be_nil
       release_spec.deployment.should eql(deployment_plan)
     end
@@ -125,7 +125,7 @@ describe Bosh::Director::DeploymentPlan do
       resource_pool.size.should eql(10)
       resource_pool.idle_vms.should eql([])
       resource_pool.deployment.should eql(deployment_plan)
-      resource_pool.spec.should eql({"stemcell" => {"name" => "jeos", "version" => 1},
+      resource_pool.spec.should eql({"stemcell" => {"name" => "jeos", "version" => "1"},
                                            "name" => "small",
                                            "cloud_properties" => {"cpu" => 1, "ram" => "512mb", "disk" => "2gb"}})
     end
@@ -140,11 +140,11 @@ describe Bosh::Director::DeploymentPlan do
       stemcell = resource_pool.stemcell
 
       stemcell.name.should eql("jeos")
-      stemcell.version.should eql(1)
+      stemcell.version.should eql("1")
       stemcell.network.should eql(network)
       stemcell.stemcell.should be_nil
       stemcell.resource_pool.should eql(resource_pool)
-      stemcell.spec.should eql({"name" => "jeos", "version" => 1})
+      stemcell.spec.should eql({"name" => "jeos", "version" => "1"})
     end
 
     it "should parse the jobs from the deployment manifest" do
@@ -376,7 +376,7 @@ describe Bosh::Director::DeploymentPlan do
           }
         },
         "resource_pool" => {
-          "stemcell" => {"name" => "jeos", "version" => 1},
+          "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
           "cloud_properties" => {"cpu"=>1, "ram"=>"512mb", "disk"=>"2gb"}
         }
@@ -408,7 +408,7 @@ describe Bosh::Director::DeploymentPlan do
           }
         },
         "resource_pool" => {
-          "stemcell" => {"name" => "jeos", "version" => 1},
+          "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
           "cloud_properties" => {"cpu"=>1, "ram"=>"512mb", "disk"=>"2gb"}
         }
@@ -440,7 +440,7 @@ describe Bosh::Director::DeploymentPlan do
           }
         },
         "resource_pool" => {
-          "stemcell" => {"name" => "jeos", "version" => 1},
+          "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
           "cloud_properties" => {"cpu"=>2, "ram"=>"512mb", "disk"=>"2gb"}
         }
@@ -690,7 +690,7 @@ describe Bosh::Director::DeploymentPlan do
       },
       "resource_pool" => {
         "name"=>"small",
-        "stemcell" => {"name" => "jeos", "version" => 1},
+        "stemcell" => {"name" => "jeos", "version" => "1"},
         "cloud_properties" => {"ram" => "512mb", "cpu" => 1, "disk" => "2gb"}
       },
       "configuration_hash" => "config_hash",
@@ -833,7 +833,7 @@ describe Bosh::Director::DeploymentPlan do
           }
         },
         "resource_pool" => {
-          "stemcell" => {"name" => "jeos", "version" => 1},
+          "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
           "cloud_properties" => { "ram" => "512mb", "cpu"=>1, "disk"=>"2gb" }
         },
@@ -849,7 +849,7 @@ describe Bosh::Director::DeploymentPlan do
         "index" => 0,
         "job" => { "name" => "job_a", "blobstore_id"=>"template_blob", "sha1" => "job-sha1", "version" => "1" },
         "persistent_disk" => 2048,
-        "release" => { "name"=>"test_release", "version"=>1 },
+        "release" => { "name" => "test_release", "version" => "1" },
         "deployment" => "test_deployment",
         "properties" => { "test" => "property" }
       })

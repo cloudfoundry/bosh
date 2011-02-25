@@ -4,6 +4,7 @@ module Bosh::Director
     include ValidationHelper
 
     class ReleaseSpec
+      include ValidationHelper
 
       attr_accessor :deployment
       attr_accessor :name
@@ -13,8 +14,8 @@ module Bosh::Director
 
       def initialize(deployment, release_spec)
         @deployment = deployment
-        @name = release_spec["name"]
-        @version = release_spec["version"]
+        @name = safe_property(release_spec, "name", :class => String)
+        @version = safe_property(release_spec, "version", :class => String)
       end
 
       def spec
@@ -27,6 +28,7 @@ module Bosh::Director
     end
 
     class StemcellSpec
+      include ValidationHelper
 
       attr_accessor :name
       attr_accessor :resource_pool
@@ -36,9 +38,9 @@ module Bosh::Director
 
       def initialize(resource_pool, stemcell_spec)
         @resource_pool = resource_pool
-        @name = stemcell_spec["name"]
-        @version = stemcell_spec["version"]
-        @network = resource_pool.deployment.network(stemcell_spec["network"])
+        @name = safe_property(stemcell_spec, "name", :class => String)
+        @version = safe_property(stemcell_spec, "version", :class => String)
+        @network = resource_pool.deployment.network(safe_property(stemcell_spec, "network", :class => String))
       end
 
       def spec
@@ -143,15 +145,16 @@ module Bosh::Director
 
     class NetworkSpec
       include IpUtil
+      include ValidationHelper
 
       attr_accessor :deployment
       attr_accessor :name
 
       def initialize(deployment, network_spec)
         @deployment = deployment
-        @name = network_spec["name"]
+        @name = safe_property(network_spec, "name", :class => String)
         @subnets = []
-        network_spec["subnets"].each do |subnet_spec|
+        safe_property(network_spec, "subnets", :class => Array).each do |subnet_spec|
           new_subnet = NetworkSubnetSpec.new(self, subnet_spec)
           @subnets.each do |subnet|
             raise "overlapping subnets" if subnet.overlaps?(new_subnet)
@@ -226,17 +229,17 @@ module Bosh::Director
 
       def initialize(network, subnet_spec)
         @network = network
-        @range = NetAddr::CIDR.create(subnet_spec["range"])
+        @range = NetAddr::CIDR.create(safe_property(subnet_spec, "range", :class => String))
         raise ArgumentError, "invalid range" unless @range.size > 1
 
         @netmask = @range.wildcard_mask
 
-        @gateway = NetAddr::CIDR.create(subnet_spec["gateway"])
+        @gateway = NetAddr::CIDR.create(safe_property(subnet_spec, "gateway", :class => String))
         raise ArgumentError, "gateway must be a single ip" unless @gateway.size == 1
         raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
 
         @dns = []
-        subnet_spec["dns"].each do |dns|
+        safe_property(subnet_spec, "dns", :class => Array).each do |dns|
           dns = NetAddr::CIDR.create(dns)
           raise ArgumentError, "dns entry must be a single ip" unless dns.size == 1
           @dns << dns.ip
@@ -255,13 +258,13 @@ module Bosh::Director
         @available_dynamic_ips.delete(@range.network(:Objectify => true).to_i)
         @available_dynamic_ips.delete(@range.broadcast(:Objectify => true).to_i)
 
-        each_ip(subnet_spec["reserved"]) do |ip|
+        each_ip(safe_property(subnet_spec, "reserved", :class => Array, :optional => true)) do |ip|
           unless @available_dynamic_ips.delete?(ip)
             raise ArgumentError, "reserved IP must be an available (not gateway, etc..) inside the range"
           end
         end
 
-        each_ip(subnet_spec["static"]) do |ip|
+        each_ip(safe_property(subnet_spec, "static", :class => Array, :optional => true)) do |ip|
           unless @available_dynamic_ips.delete?(ip)
             raise ArgumentError, "static IP must be an available (not reserved) inside the range"
           end
@@ -345,24 +348,26 @@ module Bosh::Director
           @properties = deployment.properties._deep_copy
           @properties.recursive_merge!(properties)
         end
-        @resource_pool = deployment.resource_pool(job_spec["resource_pool"])
-        @update = UpdateConfig.new(job_spec["update"], deployment.update)
+        @resource_pool = deployment.resource_pool(safe_property(job_spec, "resource_pool", :class => String))
+        @update = UpdateConfig.new(safe_property(job_spec, "update", :class => Hash, :optional => true), deployment.update)
         @rollback = false
         @update_errors = 0
         @unneeded_instances = []
 
-        job_spec["instances"].times do |index|
+        safe_property(job_spec, "instances", :class => Integer).times do |index|
           @instances[index] = InstanceSpec.new(self, index)
           @resource_pool.reserve_vm
         end
 
-        job_spec["networks"].each do |network_spec|
-          network_name = network_spec["name"]
+        safe_property(job_spec, "networks", :class => Array).each do |network_spec|
+          network_name = safe_property(network_spec, "name", :class => String)
           static_ips = nil
           if network_spec["static_ips"]
             static_ips = []
-            each_ip(network_spec["static_ips"]) { |ip| static_ips << ip }
-            raise ArgumentError, "static ip to instance mismatch" if static_ips.size != @instances.size
+            each_ip(safe_property(network_spec, "static_ips", :class => Array)) { |ip| static_ips << ip }
+            if static_ips.size != @instances.size
+              raise ArgumentError, "Job #{@name} has #{@instances.size} but was allocated #{static_ips.size}."
+            end
           end
 
           @instances.each_with_index do |instance, index|
