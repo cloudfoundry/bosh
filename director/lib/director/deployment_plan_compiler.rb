@@ -186,7 +186,9 @@ module Bosh::Director
         lock.lock do
           stemcell = Models::Stemcell[:name => stemcell_spec.name, :version => stemcell_spec.version]
           raise "Can't find stemcell: #{stemcell_spec.name}/#{stemcell_spec.version}" unless stemcell
-          stemcell.add_deployment(@deployment_plan.deployment)
+          if stemcell.deployments_dataset.filter(:deployment_id => @deployment_plan.deployment).empty?
+            stemcell.add_deployment(@deployment_plan.deployment)
+          end
           stemcell_spec.stemcell = stemcell
         end
       end
