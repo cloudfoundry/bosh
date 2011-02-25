@@ -33,7 +33,7 @@ class Deploy < Thor
         @default_password
       else
         @default_password_key = password_key
-        @default_password = mask { ask("default password (will be tried for all future connections)?") }
+        @default_password = mask { ask("default password (will be tried for all future connections)?", :blue) }
       end
     end
 
@@ -48,7 +48,7 @@ class Deploy < Thor
           @default_password = nil
           @default_password_key = nil
         end
-        @passwords[password_key] = mask { ask("password for: #{password_key}?") }
+        @passwords[password_key] = mask { ask("password for: #{password_key}?", :blue) }
       end
     end
 
@@ -77,7 +77,6 @@ class Deploy < Thor
             ssh.scp.upload!(chef_json_io, "#{@remote_chef_path}/chef.json")
 
             assets_dir = File.join(BASE_PATH, "clouds", @cloud, "assets", role.to_s)
-            say assets_dir
             if File.directory?(assets_dir)
               say_status :assets, "uploading: #{assets_dir} to #{remote_assets_dir}"
               ssh.scp.upload!(assets_dir, remote_assets_dir, :recursive => true)
@@ -128,7 +127,7 @@ class Deploy < Thor
 
     def answer_ssh(command, password)
       $expect_verbose = true
-      say command
+      say("==> EXECUTING SSH LOGIN #{command}", :yellow)
       PTY.spawn(command) do |read_pipe, write_pipe, _|
         begin
           loop do
@@ -177,10 +176,10 @@ class Deploy < Thor
             remote_port = uri.port || 22
             remote_user = uri.user || @default_user
 
-            connection.open(remote_host, remote_port) do |local_port|
+            connection.open(remote_host, remote_port) do |local_port| 
               begin
                 @gateway_password_key = "#{remote_user}@#{remote_host}:#{remote_port}"
-                say "connecting to #{@gateway_password_key} via #{user}@#{host}:#{options[:port]}"
+                say("==> CONNECTING TO #{@gateway_password_key} VIA #{user}@#{host}:#{options[:port]} ON localhost:#{local_port}", :yellow)
                 yield "#{remote_user}@localhost:#{local_port}"
               ensure
                 @gateway_password_key = nil
@@ -191,7 +190,7 @@ class Deploy < Thor
           end
         end
       else
-        say "directly connecting to #{uri}"
+        say("==> DIRECTLY CONNECTING TO #{uri}", :yellow)
         yield uri
       end
     end
