@@ -120,6 +120,8 @@ module Bosh::Director
         raise ReleaseManifestNotFound unless File.file?(@release_manifest_file)
         @release_manifest = YAML.load_file(@release_manifest_file)
 
+        normalize_manifest
+
         @release_name = @release_manifest["name"]
         @release_version = @release_manifest["version"]
 
@@ -128,6 +130,17 @@ module Bosh::Director
 
         # TODO: make sure all packages are there
         # TODO: make sure there are no extra packages
+      end
+
+      def normalize_manifest
+        ["name", "version"].each { |property| @release_manifest[property] = @release_manifest[property].to_s }
+        @release_manifest["packages"].each do |package_meta|
+          ["name", "version", "sha1"].each { |property| package_meta[property] = package_meta[property].to_s }
+        end
+
+        @release_manifest["jobs"].each do |job_meta|
+          ["name", "version", "sha1"].each { |property| job_meta[property] = job_meta[property].to_s }
+        end
       end
 
       def create_package(package_meta)
