@@ -1,10 +1,10 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
-describe Bosh::Agent::Handler do 
+describe Bosh::Agent::Handler do
 
   before(:each) do
     @nats = mock('nats')
-    NATS.stub(:start).and_yield
+    EM.stub(:run).and_yield
     NATS.stub(:connect).and_return(@nats)
 
     logger = mock('logger')
@@ -34,7 +34,7 @@ describe Bosh::Agent::Handler do
     handler = Bosh::Agent::Handler.new
     handler.start
 
-    klazz = Class.new do 
+    klazz = Class.new do
       def self.process(args)
         "result"
       end

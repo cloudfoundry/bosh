@@ -2,6 +2,7 @@ require "fileutils"
 require "tempfile"
 require "set"
 require "yaml"
+require "nats/client"
 
 module Bosh
   module Spec
@@ -11,6 +12,8 @@ module Bosh
       LOGS_PATH   = File.join(ASSETS_PATH, "logs")
       REDIS_CONF  = File.join(ASSETS_PATH, "redis_test.conf")
       REDIS_PID   = File.join(ASSETS_PATH, "redis_db/redis.pid")
+
+      NATS_PORT = 42112
 
       DB_PATH             = "/tmp/director.sqlite"
       DIRECTOR_TMP_PATH   = "/tmp/boshdir"
@@ -22,10 +25,13 @@ module Bosh
       DIRECTOR_PID  = File.join(ASSETS_PATH, "director.pid")
       WORKER_PID    = File.join(ASSETS_PATH, "worker.pid")
       BLOBSTORE_PID = File.join(ASSETS_PATH, "blobstore.pid")
+      NATS_PID      = File.join(ASSETS_PATH, "nats.pid")
 
       DIRECTOR_PATH   = File.expand_path("../../director", __FILE__)
       BLOBSTORE_PATH  = File.expand_path("../../simple_blobstore_server", __FILE__)
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
+
+      BLOBSTORE_STORAGE_DIR = "/tmp/bosh_test_blobstore"
 
       class << self
 
@@ -52,6 +58,8 @@ module Bosh
           run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
           run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID,
                        :env => blobstore_env)
+
+          run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
 
           if ENV["DEBUG"]
             FileUtils.rm_rf(LOGS_PATH)
@@ -103,15 +111,24 @@ module Bosh
         end
 
         def stop
-          # At the moment we assume that agent processes will die by themselves once Redis stops
+          Dir[File.join(AGENT_TMP_PATH, "running_vms", "*")].each do |agent_pid|
+            begin
+              Process.kill("INT", agent_pid.to_i)
+            rescue Errno::ESRCH
+              puts "Running VM found but no agent with #{agent_pid} is running"
+            end
+          end
+
           kill_process(WORKER_PID)
           kill_process(DIRECTOR_PID)
           kill_process(BLOBSTORE_PID)
           kill_process(REDIS_PID)
+          kill_process(NATS_PID)
           FileUtils.rm_f(@sqlite_db)
           FileUtils.rm_f(DB_PATH)
           FileUtils.rm_rf(DIRECTOR_TMP_PATH)
           FileUtils.rm_rf(AGENT_TMP_PATH)
+          FileUtils.rm_rf(BLOBSTORE_STORAGE_DIR)
         end
 
         private
