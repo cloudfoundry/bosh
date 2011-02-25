@@ -1,7 +1,6 @@
 module Bosh::Director
   module Models
     VALID_ID = /^[-a-z0-9_.]+$/i
-    DB = Config.db if Sequel::DATABASES.empty?
 
     autoload :CompiledPackage, "director/models/compiled_package"
     autoload :Deployment, "director/models/deployment"
@@ -28,17 +27,3 @@ Sequel::Model.raise_on_typecast_failure = false
   Sequel::Plugins::ValidationHelpers::DEFAULT_OPTIONS[validation][:message] = validation
 end
 Sequel::Plugins::ValidationHelpers::DEFAULT_OPTIONS[:max_length][:nil_message] = :max_length
-
-#
-#
-#require "director/models/compiled_package"
-#require "director/models/deployment"
-#require "director/models/instance"
-#require "director/models/package"
-#require "director/models/release"
-#require "director/models/release_version"
-#require "director/models/stemcell"
-#require "director/models/template"
-#require "director/models/task"
-#require "director/models/user"
-#require "director/models/vm"

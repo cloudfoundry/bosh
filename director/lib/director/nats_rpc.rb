@@ -12,6 +12,7 @@ module Bosh::Director
 
     def subscribe_inbox
       @nats.subscribe("#{@inbox_name}.>") do |message, _, subject|
+        @logger.debug("RECEIVED: #{subject} #{message}")
         begin
           request_id = subject.split(".").last
           callback = @lock.synchronize { @requests.delete(request_id) }
@@ -31,7 +32,9 @@ module Bosh::Director
       @lock.synchronize do
         @requests[request_id] = block
       end
-      @nats.publish(client, Yajl::Encoder.encode(request))
+      message = Yajl::Encoder.encode(request)
+      @logger.debug("SENT: #{client} #{message}")
+      @nats.publish(client, message)
       request_id
     end
 
