@@ -119,10 +119,6 @@ module Bosh::Director
       set(:dump_errors, false)
     end
 
-    before do
-      env["REMOTE_USER"] = @user # for logging
-    end
-
     error do
       exception = request.env['sinatra.error']
       if exception.kind_of?(DirectorError)
