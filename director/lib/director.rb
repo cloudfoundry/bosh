@@ -19,7 +19,7 @@ require "eventmachine"
 require "netaddr"
 require "resque"
 require "sequel"
-require "sinatra"
+require "sinatra/base"
 require "uuidtools"
 require "yajl"
 require "esxmq"
@@ -68,7 +68,20 @@ require "director/jobs/update_stemcell"
 
 module Bosh::Director
 
-  class Controller < Sinatra::Base
+  class Controller
+    def call(env)
+      api_controller = ApiController.new
+
+      app = Rack::Auth::Basic.new(api_controller) do |user, password|
+        api_controller.authenticate(user, password)
+      end
+
+      app.realm = "BOSH Director"
+      app.call(env)
+    end
+  end
+
+  class ApiController < Sinatra::Base
 
     def initialize
       super
@@ -91,6 +104,15 @@ module Bosh::Director
       end
     end
 
+    def authenticate(user, password)
+      if @user_manager.authenticate(user, password)
+        @user = user
+        true
+      else
+        false
+      end
+    end
+
     configure do
       set(:show_exceptions, false)
       set(:raise_errors, false)
@@ -98,16 +120,7 @@ module Bosh::Director
     end
 
     before do
-      @auth ||=  Rack::Auth::Basic::Request.new(request.env)
-
-      if @auth.provided? && @auth.basic? && @auth.credentials && @auth.credentials.length == 2 &&
-              @user_manager.authenticate(*@auth.credentials)
-        @user = @auth.username
-        env["REMOTE_USER"] = @user # for logging
-      else
-        response["WWW-Authenticate"] = %(Basic realm="Testing HTTP Auth")
-        error(UNAUTHORIZED, "Not authorized")
-      end
+      env["REMOTE_USER"] = @user # for logging
     end
 
     error do
@@ -275,4 +288,3 @@ module Bosh::Director
   end
 
 end
-

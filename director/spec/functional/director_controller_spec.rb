@@ -3,11 +3,6 @@ require File.dirname(__FILE__) + '/../spec_helper'
 require "rack/test"
 require "director"
 
-set :environment, :test
-set :run, false
-set :raise_errors, true
-set :logging, false
-
 describe Bosh::Director::Controller do
   include Rack::Test::Methods
 
@@ -24,7 +19,7 @@ describe Bosh::Director::Controller do
   end
 
   def app
-    @app ||= Bosh::Director::Controller
+    @app ||= Bosh::Director::Controller.new
   end
 
   def login_as_admin

@@ -16,3 +16,4 @@ spec/assets/bosh_config.yml
 agent/spec/tmp
 cli/pkg
 blobstore_client/pkg
+director/db/dev.sqlite
