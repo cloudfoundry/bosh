@@ -47,14 +47,14 @@ module Bosh::Agent
     end
 
     def start
-      begin
-        NATS.start do
+      EM.run do
+        begin
           @nats = NATS.connect(:uri => @nats_uri, :autostart => false) { on_connect }
+        rescue Errno::ENETUNREACH, Timeout::Error => e
+          @logger.info("Unable to talk to nats - retry (#{e.inspect})")
+          sleep 0.1
+          retry
         end
-      rescue Errno::ENETUNREACH, Timeout::Error => e
-        @logger.info("Unable to talk to nats - retry (#{e.inspect})")
-        sleep 0.1
-        retry
       end
     end
 
@@ -64,7 +64,7 @@ module Bosh::Agent
     end
 
     def handle_message(msg_raw)
-      msg = Yajl::Parser.new.parse(raw_msg)
+      msg = Yajl::Parser.new.parse(msg_raw)
 
       @logger.info("Message: #{msg.inspect}")
 

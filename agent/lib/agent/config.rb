@@ -19,7 +19,6 @@ module Bosh::Agent
         @settings = {}
       end
 
-
     end
   end
 end

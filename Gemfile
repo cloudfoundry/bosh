@@ -1,6 +1,7 @@
 source :rubygems
 
 gem "redis"
+gem "nats"
 gem "SystemTimer"
 gem "rake"
 gem "ci_reporter"

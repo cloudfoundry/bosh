@@ -33,28 +33,26 @@ module Bosh
       end
 
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
-        vm_name   = "vm-%d-%d" % [ rand(30000), rand(30000) ]
         agent_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "..", "agent"))
-        agent_base_dir = "/tmp/agent-base-dir-#{agent_id}"
-        
-        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -r localhost:63795 -s bs_admin:bs_pass@http://127.0.0.1:9590 -b #{agent_base_dir}")
+        agent_base_dir = "/tmp/bosh_test_cloud/agent-base-dir-#{agent_id}"
 
-        @agent_pid = fork do
-          exec "ruby #{agent_cmd} > /tmp/agent.#{agent_id}.log 2>&1"
+        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -b #{agent_base_dir} -n nats://localhost:42112")
+
+        agent_pid = fork do
+          exec "ruby #{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
         end
 
-        Process.detach(@agent_pid)
+        Process.detach(agent_pid)
 
         FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
-        FileUtils.touch(File.join(@base_dir, "running_vms", vm_name))
-        vm_name
+        FileUtils.touch(File.join(@base_dir, "running_vms", agent_pid.to_s))
+        agent_pid.to_s
       end
 
-      def delete_vm(vm_cid)
-        if @agent_pid
-          Process.kill("INT", @agent_pid)
-        end
-        FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_cid))
+      def delete_vm(vm_name)
+        agent_pid = vm_name.to_i
+        Process.kill("INT", agent_pid)
+        FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_name))
       end
 
       def configure_networks(vm, networks)
