@@ -111,9 +111,9 @@ module Bosh
         end
 
         def stop
-          Dir[File.join(AGENT_TMP_PATH, "running_vms", "*")].each do |agent_pid|
+          Dir[File.join(AGENT_TMP_PATH, "running_vms", "*")].each do |vm|
             begin
-              Process.kill("INT", agent_pid.to_i)
+              Process.kill("INT", File.basename(vm).to_i)
             rescue Errno::ESRCH
               puts "Running VM found but no agent with #{agent_pid} is running"
             end
