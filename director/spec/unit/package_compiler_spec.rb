@@ -81,7 +81,7 @@ describe Bosh::Director::PackageCompiler do
       agent.should_receive(:apply).with(({"resource_pool"=>"package_compiler",
                                           "networks"=>{"network_a"=>{"ip"=>"1.2.3.4"}},
                                           "deployment"=>"test_deployment"})).and_return({"state" => "done"})
-      agent.should_receive(:compile_package).with("package-blob", "package sha1", "test_pkg", "33", {}).
+      agent.should_receive(:compile_package).with("package-blob", "package sha1", "test_pkg", "33.1", {}).
           and_return({
             "state" => "done",
             "result" => {"sha1" => "some sha 1",
@@ -145,7 +145,7 @@ describe Bosh::Director::PackageCompiler do
       agent_a.should_receive(:apply).with(({"resource_pool"=>"package_compiler",
                                             "networks"=>{"network_a"=>{"ip"=>"1.2.3.4"}},
                                             "deployment"=>"test_deployment"})).and_return({"state" => "done"})
-      agent_a.should_receive(:compile_package).with("dep-blb-id", "dep-sha1", "dependency", "77", {}).
+      agent_a.should_receive(:compile_package).with("dep-blb-id", "dep-sha1", "dependency", "77.1", {}).
           and_return({
             "state" => "done",
             "result" => {"sha1" => "compiled-dep-sha1",
@@ -165,7 +165,7 @@ describe Bosh::Director::PackageCompiler do
                                            "networks"=>{"network_a"=>{"ip"=>"1.2.3.4"}},
                                            "deployment"=>"test_deployment"})).and_return({"state" => "done"})
 
-      agent_b.should_receive(:compile_package).with("package-blob", "package sha1", "test_pkg", "33",
+      agent_b.should_receive(:compile_package).with("package-blob", "package sha1", "test_pkg", "33.1",
                                                     {"dependency" => {"name"=>"dependency",
                                                                       "blobstore_id" => "compiled-dep-blb-id",
                                                                       "sha1" => "compiled-dep-sha1",

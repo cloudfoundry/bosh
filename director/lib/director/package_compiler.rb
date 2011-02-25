@@ -122,6 +122,9 @@ module Bosh::Director
       package  = task.package
       stemcell = task.stemcell
 
+      build = Models::CompiledPackage.filter(:package_id => package.id, :stemcell_id => stemcell.id).max(:build)
+      build = build ? build + 1 : 1
+
       @logger.info("Compiling package: #{package.name}/#{package.version} on " +
                        "stemcell: #{stemcell.name}/#{stemcell.version}")
       network_settings = nil
@@ -140,8 +143,8 @@ module Bosh::Director
         configure_vm(agent, network_settings)
 
         @logger.info("Compiling package on compilation VM")
-        agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name, package.version,
-                                           task.dependency_spec)
+        agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name,
+                                           "#{package.version}.#{build}", task.dependency_spec)
         while agent_task["state"] == "running"
           sleep(1.0)
           agent_task = agent.get_task(agent_task["agent_task_id"])
@@ -157,18 +160,12 @@ module Bosh::Director
 
       task_result = agent_task["result"]
 
-      compiled_package = nil
-      Models::CompiledPackage.db.transaction do
-        build = Models::CompiledPackage.filter(:package_id => package.id, :stemcell_id => stemcell.id).max(:build)
-        build = build ? build + 1 : 1
-        compiled_package = Models::CompiledPackage.new(:package => package,
-                                                       :stemcell => stemcell,
-                                                       :sha1 => task_result["sha1"],
-                                                       :build => build,
-                                                       :blobstore_id => task_result["blobstore_id"],
-                                                       :dependency_key => task.dependency_key)
-        compiled_package.save
-      end
+      compiled_package = Models::CompiledPackage.create(:package => package,
+                                                        :stemcell => stemcell,
+                                                        :sha1 => task_result["sha1"],
+                                                        :build => build,
+                                                        :blobstore_id => task_result["blobstore_id"],
+                                                        :dependency_key => task.dependency_key)
 
       task.compiled_package = compiled_package
     end
