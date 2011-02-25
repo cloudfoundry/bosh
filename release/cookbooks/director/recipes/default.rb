@@ -18,6 +18,8 @@ end
   end
 end
 
+package "genisoimage"
+
 runit_service "director" do
   run_restart false
 end
@@ -43,7 +45,7 @@ end
 directory node[:director][:tmp] do
   owner node[:director][:runner]
   group node[:director][:runner]
-  mode "0777"
+  mode "1777"
   recursive true
   action :create
 end
