@@ -33,7 +33,7 @@ end
 end
 
 template "#{node[:blobstore][:path]}/shared/config/simple_blobstore_server.yml" do
-  source "simple_blobstore_server.yml.erb" 
+  source "simple_blobstore_server.yml.erb"
 end
 
 deploy_revision node[:blobstore][:path] do
@@ -53,7 +53,7 @@ deploy_revision node[:blobstore][:path] do
   symlinks({})
 
   before_migrate do
-    execute "#{node[:ruby][:path]}/bin/bundle install --deployment --without development,test --local --path #{node[:blobstore][:path]}/shared/gems" do
+    execute "#{node[:ruby][:path]}/bin/bundle install --deployment --without development test --local --path #{node[:blobstore][:path]}/shared/gems" do
       ignore_failure true
       cwd "#{release_path}/simple_blobstore_server"
     end

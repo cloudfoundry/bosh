@@ -16,6 +16,8 @@ class Deploy < Thor
   include Thor::Actions
 
   BASE_PATH = File.dirname(__FILE__)
+  SSH_WRAPPER = File.join(BASE_PATH, "bin", "ssh_wrapper.sh")
+  ENV['GIT_SSH'] = SSH_WRAPPER
 
   no_tasks do
     def mask
@@ -31,7 +33,7 @@ class Deploy < Thor
         @default_password
       else
         @default_password_key = password_key
-        @default_password = mask { ask("default password?") }
+        @default_password = mask { ask("default password (will be tried for all future connections)?") }
       end
     end
 
@@ -60,13 +62,6 @@ class Deploy < Thor
             ssh.exec!("rm -rf #{@remote_chef_path}")
             ssh.exec!("mkdir -p #{@remote_chef_path} #{remote_assets_dir}")
 
-            chef_rb_io = StringIO.new
-            chef_rb_io.puts("cookbook_path \"#{@remote_cookbooks_path}\"")
-            @cloud_config["chef_config"].each do |key, value|
-              chef_rb_io.puts("#{key} \"#{value}\"")
-            end
-            chef_rb_io.rewind
-
             chef_json = {
               "run_list" => ["recipe[#{role}]"],
               "hosts" => @cloud_config["roles"],
@@ -75,10 +70,10 @@ class Deploy < Thor
 
             chef_json.merge!(@cloud_config["chef_node"]) if @cloud_config["chef_node"]
             chef_json_io = StringIO.new
-            chef_json_io.puts Yajl::Encoder.encode(chef_json)
+            chef_json_io.puts(Yajl::Encoder.encode(chef_json))
             chef_json_io.rewind
 
-            ssh.scp.upload!(chef_rb_io, "#{@remote_chef_path}/chef.rb")
+            ssh.scp.upload!(File.join(BASE_PATH, "clouds", @cloud, "chef.rb"), "#{@remote_chef_path}/chef.rb")
             ssh.scp.upload!(chef_json_io, "#{@remote_chef_path}/chef.json")
 
             assets_dir = File.join(BASE_PATH, "clouds", @cloud, "assets", role.to_s)
@@ -132,18 +127,14 @@ class Deploy < Thor
     end
 
     def answer_ssh(command, password)
+      $expect_verbose = true
       say command
       PTY.spawn(command) do |read_pipe, write_pipe, _|
         begin
           loop do
-            # TODO: Host key verification failed.
-            result = read_pipe.expect(/(password:)|(#{Regexp.quote("(yes/no)?")})/i)
+            result = read_pipe.expect(/password:/i)
             next if result.nil?
-            if result[1]
-              write_pipe.puts(password)
-            else
-              write_pipe.puts("yes")
-            end
+            write_pipe.puts(password)
           end
         rescue PTY::ChildExited
         end
@@ -166,7 +157,7 @@ class Deploy < Thor
       inside("#{@local_repo_cache}/#{repo}") do
         cmd = if File.file?("#{@local_repo_cache}/#{repo}/HEAD")
                 say_status :syncing, "syncing #{repo}"
-                "git fetch #{uri}"
+                "git fetch #{uri} master:master"
               else
                 say_status :cloning, "cloning #{repo}"
                 "git clone --bare #{uri} ."
@@ -189,6 +180,7 @@ class Deploy < Thor
             connection.open(remote_host, remote_port) do |local_port|
               begin
                 @gateway_password_key = "#{remote_user}@#{remote_host}:#{remote_port}"
+                say "connecting to #{@gateway_password_key} via #{user}@#{host}:#{options[:port]}"
                 yield "#{remote_user}@localhost:#{local_port}"
               ensure
                 @gateway_password_key = nil
@@ -199,6 +191,7 @@ class Deploy < Thor
           end
         end
       else
+        say "directly connecting to #{uri}"
         yield uri
       end
     end
@@ -339,7 +332,7 @@ class Deploy < Thor
             ssh.exec!("mkdir -p #{@remote_cookbooks_path}")
           end
 
-          command = "rsync -avz --delete -e \"ssh -p #{ssh_options[:port]}\" #{BASE_PATH}/cookbooks/ #{ssh_user}@#{ssh_host}:#{@remote_cookbooks_path}/"
+          command = "rsync -avz --delete -e \"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p #{ssh_options[:port]}\" #{BASE_PATH}/cookbooks/ #{ssh_user}@#{ssh_host}:#{@remote_cookbooks_path}/"
           answer_ssh(command, ssh_options[:password])
         end
       end

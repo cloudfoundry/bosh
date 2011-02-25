@@ -19,6 +19,7 @@ directory node[:postgresql][:data_directory] do
   mode 0700
   recursive true
   action :create
+  notifies :stop, "service[postgresql]", :immediately
 end
 
 bash "init data directory" do
@@ -61,6 +62,6 @@ bash "create user" do
 end
 
 bash "set database user password" do
-  code "sudo -u postgres psql -c \"alter role #{node[:postgresql][:user]} password '#{node[:postgresql][:password]}'\""
+  code "sudo -u postgres psql -c 'alter role #{node[:postgresql][:user]} password '\\''#{node[:postgresql][:password]}'\\'"
   timeout 5
 end

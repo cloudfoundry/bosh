@@ -1,0 +1,2 @@
+deb http://ppa.launchpad.net/pitti/postgresql/ubuntu lucid main
+deb-src http://ppa.launchpad.net/pitti/postgresql/ubuntu lucid main

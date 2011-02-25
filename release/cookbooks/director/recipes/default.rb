@@ -3,6 +3,21 @@ include_recipe "ruby"
 include_recipe "rubygems"
 include_recipe "runit"
 
+execute "apt-get update" do
+  action :nothing
+end
+
+cookbook_file "/etc/apt/sources.list.d/01-postgres.list" do
+  source "01-postgres.list"
+  notifies :run, "execute[apt-get update]", :immediately
+end
+
+["postgresql-client-9.0", "libpq-dev"].each do |name|
+  package name do
+    options "--force-yes" # since it's not authenticated
+  end
+end
+
 runit_service "director" do
   run_restart false
 end
@@ -26,6 +41,8 @@ directory "#{node[:director][:path]}/shared" do
 end
 
 directory node[:director][:tmp] do
+  owner node[:director][:runner]
+  group node[:director][:runner]
   mode "0777"
   recursive true
   action :create
@@ -42,6 +59,8 @@ end
 
 template "#{node[:director][:path]}/shared/config/director.yml" do
   source "#{node[:assets]}/director.yml.erb"
+  owner node[:director][:runner]
+  group node[:director][:runner]
   local true
   variables(
       :process_name => "director"
@@ -51,6 +70,8 @@ end
 template "#{node[:director][:path]}/shared/config/drain-workers.yml" do
   source "#{node[:assets]}/director.yml.erb"
   local true
+  owner node[:director][:runner]
+  group node[:director][:runner]
   variables(
       :process_name => "drain-workers"
   )
@@ -60,6 +81,8 @@ node[:director][:workers].times do |index|
   template "#{node[:director][:path]}/shared/config/director-worker-#{index}.yml" do
     source "#{node[:assets]}/director.yml.erb"
     local true
+    owner node[:director][:runner]
+    group node[:director][:runner]
     variables(
       :process_name => "director-worker-#{index}"
     )
@@ -71,8 +94,7 @@ deploy_revision node[:director][:path] do
   user node[:director][:runner]
   revision "HEAD"
   migrate true
-  # HACK: create a rake task instead
-  migration_command "cd director && bundle exec sequel -m db/migrations `ruby -r \"yaml\" -e \"puts YAML.load_file('#{node[:director][:path]}/shared/config/director.yml')['db']\"`"
+  migration_command "cd director && PATH=#{node[:ruby][:path]}/bin:$PATH #{node[:ruby][:path]}/bin/bundle exec sequel -m db/migrations 'postgres://#{node[:postgresql][:user]}:#{node[:postgresql][:password]}@#{node[:hosts][:postgresql]}/#{node[:postgresql][:database]}'"
   shallow_clone true
   action :force_deploy
   restart_command do
@@ -91,8 +113,7 @@ deploy_revision node[:director][:path] do
   symlinks({})
 
   before_migrate do
-    execute "#{node[:ruby][:path]}/bin/bundle install --deployment --without development,test --local --path #{node[:director][:path]}/shared/gems" do
-      ignore_failure true
+    execute "#{node[:ruby][:path]}/bin/bundle install --deployment --without development test --local --path #{node[:director][:path]}/shared/gems" do
       cwd "#{release_path}/director"
     end
 
@@ -104,8 +125,7 @@ deploy_revision node[:director][:path] do
 
     log "draining workers"
 
-    execute "bin/drain_workers -c #{node[:director][:path]}/shared/config/drain-workers.yml" do
-      ignore_failure true
+    execute "PATH=#{node[:ruby][:path]}/bin:$PATH bin/drain_workers -c #{node[:director][:path]}/shared/config/drain-workers.yml" do
       cwd "#{release_path}/director"
     end
   end

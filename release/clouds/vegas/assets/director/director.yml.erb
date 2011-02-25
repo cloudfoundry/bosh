@@ -2,7 +2,7 @@
 port: <%= node[:director][:port] %>
 logging:
   level: DEBUG
-  file: <%= node[:director][:path] %>/shared/log/<%= @process_name %>.debug.log
+  file: <%= node[:director][:path] %>/shared/logs/<%= @process_name %>.debug.log
 redis:
   host: <%= node[:hosts][:redis] %>
   port: <%= node[:redis][:port] %>
