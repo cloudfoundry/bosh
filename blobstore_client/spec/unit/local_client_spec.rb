@@ -1,6 +1,4 @@
 require File.dirname(__FILE__) + '/../spec_helper'
-require 'blobstore_client/local_client'
-require 'tempfile'
 
 describe Bosh::Blobstore::LocalClient do
 
