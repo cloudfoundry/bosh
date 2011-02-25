@@ -4,7 +4,7 @@ module Bosh::Director
 
     def create_task(description)
       task = Models::Task.new(:description => description, :state => :queued,
-                              :timestamp => Time.now.to_i)
+                              :timestamp => Time.now)
       task.save
 
       task_status_file = File.join(Config.base_dir, "tasks", task.id.to_s)
