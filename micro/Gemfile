@@ -2,3 +2,5 @@ source :rubygems
 
 gem 'ncurses'
 gem 'rbcurse'
+gem "blobstore_client", "~> 0.2"
+gem "yajl-ruby", :require => "yajl"
