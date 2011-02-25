@@ -7,6 +7,7 @@ require "blobstore_client/client"
 require "blobstore_client/base"
 require "blobstore_client/simple_blobstore_client"
 require "blobstore_client/s3_blobstore_client"
+require "blobstore_client/local_client"
 
 module Bosh
   module Blobstore
@@ -18,8 +19,10 @@ module Bosh
           SimpleBlobstoreClient.new(options)
         when "s3"
           S3BlobstoreClient.new(options)
+        when "local"
+          LocalClient.new(options)
         else
-          raise "Invalid client provider, available providers are: 'simple', 's3'"
+          raise "Invalid client provider, available providers are: 'simple', 's3', 'local'"
         end
       end
     end
