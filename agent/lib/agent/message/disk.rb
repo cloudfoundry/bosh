@@ -27,7 +27,7 @@ module Bosh::Agent
       end
 
       def mount
-        @logger.info("MountDisk: #{@cid} - #{@settings['disks']}")
+        @logger.info("MountDisk: #{@cid} - #{@settings['disks'].inspect}")
         if Bosh::Agent::Config.configure
           rescan_scsi_bus
           setup_disk
@@ -42,23 +42,29 @@ module Bosh::Agent
       end
 
       def setup_disk
-        disk_id = @settings['disks']['persistent'][@cid]
-        block = File.basename(Dir["/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"].first)
+        disk_id = @settings['disks']['persistent'][@cid.to_s]
+
+        @logger.info("setup disk @settings: #{@settings.inspect}")
+        @logger.info("disk_id: #{disk_id}")
+
+        sys_path = detect_block_device(disk_id)
+
+        block = File.basename(sys_path)
         disk = File.join('/dev', block)
         partition = "#{disk}1"
 
-        if File.blockdev?(disk)
-          if Dir["#{disk}[1-9]"].empty?
-            full_disk = ",,L\n"
-            @logger.info("Partitioning #{disk}")
+        if File.blockdev?(disk) && Dir["#{disk}[1-9]"].empty?
+          full_disk = ",,L\n"
+          @logger.info("Partitioning #{disk}")
 
-            Bosh::Agent::Util.partition_disk(disk, full_disk)
+          Bosh::Agent::Util.partition_disk(disk, full_disk)
 
-            `/sbin/mke2fs -j #{partition}`
-            unless $?.exitstatus == 0
-              raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
-            end
+          `/sbin/mke2fs -j #{partition}`
+          unless $?.exitstatus == 0
+            raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
           end
+        else
+          raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
         end
 
         store = File.join(@base_dir, 'store')
@@ -72,6 +78,15 @@ module Bosh::Agent
         end
 
         {}
+      end
+
+      def detect_block_device(disk_id)
+        dev_path = "/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"
+        while Dir[dev_path].empty?
+          @logger.info("Waiting for #{dev_path}")
+          sleep 0.1
+        end
+        Dir[dev_path].first
       end
       def self.long_running?; true; end
 
