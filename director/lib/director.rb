@@ -31,6 +31,7 @@ require "director/http_constants"
 require "director/task_helper"
 require "director/validation_helper"
 
+require "director/version"
 require "director/config"
 
 require "director/client"
@@ -69,8 +70,12 @@ require "director/jobs/update_stemcell"
 module Bosh::Director
 
   class Controller
+    PUBLIC_URLS = [ "/status" ]
+
     def call(env)
       api_controller = ApiController.new
+
+      return api_controller.call(env) unless perform_auth?(env)
 
       app = Rack::Auth::Basic.new(api_controller) do |user, password|
         api_controller.authenticate(user, password)
@@ -78,6 +83,12 @@ module Bosh::Director
 
       app.realm = "BOSH Director"
       app.call(env)
+    end
+
+    def perform_auth?(env)
+      auth_needed   = !PUBLIC_URLS.include?(env["PATH_INFO"])
+      auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect{ |key| env.has_key?(key) }
+      auth_needed || auth_provided
     end
   end
 
@@ -277,8 +288,13 @@ module Bosh::Director
     end
 
     get "/status" do
-      # TODO: add version to director
-      Yajl::Encoder.encode("status" => "Bosh Director (logged in as #{@user})")
+      status = {
+        "name"    => Config.name,
+        "version" => VERSION,
+        "user"    => @user
+      }
+      content_type(:json)
+      Yajl::Encoder.encode(status)
     end
 
   end

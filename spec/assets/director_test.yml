@@ -1,4 +1,5 @@
 ---
+name: Test Director
 port: 57523
 mbus: nats://localhost:42112
 logging:

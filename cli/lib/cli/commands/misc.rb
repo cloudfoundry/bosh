@@ -6,7 +6,7 @@ module Bosh::Cli::Command
     end
 
     def status
-      say("Target:     %s" % [ target || "not set" ])
+      say("Target:     %s" % [ full_target_name || "not set" ])
       say("User:       %s" % [ logged_in? ? username : "not set" ])
       say("Deployment: %s" % [ deployment || "not set" ])
 
@@ -88,18 +88,28 @@ module Bosh::Cli::Command
     end
 
     def show_target
-      say(target ? "Current target is '#{target}'" : "Target not set")
+      say(target ? "Current target is '#{full_target_name}'" : "Target not set")
     end
 
     def set_target(director_url)
       director_url = normalize_url(director_url)
       director = Bosh::Cli::Director.new(director_url)
 
-      if options[:director_checks] && !director.exists?
-        err("Cannot talk to director at '#{director_url}', please set correct target")
+      if options[:director_checks]
+        begin
+          status = director.get_status
+        rescue Bosh::Cli::AuthError
+          status = { }
+        rescue Bosh::Cli::DirectorError
+          err("Cannot talk to director at '#{director_url}', please set correct target") if options[:director_checks]
+        end
+      else
+        status = { "name" => "Unknown Director", "version" => "n/a" }
       end
 
       config.target = director_url
+      config.target_name = status["name"]
+      config.target_version = status["version"]
 
       if deployment
         say("WARNING! Your deployment has been unset")
@@ -107,7 +117,7 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to '#{director_url}'")
+      say("Target set to '#{full_target_name}'")
     end
 
     private
@@ -119,7 +129,6 @@ module Bosh::Cli::Command
       if specs.empty?
         say "No #{entity} specs found"
       end
-
 
       t = table [ "Name", "Dev", "Final" ]
 

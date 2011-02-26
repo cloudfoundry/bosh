@@ -54,7 +54,8 @@ describe Bosh::Director::Controller do
 
     it "not authenticated" do
       get "/status"
-      last_response.status.should == 401
+      last_response.status.should == 200
+      Yajl::Parser.parse(last_response.body)["user"].should == nil
     end
 
     it "authenticated" do
@@ -62,7 +63,12 @@ describe Bosh::Director::Controller do
       get "/status"
 
       last_response.status.should == 200
-      last_response.body.should == Yajl::Encoder.encode("status" => "Bosh Director (logged in as admin)")
+      expected = {
+        "name"    => "Test Director",
+        "version" => Bosh::Director::VERSION,
+        "user"    => "admin"
+      }
+      last_response.body.should == Yajl::Encoder.encode(expected)
     end
 
   end

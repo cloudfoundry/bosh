@@ -14,7 +14,7 @@ module Bosh
       def initialize(filename, work_dir = Dir.pwd)
         @filename = File.expand_path(filename)
         @work_dir = work_dir
-        
+
         unless File.exists?(@filename)
           File.open(@filename, "w") { |f| YAML.dump({}, f) }
           File.chmod(0600, @filename)
@@ -25,9 +25,9 @@ module Bosh
         unless @config_file.is_a?(Hash)
           @config_file = { } # Just ignore it if it's malformed
         end
-        
+
       rescue SystemCallError => e
-        raise ConfigError, "Cannot read config file: %s" % [ e.message ]        
+        raise ConfigError, "Cannot read config file: %s" % [ e.message ]
       end
 
       def auth
@@ -51,7 +51,7 @@ module Bosh
         auth ? auth["password"] : nil
       end
 
-      [ :target, :deployment ].each do |attr|
+      [ :target, :target_name, :target_version, :deployment ].each do |attr|
         define_method attr do
           read(attr, false)
         end
@@ -83,11 +83,11 @@ module Bosh
         File.open(@filename, "w") do |f|
           YAML.dump(@config_file, f)
         end
-        
+
       rescue SystemCallError => e
-        raise ConfigError, e.message      
+        raise ConfigError, e.message
       end
-      
+
     end
   end
 end

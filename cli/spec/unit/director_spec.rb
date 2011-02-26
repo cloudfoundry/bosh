@@ -10,18 +10,21 @@ describe Bosh::Cli::Director do
 
   describe "fetching status" do
     it "tells if user is authenticated" do
-      @director.should_receive(:get).with("/status").and_return([200, "OK"])
+      @director.should_receive(:get).with("/status", "application/json").and_return([200, JSON.generate("user" => "adam")])
       @director.authenticated?.should == true
     end
 
     it "tells if user not authenticated" do
-      @director.should_receive(:get).with("/status").and_return([403, "Forbidden"])
+      @director.should_receive(:get).with("/status", "application/json").and_return([403, "Forbidden"])
       @director.authenticated?.should == false
 
-      @director.should_receive(:get).with("/status").and_return([500, "Error"])
+      @director.should_receive(:get).with("/status", "application/json").and_return([500, "Error"])
       @director.authenticated?.should == false
 
-      @director.should_receive(:get).with("/status").and_return([404, "Not Found"])
+      @director.should_receive(:get).with("/status", "application/json").and_return([404, "Not Found"])
+      @director.authenticated?.should == false
+
+      @director.should_receive(:get).with("/status", "application/json").and_return([200, JSON.generate("user" => nil)])
       @director.authenticated?.should == false
     end
   end
@@ -130,13 +133,13 @@ describe Bosh::Cli::Director do
 
   describe "checking status" do
 
-    it "considers target valid if it responds with 401" do
-      @director.stub(:get).with("/status").and_return([401, "Not authorized"])
+    it "considers target valid if it responds with 401 (backward compatibility)" do
+      @director.stub(:get).with("/status", "application/json").and_return([401, "Not authorized"])
       @director.exists?.should be_true
     end
 
     it "considers target valid if it responds with 200" do
-      @director.stub(:get).with("/status").and_return([200, JSON.generate("status" => "Bosh Director (logged in as admin)")])
+      @director.stub(:get).with("/status", "application/json").and_return([200, JSON.generate("name" => "Director is your friend")])
       @director.exists?.should be_true
     end
 

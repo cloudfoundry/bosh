@@ -1,4 +1,5 @@
 ---
+name: Test Director
 port: 8081
 
 logging:

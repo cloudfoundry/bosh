@@ -26,11 +26,18 @@ module Bosh
       end
 
       def exists?
-        [401, 200].include?(get("/status")[0])
+        get_status
+        true
+      rescue AuthError
+        true # For compatibility with directors that return 401 for /status
+      rescue DirectorError
+        false
       end
 
       def authenticated?
-        get("/status")[0] == 200
+        !get_status["user"].nil?
+      rescue DirectorError
+        false
       end
 
       def create_user(username, password)
@@ -41,6 +48,10 @@ module Bosh
 
       def upload_stemcell(filename)
         upload_and_track("/stemcells", "application/x-compressed", filename)
+      end
+
+      def get_status
+        get_json("/status")
       end
 
       def list_stemcells
@@ -228,6 +239,8 @@ module Bosh
 
       def get_json(url)
         status, body, headers = get(url, "application/json")
+        raise AuthError if status == 401
+        raise DirectorError if status != 200
         JSON.parse(body)
       end
 
