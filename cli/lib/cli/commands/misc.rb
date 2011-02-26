@@ -118,6 +118,10 @@ module Bosh::Cli::Command
 
       config.save
       say("Target set to '#{full_target_name}'")
+
+      if interactive? && (config.username.blank? || config.password.blank?)
+        redirect :misc, :login
+      end
     end
 
     private

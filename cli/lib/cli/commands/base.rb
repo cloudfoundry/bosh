@@ -27,7 +27,11 @@ module Bosh::Cli
       end
 
       def non_interactive?
-        options[:non_interactive]
+        !interactive?
+      end
+
+      def interactive?
+        !options[:non_interactive]
       end
 
       def verbose?
