@@ -35,7 +35,10 @@ module Bosh
       end
 
       def authenticated?
-        !get_status["user"].nil?
+        status = get_status
+        # Backward compatibility: older directors return 200 only for logged in users
+        return true if !status.has_key?("version")
+        !status["user"].nil?
       rescue DirectorError
         false
       end
