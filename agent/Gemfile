@@ -8,7 +8,7 @@ gem "yajl-ruby", :require => "yajl"
 gem "ruby-debug"
 gem "uuidtools"
 gem "netaddr"
-gem "blobstore_client", "~> 0.2" # 0.2 has streaming support
+gem "blobstore_client", "~> 0.3" # 0.2 has streaming support
 
 group :test do
   gem "rcov_analyzer"
