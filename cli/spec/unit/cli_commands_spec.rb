@@ -31,7 +31,7 @@ describe Bosh::Cli::Command::Base do
 
       lambda {
         mock_director = mock(Object)
-        mock_director.stub!(:exists?).and_return false
+        mock_director.stub!(:get_status).and_raise(Bosh::Cli::DirectorError)
         Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
         @cmd.set_target("test")
       }.should raise_error(Bosh::Cli::CliExit, "Cannot talk to director at 'http://test', please set correct target")
@@ -39,7 +39,7 @@ describe Bosh::Cli::Command::Base do
       @cmd.target.should == nil
 
       mock_director = mock(Object)
-      mock_director.stub!(:exists?).and_return true
+      mock_director.stub!(:get_status).and_return("name" => "ZB")
       Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
       @cmd.set_target("test")
       @cmd.target.should == "http://test"
@@ -64,8 +64,8 @@ describe Bosh::Cli::Command::Base do
       @cmd.options[:director_checks] = true
 
       mock_director = mock(Object)
-      mock_director.stub!(:exists?).and_return true
-      mock_director.stub!(:authenticated?).and_return true
+      mock_director.stub(:get_status).and_return({ "user" => "user", "name" => "ZB" })
+      mock_director.stub(:authenticated?).and_return(true)
 
       Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
       @cmd.set_target("test")

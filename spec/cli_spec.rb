@@ -148,23 +148,23 @@ describe Bosh::Spec::IntegrationTest do
 
   it "sets correct target" do
     expect_output("target http://localhost:57523", <<-OUT)
-      Target set to 'http://localhost:57523'
+      Target set to 'Test Director (http://localhost:57523)'
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is 'http://localhost:57523'
+      Current target is 'Test Director (http://localhost:57523)'
     OUT
 
     Dir.chdir("/tmp") do
       expect_output("target", <<-OUT)
-        Current target is 'http://localhost:57523'
+        Current target is 'Test Director (http://localhost:57523)'
       OUT
     end
   end
 
   it "allows omitting http" do
     expect_output("target localhost:57523", <<-OUT)
-      Target set to 'http://localhost:57523'
+      Target set to 'Test Director (http://localhost:57523)'
     OUT
   end
 
@@ -189,9 +189,9 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("deployment 'vmforce'")
     expect_output("target http://localhost:57523", <<-OUT)
       WARNING! Your deployment has been unset
-      Target set to 'http://localhost:57523'
+      Target set to 'Test Director (http://localhost:57523)'
     OUT
-    expect_output("target", "Current target is 'http://localhost:57523'")
+    expect_output("target", "Current target is 'Test Director (http://localhost:57523)'")
     expect_output("deployment", "Deployment not set")
   end
 
@@ -203,14 +203,14 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("--force login jane pass")
 
     expect_output("status", <<-OUT)
-      Target:     http://bar
+      Target:     Unknown Director (http://bar)
       User:       jane
       Deployment: not set
     OUT
 
     run_bosh("--skip-director-checks target foo")
     expect_output("status", <<-OUT)
-      Target:     http://foo
+      Target:     Unknown Director (http://foo)
       User:       john
       Deployment: not set
     OUT
@@ -418,7 +418,7 @@ describe Bosh::Spec::IntegrationTest do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ Regexp.new(Regexp.escape("Deployed to 'http://localhost:57523' using '#{deployment_manifest_filename}' deployment manifest"))
+      out.should =~ Regexp.new(Regexp.escape("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest"))
     end
 
     it "successfully performed with simple manifest" do
@@ -432,7 +432,7 @@ describe Bosh::Spec::IntegrationTest do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ Regexp.new(Regexp.escape("Deployed to 'http://localhost:57523' using '#{deployment_manifest_filename}' deployment manifest"))
+      out.should =~ Regexp.new(Regexp.escape("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest"))
       # TODO: figure out which artefacts should be created by the given manifest
     end
   end

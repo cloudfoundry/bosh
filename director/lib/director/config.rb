@@ -9,6 +9,7 @@ module Bosh::Director
       attr_accessor :logger
       attr_accessor :uuid
       attr_accessor :db
+      attr_accessor :name
 
       attr_reader :redis_options
       attr_reader :cloud_options
@@ -32,7 +33,7 @@ module Bosh::Director
 
         @cloud_options = config["cloud"]
         @blobstore_options = config["blobstore"]
-
+        @name = config["name"] || ""
 
         @blobstore = nil
         @db = Sequel.connect(config["db"])

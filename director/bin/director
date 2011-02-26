@@ -29,7 +29,6 @@ event_thread = Thread.new { EM.run }
 
 thin_server = Thin::Server.new("0.0.0.0", config["port"], :signals => false) do
   use Rack::CommonLogger
-  use Rack::ShowExceptions
   map "/" do
     run Bosh::Director::Controller.new
   end

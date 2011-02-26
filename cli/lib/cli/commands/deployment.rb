@@ -26,7 +26,12 @@ module Bosh::Cli::Command
 
       if target != new_target
         config.target = new_target
-        say("WARNING! Your target has been changed to '#{new_target}'")
+        status = director.get_status rescue { } # generic rescue justified as we force target
+
+        config.target_name = status["name"]
+        config.target_version = status["version"]
+
+        say("WARNING! Your target has been changed to '#{full_target_name}'")
       end
 
       say("Deployment set to '#{manifest_filename}'")
@@ -49,7 +54,7 @@ module Bosh::Cli::Command
         err("Invalid manifest for '#{deployment}': name, release and target are all required")
       end
 
-      desc = "to '#{target}' using '#{deployment}' deployment manifest"
+      desc = "to #{target_name} using '#{deployment}' deployment manifest"
 
       say("Deploying #{desc}...")
       say("\n")

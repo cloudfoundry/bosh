@@ -54,6 +54,16 @@ module Bosh::Cli
         end
       end
 
+      alias_method :target_url, :target
+
+      def target_name
+        config.target_name || target_url
+      end
+
+      def full_target_name
+        target_name.blank? || target_name == target_url ? target_name : "%s (%s)" % [ target_name, target_url ]
+      end
+
       protected
 
       def auth_required
