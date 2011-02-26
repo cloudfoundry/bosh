@@ -6,7 +6,7 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.2.0)
+    blobstore_client (0.3.1)
       aws-s3
       httpclient
       uuidtools
@@ -52,7 +52,7 @@ PLATFORMS
 
 DEPENDENCIES
   SystemTimer
-  blobstore_client (~> 0.2)
+  blobstore_client (~> 0.3)
   ci_reporter
   nats
   netaddr
