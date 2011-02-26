@@ -24,8 +24,12 @@ describe Bosh::Cli::Director do
       @director.should_receive(:get).with("/status", "application/json").and_return([404, "Not Found"])
       @director.authenticated?.should == false
 
-      @director.should_receive(:get).with("/status", "application/json").and_return([200, JSON.generate("user" => nil)])
+      @director.should_receive(:get).with("/status", "application/json").and_return([200, JSON.generate("user" => nil, "version" => 1)])
       @director.authenticated?.should == false
+
+      # Backward compatibility
+      @director.should_receive(:get).with("/status", "application/json").and_return([200, JSON.generate("status" => "ZB")])
+      @director.authenticated?.should == true
     end
   end
 

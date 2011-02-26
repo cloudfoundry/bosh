@@ -12,6 +12,7 @@ describe Bosh::Cli::Command::Base do
 
     before :each do
       @cmd = Bosh::Cli::Command::Misc.new(@opts)
+      @cmd.stub!(:interactive?).and_return(false)
     end
 
     it "sets the target" do
@@ -105,7 +106,7 @@ describe Bosh::Cli::Command::Base do
       mock_director = mock(Bosh::Cli::Director)
       mock_director.should_receive(:delete_release).with("foo", :force => false)
 
-      @cmd.stub!(:non_interactive?).and_return(true)
+      @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
