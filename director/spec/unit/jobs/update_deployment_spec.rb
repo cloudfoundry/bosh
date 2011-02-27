@@ -85,39 +85,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
   end
 
-  describe "rollback" do
-
-    it "should rollback" do
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => "old manifest")
-      manifest = mock("manifest")
-      old_deployment_plan = mock("old_deployment_plan")
-
-      @deployment_plan.stub!(:deployment).and_return(deployment)
-
-      Bosh::Director::DeploymentPlan.stub!(:new).with(manifest).and_return(old_deployment_plan)
-      YAML.stub!(:load).with("old manifest").and_return(manifest)
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
-      update_deployment_job.should_receive(:prepare)
-      update_deployment_job.should_receive(:update)
-      update_deployment_job.rollback
-      update_deployment_job.instance_eval {@deployment_plan}.should eql(old_deployment_plan)
-    end
-
-    it "should not rollback if there was no previous manifest" do
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => nil)
-
-      @deployment_plan.stub!(:deployment).and_return(deployment)
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
-      update_deployment_job.should_not_receive(:prepare)
-      update_deployment_job.should_not_receive(:update)
-      update_deployment_job.rollback
-      update_deployment_job.instance_eval {@deployment_plan}.should eql(@deployment_plan)
-    end
-
-  end
-
   describe "update_stemcell_references" do
 
     it "should delete references to no longer used stemcells" do
@@ -168,52 +135,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       deployment.refresh
       deployment.manifest.should == "manifest"
-    end
-
-    it "should rollback if there was an error during the update step" do
-      deployment_lock = mock("deployment_lock")
-      release_lock = mock("release_lock")
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
-
-      @deployment_plan.stub!(:release).and_return(release)
-      @deployment_plan.stub!(:deployment).and_return(deployment)
-
-      Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(deployment_lock)
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release").and_return(release_lock)
-
-      deployment_lock.should_receive(:lock).and_yield
-      release_lock.should_receive(:lock).and_yield
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
-      update_deployment_job.should_receive(:prepare)
-      update_deployment_job.should_receive(:update).and_raise("rollback exception")
-      update_deployment_job.should_receive(:rollback)
-      update_deployment_job.should_receive(:update_stemcell_references)
-      update_deployment_job.perform
-    end
-
-    it "should not rollback if there was an error during the prepare step" do
-      deployment_lock = mock("deployment_lock")
-      release_lock = mock("release_lock")
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
-
-      @deployment_plan.stub!(:release).and_return(release)
-      @deployment_plan.stub!(:deployment).and_return(deployment)
-      release.stub!(:name).and_return("test_release")
-
-      Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(deployment_lock)
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release").and_return(release_lock)
-
-      deployment_lock.should_receive(:lock).and_yield
-      release_lock.should_receive(:lock).and_yield
-
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
-      update_deployment_job.should_receive(:prepare).and_raise("prepare exception")
-      update_deployment_job.should_not_receive(:update)
-      update_deployment_job.should_not_receive(:rollback)
-      lambda { update_deployment_job.perform }.should raise_exception("prepare exception")
     end
 
   end
