@@ -62,17 +62,6 @@ module Bosh::Director
         end
       end
 
-      def rollback
-        if @deployment_plan.deployment.manifest
-          @manifest = @deployment_plan.deployment.manifest
-          @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
-          prepare
-          update
-        else
-          @logger.info("Nothing to rollback to since this is the initial deployment")
-        end
-      end
-
       def update_stemcell_references
         current_stemcells = Set.new
         @deployment_plan.resource_pools.each do |resource_pool|
@@ -100,18 +89,11 @@ module Bosh::Director
             begin
               deployment = @deployment_plan.deployment
               @logger.info("Finished preparing deployment")
-              begin
-                @logger.info("Updating deployment")
-                update
-                deployment.manifest = @manifest
-                deployment.save
-                @logger.info("Finished updating deployment")
-              rescue Exception => e
-                @logger.info("Update failed, rolling back")
-                @logger.error("#{e} - #{e.backtrace.join("\n")}")
-                # TODO: record the error
-                rollback
-              end
+              @logger.info("Updating deployment")
+              update
+              deployment.manifest = @manifest
+              deployment.save
+              @logger.info("Finished updating deployment")
               "/deployments/#{deployment.name}"
             ensure
               update_stemcell_references
