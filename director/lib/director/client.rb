@@ -5,23 +5,23 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def initialize(service_name, id, options = {})
+    def initialize(service_name, client_id, options = {})
       @service_name = service_name
-      @id = id
+      @client_id = client_id
       @nats_rpc = Config.nats_rpc
       @timeout = options[:timeout] || 30
       @logger = Config.logger
     end
 
-    def method_missing(id, *args)
+    def method_missing(method_name, *args)
       result = {}
       result.extend(MonitorMixin)
 
       cond = result.new_cond
       timeout_time = Time.now.to_f + @timeout
 
-      request = { :method => id, :arguments => args }
-      request_id = @nats_rpc.send("#{@service_name}.#{@id}", request) do |response|
+      request = { :method => method_name, :arguments => args }
+      request_id = @nats_rpc.send("#{@service_name}.#{@client_id}", request) do |response|
         result.synchronize do
           result.merge!(response)
           cond.signal
@@ -33,7 +33,7 @@ module Bosh::Director
           timeout = timeout_time - Time.now.to_f
           unless timeout > 0
             @nats_rpc.cancel(request_id)
-            raise TimeoutException, "Timed out sending #{id} to #{@id} after #{@timeout} seconds"
+            raise TimeoutException, "Timed out sending #{method_name} to #{@client_id} after #{@timeout} seconds"
           end
           cond.wait(timeout)
         end
@@ -54,7 +54,7 @@ module Bosh::Director
         if @deadline - Time.now.to_i > 0
           retry
         else
-          raise TimeoutException, "Timed out pinging to #{@id} after #{deadline} seconds"
+          raise TimeoutException, "Timed out pinging to #{@client_id} after #{deadline} seconds"
         end
       ensure
         @timeout = old_timeout
