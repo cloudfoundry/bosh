@@ -316,6 +316,16 @@ describe Bosh::Director::DeploymentPlan do
       lambda { Bosh::Director::DeploymentPlan.new(manifest) }.should raise_error "resource pool too small"
     end
 
+
+    it "should fail if the resource pool doesn't exist" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+      job["resource_pool"] = "bad"
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Job job_a references an unknown resource pool: bad")
+    end
   end
 
   describe "Resource pools" do

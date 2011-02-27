@@ -349,6 +349,9 @@ module Bosh::Director
           @properties.recursive_merge!(properties)
         end
         @resource_pool = deployment.resource_pool(safe_property(job_spec, "resource_pool", :class => String))
+        if @resource_pool.nil?
+          raise ArgumentError, "Job #{@name} references an unknown resource pool: #{job_spec["resource_pool"]}"
+        end
         @update = UpdateConfig.new(safe_property(job_spec, "update", :class => Hash, :optional => true), deployment.update)
         @rollback = false
         @update_errors = 0
