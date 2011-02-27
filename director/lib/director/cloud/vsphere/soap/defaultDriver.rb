@@ -1,5 +1,5 @@
-require 'director/cloud/vsphere/default.rb'
-require 'director/cloud/vsphere/defaultMappingRegistry.rb'
+require 'director/cloud/vsphere/soap/default.rb'
+require 'director/cloud/vsphere/soap/defaultMappingRegistry.rb'
 require 'soap/rpc/driver'
 
 module VSphereCloud
