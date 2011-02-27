@@ -1,4 +1,4 @@
-require "director/cloud/vsphere/defaultDriver"
+require "director/cloud/vsphere/soap/defaultDriver"
 require "director/cloud/vsphere/client"
 require "director/cloud/vsphere/lease_updater"
 require "director/cloud/vsphere/resources"
