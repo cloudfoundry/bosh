@@ -133,7 +133,7 @@ namespace "ubuntu" do
       FileUtils.rm_rf tmpdir
 
       # Generate stemcell image for the vSphere
-      sh "/usr/lib/vmware/ovftool/ovftool ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
+      sh "#{ovftool_bin} ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
       mkdir_p "#{type}"
       Dir.chdir('ubuntu-esxi') do
         sh "tar zcf ../#{type}/image image*"
