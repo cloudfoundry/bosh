@@ -1,23 +1,3 @@
-module Bosh::Director
-  module Models
-    VALID_ID = /^[-a-z0-9_.]+$/i
-
-    autoload :CompiledPackage, "director/models/compiled_package"
-    autoload :Deployment, "director/models/deployment"
-    autoload :Instance, "director/models/instance"
-    autoload :Package, "director/models/package"
-    autoload :Release, "director/models/release"
-    autoload :ReleaseVersion, "director/models/release_version"
-    autoload :Stemcell, "director/models/stemcell"
-    autoload :Template, "director/models/template"
-    autoload :Task, "director/models/task"
-    autoload :User, "director/models/user"
-    autoload :Vm, "director/models/vm"
-
-  end
-end
-
-
 Sequel::Model.plugin :validation_helpers
 
 Sequel::Model.raise_on_typecast_failure = false
@@ -27,3 +7,21 @@ Sequel::Model.raise_on_typecast_failure = false
   Sequel::Plugins::ValidationHelpers::DEFAULT_OPTIONS[validation][:message] = validation
 end
 Sequel::Plugins::ValidationHelpers::DEFAULT_OPTIONS[:max_length][:nil_message] = :max_length
+
+require "director/models/compiled_package"
+require "director/models/deployment"
+require "director/models/instance"
+require "director/models/package"
+require "director/models/release"
+require "director/models/release_version"
+require "director/models/stemcell"
+require "director/models/template"
+require "director/models/task"
+require "director/models/user"
+require "director/models/vm"
+
+module Bosh::Director
+  module Models
+    VALID_ID = /^[-a-z0-9_.]+$/i
+  end
+end
