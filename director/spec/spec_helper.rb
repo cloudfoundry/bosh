@@ -58,7 +58,7 @@ end
 
 def gzip(string)
   result = StringIO.new
-  zio = Zlib::GzipWriter.new(result)
+  zio = Zlib::GzipWriter.new(result, nil, nil)
   zio.mtime = 1
   zio.write(string)
   zio.close
@@ -75,8 +75,8 @@ def create_stemcell(name, version, cloud_properties, image)
   }
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
-    tar.add_file("stemcell.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
-    tar.add_file("image", {:mode => "0644", :mtime => 0}) {|os, _| os.write(image)}
+    tar.add_file("stemcell.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
+    tar.add_file("image", {:mode => "0644", :mtime => 0}) { |os, _| os.write(image) }
   end
 
   io.close
@@ -96,8 +96,8 @@ def create_job(name, monit, configuration_files)
   end
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
-    tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
-    tar.add_file("monit", {:mode => "0644", :mtime => 0}) {|os, _| os.write(monit)}
+    tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
+    tar.add_file("monit", {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
 
     tar.mkdir("templates", {:mode => "0755", :mtime => 0})
     configuration_files.each do |path, configuration_file|
@@ -121,14 +121,14 @@ def create_release(name, version, jobs, packages)
   }
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
-    tar.add_file("release.MF", {:mode => "0644", :mtime => 0}) {|os, _| os.write(manifest.to_yaml)}
+    tar.add_file("release.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
     tar.mkdir("packages", {:mode => "0755"})
     packages.each do |package|
-      tar.add_file("packages/#{package[:name]}.tgz", {:mode => "0644", :mtime => 0}) {|os, _| os.write("package")}
+      tar.add_file("packages/#{package[:name]}.tgz", {:mode => "0644", :mtime => 0}) { |os, _| os.write("package") }
     end
     tar.mkdir("jobs", {:mode => "0755"})
     jobs.each do |job|
-      tar.add_file("jobs/#{job[:name]}.tgz", {:mode => "0644", :mtime => 0}) {|os, _| os.write("job")}
+      tar.add_file("jobs/#{job[:name]}.tgz", {:mode => "0644", :mtime => 0}) { |os, _| os.write("job") }
     end
   end
 
@@ -141,7 +141,7 @@ def create_package(files)
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
     files.each do |key, value|
-      tar.add_file(key, {:mode => "0644", :mtime => 0}) {|os, _| os.write(value)}
+      tar.add_file(key, {:mode => "0644", :mtime => 0}) { |os, _| os.write(value) }
     end
   end
 

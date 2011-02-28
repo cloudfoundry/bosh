@@ -37,7 +37,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
           "dns" => ["1.2.3.4"]
         }
       },
-      "properties" => {"key"=>"value"}
+      "properties" => {"key" => "value"}
     }
 
     before(:each) do

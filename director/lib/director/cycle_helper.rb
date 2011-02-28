@@ -22,7 +22,7 @@ module Bosh::Director::CycleHelper
         if path.include?(edge)
           vertex_path = []
           path = path.invert
-          path.size.times {|index| vertex_path << path[index + 1]}
+          path.size.times { |index| vertex_path << path[index + 1] }
           raise "Cycle: #{vertex_path.join("=>")}=>#{edge}"
         end
         check_for_cycle_helper(path, valid_vertices, edge, connected_vertices, &block)

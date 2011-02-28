@@ -78,7 +78,7 @@ module VSphereCloud
           output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
           raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
 
-          ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf"}
+          ovf_file = Dir.entries(temp_dir).find { |entry| File.extname(entry) == ".ovf" }
           raise "Missing OVF" if ovf_file.nil?
           ovf_file = File.join(temp_dir, ovf_file)
 
@@ -106,7 +106,7 @@ module VSphereCloud
           config = VirtualMachineConfigSpec.new
           config.deviceChange = []
 
-          nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+          nics = devices.select { |device| device.kind_of?(VirtualEthernetCard) }
           nics.each do |nic|
             nic_config = create_delete_device_spec(nic)
             config.deviceChange << nic_config
@@ -172,8 +172,8 @@ module VSphereCloud
         config.numCPUs = cpu
         config.deviceChange = []
 
-        system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
-        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
+        system_disk = devices.find { |device| device.kind_of?(VirtualDisk) }
+        pci_controller = devices.find { |device| device.kind_of?(VirtualPCIController) }
 
         file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
         ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controllerKey, disk,
@@ -188,7 +188,7 @@ module VSphereCloud
           config.deviceChange << nic_config
         end
 
-        nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+        nics = devices.select { |device| device.kind_of?(VirtualEthernetCard) }
         nics.each do |nic|
           nic_config = create_delete_device_spec(nic)
           config.deviceChange << nic_config
@@ -301,12 +301,12 @@ module VSphereCloud
         datacenter = client.find_parent(vm, "Datacenter")
         datacenter_name = client.get_property(datacenter, "Datacenter", "name")
 
-        pci_controller = devices.find {|device| device.kind_of?(VirtualPCIController)}
+        pci_controller = devices.find { |device| device.kind_of?(VirtualPCIController) }
 
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
 
-        nics = devices.select {|device| device.kind_of?(VirtualEthernetCard)}
+        nics = devices.select { |device| device.kind_of?(VirtualEthernetCard) }
         nics.each do |nic|
           nic_config = create_delete_device_spec(nic)
           config.deviceChange << nic_config
@@ -400,7 +400,7 @@ module VSphereCloud
         config = VirtualMachineConfigSpec.new
         config.deviceChange = []
 
-        system_disk = devices.find {|device| device.kind_of?(VirtualDisk)}
+        system_disk = devices.find { |device| device.kind_of?(VirtualDisk) }
 
         vmdk_path = "#{disk.path}.vmdk"
         attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], vmdk_path,
@@ -663,10 +663,10 @@ module VSphereCloud
       Dir.mktmpdir do |path|
         env_path = File.join(path, "env")
         iso_path = File.join(path, "env.iso")
-        File.open(env_path, "w") {|f| f.write(env)}
+        File.open(env_path, "w") { |f| f.write(env) }
         output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
         raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
-        File.open(iso_path, "r") {|f| f.read}
+        File.open(iso_path, "r") { |f| f.read }
       end
     end
 

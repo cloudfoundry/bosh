@@ -252,7 +252,7 @@ module Bosh::Director
 
         first_ip = @range.first(:Objectify => true)
         last_ip = @range.last(:Objectify => true)
-        (first_ip.to_i .. last_ip.to_i).each {|ip| @available_dynamic_ips << ip}
+        (first_ip.to_i .. last_ip.to_i).each { |ip| @available_dynamic_ips << ip }
 
         @available_dynamic_ips.delete(@gateway.to_i)
         @available_dynamic_ips.delete(@range.network(:Objectify => true).to_i)

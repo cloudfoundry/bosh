@@ -36,13 +36,13 @@ module Bosh::Director
     # the provided disk so it won't have to move when the disk is attached later.
     #
     # Sample networking config:
-    #  {"network_a"=>
+    #  {"network_a" =>
     #    {
     #      "netmask"          => "255.255.248.0",
     #      "ip"               => "172.30.41.40",
     #      "gateway"          => "172.30.40.1",
-    #      "dns"              => [ "172.30.22.153", "172.30.22.154" ],
-    #      "cloud_properties" => { "name" => "VLAN444" }
+    #      "dns"              => ["172.30.22.153", "172.30.22.154"],
+    #      "cloud_properties" => {"name" => "VLAN444"}
     #    }
     #  }
     #
@@ -53,7 +53,7 @@ module Bosh::Director
     #    "cpu"  => 1
     #  }
     # or similar for EC2:
-    #  { "name"  => "m1.small" }
+    #  {"name" => "m1.small"}
     #
     # @param [String] agent_id UUID for the agent that will be used later on by the director
     #                 to locate and talk to the agent

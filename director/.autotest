@@ -4,7 +4,7 @@ require 'autotest/restart'
 require 'autotest/timestamp'
 
 Autotest.add_hook :initialize do |at|
-  %w{.git vendor spec/functional}.each {|exception| at.add_exception(exception)}
+  %w{.git vendor spec/functional}.each { |exception| at.add_exception(exception) }
   at.clear_mappings
 
   at.add_mapping(%r%^spec/unit/.*_spec\.rb$%) { |filename, _| filename }

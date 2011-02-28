@@ -49,7 +49,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.stub!(:network_settings).and_return({"network_a" => {"ip" => "1.2.3.4"}})
     idle_vm.stub!(:vm).and_return(nil)
 
-    @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
+    @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
                                            {"network_a" => {"ip" => "1.2.3.4"}}).and_return("vm-1")
 
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
@@ -64,8 +64,8 @@ describe Bosh::Director::ResourcePoolUpdater do
     end
 
     agent.should_receive(:wait_until_ready)
-    agent.should_receive(:apply).with({"resource_pool"=>{"name"=>"foo"}, "networks"=>{"network_a"=>{"ip"=>"1.2.3.4"}},
-                                       "deployment"=>"deployment_name"}).
+    agent.should_receive(:apply).with({"resource_pool" => {"name" => "foo"}, "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
+                                       "deployment" => "deployment_name"}).
         and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
@@ -113,17 +113,17 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.stub!(:vm).and_return {current_vm}
 
     @cloud.should_receive(:delete_vm).with("vm-1")
-    @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram"=>"2gb"},
-                                           {"ip"=>"1.2.3.4"}).and_return("vm-2")
+    @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
+                                           {"ip" => "1.2.3.4"}).and_return("vm-2")
 
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
 
-    idle_vm.should_receive(:vm=).with(nil).and_return {|vm| current_vm = vm}
+    idle_vm.should_receive(:vm=).with(nil).and_return { |vm| current_vm = vm }
     idle_vm.should_receive(:current_state=).with(nil)
 
     agent.should_receive(:wait_until_ready)
-    agent.should_receive(:apply).with({"resource_pool"=>{"name"=>"foo"}, "networks"=>{"ip"=>"1.2.3.4"},
-                                       "deployment"=>"deployment_name"}).
+    agent.should_receive(:apply).with({"resource_pool" => {"name" => "foo"}, "networks" => {"ip" => "1.2.3.4"},
+                                       "deployment" => "deployment_name"}).
         and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:vm=).with { |vm|

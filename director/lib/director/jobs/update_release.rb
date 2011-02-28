@@ -95,7 +95,7 @@ module Bosh::Director
           packages_by_name[package["name"]] = package
           package["dependencies"] ||= []
         end
-        dependency_lookup = lambda {|package_name| packages_by_name[package_name]["dependencies"]}
+        dependency_lookup = lambda { |package_name| packages_by_name[package_name]["dependencies"] }
         result = CycleHelper.check_for_cycle(packages_by_name.keys, :connected_vertices=> true, &dependency_lookup)
         packages.each do |package|
           @logger.info("Resolving package dependencies for: #{package["name"]}, " +

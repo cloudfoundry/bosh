@@ -9,7 +9,7 @@ module Bosh::Director
         @logger = Config.logger
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
-        @manifest = File.open(@manifest_file) {|f| f.read}
+        @manifest = File.open(@manifest_file) { |f| f.read }
         @logger.debug("Manifest:\n#{@manifest}")
         @logger.info("Creating deployment plan")
         @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
