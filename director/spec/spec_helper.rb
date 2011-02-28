@@ -19,16 +19,17 @@ else
   logger = Logger.new(log_file)
 end
 
-require "sequel"
+
+require "director"
+
+Bosh::Director::Config.patch_sqlite
+
 migrate_dir = File.expand_path("../../db/migrations", __FILE__)
 Sequel.extension :migration
 db = Sequel.sqlite
 db.loggers << logger
 Sequel::Model.db = db
-
 Sequel::Migrator.apply(db, migrate_dir, nil)
-
-require "director"
 
 require "archive/tar/minitar"
 require "digest/sha1"
