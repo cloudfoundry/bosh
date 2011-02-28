@@ -1,4 +1,4 @@
-require 'director/cloud/vsphere/default.rb'
+require 'director/cloud/vsphere/soap/default.rb'
 require 'soap/mapping'
 
 module VSphereCloud

@@ -7,7 +7,7 @@ redis:
   host: 127.0.0.1
   password:
 dir: /tmp/boshdir
-db: sqlite://db/dev.sqlite
+db: "sqlite://director.db"
 blobstore:
   plugin: simple
   properties:
