@@ -2,6 +2,7 @@ source :rubygems
 
 gem "bcrypt-ruby"
 gem "blobstore_client"
+gem "duration"
 gem "eventmachine"
 gem "nats"
 gem "netaddr"
@@ -13,7 +14,6 @@ gem "sequel"
 gem "sinatra"
 gem "soap4r"
 gem "SystemTimer"
-gem "systemu"
 gem "thin"
 gem "uuidtools"
 gem "yajl-ruby"
@@ -30,7 +30,6 @@ end
 group :test do
   gem "autotest"
   gem "ci_reporter"
-  gem "faker"
   gem "machinist"
   gem "minitar"
   gem "rcov"
