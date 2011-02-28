@@ -40,6 +40,7 @@ module Bosh::Director
         patch_sqlite if config["db"].index("sqlite://") == 0
         @db = Sequel.connect(config["db"])
         @db.logger = @logger
+        @db.sql_log_level = :debug
 
         @lock = Monitor.new
       end
