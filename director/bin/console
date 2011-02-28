@@ -26,11 +26,11 @@ module Bosh
     end
 
     class Console
-      def self.start
-        new.start
+      def self.start(context)
+        new.start(context)
       end
 
-      def start
+      def start(context)
         options = {}
 
         OptionParser.new do |opt|
@@ -48,6 +48,10 @@ module Bosh
 
         puts "=> Loading #{config_file}"
         Bosh::Director::Config.configure(YAML.load(File.read(config_file)))
+
+        context.instance_eval do
+          include BD::Models
+        end
 
         begin
           require 'ruby-debug'
@@ -82,11 +86,9 @@ end
   end
 end
 
-include BD::Models
-
 Thread.new do
   EM.run
 end.join(1)
 
-BD::Console.start
+BD::Console.start(self)
 
