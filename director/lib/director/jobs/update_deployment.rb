@@ -31,6 +31,8 @@ module Bosh::Director
         @deployment_plan_compiler.bind_stemcells
         @logger.info("Binding templates")
         @deployment_plan_compiler.bind_templates
+        @logger.info("Binding unallocated VMs")
+        @deployment_plan_compiler.bind_unallocated_vms
         @logger.info("Binding instance networks")
         @deployment_plan_compiler.bind_instance_networks
         @logger.info("Compiling and binding packages")

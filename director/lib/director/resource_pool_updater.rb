@@ -59,6 +59,9 @@ module Bosh::Director
         unless idle_vm.vm
           @pool.process do
             begin
+              # TODO: create VM model and save the agent_id before creating the VM in the cloud
+              # TODO: define NotCreated vs PartiallyCreated error
+
               agent_id = generate_agent_id
               vm_cid = @cloud.create_vm(agent_id, @resource_pool.stemcell.stemcell.cid, @resource_pool.cloud_properties,
                                         idle_vm.network_settings)

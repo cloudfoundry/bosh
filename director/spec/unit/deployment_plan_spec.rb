@@ -47,9 +47,9 @@ describe Bosh::Director::DeploymentPlan do
         "size" => 10,
         "stemcell" => {
           "name" => "jeos",
-          "version" => 1,
-          "network" => "network_a"
+          "version" => 1
         },
+        "network" => "network_a",
         "cloud_properties" => {
           "ram" => "512mb",
           "disk" => "2gb",
@@ -115,13 +115,15 @@ describe Bosh::Director::DeploymentPlan do
 
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
 
+      network = deployment_plan.network("network_a")
       resource_pools = deployment_plan.resource_pools
       resource_pools.size.should eql(1)
 
       resource_pool = resource_pools[0]
       resource_pool.should eql(deployment_plan.resource_pool("small"))
       resource_pool.name.should eql("small")
-      resource_pool.cloud_properties.should eql({"cpu"=>1, "ram"=>"512mb", "disk"=>"2gb"})
+      resource_pool.cloud_properties.should eql({"cpu" => 1, "ram" => "512mb", "disk" => "2gb"})
+      resource_pool.network.should eql(network)
       resource_pool.size.should eql(10)
       resource_pool.idle_vms.should eql([])
       resource_pool.deployment.should eql(deployment_plan)
@@ -136,12 +138,10 @@ describe Bosh::Director::DeploymentPlan do
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
 
       resource_pool = deployment_plan.resource_pool("small")
-      network = deployment_plan.network("network_a")
       stemcell = resource_pool.stemcell
 
       stemcell.name.should eql("jeos")
       stemcell.version.should eql("1")
-      stemcell.network.should eql(network)
       stemcell.stemcell.should be_nil
       stemcell.resource_pool.should eql(resource_pool)
       stemcell.spec.should eql({"name" => "jeos", "version" => "1"})
@@ -340,7 +340,7 @@ describe Bosh::Director::DeploymentPlan do
       resource_pool.size.should eql(10)
       resource_pool.unallocated_vms.should eql(10)
 
-      resource_pool.add_allocated_vm
+      resource_pool.mark_allocated_vm
       resource_pool.unallocated_vms.should eql(9)
 
       idle_vm = resource_pool.add_idle_vm
@@ -459,6 +459,41 @@ describe Bosh::Director::DeploymentPlan do
       idle_vm.networks_changed?.should be_false
       idle_vm.resource_pool_changed?.should be_true
       idle_vm.changed?.should be_true
+    end
+
+    it "should return the network settings for the assigned IP" do
+      manifest = BASIC_MANIFEST._deep_copy
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      resource_pool = deployment_plan.resource_pool("small")
+
+      idle_vm = resource_pool.add_idle_vm
+      idle_vm.ip = "10.0.0.50"
+
+      idle_vm.network_settings.should == {
+          "network_a" => {
+            "netmask" => "255.255.255.0",
+            "ip" => "10.0.0.50",
+            "gateway" => "10.0.0.1",
+            "cloud_properties" => {"name" => "net_a"},
+            "dns" => ["1.2.3.4"]
+          }
+        }
+    end
+
+    it "should return the network settings for the bound instance if available" do
+      manifest = BASIC_MANIFEST._deep_copy
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      resource_pool = deployment_plan.resource_pool("small")
+
+      instance_spec = mock("instance_spec")
+      instance_spec.stub!(:network_settings).and_return({"network_a" => {"ip" => "foo"}})
+
+      idle_vm = resource_pool.add_idle_vm
+      idle_vm.bound_instance = instance_spec
+
+      idle_vm.network_settings.should == {"network_a" => {"ip" => "foo"}}
     end
 
   end

@@ -33,14 +33,12 @@ module Bosh::Director
       attr_accessor :name
       attr_accessor :resource_pool
       attr_accessor :version
-      attr_accessor :network
       attr_accessor :stemcell
 
       def initialize(resource_pool, stemcell_spec)
         @resource_pool = resource_pool
         @name = safe_property(stemcell_spec, "name", :class => String)
         @version = safe_property(stemcell_spec, "version", :class => String)
-        @network = resource_pool.deployment.network(safe_property(stemcell_spec, "network", :class => String))
       end
 
       def spec
@@ -62,6 +60,7 @@ module Bosh::Director
       attr_accessor :name
       attr_accessor :deployment
       attr_accessor :stemcell
+      attr_accessor :network
       attr_accessor :cloud_properties
       attr_accessor :size
       attr_accessor :idle_vms
@@ -72,6 +71,7 @@ module Bosh::Director
         @size = safe_property(resource_pool_spec, "size", :class => Integer)
         @cloud_properties = safe_property(resource_pool_spec, "cloud_properties", :class => Hash)
         @stemcell = StemcellSpec.new(self, safe_property(resource_pool_spec, "stemcell", :class => Hash))
+        @network = @deployment.network(safe_property(resource_pool_spec, "network", :class => String))
         @idle_vms = []
         @allocated_vms = 0
         @reserved_vms = 0
@@ -83,7 +83,7 @@ module Bosh::Director
         idle_vm
       end
 
-      def add_allocated_vm
+      def mark_allocated_vm
         @allocated_vms += 1
       end
 
@@ -97,7 +97,7 @@ module Bosh::Director
       end
 
       def allocate_vm
-        add_allocated_vm
+        mark_allocated_vm
         @idle_vms.shift
       end
 
@@ -117,16 +117,23 @@ module Bosh::Director
       attr_accessor :vm
       attr_accessor :current_state
       attr_accessor :ip
+      attr_accessor :bound_instance
 
       def initialize(resource_pool)
         @resource_pool = resource_pool
       end
 
       def network_settings
-        network_settings = {}
-        network = @resource_pool.stemcell.network
-        network_settings[network.name] = network.network_settings(@ip)
-        network_settings
+        if @bound_instance
+          # use the network settings of the bound instance
+          @bound_instance.network_settings
+        else
+          # if there is no instance, then use resource pool network
+          network_settings = {}
+          network = @resource_pool.network
+          network_settings[network.name] = network.network_settings(@ip)
+          network_settings
+        end
       end
 
       def networks_changed?
@@ -451,6 +458,7 @@ module Bosh::Director
       attr_accessor :instance
       attr_accessor :configuration_hash
       attr_accessor :current_state
+      attr_accessor :idle_vm
 
       def initialize(job, index)
         @job = job
@@ -464,9 +472,7 @@ module Bosh::Director
       end
 
       def network(name)
-        network = @networks[name]
-        raise "network #{name} not found" if network.nil?
-        network
+        @networks[name]
       end
 
       def networks
