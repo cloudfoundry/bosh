@@ -23,15 +23,35 @@ module Bosh::Director
       end
     end
 
+    def pause
+      @lock.synchronize do
+        @state = :paused
+      end
+    end
+
+    def resume
+      @lock.synchronize do
+        @state = :open
+        [@available_threads, @actions.size].min.times do
+          @available_threads -= 1
+          create_thread
+        end
+      end
+    end
+
     def process(&block)
       @lock.synchronize do
         @actions << block
-        if @available_threads > 0
-          @logger.debug("Creating new thread")
-          @available_threads -= 1
-          create_thread
-        else
-          @logger.debug("All threads are currently busy, queuing action")
+        if @state == :open
+          if @available_threads > 0
+            @logger.debug("Creating new thread")
+            @available_threads -= 1
+            create_thread
+          else
+            @logger.debug("All threads are currently busy, queuing action")
+          end
+        elsif @state == :paused
+          @logger.debug("Pool is paused, queueing action.")
         end
       end
     end

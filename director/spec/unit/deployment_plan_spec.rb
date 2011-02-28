@@ -338,21 +338,20 @@ describe Bosh::Director::DeploymentPlan do
 
       resource_pool.idle_vms.size.should eql(0)
       resource_pool.size.should eql(10)
-      resource_pool.unallocated_vms.should eql(10)
 
-      resource_pool.mark_allocated_vm
-      resource_pool.unallocated_vms.should eql(9)
+      resource_pool.mark_active_vm
+      resource_pool.active_vms.should eql(1)
 
       idle_vm = resource_pool.add_idle_vm
-      resource_pool.idle_vms.size.should eql(1)
-      resource_pool.unallocated_vms.should eql(8)
+      resource_pool.idle_vms.should == [idle_vm]
       idle_vm.resource_pool.should eql(resource_pool)
       idle_vm.vm.should be_nil
       idle_vm.ip.should be_nil
       idle_vm.current_state.should be_nil
 
       allocated_vm = resource_pool.allocate_vm
-      resource_pool.unallocated_vms.should eql(8)
+      resource_pool.idle_vms.should be_empty
+      resource_pool.allocated_vms.should == [idle_vm]
       allocated_vm.should eql(idle_vm)
     end
 

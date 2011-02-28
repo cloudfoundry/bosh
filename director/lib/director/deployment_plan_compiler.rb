@@ -93,7 +93,7 @@ module Bosh::Director
 
                     @logger.debug("Copying resource pool reservation")
                     # copy resource pool reservation
-                    instance_spec.job.resource_pool.mark_allocated_vm
+                    instance_spec.job.resource_pool.mark_active_vm
                   else
                     @logger.debug("Job/instance not found, marking for deletion")
                     @deployment_plan.delete_instance(instance)
@@ -123,10 +123,14 @@ module Bosh::Director
 
     def bind_resource_pools
       @deployment_plan.resource_pools.each do |resource_pool|
-        network = resource_pool.network
-        resource_pool.unallocated_vms.times do
-          idle_vm = resource_pool.add_idle_vm
-          idle_vm.ip = network.allocate_dynamic_ip
+        missing_vms = resource_pool.size - (resource_pool.active_vms + resource_pool.idle_vms.size)
+
+        if missing_vms > 0
+          network = resource_pool.network
+          missing_vms.times do
+            idle_vm = resource_pool.add_idle_vm
+            idle_vm.ip = network.allocate_dynamic_ip
+          end
         end
       end
     end

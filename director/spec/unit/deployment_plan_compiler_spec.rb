@@ -87,7 +87,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with(state)
       @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
-      @resource_pool_spec.should_receive(:mark_allocated_vm)
+      @resource_pool_spec.should_receive(:mark_active_vm)
 
       @deployment_plan_compiler.bind_existing_deployment
     end
@@ -100,7 +100,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.should_receive(:instance=).with(@instance)
       @instance_spec.should_receive(:current_state=).with(state)
       @instance_network_spec.should_not_receive(:use_reservation)
-      @resource_pool_spec.should_receive(:mark_allocated_vm)
+      @resource_pool_spec.should_receive(:mark_active_vm)
 
       @deployment_plan_compiler.bind_existing_deployment
     end
@@ -221,7 +221,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should do nothing when all the VMs have been allocated" do
-      @resource_pool_spec.stub!(:unallocated_vms).and_return(0)
+      idle_vm = mock("idle_vm")
+      @resource_pool_spec.stub!(:size).and_return(2)
+      @resource_pool_spec.stub!(:active_vms).and_return(1)
+      @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
       @deployment_plan_compiler.bind_resource_pools
     end
 
@@ -229,7 +232,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm_1 = mock("idle_vm_1")
       idle_vm_2 = mock("idle_vm_2")
 
-      @resource_pool_spec.stub!(:unallocated_vms).and_return(2)
+      @resource_pool_spec.stub!(:size).and_return(2)
+      @resource_pool_spec.stub!(:active_vms).and_return(0)
+      @resource_pool_spec.stub!(:idle_vms).and_return([])
+
       @resource_pool_spec.should_receive(:add_idle_vm).and_return(idle_vm_1, idle_vm_2)
       @network_spec.should_receive(:allocate_dynamic_ip).and_return(5,25)
       idle_vm_1.should_receive(:ip=).with(5)

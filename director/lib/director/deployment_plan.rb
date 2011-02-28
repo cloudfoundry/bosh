@@ -64,6 +64,8 @@ module Bosh::Director
       attr_accessor :cloud_properties
       attr_accessor :size
       attr_accessor :idle_vms
+      attr_accessor :allocated_vms
+      attr_accessor :active_vms
 
       def initialize(deployment, resource_pool_spec)
         @deployment = deployment
@@ -73,7 +75,8 @@ module Bosh::Director
         @stemcell = StemcellSpec.new(self, safe_property(resource_pool_spec, "stemcell", :class => Hash))
         @network = @deployment.network(safe_property(resource_pool_spec, "network", :class => String))
         @idle_vms = []
-        @allocated_vms = 0
+        @allocated_vms = []
+        @active_vms = 0
         @reserved_vms = 0
       end
 
@@ -83,8 +86,8 @@ module Bosh::Director
         idle_vm
       end
 
-      def mark_allocated_vm
-        @allocated_vms += 1
+      def mark_active_vm
+        @active_vms += 1
       end
 
       def reserve_vm
@@ -92,13 +95,10 @@ module Bosh::Director
         raise "resource pool too small" if @reserved_vms > @size
       end
 
-      def unallocated_vms
-        @size - (@allocated_vms + @idle_vms.size)
-      end
-
       def allocate_vm
-        mark_allocated_vm
-        @idle_vms.shift
+        allocated_vm = @idle_vms.pop
+        @allocated_vms << allocated_vm
+        allocated_vm
       end
 
       def spec
