@@ -23,6 +23,7 @@ module Bosh::Director
 
     def initialize(job)
       @job = job
+      @logger = Config.logger
     end
 
     def extract_template
@@ -40,23 +41,29 @@ module Bosh::Director
 
     def hash
       begin
+        @logger.info("Hashing: #{@job.name}")
         extract_template
         manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
         monit_template = ERB.new(File.new(File.join(@template_dir, "monit")).read)
-        config_templates = []
+        config_templates = {}
 
         if manifest["templates"]
           manifest["templates"].each_key do |config_file|
-            config_templates << ERB.new(File.new(File.join(@template_dir, "templates", config_file)).read)
+            config_templates[config_file] = ERB.new(File.new(File.join(@template_dir, "templates", config_file)).read)
           end
         end
 
         @job.instances.each do |instance|
+          @logger.info("Hashing: #{@job.name}/#{instance.index}")
           binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct,
                                              instance.spec.to_openstruct)
           digest = Digest::SHA1.new
+          @logger.info("Hashing: #{@job.name}/#{instance.index} => monit")
           digest << monit_template.result(binding_helper.get_binding)
-          config_templates.each do |template|
+          template_names = config_templates.keys.sort
+          template_names.each do |template_name|
+            template = config_templates[template_name]
+            @logger.info("Hashing: #{@job.name}/#{instance.index} => #{template_name}")
             digest << template.result(binding_helper.get_binding)
           end
           instance.configuration_hash = digest.hexdigest
