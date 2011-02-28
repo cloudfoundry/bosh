@@ -31,7 +31,7 @@ module Bosh::Director
           raise "Vm/Instance models out of sync: #{state.pretty_inspect}"
         end
 
-        if state["job"]["name"] != instance.job || state["index"] != instance.index.to_i
+        if state["job"]["name"] != instance.job || state["index"] != instance.index
           raise "Instance state out of sync: #{state.pretty_inspect}"
         end
       end
@@ -79,7 +79,7 @@ module Bosh::Director
                 # does the job instance exist in the new deployment?
                 if instance
                   @logger.debug("Binding instance VM")
-                  if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index.to_i))
+                  if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index))
                     @logger.debug("Found job and instance spec")
                     instance_spec.instance = instance
                     instance_spec.current_state = state
@@ -93,7 +93,7 @@ module Bosh::Director
 
                     @logger.debug("Copying resource pool reservation")
                     # copy resource pool reservation
-                    instance_spec.job.resource_pool.add_allocated_vm
+                    instance_spec.job.resource_pool.mark_allocated_vm
                   else
                     @logger.debug("Job/instance not found, marking for deletion")
                     @deployment_plan.delete_instance(instance)
@@ -106,7 +106,7 @@ module Bosh::Director
                     idle_vm = resource_pool.add_idle_vm
                     idle_vm.vm = vm
                     idle_vm.current_state = state
-                    network_reservation = ip_reservations[resource_pool.stemcell.network.name]
+                    network_reservation = ip_reservations[resource_pool.network.name]
                     idle_vm.ip = network_reservation[:ip] if network_reservation && !network_reservation[:static?]
                   else
                     @logger.debug("Resource pool doesn't exist, marking for deletion")
@@ -123,10 +123,47 @@ module Bosh::Director
 
     def bind_resource_pools
       @deployment_plan.resource_pools.each do |resource_pool|
-        network = resource_pool.stemcell.network
+        network = resource_pool.network
         resource_pool.unallocated_vms.times do
           idle_vm = resource_pool.add_idle_vm
           idle_vm.ip = network.allocate_dynamic_ip
+        end
+      end
+    end
+
+    def bind_unallocated_vms
+      @deployment_plan.jobs.each do |job|
+        job.instances.each do |instance_spec|
+          # create the instance model if this is a new instance
+          instance = instance_spec.instance
+
+          if instance.nil?
+            # look up the instance again, in case it wasn't associated with a VM
+            instance = Models::Instance.find_or_create(:deployment_id => @deployment_plan.deployment.id,
+                                                       :job => job.name,
+                                                       :index => instance_spec.index)
+            instance_spec.instance = instance
+          end
+
+          unless instance.vm
+            idle_vm = instance_spec.job.resource_pool.allocate_vm
+            instance_spec.idle_vm = idle_vm
+
+            if idle_vm.vm
+              # try to reuse the existing reservation if possible
+              instance_network = instance_spec.network(idle_vm.resource_pool.network.name)
+              if instance_network
+                instance_network.use_reservation(idle_vm.ip, false)
+              end
+            else
+              # if the VM is about to be created, then use this instance's networking configuration
+              idle_vm.bound_instance = instance_spec
+
+              # this also means we no longer need the reserved IP for this VM
+              idle_vm.resource_pool.network.release_dynamic_ip(idle_vm.ip)
+              idle_vm.ip = nil
+            end
+          end
         end
       end
     end
@@ -202,27 +239,17 @@ module Bosh::Director
       ThreadPool.new(:max_threads => 32).wrap do |pool|
         @deployment_plan.jobs.each do |job|
           job.instances.each do |instance_spec|
-            # create the instance model if this is a new instance
             instance = instance_spec.instance
 
-            if instance.nil?
-              # look up the instance again, in case it wasn't associated with a VM
-              instance = Models::Instance.find_or_create(:deployment_id => @deployment_plan.deployment.id,
-                                                         :job => job.name,
-                                                         :index => instance_spec.index)
-              instance_spec.instance = instance
-            end
-
             unless instance.vm
-              idle_vm = instance_spec.job.resource_pool.allocate_vm
-              instance.vm = idle_vm.vm
-              instance.save
+              idle_vm = instance_spec.idle_vm
+              instance.update(:vm => idle_vm.vm)
 
               pool.process do
                 # Apply the assignment to the VM
                 state = idle_vm.current_state
                 state["job"] = job.spec
-                state["index"] = instance.index.to_i
+                state["index"] = instance.index
                 state["release"] = @deployment_plan.release.spec
                 agent = AgentClient.new(idle_vm.vm.agent_id)
                 task = agent.apply(state)

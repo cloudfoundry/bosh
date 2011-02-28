@@ -39,6 +39,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_release)
       deployment_plan_compiler.should_receive(:bind_stemcells)
       deployment_plan_compiler.should_receive(:bind_templates)
+      deployment_plan_compiler.should_receive(:bind_unallocated_vms)
       deployment_plan_compiler.should_receive(:bind_instance_networks)
       package_compiler.should_receive(:compile)
       deployment_plan_compiler.should_receive(:bind_configuration)
