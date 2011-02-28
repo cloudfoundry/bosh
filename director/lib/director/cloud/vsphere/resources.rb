@@ -180,7 +180,7 @@ module VSphereCloud
     def average_csv(csv)
       values = csv.split(",")
       result = 0
-      values.each {|v| result += v.to_f}
+      values.each { |v| result += v.to_f }
       result / values.size
     end
 
@@ -212,8 +212,8 @@ module VSphereCloud
 
         raise "No available clusters" if clusters.empty?
 
-        clusters.sort! {|cluster_1, cluster_2| score_cluster(cluster_2, memory, max_free_memory) -
-            score_cluster(cluster_1, memory, max_free_memory)}
+        clusters.sort! { |cluster_1, cluster_2| score_cluster(cluster_2, memory, max_free_memory) -
+            score_cluster(cluster_1, memory, max_free_memory) }
         clusters = clusters[0..2]
 
         cluster_scores = clusters.collect do |cluster|
@@ -241,7 +241,7 @@ module VSphereCloud
 
         raise "No available datastore" if datastores.empty?
 
-        datastores.sort!{|ds1, ds2| score_datastore(ds2, space) - score_datastore(ds1, space)}
+        datastores.sort! { |ds1, ds2| score_datastore(ds2, space) - score_datastore(ds1, space) }
         result = datastores.first
 
         @logger.debug("Picked: #{result.inspect}")

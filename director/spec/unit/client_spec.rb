@@ -8,7 +8,7 @@ describe Bosh::Director::Client do
     Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
 
     nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments=>["arg 1", 2, {:test=>"blah"}], :method=>:test_method}
+        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
     ).and_return { |*args|
       callback = args[2]
       callback.call({"value" => 5})
@@ -16,7 +16,7 @@ describe Bosh::Director::Client do
     }
 
     @client = Bosh::Director::Client.new("test_service", "test_service_id")
-    @client.test_method("arg 1", 2, {:test =>"blah"}).should eql(5)
+    @client.test_method("arg 1", 2, {:test => "blah"}).should eql(5)
   end
 
   it "should handle exceptions" do
@@ -25,7 +25,7 @@ describe Bosh::Director::Client do
     Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
 
     nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments=>["arg 1", 2, {:test=>"blah"}], :method=>:test_method}
+        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
     ).and_return { |*args|
       callback = args[2]
       callback.call({"exception" => "test"})
@@ -42,7 +42,7 @@ describe Bosh::Director::Client do
     Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
 
     nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments=>["arg 1", 2, {:test=>"blah"}], :method=>:test_method}
+        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
     ).and_return("4")
 
     nats_rpc.should_receive(:cancel).with("4")

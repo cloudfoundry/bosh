@@ -71,7 +71,7 @@ require "director/jobs/update_stemcell"
 module Bosh::Director
 
   class Controller
-    PUBLIC_URLS = [ "/status" ]
+    PUBLIC_URLS = ["/status"]
 
     def call(env)
       api_controller = ApiController.new

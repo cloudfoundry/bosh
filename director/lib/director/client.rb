@@ -20,7 +20,7 @@ module Bosh::Director
       cond = result.new_cond
       timeout_time = Time.now.to_f + @timeout
 
-      request = { :method => method_name, :arguments => args }
+      request = {:method => method_name, :arguments => args}
       request_id = @nats_rpc.send("#{@service_name}.#{@client_id}", request) do |response|
         result.synchronize do
           result.merge!(response)

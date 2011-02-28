@@ -137,7 +137,7 @@ module Bosh::Director
               retries < 20
             end
 
-            connection_pragmas.each{|s| log_yield(s){db.execute_batch(s)}}
+            connection_pragmas.each { |s| log_yield(s) { db.execute_batch(s) } }
 
             class << db
               attr_reader :prepared_statements

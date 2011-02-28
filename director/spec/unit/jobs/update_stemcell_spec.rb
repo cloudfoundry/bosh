@@ -12,7 +12,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
     stemcell_contents = create_stemcell("jeos", 5, {"ram" => "2gb"}, "image contents")
     @stemcell_file = Tempfile.new("stemcell_contents")
-    File.open(@stemcell_file.path, "w") {|f| f.write(stemcell_contents)}
+    File.open(@stemcell_file.path, "w") { |f| f.write(stemcell_contents) }
   end
 
   after(:each) do
@@ -22,7 +22,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
   it "should upload the stemcell" do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
-      contents = File.open(image) {|f| f.read}
+      contents = File.open(image) { |f| f.read }
       contents.should eql("image contents")
       "stemcell-cid"
     end
@@ -37,7 +37,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
   it "should cleanup the stemcell file" do
     @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
-      contents = File.open(image) {|f| f.read}
+      contents = File.open(image) { |f| f.read }
       contents.should eql("image contents")
       "stemcell-cid"
     end

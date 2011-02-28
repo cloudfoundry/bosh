@@ -28,7 +28,7 @@ logger = Bosh::Director::Config.logger
 
 loop do
   logger.info("Checking for any workers that are still processing..")
-  worker = Resque::Worker.all.find {|worker| worker.working? }
+  worker = Resque::Worker.all.find { |worker| worker.working? }
   if worker.nil?
     logger.info("All workers are idle")
     break

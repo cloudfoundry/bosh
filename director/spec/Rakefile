@@ -31,7 +31,7 @@ namespace "redis" do
       false
     end
 
-    system "redis-server #{REDIS_CNF}" unless redis_running    
+    system "redis-server #{REDIS_CNF}" unless redis_running
   end
 
   desc "Stop Redis instance"
@@ -41,33 +41,33 @@ namespace "redis" do
       FileUtils.rm REDIS_PID
     end
   end
-  
+
 end
 
-task :spec => [ "spec:all" ]
+task :spec => ["spec:all"]
 
 namespace "spec" do
   gemfile   = "../Gemfile"
   spec_opts = ["--format", "documentation", "--colour"]
 
   desc "Run unit tests"
-  task "unit" => [ "run_unit" ]
+  task "unit" => ["run_unit"]
 
   desc "Run functional tests"
   task "functional" => ["redis:start", "run_functional", "redis:stop" ]
 
-  task "all" => [ "redis:start", "run_all", "redis:stop" ]
+  task "all" => ["redis:start", "run_all", "redis:stop"]
 
   desc "Run specs for rcov"
-  task "rcov" => [ "redis:start", "run_rcov", "redis:stop" ]
+  task "rcov" => ["redis:start", "run_rcov", "redis:stop"]
 
   desc "Run specs for ci"
-  task "ci" => [ "ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover" ]
+  task "ci" => ["ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover"]
 
   RSpec::Core::RakeTask.new("run_all") do |t|
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
-    t.pattern    = "**/*_spec.rb"    
+    t.pattern    = "**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_unit") do |t|
@@ -96,9 +96,9 @@ namespace "spec" do
     clover_output  = File.join(coverage_dir, "clover.xml")
 
     sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
-    FileUtils.rm_rf(dump_file)    
+    FileUtils.rm_rf(dump_file)
   end
- 
+
 end
 
 

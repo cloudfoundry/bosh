@@ -9,8 +9,8 @@ describe Bosh::Director::InstanceUpdater do
       "blobstore_id" => "job_blob"
     },
     "release"=> {
-      "name"=>"test_release",
-      "version"=>99
+      "name" => "test_release",
+      "version" => 99
     },
     "index" => 5,
     "configuration_hash" => "config_hash",
@@ -40,7 +40,7 @@ describe Bosh::Director::InstanceUpdater do
         "dns" => ["1.2.3.4"]
       }
     },
-    "properties" => {"key"=>"value"}
+    "properties" => {"key" => "value"}
   }
   IDLE_PLAN = {
     "deployment" => "test_deployment",

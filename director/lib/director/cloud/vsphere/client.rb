@@ -45,7 +45,7 @@ module VSphereCloud
       if obj.is_a?(ManagedObjectReference)
         object_spec = ObjectSpec.new(nil, nil, obj, false)
       else
-        object_spec = obj.collect {|o| ObjectSpec.new(nil, nil, o, false)}
+        object_spec = obj.collect { |o| ObjectSpec.new(nil, nil, o, false) }
       end
 
       filter_spec = PropertyFilterSpec.new(nil, nil, property_specs, object_spec)
@@ -210,7 +210,7 @@ module VSphereCloud
 
     def find_by_inventory_path(path)
       path = [path] unless path.kind_of?(Array)
-      path = path.flatten.collect {|name| name.gsub("/", "%2f")}.join("/")
+      path = path.flatten.collect { |name| name.gsub("/", "%2f") }.join("/")
       find_request = FindByInventoryPathRequestType.new(@service_content.searchIndex, path)
       @service.findByInventoryPath(find_request).returnval
     end
@@ -294,7 +294,7 @@ module VSphereCloud
       result = []
 
       until response.nil?
-        response.objects.each {|object_content| result << object_content}
+        response.objects.each { |object_content| result << object_content }
 
         break if response.token.nil?
 

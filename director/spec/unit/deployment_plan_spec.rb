@@ -193,7 +193,7 @@ describe Bosh::Director::DeploymentPlan do
         "netmask" => "255.255.255.0",
         "ip" => "10.0.0.100",
         "gateway" => "10.0.0.1",
-        "cloud_properties" => {"name"=>"net_a"},
+        "cloud_properties" => {"name" => "net_a"},
         "dns" => ["1.2.3.4"]
       }})
 
@@ -263,7 +263,7 @@ describe Bosh::Director::DeploymentPlan do
       compilation_settings = deployment_plan.compilation
       compilation_settings.workers.should eql(2)
       compilation_settings.network.should eql(deployment_plan.network("network_a"))
-      compilation_settings.cloud_properties.should eql({"ram"=>"512mb", "cpu"=>1, "disk"=>"2gb"})
+      compilation_settings.cloud_properties.should eql({"ram" => "512mb", "cpu" => 1, "disk" => "2gb"})
     end
 
     it "should parse deployment properties" do
@@ -281,7 +281,7 @@ describe Bosh::Director::DeploymentPlan do
 
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       deployment_plan.properties.should eql({"foo" => "bar", "test" => {"a" => 5, "b" => 6}})
-      deployment_plan.job("job_a").properties.should eql({"foo"=>"bar", "test"=>{"a"=>5, "b"=>7}})
+      deployment_plan.job("job_a").properties.should eql({"foo" => "bar", "test" => {"a" => 5, "b" => 7}})
     end
 
   end
@@ -292,7 +292,7 @@ describe Bosh::Director::DeploymentPlan do
       manifest = BASIC_MANIFEST._deep_copy
       job = manifest["jobs"].first
       job["instances"] = 1
-      job["networks"] = [ { "name" => "network_a" } ]
+      job["networks"] = [{"name" => "network_a"}]
 
       5.times do |index|
         new_job = job._deep_copy
@@ -381,14 +381,14 @@ describe Bosh::Director::DeploymentPlan do
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
             "gateway" => "10.0.0.1",
-            "cloud_properties" => {"name"=>"net_a"},
+            "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
           }
         },
         "resource_pool" => {
           "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
-          "cloud_properties" => {"cpu"=>1, "ram"=>"512mb", "disk"=>"2gb"}
+          "cloud_properties" => {"cpu" => 1, "ram" => "512mb", "disk" => "2gb"}
         }
       }
 
@@ -413,14 +413,14 @@ describe Bosh::Director::DeploymentPlan do
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
             "gateway" => "10.0.0.1",
-            "cloud_properties" => {"name"=>"net_a"},
+            "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
           }
         },
         "resource_pool" => {
           "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
-          "cloud_properties" => {"cpu"=>1, "ram"=>"512mb", "disk"=>"2gb"}
+          "cloud_properties" => {"cpu" => 1, "ram" => "512mb", "disk" => "2gb"}
         }
       }
 
@@ -445,14 +445,14 @@ describe Bosh::Director::DeploymentPlan do
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
             "gateway" => "10.0.0.1",
-            "cloud_properties" => {"name"=>"net_a"},
+            "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
           }
         },
         "resource_pool" => {
           "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
-          "cloud_properties" => {"cpu"=>2, "ram"=>"512mb", "disk"=>"2gb"}
+          "cloud_properties" => {"cpu" => 2, "ram" => "512mb", "disk" => "2gb"}
         }
       }
 
@@ -699,17 +699,17 @@ describe Bosh::Director::DeploymentPlan do
         }
       },
       "resource_pool" => {
-        "name"=>"small",
+        "name" => "small",
         "stemcell" => {"name" => "jeos", "version" => "1"},
         "cloud_properties" => {"ram" => "512mb", "cpu" => 1, "disk" => "2gb"}
       },
       "configuration_hash" => "config_hash",
       "packages" => {
         "test_package"=> {
-          "name"=>"test_package",
-          "blobstore_id"=>"pkg-blob-id",
-          "sha1"=>"pkg-sha1",
-          "version"=>"33.1"
+          "name" => "test_package",
+          "blobstore_id" => "pkg-blob-id",
+          "sha1" => "pkg-sha1",
+          "version" => "33.1"
         }
       },
       "persistent_disk" => 2048,
@@ -805,7 +805,7 @@ describe Bosh::Director::DeploymentPlan do
 
     it "should track instance changes compared to the current state (packages change)" do
       current_state = CURRENT_STATE._deep_copy
-      current_state["packages"] = {"pkg_a"=>{"name"=>"pkg_a", "sha1"=>"a_sha1", "version"=>1}}
+      current_state["packages"] = {"pkg_a" => {"name" => "pkg_a", "sha1" => "a_sha1", "version" => 1}}
       @instance.current_state = current_state
 
       @instance.networks_changed?.should be_false
@@ -836,32 +836,32 @@ describe Bosh::Director::DeploymentPlan do
         "configuration_hash" => "config_hash",
         "packages" => {
           "test_package"=> {
-            "name"=>"test_package",
-            "blobstore_id"=>"pkg-blob-id",
-            "sha1"=>"pkg-sha1",
-            "version"=>"33.1"
+            "name" => "test_package",
+            "blobstore_id" => "pkg-blob-id",
+            "sha1" => "pkg-sha1",
+            "version" => "33.1"
           }
         },
         "resource_pool" => {
           "stemcell" => {"name" => "jeos", "version" => "1"},
           "name" => "small",
-          "cloud_properties" => { "ram" => "512mb", "cpu"=>1, "disk"=>"2gb" }
+          "cloud_properties" => {"ram" => "512mb", "cpu" => 1, "disk" => "2gb"}
         },
         "networks" => {
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.100",
             "gateway" => "10.0.0.1",
-            "cloud_properties" => { "name"=>"net_a" },
-            "dns" => [ "1.2.3.4" ]
+            "cloud_properties" => {"name" => "net_a"},
+            "dns" => ["1.2.3.4"]
           }
         },
         "index" => 0,
-        "job" => { "name" => "job_a", "blobstore_id"=>"template_blob", "sha1" => "job-sha1", "version" => "1" },
+        "job" => {"name" => "job_a", "blobstore_id" => "template_blob", "sha1" => "job-sha1", "version" => "1"},
         "persistent_disk" => 2048,
-        "release" => { "name" => "test_release", "version" => "1" },
+        "release" => {"name" => "test_release", "version" => "1"},
         "deployment" => "test_deployment",
-        "properties" => { "test" => "property" }
+        "properties" => {"test" => "property"}
       })
     end
 
@@ -888,8 +888,8 @@ describe Bosh::Director::DeploymentPlan do
 
       job.add_package(package_a, compiled_package_a)
       job.add_package(package_b, compiled_package_b)
-      job.package_spec.should eql({"a"=>{"name"=>"a", "blobstore_id"=>"blob-a", "sha1"=>"sha1-a", "version"=>"1.1"},
-                                   "b"=>{"name"=>"b", "blobstore_id"=>"blob-b", "sha1"=>"sha1-b", "version"=>"2.3"}})
+      job.package_spec.should eql({"a" => {"name" => "a", "blobstore_id" => "blob-a", "sha1" => "sha1-a", "version" => "1.1"},
+                                   "b" => {"name" => "b", "blobstore_id" => "blob-b", "sha1" => "sha1-b", "version" => "2.3"}})
     end
 
   end

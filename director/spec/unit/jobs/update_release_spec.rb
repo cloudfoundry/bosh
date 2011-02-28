@@ -66,7 +66,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     it "should normalize nil dependencies" do
       packages = [{"name" => "A"}, {"name" => "B", "dependencies" => ["A"]}]
       @update_release_job.resolve_package_dependencies(packages)
-      packages.should eql([{"dependencies"=>[], "name"=>"A"}, {"dependencies"=>["A"], "name"=>"B"}])
+      packages.should eql([{"dependencies" => [], "name" => "A"}, {"dependencies" => ["A"], "name" => "B"}])
     end
 
     it "should not allow cycles" do
@@ -77,8 +77,8 @@ describe Bosh::Director::Jobs::UpdateRelease do
     it "should resolve nested dependencies" do
       packages = [{"name" => "A", "dependencies" => ["B"]}, {"name" => "B", "dependencies" => ["C"]}, {"name" => "C"}]
       @update_release_job.resolve_package_dependencies(packages)
-      packages.should eql([{"dependencies"=>["B", "C"], "name"=>"A"}, {"dependencies"=>["C"], "name"=>"B"},
-                           {"dependencies"=>[], "name"=>"C"}])
+      packages.should eql([{"dependencies" => ["B", "C"], "name" => "A"}, {"dependencies" => ["C"], "name" => "B"},
+                           {"dependencies" => [], "name" => "C"}])
     end
 
   end
