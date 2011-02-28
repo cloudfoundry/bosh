@@ -38,7 +38,6 @@ require "zlib"
 
 require "machinist/sequel"
 require "sham"
-require "faker"
 require "blueprints"
 
 bosh_dir = Dir.mktmpdir("boshdir")

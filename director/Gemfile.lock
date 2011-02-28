@@ -20,13 +20,11 @@ GEM
     columnize (0.3.2)
     daemons (1.1.0)
     diff-lcs (1.1.2)
+    duration (0.1.0)
     esxmq (0.0.11)
       nats (= 0.3.12)
     eventmachine (0.12.10)
-    faker (0.9.5)
-      i18n (~> 0.4)
     httpclient (2.1.6)
-    i18n (0.5.0)
     json (1.4.6)
     linecache (0.43)
     machinist (1.0.6)
@@ -47,11 +45,11 @@ GEM
       builder
       rcov
     redis (2.1.1)
-    redis-namespace (0.8.0)
+    redis-namespace (0.10.0)
       redis (< 3.0.0)
-    resque (1.10.0)
+    resque (1.13.0)
       json (~> 1.4.6)
-      redis-namespace (~> 0.8.0)
+      redis-namespace (>= 0.10.0)
       sinatra (>= 0.9.2)
       vegas (~> 0.1.2)
     rspec (2.3.0)
@@ -68,23 +66,22 @@ GEM
     ruby-debug-base (0.10.4)
       linecache (>= 0.3)
     sequel (3.20.0)
-    sinatra (1.1.0)
+    sinatra (1.1.3)
       rack (~> 1.1)
-      tilt (~> 1.1)
+      tilt (>= 1.2.2, < 2.0)
     soap4r (1.5.8)
       httpclient (>= 2.1.1)
     sqlite3 (1.3.3)
-    systemu (1.2.0)
     thin (1.2.7)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    tilt (1.1)
+    tilt (1.2.2)
     uuidtools (2.1.1)
     vegas (0.1.8)
       rack (>= 1.0.0)
     xml-simple (1.0.12)
-    yajl-ruby (0.7.8)
+    yajl-ruby (0.8.1)
 
 PLATFORMS
   ruby
@@ -95,9 +92,9 @@ DEPENDENCIES
   bcrypt-ruby
   blobstore_client
   ci_reporter
+  duration
   esxmq (= 0.0.11)
   eventmachine
-  faker
   machinist
   minitar
   nats
@@ -115,7 +112,6 @@ DEPENDENCIES
   sinatra
   soap4r
   sqlite3
-  systemu
   thin
   uuidtools
   yajl-ruby
