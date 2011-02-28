@@ -20,6 +20,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec = mock("resource_pool_spec")
     @resource_pool_spec.stub!(:deployment).and_return(@deployment_plan)
     @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
+    @resource_pool_spec.stub!(:name).and_return("test")
     @resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
     @resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
   end
@@ -28,7 +29,9 @@ describe Bosh::Director::ResourcePoolUpdater do
     vm = Bosh::Director::Models::Vm.make
     idle_vm = mock("idle_vm")
 
-    @resource_pool_spec.stub!(:unallocated_vms).and_return(0)
+    @resource_pool_spec.stub!(:size).and_return(1)
+    @resource_pool_spec.stub!(:active_vms).and_return(0)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
     idle_vm.stub!(:vm).and_return(vm)
     idle_vm.stub!(:changed?).and_return(false)
@@ -43,7 +46,9 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm = mock("idle_vm")
     agent = mock("agent")
 
-    @resource_pool_spec.stub!(:unallocated_vms).and_return(0)
+    @resource_pool_spec.stub!(:size).and_return(1)
+    @resource_pool_spec.stub!(:active_vms).and_return(0)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
 
     idle_vm.stub!(:network_settings).and_return({"network_a" => {"ip" => "1.2.3.4"}})
@@ -81,7 +86,9 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm = mock("idle_vm")
     agent = mock("agent")
 
-    @resource_pool_spec.stub!(:unallocated_vms).and_return(-1)
+    @resource_pool_spec.stub!(:size).and_return(0)
+    @resource_pool_spec.stub!(:active_vms).and_return(0)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
 
     vm.stub!(:cid).and_return("vm-1")
@@ -105,7 +112,9 @@ describe Bosh::Director::ResourcePoolUpdater do
     agent = mock("agent")
     current_vm = old_vm
 
-    @resource_pool_spec.stub!(:unallocated_vms).and_return(0)
+    @resource_pool_spec.stub!(:size).and_return(1)
+    @resource_pool_spec.stub!(:active_vms).and_return(0)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
 
     idle_vm.stub!(:network_settings).and_return({"ip" => "1.2.3.4"})
