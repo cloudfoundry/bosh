@@ -15,6 +15,7 @@ require "yaml"
 
 require "bcrypt"
 require "blobstore_client"
+require "duration"
 require "eventmachine"
 require "netaddr"
 require "resque"

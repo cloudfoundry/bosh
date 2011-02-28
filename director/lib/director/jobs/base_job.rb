@@ -19,6 +19,7 @@ module Bosh::Director
           Config.cloud_options = cloud_options
         end
 
+        started = Time.now
         with_thread_name("task:#{task_id}") do
           begin
             logger.info("Creating job")
@@ -43,6 +44,8 @@ module Bosh::Director
             task.save
           end
         end
+        ended = Time.now
+        logger.info("Task took #{Duration.new(ended - started)} to process.")
       end
 
     end
