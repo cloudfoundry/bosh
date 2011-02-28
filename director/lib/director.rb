@@ -50,7 +50,6 @@ require "director/errors"
 require "director/instance_updater"
 require "director/job_updater"
 require "director/lock"
-require "director/models"
 require "director/nats_rpc"
 require "director/package_compiler"
 require "director/release_manager"
@@ -69,6 +68,7 @@ require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
 
 module Bosh::Director
+  autoload :Models, "director/models"
 
   class Controller
     PUBLIC_URLS = ["/status"]
