@@ -457,7 +457,7 @@ module VSphereCloud
         disk.size = size
         disk.save
         @logger.info("Created disk: #{disk.pretty_inspect}")
-        disk.id
+        disk.id.to_s
       end
     end
 
