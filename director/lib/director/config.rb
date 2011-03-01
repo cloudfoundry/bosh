@@ -37,8 +37,14 @@ module Bosh::Director
 
         @blobstore = nil
 
-        patch_sqlite if config["db"].index("sqlite://") == 0
-        @db = Sequel.connect(config["db"])
+        if config["db"].index("sqlite://") == 0
+          patch_sqlite
+          connection_options = { :max_connections => 10, :pool_timeout => 10 }
+        else
+          connection_options = { }
+        end
+
+        @db = Sequel.connect(config["db"], connection_options)
         @db.logger = @logger
         @db.sql_log_level = :debug
 
