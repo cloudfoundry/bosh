@@ -16,4 +16,5 @@ spec/assets/bosh_config.yml
 agent/spec/tmp
 cli/pkg
 blobstore_client/pkg
-director/db/dev.sqlite
+spec/assets/test_release/dev_releases
+spec/assets/test_release/.dev_builds
