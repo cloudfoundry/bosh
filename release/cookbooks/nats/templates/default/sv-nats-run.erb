@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ulimit -n 65536
 PATH=<%= node[:ruby][:path] %>/bin:$PATH
 
 exec 2>&1
