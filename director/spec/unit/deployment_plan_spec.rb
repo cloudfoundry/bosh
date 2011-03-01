@@ -514,6 +514,29 @@ describe Bosh::Director::DeploymentPlan do
       NetAddr::CIDR.create(network.allocate_dynamic_ip).ip.should eql("10.0.0.99")
     end
 
+  it "should allow string network ranges for static and reserved ips" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["networks"][0]["subnets"][0] = {
+        "range" => "10.0.0.0/24",
+        "gateway" => "10.0.0.1",
+        "dns" => ["1.2.3.4"],
+        "static" => "10.0.0.100 - 10.0.0.200",
+        "reserved" => "10.0.0.201 - 10.0.0.254",
+        "cloud_properties" => {
+          "name" => "net_a"
+        }
+      }
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      network = deployment_plan.network("network_a")
+
+      network_id = NetAddr::CIDR.create("10.0.0.0")
+
+      network.reserve_ip(network_id.to_i + 2).should == :dynamic
+      network.reserve_ip(network_id.to_i + 102).should == :static
+      network.reserve_ip(network_id.to_i + 202).should be_nil
+    end
+
     it "should not allow overlapping subnets" do
       manifest = BASIC_MANIFEST._deep_copy
       manifest["networks"][0]["subnets"] << {
