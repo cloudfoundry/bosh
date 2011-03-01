@@ -78,7 +78,8 @@ module Bosh::Agent
         end
 
         blobstore_id = @job['blobstore_id']
-        Util.unpack_blob(blobstore_id, @job_install_dir)
+        sha1 = @job['sha1']
+        Util.unpack_blob(blobstore_id, sha1, @job_install_dir)
 
         job_link_dst = File.join(@base_dir, 'jobs', @job_name)
         link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
@@ -99,9 +100,10 @@ module Bosh::Agent
           @logger.info("Installing: #{pkg.inspect}")
 
           blobstore_id = pkg['blobstore_id']
+          sha1 = pkg['sha1']
           install_dir = File.join(@packages_data, pkg['name'], pkg['version'])
 
-          Util.unpack_blob(blobstore_id, install_dir)
+          Util.unpack_blob(blobstore_id, sha1, install_dir)
 
           pkg_link_dst = File.join(@base_dir, 'packages', pkg['name'])
           job_pkg_link_dst = File.join(@job_install_dir, 'packages', pkg['name'])

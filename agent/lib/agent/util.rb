@@ -21,7 +21,7 @@ module Bosh::Agent
     end
 
     class << self
-      def unpack_blob(blobstore_id, install_path)
+      def unpack_blob(blobstore_id, sha1, install_path)
         base_dir = Bosh::Agent::Config.base_dir
         logger = Bosh::Agent::Config.logger
 
@@ -40,6 +40,10 @@ module Bosh::Agent
           FileUtils.mkdir_p(install_path)
 
           blob_data_file = tf.path
+          blob_sha1 = Digest::SHA1.hexdigest(File.read(blob_data_file))
+          unless blob_sha1 == sha1
+            raise Bosh::Agent::MessageHandlerError, "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}"
+          end
 
           logger.info("Installing to: #{install_path}")
           Dir.chdir(install_path) do
