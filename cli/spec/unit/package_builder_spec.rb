@@ -292,4 +292,28 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder2.version.should == "1.1-dev"
   end
 
+  it "bumps to x.1 if final x exists and no dev exists" do
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
+    globs = ["foo/**/*", "baz"]
+
+    blobstore = mock("blobstore")
+    blobstore.should_receive(:create).and_return("object_id")
+    final_builder = Bosh::Cli::PackageBuilder.new({"name" => "bar", "files" => globs}, @release_dir, true, blobstore)
+    final_builder.build
+
+    final_builder.version.should == 1
+
+    add_sources("foo/foo15.rb")
+    builder = make_builder("bar", globs)
+    builder.build
+
+    builder.version.should == "1.1-dev"
+
+    add_sources("foo/foo16.rb")
+    builder2 = make_builder("bar", globs)
+    builder2.build
+
+    builder2.version.should == "1.2-dev"
+  end
+
 end

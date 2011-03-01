@@ -250,4 +250,26 @@ describe Bosh::Cli::JobBuilder do
     builder2.version.should == "1.1-dev"
   end
 
+  it "bumps to x.1 if final x exists and no dev exists" do
+    add_templates("foo", "bar", "baz")
+    add_monit("foo")
+
+    blobstore = mock("blobstore")
+    blobstore.should_receive(:create).and_return("object_id")
+    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder.build
+
+    final_builder.version.should == 1
+
+    add_templates("foo", "bzz")
+    builder = new_builder("foo", [], ["bar", "baz", "bzz"], [])
+    builder.build
+    builder.version.should == "1.1-dev"
+
+    add_templates("foo", "yo")
+    builder2 = new_builder("foo", [], ["bar", "baz", "bzz", "yo"], [])
+    builder2.build
+    builder2.version.should == "1.2-dev"
+  end
+
 end
