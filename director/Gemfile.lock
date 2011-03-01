@@ -21,8 +21,8 @@ GEM
     daemons (1.1.0)
     diff-lcs (1.1.2)
     duration (0.1.0)
-    esxmq (0.0.11)
-      nats (= 0.3.12)
+    esxmq (0.0.12)
+      nats
     eventmachine (0.12.10)
     httpclient (2.1.6)
     json (1.4.6)
@@ -93,7 +93,7 @@ DEPENDENCIES
   blobstore_client
   ci_reporter
   duration
-  esxmq (= 0.0.11)
+  esxmq (= 0.0.12)
   eventmachine
   machinist
   minitar
