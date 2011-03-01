@@ -4,7 +4,7 @@ require "digest/sha1"
 module Bosh
   module Cli
 
-    class ReleaseUploader
+    class ReleaseTarball
       include Validation
       include DependencyHelper
 

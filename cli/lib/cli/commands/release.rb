@@ -3,13 +3,13 @@ module Bosh::Cli::Command
     include Bosh::Cli::DependencyHelper
 
     def verify(tarball_path)
-      release = Bosh::Cli::ReleaseUploader.new(tarball_path)
+      tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
       say("\nVerifying release...")
-      release.validate
+      tarball.validate
       say("\n")
 
-      if release.valid?
+      if tarball.valid?
         say("'%s' is a valid release" % [ tarball_path] )
       else
         say("'%s' is not a valid release:" % [ tarball_path] )
@@ -22,15 +22,17 @@ module Bosh::Cli::Command
     def upload(tarball_path)
       auth_required
 
-      release = Bosh::Cli::ReleaseUploader.new(tarball_path)
+      tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
       say("\nVerifying release...")
-      release.validate
+      tarball.validate
       say("\n")
 
-      if !release.valid?
+      if !tarball.valid?
         err("Release is invalid, please fix, verify and upload again")
       end
+
+      # TODO: sparse upload
 
       say("\nUploading release...\n")
 

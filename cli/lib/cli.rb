@@ -16,8 +16,7 @@ require "cli/job_builder"
 
 require "cli/release"
 require "cli/release_builder"
-require "cli/release_uploader"
-
+require "cli/release_tarball"
 
 require "cli/runner"
 
