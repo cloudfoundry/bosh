@@ -21,7 +21,24 @@ describe Bosh::Agent::Util do
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"
-    Bosh::Agent::Util.unpack_blob(blobstore_id, install_dir)
+    sha1 = Digest::SHA1.hexdigest(dummy_package_data)
+
+    Bosh::Agent::Util.unpack_blob(blobstore_id, sha1, install_dir)
+  end
+
+  it "should raise an exception when sha1 is doesn't match blob data" do
+    response = mock("response")
+    response.stub!(:status).and_return(200)
+
+    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
+
+    install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
+    blobstore_id = "some_blobstore_id"
+
+    lambda {
+      Bosh::Agent::Util.unpack_blob(blobstore_id, "bogus_sha1", install_dir)
+    }.should raise_error(Bosh::Agent::MessageHandlerError, /Expected sha1/)
   end
 
   it "should return a binding with config variable" do

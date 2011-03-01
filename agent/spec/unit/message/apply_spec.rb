@@ -27,6 +27,7 @@ describe Bosh::Agent::Message::Apply do
 
     state = Bosh::Agent::Message::State.new(nil)
 
+    package_sha1 = Digest::SHA1.hexdigest(dummy_package_data)
     apply_data = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
@@ -34,7 +35,8 @@ describe Bosh::Agent::Message::Apply do
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
       "packages" => 
-        {"bubba" => { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id" } 
+        {"bubba" => 
+          { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id", "sha1" => package_sha1 }
       },
     }
     get_args = [ "/resources/some_blobstore_id", {}, {} ] 
@@ -55,10 +57,11 @@ describe Bosh::Agent::Message::Apply do
 
     state = Bosh::Agent::Message::State.new(nil)
 
+    job_sha1 = Digest::SHA1.hexdigest(dummy_job_data)
     apply_data = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
-      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77"},
+      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }

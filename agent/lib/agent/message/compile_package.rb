@@ -50,9 +50,10 @@ module Bosh::Agent
           @logger.info("Installing depdendency: #{pkg_name} #{pkg.inspect}")
 
           blobstore_id = pkg['blobstore_id']
+          sha1 = pkg['sha1']
           install_dir = File.join(@install_base, pkg_name, pkg['version'])
 
-          Util.unpack_blob(blobstore_id, install_dir)
+          Util.unpack_blob(blobstore_id, sha1, install_dir)
 
           pkg_link_dst = File.join(@base_dir, 'packages', pkg_name)
           FileUtils.ln_sf(install_dir, pkg_link_dst)
