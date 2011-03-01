@@ -53,12 +53,15 @@ module Bosh::Cli::Command
       jobs      = []
       final     = flags.to_s =~ /^\s*--final\s*$/i
 
+      final_release = Bosh::Cli::Release.final(work_dir)
+      dev_release = Bosh::Cli::Release.dev(work_dir)
+
       if final
         header "Building FINAL release".green
-        release = Bosh::Cli::Release.final(work_dir)
+        release = final_release
       else
         header "Building DEV release".green
-        release = Bosh::Cli::Release.dev(work_dir)
+        release = dev_release
       end
 
       if version_cmp(Bosh::Cli::VERSION, release.min_cli_version) < 0
@@ -71,7 +74,7 @@ module Bosh::Cli::Command
         release.update_config(:name => name)
       end
 
-      blobstore = init_blobstore(release.s3_options)
+      blobstore = init_blobstore(final_release.s3_options)
 
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
