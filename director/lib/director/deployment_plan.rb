@@ -265,13 +265,13 @@ module Bosh::Director
         @available_dynamic_ips.delete(@range.network(:Objectify => true).to_i)
         @available_dynamic_ips.delete(@range.broadcast(:Objectify => true).to_i)
 
-        each_ip(safe_property(subnet_spec, "reserved", :class => Array, :optional => true)) do |ip|
+        each_ip(safe_property(subnet_spec, "reserved", :optional => true)) do |ip|
           unless @available_dynamic_ips.delete?(ip)
             raise ArgumentError, "reserved IP must be an available (not gateway, etc..) inside the range"
           end
         end
 
-        each_ip(safe_property(subnet_spec, "static", :class => Array, :optional => true)) do |ip|
+        each_ip(safe_property(subnet_spec, "static", :optional => true)) do |ip|
           unless @available_dynamic_ips.delete?(ip)
             raise ArgumentError, "static IP must be an available (not reserved) inside the range"
           end
@@ -374,7 +374,7 @@ module Bosh::Director
           static_ips = nil
           if network_spec["static_ips"]
             static_ips = []
-            each_ip(safe_property(network_spec, "static_ips", :class => Array)) { |ip| static_ips << ip }
+            each_ip(safe_property(network_spec, "static_ips")) { |ip| static_ips << ip }
             if static_ips.size != @instances.size
               raise ArgumentError, "Job #{@name} has #{@instances.size} but was allocated #{static_ips.size}."
             end
