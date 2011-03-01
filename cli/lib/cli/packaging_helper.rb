@@ -95,7 +95,7 @@ module Bosh
           minor = major == current_final ? minor + 1 : 1
           major = current_final
         else
-          major, minor = 0, 1
+          major, minor = current_final, 1
         end
 
         version  = "#{major}.#{minor}-dev"
