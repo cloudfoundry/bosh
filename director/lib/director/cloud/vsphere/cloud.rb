@@ -900,7 +900,7 @@ module VSphereCloud
     end
 
     def delete_all_vms
-      ThreadPool.new(:max_threads => 32).wrap do |pool|
+      Bosh::Director::ThreadPool.new(:max_threads => 32).wrap do |pool|
         index = 0
 
         @resources.datacenters.each_value do |datacenter|
