@@ -13,7 +13,7 @@ module Bosh::Cli::Command
         say("'%s' is a valid release" % [ tarball_path] )
       else
         say("'%s' is not a valid release:" % [ tarball_path] )
-        for error in release.errors
+        for error in tarball.errors
           say("- %s" % [ error ])
         end
       end
