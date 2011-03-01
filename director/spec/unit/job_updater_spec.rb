@@ -137,16 +137,11 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should delete the unneeded instances" do
-    instance = Bosh::Director::Models::Instance.make
-    vm = Bosh::Director::Models::Vm.make
+    vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-id")
+    instance = Bosh::Director::Models::Instance.make(:vm => vm, :disk_cid => "disk-cid")
+
     agent = mock("agent")
     cloud = mock("cloud")
-
-    instance.stub!(:vm).and_return(vm)
-    instance.stub!(:disk_cid).and_return("disk-cid")
-
-    vm.stub!(:cid).and_return("vm-cid")
-    vm.stub!(:agent_id).and_return("agent-id")
 
     Bosh::Director::Config.stub!(:cloud).and_return(cloud)
 
@@ -155,9 +150,6 @@ describe Bosh::Director::JobUpdater do
 
     cloud.should_receive(:delete_vm).with("vm-cid")
     cloud.should_receive(:delete_disk).with("disk-cid")
-
-    vm.should_receive(:delete)
-    instance.should_receive(:delete)
 
     Bosh::Director::AgentClient.stub!(:new).and_return(agent, nil)
 
