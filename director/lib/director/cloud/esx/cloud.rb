@@ -16,7 +16,16 @@ module EsxCloud
       @logger = Bosh::Director::Config.logger
       @agent_properties = options["agent"]
       @esxmgr = options["esxmgr"]
-      
+
+      # blobstore
+      blobstore = @esxmgr['blobstore']
+      @blobstore_endpoint = blobstore['endpoint']
+      @headers = {}
+      if blobstore["user"] && blobstore["password"]
+        @headers["Authorization"] = "Basic " + Base64.encode64("#{blobstore["user"]}:#{blobstore["password"]}")
+      end
+      @client = HTTPClient.new
+
       # Start EM (if required)
       self.class.lock.synchronize do
         unless EM.reactor_running? 
@@ -102,43 +111,24 @@ module EsxCloud
       return rtn, results
     end
 
-    def send_file(name, full_file_name)
-      sock = TCPSocket.open(@esxmgr["host"], @esxmgr["stemcell_upload_port"])
-      src_file = open(full_file_name, "rb")
-
-      name = name.ljust(256)
-      sock.write(name)
-
-      while (file_content = src_file.read(2 * 1024 * 1024))
-        sock.write(file_content)
-      end
-      sock.flush
-      sock.close
-
-      # XXX, Wait for server to receive the last bits, The flush above does not
-      #      seem to be working well.
-      sleep(5)
-    end
-
-
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
         result = nil
-        Dir.mktmpdir do |temp_dir|
-          @logger.info("Extracting stemcell to: #{temp_dir}, image is #{image}")
 
+        name = "sc-#{generate_unique_name}"
+        file = open(image, "rb")
 
-          name = "sc-#{generate_unique_name}"
-          @logger.info("Generated name: #{name}")
-
-          # upload stemcell to esx controller
-          send_file(name, image)
-
-          # send "create stemcell" command to controller
-          create_sc = EsxMQ::CreateStemcellMsg.new(name, name)
-          rtn, rtn_payload = send_request(create_sc, 3600)
-          result = name if rtn
+        # upload stemcell to blobstore
+        response = @client.post("#{@blobstore_endpoint}/resources", {:name => name, :content => file}, @headers)
+        if response.status != 200
+          raise "Could not create upload to blobstore, #{response.status}/#{response.content}"
         end
+        file.close
+
+        # send "create stemcell" command to controller
+        create_sc = EsxMQ::CreateStemcellMsg.new(name, name)
+        rtn, rtn_payload = send_request(create_sc, 3600)
+        result = name if rtn
         @logger.info("ESXCLOUD: create_stemcell is returnng <#{result}>")
         result
       end
@@ -155,7 +145,7 @@ module EsxCloud
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
-        
+
         # SCSI disk unit numbers
         system_disk = 0 # Always reserved for system disk
         ephemeral_disk = 1
