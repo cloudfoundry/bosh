@@ -30,8 +30,8 @@ describe Bosh::Spec::IntegrationTest do
     FileUtils.rm_rf(BOSH_CACHE_DIR)
   end
 
-  def run_bosh(cmd)
-    Dir.chdir(BOSH_WORK_DIR) do
+  def run_bosh(cmd, work_dir = nil)
+    Dir.chdir(work_dir || BOSH_WORK_DIR) do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
       `#{CLI_DIR}/bin/bosh --non-interactive --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
     end
@@ -56,7 +56,7 @@ describe Bosh::Spec::IntegrationTest do
     # This is a minimal manifest I was actually being able to deploy with. It doesn't even have any jobs,
     # so it's not very realistic though
     {
-      "name" => "simple",
+      "name" => "minimal",
       "release" => {
         "name"    => "appcloud",
         "version" => "0.1" # It's our dummy valid release from spec/assets/valid_release.tgz
@@ -83,6 +83,12 @@ describe Bosh::Spec::IntegrationTest do
 
   def simple_deployment_manifest
     extras = {
+      "name" => "simple",
+      "release" => {
+        "name"    => "test_release",
+        "version" => "1"
+      },
+
       "networks" => [
                      {
                        "name" => "a",
@@ -103,8 +109,8 @@ describe Bosh::Spec::IntegrationTest do
                              "name" => "a",
                              "size" => 10,
                              "cloud_properties" => { },
+                             "network" => "a",
                              "stemcell" => {
-                               "network" => "a",
                                "name"    => "ubuntu-stemcell",
                                "version" => "1"
                              }
@@ -112,14 +118,13 @@ describe Bosh::Spec::IntegrationTest do
                           ],
       "jobs" => [
                  {
-                   "name"          => "supercacher",
-                   "template"      => "cacher",
+                   "name"          => "foobar",
+                   "template"      => "foobar",
                    "resource_pool" => "a",
                    "instances"     => 3,
                    "networks" => [
                                   {
                                     "name" => "a",
-                                    # "static_ips => "0-5"
                                   }
                                  ]
                  }
@@ -421,10 +426,18 @@ describe Bosh::Spec::IntegrationTest do
       out.should =~ Regexp.new(Regexp.escape("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest"))
     end
 
-    it "successfully performed with simple manifest" do
-      pending("dummy cloud needs to implement: configure_networks")
-      release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
+    it "generates release and deploys it via simple manifest" do
+      assets_dir = File.dirname(spec_asset("foo"))
+      release_filename = spec_asset("test_release/dev_releases/test_release-1.tgz") # It's a test release created with bosh (see spec/assets/test_release)
       stemcell_filename = spec_asset("valid_stemcell.tgz") # It's a dummy stemcell (ubuntu-stemcell 1)
+
+      Dir.chdir(File.join(assets_dir, "test_release")) do
+        FileUtils.rm_rf("dev_releases")
+        run_bosh("create release", Dir.pwd)
+      end
+
+      File.exists?(release_filename).should be_true
+
       deployment_manifest_filename = yaml_file("simple", simple_deployment_manifest)
 
       run_bosh("deployment #{deployment_manifest_filename}")
@@ -437,7 +450,6 @@ describe Bosh::Spec::IntegrationTest do
       # TODO: figure out which artefacts should be created by the given manifest
     end
   end
-
 
   it "can delete deployment" do
     pending
