@@ -248,6 +248,40 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    get "/releases/:name" do
+      name = params[:name].to_s.strip
+
+      release = Models::Release.find(:name => name)
+      raise ReleaseNotFound.new(name) if release.nil?
+
+      result = { }
+
+      result["packages"] = release.packages.map do |package|
+        {
+          "name"    => package.name,
+          "sha1"    => package.sha1,
+          "version" => package.version.to_s,
+          "dependencies" => package.dependency_set.to_a
+        }
+      end
+
+      result["jobs"] = release.templates.map do |template|
+        {
+          "name"     => template.name,
+          "sha1"     => template.sha1,
+          "version"  => template.version.to_s,
+          "packages" => template.package_names
+        }
+      end
+
+      result["versions"] = release.versions.map do |rv|
+        rv.version.to_s
+      end
+
+      content_type(:json)
+      Yajl::Encoder.encode(result)
+    end
+
     get "/tasks" do
       dataset = Models::Task.dataset
       limit = params["limit"]

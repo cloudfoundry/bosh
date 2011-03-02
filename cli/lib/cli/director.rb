@@ -78,6 +78,10 @@ module Bosh
         get_json("/tasks?limit=#{count}")
       end
 
+      def get_release(name)
+        get_json("/releases/#{name}")
+      end
+
       def upload_release(filename)
         upload_and_track("/releases", "application/x-compressed", filename)
       end

@@ -8,23 +8,57 @@ module Bosh
       include Validation
       include DependencyHelper
 
+      attr_reader :release_name, :jobs, :packages, :version
+
       def initialize(tarball_path)
-        @release_file = File.expand_path(tarball_path, Dir.pwd)
+        @tarball_path = File.expand_path(tarball_path, Dir.pwd)
+        @unpack_dir   = Dir.mktmpdir
+        @jobs = [ ]
+        @packages = [ ]
+      end
+
+      # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
+      def unpack
+        return @unpacked unless @unpacked.nil?
+        `tar -C #{@unpack_dir} -xzf #{@tarball_path} 2>&1`
+        @unpacked = $?.exitstatus == 0
+      end
+
+      def exists?
+        File.exists?(@tarball_path) && File.readable?(@tarball_path)
+      end
+
+      # Repacks tarball leaving only provided packages and jobs, doesn't touch manifest.
+      # Return path to repackaged tarball or nil if repack has failed
+      def repack(packages_to_remove, jobs_to_remove)
+        return nil unless valid?
+        unpack
+
+        repacked_path = File.join(Dir.mktmpdir, "release-repack.tgz")
+
+        Dir.chdir(@unpack_dir) do
+          packages_to_remove.each do |package_name|
+            FileUtils.rm_rf(File.join("packages", "#{package_name}.tgz"))
+          end
+          jobs_to_remove.each do |job_name|
+            FileUtils.rm_rf(File.join("jobs", "#{job_name}.tgz"))
+          end
+
+          `tar -czf #{repacked_path} . 2>&1`
+          return repacked_path if $? == 0
+        end
       end
 
       def perform_validation
-        tmp_dir = Dir.mktmpdir
-
-        step("File exists and readable", "Cannot find release file #{@release_file}", :fatal) do
-          File.exists?(@release_file) && File.readable?(@release_file)
+        step("File exists and readable", "Cannot find release file #{@tarball_path}", :fatal) do
+          exists?
         end
 
-        step("Extract tarball", "Cannot extract tarball #{@release_file}", :fatal) do
-          `tar -C #{tmp_dir} -xzf #{@release_file} 2>&1`
-          $?.exitstatus == 0
+        step("Extract tarball", "Cannot extract tarball #{@tarball_path}", :fatal) do
+          unpack
         end
 
-        manifest_file = File.expand_path("release.MF", tmp_dir)
+        manifest_file = File.expand_path("release.MF", @unpack_dir)
 
         step("Manifest exists", "Cannot find release manifest", :fatal) do
           File.exists?(manifest_file)
@@ -36,14 +70,18 @@ module Bosh
           manifest.is_a?(Hash) && manifest.has_key?("name") && manifest.has_key?("version")
         end
 
+        @release_name = manifest["name"]
+        @version = manifest["version"].to_s
+
         # Check packages
         total_packages = manifest["packages"].size
         available_packages = {}
 
         manifest["packages"].each_with_index do |package, i|
+          @packages << package
           name, version = package['name'], package['version']
 
-          package_file   = File.expand_path(name + ".tgz", tmp_dir + "/packages")
+          package_file   = File.expand_path(name + ".tgz", @unpack_dir + "/packages")
           package_exists = File.exists?(package_file)
 
           step("Read package '%s' (%d of %d)" % [ name, i+1, total_packages ],
@@ -80,10 +118,11 @@ module Bosh
         end
 
         manifest["jobs"].each_with_index do |job, i|
+          @jobs << job
           name    = job["name"]
           version = job["version"]
 
-          job_file   = File.expand_path(name + ".tgz", tmp_dir + "/jobs")
+          job_file   = File.expand_path(name + ".tgz", @unpack_dir + "/jobs")
           job_exists = File.exists?(job_file)
 
           step("Read job '%s' (%d of %d), version %s" % [ name, i+1, total_jobs, version ], "Job '#{name}' not found") do
@@ -95,7 +134,7 @@ module Bosh
               Digest::SHA1.hexdigest(File.read(job_file)) == job["sha1"]
             end
 
-            job_tmp_dir = "#{tmp_dir}/jobs/#{name}"
+            job_tmp_dir = Dir.mktmpdir
             FileUtils.mkdir_p(job_tmp_dir)
             `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
             job_extracted = $?.exitstatus == 0
@@ -137,8 +176,6 @@ module Bosh
         end
 
         print_info(manifest)
-      ensure
-        FileUtils.rm_rf(tmp_dir)
       end
 
       def print_info(manifest)

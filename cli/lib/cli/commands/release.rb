@@ -32,7 +32,72 @@ module Bosh::Cli::Command
         err("Release is invalid, please fix, verify and upload again")
       end
 
-      # TODO: sparse upload
+      begin
+        release_info = director.get_release(tarball.release_name)
+
+        unless release_info.is_a?(Hash) && release_info.has_key?("jobs") && release_info.has_key?("packages")
+          raise Bosh::Cli::DirectorError, "Cannot find version, jobs and packages info in the director response, maybe old director?".red
+        end
+
+        if release_info["versions"].include?(tarball.version)
+          err "This release version has already been uploaded"
+        end
+
+        say "Checking if we can repack release and perform sparse upload"
+
+        jobs_to_remove = []
+        packages_to_remove = []
+
+        tarball.jobs.each do |local_job|
+          job = release_info["jobs"].detect do |remote_job|
+            local_job["name"] == remote_job["name"] && local_job["version"].to_s == remote_job["version"].to_s
+          end
+          desc = "`#{local_job["name"]} (#{local_job["version"]})"
+
+          if job
+            if job["sha1"] == local_job["sha1"]
+              jobs_to_remove << local_job["name"]
+              say "Job #{desc} already exists, no need to upload".green
+            else
+              err "Job #{desc} has a different checksum remotely, please fix release"
+            end
+          else
+            say "Job #{desc} needs to be uploaded".red
+          end
+        end
+
+        tarball.packages.each do |local_package|
+          package = release_info["packages"].detect do |remote_package|
+            local_package["name"] == remote_package["name"] && local_package["version"].to_s == remote_package["version"].to_s
+          end
+          desc = "`#{local_package["name"]} (#{local_package["version"]})"
+
+          if package
+            if package["sha1"] == local_package["sha1"]
+              packages_to_remove << local_package["name"]
+              say "Package #{desc} already exists, no need to upload".green
+            else
+              err "Package #{desc} has a different checksum remotely, please fix release"
+            end
+          else
+            say "Package #{desc} needs to be uploaded".red
+          end
+        end
+
+        if packages_to_remove.size > 0 || jobs_to_remove.size > 0
+          say "Repacking release for sparse upload..."
+          repacked_path = tarball.repack(packages_to_remove, jobs_to_remove)
+          if repacked_path.nil?
+            say "Failed to repack".red
+          else
+            tarball_path = repacked_path
+          end
+        end
+
+      rescue Bosh::Cli::DirectorError => e
+        say e.to_s
+        say "Need to upload the whole release"
+      end
 
       say("\nUploading release...\n")
 
