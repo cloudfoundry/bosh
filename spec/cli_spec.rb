@@ -6,11 +6,12 @@ require "tmpdir"
 
 describe Bosh::Spec::IntegrationTest do
 
-  BOSH_CONFIG    = File.expand_path("../assets/bosh_config.yml", __FILE__)
-  BOSH_CACHE_DIR = Dir.mktmpdir
-  BOSH_WORK_DIR  = File.expand_path("../assets/bosh_work_dir", __FILE__)
-  CLOUD_DIR      = "/tmp/bosh_test_cloud"
-  CLI_DIR        = File.expand_path("../../cli", __FILE__)
+  DEV_RELEASES_DIR = File.expand_path("../assets/test_release/dev_releases", __FILE__)
+  BOSH_CONFIG      = File.expand_path("../assets/bosh_config.yml", __FILE__)
+  BOSH_CACHE_DIR   = Dir.mktmpdir
+  BOSH_WORK_DIR    = File.expand_path("../assets/bosh_work_dir", __FILE__)
+  CLOUD_DIR        = "/tmp/bosh_test_cloud"
+  CLI_DIR          = File.expand_path("../../cli", __FILE__)
 
   before(:all) do
     puts "Starting sandboxed environment for Bosh tests..."
@@ -21,6 +22,7 @@ describe Bosh::Spec::IntegrationTest do
     puts "\nStopping sandboxed environment for Bosh tests..."
     Bosh::Spec::Sandbox.stop
     FileUtils.rm_rf(CLOUD_DIR)
+    FileUtils.rm_rf(DEV_RELEASES_DIR)
   end
 
   before :each do |example|
@@ -28,6 +30,7 @@ describe Bosh::Spec::IntegrationTest do
     FileUtils.rm_rf(BOSH_CONFIG)
     FileUtils.rm_rf(CLOUD_DIR)
     FileUtils.rm_rf(BOSH_CACHE_DIR)
+    FileUtils.rm_rf(DEV_RELEASES_DIR)
   end
 
   def run_bosh(cmd, work_dir = nil)
