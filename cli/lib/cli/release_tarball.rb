@@ -92,7 +92,7 @@ module Bosh
           if package_exists
             available_packages[name] = true
             step("Package '#{name}' checksum", "Incorrect checksum for package '#{name}'") do
-              Digest::SHA1.hexdigest(File.read(package_file)) == package["sha1"]
+              Digest::SHA1.file(package_file).hexdigest == package["sha1"]
             end
           end
         end
@@ -131,7 +131,7 @@ module Bosh
 
           if job_exists
             step("Job '#{name}' checksum", "Incorrect checksum for job '#{name}'") do
-              Digest::SHA1.hexdigest(File.read(job_file)) == job["sha1"]
+              Digest::SHA1.file(job_file).hexdigest == job["sha1"]
             end
 
             job_tmp_dir = Dir.mktmpdir
