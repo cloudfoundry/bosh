@@ -155,7 +155,7 @@ module Bosh
       end
 
       def file_checksum(path)
-        Digest::SHA1.hexdigest(File.read(path))
+        Digest::SHA1.file(path).hexdigest
       end
 
       def checksum
