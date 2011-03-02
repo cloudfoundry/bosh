@@ -37,6 +37,10 @@ describe Bosh::Spec::IntegrationTest do
     end
   end
 
+  def rx(string)
+    Regexp.compile(Regexp.escape(string))
+  end
+
   def format_output(out)
     out.gsub(/^\s*/, '').gsub(/\s*$/, '')
   end
@@ -389,6 +393,50 @@ describe Bosh::Spec::IntegrationTest do
     OUT
   end
 
+  it "sparsely uploads the release" do
+    assets_dir = File.dirname(spec_asset("foo"))
+    release_1 = spec_asset("test_release/dev_releases/test_release-1.tgz")
+    release_2 = spec_asset("test_release/dev_releases/test_release-2.tgz")
+
+    Dir.chdir(File.join(assets_dir, "test_release")) do
+      FileUtils.rm_rf("dev_releases")
+      run_bosh("create release", Dir.pwd)
+      File.exists?(release_1).should be_true
+    end
+
+    run_bosh("target http://localhost:57523")
+    run_bosh("login admin admin")
+    run_bosh("upload release #{release_1}")
+
+    Dir.chdir(File.join(assets_dir, "test_release")) do
+      new_file = File.join("src", "bar", "bla")
+      begin
+        FileUtils.touch(new_file)
+        run_bosh("create release", Dir.pwd)
+        File.exists?(release_2).should be_true
+      ensure
+        FileUtils.rm_rf(new_file)
+      end
+    end
+
+    out = run_bosh("upload release #{release_2}")
+    out.should =~ rx("Job `foobar (0.1-dev)' already exists, no need to upload")
+    out.should =~ rx("Package `foo (0.1-dev)' already exists, no need to upload")
+    out.should =~ rx("Package `bar (0.2-dev)' needs to be uploaded")
+    out.should =~ rx("Repacking release for sparse upload")
+    out.should =~ /Release uploaded and updated/
+
+    expect_output("releases", <<-OUT )
+    +--------------+----------+
+    | Name         | Versions |
+    +--------------+----------+
+    | test_release | 1, 2     |
+    +--------------+----------+
+
+    Releases total: 1
+    OUT
+  end
+
   it "can't upload malformed release" do
     release_filename = spec_asset("release_invalid_checksum.tgz")
 
@@ -423,7 +471,7 @@ describe Bosh::Spec::IntegrationTest do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ Regexp.new(Regexp.escape("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest"))
+      out.should =~ rx("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest")
     end
 
     it "generates release and deploys it via simple manifest" do
@@ -445,14 +493,22 @@ describe Bosh::Spec::IntegrationTest do
       run_bosh("upload stemcell #{stemcell_filename}")
       run_bosh("upload release #{release_filename}")
 
-      out = run_bosh("deploy")
-      out.should =~ Regexp.new(Regexp.escape("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest"))
+      run_bosh("deploy").should =~ rx("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest")
       # TODO: figure out which artefacts should be created by the given manifest
     end
-  end
 
-  it "can delete deployment" do
-    pending
+    it "can delete deployment" do
+      release_filename = spec_asset("valid_release.tgz")
+      deployment_manifest_filename = yaml_file("minimal", minimal_deployment_manifest)
+
+      run_bosh("deployment #{deployment_manifest_filename}")
+      run_bosh("login admin admin")
+      run_bosh("upload release #{release_filename}")
+
+      run_bosh("deploy")
+      run_bosh("delete deployment minimal").should =~ rx("Deleted deployment 'minimal'")
+      # TODO: test that we don't have artefacts, possibly upgrade to more featured deployment, possibly merge to the previous spec
+    end
   end
 
 end

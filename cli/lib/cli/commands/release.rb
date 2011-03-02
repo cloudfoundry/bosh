@@ -36,7 +36,7 @@ module Bosh::Cli::Command
         release_info = director.get_release(tarball.release_name)
 
         unless release_info.is_a?(Hash) && release_info.has_key?("jobs") && release_info.has_key?("packages")
-          raise Bosh::Cli::DirectorError, "Cannot find version, jobs and packages info in the director response, maybe old director?".red
+          raise Bosh::Cli::DirectorError, "Cannot find version, jobs and packages info in the director response, maybe old director?"
         end
 
         if release_info["versions"].include?(tarball.version)
@@ -52,7 +52,7 @@ module Bosh::Cli::Command
           job = release_info["jobs"].detect do |remote_job|
             local_job["name"] == remote_job["name"] && local_job["version"].to_s == remote_job["version"].to_s
           end
-          desc = "`#{local_job["name"]} (#{local_job["version"]})"
+          desc = "`#{local_job["name"]} (#{local_job["version"]})'"
 
           if job
             if job["sha1"] == local_job["sha1"]
@@ -70,7 +70,7 @@ module Bosh::Cli::Command
           package = release_info["packages"].detect do |remote_package|
             local_package["name"] == remote_package["name"] && local_package["version"].to_s == remote_package["version"].to_s
           end
-          desc = "`#{local_package["name"]} (#{local_package["version"]})"
+          desc = "`#{local_package["name"]} (#{local_package["version"]})'"
 
           if package
             if package["sha1"] == local_package["sha1"]
@@ -95,7 +95,7 @@ module Bosh::Cli::Command
         end
 
       rescue Bosh::Cli::DirectorError => e
-        say e.to_s
+        say e.message.red
         say "Need to upload the whole release"
       end
 
