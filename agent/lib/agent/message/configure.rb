@@ -191,8 +191,8 @@ module Bosh::Agent
         if_tmp_file.write(data)
         if_tmp_file.flush
 
-        old = Digest::SHA1.hexdigest(File.read(path))
-        new = Digest::SHA1.hexdigest(File.read(if_tmp_file.path))
+        old = Digest::SHA1.file(path).hexdigest
+        new = Digest::SHA1.file(if_tmp_file.path).hexdigest
 
         updated = false
         unless old == new

@@ -36,11 +36,11 @@ module Bosh::Agent
 
           blobstore_client.get(blobstore_id, tf)
           tf.flush
+          blob_data_file = tf.path
 
           FileUtils.mkdir_p(install_path)
 
-          blob_data_file = tf.path
-          blob_sha1 = Digest::SHA1.hexdigest(File.read(blob_data_file))
+          blob_sha1 = Digest::SHA1.file(blob_data_file).hexdigest
           unless blob_sha1 == sha1
             raise Bosh::Agent::MessageHandlerError, "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}"
           end
