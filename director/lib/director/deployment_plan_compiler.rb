@@ -153,7 +153,7 @@ module Bosh::Director
             idle_vm = instance_spec.job.resource_pool.allocate_vm
             instance_spec.idle_vm = idle_vm
 
-            if idle_vm.vm
+            if idle_vm.vm && idle_vm.ip
               # try to reuse the existing reservation if possible
               instance_network = instance_spec.network(idle_vm.resource_pool.network.name)
               if instance_network
