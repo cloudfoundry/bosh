@@ -45,7 +45,7 @@ class Template < Thor
 
       # Use ISO if provided
       if options.iso
-        rasise "Invalid Ubuntu ISO specified" unless File.file?(options.iso)
+        raise "Invalid Ubuntu ISO specified" unless File.file?(options.iso)
         iso_option = "--iso #{options.iso}"
       else
         iso_option = ""
