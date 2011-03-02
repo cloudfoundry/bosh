@@ -399,6 +399,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should late bind instance if the instance was not attached to a VM" do
       idle_vm = mock("idle_vm")
       idle_vm.stub!(:vm).and_return(@vm)
+      idle_vm.stub!(:ip).and_return(nil)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
 
       @instance_spec.should_receive(:network).with("network-a").and_return(nil)
@@ -445,6 +446,45 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.should_receive(:idle_vm=).with(idle_vm)
 
       instance_network.should_receive(:use_reservation).with(IP_10_0_0_5, false)
+
+      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
+
+      idle_vm.should_not_receive(:bound_instance=)
+
+      @deployment_plan_compiler.bind_unallocated_vms
+    end
+
+    it "should not reuse the IP of a running VM if it doesn't have a valid IP reservation" do
+      instance_network = mock("instance_network")
+      idle_vm = mock("idle_vm")
+      idle_vm.stub!(:vm).and_return(@vm)
+      idle_vm.stub!(:ip).and_return(nil)
+      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
+
+      @instance_spec.should_receive(:network).with("network-a").and_return(instance_network)
+      @instance_spec.should_receive(:instance).and_return(nil)
+      @instance_spec.should_receive(:instance=).with(@instance)
+      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
+
+      instance_network.should_not_receive(:use_reservation)
+
+      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
+
+      idle_vm.should_not_receive(:bound_instance=)
+
+      @deployment_plan_compiler.bind_unallocated_vms
+    end
+
+    it "should not reuse the IP of a running VM if the network doesn't match" do
+      idle_vm = mock("idle_vm")
+      idle_vm.stub!(:vm).and_return(@vm)
+      idle_vm.stub!(:ip).and_return(nil)
+      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
+
+      @instance_spec.should_receive(:network).with("network-a").and_return(nil)
+      @instance_spec.should_receive(:instance).and_return(nil)
+      @instance_spec.should_receive(:instance=).with(@instance)
+      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
