@@ -1,0 +1,52 @@
+---
+name: WDCFARM2
+port: <%= node[:director][:port] %>
+logging:
+  level: DEBUG
+  file: <%= node[:director][:path] %>/shared/logs/<%= @process_name %>.debug.log
+redis:
+  host: <%= node[:hosts][:redis] %>
+  port: <%= node[:redis][:port] %>
+  password: <%= node[:redis][:password] %>
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+dir: <%= node[:director][:path] %>/shared/system
+db: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:postgresql][:database] %>
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://<%= node[:hosts][:blobstore] %>:<%= node[:blobstore][:port] %>
+    user: <%= node[:blobstore][:director_account][:user] %>
+    password: <%= node[:blobstore][:director_account][:password] %>
+cloud:
+  plugin: esx
+  properties:
+    agent:
+      ntp:
+       - ntp1.eng.vmware.com
+       - ntp2.eng.vmware.com
+      blobstore:
+        plugin: simple
+        properties:
+          endpoint: http://<%= node[:hosts][:blobstore] %>:<%= node[:blobstore][:port] %>
+          user: <%= node[:blobstore][:agent_account][:user] %>
+          password: <%= node[:blobstore][:agent_account][:password] %>
+      mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+    soap_log: <%= node[:director][:path] %>/shared/log/<%= @process_name %>.soap.log
+    esxmgr:
+      host: 10.138.68.2
+      inbox: middle
+      blobstore:
+        endpoint: http://10.138.68.2:9292
+        user: admin
+        password: admin
+    nats:
+      host: mpatil-lx.eng.vmware.com
+      port: 11009
+      user: esxmgr
+      password: esxmgr
+      datacenters:
+        - name: AppCloud
+          vm_folder: BOSH_VMs
+          template_folder: BOSH_Templates
+          clusters:
+            - Cluster01
