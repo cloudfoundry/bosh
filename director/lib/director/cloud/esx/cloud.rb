@@ -10,12 +10,18 @@ module EsxCloud
 
     BOSH_AGENT_PROPERTIES_ID = "Bosh_Agent_Properties"
 
+    DEFAULT_OPERATION_RETRIES = 3
+
     attr_accessor :client
 
     def initialize(options)
       @logger = Bosh::Director::Config.logger
       @agent_properties = options["agent"]
       @esxmgr = options["esxmgr"]
+
+      # Set default
+      @esxmgr["operation_retry"] ||= DEFAULT_OPERATION_RETRIES
+      @esxmgr["operation_retry"] = 1 if @esxmgr["operation_retry"] == 0
 
       # blobstore
       blobstore = @esxmgr['blobstore']
@@ -103,12 +109,21 @@ module EsxCloud
       req.payload = payload
 
       @logger.info("ESXCLOUD: sending request #{payload}")
-      rtn, results = EsxMQ::TimedRequest.send(payload, timeout)
+      rtn = EsxMQ::TimedRequest.send(payload, timeout)
 
-      raise "ESXCloud, request #{payload} failed #{results}" unless rtn
+      @logger.info("ESXCloud, request #{payload} #{rtn["rtn"]} #{rtn["rtn_payload"]}")
+      return rtn["rtn"], rtn["rtn_payload"]
+    end
 
-      @logger.info("ESXCloud, request #{payload} results #{results}")
-      return rtn, results
+    def send_request_with_retry(payload, timeout=nil)
+      raise "Bad config for operation retry" if @esxmgr["operation_retry"] <= 0
+
+      rtn = rtn_payload = nil
+      @esxmgr["operation_retry"].times do
+        rtn, rtn_payload = send_request(payload, timeout)
+        break if rtn
+      end
+      return rtn, rtn_payload
     end
 
     def create_stemcell(image, _)
@@ -127,9 +142,17 @@ module EsxCloud
 
         # send "create stemcell" command to controller
         create_sc = EsxMQ::CreateStemcellMsg.new(name, name)
-        rtn, rtn_payload = send_request(create_sc, 3600)
-        result = name if rtn
-        @logger.info("ESXCLOUD: create_stemcell is returnng <#{result}>")
+
+        rtn, rtn_payload = send_request_with_retry(create_sc, 3600)
+
+        if rtn
+          @logger.info("ESXCLOUD: create_stemcell #{name} succeeded <#{result}>")
+          result = name
+        else
+          @logger.warn("ESXCLOUD: failed to create_stemcell #{name} #{rtn_payload.inspect if rtn_payload}")
+          # Try to cleanup
+          delete_stemcell(name)
+        end
         result
       end
     end
@@ -138,7 +161,12 @@ module EsxCloud
       with_thread_name("delete_stemcell(#{stemcell})") do
         # send delete stemcell command to esx controller
         delete_sc = EsxMQ::DeleteStemcellMsg.new(stemcell)
-        send_request(delete_sc)
+        rtn, rtn_status = send_request_with_retry(delete_sc)
+        if rtn
+          @logger.info("Delete stemcell #{stemcell} succeeded")
+        else
+          @logger.warn("Failed to delete stemcell #{stemcell} #{rtn_status.inspect if rtn_status}")
+        end
       end
     end
 
@@ -176,9 +204,15 @@ module EsxCloud
                     "persistent" => {}}
         create_vm.guestInfo = generate_agent_env(name, name, agent_id, network_env, disk_env)
 
-        rtn, dummy = send_request(create_vm)
-        result = name if rtn
-        raise "Create vm Failed" unless rtn
+        rtn, rtn_status = send_request_with_retry(create_vm)
+        if rtn
+          @logger.info("Create vm for agent #{agent_id} #{name} succeeded")
+          result = name
+        else
+          @logger.info("Create vm for agent #{agent_id} #{name} failed, #{rtn_status.inspect if rtn_status}")
+          # Try to cleanup
+          delete_vm(name)
+        end
         result
       end
     end
@@ -188,7 +222,13 @@ module EsxCloud
         @logger.info("ESXCLOUD: Deleting vm: #{vm_cid}")
 
         delete_vm = EsxMQ::DeleteVmMsg.new(vm_cid)
-        send_request(delete_vm)
+        rtn, rtn_status = send_request_with_retry(delete_vm)
+
+        if rtn
+          @logger.info("Delete vm #{vm_cid} succeeded")
+        else
+          @logger.warn("Delete vm #{vm_cid} failed, #{rtn_status.inspect if rtn_status}")
+        end
       end
     end
 
@@ -197,7 +237,13 @@ module EsxCloud
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         network_env = build_agent_network_env_new(networks)
         configure_network = EsxMQ::ConfigureNetworkMsg.new(vm_cid, network_env)
-        send_request(configure_network)
+
+        rtn, rtn_status = send_request_with_retry(configure_network)
+        if rtn
+          @logger.info("Configure network of vm #{vm_cid} succeeded")
+        else
+          @logger.info("Configure network of vm #{vm_cid} failed #{rtn_status.inspect if rtn_status}")
+        end
       end
     end
 
