@@ -11,9 +11,9 @@ db: "sqlite://director.db"
 blobstore:
   plugin: simple
   properties:
-    endpoint: http://127.0.0.1
+    endpoint: http://127.0.0.1:9999
     user: admin
-    password:
+    password: admin
 cloud:
   plugin: vsphere
   properties:
@@ -23,9 +23,9 @@ cloud:
       blobstore:
         plugin: simple
         properties:
-          endpoint: http://127.0.0.1
-          user: agent
-          password:
+          endpoint: http://127.0.0.1:9999
+          user: admin
+          password: admin
       server:
         host: 127.0.0.1
         password:

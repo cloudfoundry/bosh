@@ -193,6 +193,26 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "getting release info" do
+      it "returns versions" do
+        release = Bosh::Director::Models::Release.create(:name => "test_release")
+        (1..10).map do |i|
+          release.add_version(Bosh::Director::Models::ReleaseVersion.make(:version => i))
+        end
+        release.save
+
+        get "/releases/test_release"
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+
+        body["versions"].sort.should == (1..10).map{ |i| i.to_s }.sort
+      end
+
+      it "returns packages and jobs" do
+        pending "TBD soon"
+      end
+    end
+
     describe "listing tasks" do
       it "has API call that returns a list of running tasks" do
         ["queued", "processing"].each do |state|
