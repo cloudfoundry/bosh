@@ -1,3 +1,5 @@
+include_recipe "env"
+
 %w[ build-essential libssl-dev zlib1g-dev libreadline5-dev libxml2-dev ].each do |pkg|
   package pkg
 end

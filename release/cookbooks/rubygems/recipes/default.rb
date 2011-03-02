@@ -1,3 +1,4 @@
+include_recipe "env"
 include_recipe "ruby"
 
 remote_file "/tmp/rubygems-#{node[:rubygems][:version]}.tgz" do
