@@ -6,6 +6,8 @@
   end
 end
 
+service "procps"
+
 if node[:env][:sysctl]
   template "/etc/sysctl.d/90-bosh.conf" do
     source "90-bosh.conf.erb"
