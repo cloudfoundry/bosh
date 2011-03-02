@@ -1,7 +1,7 @@
 daemonize no
 pidfile <%= node[:redis][:path] %>/var/redis.pid
 port <%= node[:redis][:port] %>
-timeout 300
+timeout 0
 loglevel notice
 logfile stdout
 databases 16
