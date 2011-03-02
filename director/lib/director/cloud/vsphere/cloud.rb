@@ -235,11 +235,12 @@ module VSphereCloud
     def delete_vm(vm_cid)
       with_thread_name("delete_vm(#{vm_cid})") do
         @logger.info("Deleting vm: #{vm_cid}")
-        # TODO: detach any persistent disks
+
         vm = get_vm_by_cid(vm_cid)
         datacenter = client.find_parent(vm, "Datacenter")
         properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question",
-                                                                  "name", "datastore"], :ensure => ["datastore"])
+                                                                  "config.hardware.device", "name", "datastore"],
+                                           :ensure => ["datastore", "config.hardware.device"])
 
         question = properties["runtime.question"]
         if question
@@ -255,6 +256,22 @@ module VSphereCloud
         if power_state != VirtualMachinePowerState::PoweredOff
           @logger.info("Powering off vm: #{vm_cid}")
           client.power_off_vm(vm)
+        end
+
+        # Detach any persistent disks in case they were not detached from the instance
+        devices = properties["config.hardware.device"]
+        persistent_disks = devices.select { |device| device.kind_of?(VirtualDisk) &&
+            device.backing.diskMode == VirtualDiskMode::Independent_persistent }
+
+        unless persistent_disks.empty?
+          @logger.info("Found #{persistent_disks.size} persistent disk(s)")
+          config = VirtualMachineConfigSpec.new
+          persistent_disks.each do |virtual_disk|
+            @logger.info("Detaching: #{virtual_disk.backing.fileName}")
+            config.deviceChange << create_delete_device_spec(virtual_disk)
+          end
+          client.reconfig_vm(vm, config)
+          @logger.info("Detached #{persistent_disks.size} persistent disk(s)")
         end
 
         client.delete_vm(vm)
