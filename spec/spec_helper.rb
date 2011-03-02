@@ -8,7 +8,7 @@ module Bosh
 end
 
 RSpec.configure do |c|
-  # c.filter_run :focus => true
+  c.filter_run :focus => true if ENV["FOCUS"]
 end
 
 def spec_asset(name)
