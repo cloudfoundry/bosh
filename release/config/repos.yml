@@ -1,6 +1,6 @@
 ---
 bosh:
-  uri: /home/mpatil/appcloud/projects/bosh
+  uri: git@github.com:vmware-ac/bosh.git
   roles:
   - blobstore
   - director
