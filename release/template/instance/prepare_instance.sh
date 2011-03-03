@@ -51,8 +51,8 @@ ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
 # vmbuilder will default to dhcp when no IP is specified - wipe
 echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 
-mkdir -p /var/vcap/deploy /var/vcap/storage
-chown vcap:vcap /var/vcap/deploy /var/vcap/storage
+mkdir -p ${bosh_app_dir}/deploy ${bosh_app_dir}/storage
+chown vcap:vcap ${bosh_app_dir}/deploy ${bosh_app_dir}/storage
 
-echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc
-echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
+echo "export PATH=${bosh_app_dir}/bosh/bin:\$PATH" >> /root/.bashrc
+echo "export PATH=${bosh_app_dir}/bosh/bin:\$PATH" >> /home/vcap/.bashrc
