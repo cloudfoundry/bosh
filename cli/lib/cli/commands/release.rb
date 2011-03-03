@@ -95,7 +95,7 @@ module Bosh::Cli::Command
         end
 
       rescue Bosh::Cli::DirectorError => e
-        say e.message.red
+        say e.message
         say "Need to upload the whole release"
       end
 
