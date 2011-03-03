@@ -17,7 +17,7 @@ gem "SystemTimer"
 gem "thin"
 gem "uuidtools"
 gem "yajl-ruby"
-gem "esxmq" , "0.0.12"
+gem "esxmq" , "0.0.13"
 
 group :development do
   gem "sqlite3"
