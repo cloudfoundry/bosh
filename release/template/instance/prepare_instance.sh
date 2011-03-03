@@ -56,3 +56,9 @@ chown vcap:vcap ${bosh_app_dir}/deploy ${bosh_app_dir}/storage
 
 echo "export PATH=${bosh_app_dir}/bosh/bin:\$PATH" >> /root/.bashrc
 echo "export PATH=${bosh_app_dir}/bosh/bin:\$PATH" >> /home/vcap/.bashrc
+
+if [ -f ${bosh_app_dir}/authorized_keys ]; then
+  mkdir /home/vcap/.ssh
+  mv ${bosh_app_dir}/authorized_keys /home/vcap/.ssh
+  chown -R vcap:vcap /home/vcap/.ssh
+fi

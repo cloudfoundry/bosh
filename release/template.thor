@@ -24,7 +24,7 @@ class Template < Thor
   end
 
   desc "create", "create a VM template"
-  method_options :iso => :string
+  method_options :iso => :string, :ssh_key => :string
   def create
     # Find OVF tool
     ovftool_bin = ENV['OVFTOOL'] ||= '/usr/lib/vmware/ovftool/ovftool'
@@ -40,6 +40,11 @@ class Template < Thor
         :copyin => File.join(work_dir, 'build', 'copy.in'),
         :execscript => File.join(work_dir, 'build', 'execscript.sh')
       }
+
+      if options.ssh_key
+        raise "Invalid ssh public key file specified" unless File.file?(options.ssh_key)
+        @template_args[:ssh_key] = options.ssh_key
+      end
 
       directory(TEMPLATE_PATH, work_dir)
 

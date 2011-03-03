@@ -1,1 +1,4 @@
 <%= template_args[:work_dir] %>/instance /var/vcap/bosh/src
+<% if template_args[:ssh_key] -%>
+<%= template_args[:ssh_key] -%> /var/vcap/authorized_keys
+<% end -%>
