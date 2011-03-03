@@ -34,3 +34,27 @@ class Hash
    OpenStruct.new(mapped)
  end
 end
+
+require "sequel/connection_pool/threaded"
+
+class Sequel::ThreadedConnectionPool < Sequel::ConnectionPool
+
+  alias_method :acquire_original, :acquire
+  alias_method :release_original, :release
+
+  def acquire(thread)
+    result = acquire_original(thread)
+    if Bosh::Director::Config.logger
+      Bosh::Director::Config.logger.info("Acquired connection: #{@allocated[thread].object_id}")
+    end
+    result
+  end
+
+  def release(thread)
+    if Bosh::Director::Config.logger
+      Bosh::Director::Config.logger.info("Released connection: #{@allocated[thread].object_id}")
+    end
+    release_original(thread)
+  end
+
+end
