@@ -45,14 +45,14 @@ class Sequel::ThreadedConnectionPool < Sequel::ConnectionPool
   def acquire(thread)
     result = acquire_original(thread)
     if Bosh::Director::Config.logger
-      Bosh::Director::Config.logger.info("Acquired connection: #{@allocated[thread].object_id}")
+      Bosh::Director::Config.logger.debug("Acquired connection: #{@allocated[thread].object_id}")
     end
     result
   end
 
   def release(thread)
     if Bosh::Director::Config.logger
-      Bosh::Director::Config.logger.info("Released connection: #{@allocated[thread].object_id}")
+      Bosh::Director::Config.logger.debug("Released connection: #{@allocated[thread].object_id}")
     end
     release_original(thread)
   end
