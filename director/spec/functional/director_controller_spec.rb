@@ -53,14 +53,14 @@ describe Bosh::Director::Controller do
   describe "Fetching status" do
 
     it "not authenticated" do
-      get "/status"
+      get "/info"
       last_response.status.should == 200
       Yajl::Parser.parse(last_response.body)["user"].should == nil
     end
 
     it "authenticated" do
       login_as_admin
-      get "/status"
+      get "/info"
 
       last_response.status.should == 200
       expected = {
