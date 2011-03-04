@@ -13,7 +13,7 @@ gem "resque"
 gem "sequel"
 gem "sinatra"
 gem "soap4r"
-gem "SystemTimer"
+gem "SystemTimer", :platforms => :ruby_18
 gem "thin"
 gem "uuidtools"
 gem "yajl-ruby"
@@ -35,6 +35,7 @@ group :test do
   gem "rcov"
   gem "rcov_analyzer"
   gem "rspec"
-  gem "ruby-debug"
+  gem "ruby-debug", :platforms => :ruby_18
+  gem "ruby-debug19", :platforms => :ruby_19
   gem "sqlite3"
 end
