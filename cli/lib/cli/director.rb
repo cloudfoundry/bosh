@@ -29,7 +29,7 @@ module Bosh
         get_status
         true
       rescue AuthError
-        true # For compatibility with directors that return 401 for /status
+        true # For compatibility with directors that return 401 for /info
       rescue DirectorError
         false
       end
@@ -54,7 +54,7 @@ module Bosh
       end
 
       def get_status
-        get_json("/status")
+        get_json("/info")
       end
 
       def list_stemcells

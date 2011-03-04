@@ -13,14 +13,14 @@ class Director
     if endpoint.blank?
       raise DirectorError, "Please provide director endpoint"
     end
-    
+
     @endpoint = endpoint
     @user     = user
     @password = password
   end
 
   def authenticated?
-    get("/status")[0] == 200
+    get("/info")[0] == 200
   end
 
   def list_stemcells
@@ -36,11 +36,11 @@ class Director
   end
 
   def list_running_tasks
-    get_json("/running_tasks")
+    get_json("/tasks?state=processing")
   end
 
   def list_recent_tasks(count = 30)
-    get_json("/recent_tasks/#{count.to_i}")
+    get_json("/tasks?limit=#{count.to_i}")
   end
 
   def get_task_state(task_id)
@@ -49,7 +49,7 @@ class Director
     #raise MissingTask, "No task##{@task_id} found" if response_code == 404
     #raise TaskTrackError, "Got HTTP #{response_code} while tracking task state" if response_code != 200
     body
-  end  
+  end
 
   def get_task_output(task_id, offset)
     response_code, body, headers = get("/tasks/#{task_id}/output", nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
@@ -60,7 +60,7 @@ class Director
     else
       nil
     end
-    [ body, new_offset ]    
+    [ body, new_offset ]
   end
 
   [ :post, :put, :get, :delete ].each do |method_name|
@@ -85,7 +85,7 @@ class Director
     }
 
     status, body, response_headers = perform_http_request(req)
-    
+
     if DIRECTOR_HTTP_ERROR_CODES.include?(status)
       raise DirectorError, parse_error_message(status, body)
     end
@@ -119,7 +119,7 @@ class Director
 
   def parse_error_message(status, body)
     parsed_body = JSON.parse(body.to_s)
-    
+
     if parsed_body["code"] && parsed_body["description"]
       "Director error %s: %s" % [ parsed_body["code"], parsed_body["description"] ]
     else

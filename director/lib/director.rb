@@ -72,7 +72,7 @@ module Bosh::Director
   autoload :Models, "director/models"
 
   class Controller
-    PUBLIC_URLS = ["/status"]
+    PUBLIC_URLS = ["/info"]
 
     def call(env)
       api_controller = ApiController.new
@@ -323,7 +323,7 @@ module Bosh::Director
       end
     end
 
-    get "/status" do
+    get "/info" do
       status = {
         "name"    => Config.name,
         "version" => VERSION,
