@@ -60,11 +60,16 @@ module Bosh::Agent
 
     def on_connect
       subscription = "agent.#{@agent_id}"
-      @nats.subscribe(subscription) { |raw_msg| handle_message(raw_msg) }
+      @nats.subscribe(subscription) { |raw_msg| handle_message(json) }
     end
 
-    def handle_message(msg_raw)
-      msg = Yajl::Parser.new.parse(msg_raw)
+    def handle_message(json)
+      begin
+        msg = Yajl::Parser.new.parse(json)
+      rescue Yajl::ParseError => e
+        @logger.info("Failed to parse message: #{json}: #{e.inspect}: #{e.backtrace}")
+        return
+      end
 
       @logger.info("Message: #{msg.inspect}")
 
