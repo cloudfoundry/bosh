@@ -1,3 +1,4 @@
 396259d2-fbe1-4f41-8023-93ed89b5ee3e bosh-stemcell-0.0.144.tgz
 21a82f06-23f1-4af8-8c44-9556e1fef010 bosh-stemcell-0.0.149.tgz
 00adcdca-7671-4d5b-bdc1-1cc6d6b649a3 bosh-stemcell-0.0.155.tgz
+7e93b6ea-b766-4f76-be30-8915d11a843a bosh-stemcell-0.0.181.tgz

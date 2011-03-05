@@ -31,16 +31,22 @@ module Bosh::Agent
         data_tmp = File.join(base_dir, 'data', 'tmp')
         FileUtils.mkdir_p(data_tmp)
 
-        Tempfile.open(blobstore_id, data_tmp) do |tf|
+        begin
+          tf = Tempfile.open(blobstore_id, data_tmp)
           logger.info("Retrieving blob: #{blobstore_id}")
 
           blobstore_client.get(blobstore_id, tf)
+          logger.info("Done retrieving blob")
+
           tf.flush
           blob_data_file = tf.path
 
+          logger.info("creating #{install_path}")
           FileUtils.mkdir_p(install_path)
 
           blob_sha1 = Digest::SHA1.file(blob_data_file).hexdigest
+          logger.info("hexdigest of #{blob_data_file}")
+
           unless blob_sha1 == sha1
             raise Bosh::Agent::MessageHandlerError, "Expected sha1: #{sha1}, Downloaded sha1: #{blob_sha1}"
           end
@@ -51,6 +57,12 @@ module Bosh::Agent
             raise Bosh::Agent::MessageHandlerError,
               "Failed to unpack blob: #{output}" unless $?.exitstatus == 0
           end
+        rescue Exception => e
+          logger.info("Failure unpacking blob: #{e.inspect} #{e.backtrace}")
+          raise e
+        ensure
+          tf.close
+          tf.unlink
         end
 
       end
