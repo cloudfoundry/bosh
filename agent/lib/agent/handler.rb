@@ -118,6 +118,7 @@ module Bosh::Agent
     end
 
     def publish(reply_to, payload)
+      @logger.info("reply_to: #{reply_to}: payload: #{payload.inspect}")
       @nats.publish(reply_to, Yajl::Encoder.encode(payload))
     end
 
@@ -146,6 +147,7 @@ module Bosh::Agent
         result = processor.process(args)
         return {:value => result}
       rescue Bosh::Agent::MessageHandlerError => e
+        @logger.info("#{e.inspect}: #{e.backtrace}")
         return {:exception => e.inspect}
       rescue Exception => e
         @logger.info("#{e.inspect}: #{e.backtrace}")
