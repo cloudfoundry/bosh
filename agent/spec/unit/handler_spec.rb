@@ -66,4 +66,14 @@ describe Bosh::Agent::Handler do
     handler.processors.keys.should include("camel_cased_message_handler")
   end
 
+  it "handle message should fail on broken json" do
+    logger = Bosh::Agent::Config.logger
+
+    logger.should_receive(:info).with(/Message processors/)
+    logger.should_receive(:info).with(/Yajl::ParseError/)
+
+    handler = Bosh::Agent::Handler.new
+    handler.handle_message('}}}b0rked}}}json')
+  end
+
 end
