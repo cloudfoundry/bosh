@@ -27,7 +27,7 @@ describe Bosh::Agent::Handler do
       end
     end
     payload = handler.process(klazz, nil)
-    payload.should == {:exception => "#<Bosh::Agent::MessageHandlerError: boo!>"}
+    payload[:exception].should match(/#<Bosh::Agent::MessageHandlerError: boo!/)
   end
 
   it "should process long running tasks" do

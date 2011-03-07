@@ -153,7 +153,7 @@ module Bosh::Agent
         return {:value => result}
       rescue Bosh::Agent::MessageHandlerError => e
         @logger.info("#{e.inspect}: #{e.backtrace}")
-        return {:exception => "#{e.inspect}: #{b.backtrace}"}
+        return {:exception => "#{e.inspect}: #{e.backtrace}"}
       rescue Exception => e
         @logger.info("#{e.inspect}: #{e.backtrace}")
         raise e
