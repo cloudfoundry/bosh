@@ -16,6 +16,7 @@ options = {
   "mbus"      => "nats://localhost:4222",
   "agent_id"  => "not_configured",
   "blobstore_options" => {},
+  "blobstore_provider" => "simple",
   "base_dir"  => "/var/vcap"
 }
 
@@ -36,13 +37,16 @@ opts = OptionParser.new do |opts|
     options["mbus"] = opt
   end
 
+  opts.on("-p", "--provider String", "Blobstore provider") do |opt|
+    options["blobstore_provider"] = opt
+  end
+
   # Needed this customization for integration tests, quirky but seems to work
   opts.on("-s", "--blobstore String", "Blobstore options") do |opt|
     credentials, endpoint = opt.split("@", 2)
     user, password = credentials.split(":", 2)
     options["blobstore_options"] = { "endpoint" => endpoint, "user" => user, "password" => password }
   end
-  
 end
 opts.parse!(ARGV.dup)
 
