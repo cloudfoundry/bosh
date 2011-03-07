@@ -54,14 +54,19 @@ describe Bosh::Agent::Message::Configure do
   # This doesn't quite belong here
   it "should configure mbus with nats server uri" do
     @processor.load_settings
-    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore" => {}})
+    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore_options" => {}})
     @processor.update_mbus
     Bosh::Agent::Config.mbus.should == "nats://user:pass@11.0.0.11:4222"
   end
 
   it "should configure blobstore with settings data" do
     @processor.load_settings
-    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore" => {}})
+
+    settings = {
+      "logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore_options" => { "user" => "agent" }
+    }
+    Bosh::Agent::Config.setup(settings)
+
     @processor.update_blobstore
     blobstore_options = Bosh::Agent::Config.blobstore_options
     blobstore_options["user"].should == "agent"

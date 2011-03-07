@@ -59,7 +59,8 @@ if __FILE__ == $0
     "logging" => { "level" => "DEBUG" },
     "mbus" => "nats://localhost:4222",
     "agent_id" => "not_configured",
-    "base_dir" => "/var/vcap"
+    "base_dir" => "/var/vcap",
+    "blobstore_options" => {}
   }
   Bosh::Agent.run(options)
 end

@@ -26,7 +26,8 @@ module Bosh::Agent
         logger = Bosh::Agent::Config.logger
 
         bsc_options = Bosh::Agent::Config.blobstore_options
-        blobstore_client = Bosh::Blobstore::SimpleBlobstoreClient.new(bsc_options)
+        bsc_provider = Bosh::Agent::Config.blobstore_provider
+        blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
 
         data_tmp = File.join(base_dir, 'data', 'tmp')
         FileUtils.mkdir_p(data_tmp)
