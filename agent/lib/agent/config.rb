@@ -11,7 +11,7 @@ module Bosh::Agent
         @logger = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
 
-        @logger.info("Configuring Agent with: #{config}")
+        @logger.info("Configuring Agent with: #{config.inspect}")
 
         @agent_id = config["agent_id"]
 
@@ -20,7 +20,7 @@ module Bosh::Agent
 
         # TODO: right now this will only appy the the simple blobstore type
         @blobstore_options = config["blobstore_options"]
-        @blobstore_provier = config["blobstore_provider"]
+        @blobstore_provider = config["blobstore_provider"]
 
         @settings = {}
       end
