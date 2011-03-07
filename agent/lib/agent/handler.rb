@@ -60,7 +60,7 @@ module Bosh::Agent
 
     def on_connect
       subscription = "agent.#{@agent_id}"
-      @nats.subscribe(subscription) { |raw_msg| handle_message(json) }
+      @nats.subscribe(subscription) { |raw_msg| handle_message(raw_msg) }
     end
 
     def handle_message(json)

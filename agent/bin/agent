@@ -15,7 +15,7 @@ options = {
   "logging"   => { "level" => "DEBUG" },
   "mbus"      => "nats://localhost:4222",
   "agent_id"  => "not_configured",
-  "blobstore" => {}, # FIXME - make configurable
+  "blobstore_options" => {},
   "base_dir"  => "/var/vcap"
 }
 
@@ -40,7 +40,7 @@ opts = OptionParser.new do |opts|
   opts.on("-s", "--blobstore String", "Blobstore options") do |opt|
     credentials, endpoint = opt.split("@", 2)
     user, password = credentials.split(":", 2)
-    options["blobstore"] = { "endpoint" => endpoint, "user" => user, "password" => password }
+    options["blobstore_options"] = { "endpoint" => endpoint, "user" => user, "password" => password }
   end
   
 end

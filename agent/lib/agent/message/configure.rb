@@ -78,8 +78,13 @@ module Bosh::Agent
       end
 
       def update_blobstore
-        blobstore_settings = @settings["blobstore"]["properties"]
-        Bosh::Agent::Config.blobstore_options.merge!(blobstore_settings)
+        blobstore_settings = @settings["blobstore"]
+
+        blobstore_provider =  blobstore_settings["plugin"]
+        blobstore_options =  blobstore_settings["properties"]
+
+        Bosh::Agent::Config.blobstore_provider = blobstore_provider
+        Bosh::Agent::Config.blobstore_options.merge!(blobstore_options)
       end
 
       # TODO: factor out into it's own class

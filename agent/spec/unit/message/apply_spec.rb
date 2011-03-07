@@ -9,7 +9,9 @@ describe Bosh::Agent::Message::Apply do
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
 
+    Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
+
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
   end
