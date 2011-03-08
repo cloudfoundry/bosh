@@ -68,7 +68,6 @@ echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
 
 echo -e "startup=1\n" > /etc/default/monit
-mkidr -p ${bosh_app_dir}/monit
 cp monitrc /etc/monit/monitrc
 
 # monit refuses to start without an include file present
