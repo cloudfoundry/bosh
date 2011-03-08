@@ -40,7 +40,7 @@ tar zxvf rubygems-1.3.7.tgz
   ${bosh_app_dir}/bosh/bin/ruby setup.rb
 )
 
-gem install bundler-1.0.7.gem
+gem install bundler-1.0.10.gem
 
 version=$(cat version)
 agent_path=${bosh_app_dir}/bosh/agent_${version}_builtin
