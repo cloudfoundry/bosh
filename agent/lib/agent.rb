@@ -7,6 +7,7 @@ require 'nats/client'
 require "yajl"
 require 'uuidtools'
 require 'ostruct'
+require 'posix/spawn'
 
 require "agent/ext"
 require "agent/version"

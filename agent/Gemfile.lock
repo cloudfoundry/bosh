@@ -1,7 +1,6 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    SystemTimer (1.2)
     aws-s3 (0.6.2)
       builder
       mime-types
@@ -13,18 +12,17 @@ GEM
     builder (2.1.2)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
-    columnize (0.3.1)
     daemons (1.1.0)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
     httpclient (2.1.6.1)
-    linecache (0.43)
     mime-types (1.16)
     nats (0.3.12)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
       yajl-ruby (>= 0.7.8)
     netaddr (1.5.0)
+    posix-spawn (0.3.3)
     rake (0.8.7)
     rcov (0.9.9)
     rcov_analyzer (0.1)
@@ -38,11 +36,6 @@ GEM
     rspec-expectations (2.1.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.1.0)
-    ruby-debug (0.10.3)
-      columnize (>= 0.1)
-      ruby-debug-base (~> 0.10.3.0)
-    ruby-debug-base (0.10.3)
-      linecache (>= 0.3)
     uuidtools (2.1.1)
     xml-simple (1.0.12)
     yajl-ruby (0.7.8)
@@ -51,15 +44,14 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  SystemTimer
   blobstore_client (~> 0.3)
   ci_reporter
   nats
   netaddr
+  posix-spawn
   rake
   rcov
   rcov_analyzer
   rspec
-  ruby-debug
   uuidtools
   yajl-ruby
