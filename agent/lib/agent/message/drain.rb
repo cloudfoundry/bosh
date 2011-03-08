@@ -107,13 +107,6 @@ module Bosh::Agent
         File.exists?(drain_script)
       end
 
-      def updated
-        @udpated_packages = []
-
-        @old_spec['packages'].each do |pkg|
-        end
-      end
-
     end
   end
 end
