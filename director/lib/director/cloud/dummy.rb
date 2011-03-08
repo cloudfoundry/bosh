@@ -39,6 +39,7 @@ module Bosh
         agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112")
 
         agent_pid = fork do
+          ENV["BUNDLE_GEMFILE"] = File.join(agent_dir, 'Gemfile')
           exec "ruby #{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
         end
 
