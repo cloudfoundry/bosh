@@ -57,6 +57,7 @@ module Bosh::Agent
           begin
             apply_job
             apply_packages
+            post_install_hook
             configure_monit
           rescue Exception => e
             raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
@@ -144,6 +145,10 @@ module Bosh::Agent
             FileUtils.chmod(0755, out_file)
           end
         end
+      end
+
+      def post_install_hook
+        Util.run_hook('post_install', @job_name)
       end
 
       def configure_monit

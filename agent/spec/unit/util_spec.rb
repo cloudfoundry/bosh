@@ -57,4 +57,25 @@ describe Bosh::Agent::Util do
     template.result(config_binding).should == "job name: funky_job_name"
   end
 
+  it "should handle hook" do
+    base_dir = Bosh::Agent::Config.base_dir
+
+    job_name = "hubba"
+    job_bin_dir = File.join(base_dir, 'jobs', job_name, 'bin')
+    FileUtils.mkdir_p(job_bin_dir)
+
+    hook_file = File.join(job_bin_dir, 'post-install')
+
+    File.open(hook_file, 'w') do |fh|
+      fh.puts("#!/bin/sh\necho -n 'yay'")
+    end
+
+    lambda {
+      Bosh::Agent::Util.run_hook('post-install', job_name)
+    }.should raise_error(Bosh::Agent::MessageHandlerError, /exit: 127/)
+
+    FileUtils.chmod(0700, hook_file)
+    Bosh::Agent::Util.run_hook('post-install', job_name).should == "yay"
+  end
+
 end
