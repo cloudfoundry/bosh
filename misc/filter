@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require "rubygems"
+require "yajl"
+
+result = {}
+
+ARGF.each do |line|
+  if /DEBUG -- : SENT: agent./ =~ line
+    json = line[line.index("{")..-1]
+    message = Yajl::Parser.parse(json)
+    if message["method"] == "apply"
+      spec = message["arguments"].first
+      result[[spec["job"]["name"], spec["index"]]] = "#{spec["networks"].collect{ |name, network| network["ip"]}.join(", ")}" if spec["configuration_hash"]
+    end
+  end
+end
+
+result.sort{ |a, b|
+  name_a = a[0][0]
+  name_b = b[0][0]
+
+  result = name_a <=> name_b
+
+  if result == 0
+    index_a = a[0][1]
+    index_b = b[0][1]
+    result = index_a <=> index_b
+  end
+  result
+}.each { |key, value| puts "#{key[0]}/#{key[1]} => #{value}" }
