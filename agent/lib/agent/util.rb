@@ -121,6 +121,29 @@ module Bosh::Agent
         settings
       end
 
+      def run_hook(hook, job_name)
+        base_dir = Bosh::Agent::Config.base_dir
+        logger = Bosh::Agent::Config.logger
+
+        hook_file = File.join(base_dir, 'jobs', job_name, 'bin', hook)
+        if File.exist?(hook_file)
+
+          child = POSIX::Spawn::Child.new(hook_file)
+          result = child.out
+          logger.info("Hook #{hook} for job #{job_name}: #{result}")
+
+          unless child.status.exitstatus == 0
+            exception_message = "Hook #{hook} for #{job_name} failed "
+            exception_message += "(exit: #{child.status.exitstatus}) "
+            exception_message += " stderr: #{child.err}, stdout: #{result}"
+            logger.info(exception_message)
+
+            raise Bosh::Agent::MessageHandlerError, exception_message
+          end
+          result
+        end
+      end
+
     end
   end
 end
