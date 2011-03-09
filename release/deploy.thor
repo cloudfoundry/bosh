@@ -152,7 +152,26 @@ class Deploy < Thor
       end
     end
 
-    def update_local_repo(repo, uri)
+    def update_local_repo(repo, uri, scm)
+      if scm.upcase == "NONE"
+        say_status :syncing, "Preparing git repo from directory #{uri}"
+
+        base_dir = File.basename(uri)
+        inside("#{@local_repo_cache}/git") do
+          fork{
+            cmd = "rsync -a --delete --exclude=.git/ #{uri} . && " +
+                  "cd #{base_dir} && git init && git add -u && " +
+                  "git add * && git commit -q -m 'update'"
+            exec("#{cmd}")
+          }
+          Process.wait
+          status = $?
+          raise "Failed to create local repo" unless status.exited? && status.exitstatus == 0
+
+          uri = @local_repo_cache + "/git/" + base_dir
+        end
+      end
+
       inside("#{@local_repo_cache}/#{repo}") do
         cmd = if File.file?("#{@local_repo_cache}/#{repo}/HEAD")
                 say_status :syncing, "syncing #{repo}"
@@ -163,6 +182,8 @@ class Deploy < Thor
               end
         fork { exec(cmd) }
         Process.wait
+        status = $?
+        raise "Failed to sync repo" unless status.exited? && status.exitstatus == 0
       end
     end
 
@@ -302,7 +323,8 @@ class Deploy < Thor
         (role_repo_mapping[role] ||= []) << name
         required_repo = true
       end
-      update_local_repo(name, config["uri"]) if required_repo
+      scm = config["scm"] || "git"
+      update_local_repo(name, config["uri"], scm) if required_repo
     end
 
     say_status :repos, "checking which repos need to be uploaded"
@@ -337,7 +359,7 @@ class Deploy < Thor
       end
     end
 
-    [:blobstore, :nats, :postgresql, :redis, :director].each do |role|
+    @cloud_config["roles"].each_key do |role|
       host = @roles[role.to_s]
       update_role(role, host) if host
     end
