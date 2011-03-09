@@ -84,7 +84,7 @@ module Bosh::Agent
           output = %x[#{sfdisk_cmd}]
           unless $? == 0
             logger.info("failed to parition #{dev}")
-            logger.info(ouput)
+            logger.info(output)
           end
         end
       end
