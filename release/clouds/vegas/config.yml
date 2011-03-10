@@ -5,6 +5,12 @@ roles:
   redis:      172.30.252.115
   nats:       172.30.40.12
   blobstore:  172.30.40.12
+deploy_order:
+  - blobstore
+  - nats
+  - postgres
+  - redis
+  - director
 user: vcap
 gateway: las-jump
 paths:
