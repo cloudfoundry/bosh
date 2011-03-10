@@ -129,15 +129,22 @@ module DeployBosh
        def answer_ssh(command, password)
          $expect_verbose = true
          say("==> EXECUTING SSH LOGIN #{command}", :yellow)
-         PTY.spawn(command) do |read_pipe, write_pipe, _|
-           begin
+         begin
+           PTY.spawn(command) do |read_pipe, write_pipe, _|
              loop do
                result = read_pipe.expect(/password:/i)
                next if result.nil?
                write_pipe.puts(password)
              end
-           rescue PTY::ChildExited
+             if $!.nil? || $!.is_a?(SystemExit) && $!.success?
+               nil
+             else
+               rtn = $!.is_a?(SystemExit) ? $!.status.exitstatus : 1
+               raise "Failed command #{command}" if rtn != 0
+             end
            end
+         rescue PTY::ChildExited => msg
+           raise "Failed command #{command}" if msg.status.exitstatus != 0
          end
        end
 
@@ -162,6 +169,9 @@ module DeployBosh
              fork{
                cmd = "rsync -a --delete --exclude=\".*/\" #{uri} . && " +
                      "cd #{base_dir} && git init && git add -u && " +
+                     # empty git commit reports an error in exitstatus,
+                     # so always commit atleast one file (timestamp)
+                     "echo #{Time.now.to_f.to_s} > timestamp && " + 
                      "git add * && git commit -q -m 'update'"
                exec("#{cmd}")
              }
