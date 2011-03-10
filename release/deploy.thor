@@ -359,7 +359,7 @@ class Deploy < Thor
       end
     end
 
-    @cloud_config["roles"].each_key do |role|
+    @cloud_config["deploy_order"].each do |role|
       host = @roles[role.to_s]
       update_role(role, host) if host
     end
