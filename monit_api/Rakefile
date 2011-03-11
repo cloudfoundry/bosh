@@ -1,0 +1,69 @@
+require "rubygems"
+require "rake/gempackagetask"
+
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "lib"))
+require "monit_api/version"
+
+GEM = "monit_api"
+GEM_VERSION = MonitApi::VERSION
+
+gemspec = Gem::Specification.new do |s|
+  s.name         = GEM
+  s.version      = GEM_VERSION
+  s.platform     = Gem::Platform::RUBY
+  s.has_rdoc     = false
+  s.summary      = "Monit API Client"
+  s.description  = s.summary
+  s.authors      = [ "Vadim Spivak" ]
+  s.email        = "vspivak@vmware.com"
+  s.homepage     = "http://vmware.com"
+  s.require_path = "lib"
+  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec}/**/*")
+
+  s.add_dependency "crack"
+end
+
+Rake::GemPackageTask.new(gemspec) do |pkg|
+  pkg.gem_spec = gemspec
+end
+
+task :install => [ :package ] do
+  sh "gem install pkg/#{GEM}-#{GEM_VERSION}"
+end
+
+desc "Run specs"
+task :spec => [ "bundler:install:test", "test:spec" ]
+
+desc "Run specs for CI"
+task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
+
+desc "Run specs w/coverage"
+task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
+
+environments = %w(test development production)
+
+namespace "bundler" do
+
+  desc "Install gems"
+  task "install" do
+    sh("bundle install")
+  end
+
+  environments = %w(test development production)
+
+  environments.each do |env|
+    desc "Install gems for #{env}"
+    task "install:#{env}" do
+      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
+    end
+  end
+
+end
+
+namespace "test" do
+  ["spec", "spec:rcov", "spec:ci" ].each do |task_name|
+    task task_name do
+      sh("cd spec && rake #{task_name}")
+    end
+  end
+end
