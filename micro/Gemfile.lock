@@ -10,10 +10,21 @@ GEM
       httpclient
       uuidtools
     builder (3.0.0)
+    daemons (1.1.0)
+    eventmachine (0.12.10)
+    highline (1.6.1)
     httpclient (2.1.6.1)
     mime-types (1.16)
+    nats (0.3.12)
+      daemons (>= 1.1.0)
+      eventmachine (>= 0.12.10)
+      yajl-ruby (>= 0.7.8)
     ncurses (0.9.1)
+    netaddr (1.5.0)
+    posix-spawn (0.3.3)
     rbcurse (1.1.5)
+    rest-client (1.6.1)
+      mime-types (>= 1.16)
     uuidtools (2.1.1)
     xml-simple (1.0.13)
     yajl-ruby (0.7.8)
@@ -23,6 +34,12 @@ PLATFORMS
 
 DEPENDENCIES
   blobstore_client (~> 0.2)
+  highline
+  nats
   ncurses
+  netaddr
+  posix-spawn
   rbcurse
+  rest-client
+  uuidtools
   yajl-ruby
