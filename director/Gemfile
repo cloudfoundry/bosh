@@ -2,7 +2,6 @@ source :rubygems
 
 gem "bcrypt-ruby"
 gem "blobstore_client"
-gem "duration"
 gem "eventmachine"
 gem "nats"
 gem "netaddr"
