@@ -1,0 +1,12 @@
+source :rubygems
+
+gem "rake"
+gem "crack"
+
+group :test do
+  gem "ci_reporter"
+  gem "rcov"
+  gem "rcov_analyzer"
+  gem "rspec"
+  gem "ruby-debug"
+end
