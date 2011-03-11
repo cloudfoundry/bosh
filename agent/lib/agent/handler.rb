@@ -34,7 +34,7 @@ module Bosh::Agent
         klazz = Bosh::Agent::Message.const_get(c)
         if klazz.respond_to?(:process)
           # CamelCase -> under_score -> downcased
-          processor_key = c.gsub(/(.)([A-Z])/,'\1_\2').downcase
+          processor_key = c.to_s.gsub(/(.)([A-Z])/,'\1_\2').downcase
           @processors[processor_key] = klazz
         end
       end
