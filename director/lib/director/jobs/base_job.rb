@@ -45,7 +45,7 @@ module Bosh::Director
           end
         end
         ended = Time.now
-        logger.info("Task took #{Duration.new(ended - started)} to process.")
+        logger.info("Task took #{Duration.duration(ended - started)} to process.")
       end
 
     end

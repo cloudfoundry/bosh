@@ -21,7 +21,6 @@ GEM
     columnize (0.3.2)
     daemons (1.1.0)
     diff-lcs (1.1.2)
-    duration (0.1.0)
     esxmq (0.0.13)
       nats
     eventmachine (0.12.10)
@@ -105,7 +104,6 @@ DEPENDENCIES
   bcrypt-ruby
   blobstore_client
   ci_reporter
-  duration
   esxmq (= 0.0.13)
   eventmachine
   machinist
