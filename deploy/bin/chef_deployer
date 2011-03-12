@@ -9,8 +9,8 @@ if File.exists?(gemfile)
 end
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
-require "deploy_bosh"
+require "chef_deployer"
 
 trap("INT") { puts "Exiting..."; exit(0) }
 
-DeployBosh::Deploy.start
+ChefDeployer::Deploy.start
