@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    deploy_bosh (0.0.4)
+    chef_deployer (0.0.4)
       chef
       nats
       net-scp
@@ -71,4 +71,4 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  deploy_bosh!
+  chef_deployer!

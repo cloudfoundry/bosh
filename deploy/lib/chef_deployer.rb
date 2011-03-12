@@ -11,13 +11,13 @@ require "net/scp"
 require "net/ssh/gateway"
 require "yajl"
 
-module DeployBosh
+module ChefDeployer
    class Deploy < Thor
      include Thor::Actions
 
      BASE_PATH = Dir.pwd
      COOKBOOKS_PATH = File.join(BASE_PATH, "cookbooks");
-     SSH_WRAPPER = File.join(File.expand_path("../../bin", __FILE__), "ssh_wrapper.sh")
+     SSH_WRAPPER = File.join(File.expand_path("../../bin", __FILE__), "chef_deployer_ssh_wrapper")
      ENV['GIT_SSH'] = SSH_WRAPPER
 
      no_tasks do
@@ -319,6 +319,8 @@ module DeployBosh
          say_status :status, "Generating cookbook metadata"
          fork { exec "knife cookbook metadata -a -o cookbooks #{COOKBOOKS_PATH}" }
          Process.wait
+         status = $?
+         raise "Failed to generate cookbook metadata" unless status.exited? && status.exitstatus == 0
        end
 
        @gateway = @cloud_config["gateway"]
