@@ -1,0 +1,3 @@
+#!/bin/sh
+cd /var/vcap/micro
+bundle exec ruby -I./lib lib/micro/configurator.rb
