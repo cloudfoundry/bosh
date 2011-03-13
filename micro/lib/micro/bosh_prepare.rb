@@ -47,6 +47,7 @@ module VCAP
       def copy_micro_to_rootfs
         FileUtils.mkdir('/var/vcap/micro')
         `cp -r /var/vcap/packages/micro/* /var/vcap/micro`
+        `cp -r /var/vcap/packages/micro/.bundle /var/vcap/micro/.bundle`
       end
 
       def setup_micro_tty
@@ -54,7 +55,10 @@ module VCAP
           f.puts("start on stopped rc RUNLEVEL=[2345]")
           f.puts("stop on runlevel [!2345]\n")
           f.puts("respawn")
-          f.puts("exec /sbin/getty exec /sbin/getty -n -i -l /var/vcap/bin/microconsole -8 38400 tty1 -8 38400 tty1")
+
+          # TODO: Ubuntu does a double exec here - figure out if it's needed
+          # (see /etc/init/tty2.conf on any Lucid system)
+          f.puts("exec /sbin/getty -n -i -l /var/vcap/micro/bin/microconsole -8 38400 tty1 -8 38400 tty1")
         end
       end
 
