@@ -1,3 +1,4 @@
 #!/bin/sh
+export PATH=/var/vcap/bosh/bin:$PATH
 cd /var/vcap/micro
-bundle exec ruby -I./lib lib/micro/configurator.rb
+bundle exec ruby -I/var/vcap/micro/lib lib/micro/configurator.rb
