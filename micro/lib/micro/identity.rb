@@ -2,6 +2,10 @@ module VCAP
   module Micro
     class Identity 
 
+      def self.admin?
+        # An admin is defined - e.g. through token
+      end
+
       def self.token(token)
       end
 

@@ -1,6 +1,6 @@
 require 'highline/import'
-require 'network'
-require 'identity'
+require 'micro/network'
+require 'micro/identity'
 
 module VCAP
   module Micro
@@ -66,6 +66,9 @@ module VCAP
           menu.choice(:token) { token }
           menu.choice(:dns_wildcard_name) { dns_wildcard_name }
         end
+        unless VCAP::Micro::Identity.admin?
+          setup_admin
+        end
       end
 
       def token
@@ -76,6 +79,11 @@ module VCAP
       def dns_wildcard_name
         name = ask("DNS wildcarded record: ")
         VCAP::Micro::Identity.dns_wildcard_name(name)
+      end
+
+      def setup_admin
+        admin = ask("Admin email: ")
+        VCAP::Micro::Identity.setup_admin(admin)
       end
 
       def start_micro_cloud
