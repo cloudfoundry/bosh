@@ -3,6 +3,7 @@ require 'posix/spawn'
 require 'yaml'
 
 require 'micro/cache'
+require 'micro/settings'
 
 module VCAP
   module Micro
@@ -73,14 +74,7 @@ module VCAP
         %w{resource_pool networks }.each { |key| state.delete(key )}
 
         properties = state['properties']
-
-        properties['cc']['token'] = secret(64)
-        properties['cc']['password'] = secret(64)
-        properties['mysql_node']['password'] = secret(8)
-        properties['nats']['password'] = secret(8)
-        properties['ccdb']['password'] = secret(8)
-
-        state['properties'] = properties
+        state['properties'] = VCAP::Micro::Settings.randomize_passwords(properties)
 
         File.open('/var/vcap/micro/apply_spec.yml', 'w') { |f| f.write(YAML.dump(state)) }
       end
