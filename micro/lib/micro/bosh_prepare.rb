@@ -18,6 +18,7 @@ module VCAP
     class BoshPrepare
 
       def run
+        stop_micro_job
         delete_agent_runit_service
         reset_hostname
         reset_etc_host
@@ -26,6 +27,11 @@ module VCAP
         prune_apply_spec
         cache_blobs
         prune_files
+      end
+
+      def stop_micro_job
+        # Redo this with the monit gem
+        `monit -g vcap stop`
       end
 
       def delete_agent_runit_service
@@ -88,12 +94,24 @@ module VCAP
         cache.download
       end
 
-
       def prune_files
         %w{
           /var/vcap/bosh/settings.json
+          /var/vcap/jobs
+          /var/vcap/packages
+          /var/vcap/sys/run
+          /var/vcap/sys/dea
+          /var/vcap/data/cloudcontroller
+          /var/vcap/data/jobs
+          /var/vcap/data/log
+          /var/vcap/data/packages
+          /var/vcap/store/mysql
+          /var/vcap/store/mysql_node.db
+          /var/vcap/store/redis
+          /var/vcap/bosh/src
+          /etc/udev/rules.d/70-persistent-net.rules
         }.each do |path|
-          FileUtils.rm(path)
+          FileUtils.rm_rf(path)
         end
       end
 
