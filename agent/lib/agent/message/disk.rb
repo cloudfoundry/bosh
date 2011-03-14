@@ -63,6 +63,9 @@ module Bosh::Agent
           unless $?.exitstatus == 0
             raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
           end
+        elsif File.blockdev?(partition)
+          @logger.info("Found existing partition on #{disk}")
+          # Do nothing
         else
           raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
         end
