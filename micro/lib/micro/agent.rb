@@ -46,6 +46,22 @@ module VCAP
         Bosh::Agent::Message::Apply.process([apply_spec])
       end
 
+      def update_spec(subdomain)
+        apply_spec = '/var/vcap/micro/apply_spec.yml'
+        spec = YAML.load_file(apply_spec)
+
+        properties = spec['properties']
+        properties = VCAP::Micro::Settings.randomize_passowrds(properties)
+        properties['cc']['external_uri'] = "api.#{subdomain}"
+        properties['cc']['index_page'] = subdomain
+
+        spec['properties'] = properties
+
+        File.open(apply_spec, 'w') { |f| f.write(YAML.dump(apply_spec)) }
+      end
+
+
+
     end
   end
 end
