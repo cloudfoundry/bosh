@@ -1,6 +1,8 @@
 require 'highline/import'
 require 'micro/network'
 require 'micro/identity'
+require 'micro/agent'
+
 
 module VCAP
   module Micro
@@ -19,6 +21,8 @@ module VCAP
 
         # Network needs to be set up before we can proceed with identity
         identity
+
+        install_micro
       end
 
       def header
@@ -99,7 +103,11 @@ module VCAP
         VCAP::Micro::Identity.setup_admin(admin)
       end
 
-      def start_micro_cloud
+      def install_micro
+        VCAP::Micro::Agent.apply
+      end
+
+      def start_micro
         #VCAP::Micro::Runner.start
       end
 
