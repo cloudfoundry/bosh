@@ -31,12 +31,12 @@ module VCAP
       end
 
       def write_network_interfaces(template_data, net)
-        interface_file = "/tmp/etc/network/interfaces"
+        interface_file = "/etc/network/interfaces"
         FileUtils.mkdir_p(File.dirname(interface_file))
 
         template = ERB.new(template_data, 0, '%<>') 
         result = template.result(binding)
-        File.open('/tmp/etc/network/interfaces', 'w') do |fh|
+        File.open(interface_file, 'w') do |fh|
           fh.write(result)
         end
       end
