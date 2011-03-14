@@ -2,7 +2,7 @@ require 'highline/import'
 require 'micro/network'
 require 'micro/identity'
 require 'micro/agent'
-
+require 'micro/system'
 
 module VCAP
   module Micro
@@ -66,15 +66,7 @@ module VCAP
       end
 
       def mounts
-        if File.blockdev?('/dev/sdb1')
-          `swapon /dev/sdb1`
-        end
-        if File.blockdev?('/dev/sdb2') && !Pathname.new('/var/vcap/data').mountpoint?
-          `mount /dev/sdb2 /var/vcap/data`
-        end
-        if File.blockdev?('/dev/sdc1') && !Pathname.new('/var/vcap/store').mountpoint?
-          `mount /dev/sdc1 /var/vcap/store`
-        end
+        VCAP::Micro::System.mounts
       end
 
       def identity
