@@ -766,6 +766,7 @@ module VSphereCloud
     end
 
     def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)
+      raise "Can't find network: #{v_network_name}" if network.nil?
       if network.xmlattr_type == "DistributedVirtualPortgroup"
         portgroup_properties = client.get_properties(network, "DistributedVirtualPortgroup",
                                                      ["config.key", "config.distributedVirtualSwitch"],
