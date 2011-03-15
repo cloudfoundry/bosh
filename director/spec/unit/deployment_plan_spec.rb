@@ -643,7 +643,28 @@ describe Bosh::Director::DeploymentPlan do
       NetAddr::CIDR.create(network.allocate_dynamic_ip).ip.should eql("10.0.0.99")
     end
 
-  it "should allow string network ranges for static and reserved ips" do
+    it "should allow gateways to be optional" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["networks"][0]["subnets"][0] = {
+        "range" => "10.0.0.0/24",
+        "dns" => ["1.2.3.4"],
+        "static" => ["10.0.0.100 - 10.0.0.200"],
+        "reserved" => ["10.0.0.201 - 10.0.0.254"],
+        "cloud_properties" => {
+          "name" => "net_a"
+        }
+      }
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      network = deployment_plan.network("network_a")
+      network.network_settings("10.0.0.2").should == {
+        "netmask" => "255.255.255.0",
+        "ip" => "10.0.0.2",
+        "cloud_properties" => {"name" => "net_a"},
+        "dns"=>["1.2.3.4"]
+      }
+    end
+
+    it "should allow string network ranges for static and reserved ips" do
       manifest = BASIC_MANIFEST._deep_copy
       manifest["networks"][0]["subnets"][0] = {
         "range" => "10.0.0.0/24",
