@@ -142,7 +142,7 @@ module Bosh::Agent
       end
 
       def write_ubuntu_network_interfaces
-        template = ERB.new(INTERFACE_TEMPLATE, 0, '%<>')
+        template = ERB.new(INTERFACE_TEMPLATE, 0, '%<>-')
         result = template.result(binding)
         network_updated = update_file(result, '/etc/network/interfaces')
         if network_updated
@@ -264,16 +264,16 @@ module Bosh::Agent
 auto lo
 iface lo inet loopback
 
-<% @networks.each do |name, n| %>
+<% @networks.each do |name, n| -%>
 auto <%= n["interface"] %>
 iface <%= n["interface"] %> inet static
     address <%= n["ip"]%>
     network <%= n["network"] %>
     netmask <%= n["netmask"]%>
     broadcast <%= n["broadcast"] %>
-  <% if n.key?('gateway') && n['gateway'] %>
-    gateway <%= n["gateway"] %>
-  <% end %>
+<% if n.key?('gateway') && n['gateway'] -%>
+    gateway <%= n["gateway"] -%>
+<% end -%>
 <% end %>
 
 TEMPLATE
