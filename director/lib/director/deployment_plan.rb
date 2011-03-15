@@ -334,6 +334,7 @@ module Bosh::Director
       attr_accessor :name
       attr_accessor :persistent_disk
       attr_accessor :resource_pool
+      attr_accessor :default_network
       attr_accessor :template
       attr_accessor :properties
       attr_accessor :packages
@@ -363,14 +364,23 @@ module Bosh::Director
         @rollback = false
         @update_errors = 0
         @unneeded_instances = []
+        @default_network = nil
 
         safe_property(job_spec, "instances", :class => Integer).times do |index|
           @instances[index] = InstanceSpec.new(self, index)
           @resource_pool.reserve_vm
         end
 
-        safe_property(job_spec, "networks", :class => Array).each do |network_spec|
+        network_specs = safe_property(job_spec, "networks", :class => Array)
+        if network_specs.empty?
+          raise "Job #{@name} must specify at least one network"
+        end
+
+        network_specs.each do |network_spec|
           network_name = safe_property(network_spec, "name", :class => String)
+          network = @deployment.network(network_name)
+          raise "Job #{@name} references an unknown network: #{network_name}" if network.nil?
+
           static_ips = nil
           if network_spec["static_ips"]
             static_ips = []
@@ -380,12 +390,29 @@ module Bosh::Director
             end
           end
 
+          default_network = safe_property(network_spec, "default", :class => :boolean, :optional => true)
+          if default_network
+            if @default_network.nil?
+              @default_network = network_name
+            else
+              raise "Job #{@name} must specify only one default network"
+            end
+          end
+
           @instances.each_with_index do |instance, index|
             network = instance.add_network(network_name)
             if static_ips
               network.ip = static_ips[index]
             end
           end
+        end
+
+        if @default_network.nil? && network_specs.size > 1
+          raise "Job #{@name} must specify a default network since it's has more than one network configured"
+        end
+
+        if @default_network.nil?
+          @default_network = safe_property(network_specs.first, "name", :class => String)
         end
       end
 
@@ -484,6 +511,9 @@ module Bosh::Director
         @networks.each_value do |instance_network|
           network = @job.deployment.network(instance_network.name)
           network_settings[instance_network.name] = network.network_settings(instance_network.ip)
+          if @job.default_network == instance_network.name
+            network_settings[instance_network.name]["default"] = true
+          end
         end
         network_settings
       end
