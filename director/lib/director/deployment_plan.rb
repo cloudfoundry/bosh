@@ -202,10 +202,10 @@ module Bosh::Director
             config = {
               "ip" => ip.ip,
               "netmask" => subnet.netmask,
-              "gateway" => subnet.gateway.ip,
               "dns" => subnet.dns,
               "cloud_properties" => subnet.cloud_properties
             }
+            config["gateway"] = subnet.gateway.ip if subnet.gateway
             break
           end
         end
@@ -242,9 +242,12 @@ module Bosh::Director
 
         @netmask = @range.wildcard_mask
 
-        @gateway = NetAddr::CIDR.create(safe_property(subnet_spec, "gateway", :class => String))
-        raise ArgumentError, "gateway must be a single ip" unless @gateway.size == 1
-        raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
+        gateway_property = safe_property(subnet_spec, "gateway", :class => String, :optional => true)
+        if gateway_property
+          @gateway = NetAddr::CIDR.create(gateway_property)
+          raise ArgumentError, "gateway must be a single ip" unless @gateway.size == 1
+          raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
+        end
 
         @dns = []
         safe_property(subnet_spec, "dns", :class => Array).each do |dns|
@@ -262,7 +265,7 @@ module Bosh::Director
         last_ip = @range.last(:Objectify => true)
         (first_ip.to_i .. last_ip.to_i).each { |ip| @available_dynamic_ips << ip }
 
-        @available_dynamic_ips.delete(@gateway.to_i)
+        @available_dynamic_ips.delete(@gateway.to_i) if @gateway
         @available_dynamic_ips.delete(@range.network(:Objectify => true).to_i)
         @available_dynamic_ips.delete(@range.broadcast(:Objectify => true).to_i)
 
