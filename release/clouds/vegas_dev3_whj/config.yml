@@ -8,7 +8,7 @@ roles:
 deploy_order:
   - blobstore
   - nats
-  - postgres
+  - postgresql
   - redis
   - director
 user: vcap

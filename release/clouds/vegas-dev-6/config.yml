@@ -5,6 +5,12 @@ roles:
   redis:      172.31.113.146
   nats:       172.31.113.146
   blobstore:  172.31.113.146
+deploy_order:
+  - blobstore
+  - nats
+  - postgresql
+  - redis
+  - director
 user: vcap
 paths:
   repo_cache: /var/vcap/deploy/repos
