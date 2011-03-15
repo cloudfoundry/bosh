@@ -101,6 +101,8 @@ module Bosh::Agent
         }
       elsif method == "get_task"
         handle_get_task(reply_to, args.first)
+      elsif method == "shutdown"
+        handle_shutdown(reply_to)
       else
         payload = {:exception => "unknown message #{msg.inspect}"}
         publish(reply_to, payload)
@@ -178,6 +180,15 @@ module Bosh::Agent
 
       @logger.info("Halt after networking change")
       `/sbin/halt`
+    end
+
+    def handle_shutdown(reply_to)
+      @logger.info("Shutting down NATS connection")
+      payload = {:value => "shutdown"}
+      @nats.publish(reply_to, Yajl::Encoder.encode(payload)) {
+        @logger.info("Exit")
+        NATS.stop { EM.stop; exit }
+      }
     end
 
   end
