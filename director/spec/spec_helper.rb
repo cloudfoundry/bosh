@@ -26,7 +26,7 @@ Bosh::Director::Config.patch_sqlite
 
 migrate_dir = File.expand_path("../../db/migrations", __FILE__)
 Sequel.extension :migration
-db = Sequel.sqlite
+db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
 db.loggers << logger
 Sequel::Model.db = db
 Sequel::Migrator.apply(db, migrate_dir, nil)

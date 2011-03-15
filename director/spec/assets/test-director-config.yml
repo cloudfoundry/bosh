@@ -11,7 +11,10 @@ redis:
   password:
 
 dir: /tmp/boshdir
-db: "sqlite:///:memory:"
+db:
+  database: "sqlite:///:memory:"
+  max_connections: 32
+  pool_timeout: 10
 blobstore:
   plugin: simple
   properties:
