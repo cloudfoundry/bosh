@@ -138,7 +138,6 @@ module Bosh
           output = opts[:output] || "/dev/null"
 
           unless process_running?(pidfile)
-
             pid = fork do
               $stdin.reopen("/dev/null")
               [ $stdout, $stderr ].each { |stream| stream.reopen(output, "w") }
@@ -169,16 +168,16 @@ module Bosh
         end
 
         def kill_process(pidfile, signal="TERM")
-          return unless File.exists?(pidfile)
+          return unless process_running?(pidfile)
           pid = File.read(pidfile).to_i
 
           while process_running?(pidfile)
-            Process.kill signal, pid
-            sleep(0.1)
+            Process.kill(signal, pid)
+            sleep(0.2)
           end
 
         rescue Errno::ESRCH
-          puts "Not found process with PID=#{pid}"
+          puts "Not found process with PID=#{pid} (pidfile #{pidfile})"
         ensure
           FileUtils.rm_rf pidfile
         end

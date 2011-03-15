@@ -43,8 +43,12 @@ module Bosh::Cli
         graph[p].clear
       end
 
-      graph.each_pair do |v, e|
-        raise CircularDependency, "Cannot resolve dependencies for '#{v}': circular dependency with '#{e.first}'" unless e.empty?
+      # each_pair gives different (correct) results in 1.8 in 1.9, stabilizing for tests
+      graph.keys.sort.each do |v|
+        e = graph[v]
+        unless e.empty?
+          raise CircularDependency, "Cannot resolve dependencies for '%s': circular dependency with '%s'" % [ v, e.first ]
+        end
       end
 
       sorted

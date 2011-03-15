@@ -31,7 +31,7 @@ describe Bosh::Cli::DependencyHelper do
   it "whines on circular dependencies" do
     lambda {
       tsort_packages("foo" => ["bar"], "bar" => ["baz"], "baz" => ["foo"])
-    }.should raise_error Bosh::Cli::CircularDependency, "Cannot resolve dependencies for 'baz': circular dependency with 'bar'"
+    }.should raise_error(Bosh::Cli::CircularDependency, "Cannot resolve dependencies for 'bar': circular dependency with 'foo'")
   end
 
   it "can resolve nested dependencies" do

@@ -5,7 +5,7 @@ ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 require "rubygems"
 require "bundler/setup"
 
-$LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
+$:.unshift(File.expand_path("../../lib", __FILE__))
 
 require "director"
 require "thin"
