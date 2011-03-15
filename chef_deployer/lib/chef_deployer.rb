@@ -4,11 +4,11 @@ require "pty"
 require "set"
 require "stringio"
 require "yaml"
-require "thor"
 
 require "net/ssh"
 require "net/scp"
 require "net/ssh/gateway"
+require "thor"
 require "yajl"
 
 module ChefDeployer
@@ -16,7 +16,7 @@ module ChefDeployer
      include Thor::Actions
 
      BASE_PATH = Dir.pwd
-     COOKBOOKS_PATH = File.join(BASE_PATH, "cookbooks");
+     COOKBOOKS_PATH = File.join(BASE_PATH, "cookbooks")
      SSH_WRAPPER = File.join(File.expand_path("../../bin", __FILE__), "chef_deployer_ssh_wrapper")
      ENV['GIT_SSH'] = SSH_WRAPPER
 
@@ -65,7 +65,7 @@ module ChefDeployer
 
                chef_json = {
                  "run_list" => ["recipe[#{role}]"],
-                 "hosts" => @cloud_config["roles"],
+                 "hosts" => @roles,
                  "assets" => "#{remote_assets_dir}/#{role}"
                }
 
@@ -171,7 +171,7 @@ module ChefDeployer
                      "cd #{base_dir} && git init && git add -u && " +
                      # empty git commit reports an error in exitstatus,
                      # so always commit atleast one file (timestamp)
-                     "echo #{Time.now.to_f.to_s} > timestamp && " + 
+                     "echo #{Time.now.to_f.to_s} > timestamp && " +
                      "git add * && git commit -q -m 'update'"
                exec("#{cmd}")
              }
@@ -208,7 +208,7 @@ module ChefDeployer
                remote_port = uri.port || 22
                remote_user = uri.user || @default_user
 
-               connection.open(remote_host, remote_port) do |local_port| 
+               connection.open(remote_host, remote_port) do |local_port|
                  begin
                    @gateway_password_key = "#{remote_user}@#{remote_host}:#{remote_port}"
                    say("==> CONNECTING TO #{@gateway_password_key} VIA #{user}@#{host}:#{options[:port]} ON localhost:#{local_port}", :yellow)
@@ -296,7 +296,20 @@ module ChefDeployer
        host_role_mapping = {}
        @cloud_config = YAML.load_file(config_path)
 
-       @roles = @cloud_config["roles"].dup
+       @roles = {}
+       @deploy_order = []
+       @cloud_config["roles"].each do |role|
+         if !role.kind_of?(Hash) || role.keys.size != 1
+          raise "Invalid role: #{role.pretty_inspect}, must be a Hash and contain a single key/value of role_name => hostname."
+         end
+
+         role_name = role.keys.first
+         raise "Invalid role: #{role_name}, cookbook not found." unless File.directory?(File.join(COOKBOOKS_PATH, role_name))
+
+         @roles[role_name] = role[role_name]
+         @deploy_order << role_name
+       end
+
        # Filter out all roles that are not needed
        if options.roles
          role_filter = Set.new(options.roles)
@@ -316,11 +329,30 @@ module ChefDeployer
        raise InvocationError, "Invalid cloud: #{cloud}, missing user" unless @default_user
 
        if options.metadata
-         say_status :status, "Generating cookbook metadata"
-         fork { exec "knife cookbook metadata -a -o cookbooks #{COOKBOOKS_PATH}" }
-         Process.wait
-         status = $?
-         raise "Failed to generate cookbook metadata" unless status.exited? && status.exitstatus == 0
+         say_status :metadata, "generating cookbook metadata"
+
+         Dir.entries(COOKBOOKS_PATH).each do |entry|
+           next if entry.index(".") == 0
+           cookbook_path = File.join(COOKBOOKS_PATH, entry)
+           if File.directory?(cookbook_path)
+             metadata_json = File.join(cookbook_path, "metadata.json")
+             metadata_rb = File.join(cookbook_path, "metadata.rb")
+
+             if File.exist?(metadata_json)
+               generate_metadata = File.stat(metadata_rb).mtime > File.stat(metadata_json).mtime
+             else
+               generate_metadata = true
+             end
+
+             if generate_metadata
+               say_status :metadata, "generating cookbook metadata for: #{entry}"
+               fork { exec "knife cookbook metadata #{entry} -o cookbooks #{COOKBOOKS_PATH}" }
+               Process.wait
+               status = $?
+               raise "Failed to generate cookbook metadata" unless status.exited? && status.exitstatus == 0
+             end
+           end
+         end
        end
 
        @gateway = @cloud_config["gateway"]
@@ -376,7 +408,7 @@ module ChefDeployer
          end
        end
 
-       @cloud_config["deploy_order"].each do |role|
+       @deploy_order.each do |role|
          host = @roles[role.to_s]
          update_role(role, host) if host
        end
