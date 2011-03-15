@@ -10,7 +10,10 @@ redis:
   password: <%= node[:redis][:password] %>
 mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
 dir: <%= node[:director][:path] %>/shared/system
-db: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:postgresql][:database] %>
+db:
+  database: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:postgresql][:database] %>
+  max_connections: 32
+  pool_timeout: 10
 blobstore:
   plugin: simple
   properties:
