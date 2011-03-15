@@ -4,12 +4,21 @@ module VCAP
   module Micro
     class Network
 
+      A_ROOT_SERVER = '198.41.0.4'
+
+      def self.local_ip(route = A_ROOT_SERVER)
+        route ||= A_ROOT_SERVER
+        orig, Socket.do_not_reverse_lookup = Socket.do_not_reverse_lookup, true
+        UDPSocket.open {|s| s.connect(route, 1); s.addr.last }
+      ensure
+        Socket.do_not_reverse_lookup = orig
+      end
+
       def dhcp
         write_network_interfaces(BASE_TEMPLATE + DHCP_TEMPLATE, nil)
       end
 
       def manual(net)
-
         begin
           cidr_ip_mask = "#{net['address']} #{net['netmask']}"
 

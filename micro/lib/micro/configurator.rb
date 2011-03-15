@@ -8,35 +8,69 @@ module VCAP
   module Micro
     class Configurator
 
+      def initialize
+        @identity = Identity.new
+      end
+
       def run
         # TODO: check highline's signal handling - might get in the way here
         %w{TERM INT}.each { |sig| trap(sig) { puts "Exiting Micro Cloud Configurator"; exit } }
 
         clear
         header
-        summary
-        password
+        #password # TODO OS auth/pwchange/pam auth
+        identity
+
         network
         mounts
 
-        # Network needs to be set up before we can proceed with identity
-        identity
-
+        @ip = VCAP::Micro::Network.local_ip
+        install_identity
         install_micro
       end
 
       def header
-        say("Welcome to VMware Micro Cloud Download\n\n")
-      end
+        say("BETA - Welcome to VMware Micro Cloud Download - BETA\n\n")
+        say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
 
-      def summary
-        say("Please visit http://CloudFoundry.com register for a Micro Cloud Download token.\n\n")
+        unless @identity.configured?
+          exit unless agree("Micro Cloud Not Configured - Do you want to configure (y/n)?")
+        else
+          say("Current Configuration:")
+          say("Identity: ")
+          say("Networking (type)")
+
+          exit unless agree("Re-configure Micro Cloud? (y/n)")
+        end
       end
 
       def password
         # TODO: check if default has already been changed
         # TODO: ask for password if set 
         pass = ask("Configure Micro Cloud Password:  ") { |q| q.echo = "*" }
+      end
+
+      def identity
+        say("\nConfigure Micro Cloud identity\n")
+        choose do |menu|
+          menu.choice(:token) { token }
+          menu.choice(:dns_wildcard_name) { dns_wildcard_name }
+        end
+
+        # TODO: do this after we have network
+        #unless @identity.admin?
+        #  setup_admin
+        #end
+      end
+
+      def token
+        token = ask("Token: ")
+        @identity.token(token)
+      end
+
+      def dns_wildcard_name
+        name = ask("DNS wildcarded record: ")
+        @identity.dns_wildcard_name(name)
       end
 
       def network
@@ -69,30 +103,13 @@ module VCAP
         VCAP::Micro::System.mounts
       end
 
-      def identity
-        say("\nConfigure Micro Cloud identity\n")
-        choose do |menu|
-          menu.choice(:token) { token }
-          menu.choice(:dns_wildcard_name) { dns_wildcard_name }
-        end
-        unless VCAP::Micro::Identity.admin?
-          setup_admin
-        end
-      end
-
-      def token
-        token = ask("Token: ")
-        VCAP::Micro::Identity.token(token)
-      end
-
-      def dns_wildcard_name
-        name = ask("DNS wildcarded record: ")
-        VCAP::Micro::Identity.dns_wildcard_name(name)
-      end
-
       def setup_admin
         admin = ask("Admin email: ")
         VCAP::Micro::Identity.setup_admin(admin)
+      end
+
+      def install_identity
+        @identity.install(@ip)
       end
 
       def install_micro
