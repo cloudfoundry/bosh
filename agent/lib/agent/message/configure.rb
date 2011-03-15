@@ -133,7 +133,7 @@ module Bosh::Agent
       def verify_networks
         # This only verifies that the fields has values
         @networks.each do |k, v|
-          %w{ip network netmask broadcast gateway}.each do |field|
+          %w{ip network netmask broadcast}.each do |field|
             unless v[field] 
               raise Bosh::Agent::MessageHandlerError, "Missing network value for #{field} in #{v.inspect}"
             end
@@ -271,7 +271,9 @@ iface <%= n["interface"] %> inet static
     network <%= n["network"] %>
     netmask <%= n["netmask"]%>
     broadcast <%= n["broadcast"] %>
+  <% if n.key?('gateway') && n['gateway'] %>
     gateway <%= n["gateway"] %>
+  <% end %>
 <% end %>
 
 TEMPLATE
