@@ -192,6 +192,7 @@ describe Bosh::Director::DeploymentPlan do
       instance.network_settings.should eql({"network_a" => {
         "netmask" => "255.255.255.0",
         "ip" => "10.0.0.100",
+        "default" => true,
         "gateway" => "10.0.0.1",
         "cloud_properties" => {"name" => "net_a"},
         "dns" => ["1.2.3.4"]
@@ -325,6 +326,131 @@ describe Bosh::Director::DeploymentPlan do
       lambda {
         Bosh::Director::DeploymentPlan.new(manifest)
       }.should raise_error("Job job_a references an unknown resource pool: bad")
+    end
+
+    it "should fail if network name doesn't exist" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+
+      job["networks"] = [
+        {
+          "name" => "network_b",
+          "static_ips" => ["10.0.0.100 - 10.0.0.104"]
+        }
+      ]
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Job job_a references an unknown network: network_b")
+    end
+
+    it "should fail if no networks were specified" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+
+      job["networks"] = []
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Job job_a must specify at least one network")
+    end
+
+    it "should let you set a default network" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+
+      networks = manifest["networks"]
+      networks << {
+        "name" => "network_b",
+        "subnets" => [
+          {
+            "range" => "10.1.0.0/24",
+            "gateway" => "10.1.0.1",
+            "dns" => ["1.2.3.4"],
+            "static" => ["10.1.0.100 - 10.1.0.200"],
+            "reserved" => ["10.1.0.201 - 10.1.0.254"],
+            "cloud_properties" => {
+              "name" => "net_b"
+            }
+          }
+        ]
+      }
+
+      job["networks"] = [
+        { "name" => "network_a", "default" => true },
+        { "name" => "network_b" }
+      ]
+
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      deployment_plan.job("job_a").default_network.should == "network_a"
+    end
+
+    it "should automatically set the default network if there was only one network configured" do
+      manifest = BASIC_MANIFEST._deep_copy
+      deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
+      deployment_plan.job("job_a").default_network.should == "network_a"
+    end
+
+    it "should require a default network if more than one network was configured" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+
+      networks = manifest["networks"]
+      networks << {
+        "name" => "network_b",
+        "subnets" => [
+          {
+            "range" => "10.1.0.0/24",
+            "gateway" => "10.1.0.1",
+            "dns" => ["1.2.3.4"],
+            "static" => ["10.1.0.100 - 10.1.0.200"],
+            "reserved" => ["10.1.0.201 - 10.1.0.254"],
+            "cloud_properties" => {
+              "name" => "net_b"
+            }
+          }
+        ]
+      }
+
+      job["networks"] = [
+        { "name" => "network_a" },
+        { "name" => "network_b" }
+      ]
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Job job_a must specify a default network since it's has more than one network configured")
+    end
+
+    it "should fail if more than one default network was configured" do
+      manifest = BASIC_MANIFEST._deep_copy
+      job = manifest["jobs"].first
+
+      networks = manifest["networks"]
+      networks << {
+        "name" => "network_b",
+        "subnets" => [
+          {
+            "range" => "10.1.0.0/24",
+            "gateway" => "10.1.0.1",
+            "dns" => ["1.2.3.4"],
+            "static" => ["10.1.0.100 - 10.1.0.200"],
+            "reserved" => ["10.1.0.201 - 10.1.0.254"],
+            "cloud_properties" => {
+              "name" => "net_b"
+            }
+          }
+        ]
+      }
+
+      job["networks"] = [
+        { "name" => "network_a", "default" => true },
+        { "name" => "network_b", "default" => true }
+      ]
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Job job_a must specify only one default network")
     end
   end
 
@@ -750,6 +876,7 @@ describe Bosh::Director::DeploymentPlan do
         "network_a" => {
           "netmask" => "255.255.255.0",
           "ip" => "10.0.0.100",
+          "default" => true,
           "gateway" => "10.0.0.1",
           "cloud_properties" => {"name" => "net_a"},
           "dns" => ["1.2.3.4"]
@@ -908,6 +1035,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.100",
+            "default" => true,
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
