@@ -132,6 +132,7 @@ module Bosh::Director
           network_settings = {}
           network = @resource_pool.network
           network_settings[network.name] = network.network_settings(@ip)
+          network_settings[network.name]["default"] = true
           network_settings
         end
       end
