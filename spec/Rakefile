@@ -1,7 +1,7 @@
 require "tempfile"
 require "rake"
 
-ENV["BUNDLE_GEMFILE"] ||= File.join(File.dirname(__FILE__), "..", "Gemfile")
+ENV["BUNDLE_GEMFILE"] ||= File.join(File.dirname(__FILE__), "Gemfile")
 require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
@@ -17,7 +17,7 @@ ENV["CI_REPORTS"] = reports_dir
 task "spec:ci" => [ "ci:setup:rspec", "spec" ]
 
 RSpec::Core::RakeTask.new do |t|
-  t.pattern    = "*_spec.rb"      
+  t.pattern    = "*_spec.rb"
   t.rspec_opts = [ "--format", "documentation", "--colour" ]
 end
 

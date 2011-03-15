@@ -5,7 +5,7 @@ task :build do
 end
 
 task :bundle_install do
-  bundle_cmd = "bundle --local install --without development production"
+  bundle_cmd = "cd spec && bundle --local install --without development production"
   sh(bundle_cmd)
 
   %w(director cli simple_blobstore_server).each do |component|
