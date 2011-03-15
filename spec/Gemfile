@@ -2,10 +2,11 @@ source :rubygems
 
 gem "redis"
 gem "nats"
-gem "SystemTimer"
+gem "SystemTimer", :platforms => :ruby_18
 gem "rake"
 gem "ci_reporter"
 gem "rcov"
 gem "rcov_analyzer"
 gem "rspec"
-gem "ruby-debug"
+gem "ruby-debug", :platforms => :ruby_18
+gem "ruby-debug19", :platforms => :ruby_19

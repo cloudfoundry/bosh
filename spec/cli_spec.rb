@@ -56,7 +56,7 @@ describe Bosh::Spec::IntegrationTest do
     f = Tempfile.new(name)
     f.write(YAML.dump(object))
     f.close
-    f.path
+    f
   end
 
   def minimal_deployment_manifest
@@ -467,17 +467,17 @@ describe Bosh::Spec::IntegrationTest do
   describe "deployment process" do
     it "successfully performed with minimal manifest" do
       release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
-      deployment_manifest_filename = yaml_file("minimal", minimal_deployment_manifest)
+      deployment_manifest = yaml_file("minimal", minimal_deployment_manifest)
 
-      run_bosh("deployment #{deployment_manifest_filename}")
+      run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ rx("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest")
+      out.should =~ rx("Deployed to Test Director using '#{deployment_manifest.path}' deployment manifest")
     end
 
-    it "generates release and deploys it via simple manifest" do
+    it "generates release and deploys it via simple manifest", :focus => true do
       assets_dir = File.dirname(spec_asset("foo"))
       release_filename = spec_asset("test_release/dev_releases/test_release-1.tgz") # It's a test release created with bosh (see spec/assets/test_release)
       stemcell_filename = spec_asset("valid_stemcell.tgz") # It's a dummy stemcell (ubuntu-stemcell 1)
@@ -487,24 +487,25 @@ describe Bosh::Spec::IntegrationTest do
         run_bosh("create release", Dir.pwd)
       end
 
+      deployment_manifest = yaml_file("simple", simple_deployment_manifest)
+
       File.exists?(release_filename).should be_true
+      File.exists?(deployment_manifest.path).should be_true
 
-      deployment_manifest_filename = yaml_file("simple", simple_deployment_manifest)
-
-      run_bosh("deployment #{deployment_manifest_filename}")
+      run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload stemcell #{stemcell_filename}")
       run_bosh("upload release #{release_filename}")
 
-      run_bosh("deploy").should =~ rx("Deployed to Test Director using '#{deployment_manifest_filename}' deployment manifest")
+      run_bosh("deploy").should =~ rx("Deployed to Test Director using '#{deployment_manifest.path}' deployment manifest")
       # TODO: figure out which artefacts should be created by the given manifest
     end
 
     it "can delete deployment" do
       release_filename = spec_asset("valid_release.tgz")
-      deployment_manifest_filename = yaml_file("minimal", minimal_deployment_manifest)
+      deployment_manifest = yaml_file("minimal", minimal_deployment_manifest)
 
-      run_bosh("deployment #{deployment_manifest_filename}")
+      run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
 

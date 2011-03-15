@@ -234,7 +234,7 @@ module Bosh
 
       def perform_http_request(req)
         result = nil
-        RestClient::Request.execute(req) do |response, request, result|
+        RestClient::Request.execute(req) do |response, request, req_result|
           result = [ response.code, response.body, response.headers ]
         end
         result

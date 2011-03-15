@@ -1,6 +1,7 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    archive-tar-minitar (0.5.2)
     aws-s3 (0.6.2)
       builder
       mime-types
@@ -18,6 +19,8 @@ GEM
     httpclient (2.1.6.1)
     json_pure (1.4.6)
     linecache (0.43)
+    linecache19 (0.5.11)
+      ruby_core_source (>= 0.1.4)
     mime-types (1.16)
     progressbar (0.9.0)
     rake (0.8.7)
@@ -40,6 +43,16 @@ GEM
       ruby-debug-base (~> 0.10.4.0)
     ruby-debug-base (0.10.4)
       linecache (>= 0.3)
+    ruby-debug-base19 (0.11.24)
+      columnize (>= 0.3.1)
+      linecache19 (>= 0.5.11)
+      ruby_core_source (>= 0.1.4)
+    ruby-debug19 (0.11.6)
+      columnize (>= 0.3.1)
+      linecache19 (>= 0.5.11)
+      ruby-debug-base19 (>= 0.11.19)
+    ruby_core_source (0.1.4)
+      archive-tar-minitar (>= 0.5.2)
     terminal-table (1.4.2)
     uuidtools (2.1.1)
     xml-simple (1.0.12)
@@ -59,4 +72,5 @@ DEPENDENCIES
   rest-client
   rspec
   ruby-debug
+  ruby-debug19
   terminal-table
