@@ -505,6 +505,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
+            "default" => true,
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
@@ -569,6 +570,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
+            "default" => true,
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
@@ -599,6 +601,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.50",
+            "default" => true,
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
