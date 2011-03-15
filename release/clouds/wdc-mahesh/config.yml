@@ -1,16 +1,10 @@
 ---
 roles:
-  director:   10.138.68.2
-  postgresql: 10.138.68.2
-  redis:      10.138.68.2
-  nats:       10.138.68.2
-  blobstore:  10.138.68.2
-deploy_order:
-  - blobstore
-  - nats
-  - postgresql
-  - redis
-  - director
+  - blobstore:   10.138.68.2
+  - nats:        10.138.68.2
+  - postgresql:  10.138.68.2
+  - redis:       10.138.68.2
+  - director:    10.138.68.2
 user: vcap
 paths:
   repo_cache: /var/vcap/deploy/repos
