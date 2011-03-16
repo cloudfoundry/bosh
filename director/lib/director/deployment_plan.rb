@@ -202,9 +202,9 @@ module Bosh::Director
             config = {
               "ip" => ip.ip,
               "netmask" => subnet.netmask,
-              "dns" => subnet.dns,
               "cloud_properties" => subnet.cloud_properties
             }
+            config["dns"] = subnet.dns if subnet.dns
             config["gateway"] = subnet.gateway.ip if subnet.gateway
             break
           end
@@ -249,11 +249,14 @@ module Bosh::Director
           raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
         end
 
-        @dns = []
-        safe_property(subnet_spec, "dns", :class => Array).each do |dns|
-          dns = NetAddr::CIDR.create(dns)
-          raise ArgumentError, "dns entry must be a single ip" unless dns.size == 1
-          @dns << dns.ip
+        dns_property = safe_property(subnet_spec, "dns", :class => Array, :optional => true)
+        if dns_property
+          @dns = []
+          dns_property.each do |dns|
+            dns = NetAddr::CIDR.create(dns)
+            raise ArgumentError, "dns entry must be a single ip" unless dns.size == 1
+            @dns << dns.ip
+          end
         end
 
         @cloud_properties = safe_property(subnet_spec, "cloud_properties", :class => Hash)
