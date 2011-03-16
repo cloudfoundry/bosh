@@ -132,7 +132,7 @@ module Bosh::Director
           network_settings = {}
           network = @resource_pool.network
           network_settings[network.name] = network.network_settings(@ip)
-          network_settings[network.name]["default"] = true
+          network_settings[network.name]["default"] = JobSpec::VALID_DEFAULT_NETWORK_PROPERTIES.to_a.dup.sort
           network_settings
         end
       end
@@ -337,6 +337,9 @@ module Bosh::Director
       include IpUtil
       include ValidationHelper
 
+      VALID_DEFAULT_NETWORK_PROPERTIES = Set.new(["dns", "gateway"])
+      VALID_DEFAULT_NETWORK_PROPERTIES_ARRAY = VALID_DEFAULT_NETWORK_PROPERTIES.to_a.sort
+
       attr_accessor :deployment
       attr_accessor :name
       attr_accessor :persistent_disk
@@ -371,7 +374,7 @@ module Bosh::Director
         @rollback = false
         @update_errors = 0
         @unneeded_instances = []
-        @default_network = nil
+        @default_network = {}
 
         safe_property(job_spec, "instances", :class => Integer).times do |index|
           @instances[index] = InstanceSpec.new(self, index)
@@ -397,12 +400,16 @@ module Bosh::Director
             end
           end
 
-          default_network = safe_property(network_spec, "default", :class => :boolean, :optional => true)
+          default_network = safe_property(network_spec, "default", :class => Array, :optional => true)
           if default_network
-            if @default_network.nil?
-              @default_network = network_name
-            else
-              raise "Job #{@name} must specify only one default network"
+            default_network.each do |property|
+              if !VALID_DEFAULT_NETWORK_PROPERTIES.include?(property)
+                raise "Job #{@name} specified an invalid default property: #{property}"
+              elsif @default_network[property].nil?
+                @default_network[property] = network_name
+              else
+                raise "Job #{@name} must specify only one default network for: #{property}"
+              end
             end
           end
 
@@ -414,12 +421,17 @@ module Bosh::Director
           end
         end
 
-        if @default_network.nil? && network_specs.size > 1
-          raise "Job #{@name} must specify a default network since it's has more than one network configured"
-        end
-
-        if @default_network.nil?
-          @default_network = safe_property(network_specs.first, "name", :class => String)
+        if network_specs.size > 1
+          missing_default_properties = VALID_DEFAULT_NETWORK_PROPERTIES.dup
+          @default_network.each_key { |key| missing_default_properties.delete(key) }
+          unless missing_default_properties.empty?
+            raise "Job #{@name} must specify a default networks for '#{missing_default_properties.to_a.join(", ")}' " +
+                      "since it has more than one network configured"
+          end
+        else
+          # Set the default network to the one and only available network (if not specified already)
+          network = safe_property(network_specs.first, "name", :class => String)
+          VALID_DEFAULT_NETWORK_PROPERTIES.each { |property| @default_network[property] ||= network }
         end
       end
 
@@ -514,12 +526,16 @@ module Bosh::Director
       end
 
       def network_settings
+        default_network_properties = {}
+        @job.default_network.each { |key, value| (default_network_properties[value] ||= []) << key}
+
         network_settings = {}
         @networks.each_value do |instance_network|
           network = @job.deployment.network(instance_network.name)
           network_settings[instance_network.name] = network.network_settings(instance_network.ip)
-          if @job.default_network == instance_network.name
-            network_settings[instance_network.name]["default"] = true
+
+          if default_network_properties[instance_network.name]
+            network_settings[instance_network.name]["default"] = default_network_properties[instance_network.name].sort
           end
         end
         network_settings

@@ -192,7 +192,7 @@ describe Bosh::Director::DeploymentPlan do
       instance.network_settings.should eql({"network_a" => {
         "netmask" => "255.255.255.0",
         "ip" => "10.0.0.100",
-        "default" => true,
+        "default" => ["dns", "gateway"],
         "gateway" => "10.0.0.1",
         "cloud_properties" => {"name" => "net_a"},
         "dns" => ["1.2.3.4"]
@@ -377,18 +377,19 @@ describe Bosh::Director::DeploymentPlan do
       }
 
       job["networks"] = [
-        { "name" => "network_a", "default" => true },
-        { "name" => "network_b" }
+        { "name" => "network_a", "default" => ["gateway"] },
+        { "name" => "network_b", "default" => ["dns"] }
       ]
 
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      deployment_plan.job("job_a").default_network.should == "network_a"
+      deployment_plan.job("job_a").default_network["gateway"].should == "network_a"
+      deployment_plan.job("job_a").default_network["dns"].should == "network_b"
     end
 
     it "should automatically set the default network if there was only one network configured" do
       manifest = BASIC_MANIFEST._deep_copy
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
-      deployment_plan.job("job_a").default_network.should == "network_a"
+      deployment_plan.job("job_a").default_network.should == {"gateway"=>"network_a", "dns"=>"network_a"}
     end
 
     it "should require a default network if more than one network was configured" do
@@ -419,7 +420,7 @@ describe Bosh::Director::DeploymentPlan do
 
       lambda {
         Bosh::Director::DeploymentPlan.new(manifest)
-      }.should raise_error("Job job_a must specify a default network since it's has more than one network configured")
+      }.should raise_error("Job job_a must specify a default networks for 'gateway, dns' since it has more than one network configured")
     end
 
     it "should fail if more than one default network was configured" do
@@ -444,13 +445,13 @@ describe Bosh::Director::DeploymentPlan do
       }
 
       job["networks"] = [
-        { "name" => "network_a", "default" => true },
-        { "name" => "network_b", "default" => true }
+        { "name" => "network_a", "default" => ["dns", "gateway"] },
+        { "name" => "network_b", "default" => ["gateway"] }
       ]
 
       lambda {
         Bosh::Director::DeploymentPlan.new(manifest)
-      }.should raise_error("Job job_a must specify only one default network")
+      }.should raise_error("Job job_a must specify only one default network for: gateway")
     end
   end
 
@@ -505,7 +506,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
-            "default" => true,
+            "default" => ["dns", "gateway"],
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
@@ -570,7 +571,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.20",
-            "default" => true,
+            "default" => ["dns", "gateway"],
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
@@ -601,7 +602,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.50",
-            "default" => true,
+            "default" => ["dns", "gateway"],
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
@@ -919,7 +920,7 @@ describe Bosh::Director::DeploymentPlan do
         "network_a" => {
           "netmask" => "255.255.255.0",
           "ip" => "10.0.0.100",
-          "default" => true,
+          "default" => ["dns", "gateway"],
           "gateway" => "10.0.0.1",
           "cloud_properties" => {"name" => "net_a"},
           "dns" => ["1.2.3.4"]
@@ -1078,7 +1079,7 @@ describe Bosh::Director::DeploymentPlan do
           "network_a" => {
             "netmask" => "255.255.255.0",
             "ip" => "10.0.0.100",
-            "default" => true,
+            "default" => ["dns", "gateway"],
             "gateway" => "10.0.0.1",
             "cloud_properties" => {"name" => "net_a"},
             "dns" => ["1.2.3.4"]
