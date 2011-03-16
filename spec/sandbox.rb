@@ -56,8 +56,7 @@ module Bosh
           blobstore_env = { "BUNDLE_GEMFILE" => "#{BLOBSTORE_PATH}/Gemfile" }
 
           run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
-          run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID,
-                       :env => blobstore_env)
+          run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID, :env => blobstore_env)
 
           run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
 
@@ -171,10 +170,8 @@ module Bosh
           return unless process_running?(pidfile)
           pid = File.read(pidfile).to_i
 
-          while process_running?(pidfile)
-            Process.kill(signal, pid)
-            sleep(0.2)
-          end
+          Process.kill(signal, pid)
+          sleep(1) while process_running?(pidfile)
 
         rescue Errno::ESRCH
           puts "Not found process with PID=#{pid} (pidfile #{pidfile})"
