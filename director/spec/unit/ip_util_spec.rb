@@ -16,7 +16,7 @@ describe Bosh::Director::IpUtil do
         ip.should eql(NetAddr::CIDR.create("1.2.3.4").to_i)
         counter += 1
       end
-      counter.should eql(1)
+      counter.should == 1
     end
 
     it "should handle a range" do
@@ -25,7 +25,7 @@ describe Bosh::Director::IpUtil do
         ip.should eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
         counter += 1
       end
-      counter.should eql(256)
+      counter.should == 256
     end
 
     it "should handle an differently formatted range" do
@@ -34,11 +34,20 @@ describe Bosh::Director::IpUtil do
         ip.should eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
         counter += 1
       end
-      counter.should eql(257)
+      counter.should == 257
     end
 
     it "should not accept invalid input" do
       lambda {@obj.each_ip("1.2.4") {}}.should raise_error
+    end
+
+    it "should ignore nil values" do
+      counter = 0
+      @obj.each_ip(nil) do |ip|
+        ip.should eql(NetAddr::CIDR.create("1.2.3.4").to_i)
+        counter += 1
+      end
+      counter.should == 0
     end
 
   end

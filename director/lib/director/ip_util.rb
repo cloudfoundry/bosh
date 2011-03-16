@@ -8,7 +8,7 @@ module Bosh::Director
         end
       elsif ranges.kind_of?(String)
         process_range(ranges, &block)
-      else
+      elsif !ranges.nil?
         raise ArgumentError, "Unknown range type, must be list or a string: #{ranges.class} #{ranges}"
       end
     end
