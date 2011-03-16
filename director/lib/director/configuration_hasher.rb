@@ -41,10 +41,10 @@ module Bosh::Director
 
     def hash
       begin
-        @logger.info("Hashing: #{@job.name}")
         extract_template
         manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
         monit_template = ERB.new(File.new(File.join(@template_dir, "monit")).read)
+        monit_template.filename = File.join(@job.template.name, "monit")
         config_templates = {}
 
         if manifest["templates"]
@@ -54,23 +54,30 @@ module Bosh::Director
         end
 
         @job.instances.each do |instance|
-          @logger.info("Hashing: #{@job.name}/#{instance.index}")
           binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct,
                                              instance.spec.to_openstruct)
           digest = Digest::SHA1.new
-          @logger.info("Hashing: #{@job.name}/#{instance.index} => monit")
-          digest << monit_template.result(binding_helper.get_binding)
+          digest << bind_template(monit_template, binding_helper, "monit", instance.index)
           template_names = config_templates.keys.sort
           template_names.each do |template_name|
             template = config_templates[template_name]
-            @logger.info("Hashing: #{@job.name}/#{instance.index} => #{template_name}")
-            digest << template.result(binding_helper.get_binding)
+            template.filename = File.join(@job.template.name, template_name)
+            digest << bind_template(template, binding_helper, template_name, instance.index)
           end
           instance.configuration_hash = digest.hexdigest
         end
       ensure
         FileUtils.rm_rf(@template_dir) if @template_dir
       end
+    end
+
+    def bind_template(template, binding_helper, template_name, index)
+      template.result(binding_helper.get_binding)
+    rescue Exception => e
+      line = e.backtrace.first
+      line = line[0..line.rindex(":") - 1]
+      @logger.debug("Error filling in template #{line} for #{@job.name}/#{index}: '#{e}', #{e.backtrace.pretty_inspect}")
+      raise "Error filling in template #{line} for #{@job.name}/#{index}: '#{e}'"
     end
 
   end
