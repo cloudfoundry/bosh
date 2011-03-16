@@ -211,7 +211,9 @@ module Bosh::Agent
     # FIXME: temporary stop method
     class Stop
       def self.process(args)
-        `monit -g #{BOSH_APP_GROUP} stop`
+        if Config.configure
+          `monit -g #{BOSH_APP_GROUP} stop`
+        end
         "stopped"
       end
     end
