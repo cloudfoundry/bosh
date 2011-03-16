@@ -5,7 +5,7 @@ gem "nats"
 gem "yajl-ruby", :require => "yajl"
 gem "uuidtools"
 gem "netaddr"
-gem "blobstore_client", "~> 0.3" # 0.2 has streaming support
+gem "blobstore_client", "~> 0.3"
 gem "posix-spawn"
 
 group :test do

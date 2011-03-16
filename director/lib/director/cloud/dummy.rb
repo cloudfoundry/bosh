@@ -53,7 +53,6 @@ module Bosh
       def delete_vm(vm_name)
         agent_pid = vm_name.to_i
         Process.kill("INT", agent_pid)
-      rescue Errno::ESRCH
       ensure
         FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_name))
       end
