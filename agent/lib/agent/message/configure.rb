@@ -252,12 +252,21 @@ module Bosh::Agent
       end
 
       def data_sfdisk_input
-        ",#{mem_total.to_i/1024},S\n,,L\n"
+        ",#{swap_size},S\n,,L\n"
+      end
+
+      def swap_size
+        disk_size = Util.block_device_size(DATA_DISK)
+        if mem_total > disk_size/2
+          return (disk_size/2)/1024
+        else
+          return mem_total/1024
+        end
       end
 
       def mem_total
         # MemTotal:        3952180 kB
-        File.readlines('/proc/meminfo').first.split(/\s+/)[1]
+        File.readlines('/proc/meminfo').first.split(/\s+/)[1].to_i
       end
 
       INTERFACE_TEMPLATE = <<TEMPLATE

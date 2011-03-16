@@ -11,6 +11,7 @@ describe Bosh::Agent::Message::Configure do
     @processor = Bosh::Agent::Message::Configure.new(nil)
 
     Bosh::Agent::Util.stub(:settings).and_return(complete_settings)
+    Bosh::Agent::Util.stub(:block_device_size).and_return(7903232)
 
     # We just want to avoid this to accidently be invoked on dev systems
     #@processor.stub(:load_settings).and_return(complete_settings)
