@@ -684,6 +684,34 @@ describe Bosh::Director::DeploymentPlan do
       }
     end
 
+    it "should allow reserved ranges to be optional" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["networks"][0]["subnets"][0] = {
+        "range" => "10.0.0.0/24",
+        "gateway" => "10.0.0.1",
+        "dns" => ["1.2.3.4"],
+        "static" => ["10.0.0.100 - 10.0.0.200"],
+        "cloud_properties" => {
+          "name" => "net_a"
+        }
+      }
+      Bosh::Director::DeploymentPlan.new(manifest)
+    end
+
+    it "should allow static ranges to be optional" do
+      manifest = BASIC_MANIFEST._deep_copy
+      manifest["networks"][0]["subnets"][0] = {
+        "range" => "10.0.0.0/24",
+        "gateway" => "10.0.0.1",
+        "dns" => ["1.2.3.4"],
+        "reserved" => ["10.0.0.201 - 10.0.0.254"],
+        "cloud_properties" => {
+          "name" => "net_a"
+        }
+      }
+      Bosh::Director::DeploymentPlan.new(manifest)
+    end
+
     it "should allow string network ranges for static and reserved ips" do
       manifest = BASIC_MANIFEST._deep_copy
       manifest["networks"][0]["subnets"][0] = {
