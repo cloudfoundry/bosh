@@ -89,6 +89,20 @@ module Bosh::Agent
         end
       end
 
+      def block_device_size(block_device)
+        unless File.blockdev?(block_device)
+          raise Bosh::Agent::MessageHandlerError, "Not a blockdevice"
+        end
+
+        child = POSIX::Spawn::Child.new('/sbin/sfdisk', '-s', block_device)
+        result = child.out
+        unless result.match(/\A\d+\Z/) && child.status.exitstatus == 0
+          raise Bosh::Agent::MessageHandlerError,
+            "Unable to determine disk size"
+        end
+        result.to_i
+      end
+
       def settings
         base_dir = Bosh::Agent::Config.base_dir
         settings_dir = File.join(base_dir, 'bosh', 'settings')
