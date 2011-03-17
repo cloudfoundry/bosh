@@ -80,7 +80,8 @@ module Bosh::Director
       @network = @deployment_plan.compilation.network
       @networks = []
       @deployment_plan.compilation.workers.times do
-        @networks << {@network.name => @network.network_settings(@network.allocate_dynamic_ip)}
+        defaults = DeploymentPlan::NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES_ARRAY
+        @networks << {@network.name => @network.network_settings(@network.allocate_dynamic_ip, defaults)}
       end
 
       ThreadPool.new(:max_threads => @deployment_plan.compilation.workers).wrap do |pool|
