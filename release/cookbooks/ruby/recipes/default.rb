@@ -5,7 +5,7 @@ include_recipe "env"
 end
 
 remote_file "/tmp/ruby-#{node[:ruby][:version]}.tar.gz" do
-  source "http://ftp.ruby-lang.org/pub/ruby/1.8/ruby-#{node[:ruby][:version]}.tar.gz"
+  source node[:ruby][:source]
   not_if { ::File.exists?("/tmp/ruby-#{node[:ruby][:version]}.tar.gz") }
 end
 
