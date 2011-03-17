@@ -82,7 +82,7 @@ describe Bosh::Director::ResourcePoolUpdater do
   end
 
   it "should delete any extra vms" do
-    vm = Bosh::Director::Models::Vm.make
+    vm = Bosh::Director::Models::Vm.make(:cid => "vm-1")
     idle_vm = mock("idle_vm")
     agent = mock("agent")
 
@@ -90,8 +90,6 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:active_vms).and_return(0)
     @resource_pool_spec.stub!(:allocated_vms).and_return([])
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
-
-    vm.stub!(:cid).and_return("vm-1")
 
     idle_vm.stub!(:vm).and_return(vm)
 

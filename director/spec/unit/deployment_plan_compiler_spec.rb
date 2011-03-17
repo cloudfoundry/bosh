@@ -607,19 +607,17 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should delete unneeded vms" do
       deployment_plan = mock("deployment_plan")
       cloud = mock("cloud")
-      vm = Bosh::Director::Models::Vm.make
-
       Bosh::Director::Config.stub!(:cloud).and_return(cloud)
 
-      vm.stub!(:cid).and_return("vm-cid")
-      vm.should_receive(:delete)
-
+      vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
       deployment_plan.stub!(:unneeded_vms).and_return([vm])
 
       cloud.should_receive(:delete_vm).with("vm-cid")
 
       deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
       deployment_plan_compiler.delete_unneeded_vms
+
+      Bosh::Director::Models::Vm[vm.id].should be_nil
     end
 
   end
