@@ -101,9 +101,7 @@ module Bosh::Agent
       def setup_networking
         mac_addresses = detect_mac_addresses
 
-        # last to update wins for now
         @dns = []
-
         @networks = @settings["networks"]
         @networks.each do |k, v|
            mac = v["mac"]
@@ -116,7 +114,9 @@ module Bosh::Agent
               v["network"] = net_cidr.network
               v["broadcast"] = net_cidr.broadcast
 
-              @dns = v["dns"]
+              if v.key?('default') && v['default'].include?('dns')
+                @dns = v["dns"]
+              end
             rescue NetAddr::ValidationError => e
               raise Bosh::Agent::MessageHandlerError, e.to_s
             end
@@ -280,7 +280,7 @@ iface <%= n["interface"] %> inet static
     network <%= n["network"] %>
     netmask <%= n["netmask"]%>
     broadcast <%= n["broadcast"] %>
-<% if n.key?('gateway') && n['gateway'] -%>
+<% if n.key?('default') && n['default'].include?('gateway') -%>
     gateway <%= n["gateway"] -%>
 <% end -%>
 <% end %>
