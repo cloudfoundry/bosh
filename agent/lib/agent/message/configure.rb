@@ -128,6 +128,15 @@ module Bosh::Agent
         verify_networks
         write_ubuntu_network_interfaces
         write_resolv_conf
+
+        # HACK to send a gratuitous arp every 10 seconds for the first minute
+        # after networking has been reconfigured.
+        Thread.new do
+          6.times do
+            gratuitous_arp
+            sleep 10
+          end
+        end
       end
 
       def verify_networks
@@ -148,16 +157,6 @@ module Bosh::Agent
         if network_updated
           @logger.info("Updated networking")
           restart_networking_service
-
-          # HACK to send a gratuitous arp every 10 seconds for the first minute
-          # after networking has been reconfigured.
-          Thread.new do
-            6.times do
-              gratuitous_arp
-              sleep 10
-            end
-          end
-
         end
       end
 
