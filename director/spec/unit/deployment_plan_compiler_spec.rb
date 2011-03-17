@@ -628,19 +628,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should delete unneeded instances" do
       deployment_plan = mock("deployment_plan")
       cloud = mock("cloud")
-      instance = Bosh::Director::Models::Instance.make
-      vm = Bosh::Director::Models::Vm.make
+      vm = Bosh::Director::Models::Vm.make(:cid =>"vm-cid", :agent_id => "agent-id")
+      instance = Bosh::Director::Models::Instance.make(:vm => vm, :disk_cid => "disk-cid")
       agent = mock("agent")
 
       Bosh::Director::Config.stub!(:cloud).and_return(cloud)
-
-      instance.stub!(:vm).and_return(vm)
-      instance.stub!(:disk_cid).and_return("disk-cid")
-      instance.should_receive(:delete)
-
-      vm.stub!(:cid).and_return("vm-cid")
-      vm.stub!(:agent_id).and_return("agent-id")
-      vm.should_receive(:delete)
 
       agent.should_receive(:drain).and_return(0.01)
       agent.should_receive(:stop)
@@ -654,6 +646,9 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
       deployment_plan_compiler.delete_unneeded_instances
+
+      Bosh::Director::Models::Vm[vm.id].should be_nil
+      Bosh::Director::Models::Instance[instance.id].should be_nil
     end
   end
 
