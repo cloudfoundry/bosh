@@ -4,6 +4,8 @@ require 'yajl'
 module VCAP
   module Micro
     class Identity 
+      attr_accessor :admin
+
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
 
       def initialize
@@ -29,7 +31,6 @@ module VCAP
         update_dns
 
         File.open(MICRO_CONFIG, 'w') do |f|
-
           f.write(Yajl::Encoder.encode(config))
         end
       end
@@ -38,13 +39,8 @@ module VCAP
         dns_data = {:token => @auth_token, :ip => @ip}
         payload = Yajl::Encoder.encode(dns_data)
         begin
-          p @client['/update_dns']
-          p payload
-
           @client['/update_dns'].put(payload)
-          puts "first"
         rescue RestClient::NotModified
-          puts "second"
           # Do nothing
         end
       end
@@ -61,13 +57,6 @@ module VCAP
       end
 
       def dns_wildcard_name(name)
-      end
-
-      def self.setup_admin(admin_email)
-      end
-
-      def self.admin?
-        # An admin is defined - e.g. through token
       end
 
     end
