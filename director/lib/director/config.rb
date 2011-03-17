@@ -8,6 +8,7 @@ module Bosh::Director
       attr_accessor :base_dir
       attr_accessor :logger
       attr_accessor :uuid
+      attr_accessor :process_uuid
       attr_accessor :db
       attr_accessor :name
 
@@ -16,6 +17,7 @@ module Bosh::Director
 
       def configure(config)
         @base_dir = config["dir"]
+        FileUtils.mkdir_p(@base_dir)
 
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
@@ -28,7 +30,18 @@ module Bosh::Director
           :logger   => @logger
         }
 
-        @uuid = UUIDTools::UUID.random_create.to_s
+        state_json = File.join(@base_dir, "state.json")
+        File.open(state_json, File::RDWR|File::CREAT, 0644) do |file|
+          file.flock(File::LOCK_EX)
+          state = Yajl::Parser.parse(file.read) || {}
+          @uuid = state["uuid"] ||= UUIDTools::UUID.random_create.to_s
+          file.rewind
+          file.write(Yajl::Encoder.encode(state))
+          file.flush
+          file.truncate(file.pos)
+        end
+
+        @process_uuid = UUIDTools::UUID.random_create.to_s
         @nats_uri = config["mbus"]
 
         @cloud_options = config["cloud"]
