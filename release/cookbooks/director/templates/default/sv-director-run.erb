@@ -3,4 +3,4 @@
 PATH=<%= node[:ruby][:path] %>/bin:$PATH
 
 exec 2>&1
-exec chpst -u <%= node[:director][:runner] %> env TMPDIR=<%= node[:director][:tmp] %> <%= node[:director][:path] %>/current/director/bin/director -c <%= node[:director][:path] %>/shared/config/director.yml
+exec chpst -u <%= node[:director][:runner] %> env RACK_ENV=production TMPDIR=<%= node[:director][:tmp] %> <%= node[:director][:path] %>/current/director/bin/director -c <%= node[:director][:path] %>/shared/config/director.yml
