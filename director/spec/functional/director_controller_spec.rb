@@ -66,6 +66,7 @@ describe Bosh::Director::Controller do
       expected = {
         "name"    => "Test Director",
         "version" => Bosh::Director::VERSION,
+        "uuid"    => Bosh::Director::Config.uuid,
         "user"    => "admin"
       }
       last_response.body.should == Yajl::Encoder.encode(expected)
