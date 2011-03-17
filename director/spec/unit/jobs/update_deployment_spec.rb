@@ -120,7 +120,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       @deployment_plan.stub!(:release).and_return(release)
       @deployment_plan.stub!(:deployment).and_return(deployment)
-      release.stub!(:name).and_return("test_release")
 
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(deployment_lock)
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release").and_return(release_lock)
