@@ -326,6 +326,7 @@ module Bosh::Director
     get "/info" do
       status = {
         "name"    => Config.name,
+        "uuid"    => Config.uuid,
         "version" => VERSION,
         "user"    => @user
       }

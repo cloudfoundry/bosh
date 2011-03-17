@@ -5,7 +5,7 @@ module Bosh::Director
       @nats = Config.nats
       @logger = Config.logger
       @lock = Mutex.new
-      @inbox_name = "director.#{Config.uuid}"
+      @inbox_name = "director.#{Config.process_uuid}"
       @requests = {}
       subscribe_inbox
     end

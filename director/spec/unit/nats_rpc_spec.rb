@@ -5,7 +5,7 @@ describe Bosh::Director::NatsRpc do
   before(:each) do
     @nats = mock("nats")
     Bosh::Director::Config.stub(:nats).and_return(@nats)
-    Bosh::Director::Config.stub(:uuid).and_return(123)
+    Bosh::Director::Config.stub(:process_uuid).and_return(123)
   end
 
   describe "send" do
