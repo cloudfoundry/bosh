@@ -21,6 +21,8 @@ require 'agent/message/apply'
 module VCAP
   module Micro
     class Agent
+      APPLY_SPEC = '/var/vcap/micro/apply_spec.yml'
+
       def self.apply(identity)
         agent = self.new(identity)
         agent.setup
@@ -43,28 +45,37 @@ module VCAP
           "blobstore_provider" => "local"
         }
         Bosh::Agent::Config.setup(settings)
+
+        load_spec
+        update_spec
+      end
+
+      def load_spec
+        @spec = YAML.load_file(APPLY_SPEC)
       end
 
       def apply
-        apply_spec = YAML.load_file('/var/vcap/micro/apply_spec.yml')
-        Bosh::Agent::Message::Apply.process([apply_spec])
+        Bosh::Agent::Message::Apply.process([@spec])
       end
 
-      def update_spec(subdomain)
-        apply_spec = '/var/vcap/micro/apply_spec.yml'
-        spec = YAML.load_file(apply_spec)
+      def update_spec
+        subdomain = @identity.subdomain
+        admins = @identity.admins
 
-        properties = spec['properties']
-        properties = VCAP::Micro::Settings.randomize_passowrds(properties)
+        properties = @spec['properties']
+
+        unless @identity.configured?
+          properties = VCAP::Micro::Settings.randomize_passwords(properties)
+        end
+
         properties['cc']['external_uri'] = "api.#{subdomain}"
         properties['cc']['index_page'] = subdomain
+        properties['cc']['admins'] = admins
 
-        spec['properties'] = properties
+        @spec['properties'] = properties
 
-        File.open(apply_spec, 'w') { |f| f.write(YAML.dump(apply_spec)) }
+        File.open(APPLY_SPEC, 'w') { |f| f.write(YAML.dump(@spec)) }
       end
-
-
 
     end
   end

@@ -4,7 +4,7 @@ require 'yajl'
 module VCAP
   module Micro
     class Identity 
-      attr_accessor :admin
+      attr_accessor :admins, :ip, :subdomain, :proxy
 
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
 
@@ -13,26 +13,46 @@ module VCAP
           'http://cf.vcloudlabs.com/api/v1',
           :headers => { :content_type => 'application/json' }
         )
+        if configured?
+          load_config
+        end
+        @config ||= {}
       end
 
       def configured?
         File.exist?(MICRO_CONFIG)
       end
 
-      def install(ip)
-        @ip = ip
+      def load_config
+        File.open(MICRO_CONFIG) do |f|
+          @config = Yajl::Parser.parse(f)
+          @subdomain = @config['subdomain']
+          @admins = @config['admins']
+          @ip = @config['ip']
+        end
+      end
 
-        config = auth
-        @admin = config['email']
-        @domain = config['hostname']
-        @auth_token = config['token']
-        config['ip'] = @ip
+      def install(ip)
+        if @proxy.match(/\Ahttp/)
+          RestClient.proxy = proxy
+        end
+
+        @ip = @config['ip'] = ip
+
+        resp = auth
+        @admins = @config['admins'] = [ resp['email'] ]
+        @subdomain = @config['subdomain'] = resp['hostname']
+        @auth_token = @config['auth_token'] = resp['token']
 
         update_dns
 
-        File.open(MICRO_CONFIG, 'w') do |f|
-          f.write(Yajl::Encoder.encode(config))
-        end
+      end
+
+      def auth
+        path = "/auth/#{CGI.escape(@nounce)}"
+        response = @client[path].get
+        resp = Yajl::Parser.new.parse(response)
+        resp
       end
 
       def update_dns
@@ -49,14 +69,14 @@ module VCAP
         @nounce = nounce
       end
 
-      def auth
-        path = "/auth/#{CGI.escape(@nounce)}"
-        response = @client[path].get
-        conf = Yajl::Parser.new.parse(response)
-        conf
+      def dns_wildcard_name(subsdomain)
+        @subdomain = subdomain
       end
 
-      def dns_wildcard_name(name)
+      def save
+        File.open(MICRO_CONFIG, 'w') do |f|
+          Yajl::Encoder.encode(@config, f)
+        end
       end
 
     end
