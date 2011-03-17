@@ -56,11 +56,6 @@ module VCAP
           menu.choice(:token) { token }
           menu.choice(:dns_wildcard_name) { dns_wildcard_name }
         end
-
-        # TODO: do this after we have network
-        #unless @identity.admin?
-        #  setup_admin
-        #end
       end
 
       def token
@@ -103,17 +98,20 @@ module VCAP
         VCAP::Micro::System.mounts
       end
 
-      def setup_admin
-        admin = ask("Admin email: ")
-        VCAP::Micro::Identity.setup_admin(admin)
-      end
-
       def install_identity
+        unless @identity.admin
+          setup_admin
+        end
         @identity.install(@ip)
       end
 
+      def setup_admin
+        admin_email = ask("Admin email: ")
+        @identity.admin = admin_email
+      end
+
       def install_micro
-        VCAP::Micro::Agent.apply
+        VCAP::Micro::Agent.apply(@identity)
       end
 
       def start_micro

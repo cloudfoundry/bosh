@@ -21,10 +21,14 @@ require 'agent/message/apply'
 module VCAP
   module Micro
     class Agent
-      def self.apply
-        agent = new
+      def self.apply(identity)
+        agent = self.new(identity)
         agent.setup
         agent.apply
+      end
+
+      def initialize(identity)
+        @identity = identity
       end
 
       def setup
