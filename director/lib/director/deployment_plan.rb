@@ -131,8 +131,8 @@ module Bosh::Director
           # if there is no instance, then use resource pool network
           network_settings = {}
           network = @resource_pool.network
-          network_settings[network.name] = network.network_settings(@ip)
-          network_settings[network.name]["default"] = JobSpec::VALID_DEFAULT_NETWORK_PROPERTIES.to_a.dup.sort
+          network_settings[network.name] = network.network_settings(
+              @ip, NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES_ARRAY)
           network_settings
         end
       end
@@ -154,6 +154,9 @@ module Bosh::Director
     class NetworkSpec
       include IpUtil
       include ValidationHelper
+
+      VALID_DEFAULT_NETWORK_PROPERTIES = Set.new(["dns", "gateway"])
+      VALID_DEFAULT_NETWORK_PROPERTIES_ARRAY = VALID_DEFAULT_NETWORK_PROPERTIES.to_a.sort
 
       attr_accessor :deployment
       attr_accessor :name
@@ -194,7 +197,7 @@ module Bosh::Director
         reserved
       end
 
-      def network_settings(ip)
+      def network_settings(ip, default_properties)
         config = nil
         ip = ip_to_netaddr(ip)
         @subnets.each do |subnet|
@@ -204,6 +207,11 @@ module Bosh::Director
               "netmask" => subnet.netmask,
               "cloud_properties" => subnet.cloud_properties
             }
+
+            if default_properties
+              config["default"] = default_properties.sort
+            end
+
             config["dns"] = subnet.dns if subnet.dns
             config["gateway"] = subnet.gateway.ip if subnet.gateway
             break
@@ -337,9 +345,6 @@ module Bosh::Director
       include IpUtil
       include ValidationHelper
 
-      VALID_DEFAULT_NETWORK_PROPERTIES = Set.new(["dns", "gateway"])
-      VALID_DEFAULT_NETWORK_PROPERTIES_ARRAY = VALID_DEFAULT_NETWORK_PROPERTIES.to_a.sort
-
       attr_accessor :deployment
       attr_accessor :name
       attr_accessor :persistent_disk
@@ -403,7 +408,7 @@ module Bosh::Director
           default_network = safe_property(network_spec, "default", :class => Array, :optional => true)
           if default_network
             default_network.each do |property|
-              if !VALID_DEFAULT_NETWORK_PROPERTIES.include?(property)
+              if !NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.include?(property)
                 raise "Job #{@name} specified an invalid default property: #{property}"
               elsif @default_network[property].nil?
                 @default_network[property] = network_name
@@ -422,7 +427,7 @@ module Bosh::Director
         end
 
         if network_specs.size > 1
-          missing_default_properties = VALID_DEFAULT_NETWORK_PROPERTIES.dup
+          missing_default_properties = NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.dup
           @default_network.each_key { |key| missing_default_properties.delete(key) }
           unless missing_default_properties.empty?
             raise "Job #{@name} must specify a default networks for '#{missing_default_properties.to_a.join(", ")}' " +
@@ -431,7 +436,7 @@ module Bosh::Director
         else
           # Set the default network to the one and only available network (if not specified already)
           network = safe_property(network_specs.first, "name", :class => String)
-          VALID_DEFAULT_NETWORK_PROPERTIES.each { |property| @default_network[property] ||= network }
+          NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.each { |property| @default_network[property] ||= network }
         end
       end
 
@@ -532,11 +537,8 @@ module Bosh::Director
         network_settings = {}
         @networks.each_value do |instance_network|
           network = @job.deployment.network(instance_network.name)
-          network_settings[instance_network.name] = network.network_settings(instance_network.ip)
-
-          if default_network_properties[instance_network.name]
-            network_settings[instance_network.name]["default"] = default_network_properties[instance_network.name].sort
-          end
+          network_settings[instance_network.name] = network.network_settings(
+              instance_network.ip, default_network_properties[instance_network.name])
         end
         network_settings
       end

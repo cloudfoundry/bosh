@@ -70,7 +70,7 @@ describe Bosh::Director::PackageCompiler do
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
       @network.should_receive(:allocate_dynamic_ip).and_return(255)
-      @network.should_receive(:network_settings).with(255).and_return({"ip" => "1.2.3.4"})
+      @network.should_receive(:network_settings).with(255, ["dns", "gateway"]).and_return({"ip" => "1.2.3.4"})
 
       agent = mock("agent")
       Bosh::Director::AgentClient.should_receive(:new).with("agent-1").and_return(agent)
@@ -134,7 +134,7 @@ describe Bosh::Director::PackageCompiler do
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
 
       @network.should_receive(:allocate_dynamic_ip).and_return(255)
-      @network.should_receive(:network_settings).with(255).and_return({"ip" => "1.2.3.4"})
+      @network.should_receive(:network_settings).with(255, ["dns", "gateway"]).and_return({"ip" => "1.2.3.4"})
 
       agent_a = mock("agent")
       Bosh::Director::AgentClient.should_receive(:new).with("agent-a").and_return(agent_a)

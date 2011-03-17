@@ -657,7 +657,7 @@ describe Bosh::Director::DeploymentPlan do
       }
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       network = deployment_plan.network("network_a")
-      network.network_settings("10.0.0.2").should == {
+      network.network_settings("10.0.0.2", nil).should == {
         "netmask" => "255.255.255.0",
         "ip" => "10.0.0.2",
         "cloud_properties" => {"name" => "net_a"},
@@ -677,7 +677,7 @@ describe Bosh::Director::DeploymentPlan do
       }
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       network = deployment_plan.network("network_a")
-      network.network_settings("10.0.0.2").should == {
+      network.network_settings("10.0.0.2", nil).should == {
         "netmask" => "255.255.255.0",
         "ip" => "10.0.0.2",
         "cloud_properties" => {"name" => "net_a"}
