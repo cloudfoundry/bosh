@@ -3,6 +3,7 @@ require 'micro/network'
 require 'micro/identity'
 require 'micro/agent'
 require 'micro/system'
+require 'micro/settings'
 
 module VCAP
   module Micro
@@ -27,20 +28,25 @@ module VCAP
         @ip = VCAP::Micro::Network.local_ip
         install_identity
         install_micro
+
+        @identity.save
       end
 
       def header
         say("BETA - Welcome to VMware Micro Cloud Download - BETA\n\n")
-        say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
 
         unless @identity.configured?
+          say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
           exit unless agree("Micro Cloud Not Configured - Do you want to configure (y/n)?")
         else
-          say("Current Configuration:")
-          say("Identity: ")
-          say("Networking (type)")
+          say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n")
 
-          exit unless agree("Re-configure Micro Cloud? (y/n)")
+          say("Current Configuration:\n")
+          say("  Identity : #{@identity.subdomain}\n")
+          say("  Admin    : #{@identity.admins.join(', ')}\n")
+          say("  Address  : #{@identity.ip}\n")
+
+          exit unless agree("\nRe-configure Micro Cloud? (y/n)")
         end
       end
 
@@ -75,7 +81,7 @@ module VCAP
           menu.choice(:manual) { manual_network }
         end
 
-        proxy = ask("HTTP proxy: ") { |q| q.default = "none" }
+        @identity.proxy = ask("HTTP proxy: ") { |q| q.default = "none" }
       end
 
       def dhcp_network
@@ -99,7 +105,7 @@ module VCAP
       end
 
       def install_identity
-        unless @identity.admin
+        unless @identity.admins
           setup_admin
         end
         @identity.install(@ip)
@@ -107,7 +113,7 @@ module VCAP
 
       def setup_admin
         admin_email = ask("Admin email: ")
-        @identity.admin = admin_email
+        @identity.admins = [ admin_email.split(',') ]
       end
 
       def install_micro
