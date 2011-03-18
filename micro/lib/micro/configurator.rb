@@ -39,7 +39,7 @@ module VCAP
           say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
           exit unless agree("Micro Cloud Not Configured - Do you want to configure (y/n)?")
         else
-          say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n")
+          say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n\n")
 
           say("Current Configuration:\n")
           say("  Identity : #{@identity.subdomain}\n")
@@ -112,16 +112,13 @@ module VCAP
       end
 
       def setup_admin
-        admin_email = ask("Admin email: ")
+        admin_email = ask("\nAdmin email: ")
         @identity.admins = [ admin_email.split(',') ]
       end
 
       def install_micro
+        say("\n\nInstalling CloudFoundry...\n\n")
         VCAP::Micro::Agent.apply(@identity)
-      end
-
-      def start_micro
-        #VCAP::Micro::Runner.start
       end
 
       def clear
