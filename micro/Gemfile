@@ -7,7 +7,6 @@ gem 'rest-client'
 gem "blobstore_client", "~> 0.3"
 gem "yajl-ruby", :require => "yajl"
 
-gem "nats"
 gem "uuidtools"
 gem "netaddr"
 gem "posix-spawn"
