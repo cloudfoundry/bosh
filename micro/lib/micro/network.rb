@@ -35,6 +35,7 @@ module VCAP
         if net['dns']
           dns(net['dns'])
         end
+        restart
       end
 
       # Comma separated list of dns servers
