@@ -104,6 +104,7 @@ module VCAP
           /var/vcap/store/redis
           /var/vcap/bosh/src
           /etc/udev/rules.d/70-persistent-net.rules
+          /etc/network/interfaces
         }.each do |path|
           FileUtils.rm_rf(path)
         end
