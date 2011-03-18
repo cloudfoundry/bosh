@@ -44,11 +44,11 @@ module VCAP
       end
 
       def reset_hostname
-        File.open('/etc/hostname', 'w') { |f| f.puts("cfmicro") }
+        File.open('/etc/hostname', 'w') { |f| f.puts("micro") }
       end
 
       def reset_etc_host
-        File.open('/etc/hosts', 'w') { |f| f.puts("127.0.0.1 localhost cfmicro") }
+        File.open('/etc/hosts', 'w') { |f| f.puts("127.0.0.1 localhost micro") }
       end
 
       def copy_micro_to_rootfs
