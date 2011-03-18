@@ -101,7 +101,7 @@ module Bosh::Cli
             FileUtils.mkdir_p(destination)
           else
             FileUtils.mkdir_p(File.dirname(destination))
-            FileUtils.cp(filename, destination)
+            FileUtils.cp(filename, destination, :preserve => true)
             copied += 1
           end
         end
@@ -114,7 +114,7 @@ module Bosh::Cli
           if File.exists?(destination)
             raise InvalidPackage, "Package '#{name}' has '#{filename}' file which conflicts with BOSH packaging"
           end
-          FileUtils.cp(filename, destination)
+          FileUtils.cp(filename, destination, :preserve => true)
           copied += 1
         end
       end
@@ -129,7 +129,7 @@ module Bosh::Cli
       if File.exists?(pre_packaging_script)
 
         say("Found pre-packaging script for `#{name}'")
-        FileUtils.cp(pre_packaging_script, build_dir)
+        FileUtils.cp(pre_packaging_script, build_dir, :preserve => true)
 
         old_env = ENV
 

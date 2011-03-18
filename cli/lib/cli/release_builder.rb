@@ -62,7 +62,7 @@ module Bosh::Cli
     def copy_packages
       packages.each do |package|
         say "Copying #{package.tarball_path}..."
-        FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"))
+        FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"), :preserve => true)
       end
       @packages_copied = true
     end
@@ -70,7 +70,7 @@ module Bosh::Cli
     def copy_jobs
       jobs.each do |job|
         say "Copying #{job.tarball_path}..."
-        FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"))
+        FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"), :preserve => true)
       end
       @jobs_copied = true
     end
