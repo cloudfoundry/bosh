@@ -16,6 +16,7 @@ module VCAP
 
       def dhcp
         write_network_interfaces(BASE_TEMPLATE + DHCP_TEMPLATE, nil)
+        restart
       end
 
       def manual(net)
@@ -30,10 +31,20 @@ module VCAP
         end
 
         write_network_interfaces(BASE_TEMPLATE + MANUAL_TEMPLATE, net)
+
+        if net['dns']
+          dns(net['dns'])
+        end
       end
 
       # Comma separated list of dns servers
       def dns(dns_string)
+        servers = dns_string.split(/,/).map { |s| s.gsub(/\s+/, '') }
+        File.open('/etc/resolv.conf', 'w') do |f|
+          servers.each do |s|
+            f.puts("nameserver #{s}")
+          end
+        end
       end
 
       def ntp(ntp_server)
@@ -51,7 +62,8 @@ module VCAP
       end
 
       def restart
-        puts "service network-interface stop INTERFACE=eth0"
+        `service network-interface stop INTERFACE=eth0`
+        `service network-interface start INTERFACE=eth0`
       end
 
       BASE_TEMPLATE = <<TEMPLATE
