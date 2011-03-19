@@ -100,7 +100,7 @@ module Bosh::Agent
 
       def drain_script
          job_name = @old_spec['job']['name']
-        "#{@base_dir}/jobs/#{job_name}/drain"
+        "#{@base_dir}/jobs/#{job_name}/bin/drain"
       end
 
       def drain_script_exists?

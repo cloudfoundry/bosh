@@ -24,9 +24,9 @@ describe Bosh::Agent::Message::Drain do
   it "should handle update drain type" do
     @state_handler.should_receive(:state).and_return(old_spec)
 
-    jobdir = File.join(@base_dir, 'jobs', 'cloudcontroller')
-    drain_script = File.join(jobdir, 'drain')
-    FileUtils.mkdir_p(jobdir)
+    bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
+    drain_script = File.join(bindir, 'drain')
+    FileUtils.mkdir_p(bindir)
 
     File.open(drain_script, 'w') do |fh|
       fh.puts "#/bin/sh\necho $@ > /tmp/yay.out\necho -n '10'"
