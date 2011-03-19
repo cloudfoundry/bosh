@@ -17,19 +17,28 @@ module VCAP
         # TODO: check highline's signal handling - might get in the way here
         %w{TERM INT}.each { |sig| trap(sig) { puts "Exiting Micro Cloud Configurator"; exit } }
 
-        clear
-        header
-        #password # TODO OS auth/pwchange/pam auth
-        identity
+        begin
+          clear
+          header
+          #password # TODO OS auth/pwchange/pam auth
+          identity
 
-        network
-        mounts
+          network
+          mounts
 
-        @ip = VCAP::Micro::Network.local_ip
-        install_identity
-        install_micro
+          @ip = VCAP::Micro::Network.local_ip
+          install_identity
+          install_micro
 
-        @identity.save
+          @identity.save
+        rescue Exception => e
+          # FIXME: crude hack to prevent console to restart and clear
+          say("\nWARNING: Failed to configure Cloud Foundry Micro:\n")
+          puts e
+          puts e.backtrace
+          STDIN.getc
+          exit(1)
+        end
       end
 
       def header
@@ -41,12 +50,24 @@ module VCAP
         else
           say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n\n")
 
-          say("Current Configuration:\n")
-          say("  Identity : #{@identity.subdomain}\n")
-          say("  Admin    : #{@identity.admins.join(', ')}\n")
-          say("  Address  : #{@identity.ip}\n")
-
+          current_configuration
           exit unless agree("\nRe-configure Micro Cloud? (y/n)")
+        end
+      end
+
+      def current_configuration
+        say("Current Configuration:\n")
+        say("  Identity : #{@identity.subdomain}\n")
+        say("  Admin    : #{@identity.admins.join(', ')}\n")
+        say("  Address  : #{@identity.ip}\n")
+
+        begin 
+          current_ip = VCAP::Micro::Network.local_ip
+          if current_ip != @identity.ip
+            say("WARNING: Current IP Address (#{current_ip}) differs from configured IP")
+          end
+        rescue
+          # TODO: check what local_ip does if no network exist.
         end
       end
 
@@ -117,7 +138,11 @@ module VCAP
       end
 
       def install_micro
-        say("\n\nInstalling CloudFoundry...\n\n")
+        say("\n")
+        current_configuration
+
+        say("\nInstalling CloudFoundry Micro...\n\n")
+
         VCAP::Micro::Agent.apply(@identity)
       end
 
