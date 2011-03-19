@@ -16,11 +16,12 @@ GEM
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
     httpclient (2.1.6.1)
+    json_pure (1.5.1)
     mime-types (1.16)
-    nats (0.3.12)
+    nats (0.4.2)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
-      yajl-ruby (>= 0.7.8)
+      json_pure (>= 1.5.1)
     netaddr (1.5.0)
     posix-spawn (0.3.3)
     rake (0.8.7)
@@ -38,7 +39,7 @@ GEM
     rspec-mocks (2.1.0)
     uuidtools (2.1.1)
     xml-simple (1.0.12)
-    yajl-ruby (0.7.8)
+    yajl-ruby (0.8.1)
 
 PLATFORMS
   ruby
