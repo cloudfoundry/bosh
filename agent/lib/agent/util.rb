@@ -21,10 +21,15 @@ module Bosh::Agent
     end
 
     class << self
-      def unpack_blob(blobstore_id, sha1, install_path)
-        base_dir = Bosh::Agent::Config.base_dir
-        logger = Bosh::Agent::Config.logger
+      def base_dir
+        Bosh::Agent::Config.base_dir
+      end
 
+      def logger
+        Bosh::Agent::Config.logger
+      end
+
+      def unpack_blob(blobstore_id, sha1, install_path)
         bsc_options = Bosh::Agent::Config.blobstore_options
         bsc_provider = Bosh::Agent::Config.blobstore_provider
         blobstore_client = Bosh::Blobstore::Client.create(bsc_provider, bsc_options)
@@ -78,7 +83,6 @@ module Bosh::Agent
       end
 
       def partition_disk(dev, sfdisk_input)
-        logger = Bosh::Agent::Config.logger
         if File.blockdev?(dev)
           sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uM #{dev}"
           output = %x[#{sfdisk_cmd}]
@@ -104,7 +108,6 @@ module Bosh::Agent
       end
 
       def settings
-        base_dir = Bosh::Agent::Config.base_dir
         settings_dir = File.join(base_dir, 'bosh', 'settings')
 
         begin
@@ -136,9 +139,6 @@ module Bosh::Agent
       end
 
       def run_hook(hook, job_name)
-        base_dir = Bosh::Agent::Config.base_dir
-        logger = Bosh::Agent::Config.logger
-
         hook_file = File.join(base_dir, 'jobs', job_name, 'bin', hook)
         if File.exist?(hook_file)
 
