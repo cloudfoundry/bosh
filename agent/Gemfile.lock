@@ -12,12 +12,15 @@ GEM
     builder (2.1.2)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
+    crack (0.1.8)
     daemons (1.1.0)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
     httpclient (2.1.6.1)
     json_pure (1.5.1)
     mime-types (1.16)
+    monit_api (1.0.0)
+      crack
     nats (0.4.2)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
@@ -47,6 +50,7 @@ PLATFORMS
 DEPENDENCIES
   blobstore_client (~> 0.3)
   ci_reporter
+  monit_api
   nats
   netaddr
   posix-spawn
