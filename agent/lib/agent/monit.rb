@@ -55,6 +55,7 @@ module Bosh::Agent
             readers.delete(fd)
             fd.close
           end
+          buf.gsub!(/\n\Z/,'')
           @logger.info("Monit: #{buf}")
         end
         out, err = '', ''
