@@ -67,7 +67,8 @@ echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
 
-echo -e "startup=1\n" > /etc/default/monit
+# the agent will run monit
+rm /etc/init.d/monit
 cp monitrc /etc/monit/monitrc
 
 # monit refuses to start without an include file present

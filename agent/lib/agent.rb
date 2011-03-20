@@ -13,6 +13,7 @@ require "agent/ext"
 require "agent/version"
 require "agent/config"
 require "agent/util"
+require "agent/monit"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/disk"
@@ -46,6 +47,7 @@ module Bosh::Agent
       @logger.info("Configuring agent #{Bosh::Agent::VERSION}")
       if Config.configure
         Bosh::Agent::Message::Configure.process(nil)
+        Bosh::Agent::Monit.start
       end
       @logger.info("Starting agent")
       Bosh::Agent::Handler.start

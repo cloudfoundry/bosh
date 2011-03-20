@@ -4,6 +4,7 @@ require 'erb'
 require 'tempfile'
 require 'fileutils'
 require 'pathname'
+require 'openssl'
 
 module Bosh::Agent
   module Message
@@ -35,6 +36,7 @@ module Bosh::Agent
           setup_networking
           update_time
           setup_data_disk
+          setup_monit_user
 
           # HACK HACK HACK - until we can identify store drive
           if File.blockdev?('/dev/sdc1')
@@ -285,6 +287,17 @@ iface <%= n["interface"] %> inet static
 <% end %>
 
 TEMPLATE
+
+      def setup_monit_user
+        user_file = File.join(@base_dir, 'monit', 'monit.user')
+        credential = OpenSSL::Random.random_bytes(8).unpack("H*")[0]
+
+        unless File.exist?(user_file)
+          File.open(user_file, 'w') do |f|
+            f.puts("vcap:#{credential}")
+          end
+        end
+      end
 
     end
   end
