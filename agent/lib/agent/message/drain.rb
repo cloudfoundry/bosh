@@ -39,7 +39,6 @@ module Bosh::Agent
             job_change =  if !@old_spec.key?('job')
                             "job_new"
                           elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
-                            p @spec
                             "job_unchanged"
                           else
                             "job_changed"

@@ -10,6 +10,10 @@ module Bosh::Agent
     end
 
     class << self
+      def base_dir
+        Bosh::Agent::Config.base_dir
+      end
+
       def monit_user_file
         File.join(base_dir, 'monit', 'monit.user')
       end
