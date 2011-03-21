@@ -2,15 +2,24 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Agent::Monit do 
 
-  it "should set up monit user" do
+  before(:each) do
+    setup_tmp_base_dir
+
     monit_dir = File.join(base_dir, 'monit')
-    monit_user_file = File.join(monit_dir, 'monit.user')
     FileUtils.mkdir(monit_dir)
 
+    @monit_user_file = File.join(monit_dir, 'monit.user')
+  end
+
+  it "should have monit user file" do
+    Bosh::Agent::Monit.monit_user_file.should == @monit_user_file
+  end
+
+  it "should set up monit user" do
     Bosh::Agent::Monit.setup_monit_user
 
-    File.exist?(monit_user_file).should == true
-    monit_user_data = File.read(monit_user_file)
+    File.exist?(@monit_user_file).should == true
+    monit_user_data = File.read(@monit_user_file)
     monit_user_data.should match(/vcap:\S{16}/)
   end
 
@@ -36,6 +45,5 @@ describe Bosh::Agent::Monit do
     client = Bosh::Agent::Monit.monit_api_client
     client.send('service_action', 'test', 'start')
   end
-
 
 end
