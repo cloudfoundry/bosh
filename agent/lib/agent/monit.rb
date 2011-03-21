@@ -9,6 +9,36 @@ module Bosh::Agent
       self.new.run
     end
 
+    class << self
+      def monit_user_file
+        File.join(base_dir, 'monit', 'monit.user')
+      end
+
+      def monit_credentials
+        entry = File.read(monit_user_file).lines.find { |line| line.match(/\A#{BOSH_APP_GROUP}/) }
+        user, cred = entry.split(/:/)
+        [user, cred.strip]
+      end
+
+      def monit_api_client
+        user, cred = monit_credentials
+        MonitApi::Client.new("http://#{user}:#{cred}@localhost:2822")
+      end
+
+      def random_credential
+        OpenSSL::Random.random_bytes(8).unpack("H*")[0]
+      end
+
+      def setup_monit_user
+        unless File.exist?(monit_user_file)
+          File.open(monit_user_file, 'w') do |f|
+            f.puts("vcap:#{random_credential}")
+          end
+        end
+      end
+
+    end
+
     def initialize
       @logger = Bosh::Agent::Config.logger
     end

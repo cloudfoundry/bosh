@@ -8,6 +8,7 @@ require "yajl"
 require 'uuidtools'
 require 'ostruct'
 require 'posix/spawn'
+require 'monit_api'
 
 require "agent/ext"
 require "agent/version"
