@@ -34,6 +34,10 @@ Rspec.configure do |rspec_config|
   end
 end
 
+def base_dir
+  Bosh::Agent::Config.base_dir
+end
+
 def setup_tmp_base_dir
   tmp_base_dir = File.dirname(__FILE__) + "/tmp/#{Time.now.to_i}"
   if File.directory?(tmp_base_dir)
