@@ -19,7 +19,7 @@ GEM
     httpclient (2.1.6.1)
     json_pure (1.5.1)
     mime-types (1.16)
-    monit_api (1.0.0)
+    monit_api (1.0.1)
       crack
     nats (0.4.2)
       daemons (>= 1.1.0)
