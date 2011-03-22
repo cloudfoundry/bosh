@@ -57,6 +57,24 @@ describe MonitApi::Client do
       status["monit"]["servicegroups"]["servicegroup"].should_not be_nil
     end
 
+    it "should not fail on empty servicegroups" do
+      http_client = mock("http_client")
+      Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)
+
+      response = mock("response")
+      response.stub!(:code).and_return("200")
+      response.stub!(:body).and_return(File.read(File.expand_path("../../assets/status_without_servicegroups.xml", __FILE__)))
+
+      http_client.should_receive(:request).with { |request|
+        request.method.should == "GET"
+        request.path.should == "/_status2?format=xml"
+      }.and_return(response)
+
+      client = MonitApi::Client.new("http://localhost:123")
+      status = client.send(:get_status)
+      status["monit"]["servicegroups"].should be_nil
+    end
+
     it "should fail when monit returns an error" do
       http_client = mock("http_client")
       Net::HTTP.should_receive(:new).with("localhost", 123).and_return(http_client)

@@ -102,15 +102,17 @@ module MonitApi
       services = [services] unless services.kind_of?(Array)
 
       service_groups_index = {}
-      groups = status["monit"]["servicegroups"]["servicegroup"]
-      groups = [groups] unless groups.kind_of?(Array)
-      groups.each do |group|
-        service_names = group["service"]
-        service_names = [service_names] unless service_names.kind_of?(Array)
+      if status["monit"]["servicegroups"]
+        groups = status["monit"]["servicegroups"]["servicegroup"]
+        groups = [groups] unless groups.kind_of?(Array)
+        groups.each do |group|
+          service_names = group["service"]
+          service_names = [service_names] unless service_names.kind_of?(Array)
 
-        service_names.each do |service_name|
-          service_groups_index[service_name] ||= Set.new
-          service_groups_index[service_name] << group["name"]
+          service_names.each do |service_name|
+            service_groups_index[service_name] ||= Set.new
+            service_groups_index[service_name] << group["name"]
+          end
         end
       end
 
