@@ -14,16 +14,23 @@ apt-get update
 
 apt-get install -y --force-yes --no-install-recommends \
   build-essential libssl-dev openssh-server linux-headers-virtual \
-  open-vm-dkms open-vm-tools monit lsof strace scsitools bind9-host \
+  open-vm-dkms open-vm-tools lsof strace scsitools bind9-host \
   dnsutils tcpdump tshark iputils-arping curl wget libcurl3 libcurl3-dev \
   bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
-  zip unzip nfs-common
+  zip unzip nfs-common flex
 
 dpkg -l > ${bosh_app_dir}/bosh/stemcell_dpkg_l.out
 
 cd ${bosh_app_dir}/bosh/src
-tar zxvf ruby-1.8.7-p302.tar.gz
 
+tar zxvf monit-5.2.4.tar.gz
+(
+  cd monit-5.2.4
+  ./configure --prefix=${bosh_app_dir}/bosh
+  make && make install
+)
+
+tar zxvf ruby-1.8.7-p302.tar.gz
 (
   cd ruby-1.8.7-p302
   ./configure \
@@ -69,7 +76,10 @@ echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
 
 # the agent will run monit
 rm /etc/init.d/monit
-cp monitrc /etc/monit/monitrc
+
+mkdir -p ${bosh_app_dir}/bosh/etc
+cp monitrc ${bosh_app_dir}/bosh/etc/monitrc
+chmod 0700 ${bosh_app_dir}/bosh/etc/monitrc
 
 # monit refuses to start without an include file present
 mkdir -p ${bosh_app_dir}/monit

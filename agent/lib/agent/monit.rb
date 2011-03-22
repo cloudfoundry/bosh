@@ -14,6 +14,10 @@ module Bosh::Agent
         Bosh::Agent::Config.base_dir
       end
 
+      def logger
+        Bosh::Agent::Config.logger
+      end
+
       def monit_user_file
         File.join(base_dir, 'monit', 'monit.user')
       end
@@ -26,7 +30,7 @@ module Bosh::Agent
 
       def monit_api_client
         user, cred = monit_credentials
-        MonitApi::Client.new("http://#{user}:#{cred}@localhost:2822")
+        MonitApi::Client.new("http://#{user}:#{cred}@localhost:2822", :logger => logger)
       end
 
       def random_credential
@@ -39,6 +43,18 @@ module Bosh::Agent
             f.puts("vcap:#{random_credential}")
           end
         end
+      end
+
+      def monit_bin
+        File.join(base_dir, 'bosh', 'bin', 'monit')
+      end
+
+      def monitrc
+        File.join(base_dir, 'bosh', 'etc', 'monitrc')
+      end
+
+      def reload
+        `#{monit_bin} reload`
       end
 
     end
@@ -54,7 +70,7 @@ module Bosh::Agent
     end
 
     def exec_monit
-      pid, stdin, stdout, stderr = POSIX::Spawn.popen4('/usr/sbin/monit', '-I', '-c', '/etc/monit/monitrc')
+      pid, stdin, stdout, stderr = POSIX::Spawn.popen4(Monit.monit_bin, '-I', '-c', Monit.monitrc)
       stdin.close
 
       log_monit_output(stdout, stderr)
