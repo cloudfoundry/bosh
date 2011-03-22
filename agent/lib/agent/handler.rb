@@ -212,7 +212,8 @@ module Bosh::Agent
     class Stop
       def self.process(args)
         if Config.configure
-          `monit -g #{BOSH_APP_GROUP} stop`
+          monit_api_client = Bosh::Agent::Monit.monit_api_client
+          monit_api_client.stop(:group => BOSH_APP_GROUP)
         end
         "stopped"
       end
