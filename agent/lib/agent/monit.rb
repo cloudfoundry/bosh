@@ -18,8 +18,12 @@ module Bosh::Agent
         Bosh::Agent::Config.logger
       end
 
+      def monit_dir
+        File.join(base_dir, 'monit')
+      end
+
       def monit_user_file
-        File.join(base_dir, 'monit', 'monit.user')
+        File.join(monit_dir, 'monit.user')
       end
 
       def monit_credentials
@@ -29,6 +33,11 @@ module Bosh::Agent
       end
 
       def monit_api_client
+        # Primarily for CI - normally done during configure
+        unless Bosh::Agent::Config.configure
+          setup_monit_user
+        end
+
         user, cred = monit_credentials
         MonitApi::Client.new("http://#{user}:#{cred}@localhost:2822", :logger => logger)
       end
@@ -39,6 +48,10 @@ module Bosh::Agent
 
       def setup_monit_user
         unless File.exist?(monit_user_file)
+
+          FileUtils.mkdir_p(monit_dir)
+          FileUtils.chmod(0700, monit_dir)
+
           File.open(monit_user_file, 'w') do |f|
             f.puts("vcap:#{random_credential}")
           end
