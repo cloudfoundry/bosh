@@ -5,6 +5,11 @@ describe Bosh::Agent::Monit do
   before(:each) do
     setup_tmp_base_dir
 
+    logger = mock('logger')
+    logger.stub!(:info)
+    logger.stub!(:debug)
+    Bosh::Agent::Config.logger = logger
+
     monit_dir = File.join(base_dir, 'monit')
     FileUtils.mkdir(monit_dir)
 

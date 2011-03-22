@@ -10,6 +10,7 @@ module Bosh::Agent
       def initialize(args)
         @logger = Bosh::Agent::Config.logger
         @base_dir = Bosh::Agent::Config.base_dir
+        @monit_api_client = Bosh::Agent::Monit.monit_api_client
 
         @apply_spec = args.first
         @job = @apply_spec['job']
@@ -171,11 +172,23 @@ module Bosh::Agent
           if Bosh::Agent::Config.configure
             # There is really no use trying to do error handling on these -
             # monit always return 0
-            `monit reload`
+            Bosh::Agent::Monit.reload
             sleep 1
-            `monit -g #{BOSH_APP_GROUP} monitor`
-            output = `monit -g #{BOSH_APP_GROUP} start 2>&1`
-            @logger.info("Monit start: #{output}")
+            @monit_api_client.monitor(:group => BOSH_APP_GROUP)
+
+            # HACK: Monit becomes unresponsive after reload
+            attempts = 10
+            begin
+              @monit_api_client.start(:group => BOSH_APP_GROUP)
+            rescue => e
+              if e.message == "Service Unavailable"
+                retry if (attempts -= 1) > 0
+                sleep 1
+              else
+                raise e
+              end
+            end
+
           end
         end
       end

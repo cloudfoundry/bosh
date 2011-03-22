@@ -12,6 +12,9 @@ describe Bosh::Agent::Message::Apply do
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
 
+    FileUtils.mkdir_p(File.join(base_dir, 'monit'))
+    Bosh::Agent::Monit.setup_monit_user
+
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
   end
