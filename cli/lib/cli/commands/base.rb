@@ -85,8 +85,21 @@ module Bosh::Cli
         end
       end
 
+      def check_if_dirty_state
+        if dirty_state?
+          say "\n%s\n" % [ `git status` ]
+          err "Your current directory has some local modifications, please discard or commit them first"
+        end
+      end
+
       def in_release_dir?
         File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
+      end
+
+      def dirty_state?
+        `which git`
+        return false unless $? == 0
+        File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
       end
 
       def init_blobstore(options)
