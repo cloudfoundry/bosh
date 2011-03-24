@@ -10,6 +10,9 @@ GEM
       httpclient
       uuidtools
     builder (3.0.0)
+    ci_reporter (1.6.3)
+      builder (>= 2.1.2)
+    diff-lcs (1.1.2)
     highline (1.6.1)
     httpclient (2.1.6.1)
     mime-types (1.16)
@@ -17,8 +20,20 @@ GEM
     netaddr (1.5.0)
     posix-spawn (0.3.3)
     rbcurse (1.1.5)
+    rcov (0.9.9)
+    rcov_analyzer (0.1)
+      builder
+      rcov
     rest-client (1.6.1)
       mime-types (>= 1.16)
+    rspec (2.1.0)
+      rspec-core (~> 2.1.0)
+      rspec-expectations (~> 2.1.0)
+      rspec-mocks (~> 2.1.0)
+    rspec-core (2.1.0)
+    rspec-expectations (2.1.0)
+      diff-lcs (~> 1.1.2)
+    rspec-mocks (2.1.0)
     uuidtools (2.1.1)
     xml-simple (1.0.13)
     yajl-ruby (0.7.8)
@@ -28,11 +43,15 @@ PLATFORMS
 
 DEPENDENCIES
   blobstore_client (~> 0.3)
+  ci_reporter
   highline
   ncurses
   netaddr
   posix-spawn
   rbcurse
+  rcov
+  rcov_analyzer
   rest-client
+  rspec
   uuidtools
   yajl-ruby
