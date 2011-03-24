@@ -1,0 +1,51 @@
+require 'rake'
+require 'erb'
+
+desc "Run specs"
+task "spec" => ["bundler:install:test", "test:spec"]
+
+desc "Run specs using RCov"
+task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
+
+desc "Run specs for CI"
+task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
+
+namespace "bundler" do
+  desc "Install gems"
+  task "install" do
+    sh("bundle install")
+  end
+
+  desc "Install gems for test"
+  task "install:test" do
+    sh("bundle install --local --without development production")
+  end
+
+  desc "Install gems for production"
+  task "install:production" do
+    sh("bundle install --local --without development test")
+  end
+
+  desc "Install gems for development"
+  task "install:development" do
+    sh("bundle install --local --without test production")
+  end
+end
+
+namespace "test" do
+
+  task "spec" do |t|
+    sh("cd spec && rake spec")
+  end
+
+  task "spec:ci" do |t|
+    sh("cd spec && rake spec:ci")
+  end
+
+  task "spec:rcov" do |t|
+    sh("cd spec && rake spec:rcov")
+  end
+
+end
+
+
