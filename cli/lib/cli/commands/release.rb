@@ -113,12 +113,15 @@ module Bosh::Cli::Command
       say responses[status] || "Cannot upload release: #{message}"
     end
 
-    def create(flags = "")
+    def create(*options)
+      final = options.include?("--final")
+      force = options.include?("--force")
+
       check_if_release_dir
+      check_if_dirty_state unless force
 
       packages  = []
       jobs      = []
-      final     = flags.to_s =~ /^\s*--final\s*$/i
 
       final_release = Bosh::Cli::Release.final(work_dir)
       dev_release = Bosh::Cli::Release.dev(work_dir)
