@@ -86,6 +86,11 @@ module Bosh::Agent
       pid, stdin, stdout, stderr = POSIX::Spawn.popen4(Monit.monit_bin, '-I', '-c', Monit.monitrc)
       stdin.close
 
+      at_exit {
+        Process.kill('TERM', pid) rescue nil
+        Process.waitpid(pid)      rescue nil
+      }
+
       log_monit_output(stdout, stderr)
 
       status = Process.waitpid(pid)
