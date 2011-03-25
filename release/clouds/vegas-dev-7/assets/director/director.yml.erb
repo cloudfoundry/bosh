@@ -1,0 +1,49 @@
+---
+name: Vegas7
+port: <%= node[:director][:port] %>
+logging:
+  level: DEBUG
+  file: <%= node[:director][:path] %>/shared/logs/<%= @process_name %>.debug.log
+redis:
+  host: <%= node[:hosts][:redis] %>
+  port: <%= node[:redis][:port] %>
+  password: <%= node[:redis][:password] %>
+mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+dir: <%= node[:director][:path] %>/shared/system
+db:
+  database: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:postgresql][:database] %>
+  max_connections: 32
+  pool_timeout: 10
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://<%= node[:hosts][:blobstore] %>:<%= node[:blobstore][:port] %>
+    user: <%= node[:blobstore][:director_account][:user] %>
+    password: <%= node[:blobstore][:director_account][:password] %>
+cloud:
+  plugin: vsphere
+  properties:
+    agent:
+      ntp:
+       - ntp01.las01.emcatmos.com
+       - ntp02.las01.emcatmos.com
+      blobstore:
+        plugin: simple
+        properties:
+          endpoint: http://<%= node[:hosts][:blobstore] %>:<%= node[:blobstore][:port] %>
+          user: <%= node[:blobstore][:agent_account][:user] %>
+          password: <%= node[:blobstore][:agent_account][:password] %>
+      mbus: nats://<%= node[:nats][:user] %>:<%= node[:nats][:password] %>@<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+    soap_log: <%= node[:director][:path] %>/shared/log/<%= @process_name %>.soap.log
+    vcenters:
+      - host: 172.31.113.18
+        user: Administrator
+        password: TempP@ss
+        datacenters:
+          - name: LAS01
+            vm_folder: BOSH_VMs
+            template_folder: BOSH_Templates
+            disk_path: BOSH_Disks
+            datastore_pattern: las01-.*
+            clusters:
+              - CLUSTER01
