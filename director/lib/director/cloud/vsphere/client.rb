@@ -1,61 +1,63 @@
 module VSphereCloud
 
   class Client
+    include VimSdk
+    PC = Vmodl::Query::PropertyCollector
 
     class AlreadyLoggedInException < StandardError; end
     class NotLoggedInException < StandardError; end
 
     attr_accessor :service_content
-    attr_accessor :service
+    attr_accessor :stub
 
     def initialize(host, options = {})
-      @service                                                 = VimPortType.new(host)
-      @service.options["protocol.http.ssl_config.verify_mode"] = OpenSSL::SSL::VERIFY_NONE
+      http_client = HTTPClient.new
       if options["soap_log"]
         log_file = File.open(options["soap_log"], "w")
         log_file.sync = true
-        @service.wiredump_dev = log_file
+        http_client.debug_dev = log_file
       end
+      http_client.send_timeout = 14400
+      http_client.receive_timeout = 14400
+      http_client.connect_timeout = 4
+      http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
-      service_ref                      = ManagedObjectReference.new("ServiceInstance")
-      service_ref.xmlattr_type         = "ServiceInstance"
+      @stub = Soap::StubAdapter.new(host, "vim.version.version6", http_client)
 
-      retrieve_service_content_request = RetrieveServiceContentRequestType.new(service_ref)
-      @service_content                 = @service.retrieveServiceContent(retrieve_service_content_request).returnval
-      @metrics_cache                   = {}
-      @lock                            = Mutex.new
-      @logger                          = Bosh::Director::Config.logger
+      service_instance = Vim::ServiceInstance.new("ServiceInstance", stub)
+      @service_content = service_instance.content
+      @metrics_cache  = {}
+      @lock = Mutex.new
+      @logger = Bosh::Director::Config.logger
     end
 
     def login(username, password, locale)
       raise AlreadyLoggedInException if @session
-      login_request = LoginRequestType.new(@service_content.sessionManager, username, password, locale)
-      @session = @service.login(login_request).returnval
+      @session = @service_content.session_manager.login(username, password, locale)
     end
 
     def logout
       raise NotLoggedInException unless @session
       @session = nil
-      @service.logout(LogoutRequestType.new(@service_content.sessionManager))
+      @service_content.session_manager.logout
     end
 
     def get_properties(obj, type, properties, options = {})
-      property_specs = [PropertySpec.new(nil, nil, type, false, properties)]
+      properties = [properties] if properties.kind_of?(String)
+      property_specs = [PC::PropertySpec.new(:type => type, :all => false, :path_set => properties)]
 
-      if obj.is_a?(ManagedObjectReference)
-        object_spec = ObjectSpec.new(nil, nil, obj, false)
+      if obj.is_a?(Vmodl::ManagedObject)
+        object_spec = PC::ObjectSpec.new(:obj => obj, :skip => false)
       else
-        object_spec = obj.collect { |o| ObjectSpec.new(nil, nil, o, false) }
+        object_spec = obj.collect { |o| PC::ObjectSpec.new(:obj => o, :skip => false) }
       end
 
-      filter_spec = PropertyFilterSpec.new(nil, nil, property_specs, object_spec)
-      properties_request = RetrievePropertiesExRequestType.new(@service_content.propertyCollector, filter_spec,
-                                                               RetrieveOptions.new)
+      filter_spec = PC::FilterSpec.new(:prop_set => property_specs, :object_set => object_spec)
 
       # TODO: cache partial results
       attempts = 0
       begin
-        properties_response = get_all_properties(properties_request)
+        properties_response = get_all_properties(filter_spec)
         result = {}
 
         properties_response.each do |object_content|
@@ -65,8 +67,8 @@ module VSphereCloud
           else
             remaining_properties = Set.new(options[:ensure])
           end
-          if object_content.propSet
-            object_content.propSet.each do |property|
+          if object_content.prop_set
+            object_content.prop_set.each do |property|
               object_properties[property.name] = property.val
               remaining_properties.delete(property.name)
             end
@@ -79,7 +81,7 @@ module VSphereCloud
           result[object_content.obj] = object_properties
         end
 
-        result = result.values[0] if obj.is_a?(String)
+        result = result.values.first if obj.is_a?(Vmodl::ManagedObject)
         result
       rescue => e
         attempts += 1
@@ -100,17 +102,14 @@ module VSphereCloud
     end
 
     def get_managed_objects(type, options={})
-      root = options[:root] || @service_content.rootFolder
-
-      property_specs = [PropertySpec.new(nil, nil, type, false, ["name"])]
+      root = options[:root] || @service_content.root_folder
+      property_specs = [PC::PropertySpec.new(:type => type, :all => false, :path_set => ["name"])]
       filter_spec = get_search_filter_spec(root, property_specs)
-      retrieve_properties_request = RetrievePropertiesExRequestType.new(@service_content.propertyCollector,
-                                                                        filter_spec, RetrieveOptions.new)
-      object_specs = get_all_properties(retrieve_properties_request)
+      object_specs = get_all_properties(filter_spec)
 
       result = []
       object_specs.each do |object_spec|
-        name = object_spec.propSet[0].val
+        name = object_spec.prop_set.first.val
         if options[:name].nil? || name == options[:name]
           if options[:include_name]
             result << [name , object_spec.obj]
@@ -126,43 +125,35 @@ module VSphereCloud
       result = get_managed_objects(type, options)
       raise "Could not find #{type}: #{options.pretty_inspect}" if result.length == 0
       raise "Found more than one #{type}: #{options.pretty_inspect}" if result.length > 1
-      result[0]
+      result.first
     end
 
     def find_parent(obj, parent_type)
-      loop do
-        obj = get_property(obj, obj.xmlattr_type, "parent", :ensure_all => true)
-        break if obj.nil? || obj.xmlattr_type == parent_type
+      while obj && obj.class != parent_type
+        obj = get_property(obj, obj.class, "parent", :ensure_all => true)
       end
       obj
     end
 
     def reconfig_vm(vm, config)
-      request = ReconfigVMRequestType.new(vm)
-      request.spec = config
-
-      task = @service.reconfigVM_Task(request).returnval
+      task = vm.reconfigure(config)
       wait_for_task(task)
     end
 
     def delete_vm(vm)
-      task = @service.destroy_Task(DestroyRequestType.new(vm)).returnval
+      task = vm.destroy
       wait_for_task(task)
     end
 
     def answer_vm(vm, question, answer)
-      request = AnswerVMRequestType.new(vm)
-      request.questionId = question
-      request.answerChoice = answer
-      @service.answerVM(request)
+      vm.answer(question, answer)
     end
 
     def power_on_vm(datacenter, vm)
-      request = PowerOnMultiVMRequestType.new(datacenter, [vm])
-      task = @service.powerOnMultiVM_Task(request).returnval
+      task = datacenter.power_on_vm([vm], nil)
       result = wait_for_task(task)
       if result.attempted.nil?
-        raise "Could not power on VM: #{result.notAttempted.localizedMessage}"
+        raise "Could not power on VM: #{result.not_attempted.localized_message}"
       else
         task = result.attempted.first.task
         wait_for_task(task)
@@ -170,26 +161,19 @@ module VSphereCloud
     end
 
     def power_off_vm(vm)
-      request = PowerOffVMRequestType.new(vm)
-      task = @service.powerOffVM_Task(request).returnval
+      task = vm.power_off
       wait_for_task(task)
     end
 
     def delete_path(datacenter, path)
-      request = DeleteDatastoreFileRequestType.new(@service_content.fileManager)
-      request.name = path
-      request.datacenter = datacenter
-      task = @service.deleteDatastoreFile_Task(request).returnval
+      task = @service_content.file_manager.delete_file(path, datacenter)
       wait_for_task(task)
     end
 
     def delete_disk(datacenter, path)
       tasks = []
       [".vmdk", "-flat.vmdk"].each do |extension|
-        request = DeleteDatastoreFileRequestType.new(@service_content.fileManager)
-        request.name = "#{path}#{extension}"
-        request.datacenter = datacenter
-        tasks << @service.deleteDatastoreFile_Task(request).returnval
+        tasks << @service_content.file_manager.delete_file("#{path}#{extension}", datacenter)
       end
       tasks.each { |task| wait_for_task(task) }
     end
@@ -197,12 +181,8 @@ module VSphereCloud
     def move_disk(source_datacenter, source_path, destination_datacenter, destination_path)
       tasks = []
       [".vmdk", "-flat.vmdk"].each do |extension|
-        request = MoveDatastoreFileRequestType.new(@service_content.fileManager)
-        request.sourceName = "#{source_path}#{extension}"
-        request.sourceDatacenter = source_datacenter
-        request.destinationName = "#{destination_path}#{extension}"
-        request.destinationDatacenter = destination_datacenter
-        tasks << @service.moveDatastoreFile_Task(request).returnval
+        tasks << @service_content.file_manager.move_file("#{source_path}#{extension}", source_datacenter,
+                                                         "#{destination_path}#{extension}", destination_datacenter)
       end
 
       tasks.each { |task| wait_for_task(task) }
@@ -211,128 +191,193 @@ module VSphereCloud
     def find_by_inventory_path(path)
       path = [path] unless path.kind_of?(Array)
       path = path.flatten.collect { |name| name.gsub("/", "%2f") }.join("/")
-      find_request = FindByInventoryPathRequestType.new(@service_content.searchIndex, path)
-      @service.findByInventoryPath(find_request).returnval
+      @service_content.search_index.find_by_inventory_path(path)
     end
 
-    def wait_for_task(task, options = {})
-      interval = options[:interval] || 1.0
+    def wait_for_task(task)
+      interval = 1.0
+      started = Time.now
       loop do
-        properties = get_properties([task], "Task",
-                                    ["info.progress", "info.state",
-                                     "info.result", "info.error"], :ensure => ["info.state"])[task]
+        properties = get_properties([task], Vim::Task, ["info.progress", "info.state", "info.result", "info.error"],
+                                    :ensure => ["info.state"])[task]
+
+        duration = Time.now - started
+        # TODO: make configurable?
+        raise "Task taking too long" if duration > 3600 # 1 hour
+
+        # Update the polling interval based on task progress
+        if properties["info.progress"] && properties["info.progress"] > 0
+          interval = ((duration * 100 / properties["info.progress"]) - duration) / 5
+          if interval < 1
+            interval = 1
+          elsif interval > 10
+            interval = 10
+          elsif interval > duration
+            interval = duration
+          end
+        end
+
         case properties["info.state"]
-          when TaskInfoState::Running
+          when Vim::TaskInfo::State::RUNNING
             sleep(interval)
-          when TaskInfoState::Success
+          when Vim::TaskInfo::State::QUEUED
+            sleep(interval)
+          when Vim::TaskInfo::State::SUCCESS
             return properties["info.result"]
-          when TaskInfoState::Error
-            raise properties["info.error"].localizedMessage
+          when Vim::TaskInfo::State::ERROR
+            raise properties["info.error"].localized_message
         end
       end
     end
 
     def get_search_filter_spec(obj, property_specs)
-      resource_pool_traversal_spec = TraversalSpec.new(nil, nil, "resourcePoolTraversalSpec", "ResourcePool",
-                                                    "resourcePool", false,
-                                                    [SelectionSpec.new(nil, nil, "resourcePoolTraversalSpec"),
-                                                     SelectionSpec.new(nil, nil, "resourcePoolVmTraversalSpec")])
+      resource_pool_traversal_spec = PC::TraversalSpec.new(
+          :name => "resourcePoolTraversalSpec",
+          :type => Vim::ResourcePool,
+          :path => "resourcePool",
+          :skip => false,
+          :select_set => [
+             PC::SelectionSpec.new(:name => "resourcePoolTraversalSpec"),
+             PC::SelectionSpec.new(:name => "resourcePoolVmTraversalSpec")
+          ]
+      )
 
-      resource_pool_vm_traversal_spec = TraversalSpec.new(nil, nil, "resourcePoolVmTraversalSpec", "ResourcePool",
-                                                      "vm", false)
+      resource_pool_vm_traversal_spec = PC::TraversalSpec.new(
+          :name => "resourcePoolVmTraversalSpec",
+          :type => Vim::ResourcePool,
+          :path => "vm",
+          :skip => false
+      )
 
-      compute_resource_rp_traversal_spec = TraversalSpec.new(nil, nil, "computeResourceRpTraversalSpec",
-                                                         "ComputeResource", "resourcePool", false,
-                                                         [SelectionSpec.new(nil, nil, "resourcePoolTraversalSpec"),
-                                                          SelectionSpec.new(nil, nil, "resourcePoolVmTraversalSpec")])
+      compute_resource_rp_traversal_spec = PC::TraversalSpec.new(
+          :name => "computeResourceRpTraversalSpec",
+          :type => Vim::ComputeResource,
+          :path => "resourcePool",
+          :skip => false,
+          :select_set => [
+              PC::SelectionSpec.new(:name => "resourcePoolTraversalSpec"),
+              PC::SelectionSpec.new(:name => "resourcePoolVmTraversalSpec")
+          ]
+      )
 
-      compute_resource_datastore_traversal_spec = TraversalSpec.new(nil, nil, "computeResourceDatastoreTraversalSpec",
-                                                                "ComputeResource", "datastore", false)
+      compute_resource_datastore_traversal_spec = PC::TraversalSpec.new(
+          :name => "computeResourceDatastoreTraversalSpec",
+          :type => Vim::ComputeResource,
+          :path => "datastore",
+          :skip => false
+      )
 
-      compute_resource_host_traversal_spec = TraversalSpec.new(nil, nil, "computeResourceHostTraversalSpec",
-                                                           "ComputeResource", "host", false)
+      compute_resource_host_traversal_spec = PC::TraversalSpec.new(
+          :name => "computeResourceHostTraversalSpec",
+          :type => Vim::ComputeResource,
+          :path => "host",
+          :skip => false
+      )
 
-      datacenter_host_traversal_spec = TraversalSpec.new(nil, nil, "datacenterHostTraversalSpec", "Datacenter",
-                                                      "hostFolder", false,
-                                                      [SelectionSpec.new(nil, nil, "folderTraversalSpec")])
+      datacenter_host_traversal_spec = PC::TraversalSpec.new(
+          :name => "datacenterHostTraversalSpec",
+          :type => Vim::Datacenter,
+          :path => "hostFolder",
+          :skip => false,
+          :select_set => [
+              PC::SelectionSpec.new(:name => "folderTraversalSpec")
+          ]
+      )
 
-      datacenter_vm_traversal_spec = TraversalSpec.new(nil, nil, "datacenterVmTraversalSpec", "Datacenter",
-                                                    "vmFolder", false,
-                                                    [SelectionSpec.new(nil, nil, "folderTraversalSpec")])
+      datacenter_vm_traversal_spec = PC::TraversalSpec.new(
+          :name => "datacenterVmTraversalSpec",
+          :type => Vim::Datacenter,
+          :path => "vmFolder",
+          :skip => false,
+          :select_set => [
+              PC::SelectionSpec.new(:name => "folderTraversalSpec")
+          ]
+      )
 
-      host_vm_traversal_spec = TraversalSpec.new(nil, nil, "hostVmTraversalSpec", "HostSystem",
-                                              "vm", false,
-                                              [SelectionSpec.new(nil, nil, "folderTraversalSpec")])
+      host_vm_traversal_spec = PC::TraversalSpec.new(
+          :name => "hostVmTraversalSpec",
+          :type => Vim::HostSystem,
+          :path => "vm",
+          :skip => false,
+          :select_set => [
+              PC::SelectionSpec.new(:name => "folderTraversalSpec")
+          ]
+      )
 
-      folder_traversal_spec = TraversalSpec.new(nil, nil, "folderTraversalSpec", "Folder",
-                                              "childEntity", false,
-                                              [SelectionSpec.new(nil, nil, "folderTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "datacenterHostTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "datacenterVmTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "computeResourceRpTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "computeResourceDatastoreTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "computeResourceHostTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "hostVmTraversalSpec"),
-                                               SelectionSpec.new(nil, nil, "resourcePoolVmTraversalSpec")])
+      folder_traversal_spec = PC::TraversalSpec.new(
+          :name => "folderTraversalSpec",
+          :type => Vim::Folder,
+          :path => "childEntity",
+          :skip => false,
+          :select_set => [
+              PC::SelectionSpec.new(:name => "folderTraversalSpec"),
+              PC::SelectionSpec.new(:name => "datacenterHostTraversalSpec"),
+              PC::SelectionSpec.new(:name => "datacenterVmTraversalSpec"),
+              PC::SelectionSpec.new(:name => "computeResourceRpTraversalSpec"),
+              PC::SelectionSpec.new(:name => "computeResourceDatastoreTraversalSpec"),
+              PC::SelectionSpec.new(:name => "computeResourceHostTraversalSpec"),
+              PC::SelectionSpec.new(:name => "hostVmTraversalSpec"),
+              PC::SelectionSpec.new(:name => "resourcePoolVmTraversalSpec")
+          ]
+      )
 
-      obj_spec = ObjectSpec.new(nil, nil, obj, false,
-                                [folder_traversal_spec,
-                                 datacenter_vm_traversal_spec,
-                                 datacenter_host_traversal_spec,
-                                 compute_resource_host_traversal_spec,
-                                 compute_resource_datastore_traversal_spec,
-                                 compute_resource_rp_traversal_spec,
-                                 resource_pool_traversal_spec,
-                                 host_vm_traversal_spec,
-                                 resource_pool_vm_traversal_spec])
+      obj_spec = PC::ObjectSpec.new(
+          :obj => obj,
+          :skip => false,
+          :select_set => [
+              folder_traversal_spec,
+              datacenter_vm_traversal_spec,
+              datacenter_host_traversal_spec,
+              compute_resource_host_traversal_spec,
+              compute_resource_datastore_traversal_spec,
+              compute_resource_rp_traversal_spec,
+              resource_pool_traversal_spec,
+              host_vm_traversal_spec,
+              resource_pool_vm_traversal_spec
+          ]
+      )
 
-      PropertyFilterSpec.new(nil, nil, property_specs, [obj_spec])
+      PC::FilterSpec.new(:prop_set => property_specs, :object_set => [obj_spec])
     end
 
-    def get_all_properties(request)
-      response = @service.retrievePropertiesEx(request).returnval
+    def get_all_properties(filter_spec)
       result = []
-
-      until response.nil?
-        response.objects.each { |object_content| result << object_content }
-
-        break if response.token.nil?
-
-        request = ContinueRetrievePropertiesExRequestType.new(@service_content.propertyCollector, response.token)
-        response = @service.continueRetrievePropertiesEx(request).returnval
+      retrieve_result = @service_content.property_collector.retrieve_properties_ex([filter_spec],
+                                                                                   PC::RetrieveOptions.new)
+      until retrieve_result.nil?
+        retrieve_result.objects.each { |object_content| result << object_content }
+        break if retrieve_result.token.nil?
+        retrieve_result = @service_content.property_collector.continue_retrieve_properties_ex(retrieve_result.token)
       end
       result
     end
 
     def get_perf_counters(mobs, names, options = {})
-      metrics           = find_perf_metric_names(mobs.first, names)
-      metric_ids        = metrics.values
+      metrics = find_perf_metric_names(mobs.first, names)
+      metric_ids = metrics.values
 
       metric_name_by_id = {}
-      metrics.each { |name, metric| metric_name_by_id[metric.counterId] = name }
+      metrics.each { |name, metric| metric_name_by_id[metric.counter_id] = name }
 
-      queries    = []
+      queries = []
       mobs.each do |mob|
-        query            = PerfQuerySpec.new
-        query.entity     = mob
-        query.metricId   = metric_ids
-        query.format     = PerfFormat::Csv
-        query.intervalId = options[:interval_id] || 20
-        query.maxSample  = options[:max_sample]
-        queries << query
+        queries << Vim::PerformanceManager::QuerySpec.new(
+            :entity => mob,
+            :metric_id => metric_ids,
+            :format => Vim::PerformanceManager::Format::CSV,
+            :interval_id => options[:interval_id] || 20,
+            :max_sample => options[:max_sample])
       end
 
-      query_perf_request  = QueryPerfRequestType.new(service_content.perfManager, queries)
-      # TODO: shard and send requests in parallel for better performance
-      query_perf_response = service.queryPerf(query_perf_request)
+      query_perf_response = @service_content.perf_manager.query_stats(queries)
 
       result = {}
       query_perf_response.each do |mob_stats|
         mob_entry = {}
-        counters  = mob_stats.value
+        counters = mob_stats.value
         counters.each do |counter_stats|
-          counter_id = counter_stats.id.counterId
-          values     = counter_stats.value
+          counter_id = counter_stats.id.counter_id
+          values = counter_stats.value
           mob_entry[metric_name_by_id[counter_id]] = values
         end
         result[mob_stats.entity] = mob_entry
@@ -341,15 +386,14 @@ module VSphereCloud
     end
 
     def find_perf_metric_names(mob, names)
-      type = mob.xmlattr_type
       @lock.synchronize do
-        unless @metrics_cache.has_key?(type)
-          @metrics_cache[type] = fetch_perf_metric_names(mob)
+        unless @metrics_cache.has_key?(mob.class)
+          @metrics_cache[mob.class] = fetch_perf_metric_names(mob)
         end
       end
 
       result = {}
-      @metrics_cache[type].each do |name, metric|
+      @metrics_cache[mob.class].each do |name, metric|
         result[name] = metric if names.include?(name)
       end
 
@@ -357,22 +401,18 @@ module VSphereCloud
     end
 
     def fetch_perf_metric_names(mob)
-      request            = QueryAvailablePerfMetricRequestType.new(service_content.perfManager, mob)
-      request.intervalId = 300
-      metrics            = service.queryAvailablePerfMetric(request)
+      metrics = @service_content.perf_manager.query_available_metric(mob, nil, nil, 300)
+      metric_ids = metrics.collect { |metric| metric.counter_id }
 
-      metric_ids         = metrics.collect { |metric| metric.counterId }
-      request            = QueryPerfCounterRequestType.new(service_content.perfManager, metric_ids)
-      metrics_info       = service.queryPerfCounter(request)
-
-      metric_names       = {}
+      metric_names = {}
+      metrics_info = @service_content.perf_manager.query_counter(metric_ids)
       metrics_info.each do |perf_counter_info|
-        name = "#{perf_counter_info.groupInfo.key}.#{perf_counter_info.nameInfo.key}.#{perf_counter_info.rollupType}"
+        name = "#{perf_counter_info.group_info.key}.#{perf_counter_info.name_info.key}.#{perf_counter_info.rollup_type}"
         metric_names[perf_counter_info.key] = name
       end
 
       result = {}
-      metrics.each { |metric| result[metric_names[metric.counterId]] = metric }
+      metrics.each { |metric| result[metric_names[metric.counter_id]] = metric }
       result
     end
   end

@@ -2,6 +2,7 @@ source :rubygems
 
 gem "bcrypt-ruby"
 gem "blobstore_client"
+gem "esxmq" , "0.0.13"
 gem "eventmachine"
 gem "nats"
 gem "netaddr"
@@ -9,14 +10,13 @@ gem "rack-test"         # needed for console
 gem "rake"
 gem "redis"
 gem "resque"
+gem "ruby_vim_sdk"
 gem "sequel"
 gem "sinatra"
-gem "soap4r"
 gem "SystemTimer", :platforms => :ruby_18
 gem "thin"
 gem "uuidtools"
 gem "yajl-ruby"
-gem "esxmq" , "0.0.13"
 
 group :development do
   gem "sqlite3"

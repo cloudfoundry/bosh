@@ -1,39 +1,13 @@
-require "director/cloud/vsphere/soap/defaultDriver"
+require "ruby_vim_sdk"
 require "director/cloud/vsphere/client"
 require "director/cloud/vsphere/lease_updater"
 require "director/cloud/vsphere/resources"
 require "director/cloud/vsphere/models/disk"
 
-module SOAP
-
-  module Mapping
-    def self.fault2exception(fault, registry = nil)
-      registry ||= Mapping::DefaultRegistry
-      detail = if fault.detail
-          soap2obj(fault.detail, registry) || ""
-        else
-          ""
-        end
-      if detail.is_a?(Mapping::SOAPException)
-        begin
-          e = detail.to_e
-    remote_backtrace = e.backtrace
-          e.set_backtrace(nil)
-          raise e # ruby sets current caller as local backtrace of e => e2.
-        rescue Exception => e
-    e.set_backtrace(remote_backtrace + e.backtrace[1..-1])
-          raise
-        end
-      else
-        raise fault
-      end
-    end
-  end
-end
-
 module VSphereCloud
 
   class Cloud
+    include VimSdk
 
     class TimeoutException < StandardError; end
 
@@ -56,8 +30,7 @@ module VSphereCloud
       @rest_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
       # HACK: read the session from the SOAP client so we don't leak sessions when using the REST client
-      soap_client = @client.service.instance_eval { @proxy.instance_eval { @streamhandler.instance_eval { @client } } }
-      cookie_str = soap_client.cookie_manager.find(URI.parse("https://#{@vcenter["host"]}/sdk/vimService"))
+      cookie_str = @client.stub.cookie
       @rest_client.cookie_manager.parse(cookie_str, URI.parse("https://#{@vcenter["host"]}"))
 
       @resources = Resources.new(@client, @vcenter)
@@ -91,25 +64,25 @@ module VSphereCloud
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
-          lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.importSpec,
+          lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.import_spec,
                                    cluster.datacenter.template_folder)
           @logger.info("Waiting for NFC lease")
           state = wait_for_nfc_lease(lease)
           raise "Could not acquire HTTP NFC lease" unless state == HttpNfcLeaseState::Ready
 
           @logger.info("Uploading")
-          vm = upload_ovf(ovf_file, lease, import_spec_result.fileItem)
+          vm = upload_ovf(ovf_file, lease, import_spec_result.file_item)
           result = name
 
           @logger.info("Removing NICs")
-          devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
-          config = VirtualMachineConfigSpec.new
-          config.deviceChange = []
+          devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
+          config = Vim::Vm::ConfigSpec.new
+          config.device_change = []
 
-          nics = devices.select { |device| device.kind_of?(VirtualEthernetCard) }
+          nics = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualEthernetCard) }
           nics.each do |nic|
             nic_config = create_delete_device_spec(nic)
-            config.deviceChange << nic_config
+            config.device_change << nic_config
           end
           client.reconfig_vm(vm, config)
 
@@ -126,9 +99,9 @@ module VSphereCloud
         Bosh::Director::ThreadPool.new(:max_threads => 32).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-            templates = client.get_property(datacenter.template_folder, "Folder", "childEntity", :ensure_all => true)
-            template_properties = client.get_properties(templates, "VirtualMachine", ["name"])
-            template_properties.each do |template, properties|
+            templates = client.get_property(datacenter.template_folder, Vim::Folder, "childEntity", :ensure_all => true)
+            template_properties = client.get_properties(templates, Vim::VirtualMachine, ["name"])
+            template_properties.each_value do |properties|
               template_name = properties["name"].gsub("%2f", "/")
               if template_name.split("/").first.strip == stemcell
                 @logger.info("Found: #{template_name}")
@@ -162,58 +135,57 @@ module VSphereCloud
         @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
         replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
-        replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, "VirtualMachine",
+        replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, Vim::VirtualMachine,
                                                           ["config.hardware.device", "snapshot"], :ensure_all => true)
+
         devices = replicated_stemcell_properties["config.hardware.device"]
         snapshot = replicated_stemcell_properties["snapshot"]
 
-        config = VirtualMachineConfigSpec.new
-        config.memoryMB = memory
-        config.numCPUs = cpu
-        config.deviceChange = []
+        config = Vim::Vm::ConfigSpec.new(:memory_mb => memory, :num_cpus => cpu)
+        config.device_change = []
 
-        system_disk = devices.find { |device| device.kind_of?(VirtualDisk) }
-        pci_controller = devices.find { |device| device.kind_of?(VirtualPCIController) }
+        system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
+        pci_controller = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualPCIController) }
 
         file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
-        ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controllerKey, disk,
+        ephemeral_disk_config = create_disk_config_spec(datastore.mob, file_name, system_disk.controller_key, disk,
                                                         :create => true)
-        config.deviceChange << ephemeral_disk_config
+        config.device_change << ephemeral_disk_config
 
         dvs_index = {}
         networks.each_value do |network|
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([cluster.datacenter.name, "network", v_network_name])
           nic_config = create_nic_config_spec(v_network_name, network_mob, pci_controller.key, dvs_index)
-          config.deviceChange << nic_config
+          config.device_change << nic_config
         end
 
-        nics = devices.select { |device| device.kind_of?(VirtualEthernetCard) }
+        nics = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualEthernetCard) }
         nics.each do |nic|
           nic_config = create_delete_device_spec(nic)
-          config.deviceChange << nic_config
+          config.device_change << nic_config
         end
 
-        fix_device_unit_numbers(devices, config.deviceChange)
+        fix_device_unit_numbers(devices, config.device_change)
 
         @logger.info("Cloning vm: #{replicated_stemcell_vm} to #{name}")
 
         task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
-                        :datastore => datastore.mob, :linked => true, :snapshot => snapshot.currentSnapshot,
+                        :datastore => datastore.mob, :linked => true, :snapshot => snapshot.current_snapshot,
                         :config => config)
         vm = client.wait_for_task(task)
 
         upload_file(cluster.datacenter.name, datastore.name, "#{name}/env.iso", "")
 
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["config.hardware.device"], :ensure_all => true)
+        vm_properties = client.get_properties(vm, Vim::VirtualMachine, ["config.hardware.device"], :ensure_all => true)
         devices = vm_properties["config.hardware.device"]
 
         # Configure the ENV CDROM
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = []
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
         file_name = "[#{datastore.name}] #{name}/env.iso"
         cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
-        config.deviceChange << cdrom_change
+        config.device_change << cdrom_change
         client.reconfig_vm(vm, config)
 
         network_env = generate_network_env(devices, networks, dvs_index)
@@ -237,38 +209,39 @@ module VSphereCloud
         @logger.info("Deleting vm: #{vm_cid}")
 
         vm = get_vm_by_cid(vm_cid)
-        datacenter = client.find_parent(vm, "Datacenter")
-        properties = client.get_properties(vm, "VirtualMachine", ["runtime.powerState", "runtime.question",
-                                                                  "config.hardware.device", "name", "datastore"],
+        datacenter = client.find_parent(vm, Vim::Datacenter)
+        properties = client.get_properties(vm, Vim::VirtualMachine, ["runtime.powerState", "runtime.question",
+                                                                     "config.hardware.device", "name", "datastore"],
                                            :ensure => ["datastore", "config.hardware.device"])
 
         question = properties["runtime.question"]
         if question
           choices = question.choice
           @logger.info("VM is blocked on a question: #{question.text}, " +
-                           "providing default answer: #{choices.choiceInfo[choices.defaultIndex].label}")
-          client.answer_vm(vm, question.id, choices.choiceInfo[choices.defaultIndex].key)
-          power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
+                           "providing default answer: #{choices.choice_info[choices.default_index].label}")
+          client.answer_vm(vm, question.id, choices.choice_info[choices.default_index].key)
+          power_state = client.get_property(vm, Vim::VirtualMachine, "runtime.powerState")
         else
           power_state = properties["runtime.powerState"]
         end
 
-        if power_state != VirtualMachinePowerState::PoweredOff
+        if power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
           @logger.info("Powering off vm: #{vm_cid}")
           client.power_off_vm(vm)
         end
 
         # Detach any persistent disks in case they were not detached from the instance
         devices = properties["config.hardware.device"]
-        persistent_disks = devices.select { |device| device.kind_of?(VirtualDisk) &&
-            device.backing.diskMode == VirtualDiskMode::Independent_persistent }
+        persistent_disks = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+            device.backing.disk_mode == Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT }
 
         unless persistent_disks.empty?
           @logger.info("Found #{persistent_disks.size} persistent disk(s)")
-          config = VirtualMachineConfigSpec.new
+          config = Vim::Vm::ConfigSpec.new
+          config.device_change = []
           persistent_disks.each do |virtual_disk|
-            @logger.info("Detaching: #{virtual_disk.backing.fileName}")
-            config.deviceChange << create_delete_device_spec(virtual_disk)
+            @logger.info("Detaching: #{virtual_disk.backing.file_name}")
+            config.device_change << create_delete_device_spec(virtual_disk)
           end
           client.reconfig_vm(vm, config)
           @logger.info("Detached #{persistent_disks.size} persistent disk(s)")
@@ -279,7 +252,7 @@ module VSphereCloud
 
         # Delete env.iso and VM specific files managed by the director
         datastore = properties["datastore"].first
-        datastore_name = client.get_property(datastore, "Datastore", "name")
+        datastore_name = client.get_property(datastore, Vim::Datastore, "name")
         vm_name = properties["name"]
         client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
       end
@@ -298,7 +271,7 @@ module VSphereCloud
             when :initial
               @logger.debug("The guest did not shutdown in time, requesting it to shutdown")
               begin
-                client.service.shutdownGuest(ShutdownGuestRequestType.new(vm))
+                vm.shutdown_guest
               rescue => e
                 @logger.debug("Ignoring possible race condition when a VM has " +
                               "powered off by the time we ask it to shutdown: #{e.message}")
@@ -313,20 +286,17 @@ module VSphereCloud
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         vm = get_vm_by_cid(vm_cid)
-        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+        devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
+        datacenter = client.find_parent(vm, Vim::Datacenter)
+        datacenter_name = client.get_property(datacenter, Vim::Datacenter, "name")
+        pci_controller = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualPCIController) }
 
-        datacenter = client.find_parent(vm, "Datacenter")
-        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
-
-        pci_controller = devices.find { |device| device.kind_of?(VirtualPCIController) }
-
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = []
-
-        nics = devices.select { |device| device.kind_of?(VirtualEthernetCard) }
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        nics = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualEthernetCard) }
         nics.each do |nic|
           nic_config = create_delete_device_spec(nic)
-          config.deviceChange << nic_config
+          config.device_change << nic_config
         end
 
         dvs_index = {}
@@ -334,10 +304,10 @@ module VSphereCloud
           v_network_name = network["cloud_properties"]["name"]
           network_mob = client.find_by_inventory_path([datacenter_name, "network", v_network_name])
           nic_config = create_nic_config_spec(v_network_name, network_mob, pci_controller.key, dvs_index)
-          config.deviceChange << nic_config
+          config.device_change << nic_config
         end
 
-        fix_device_unit_numbers(devices, config.deviceChange)
+        fix_device_unit_numbers(devices, config.device_change)
         @logger.debug("Reconfiguring the networks")
         @client.reconfig_vm(vm, config)
 
@@ -345,7 +315,7 @@ module VSphereCloud
         env = get_current_agent_env(location)
         @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
-        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+        devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
         env["networks"] = generate_network_env(devices, networks, dvs_index)
 
         @logger.debug("Updating agent env to: #{env.pretty_inspect}")
@@ -364,17 +334,17 @@ module VSphereCloud
 
         vm = get_vm_by_cid(vm_cid)
 
-        datacenter = client.find_parent(vm, "Datacenter")
-        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+        datacenter = client.find_parent(vm, Vim::Datacenter)
+        datacenter_name = client.get_property(datacenter, Vim::Datacenter, "name")
 
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore",
-                                                                     "config.hardware.device"], :ensure_all => true)
+        vm_properties = client.get_properties(vm, Vim::VirtualMachine,
+                                              ["datastore", "config.hardware.device"], :ensure_all => true)
         datastores = vm_properties["datastore"]
         raise "Can't find datastore for: #{vm}" if datastores.empty?
         @logger.warn("Found multiple datastores associated with a single VM: " +
                      "#{vm.pretty_inspect}/#{datastores.pretty_inspect}") if datastores.size > 1
 
-        datastore_properties = client.get_properties(datastores, "Datastore", ["name"])
+        datastore_properties = client.get_properties(datastores, Vim::Datastore, ["name"])
         vm_datastore_by_name = {}
         datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
 
@@ -413,23 +383,21 @@ module VSphereCloud
         end
 
         devices = vm_properties["config.hardware.device"]
-
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = []
-
-        system_disk = devices.find { |device| device.kind_of?(VirtualDisk) }
+        system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
 
         vmdk_path = "#{disk.path}.vmdk"
         attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], vmdk_path,
-                                                       system_disk.controllerKey, disk.size.to_i,
+                                                       system_disk.controller_key, disk.size.to_i,
                                                        :create => create_disk, :independent => true)
-        config.deviceChange << attached_disk_config
-        fix_device_unit_numbers(devices, config.deviceChange)
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        config.device_change << attached_disk_config
+        fix_device_unit_numbers(devices, config.device_change)
 
         location = get_vm_location(vm, :datacenter => datacenter_name)
         env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unitNumber
+        env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unit_number
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(vm, location, env)
         @logger.info("Attaching disk")
@@ -446,14 +414,16 @@ module VSphereCloud
 
         vm = get_vm_by_cid(vm_cid)
 
-        devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
+        devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
 
         vmdk_path = "#{disk.path}.vmdk"
-        virtual_disk = devices.find { |device| device.kind_of?(VirtualDisk) && device.backing.fileName == vmdk_path }
+        virtual_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+            device.backing.file_name == vmdk_path }
         raise "Disk is not attached to this VM" if virtual_disk.nil?
 
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange << create_delete_device_spec(virtual_disk)
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        config.device_change << create_delete_device_spec(virtual_disk)
 
         location = get_vm_location(vm)
         env = get_current_agent_env(location)
@@ -511,7 +481,7 @@ module VSphereCloud
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
                                                    cluster.datacenter.template_folder_name, stemcell])
       raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
-      stemcell_datastore = client.get_property(stemcell_vm, "VirtualMachine", "datastore", :ensure_all => true)
+      stemcell_datastore = client.get_property(stemcell_vm, Vim::VirtualMachine, "datastore", :ensure_all => true)
 
       if stemcell_datastore != datastore.mob
         @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
@@ -563,12 +533,12 @@ module VSphereCloud
       nics = {}
 
       devices.each do |device|
-        if device.kind_of?(VirtualEthernetCard)
+        if device.kind_of?(Vim::Vm::Device::VirtualEthernetCard)
           backing = device.backing
-          if backing.kind_of?(VirtualEthernetCardDistributedVirtualPortBackingInfo)
-            v_network_name = dvs_index[device.backing.port.portgroupKey]
+          if backing.kind_of?(Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo)
+            v_network_name = dvs_index[device.backing.port.portgroup_key]
           else
-            v_network_name = device.backing.deviceName
+            v_network_name = device.backing.device_name
           end
           allocated_networks = nics[v_network_name] || []
           allocated_networks << device
@@ -578,10 +548,10 @@ module VSphereCloud
 
       network_env = {}
       networks.each do |network_name, network|
-        network_entry             = network.dup
-        v_network_name            = network["cloud_properties"]["name"]
-        nic                       = nics[v_network_name].pop
-        network_entry["mac"]      = nic.macAddress
+        network_entry = network.dup
+        v_network_name = network["cloud_properties"]["name"]
+        nic = nics[v_network_name].pop
+        network_entry["mac"] = nic.mac_address
         network_env[network_name] = network_entry
       end
       network_env
@@ -589,8 +559,8 @@ module VSphereCloud
 
     def generate_disk_env(system_disk, ephemeral_disk)
       {
-        "system" => system_disk.unitNumber,
-        "ephemeral" => ephemeral_disk.unitNumber,
+        "system" => system_disk.unit_number,
+        "ephemeral" => ephemeral_disk.unit_number,
         "persistent" => {}
       }
     end
@@ -598,7 +568,7 @@ module VSphereCloud
     def generate_agent_env(name, vm, agent_id, networking_env, disk_env)
       vm_env = {
         "name" => name,
-        "id" => vm
+        "id" => vm.__mo_id__
       }
 
       env = {}
@@ -616,17 +586,17 @@ module VSphereCloud
       vm_name = options[:vm]
 
       unless datacenter_name
-        datacenter = client.find_parent(vm, "Datacenter")
-        datacenter_name = client.get_property(datacenter, "Datacenter", "name")
+        datacenter = client.find_parent(vm, Vim::Datacenter)
+        datacenter_name = client.get_property(datacenter, Vim::Datacenter, "name")
       end
 
       if vm_name.nil? || datastore_name.nil?
-        vm_properties = client.get_properties(vm, "VirtualMachine", ["datastore", "name"])
+        vm_properties = client.get_properties(vm, Vim::VirtualMachine, ["datastore", "name"])
         vm_name = vm_properties["name"]
 
         unless datastore_name
           datastore = vm_properties["datastore"].first
-          datastore_name = client.get_property(datastore, "Datastore", "name")
+          datastore_name = client.get_property(datastore, Vim::Datastore, "name")
         end
       end
 
@@ -648,28 +618,28 @@ module VSphereCloud
     end
 
     def connect_cdrom(vm, connected = true)
-      devices = client.get_property(vm, "VirtualMachine", "config.hardware.device", :ensure_all => true)
-      cdrom = devices.find { |device| device.kind_of?(VirtualCdrom) }
+      devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
+      cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
 
       if cdrom.connectable.connected != connected
         cdrom.connectable.connected = connected
-        config = VirtualMachineConfigSpec.new
-        config.deviceChange = [create_edit_device_spec(cdrom)]
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = [create_edit_device_spec(cdrom)]
         client.reconfig_vm(vm, config)
       end
     end
 
     def configure_env_cdrom(datastore, devices, file_name)
-      backing_info = VirtualCdromIsoBackingInfo.new
+      backing_info = Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new
       backing_info.datastore = datastore
-      backing_info.fileName = file_name
+      backing_info.file_name = file_name
 
-      connect_info = VirtualDeviceConnectInfo.new
-      connect_info.allowGuestControl = false
-      connect_info.startConnected = true
+      connect_info = Vim::Vm::Device::VirtualDevice::ConnectInfo.new
+      connect_info.allow_guest_control = false
+      connect_info.start_connected = true
       connect_info.connected = true
 
-      cdrom = devices.find { |device| device.kind_of?(VirtualCdrom) }
+      cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
       cdrom.connectable = connect_info
       cdrom.backing = backing_info
 
@@ -713,30 +683,25 @@ module VSphereCloud
     end
 
     def clone_vm(vm, name, folder, resource_pool, options={})
-      relocation_spec = VirtualMachineRelocateSpec.new
+      relocation_spec =Vim::Vm::RelocateSpec.new
       relocation_spec.datastore = options[:datastore] if options[:datastore]
       if options[:linked]
-        relocation_spec.diskMoveType = VirtualMachineRelocateDiskMoveOptions::CreateNewChildDiskBacking
+        relocation_spec.disk_move_type = Vim::Vm::RelocateSpec::DiskMoveOptions::CREATE_NEW_CHILD_DISK_BACKING
       end
       relocation_spec.pool = resource_pool
 
-      clone_spec = VirtualMachineCloneSpec.new
+      clone_spec = Vim::Vm::CloneSpec.new
       clone_spec.config = options[:config] if options[:config]
       clone_spec.location = relocation_spec
-      clone_spec.powerOn = options[:power_on] ? true : false
+      clone_spec.power_on = options[:power_on] ? true : false
       clone_spec.snapshot = options[:snapshot] if options[:snapshot]
       clone_spec.template = false
 
-      client.service.cloneVM_Task(CloneVMRequestType.new(vm, folder, name,
-                                                                                  clone_spec)).returnval
+      vm.clone(folder, name, clone_spec)
     end
 
     def take_snapshot(vm, name)
-      request = CreateSnapshotRequestType.new(vm)
-      request.name = name
-      request.memory = false
-      request.quiesce = false
-      client.service.createSnapshot_Task(request).returnval
+      vm.create_snapshot(name, nil, false, false)
     end
 
     def generate_unique_name
@@ -744,124 +709,125 @@ module VSphereCloud
     end
 
     def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})
-      backing_info = VirtualDiskFlatVer2BackingInfo.new
+      backing_info = Vim::Vm::Device::VirtualDisk::FlatVer2BackingInfo.new
       backing_info.datastore = datastore
-      backing_info.diskMode = options[:independent] ?
-                              VirtualDiskMode::Independent_persistent : VirtualDiskMode::Persistent
-      backing_info.fileName = file_name
+      if options[:independent]
+        backing_info.disk_mode = Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT
+      else
+        backing_info.disk_mode = Vim::Vm::Device::VirtualDiskOption::DiskMode::PERSISTENT
+      end
+      backing_info.file_name = file_name
 
-      virtual_disk = VirtualDisk.new
+      virtual_disk = Vim::Vm::Device::VirtualDisk.new
       virtual_disk.key = -1
-      virtual_disk.controllerKey = controller_key
+      virtual_disk.controller_key = controller_key
       virtual_disk.backing = backing_info
-      virtual_disk.capacityInKB = space * 1024
+      virtual_disk.capacity_in_kb = space * 1024
 
-      device_config_spec = VirtualDeviceConfigSpec.new
+      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
       device_config_spec.device = virtual_disk
-      device_config_spec.operation = VirtualDeviceConfigSpecOperation::Add
+      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::ADD
       if options[:create]
-        device_config_spec.fileOperation = VirtualDeviceConfigSpecFileOperation::Create
+        device_config_spec.file_operation = Vim::Vm::Device::VirtualDeviceSpec::FileOperation::CREATE
       end
       device_config_spec
     end
 
     def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)
       raise "Can't find network: #{v_network_name}" if network.nil?
-      if network.xmlattr_type == "DistributedVirtualPortgroup"
-        portgroup_properties = client.get_properties(network, "DistributedVirtualPortgroup",
+      if network.class == Vim::Dvs::DistributedVirtualPortgroup
+        portgroup_properties = client.get_properties(network, Vim::DistributedVirtualPortgroup,
                                                      ["config.key", "config.distributedVirtualSwitch"],
                                                      :ensure_all => true)
 
         switch = portgroup_properties["config.distributedVirtualSwitch"]
-        switch_uuid = client.get_property(switch, "DistributedVirtualSwitch", "uuid", :ensure_all => true)
+        switch_uuid = client.get_property(switch, Vim::DistributedVirtualSwitch, "uuid", :ensure_all => true)
 
-        port = DistributedVirtualSwitchPortConnection.new
-        port.switchUuid = switch_uuid
-        port.portgroupKey = portgroup_properties["config.key"]
+        port = Vim::Dvs::PortConnection.new
+        port.switch_uuid = switch_uuid
+        port.portgroup_key = portgroup_properties["config.key"]
 
-        backing_info = VirtualEthernetCardDistributedVirtualPortBackingInfo.new
+        backing_info = Vim::Vm::Device::VirtualEthernetCard::DistributedVirtualPortBackingInfo.new
         backing_info.port = port
 
-        dvs_index[port.portgroupKey] = v_network_name
+        dvs_index[port.portgroup_key] = v_network_name
       else
-        backing_info = VirtualEthernetCardNetworkBackingInfo.new
-        backing_info.deviceName = v_network_name
+        backing_info = Vim::Vm::Device::VirtualEthernetCard::NetworkBackingInfo.new
+        backing_info.device_name = v_network_name
         backing_info.network = network
       end
 
-      nic = VirtualVmxnet3.new
+      nic = Vim::Vm::Device::VirtualVmxnet3.new
       nic.key = -1
-      nic.controllerKey = controller_key
+      nic.controller_key = controller_key
       nic.backing = backing_info
 
-      device_config_spec = VirtualDeviceConfigSpec.new
+      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
       device_config_spec.device = nic
-      device_config_spec.operation = VirtualDeviceConfigSpecOperation::Add
+      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::ADD
       device_config_spec
     end
 
     def create_delete_device_spec(device, options = {})
-      device_config_spec = VirtualDeviceConfigSpec.new
+      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
       device_config_spec.device = device
-      device_config_spec.operation = VirtualDeviceConfigSpecOperation::Remove
+      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE
       if options[:destroy]
-        device_config_spec.fileOperation = VirtualDeviceConfigSpecFileOperation::Destroy
+        device_config_spec.file_operation = Vim::Vm::Device::VirtualDeviceSpec::FileOperation::DESTROY
       end
       device_config_spec
     end
 
     def create_edit_device_spec(device)
-      device_config_spec = VirtualDeviceConfigSpec.new
+      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
       device_config_spec.device = device
-      device_config_spec.operation = VirtualDeviceConfigSpecOperation::Edit
+      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::EDIT
       device_config_spec
     end
 
     def fix_device_unit_numbers(devices, device_changes)
       max_unit_numbers = {}
       devices.each do |device|
-        if device.controllerKey
-          max_unit_number = max_unit_numbers[device.controllerKey]
-          if max_unit_number.nil? || max_unit_number < device.unitNumber
-            max_unit_numbers[device.controllerKey] = device.unitNumber
+        if device.controller_key
+          max_unit_number = max_unit_numbers[device.controller_key]
+          if max_unit_number.nil? || max_unit_number < device.unit_number
+            max_unit_numbers[device.controller_key] = device.unit_number
           end
         end
       end
 
       device_changes.each do |device_change|
         device = device_change.device
-        if device.controllerKey && device.unitNumber.nil?
-          max_unit_number = max_unit_numbers[device.controllerKey] || 0
-          device.unitNumber = max_unit_number + 1
-          max_unit_numbers[device.controllerKey] = device.unitNumber
+        if device.controller_key && device.unit_number.nil?
+          max_unit_number = max_unit_numbers[device.controller_key] || 0
+          device.unit_number = max_unit_number + 1
+          max_unit_numbers[device.controller_key] = device.unit_number
         end
       end
     end
 
     def import_ovf(name, ovf, resource_pool, datastore)
-      import_spec_params = OvfCreateImportSpecParams.new
-      import_spec_params.entityName = name
+      import_spec_params = Vim::OvfManager::CreateImportSpecParams.new
+      import_spec_params.entity_name = name
       import_spec_params.locale = 'US'
-      import_spec_params.deploymentOption = ''
+      import_spec_params.deployment_option = ''
 
       ovf_file = File.open(ovf)
       ovf_descriptor = ovf_file.read
       ovf_file.close
 
-      request = CreateImportSpecRequestType.new(
-              client.service_content.ovfManager, ovf_descriptor, resource_pool, datastore, import_spec_params)
-      client.service.createImportSpec(request).returnval
+      @client.service_content.ovf_manager.create_import_spec(ovf_descriptor, resource_pool,
+                                                             datastore, import_spec_params)
     end
 
     def obtain_nfc_lease(resource_pool, import_spec, folder)
-      request = ImportVAppRequestType.new(resource_pool, import_spec, folder)
-      client.service.importVApp(request).returnval
+      resource_pool.importVApp(import_spec, folder)
     end
 
     def wait_for_nfc_lease(lease)
       loop do
-        state = client.get_property(lease, 'HttpNfcLease', 'state')
-        unless state == HttpNfcLeaseState::Initializing
+        state = client.get_property(lease, Vim::HttpNfcLease, "state")
+        unless state == Vim::HttpNfcLease::State::INITIALIZING
           return state
         end
         sleep(1.0)
@@ -869,13 +835,13 @@ module VSphereCloud
     end
 
     def upload_ovf(ovf, lease, file_items)
-      info = client.get_property(lease, 'HttpNfcLease', 'info', :ensure_all => true)
+      info = client.get_property(lease, Vim::HttpNfcLease, "info", :ensure_all => true)
       lease_updater = LeaseUpdater.new(client, lease)
 
-      info.deviceUrl.each do |device_url|
-        device_key = device_url.importKey
+      info.device_url.each do |device_url|
+        device_key = device_url.import_key
         file_items.each do |file_item|
-          if device_key == file_item.deviceId
+          if device_key == file_item.device_id
             http_client = HTTPClient.new
             http_client.send_timeout = 14400 # 4 hours
             http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
@@ -910,8 +876,8 @@ module VSphereCloud
     def wait_until_off(vm, timeout)
         started = Time.now
         loop do
-          power_state = client.get_property(vm, "VirtualMachine", "runtime.powerState")
-          break if power_state == VirtualMachinePowerState::PoweredOff
+          power_state = client.get_property(vm, Vim::VirtualMachine, "runtime.powerState")
+          break if power_state == Vim::VirtualMachine::PowerState::POWERED_OFF
           raise TimeoutException if Time.now - started > timeout
           sleep(1.0)
         end
@@ -924,10 +890,10 @@ module VSphereCloud
         @resources.datacenters.each_value do |datacenter|
           vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
           vm_folder = client.find_by_inventory_path(vm_folder_path)
-          vms = client.get_managed_objects("VirtualMachine", :root => vm_folder)
+          vms = client.get_managed_objects(Vim::VirtualMachine, :root => vm_folder)
           next if vms.empty?
 
-          vm_properties = client.get_properties(vms, "VirtualMachine", ["name"])
+          vm_properties = client.get_properties(vms, Vim::VirtualMachine, ["name"])
 
           vm_properties.each do |_, properties|
             pool.process do

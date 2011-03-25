@@ -1,6 +1,7 @@
 module VSphereCloud
 
   class Resources
+    include VimSdk
 
     MEMORY_THRESHOLD = 128
     DISK_THRESHOLD = 512
@@ -68,8 +69,8 @@ module VSphereCloud
     end
 
     def fetch_datacenters
-      datacenters      = @client.get_managed_objects("Datacenter")
-      properties       = @client.get_properties(datacenters, "Datacenter", ["name"])
+      datacenters      = @client.get_managed_objects(Vim::Datacenter)
+      properties       = @client.get_properties(datacenters, Vim::Datacenter, ["name"])
       datacenter_specs = {}
 
       @vcenter["datacenters"].each { |spec| datacenter_specs[spec["name"]] = spec }
@@ -100,8 +101,8 @@ module VSphereCloud
 
     def fetch_clusters(datacenter)
       datacenter_spec = datacenter.spec
-      cluster_mobs    = @client.get_managed_objects("ClusterComputeResource", :root => datacenter.mob)
-      properties      = @client.get_properties(cluster_mobs, "ClusterComputeResource",
+      cluster_mobs    = @client.get_managed_objects(Vim::ClusterComputeResource, :root => datacenter.mob)
+      properties      = @client.get_properties(cluster_mobs, Vim::ClusterComputeResource,
                                                ["name", "datastore", "resourcePool", "host"], :ensure_all => true)
 
       cluster_names   = Set.new(datacenter_spec["clusters"])
@@ -127,7 +128,7 @@ module VSphereCloud
     end
 
     def fetch_datastores(datacenter, datastore_mobs)
-      properties = @client.get_properties(datastore_mobs, "Datastore",
+      properties = @client.get_properties(datastore_mobs, Vim::Datastore,
                                           ["summary.freeSpace", "summary.capacity", "name"])
       properties.delete_if { |_, datastore_properties| datastore_properties["name"] !~ datacenter.datastore_pattern }
 
@@ -148,7 +149,7 @@ module VSphereCloud
     end
 
     def fetch_cluster_utilization(cluster, host_mobs)
-      properties = @client.get_properties(host_mobs, "HostSystem",
+      properties = @client.get_properties(host_mobs, Vim::HostSystem,
                                           ["hardware.memorySize", "runtime.inMaintenanceMode"], :ensure_all => true)
       properties.delete_if { |_, host_properties| host_properties["runtime.inMaintenanceMode"] == "true" }
 
