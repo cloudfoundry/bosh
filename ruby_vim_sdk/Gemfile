@@ -1,0 +1,13 @@
+source :rubygems
+
+gemspec
+
+group :test do
+  gem "ci_reporter"
+  gem "rake"
+  gem "rcov"
+  gem "rcov_analyzer"
+  gem "rspec"
+  gem "ruby-debug", :platforms => :ruby_18
+  gem "ruby-debug19", :platforms => :ruby_19
+end

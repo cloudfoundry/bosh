@@ -1,0 +1,2 @@
+- finish the rest of the tests
+- get rid of guess_wsdl_type, should use default namespace
