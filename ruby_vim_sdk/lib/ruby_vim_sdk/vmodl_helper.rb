@@ -1,5 +1,8 @@
 module VimSdk::VmodlHelper
-  UNDERSCORE_EXCEPTIONS = {"numCPUs" => "num_cpus"}
+  UNDERSCORE_EXCEPTIONS = {
+    "numCPUs" => "num_cpus",
+    "importVApp" => "import_vapp"
+  }
 
   # Borrowed mostly from activesupport
   def camelize(word)
