@@ -7,20 +7,21 @@ module Bosh::Agent
       attr_accessor :settings
 
       def setup(config)
-        @base_dir = config["base_dir"]
+        @configure = config["configure"]
+
         @logger = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
 
-        @logger.info("Configuring Agent with: #{config.inspect}")
-
+        @base_dir = config["base_dir"]
         @agent_id = config["agent_id"]
 
-        @configure = config["configure"]
         @mbus = config['mbus']
-
-        # TODO: right now this will only appy the the simple blobstore type
         @blobstore_options = config["blobstore_options"]
         @blobstore_provider = config["blobstore_provider"]
+
+        unless @configure
+          @logger.info("Configuring Agent with: #{config.inspect}")
+        end
 
         @settings = {}
       end
