@@ -145,7 +145,7 @@ module Bosh::Agent
         # This only verifies that the fields has values
         @networks.each do |k, v|
           %w{ip network netmask broadcast}.each do |field|
-            unless v[field] 
+            unless v[field]
               raise Bosh::Agent::MessageHandlerError, "Missing network value for #{field} in #{v.inspect}"
             end
           end
@@ -226,7 +226,7 @@ module Bosh::Agent
         swap_partition = "#{DATA_DISK}1"
         data_partition = "#{DATA_DISK}2"
 
-        if File.blockdev?(DATA_DISK) 
+        if File.blockdev?(DATA_DISK)
 
           if Dir["#{DATA_DISK}[1-9]"].empty?
             @logger.info("Found unformatted drive")
@@ -282,10 +282,9 @@ iface <%= n["interface"] %> inet static
     netmask <%= n["netmask"]%>
     broadcast <%= n["broadcast"] %>
 <% if n.key?('default') && n['default'].include?('gateway') -%>
-    gateway <%= n["gateway"] -%>
-<% end -%>
+    gateway <%= n["gateway"] %>
 <% end %>
-
+<% end -%>
 TEMPLATE
 
     end
