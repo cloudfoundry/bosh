@@ -279,9 +279,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
       @deployment_plan.stub!(:network).with("network-a").and_return(@network_spec)
 
+      @job_spec.stub!(:name).and_return("job-a")
       @job_spec.stub!(:instances).and_return([@instance_spec])
 
       @instance_spec.stub!(:networks).and_return([@instance_network_spec])
+      @instance_spec.stub!(:index).and_return(3)
 
       @instance_network_spec.stub!(:name).and_return("network-a")
 
@@ -315,7 +317,18 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_network_spec.stub!(:reserved).and_return(false)
       @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
-      lambda {@deployment_plan_compiler.bind_instance_networks}.should raise_error
+      lambda {
+        @deployment_plan_compiler.bind_instance_networks
+      }.should raise_error("Job: 'job-a'/'3' asked for a static IP: 10.0.0.5 but it's in the dynamic pool")
+    end
+
+    it "should fail reserving a static ip that was taken" do
+      @instance_network_spec.stub!(:reserved).and_return(false)
+      @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(nil)
+      lambda {
+        @deployment_plan_compiler.bind_instance_networks
+      }.should raise_error("Job: 'job-a'/'3' asked for a static IP: 10.0.0.5 but it's already reserved/in use")
     end
 
   end
