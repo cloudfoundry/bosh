@@ -181,8 +181,15 @@ module Bosh::Director
               # static ip that wasn't reserved
               if network_config.ip
                 reservation = network.reserve_ip(network_config.ip)
-                raise "bad static IP reservation" unless reservation == :static
-                network_config.use_reservation(network_config.ip, true)
+                if reservation == :static
+                  network_config.use_reservation(network_config.ip, true)
+                elsif reservation == :dynamic
+                  raise "Job: '#{job.name}'/'#{instance.index}' asked for a static IP: " +
+                            "#{ip_to_netaddr(network_config.ip).ip} but it's in the dynamic pool"
+                else
+                  raise "Job: '#{job.name}'/'#{instance.index}' asked for a static IP: " +
+                            "#{ip_to_netaddr(network_config.ip).ip} but it's already reserved/in use"
+                end
               else
                 ip = network.allocate_dynamic_ip
                 network_config.use_reservation(ip, false)
