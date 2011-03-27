@@ -314,7 +314,9 @@ describe Bosh::Director::DeploymentPlan do
     it "should fail when the number of instances exceeds resource pool capacity" do
       manifest = BASIC_MANIFEST._deep_copy
       manifest["jobs"].first["instances"] = 15
-      lambda { Bosh::Director::DeploymentPlan.new(manifest) }.should raise_error "resource pool too small"
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Resource pool 'small' is not big enough to run all the requested jobs")
     end
 
 
@@ -341,7 +343,7 @@ describe Bosh::Director::DeploymentPlan do
 
       lambda {
         Bosh::Director::DeploymentPlan.new(manifest)
-      }.should raise_error("Job job_a references an unknown network: network_b")
+      }.should raise_error("Job 'job_a' references an unknown network: 'network_b'")
     end
 
     it "should fail if no networks were specified" do
@@ -625,6 +627,15 @@ describe Bosh::Director::DeploymentPlan do
       idle_vm.network_settings.should == {"network_a" => {"ip" => "foo"}}
     end
 
+    it "should fail if network name doesn't exist" do
+      manifest = BASIC_MANIFEST._deep_copy
+      resource_pool = manifest["resource_pools"].first
+      resource_pool["network"] = "network_b"
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Resource pool 'small' references an unknown network: 'network_b'")
+    end
   end
 
   describe "Networks" do
@@ -1182,6 +1193,20 @@ describe Bosh::Director::DeploymentPlan do
       job.should_rollback?.should be_false
       job.record_update_error("some error", :canary => true)
       job.should_rollback?.should be_true
+    end
+
+  end
+
+  describe "Compilation" do
+
+    it "should fail if network name doesn't exist" do
+      manifest = BASIC_MANIFEST._deep_copy
+      compilation = manifest["compilation"]
+      compilation["network"] = "network_b"
+
+      lambda {
+        Bosh::Director::DeploymentPlan.new(manifest)
+      }.should raise_error("Compilation workers reference an unknown network: 'network_b'")
     end
 
   end

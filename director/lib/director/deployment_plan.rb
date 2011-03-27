@@ -73,7 +73,11 @@ module Bosh::Director
         @size = safe_property(resource_pool_spec, "size", :class => Integer)
         @cloud_properties = safe_property(resource_pool_spec, "cloud_properties", :class => Hash)
         @stemcell = StemcellSpec.new(self, safe_property(resource_pool_spec, "stemcell", :class => Hash))
-        @network = @deployment.network(safe_property(resource_pool_spec, "network", :class => String))
+
+        network_name = safe_property(resource_pool_spec, "network", :class => String)
+        @network = @deployment.network(network_name)
+        raise "Resource pool '#{@name}' references an unknown network: '#{network_name}'" if @network.nil?
+
         @idle_vms = []
         @allocated_vms = []
         @active_vms = 0
@@ -92,7 +96,7 @@ module Bosh::Director
 
       def reserve_vm
         @reserved_vms += 1
-        raise "resource pool too small" if @reserved_vms > @size
+        raise "Resource pool '#{@name}' is not big enough to run all the requested jobs" if @reserved_vms > @size
       end
 
       def allocate_vm
@@ -394,7 +398,7 @@ module Bosh::Director
         network_specs.each do |network_spec|
           network_name = safe_property(network_spec, "name", :class => String)
           network = @deployment.network(network_name)
-          raise "Job #{@name} references an unknown network: #{network_name}" if network.nil?
+          raise "Job '#{@name}' references an unknown network: '#{network_name}'" if network.nil?
 
           static_ips = nil
           if network_spec["static_ips"]
@@ -659,7 +663,9 @@ module Bosh::Director
       def initialize(deployment, compilation_config)
         @deployment = deployment
         @workers = safe_property(compilation_config, "workers", :class => Integer)
-        @network = deployment.network(safe_property(compilation_config, "network", :class => String))
+        network_name = safe_property(compilation_config, "network", :class => String)
+        @network = deployment.network(network_name)
+        raise "Compilation workers reference an unknown network: '#{network_name}'" if @network.nil?
         @cloud_properties = safe_property(compilation_config, "cloud_properties", :class => Hash)
       end
     end
