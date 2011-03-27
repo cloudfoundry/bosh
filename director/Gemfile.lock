@@ -24,7 +24,7 @@ GEM
     esxmq (0.0.13)
       nats
     eventmachine (0.12.10)
-    httpclient (2.1.6)
+    httpclient (2.1.7.2)
     json (1.4.6)
     linecache (0.43)
     linecache19 (0.5.11)
@@ -78,7 +78,7 @@ GEM
       ruby-debug-base19 (>= 0.11.19)
     ruby_core_source (0.1.4)
       archive-tar-minitar (>= 0.5.2)
-    ruby_vim_sdk (0.0.1)
+    ruby_vim_sdk (0.0.2)
       builder
       httpclient
       nokogiri

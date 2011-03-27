@@ -821,7 +821,7 @@ module VSphereCloud
     end
 
     def obtain_nfc_lease(resource_pool, import_spec, folder)
-      resource_pool.importVApp(import_spec, folder)
+      resource_pool.import_vapp(import_spec, folder)
     end
 
     def wait_for_nfc_lease(lease)
