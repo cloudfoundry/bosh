@@ -9,6 +9,9 @@ describe Bosh::Agent::Message::State do
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
     Bosh::Agent::Config.settings = { "vm" => {}, "agent_id" => nil }
+
+    @monit_mock = mock('monit_api_client')
+    Bosh::Agent::Monit.stub!(:monit_api_client).and_return(@monit_mock)
   end
 
   it 'shuold have initial empty state' do
@@ -18,13 +21,38 @@ describe Bosh::Agent::Message::State do
       "networks"=>{},
       "resource_pool"=>{},
       "agent_id" => nil,
-      "vm" => {}
+      "vm" => {},
+      "job_state" => nil
     }
-
-    # FIXME: initial state will _not_ be running when job handling is
-    # implemented
-    initial_state["job_state"] = "running"
-
+    handler.stub!(:job_state).and_return(nil)
     handler.state.should == initial_state
   end
+
+  it "should report job_state as running" do
+    handler = Bosh::Agent::Message::State.new(nil)
+
+    status = { "foo" => { :status => { :message => "running" }, :monitor => :yes }}
+    @monit_mock.should_receive(:status).and_return(status)
+
+    handler.state['job_state'].should == "running"
+  end
+
+  it "should report job_state as starting" do
+    handler = Bosh::Agent::Message::State.new(nil)
+
+    status = { "foo" => { :status => { :message => "running" }, :monitor => :init }}
+    @monit_mock.should_receive(:status).and_return(status)
+
+    handler.state['job_state'].should == "starting"
+  end
+
+  it "should report job_state as failing" do
+    handler = Bosh::Agent::Message::State.new(nil)
+
+    status = { "foo" => { :status => { :message => "born to run" }, :monitor => :yes }}
+    @monit_mock.should_receive(:status).and_return(status)
+
+    handler.state['job_state'].should == "failing"
+  end
+
 end
