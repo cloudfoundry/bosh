@@ -21,6 +21,8 @@ apt-get install -y --force-yes --no-install-recommends \
 
 dpkg -l > ${bosh_app_dir}/bosh/stemcell_dpkg_l.out
 
+rm -fr /var/cache/apt/archives/*deb
+
 cd ${bosh_app_dir}/bosh/src
 
 tar zxvf monit-5.2.4.tar.gz
@@ -30,14 +32,17 @@ tar zxvf monit-5.2.4.tar.gz
   make && make install
 )
 
-tar zxvf ruby-1.8.7-p302.tar.gz
+
+ruby_version="1.9.2-p180"
+tar jxvf ruby-${ruby_version}.tar.bz2
 (
-  cd ruby-1.8.7-p302
+  cd ruby-${ruby_version}
   ./configure \
-    --disable-pthread \
-    --prefix=${bosh_app_dir}/bosh
+    --prefix=${bosh_app_dir}/bosh \
+    --disable-install-doc
   make && make install
 )
+rm -fr ruby-${ruby_version}
 
 echo "gem: --no-ri --no-rdoc" > /etc/gemrc
 
