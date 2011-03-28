@@ -34,7 +34,12 @@ module Bosh::Agent
           state["vm"] = settings["vm"]
         end
 
-        state["job_state"] = job_state
+        if Bosh::Agent::Config.configure
+          state["job_state"] = job_state
+        else
+          state["job_state"] = "running"
+        end
+
         state
       end
 
