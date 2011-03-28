@@ -34,16 +34,15 @@ module Bosh::Agent
           state["vm"] = settings["vm"]
         end
 
-        if Bosh::Agent::Config.configure
-          state["job_state"] = job_state
-        else
-          state["job_state"] = "running"
-        end
-
+        state["job_state"] = job_state
         state
       end
 
       def job_state
+        unless Bosh::Agent::Monit.enabled
+          return "running"
+        end
+
         client = Bosh::Agent::Monit.monit_api_client
 
         status = client.status(:group => BOSH_APP_GROUP)

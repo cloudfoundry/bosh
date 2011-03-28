@@ -10,6 +10,7 @@ describe Bosh::Agent::Message::State do
     Bosh::Agent::Config.logger = logger
     Bosh::Agent::Config.settings = { "vm" => {}, "agent_id" => nil }
 
+    Bosh::Agent::Monit.enabled = true
     @monit_mock = mock('monit_api_client')
     Bosh::Agent::Monit.stub!(:monit_api_client).and_return(@monit_mock)
   end

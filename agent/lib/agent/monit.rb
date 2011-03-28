@@ -10,6 +10,8 @@ module Bosh::Agent
     end
 
     class << self
+      attr_accessor :enabled
+
       def base_dir
         Bosh::Agent::Config.base_dir
       end
