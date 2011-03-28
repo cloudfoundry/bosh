@@ -173,17 +173,8 @@ module Bosh::Agent
             # There is really no use trying to do error handling on these -
             # monit always return 0
             Bosh::Agent::Monit.reload
-
-            # HACK: Monit becomes unresponsive after reload
-            attempts = 10
-            begin
-              @monit_api_client.monitor(:group => BOSH_APP_GROUP)
-              @monit_api_client.start(:group => BOSH_APP_GROUP)
-            rescue Errno::ECONNREFUSED
-              retry if (attempts -= 1) > 0
-              @logger.info("Monit Service Connection Refused: retrying")
-              sleep 1
-            end
+            Bosh::Agent::Monit.monitor_services
+            Bosh::Agent::Monit.start_services
           end
         end
       end
