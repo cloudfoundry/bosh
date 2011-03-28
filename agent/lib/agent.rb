@@ -48,6 +48,7 @@ module Bosh::Agent
       @logger.info("Configuring agent #{Bosh::Agent::VERSION}")
       if Config.configure
         Bosh::Agent::Message::Configure.process(nil)
+        Bosh::Agent::Monit.enabled = true
         Bosh::Agent::Monit.start
       end
       @logger.info("Starting agent")
