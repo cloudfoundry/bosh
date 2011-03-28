@@ -16,10 +16,8 @@ GEM
     highline (1.6.1)
     httpclient (2.1.6.1)
     mime-types (1.16)
-    ncurses (0.9.1)
     netaddr (1.5.0)
     posix-spawn (0.3.3)
-    rbcurse (1.1.5)
     rcov (0.9.9)
     rcov_analyzer (0.1)
       builder
@@ -45,10 +43,8 @@ DEPENDENCIES
   blobstore_client (~> 0.3)
   ci_reporter
   highline
-  ncurses
   netaddr
   posix-spawn
-  rbcurse
   rcov
   rcov_analyzer
   rest-client
