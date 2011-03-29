@@ -96,6 +96,8 @@ namespace "ubuntu" do
 
     cp_r "misc/#{type}/build", work_dir
     cp_r "misc/#{type}/instance", work_dir
+    chmod(0755, File.join(work_dir, 'build', 'execscript.sh'))
+    chmod(0755, File.join(work_dir, 'instance', 'prepare_instance.sh'))
 
     instance_dir = File.join(work_dir, 'instance')
 
