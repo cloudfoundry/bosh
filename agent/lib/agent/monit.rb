@@ -77,12 +77,11 @@ module Bosh::Agent
       end
 
       def start_services
-        retry_monit_request(:start)
+        retry_monit_request(:start, 20)
       end
 
-      def retry_monit_request(request)
+      def retry_monit_request(request, attempts=10)
         # HACK: Monit becomes unresponsive after reload
-        attempts = 10
         begin
           monit_api_client.send(request, :group => BOSH_APP_GROUP)
         rescue Errno::ECONNREFUSED
