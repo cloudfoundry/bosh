@@ -112,7 +112,7 @@ module Bosh::Agent
 
         begin
           File.read('/dev/cdrom', 0)
-        rescue Errno::E123 # ENOMEDIUM
+        rescue Errno::ENOMEDIUM # 1.8: Errno::E123
           raise Bosh::Agent::LoadSettingsError, 'No bosh cdrom env'
         end
 
