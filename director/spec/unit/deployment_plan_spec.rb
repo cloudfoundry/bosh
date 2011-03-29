@@ -980,11 +980,18 @@ describe Bosh::Director::DeploymentPlan do
         }
       },
       "persistent_disk" => 2048,
-      "job" => {"name" => "job_a", "version" => "1", "sha1" => "job-sha1", "blobstore_id" => "template_blob"}
+      "job" => {
+        "name" => "job_a",
+        "template" => "template_name",
+        "version" => "1",
+        "sha1" => "job-sha1",
+        "blobstore_id" => "template_blob"
+      }
     }
 
     before(:each) do
-      @template = Bosh::Director::Models::Template.make(:version => 1,
+      @template = Bosh::Director::Models::Template.make(:name => "template_name",
+                                                        :version => 1,
                                                         :sha1 => "job-sha1",
                                                         :blobstore_id => "template_blob")
       @package = Bosh::Director::Models::Package.make(:name => "test_package", :version => "33")
@@ -1125,7 +1132,13 @@ describe Bosh::Director::DeploymentPlan do
           }
         },
         "index" => 0,
-        "job" => {"name" => "job_a", "blobstore_id" => "template_blob", "sha1" => "job-sha1", "version" => "1"},
+        "job" => {
+          "name" => "job_a",
+          "template" => "template_name",
+          "blobstore_id" => "template_blob",
+          "sha1" => "job-sha1",
+          "version" => "1"
+        },
         "persistent_disk" => 2048,
         "release" => {"name" => "test_release", "version" => "1"},
         "deployment" => "test_deployment",
