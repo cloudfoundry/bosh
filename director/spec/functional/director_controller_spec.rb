@@ -65,7 +65,7 @@ describe Bosh::Director::Controller do
       last_response.status.should == 200
       expected = {
         "name"    => "Test Director",
-        "version" => Bosh::Director::VERSION,
+        "version" => "#{Bosh::Director::VERSION} (#{Bosh::Director::Config.revision})",
         "uuid"    => Bosh::Director::Config.uuid,
         "user"    => "admin"
       }
