@@ -143,6 +143,8 @@ namespace "ubuntu" do
         f.write("---\nname: bosh-stemcell\nversion: #{version}\ncloud_properties: {}")
       end
 
+      cp("stemcell_dpkg_l.out", "#{type}/stemcell_dpkg_l.txt")
+
       Dir.chdir("#{type}") do
         sh "tar zcf ../bosh-#{type}-#{version}.tgz *"
       end
