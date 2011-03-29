@@ -39,7 +39,7 @@ describe Bosh::Agent::Message::Apply do
     apply_data = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
-      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77" },
+      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77" },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
       "packages" => 
@@ -69,7 +69,7 @@ describe Bosh::Agent::Message::Apply do
     apply_data = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
-      "job" => { "name" => "bubba", 'blobstore_id' => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
+      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }

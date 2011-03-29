@@ -16,9 +16,9 @@ module Bosh::Agent
         @job = @apply_spec['job']
 
         if @job
-          @job_name = @job['name']
+          @job_template = @job['template']
           @job_version = @job['version']
-          @job_install_dir = File.join(@base_dir, 'data', 'jobs', @job_name, @job_version)
+          @job_install_dir = File.join(@base_dir, 'data', 'jobs', @job_template, @job_version)
         end
 
         @packages_data = File.join(@base_dir, 'data', 'packages')
@@ -83,7 +83,7 @@ module Bosh::Agent
         sha1 = @job['sha1']
         Util.unpack_blob(blobstore_id, sha1, @job_install_dir)
 
-        job_link_dst = File.join(@base_dir, 'jobs', @job_name)
+        job_link_dst = File.join(@base_dir, 'jobs', @job_template)
         link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
 
         template_configurations
@@ -149,7 +149,7 @@ module Bosh::Agent
       end
 
       def post_install_hook
-        Util.run_hook('post_install', @job_name)
+        Util.run_hook('post_install', @job_template)
       end
 
       def configure_monit
@@ -157,7 +157,7 @@ module Bosh::Agent
         monit_template = File.join(@job_install_dir, 'monit')
         if File.exist?(monit_template)
           template = ERB.new(File.read(monit_template))
-          monitrc_name = "#{@job_name}.monitrc"
+          monitrc_name = "#{@job_template}.monitrc"
 
           out_file = File.join(@job_install_dir, monitrc_name)
 
@@ -165,7 +165,7 @@ module Bosh::Agent
             fh.write(template.result(Util.config_binding(@apply_spec)))
           end
 
-          monit_link = File.join(@base_dir, 'monit', "#{@job_name}.monitrc")
+          monit_link = File.join(@base_dir, 'monit', "#{@job_template}.monitrc")
 
           link_installed(out_file, monit_link, "Failed to link monit file: #{out_file} #{monit_link}" )
 

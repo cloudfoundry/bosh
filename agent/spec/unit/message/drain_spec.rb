@@ -95,8 +95,12 @@ describe Bosh::Agent::Message::Drain do
         }
       },
       "job"=>{
-        "name"=>"cloudcontroller", "blobstore_id"=>"fd03f94d-95c2-4581-8ae1-d11c96ca6910", 
-         "sha1"=>"9989206a20fe1ee70eb115287ab4d311a4236564", "version"=>"1.1-dev"},
+        "name"=>"cloudcontroller",
+        "template" => "cloudcontroller",
+        "blobstore_id"=>"fd03f94d-95c2-4581-8ae1-d11c96ca6910",
+        "sha1"=>"9989206a20fe1ee70eb115287ab4d311a4236564",
+        "version"=>"1.1-dev"
+      },
       "index"=>0
     }
   end
