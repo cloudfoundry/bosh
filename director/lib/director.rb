@@ -327,7 +327,7 @@ module Bosh::Director
       status = {
         "name"    => Config.name,
         "uuid"    => Config.uuid,
-        "version" => VERSION,
+        "version" => "#{VERSION} (#{Config.revision})",
         "user"    => @user
       }
       content_type(:json)

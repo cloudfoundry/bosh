@@ -14,6 +14,7 @@ module Bosh::Director
 
       attr_reader :redis_options
       attr_reader :cloud_options
+      attr_reader :revision
 
       def configure(config)
         @base_dir = config["dir"]
@@ -40,6 +41,8 @@ module Bosh::Director
           file.flush
           file.truncate(file.pos)
         end
+
+        @revision = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip
 
         @process_uuid = UUIDTools::UUID.random_create.to_s
         @nats_uri = config["mbus"]
