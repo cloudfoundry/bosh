@@ -235,7 +235,7 @@ module Bosh::Agent
 
             @logger.info("Create swap and data partitions")
             %x[mkswap #{swap_partition}]
-            %x[mkfs.ext4 #{data_partition}]
+            %x[/sbin/mke2fs -t ext4 -j #{data_partition}]
           end
 
           @logger.info("Swapon and mount data partition")
