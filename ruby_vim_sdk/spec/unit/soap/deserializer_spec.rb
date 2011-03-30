@@ -172,6 +172,32 @@ describe VimSdk::Soap::SoapDeserializer do
   it "should deserialize an enum"
 
   it "should fail to deserialize a bad boolean value"
+
+  it "should unwrap nested localized method faults" do
+
+    response = <<RESPONSE
+      <propSet xmlns="urn:vim25" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <name>info.error</name>
+        <val xsi:type="LocalizedMethodFault">
+          <fault xsi:type="SystemError"><reason>Error deleting disk Device or resource busy</reason></fault>
+          <localizedMessage>A general system error occurred: Error deleting disk Device or resource busy</localizedMessage>
+        </val>
+      </propSet>
+RESPONSE
+
+    stub = mock("stub")
+    deserializer = VimSdk::Soap::SoapDeserializer.new(stub, "vim.version.version6")
+    deserializer.deserialize(VimSdk::Soap::DelegatedDocument.new,
+                             VimSdk::Vmodl::DynamicProperty, false)
+    parser = Nokogiri::XML::SAX::Parser.new(deserializer)
+    parser.parse(response)
+
+    result = deserializer.result
+    value = result.val
+    value.class.should == VimSdk::Vmodl::Fault::SystemError
+    value.msg.should == "A general system error occurred: Error deleting disk Device or resource busy"
+    value.reason.should == "Error deleting disk Device or resource busy"
+  end
 end
 
 describe VimSdk::Soap::SoapResponseDeserializer do
