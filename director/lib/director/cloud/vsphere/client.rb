@@ -153,7 +153,7 @@ module VSphereCloud
       task = datacenter.power_on_vm([vm], nil)
       result = wait_for_task(task)
       if result.attempted.nil?
-        raise "Could not power on VM: #{result.not_attempted.localized_message}"
+        raise "Could not power on VM: #{result.not_attempted.msg}"
       else
         task = result.attempted.first.task
         wait_for_task(task)
@@ -225,7 +225,7 @@ module VSphereCloud
           when Vim::TaskInfo::State::SUCCESS
             return properties["info.result"]
           when Vim::TaskInfo::State::ERROR
-            raise properties["info.error"].localized_message
+            raise properties["info.error"].msg
         end
       end
     end
