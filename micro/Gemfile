@@ -1,7 +1,5 @@
 source :rubygems
 
-#gem 'ncurses'
-#gem 'rbcurse'
 gem 'highline'
 gem 'rest-client'
 gem "blobstore_client", "~> 0.3"
