@@ -13,6 +13,10 @@ module Bosh::Agent
 
         @logger.info("Draining: #{args.inspect}")
 
+        if Bosh::Agent::Config.configure
+          Bosh::Agent::Monit.unmonitor_services
+        end
+
         @drain_type = args.shift
 
         if @drain_type == "update"

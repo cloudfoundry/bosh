@@ -72,6 +72,10 @@ module Bosh::Agent
         `#{monit_bin} reload`
       end
 
+      def unmonitor_services
+        retry_monit_request(:unmonitor)
+      end
+
       def monitor_services
         retry_monit_request(:monitor)
       end
