@@ -30,20 +30,15 @@ module VimSdk
 
         status = response.code
         if status == 200 || status == 500
-          begin
-            object = SoapResponseDeserializer.new(outer_stub).deserialize(response.content, method_info.result_type)
-            if outer_stub != self
-              result = [status, object]
-            elsif status == 200
-              result = object
-            elsif object.kind_of?(Vmodl::MethodFault)
-              raise SoapException.new(object.msg, object)
-            else
-              raise SoapException.new("Unknown SOAP fault", object)
-            end
-          rescue Exception
-            @connection_pool.close_connections
-            raise
+          object = SoapResponseDeserializer.new(outer_stub).deserialize(response.content, method_info.result_type)
+          if outer_stub != self
+            result = [status, object]
+          elsif status == 200
+            result = object
+          elsif object.kind_of?(Vmodl::MethodFault)
+            raise SoapException.new(object.msg, object)
+          else
+            raise SoapException.new("Unknown SOAP fault", object)
           end
         else
           raise Net::HTTPError.new("#{status}", nil)
