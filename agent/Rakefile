@@ -61,6 +61,7 @@ namespace "ubuntu" do
   task "cell", :type do |t, args|
     type = args[:type]
     version = Bosh::Agent::VERSION
+    minimum_director_version = Bosh::Agent::MINIMUM_DIRECTOR_VERSION
 
     work_dir = "/var/tmp/bosh/agent-#{version}-#{$$}"
     mkdir_p work_dir
@@ -126,7 +127,7 @@ namespace "ubuntu" do
       end
 
       File.open("#{tmpdir}/stemcell.MF", 'w') do |f|
-        f.write("---\nname: bosh-stemcell\nversion: #{version}\ncloud_properties: {}")
+        f.write("---\nname: bosh-stemcell\nversion: #{version}\nminimum_director_version: #{minimum_director_version}\ncloud_properties: {}")
       end
 
       Dir.chdir(tmpdir) do
@@ -142,7 +143,7 @@ namespace "ubuntu" do
       end
 
       File.open("#{type}/stemcell.MF", 'w') do |f|
-        f.write("---\nname: bosh-stemcell\nversion: #{version}\ncloud_properties: {}")
+        f.write("---\nname: bosh-stemcell\nversion: #{version}\nminimum_director_version: #{minimum_director_version}\ncloud_properties: {}")
       end
 
       cp("stemcell_dpkg_l.out", "#{type}/stemcell_dpkg_l.txt")
