@@ -95,9 +95,9 @@ module Bosh::Cli::Command
       err("No deployments") if deployments.size == 0
 
       deployments_table = table do |t|
-        t.headings = "Name"
+        t.headings = [ "Name" ]
         deployments.each do |r|
-          t << [ r["name"] ]
+          t << [ r["name"]  ]
         end
       end
 
