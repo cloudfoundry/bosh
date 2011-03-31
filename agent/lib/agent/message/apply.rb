@@ -170,10 +170,7 @@ module Bosh::Agent
           link_installed(out_file, monit_link, "Failed to link monit file: #{out_file} #{monit_link}" )
 
           if Bosh::Agent::Config.configure
-            # There is really no use trying to do error handling on these -
-            # monit always return 0
             Bosh::Agent::Monit.reload
-            Bosh::Agent::Monit.monitor_services
             Bosh::Agent::Monit.start_services
           end
         end

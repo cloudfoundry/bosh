@@ -88,13 +88,17 @@ module Bosh::Agent
         # HACK: Monit becomes unresponsive after reload
         begin
           monit_api_client.send(request, :group => BOSH_APP_GROUP)
-        rescue Errno::ECONNREFUSED
+        rescue Errno::ECONNREFUSED, TimeoutError
           sleep 1
           logger.info("Monit Service Connection Refused: retrying")
           retry if (attempts -= 1) > 0
         rescue => e
-          if e.message == "Service Unavailable"
-            logger.info("Monit Service Unavailable: retrying")
+          messages = [
+            "Connection reset by peer",
+            "Service Unavailable"
+          ]
+          if messages.include?(e.message)
+            logger.info("Monit Service Unavailable (#{e.message}): retrying")
             sleep 1
             retry if (attempts -= 1) > 0
           end

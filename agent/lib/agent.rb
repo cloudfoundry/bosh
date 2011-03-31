@@ -17,6 +17,7 @@ require "agent/util"
 require "agent/monit"
 
 # TODO the message handlers will be loaded dynamically
+require "agent/message/base"
 require "agent/message/disk"
 require "agent/message/configure"
 require "agent/message/state"
