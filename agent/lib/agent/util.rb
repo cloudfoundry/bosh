@@ -142,7 +142,11 @@ module Bosh::Agent
         hook_file = File.join(base_dir, 'jobs', job_template_name, 'bin', hook)
         if File.exist?(hook_file)
 
-          child = POSIX::Spawn::Child.new(hook_file)
+          env = {
+            'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
+          }
+
+          child = POSIX::Spawn::Child.new(env, hook_file, :unsetenv_others => true)
           result = child.out
           logger.info("Hook #{hook} for job #{job_template_name}: #{result}")
 
