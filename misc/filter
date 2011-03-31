@@ -10,7 +10,7 @@ ARGF.each do |line|
   if /DEBUG -- : RECEIVED: director./ =~ line
     json = line[line.index("{")..-1]
     message = Yajl::Parser.parse(json)
-    if message["value"] && message["value"]["job_state"]
+    if message["value"] && message["value"].kind_of?(Hash) && message["value"]["job_state"]
       spec = message["value"]
       result[[spec["job"]["name"], spec["index"]]] = "#{spec["networks"].collect{ |name, network| network["ip"] + ((network["default"] && network["default"].include?("gateway")) ? "(*)" : "")}.join(", ")}" if spec["configuration_hash"]
     end
