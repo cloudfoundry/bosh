@@ -8,8 +8,8 @@ module Bosh::Cli
       spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name           = spec["name"]
-      @packages       = spec["packages"]
-      @built_packages = built_packages
+      @packages       = spec["packages"].to_a
+      @built_packages = built_packages.to_a
       @release_dir    = release_dir
       @templates_dir  = File.join(job_dir, "templates")
       @tarballs_dir   = File.join(release_dir, "tmp", "jobs")
