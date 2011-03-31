@@ -8,7 +8,7 @@ require 'openssl'
 
 module Bosh::Agent
   module Message
-    class Configure
+    class Configure < Base
       def self.process(args)
         self.new(args).configure
       end
@@ -37,13 +37,9 @@ module Bosh::Agent
           update_time
           setup_data_disk
           Bosh::Agent::Monit.setup_monit_user
+          mount_persistent_disk
 
-          # HACK HACK HACK - until we can identify store drive
-          if File.blockdev?('/dev/sdc1')
-            store_mount_point = File.join(@base_dir, 'store')
-            @logger.info("HACK: mount /dev/sdc1 #{store_mount_point}")
-            `mount /dev/sdc1 #{store_mount_point}`
-          end
+
         end
         { "settings" => @settings }
       end
@@ -268,6 +264,28 @@ module Bosh::Agent
       def mem_total
         # MemTotal:        3952180 kB
         File.readlines('/proc/meminfo').first.split(/\s+/)[1].to_i
+      end
+
+      def mount_persistent_disk
+        if @settings['disks']['persistent'].keys.size > 1
+          # hell on earth
+          raise Bosh::Agent::MessageHandlerError, "Fatal: more than one persistent disk on boot"
+        else
+          cid = @settings['disks']['persistent'].keys.first
+          if cid
+            disk = DiskUtil.lookup_disk_by_cid(cid)
+            partition = "#{disk}1"
+
+            if File.blockdev?(partition) && !DiskUtil.mount_entry(partition)
+              @logger.info("Mount #{partition} #{store_path}")
+              `mount #{partition} #{store_path}`
+              unless $?.exitstatus == 0
+                raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path}"
+              end
+            end
+
+          end
+        end
       end
 
       INTERFACE_TEMPLATE = <<TEMPLATE

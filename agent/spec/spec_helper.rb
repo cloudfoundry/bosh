@@ -23,6 +23,12 @@ ENV["TMPDIR"] = bosh_tmp_dir
 Rspec.configure do |rspec_config|
   rspec_config.before(:each) do
     FileUtils.mkdir_p(bosh_dir)
+
+    logger = mock('logger')
+    logger.stub!(:info)
+    Bosh::Agent::Config.logger = logger
+
+    setup_tmp_base_dir
   end
 
   rspec_config.after(:each) do
