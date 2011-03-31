@@ -21,6 +21,10 @@ module Bosh::Agent
           `(cd #{store_path} && tar cf - .) | (cd #{store_migration_target} && tar xpf -)`
         end
 
+        until `lsof -t +D #{store_path}`.empty? && `lsof -t +D #{store_migration_target}`.empty?
+          sleep 1
+        end
+
         unmount_store
         unmount_store_migration_target
         mount_new_store
@@ -104,11 +108,11 @@ module Bosh::Agent
           raise Bosh::Agent::MessageHandlerError, "Unable to format #{disk}"
         end
 
-        mount_persistent_disk
+        mount_persistent_disk(partition)
         {}
       end
 
-      def mount_persistent_disk
+      def mount_persistent_disk(partition)
         store_mountpoint = File.join(base_dir, 'store')
 
         if Pathname.new(store_mountpoint).mountpoint?
@@ -146,6 +150,11 @@ module Bosh::Agent
 
         if DiskUtil.mount_entry(partition)
           block, mountpoint = DiskUtil.mount_entry(partition).split
+
+          until `lsof -t +D /var/vcap/store`.empty?
+            sleep 1
+          end
+
           `umount #{mountpoint}`
           unless $?.exitstatus == 0
             raise Bosh::Agent::MessageHandlerError, "Failed to umount #{partition} on #{mountpoint} #{$?.exitstatus}"
