@@ -72,6 +72,23 @@ module Bosh
         say(e.message.red)
       rescue Bosh::Cli::CliError => e
         say("Error #{e.error_code}: #{e.message}".red)
+      rescue => e
+        if @options[:debug] || ENV["DEBUG"]
+          raise e
+        else
+          say("BOSH CLI Error: #{e.message}".red)
+          begin
+            errfile = File.expand_path("~/.bosh_error")
+            File.open(errfile, "w") do |f|
+              f.write(e.message)
+              f.write("\n")
+              f.write(e.backtrace.join("\n"))
+            end
+            say("Error information saved in #{errfile}")
+          rescue => e
+            say("Error information couldn't be saved: #{e.message}")
+          end
+        end
       ensure
         say("\n")
       end
@@ -86,6 +103,7 @@ module Bosh
           opts.on("--force")                {         @options[:director_checks] = false }
           opts.on("--quiet")                {         @options[:quiet] = true }
           opts.on("--non-interactive")      {         @options[:non_interactive] = true }
+          opts.on("--debug")                {         @options[:debug] = true }
           opts.on("--version")              {         set_cmd(:misc, :version) }
           opts.on("--help")                 {}
         end
