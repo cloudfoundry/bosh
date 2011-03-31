@@ -37,8 +37,6 @@ module Bosh::Agent
         when "update"
           # HACK: We go through the motions below to be able to support drain scripts written as shell scripts
           if @old_spec.key?('job') && drain_script_exists?
-            ENV['BOSH_CURRENT_STATE'] = Yajl::Encoder.encode(@old_spec)
-            ENV['BOSH_APPLY_SPEC'] = Yajl::Encoder.encode(@spec)
 
             job_change =  if !@old_spec.key?('job')
                             "job_new"
@@ -67,8 +65,16 @@ module Bosh::Agent
       end
 
       def run_drain_script(job_updated, hash_updated, updated_packages)
+        env = {
+          'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
+          'BOSH_CURRENT_STATE' => Yajl::Encoder.encode(@old_spec),
+          'BOSH_APPLY_SPEC' => Yajl::Encoder.encode(@spec)
+        }
+
         # Drain contract: on success the drain script should return a number exit(0)
-        child = POSIX::Spawn::Child.new(drain_script, job_updated, hash_updated, *updated_packages)
+        child = POSIX::Spawn::Child.new(env,
+                                        drain_script, job_updated, hash_updated, *updated_packages,
+                                        :unsetenv_others => true)
         result = child.out
         unless result.match(/\A\d+\Z/) && child.status.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError,
