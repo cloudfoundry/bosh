@@ -20,7 +20,7 @@ module VCAP
         begin
           clear
           header
-          #password # TODO OS auth/pwchange/pam auth
+          password # TODO OS auth/pwchange/pam auth
           identity
 
           network
@@ -74,7 +74,12 @@ module VCAP
       def password
         # TODO: check if default has already been changed
         # TODO: ask for password if set 
-        pass = ask("Configure Micro Cloud Password:  ") { |q| q.echo = "*" }
+
+        unless @identity.configured?
+          pass = ask("Configure Micro Cloud Password:  ") { |q| q.echo = "*" }
+          # BIG HACK
+          `echo "root:#{pass}\nvcap:#{pass}" | chpasswd`
+        end
       end
 
       def identity
