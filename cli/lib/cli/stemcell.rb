@@ -5,13 +5,13 @@ module Bosh
       include Validation
 
       attr_reader :stemcell_file
-      
+
       def initialize(tarball_path, cache)
         @stemcell_file = File.expand_path(tarball_path, Dir.pwd)
         @cache = cache
       end
 
-      def perform_validation
+      def perform_validation(options = {})
         tmp_dir = Dir.mktmpdir
 
         step("File exists and readable", "Cannot find stemcell file #{@stemcell_file}", :fatal) do
@@ -40,7 +40,7 @@ module Bosh
 
           step("Stemcell image file", "Stemcell image file is missing", :fatal) do
             File.exists?(File.expand_path("image", tmp_dir))
-          end          
+          end
 
           say("Writing manifest to cache...")
           manifest_yaml = File.read(manifest_file)
@@ -66,7 +66,7 @@ module Bosh
       def print_info(manifest)
         say("\nStemcell info")
         say("-------------")
-        
+
         say "Name:    %s" % [ manifest["name"] || "missing".red ]
         say "Version: %s" % [ manifest["version"] || "missing".red ]
       end

@@ -49,7 +49,13 @@ module Bosh
         end
       end
 
-      def perform_validation
+
+      # If sparse release is allowed we bypass the requirement of having all jobs
+      # and packages in place when we do validation. However for jobs and packages
+      # that are present we still need to validate checksums
+      def perform_validation(options = {})
+        allow_sparse = options.has_key?(:allow_sparse) ? !!options[:allow_sparse] : false
+
         step("File exists and readable", "Cannot find release file #{@tarball_path}", :fatal) do
           exists?
         end
@@ -86,7 +92,7 @@ module Bosh
 
           step("Read package '%s' (%d of %d)" % [ name, i+1, total_packages ],
                "Missing package '#{name}'") do
-            package_exists
+            package_exists || allow_sparse
           end
 
           if package_exists
@@ -98,6 +104,8 @@ module Bosh
         end
 
         # Check package dependencies
+        # Note that we use manifest["packages"] here; manifest contains all packages even if release is sparse,
+        # so we can detect problems even in sparse release tarball.
         if total_packages > 0
           step("Package dependencies", "Package dependencies couldn't be resolved") do
             begin
@@ -126,7 +134,7 @@ module Bosh
           job_exists = File.exists?(job_file)
 
           step("Read job '%s' (%d of %d), version %s" % [ name, i+1, total_jobs, version ], "Job '#{name}' not found") do
-            job_exists
+            job_exists || allow_sparse
           end
 
           if job_exists
@@ -163,7 +171,7 @@ module Bosh
               if job_manifest_valid && job_manifest["packages"]
                 job_manifest["packages"].each do |package_name|
                   step("Job '#{name}' needs '#{package_name}' package", "'Job '#{name}' references missing package '#{package_name}'") do
-                    available_packages[package_name]
+                    available_packages[package_name] || allow_sparse
                   end
                 end
               end

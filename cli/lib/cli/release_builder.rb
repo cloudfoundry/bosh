@@ -8,18 +8,22 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :work_dir, :release, :packages, :jobs
+    attr_reader :work_dir, :release, :packages, :jobs, :packages_to_skip, :jobs_to_skip
 
-    def initialize(work_dir, packages, jobs, final = false)
+    def initialize(work_dir, packages, jobs, packages_to_skip = [], jobs_to_skip = [], options = { })
+      @final     = options.has_key?(:final) ? !!options[:final] : false
+
       @work_dir  = work_dir
 
-      @release   = final ? Release.final(@work_dir) : Release.dev(@work_dir)
-      @packages  = packages
+      @release   = @final ? Release.final(@work_dir) : Release.dev(@work_dir)
+
+      @packages         = packages
+      @packages_to_skip = packages_to_skip
 
       job_order  = partial_order_sort(jobs.map{ |job| job.name }, @release.jobs_order)
 
-      @jobs      = jobs.sort_by { |job| job_order.index(job.name) }
-      @final     = final
+      @jobs         = jobs.sort_by { |job| job_order.index(job.name) }
+      @jobs_to_skip = jobs_to_skip
 
       @index = VersionsIndex.new(releases_dir, release_name)
       create_release_build_dir
@@ -60,7 +64,7 @@ module Bosh::Cli
     end
 
     def copy_packages
-      packages.each do |package|
+      (packages - packages_to_skip).each do |package|
         say "Copying #{package.tarball_path}..."
         FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"), :preserve => true)
       end
@@ -68,7 +72,7 @@ module Bosh::Cli
     end
 
     def copy_jobs
-      jobs.each do |job|
+      (jobs - jobs_to_skip).each do |job|
         say "Copying #{job.tarball_path}..."
         FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"), :preserve => true)
       end
