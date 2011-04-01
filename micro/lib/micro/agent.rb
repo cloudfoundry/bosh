@@ -4,6 +4,7 @@ require 'blobstore_client'
 require 'tempfile'
 require 'ostruct'
 require 'posix-spawn'
+require 'monit_api'
 
 module Bosh
   module Agent
@@ -17,6 +18,7 @@ require 'agent/util'
 require 'agent/config'
 require 'agent/version'
 require 'agent/message/apply'
+require 'agent/monit'
 
 module VCAP
   module Micro
@@ -29,11 +31,17 @@ module VCAP
         agent.apply
       end
 
+      def self.start
+        Bosh::Agent::Monit.enabled = true
+        Bosh::Agent::Monit..start
+      end
+
       def initialize(identity)
         @identity = identity
       end
 
       def setup
+
         FileUtils.mkdir_p('/var/vcap/data/log')
 
         settings = {
@@ -45,6 +53,7 @@ module VCAP
           "blobstore_provider" => "local"
         }
         Bosh::Agent::Config.setup(settings)
+        Bosh::Agent::Monit.setup_monit_user
 
         load_spec
         update_spec
@@ -72,6 +81,7 @@ module VCAP
         properties['cc']['admins'] = admins
 
         @spec['properties'] = properties
+        @spec['networks'] = { "local" => { "ip" => "127.0.0.1" } }
 
         File.open(APPLY_SPEC, 'w') { |f| f.write(YAML.dump(@spec)) }
       end

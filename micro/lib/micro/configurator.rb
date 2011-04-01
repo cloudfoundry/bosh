@@ -19,6 +19,11 @@ module VCAP
 
         begin
           clear
+
+          if @identity.configured?
+            VCAP::Micro::Agent.start
+          end
+
           header
           password # TODO OS auth/pwchange/pam auth
           identity
@@ -76,7 +81,7 @@ module VCAP
         # TODO: ask for password if set 
 
         unless @identity.configured?
-          pass = ask("Configure Micro Cloud Password:  ") { |q| q.echo = "*" }
+          pass = ask("\nConfigure Micro Cloud Password:  ") { |q| q.echo = "*" }
           # BIG HACK
           `echo "root:#{pass}\nvcap:#{pass}" | chpasswd`
         end
@@ -92,7 +97,7 @@ module VCAP
       end
 
       def token
-        token = ask("Token: ")
+        token = ask("\nToken: ")
         @identity.token(token)
       end
 
@@ -102,9 +107,9 @@ module VCAP
       end
 
       def network
-        say("\nConfigure Micro Cloud networking ")
+        say("\nConfigure Micro Cloud networking")
         choose do |menu|
-          menu.prompt = "Network type: "
+          menu.prompt = "Type: "
           menu.choice(:dhcp) { dhcp_network }
           menu.choice(:manual) { manual_network }
         end
