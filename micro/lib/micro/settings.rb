@@ -14,6 +14,8 @@ module VCAP
         properties['nats']['password'] = secret(8)
         properties['ccdb']['password'] = secret(8)
         properties['mysql_node']['password'] = properties['ccdb']['password']
+        properties['mysql_gateway']['token'] = secret(4)
+        properties['redis_gateway']['token'] = secret(4)
         properties
       end
 
