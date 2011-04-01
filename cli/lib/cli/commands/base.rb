@@ -102,6 +102,10 @@ module Bosh::Cli
         File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
       end
 
+      def operation_confirmed?(prompt = "Are you sure? (type 'yes' to continue): ")
+        non_interactive? || (ask(prompt) == "yes")
+      end
+
       def init_blobstore(options)
         bs_options = {
           :access_key_id     => options["access_key_id"].to_s,

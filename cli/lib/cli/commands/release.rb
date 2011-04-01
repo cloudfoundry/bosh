@@ -233,7 +233,7 @@ module Bosh::Cli::Command
         say "Deleting release `#{name}'".red
       end
 
-      if (non_interactive? || ask("Are you sure? (type 'yes' to continue): ") == "yes")
+      if operation_confirmed?
         director.delete_release(name, :force => force)
       else
         say "Canceled deleting release".green

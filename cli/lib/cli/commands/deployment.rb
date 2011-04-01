@@ -75,6 +75,13 @@ module Bosh::Cli::Command
     def delete(name)
       auth_required
 
+      say "\nYou are going to delete deployment `#{name}'.\n\nTHIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red
+
+      unless operation_confirmed?
+        say "Canceled deleting deployment".green
+        return
+      end
+
       status, message = director.delete_deployment(name)
 
       responses = {

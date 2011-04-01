@@ -80,6 +80,36 @@ describe Bosh::Cli::Command::Base do
     end
   end
 
+  describe Bosh::Cli::Command::Stemcell do
+    before :each do
+      @cmd = Bosh::Cli::Command::Stemcell.new(@opts)
+    end
+
+    it "allows deleting the stemcell" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_receive(:delete_stemcell).with("foo", "123")
+
+      @cmd.stub!(:interactive?).and_return(false)
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.delete("foo", "123")
+    end
+
+    it "needs confirmation to delete stemcell" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_not_receive(:delete_stemcell)
+
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.stub!(:ask).and_return("")
+      @cmd.delete("foo", "123")
+    end
+  end
+
   describe Bosh::Cli::Command::Deployment do
     before :each do
       @cmd = Bosh::Cli::Command::Deployment.new(@opts)
@@ -89,10 +119,23 @@ describe Bosh::Cli::Command::Base do
       mock_director = mock(Bosh::Cli::Director)
       mock_director.should_receive(:delete_deployment).with("foo")
 
+      @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
       @cmd.stub!(:director).and_return(mock_director)
+      @cmd.delete("foo")
+    end
+
+    it "needs confirmation to delete deployment" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.should_not_receive(:delete_deployment)
+
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.stub!(:ask).and_return("")
       @cmd.delete("foo")
     end
   end
