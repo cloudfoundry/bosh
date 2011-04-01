@@ -67,6 +67,13 @@ module Bosh::Cli::Command
     def delete(name, version)
       auth_required
 
+      say "You are going to delete stemcell `#{name} (#{version})'".red
+
+      unless operation_confirmed?
+        say "Canceled deleting stemcell".green
+        return
+      end
+
       status, message = director.delete_stemcell(name, version)
 
       responses = {
