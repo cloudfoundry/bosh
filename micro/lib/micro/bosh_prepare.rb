@@ -75,6 +75,7 @@ module VCAP
 
         properties = state['properties']
         state['properties'] = VCAP::Micro::Settings.randomize_passwords(properties)
+        state['properties']['admins'] = ['micro@vcap.me']
 
         File.open('/var/vcap/micro/apply_spec.yml', 'w') { |f| f.write(YAML.dump(state)) }
       end
@@ -91,6 +92,7 @@ module VCAP
       def prune_files
         %w{
           /var/vcap/bosh/settings.json
+          /var/vcap/bosh/state.yml
           /var/vcap/jobs
           /var/vcap/packages
           /var/vcap/sys/run

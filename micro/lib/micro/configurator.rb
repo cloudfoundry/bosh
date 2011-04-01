@@ -46,12 +46,12 @@ module VCAP
 
         unless @identity.configured?
           say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
-          exit unless agree("Micro Cloud Not Configured - Do you want to configure (y/n)?")
+          exit unless agree("Micro Cloud Not Configured - Do you want to configure? (y/n) ")
         else
           say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n\n")
 
           current_configuration
-          exit unless agree("\nRe-configure Micro Cloud? (y/n)")
+          exit unless agree("\nRe-configure Micro Cloud? (y/n): ")
         end
       end
 
@@ -78,8 +78,9 @@ module VCAP
       end
 
       def identity
-        say("\nConfigure Micro Cloud identity\n")
+        say("\nConfigure Micro Cloud identity:\n")
         choose do |menu|
+          menu.prompt = "Choose identity type: "
           menu.choice(:token) { token }
           menu.choice(:dns_wildcard_name) { dns_wildcard_name }
         end
@@ -96,8 +97,9 @@ module VCAP
       end
 
       def network
-        say("\nConfigure Micro Cloud networking")
+        say("\nConfigure Micro Cloud networking ")
         choose do |menu|
+          menu.prompt = "Network type: "
           menu.choice(:dhcp) { dhcp_network }
           menu.choice(:manual) { manual_network }
         end
@@ -129,7 +131,13 @@ module VCAP
         unless @identity.admins
           setup_admin
         end
-        @identity.install(@ip)
+        begin
+          @identity.install(@ip)
+        rescue => e
+          say("Error registering identity with cf.vcloudlabs.com (will be www.cloudfoundry.com)\n")
+          say("\nException: #{e.message}")
+          say("\nBacktrace: #{e.backtrace}")
+        end
       end
 
       def setup_admin

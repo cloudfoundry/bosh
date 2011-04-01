@@ -45,7 +45,6 @@ module VCAP
         @auth_token = @config['auth_token'] = resp['token']
 
         update_dns
-
       end
 
       def auth
