@@ -32,18 +32,12 @@ module VCAP
       end
 
       def self.start
+        Agent.config
         Bosh::Agent::Monit.enabled = true
-        Bosh::Agent::Monit..start
+        Bosh::Agent::Monit.start
       end
 
-      def initialize(identity)
-        @identity = identity
-      end
-
-      def setup
-
-        FileUtils.mkdir_p('/var/vcap/data/log')
-
+      def self.config
         settings = {
           "configure" => true,
           "logging" => { "level" => "WARN" },
@@ -53,7 +47,18 @@ module VCAP
           "blobstore_provider" => "local"
         }
         Bosh::Agent::Config.setup(settings)
+      end
+
+      def initialize(identity)
+        @identity = identity
+      end
+
+      def setup
+        FileUtils.mkdir_p('/var/vcap/data/log')
+
+        Agent.config
         Bosh::Agent::Monit.setup_monit_user
+        Agent.start
 
         load_spec
         update_spec
@@ -61,10 +66,6 @@ module VCAP
 
       def load_spec
         @spec = YAML.load_file(APPLY_SPEC)
-      end
-
-      def apply
-        Bosh::Agent::Message::Apply.process([@spec])
       end
 
       def update_spec
@@ -84,6 +85,35 @@ module VCAP
         @spec['networks'] = { "local" => { "ip" => "127.0.0.1" } }
 
         File.open(APPLY_SPEC, 'w') { |f| f.write(YAML.dump(@spec)) }
+      end
+
+      def apply
+        Bosh::Agent::Message::Apply.process([@spec])
+        monitor_start
+      end
+
+      def monitor_start
+        started = []
+
+        loop do
+          status = Bosh::Agent::Monit.retry_monit_request(:status, :group => 'vcap')
+
+          status.each do |name, data|
+            if running_service?(data)
+              unless started.include?(name)
+                puts "Started: #{name}"
+                started << name
+              end
+            end
+          end
+
+          break if status.reject { |name, data| running_service?(data) }.empty?
+          sleep 1
+        end
+      end
+
+      def running_service?(data)
+        data[:monitor] == :yes && data[:status][:message] == "running"
       end
 
     end
