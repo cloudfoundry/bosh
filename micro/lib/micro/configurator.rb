@@ -123,7 +123,7 @@ module VCAP
 
       def manual_network
         net = Hash.new
-        say("Enter network configuration (address/netmask/gateway/DNS)")
+        say("\nEnter network configuration (address/netmask/gateway/DNS)")
 
         net['address'] = ask("Address: ")
         net['netmask'] = ask("Netmask: ")
