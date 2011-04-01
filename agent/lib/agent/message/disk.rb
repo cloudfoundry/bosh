@@ -16,13 +16,19 @@ module Bosh::Agent
         logger.info("MigrateDisk:" + args.inspect)
         @old_cid, @new_cid = args
 
+        300.times do |n|
+          break if `lsof -t +D #{store_path}`.empty? && `lsof -t +D #{store_migration_target}`.empty?
+          if n == 299
+            raise Bosh::Agent::MessageHandlerError,
+              "Failed to migrate store to new disk still processes with open files"
+          end
+          sleep 1
+        end
+
+        # TODO: remount old store read-only
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
           `(cd #{store_path} && tar cf - .) | (cd #{store_migration_target} && tar xpf -)`
-        end
-
-        until `lsof -t +D #{store_path}`.empty? && `lsof -t +D #{store_migration_target}`.empty?
-          sleep 1
         end
 
         unmount_store
