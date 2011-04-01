@@ -3,7 +3,9 @@ module VCAP
     class System
       def self.mounts
         if File.blockdev?('/dev/sdb1')
-          `swapon /dev/sdb1`
+          if `swapon -s`.lines.select { |l| l.match(%r{/dev/sdb1}) }.empty?
+            `swapon /dev/sdb1`
+          end
         end
         if File.blockdev?('/dev/sdb2') && !Pathname.new('/var/vcap/data').mountpoint?
           `mount /dev/sdb2 /var/vcap/data`
