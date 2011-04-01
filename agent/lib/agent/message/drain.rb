@@ -72,9 +72,7 @@ module Bosh::Agent
         }
 
         # Drain contract: on success the drain script should return a number exit(0)
-        child = POSIX::Spawn::Child.new(env,
-                                        drain_script, job_updated, hash_updated, *updated_packages,
-                                        :unsetenv_others => true)
+        child = POSIX::Spawn::Child.new(env, drain_script, job_updated, hash_updated, *updated_packages, :unsetenv_others => true)
         result = child.out
         unless result.match(/\A\d+\Z/) && child.status.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError,
