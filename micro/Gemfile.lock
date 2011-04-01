@@ -12,10 +12,13 @@ GEM
     builder (3.0.0)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
+    crack (0.1.8)
     diff-lcs (1.1.2)
     highline (1.6.1)
     httpclient (2.1.6.1)
     mime-types (1.16)
+    monit_api (1.0.1)
+      crack
     netaddr (1.5.0)
     posix-spawn (0.3.3)
     rcov (0.9.9)
@@ -43,6 +46,7 @@ DEPENDENCIES
   blobstore_client (~> 0.3)
   ci_reporter
   highline
+  monit_api
   netaddr
   posix-spawn
   rcov
