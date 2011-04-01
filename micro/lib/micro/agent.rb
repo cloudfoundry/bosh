@@ -68,8 +68,7 @@ module VCAP
           properties = VCAP::Micro::Settings.randomize_passwords(properties)
         end
 
-        properties['cc']['external_uri'] = "api.#{subdomain}"
-        properties['cc']['index_page'] = subdomain
+        properties['domain'] = subdomain
         properties['cc']['admins'] = admins
 
         @spec['properties'] = properties
