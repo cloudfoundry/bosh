@@ -29,10 +29,8 @@ class Hash
  end
 end
 
-#class Logger
-#  BOSH_PATH = %r{\A/var/vcap/bosh/}
-#  def format_message(severity, timestamp, msg, progname)
-#    #"#{Kernel.caller[2].gsub(BOSH_PATH, '')}: [##{$$}] #{severity.upcase}: #{progname.gsub(/\n/, '').lstrip}\n"
-#    "[##{$$}] #{severity.upcase}: #{progname.gsub(/\n/, '').lstrip}\n"
-#  end
-#end
+class Logger
+  def format_message(severity, timestamp, progname, msg)
+    "#[#{$$}] #{severity.upcase}: #{msg}\n"
+  end
+end
