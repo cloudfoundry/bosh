@@ -5,6 +5,8 @@ bosh_app_dir=/var/vcap
 export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
 
+chown root:root ${bosh_app_dir}/bosh
+chmod 0700 ${bosh_app_dir}/bosh
 
 # Shady work aroud vmbuilder in combination with ubuntu iso cache corrupting
 # the debian list caches. There is s discussion in:
@@ -31,7 +33,6 @@ tar zxvf monit-5.2.4.tar.gz
   ./configure --prefix=${bosh_app_dir}/bosh
   make && make install
 )
-
 
 ruby_version="1.9.2-p180"
 tar jxvf ruby-${ruby_version}.tar.bz2
@@ -89,7 +90,5 @@ chmod 0700 ${bosh_app_dir}/bosh/etc/monitrc
 # monit refuses to start without an include file present
 mkdir -p ${bosh_app_dir}/monit
 touch ${bosh_app_dir}/monit/empty.monitrc
-
-mkdir -p ${bosh_app_dir}/sys/run
 
 cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
