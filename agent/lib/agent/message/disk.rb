@@ -97,7 +97,31 @@ module Bosh::Agent
 
         logger.info("setup disk settings: #{settings.inspect}")
 
-        if File.blockdev?(disk) && Dir["#{disk}[1-9]"].empty?
+        read_disk_attempts = 300
+        read_disk_attempts.downto(0) do |n|
+          begin
+            # Parition table is blank
+            disk_data = File.read(disk, 512)
+
+            if disk_data == "\x00"*512
+              logger.info("Found blank disk #{disk}")
+            else
+              logger.info("Disk has partition table")
+              logger.info(`sfdisk -Llq #{disk} 2> /dev/null`)
+            end
+            break
+          rescue => e
+            # Do nothing - we'll retry
+            logger.info("Re-trying reading from #{disk}")
+          end
+
+          if n == 0
+            raise Bosh::Agent::MessageHandlerError, "Unable to read from new disk"
+          end
+          sleep 1
+        end
+
+        if File.blockdev?(disk) && DiskUtil.ensure_no_partition?(disk, partition)
           full_disk = ",,L\n"
           logger.info("Partitioning #{disk}")
 
@@ -198,6 +222,33 @@ module Bosh::Agent
         def mount_entry(partition)
           File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
         end
+
+        # Pay a penalty on this check the first time a persistent disk is added to a system
+        def ensure_no_partition?(disk, partition)
+          check_count = 2
+          check_count.times do
+            if sfdisk_lookup_partition(disk, partition).empty? 
+              # keep on trying
+            else
+              if File.blockdev?(partition)
+                return false # break early if partition is there
+              end
+            end
+            sleep 1
+          end
+
+          # Double check that the /dev entry is there
+          if File.blockdev?(partition)
+            return false
+          else
+            return true
+          end
+        end
+
+        def sfdisk_lookup_partition(disk, partition)
+          `sfdisk -Llq #{disk}`.lines.select { |l| l.match(%q{/\A#{partition}.*83.*Linux}) }
+        end
+
       end
     end
 
