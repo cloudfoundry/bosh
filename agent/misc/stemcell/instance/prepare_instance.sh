@@ -68,6 +68,10 @@ chmod +x ${bosh_app_dir}/bosh/agent/bin/agent
   bundle install --path ${bosh_app_dir}/bosh/gems
 )
 
+mkdir -p ${bosh_app_dir}/bosh/log
+chown root:root ${bosh_app_dir}/bosh
+chmod 0700 ${bosh_app_dir}/bosh
+
 cp -a runit/agent /etc/sv/agent
 chmod +x /etc/sv/agent/run /etc/sv/agent/log/run
 ln -s /etc/sv/agent /etc/service/agent

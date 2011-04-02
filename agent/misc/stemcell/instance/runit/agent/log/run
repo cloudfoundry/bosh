@@ -1,2 +1,2 @@
 #!/bin/sh
-svlogd -tt .
+svlogd -tt /var/vcap/bosh/log
