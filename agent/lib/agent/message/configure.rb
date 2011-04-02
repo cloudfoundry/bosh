@@ -15,18 +15,15 @@ module Bosh::Agent
 
       # TODO: set up iptables
       def initialize(args)
-        @logger = Bosh::Agent::Config.logger
-        @base_dir = Bosh::Agent::Config.base_dir
-
-        FileUtils.mkdir_p(File.join(@base_dir, 'bosh'))
-        @settings_file = File.join(@base_dir, 'bosh', 'settings.json')
+        FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
+        @settings_file = File.join(base_dir, 'bosh', 'settings.json')
       end
 
       def configure
-        @logger.info("Configuring instance")
+        logger.info("Configuring instance")
 
         load_settings
-        @logger.info("Loaded settings: #{@settings.inspect}")
+        logger.info("Loaded settings: #{@settings.inspect}")
 
         if @settings
           update_agent_id
@@ -153,7 +150,7 @@ module Bosh::Agent
         result = template.result(binding)
         network_updated = update_file(result, '/etc/network/interfaces')
         if network_updated
-          @logger.info("Updated networking")
+          logger.info("Updated networking")
           restart_networking_service
         end
       end
@@ -162,10 +159,10 @@ module Bosh::Agent
         # ubuntu 10.04 networking startup/upstart stuff is quite borked
         @networks.each do |k, v|
           interface = v['interface']
-          @logger.info("Restarting #{interface}")
+          logger.info("Restarting #{interface}")
           output = `service network-interface stop INTERFACE=#{interface}`
           output += `service network-interface start INTERFACE=#{interface}`
-          @logger.info("Restarted networking: #{output}")
+          logger.info("Restarted networking: #{output}")
         end
       end
 
@@ -174,7 +171,7 @@ module Bosh::Agent
           until File.exist?("/sys/class/net/#{n['interface']}")
             sleep 0.1
           end
-          @logger.info("arping -c 1 -U -I #{n['interface']} #{n['ip']}")
+          logger.info("arping -c 1 -U -I #{n['interface']} #{n['ip']}")
           `arping -c 1 -U -I #{n['interface']} #{n['ip']}`
         end
       end
@@ -211,9 +208,9 @@ module Bosh::Agent
       def update_time
         ntp_servers = @settings['ntp'].join(" ")
         unless ntp_servers.empty?
-          @logger.info("Configure ntp-servers: #{ntp_servers}")
+          logger.info("Configure ntp-servers: #{ntp_servers}")
           output = `ntpdate #{ntp_servers}`
-          @logger.info(output)
+          logger.info(output)
         end
       end
 
@@ -225,26 +222,25 @@ module Bosh::Agent
         if File.blockdev?(DATA_DISK)
 
           if Dir["#{DATA_DISK}[1-9]"].empty?
-            @logger.info("Found unformatted drive")
-            @logger.info("Partition #{DATA_DISK}")
+            logger.info("Found unformatted drive")
+            logger.info("Partition #{DATA_DISK}")
             Bosh::Agent::Util.partition_disk(DATA_DISK, data_sfdisk_input)
 
-            @logger.info("Create swap and data partitions")
+            logger.info("Create swap and data partitions")
             %x[mkswap #{swap_partition}]
             %x[/sbin/mke2fs -t ext4 -j #{data_partition}]
           end
 
-          @logger.info("Swapon and mount data partition")
+          logger.info("Swapon and mount data partition")
           %x[swapon #{swap_partition}]
-          %x[mkdir -p #{@base_dir}/data]
+          %x[mkdir -p #{base_dir}/data]
 
-          data_mount = "#{@base_dir}/data"
+          data_mount = "#{base_dir}/data"
           unless Pathname.new(data_mount).mountpoint?
             %x[mount #{data_partition} #{data_mount}]
           end
 
-          %x[mkdir -p #{@base_dir}/data/log]
-          %x[ln -nsf #{@base_dir}/data/log #{@base_dir}/sys/log]
+          setup_data_sys
         end
       end
 
@@ -266,6 +262,16 @@ module Bosh::Agent
         File.readlines('/proc/meminfo').first.split(/\s+/)[1].to_i
       end
 
+      def setup_data_sys
+        %w{log run}.each do |dir|
+          path = "#{base_dir}/data/sys/#{dir}"
+          %x[mkdir -p #{path}]
+          %x[chown root:vcap #{path}]
+          %x[chmod 0750 #{path}]
+        end
+        %x[ln -nsf #{base_dir}/data/sys #{base_dir}/sys]
+      end
+
       def mount_persistent_disk
         if @settings['disks']['persistent'].keys.size > 1
           # hell on earth
@@ -277,7 +283,7 @@ module Bosh::Agent
             partition = "#{disk}1"
 
             if File.blockdev?(partition) && !DiskUtil.mount_entry(partition)
-              @logger.info("Mount #{partition} #{store_path}")
+              logger.info("Mount #{partition} #{store_path}")
               `mount #{partition} #{store_path}`
               unless $?.exitstatus == 0
                 raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path}"
