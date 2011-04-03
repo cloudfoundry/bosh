@@ -47,6 +47,8 @@ module Bosh::Agent
     end
 
     def start
+      ['TERM', 'INT', 'QUIT'].each { |s| trap(s) { shutdown } }
+
       EM.run do
         begin
           @nats = NATS.connect(:uri => @nats_uri, :autostart => false) { on_connect }
@@ -56,6 +58,11 @@ module Bosh::Agent
           retry
         end
       end
+    end
+
+    def shutdown
+      @logger.info("Exit")
+      NATS.stop { EM.stop; exit }
     end
 
     def on_connect
@@ -185,9 +192,14 @@ module Bosh::Agent
     def handle_shutdown(reply_to)
       @logger.info("Shutting down NATS connection")
       payload = {:value => "shutdown"}
+
+      if Bosh::Agent::Config.configure
+        # We should never come back up again
+        at_exit { `sv stop agent` }
+      end
+
       @nats.publish(reply_to, Yajl::Encoder.encode(payload)) {
-        @logger.info("Exit")
-        NATS.stop { EM.stop; exit }
+        shutdown
       }
     end
 

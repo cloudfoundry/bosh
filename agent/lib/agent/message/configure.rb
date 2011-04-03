@@ -35,8 +35,6 @@ module Bosh::Agent
           setup_data_disk
           Bosh::Agent::Monit.setup_monit_user
           mount_persistent_disk
-
-
         end
         { "settings" => @settings }
       end
