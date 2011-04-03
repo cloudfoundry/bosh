@@ -10,6 +10,8 @@ gem "uuidtools"
 gem "netaddr"
 gem "posix-spawn"
 
+gem 'vmc'
+
 group :test do
   gem "rcov_analyzer"
   gem "rspec", :require => ["spec", "spec/interop/test"]
