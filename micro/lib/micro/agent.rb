@@ -17,6 +17,7 @@ require 'agent/ext'
 require 'agent/util'
 require 'agent/config'
 require 'agent/version'
+require 'agent/message/base'
 require 'agent/message/apply'
 require 'agent/monit'
 
