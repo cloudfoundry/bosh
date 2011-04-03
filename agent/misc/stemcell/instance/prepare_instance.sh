@@ -97,5 +97,9 @@ touch ${bosh_app_dir}/monit/empty.monitrc
 
 cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
 
+# TODO: We really want to lock these down - but we're having issues
+# with both our components and users apps assuming this is writable
+# Tempfile and friends - we'll punt on this for 4/12 and revisit it
+# in the immediate release cycle after that.
 # Lock dowon /tmp and /var/tmp - jobs should use /var/vcap/data/tmp
-chmod 0700 /tmp /var/tmp
+# chmod 0700 /tmp /var/tmp
