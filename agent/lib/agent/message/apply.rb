@@ -1,15 +1,13 @@
 
 module Bosh::Agent
   module Message
-    class Apply
+    class Apply < Base
       def self.process(args)
         self.new(args).apply
       end
       def self.long_running?; true; end
 
       def initialize(args)
-        @logger = Bosh::Agent::Config.logger
-        @base_dir = Bosh::Agent::Config.base_dir
         @monit_api_client = Bosh::Agent::Monit.monit_api_client
 
         @apply_spec = args.first
@@ -18,20 +16,20 @@ module Bosh::Agent
         if @job
           @job_template = @job['template']
           @job_version = @job['version']
-          @job_install_dir = File.join(@base_dir, 'data', 'jobs', @job_template, @job_version)
+          @job_install_dir = File.join(base_dir, 'data', 'jobs', @job_template, @job_version)
         end
 
-        @packages_data = File.join(@base_dir, 'data', 'packages')
+        @packages_data = File.join(base_dir, 'data', 'packages')
 
         %w{ packages bosh jobs monit }.each do |dir|
-          FileUtils.mkdir_p(File.join(@base_dir, dir))
+          FileUtils.mkdir_p(File.join(base_dir, dir))
         end
 
-        @state_file = File.join(@base_dir, '/bosh/state.yml')
+        @state_file = File.join(base_dir, '/bosh/state.yml')
       end
 
       def apply
-        @logger.info("Applying: #{@apply_spec.inspect}")
+        logger.info("Applying: #{@apply_spec.inspect}")
 
         if File.exist?(@state_file)
           @state = YAML.load_file(@state_file)
@@ -75,7 +73,7 @@ module Bosh::Agent
       def apply_job
 
         unless @job
-          @logger.info("No job")
+          logger.info("No job")
           return
         end
 
@@ -83,7 +81,7 @@ module Bosh::Agent
         sha1 = @job['sha1']
         Util.unpack_blob(blobstore_id, sha1, @job_install_dir)
 
-        job_link_dst = File.join(@base_dir, 'jobs', @job_template)
+        job_link_dst = File.join(base_dir, 'jobs', @job_template)
         link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
 
         template_configurations
@@ -94,12 +92,12 @@ module Bosh::Agent
       def apply_packages
 
         if @apply_spec['packages'] == nil
-          @logger.info("No packages")
+          logger.info("No packages")
           return
         end
 
         @apply_spec['packages'].each do |pkg_name, pkg|
-          @logger.info("Installing: #{pkg.inspect}")
+          logger.info("Installing: #{pkg.inspect}")
 
           blobstore_id = pkg['blobstore_id']
           sha1 = pkg['sha1']
@@ -107,7 +105,7 @@ module Bosh::Agent
 
           Util.unpack_blob(blobstore_id, sha1, install_dir)
 
-          pkg_link_dst = File.join(@base_dir, 'packages', pkg['name'])
+          pkg_link_dst = File.join(base_dir, 'packages', pkg['name'])
           job_pkg_link_dst = File.join(@job_install_dir, 'packages', pkg['name'])
 
           [ pkg_link_dst, job_pkg_link_dst ].each do |dst|
@@ -165,7 +163,7 @@ module Bosh::Agent
             fh.write(template.result(Util.config_binding(@apply_spec)))
           end
 
-          monit_link = File.join(@base_dir, 'monit', "#{@job_template}.monitrc")
+          monit_link = File.join(base_dir, 'monit', "#{@job_template}.monitrc")
 
           link_installed(out_file, monit_link, "Failed to link monit file: #{out_file} #{monit_link}" )
 
