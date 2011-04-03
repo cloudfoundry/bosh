@@ -1,0 +1,12 @@
+---
+roles:
+  - director:   172.31.49.128
+  - postgresql: 172.31.49.128
+  - redis:      172.31.50.10
+  - nats:       172.31.50.10
+  - blobstore:  172.31.50.10
+user: vcap
+paths:
+  repo_cache: /var/vcap/deploy/repos
+  cookbooks: /var/vcap/deploy/cookbooks
+  chef: /var/vcap/deploy/chef
