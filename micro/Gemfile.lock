@@ -16,6 +16,7 @@ GEM
     diff-lcs (1.1.2)
     highline (1.6.1)
     httpclient (2.1.6.1)
+    json_pure (1.5.1)
     mime-types (1.16)
     monit_api (1.0.1)
       crack
@@ -35,7 +36,15 @@ GEM
     rspec-expectations (2.1.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.1.0)
+    rubyzip2 (2.0.1)
+    terminal-table (1.4.2)
     uuidtools (2.1.1)
+    vmc (0.2.6)
+      highline (~> 1.6.1)
+      json_pure (~> 1.5.1)
+      rest-client (< 1.7.0, >= 1.6.1)
+      rubyzip2 (~> 2.0.1)
+      terminal-table (~> 1.4.2)
     xml-simple (1.0.13)
     yajl-ruby (0.7.8)
 
@@ -54,4 +63,5 @@ DEPENDENCIES
   rest-client
   rspec
   uuidtools
+  vmc
   yajl-ruby
