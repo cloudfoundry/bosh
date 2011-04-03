@@ -71,7 +71,6 @@ module Bosh::Agent
       end
 
       def apply_job
-
         unless @job
           logger.info("No job")
           return
@@ -85,6 +84,10 @@ module Bosh::Agent
         link_installed(@job_install_dir, job_link_dst, "Failed to link job: #{@job_install_dir} #{job_link_dst}")
 
         template_configurations
+
+        if Bosh::Agent::Config.configure
+          harden_job_permissions
+        end
 
         FileUtils.mkdir_p(File.join(@job_install_dir, 'packages'))
       end
@@ -144,6 +147,11 @@ module Bosh::Agent
             FileUtils.chmod(0755, out_file)
           end
         end
+      end
+
+      def harden_job_permissions
+        FileUtils.chown_R('root', BOSH_APP_USER, @job_install_dir)
+        %x[chmod -R o-rwx #{@job_install_dir}]
       end
 
       def post_install_hook
