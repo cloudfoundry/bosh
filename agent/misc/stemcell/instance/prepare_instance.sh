@@ -96,3 +96,6 @@ mkdir -p ${bosh_app_dir}/monit
 touch ${bosh_app_dir}/monit/empty.monitrc
 
 cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
+
+# Lock dowon /tmp and /var/tmp - jobs should use /var/vcap/data/tmp
+chmod 0700 /tmp /var/tmp
