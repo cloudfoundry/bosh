@@ -100,10 +100,15 @@ module Bosh::Agent
             end
           else
             payload = process(processor, args)
-            publish(reply_to, payload)
-            if Config.configure && method == "prepare_network_change"
-              post_prepare_network_change
+
+            if Config.configure && method == 'prepare_network_change'
+              @nats.publish(reply_to, Yajl::Encoder.encode(payload)) {
+                post_prepare_network_change
+              }
+            else
+              publish(reply_to, payload)
             end
+
           end
         }
       elsif method == "get_task"
