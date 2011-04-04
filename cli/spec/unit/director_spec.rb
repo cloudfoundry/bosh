@@ -91,6 +91,11 @@ describe Bosh::Cli::Director do
       @director.get_release("foo")
     end
 
+    it "gets deployment info" do
+      @director.should_receive(:get).with("/deployments/foo", "application/json").and_return([200, JSON.generate([]), { }])
+      @director.get_deployment("foo")
+    end
+
     it "deletes stemcell" do
       @director.should_receive(:request_and_track).with(:delete, "/stemcells/ubuntu/123", nil, nil).and_return(true)
       @director.delete_stemcell("ubuntu", "123")

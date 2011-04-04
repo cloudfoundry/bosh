@@ -434,7 +434,7 @@ module Bosh::Director
           missing_default_properties = NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.dup
           @default_network.each_key { |key| missing_default_properties.delete(key) }
           unless missing_default_properties.empty?
-            raise "Job #{@name} must specify a default networks for '#{missing_default_properties.to_a.sort.join(", ")}' " +
+            raise "Job #{@name} must specify a default network for '#{missing_default_properties.to_a.sort.join(", ")}' " +
                       "since it has more than one network configured"
           end
         else

@@ -69,7 +69,8 @@ describe Bosh::Director::Controller do
         "uuid"    => Bosh::Director::Config.uuid,
         "user"    => "admin"
       }
-      last_response.body.should == Yajl::Encoder.encode(expected)
+
+      Yajl::Parser.parse(last_response.body).should == expected
     end
 
   end
@@ -194,6 +195,17 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "getting deployment info" do
+      it "returns manifest" do
+        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
+        get "/deployments/test_deployment"
+
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+        YAML.load(body["manifest"]).should == { "foo" => "bar" }
+      end
+    end
+
     describe "getting release info" do
       it "returns versions" do
         release = Bosh::Director::Models::Release.create(:name => "test_release")
@@ -210,7 +222,7 @@ describe Bosh::Director::Controller do
       end
 
       it "returns packages and jobs" do
-        pending "TBD soon"
+        pending "TBD"
       end
     end
 
