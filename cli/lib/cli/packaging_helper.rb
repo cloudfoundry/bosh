@@ -10,12 +10,12 @@ module Bosh
       end
 
       def use_final_version
-        say "Looking for final version of `#{name}'"
+        say "Final version:", " "
 
         item = @final_index[fingerprint]
 
         if item.nil?
-          say "Final version of `#{name}' not found"
+          say "NOT FOUND".red
           return nil
         end
 
@@ -23,7 +23,7 @@ module Bosh
         version      = item["version"]
 
         if blobstore_id.nil?
-          say "No blobstore id for `#{name}' (#{version})"
+          say "No blobstore id".red
           return nil
         end
 
@@ -31,18 +31,18 @@ module Bosh
         need_fetch = true
 
         if File.exists?(filename)
-          say "Found final version `#{name}' (#{version}) in local cache"
+          say "FOUND LOCAL".green
           if file_checksum(filename) == item["sha1"]
             @tarball_path = filename
             need_fetch = false
           else
-            say "Corrupted final version of `#{name}', need to re-fetch"
+            say "LOCAL CHECKSUM MISMATCH".red
             need_fetch = true
           end
         end
 
         if need_fetch
-          say "Fetching `#{name}' (final version #{version}) from blobstore (#{blobstore_id})"
+          say "Downloading `#{name} (#{version})' (#{blobstore_id})".green
           payload = @blobstore.get(blobstore_id)
           if Digest::SHA1.hexdigest(payload) == item["sha1"]
             @tarball_path = @final_index.add_version(fingerprint, item, payload)
@@ -60,11 +60,11 @@ module Bosh
       end
 
       def use_dev_version
-        say "Looking for dev version of `#{name}'"
+        say "Dev version:", "   "
         item = @dev_index[fingerprint]
 
         if item.nil?
-          say "Dev version of `#{name}' not found"
+          say "NOT FOUND".red
           return nil
         end
 
@@ -72,9 +72,9 @@ module Bosh
         filename = @dev_index.filename(version)
 
         if File.exists?(filename)
-          say "Found dev version `#{name}' (#{version}) in local cache"
+          say "FOUND LOCAL".green
         else
-          say "Tarball for `#{name}' (dev version `#{version}') not found"
+          say "TARBALL MISSING".red
           return nil
         end
 
@@ -82,7 +82,7 @@ module Bosh
           @tarball_path = filename
           @version      = version
         else
-          say "Corrupted dev version of `#{name}', need to re-generate"
+          say "`#{name} (#{version})' tarball corrupted".red
           return nil
         end
       end
@@ -101,7 +101,7 @@ module Bosh
         version  = "#{major}.#{minor}-dev"
         tmp_file = Tempfile.new(name)
 
-        say "Generating `#{name}' (dev version #{version})"
+        say "Generating..."
 
         copy_files
 
@@ -120,23 +120,23 @@ module Bosh
         @tarball_path   = @dev_index.filename(version)
         @version        = version
 
-        say "Generated `#{name}' (dev version #{version}): `#{@tarball_path}'"
+        say "Generated version #{version}".green
         true
       end
 
       def upload_tarball(path)
         item = @final_index[fingerprint]
 
+        say "Uploading final version #{version}..."
+
         if !item.nil?
           version = item["version"]
-          say "`#{name}' (final version #{version}) already uploaded"
+          say "This package has already been uploaded"
           return
         end
 
         version = @final_index.latest_version.to_i + 1
         payload = File.read(path)
-
-        say "Uploading `#{path}' as `#{name}' (final version #{version})"
 
         blobstore_id = @blobstore.create(payload)
 
@@ -145,7 +145,7 @@ module Bosh
           "version"      => version
         }
 
-        say "`#{name}' (final version #{version}) uploaded, blobstore id #{blobstore_id}"
+        say "Uploaded, blobstore id #{blobstore_id}"
         @final_index.add_version(fingerprint, item, payload)
         @tarball_path = @final_index.filename(version)
         @version      = version

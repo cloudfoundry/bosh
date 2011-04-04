@@ -1,6 +1,16 @@
 module BoshExtensions
-  def say(message)
-    Bosh::Cli::Config.output.puts(message) if Bosh::Cli::Config.output
+  def say(message, sep = "\n")
+    return unless Bosh::Cli::Config.output && message
+    message = message.dup.to_s
+    sep = "" if message[-1..-1] == sep
+    Bosh::Cli::Config.output.print("#{@indent}#{message}#{sep}")
+  end
+
+  def with_indent(indent, &block)
+    old_indent, @indent = @indent, old_indent.to_s + indent.to_s
+    yield
+  ensure
+    @indent = old_indent
   end
 
   def header(message, filler = '-')
@@ -19,6 +29,21 @@ module BoshExtensions
 
   def blank?
     self.to_s.blank?
+  end
+
+  def pretty_size(what, prec=1)
+    size = \
+    if what.is_a?(String) && File.exists?(what)
+      File.size(what)
+    else
+      what.to_i
+    end
+
+    return 'NA' unless size
+    return "#{size}B" if size < 1024
+    return sprintf("%.#{prec}fK", size/1024.0) if size < (1024*1024)
+    return sprintf("%.#{prec}fM", size/(1024.0*1024.0)) if size < (1024*1024*1024)
+    return sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
   end
 end
 

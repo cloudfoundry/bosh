@@ -48,7 +48,9 @@ module Bosh::Cli
     end
 
     def build
-      use_final_version || use_dev_version || generate_tarball
+      with_indent("  ") do
+        use_final_version || use_dev_version || generate_tarball
+      end
       upload_tarball(@tarball_path) if final_build?
     end
 
@@ -128,7 +130,7 @@ module Bosh::Cli
 
       if File.exists?(pre_packaging_script)
 
-        say("Found pre-packaging script for `#{name}'")
+        say("Pre-packaging...")
         FileUtils.cp(pre_packaging_script, build_dir, :preserve => true)
 
         old_env = ENV
@@ -139,7 +141,9 @@ module Bosh::Cli
 
           in_build_dir do
             pre_packaging_out = `bash -x pre_packaging 2>&1`
-            say pre_packaging_out
+            pre_packaging_out.split("\n").each do |line|
+              say "> #{line}"
+            end
             raise InvalidPackage, "`#{name}' pre-packaging failed" unless $?.exitstatus == 0
           end
 

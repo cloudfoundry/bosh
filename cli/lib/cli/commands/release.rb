@@ -165,7 +165,7 @@ module Bosh::Cli::Command
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
 
         package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, blobstore)
-        header "Building #{package.name.green}..."
+        say "Building #{package.name.green}..."
         package.build
 
         packages << package
@@ -227,6 +227,7 @@ module Bosh::Cli::Command
       builder.build
 
       say("Built release #{builder.version} at '#{builder.tarball_path}'")
+      say("Release size: #{pretty_size(builder.tarball_path)}")
       if sparse
         say("Please note that this release is sparse and probably is only useful with your current target director".red)
       end
