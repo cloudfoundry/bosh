@@ -80,6 +80,7 @@ module VCAP
         end
 
         properties['domain'] = subdomain
+        properties['cc']['srv_api_uri'] = "http://api.#{subdomain}"
         properties['cc']['admins'] = admins
 
         @spec['properties'] = properties
