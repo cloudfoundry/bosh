@@ -75,7 +75,7 @@ module VCAP
 
         properties = state['properties']
         state['properties'] = VCAP::Micro::Settings.randomize_passwords(properties)
-        state['properties']['admins'] = ['micro@vcap.me']
+        state['properties']['cc']['admins'] = ['micro@vcap.me']
 
         File.open('/var/vcap/micro/apply_spec.yml', 'w') { |f| f.write(YAML.dump(state)) }
       end

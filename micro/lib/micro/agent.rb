@@ -97,7 +97,7 @@ module VCAP
         started = []
 
         loop do
-          status = Bosh::Agent::Monit.retry_monit_request(:status, :group => 'vcap')
+          status = Bosh::Agent::Monit.retry_monit_request(:status)
 
           status.each do |name, data|
             if running_service?(data)
