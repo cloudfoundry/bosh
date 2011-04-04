@@ -83,6 +83,10 @@ module VCAP
         properties['cc']['srv_api_uri'] = "http://api.#{subdomain}"
         properties['cc']['admins'] = admins
 
+        if @identity.proxy.match(/\Ahttp/)
+          properties['env']['http_proxy'] = @identity.proxy
+        end
+
         @spec['properties'] = properties
         @spec['networks'] = { "local" => { "ip" => "127.0.0.1" } }
 

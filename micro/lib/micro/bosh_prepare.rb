@@ -71,11 +71,13 @@ module VCAP
 
       def prune_apply_spec
         state = YAML.load_file('/var/vcap/bosh/state.yml')
-        %w{resource_pool networks }.each { |key| state.delete(key )}
+        %w{resource_pool networks }.each { |key| state.delete(key) }
 
         properties = state['properties']
         state['properties'] = VCAP::Micro::Settings.randomize_passwords(properties)
         state['properties']['cc']['admins'] = ['micro@vcap.me']
+
+        %w{http_proxy https_proxy}.each { |key| state['properties']['env'].delete(key) }
 
         File.open('/var/vcap/micro/apply_spec.yml', 'w') { |f| f.write(YAML.dump(state)) }
       end
