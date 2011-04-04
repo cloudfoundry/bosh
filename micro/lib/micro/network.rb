@@ -63,7 +63,7 @@ module VCAP
       end
 
       def restart
-        `service network-interface stop INTERFACE=eth0`
+        `service network-interface stop INTERFACE=eth0 2>/dev/null`
         `service network-interface start INTERFACE=eth0`
       end
 
