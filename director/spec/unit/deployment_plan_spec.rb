@@ -422,7 +422,7 @@ describe Bosh::Director::DeploymentPlan do
 
       lambda {
         Bosh::Director::DeploymentPlan.new(manifest)
-      }.should raise_error("Job job_a must specify a default networks for 'dns, gateway' since it has more than " +
+      }.should raise_error("Job job_a must specify a default network for 'dns, gateway' since it has more than " +
                                "one network configured")
     end
 

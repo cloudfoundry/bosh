@@ -216,6 +216,18 @@ module Bosh::Director
       Yajl::Encoder.encode(deployments)
     end
 
+    get "/deployments/:name" do
+      name       = params[:name].to_s.strip
+      deployment = Models::Deployment.find(:name => name)
+      raise DeploymentNotFound.new(name) if deployment.nil?
+
+      result = {
+        "manifest" => deployment.manifest
+      }
+
+      Yajl::Encoder.encode(result)
+    end
+
     delete "/deployments/:name" do
       deployment = Models::Deployment[:name => params[:name]]
       raise DeploymentNotFound.new(params[:name]) if deployment.nil?
