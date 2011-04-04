@@ -65,7 +65,7 @@ module Bosh::Cli
 
     def copy_packages
       (packages - packages_to_skip).each do |package|
-        say "Copying #{package.tarball_path}..."
+       say "%-40s %s" % [ package.name.green, pretty_size(package.tarball_path) ]
         FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"), :preserve => true)
       end
       @packages_copied = true
@@ -73,7 +73,7 @@ module Bosh::Cli
 
     def copy_jobs
       (jobs - jobs_to_skip).each do |job|
-        say "Copying #{job.tarball_path}..."
+        say "%-40s %s" % [ job.name.green, pretty_size(job.tarball_path) ]
         FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"), :preserve => true)
       end
       @jobs_copied = true
@@ -114,7 +114,8 @@ module Bosh::Cli
         say "Looks like this version is no different from version #{old_version}"
         if @index.version_exists?(old_version)
           @reused_old_version = true
-          say("Found matching version %s: %s".green % [ old_version, @index.filename(old_version) ])
+          fn = @index.filename(old_version)
+          say("Found matching version %s: %s, size is %s".green % [ old_version, fn, pretty_size(fn) ])
           quit
         else
           say "Cannot find tarball for version #{old_version}, generating a new one..."

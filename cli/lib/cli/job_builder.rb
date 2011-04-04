@@ -67,7 +67,9 @@ module Bosh::Cli
     end
 
     def build
-      use_final_version || use_dev_version || generate_tarball
+      with_indent("  ") do
+        use_final_version || use_dev_version || generate_tarball
+      end
       upload_tarball(@tarball_path) if final?
     end
 
