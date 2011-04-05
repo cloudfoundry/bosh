@@ -33,6 +33,7 @@ module VCAP
 
           @ip = VCAP::Micro::Network.local_ip
           install_identity
+          setup_admin
           install_micro
 
           @identity.save
@@ -138,9 +139,6 @@ module VCAP
       end
 
       def install_identity
-        unless @identity.admins
-          setup_admin
-        end
         begin
           @identity.install(@ip)
         rescue => e
@@ -151,8 +149,13 @@ module VCAP
       end
 
       def setup_admin
-        admin_email = ask("\nAdmin email: ")
-        @identity.admins = [ admin_email.split(',') ]
+        admin_email = ask("\nAdmin email (#{@identity.admins.first}): ")
+
+        # One day we'll grow up and validate email addresses - just not today
+        if admin_email.match(/@/)
+          @identity.admins = [ admin_email.split(',') ]
+        end
+        say("\n")
       end
 
       def install_micro
