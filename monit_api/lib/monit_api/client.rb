@@ -77,6 +77,16 @@ module MonitApi
       result
     end
 
+    def monit_info
+      status = get_status
+      monit_status = status["monit"]
+      {
+        :id => monit_status["id"],
+        :incarnation => monit_status["incarnation"],
+        :version => monit_status["version"]
+      }
+    end
+
     private
 
     def get_status

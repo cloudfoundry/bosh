@@ -90,6 +90,18 @@ describe MonitApi::Client do
     end
   end
 
+  describe "monit_info" do
+    it "should return id, incarnation, and version" do
+      client = MonitApi::Client.new("http://localhost:123")
+      client.stub!(:get_status).and_return(STATUS)
+      client.monit_info.should ==  {
+        :id=>"946bd13e5c851e91698f1160754ef1a0",
+        :incarnation=>"1299869457",
+        :version=>"5.2.1"
+      }
+    end
+  end
+
   describe "get_services" do
     it "should select all services" do
       client = MonitApi::Client.new("http://localhost:123")
