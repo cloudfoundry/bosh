@@ -485,7 +485,7 @@ module VSphereCloud
 
       if stemcell_datastore != datastore.mob
         @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
-        local_stemcell_name    = "#{stemcell} / #{datastore.mob}"
+        local_stemcell_name    = "#{stemcell} / #{datastore.mob.__mo_id__}"
         local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
                                   local_stemcell_name]
         replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
