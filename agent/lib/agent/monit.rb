@@ -69,25 +69,39 @@ module Bosh::Agent
       end
 
       def reload
+        old = retry_monit_request { |client| client.monit_info }
+        logger.info("Monit: old incarnation #{old[:incarnation]}")
         `#{monit_bin} reload`
+        logger.info("Monit: reload")
+
+        # We'll try for about a minute to get new Monit incarnation after reload
+        attempts = 60
+        attempts.times do
+          check = retry_monit_request { |client| client.monit_info }
+          if old[:incarnation].to_i < check[:incarnation].to_i
+            logger.info("Monit: updated incarnation #{check[:incarnation]}")
+            break
+          end
+          sleep 1
+        end
       end
 
       def unmonitor_services
-        retry_monit_request(:unmonitor)
+        retry_monit_request { |client| client.unmonitor(:group => BOSH_APP_GROUP) }
       end
 
       def monitor_services
-        retry_monit_request(:monitor)
+        retry_monit_request { |client| client.monitor(:group => BOSH_APP_GROUP) }
       end
 
       def start_services
-        retry_monit_request(:start, 20)
+        retry_monit_request(20) { |client| client.start(:group => BOSH_APP_GROUP) }
       end
 
-      def retry_monit_request(request, attempts=10)
+      def retry_monit_request(attempts=10)
         # HACK: Monit becomes unresponsive after reload
         begin
-          monit_api_client.send(request, :group => BOSH_APP_GROUP)
+          yield monit_api_client if block_given?
         rescue Errno::ECONNREFUSED, TimeoutError
           sleep 1
           logger.info("Monit Service Connection Refused: retrying")
