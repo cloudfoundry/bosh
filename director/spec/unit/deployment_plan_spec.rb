@@ -422,7 +422,8 @@ describe Bosh::Director::DeploymentPlan do
 
       lambda {
         Bosh::Director::DeploymentPlan.new(manifest)
-      }.should raise_error("Job job_a must specify a default networks for 'gateway, dns' since it has more than one network configured")
+      }.should raise_error("Job job_a must specify a default networks for 'dns, gateway' since it has more than " +
+                               "one network configured")
     end
 
     it "should fail if more than one default network was configured" do
@@ -986,7 +987,8 @@ describe Bosh::Director::DeploymentPlan do
         "version" => "1",
         "sha1" => "job-sha1",
         "blobstore_id" => "template_blob"
-      }
+      },
+      "job_state" => "running"
     }
 
     before(:each) do
@@ -1018,6 +1020,7 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_false
       @instance.persistent_disk_changed?.should be_false
       @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_false
       @instance.changed?.should be_false
     end
 
@@ -1032,6 +1035,22 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_false
       @instance.persistent_disk_changed?.should be_false
       @instance.job_changed?.should be_true
+      @instance.job_state_changed?.should be_false
+      @instance.changed?.should be_true
+    end
+
+    it "should track instance changes compared to the current state (job state change)" do
+      current_state = CURRENT_STATE._deep_copy
+      current_state["job_state"] = "failing"
+      @instance.current_state = current_state
+
+      @instance.networks_changed?.should be_false
+      @instance.resource_pool_changed?.should be_false
+      @instance.configuration_changed?.should be_false
+      @instance.packages_changed?.should be_false
+      @instance.persistent_disk_changed?.should be_false
+      @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_true
       @instance.changed?.should be_true
     end
 
@@ -1046,6 +1065,7 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_false
       @instance.persistent_disk_changed?.should be_false
       @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_false
       @instance.changed?.should be_true
     end
 
@@ -1060,6 +1080,7 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_false
       @instance.persistent_disk_changed?.should be_false
       @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_false
       @instance.changed?.should be_true
     end
 
@@ -1074,6 +1095,7 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_false
       @instance.persistent_disk_changed?.should be_false
       @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_false
       @instance.changed?.should be_true
     end
 
@@ -1088,6 +1110,7 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_true
       @instance.persistent_disk_changed?.should be_false
       @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_false
       @instance.changed?.should be_true
     end
 
@@ -1102,6 +1125,7 @@ describe Bosh::Director::DeploymentPlan do
       @instance.packages_changed?.should be_false
       @instance.persistent_disk_changed?.should be_true
       @instance.job_changed?.should be_false
+      @instance.job_state_changed?.should be_false
       @instance.changed?.should be_true
     end
 
