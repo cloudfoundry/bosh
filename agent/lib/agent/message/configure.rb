@@ -36,6 +36,7 @@ module Bosh::Agent
           setup_tmp
           Bosh::Agent::Monit.setup_monit_user
           mount_persistent_disk
+          harden_permissions
         end
         { "settings" => @settings }
       end
@@ -316,6 +317,34 @@ module Bosh::Agent
             end
 
           end
+        end
+      end
+
+      def harden_permissions
+        setup_cron_at_allow
+
+        root_app_user_rw = %w{
+          /dev/shm
+        }
+        root_app_user_rw.each do |path|
+          %x[chmod 0770 #{path}]
+          %x[chown root:#{BOSH_APP_USER} #{path}]
+        end
+
+        root_rw_app_user_read = %w{
+          /etc/cron.allow
+          /etc/at.allow
+        }
+        root_rw_app_user_read.each do |path|
+          %x[chmod 0640 #{path}]
+          %x[chown root:#{BOSH_APP_USER} #{path}]
+        end
+
+      end
+
+      def setup_cron_at_allow
+        %w{/etc/cron.allow /etc/at.allow}.each do |file|
+          File.open(file, 'w') { |fh| fh.puts(BOSH_APP_USER) }
         end
       end
 
