@@ -103,3 +103,8 @@ cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
 # in the immediate release cycle after that.
 # Lock dowon /tmp and /var/tmp - jobs should use /var/vcap/data/tmp
 chmod 0770 /tmp /var/tmp
+
+# remove setuid binaries - except su/sudo (sudoedit is hardlinked)
+find / -xdev -perm +6000 -a -type f \
+  -a -not \( -name sudo -o -name su -o -name sudoedit \) \
+  -exec chmod ug-s {} \;
