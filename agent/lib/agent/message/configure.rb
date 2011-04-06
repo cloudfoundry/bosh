@@ -325,6 +325,7 @@ module Bosh::Agent
 
         root_app_user_rw = %w{
           /dev/shm
+          /var/lock
         }
         root_app_user_rw.each do |path|
           %x[chmod 0770 #{path}]
