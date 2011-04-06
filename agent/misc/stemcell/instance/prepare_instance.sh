@@ -102,4 +102,4 @@ cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
 # Tempfile and friends - we'll punt on this for 4/12 and revisit it
 # in the immediate release cycle after that.
 # Lock dowon /tmp and /var/tmp - jobs should use /var/vcap/data/tmp
-# chmod 0700 /tmp /var/tmp
+chmod 0770 /tmp /var/tmp
