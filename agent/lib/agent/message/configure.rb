@@ -33,6 +33,7 @@ module Bosh::Agent
           setup_networking
           update_time
           setup_data_disk
+          setup_tmp
           Bosh::Agent::Monit.setup_monit_user
           mount_persistent_disk
         end
@@ -268,6 +269,32 @@ module Bosh::Agent
           %x[chmod 0750 #{path}]
         end
         %x[ln -nsf #{base_dir}/data/sys #{base_dir}/sys]
+      end
+
+      def setup_tmp
+        # first time: for /tmp on the root fs
+        tmp_permissions
+
+        unless Pathname.new('/tmp').mountpoint?
+          tmp_size = 512
+          root_tmp = File.join(base_dir, 'data', 'root_tmp')
+
+          # If it's not mounted on /tmp - we don't care - blow it away
+          %x[dd if=/dev/zero of=#{root_tmp} bs=1M count=#{tmp_size}]
+          %x[chmod 0700 #{root_tmp}]
+          %x[mke2fs -t ext4 -m 1 -F #{root_tmp}]
+
+          %x[mount -t ext4 -o loop #{root_tmp} /tmp]
+
+          # 2nd time for the new /tmp mount
+          tmp_permissions
+        end
+      end
+
+      def tmp_permissions
+        %x[chown root:#{BOSH_APP_USER} /tmp]
+        %x[chmod 0770 /tmp]
+        %x[chmod 0700 /var/tmp]
       end
 
       def mount_persistent_disk
