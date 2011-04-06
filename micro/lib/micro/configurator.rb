@@ -21,6 +21,12 @@ module VCAP
           clear
 
           if @identity.configured?
+            current_ip = VCAP::Micro::Network.local_ip
+
+            unless current_ip == @identity.ip
+              @identity.install(current_ip)
+            end
+
             VCAP::Micro::Agent.start
           end
 
