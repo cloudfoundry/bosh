@@ -22,6 +22,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
     @resource_pool_spec.stub!(:name).and_return("test")
     @resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
+    @resource_pool_spec.stub!(:env).and_return({})
     @resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
   end
 
@@ -55,7 +56,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.stub!(:vm).and_return(nil)
 
     @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
-                                           {"network_a" => {"ip" => "1.2.3.4"}}).and_return("vm-1")
+                                           {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-1")
 
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
 
@@ -121,7 +122,7 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     @cloud.should_receive(:delete_vm).with("vm-1")
     @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
-                                           {"ip" => "1.2.3.4"}).and_return("vm-2")
+                                           {"ip" => "1.2.3.4"}, nil, {}).and_return("vm-2")
 
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
 

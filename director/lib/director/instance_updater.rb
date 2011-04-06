@@ -61,7 +61,8 @@ module Bosh::Director
 
         agent_id = generate_agent_id
         vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
-                                 @instance_spec.network_settings, @instance.disk_cid)
+                                 @instance_spec.network_settings, @instance.disk_cid,
+                                 @resource_pool_spec.env)
 
         @vm = Models::Vm.new
         @vm.deployment = @deployment_plan.deployment
