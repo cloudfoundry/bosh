@@ -133,7 +133,7 @@ module Bosh::Director
     end
 
     error do
-      exception = request.env['sinatra.error']
+      exception = request.env["sinatra.error"]
       if exception.kind_of?(DirectorError)
         @logger.debug("Request failed with response code: #{exception.response_code} error code: " +
                          "#{exception.error_code} error: #{exception.message}")
@@ -175,7 +175,7 @@ module Bosh::Director
     end
 
     post "/releases", :consumes => :tgz do
-      task = @release_manager.create_release(request.body)
+      task = @release_manager.create_release(@user, request.body)
       redirect "/tasks/#{task.id}"
     end
 
@@ -197,12 +197,12 @@ module Bosh::Director
       options = {}
       options["force"] = true if params["force"] == "true"
 
-      task = @release_manager.delete_release(release, options)
+      task = @release_manager.delete_release(@task, release, options)
       redirect "/tasks/#{task.id}"
     end
 
     post "/deployments", :consumes => :yaml do
-      task = @deployment_manager.create_deployment(request.body)
+      task = @deployment_manager.create_deployment(@task, request.body)
       redirect "/tasks/#{task.id}"
     end
 
@@ -231,7 +231,7 @@ module Bosh::Director
     delete "/deployments/:name" do
       deployment = Models::Deployment[:name => params[:name]]
       raise DeploymentNotFound.new(params[:name]) if deployment.nil?
-      task = @deployment_manager.delete_deployment(deployment)
+      task = @deployment_manager.delete_deployment(@task, deployment)
       redirect "/tasks/#{task.id}"
     end
 
@@ -239,7 +239,7 @@ module Bosh::Director
     # TODO: stop, start, restart jobs/instances
 
     post "/stemcells", :consumes => :tgz do
-      task = @stemcell_manager.create_stemcell(request.body)
+      task = @stemcell_manager.create_stemcell(@task, request.body)
       redirect "/tasks/#{task.id}"
     end
 
@@ -257,7 +257,7 @@ module Bosh::Director
     delete "/stemcells/:name/:version" do
       stemcell = Models::Stemcell[:name => params[:name], :version => params[:version]]
       raise StemcellNotFound.new(params[:name], params[:version]) if stemcell.nil?
-      task = @stemcell_manager.delete_stemcell(stemcell)
+      task = @stemcell_manager.delete_stemcell(@task, stemcell)
       redirect "/tasks/#{task.id}"
     end
 

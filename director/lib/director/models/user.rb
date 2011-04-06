@@ -1,4 +1,4 @@
-module Bosh::Director::Models
+  module Bosh::Director::Models
   class User < Sequel::Model
     def validate
       validates_presence :username
