@@ -91,7 +91,8 @@ module Bosh::Director
 
       agent_id = generate_agent_id
       vm_cid = @cloud.create_vm(agent_id, @resource_pool.stemcell.stemcell.cid,
-                                @resource_pool.cloud_properties, idle_vm.network_settings)
+                                @resource_pool.cloud_properties, idle_vm.network_settings, nil,
+                                @resource_pool.env)
 
       vm = Models::Vm.create(:deployment => @resource_pool.deployment.deployment, :agent_id => agent_id, :cid => vm_cid)
       # TODO: delete the VM if it wasn't saved

@@ -68,6 +68,7 @@ describe Bosh::Director::PackageCompiler do
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
+      @compilation_config.stub!(:env).and_return({})
 
       @network.should_receive(:allocate_dynamic_ip).and_return(255)
       @network.should_receive(:network_settings).with(255, ["dns", "gateway"]).and_return({"ip" => "1.2.3.4"})
@@ -76,7 +77,7 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-1").and_return(agent)
 
       @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
-                                             {"network_a" => {"ip" => "1.2.3.4"}}).and_return("vm-1")
+                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-1")
       agent.should_receive(:wait_until_ready)
       agent.should_receive(:apply).with(({"resource_pool" => "package_compiler",
                                           "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
@@ -132,6 +133,7 @@ describe Bosh::Director::PackageCompiler do
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
+      @compilation_config.stub!(:env).and_return({})
 
       @network.should_receive(:allocate_dynamic_ip).and_return(255)
       @network.should_receive(:network_settings).with(255, ["dns", "gateway"]).and_return({"ip" => "1.2.3.4"})
@@ -140,7 +142,7 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-a").and_return(agent_a)
 
       @cloud.should_receive(:create_vm).with("agent-a", "stemcell-id", {"ram" => "2gb"},
-                                             {"network_a" => {"ip" => "1.2.3.4"}}).and_return("vm-1")
+                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-1")
       agent_a.should_receive(:wait_until_ready)
       agent_a.should_receive(:apply).with(({"resource_pool" => "package_compiler",
                                             "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
@@ -158,7 +160,7 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-b").and_return(agent_b)
 
       @cloud.should_receive(:create_vm).with("agent-b", "stemcell-id", {"ram" => "2gb"},
-                                             {"network_a" => {"ip" => "1.2.3.4"}}).and_return("vm-2")
+                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-2")
 
       agent_b.should_receive(:wait_until_ready)
       agent_b.should_receive(:apply).with(({"resource_pool" => "package_compiler",

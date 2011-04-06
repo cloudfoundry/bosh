@@ -62,6 +62,8 @@ module Bosh::Director
       attr_accessor :stemcell
       attr_accessor :network
       attr_accessor :cloud_properties
+      attr_accessor :env
+      attr_accessor :env_hash
       attr_accessor :size
       attr_accessor :idle_vms
       attr_accessor :allocated_vms
@@ -77,6 +79,9 @@ module Bosh::Director
         network_name = safe_property(resource_pool_spec, "network", :class => String)
         @network = @deployment.network(network_name)
         raise "Resource pool '#{@name}' references an unknown network: '#{network_name}'" if @network.nil?
+
+        @env = safe_property(resource_pool_spec, "env", :class => Hash, :optional => true) || {}
+        @env_hash = Digest::SHA1.new(Yajl::Encoder.encode(@env.sort)).hexdigest
 
         @idle_vms = []
         @allocated_vms = []
@@ -664,6 +669,7 @@ module Bosh::Director
       attr_accessor :workers
       attr_accessor :network
       attr_accessor :cloud_properties
+      attr_accessor :env
 
       def initialize(deployment, compilation_config)
         @deployment = deployment
@@ -672,6 +678,7 @@ module Bosh::Director
         @network = deployment.network(network_name)
         raise "Compilation workers reference an unknown network: '#{network_name}'" if @network.nil?
         @cloud_properties = safe_property(compilation_config, "cloud_properties", :class => Hash)
+        @env = safe_property(compilation_config, "env", :class => Hash, :optional => true) || {}
       end
     end
 

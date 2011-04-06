@@ -117,7 +117,7 @@ module VSphereCloud
       end
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
+    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         memory = resource_pool["ram"]
         disk = resource_pool["disk"]
@@ -191,6 +191,7 @@ module VSphereCloud
         network_env = generate_network_env(devices, networks, dvs_index)
         disk_env = generate_disk_env(system_disk, ephemeral_disk_config.device)
         env = generate_agent_env(name, vm, agent_id, network_env, disk_env)
+        env["env"] = env
         @logger.info("Setting VM env: #{env.pretty_inspect}")
 
         location = get_vm_location(vm, :datacenter => cluster.datacenter.name,

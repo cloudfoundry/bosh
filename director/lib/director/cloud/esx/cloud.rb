@@ -5,7 +5,7 @@ module EsxCloud
     @lock = Mutex.new
 
     class << self
-      attr_accessor :req_id, :lock 
+      attr_accessor :req_id, :lock
     end
 
     BOSH_AGENT_PROPERTIES_ID = "Bosh_Agent_Properties"
@@ -34,7 +34,7 @@ module EsxCloud
 
       # Start EM (if required)
       self.class.lock.synchronize do
-        unless EM.reactor_running? 
+        unless EM.reactor_running?
           Thread.new {
             EM.run{}
           }
@@ -170,7 +170,7 @@ module EsxCloud
       end
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil)
+    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
 

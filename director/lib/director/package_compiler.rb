@@ -76,6 +76,7 @@ module Bosh::Director
       end
 
       @compilation_resources = @deployment_plan.compilation.cloud_properties
+      @compilation_env = @deployment_plan.compilation.env
 
       @network = @deployment_plan.compilation.network
       @networks = []
@@ -135,7 +136,7 @@ module Bosh::Director
 
       agent_id = generate_agent_id
       @logger.info("Creating compilation VM with agent id: #{agent_id}")
-      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @compilation_resources, network_settings)
+      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @compilation_resources, network_settings, nil, @compilation_env)
       @logger.info("Configuring compilation VM: #{vm_cid}")
       begin
         agent = AgentClient.new(agent_id)
