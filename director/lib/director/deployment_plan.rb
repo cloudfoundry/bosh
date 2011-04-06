@@ -81,7 +81,7 @@ module Bosh::Director
         raise "Resource pool '#{@name}' references an unknown network: '#{network_name}'" if @network.nil?
 
         @env = safe_property(resource_pool_spec, "env", :class => Hash, :optional => true) || {}
-        @env_hash = Digest::SHA1.new(Yajl::Encoder.encode(@env.sort)).hexdigest
+        @env_hash = Digest::SHA1.hexdigest(Yajl::Encoder.encode(@env.sort))
 
         @idle_vms = []
         @allocated_vms = []
