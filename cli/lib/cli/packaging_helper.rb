@@ -109,7 +109,6 @@ module Bosh
           tar_out = `tar -czf #{tmp_file.path} . 2>&1`
           raise PackagingError, "Cannot create tarball: #{tar_out}" unless $?.exitstatus == 0
         end
-        FileUtils.rm(build_dir)
 
         payload = tmp_file.read
 
