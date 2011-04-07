@@ -64,8 +64,14 @@ module Bosh::Agent
       end
 
       def update_hostname
-        `hostname #{@settings["agent_id"]}`
-        File.open('/etc/hostname', 'w') { |f| f.puts(@settings["agent_id"]) }
+        agent_id = @settings['agent_id']
+
+        template = ERB.new(ETC_HOST_TEMPATE, 0, '%<>-')
+        result = template.result(binding)
+        File.open('/etc/hosts', 'w') { |f| f.puts(result) }
+
+        `hostname #{agent_id}`
+        File.open('/etc/hostname', 'w') { |f| f.puts(agent_id) }
       end
 
       def update_mbus
@@ -277,11 +283,11 @@ module Bosh::Agent
         tmp_permissions
 
         unless Pathname.new('/tmp').mountpoint?
-          tmp_size = 512
+          tmp_size = 128
           root_tmp = File.join(base_dir, 'data', 'root_tmp')
 
           # If it's not mounted on /tmp - we don't care - blow it away
-          %x[dd if=/dev/zero of=#{root_tmp} bs=1M count=#{tmp_size}]
+          %x[/usr/bin/truncate -s #{tmp_size}M #{root_tmp}]
           %x[chmod 0700 #{root_tmp}]
           %x[mke2fs -t ext4 -m 1 -F #{root_tmp}]
 
@@ -341,6 +347,14 @@ module Bosh::Agent
           %x[chown root:#{BOSH_APP_USER} #{path}]
         end
 
+        no_other_read = %w{
+          /data/vcap/data
+          /data/vcap/store
+        }
+        no_other_read.each do |path|
+          %[chmod o-r #{path}]
+        end
+
       end
 
       def setup_cron_at_allow
@@ -348,6 +362,18 @@ module Bosh::Agent
           File.open(file, 'w') { |fh| fh.puts(BOSH_APP_USER) }
         end
       end
+
+      ETC_HOST_TEMPATE = <<TEMPLATE
+127.0.0.1 localhost <%= agent_id %>
+
+# The following lines are desirable for IPv6 capable hosts
+::1 localhost ip6-localhost ip6-loopback <%= agent_id %>
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+TEMPLATE
 
       INTERFACE_TEMPLATE = <<TEMPLATE
 auto lo
