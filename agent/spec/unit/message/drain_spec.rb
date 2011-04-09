@@ -16,10 +16,33 @@ describe Bosh::Agent::Message::Drain do
   end
 
   it "should receive drain type and an optional argument" do
+    @state_handler.should_receive(:state).and_return(old_spec)
     handler = Bosh::Agent::Message::Drain.new(["shutdown"])
   end
 
-  it "should handle shutdown drain type"
+  it "should handle shutdown drain type" do
+    @state_handler.should_receive(:state).and_return(old_spec)
+
+    bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
+    drain_script = File.join(bindir, 'drain')
+    FileUtils.mkdir_p(bindir)
+
+    handler = Bosh::Agent::Message::Drain.new(["shutdown"])
+
+    FileUtils.mkdir_p(File.join(base_dir, 'tmp'))
+
+    drain_out = File.join(base_dir, 'tmp', 'yay.out')
+
+    File.open(drain_script, 'w') do |fh|
+      fh.puts "#/bin/sh\necho $@ > #{drain_out}\necho -n '10'"
+    end
+    FileUtils.chmod(0777, drain_script)
+
+    handler.drain.should == 10
+
+    File.read(drain_out).should == "job_shutdown hash_unchanged\n"
+  end
+
 
   it "should handle update drain type" do
     @state_handler.should_receive(:state).and_return(old_spec)

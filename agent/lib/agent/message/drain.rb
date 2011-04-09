@@ -25,39 +25,38 @@ module Bosh::Agent
             raise Bosh::Agent::MessageHandlerError,
               "Drain update called without apply spec"
           end
-
-          @old_spec = Bosh::Agent::Message::State.new(nil).state
         end
+
+        @old_spec = Bosh::Agent::Message::State.new(nil).state
       end
 
       def drain
+        return 0 unless @old_spec.key?('job') && drain_script_exists?
+
         case @drain_type
         when "shutdown"
-          return 0
+          drain_time = run_drain_script("job_shutdown", "hash_unchanged", [])
+          return drain_time
         when "update"
           # HACK: We go through the motions below to be able to support drain scripts written as shell scripts
-          if @old_spec.key?('job') && drain_script_exists?
+          job_change =  if !@old_spec.key?('job')
+                          "job_new"
+                        elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
+                          "job_unchanged"
+                        else
+                          "job_changed"
+                        end
 
-            job_change =  if !@old_spec.key?('job')
-                            "job_new"
-                          elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
-                            "job_unchanged"
-                          else
-                            "job_changed"
-                          end
+          hash_change = if !@old_spec.key?('configuration_hash')
+                          "hash_new"
+                        elsif @old_spec['configuration_hash'] == @spec['configuration_hash']
+                          "hash_unchanged"
+                        else
+                          "hash_changed"
+                        end
 
-            hash_change = if !@old_spec.key?('configuration_hash')
-                            "hash_new"
-                          elsif @old_spec['configuration_hash'] == @spec['configuration_hash']
-                            "hash_unchanged"
-                          else
-                            "hash_changed"
-                          end
-
-            drain_time = run_drain_script(job_change, hash_change, updated_packages.flatten)
-            return drain_time
-          end
-          return 0
+          drain_time = run_drain_script(job_change, hash_change, updated_packages.flatten)
+          return drain_time
         else
           raise Bosh::Agent::MessageHandlerError,
             "Unknown drain type #{@drain_type}"
