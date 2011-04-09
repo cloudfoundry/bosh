@@ -152,6 +152,7 @@ module Bosh::Agent
       def harden_job_permissions
         FileUtils.chown_R('root', BOSH_APP_USER, @job_install_dir)
         %x[chmod -R o-rwx #{@job_install_dir}]
+        %x[chmod g+rx #{@job_install_dir}]
       end
 
       def post_install_hook
