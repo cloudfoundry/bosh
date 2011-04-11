@@ -74,10 +74,10 @@ module ChefDeployer
                chef_json_io.puts(Yajl::Encoder.encode(chef_json))
                chef_json_io.rewind
 
-               ssh.scp.upload!(File.join(BASE_PATH, "clouds", @cloud, "chef.rb"), "#{@remote_chef_path}/chef.rb")
+               ssh.scp.upload!(File.join(@cloud_path, "chef.rb"), "#{@remote_chef_path}/chef.rb")
                ssh.scp.upload!(chef_json_io, "#{@remote_chef_path}/chef.json")
 
-               assets_dir = File.join(BASE_PATH, "clouds", @cloud, "assets", role.to_s)
+               assets_dir = File.join(@cloud_path, "assets", role.to_s)
                if File.directory?(assets_dir)
                  say_status :assets, "uploading: #{assets_dir} to #{remote_assets_dir}"
                  ssh.scp.upload!(assets_dir, remote_assets_dir, :recursive => true)
@@ -288,10 +288,15 @@ module ChefDeployer
      method_option :roles, :type => :array
      method_option :metadata, :type => :boolean, :default => true
      def deploy(cloud)
-       @cloud = cloud
+       if File.directory?(cloud)
+         @cloud_path = cloud
+       else
+         @cloud_path = File.join(BASE_PATH, "clouds", cloud)
+       end
+
        say_status :config, "reading cloud configuration"
-       config_path = File.join(BASE_PATH, "clouds", cloud, "config.yml")
-       raise InvocationError, "Invalid cloud: #{cloud}, missing config file" unless File.file?(config_path)
+       config_path = File.join(@cloud_path, "config.yml")
+       raise InvocationError, "Invalid cloud: #{@cloud_path}, missing config file" unless File.file?(config_path)
 
        host_role_mapping = {}
        @cloud_config = YAML.load_file(config_path)
