@@ -1,3 +1,5 @@
+$:.unshift(File.dirname(__FILE__))
+
 require "expect"
 require "pp"
 require "pty"
@@ -135,6 +137,7 @@ module ChefDeployer
                result = read_pipe.expect(/password:/i)
                next if result.nil?
                write_pipe.puts(password)
+               break
              end
              if $!.nil? || $!.is_a?(SystemExit) && $!.success?
                nil
