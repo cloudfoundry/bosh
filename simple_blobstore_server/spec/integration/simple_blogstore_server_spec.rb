@@ -32,12 +32,12 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should accept valid users" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should eql(404)
+      last_response.status.should == 404
     end
 
     it "should reject invalid users" do
       get "/resources/foo"
-      last_response.status.should eql(401)
+      last_response.status.should == 401
     end
 
   end
@@ -52,12 +52,12 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
         resource_file.close
         post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
              {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should eql(200)
+        last_response.status.should == 200
         object_id = last_response.body
 
         get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should eql(200)
-        last_response.body.should eql("test contents")
+        last_response.status.should == 200
+        last_response.body.should == "test contents"
       ensure
         resource_file.delete
       end
@@ -70,7 +70,35 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should return an error if the resource is not found" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should eql(404)
+      last_response.status.should == 404
+    end
+
+    it "should set Nginx header when Nginx support is enabled" do
+      config = {
+        "path" => @path,
+        "users" => {
+          "john" => "doe"
+        },
+        "nginx_path" => "/protected"
+      }
+      @app = Bosh::Blobstore::SimpleBlobstoreServer.new(config)
+
+      resource_file = Tempfile.new("resource")
+      begin
+        resource_file.write("test contents")
+        resource_file.close
+        post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
+             {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+        last_response.status.should == 200
+        object_id = last_response.body
+        get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+        last_response.status.should == 200
+        last_response.body.should == ""
+        last_response.headers["X-Accel-Redirect"].should ==
+            "/protected/#{Digest::SHA1.hexdigest(object_id)[0, 2]}/#{object_id}"
+      ensure
+        resource_file.delete
+      end
     end
 
   end
@@ -84,18 +112,18 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
         resource_file.close
         post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
              {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should eql(200)
+        last_response.status.should == 200
         object_id = last_response.body
 
         get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should eql(200)
-        last_response.body.should eql("test contents")
+        last_response.status.should == 200
+        last_response.body.should == "test contents"
 
         delete "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should eql(204)
+        last_response.status.should == 204
 
         get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should eql(404)
+        last_response.status.should == 404
       ensure
         resource_file.delete
       end
@@ -103,7 +131,7 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should return an error if the resource is not found" do
       delete "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should eql(404)
+      last_response.status.should == 404
     end
 
   end

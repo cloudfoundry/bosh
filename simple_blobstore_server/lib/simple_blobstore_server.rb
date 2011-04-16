@@ -16,6 +16,7 @@ module Bosh
       def initialize(config)
         super
         @path = config["path"]
+        @nginx_path = config["nginx_path"]
 
         if File.exists?(@path)
           raise "Invalid path" unless File.directory?(@path)
@@ -34,6 +35,11 @@ module Bosh
       def get_file_name(object_id)
         sha1 = Digest::SHA1.hexdigest(object_id)
         File.join(@path, sha1[0, 2], object_id)
+      end
+
+      def get_nginx_path(object_id)
+        sha1 = Digest::SHA1.hexdigest(object_id)
+        "#{@nginx_path}/#{sha1[0, 2]}/#{object_id}"
       end
 
       def generate_object_id
@@ -77,7 +83,14 @@ module Bosh
       get "/resources/:id" do
         file_name = get_file_name(params[:id])
         if File.exist?(file_name)
-          send_file(file_name)
+          if @nginx_path
+            status(200)
+            content_type "application/octet-stream"
+            response["X-Accel-Redirect"] = get_nginx_path(params[:id])
+            nil
+          else
+            send_file(file_name)
+          end
         else
           error(404)
         end
