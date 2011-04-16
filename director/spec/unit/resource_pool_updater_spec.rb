@@ -53,6 +53,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
 
     idle_vm.stub!(:network_settings).and_return({"network_a" => {"ip" => "1.2.3.4"}})
+    idle_vm.stub!(:bound_instance).and_return(nil)
     idle_vm.stub!(:vm).and_return(nil)
 
     @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
@@ -72,6 +73,53 @@ describe Bosh::Director::ResourcePoolUpdater do
     agent.should_receive(:wait_until_ready)
     agent.should_receive(:apply).with({"resource_pool" => {"name" => "foo"}, "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
                                        "deployment" => "deployment_name"}).
+        and_return({"agent_task_id" => 5, "state" => "done"})
+    agent.should_receive(:get_state).and_return({"state" => "testing"})
+    idle_vm.should_receive(:current_state=).with({"state" => "testing"})
+
+    resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
+    resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
+    resource_pool_updater.update
+    Bosh::Director::Models::Vm.all.should == [created_vm]
+  end
+
+  it "should set the state of the bound instance" do
+    instance_spec = mock("instance")
+    idle_vm = mock("idle_vm")
+    agent = mock("agent")
+
+    @resource_pool_spec.stub!(:size).and_return(1)
+    @resource_pool_spec.stub!(:active_vms).and_return(0)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
+    @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
+
+    instance_spec.stub!(:spec).and_return({"foo" => "bar", "job" => "a", "index" => 5, "release" => "release_name"})
+
+    idle_vm.stub!(:network_settings).and_return({"network_a" => {"ip" => "1.2.3.4"}})
+    idle_vm.stub!(:bound_instance).and_return(instance_spec)
+    idle_vm.stub!(:vm).and_return(nil)
+
+    @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
+                                           {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-1")
+
+    Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
+
+    created_vm = nil
+    idle_vm.should_receive(:vm=).with do |vm|
+      created_vm = vm
+      vm.deployment.should == @deployment
+      vm.cid.should == "vm-1"
+      vm.agent_id.should == "agent-1"
+      true
+    end
+
+    agent.should_receive(:wait_until_ready)
+    agent.should_receive(:apply).with({"resource_pool" => {"name" => "foo"},
+                                       "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
+                                       "deployment" => "deployment_name",
+                                       "job"=>"a",
+                                       "index"=>5,
+                                       "release"=>"release_name"}).
         and_return({"agent_task_id" => 5, "state" => "done"})
     agent.should_receive(:get_state).and_return({"state" => "testing"})
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
@@ -118,6 +166,7 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     idle_vm.stub!(:network_settings).and_return({"ip" => "1.2.3.4"})
     idle_vm.should_receive(:changed?).and_return(true)
+    idle_vm.stub!(:bound_instance).and_return(nil)
     idle_vm.stub!(:vm).and_return {current_vm}
 
     @cloud.should_receive(:delete_vm).with("vm-1")
