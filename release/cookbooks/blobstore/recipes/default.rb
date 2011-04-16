@@ -1,4 +1,5 @@
 include_recipe "env"
+include_recipe "nginx"
 include_recipe "ruby"
 include_recipe "rubygems"
 include_recipe "runit"
@@ -23,7 +24,7 @@ directory node[:blobstore][:tmp] do
   action :create
 end
 
-%w{config gems}.each do |dir|
+%w{config gems logs}.each do |dir|
   directory "#{node[:blobstore][:path]}/shared/#{dir}" do
     owner node[:blobstore][:runner]
     group node[:blobstore][:runner]
@@ -58,4 +59,12 @@ deploy_revision node[:blobstore][:path] do
       cwd "#{release_path}/simple_blobstore_server"
     end
   end
+end
+
+template "#{node[:nginx][:path]}/sites/blobstore.conf" do
+  source "nginx.conf.erb"
+  owner node[:nginx][:runner]
+  group node[:nginx][:runner]
+  mode "0644"
+  notifies :restart, "service[nginx]", :immediately
 end

@@ -1,6 +1,7 @@
 ---
 path: <%= node[:blobstore][:storage] %>
-port: <%= node[:blobstore][:port] %>
+port: <%= node[:blobstore][:backend_port] %>
+nginx_path: /protected
 users:
   <%= node[:blobstore][:agent_account][:user] %>: <%= node[:blobstore][:agent_account][:password] %>
   <%= node[:blobstore][:director_account][:user] %>: <%= node[:blobstore][:director_account][:password] %>
