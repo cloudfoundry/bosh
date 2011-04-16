@@ -11,7 +11,7 @@ GEM
       mime-types
       xml-simple
     bcrypt-ruby (2.1.3)
-    blobstore_client (0.2.0)
+    blobstore_client (0.3.2)
       aws-s3
       httpclient
       uuidtools
