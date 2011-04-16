@@ -132,18 +132,17 @@ module ChefDeployer
          $expect_verbose = true
          say("==> EXECUTING SSH LOGIN #{command}", :yellow)
          begin
-           PTY.spawn(command) do |read_pipe, write_pipe, _|
+           PTY.spawn(command) do |read_pipe, write_pipe, pid|
              loop do
                break if read_pipe.eof?
                result = read_pipe.expect(/password:/i)
                next if result.nil?
                write_pipe.puts(password)
              end
-             if $!.nil? || $!.is_a?(SystemExit) && $!.success?
-               nil
-             else
-               rtn = $!.is_a?(SystemExit) ? $!.status.exitstatus : 1
-               raise "Failed command #{command}" if rtn != 0
+
+             Process.wait(pid)
+             if $? && $?.exitstatus != 0
+               raise "Failed command #{command} with exit code: #{$?.exitstatus}"
              end
            end
          rescue PTY::ChildExited => msg
