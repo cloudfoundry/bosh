@@ -59,8 +59,7 @@ module VSphereCloud
           @logger.info("Generated name: #{name}")
 
           # TODO: make stemcell friendly version of the calls below
-          cluster = @resources.find_least_loaded_cluster(1)
-          datastore = @resources.find_least_loaded_datastore(cluster, 1)
+          cluster, datastore = @resources.find_resources(1, 1)
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
@@ -124,11 +123,10 @@ module VSphereCloud
         cpu = resource_pool["cpu"]
 
         if disk_locality.nil?
-          cluster = @resources.find_least_loaded_cluster(memory)
-          datastore = @resources.find_least_loaded_datastore(cluster, disk)
+          cluster, datastore = @resources.find_resources(memory, disk)
         else
           @logger.info("Looking for resources near disk: #{disk_locality}")
-          cluster, datastore = @resources.find_disk_local_resources(disk_locality, memory, disk, cpu)
+          cluster, datastore = @resources.find_resources_near_disk(disk_locality, memory, disk)
         end
 
         name = "vm-#{generate_unique_name}"

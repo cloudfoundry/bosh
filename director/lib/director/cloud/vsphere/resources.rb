@@ -195,64 +195,58 @@ module VSphereCloud
       @datacenters
     end
 
-    def find_least_loaded_cluster(memory)
-      result = nil
-      @lock.synchronize do
-        max_free_memory = 0.0
-
-        clusters = []
-        datacenters.each_value do |datacenter|
-          datacenter.clusters.each do |cluster|
-            free_memory = cluster.real_free_memory
-            if free_memory - memory > MEMORY_THRESHOLD
-              max_free_memory = free_memory if free_memory > max_free_memory
-              clusters << cluster
-            end
+    def filter_used_resources(disk, memory)
+      resources = []
+      datacenters.each_value do |datacenter|
+        datacenter.clusters.each do |cluster|
+          has_memory = cluster.real_free_memory - memory > MEMORY_THRESHOLD
+          if has_memory
+            datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
+            has_disk = datastore.real_free_space - disk > DISK_THRESHOLD
+            resources << [cluster, datastore] if has_disk
           end
         end
-
-        raise "No available clusters" if clusters.empty?
-
-        clusters.sort! { |cluster_1, cluster_2| score_cluster(cluster_2, memory, max_free_memory) -
-            score_cluster(cluster_1, memory, max_free_memory) }
-        clusters = clusters[0..2]
-
-        cluster_scores = clusters.collect do |cluster|
-          cluster_score = score_cluster(cluster, memory, max_free_memory)
-          @logger.debug("Cluster: #{cluster.inspect} score: #{cluster_score}")
-          [cluster, cluster_score]
-        end
-        result = pick_random_with_score(cluster_scores)
-
-        @logger.debug("Picked: #{result.inspect}")
-
-        result.unaccounted_memory += memory
       end
 
-      result
+      raise "No available resources" if resources.empty?
+      resources
     end
 
-    def find_least_loaded_datastore(cluster, space)
-      result = nil
+    def find_resources(memory, disk)
+      cluster = nil
+      datastore = nil
+
       @lock.synchronize do
-        datastores = cluster.datastores
-        datastores = datastores.select do |datastore|
-          datastore.real_free_space - space > DISK_THRESHOLD
+        resources = filter_used_resources(disk, memory)
+
+        scored_resources = {}
+        resources.each do |resource|
+          cluster, datastore = resource
+          @logger.debug("Looking @: #{cluster.real_free_memory} / #{datastore.real_free_space}")
+
+          scored_resources[resource] = score_resource(cluster, datastore, memory, disk)
         end
 
-        raise "No available datastore" if datastores.empty?
+        scored_resources = scored_resources.sort_by { |resource| 1 - resource.last }
+        scored_resources = scored_resources[0..2]
 
-        datastores.sort! { |ds1, ds2| score_datastore(ds2, space) - score_datastore(ds1, space) }
-        result = datastores.first
+        scored_resources.each do |resource, score|
+          cluster, datastore = resource
+          @logger.debug("Cluster: #{cluster.inspect} Datastore: #{datastore.inspect} score: #{score}")
+        end
 
-        @logger.debug("Picked: #{result.inspect}")
+        cluster, datastore = pick_random_with_score(scored_resources)
 
-        result.unaccounted_space += space
+        @logger.debug("Picked: #{cluster.inspect} / #{datastore.inspect}")
+
+        cluster.unaccounted_memory += memory
+        datastore.unaccounted_space += disk
       end
-      result
+
+      [cluster, datastore]
     end
 
-    def find_disk_local_resources(disk_locality, memory, disk_space, _)
+    def find_resources_near_disk(disk_locality, memory, disk_space)
       disk = Models::Disk[disk_locality]
       raise "Disk not found: #{disk_locality}" if disk.nil?
 
@@ -287,29 +281,30 @@ module VSphereCloud
             cluster.unaccounted_memory += memory
           else
             @logger.info("Resources near disk were out of capacity, allocating elsewhere based on system capacity")
-            cluster   = find_least_loaded_cluster(memory)
-            datastore = find_least_loaded_datastore(cluster, disk_space)
+            cluster, datastore = find_resources(memory, disk_space)
           end
         end
       else
         @logger.info("Disk was not allocated yet, allocating resources based on system capacity")
-        cluster   = find_least_loaded_cluster(memory)
-        datastore = find_least_loaded_datastore(cluster, disk_space)
+        cluster, datastore = find_resources(memory, disk_space)
       end
 
       [cluster, datastore]
     end
 
-    def score_datastore(datastore, space)
-      datastore.free_space - datastore.unaccounted_space - space
-    end
+    def score_resource(cluster, datastore, memory, disk)
+      percent_of_free_mem = 1 - (memory.to_f / cluster.real_free_memory)
+      percent_of_total_mem = 1 - (memory.to_f / cluster.total_memory)
+      percent_free_mem_left = (cluster.real_free_memory.to_f - memory) / cluster.total_memory
+      memory_score = percent_of_free_mem * 0.5 + percent_of_total_mem * 0.25 + percent_free_mem_left * 0.25
 
-    def score_cluster(cluster, memory, max_free_memory)
-      # 50% based on how much free memory this cluster has relative to other clusters
-      # 25% based on cpu usage
-      # 25% based on how much free memory this cluster has as a whole
-      free_memory = cluster.real_free_memory.to_f - memory
-      free_memory / max_free_memory * 0.5 + cluster.idle_cpu * 0.25 + (free_memory / cluster.total_memory) * 0.25
+      cpu_score = cluster.idle_cpu
+
+      percent_of_free_disk = 1 - (disk.to_f / datastore.real_free_space)
+      percent_of_total_disk = 1 - (disk.to_f / datastore.total_space)
+      disk_score = percent_of_free_disk * 0.67 + percent_of_total_disk * 0.33
+
+      memory_score * 0.5 + cpu_score * 0.25 + disk_score * 0.25
     end
 
     def pick_random_with_score(elements)
@@ -319,7 +314,7 @@ module VSphereCloud
       random_score = rand * score_sum
       base_score = 0
 
-      elements.find do |element|
+      elements.each do |element|
         score = element[1]
         return element[0] if base_score + score > random_score
         base_score += score
