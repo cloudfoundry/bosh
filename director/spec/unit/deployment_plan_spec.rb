@@ -1215,7 +1215,7 @@ describe Bosh::Director::DeploymentPlan do
       deployment_plan = Bosh::Director::DeploymentPlan.new(manifest)
       job = deployment_plan.job("job_a")
 
-      3.times do
+      2.times do
         job.should_rollback?.should be_false
         job.record_update_error("some error")
       end
