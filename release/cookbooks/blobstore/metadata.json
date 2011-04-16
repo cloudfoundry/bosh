@@ -1,41 +1,44 @@
 {
-  "version": "1.0.0",
-  "conflicting": {
-  },
-  "providing": {
-  },
-  "maintainer": "VMware",
-  "replacing": {
-  },
-  "license": "TBD",
-  "maintainer_email": "TBD",
+  "name": "blobstore",
+  "description": "Installs/Configures blobstore",
   "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
-  "groupings": {
+  "maintainer": "VMware",
+  "maintainer_email": "TBD",
+  "license": "TBD",
+  "platforms": {
   },
   "dependencies": {
-    "runit": [
+    "env": [
 
     ],
-    "env": [
+    "nginx": [
+
+    ],
+    "ruby": [
 
     ],
     "rubygems": [
 
     ],
-    "ruby": [
+    "runit": [
 
     ]
   },
-  "attributes": {
-  },
   "recommendations": {
   },
-  "name": "blobstore",
   "suggestions": {
   },
-  "description": "Installs/Configures blobstore",
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "replacing": {
+  },
+  "attributes": {
+  },
+  "groupings": {
+  },
   "recipes": {
   },
-  "platforms": {
-  }
+  "version": "1.0.0"
 }
