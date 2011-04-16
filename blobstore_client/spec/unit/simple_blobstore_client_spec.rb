@@ -15,7 +15,7 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       response.stub!(:content).and_return("content_id")
 
       @httpclient.should_receive(:get).with("http://localhost/resources/foo", {},
-                                            {"Authorization"=>"Basic am9objpzbWl0aA==\n"}).and_return(response)
+                                            {"Authorization"=>"Basic am9objpzbWl0aA=="}).and_return(response)
       @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost",
                                                             "user" => "john",
                                                             "password" => "smith"})
