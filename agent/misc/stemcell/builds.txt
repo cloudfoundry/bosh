@@ -19,3 +19,4 @@ cc2a878d-a0f2-4fe1-b0b4-95d5bdf0ea06 bosh-stemcell-0.0.234.tgz
 1d2a92f1-63a5-485c-9f00-dc24137df748 bosh-stemcell-0.1.35.tgz # test prepare_network_change
 59c60c99-1c2d-47b9-b141-060bf2338ede bosh-stemcell-0.1.38.tgz
 0153bfbe-d227-436e-844b-2d054cd5647f bosh-stemcell-0.1.47.tgz
+bbfdebf0-a2f2-48cf-af75-24e05466680f bosh-stemcell-0.1.58.tgz
