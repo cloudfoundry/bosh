@@ -134,10 +134,10 @@ module ChefDeployer
          begin
            PTY.spawn(command) do |read_pipe, write_pipe, _|
              loop do
+               break if read_pipe.eof?
                result = read_pipe.expect(/password:/i)
                next if result.nil?
                write_pipe.puts(password)
-               break
              end
              if $!.nil? || $!.is_a?(SystemExit) && $!.success?
                nil
