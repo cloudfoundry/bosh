@@ -9,7 +9,7 @@ module Bosh
         @endpoint = options["endpoint"]
         @headers = {}
         if options["user"] && options["password"]
-          @headers["Authorization"] = "Basic " + Base64.encode64("#{options["user"]}:#{options["password"]}")
+          @headers["Authorization"] = "Basic " + Base64.encode64("#{options["user"]}:#{options["password"]}").strip
         end
       end
 
