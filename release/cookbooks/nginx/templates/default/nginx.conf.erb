@@ -1,0 +1,35 @@
+user <%= node[:nginx][:runner] %>;
+worker_processes  <%= node[:nginx][:worker_processes] %>;
+daemon off;
+
+error_log  <%= node[:nginx][:path] %>/logs/error.log;
+pid        <%= node[:nginx][:path] %>/run/nginx.pid;
+
+events {
+  worker_connections  <%= node[:nginx][:worker_connections] %>;
+}
+
+http {
+  include       <%= node[:nginx][:path] %>/conf/mime.types;
+  default_type  text/html;
+  server_tokens off;
+
+  access_log	<%= node[:nginx][:path] %>/logs/access.log;
+
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
+
+  keepalive_timeout  75 20;
+
+  gzip                 on;
+  gzip_min_length      1250;
+  gzip_buffers         16 8k;
+  gzip_comp_level      2;
+  gzip_proxied         any;
+  gzip_types           text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  gzip_vary            on;
+  gzip_disable         "MSIE [1-6]\.(?!.*SV1)";
+
+  include <%= node[:nginx][:path] %>/sites/*;
+}

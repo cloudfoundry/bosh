@@ -1,0 +1,3 @@
+#!/bin/sh
+exec 2>&1
+exec <%= node[:nginx][:path] %>/sbin/nginx -c <%= node[:nginx][:path] %>/conf/nginx.conf
