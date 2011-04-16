@@ -195,14 +195,14 @@ module VSphereCloud
       @datacenters
     end
 
-    def filter_used_resources(disk, memory)
+    def filter_used_resources(disk_space, memory)
       resources = []
       datacenters.each_value do |datacenter|
         datacenter.clusters.each do |cluster|
           has_memory = cluster.real_free_memory - memory > MEMORY_THRESHOLD
           if has_memory
             datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
-            has_disk = datastore.real_free_space - disk > DISK_THRESHOLD
+            has_disk = datastore.real_free_space - disk_space > DISK_THRESHOLD
             resources << [cluster, datastore] if has_disk
           end
         end
@@ -212,19 +212,20 @@ module VSphereCloud
       resources
     end
 
-    def find_resources(memory, disk)
+    def find_resources(memory, disk_space)
       cluster = nil
       datastore = nil
 
+      # account for swap
+      disk_space += memory
+
       @lock.synchronize do
-        resources = filter_used_resources(disk, memory)
+        resources = filter_used_resources(disk_space, memory)
 
         scored_resources = {}
         resources.each do |resource|
           cluster, datastore = resource
-          @logger.debug("Looking @: #{cluster.real_free_memory} / #{datastore.real_free_space}")
-
-          scored_resources[resource] = score_resource(cluster, datastore, memory, disk)
+          scored_resources[resource] = score_resource(cluster, datastore, memory, disk_space)
         end
 
         scored_resources = scored_resources.sort_by { |resource| 1 - resource.last }
@@ -240,7 +241,7 @@ module VSphereCloud
         @logger.debug("Picked: #{cluster.inspect} / #{datastore.inspect}")
 
         cluster.unaccounted_memory += memory
-        datastore.unaccounted_space += disk
+        datastore.unaccounted_space += disk_space
       end
 
       [cluster, datastore]
@@ -249,6 +250,9 @@ module VSphereCloud
     def find_resources_near_disk(disk_locality, memory, disk_space)
       disk = Models::Disk[disk_locality]
       raise "Disk not found: #{disk_locality}" if disk.nil?
+
+      # account for swap
+      disk_space += memory
 
       cluster = nil
       datastore = nil
