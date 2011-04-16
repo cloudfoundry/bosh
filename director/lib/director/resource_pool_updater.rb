@@ -100,11 +100,19 @@ module Bosh::Director
       agent = AgentClient.new(vm.agent_id)
       agent.wait_until_ready
 
-      task = agent.apply({
+      state = {
         "deployment" => @resource_pool.deployment.name,
         "resource_pool" => @resource_pool.spec,
         "networks" => idle_vm.network_settings
-      })
+      }
+
+      # apply the instance state if it's already bound so we can recover if needed
+      if idle_vm.bound_instance
+        instance_spec = idle_vm.bound_instance.spec
+        ["job", "index", "release"].each { |key| state[key] = instance_spec[key] }
+      end
+
+      task = agent.apply(state)
       while task["state"] == "running"
         sleep(1.0)
         task = agent.get_task(task["agent_task_id"])
