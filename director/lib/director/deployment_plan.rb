@@ -475,7 +475,7 @@ module Bosh::Director
 
       def record_update_error(error, options = {})
         @update_errors += 1
-        if options[:canary] || (@update.max_errors > 0 && @update.max_errors < @update_errors)
+        if options[:canary] || (@update.max_errors > 0 && @update_errors >= @update.max_errors)
           @rollback = true
         end
       end
