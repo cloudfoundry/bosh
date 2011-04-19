@@ -35,6 +35,9 @@ end
 
 template "#{node[:blobstore][:path]}/shared/config/simple_blobstore_server.yml" do
   source "simple_blobstore_server.yml.erb"
+  owner node[:blobstore][:runner]
+  group node[:blobstore][:runner]
+  notifies :restart, "service[blobstore]"
 end
 
 deploy_revision node[:blobstore][:path] do
