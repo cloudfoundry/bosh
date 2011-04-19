@@ -668,7 +668,7 @@ module VSphereCloud
       response = @rest_client.get(url)
 
       if response.code < 400
-        response.body.content
+        response.body
       elsif response.code == 404
         nil
       else
