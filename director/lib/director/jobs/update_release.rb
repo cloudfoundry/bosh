@@ -36,7 +36,11 @@ module Bosh::Director
       rescue Exception => e
         # cleanup
         if @release_version_entry && !@release_version_entry.new?
-          @release_version_entry.destroy if @release_version_entry
+          if @release_version_entry
+            @release_version_entry.remove_all_packages
+            @release_version_entry.remove_all_templates
+            @release_version_entry.destroy
+          end
         end
         raise e
       ensure
