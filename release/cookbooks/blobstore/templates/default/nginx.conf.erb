@@ -9,6 +9,8 @@ server {
   access_log  <%= node[:blobstore][:path] %>/shared/logs/access.log;
   error_log   <%= node[:blobstore][:path] %>/shared/logs/error.log;
 
+  client_max_body_size 1G;
+
   error_page 400 = /400.html;
   location /400.html {
     internal;
