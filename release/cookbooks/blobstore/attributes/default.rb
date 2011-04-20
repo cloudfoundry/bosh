@@ -5,6 +5,7 @@ default[:blobstore][:storage]    = "/var/vcap/storage/blobstore"
 default[:blobstore][:runner]     = "vcap"
 default[:blobstore][:port]       = 25250
 default[:blobstore][:backend_port] = 25251
+default[:blobstore][:nginx]      = false
 default[:blobstore][:agent_account][:user] = "agent"
 default[:blobstore][:agent_account][:password] = "Ag3Nt"
 default[:blobstore][:director_account][:user] = "director"
