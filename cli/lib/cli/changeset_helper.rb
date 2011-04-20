@@ -31,10 +31,6 @@ module Bosh::Cli
       end
     end
 
-    def slice(key)
-      @children.select { |k, v| v[key] }
-    end
-
     def leaf?
       @children.empty?
     end
