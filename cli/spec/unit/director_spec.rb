@@ -220,7 +220,7 @@ describe Bosh::Cli::Director do
     end
 
     it "nicely wraps director error response" do
-      [400, 403, 404, 500].each do |code|
+      [400, 403, 500].each do |code|
         lambda {
           # Familiar JSON
           @director.should_receive(:perform_http_request).and_return([code, JSON.generate("code" => "40422", "description" => "Weird stuff happened"), { }])

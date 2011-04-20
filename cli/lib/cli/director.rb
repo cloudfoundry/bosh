@@ -6,7 +6,7 @@ module Bosh
   module Cli
     class Director
 
-      DIRECTOR_HTTP_ERROR_CODES = [ 400, 403, 404, 500 ]
+      DIRECTOR_HTTP_ERROR_CODES = [ 400, 403, 500 ]
 
       DEFAULT_MAX_POLLS     = nil # Not limited
       DEFAULT_POLL_INTERVAL = 1
@@ -83,7 +83,9 @@ module Bosh
       end
 
       def get_deployment(name)
-        get_json("/deployments/#{name}")
+        status, body = get_json_with_status("/deployments/#{name}")
+        raise DeploymentNotFound, "Deployment `#{name}' not found" if status == 404
+        body
       end
 
       def upload_release(filename)
@@ -249,10 +251,18 @@ module Bosh
       end
 
       def get_json(url)
-        status, body, headers = get(url, "application/json")
+        status, body = get_json_with_status(url)
         raise AuthError if status == 401
         raise DirectorError if status != 200
-        JSON.parse(body)
+        body
+      end
+
+      def get_json_with_status(url)
+        status, body, headers = get(url, "application/json")
+        body = JSON.parse(body) if status == 200
+        [ status, body ]
+      rescue JSON::ParserError
+        raise DirectorError, "Cannot parse director response: #{body}"
       end
 
       def parse_error_message(status, body)

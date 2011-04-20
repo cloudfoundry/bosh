@@ -13,6 +13,7 @@ require "cli/versions_index"
 require "cli/packaging_helper"
 require "cli/package_builder"
 require "cli/job_builder"
+require "cli/changeset_helper"
 
 require "cli/release"
 require "cli/release_builder"

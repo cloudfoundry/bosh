@@ -3,14 +3,14 @@ module BoshExtensions
     return unless Bosh::Cli::Config.output && message
     message = message.dup.to_s
     sep = "" if message[-1..-1] == sep
-    Bosh::Cli::Config.output.print("#{@indent}#{message}#{sep}")
+    Bosh::Cli::Config.output.print("#{$indent}#{message}#{sep}")
   end
 
   def with_indent(indent, &block)
-    old_indent, @indent = @indent, old_indent.to_s + indent.to_s
+    old_indent, $indent = $indent, old_indent.to_s + indent.to_s
     yield
   ensure
-    @indent = old_indent
+    $indent = old_indent
   end
 
   def header(message, filler = '-')
@@ -19,11 +19,16 @@ module BoshExtensions
     say filler.to_s * message.size
   end
 
+  def nl
+    say("\n")
+  end
+
   def err(message)
     raise Bosh::Cli::CliExit, message
   end
 
   def quit(message = nil)
+    say message
     raise Bosh::Cli::GracefulExit, message
   end
 
@@ -54,6 +59,10 @@ module BoshStringExtensions
 
   def green
     colorize("\e[0m\e[32m")
+  end
+
+  def yellow
+    colorize("\e[0m\e[33m")
   end
 
   def colorize(color_code)
