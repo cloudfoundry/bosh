@@ -46,6 +46,19 @@ describe Bosh::Cli::Command::Base do
       @cmd.target.should == "http://test"
     end
 
+    it "supports named targets" do
+      @cmd.set_target("test", "mytarget")
+      @cmd.target.should == "http://test"
+
+      @cmd.set_target("foo", "myfoo")
+
+      @cmd.set_target("mytarget")
+      @cmd.target.should == "http://test"
+
+      @cmd.set_target("myfoo")
+      @cmd.target.should == "http://foo"
+    end
+
     it "logs user in" do
       @cmd.set_target("test")
       @cmd.login("user", "pass")

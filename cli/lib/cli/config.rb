@@ -43,6 +43,25 @@ module Bosh
         @config_file["auth"][target] = { "username" => username, "password" => password }
       end
 
+      def set_alias(category, alias_name, value)
+        @config_file["aliases"] ||= { }
+        @config_file["aliases"][category.to_s] ||= { }
+        @config_file["aliases"][category.to_s][alias_name] = value
+      end
+
+      def resolve_alias(category, alias_name)
+        category = category.to_s
+
+        if @config_file.has_key?("aliases") &&
+            @config_file["aliases"].is_a?(Hash) &&
+            @config_file["aliases"].has_key?(category) &&
+            @config_file["aliases"][category].is_a?(Hash)
+          @config_file["aliases"][category][alias_name].to_s
+        else
+          nil
+        end
+      end
+
       def username
         auth ? auth["username"] : nil
       end

@@ -40,6 +40,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["status"], :misc, :status)
     test_cmd(["target"], :misc, :show_target)
     test_cmd(["target", "test"], :misc, :set_target, ["test"])
+    test_cmd(["target", "test", "alias"], :misc, :set_target, ["test", "alias"])
     test_cmd(["deploy"], :deployment, :perform)
     test_cmd(["deployment"], :deployment, :show_current)
     test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])

@@ -91,7 +91,11 @@ module Bosh::Cli::Command
       say(target ? "Current target is '#{full_target_name}'" : "Target not set")
     end
 
-    def set_target(director_url)
+    def set_target(director_url, name = nil)
+      if name.nil?
+        director_url = config.resolve_alias(:target, director_url) || director_url
+      end
+
       director_url = normalize_url(director_url)
       director = Bosh::Cli::Director.new(director_url)
 
@@ -110,6 +114,7 @@ module Bosh::Cli::Command
       config.target = director_url
       config.target_name = status["name"]
       config.target_version = status["version"]
+      config.set_alias(:target, name, director_url) unless name.blank?
 
       if deployment
         say("WARNING! Your deployment has been unset")
