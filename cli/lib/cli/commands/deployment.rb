@@ -44,20 +44,28 @@ module Bosh::Cli::Command
       err("Please choose deployment first") unless deployment
 
       manifest_filename = deployment
+
       if !File.exists?(manifest_filename)
         err("Missing deployment at '#{deployment}'")
       end
 
-      manifest = YAML.load_file(manifest_filename)
+      new_manifest = YAML.load_file(manifest_filename)
 
-      if manifest["name"].blank? || manifest["release"].blank? || manifest["target"].blank?
+      if new_manifest["name"].blank? || new_manifest["release"].blank? || new_manifest["target"].blank?
         err("Invalid manifest for '#{deployment}': name, release and target are all required")
       end
 
-      desc = "to #{target_name} using '#{deployment}' deployment manifest"
+      desc = "to #{target_name.green} using '#{deployment.green}' deployment manifest"
+      say "You are about to start the deployment #{desc}"
 
-      say("Deploying #{desc}...")
-      say("\n")
+      inspect_deployment_changes(new_manifest) if interactive?
+
+      say "Deploying #{desc}..."
+      nl
+
+      if interactive? && ask("Please review all changes above and type 'yes' if you are ready to deploy: ") != "yes"
+        cancel_deployment
+      end
 
       status, body = director.deploy(manifest_filename)
 
@@ -116,12 +124,145 @@ module Bosh::Cli::Command
 
     private
 
+    # Interactive walkthrough of deployment changes, expected to bail out of CLI using 'cancel_deployment'
+    # if something goes wrong, so it doesn't need to have a meaningful return value.
+    def inspect_deployment_changes(manifest)
+      manifest = manifest.dup
+      current_deployment = director.get_deployment(manifest["name"])
+
+      if current_deployment["manifest"].nil?
+        say "Directory currently has an information about this deployment but it's missing the manifest.".red
+        say "This is something you probably need to fix before proceeding.".red
+        cancel_deployment if ask("Please enter 'yes' if you want to ignore this fact and still deploy: ") != 'yes'
+      end
+
+      current_manifest = YAML.load(current_deployment["manifest"])
+
+      unless current_manifest.is_a?(Hash)
+        err "Current deployment manifest format is invalid, check if director works properly"
+      end
+
+      # TODO: validate new deployment manifest
+      diff = Bosh::Cli::HashChangeset.new
+      diff.add_hash(normalize_deployment_manifest(manifest), :new)
+      diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
+
+      say "Detecting changes in deployment...".green
+      nl
+      print_summary("Release", diff[:release])
+
+      if diff[:release][:name].changed?
+        say "Release name has changed: %s -> %s".red % [ diff[:release][:name].old, diff[:release][:name].new ]
+        if ask("This is very serious and potentially destructive change. ARE YOU SURE YOU WANT TO DO IT? (type 'yes' to confirm): ") != 'yes'
+          cancel_deployment
+        end
+      elsif diff[:release][:version].changed?
+        say "Release version has changed: %s -> %s".yellow % [ diff[:release][:version].old, diff[:release][:version].new ]
+        if ask("Are you sure you want to deploy this version? (type 'yes' to confirm): ") != 'yes'
+          cancel_deployment
+        end
+      end
+      nl
+
+      print_summary("Compilation", diff[:compilation])
+      nl
+
+      print_summary("Update", diff[:update])
+      nl
+
+      print_summary("Resource pools", diff[:resource_pools])
+
+      old_stemcells = Set.new
+      new_stemcells = Set.new
+
+      diff[:resource_pools].each do |pool|
+        old_stemcells << { :name => pool[:stemcell][:name].old, :version => pool[:stemcell][:version].old }
+        new_stemcells << { :name => pool[:stemcell][:name].new, :version => pool[:stemcell][:version].new }
+      end
+
+      if old_stemcells != new_stemcells
+        if ask("Stemcell update has been detected. Are you sure you want to update stemcells? (type 'yes' to confirm): ") != 'yes'
+          cancel_deployment
+        end
+      end
+
+      if old_stemcells.size != new_stemcells.size
+        say "Stemcell update seems to be inconsistent with current deployment. Please carefully review changes above.".red
+        if ask("Are you sure this configuration is correct? (type 'yes' to confirm): ") != 'yes'
+          cancel_deployment
+        end
+      end
+
+      nl
+      print_summary("Networks", diff[:networks])
+      nl
+      print_summary("Jobs", diff[:jobs])
+      nl
+      print_summary("Properties", diff[:properties])
+      nl
+
+    rescue Bosh::Cli::DeploymentNotFound
+      say "Cannot get current deployment information from director, possibly a new deployment".red
+    end
+
+    private
+
     def find_deployment(name)
       if File.exists?(name)
         File.expand_path(name)
       else
         File.expand_path(File.join(work_dir, "deployments", "#{name}.yml"))
       end
+    end
+
+    def cancel_deployment
+      quit "Deployment canceled".red
+    end
+
+    def manifest_error(err)
+      err("Deployment manifest error: #{err}")
+    end
+
+    def print_summary(title, diff)
+      say title.green
+      summary = diff.summary
+      if summary.empty?
+        say "No changes"
+      else
+        say summary.join("\n")
+      end
+    end
+
+    def normalize_deployment_manifest(manifest)
+      normalized = manifest.dup
+
+      %w(networks jobs resource_pools).each do |section|
+        normalized[section] = normalized[section].inject({}) do |acc, e|
+          if e["name"].blank?
+            manifest_error("missing name for one of entries in '#{section}'")
+          end
+          if acc.has_key?(e["name"])
+            manifest_error("duplicate entry '#{e['name']}' in '#{section}'")
+          end
+          acc[e["name"]] = e
+          acc
+        end
+      end
+
+      normalized["networks"].each do |network_name, network|
+        normalized["networks"][network_name]["subnets"] = network["subnets"].inject({}) do |acc, e|
+          if e["range"].blank?
+            manifest_error("missing range for one of subnets in '#{network_name}'")
+          end
+          if acc.has_key?(e["range"])
+            manifest_error("duplicate network range '#{e['range']}' in '#{network}'")
+          end
+          acc[e["range"]] = e
+          acc
+        end
+      end
+
+      normalized
     end
 
   end
