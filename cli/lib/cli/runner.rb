@@ -170,7 +170,7 @@ Currently available bosh commands are:
 
   Misc
     status                                   Show current status (current target, user, deployment info etc.)
-    target <name>                            Choose director to talk to
+    target [<name>] [<alias>]                Choose director to talk to (optionally creating an alias)
     login [<username>] [<password>]          Use given credentials for the subsequent interactions with director
     logout                                   Forgets currently saved credentials
     purge                                    Purge local manifest cache
@@ -188,9 +188,9 @@ USAGE
           set_cmd(:misc, :version)
 
         when "target"
-          usage("bosh target [<name>]")
-          if @args.size == 1
-            set_cmd(:misc, :set_target, 1)
+          usage("bosh target [<name>] [<alias>]")
+          if @args.size >= 1
+            set_cmd(:misc, :set_target, 1..2)
           else
             set_cmd(:misc, :show_target)
           end
