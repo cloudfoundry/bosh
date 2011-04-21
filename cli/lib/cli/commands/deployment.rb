@@ -131,9 +131,13 @@ module Bosh::Cli::Command
       current_deployment = director.get_deployment(manifest["name"])
 
       if current_deployment["manifest"].nil?
-        say "Directory currently has an information about this deployment but it's missing the manifest.".red
+        say "Director currently has an information about this deployment but it's missing the manifest.".red
         say "This is something you probably need to fix before proceeding.".red
-        cancel_deployment if ask("Please enter 'yes' if you want to ignore this fact and still deploy: ") != 'yes'
+        if ask("Please enter 'yes' if you want to ignore this fact and still deploy: ") == 'yes'
+          return
+        else
+          cancel_deployment
+        end
       end
 
       current_manifest = YAML.load(current_deployment["manifest"])
