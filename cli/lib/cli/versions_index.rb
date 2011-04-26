@@ -27,6 +27,13 @@ module Bosh::Cli
       @data["builds"] ||= {}
     end
 
+    def find_by_checksum(checksum)
+      @data["builds"].each_pair do |fingerprint, build_data|
+        return build_data if build_data["sha1"] == checksum
+      end
+      nil
+    end
+
     def [](fingerprint)
       @data["builds"][fingerprint]
     end

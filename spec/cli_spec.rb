@@ -423,10 +423,11 @@ describe Bosh::Spec::IntegrationTest do
     end
 
     out = run_bosh("upload release #{release_2}")
-    out.should =~ rx("Job `foobar (0.1-dev)' already exists, no need to upload")
-    out.should =~ rx("Package `foo (0.1-dev)' already exists, no need to upload")
-    out.should =~ rx("Package `bar (0.2-dev)' needs to be uploaded")
-    out.should =~ rx("Repacking release for sparse upload")
+    out.should =~ rx("foo (0.1-dev)                 SKIP\n")
+    out.should =~ rx("foobar (0.1-dev)              SKIP\n")
+    out.should =~ rx("bar (0.2-dev)                 UPLOAD\n")
+    out.should =~ rx("Checking if can repack release for faster upload")
+    out.should =~ rx("Release repacked")
     out.should =~ /Release uploaded and updated/
 
     expect_output("releases", <<-OUT )

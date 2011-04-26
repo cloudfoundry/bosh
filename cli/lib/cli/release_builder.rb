@@ -8,22 +8,15 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :work_dir, :release, :packages, :jobs, :packages_to_skip, :jobs_to_skip
+    attr_reader :work_dir, :release, :packages, :jobs
 
-    def initialize(work_dir, packages, jobs, packages_to_skip = [], jobs_to_skip = [], options = { })
-      @final     = options.has_key?(:final) ? !!options[:final] : false
-
-      @work_dir  = work_dir
-
-      @release   = @final ? Release.final(@work_dir) : Release.dev(@work_dir)
-
-      @packages         = packages
-      @packages_to_skip = packages_to_skip
-
-      job_order  = partial_order_sort(jobs.map{ |job| job.name }, @release.jobs_order)
-
-      @jobs         = jobs.sort_by { |job| job_order.index(job.name) }
-      @jobs_to_skip = jobs_to_skip
+    def initialize(work_dir, packages, jobs, options = { })
+      @final    = options.has_key?(:final) ? !!options[:final] : false
+      @work_dir = work_dir
+      @release  = @final ? Release.final(@work_dir) : Release.dev(@work_dir)
+      @packages = packages
+      job_order = partial_order_sort(jobs.map{ |job| job.name }, @release.jobs_order)
+      @jobs     = jobs.sort_by { |job| job_order.index(job.name) }
 
       @index = VersionsIndex.new(releases_dir, release_name)
       create_release_build_dir
@@ -42,17 +35,20 @@ module Bosh::Cli
       @final
     end
 
-    def build
+    def build(options = {})
+      options = { :generate_tarball => true }.merge(options)
+
       header("Copying jobs...")
       copy_jobs
       header("Copying packages...")
       copy_packages
       header("Generating manifest...")
       generate_manifest
-      header("Generating tarball...")
-      generate_tarball
+      if options[:generate_tarball]
+        header("Generating tarball...")
+        generate_tarball
+      end
       header("Saving new version...")
-      save_version
       @build_complete = true
     ensure
       rollback unless @build_complete || @reused_old_version
@@ -64,7 +60,7 @@ module Bosh::Cli
     end
 
     def copy_packages
-      (packages - packages_to_skip).each do |package|
+      packages.each do |package|
        say "%-40s %s" % [ package.name.green, pretty_size(package.tarball_path) ]
         FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"), :preserve => true)
       end
@@ -72,7 +68,7 @@ module Bosh::Cli
     end
 
     def copy_jobs
-      (jobs - jobs_to_skip).each do |job|
+      jobs.each do |job|
         say "%-40s %s" % [ job.name.green, pretty_size(job.tarball_path) ]
         FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"), :preserve => true)
       end
@@ -118,15 +114,23 @@ module Bosh::Cli
           say("Found matching version %s: %s, size is %s".green % [ old_version, fn, pretty_size(fn) ])
           quit
         else
+          self.version = old_version
           say "Cannot find tarball for version #{old_version}, generating a new one..."
         end
       end
 
+      # require "ruby-debug"; debugger
+
       manifest["version"] = version
+      manifest_yaml = YAML.dump(manifest)
 
       say "Writing manifest..."
       File.open(File.join(build_dir, "release.MF"), "w") do |f|
-        f.write(YAML.dump(manifest))
+        f.write(manifest_yaml)
+      end
+
+      File.open(manifest_path, "w") do |f|
+        f.write(manifest_yaml)
       end
 
       @index.add_version(fingerprint, { "version" => version })
@@ -155,6 +159,10 @@ module Bosh::Cli
       File.join(releases_dir, "#{release_name}-#{version}.tgz")
     end
 
+    def manifest_path
+      File.join(releases_dir, "#{release_name}-#{version}.yml")
+    end
+
     def make_fingerprint(item)
       source = \
       case item
@@ -170,6 +178,10 @@ module Bosh::Cli
 
     private
 
+    def version=(version)
+      @version=version
+    end
+
     def assign_version
       current_version = @index.latest_version.to_i
       current_version + 1
@@ -177,10 +189,6 @@ module Bosh::Cli
 
     def build_dir
       @build_dir ||= Dir.mktmpdir
-    end
-
-    def save_version
-      @release.update_config(:version => version)
     end
 
     def create_release_build_dir

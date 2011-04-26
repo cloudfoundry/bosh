@@ -1,5 +1,8 @@
 require "blobstore_client"
 
+# This relies on having the following instance variables in a host class:
+# @dev_builds_dir, @final_builds_dir, @blobstore, @name, @version, @tarball_path
+
 module Bosh
   module Cli
     module PackagingHelper

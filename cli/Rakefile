@@ -11,7 +11,6 @@ gemspec = Gem::Specification.new do |s|
   s.name         = GEM
   s.version      = GEM_VERSION
   s.platform     = Gem::Platform::RUBY
-  s.has_rdoc     = false
   s.summary      = "Bosh CLI"
   s.description  = s.summary
   s.author       = "Oleg Shaldybin"
@@ -54,7 +53,7 @@ namespace "bundler" do
   desc "Install gems"
   task "install" do
     sh("bundle install")
-  end  
+  end
 
   environments = %w(test development production)
 
