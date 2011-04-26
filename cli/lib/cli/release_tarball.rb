@@ -7,8 +7,10 @@ module Bosh
     class ReleaseTarball
       include Validation
       include DependencyHelper
+      include YamlHelper
 
       attr_reader :release_name, :jobs, :packages, :version
+      attr_reader :skipped # Mostly for tests
 
       def initialize(tarball_path)
         @tarball_path = File.expand_path(tarball_path, Dir.pwd)
@@ -28,27 +30,54 @@ module Bosh
         File.exists?(@tarball_path) && File.readable?(@tarball_path)
       end
 
-      # Repacks tarball leaving only provided packages and jobs, doesn't touch manifest.
+      # Repacks tarball according to the structure of remote release
       # Return path to repackaged tarball or nil if repack has failed
-      def repack(packages_to_remove, jobs_to_remove)
+      def repack(remote_release)
         return nil unless valid?
         unpack
 
-        repacked_path = File.join(Dir.mktmpdir, "release-repack.tgz")
+        tmpdir        = Dir.mktmpdir
+        repacked_path = File.join(tmpdir, "release-repack.tgz")
+
+        at_exit { FileUtils.rm_rf(tmpdir) }
+
+        manifest = load_yaml_file(File.join(@unpack_dir, "release.MF"))
+
+        local_packages  = manifest["packages"]
+        local_jobs      = manifest["jobs"]
+        remote_packages = remote_release["packages"]
+        remote_jobs     = remote_release["jobs"]
+
+        @skipped = 0
 
         Dir.chdir(@unpack_dir) do
-          packages_to_remove.each do |package_name|
-            FileUtils.rm_rf(File.join("packages", "#{package_name}.tgz"))
-          end
-          jobs_to_remove.each do |job_name|
-            FileUtils.rm_rf(File.join("jobs", "#{job_name}.tgz"))
+          local_packages.each do |package|
+            say "#{package['name']} (#{package['version']})".ljust(30), " "
+            if remote_packages.any? { |rp| package["name"] == rp["name"] && package["version"].to_s == rp["version"].to_s }
+              say "SKIP".green
+              @skipped += 1
+              FileUtils.rm_rf(File.join("packages", "#{package['name']}.tgz"))
+            else
+              say "UPLOAD".red
+            end
           end
 
+          local_jobs.each do |job|
+            say "#{job['name']} (#{job['version']})".ljust(30), " "
+            if remote_jobs.any? { |rj| job["name"] == rj["name"] && job["version"].to_s == rj["version"].to_s }
+              say "SKIP".green
+              @skipped += 1
+              FileUtils.rm_rf(File.join("jobs", "#{job['name']}.tgz"))
+            else
+              say "UPLOAD".red
+            end
+          end
+
+          return nil if @skipped == 0
           `tar -czf #{repacked_path} . 2>&1`
           return repacked_path if $? == 0
         end
       end
-
 
       # If sparse release is allowed we bypass the requirement of having all jobs
       # and packages in place when we do validation. However for jobs and packages

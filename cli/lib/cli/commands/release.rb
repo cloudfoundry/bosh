@@ -1,13 +1,14 @@
 module Bosh::Cli::Command
   class Release < Base
     include Bosh::Cli::DependencyHelper
+    include Bosh::Cli::YamlHelper
 
     def verify(tarball_path, *options)
       tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
       say("\nVerifying release...")
       tarball.validate
-      say("\n")
+      nl
 
       if tarball.valid?
         say("'%s' is a valid release" % [ tarball_path] )
@@ -19,80 +20,64 @@ module Bosh::Cli::Command
       end
     end
 
-    def upload(tarball_path)
+    def upload(release_file)
       auth_required
+      file_type = `file --mime-type -b '#{release_file}'`
 
+      if file_type =~ /text\/(plain|yaml)/
+        upload_manifest(release_file)
+      else # Just assume tarball
+        upload_tarball(release_file)
+      end
+    end
+
+    def upload_manifest(manifest_path)
+      manifest       = load_yaml_file(manifest_path)
+      remote_release = get_remote_release(manifest["name"]) rescue nil
+      blobstore      = init_blobstore(Bosh::Cli::Release.final(work_dir).s3_options)
+      tmpdir         = Dir.mktmpdir
+
+      at_exit { FileUtils.rm_rf(tmpdir) }
+
+      release = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, remote_release)
+      unless release.exists?
+        release.tarball_path = File.join(tmpdir, "release.tgz")
+        release.compile
+      end
+      upload_tarball(release.tarball_path, :repack => false)
+    end
+
+    def upload_tarball(tarball_path, options = {})
       tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
+      # Trying to repack release by default
+      repack  = options.has_key?(:repack) ? !!options[:repack] : true
 
       say("\nVerifying release...")
       tarball.validate(:allow_sparse => true)
-      say("\n")
+      nl
 
       if !tarball.valid?
         err("Release is invalid, please fix, verify and upload again")
       end
 
       begin
-        release_info = fetch_release_info(tarball.release_name)
-
-        if release_info["versions"].include?(tarball.version)
+        remote_release = get_remote_release(tarball.release_name)
+        if remote_release["versions"].include?(tarball.version)
           err "This release version has already been uploaded"
         end
 
-        say "Checking if we can repack release and perform sparse upload"
-
-        jobs_to_remove = []
-        packages_to_remove = []
-
-        tarball.jobs.each do |local_job|
-          job = release_info["jobs"].detect do |remote_job|
-            local_job["name"] == remote_job["name"] && local_job["version"].to_s == remote_job["version"].to_s
-          end
-          desc = "`#{local_job["name"]} (#{local_job["version"]})'"
-
-          if job
-            if job["sha1"] == local_job["sha1"]
-              jobs_to_remove << local_job["name"]
-              say "Job #{desc} already exists, no need to upload".green
-            else
-              err "Job #{desc} has a different checksum remotely, please fix release"
-            end
-          else
-            say "Job #{desc} needs to be uploaded".red
-          end
-        end
-
-        tarball.packages.each do |local_package|
-          package = release_info["packages"].detect do |remote_package|
-            local_package["name"] == remote_package["name"] && local_package["version"].to_s == remote_package["version"].to_s
-          end
-          desc = "`#{local_package["name"]} (#{local_package["version"]})'"
-
-          if package
-            if package["sha1"] == local_package["sha1"]
-              packages_to_remove << local_package["name"]
-              say "Package #{desc} already exists, no need to upload".green
-            else
-              err "Package #{desc} has a different checksum remotely, please fix release"
-            end
-          else
-            say "Package #{desc} needs to be uploaded".red
-          end
-        end
-
-        if packages_to_remove.size > 0 || jobs_to_remove.size > 0
-          say "Repacking release for sparse upload...".green
-          repacked_path = tarball.repack(packages_to_remove, jobs_to_remove)
+        if repack
+          say "Checking if can repack release for faster upload..."
+          repacked_path = tarball.repack(remote_release)
           if repacked_path.nil?
-            say "Failed to repack".red
+            say "Uploading the whole release".green
           else
+            say "Release repacked (new size is #{pretty_size(repacked_path)})".green
             tarball_path = repacked_path
           end
         end
-
-      rescue Bosh::Cli::DirectorError => e
-        say e.message
-        say "Need to upload the whole release"
+      rescue Bosh::Cli::DirectorError
+        say "Cannot get this release information from director, possibly a new release"
       end
 
       say("\nUploading release...\n")
@@ -110,13 +95,25 @@ module Bosh::Cli::Command
     end
 
     def create(*options)
-      final  = options.include?("--final")
-      force  = options.include?("--force")
-      sparse = options.include?("--sparse")
-
-      if final && sparse
-        err "Final sparse releases are not allowed"
+      if options.size == 1 && File.file?(options[0])
+        create_from_manifest(options[0])
+      else
+        create_from_spec(*options)
       end
+    end
+
+    def create_from_manifest(manifest_file)
+      say "Recreating release from the manifest"
+      final_release = Bosh::Cli::Release.final(work_dir)
+      blobstore     = init_blobstore(final_release.s3_options)
+
+      Bosh::Cli::ReleaseCompiler.compile(manifest_file, blobstore)
+    end
+
+    def create_from_spec(*options)
+      final         = options.include?("--final")
+      force         = options.include?("--force")
+      manifest_only = options.any? { |opt| ["--sparse", "--lite", "--manifest-only"].include?(opt) }
 
       check_if_release_dir
       check_if_dirty_state unless force
@@ -124,11 +121,8 @@ module Bosh::Cli::Command
       packages  = []
       jobs      = []
 
-      packages_to_skip = []
-      jobs_to_skip     = []
-
       final_release = Bosh::Cli::Release.final(work_dir)
-      dev_release = Bosh::Cli::Release.dev(work_dir)
+      dev_release   = Bosh::Cli::Release.dev(work_dir)
 
       if final
         header "Building FINAL release".green
@@ -148,43 +142,15 @@ module Bosh::Cli::Command
         release.update_config(:name => name)
       end
 
-      if sparse
-        begin
-          say "Fetching existing release from director to allow sparse release creation...".green
-          release_info = fetch_release_info(release.name)
-        rescue Bosh::Cli::DirectorError => e
-          say e.message
-          say "Creating full release"
-          sparse = false
-        end
-      end
-
       blobstore = init_blobstore(final_release.s3_options)
 
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
-
         package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, blobstore)
         say "Building #{package.name.green}..."
         package.build
-
         packages << package
-
-        if sparse
-          remote_package = release_info["packages"].detect do |rp|
-            package.name == rp["name"] && package.version.to_s == rp["version"].to_s
-          end
-
-          desc = "`#{package.name} (#{package.version})'"
-
-          if remote_package
-            packages_to_skip << package
-            say "Package #{desc} already exists".green
-          else
-            say "Package #{desc} will be included into release".red
-          end
-        end
-        say("\n")
+        nl
       end
 
       if packages.size > 0
@@ -194,7 +160,7 @@ module Bosh::Cli::Command
         for package_name in sorted_packages
           say("- %s" % [ package_name ])
         end
-        say("\n")
+        nl
       end
 
       built_package_names = packages.map { |package| package.name }
@@ -205,37 +171,24 @@ module Bosh::Cli::Command
         say "Building #{job.name.green}..."
         job.build
         jobs << job
-
-        if sparse
-          remote_job = release_info["jobs"].detect do |rj|
-            job.name == rj["name"] && job.version.to_s == rj["version"].to_s
-          end
-
-          desc = "`#{job.name} (#{job.version})'"
-
-          if remote_job
-            jobs_to_skip << job
-            say "Job #{desc} already exists".green
-          else
-            say "Job #{desc} will be included into release".red
-          end
-        end
-        say("\n")
+        nl
       end
 
-      builder = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, packages_to_skip, jobs_to_skip, :final => final)
-      builder.build
+      builder = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, :final => final)
 
-      say("Built release #{builder.version} at '#{builder.tarball_path}'")
-      say("Release size: #{pretty_size(builder.tarball_path)}")
-      if sparse
-        say("Please note that this release is sparse and probably is only useful with your current target director".red)
+      if manifest_only
+        builder.build(:generate_tarball => false)
+      else
+        builder.build(:generate_tarball => true)
+        say("Built release #{builder.version} at '#{builder.tarball_path.green}'")
+        say("Release size: #{pretty_size(builder.tarball_path).green}")
       end
+
+      say("Release manifest saved in '#{builder.manifest_path.green}'")
     end
 
     def reset
       check_if_release_dir
-
       release = Bosh::Cli::Release.dev(work_dir)
 
       say "Your dev release environment will be completely reset".red
@@ -266,9 +219,9 @@ module Bosh::Cli::Command
         end
       end
 
-      say("\n")
+      nl
       say(releases_table)
-      say("\n")
+      nl
       say("Releases total: %d" % releases.size)
     end
 
@@ -304,15 +257,14 @@ module Bosh::Cli::Command
       result
     end
 
-    def fetch_release_info(name)
-      release_info = director.get_release(name)
+    def get_remote_release(name)
+      release = director.get_release(name)
 
-      unless release_info.is_a?(Hash) && release_info.has_key?("jobs") && release_info.has_key?("packages")
+      unless release.is_a?(Hash) && release.has_key?("jobs") && release.has_key?("packages")
         raise Bosh::Cli::DirectorError, "Cannot find version, jobs and packages info in the director response, maybe old director?"
       end
 
-      release_info
+      release
     end
-
   end
 end
