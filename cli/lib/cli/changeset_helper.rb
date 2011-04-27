@@ -51,7 +51,8 @@ module Bosh::Cli
           when :removed
             out << indent + "removed #{k}: ".red + v.old.to_s
           when :changed
-            out << indent + "changed #{k}: ".yellow + "#{v.old} -> #{v.new}"
+            out << indent + "changed #{k}: ".yellow
+            out << diff(v.old, v.new, indent + "  ")
           when :mismatch
             out << indent + "type mismatch in #{k}: ".red + "#{v.old} (#{v.old.class}) -> #{v.new} (#{v.new.class})"
           end
@@ -64,6 +65,26 @@ module Bosh::Cli
         end
       end
       out
+    end
+
+    def diff(oldval, newval, indent)
+      oldval  = [ oldval ] unless oldval.kind_of?(Array)
+      newval  = [ newval ] unless newval.kind_of?(Array)
+
+      added   = newval - oldval
+      removed = oldval - newval
+
+      lines = []
+
+      removed.each do |line|
+        lines << "#{indent}- #{line}".red
+      end
+
+      added.each do |line|
+        lines << "#{indent}+ #{line}".green
+      end
+
+      lines.join("\n")
     end
 
     def old
