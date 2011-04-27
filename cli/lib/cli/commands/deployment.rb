@@ -241,6 +241,7 @@ module Bosh::Cli::Command
       normalized = manifest.dup
 
       %w(networks jobs resource_pools).each do |section|
+        manifest_error("#{section} is expected to be an array") unless normalized[section].kind_of?(Array)
         normalized[section] = normalized[section].inject({}) do |acc, e|
           if e["name"].blank?
             manifest_error("missing name for one of entries in '#{section}'")
@@ -254,6 +255,7 @@ module Bosh::Cli::Command
       end
 
       normalized["networks"].each do |network_name, network|
+        manifest_error("network subnets is expected to be an array") unless network["subnets"].kind_of?(Array)
         normalized["networks"][network_name]["subnets"] = network["subnets"].inject({}) do |acc, e|
           if e["range"].blank?
             manifest_error("missing range for one of subnets in '#{network_name}'")
