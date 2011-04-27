@@ -13,6 +13,10 @@ module Bosh::Cli
       @children[key.to_s]
     end
 
+    def keys
+      @children.keys
+    end
+
     def []=(key, value)
       @children[key.to_s] = value
     end

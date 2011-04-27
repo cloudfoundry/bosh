@@ -150,10 +150,11 @@ module Bosh::Cli::Command
       diff = Bosh::Cli::HashChangeset.new
       diff.add_hash(normalize_deployment_manifest(manifest), :new)
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
+      @visited = { "name" => 1, "target" => 1 }
 
       say "Detecting changes in deployment...".green
       nl
-      print_summary("Release", diff[:release])
+      print_summary(diff, :release)
 
       if diff[:release][:name].changed?
         say "Release name has changed: %s -> %s".red % [ diff[:release][:name].old, diff[:release][:name].new ]
@@ -168,13 +169,13 @@ module Bosh::Cli::Command
       end
       nl
 
-      print_summary("Compilation", diff[:compilation])
+      print_summary(diff, :compilation)
       nl
 
-      print_summary("Update", diff[:update])
+      print_summary(diff, :update)
       nl
 
-      print_summary("Resource pools", diff[:resource_pools])
+      print_summary(diff, :resource_pools)
 
       old_stemcells = Set.new
       new_stemcells = Set.new
@@ -198,12 +199,19 @@ module Bosh::Cli::Command
       end
 
       nl
-      print_summary("Networks", diff[:networks])
+      print_summary(diff, :networks)
       nl
-      print_summary("Jobs", diff[:jobs])
+      print_summary(diff, :jobs)
       nl
-      print_summary("Properties", diff[:properties])
+      print_summary(diff, :properties)
       nl
+
+      diff.keys.each do |key|
+        unless @visited[key]
+          print_summary(diff, key)
+          nl
+        end
+      end
 
     rescue Bosh::Cli::DeploymentNotFound
       say "Cannot get current deployment information from director, possibly a new deployment".red
@@ -227,14 +235,17 @@ module Bosh::Cli::Command
       err("Deployment manifest error: #{err}")
     end
 
-    def print_summary(title, diff)
+    def print_summary(diff, key, title = nil)
+      title ||= key.to_s.gsub(/[-_]/, " ").capitalize
+
       say title.green
-      summary = diff.summary
+      summary = diff[key].summary
       if summary.empty?
         say "No changes"
       else
         say summary.join("\n")
       end
+      @visited[key.to_s] = 1
     end
 
     def normalize_deployment_manifest(manifest)
