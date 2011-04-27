@@ -22,11 +22,10 @@ module Bosh::Cli
 
       hash.each_pair do |k, v|
         self[k] ||= HashChangeset.new
+        self[k].values[as] = v
 
         if v.is_a?(Hash)
           self[k].add_hash(v, as)
-        else
-          self[k].values[as] = v
         end
       end
     end
@@ -44,20 +43,23 @@ module Bosh::Cli
       out = [ ]
 
       @children.each_pair do |k, v|
-        if v.leaf?
+        if v.state == :mismatch
+          out << indent + "type mismatch in #{k}: ".red + "was #{v.old.class.to_s}, now #{v.new.class.to_s}"
+          out << diff(v.old, v.new, indent + "  ")
+        elsif v.leaf?
           case v.state
           when :added
-            out << indent + "added #{k}: ".green + v.new.to_s
+            out << indent + "added #{k}: ".yellow + v.new.to_s
           when :removed
             out << indent + "removed #{k}: ".red + v.old.to_s
           when :changed
             out << indent + "changed #{k}: ".yellow
             out << diff(v.old, v.new, indent + "  ")
-          when :mismatch
-            out << indent + "type mismatch in #{k}: ".red + "#{v.old} (#{v.old.class}) -> #{v.new} (#{v.new.class})"
           end
         else
+          # TODO: track renames?
           child_summary = v.summary(lev+1)
+
           unless child_summary.empty?
             out << indent + k
             out << child_summary

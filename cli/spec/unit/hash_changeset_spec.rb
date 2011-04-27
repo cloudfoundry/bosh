@@ -22,7 +22,8 @@ describe Bosh::Cli::HashChangeset do
         },
         :arr => %w(a b c)
       },
-      :arr => [ 1, 2, 3 ]
+      :arr => [ 1, 2, 3 ],
+      :zb => { :a => 2, :b => 3}
     }
 
     m2 = {
@@ -37,7 +38,8 @@ describe Bosh::Cli::HashChangeset do
         },
         :arr => %w(a b c d e)
       },
-      :arr => [ 1, 2, 3 ]
+      :arr => [ 1, 2, 3 ],
+      :zb => "test"
     }
 
     mc = changeset(m1, m2)
@@ -62,6 +64,8 @@ describe Bosh::Cli::HashChangeset do
 
     mc[:foo][:arr].changed?.should be_true
     mc[:arr].same?.should be_true
+
+    mc[:zb].mismatch?.should be_true
   end
 
 end
