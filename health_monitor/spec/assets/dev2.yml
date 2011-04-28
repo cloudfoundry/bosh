@@ -1,0 +1,40 @@
+---
+mbus:
+  endpoint: nats://172.31.113.142:4222
+  user: bosh
+  password: b0$H
+
+director:
+  endpoint: http://172.31.113.142:25555
+  user: admin
+  password: admin
+
+intervals:
+  poll_director: 60
+  poll_grace_period: 30
+  log_stats: 60
+  analyze_agents: 60
+  agent_timeout: 60
+  rogue_agent_alert: 120
+
+loglevel: info
+
+alert_delivery_agents:
+
+  - plugin: logger
+
+  - plugin: pagerduty
+    service_key: b2b734f06898012e917512313d009e57
+
+  - plugin: email
+    recipients:
+      - olegs@vmware.com
+    smtp:
+      from: bosh.alerts@gmail.com
+      host: smtp.gmail.com
+      port: 587
+      user: bosh.alerts
+      password: dragonagezb
+      auth: plain
+      tls: true
+      domain: gmail.com

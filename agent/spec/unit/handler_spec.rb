@@ -7,15 +7,49 @@ describe Bosh::Agent::Handler do
     EM.stub(:run).and_yield
     NATS.stub(:connect).and_return(@nats)
 
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
+    # TODO: refactor the whole thing to avoid stubs such as these
+    Bosh::Agent::AlertProcessor.stub(:start)
+    Bosh::Agent::Heartbeat.stub(:enable)
+
+    Bosh::Agent::Config.logger = Logger.new(StringIO.new)
+
+    Bosh::Agent::Config.process_alerts = true
+    Bosh::Agent::Config.smtp_port      = 55213
+    Bosh::Agent::Config.smtp_user      = "user"
+    Bosh::Agent::Config.smtp_password  = "pass"
   end
 
   it "should result in a value payload" do
     handler = Bosh::Agent::Handler.new
     payload = handler.process(Bosh::Agent::Message::Ping, nil)
     payload.should == {:value => "pong"}
+  end
+
+  it "should attempt to start alert processor when handler starts" do
+    Bosh::Agent::AlertProcessor.should_receive(:start).with("127.0.0.1", 55213, "user", "pass")
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
+  end
+
+  it "should setup hearbeats on start if interval is provided" do
+    Bosh::Agent::Config.heartbeat_interval = 20
+    Bosh::Agent::Heartbeat.should_receive(:enable).with(20)
+    Bosh::Agent::Handler.new.start
+  end
+
+  it "shouldn't attemtp setting up hearbeats on start if interval is not provided" do
+    Bosh::Agent::Config.heartbeat_interval = 0
+    Bosh::Agent::Heartbeat.should_not_receive(:enable)
+    Bosh::Agent::Handler.new.start
+  end
+
+  it "should not start alert processor if alerts are disabled via config" do
+    Bosh::Agent::Config.process_alerts = false
+    Bosh::Agent::AlertProcessor.should_not_receive(:start)
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
   end
 
   it "should result in an exception payload" do

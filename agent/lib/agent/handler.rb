@@ -1,33 +1,34 @@
-
 module Bosh::Agent
-
-  class MessageHandlerError < StandardError; end
-  class UnknownMessage < StandardError; end
-  class LoadSettingsError < StandardError; end
 
   class Handler
     attr_reader :processors
 
-    class << self
-      def start
-        Handler.new.start
-      end
+    def self.start
+      new.start
     end
 
     def initialize
-      @agent_id = Config.agent_id
-      @logger = Config.logger
-      @nats_uri = Config.mbus
-      @base_dir = Config.base_dir
+      @agent_id  = Config.agent_id
+      @logger    = Config.logger
+      @nats_uri  = Config.mbus
+      @base_dir  = Config.base_dir
+
+      # Alert processing
+      @process_alerts = Config.process_alerts
+      @smtp_user      = Config.smtp_user
+      @smtp_password  = Config.smtp_password
+      @smtp_port      = Config.smtp_port
 
       @lock = Mutex.new
-      @long_running_agent_task = []
+
       @results = []
-      message_processors
+      @long_running_agent_task = []
+
+      find_message_processors
     end
 
     # TODO: add runtime loading of messag handlers
-    def message_processors
+    def find_message_processors
       message_consts = Bosh::Agent::Message.constants
       @processors = {}
       message_consts.each do |c|
@@ -41,7 +42,6 @@ module Bosh::Agent
       @logger.info("Message processors: #{@processors.inspect}")
     end
 
-    # TODO:
     def lookup(method)
       @processors[method]
     end
@@ -52,10 +52,23 @@ module Bosh::Agent
       EM.run do
         begin
           @nats = NATS.connect(:uri => @nats_uri, :autostart => false) { on_connect }
+          Config.nats = @nats
         rescue Errno::ENETUNREACH, Timeout::Error => e
           @logger.info("Unable to talk to nats - retry (#{e.inspect})")
           sleep 0.1
           retry
+        end
+
+        setup_heartbeats
+
+        if @process_alerts
+          if (@smtp_port.nil? || @smtp_user.nil? || @smtp_password.nil?)
+            @logger.error "Cannot start alert processor without having SMTP port, user and password configured"
+            @logger.error "Agent will be running but alerts will NOT be properly processed"
+          else
+            @logger.debug("SMTP: #{@smtp_password}")
+            Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
+          end
         end
       end
     end
@@ -70,6 +83,16 @@ module Bosh::Agent
       @nats.subscribe(subscription) { |raw_msg| handle_message(raw_msg) }
     end
 
+    def setup_heartbeats
+      interval = Config.heartbeat_interval.to_i
+      if interval > 0
+        Bosh::Agent::Heartbeat.enable(interval)
+        @logger.info("Heartbeats are enabled and will be sent every #{interval} seconds")
+      else
+        @logger.warn("Heartbeats are disabled")
+      end
+    end
+
     def handle_message(json)
       begin
         msg = Yajl::Parser.new.parse(json)
@@ -81,8 +104,8 @@ module Bosh::Agent
       @logger.info("Message: #{msg.inspect}")
 
       reply_to = msg['reply_to']
-      method = msg['method']
-      args = msg['arguments']
+      method   = msg['method']
+      args     = msg['arguments']
 
       if method == "get_state"
         method = "state"
@@ -120,7 +143,6 @@ module Bosh::Agent
         publish(reply_to, payload)
       end
     end
-
 
     def handle_get_task(reply_to, agent_task_id)
       if @long_running_agent_task == [agent_task_id]

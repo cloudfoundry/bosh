@@ -1,16 +1,57 @@
-
 module Bosh::Agent
 
   # A good chunk of this code is lifted from the implementation of POSIX::Spawn::Child
   class Monit
     BUFSIZE = (32 * 1024)
 
-    def self.start
-      self.new.run
-    end
-
     class << self
       attr_accessor :enabled
+
+      # enable supposed to be called in the very beginning as it creates
+      # sync primitives. Ideally this class should be refactored to minimize
+      # the number of singleton methods having to keep track of the state.
+      def enable
+        @enabled     = true
+        @lock        = Mutex.new
+        @monit_ready = ConditionVariable.new
+      end
+
+      def start
+        new.run
+      end
+
+      # Signals that Monit process is ready (with given pid).
+      # Called from exec_monit
+      def signal_pid(pid)
+        @lock.synchronize do
+          logger.info("Monit started (pid=#{pid})")
+          @pid = pid
+          @monit_ready.signal
+        end
+      end
+
+      # Kill monit process spawned by this agent.
+      # Will block until monit is ready
+      # unless it's known to be running.
+      # TODO: this should be thoroughly tested!
+      def kill
+        @lock.synchronize do
+          if @pid
+            kill_pid(@pid)
+          else
+            @monit_ready.wait(@lock)
+            kill_pid(@pid)
+          end
+        end
+      end
+
+      def kill_pid(pid)
+        return if pid.nil?
+        logger.warn("Killing monit (pid=#{pid})")
+        Process.kill("TERM", pid) rescue nil
+        Process.waitpid(pid) rescue nil
+        @pid = nil
+      end
 
       def base_dir
         Bosh::Agent::Config.base_dir
@@ -24,8 +65,20 @@ module Bosh::Agent
         File.join(base_dir, 'monit')
       end
 
+      def monit_events_dir
+        File.join(monit_dir, 'events')
+      end
+
       def monit_user_file
         File.join(monit_dir, 'monit.user')
+      end
+
+      def monit_alerts_file
+        File.join(monit_dir, 'alerts.monitrc')
+      end
+
+      def smtp_port
+        Bosh::Agent::Config.smtp_port
       end
 
       def monit_credentials
@@ -48,15 +101,50 @@ module Bosh::Agent
         OpenSSL::Random.random_bytes(8).unpack("H*")[0]
       end
 
+      def setup_monit_dir
+        FileUtils.mkdir_p(monit_dir)
+        FileUtils.chmod(0700, monit_dir)
+      end
+
       def setup_monit_user
         unless File.exist?(monit_user_file)
-
-          FileUtils.mkdir_p(monit_dir)
-          FileUtils.chmod(0700, monit_dir)
-
+          setup_monit_dir
           File.open(monit_user_file, 'w') do |f|
             f.puts("vcap:#{random_credential}")
           end
+        end
+      end
+
+      # This and other methods could probably be refactored into a separate management class to avoid keeping
+      # all this state in a metaclass (as it's weird to test)
+      def setup_alerts
+        return unless Config.process_alerts
+
+        alerts_config = <<-CONFIG
+        set alert bosh@localhost
+        set mailserver 127.0.0.1 port #{Config.smtp_port}
+            username "#{Config.smtp_user}" password "#{Config.smtp_password}"
+
+        set eventqueue
+            basedir #{monit_events_dir}
+            slots 5000
+
+        set mail-format {
+          from: monit@localhost
+          subject: Monit Alert
+          message: Service: $SERVICE
+          Event: $EVENT
+          Action: $ACTION
+          Date: $DATE
+          Description: $DESCRIPTION
+        }
+        CONFIG
+
+        setup_monit_dir
+        FileUtils.mkdir_p(monit_events_dir)
+
+        File.open(monit_alerts_file, 'w') do |f|
+          f.puts(alerts_config)
         end
       end
 
@@ -98,6 +186,10 @@ module Bosh::Agent
         retry_monit_request(20) { |client| client.start(:group => BOSH_APP_GROUP) }
       end
 
+      def start_all_services
+        retry_monit_request(20) { |client| client.start({ }) }
+      end
+
       def retry_monit_request(attempts=10)
         # HACK: Monit becomes unresponsive after reload
         begin
@@ -120,6 +212,28 @@ module Bosh::Agent
         end
       end
 
+      def service_group_state(num_retries=10)
+        # FIXME: state should be unknown if monit is disabled
+        # However right now that would break director interaction
+        # (at least in integration tests)
+        return "running" unless @enabled
+
+        retry_monit_request(num_retries) do |client|
+          status = client.status(:group => BOSH_APP_GROUP)
+
+          not_running = status.reject do |name, data|
+            # break early if any service is initializing
+            return "starting" if data[:monitor] == :init
+            # at least with monit_api a stopped services is still running
+            (data[:monitor] == :yes && data[:status][:message] == "running")
+          end
+          not_running.empty? ? "running" : "failing"
+        end
+      rescue => e
+        logger.info("Unable to determine job state: #{e}")
+        "unknown"
+      end
+
     end
 
     def initialize
@@ -127,12 +241,12 @@ module Bosh::Agent
     end
 
     def run
-      Thread.new {
-        exec_monit
-      }
+      Thread.new { exec_monit }
     end
 
     def exec_monit
+      status = nil
+
       pid, stdin, stdout, stderr = POSIX::Spawn.popen4(Monit.monit_bin, '-I', '-c', Monit.monitrc)
       stdin.close
 
@@ -142,18 +256,28 @@ module Bosh::Agent
       }
 
       log_monit_output(stdout, stderr)
+      signal_pid(pid)
 
-      status = Process.waitpid(pid)
-    rescue Object => e
-      @logger.info("Failed to run Monit: #{e.inspect} #{e.backtrace}")
+      status = Process.waitpid(pid) rescue nil
+    rescue => e
+      # TODO: send alert to HM
+      signal_pid(nil)
+      @logger.error("Failed to run Monit: #{e.inspect} #{e.backtrace}")
+
       [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
+
       if status.nil?
-        ::Process.kill('TERM', pid) rescue nil
-        waitpid(pid)      rescue nil
+        Process.kill('TERM', pid) rescue nil
+        Process.waitpid(pid)      rescue nil
       end
+
       raise
     ensure
-      [stdin, stdout, stderr].each { |fd| fd.close rescue nil } 
+      [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
+    end
+
+    def signal_pid(pid)
+      self.class.signal_pid(pid)
     end
 
     def log_monit_output(stdout, stderr)
@@ -183,3 +307,4 @@ module Bosh::Agent
 
   end
 end
+

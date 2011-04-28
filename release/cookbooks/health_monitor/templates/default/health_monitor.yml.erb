@@ -1,0 +1,36 @@
+---
+mbus:
+  endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+  user: <%= node[:nats][:user] %>
+  password: <%= node[:nats][:password] %>
+
+director:
+  endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port] %>
+  user: admin
+  password: admin
+
+intervals:
+  poll_director: 60
+  poll_grace_period: 30
+  log_stats: 300
+  analyze_agents: 60
+  agent_timeout: 180
+  rogue_agent_alert: 180
+
+alert_delivery_agents:
+  - plugin: logger
+
+  - plugin: email
+    recipients:
+      - olegs@vmware.com
+    smtp:
+      from: bhm@localhost.localdomain
+      host: smtp.las01.emcatmos.com
+      port: 25
+      auth: plain
+      user: appcloud
+      password: @ppcl0ud
+      domain: localdomain
+
+logfile: <%= node[:health_monitor][:path] %>/shared/logs/health_monitor.log
+loglevel: info
