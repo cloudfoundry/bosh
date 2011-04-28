@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
+require "health_monitor"
+
+config_file = File.expand_path("../../config/health_monitor.yml", __FILE__)
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+Signal.trap("INT") do
+  puts "Interrupted..."
+  exit
+end
+
+Bosh::HealthMonitor::Runner.run(config_file)

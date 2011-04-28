@@ -223,12 +223,7 @@ module Bosh::Director
       name       = params[:name].to_s.strip
       deployment = Models::Deployment.find(:name => name)
       raise DeploymentNotFound.new(name) if deployment.nil?
-
-      result = {
-        "manifest" => deployment.manifest
-      }
-
-      Yajl::Encoder.encode(result)
+      @deployment_manager.deployment_to_json(deployment)
     end
 
     delete "/deployments/:name" do

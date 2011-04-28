@@ -1,0 +1,42 @@
+HealthMonitor is a Bosh component responsible for heartbeating.
+
+* gets model data from director: vm, cid, agent_id, deployment name, *pubkey
+* gets state from all agents
+
+Heartbeats:
+===========
+- HealthMonitor: 24/7 components
+- gets model data from director:
+-- vm/cid/agent_id/deployment name/instance public key
+-- optionally: job name/job index/disk
+- get state (full w/packages) from everyone
+-- consider light weight get_state for more frequent updates (just running and friends)
+- by deployment
+-- get_state for each·
+--- if failed_get _state: verify if deployment is changed
+----- if unchanged:: get deployment lock
+-------if we can't get lock: break get state for deployment
+-- if last mustated too new: state: init
+--- other states: healthy/unhealthy)
+
+- get deployment meta data:
+- max error velocity
+-- some components statless define higher velocity
+-- stateful: zero velocity
+- types of error velocity: soft/hard
+- alert when velocity exceeded
+- alert with different severity on any velocity chang
+- alerting funnel:
+-- severity, components, timestamp, details
+- encryption:
+-- part of director, use director private key/agents public keys
+- general changes:
+-- agent: add last_apply/mutated
+-- deployment: last_deployed
+- monit:
+-- runaway protection
+-- we want to know when monit has restarted processes
+- "monitor only monitors"
+-- mitigation done by director batched by deployment
+- director down -> alert
+- delete old keys in redis (when instances/jobs are deleted)

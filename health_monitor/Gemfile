@@ -1,0 +1,14 @@
+source :rubygems
+
+gem "eventmachine", "~> 0.12.10"
+gem "logging", "~> 1.5.0"
+gem "em-http-request", "~> 0.3.0"
+gem "nats", "~> 0.4.10"
+gem "yajl-ruby", "~> 0.8.2"
+gem "uuidtools"
+
+group :test do
+  gem "rspec", "~> 2.5.0"
+  gem "ruby-debug", :platforms => :ruby_18
+  gem "ruby-debug19", :platforms => :ruby_19
+end
