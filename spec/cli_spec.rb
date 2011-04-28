@@ -542,6 +542,7 @@ describe Bosh::Spec::IntegrationTest do
       run_bosh("upload release #{release_filename}")
 
       run_bosh("deploy").should =~ rx("Deployed to Test Director using '#{deployment_manifest.path}' deployment manifest")
+
       # TODO: figure out which artefacts should be created by the given manifest
     end
 

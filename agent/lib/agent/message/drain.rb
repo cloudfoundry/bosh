@@ -1,65 +1,98 @@
 require 'yaml'
+require 'monitor'
 
 module Bosh::Agent
   module Message
     class Drain
+
+      HM_NOTIFY_TIMEOUT = 5
+
       def self.process(args)
         self.new(args).drain
       end
 
       def initialize(args)
-        @logger = Bosh::Agent::Config.logger
-        @base_dir = Bosh::Agent::Config.base_dir
+        @logger     = Bosh::Agent::Config.logger
+        @base_dir   = Bosh::Agent::Config.base_dir
+        @nats       = Bosh::Agent::Config.nats
+        @agent_id   = Bosh::Agent::Config.agent_id
+        @old_spec   = Bosh::Agent::Config.state.to_hash
+        @args       = args
 
-        @logger.info("Draining: #{args.inspect}")
+        @drain_type = args[0]
+        @spec       = args[1]
+      end
+
+      def drain
+        @logger.info("Draining: #{@args.inspect}")
 
         if Bosh::Agent::Config.configure
           Bosh::Agent::Monit.unmonitor_services
         end
 
-        @drain_type = args.shift
+        case @drain_type
+        when "shutdown"
+          drain_for_shutdown
+        when "update"
+          drain_for_update
+        else
+          raise Bosh::Agent::MessageHandlerError, "Unknown drain type #{@drain_type}"
+        end
+      end
 
-        if @drain_type == "update"
-          @spec = args.shift
-          unless @spec
-            raise Bosh::Agent::MessageHandlerError,
-              "Drain update called without apply spec"
+      def drain_for_update
+        if @spec.nil?
+          raise Bosh::Agent::MessageHandlerError, "Drain update called without apply spec"
+        end
+
+        if @old_spec.key?('job') && drain_script_exists?
+          # HACK: We go through the motions below to be able to support drain scripts written as shell scripts
+          job_change = \
+          if !@old_spec.key?('job')
+            "job_new"
+          elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
+            "job_unchanged"
+          else
+            "job_changed"
+          end
+
+          hash_change = \
+          if !@old_spec.key?('configuration_hash')
+            "hash_new"
+          elsif @old_spec['configuration_hash'] == @spec['configuration_hash']
+            "hash_unchanged"
+          else
+            "hash_changed"
+          end
+          run_drain_script(job_change, hash_change, updated_packages.flatten)
+        else
+          0
+        end
+      end
+
+      def drain_for_shutdown
+        lock = Monitor.new
+        delivery_cond = lock.new_cond
+        delivered = false
+
+        # HM notification should be in sync with VM shutdown
+        Thread.new do
+          @nats.publish("hm.agent.shutdown.#{@agent_id}") do
+            lock.synchronize do
+              delivered = true
+              delivery_cond.signal
+            end
           end
         end
 
-        @old_spec = Bosh::Agent::Message::State.new(nil).state
-      end
+        lock.synchronize do
+          delivery_cond.wait(HM_NOTIFY_TIMEOUT) unless delivered
+        end
 
-      def drain
-        return 0 unless @old_spec.key?('job') && drain_script_exists?
-
-        case @drain_type
-        when "shutdown"
-          drain_time = run_drain_script("job_shutdown", "hash_unchanged", [])
-          return drain_time
-        when "update"
-          # HACK: We go through the motions below to be able to support drain scripts written as shell scripts
-          job_change =  if !@old_spec.key?('job')
-                          "job_new"
-                        elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
-                          "job_unchanged"
-                        else
-                          "job_changed"
-                        end
-
-          hash_change = if !@old_spec.key?('configuration_hash')
-                          "hash_new"
-                        elsif @old_spec['configuration_hash'] == @spec['configuration_hash']
-                          "hash_unchanged"
-                        else
-                          "hash_changed"
-                        end
-
-          drain_time = run_drain_script(job_change, hash_change, updated_packages.flatten)
-          return drain_time
+        if @old_spec.key?('job') && drain_script_exists?
+          run_drain_script("job_shutdown", "hash_unchanged", [])
         else
-          raise Bosh::Agent::MessageHandlerError,
-            "Unknown drain type #{@drain_type}"
+          0
         end
       end
 
@@ -106,7 +139,7 @@ module Bosh::Agent
           else
             false
           end
-        end.collect { |package_name, pkg| package_name } 
+        end.collect { |package_name, pkg| package_name }
       end
 
       def drain_script
