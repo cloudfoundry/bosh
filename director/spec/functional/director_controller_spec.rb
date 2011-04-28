@@ -196,13 +196,23 @@ describe Bosh::Director::Controller do
     end
 
     describe "getting deployment info" do
-      it "returns manifest" do
+      it "returns manifest, vms" do
         deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
+        vms = [ ]
+
+        15.times do |i|
+          vm_params = { "agent_id" => "agent-#{i+1}", "cid" => "cid-#{i+1}" }
+          vm = Bosh::Director::Models::Vm.create({"deployment_id" => deployment.id}.merge(vm_params))
+          vms << vm_params
+        end
+
         get "/deployments/test_deployment"
 
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
         YAML.load(body["manifest"]).should == { "foo" => "bar" }
+
+        body["vms"].sort_by{ |vm| vm["agent_id"] }.should == vms.sort_by { |vm| vm["agent_id"] }
       end
     end
 

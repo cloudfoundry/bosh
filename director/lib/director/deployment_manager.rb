@@ -21,5 +21,21 @@ module Bosh::Director
       task
     end
 
+    def deployment_to_json(deployment)
+      vms = deployment.vms.map do |vm|
+        {
+          "agent_id" => vm.agent_id,
+          "cid"      => vm.cid
+        }
+      end
+
+      result = {
+        "manifest" => deployment.manifest,
+        "vms"      => vms
+      }
+
+      Yajl::Encoder.encode(result)
+    end
+
   end
 end
