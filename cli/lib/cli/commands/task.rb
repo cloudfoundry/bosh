@@ -4,6 +4,11 @@ module Bosh::Cli::Command
     def track(task_id, *flags)
       auth_required
 
+      if task_id == "last"
+        last = director.list_recent_tasks(1)
+        task_id = last[0] ? last[0]["id"] : 0
+      end
+
       task = Bosh::Cli::DirectorTask.new(director, task_id)
       say("Task state: #{task.state}")
 
