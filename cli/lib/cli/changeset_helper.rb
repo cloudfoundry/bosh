@@ -82,11 +82,15 @@ module Bosh::Cli
 
       lines = []
 
+      # Ruby 1.8 has ugly Hash#to_s, hence the normalization
+
       removed.each do |line|
+        line = line.inspect if line.is_a?(Hash)
         lines << "#{indent}- #{line}".red
       end
 
       added.each do |line|
+        line = line.inspect if line.is_a?(Hash)
         lines << "#{indent}+ #{line}".green
       end
 
