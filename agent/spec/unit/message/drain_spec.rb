@@ -34,7 +34,7 @@ describe Bosh::Agent::Message::Drain do
     drain_out = File.join(base_dir, 'tmp', 'yay.out')
 
     File.open(drain_script, 'w') do |fh|
-      fh.puts "#/bin/sh\necho $@ > #{drain_out}\necho -n '10'"
+      fh.puts "#!/bin/bash\necho $@ > #{drain_out}\necho -n '10'"
     end
     FileUtils.chmod(0777, drain_script)
 
@@ -52,7 +52,7 @@ describe Bosh::Agent::Message::Drain do
     FileUtils.mkdir_p(bindir)
 
     File.open(drain_script, 'w') do |fh|
-      fh.puts "#/bin/sh\necho $@ > /tmp/yay.out\necho -n '10'"
+      fh.puts "#!/bin/bash\necho $@ > /tmp/yay.out\necho -n '10'"
     end
     FileUtils.chmod(0777, drain_script)
 
@@ -105,15 +105,15 @@ describe Bosh::Agent::Message::Drain do
       "configuration_hash"=>"bfa2468a257de0ead95e1812038030209dc5b0b7",
       "packages"=>{
         "mysqlclient"=>{
-          "name"=>"mysqlclient", "blobstore_id"=>"7eb0da76-2563-445c-81a2-e25a3f446473", 
+          "name"=>"mysqlclient", "blobstore_id"=>"7eb0da76-2563-445c-81a2-e25a3f446473",
           "sha1"=>"9e81d6e1cd2aa612598b78f362d94534cedaff87", "version"=>"1.1"
         },
         "cloudcontroller"=>{
-          "name"=>"cloudcontroller", "blobstore_id"=>"8cc08509-c5ff-42ce-9ad9-423a80beee83", 
+          "name"=>"cloudcontroller", "blobstore_id"=>"8cc08509-c5ff-42ce-9ad9-423a80beee83",
           "sha1"=>"40d5b9f0756aa5a22141bf78094b16b6d2c2b5e8", "version"=>"1.1-dev.1"
         },
         "ruby"=>{
-          "name"=>"ruby", "blobstore_id"=>"12fbfc36-69be-4f40-81c8-bab238aaa19d", 
+          "name"=>"ruby", "blobstore_id"=>"12fbfc36-69be-4f40-81c8-bab238aaa19d",
           "sha1"=>"c5daee2106b4e948d722c7601ce8f5901e790627", "version"=>"1.1"
         }
       },

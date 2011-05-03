@@ -140,26 +140,33 @@ module Bosh::Agent
 
       def run_hook(hook, job_template_name)
         hook_file = File.join(base_dir, 'jobs', job_template_name, 'bin', hook)
-        if File.exist?(hook_file)
 
-          env = {
-            'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
-          }
-
-          child = POSIX::Spawn::Child.new(env, hook_file, :unsetenv_others => true)
-          result = child.out
-          logger.info("Hook #{hook} for job #{job_template_name}: #{result}")
-
-          unless child.status.exitstatus == 0
-            exception_message = "Hook #{hook} for #{job_template_name} failed "
-            exception_message += "(exit: #{child.status.exitstatus}) "
-            exception_message += " stderr: #{child.err}, stdout: #{result}"
-            logger.info(exception_message)
-
-            raise Bosh::Agent::MessageHandlerError, exception_message
-          end
-          result
+        unless File.exists?(hook_file)
+          return nil
         end
+
+        unless File.executable?(hook_file)
+          raise Bosh::Agent::MessageHandlerError, "`#{hook}' hook for `#{job_template_name}' job is not an executable file"
+        end
+
+        env = {
+          'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
+        }
+
+        child = POSIX::Spawn::Child.new(env, hook_file, :unsetenv_others => true)
+
+        result = child.out
+        logger.info("Hook #{hook} for job #{job_template_name}: #{result}")
+
+        unless child.status.exitstatus == 0
+          exception_message = "Hook #{hook} for #{job_template_name} failed "
+          exception_message += "(exit: #{child.status.exitstatus}) "
+          exception_message += " stderr: #{child.err}, stdout: #{result}"
+          logger.info(exception_message)
+
+          raise Bosh::Agent::MessageHandlerError, exception_message
+        end
+        result
       end
 
     end
