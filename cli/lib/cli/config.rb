@@ -55,7 +55,8 @@ module Bosh
         if @config_file.has_key?("aliases") &&
             @config_file["aliases"].is_a?(Hash) &&
             @config_file["aliases"].has_key?(category) &&
-            @config_file["aliases"][category].is_a?(Hash)
+            @config_file["aliases"][category].is_a?(Hash) &&
+            !@config_file["aliases"][category][alias_name].blank?
           @config_file["aliases"][category][alias_name].to_s
         else
           nil
