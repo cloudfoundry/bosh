@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
-describe Bosh::Agent::Util do 
+describe Bosh::Agent::Util do
 
   before(:each) do
     logger = mock('logger')
@@ -19,7 +19,7 @@ describe Bosh::Agent::Util do
     response = mock("response")
     response.stub!(:status).and_return(200)
 
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
@@ -33,7 +33,7 @@ describe Bosh::Agent::Util do
     response = mock("response")
     response.stub!(:status).and_return(200)
 
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
@@ -66,13 +66,16 @@ describe Bosh::Agent::Util do
 
     hook_file = File.join(job_bin_dir, 'post-install')
 
+    File.exists?(hook_file).should be_false
+    Bosh::Agent::Util.run_hook('post-install', job_name).should == nil
+
     File.open(hook_file, 'w') do |fh|
-      fh.puts("#!/bin/sh\necho -n 'yay'")
+      fh.puts("#!/bin/bash\necho -n 'yay'") # sh echo doesn't support -n (at least on OSX)
     end
 
     lambda {
       Bosh::Agent::Util.run_hook('post-install', job_name)
-    }.should raise_error(Bosh::Agent::MessageHandlerError, /exit: 127/)
+    }.should raise_error(Bosh::Agent::MessageHandlerError, "`post-install' hook for `hubba' job is not an executable file")
 
     FileUtils.chmod(0700, hook_file)
     Bosh::Agent::Util.run_hook('post-install', job_name).should == "yay"
