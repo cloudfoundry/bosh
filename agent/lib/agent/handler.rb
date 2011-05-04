@@ -15,10 +15,11 @@ module Bosh::Agent
     end
 
     def initialize
-      @agent_id = Config.agent_id
-      @logger = Config.logger
-      @nats_uri = Config.mbus
-      @base_dir = Config.base_dir
+      @agent_id  = Config.agent_id
+      @logger    = Config.logger
+      @nats_uri  = Config.mbus
+      @base_dir  = Config.base_dir
+      @smtp_port = Config.smtp_port
 
       @lock = Mutex.new
       @long_running_agent_task = []
@@ -52,10 +53,23 @@ module Bosh::Agent
       EM.run do
         begin
           @nats = NATS.connect(:uri => @nats_uri, :autostart => false) { on_connect }
+          Config.nats = @nats
         rescue Errno::ENETUNREACH, Timeout::Error => e
           @logger.info("Unable to talk to nats - retry (#{e.inspect})")
           sleep 0.1
           retry
+        end
+
+        if @smtp_port
+          smtp_user     = Monit.smtp_user
+          smtp_password = Monit.smtp_password
+
+          if (smtp_user.nil? || smtp_password.nil?)
+            @logger.error "Cannot start aler processor without having SMTP user and password in Monit configuration"
+            @logger.error "Agent will be running but alerts will NOT be properly processed"
+          else
+            Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, smtp_user, smtp_password)
+          end
         end
       end
     end
@@ -81,8 +95,8 @@ module Bosh::Agent
       @logger.info("Message: #{msg.inspect}")
 
       reply_to = msg['reply_to']
-      method = msg['method']
-      args = msg['arguments']
+      method   = msg['method']
+      args     = msg['arguments']
 
       if method == "get_state"
         method = "state"
@@ -120,7 +134,6 @@ module Bosh::Agent
         publish(reply_to, payload)
       end
     end
-
 
     def handle_get_task(reply_to, agent_task_id)
       if @long_running_agent_task == [agent_task_id]

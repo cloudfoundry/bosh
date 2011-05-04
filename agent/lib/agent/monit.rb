@@ -11,6 +11,7 @@ module Bosh::Agent
 
     class << self
       attr_accessor :enabled
+      attr_accessor :smtp_user, :smtp_password
 
       def base_dir
         Bosh::Agent::Config.base_dir
@@ -20,12 +21,24 @@ module Bosh::Agent
         Bosh::Agent::Config.logger
       end
 
+      def smtp_port
+        Bosh::Agent::Config.smtp_port
+      end
+
       def monit_dir
         File.join(base_dir, 'monit')
       end
 
+      def monit_events_dir
+        File.join(monit_dir, 'events')
+      end
+
       def monit_user_file
         File.join(monit_dir, 'monit.user')
+      end
+
+      def monit_alerts_file
+        File.join(monit_dir, 'alerts.monitrc')
       end
 
       def monit_credentials
@@ -38,6 +51,7 @@ module Bosh::Agent
         # Primarily for CI - normally done during configure
         unless Bosh::Agent::Config.configure
           setup_monit_user
+          setup_alerts
         end
 
         user, cred = monit_credentials
@@ -48,14 +62,51 @@ module Bosh::Agent
         OpenSSL::Random.random_bytes(8).unpack("H*")[0]
       end
 
+      def setup_monit_dir
+        FileUtils.mkdir_p(monit_dir)
+        FileUtils.chmod(0700, monit_dir)
+      end
+
       def setup_monit_user
         unless File.exist?(monit_user_file)
-
-          FileUtils.mkdir_p(monit_dir)
-          FileUtils.chmod(0700, monit_dir)
-
+          setup_monit_dir
           File.open(monit_user_file, 'w') do |f|
             f.puts("vcap:#{random_credential}")
+          end
+        end
+      end
+
+      # [OS] This method has a side effect of setting @smtp_user and @smtp_password if those aren't already set
+      # This and other methods could probably be refactored into a separate management class to avoid keeping
+      # all this state in a metaclass (as it's weird to test)
+      def setup_alerts
+        @smtp_user     ||= "vcap"
+        @smtp_password ||= random_credential
+
+        alerts_config = <<-CONFIG
+        set mailserver 127.0.0.1 port #{smtp_port}
+        username "#{@smtp_user}" password "#{@smtp_password}"
+
+        set eventqueue
+        basedir #{monit_events_dir}
+        slots 5000
+
+        set mail-format {
+          from: monit@localhost
+          subject: Monit Alert
+          message: Service: $SERVICE
+          Event: $EVENT
+          Action: $ACTION
+          Date: $DATE
+        }
+        CONFIG
+
+        unless File.exists?(monit_alerts_file)
+          setup_monit_dir
+          FileUtils.mkdir_p(monit_events_dir)
+
+          File.open(monit_alerts_file, 'w') do |f|
+            f.puts(alerts_config)
           end
         end
       end
@@ -153,7 +204,7 @@ module Bosh::Agent
       end
       raise
     ensure
-      [stdin, stdout, stderr].each { |fd| fd.close rescue nil } 
+      [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
     end
 
     def log_monit_output(stdout, stderr)

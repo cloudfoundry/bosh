@@ -16,10 +16,15 @@ module Bosh::HealthMonitor
       # TODO: handle errors
       # TODO: handle missing agent
 
-      Bhm.nats.subscribe("hm.agent_state.reply.>") do |message, reply, subject|
+      Bhm.nats.subscribe("hm.agent.state.reply.*") do |message, reply, subject|
         @replies_received += 1
         agent_id = subject.split('.').last
         @agents[agent_id]["state"] = message
+      end
+
+      Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
+        agent_id = subject.split('.').last
+        @logger.info("Received alert from `#{agent_id}': #{message}")
       end
     end
 
@@ -49,7 +54,7 @@ module Bosh::HealthMonitor
       # request_id    = UUIDTools::UUID.random_create.to_s
 
       message = {
-        "reply_to" => "hm.agent_state.reply.#{agent_id}",
+        "reply_to" => "hm.agent.state.reply.#{agent_id}",
         "method"   => "get_state",
         "args"     => ""
       }
