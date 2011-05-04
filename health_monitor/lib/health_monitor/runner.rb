@@ -29,7 +29,7 @@ module Bosh::HealthMonitor
         },
 
         "mbus" => {
-          "endpoint" => "nats://172.31.113.142:4222",
+          "endpoint" => "nats://127.0.0.1:4222",
           "user"     => "bosh",
           "password" => "b0$H"
         },

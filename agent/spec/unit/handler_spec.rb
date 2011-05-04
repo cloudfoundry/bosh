@@ -6,16 +6,36 @@ describe Bosh::Agent::Handler do
     @nats = mock('nats')
     EM.stub(:run).and_yield
     NATS.stub(:connect).and_return(@nats)
+    Bosh::Agent::AlertProcessor.stub(:start)
 
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
+    Bosh::Agent::Config.logger = Logger.new(StringIO.new)
+    Bosh::Agent::Config.smtp_port = 55213
   end
 
   it "should result in a value payload" do
     handler = Bosh::Agent::Handler.new
     payload = handler.process(Bosh::Agent::Message::Ping, nil)
     payload.should == {:value => "pong"}
+  end
+
+  it "should attempt to start smtp server if Monit credentials are provided" do
+    Bosh::Agent::Monit.smtp_user = "user"
+    Bosh::Agent::Monit.smtp_password = "pass"
+
+    Bosh::Agent::AlertProcessor.should_receive(:start).with("127.0.0.1", 55213, "user", "pass")
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
+  end
+
+  it "should not attempt to start smtp server if Monit credentials are missing" do
+    Bosh::Agent::Monit.smtp_user = nil
+    Bosh::Agent::Monit.smtp_password = nil
+
+    Bosh::Agent::AlertProcessor.should_not_receive(:start)
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
   end
 
   it "should result in an exception payload" do

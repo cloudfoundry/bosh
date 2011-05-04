@@ -1,14 +1,14 @@
 module Bosh
 end
 
-require 'logger'
+require "logger"
 
-require 'nats/client'
+require "nats/client"
 require "yajl"
-require 'uuidtools'
-require 'ostruct'
-require 'posix/spawn'
-require 'monit_api'
+require "uuidtools"
+require "ostruct"
+require "posix/spawn"
+require "monit_api"
 
 require "agent/ext"
 require "agent/version"
@@ -18,6 +18,10 @@ require "agent/util"
 require "agent/monit"
 
 require "agent/platform"
+
+require "agent/alert"
+require "agent/alert_processor"
+require "agent/smtp_server"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"

@@ -11,14 +11,15 @@ require "agent"
 
 # Defaults
 options = {
-  "configure" => false,
-  "logging"   => { "level" => "DEBUG" },
-  "mbus"      => "nats://localhost:4222",
-  "agent_id"  => "not_configured",
-  "blobstore_options" => {},
+  "configure"          => false,
+  "logging"            => { "level" => "DEBUG" },
+  "mbus"               => "nats://localhost:4222",
+  "agent_id"           => "not_configured",
+  "blobstore_options"  => {},
   "blobstore_provider" => "simple",
-  "base_dir"  => "/var/vcap",
-  "platform_name" => "ubuntu"
+  "platform_name"      => "ubuntu"
+  "base_dir"           => "/var/vcap",
+  "smtp_port"          => nil
 }
 
 opts = OptionParser.new do |opts|
@@ -48,6 +49,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("-r", "--root_dir String", "Root directory") do |opt|
     options["root_dir"] = opt
+  end
+
+  opts.on("-t", "--smtp-port Integer", "Built-in SMTP server port") do |opt|
+    options["smtp_port"] = opt
   end
 
   # Needed this customization for integration tests, quirky but seems to work
