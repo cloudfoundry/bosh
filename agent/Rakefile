@@ -59,6 +59,8 @@ namespace "ubuntu" do
   # Don't do this remote as it probably will kill your sshd.
   desc "Build Ubuntu cell"
   task "cell", :type do |t, args|
+    stemcell_name = ENV["NAME"] || "bosh-stemcell"
+
     type = args[:type]
     version = Bosh::Agent::VERSION
     bosh_protocol = Bosh::Agent::BOSH_PROTOCOL
@@ -127,7 +129,7 @@ namespace "ubuntu" do
       end
 
       File.open("#{tmpdir}/stemcell.MF", 'w') do |f|
-        f.write("---\nname: bosh-stemcell\nversion: #{version}\nbosh_protocol: #{bosh_protocol}\ncloud_properties: {}")
+        f.write("---\nname: #{stemcell_name}\nversion: #{version}\nbosh_protocol: #{bosh_protocol}\ncloud_properties: {}")
       end
 
       Dir.chdir(tmpdir) do
@@ -143,7 +145,7 @@ namespace "ubuntu" do
       end
 
       File.open("#{type}/stemcell.MF", 'w') do |f|
-        f.write("---\nname: bosh-stemcell\nversion: #{version}\nbosh_protocol: #{bosh_protocol}\ncloud_properties: {}")
+        f.write("---\nname: #{stemcell_name}\nversion: #{version}\nbosh_protocol: #{bosh_protocol}\ncloud_properties: {}")
       end
 
       cp("stemcell_dpkg_l.out", "#{type}/stemcell_dpkg_l.txt")
