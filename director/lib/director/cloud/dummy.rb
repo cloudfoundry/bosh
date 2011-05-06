@@ -36,7 +36,10 @@ module Bosh
         agent_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "..", "agent"))
         agent_base_dir = "/tmp/bosh_test_cloud/agent-base-dir-#{agent_id}"
 
-        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112")
+        # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
+        # then port should be overriden for each agent, otherwise all but first won't start
+        # (won't be able to bind to port)
+        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 --no-alerts")
 
         agent_pid = fork do
           ENV["BUNDLE_GEMFILE"] = File.join(agent_dir, 'Gemfile')

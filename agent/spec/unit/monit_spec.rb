@@ -35,18 +35,18 @@ describe Bosh::Agent::Monit do
     Bosh::Agent::Monit.smtp_user     = "vcap"
     Bosh::Agent::Monit.smtp_password = "pass"
 
-    Bosh::Agent::Monit.setup_alerts
+    Bosh::Agent::Monit.setup_alerts(55231, "vcap", "pass")
 
     File.exist?(@monit_alerts_file).should == true
     monit_alert_config = File.read(@monit_alerts_file)
 
     monit_alert_config.should == <<-CONFIG
         set mailserver 127.0.0.1 port 55231
-        username "vcap" password "pass"
+            username "vcap" password "pass"
 
         set eventqueue
-        basedir #{Bosh::Agent::Monit.monit_events_dir}
-        slots 5000
+            basedir #{Bosh::Agent::Monit.monit_events_dir}
+            slots 5000
 
         set mail-format {
           from: monit@localhost

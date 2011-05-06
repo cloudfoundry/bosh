@@ -19,7 +19,11 @@ module Bosh::Agent
       @logger    = Config.logger
       @nats_uri  = Config.mbus
       @base_dir  = Config.base_dir
-      @smtp_port = Config.smtp_port
+
+      @process_alerts = Config.process_alerts
+      @smtp_user      = Config.smtp_user
+      @smtp_password  = Config.smtp_password
+      @smtp_port      = Config.smtp_port
 
       @lock = Mutex.new
       @long_running_agent_task = []
@@ -60,15 +64,15 @@ module Bosh::Agent
           retry
         end
 
-        if @smtp_port
-          smtp_user     = Monit.smtp_user
-          smtp_password = Monit.smtp_password
-
-          if (smtp_user.nil? || smtp_password.nil?)
-            @logger.error "Cannot start aler processor without having SMTP user and password in Monit configuration"
+        if @process_alerts
+          if (@smtp_port.nil? || @smtp_user.nil? || @smtp_password.nil?)
+            @logger.error "Cannot start alert processor without having SMTP port, user and password configured"
             @logger.error "Agent will be running but alerts will NOT be properly processed"
           else
-            Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, smtp_user, smtp_password)
+            if Bosh::Agent::Monit.enabled
+              Bosh::Agent::Monit.setup_alerts(@smtp_port, @smtp_user, @smtp_password)
+            end
+            Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
           end
         end
       end

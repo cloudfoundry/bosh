@@ -18,7 +18,8 @@ options = {
   "blobstore_options"  => {},
   "blobstore_provider" => "simple",
   "base_dir"           => "/var/vcap",
-  "smtp_port"          => nil
+  "smtp_port"          => 2825,
+  "process_alerts"     => true
 }
 
 opts = OptionParser.new do |opts|
@@ -44,6 +45,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("-t", "--smtp-port Integer", "Built-in SMTP server port") do |opt|
     options["smtp_port"] = opt
+  end
+
+  opts.on("--no-alerts", "Don't process alerts from Monit") do |opt|
+    options["process_alerts"] = false
   end
 
   # Needed this customization for integration tests, quirky but seems to work

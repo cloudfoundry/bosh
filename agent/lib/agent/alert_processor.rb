@@ -1,5 +1,8 @@
 module Bosh::Agent
 
+  # AlertProcessor is a simple SMTP server + callback for processing alerts.
+  # It is primarily meant to be used with Monit.
+
   class AlertProcessor
     class Error < StandardError; end
 
