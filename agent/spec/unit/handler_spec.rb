@@ -9,7 +9,11 @@ describe Bosh::Agent::Handler do
     Bosh::Agent::AlertProcessor.stub(:start)
 
     Bosh::Agent::Config.logger = Logger.new(StringIO.new)
-    Bosh::Agent::Config.smtp_port = 55213
+
+    Bosh::Agent::Config.process_alerts = true
+    Bosh::Agent::Config.smtp_port      = 55213
+    Bosh::Agent::Config.smtp_user      = "user"
+    Bosh::Agent::Config.smtp_password  = "pass"
   end
 
   it "should result in a value payload" do
@@ -18,21 +22,32 @@ describe Bosh::Agent::Handler do
     payload.should == {:value => "pong"}
   end
 
-  it "should attempt to start smtp server if Monit credentials are provided" do
-    Bosh::Agent::Monit.smtp_user = "user"
-    Bosh::Agent::Monit.smtp_password = "pass"
-
+  it "should attempt to start alert processor when handler starts" do
     Bosh::Agent::AlertProcessor.should_receive(:start).with("127.0.0.1", 55213, "user", "pass")
 
     handler = Bosh::Agent::Handler.new
     handler.start
   end
 
-  it "should not attempt to start smtp server if Monit credentials are missing" do
-    Bosh::Agent::Monit.smtp_user = nil
-    Bosh::Agent::Monit.smtp_password = nil
-
+  it "should not start alert processor if alerts are disabled via config" do
+    Bosh::Agent::Config.process_alerts = false
     Bosh::Agent::AlertProcessor.should_not_receive(:start)
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
+  end
+
+  it "should setup monit alerts when handler starts (if Monit is enabled)" do
+    Bosh::Agent::Monit.enabled = true
+    Bosh::Agent::Monit.should_receive(:setup_alerts).with(55213, "user", "pass")
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
+  end
+
+  it "should not setup monit alerts when handler starts (if Monit is not enabled)" do
+    Bosh::Agent::Monit.enabled = false
+    Bosh::Agent::Monit.should_not_receive(:setup_alerts)
 
     handler = Bosh::Agent::Handler.new
     handler.start

@@ -68,12 +68,12 @@ end
 
 if __FILE__ == $0
   options = {
-    "configure" => true,
-    "logging" => { "level" => "DEBUG" },
-    "mbus" => "nats://localhost:4222",
-    "agent_id" => "not_configured",
-    "base_dir" => "/var/vcap",
-    "platform_name" => "ubuntu",
+    "configure"         => true,
+    "logging"           => { "level" => "DEBUG" },
+    "mbus"              => "nats://localhost:4222",
+    "agent_id"          => "not_configured",
+    "base_dir"          => "/var/vcap",
+    "platform_name"     => "ubuntu",
     "blobstore_options" => {}
   }
   Bosh::Agent.run(options)

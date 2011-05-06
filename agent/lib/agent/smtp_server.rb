@@ -1,7 +1,8 @@
 module Bosh::Agent
 
-  # TODO: check payload max size
-  # TODO: check what happens if there are multiple messages in one SMTP session
+  # TODO: payload max size should be enforced via underlying LineText2 protocol
+  # but it seems to be missing there, potentially need to monkeypatch LineText2
+  # to add it.
   class SmtpServer < EM::Protocols::SmtpServer
 
     class Error < StandardError; end

@@ -36,7 +36,6 @@ module Bosh::Agent
           setup_tmp
 
           Bosh::Agent::Monit.setup_monit_user
-          Bosh::Agent::Monit.setup_alerts
 
           mount_persistent_disk
           harden_permissions

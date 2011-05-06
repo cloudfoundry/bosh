@@ -5,7 +5,8 @@ module Bosh::Agent
       attr_accessor :agent_id, :configure
       attr_accessor :blobstore, :blobstore_provider, :blobstore_options
       attr_accessor :system_root, :platform_name
-      attr_accessor :smtp_port
+      attr_accessor :process_alerts, :smtp_port, :smtp_user, :smtp_password
+
       attr_accessor :settings
       attr_accessor :nats
 
@@ -27,7 +28,10 @@ module Bosh::Agent
 
         @system_root = config['root_dir'] || "/"
 
-        @smtp_port = config["smtp_port"]
+        @process_alerts = config["process_alerts"]
+        @smtp_port      = config["smtp_port"]
+        @smtp_user      = "vcap"
+        @smtp_password  = random_password(8)
 
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")
@@ -38,6 +42,10 @@ module Bosh::Agent
 
       def platform
         @platform ||= Bosh::Agent::Platform.new(@platform_name).platform
+      end
+
+      def random_password(len)
+        OpenSSL::Random.random_bytes(len).unpack("H*")[0]
       end
 
     end
