@@ -1,0 +1,17 @@
+---
+mbus:
+  endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+  user: <%= node[:nats][:user] %>
+  password: <%= node[:nats][:password] %>
+
+director:
+  endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port]
+  user: admin
+  password: admin
+
+intervals:
+  poll_director: 60
+  log_stats: 60
+  poll_agents: 10
+  agent_timeout: 60
+

@@ -9,7 +9,7 @@ $:.unshift(File.expand_path("../../lib", __FILE__))
 
 require "health_monitor"
 
-config_file = File.expand_path("../../config/health_monitor.yml", __FILE__)
+config_file = nil
 
 opts = OptionParser.new do |opts|
   opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
@@ -22,6 +22,11 @@ opts.parse!(ARGV.dup)
 Signal.trap("INT") do
   puts "Interrupted..."
   exit
+end
+
+if config_file.nil?
+  puts opts
+  exit 1
 end
 
 Bosh::HealthMonitor::Runner.run(config_file)
