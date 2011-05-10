@@ -1,0 +1,17 @@
+---
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  user:
+  password:
+
+director:
+  endpoint: http://127.0.0.1:25555
+  user:
+  password:
+
+intervals:
+  poll_director: 60
+  log_stats: 60
+  poll_agents: 10
+  agent_timeout: 60
+
