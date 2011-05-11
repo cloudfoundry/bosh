@@ -164,13 +164,14 @@ module Bosh::Agent
       end
 
       def self.long_running?; true; end
-
     end
 
     class UnmountDisk < Base
+      GUARD_RETRIES = 300
+      GUARD_SLEEP = 1
+
       def self.process(args)
         self.new.unmount(args)
-        {}
       end
 
       def unmount(args)
@@ -179,19 +180,45 @@ module Bosh::Agent
         partition = "#{disk}1"
 
         if DiskUtil.mount_entry(partition)
-          block, mountpoint = DiskUtil.mount_entry(partition).split
-
-          until `lsof -t +D /var/vcap/store`.empty?
-            sleep 1
-          end
-
-          `umount #{mountpoint}`
-          unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed to umount #{partition} on #{mountpoint} #{$?.exitstatus}"
-          end
+          @block, @mountpoint = DiskUtil.mount_entry(partition).split
+          lsof_guard
+          umount_guard
+          logger.info("Unmounted #{@block} on #{@mountpoint}")
+          return {:message => "Unmounted #{@block} on #{@mountpoint}" }
+        else
+          # TODO: should we raise MessageHandlerError here?
+          return {:message => "Unknown mount for partition: #{partition}"}
         end
       end
 
+      def lsof_guard
+        lsof_attempts = GUARD_RETRIES
+        until lsof_output = `lsof -t +D #{@mountpoint}`.empty?
+          sleep GUARD_SLEEP
+          lsof_attempts -= 1
+          if lsof_attempts == 0
+            raise Bosh::Agent::MessageHandlerError, "Failed lsof guard #{@block} on #{@mountpoint}: #{lsof_output}"
+          end
+        end
+        logger.info("Unmount lsof_guard (attempts: #{GUARD_RETRIES-lsof_attempts})")
+      end
+
+      def umount_guard
+        umount_attempts = GUARD_RETRIES
+        loop {
+          umount_output = `umount #{@mountpoint}`
+          if $?.exitstatus == 0
+            break
+          else
+            sleep GUARD_SLEEP
+            umount_attempts -= 1
+            if umount_attempts == 0
+              raise Bosh::Agent::MessageHandlerError, "Failed to umount #{@block} on #{@mountpoint}: #{umount_output}"
+            end
+          end
+        }
+        logger.info("Unmount umount_guard (attempts: #{GUARD_RETRIES-umount_attempts})")
+      end
 
       def self.long_running?; true; end
     end
