@@ -10,8 +10,7 @@ director:
   password:
 
 intervals:
-  poll_director: 60
-  log_stats: 60
-  poll_agents: 10
-  agent_timeout: 60
+  poll_director: 5
+  log_stats: 10
+  agent_timeout: 10
 

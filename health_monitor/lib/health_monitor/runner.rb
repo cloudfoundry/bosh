@@ -20,12 +20,11 @@ module Bosh::HealthMonitor
     end
 
     def run
-      EM.kqueue; EM.epoll
+      @logger.info("HealthMonitor starting...")
+      EM.kqueue if EM.kqueue?
+      EM.epoll  if EM.epoll?
 
-      EM.error_handler do |e|
-        @logger.error "EM error: #{e}"
-        @logger.error("#{e.backtrace.join("\n")}")
-      end
+      EM.error_handler { |e| handle_em_error(e) }
 
       EM.run do
         connect_to_mbus
@@ -35,12 +34,20 @@ module Bosh::HealthMonitor
       end
     end
 
+    def stop(e = nil)
+      EM.stop
+      @logger.info("HealthMonitor shutting down...")
+      if e.kind_of?(Exception) # Re-raise exception to see the error on tty as well
+        raise e
+      else
+        exit(1)
+      end
+    end
+
     def setup_timers
       EM.next_tick do
         poll_director
-
         EM.add_periodic_timer(@intervals.poll_director) { poll_director }
-        EM.add_periodic_timer(@intervals.poll_agents) { poll_agents }
         EM.add_periodic_timer(@intervals.log_stats) { log_stats }
       end
     end
@@ -52,11 +59,12 @@ module Bosh::HealthMonitor
 
     def connect_to_mbus
       NATS.on_error do |e|
-        if e.kind_of? NATS::ConnectError
-          @logger.fatal("NATS connection failed: #{e}")
-          exit(1)
+        case e
+        when NATS::ConnectError
+          log_exception(e, :fatal)
+          stop(e)
         else
-          @logger.error("NATS problem, #{e}")
+          log_exception(e)
         end
       end
 
@@ -77,15 +85,32 @@ module Bosh::HealthMonitor
       Fiber.new { fetch_deployments }.resume
     end
 
-    def poll_agents
-      @logger.debug "Polling agents..."
+    private
 
-      @agent_manager.each_agent do |agent|
-        @agent_manager.update_state(agent)
-      end
+    # This is somewhat controversial approach: instead of swallowing some exceptions
+    # and letting event loop run further we force our server to stop. The rationale
+    # behind that is to avoid the situation when swallowed exception actually breaks
+    # things:
+    # 1. Periodic timer will get canceled unless we manually reschedule it
+    #    in a rescue clause even if we swallow the exception.
+    # 2. If we want to perform an operation on next tick AND schedule some operation
+    #    to be run periodically AND there is an exception swallowed somewhere during the
+    #    event processing, then on the next tick we don't really process events that follow the buggy one.
+    # These things can be pretty painful for HM as we might think it runs fine
+    # when it actually just swallows some exception and effectively does nothing.
+    # We might revisit that later
+    def handle_em_error(e)
+      log_exception(e, :fatal)
+      stop(e)
     end
 
-    private
+    def log_exception(e, level = :error)
+      level = :error unless level == :error || level == :fatal
+      @logger.send(level, e.to_s)
+      if e.respond_to?(:backtrace) && e.backtrace.respond_to?(:join)
+        @logger.send(level, e.backtrace.join("\n"))
+      end
+    end
 
     def fetch_deployments
       deployments = @director.get_deployments
@@ -110,8 +135,8 @@ module Bosh::HealthMonitor
           @logger.warn "Cannot get VMs list from deployment, possibly the old director version"
         end
       end
-    rescue Bosh::HealthMonitor::DirectorError => e
-      @logger.error(e)
+    rescue Bhm::DirectorError => e
+      log_exception(e)
     end
 
   end

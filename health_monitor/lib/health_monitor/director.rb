@@ -51,16 +51,21 @@ module Bosh::HealthMonitor
     def perform_request(method, uri)
       f = Fiber.current
 
+      target_uri = @endpoint + uri
+
       headers = {
         "authorization" => [@user, @password]
       }
 
-      http = EM::HttpRequest.new(@endpoint + uri).send(method.to_sym, :head => headers)
+      http = EM::HttpRequest.new(target_uri).send(method.to_sym, :head => headers)
 
       http.callback { f.resume(http) }
       http.errback  { f.resume(http) }
 
       Fiber.yield
+
+    rescue URI::Error => e
+      raise DirectorError, "Invalid URI: #{target_uri}"
     end
 
   end

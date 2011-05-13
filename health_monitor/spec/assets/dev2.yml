@@ -1,0 +1,16 @@
+---
+mbus:
+  endpoint: nats://172.31.113.142:4222
+  user: bosh
+  password: b0$H
+
+director:
+  endpoint: http://172.31.113.142:25555
+  user: admin
+  password: admin
+
+intervals:
+  poll_director: 5
+  log_stats: 10
+  agent_timeout: 60
+
