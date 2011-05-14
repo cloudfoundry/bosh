@@ -54,7 +54,7 @@ module Bosh::HealthMonitor
 
     def log_stats
       @logger.info("Managing %s, %s" % [ pluralize(@deployment_manager.deployments_count, "deployment"), pluralize(@agent_manager.agents_count, "agent") ])
-      @logger.info("Agent requests sent = %s, replies received = %s" % [ @agent_manager.requests_sent, @agent_manager.replies_received ])
+      @logger.info("Agent heartbeats received = %s" % [ @agent_manager.heartbeats_received ])
     end
 
     def connect_to_mbus

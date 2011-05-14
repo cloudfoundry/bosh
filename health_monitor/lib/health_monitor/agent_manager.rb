@@ -2,29 +2,31 @@ module Bosh::HealthMonitor
 
   class AgentManager
 
-    attr_reader :requests_sent, :replies_received
+    attr_reader :heartbeats_received
 
     def initialize
       @agents = { }
       @logger = Bhm.logger
       @agents_by_deployment = { }
-      @requests_sent = 0
-      @replies_received = 0
+      @heartbeats_received = 0
     end
 
     def setup_subscriptions
       # TODO: handle errors
       # TODO: handle missing agent
 
-      Bhm.nats.subscribe("hm.agent.state.reply.*") do |message, reply, subject|
-        @replies_received += 1
+      Bhm.nats.subscribe("hm.agent.heartbeat.*") do |message, reply, subject|
+        @heartbeats_received += 1
         agent_id = subject.split('.').last
+        @logger.info("Received heartbeat from #{agent_id}: #{message}")
+        @agents[agent_id] ||= { }
         @agents[agent_id]["state"] = message
       end
 
       Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
         agent_id = subject.split('.').last
         @logger.info("Received alert from `#{agent_id}': #{message}")
+        # TODO: process alert
       end
     end
 
@@ -46,23 +48,6 @@ module Bosh::HealthMonitor
         end
       end
     end
-
-    def update_state(agent)
-      # TODO: add timeout
-      agent_id      = agent["id"]
-      agent_channel = "agent.#{agent_id}"
-      # request_id    = UUIDTools::UUID.random_create.to_s
-
-      message = {
-        "reply_to" => "hm.agent.state.reply.#{agent_id}",
-        "method"   => "get_state",
-        "args"     => ""
-      }
-
-      Bhm.nats.publish(agent_channel, Yajl::Encoder.encode(message))
-      @requests_sent += 1
-    end
-
   end
 
 end

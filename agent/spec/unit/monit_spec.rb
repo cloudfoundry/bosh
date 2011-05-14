@@ -41,6 +41,7 @@ describe Bosh::Agent::Monit do
     monit_alert_config = File.read(@monit_alerts_file)
 
     monit_alert_config.should == <<-CONFIG
+        set alert bosh@localhost
         set mailserver 127.0.0.1 port 55231
             username "vcap" password "pass"
 
