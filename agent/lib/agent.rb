@@ -22,6 +22,7 @@ require "agent/platform"
 require "agent/alert"
 require "agent/alert_processor"
 require "agent/smtp_server"
+require "agent/heartbeat"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"

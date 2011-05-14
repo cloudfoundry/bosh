@@ -84,7 +84,6 @@ module Bosh::Agent
       def setup_alerts(port, user, password)
         alerts_config = <<-CONFIG
         set alert bosh@localhost
-
         set mailserver 127.0.0.1 port #{port}
             username "#{user}" password "#{password}"
 

@@ -14,7 +14,7 @@ module Bosh::HealthMonitor
       status = http.response_header.http_status
 
       if status != "200"
-        raise DirectorError, "Cannot get deployments from director: #{status} #{body}"
+        raise DirectorError, "Cannot get deployments from director at #{http.uri}: #{status} #{body}"
       end
 
       parse_json(body, Array)
@@ -27,7 +27,7 @@ module Bosh::HealthMonitor
       status = http.response_header.http_status
 
       if status != "200"
-        raise DirectorError, "Cannot get deployment `#{name}' from director: #{status} #{body}"
+        raise DirectorError, "Cannot get deployment `#{name}' from director at #{http.uri}: #{status} #{body}"
       end
 
       parse_json(body, Hash)

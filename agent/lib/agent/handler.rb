@@ -64,6 +64,8 @@ module Bosh::Agent
           retry
         end
 
+        setup_heartbeats
+
         if @process_alerts
           if (@smtp_port.nil? || @smtp_user.nil? || @smtp_password.nil?)
             @logger.error "Cannot start alert processor without having SMTP port, user and password configured"
@@ -86,6 +88,16 @@ module Bosh::Agent
     def on_connect
       subscription = "agent.#{@agent_id}"
       @nats.subscribe(subscription) { |raw_msg| handle_message(raw_msg) }
+    end
+
+    def setup_heartbeats
+      interval = Config.heartbeat_interval.to_i
+      if interval > 0
+        Bosh::Agent::Heartbeat.enable(interval)
+        @logger.info("Heartbeats are enabled and will be sent every #{interval} seconds")
+      else
+        @logger.warn("Heartbeats are disabled")
+      end
     end
 
     def handle_message(json)

@@ -28,6 +28,7 @@ module Bosh::Agent
         end
         @logger.info("Agent state: #{state.inspect}")
 
+        # TODO: this is hard to test, should be parameterized
         settings = Bosh::Agent::Config.settings
         if settings
           state["agent_id"] = settings["agent_id"]

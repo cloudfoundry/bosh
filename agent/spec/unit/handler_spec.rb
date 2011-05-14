@@ -6,7 +6,10 @@ describe Bosh::Agent::Handler do
     @nats = mock('nats')
     EM.stub(:run).and_yield
     NATS.stub(:connect).and_return(@nats)
+
+    # TODO: refactor the whole thing to avoid stubs such as these
     Bosh::Agent::AlertProcessor.stub(:start)
+    Bosh::Agent::Heartbeat.stub(:enable)
 
     Bosh::Agent::Config.logger = Logger.new(StringIO.new)
 
@@ -27,6 +30,18 @@ describe Bosh::Agent::Handler do
 
     handler = Bosh::Agent::Handler.new
     handler.start
+  end
+
+  it "should setup hearbeats on start if interval is provided" do
+    Bosh::Agent::Config.heartbeat_interval = 20
+    Bosh::Agent::Heartbeat.should_receive(:enable).with(20)
+    Bosh::Agent::Handler.new.start
+  end
+
+  it "shouldn't attemtp setting up hearbeats on start if interval is not provided" do
+    Bosh::Agent::Config.heartbeat_interval = 0
+    Bosh::Agent::Heartbeat.should_not_receive(:enable)
+    Bosh::Agent::Handler.new.start
   end
 
   it "should not start alert processor if alerts are disabled via config" do

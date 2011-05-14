@@ -20,7 +20,8 @@ options = {
   "platform_name"      => "ubuntu"
   "base_dir"           => "/var/vcap",
   "smtp_port"          => 2825,
-  "process_alerts"     => true
+  "process_alerts"     => true,
+  "heartbeat_interval" => 10
 }
 
 opts = OptionParser.new do |opts|
@@ -58,6 +59,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("--no-alerts", "Don't process alerts from Monit") do |opt|
     options["process_alerts"] = false
+  end
+
+  opts.on("-h", "--heartbeat-interval Integer", "Heartbeat interval") do |opt|
+    options["heartbeat_interval"] = opt
   end
 
   # Needed this customization for integration tests, quirky but seems to work

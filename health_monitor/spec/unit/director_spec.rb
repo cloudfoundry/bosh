@@ -20,12 +20,12 @@ describe Bhm::Director do
   end
 
   it "raises an error if deployments cannot be fetched" do
-    mock_response = mock(:response => "foo", :response_header => mock(:http_status => "500"))
+    mock_response = mock(:response => "foo", :response_header => mock(:http_status => "500"), :uri => "deployments_uri")
     @director.stub!(:perform_request).with(:get, "/deployments").and_return(mock_response)
 
     lambda {
       @director.get_deployments
-    }.should raise_error(Bhm::DirectorError, "Cannot get deployments from director: 500 foo")
+    }.should raise_error(Bhm::DirectorError, "Cannot get deployments from director at deployments_uri: 500 foo")
   end
 
   it "can fetch deployment by name from Bosh director" do

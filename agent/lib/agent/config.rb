@@ -6,7 +6,7 @@ module Bosh::Agent
       attr_accessor :blobstore, :blobstore_provider, :blobstore_options
       attr_accessor :system_root, :platform_name
       attr_accessor :process_alerts, :smtp_port, :smtp_user, :smtp_password
-
+      attr_accessor :heartbeat_interval
       attr_accessor :settings
       attr_accessor :nats
 
@@ -32,6 +32,8 @@ module Bosh::Agent
         @smtp_port      = config["smtp_port"]
         @smtp_user      = "vcap"
         @smtp_password  = random_password(8)
+
+        @heartbeat_interval = config["heartbeat_interval"]
 
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")
