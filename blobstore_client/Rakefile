@@ -11,7 +11,6 @@ gemspec = Gem::Specification.new do |s|
   s.name         = GEM
   s.version      = GEM_VERSION
   s.platform     = Gem::Platform::RUBY
-  s.has_rdoc     = false
   s.summary      = "Bosh blobstore client"
   s.description  = s.summary
   s.authors      = [ "Vadim Spivak", "Oleg Shaldybin" ]
