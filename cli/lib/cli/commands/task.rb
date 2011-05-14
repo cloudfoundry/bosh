@@ -1,8 +1,21 @@
 module Bosh::Cli::Command
   class Task < Base
 
-    def track(task_id, *flags)
+    def track(*args)
       auth_required
+
+      task_id = args.shift
+      flags = args
+
+      if task_id.nil? || task_id == "last"
+        last = director.list_recent_tasks(1)
+        if last.size == 0
+          say("No tasks found!".red)
+          return
+        end
+
+        task_id = last[0]["id"]
+      end
 
       task = Bosh::Cli::DirectorTask.new(director, task_id)
       say("Task state: #{task.state}")

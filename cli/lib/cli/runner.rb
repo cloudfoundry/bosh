@@ -166,7 +166,7 @@ Currently available bosh commands are:
   Monitoring
     tasks [running]                          Show the list of running tasks
     tasks recent [<number>]                  Show <number> recent tasks
-    task <id> [--no-cache]                   Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
+    task [<id>|last] [--no-cache]            Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
 
   Misc
     status                                   Show current status (current target, user, deployment info etc.)
@@ -303,8 +303,8 @@ USAGE
           end
 
         when "task"
-          usage("bosh task <task_id> [--no-cache]")
-          set_cmd(:task, :track, 1..2)
+          usage("bosh task [<task_id>|last] [--no-cache]")
+          set_cmd(:task, :track, 0..2)
 
         when "stemcells"
           usage("bosh stemcells")
