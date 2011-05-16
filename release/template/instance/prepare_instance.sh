@@ -25,7 +25,7 @@ apt-get install -y --force-yes --no-install-recommends \
 dpkg -l > ${bosh_app_dir}/bosh/dpkg_l.out
 
 cd /tmp
-wget ftp://ftp.ruby-lang.org/pub/ruby/1.8/ruby-$RUBY_VERSION.tar.gz
+wget http://ftp.ruby-lang.org/pub/ruby/1.8/ruby-$RUBY_VERSION.tar.gz
 tar zxvf ruby-$RUBY_VERSION.tar.gz
 (
   cd ruby-$RUBY_VERSION
