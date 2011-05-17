@@ -10,7 +10,21 @@ director:
   password:
 
 intervals:
-  poll_director: 5
-  log_stats: 10
+  poll_director: 60
+  log_stats: 60
   agent_timeout: 10
+
+alerts:
+  plugin: email
+  options:
+    recipients:
+      - olegs@vmware.com
+    smtp:
+      from: bosh.alerts@gmail.com
+      host: smtp.gmail.com
+      port: 587
+      user: bosh.alerts
+      password: dragonagezb
+      auth: plain
+      domain: gmail.com
 

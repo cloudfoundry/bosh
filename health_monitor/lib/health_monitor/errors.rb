@@ -11,4 +11,6 @@ module Bosh::HealthMonitor
   class ConfigError < Error; error_code(101); end
   class DirectorError < Error; error_code(201); end
 
+  class AlertProcessingError < Error; error_code(301); end
+
 end

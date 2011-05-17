@@ -28,6 +28,7 @@ module Bosh::Agent
         @smtp_user      = "vcap"
         @smtp_password  = random_password(8)
 
+        @logger.info("Smtp password: #{@smtp_password}")
         @heartbeat_interval = config["heartbeat_interval"]
 
         unless @configure

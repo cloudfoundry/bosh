@@ -14,6 +14,7 @@ rescue LoadError
   end
 end
 
+# Deps
 require "eventmachine"
 require "em-http-request"
 require "nats/client"
@@ -21,8 +22,10 @@ require "logging"
 require "yajl"
 require "uuidtools"
 
+# Helpers
 require "health_monitor/yaml_helper"
 
+# Basic blocks
 require "health_monitor/config"
 require "health_monitor/core_ext"
 require "health_monitor/version"
@@ -30,5 +33,12 @@ require "health_monitor/errors"
 require "health_monitor/runner"
 require "health_monitor/director"
 
+# Managers
 require "health_monitor/deployment_manager"
 require "health_monitor/agent_manager"
+
+# Alert processing
+require "health_monitor/alert_processor"
+require "health_monitor/alert_processors/base"
+require "health_monitor/alert_processors/silent"
+require "health_monitor/alert_processors/email"
