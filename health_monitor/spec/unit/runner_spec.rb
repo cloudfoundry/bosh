@@ -8,9 +8,9 @@ describe Bhm::Runner do
     Bhm.logger.should be_a(Logging::Logger)
     Bhm.director.should be_a(Bhm::Director)
 
-    Bhm.intervals.poll_director.should == 5
-    Bhm.intervals.log_stats.should == 10
-    Bhm.intervals.agent_timeout.should == 10
+    Bhm.intervals.poll_director.should be_kind_of Integer
+    Bhm.intervals.log_stats.should be_kind_of Integer
+    Bhm.intervals.agent_timeout.should be_kind_of Integer
 
     Bhm.mbus.endpoint.should == "nats://127.0.0.1:4222"
     Bhm.mbus.user.should be_nil

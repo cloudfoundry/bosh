@@ -71,6 +71,7 @@ module Bosh::Agent
             @logger.error "Cannot start alert processor without having SMTP port, user and password configured"
             @logger.error "Agent will be running but alerts will NOT be properly processed"
           else
+            @logger.debug("SMTP: #{@smtp_password}")
             if Bosh::Agent::Monit.enabled
               Bosh::Agent::Monit.setup_alerts(@smtp_port, @smtp_user, @smtp_password)
             end
