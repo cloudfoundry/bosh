@@ -49,6 +49,10 @@ module Bosh::HealthMonitor
         poll_director
         EM.add_periodic_timer(@intervals.poll_director) { poll_director }
         EM.add_periodic_timer(@intervals.log_stats) { log_stats }
+
+        EM.add_timer(@intervals.poll_grace_period) do
+          EM.add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
+        end
       end
     end
 
@@ -83,6 +87,12 @@ module Bosh::HealthMonitor
     def poll_director
       @logger.debug "Getting deployments from director..."
       Fiber.new { fetch_deployments }.resume
+    end
+
+    def analyze_agents
+      # N.B. Yes, this will block event loop,
+      # possibly consider deferring
+      @agent_manager.analyze_agents
     end
 
     private
@@ -128,8 +138,7 @@ module Bosh::HealthMonitor
 
         if deployment_info["vms"].kind_of?(Array)
           deployment_info["vms"].each do |vm|
-            @agent_manager.update_agent(deployment_name, vm["agent_id"])
-            # TODO: handle missing agents
+            @agent_manager.add_agent(deployment_name, vm["agent_id"])
           end
         else
           @logger.warn "Cannot get VMs list from deployment, possibly the old director version"

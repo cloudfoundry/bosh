@@ -22,6 +22,8 @@ require "logging"
 require "yajl"
 require "uuidtools"
 
+require "set"
+
 # Helpers
 require "health_monitor/yaml_helper"
 
@@ -32,6 +34,7 @@ require "health_monitor/version"
 require "health_monitor/errors"
 require "health_monitor/runner"
 require "health_monitor/director"
+require "health_monitor/agent"
 
 # Managers
 require "health_monitor/deployment_manager"
