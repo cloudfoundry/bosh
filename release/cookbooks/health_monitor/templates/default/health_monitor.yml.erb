@@ -5,7 +5,7 @@ mbus:
   password: <%= node[:nats][:password] %>
 
 director:
-  endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port]
+  endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port] %>
   user: admin
   password: admin
 
@@ -15,3 +15,4 @@ intervals:
   poll_agents: 10
   agent_timeout: 60
 
+logfile: <%= node[:health_monitor][:path] %>/shared/logs/health_monitor.log
