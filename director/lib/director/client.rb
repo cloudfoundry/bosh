@@ -11,9 +11,43 @@ module Bosh::Director
       @nats_rpc = Config.nats_rpc
       @timeout = options[:timeout] || 30
       @logger = Config.logger
+      @retry_methods = options[:retry_methods] || {}
     end
 
     def method_missing(method_name, *args)
+      retries = @retry_methods[method_name] || 0
+      begin
+        handle_method(method_name, args)
+      rescue TimeoutException => e
+        if (retries > 0)
+          retries -= 1
+          retry
+        end
+        raise
+      end
+    end
+
+    def wait_until_ready(deadline = 300)
+      old_timeout = @timeout
+      @timeout = 1.0
+      @deadline = Time.now.to_i + deadline
+
+      begin
+        ping
+      rescue TimeoutException
+        if @deadline - Time.now.to_i > 0
+          retry
+        else
+          raise TimeoutException, "Timed out pinging to #{@client_id} after #{deadline} seconds"
+        end
+      ensure
+        @timeout = old_timeout
+      end
+
+    end
+
+    private
+    def handle_method(method_name, args)
       result = {}
       result.extend(MonitorMixin)
 
@@ -41,25 +75,6 @@ module Bosh::Director
 
       raise result["exception"] if result.has_key?("exception")
       result["value"]
-    end
-
-    def wait_until_ready(deadline = 300)
-      old_timeout = @timeout
-      @timeout = 1.0
-      @deadline = Time.now.to_i + deadline
-
-      begin
-        ping
-      rescue TimeoutException => e
-        if @deadline - Time.now.to_i > 0
-          retry
-        else
-          raise TimeoutException, "Timed out pinging to #{@client_id} after #{deadline} seconds"
-        end
-      ensure
-        @timeout = old_timeout
-      end
-
     end
 
   end

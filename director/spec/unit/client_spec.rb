@@ -53,6 +53,57 @@ describe Bosh::Director::Client do
     }.should raise_exception(Bosh::Director::Client::TimeoutException)
   end
 
+  it "should retry only methods in the option-list" do
+    nats_rpc = mock("nats_rpc")
+
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+
+    nats_rpc.should_receive(:send).with("test_service.retry_service_id",
+        {:method => :retry_method, :arguments => []}
+    ).exactly(1).times.and_raise(Bosh::Director::Client::TimeoutException)
+
+    options = {:timeout => 0.1,
+               :retry_methods => { :foo => 10 }}
+    @client = Bosh::Director::Client.new("test_service", "retry_service_id", options)
+    lambda {
+      @client.retry_method
+    }.should raise_exception(Bosh::Director::Client::TimeoutException)
+  end
+
+  it "should retry methods" do
+    nats_rpc = mock("nats_rpc")
+
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+
+    nats_rpc.should_receive(:send).with("test_service.retry_service_id",
+        {:method => :retry_method, :arguments => []}
+    ).exactly(2).times.and_raise(Bosh::Director::Client::TimeoutException)
+
+    options = {:timeout => 0.1,
+               :retry_methods => { :retry_method => 1 }}
+    @client = Bosh::Director::Client.new("test_service", "retry_service_id", options)
+    lambda {
+      @client.retry_method
+    }.should raise_exception(Bosh::Director::Client::TimeoutException)
+  end
+
+  it "should retry only timeout errors" do
+    nats_rpc = mock("nats_rpc")
+
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+
+    nats_rpc.should_receive(:send).with("test_service.retry_service_id",
+        {:method => :retry_method, :arguments => []}
+    ).exactly(1).times.and_raise(RuntimeError)
+
+    options = {:timeout => 0.1,
+               :retry_methods => { :retry_method => 10 }}
+    @client = Bosh::Director::Client.new("test_service", "retry_service_id", options)
+    lambda {
+      @client.retry_method
+    }.should raise_exception(RuntimeError)
+  end
+
   it "should let you wait for the server to be ready" do
     nats_rpc = mock("nats_rpc")
 
