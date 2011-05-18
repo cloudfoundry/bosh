@@ -22,7 +22,6 @@ module Bosh::HealthMonitor
       end
 
       processor
-
     end
 
   end

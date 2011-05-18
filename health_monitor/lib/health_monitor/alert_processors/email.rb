@@ -5,7 +5,9 @@ module Bosh::HealthMonitor
     # Note that EM::defer has problems with 1.9 (as seen in DEA)
 
     def validate_options
-      options["recipients"].is_a?(Array) && options["smtp"].is_a?(Hash) &&
+      options.kind_of?(Hash) &&
+        options["recipients"].kind_of?(Array) &&
+        options["smtp"].kind_of?(Hash) &&
         options["smtp"]["host"] && options["smtp"]["port"]
     end
 
