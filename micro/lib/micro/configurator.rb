@@ -150,7 +150,7 @@ module VCAP
         rescue => e
           say("Error registering identity with cf.vcloudlabs.com (will be www.cloudfoundry.com)\n")
           say("\nException: #{e.message}")
-          say("\nBacktrace: #{e.backtrace}")
+          say("\nBacktrace: #{e.backtrace.join("\n")}")
         end
       end
 
