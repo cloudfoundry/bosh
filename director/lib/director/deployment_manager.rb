@@ -25,7 +25,6 @@ module Bosh::Director
       vms = deployment.vms.map do |vm|
         {
           "agent_id" => vm.agent_id,
-          "cid"      => vm.cid
         }
       end
 
