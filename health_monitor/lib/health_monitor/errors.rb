@@ -12,5 +12,6 @@ module Bosh::HealthMonitor
   class DirectorError < Error; error_code(201); end
 
   class AlertProcessingError < Error; error_code(301); end
+  class InvalidAlert < Error; error_code(302); end
 
 end

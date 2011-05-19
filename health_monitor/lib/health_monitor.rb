@@ -35,6 +35,7 @@ require "health_monitor/errors"
 require "health_monitor/runner"
 require "health_monitor/director"
 require "health_monitor/agent"
+require "health_monitor/alert"
 
 # Managers
 require "health_monitor/deployment_manager"
