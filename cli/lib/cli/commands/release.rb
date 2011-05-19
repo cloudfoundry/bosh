@@ -40,11 +40,14 @@ module Bosh::Cli::Command
       at_exit { FileUtils.rm_rf(tmpdir) }
 
       release = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, remote_release)
+      need_repack = true
+
       unless release.exists?
         release.tarball_path = File.join(tmpdir, "release.tgz")
         release.compile
+        need_repack = false
       end
-      upload_tarball(release.tarball_path, :repack => false)
+      upload_tarball(release.tarball_path, :repack => need_repack)
     end
 
     def upload_tarball(tarball_path, options = {})
