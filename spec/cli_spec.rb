@@ -403,7 +403,7 @@ describe Bosh::Spec::IntegrationTest do
 
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
-      run_bosh("create release", Dir.pwd)
+      run_bosh("create release --with-tarball", Dir.pwd)
       File.exists?(release_1).should be_true
     end
 
@@ -415,7 +415,7 @@ describe Bosh::Spec::IntegrationTest do
       new_file = File.join("src", "bar", "bla")
       begin
         FileUtils.touch(new_file)
-        run_bosh("create release", Dir.pwd)
+        run_bosh("create release --with-tarball", Dir.pwd)
         File.exists?(release_2).should be_true
       ensure
         FileUtils.rm_rf(new_file)
@@ -429,6 +429,49 @@ describe Bosh::Spec::IntegrationTest do
     out.should =~ rx("Checking if can repack release for faster upload")
     out.should =~ rx("Release repacked")
     out.should =~ /Release uploaded and updated/
+
+    expect_output("releases", <<-OUT )
+    +--------------+----------+
+    | Name         | Versions |
+    +--------------+----------+
+    | test_release | 1, 2     |
+    +--------------+----------+
+
+    Releases total: 1
+    OUT
+  end
+
+  it "supports sparse uploading release via manifest" do
+    assets_dir = File.dirname(spec_asset("foo"))
+    release_1 = spec_asset("test_release/dev_releases/test_release-1.yml")
+    release_2 = spec_asset("test_release/dev_releases/test_release-2.yml")
+
+    release_dir = File.join(assets_dir, "test_release")
+
+    Dir.chdir(release_dir) do
+      run_bosh("reset release")
+      run_bosh("create release", Dir.pwd)
+      File.exists?(release_1).should be_true
+
+      run_bosh("target http://localhost:57523")
+      run_bosh("login admin admin")
+      run_bosh("upload release #{release_1}", Dir.pwd)
+
+      new_file = File.join("src", "bar", "bla")
+      begin
+        FileUtils.touch(new_file)
+        run_bosh("create release", Dir.pwd)
+        File.exists?(release_2).should be_true
+      ensure
+        FileUtils.rm_rf(new_file)
+      end
+
+      out = run_bosh("upload release #{release_2}", Dir.pwd)
+      out.should =~ rx("Building tarball")
+      out.should_not =~ rx("Checking if can repack release for faster upload")
+      out.should_not =~ rx("Release repacked")
+      out.should =~ /Release uploaded and updated/
+    end
 
     expect_output("releases", <<-OUT )
     +--------------+----------+
@@ -478,14 +521,14 @@ describe Bosh::Spec::IntegrationTest do
       out.should =~ rx("Deployed to Test Director using '#{deployment_manifest.path}' deployment manifest")
     end
 
-    it "generates release and deploys it via simple manifest", :focus => true do
+    it "generates release and deploys it via simple manifest" do
       assets_dir = File.dirname(spec_asset("foo"))
       release_filename = spec_asset("test_release/dev_releases/test_release-1.tgz") # It's a test release created with bosh (see spec/assets/test_release)
       stemcell_filename = spec_asset("valid_stemcell.tgz") # It's a dummy stemcell (ubuntu-stemcell 1)
 
       Dir.chdir(File.join(assets_dir, "test_release")) do
         FileUtils.rm_rf("dev_releases")
-        run_bosh("create release", Dir.pwd)
+        run_bosh("create release --with-tarball", Dir.pwd)
       end
 
       deployment_manifest = yaml_file("simple", simple_deployment_manifest)

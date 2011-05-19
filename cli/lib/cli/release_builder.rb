@@ -115,11 +115,8 @@ module Bosh::Cli
           quit
         else
           self.version = old_version
-          say "Cannot find tarball for version #{old_version}, generating a new one..."
         end
       end
-
-      # require "ruby-debug"; debugger
 
       manifest["version"] = version
       manifest_yaml = YAML.dump(manifest)

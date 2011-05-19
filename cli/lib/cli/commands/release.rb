@@ -116,7 +116,7 @@ module Bosh::Cli::Command
     def create_from_spec(*options)
       final         = options.include?("--final")
       force         = options.include?("--force")
-      manifest_only = options.any? { |opt| ["--sparse", "--lite", "--manifest-only"].include?(opt) }
+      manifest_only = !options.include?("--with-tarball")
 
       check_if_release_dir
       check_if_dirty_state unless force
