@@ -196,23 +196,39 @@ describe Bosh::Director::Controller do
     end
 
     describe "getting deployment info" do
-      it "returns manifest, vms" do
+      it "returns manifest" do
         deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
-        vms = [ ]
-
-        15.times do |i|
-          vm_params = { "agent_id" => "agent-#{i+1}", "cid" => "cid-#{i+1}" }
-          vm = Bosh::Director::Models::Vm.create({"deployment_id" => deployment.id}.merge(vm_params))
-          vms << vm_params
-        end
-
         get "/deployments/test_deployment"
 
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
         YAML.load(body["manifest"]).should == { "foo" => "bar" }
+      end
+    end
 
-        body["vms"].sort_by{ |vm| vm["agent_id"] }.should == vms.sort_by { |vm| vm["agent_id"] }
+    describe "getting deployment vms info" do
+      it "returns a list of agent_ids, jobs and indices" do
+        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
+        vms = [ ]
+
+        15.times do |i|
+          vm_params = { "agent_id" => "agent-#{i}", "cid" => "cid-#{i}", "deployment_id" => deployment.id }
+          vm = Bosh::Director::Models::Vm.create(vm_params)
+
+          instance_params = { "deployment_id" => deployment.id, "vm_id" => vm.id, "job" => "job-#{i}", "index" => i }
+          instance = Bosh::Director::Models::Instance.create(instance_params)
+        end
+
+        get "/deployments/test_deployment/vms"
+
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+        body.should be_kind_of Array
+        body.size.should == 15
+
+        15.times do |i|
+          body[i].should == { "agent_id" => "agent-#{i}", "job" => "job-#{i}", "index" => i }
+        end
       end
     end
 

@@ -23,7 +23,7 @@ module Bosh::HealthMonitor
         @heartbeats_received += 1
         # TODO if there are more than 4 parts it's a bogus heartbeat, should ignore it
         agent_id = subject.split('.').last
-        @logger.debugger("Received heartbeat from #{agent_id}: #{heartbeat_json}")
+        @logger.debug("Received heartbeat from #{agent_id}: #{heartbeat_json}")
         process_heartbeat(agent_id, heartbeat_json)
       end
 
@@ -101,7 +101,7 @@ module Bosh::HealthMonitor
         agent.process_heartbeat(heartbeat_json)
         @agents[agent_id] = agent
       else
-        agent.process_heartbeart(heartbeat_json)
+        agent.process_heartbeat(heartbeat_json)
       end
     end
 

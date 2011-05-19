@@ -22,18 +22,27 @@ module Bosh::Director
     end
 
     def deployment_to_json(deployment)
-      vms = deployment.vms.map do |vm|
-        {
-          "agent_id" => vm.agent_id,
-        }
-      end
-
       result = {
         "manifest" => deployment.manifest,
-        "vms"      => vms
       }
 
       Yajl::Encoder.encode(result)
+    end
+
+    def deployment_vms_to_json(deployment)
+      vms = [ ]
+
+      deployment.vms.each do |vm|
+        instance = vm.instance
+
+        vms << {
+          "agent_id" => vm.agent_id,
+          "job"      => instance ? instance.job : nil,
+          "index"    => instance ? instance.index : nil
+        }
+      end
+
+      Yajl::Encoder.encode(vms)
     end
 
   end

@@ -29,10 +29,10 @@ describe Bhm::Director do
   end
 
   it "can fetch deployment by name from Bosh director" do
-    deployment_json = Yajl::Encoder.encode("a" => 1, "b" => 2)
+    deployment_json = Yajl::Encoder.encode(["a" => 1, "b" => 2], ["a" => 3, "b" => 4])
     mock_response = mock(:response => deployment_json,  :response_header => mock(:http_status => "200"))
-    @director.stub!(:perform_request).with(:get, "/deployments/foo").and_return(mock_response)
+    @director.stub!(:perform_request).with(:get, "/deployments/foo/vms").and_return(mock_response)
 
-    @director.get_deployment("foo").should == Yajl::Parser.parse(deployment_json)
+    @director.get_deployment_vms("foo").should == Yajl::Parser.parse(deployment_json)
   end
 end

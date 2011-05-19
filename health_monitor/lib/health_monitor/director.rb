@@ -20,8 +20,8 @@ module Bosh::HealthMonitor
       parse_json(body, Array)
     end
 
-    def get_deployment(name)
-      http = perform_request(:get, "/deployments/#{name}")
+    def get_deployment_vms(name)
+      http = perform_request(:get, "/deployments/#{name}/vms")
 
       body   = http.response
       status = http.response_header.http_status
@@ -30,7 +30,7 @@ module Bosh::HealthMonitor
         raise DirectorError, "Cannot get deployment `#{name}' from director at #{http.uri}: #{status} #{body}"
       end
 
-      parse_json(body, Hash)
+      parse_json(body, Array)
     end
 
     private

@@ -130,18 +130,14 @@ module Bosh::HealthMonitor
 
         @logger.info "Found deployment `#{deployment_name}'"
 
-        deployment_info = @director.get_deployment(deployment_name)
-        @logger.debug "Updated deployment information for `#{deployment_name}'"
+        deployment_vms = @director.get_deployment_vms(deployment_name)
+        @logger.debug "Fetching VMs information for `#{deployment_name}'..."
 
         @deployment_manager.update_deployment(deployment_name, deployment_info)
         # TODO: handle missing deployments
 
-        if deployment_info["vms"].kind_of?(Array)
-          deployment_info["vms"].each do |vm|
-            @agent_manager.add_agent(deployment_name, vm["agent_id"])
-          end
-        else
-          @logger.warn "Cannot get VMs list from deployment, possibly the old director version"
+        deployment_vms.each do |vm|
+          @agent_manager.add_agent(deployment_name, vm["agent_id"])
         end
       end
     rescue Bhm::DirectorError => e

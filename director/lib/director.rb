@@ -226,6 +226,13 @@ module Bosh::Director
       @deployment_manager.deployment_to_json(deployment)
     end
 
+    get "/deployments/:name/vms" do
+      name       = params[:name].to_s.strip
+      deployment = Models::Deployment.find(:name => name)
+      raise DeploymentNotFound.new(name) if deployment.nil?
+      @deployment_manager.deployment_vms_to_json(deployment)
+    end
+
     delete "/deployments/:name" do
       deployment = Models::Deployment[:name => params[:name]]
       raise DeploymentNotFound.new(params[:name]) if deployment.nil?
@@ -233,7 +240,6 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
-    # TODO: get information about an existing deployment
     # TODO: stop, start, restart jobs/instances
 
     post "/stemcells", :consumes => :tgz do
