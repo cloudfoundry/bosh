@@ -142,8 +142,13 @@ Currently available bosh commands are:
     deploy                                   Deploy according to the currently selected deployment
 
   Releases
-    create release                           Attempt to create release (assumes current directory to contain release)
-    create release --final                   Create production-ready release (stores artefacts in blobstore, ignores dev build numbers)
+    create release                           Attempt to create release (assumes current directory to contain release).
+                                             Release creation options:
+                                               --force        bypass git dirty state check
+                                               --final        create production-ready release (stores artefacts in blobstore, bumps final version)
+                                               --with-tarball create full release tarball (by default only manifest is created)
+
+
     create package <name>|<path>             Build a single package
     verify release /path/to/release.tgz      Verify release tarball
     upload release /path/to/release.tgz      Upload release tarball
@@ -233,7 +238,7 @@ USAGE
           what = @args.shift
           case what
           when "release"
-            usage("bosh create release [--force] [--final]")
+            usage("bosh create release [--force] [--final] [--with-tarball]")
             set_cmd(:release, :create, 0..2)
           when "user"
             usage("bosh create user [<name>] [<password>]")
