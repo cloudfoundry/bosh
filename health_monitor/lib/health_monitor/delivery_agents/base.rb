@@ -11,11 +11,11 @@ module Bosh::HealthMonitor
     end
 
     def run
-      raise AlertDeliveryError, "`run' method is not implemented in `#{self.class}'"
+      raise DeliveryAgentError, "`run' method is not implemented in `#{self.class}'"
     end
 
     def deliver(alert)
-      raise AlertDeliveryError, "`deliver' method is not implemented in `#{self.class}'"
+      raise DeliveryAgentError, "`deliver' method is not implemented in `#{self.class}'"
     end
 
   end

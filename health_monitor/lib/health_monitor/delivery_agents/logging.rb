@@ -2,6 +2,10 @@ module Bosh::HealthMonitor
 
   class LoggingDeliveryAgent < BaseDeliveryAgent
 
+    def run
+      logger.info("Logging delivery agent is running...")
+    end
+
     def deliver(alert)
       logger.info("Alert: #{format_alert(alert)}")
     end

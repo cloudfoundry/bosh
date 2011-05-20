@@ -21,6 +21,7 @@ module Bosh::HealthMonitor
 
       @lock.synchronize do
         @agents << agent
+        agent.run
       end
     end
 

@@ -19,10 +19,13 @@ module Bosh::HealthMonitor
 
     def run
       unless EM.reactor_running?
-        raise DeliveryAgentError, "Email delivery agent can only be started when event loop is running"
+        logger.error("Email delivery agent can only be started when event loop is running")
+        return false
       end
 
       return true if @started
+
+      logger.info("Email delivery agent is running...")
 
       EM.add_periodic_timer(@delivery_interval) do
         begin

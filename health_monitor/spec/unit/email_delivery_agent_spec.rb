@@ -50,9 +50,7 @@ describe Bhm::EmailDeliveryAgent do
   end
 
   it "doesn't start if event loop isn't running" do
-    lambda {
-      @agent.run
-    }.should raise_error Bhm::DeliveryAgentError, "Email delivery agent can only be started when event loop is running"
+    @agent.run.should be_false
   end
 
   it "has a list of recipients and smtp options" do
