@@ -5,8 +5,8 @@ describe Bhm::Runner do
   it "reads provided configuration file and sets Bhm singletons" do
     runner = Bhm::Runner.new(spec_asset("sample_config.yml"))
 
-    Bhm.logger.should be_a(Logging::Logger)
-    Bhm.director.should be_a(Bhm::Director)
+    Bhm.logger.should be_kind_of(Logging::Logger)
+    Bhm.director.should be_kind_of(Bhm::Director)
 
     Bhm.intervals.poll_director.should be_kind_of Integer
     Bhm.intervals.log_stats.should be_kind_of Integer

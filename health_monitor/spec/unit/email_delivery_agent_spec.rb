@@ -26,6 +26,29 @@ describe Bhm::EmailDeliveryAgent do
     Bhm::Alert.create!(:id => i, :severity => i, :title => "Alert #{i}", :summary => "Summary #{i}", :created_at => ts)
   end
 
+  it "validates options" do
+    valid_options = {
+      "recipients" => [ "olegs@vmware.com" ],
+      "smtp" => {
+        "from"     => "hm@example.com",
+        "host"     => "smtp.example.com",
+        "port"     => 587,
+        "user"     => "usr",
+        "password" => "pwd",
+        "auth"     => "plain",
+        "domain"   => "example.com"
+      }
+    }
+
+    invalid_options = {
+      "a" => "b",
+      "c" => "d"
+    }
+
+    Bhm::EmailDeliveryAgent.new(valid_options).validate_options.should be_true
+    Bhm::EmailDeliveryAgent.new(invalid_options).validate_options.should be_false
+  end
+
   it "doesn't start if event loop isn't running" do
     lambda {
       @agent.run

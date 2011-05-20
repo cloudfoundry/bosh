@@ -39,7 +39,7 @@ module Bosh::HealthMonitor
       options.kind_of?(Hash) &&
         options["recipients"].kind_of?(Array) &&
         options["smtp"].kind_of?(Hash) &&
-        options["smtp"]["host"] && options["smtp"]["port"]
+        options["smtp"]["host"] && options["smtp"]["port"] && options["smtp"]["from"]
     end
 
     def recipients
