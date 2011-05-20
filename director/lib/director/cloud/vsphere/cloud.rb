@@ -126,7 +126,7 @@ module VSphereCloud
           cluster, datastore = @resources.find_resources(memory, disk)
         else
           @logger.info("Looking for resources near disk: #{disk_locality}")
-          cluster, datastore = @resources.find_resources_near_disk(disk_locality, memory, disk)
+          cluster, datastore = @resources.find_resources_near_persistent_disk(disk_locality, memory, disk)
         end
 
         name = "vm-#{generate_unique_name}"
@@ -330,6 +330,37 @@ module VSphereCloud
       end
     end
 
+    def get_vm_host_info(vm_ref)
+      vm = @client.get_properties(vm_ref, Vim::VirtualMachine, "runtime")
+      vm_runtime = vm["runtime"]
+
+      properties = @client.get_properties(vm_runtime.host, Vim::HostSystem, ["datastore", "parent"],
+                                          :ensure_all => true)
+
+      # Get the cluster that the vm's host belongs to.
+      cluster = @client.get_properties(properties["parent"], Vim::ClusterComputeResource, "name")
+
+      # Get the datastores that are accessible to the vm's host.
+      datastores_accessible = []
+      properties["datastore"].each { |store|
+        ds = @client.get_properties(store, Vim::Datastore, "info", :ensure_all => true)
+        datastores_accessible << ds["info"].name
+      }
+
+      {"cluster" => cluster["name"], "datastores" => datastores_accessible}
+    end
+
+    def find_persistent_datastore(datacenter_name, host_info, disk_size)
+      # Find datastore
+      datastore = @resources.find_persistent_datastore(datacenter_name, host_info["cluster"], disk_size)
+
+      # Sanity check, verify that the vm's host can access this datastore
+      unless host_info["datastores"].include?(datastore.name)
+        raise "Datastore not accessible to host, #{datastore.name}, #{host_info["datastores"]}"
+      end
+      datastore
+    end
+
     def attach_disk(vm_cid, disk_cid)
       with_thread_name("attach_disk(#{vm_cid}, #{disk_cid})") do
         @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
@@ -341,45 +372,54 @@ module VSphereCloud
         datacenter = client.find_parent(vm, Vim::Datacenter)
         datacenter_name = client.get_property(datacenter, Vim::Datacenter, "name")
 
-        vm_properties = client.get_properties(vm, Vim::VirtualMachine,
-                                              ["datastore", "config.hardware.device"], :ensure_all => true)
-        datastores = vm_properties["datastore"]
-        raise "Can't find datastore for: #{vm}" if datastores.empty?
-        @logger.warn("Found multiple datastores associated with a single VM: " +
-                     "#{vm.pretty_inspect}/#{datastores.pretty_inspect}") if datastores.size > 1
-
-        datastore_properties = client.get_properties(datastores, Vim::Datastore, ["name"])
-        vm_datastore_by_name = {}
-        datastore_properties.each_value { |properties| vm_datastore_by_name[properties["name"]] = properties[:obj] }
-
-        # Assume that the VM has only one datastore which is it's primary
-        primary_vm_datastore_name = vm_datastore_by_name.keys.first
+        vm_properties = client.get_properties(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
+        host_info = get_vm_host_info(vm)
+        persistent_datastore = nil
 
         create_disk = false
         if disk.path
-          if disk.datacenter == datacenter_name && disk.datastore == primary_vm_datastore_name
-            @logger.info("Disk already in the right datastore")
+          if disk.datacenter == datacenter_name && @resources.validate_persistent_datastore(datacenter_name,
+                                                                                            disk.datastore)
+            # Looks like we have a valid persistent data store
+
+            # Sanity check, verify that the vm's host can access this persistent datastore
+            unless host_info["datastores"].include?(disk.datastore)
+              raise "Datastore not accessible to host, #{disk.datastore}, #{host_info["datastores"]}"
+            end
+
+            @logger.info("Disk already in the right datastore #{datacenter_name} #{disk.datastore}")
+            persistent_datastore = @resources.get_persistent_datastore(datacenter_name, host_info["cluster"],
+                                                                       disk.datastore)
           else
-            @logger.info("Disk needs to move")
+            @logger.info("Disk needs to move from #{datacenter_name} #{disk.datastore}")
+
+            # Find the destination datastore
+            persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
+
             # need to move disk to right datastore
             source_datacenter = client.find_by_inventory_path(disk.datacenter)
             source_path = disk.path
             datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-            destination_path = "[#{primary_vm_datastore_name}] #{datacenter_disk_path}/#{disk.id}"
+
+            destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.id}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
             client.move_disk(source_datacenter, source_path, datacenter, destination_path)
             @logger.info("Moved disk successfully")
 
             disk.datacenter = datacenter_name
-            disk.datastore = primary_vm_datastore_name
+            disk.datastore = persistent_datastore.name
             disk.path = destination_path
             disk.save
           end
         else
           @logger.info("Need to create disk")
+
+          # Find the destination datastore
+          persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
+
           # need to create disk
           disk.datacenter = datacenter_name
-          disk.datastore = primary_vm_datastore_name
+          disk.datastore = persistent_datastore.name
           datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
           disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}"
           disk.save
@@ -390,7 +430,7 @@ module VSphereCloud
         system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
 
         vmdk_path = "#{disk.path}.vmdk"
-        attached_disk_config = create_disk_config_spec(vm_datastore_by_name[disk.datastore], vmdk_path,
+        attached_disk_config = create_disk_config_spec(persistent_datastore.mob, vmdk_path,
                                                        system_disk.controller_key, disk.size.to_i,
                                                        :create => create_disk, :independent => true)
         config = Vim::Vm::ConfigSpec.new
