@@ -16,6 +16,7 @@ module VSphereCloud
       attr_accessor :template_folder_name
       attr_accessor :disk_path
       attr_accessor :datastore_pattern
+      attr_accessor :persistent_datastore_pattern
       attr_accessor :spec
 
       def inspect
@@ -45,6 +46,7 @@ module VSphereCloud
       attr_accessor :datacenter
       attr_accessor :resource_pool
       attr_accessor :datastores
+      attr_accessor :persistent_datastores
       attr_accessor :idle_cpu
       attr_accessor :total_memory
       attr_accessor :free_memory
@@ -93,6 +95,8 @@ module VSphereCloud
                                                                           datacenter.spec["vm_folder"]])
         datacenter.disk_path            = datacenter.spec["disk_path"]
         datacenter.datastore_pattern    = Regexp.new(datacenter.spec["datastore_pattern"])
+        raise "Missing persistent_datastore_pattern in director config" if datacenter.spec["persistent_datastore_pattern"].nil?
+        datacenter.persistent_datastore_pattern = Regexp.new(datacenter.spec["persistent_datastore_pattern"])
         datacenter.clusters             = fetch_clusters(datacenter)
         datacenters[datacenter.name]    = datacenter
       end
@@ -118,8 +122,24 @@ module VSphereCloud
 
         cluster.resource_pool      = cluster_properties["resourcePool"]
         cluster.datacenter         = datacenter
-        cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"])
+        cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"],
+                                                      datacenter.datastore_pattern)
+        cluster.persistent_datastores = fetch_datastores(datacenter, cluster_properties["datastore"],
+                                                         datacenter.persistent_datastore_pattern)
 
+        # make sure datastores and persistent_datastores are mutually exclusive
+        datastore_names = cluster.datastores.map { |ds|
+          ds.name
+        }
+        persistent_datastore_names = cluster.persistent_datastores.map { |ds|
+          ds.name
+        }
+        if (datastore_names & persistent_datastore_names).length != 0
+          raise("datastore patterns are not mutually exclusive non-persistent are " +
+                "#{datastore_names.pretty_inspect}\n persistent are #{persistent_datastore_names.pretty_inspect}")
+        end
+        @logger.debug("non-persistent datastores are " + "#{datastore_names.pretty_inspect}\n " +
+                      "persistent datastores are #{persistent_datastore_names.pretty_inspect}")
         fetch_cluster_utilization(cluster, cluster_properties["host"])
 
         clusters << cluster
@@ -127,10 +147,10 @@ module VSphereCloud
       clusters
     end
 
-    def fetch_datastores(datacenter, datastore_mobs)
+    def fetch_datastores(datacenter, datastore_mobs, match_pattern)
       properties = @client.get_properties(datastore_mobs, Vim::Datastore,
                                           ["summary.freeSpace", "summary.capacity", "name"])
-      properties.delete_if { |_, datastore_properties| datastore_properties["name"] !~ datacenter.datastore_pattern }
+      properties.delete_if { |_, datastore_properties| datastore_properties["name"] !~ match_pattern }
 
       datastores = []
       properties.each_value do |datastore_properties|
@@ -212,6 +232,67 @@ module VSphereCloud
       resources
     end
 
+    def get_cluster(dc_name, cluster_name)
+      datacenter = datacenters[dc_name]
+      return nil if datacenter.nil?
+
+      cluster = nil
+      datacenter.clusters.each do |c|
+        if c.name == cluster_name
+          cluster = c
+          break
+        end
+      end
+      cluster
+    end
+
+    def validate_persistent_datastore(dc_name, datastore_name)
+      datacenter = datacenters[dc_name]
+      raise "Invalid datacenter #{dc_name} #{datacenters.pretty_inspect}" if datacenter.nil?
+
+      return datastore_name =~ datacenter.persistent_datastore_pattern
+    end
+
+    def get_persistent_datastore(dc_name, cluster_name, persistent_datastore_name)
+      cluster = get_cluster(dc_name, cluster_name)
+      return nil if cluster.nil?
+
+      datastore = nil
+      cluster.persistent_datastores.each { |ds|
+        if ds.name == persistent_datastore_name
+          datastore = ds
+          break
+        end
+      }
+      datastore
+    end
+
+    def pick_datastore(cluster, disk_space, persistent=false)
+      datastores = {}
+      tgt_datastores = persistent ? cluster.persistent_datastores : cluster.datastores
+      tgt_datastores.each { |ds|
+        if ds.real_free_space - disk_space > DISK_THRESHOLD
+          datastores[ds] = score_datastore(ds, disk_space)
+        end
+      }
+      return nil if datastores.empty?
+      pick_random_with_score(datastores)
+    end
+
+    def find_persistent_datastore(dc_name, cluster_name, disk_space)
+      cluster = get_cluster(dc_name, cluster_name)
+      return nil if cluster.nil?
+
+      chosen_datastore = nil
+      @lock.synchronize do
+        chosen_datastore = pick_datastore(cluster, disk_space, true)
+        break if chosen_datastore.nil?
+
+        chosen_datastore.unaccounted_space += disk_space
+      end
+      chosen_datastore
+    end
+
     def find_resources(memory, disk_space)
       cluster = nil
       datastore = nil
@@ -247,7 +328,7 @@ module VSphereCloud
       [cluster, datastore]
     end
 
-    def find_resources_near_disk(disk_locality, memory, disk_space)
+    def find_resources_near_persistent_disk(disk_locality, memory, disk_space)
       disk = Models::Disk[disk_locality]
       raise "Disk not found: #{disk_locality}" if disk.nil?
 
@@ -256,44 +337,49 @@ module VSphereCloud
 
       cluster = nil
       datastore = nil
+      found = false
 
-      if disk.path
+      # locality only if the given disk is a persistent disk
+      if disk.path && validate_persistent_datastore(disk.datacenter, disk.datastore)
         datacenter = datacenters.values.find { |dc| dc.name == disk.datacenter }
         datacenter.clusters.each do |c|
-          c.datastores.each do |ds|
+          c.persistent_datastores.each do |ds|
             if ds.name == disk.datastore
-              @logger.info("Found #{ds.name} @ #{ds.mob}")
-              datastore = ds
+              @logger.info("Found #{c.name} @ #{c.mob}")
+              cluster = c
               break
             end
           end
-
-          if datastore
-            @logger.info("Found #{c.name} @ #{c.mob}")
-            cluster = c
-            break
-          end
         end
 
-        raise "Could not find disk local resources for: #{disk.pretty_inspect}" if cluster.nil? || datastore.nil?
+        raise "Could not find disk local resources for: #{disk.pretty_inspect}" if cluster.nil?
 
         # Make sure there is enough space
         @lock.synchronize do
-          if cluster.real_free_memory - memory > MEMORY_THRESHOLD &&
-                 datastore.real_free_space - disk_space > DISK_THRESHOLD
-            datastore.unaccounted_space += disk_space
-            cluster.unaccounted_memory += memory
-          else
-            @logger.info("Resources near disk were out of capacity, allocating elsewhere based on system capacity")
-            cluster, datastore = find_resources(memory, disk_space)
-          end
+          break if cluster.real_free_memory - memory < MEMORY_THRESHOLD 
+
+          # Find a datastore with sufficient free space
+          datastore = pick_datastore(cluster, disk_space)
+          break if datastore.nil?
+
+          datastore.unaccounted_space += disk_space
+          cluster.unaccounted_memory += memory
+          found = true
         end
-      else
+      end
+
+      unless found
         @logger.info("Disk was not allocated yet, allocating resources based on system capacity")
         cluster, datastore = find_resources(memory, disk_space)
       end
 
       [cluster, datastore]
+    end
+
+    def score_datastore(datastore, disk)
+      percent_of_free_disk = 1 - (disk.to_f / datastore.real_free_space)
+      percent_of_total_disk = 1 - (disk.to_f / datastore.total_space)
+      percent_of_free_disk * 0.67 + percent_of_total_disk * 0.33
     end
 
     def score_resource(cluster, datastore, memory, disk)
@@ -304,9 +390,7 @@ module VSphereCloud
 
       cpu_score = cluster.idle_cpu
 
-      percent_of_free_disk = 1 - (disk.to_f / datastore.real_free_space)
-      percent_of_total_disk = 1 - (disk.to_f / datastore.total_space)
-      disk_score = percent_of_free_disk * 0.67 + percent_of_total_disk * 0.33
+      disk_score = score_datastore(datastore, disk)
 
       memory_score * 0.5 + cpu_score * 0.25 + disk_score * 0.25
     end
