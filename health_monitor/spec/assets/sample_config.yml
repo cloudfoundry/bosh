@@ -11,12 +11,17 @@ director:
 
 intervals:
   poll_director: 60
+  poll_grace_period: 30
   log_stats: 60
-  agent_timeout: 10
+  agent_timeout: 60
+  analyze_agents: 60
+  agent_timeout: 60
 
-alerts:
-  plugin: email
-  options:
+alert_delivery_agents:
+
+  - plugin: logger
+
+  - plugin: email
     recipients:
       - olegs@vmware.com
     smtp:

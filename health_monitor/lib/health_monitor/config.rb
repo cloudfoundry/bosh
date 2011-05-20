@@ -9,8 +9,8 @@ module Bosh::HealthMonitor
     attr_accessor :intervals
     attr_accessor :nats
     attr_accessor :mbus
-    attr_accessor :alert_plugin
-    attr_accessor :alert_options
+
+    attr_accessor :alert_delivery_agents
 
     def config=(config)
       @logger     = Logging.logger(config["logfile"] || STDOUT)
@@ -18,9 +18,11 @@ module Bosh::HealthMonitor
       @director   = Director.new(config["director"])
       @mbus       = OpenStruct.new(config["mbus"])
 
-      if config["alerts"].is_a?(Hash)
-        @alert_plugin  = config["alerts"]["plugin"]
-        @alert_options = config["alerts"]["options"] || { }
+      if config["alert_delivery_agents"].kind_of?(Array)
+        @alert_delivery_agents = config["alert_delivery_agents"]
+      else
+        @alert_delivery_agents = [ ]
+        @logger.warn("Unknown format for alert_delivery_agents in config file, Array expected")
       end
     end
 

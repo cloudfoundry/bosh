@@ -2,8 +2,6 @@ module Bosh::HealthMonitor
 
   class Agent
 
-    OK_JOB_STATES = [ :running ]
-
     attr_reader   :id
     attr_reader   :discovered_at
     attr_accessor :updated_at
@@ -14,24 +12,14 @@ module Bosh::HealthMonitor
       @updated_at    = Time.now
       @logger        = Bhm.logger
       @intervals     = Bhm.intervals
-      @job_state     = :unknown
     end
 
     def missing?
       Time.now - @updated_at > @intervals.agent_timeout
     end
 
-    def process_heartbeat(heartbeat_json)
-      heartbeat   = Yajl::Parser.parse(heartbeat_json)
+    def process_heartbeat(heartbeat_payload)
       @updated_at = Time.now
-      @job_state  = heartbeat["job_state"].to_sym
-
-      unless OK_JOB_STATES.include?(@job_state)
-        @logger.warn("Agent #{@id} job state is #{@job_state}")
-      end
-
-    rescue Yajl::ParseError
-      @logger.error("Cannot parse heartbeat json payload from #{@id}: #{heartbeat_json}")
     end
 
     def analyze

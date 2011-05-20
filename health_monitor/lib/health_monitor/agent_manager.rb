@@ -1,37 +1,51 @@
 module Bosh::HealthMonitor
 
   class AgentManager
+    # TODO: make threadsafe? Not supposed to be deferred though...
 
-    attr_reader :heartbeats_received
+    attr_reader :heartbeats_received, :alerts_received, :alerts_processed
 
     def initialize
-      alert_plugin  = Bhm.alert_plugin || :email
-      alert_options = Bhm.alert_options
-
       @agents = { }
       @agent_ids = Set.new
       @agents_by_deployment = { }
 
       @logger = Bhm.logger
       @heartbeats_received = 0
+      @alerts_received     = 0
+      @alerts_processed    = 0
 
       @alert_processor = AlertProcessor.new
-      @alert_processor.add_delivery_agent(EmailDeliveryAgent.new(alert_options))
-      @alert_processor.add_delivery_agent(LoggingDeliveryAgent.new)
+
+      Bhm.alert_delivery_agents.each do |agent_options|
+        @alert_processor.add_delivery_agent(lookup_delivery_agent(agent_options))
+      end
+    end
+
+    def lookup_delivery_agent(options)
+      plugin = options["plugin"].to_s
+
+      case plugin
+      when "email"
+        EmailDeliveryAgent.new(options)
+      when "logger"
+        LoggingDeliveryAgent.new(options)
+      else
+        raise DeliveryAgentError, "Cannot find delivery agent plugin `#{plugin}'"
+      end
     end
 
     def setup_subscriptions
       Bhm.nats.subscribe("hm.agent.heartbeat.*") do |heartbeat_json, reply, subject|
         @heartbeats_received += 1
-        # TODO if there are more than 4 parts it's a bogus heartbeat, should ignore it
-        agent_id = subject.split('.').last
+        agent_id = subject.split('.', 4).last
         @logger.debug("Received heartbeat from #{agent_id}: #{heartbeat_json}")
         process_heartbeat(agent_id, heartbeat_json)
       end
 
       Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
-        # TODO if there are more than 4 parts it's a bogus alert, should ignore it
-        agent_id = subject.split('.').last
+        @alerts_received += 1
+        agent_id = subject.split('.', 4).last
         @logger.info("Received alert from `#{agent_id}': #{message}")
         process_alert(message)
       end
@@ -90,20 +104,28 @@ module Bosh::HealthMonitor
     end
 
     # Subscription callbacks
-    def process_alert(raw_alert)
-      @alert_processor.process(raw_alert)
+    def process_alert(alert_json)
+      alert = Alert.create!(Yajl::Parser.parse(alert_json))
+      @alert_processor.register_alert(alert)
+      @alerts_processed += 1
+
+    rescue Yajl::ParseError => e
+      @logger.error("Cannot parse incoming alert: #{e}")
+    rescue Bhm::InvalidAlert => e
+      @logger.error(e)
     end
 
-    def process_heartbeat(agent_id, heartbeat_json)
+    def process_heartbeat(agent_id, heartbeat_payload)
       agent = @agents[agent_id]
+
       if agent.nil?
         # TODO: alert?
         @logger.warn("Received a heartbeat from an unmanaged agent #{agent_id}")
         agent = Agent.new(agent_id)
-        agent.process_heartbeat(heartbeat_json)
+        agent.process_heartbeat(heartbeat_payload)
         @agents[agent_id] = agent
       else
-        agent.process_heartbeat(heartbeat_json)
+        agent.process_heartbeat(heartbeat_payload)
       end
     end
 

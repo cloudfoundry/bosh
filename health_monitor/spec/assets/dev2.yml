@@ -17,8 +17,9 @@ intervals:
   agent_timeout: 60
 
 alerts:
-  plugin: email
-  options:
+  - plugin: logging
+
+  - plugin: email
     recipients:
       - olegs@vmware.com
     smtp:
