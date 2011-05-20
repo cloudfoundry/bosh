@@ -43,6 +43,8 @@ require "health_monitor/agent_manager"
 
 # Alert processing
 require "health_monitor/alert_processor"
-require "health_monitor/alert_processors/base"
-require "health_monitor/alert_processors/silent"
-require "health_monitor/alert_processors/email"
+
+# Alert delivery
+require "health_monitor/delivery_agents/base"
+require "health_monitor/delivery_agents/logging"
+require "health_monitor/delivery_agents/email"

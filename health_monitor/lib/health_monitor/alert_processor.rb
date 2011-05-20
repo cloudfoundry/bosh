@@ -2,26 +2,26 @@ module Bosh::HealthMonitor
 
   class AlertProcessor
 
-    def self.plugin_available?(plugin)
-      [ "email", "silent" ].include?(plugin.to_s)
+    def self.agent_available?(agent)
+      [ "email", "logger" ].include?(agent.to_s)
     end
 
-    def self.find(plugin, options = { })
-      impl = \
-      case plugin.to_s
+    def self.find_agent(agent, options = { })
+      agent_plugin = \
+      case agent.to_s
       when "email"
-        Bosh::HealthMonitor::EmailAlertProcessor
+        Bosh::HealthMonitor::EmailDeliveryAgent
       else
-        Bosh::HealthMonitor::SilentAlertProcessor
+        Bosh::HealthMonitor::LoggingDeliveryAgent
       end
 
-      processor = impl.new(options)
+      agent = agent_plugin.new(options)
 
-      if processor.respond_to?(:validate_options) && !processor.validate_options
-        raise AlertProcessingError, "Invalid options for `#{processor.class}'"
+      if agent.respond_to?(:validate_options) && !agent.validate_options
+        raise DeliveryAgentError, "Invalid options for `#{agent.class}'"
       end
 
-      processor
+      agent
     end
 
   end

@@ -15,7 +15,7 @@ module Bosh::HealthMonitor
       @logger = Bhm.logger
       @heartbeats_received = 0
 
-      @alert_processor = AlertProcessor.find(alert_plugin, alert_options)
+      @alert_processor = AlertProcessor.find_agent(alert_plugin, alert_options)
     end
 
     def setup_subscriptions

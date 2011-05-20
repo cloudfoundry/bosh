@@ -2,14 +2,14 @@ require 'spec_helper'
 
 describe Bhm::AlertProcessor do
 
-  it "has a set of available plugins" do
-    Bhm::AlertProcessor.plugin_available?(:silent).should be_true
-    Bhm::AlertProcessor.plugin_available?(:email).should be_true
-    Bhm::AlertProcessor.plugin_available?(:foo).should be_false
+  it "has a set of available delivery agents" do
+    Bhm::AlertProcessor.agent_available?(:logger).should be_true
+    Bhm::AlertProcessor.agent_available?(:email).should be_true
+    Bhm::AlertProcessor.agent_available?(:foo).should be_false
   end
 
-  it "finds silent plugin implementation" do
-    Bhm::AlertProcessor.find(:silent).should be_kind_of(Bhm::SilentAlertProcessor)
+  it "finds agent implementations" do
+    Bhm::AlertProcessor.find_agent(:logger).should be_kind_of(Bhm::LoggingDeliveryAgent)
   end
 
   it "finds email plugin and validates its options" do
@@ -31,11 +31,11 @@ describe Bhm::AlertProcessor do
       "c" => "d"
     }
 
-    Bhm::AlertProcessor.find(:email, valid_options).should be_kind_of(Bhm::EmailAlertProcessor)
+    Bhm::AlertProcessor.find_agent(:email, valid_options).should be_kind_of(Bhm::EmailDeliveryAgent)
 
     lambda {
-      Bhm::AlertProcessor.find(:email, invalid_options)
-    }.should raise_error(Bhm::AlertProcessingError, "Invalid options for `Bosh::HealthMonitor::EmailAlertProcessor'")
+      Bhm::AlertProcessor.find_agent(:email, invalid_options)
+    }.should raise_error(Bhm::DeliveryAgentError, "Invalid options for `Bosh::HealthMonitor::EmailDeliveryAgent'")
   end
 
 end
