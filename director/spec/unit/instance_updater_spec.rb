@@ -214,7 +214,7 @@ describe Bosh::Director::InstanceUpdater do
     vm = @instance.vm
     vm.cid.should == "vm-id-2"
     vm.agent_id.should == "agent-2"
-    Bosh::Director::Models::Vm[@vm.id].should be_nil
+    Bosh::Director::Models::Vm.filter(:cid => "vm-id").first.should be_nil
   end
 
   it "should do a resource pool update with an existing disk" do
@@ -268,7 +268,7 @@ describe Bosh::Director::InstanceUpdater do
     vm = @instance.vm
     vm.cid.should == "vm-id-2"
     vm.agent_id.should == "agent-2"
-    Bosh::Director::Models::Vm[@vm.id].should be_nil
+    Bosh::Director::Models::Vm.filter(:cid => "vm-id").first.should be_nil
   end
 
   it "should update the networks when needed" do
