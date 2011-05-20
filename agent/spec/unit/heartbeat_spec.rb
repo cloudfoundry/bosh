@@ -10,10 +10,7 @@ describe Bosh::Agent::Heartbeat do
 
   it "publishes hearbeat via nats (using state message handler)" do
     nats = mock()
-    state_handler = mock(:state => "state_payload")
-
-    Bosh::Agent::Message::State.should_receive(:new).and_return(state_handler)
-    nats.should_receive(:publish).with("hm.agent.heartbeat.agent-zb", "state_payload")
+    nats.should_receive(:publish).with("hm.agent.heartbeat.agent-zb", nil)
 
     @heartbeat.nats = nats
     @heartbeat.send_via_mbus

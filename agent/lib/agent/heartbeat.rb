@@ -32,14 +32,7 @@ module Bosh::Agent
     end
 
     def heartbeat_payload
-      # FIXME: Using agent state message handler here is probably fine
-      # for the initial implementation but we need to keep an eye on it,
-      # maybe abstract it to a separate class and make both this code
-      # and state message handler clients of this class.
-
-      # TODO: send only what really needed
-      state_handler = Bosh::Agent::Message::State.new(nil)
-      state_handler.state
+      nil
     end
 
   end
