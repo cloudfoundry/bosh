@@ -19,11 +19,14 @@ describe Bosh::Director::PackageCompiler do
       @job_spec = mock("job_spec")
       @template_spec = mock("template_spec")
       @cloud = mock("cloud")
+      @deployment = Bosh::Director::Models::Deployment.make
+      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-id")
 
       @deployment_plan.stub!(:release).and_return(@release_spec)
       @deployment_plan.stub!(:jobs).and_return([@job_spec])
       @deployment_plan.stub!(:compilation).and_return(@compilation_config)
       @deployment_plan.stub!(:name).and_return("test_deployment")
+      @deployment_plan.stub!(:deployment).and_return(@deployment)
 
       @network.stub!(:name).and_return("network_a")
 
@@ -40,6 +43,8 @@ describe Bosh::Director::PackageCompiler do
       @job_spec.stub!(:template).and_return(@template_spec)
       @job_spec.stub!(:name).and_return("test_job_name")
 
+      @vm.stub!(:save)
+      @vm.stub!(:delete)
       Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
     end
 
@@ -104,6 +109,10 @@ describe Bosh::Director::PackageCompiler do
         true
       end
 
+      Bosh::Director::Models::Vm.should_receive(:create).with(:deployment => @deployment,
+                                                              :agent_id => "agent-1").and_return(@vm)
+      @vm.should_receive(:save)
+      @vm.should_receive(:delete)
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
       package_compiler.compile
@@ -196,6 +205,11 @@ describe Bosh::Director::PackageCompiler do
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-a", "agent-b", "invalid")
+      Bosh::Director::Models::Vm.stub!(:create).and_return(@vm)
+      Bosh::Director::Models::Vm.should_receive(:create).with(:deployment => @deployment,
+                                                              :agent_id => "agent-a")
+      @vm.should_receive(:save)
+      @vm.should_receive(:delete)
       package_compiler.compile
 
       dep_compiled_package = Bosh::Director::Models::CompiledPackage[:package_id => dependent_package.id]

@@ -86,15 +86,16 @@ module Bosh::Director
     end
 
     def create_missing_vm(idle_vm)
-      # TODO: create VM model and save the agent_id before creating the VM in the cloud
-      # TODO: define NotCreated vs PartiallyCreated error
 
       agent_id = generate_agent_id
+      vm = Models::Vm.create(:deployment => @resource_pool.deployment.deployment, :agent_id => agent_id)
       vm_cid = @cloud.create_vm(agent_id, @resource_pool.stemcell.stemcell.cid,
                                 @resource_pool.cloud_properties, idle_vm.network_settings, nil,
                                 @resource_pool.env)
+      # partially created vms should have an empty cid
+      vm.cid = vm_cid
+      vm.save
 
-      vm = Models::Vm.create(:deployment => @resource_pool.deployment.deployment, :agent_id => agent_id, :cid => vm_cid)
       # TODO: delete the VM if it wasn't saved
 
       agent = AgentClient.new(vm.agent_id)

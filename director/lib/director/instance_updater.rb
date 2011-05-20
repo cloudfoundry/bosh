@@ -60,15 +60,15 @@ module Bosh::Director
         stemcell = @resource_pool_spec.stemcell.stemcell
 
         agent_id = generate_agent_id
-        vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
-                                 @instance_spec.network_settings, @instance.disk_cid,
-                                 @resource_pool_spec.env)
 
         @vm = Models::Vm.new
         @vm.deployment = @deployment_plan.deployment
         @vm.agent_id = agent_id
-        @vm.cid = vm_cid
+        @vm.save
 
+        @vm.cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
+                                   @instance_spec.network_settings, @instance.disk_cid,
+                                   @resource_pool_spec.env)
         @instance.db.transaction do
           @vm.save
           @instance.vm = @vm
@@ -76,7 +76,7 @@ module Bosh::Director
         end
 
         # TODO: delete the VM if it wasn't saved
-
+        
         agent.wait_until_ready
 
         if @instance.disk_cid
