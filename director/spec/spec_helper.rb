@@ -152,6 +152,10 @@ end
 Rspec.configure do |rspec_config|
 
   rspec_config.before(:each) do
+    # hack to clean-up the db for the spec tests.
+    Bosh::Director::Models::Instance.each { |c| c.destroy }
+    Bosh::Director::Models::Vm.each { |c| c.destroy }
+
     Sequel::Migrator.apply(db, migrate_dir, 0)
     Sequel::Migrator.apply(db, migrate_dir, nil)
     FileUtils.mkdir_p(bosh_dir)
