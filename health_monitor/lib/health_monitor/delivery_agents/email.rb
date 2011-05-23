@@ -71,7 +71,7 @@ module Bosh::HealthMonitor
         end
       end
 
-      send_email(email_subject, email_body)
+      send_email_async(email_subject, email_body)
     end
 
     def formatted_alert(alert)
@@ -82,9 +82,7 @@ module Bosh::HealthMonitor
       result << "Time: #{alert.created_at.utc}\n"
     end
 
-    # TODO: this blocks event loop while sending, consider EM::defer or EM::SmtpClient
-    # Note that EM::defer has problems with 1.9 (as seen in DEA)
-    def send_email(subject, body, date = Time.now)
+    def send_email_async(subject, body, date = Time.now)
       started = Time.now
       logger.debug("Sending email alert...")
 
@@ -96,29 +94,41 @@ module Bosh::HealthMonitor
         "Content-Type" => "text/plain; charset=\"iso-8859-1\""
       }
 
-      headers_str = headers.map { |(k, v)| "#{k}: #{v}"}.join("\r\n")
-      message     = "#{headers_str}\r\n\r\n#{body}"
-      smtp        = Net::SMTP.new(smtp_options["host"], smtp_options["port"])
+      smtp_client_options = {
+        :domain   => smtp_options["domain"],
+        :host     => smtp_options["host"],
+        :port     => smtp_options["port"],
+        :from     => smtp_options["from"],
+        :to       => recipients,
+        :header   => headers,
+        :body     => body
+      }
 
-      # We use 1.9 so we're fine but 1.8 would require plugin to enable TLS with net/smtp
-      smtp.enable_starttls
+      if smtp_options["tls"]
+        smtp_client_options[:starttls] = true
+      end
 
       if smtp_options["auth"]
-        smtp.start(smtp_options["domain"], smtp_options["user"], smtp_options["password"], smtp_options["auth"])
-      else
-        smtp.start(smtp_options["domain"])
+        smtp_client_options[:auth] = {
+          # FIXME: EM SMTP client will only work with plain auth
+          :type     => smtp_options["auth"].to_sym,
+          :username => smtp_options["user"],
+          :password => smtp_options["password"]
+        }
       end
 
-      recipients.each do |recipient|
-        smtp.send_message(message, smtp_options["from"], recipient)
+      email = EM::Protocols::SmtpClient.send(smtp_client_options)
+
+      email.callback do
+        logger.debug("Email alert sent (took #{Time.now - started} seconds)")
       end
 
-      smtp.finish
-
-      logger.debug("Email alert sent (took #{Time.now - started} seconds)")
+      email.errback do |e|
+        logger.error("Failed to send alert via email: #{e}")
+      end
 
     rescue => e
-      logger.error("Cannot send an email: #{e}")
+      logger.error("Error sending email: #{e}")
     end
 
   end

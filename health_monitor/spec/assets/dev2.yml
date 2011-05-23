@@ -29,4 +29,5 @@ alerts:
       user: bosh.alerts
       password: dragonagezb
       auth: plain
+      tls: true
       domain: gmail.com

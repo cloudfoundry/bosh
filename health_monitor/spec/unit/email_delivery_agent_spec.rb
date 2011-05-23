@@ -112,7 +112,7 @@ Time: #{(ts + 2).utc}
 
     EMAIL
 
-    @agent.should_receive(:send_email).with("3 alerts from Bosh Health Monitor", email_body).once.and_return(true)
+    @agent.should_receive(:send_email_async).with("3 alerts from Bosh Health Monitor", email_body).once.and_return(true)
     @agent.process_queue
   end
 

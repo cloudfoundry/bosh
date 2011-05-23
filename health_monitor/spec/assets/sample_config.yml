@@ -28,8 +28,9 @@ alert_delivery_agents:
       from: bosh.alerts@gmail.com
       host: smtp.gmail.com
       port: 587
+      auth: plain
       user: bosh.alerts
       password: dragonagezb
-      auth: plain
+      tls: true
       domain: gmail.com
 
