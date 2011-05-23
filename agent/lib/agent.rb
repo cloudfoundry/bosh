@@ -2,6 +2,7 @@ module Bosh
 end
 
 require "logger"
+require "time"
 
 require "nats/client"
 require "yajl"

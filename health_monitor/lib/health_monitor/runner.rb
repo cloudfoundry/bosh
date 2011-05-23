@@ -28,7 +28,7 @@ module Bosh::HealthMonitor
 
       EM.run do
         connect_to_mbus
-        @agent_manager.setup_subscriptions
+        @agent_manager.setup_events
         setup_timers
         @logger.info "Bosh HealthMonitor #{Bhm::VERSION} is running..."
       end

@@ -41,39 +41,40 @@ module Bosh::Agent
     #   Event: $EVENT
     #   Action: $ACTION
     #   Date: $DATE
+    #   Description: $DESCRIPTION
     #   }
 
     # == Returns:
     # true if succeeded to process the alert, false if failed
     #
     def process_email_alert(raw_email)
+      create_alert_from_email(raw_email).register
+    end
+
+    def create_alert_from_email(raw_email)
       @logger.debug "Received email alert: #{raw_email}"
 
-      alert_id = nil
-      service  = nil
-      event    = nil
-      action   = nil
-      date     = nil
+      attrs = { }
 
       raw_email.split(/\r?\n/).each do |line|
         case line
         when /^\s*Message-id:\s*<(.*)>$/i
-          alert_id = $1.split("@")[0] # Remove host
+          attrs[:id] = $1.split("@")[0] # Remove host
         when /^\s*Service:\s*(.*)$/i
-          service = $1
+          attrs[:service] = $1
         when /^\s*Event:\s*(.*)$/i
-          event = $1
+          attrs[:event] = $1
         when /^\s*Action:\s*(.*)$/i
-          action = $1
+          attrs[:action] = $1
         when /^\s*Date:\s*(.*)$/i
-          date = $1
+          attrs[:date] = $1
+        when /^\s*Description:\s*(.*)$/i
+          attrs[:description] = $1
         end
       end
 
-      @logger.info("Extracted email alert data: id=#{alert_id}, service=#{service}, event=#{event}, action=#{action}, date=#{date}")
-      Alert.register(alert_id, service, event, action, date)
-
-      true
+      @logger.debug("Extracted email alert data: #{attrs}")
+      Alert.new(attrs)
     end
 
   end

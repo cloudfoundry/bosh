@@ -98,6 +98,7 @@ module Bosh::Agent
           Event: $EVENT
           Action: $ACTION
           Date: $DATE
+          Description: $DESCRIPTION
         }
         CONFIG
 

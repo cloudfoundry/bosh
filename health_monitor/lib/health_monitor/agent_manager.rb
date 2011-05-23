@@ -16,10 +16,6 @@ module Bosh::HealthMonitor
       @alerts_processed    = 0
 
       @alert_processor = AlertProcessor.new
-
-      Bhm.alert_delivery_agents.each do |agent_options|
-        @alert_processor.add_delivery_agent(lookup_delivery_agent(agent_options))
-      end
     end
 
     def lookup_delivery_agent(options)
@@ -35,7 +31,11 @@ module Bosh::HealthMonitor
       end
     end
 
-    def setup_subscriptions
+    def setup_events
+      Bhm.alert_delivery_agents.each do |agent_options|
+        @alert_processor.add_delivery_agent(lookup_delivery_agent(agent_options))
+      end
+
       Bhm.nats.subscribe("hm.agent.heartbeat.*") do |heartbeat_json, reply, subject|
         @heartbeats_received += 1
         agent_id = subject.split('.', 4).last

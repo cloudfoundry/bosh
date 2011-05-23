@@ -56,6 +56,7 @@ describe Bosh::Agent::Monit do
           Event: $EVENT
           Action: $ACTION
           Date: $DATE
+          Description: $DESCRIPTION
         }
     CONFIG
   end
