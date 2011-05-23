@@ -16,7 +16,7 @@ intervals:
   analyze_agents: 60
   agent_timeout: 60
 
-alerts:
+alert_delivery_agents:
   - plugin: logging
 
   - plugin: email

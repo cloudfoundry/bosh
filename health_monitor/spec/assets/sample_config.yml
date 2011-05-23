@@ -13,7 +13,6 @@ intervals:
   poll_director: 60
   poll_grace_period: 30
   log_stats: 60
-  agent_timeout: 60
   analyze_agents: 60
   agent_timeout: 60
 
