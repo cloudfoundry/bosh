@@ -133,7 +133,7 @@ module Bosh::HealthMonitor
         deployment_vms = @director.get_deployment_vms(deployment_name)
         @logger.debug "Fetching VMs information for `#{deployment_name}'..."
 
-        @deployment_manager.update_deployment(deployment_name, deployment_info)
+        @deployment_manager.update_deployment(deployment_name, deployment)
         # TODO: handle missing deployments
 
         deployment_vms.each do |vm|

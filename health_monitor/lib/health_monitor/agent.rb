@@ -6,6 +6,9 @@ module Bosh::HealthMonitor
     attr_reader   :discovered_at
     attr_accessor :updated_at
 
+    attr_reader :job
+    attr_reader :index
+
     def initialize(id)
       @id            = id
       @discovered_at = Time.now
@@ -14,18 +17,12 @@ module Bosh::HealthMonitor
       @intervals     = Bhm.intervals
     end
 
-    def missing?
-      Time.now - @updated_at > @intervals.agent_timeout
+    def timed_out?
+      (Time.now - @updated_at) > @intervals.agent_timeout
     end
 
     def process_heartbeat(heartbeat_payload)
       @updated_at = Time.now
-    end
-
-    def analyze
-      if missing?
-        @logger.warn("Agent #{@id} has timed out")
-      end
     end
 
   end

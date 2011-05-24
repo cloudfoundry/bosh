@@ -18,6 +18,10 @@ module Bosh::HealthMonitor
       @director   = Director.new(config["director"])
       @mbus       = OpenStruct.new(config["mbus"])
 
+      if config["loglevel"].is_a?(String)
+        @logger.level = config["loglevel"].to_sym
+      end
+
       if config["alert_delivery_agents"].kind_of?(Array)
         @alert_delivery_agents = config["alert_delivery_agents"]
       else

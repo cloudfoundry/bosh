@@ -26,6 +26,17 @@ module Bosh::HealthMonitor
     end
 
     def register_alert(alert)
+      register_alert!(alert)
+      true
+    rescue Bhm::InvalidAlert => e
+      @logger.error(e)
+      false
+    end
+
+    def register_alert!(alert)
+
+      alert = Alert.create!(alert) if alert.kind_of?(Hash)
+
       @lock.synchronize do
         if @alert_ids.include?(alert.id)
           return true

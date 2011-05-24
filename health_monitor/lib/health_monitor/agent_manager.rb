@@ -61,8 +61,6 @@ module Bosh::HealthMonitor
       if agent.nil?
         @logger.debug("Discovered agent #{agent_id}")
         @agents[agent_id] = Agent.new(agent_id)
-      else
-        agent.updated_at = Time.now
       end
 
       @agent_ids << agent_id
@@ -75,12 +73,14 @@ module Bosh::HealthMonitor
       started = Time.now
 
       processed = Set.new
+      count = 0
 
       # Agents from managed deployments
       @agents_by_deployment.each_pair do |deployment_name, agent_ids|
         agent_ids.each do |agent_id|
           analyze_agent(agent_id)
           processed << agent_id
+          count += 1
         end
       end
 
@@ -89,17 +89,30 @@ module Bosh::HealthMonitor
         @logger.warn("Agent #{agent_id} is not a part of any deployment")
         # TODO: alert?
         analyze_agent(agent_id)
+        count += 1
       end
 
-      @logger.info("Finished analyzing agents, took %s seconds" % [ Time.now - started ])
+      @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "agent"), Time.now - started ])
     end
 
     def analyze_agent(agent_id)
       agent = @agents[agent_id]
+      ts    = Time.now.to_i
+
       if agent.nil?
         @logger.error("Agent #{agent_id} is missing from agents index, skipping...")
-      else
-        agent.analyze
+        return
+      end
+
+      if agent.timed_out?
+        alert = {
+          :id         => "timeout-#{agent_id}-#{ts}",
+          :severity   => 2,
+          :title      => "Agent timed out: #{agent_id}",
+          :created_at => ts
+        }
+
+        @alert_processor.register_alert(alert)
       end
     end
 
