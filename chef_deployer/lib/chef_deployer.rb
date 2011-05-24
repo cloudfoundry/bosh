@@ -289,6 +289,7 @@ module ChefDeployer
      desc "deploy CLOUD", "deploy CLOUD"
      method_option :roles, :type => :array
      method_option :metadata, :type => :boolean, :default => true
+     method_option :config, :type => :string, :default => "config.yml"
      def deploy(cloud)
        if File.directory?(cloud)
          @cloud_path = cloud
@@ -296,8 +297,8 @@ module ChefDeployer
          @cloud_path = File.join(BASE_PATH, "clouds", cloud)
        end
 
-       say_status :config, "reading cloud configuration"
-       config_path = File.join(@cloud_path, "config.yml")
+       say_status :config, "reading cloud configuration #{options.config}"
+       config_path = File.join(@cloud_path, options.config)
        raise InvocationError, "Invalid cloud: #{@cloud_path}, missing config file" unless File.file?(config_path)
 
        host_role_mapping = {}
