@@ -12,10 +12,11 @@ director:
 intervals:
   poll_director: 60
   poll_grace_period: 30
-  log_stats: 60
+  log_stats: 300
   agent_timeout: 60
   analyze_agents: 60
   agent_timeout: 60
+  rogue_agent_alert: 120
 
 alert_delivery_agents:
   - plugin: logger
@@ -24,14 +25,13 @@ alert_delivery_agents:
     recipients:
       - olegs@vmware.com
     smtp:
-      from: bosh.alerts@gmail.com
-      host: smtp.gmail.com
-      port: 587
+      from: bhm@localhost.localdomain
+      host: smtp.las01.emcatmos.com
+      port: 25
       auth: plain
-      user: bosh.alerts
-      password: dragonagezb
-      tls: true
-      domain: gmail.com
+      user: appcloud
+      password: @ppcl0ud
+      domain: localdomain
 
 logfile: <%= node[:health_monitor][:path] %>/shared/logs/health_monitor.log
-
+loglevel: info

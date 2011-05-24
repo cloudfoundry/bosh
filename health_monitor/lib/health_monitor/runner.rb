@@ -137,7 +137,7 @@ module Bosh::HealthMonitor
         # TODO: handle missing deployments
 
         deployment_vms.each do |vm|
-          @agent_manager.add_agent(deployment_name, vm["agent_id"])
+          @agent_manager.add_agent(deployment_name, vm)
         end
       end
     rescue Bhm::DirectorError => e

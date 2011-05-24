@@ -76,9 +76,10 @@ module Bosh::HealthMonitor
 
     def formatted_alert(alert)
       result = ""
+      result << "#{alert.source}\n" unless alert.source.nil?
       result << (alert.title || "Unknown Alert") << "\n"
       result << "Severity: #{alert.severity}\n"
-      result << "Summary: #{alert.summary}\n"
+      result << "Summary: #{alert.summary}\n" unless alert.summary.nil?
       result << "Time: #{alert.created_at.utc}\n"
     end
 

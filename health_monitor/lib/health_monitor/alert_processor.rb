@@ -33,9 +33,12 @@ module Bosh::HealthMonitor
       false
     end
 
+    # register_alert! doesn't care about alert type as long as Alert.create!
+    # can create alert using this type or it's already a Bhm::Alert
     def register_alert!(alert)
-
-      alert = Alert.create!(alert) if alert.kind_of?(Hash)
+      unless alert.kind_of?(Alert)
+        alert = Alert.create!(alert)
+      end
 
       @lock.synchronize do
         if @alert_ids.include?(alert.id)

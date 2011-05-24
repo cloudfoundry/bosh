@@ -15,6 +15,7 @@ intervals:
   log_stats: 60
   analyze_agents: 60
   agent_timeout: 60
+  rogue_agent_alert: 120
 
 alert_delivery_agents:
 

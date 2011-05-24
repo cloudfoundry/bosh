@@ -7,7 +7,6 @@ module Bosh::HealthMonitor
 
     def initialize
       @agents = { }
-      @agent_ids = Set.new
       @agents_by_deployment = { }
 
       @logger = Bhm.logger
@@ -47,7 +46,7 @@ module Bosh::HealthMonitor
         @alerts_received += 1
         agent_id = subject.split('.', 4).last
         @logger.info("Received alert from `#{agent_id}': #{message}")
-        process_alert(message)
+        process_alert(agent_id, message)
       end
     end
 
@@ -55,17 +54,36 @@ module Bosh::HealthMonitor
       @agents.size
     end
 
-    def add_agent(deployment_name, agent_id)
+    # Processes VM data from Bosh Director,
+    # extracts relevant agent data, wraps it into Agent object
+    # and adds it to a list of managed agents.
+    def add_agent(deployment_name, vm_data)
+      unless vm_data.kind_of?(Hash)
+        @logger.error("Invalid format for VM data: expected Hash, got #{vm_data.class}: #{vm_data}")
+        return false
+      end
+
+      agent_id = vm_data["agent_id"]
+
+      if agent_id.nil? # TODO: alert?
+        @logger.warn("No agent id for VM: #{vm_data}")
+        return false
+      end
+
       agent = @agents[agent_id]
 
       if agent.nil?
         @logger.debug("Discovered agent #{agent_id}")
-        @agents[agent_id] = Agent.new(agent_id)
+        @agents[agent_id] = Agent.new(agent_id, deployment_name, vm_data["job"], vm_data["index"])
+      else
+        agent.deployment = deployment_name
+        agent.job        = vm_data["job"]
+        agent.index      = vm_data["index"]
       end
 
-      @agent_ids << agent_id
       @agents_by_deployment[deployment_name] ||= Set.new
       @agents_by_deployment[deployment_name] << agent_id
+      true
     end
 
     def analyze_agents
@@ -85,14 +103,14 @@ module Bosh::HealthMonitor
       end
 
       # Rogue agents (hey there Solid Snake)
-      (@agent_ids - processed).each do |agent_id|
+      (@agents.keys.to_set - processed).each do |agent_id|
         @logger.warn("Agent #{agent_id} is not a part of any deployment")
-        # TODO: alert?
         analyze_agent(agent_id)
         count += 1
       end
 
       @logger.info("Analyzed %s, took %s seconds" % [ pluralize(count, "agent"), Time.now - started ])
+      count
     end
 
     def analyze_agent(agent_id)
@@ -101,26 +119,59 @@ module Bosh::HealthMonitor
 
       if agent.nil?
         @logger.error("Agent #{agent_id} is missing from agents index, skipping...")
-        return
+        return false
       end
 
       if agent.timed_out?
         alert = {
-          :id         => "timeout-#{agent_id}-#{ts}",
+          :id         => "timeout-#{agent.id}-#{ts}",
           :severity   => 2,
-          :title      => "Agent timed out: #{agent_id}",
+          :source     => agent.name,
+          :title      => "#{agent.id} has timed out",
           :created_at => ts
         }
 
-        @alert_processor.register_alert(alert)
+        register_alert(alert)
       end
+
+      if agent.rogue?
+        alert = {
+          :id         => "rogue-#{agent.id}-#{ts}",
+          :severity   => 2,
+          :source     => agent.name,
+          :title      => "#{agent.id} is not a part of any deployment",
+          :created_at => ts
+        }
+
+        register_alert(alert)
+      end
+
+      true
+    end
+
+    def register_alert(alert)
+      @alert_processor.register_alert(alert)
     end
 
     # Subscription callbacks
-    def process_alert(alert_json)
-      alert = Alert.create!(Yajl::Parser.parse(alert_json))
-      @alert_processor.register_alert(alert)
-      @alerts_processed += 1
+    def process_alert(agent_id, alert_json)
+      agent = @agents[agent_id]
+
+      if agent.nil?
+        @logger.warn("Received an alert from an unmanaged agent: #{agent_id}")
+        agent = Agent.new(agent_id)
+        @agents[agent_id] = agent
+      end
+
+      alert = Yajl::Parser.parse(alert_json)
+
+      if alert.is_a?(Hash) && !alert.has_key?("source")
+        alert["source"] = agent.name
+      end
+
+      if register_alert(alert)
+        @alerts_processed += 1
+      end
 
     rescue Yajl::ParseError => e
       @logger.error("Cannot parse incoming alert: #{e}")
@@ -132,14 +183,12 @@ module Bosh::HealthMonitor
       agent = @agents[agent_id]
 
       if agent.nil?
-        # TODO: alert?
-        @logger.warn("Received a heartbeat from an unmanaged agent #{agent_id}")
+        @logger.warn("Received a heartbeat from an unmanaged agent: #{agent_id}")
         agent = Agent.new(agent_id)
-        agent.process_heartbeat(heartbeat_payload)
         @agents[agent_id] = agent
-      else
-        agent.process_heartbeat(heartbeat_payload)
       end
+
+      agent.process_heartbeat(heartbeat_payload)
     end
 
   end

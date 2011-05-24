@@ -4,8 +4,9 @@ module Bosh::HealthMonitor
 
     attr_reader :id
     attr_reader :severity
-    attr_reader :title
     attr_reader :summary
+    attr_reader :title
+    attr_reader :source
     attr_reader :created_at
 
     attr_reader :errors
@@ -26,7 +27,6 @@ module Bosh::HealthMonitor
     end
 
     def initialize(attrs = {})
-
       # Stringify keys
       attrs.dup.each_pair do |k, v|
         attrs[k.to_s] = attrs[k]
@@ -36,6 +36,7 @@ module Bosh::HealthMonitor
       @severity   = attrs["severity"].to_i
       @title      = attrs["title"]
       @summary    = attrs["summary"]
+      @source     = attrs["source"]
       @created_at = Time.at(attrs["created_at"]) rescue attrs["created_at"]
     end
 

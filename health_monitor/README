@@ -35,6 +35,7 @@ Alert is a concept used by HM to flag and deliver information about important ev
 
 # Id
 # Severity
+# Source (usually deployment/job/index tuple)
 # Timestamp
 # Description
 # Long description (optional)
@@ -45,7 +46,7 @@ h6. Alert Processor
 Alert Processor is a module that registers incoming alerts and routes them to interested parties via appropriate delivery agent. It should conform to the following interface:
 
 | *Method*         | *Arguments* | *Description* |
-| *register_alert* | alert (object responding to :id, :severity, :timestamp, :description, :long_description and :tags)  | Registers an alert and invokes a delivery agent. Delivery agent might or might not deliver alert immediately depending on the implementation, so Alert Processor shouldn't make any assumptions about delivery (i.e. agent might queue up several alerts and send them asynchronously. |
+| *register_alert* | alert (object responding to :id, :severity, :timestamp, :description, :long_description, :source and :tags)  | Registers an alert and invokes a delivery agent. Delivery agent might or might not deliver alert immediately depending on the implementation, so Alert Processor shouldn't make any assumptions about delivery (i.e. agent might queue up several alerts and send them asynchronously. |
 | *add_delivery_agent* | delivery_agent, options | Adds a delivery agent to a processor |
 
 Alert id can be an arbitrary string however Alert Processor might use it to keep track of registered alerts and don't process the same alert twice. This way other HM modules can just blindly register any incoming alerts and leave the dedup step to the alert processor).
