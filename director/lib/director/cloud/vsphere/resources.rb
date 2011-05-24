@@ -17,6 +17,7 @@ module VSphereCloud
       attr_accessor :disk_path
       attr_accessor :datastore_pattern
       attr_accessor :persistent_datastore_pattern
+      attr_accessor :allow_mixed_datastores
       attr_accessor :spec
 
       def inspect
@@ -97,6 +98,9 @@ module VSphereCloud
         datacenter.datastore_pattern    = Regexp.new(datacenter.spec["datastore_pattern"])
         raise "Missing persistent_datastore_pattern in director config" if datacenter.spec["persistent_datastore_pattern"].nil?
         datacenter.persistent_datastore_pattern = Regexp.new(datacenter.spec["persistent_datastore_pattern"])
+
+        datacenter.allow_mixed_datastores = !!datacenter.spec["allow_mixed_datastores"]
+
         datacenter.clusters             = fetch_clusters(datacenter)
         datacenters[datacenter.name]    = datacenter
       end
@@ -134,9 +138,10 @@ module VSphereCloud
         persistent_datastore_names = cluster.persistent_datastores.map { |ds|
           ds.name
         }
-        if (datastore_names & persistent_datastore_names).length != 0
+        if (datastore_names & persistent_datastore_names).length != 0 && !datacenter.allow_mixed_datastores
           raise("datastore patterns are not mutually exclusive non-persistent are " +
-                "#{datastore_names.pretty_inspect}\n persistent are #{persistent_datastore_names.pretty_inspect}")
+                "#{datastore_names.pretty_inspect}\n persistent are #{persistent_datastore_names.pretty_inspect}, " +
+                "please use allow_mixed_datastores director configuration parameter to allow this")
         end
         @logger.debug("non-persistent datastores are " + "#{datastore_names.pretty_inspect}\n " +
                       "persistent datastores are #{persistent_datastore_names.pretty_inspect}")
@@ -356,7 +361,7 @@ module VSphereCloud
 
         # Make sure there is enough space
         @lock.synchronize do
-          break if cluster.real_free_memory - memory < MEMORY_THRESHOLD 
+          break if cluster.real_free_memory - memory < MEMORY_THRESHOLD
 
           # Find a datastore with sufficient free space
           datastore = pick_datastore(cluster, disk_space)
