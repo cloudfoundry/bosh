@@ -25,6 +25,8 @@ module Bosh::HealthMonitor
         EmailDeliveryAgent.new(options)
       when "logger"
         LoggingDeliveryAgent.new(options)
+      when "pagerduty"
+        PagerdutyDeliveryAgent.new(options)
       else
         raise DeliveryAgentError, "Cannot find delivery agent plugin `#{plugin}'"
       end

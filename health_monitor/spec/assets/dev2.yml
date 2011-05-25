@@ -17,9 +17,14 @@ intervals:
   agent_timeout: 60
   rogue_agent_alert: 120
 
+loglevel: info
+
 alert_delivery_agents:
 
   - plugin: logger
+
+  - plugin: pagerduty
+    service_key: b2b734f06898012e917512313d009e57
 
   - plugin: email
     recipients:
