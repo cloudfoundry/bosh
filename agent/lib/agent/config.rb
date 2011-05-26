@@ -1,14 +1,22 @@
 module Bosh::Agent
   class Config
     class << self
+      DEFAULT_BASE_DIR = "/var/vcap"
+
       attr_accessor :base_dir, :logger, :mbus
       attr_accessor :agent_id, :configure
       attr_accessor :blobstore, :blobstore_provider, :blobstore_options
+
       attr_accessor :system_root, :platform_name
-      attr_accessor :process_alerts, :smtp_port, :smtp_user, :smtp_password
-      attr_accessor :heartbeat_interval
-      attr_accessor :settings
+
       attr_accessor :nats
+
+      attr_accessor :process_alerts, :smtp_port, :smtp_user, :smtp_password
+
+      attr_accessor :heartbeat_interval
+
+      attr_accessor :settings
+      attr_accessor :state
 
       def setup(config)
         @configure = config["configure"]
@@ -16,7 +24,7 @@ module Bosh::Agent
         @logger       = Logger.new(STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
 
-        @base_dir = config["base_dir"]
+        @base_dir = config["base_dir"] || DEFAULT_BASE_DIR
         @agent_id = config["agent_id"]
 
         @mbus = config['mbus']
@@ -40,6 +48,8 @@ module Bosh::Agent
         end
 
         @settings = {}
+
+        @state = State.new(File.join(@base_dir, "bosh", "state.yml"))
       end
 
       def platform

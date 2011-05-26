@@ -3,6 +3,7 @@ end
 
 require "logger"
 require "time"
+require "yaml"
 
 require "nats/client"
 require "yajl"
@@ -13,7 +14,10 @@ require "monit_api"
 
 require "agent/ext"
 require "agent/version"
+
 require "agent/template"
+require "agent/errors"
+
 require "agent/config"
 require "agent/util"
 require "agent/monit"
@@ -24,6 +28,7 @@ require "agent/alert"
 require "agent/alert_processor"
 require "agent/smtp_server"
 require "agent/heartbeat"
+require "agent/state"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
@@ -50,18 +55,28 @@ module Bosh::Agent
 
     def initialize(options)
       self.config = Bosh::Agent::Config.setup(options)
+      @logger     = Bosh::Agent::Config.logger
     end
 
     def start
       $stdout.sync = true
-      @logger = Bosh::Agent::Config.logger
-      @logger.info("Configuring agent #{Bosh::Agent::VERSION}")
+      @logger.info("Starting agent #{Bosh::Agent::VERSION}...")
+
       if Config.configure
+        @logger.info("Configuring agent...")
+        # FIXME: this should not use message handler.
+        # The whole thing should be refactored so that
+        # regular code doesn't use RPC handlers other than
+        # for responding to RPC.
         Bosh::Agent::Message::Configure.process(nil)
+
         Bosh::Agent::Monit.enabled = true
         Bosh::Agent::Monit.start
+      else
+        @logger.info("Skipping configuration step (use '-c' argument to configure on start) ")
       end
-      @logger.info("Starting agent")
+
+      @logger.info("Starting agent #{Bosh::Agent::VERSION}...")
       Bosh::Agent::Handler.start
     end
   end

@@ -4,10 +4,9 @@ require 'fileutils'
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
-    #setup_tmp_base_dir
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
+    setup_tmp_base_dir
+
+    Bosh::Agent::Config.state = Bosh::Agent::State.new(Tempfile.new("state").path)
 
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
@@ -46,12 +45,12 @@ describe Bosh::Agent::Message::Apply do
       "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77" },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
-      "packages" => 
-        {"bubba" => 
+      "packages" =>
+        {"bubba" =>
           { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id", "sha1" => package_sha1 }
       },
     }
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
@@ -77,7 +76,7 @@ describe Bosh::Agent::Message::Apply do
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_job_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])

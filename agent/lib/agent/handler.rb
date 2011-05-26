@@ -1,17 +1,10 @@
-
 module Bosh::Agent
-
-  class MessageHandlerError < StandardError; end
-  class UnknownMessage < StandardError; end
-  class LoadSettingsError < StandardError; end
 
   class Handler
     attr_reader :processors
 
-    class << self
-      def start
-        Handler.new.start
-      end
+    def self.start
+      new.start
     end
 
     def initialize
@@ -20,19 +13,22 @@ module Bosh::Agent
       @nats_uri  = Config.mbus
       @base_dir  = Config.base_dir
 
+      # Alert processing
       @process_alerts = Config.process_alerts
       @smtp_user      = Config.smtp_user
       @smtp_password  = Config.smtp_password
       @smtp_port      = Config.smtp_port
 
       @lock = Mutex.new
-      @long_running_agent_task = []
+
       @results = []
-      message_processors
+      @long_running_agent_task = []
+
+      find_message_processors
     end
 
     # TODO: add runtime loading of messag handlers
-    def message_processors
+    def find_message_processors
       message_consts = Bosh::Agent::Message.constants
       @processors = {}
       message_consts.each do |c|
@@ -46,7 +42,6 @@ module Bosh::Agent
       @logger.info("Message processors: #{@processors.inspect}")
     end
 
-    # TODO:
     def lookup(method)
       @processors[method]
     end

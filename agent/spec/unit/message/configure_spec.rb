@@ -40,7 +40,7 @@ describe Bosh::Agent::Message::Configure do
     @processor.load_settings
     @processor.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
     @processor.stub!(:update_file) do |data, file|
-      # FIMXE: clean this mess up 
+      # FIMXE: clean this mess up
       case file
       when '/etc/network/interfaces'
         data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 172.30.40.115\n    network 172.30.40.0\n    netmask 255.255.248.0\n    broadcast 172.30.47.255\n    gateway 172.30.40.1\n\n"

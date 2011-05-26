@@ -1,42 +1,26 @@
-require 'yaml'
-
 module Bosh::Agent
   module Message
-    class State
+    class State < Base
+
       def self.process(args)
         self.new(args).state
       end
 
-      def initialize(args)
-        @logger = Bosh::Agent::Config.logger
-        @base_dir = Bosh::Agent::Config.base_dir
-      end
-
       def state
-        state_file = File.join(@base_dir, 'bosh', 'state.yml')
-        if File.exist?(state_file)
-          state = YAML.load_file(state_file)
-        else
-          state = {
-           "deployment"=>"",
-           "networks"=>{},
-           "resource_pool"=>{}
-          }
-          File.open(state_file, 'w') do |f|
-            f.puts(state.to_yaml)
-          end
-        end
-        @logger.info("Agent state: #{state.inspect}")
+        response = Bosh::Agent::Config.state.to_hash
 
-        # TODO: this is hard to test, should be parameterized
-        settings = Bosh::Agent::Config.settings
+        logger.info("Agent state: #{response.inspect}")
+
         if settings
-          state["agent_id"] = settings["agent_id"]
-          state["vm"] = settings["vm"]
+          response["agent_id"] = settings["agent_id"]
+          response["vm"] = settings["vm"]
         end
 
-        state["job_state"] = job_state
-        state
+        response["job_state"] = job_state
+        response
+
+      rescue Bosh::Agent::StateError => e
+        raise Bosh::Agent::MessageHandlerError, e
       end
 
       def job_state
