@@ -135,8 +135,12 @@ module Bosh::Director
       end
 
       agent_id = generate_agent_id
+      vm = Models::Vm.create(:deployment => @deployment_plan.deployment, :agent_id => agent_id)
       @logger.info("Creating compilation VM with agent id: #{agent_id}")
       vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @compilation_resources, network_settings, nil, @compilation_env)
+      vm.cid = vm_cid
+      vm.save
+
       @logger.info("Configuring compilation VM: #{vm_cid}")
       begin
         agent = AgentClient.new(agent_id)
@@ -154,6 +158,7 @@ module Bosh::Director
       ensure
         @logger.info("Deleting compilation VM: #{vm_cid}")
         @cloud.delete_vm(vm_cid)
+        vm.destroy
       end
 
       @networks_mutex.synchronize do
