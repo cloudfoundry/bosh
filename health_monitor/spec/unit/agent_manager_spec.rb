@@ -59,6 +59,23 @@ describe Bhm::AgentManager do
     manager.agents_count.should == 1
   end
 
+  it "can sync agents" do
+    manager = make_manager
+    vm1 = { "agent_id" => "007", "index" => "0", "job" => "mutator"}
+    vm2 = { "agent_id" => "008", "index" => "0", "job" => "nats"}
+    vm3 = { "agent_id" => "009", "index" => "28", "job" => "mysql_node"}
+
+    vms = [ vm1, vm2 ]
+    manager.sync_agents("mycloud", vms)
+    manager.agents_count.should == 2
+
+    manager.sync_agents("mycloud", vms - [vm1])
+    manager.agents_count.should == 1
+
+    manager.sync_agents("mycloud", [vm1, vm3])
+    manager.agents_count.should == 2
+  end
+
   it "refuses to register agents with malformed director vm data" do
     manager = make_manager
 

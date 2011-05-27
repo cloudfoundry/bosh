@@ -61,6 +61,28 @@ module Bosh::HealthMonitor
       @agents.size
     end
 
+    def sync_agents(deployment, vms)
+      managed_agent_ids = @agents_by_deployment[deployment] || Set.new
+      active_agent_ids  = Set.new
+
+      vms.each do |vm|
+        if add_agent(deployment, vm)
+          active_agent_ids << vm["agent_id"]
+        end
+      end
+
+      (managed_agent_ids - active_agent_ids).each do |agent_id|
+        remove_agent(agent_id)
+      end
+    end
+
+    def remove_agent(agent_id)
+      @agents.delete(agent_id)
+      @agents_by_deployment.each_pair do |deployment, agents|
+        agents.delete(agent_id)
+      end
+    end
+
     # Processes VM data from Bosh Director,
     # extracts relevant agent data, wraps it into Agent object
     # and adds it to a list of managed agents.
@@ -199,11 +221,7 @@ module Bosh::HealthMonitor
       # to avoid flooding logs with the same message
       return if agent.nil?
       @logger.info("Agent `#{agent_id}' shutting down...")
-
-      @agents.delete(agent_id)
-      @agents_by_deployment.each_pair do |deployment, agents|
-        agents.delete(agent_id)
-      end
+      remove_agent(agent_id)
     end
 
     def process_heartbeat(agent_id, heartbeat_payload)
