@@ -3,13 +3,20 @@ require 'yaml'
 module Bosh::Agent
   module Message
     class Drain
+
+      NOTIFICATION_RETRIES = 3
+      RETRY_PERIOD = 1
+
       def self.process(args)
         self.new(args).drain
       end
 
       def initialize(args)
-        @logger = Bosh::Agent::Config.logger
-        @base_dir = Bosh::Agent::Config.base_dir
+        @logger     = Bosh::Agent::Config.logger
+        @base_dir   = Bosh::Agent::Config.base_dir
+        @nats       = Bosh::Agent::Config.nats
+        @agent_id   = Bosh::Agent::Config.agent_id
+        @drain_type = args.shift
 
         @logger.info("Draining: #{args.inspect}")
 
@@ -17,13 +24,15 @@ module Bosh::Agent
           Bosh::Agent::Monit.unmonitor_services
         end
 
-        @drain_type = args.shift
-
-        if @drain_type == "update"
+        case @drain_type
+        when "shutdown"
+          # TODO: can agent shutdown before the message sent over mbus?
+          # Maybe we need to add some grace period to let it happen?
+          notify_health_monitor
+        when "update"
           @spec = args.shift
-          unless @spec
-            raise Bosh::Agent::MessageHandlerError,
-              "Drain update called without apply spec"
+          if @spec.nil?
+            raise Bosh::Agent::MessageHandlerError, "Drain update called without apply spec"
           end
         end
 
@@ -106,7 +115,7 @@ module Bosh::Agent
           else
             false
           end
-        end.collect { |package_name, pkg| package_name } 
+        end.collect { |package_name, pkg| package_name }
       end
 
       def drain_script
@@ -116,6 +125,19 @@ module Bosh::Agent
 
       def drain_script_exists?
         File.exists?(drain_script)
+      end
+
+      def notify_health_monitor
+        unless EM.reactor_running?
+          @logger.warn("Event loop must be running in order to send shutdown notification to HM")
+          return
+        end
+
+        NOTIFICATION_RETRIES.times do |i|
+          EM.add_timer(i * RETRY_PERIOD) do
+            @nats.publish("hm.agent.shutdown.#{@agent_id}")
+          end
+        end
       end
 
     end

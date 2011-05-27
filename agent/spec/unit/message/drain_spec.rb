@@ -5,9 +5,11 @@ describe Bosh::Agent::Message::Drain do
 
   before(:each) do
     setup_tmp_base_dir
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
+    @nats = mock
+
+    Bosh::Agent::Config.logger   = Logger.new(StringIO.new)
+    Bosh::Agent::Config.nats     = @nats
+    Bosh::Agent::Config.agent_id = "zb-agent"
 
     @base_dir = Bosh::Agent::Config.base_dir
 
@@ -96,8 +98,25 @@ describe Bosh::Agent::Message::Drain do
     handler.drain.should == 10
   end
 
+  it "notifies HM when agent drains for shutdown" do
+    @state_handler.should_receive(:state).and_return(old_spec)
 
-  it "should set BOSH_CURRENT_STATE environment varibale"
+    EM.run do
+      EM.add_timer(0.5) { EM.stop }
+
+      EM.should_receive(:add_timer).with(0).and_yield
+      EM.should_receive(:add_timer).with(1).and_yield
+      EM.should_receive(:add_timer).with(2).and_yield
+
+      @nats.should_receive(:publish).with("hm.agent.shutdown.zb-agent").exactly(3).times
+      handler = Bosh::Agent::Message::Drain.new(["shutdown"])
+
+      handler.stub!(:drain_script_exists?).and_return(false)
+      handler.drain
+    end
+  end
+
+  it "should set BOSH_CURRENT_STATE environment variable"
   it "should set BOSH_APPLY_SPEC environment variable"
 
   def old_spec

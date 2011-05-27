@@ -4,7 +4,8 @@ module Bosh::Agent
 
   class Heartbeat
 
-    attr_accessor :logger, :nats, :agent_id # Mostly for tests
+    # Mostly for tests so we can override these without touching Config
+    attr_accessor :logger, :nats, :agent_id, :state
 
     def self.enable(interval)
       unless EM.reactor_running?
@@ -20,9 +21,20 @@ module Bosh::Agent
       @logger   = Config.logger
       @nats     = Config.nats
       @agent_id = Config.agent_id
+      @state    = Config.state
     end
 
     def send_via_mbus
+      if @state.nil?
+        @logger.error("Unable to send heartbeat: agent state unknown")
+        return
+      end
+
+      if !@state["job"]
+        @logger.info("No job, skipping the heartbeat")
+        return
+      end
+
       if @nats.nil?
         raise Bosh::Agent::HeartbeatError, "NATS should be initialized in order to send heartbeats"
       end

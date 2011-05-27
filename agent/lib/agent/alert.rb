@@ -23,6 +23,7 @@ module Bosh::Agent
       @logger   = Config.logger
       @nats     = Config.nats
       @agent_id = Config.agent_id
+      @state    = Config.state
 
       @id          = attrs[:id]
       @service     = attrs[:service]
@@ -37,6 +38,7 @@ module Bosh::Agent
     # send alerts several times in case HM temporarily goes down
     def register
       return if severity >= SEVERITY_CUTOFF
+
       ALERT_RETRIES.times do |i|
         EM.add_timer(i * RETRY_PERIOD) do
           send_via_mbus
@@ -45,6 +47,16 @@ module Bosh::Agent
     end
 
     def send_via_mbus
+      if @state.nil?
+        @logger.warn("Unable to send alert: unknown agent state")
+        return
+      end
+
+      if !@state["job"]
+        @logger.info("No job, ignoring alert")
+        return
+      end
+
       @nats.publish("hm.agent.alert.#{@agent_id}", Yajl::Encoder.encode(converted_alert_data))
     end
 

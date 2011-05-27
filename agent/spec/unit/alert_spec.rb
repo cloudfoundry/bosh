@@ -3,13 +3,20 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::Alert do
 
   before(:each) do
+    state_file = Tempfile.new("state")
+    state_file.close
+
     @logger   = Logger.new(StringIO.new)
     @nats     = mock()
     @agent_id = "zb-agent"
+    @state    = Bosh::Agent::State.new(state_file.path)
+
+    @state.write({ "job" => "zb" })
 
     Bosh::Agent::Config.logger   = @logger
     Bosh::Agent::Config.nats     = @nats
     Bosh::Agent::Config.agent_id = @agent_id
+    Bosh::Agent::Config.state    = @state
   end
 
   def make_alert(attrs = { })
@@ -113,6 +120,22 @@ describe Bosh::Agent::Alert do
     }
 
     @nats.should_receive(:publish).with("hm.agent.alert.zb-agent", Yajl::Encoder.encode(payload))
+    alert.send_via_mbus
+  end
+
+  it "doesn't send alert when there is no job" do
+    alert = make_alert
+    @state.write({ "job" => nil })
+
+    @nats.should_not_receive(:publish)
+    alert.send_via_mbus
+  end
+
+  it "doesn't send alert when there is no state" do
+    Bosh::Agent::Config.state = nil
+    alert = make_alert
+
+    @nats.should_not_receive(:publish)
     alert.send_via_mbus
   end
 

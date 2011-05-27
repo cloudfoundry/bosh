@@ -40,7 +40,7 @@ module Bosh::HealthMonitor
       Bhm.nats.subscribe("hm.agent.heartbeat.*") do |heartbeat_json, reply, subject|
         @heartbeats_received += 1
         agent_id = subject.split('.', 4).last
-        @logger.debug("Received heartbeat from #{agent_id}: #{heartbeat_json}")
+        @logger.debug("Received heartbeat from #{agent_id}")
         process_heartbeat(agent_id, heartbeat_json)
       end
 
@@ -49,6 +49,11 @@ module Bosh::HealthMonitor
         agent_id = subject.split('.', 4).last
         @logger.info("Received alert from `#{agent_id}': #{message}")
         process_alert(agent_id, message)
+      end
+
+      Bhm.nats.subscribe("hm.agent.shutdown.*") do |message, reply, subject|
+        agent_id = subject.split('.', 4).last
+        process_shutdown(agent_id, message)
       end
     end
 
@@ -179,6 +184,21 @@ module Bosh::HealthMonitor
       @logger.error("Cannot parse incoming alert: #{e}")
     rescue Bhm::InvalidAlert => e
       @logger.error(e)
+    end
+
+
+    def process_shutdown(agent_id, shutdown_payload = nil)
+      agent = @agents[agent_id]
+      # Agent sends shutdown message several times, so we
+      # earlier if we know this agent is no longer managed
+      # to avoid flooding logs with the same message
+      return if agent.nil?
+      @logger.info("Agent `#{agent_id}' shutting down...")
+
+      @agents.delete(agent_id)
+      @agents_by_deployment.each_pair do |deployment, agents|
+        agents.delete(agent_id)
+      end
     end
 
     def process_heartbeat(agent_id, heartbeat_payload)

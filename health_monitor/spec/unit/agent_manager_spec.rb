@@ -39,6 +39,19 @@ describe Bhm::AgentManager do
     manager.alerts_processed.should == 1
   end
 
+  it "can process agent shutdowns" do
+    manager = make_manager
+    manager.add_agent("mycloud", { "agent_id" => "007", "index" => "0", "job" => "mutator"})
+    manager.add_agent("mycloud", { "agent_id" => "008", "index" => "0", "job" => "nats"})
+    manager.add_agent("mycloud", { "agent_id" => "009", "index" => "28", "job" => "mysql_node"})
+
+    manager.agents_count.should == 3
+    manager.analyze_agents.should == 3
+    manager.process_shutdown("008")
+    manager.agents_count.should == 2
+    manager.analyze_agents.should == 2
+  end
+
   it "can start managing agent" do
     manager = make_manager
 

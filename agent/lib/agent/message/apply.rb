@@ -1,4 +1,3 @@
-
 module Bosh::Agent
   module Message
     class Apply < Base
