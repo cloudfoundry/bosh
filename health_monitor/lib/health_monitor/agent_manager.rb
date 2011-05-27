@@ -77,6 +77,11 @@ module Bosh::HealthMonitor
         return false
       end
 
+      if vm_data["job"].nil? # Resource pool VM, we don't care about them
+        @logger.debug("VM with no job found: #{agent_id}")
+        return false
+      end
+
       agent = @agents[agent_id]
 
       if agent.nil?

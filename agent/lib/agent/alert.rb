@@ -52,7 +52,7 @@ module Bosh::Agent
         return
       end
 
-      if !@state["job"]
+      if @state["job"].blank?
         @logger.info("No job, ignoring alert")
         return
       end
@@ -129,7 +129,7 @@ module Bosh::Agent
       "icmp not changed"             => 5,
       "monit instance failed"        => 1,
       "monit instance succeeded"     => 5,
-      "monit instance changed"       => 4,
+      "monit instance changed"       => 5,
       "monit instance not changed"   => 5,
       "invalid type"                 => 3,
       "type succeeded"               => 5,

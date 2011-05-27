@@ -23,7 +23,7 @@ describe Bosh::Agent::Message::Apply do
   end
 
   it 'should set deployment in agents state if blank' do
-    state = Bosh::Agent::Message::State.new(nil)
+    state = Bosh::Agent::Message::State.new
     state.stub!(:job_state).and_return("running")
 
     handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
@@ -36,7 +36,7 @@ describe Bosh::Agent::Message::Apply do
     response = mock("response")
     response.stub!(:status).and_return(200)
 
-    state = Bosh::Agent::Message::State.new(nil)
+    state = Bosh::Agent::Message::State.new
 
     package_sha1 = Digest::SHA1.hexdigest(dummy_package_data)
     apply_data = {
@@ -66,7 +66,7 @@ describe Bosh::Agent::Message::Apply do
     response = mock("response")
     response.stub!(:status).and_return(200)
 
-    state = Bosh::Agent::Message::State.new(nil)
+    state = Bosh::Agent::Message::State.new
 
     job_sha1 = Digest::SHA1.hexdigest(dummy_job_data)
     apply_data = {

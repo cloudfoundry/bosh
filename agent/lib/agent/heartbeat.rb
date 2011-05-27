@@ -30,7 +30,7 @@ module Bosh::Agent
         return
       end
 
-      if !@state["job"]
+      if @state["job"].blank?
         @logger.info("No job, skipping the heartbeat")
         return
       end

@@ -3,7 +3,7 @@ module Bosh::Agent
     class State < Base
 
       def self.process(args)
-        self.new(args).state
+        self.new.state
       end
 
       def state
