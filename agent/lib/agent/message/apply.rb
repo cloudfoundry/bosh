@@ -26,6 +26,8 @@ module Bosh::Agent
         end
 
         @state_file = File.join(base_dir, '/bosh/state.yml')
+
+        @platform = Bosh::Agent::Config.platform
       end
 
       def apply
@@ -58,6 +60,7 @@ module Bosh::Agent
             apply_packages
             post_install_hook
             configure_monit
+            @platform.update_logging(@apply_spec)
           rescue Exception => e
             raise Bosh::Agent::MessageHandlerError, "#{e.message}: #{e.backtrace}"
           end

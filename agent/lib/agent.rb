@@ -12,9 +12,12 @@ require 'monit_api'
 
 require "agent/ext"
 require "agent/version"
+require "agent/template"
 require "agent/config"
 require "agent/util"
 require "agent/monit"
+
+require "agent/platform"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
@@ -66,6 +69,7 @@ if __FILE__ == $0
     "mbus" => "nats://localhost:4222",
     "agent_id" => "not_configured",
     "base_dir" => "/var/vcap",
+    "platform_name" => "ubuntu",
     "blobstore_options" => {}
   }
   Bosh::Agent.run(options)
