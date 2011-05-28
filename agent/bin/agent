@@ -17,7 +17,8 @@ options = {
   "agent_id"  => "not_configured",
   "blobstore_options" => {},
   "blobstore_provider" => "simple",
-  "base_dir"  => "/var/vcap"
+  "base_dir"  => "/var/vcap",
+  "platform_name" => "ubuntu"
 }
 
 opts = OptionParser.new do |opts|
@@ -39,6 +40,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("-p", "--provider String", "Blobstore provider") do |opt|
     options["blobstore_provider"] = opt
+  end
+
+  opts.on("-P", "--platform String", "Platform") do |opt|
+    options["platform_name"] = opt
   end
 
   # Needed this customization for integration tests, quirky but seems to work

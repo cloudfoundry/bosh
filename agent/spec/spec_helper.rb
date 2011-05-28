@@ -26,6 +26,7 @@ Rspec.configure do |rspec_config|
 
     logger = mock('logger')
     logger.stub!(:info)
+    logger.stub!(:debug)
     Bosh::Agent::Config.logger = logger
 
     setup_tmp_base_dir
@@ -50,7 +51,9 @@ def setup_tmp_base_dir
     FileUtils.rm_rf(tmp_base_dir)
   end
   Bosh::Agent::Config.base_dir = tmp_base_dir
+  Bosh::Agent::Config.system_root = File.join(tmp_base_dir, 'system_root')
   FileUtils.mkdir_p Bosh::Agent::Config.base_dir + '/bosh'
+  FileUtils.mkdir_p Bosh::Agent::Config.base_dir + '/system_root'
 end
 
 def read_asset(filename)

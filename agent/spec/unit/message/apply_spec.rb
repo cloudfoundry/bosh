@@ -4,7 +4,7 @@ require 'fileutils'
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
-    setup_tmp_base_dir
+    #setup_tmp_base_dir
     logger = mock('logger')
     logger.stub!(:info)
     Bosh::Agent::Config.logger = logger
@@ -14,6 +14,10 @@ describe Bosh::Agent::Message::Apply do
 
     FileUtils.mkdir_p(File.join(base_dir, 'monit'))
     Bosh::Agent::Monit.setup_monit_user
+
+    # FIXME: use Dummy platform for tests
+    system_root = Bosh::Agent::Config.system_root
+    FileUtils.mkdir_p(File.join(system_root, 'etc', 'logrotate.d'))
 
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
