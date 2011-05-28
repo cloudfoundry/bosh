@@ -4,6 +4,7 @@ module Bosh::Agent
       attr_accessor :base_dir, :logger, :mbus
       attr_accessor :agent_id, :configure
       attr_accessor :blobstore, :blobstore_provider, :blobstore_options
+      attr_accessor :system_root, :platform_name
       attr_accessor :settings
 
       def setup(config)
@@ -19,11 +20,19 @@ module Bosh::Agent
         @blobstore_options = config["blobstore_options"]
         @blobstore_provider = config["blobstore_provider"]
 
+        @platform_name = config['platform_name']
+
+        @system_root = "/"
+
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")
         end
 
         @settings = {}
+      end
+
+      def platform
+        @platform ||= Bosh::Agent::Platform.new(@platform_name).platform
       end
 
     end
