@@ -194,7 +194,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:delete_vm).with("vm-id")
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"], nil, {}).and_return("vm-id-2")
+      BASIC_PLAN["networks"], nil, {}, BASIC_PLAN["persistent_disk"]).and_return("vm-id-2")
 
     @agent_2.should_receive(:wait_until_ready)
     @agent_2.should_receive(:apply).with(IDLE_PLAN).and_return({
@@ -245,7 +245,7 @@ describe Bosh::Director::InstanceUpdater do
     @cloud.should_receive(:detach_disk).with("vm-id", "disk-id")
     @cloud.should_receive(:delete_vm).with("vm-id")
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"], "disk-id", {}).and_return("vm-id-2")
+      BASIC_PLAN["networks"], "disk-id", {}, BASIC_PLAN["persistent_disk"]).and_return("vm-id-2")
     @cloud.should_receive(:attach_disk).with("vm-id-2", "disk-id")
 
     @agent_2.should_receive(:wait_until_ready)

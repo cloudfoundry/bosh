@@ -59,7 +59,7 @@ module VSphereCloud
           @logger.info("Generated name: #{name}")
 
           # TODO: make stemcell friendly version of the calls below
-          cluster, datastore = @resources.find_resources(1, 1)
+          cluster, datastore = @resources.find_resources(1, 1, 1)
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
@@ -116,17 +116,25 @@ module VSphereCloud
       end
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil)
+    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil, persistent_disk_size = 0)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         memory = resource_pool["ram"]
         disk = resource_pool["disk"]
         cpu = resource_pool["cpu"]
 
+        # Find out how much persistent space we actually need
+        if !disk_locality.nil?
+          if Models::Disk[disk_locality].size == persistent_disk_size
+            # We already have the disk of the required size
+            persistent_disk_size= 0
+          end
+        end
+
         if disk_locality.nil?
-          cluster, datastore = @resources.find_resources(memory, disk)
+          cluster, datastore = @resources.find_resources(memory, disk, persistent_disk_size)
         else
           @logger.info("Looking for resources near disk: #{disk_locality}")
-          cluster, datastore = @resources.find_resources_near_persistent_disk(disk_locality, memory, disk)
+          cluster, datastore = @resources.find_resources_near_persistent_disk(disk_locality, memory, disk, persistent_disk_size)
         end
 
         name = "vm-#{generate_unique_name}"
@@ -353,6 +361,10 @@ module VSphereCloud
     def find_persistent_datastore(datacenter_name, host_info, disk_size)
       # Find datastore
       datastore = @resources.find_persistent_datastore(datacenter_name, host_info["cluster"], disk_size)
+
+      if datastore.nil?
+        raise Bosh::Director::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info["cluster"]}, #{disk_size}"
+      end
 
       # Sanity check, verify that the vm's host can access this datastore
       unless host_info["datastores"].include?(datastore.name)

@@ -22,6 +22,14 @@ module Bosh::Director
 
   end
 
+  class NoDiskSpace < StandardError
+    attr_accessor :ok_to_retry
+
+    def initialize(ok_to_retry)
+      @ok_to_retry = ok_to_retry
+    end
+  end
+
   [
     ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
 

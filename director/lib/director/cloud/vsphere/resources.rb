@@ -220,16 +220,20 @@ module VSphereCloud
       @datacenters
     end
 
-    def filter_used_resources(disk_space, memory)
+    def filter_used_resources(memory, disk_space, persistent_disk_space)
       resources = []
       datacenters.each_value do |datacenter|
         datacenter.clusters.each do |cluster|
-          has_memory = cluster.real_free_memory - memory > MEMORY_THRESHOLD
-          if has_memory
-            datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
-            has_disk = datastore.real_free_space - disk_space > DISK_THRESHOLD
-            resources << [cluster, datastore] if has_disk
-          end
+          next unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
+
+          persistent_datastore = cluster.persistent_datastores.max_by { |ds| ds.real_free_space }
+          next unless !persistent_datastore.nil? &&
+                      persistent_datastore.real_free_space - persistent_disk_space > DISK_THRESHOLD
+
+          datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
+          next unless datastore.real_free_space - disk_space > DISK_THRESHOLD
+
+          resources << [cluster, datastore]
         end
       end
 
@@ -298,7 +302,7 @@ module VSphereCloud
       chosen_datastore
     end
 
-    def find_resources(memory, disk_space)
+    def find_resources(memory, disk_space, persistent_disk_space)
       cluster = nil
       datastore = nil
 
@@ -306,7 +310,7 @@ module VSphereCloud
       disk_space += memory
 
       @lock.synchronize do
-        resources = filter_used_resources(disk_space, memory)
+        resources = filter_used_resources(memory, disk_space, persistent_disk_space)
 
         scored_resources = {}
         resources.each do |resource|
@@ -333,7 +337,7 @@ module VSphereCloud
       [cluster, datastore]
     end
 
-    def find_resources_near_persistent_disk(disk_locality, memory, disk_space)
+    def find_resources_near_persistent_disk(disk_locality, memory, disk_space, additional_persistent_space)
       disk = Models::Disk[disk_locality]
       raise "Disk not found: #{disk_locality}" if disk.nil?
 
@@ -356,26 +360,34 @@ module VSphereCloud
             end
           end
         end
-
         raise "Could not find disk local resources for: #{disk.pretty_inspect}" if cluster.nil?
 
-        # Make sure there is enough space
-        @lock.synchronize do
-          break if cluster.real_free_memory - memory < MEMORY_THRESHOLD
+        # We need to make sure that this cluster has the required additional_persistent_space.
+        # So use this cluster only if the current persistent datastore has sufficient space or
+        # the cluster has some persistent datastore with sufficient space
+        ds = get_persistent_datastore(datacenter.name, cluster.name, disk.datastore)
+        if ds.real_free_space - additional_persistent_space > DISK_THRESHOLD ||
+           !pick_datastore(cluster, additional_persistent_space, true).nil?
 
-          # Find a datastore with sufficient free space
-          datastore = pick_datastore(cluster, disk_space)
-          break if datastore.nil?
+          # Make sure there is enough space
+          @lock.synchronize do
+            break if cluster.real_free_memory - memory < MEMORY_THRESHOLD
 
-          datastore.unaccounted_space += disk_space
-          cluster.unaccounted_memory += memory
-          found = true
+            # Find a datastore with sufficient free space
+            datastore = pick_datastore(cluster, disk_space)
+            break if datastore.nil?
+
+            datastore.unaccounted_space += disk_space
+            cluster.unaccounted_memory += memory
+            found = true
+          end
+
         end
       end
 
       unless found
         @logger.info("Disk was not allocated yet, allocating resources based on system capacity")
-        cluster, datastore = find_resources(memory, disk_space)
+        cluster, datastore = find_resources(memory, disk_space, additional_persistent_space)
       end
 
       [cluster, datastore]
