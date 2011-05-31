@@ -32,7 +32,7 @@ module Bosh
         FileUtils.rm(File.join(@base_dir, "stemcell_#{stemcell_cid}"))
       end
 
-      def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
+      def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil, persistent_disk_space = 0)
         agent_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "..", "agent"))
         agent_base_dir = "/tmp/bosh_test_cloud/agent-base-dir-#{agent_id}"
 
