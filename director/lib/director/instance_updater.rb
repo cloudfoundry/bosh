@@ -1,9 +1,11 @@
 module Bosh::Director
   class InstanceUpdater
+    MAX_ATTACH_DISK_TRIES = 3
 
     def initialize(instance)
       @instance_spec = instance
       @cloud = Config.cloud
+      @logger = Config.logger
       @job_spec = instance.job
       @deployment_plan = @job_spec.deployment
       @resource_pool_spec = @job_spec.resource_pool
@@ -11,10 +13,33 @@ module Bosh::Director
       @vm = @instance.vm
     end
 
+    def get_new_disk
+      new_disk_cid = nil
+      if @instance_spec.persistent_disk_changed? && @job_spec.persistent_disk > 0
+          new_disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
+      end
+      new_disk_cid
+    end
+
     def update(options = {})
       stop
-      update_resource_pool
-      update_persistent_disk
+      num_retries = 0
+      new_disk_cid = get_new_disk
+      begin
+        update_resource_pool(new_disk_cid, num_retries > 0)
+        update_persistent_disk(new_disk_cid)
+      rescue NoDiskSpace => e
+        if e.ok_to_retry && num_retries < MAX_ATTACH_DISK_TRIES
+          num_retries += 1
+          @logger.warn("Retrying attach disk operation after persistent disk update failed #{num_retries}")
+          retry
+        end
+        @logger.warn("Giving up on attach disk operation after persistent disk update failures, #{num_retries}")
+        # Cleanup disk model entry
+        @cloud.delete_disk(new_disk_cid) if !new_disk_cid.nil?
+        raise
+      end
+
       update_networks
       apply_deployment
 
@@ -38,8 +63,8 @@ module Bosh::Director
       agent.stop
     end
 
-    def update_resource_pool
-      if @instance_spec.resource_pool_changed?
+    def update_resource_pool(new_disk_cid, force)
+      if @instance_spec.resource_pool_changed? || force
         if @instance.disk_cid
           task = agent.unmount_disk(@instance.disk_cid)
           while task["state"] == "running"
@@ -49,43 +74,59 @@ module Bosh::Director
           @cloud.detach_disk(@vm.cid, @instance.disk_cid)
         end
 
-        @cloud.delete_vm(@vm.cid)
+        num_retries = 0
+        begin
+          @cloud.delete_vm(@vm.cid)
 
-        @instance.db.transaction do
-          @instance.vm = nil
-          @instance.save
-          @vm.destroy
-        end
-
-        stemcell = @resource_pool_spec.stemcell.stemcell
-
-        agent_id = generate_agent_id
-
-        @vm = Models::Vm.new
-        @vm.deployment = @deployment_plan.deployment
-        @vm.agent_id = agent_id
-        @vm.save
-
-        @vm.cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
-                                   @instance_spec.network_settings, @instance.disk_cid,
-                                   @resource_pool_spec.env)
-        @instance.db.transaction do
-          @vm.save
-          @instance.vm = @vm
-          @instance.save
-        end
-
-        # TODO: delete the VM if it wasn't saved
-
-        agent.wait_until_ready
-
-        if @instance.disk_cid
-          @cloud.attach_disk(@vm.cid, @instance.disk_cid)
-          task = agent.mount_disk(@instance.disk_cid)
-          while task["state"] == "running"
-            sleep(1.0)
-            task = agent.get_task(task["agent_task_id"])
+          @instance.db.transaction do
+            @instance.vm = nil
+            @instance.save
+            @vm.destroy
           end
+
+          stemcell = @resource_pool_spec.stemcell.stemcell
+
+          agent_id = generate_agent_id
+
+          @vm = Models::Vm.new
+          @vm.deployment = @deployment_plan.deployment
+          @vm.agent_id = agent_id
+          @vm.save
+
+          disks = []
+          disks << @instance.disk_cid if !@instance.disk_cid.nil?
+          disks << new_disk_cid if !new_disk_cid.nil?
+          @vm.cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
+                                    @instance_spec.network_settings, disks,
+                                    @resource_pool_spec.env)
+
+          @instance.db.transaction do
+            @vm.save
+            @instance.vm = @vm
+            @instance.save
+          end
+
+          # TODO: delete the VM if it wasn't saved
+
+          agent.wait_until_ready
+
+          if @instance.disk_cid
+            @cloud.attach_disk(@vm.cid, @instance.disk_cid)
+            task = agent.mount_disk(@instance.disk_cid)
+            while task["state"] == "running"
+              sleep(1.0)
+              task = agent.get_task(task["agent_task_id"])
+            end
+          end
+        rescue NoDiskSpace => e
+          if e.ok_to_retry && num_retries < MAX_ATTACH_DISK_TRIES
+            num_retries += 1
+            @logger.warn("Retrying attach disk operation #{num_retries}")
+            retry
+          end
+          @logger.warn("Giving up on attach disk operation")
+          e.ok_to_retry = false
+          raise
         end
 
         state = {
@@ -106,14 +147,13 @@ module Bosh::Director
       end
     end
 
-    def update_persistent_disk
+    def update_persistent_disk(disk_cid)
       if @instance_spec.persistent_disk_changed?
-        disk_cid = nil
         old_disk_cid = @instance.disk_cid
 
         if @job_spec.persistent_disk > 0
-          disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
           @cloud.attach_disk(@vm.cid, disk_cid)
+
           task = agent.mount_disk(disk_cid)
           while task["state"] == "running"
             sleep(1.0)

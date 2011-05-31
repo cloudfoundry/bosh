@@ -59,7 +59,7 @@ module VSphereCloud
           @logger.info("Generated name: #{name}")
 
           # TODO: make stemcell friendly version of the calls below
-          cluster, datastore = @resources.find_resources(1, 1)
+          cluster, datastore = @resources.find_resources(1, 1, 1)
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
@@ -116,17 +116,47 @@ module VSphereCloud
       end
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil)
+    def create_vm(agent_id, stemcell, resource_pool, networks, persistent_disks = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         memory = resource_pool["ram"]
         disk = resource_pool["disk"]
         cpu = resource_pool["cpu"]
 
-        if disk_locality.nil?
-          cluster, datastore = @resources.find_resources(memory, disk)
+        # Parse persistent disks param
+        # We have 2 types of callers.
+        # 1. That passes the persistent_disks as a "disk_cid"
+        # 2. That passes an array of persistent disk cids.
+        persistent_disk_locality = nil
+        additional_disks = []
+        additional_disks_size = 0
+        if !persistent_disks.nil?
+          if persistent_disks.is_a?(Array)
+            # We use the locality of the first disk in the array
+            persistent_disk_locality = persistent_disks.shift
+            persistent_disks.each do |d|
+              additional_disks << d if !d.nil?
+              # Find out the space required by additional disks
+              additional_disks_size += Models::Disk[d].size
+            end
+          else
+            persistent_disk_locality = persistent_disks
+          end
+        end
+
+        if persistent_disk_locality.nil?
+          # VM does not have any persistent disk
+          cluster, datastore = @resources.find_resources(memory, disk, 0)
         else
-          @logger.info("Looking for resources near disk: #{disk_locality}")
-          cluster, datastore = @resources.find_resources_near_persistent_disk(disk_locality, memory, disk)
+          disk_info = Models::Disk[persistent_disk_locality]
+          if !disk_info.datacenter.nil? && !disk_info.datastore.nil?
+            # VM has a persistent disk that has already been allocated, try to
+            # place the vm in the same locality as this disk
+            @logger.info("Looking for resources near disk: #{disk_info.pretty_inspect}")
+            cluster, datastore = @resources.find_resources_near_persistent_disk(persistent_disk_locality, memory, disk, additional_disks_size)
+          else
+            # VM has a persistent disk that hasnt been allocated yet
+            cluster, datastore = @resources.find_resources(memory, disk, disk_info.size + additional_disks_size)
+          end
         end
 
         name = "vm-#{generate_unique_name}"
@@ -353,6 +383,10 @@ module VSphereCloud
     def find_persistent_datastore(datacenter_name, host_info, disk_size)
       # Find datastore
       datastore = @resources.find_persistent_datastore(datacenter_name, host_info["cluster"], disk_size)
+
+      if datastore.nil?
+        raise Bosh::Director::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info["cluster"]}, #{disk_size}"
+      end
 
       # Sanity check, verify that the vm's host can access this datastore
       unless host_info["datastores"].include?(datastore.name)
