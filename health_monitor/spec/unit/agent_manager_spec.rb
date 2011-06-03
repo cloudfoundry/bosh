@@ -117,19 +117,20 @@ describe Bhm::AgentManager do
     manager.analyze_agents.should == 5
 
     ts = Time.now
-    Time.stub!(:now).and_return(ts + [ Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert ].max + 1)
-
-    $A = 1
+    Time.stub!(:now).and_return(ts + [ Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert ].max + 10)
 
     manager.process_heartbeat("512", nil)
-    # 5 agents total, 1 hearbeat present => 4 timed out and should alert
-    # + 2 agents are considered rogue ("256" and "512")
-    manager.should_receive(:register_alert).exactly(6).times
+    # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
+    $A = 1
+    manager.should_receive(:register_alert).exactly(4).times
     manager.analyze_agents.should == 5
 
-    # Now "256" gets reported as a good citizen, so expecting 1 less alert
+    manager.agents_count.should == 4
+
+    # Now previously removed "256" gets reported as a good citizen
+    # 5 agents total, 3 timed out, 1 rogue
     manager.add_agent("mycloud", { "agent_id" => "256", "index" => "0", "job" => "redis_node" })
-    manager.should_receive(:register_alert).exactly(5).times
+    manager.should_receive(:register_alert).exactly(4).times
     manager.analyze_agents.should == 5
   end
 

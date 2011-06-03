@@ -7,7 +7,7 @@ module Bosh::HealthMonitor
 
     def initialize
       @agents = { }
-      @agents_by_deployment = { }
+      @deployments = { }
 
       @logger = Bhm.logger
       @heartbeats_received = 0
@@ -62,7 +62,7 @@ module Bosh::HealthMonitor
     end
 
     def sync_agents(deployment, vms)
-      managed_agent_ids = @agents_by_deployment[deployment] || Set.new
+      managed_agent_ids = @deployments[deployment] || Set.new
       active_agent_ids  = Set.new
 
       vms.each do |vm|
@@ -78,7 +78,7 @@ module Bosh::HealthMonitor
 
     def remove_agent(agent_id)
       @agents.delete(agent_id)
-      @agents_by_deployment.each_pair do |deployment, agents|
+      @deployments.each_pair do |deployment, agents|
         agents.delete(agent_id)
       end
     end
@@ -99,7 +99,7 @@ module Bosh::HealthMonitor
         return false
       end
 
-      if vm_data["job"].nil? # Resource pool VM, we don't care about them
+      if vm_data["job"].nil? # Idle VMs, we don't care about them
         @logger.debug("VM with no job found: #{agent_id}")
         return false
       end
@@ -115,8 +115,8 @@ module Bosh::HealthMonitor
         agent.index      = vm_data["index"]
       end
 
-      @agents_by_deployment[deployment_name] ||= Set.new
-      @agents_by_deployment[deployment_name] << agent_id
+      @deployments[deployment_name] ||= Set.new
+      @deployments[deployment_name] << agent_id
       true
     end
 
@@ -128,7 +128,7 @@ module Bosh::HealthMonitor
       count = 0
 
       # Agents from managed deployments
-      @agents_by_deployment.each_pair do |deployment_name, agent_ids|
+      @deployments.each_pair do |deployment_name, agent_ids|
         agent_ids.each do |agent_id|
           analyze_agent(agent_id)
           processed << agent_id
@@ -152,11 +152,13 @@ module Bosh::HealthMonitor
       ts    = Time.now.to_i
 
       if agent.nil?
-        @logger.error("Agent #{agent_id} is missing from agents index, skipping...")
+        @logger.error("Can't analyze agent #{agent_id} as it is missing from agents index, skipping...")
         return false
       end
 
-      if agent.timed_out?
+      if agent.timed_out? && agent.rogue?
+        remove_agent(agent.id)
+      elsif agent.timed_out?
         alert = {
           :id         => "timeout-#{agent.id}-#{ts}",
           :severity   => 2,
@@ -166,9 +168,7 @@ module Bosh::HealthMonitor
         }
 
         register_alert(alert)
-      end
-
-      if agent.rogue?
+      elsif agent.rogue?
         alert = {
           :id         => "rogue-#{agent.id}-#{ts}",
           :severity   => 2,
