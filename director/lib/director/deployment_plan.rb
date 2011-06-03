@@ -151,7 +151,7 @@ module Bosh::Director
       end
 
       def resource_pool_changed?
-        resource_pool.spec != @current_state["resource_pool"]
+        resource_pool.spec != @current_state["resource_pool"] || resource_pool.deployment.recreate
       end
 
       def changed?
@@ -558,7 +558,7 @@ module Bosh::Director
       end
 
       def resource_pool_changed?
-        @job.resource_pool.spec != @current_state["resource_pool"]
+        @job.resource_pool.spec != @current_state["resource_pool"] || @job.deployment.recreate
       end
 
       def configuration_changed?
@@ -690,12 +690,14 @@ module Bosh::Director
     attr_accessor :update
     attr_accessor :unneeded_instances
     attr_accessor :unneeded_vms
+    attr_reader   :recreate
 
-    def initialize(manifest)
+    def initialize(manifest, recreate = false)
       @name = safe_property(manifest, "name", :class => String)
       @release = ReleaseSpec.new(self, safe_property(manifest, "release", :class => Hash))
       @properties = safe_property(manifest, "properties", :class => Hash, :optional => true) || {}
       @properties.extend(DeepCopy)
+      @recreate = recreate
 
       @networks = {}
       networks = safe_property(manifest, "networks", :class => Array)
