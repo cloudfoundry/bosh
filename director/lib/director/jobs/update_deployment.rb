@@ -5,14 +5,14 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(manifest_file)
+      def initialize(manifest_file, options = {})
         @logger = Config.logger
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) { |f| f.read }
         @logger.debug("Manifest:\n#{@manifest}")
         @logger.info("Creating deployment plan")
-        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
+        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest), options["recreate"] || false)
         @logger.info("Created deployment plan")
       end
 

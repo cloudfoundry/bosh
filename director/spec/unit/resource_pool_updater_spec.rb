@@ -11,6 +11,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @deployment_plan = mock("deployment_plan")
     @deployment_plan.stub!(:deployment).and_return(@deployment)
     @deployment_plan.stub!(:name).and_return("deployment_name")
+    @deployment_plan.stub!(:recreate).and_return(false)
 
     @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
 

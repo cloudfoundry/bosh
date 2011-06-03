@@ -14,7 +14,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     File.stub!(:open).with("test_file").and_yield(@file)
     YAML.stub!(:load).with("manifest").and_return(@manifest)
-    Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest).and_return(@deployment_plan)
+    Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, false).and_return(@deployment_plan)
     Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
   end
 

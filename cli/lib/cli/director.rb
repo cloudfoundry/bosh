@@ -106,8 +106,10 @@ module Bosh
         request_and_track(:delete, url, nil, nil)
       end
 
-      def deploy(filename)
-        upload_and_track("/deployments", "text/yaml", filename)
+      def deploy(filename, options = {})
+        url = "/deployments"
+        url += "?recreate=true" if options[:recreate]
+        upload_and_track(url, "text/yaml", filename)
       end
 
       def get_task_state(task_id)
