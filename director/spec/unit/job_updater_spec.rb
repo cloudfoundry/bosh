@@ -46,7 +46,7 @@ describe Bosh::Director::JobUpdater do
     instance_1.should_receive(:changed?).and_return(true)
     instance_2.should_receive(:changed?).and_return(true)
 
-    instance_updater_1.should_receive(:update).with(:canary => true)
+    instance_updater_1.should_receive(:update).with(:canary => true, :force => false)
     instance_updater_2.should_receive(:update).with(no_args)
 
     Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance|
@@ -82,7 +82,7 @@ describe Bosh::Director::JobUpdater do
     instance_1.should_receive(:changed?).and_return(true)
     instance_2.should_receive(:changed?).and_return(true)
 
-    instance_updater_1.should_receive(:update).with(:canary => true).and_throw("bad update")
+    instance_updater_1.should_receive(:update).with(:canary => true, :force => false).and_throw("bad update")
     instance_updater_2.should_not_receive(:update).with(no_args)
 
     Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance|
@@ -118,7 +118,7 @@ describe Bosh::Director::JobUpdater do
     instance_1.should_receive(:changed?).and_return(true)
     instance_2.should_receive(:changed?).and_return(true)
 
-    instance_updater_1.should_receive(:update).with(:canary => true)
+    instance_updater_1.should_receive(:update).with(:canary => true, :force => false)
     instance_updater_2.should_receive(:update).with(no_args).and_throw("bad update")
 
     Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance|

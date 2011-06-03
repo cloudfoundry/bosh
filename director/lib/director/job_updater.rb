@@ -38,12 +38,12 @@ module Bosh::Director
       @logger.info("Deleted no longer needed instances")
     end
 
-    def update
+    def update(force = false)
       delete_unneeded_instances
 
       instances = []
       @job.instances.each do |instance|
-        instances << instance if instance.changed?
+        instances << instance if instance.changed? || force
       end
 
       unless instances.empty?
@@ -59,7 +59,7 @@ module Bosh::Director
               with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
                   begin
-                    InstanceUpdater.new(instance).update(:canary => true)
+                    InstanceUpdater.new(instance).update(:canary => true, :force => force)
                   rescue Exception => e
                     @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
                     @job.record_update_error(e, :canary => true)

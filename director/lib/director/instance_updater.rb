@@ -13,7 +13,8 @@ module Bosh::Director
 
     def update(options = {})
       stop
-      update_resource_pool
+      force = options[:force] || false
+      update_resource_pool(force)
       update_persistent_disk
       update_networks
       apply_deployment
@@ -38,8 +39,8 @@ module Bosh::Director
       agent.stop
     end
 
-    def update_resource_pool
-      if @instance_spec.resource_pool_changed?
+    def update_resource_pool(force)
+      if @instance_spec.resource_pool_changed? || force
         if @instance.disk_cid
           task = agent.unmount_disk(@instance.disk_cid)
           while task["state"] == "running"

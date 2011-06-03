@@ -5,7 +5,7 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(manifest_file)
+      def initialize(manifest_file, options = {})
         @logger = Config.logger
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
@@ -14,6 +14,7 @@ module Bosh::Director
         @logger.info("Creating deployment plan")
         @deployment_plan = DeploymentPlan.new(YAML.load(@manifest))
         @logger.info("Created deployment plan")
+        @force = options["force"] || false
       end
 
       def prepare
@@ -60,7 +61,7 @@ module Bosh::Director
         @logger.info("Updating jobs")
         @deployment_plan.jobs.each do |job|
           @logger.info("Updating job: #{job.name}")
-          JobUpdater.new(job).update
+          JobUpdater.new(job).update(@force)
         end
       end
 

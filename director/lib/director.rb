@@ -202,7 +202,10 @@ module Bosh::Director
     end
 
     post "/deployments", :consumes => :yaml do
-      task = @deployment_manager.create_deployment(@task, request.body)
+      options = {}
+      options["force"] = true if params["force"] == "true"
+
+      task = @deployment_manager.create_deployment(@task, request.body, options)
       redirect "/tasks/#{task.id}"
     end
 
