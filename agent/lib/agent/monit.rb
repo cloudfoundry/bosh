@@ -1,21 +1,62 @@
-
 module Bosh::Agent
 
   # A good chunk of this code is lifted from the implementation of POSIX::Spawn::Child
   class Monit
     BUFSIZE = (32 * 1024)
 
-    def self.start
-      self.new.run
-    end
-
     class << self
       attr_accessor :enabled
 
-      # SMTP credentials are overridable mostly tests,
+      # SMTP credentials are overridable mostly for tests,
       # normally we just rely on reader methods
       # to provide sane credentials
       attr_writer :smtp_user, :smtp_password
+
+      # enable supposed to be called in the very beginning as it creates
+      # sync primitives. Ideally this class should be refactored to minimize
+      # the number of singleton methods having to keep track of the state.
+      def enable
+        @enabled     = true
+        @lock        = Mutex.new
+        @monit_ready = ConditionVariable.new
+      end
+
+      def start
+        new.run
+      end
+
+      # Signals that Monit process is ready (with given pid).
+      # Called from exec_monit
+      def signal_pid(pid)
+        @lock.synchronize do
+          logger.info("Monit started (pid=#{pid})")
+          @pid = pid
+          @monit_ready.signal
+        end
+      end
+
+      # Kill monit process spawned by this agent.
+      # Will block until monit is ready
+      # unless it's known to be running.
+      # TODO: this should be thoroughly tested!
+      def kill
+        @lock.synchronize do
+          if @pid
+            kill_pid(@pid)
+          else
+            @monit_ready.wait(@lock)
+            kill_pid(@pid)
+          end
+        end
+      end
+
+      def kill_pid(pid)
+        return if pid.nil?
+        logger.warn("Killing monit (pid=#{pid})")
+        Process.kill("TERM", pid) rescue nil
+        Process.waitpid(pid) rescue nil
+        @pid = nil
+      end
 
       def base_dir
         Bosh::Agent::Config.base_dir
@@ -148,6 +189,10 @@ module Bosh::Agent
         retry_monit_request(20) { |client| client.start(:group => BOSH_APP_GROUP) }
       end
 
+      def start_all_services
+        retry_monit_request(20) { |client| client.start({ }) }
+      end
+
       def retry_monit_request(attempts=10)
         # HACK: Monit becomes unresponsive after reload
         begin
@@ -177,12 +222,12 @@ module Bosh::Agent
     end
 
     def run
-      Thread.new {
-        exec_monit
-      }
+      Thread.new { exec_monit }
     end
 
     def exec_monit
+      status = nil
+
       pid, stdin, stdout, stderr = POSIX::Spawn.popen4(Monit.monit_bin, '-I', '-c', Monit.monitrc)
       stdin.close
 
@@ -192,18 +237,28 @@ module Bosh::Agent
       }
 
       log_monit_output(stdout, stderr)
+      signal_pid(pid)
 
-      status = Process.waitpid(pid)
-    rescue Object => e
-      @logger.info("Failed to run Monit: #{e.inspect} #{e.backtrace}")
+      status = Process.waitpid(pid) rescue nil
+    rescue => e
+      # TODO: send alert to HM
+      signal_pid(nil)
+      @logger.error("Failed to run Monit: #{e.inspect} #{e.backtrace}")
+
       [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
+
       if status.nil?
-        ::Process.kill('TERM', pid) rescue nil
-        waitpid(pid)      rescue nil
+        Process.kill('TERM', pid) rescue nil
+        Process.waitpid(pid)      rescue nil
       end
+
       raise
     ensure
       [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
+    end
+
+    def signal_pid(pid)
+      self.class.signal_pid(pid)
     end
 
     def log_monit_output(stdout, stderr)
@@ -233,3 +288,4 @@ module Bosh::Agent
 
   end
 end
+

@@ -21,7 +21,7 @@ options = {
   "base_dir"           => "/var/vcap",
   "smtp_port"          => 2825,
   "process_alerts"     => true,
-  "heartbeat_interval" => 10
+  "heartbeat_interval" => 60
 }
 
 opts = OptionParser.new do |opts|

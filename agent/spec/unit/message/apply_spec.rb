@@ -90,5 +90,38 @@ describe Bosh::Agent::Message::Apply do
     File.executable?(bin_file).should == true
   end
 
+  it "should be able to add manual modes to monit configuration file" do
+    handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
+    handler.add_modes(<<-IN).should == <<-OUT.strip
+      check process nats mode active start program "bla" stop program "bla bla"
+    IN
+      check process nats mode active start program "bla" stop program "bla bla"
+    OUT
+
+    handler.add_modes(<<-IN).should == <<-OUT.strip
+      check process nats
+            start program "bla"
+            stop program "bla bla"
+    IN
+      check process nats start program "bla" stop program "bla bla" mode manual
+    OUT
+
+    handler.add_modes(<<-IN).should == <<-OUT.strip
+      check process nats
+            start program "bla"
+            stop program "bla bla"
+
+      check process zb
+      start program "ppc"
+      mode active
+
+
+      check filesystem aaa
+      start program "mode active"
+    IN
+      check process nats start program "bla" stop program "bla bla" mode manual check process zb start program "ppc" mode active check filesystem aaa start program "mode active" mode manual
+    OUT
+  end
+
 end
 

@@ -31,6 +31,17 @@ describe Bosh::Agent::Monit do
     monit_user_data.should match(/vcap:\S{16}/)
   end
 
+  # WARNING: this doesn't really test much besides not blocking on a failed monit start
+  # because there is no monit binary or monitrc in a temporary base dir. However it helperd
+  # in finding at least one bug so it's here to stay for a while.
+  it "should provide interface for killing and starting monit process" do
+#    Bosh::Agent::Monit.enable
+#    Bosh::Agent::Monit.start
+#    Bosh::Agent::Monit.kill
+#    Bosh::Agent::Monit.start
+#    Bosh::Agent::Monit.kill
+  end
+
   it "should set up monit alerts" do
     Bosh::Agent::Monit.smtp_user     = "vcap"
     Bosh::Agent::Monit.smtp_password = "pass"

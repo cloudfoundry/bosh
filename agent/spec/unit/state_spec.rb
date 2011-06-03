@@ -33,30 +33,42 @@ describe Bosh::Agent::State do
   end
 
   it "returns the current state" do
+    ts = Time.now
+    Time.stub!(:now).and_return(ts)
+
     File.open(@state_file, "w") do |f|
       f.write(YAML.dump({ "a" => 1, "b" => 2}))
     end
 
     state = make_state(@state_file)
-    state.to_hash.should == { "a" => 1, "b" => 2}
+    state.to_hash.should == { "a" => 1, "b" => 2 }
 
     File.open(@state_file, "w") do |f|
       f.write(YAML.dump({ "a" => 2, "b" => 3}))
     end
 
     # Someone else re-wrote the file, we don't know about that
-    state.to_hash.should == { "a" => 1, "b" => 2}
+    state.to_hash.should == { "a" => 1, "b" => 2 }
 
     # Now we should know about the new contents
     state.write({ "a" => 2, "b" => 3})
-    state.to_hash.should == { "a" => 2, "b" => 3}
+    state.to_hash.should == { "a" => 2, "b" => 3 }
   end
 
   it "writes the state" do
     state = make_state(@state_file)
 
+    ts  = Time.now
+    ts2 = Time.now
+    Time.stub!(:now).and_return(ts)
+
     state.write({ "a" => 1, "b" => 2})
-    state.to_hash.should == { "a" => 1, "b" => 2}
+    state.to_hash.should == { "a" => 1, "b" => 2 }
+
+    Time.stub!(:now).and_return(ts2)
+
+    state.write({ "a" => 1, "b" => 2})
+    state.to_hash.should == { "a" => 1, "b" => 2 }
   end
 
   it "can be queried for particular state keys" do

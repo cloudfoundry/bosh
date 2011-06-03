@@ -70,13 +70,12 @@ module Bosh::Agent
         # for responding to RPC.
         Bosh::Agent::Message::Configure.process(nil)
 
-        Bosh::Agent::Monit.enabled = true
+        Bosh::Agent::Monit.enable
         Bosh::Agent::Monit.start
       else
         @logger.info("Skipping configuration step (use '-c' argument to configure on start) ")
       end
 
-      @logger.info("Starting agent #{Bosh::Agent::VERSION}...")
       Bosh::Agent::Handler.start
     end
   end

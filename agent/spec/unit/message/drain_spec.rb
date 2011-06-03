@@ -3,6 +3,13 @@ require 'fileutils'
 
 describe Bosh::Agent::Message::Drain do
 
+  def set_state(state)
+    state_file = Tempfile.new("agent-state")
+    state_file.write(YAML.dump(state))
+    state_file.close
+    Bosh::Agent::Config.state = Bosh::Agent::State.new(state_file.path)
+  end
+
   before(:each) do
     setup_tmp_base_dir
     @nats = mock
@@ -12,34 +19,34 @@ describe Bosh::Agent::Message::Drain do
     Bosh::Agent::Config.agent_id = "zb-agent"
 
     @base_dir = Bosh::Agent::Config.base_dir
-
-    @state_handler = mock('state_handler')
-    Bosh::Agent::Message::State.stub(:new).and_return(@state_handler)
   end
 
   it "should receive drain type and an optional argument" do
-    @state_handler.should_receive(:state).and_return(old_spec)
+    set_state({"a" => 1})
     handler = Bosh::Agent::Message::Drain.new(["shutdown"])
+    handler.should be_kind_of Bosh::Agent::Message::Drain
   end
 
   it "should handle shutdown drain type" do
-    @state_handler.should_receive(:state).and_return(old_spec)
+    set_state({ "job" => {"name" => "cc", "template" => "cloudcontroller" } })
 
     bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
-    drain_script = File.join(bindir, 'drain')
+    tmpdir = File.join(@base_dir, 'tmp')
+
     FileUtils.mkdir_p(bindir)
+    FileUtils.mkdir_p(tmpdir)
 
-    handler = Bosh::Agent::Message::Drain.new(["shutdown"])
-
-    FileUtils.mkdir_p(File.join(base_dir, 'tmp'))
-
-    drain_out = File.join(base_dir, 'tmp', 'yay.out')
+    drain_script = File.join(bindir, 'drain')
+    drain_out    = File.join(tmpdir, 'yay.out')
 
     File.open(drain_script, 'w') do |fh|
       fh.puts "#!/bin/bash\necho $@ > #{drain_out}\necho -n '10'"
     end
+
+    handler = Bosh::Agent::Message::Drain.new(["shutdown"])
     FileUtils.chmod(0777, drain_script)
 
+    @nats.should_receive(:publish).with("hm.agent.shutdown.zb-agent").and_yield
     handler.drain.should == 10
 
     File.read(drain_out).should == "job_shutdown hash_unchanged\n"
@@ -47,16 +54,19 @@ describe Bosh::Agent::Message::Drain do
 
 
   it "should handle update drain type" do
-    @state_handler.should_receive(:state).and_return(old_spec)
+    set_state(old_spec)
 
     bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
-    drain_script = File.join(bindir, 'drain')
     FileUtils.mkdir_p(bindir)
+
+    drain_script = File.join(bindir, 'drain')
 
     File.open(drain_script, 'w') do |fh|
       fh.puts "#!/bin/bash\necho $@ > /tmp/yay.out\necho -n '10'"
     end
     FileUtils.chmod(0777, drain_script)
+
+    @nats.should_not_receive(:publish).with("hm.agent.shutdown.zb-agent")
 
     handler = Bosh::Agent::Message::Drain.new(["update", new_spec])
     handler.drain.should == 10
@@ -64,14 +74,15 @@ describe Bosh::Agent::Message::Drain do
 
 
   it "should return 0 if it receives an update but doesn't have a previouisly applied job" do
-    @state_handler.should_receive(:state).and_return({})
+    set_state({ })
 
     handler = Bosh::Agent::Message::Drain.new(["update", new_spec])
+    @nats.should_not_receive(:publish).with("hm.agent.shutdown.zb-agent")
     handler.drain.should == 0
   end
 
   it "should pass job update state to drain script" do
-    @state_handler.should_receive(:state).and_return(old_spec)
+    set_state(old_spec)
 
     job_update_spec = new_spec
     job_update_spec['job']['sha1'] = "some_sha1"
@@ -85,7 +96,7 @@ describe Bosh::Agent::Message::Drain do
   end
 
   it "should pass the name of updated packages to drain script" do
-    @state_handler.should_receive(:state).and_return(old_spec)
+    set_state(old_spec)
 
     pkg_update_spec = new_spec
     pkg_update_spec['packages']['ruby']['sha1'] = "some_other_sha1"
@@ -93,27 +104,9 @@ describe Bosh::Agent::Message::Drain do
     handler = Bosh::Agent::Message::Drain.new(["update", pkg_update_spec])
 
     handler.stub!(:drain_script_exists?).and_return(true)
-    handler.stub!(:run_drain_script).and_return(10)
+    handler.stub!(:run_drain_script).and_return(121)
     handler.should_receive(:run_drain_script).with("job_unchanged", "hash_unchanged", ["mysqlclient", "ruby"])
-    handler.drain.should == 10
-  end
-
-  it "notifies HM when agent drains for shutdown" do
-    @state_handler.should_receive(:state).and_return(old_spec)
-
-    EM.run do
-      EM.add_timer(0.5) { EM.stop }
-
-      EM.should_receive(:add_timer).with(0).and_yield
-      EM.should_receive(:add_timer).with(1).and_yield
-      EM.should_receive(:add_timer).with(2).and_yield
-
-      @nats.should_receive(:publish).with("hm.agent.shutdown.zb-agent").exactly(3).times
-      handler = Bosh::Agent::Message::Drain.new(["shutdown"])
-
-      handler.stub!(:drain_script_exists?).and_return(false)
-      handler.drain
-    end
+    handler.drain.should == 121
   end
 
   it "should set BOSH_CURRENT_STATE environment variable"
@@ -152,6 +145,5 @@ describe Bosh::Agent::Message::Drain do
     tmp_spec['packages']['mysqlclient']['sha1'] = "foo_sha1"
     tmp_spec
   end
-
 
 end

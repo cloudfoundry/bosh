@@ -158,8 +158,11 @@ module Bosh::Agent
 
           out_file = File.join(@job_install_dir, monitrc_name)
 
+          original_monitrc = template.result(Util.config_binding(@apply_spec))
+          result_monitrc   = add_modes(original_monitrc)
+
           File.open(out_file, 'w') do |fh|
-            fh.write(template.result(Util.config_binding(@apply_spec)))
+            fh.write(result_monitrc)
           end
 
           monit_link = File.join(base_dir, 'monit', "#{@job_template}.monitrc")
@@ -171,6 +174,40 @@ module Bosh::Agent
             Bosh::Agent::Monit.start_services
           end
         end
+      end
+
+      # HACK
+      # Force manual mode on all services which don't have mode already set.
+      # FIXME: this parser is very simple and thus generates space-delimited
+      # output. Can be improved to respect indentation for mode. Also it doesn't
+      # skip quoted tokens.
+      def add_modes(job_monitrc)
+        state     = :out
+        need_mode = true
+        result    = ""
+
+        tokens = job_monitrc.split(/\s+/)
+
+        while (t = tokens.shift)
+          if t == "check"
+            if state == :in && need_mode
+              result << "mode manual "
+            end
+            state = :in
+            need_mode = true
+
+          elsif t == "mode" && %w(passive manual active).include?(tokens[0])
+            need_mode = false
+          end
+
+          result << t << " "
+        end
+
+        if need_mode
+          result << "mode manual "
+        end
+
+        result.strip
       end
     end
 

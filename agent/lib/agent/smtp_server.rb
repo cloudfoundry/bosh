@@ -86,6 +86,9 @@ module Bosh::Agent
       message = @chunks.join("\n")
       @chunks = [ ] # Support multiple data blocks in a single SMTP session
       @processor.process_email_alert(message)
+
+      # WARNING: this MUST return true, otherwise Monit will try to send alerts over and over again
+      true
     end
 
   end

@@ -104,7 +104,7 @@ describe Bosh::Agent::Alert do
     attrs = {
       :id          => "1304319946.0",
       :service     => "nats",
-      :event       => "does not exist",
+      :event       => "execution failed",
       :action      => "restart",
       :date        => "Sun, 22 May 2011 20:07:41 +0500",
       :description => "process is not running"
@@ -114,7 +114,7 @@ describe Bosh::Agent::Alert do
     payload = {
       "id"         => "1304319946.0",
       "severity"   => 1,
-      "title"      => "nats - does not exist - restart",
+      "title"      => "nats - execution failed - restart",
       "summary"    => "process is not running",
       "created_at" => 1306076861
     }
