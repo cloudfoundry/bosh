@@ -15,8 +15,10 @@ describe Bosh::Director::JobUpdater do
   it "should do nothing when the job is up to date" do
     instance_1 = mock("instance-1")
     instance_1.stub!(:index).and_return(1)
+    instance_1.stub!(:recreate?).and_return(false)
     instance_2 = mock("instance-1")
     instance_2.stub!(:index).and_return(2)
+    instance_2.stub!(:recreate?).and_return(false)
 
     instances = [instance_1, instance_2]
 

@@ -94,6 +94,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:job).and_return(@job_spec)
     @instance_spec.stub!(:instance).and_return(@instance)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @job_spec.stub!(:deployment).and_return(@deployment_plan)
     @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
@@ -136,6 +137,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -156,6 +158,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @update_spec.should_not_receive(:update_watch_time)
     @update_spec.should_receive(:canary_watch_time).and_return(0.01)
@@ -189,6 +192,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -238,6 +242,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -281,6 +286,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -305,6 +311,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -336,6 +343,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -382,6 +390,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(plan)
+    @instance_spec.stub!(:recreate?).and_return(false)
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)

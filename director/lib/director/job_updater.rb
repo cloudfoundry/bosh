@@ -43,7 +43,7 @@ module Bosh::Director
 
       instances = []
       @job.instances.each do |instance|
-        instances << instance if instance.changed?
+        instances << instance if instance.changed? || instance.recreate?
       end
 
       unless instances.empty?

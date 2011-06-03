@@ -425,7 +425,7 @@ describe Bosh::Spec::IntegrationTest do
     out = run_bosh("upload release #{release_2}")
     out.should =~ rx("foo (0.1-dev)                 SKIP\n")
     out.should =~ rx("foobar (0.1-dev)              SKIP\n")
-    out.should =~ rx("bar (0.2-dev)                 UPLOAD\n")
+    out.should =~ rx("bar (0.3-dev)                 UPLOAD\n")
     out.should =~ rx("Checking if can repack release for faster upload")
     out.should =~ rx("Release repacked")
     out.should =~ /Release uploaded and updated/

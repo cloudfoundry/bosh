@@ -139,7 +139,7 @@ Currently available bosh commands are:
     deployment <name>                        Choose deployment to work with (it also updates current target)
     delete deployment <name>                 Delete deployment
     deployments                              Show the list of available deployments
-    deploy                                   Deploy according to the currently selected deployment
+    deploy [--recreate]                         Deploy according to the currently selected deployment
 
   Releases
     create release                           Attempt to create release (assumes current directory to contain release).
@@ -201,8 +201,8 @@ USAGE
           end
 
         when "deploy"
-          usage("bosh deploy")
-          set_cmd(:deployment, :perform)
+          usage("bosh deploy [--recreate]")
+          set_cmd(:deployment, :perform, 0..1)
 
         when "deployment"
           usage("bosh deployment [<name>]")

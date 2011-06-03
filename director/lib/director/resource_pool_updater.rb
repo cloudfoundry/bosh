@@ -41,7 +41,7 @@ module Bosh::Director
       counter = 0
       @pool.pause
       each_idle_vm do |idle_vm|
-        if idle_vm.vm && idle_vm.changed?
+        if idle_vm.vm && (idle_vm.changed? || @resource_pool.deployment.recreate)
           index = counter += 1
           vm_cid = idle_vm.vm.cid
           @pool.process do

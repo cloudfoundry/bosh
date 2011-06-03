@@ -39,7 +39,7 @@ module Bosh::Director
     end
 
     def update_resource_pool
-      if @instance_spec.resource_pool_changed?
+      if @instance_spec.resource_pool_changed? || @instance_spec.recreate?
         if @instance.disk_cid
           task = agent.unmount_disk(@instance.disk_cid)
           while task["state"] == "running"

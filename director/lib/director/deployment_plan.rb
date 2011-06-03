@@ -586,6 +586,10 @@ module Bosh::Director
                 configuration_changed? || job_changed? || job_state_changed?
       end
 
+      def recreate?
+        job.deployment.recreate
+      end
+
       def spec
         deployment_plan = @job.deployment
         {
@@ -690,12 +694,14 @@ module Bosh::Director
     attr_accessor :update
     attr_accessor :unneeded_instances
     attr_accessor :unneeded_vms
+    attr_reader   :recreate
 
-    def initialize(manifest)
+    def initialize(manifest, recreate = false)
       @name = safe_property(manifest, "name", :class => String)
       @release = ReleaseSpec.new(self, safe_property(manifest, "release", :class => Hash))
       @properties = safe_property(manifest, "properties", :class => Hash, :optional => true) || {}
       @properties.extend(DeepCopy)
+      @recreate = recreate
 
       @networks = {}
       networks = safe_property(manifest, "networks", :class => Array)
