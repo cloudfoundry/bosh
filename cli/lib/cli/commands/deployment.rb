@@ -39,9 +39,14 @@ module Bosh::Cli::Command
       config.save
     end
 
-    def perform
+    def perform(*options)
       auth_required
       err("Please choose deployment first") unless deployment
+
+      recreate = false
+      if options.include?("--recreate")
+        recreate = true
+      end
 
       manifest_filename = deployment
 
@@ -67,7 +72,7 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      status, body = director.deploy(manifest_filename)
+      status, body = director.deploy(manifest_filename, :recreate => recreate)
 
       responses = {
         :done          => "Deployed #{desc}",
