@@ -110,11 +110,11 @@ describe Bosh::Cli::Runner do
   end
 
   it "whines on extra arguments" do
-    runner = Bosh::Cli::Runner.new(["deploy", "--mutator", "me", "bla"])
+    runner = Bosh::Cli::Runner.new(["deploy", "--recreate", "me", "bla"])
     runner.parse_command!
     runner.namespace.should == nil
     runner.action.should == nil
-    runner.usage_error.should == "Too many arguments: '--mutator', 'me', 'bla'"
+    runner.usage_error.should == "Too many arguments: 'me', 'bla'"
   end
 
   it "whines on too few arguments" do
