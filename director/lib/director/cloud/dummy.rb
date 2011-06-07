@@ -36,7 +36,10 @@ module Bosh
         agent_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "..", "agent"))
         agent_base_dir = "/tmp/bosh_test_cloud/agent-base-dir-#{agent_id}"
 
-        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112")
+        root_dir = File.join(agent_base_dir, 'root_dir')
+        FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
+
+        agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir}")
 
         agent_pid = fork do
           ENV["BUNDLE_GEMFILE"] = File.join(agent_dir, 'Gemfile')

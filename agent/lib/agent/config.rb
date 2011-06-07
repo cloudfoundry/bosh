@@ -22,7 +22,7 @@ module Bosh::Agent
 
         @platform_name = config['platform_name']
 
-        @system_root = "/"
+        @system_root = config['root_dir'] || "/"
 
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")

@@ -46,6 +46,10 @@ opts = OptionParser.new do |opts|
     options["platform_name"] = opt
   end
 
+  opts.on("-r", "--root_dir String", "Root directory") do |opt|
+    options["root_dir"] = opt
+  end
+
   # Needed this customization for integration tests, quirky but seems to work
   opts.on("-s", "--blobstore String", "Blobstore options") do |opt|
     credentials, endpoint = opt.split("@", 2)
