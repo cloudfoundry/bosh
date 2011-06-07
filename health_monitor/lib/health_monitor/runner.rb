@@ -133,7 +133,7 @@ module Bosh::HealthMonitor
         vms = @director.get_deployment_vms(deployment_name)
         @logger.debug "Fetching VMs information for `#{deployment_name}'..."
 
-        @agent_manager.sync_agents(deployment, vms)
+        @agent_manager.sync_agents(deployment_name, vms)
       end
 
     rescue Bhm::DirectorError => e
