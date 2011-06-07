@@ -152,6 +152,7 @@ module Bosh::HealthMonitor
       ts    = Time.now.to_i
 
       if agent.nil?
+        # TODO: consider alerting about missing agent?
         @logger.error("Can't analyze agent #{agent_id} as it is missing from agents index, skipping...")
         return false
       end

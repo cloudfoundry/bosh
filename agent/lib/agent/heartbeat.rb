@@ -44,7 +44,7 @@ module Bosh::Agent
     end
 
     def heartbeat_payload
-      nil
+      Yajl::Encoder.encode({ "job_state" => Bosh::Agent::Monit.job_state })
     end
 
   end

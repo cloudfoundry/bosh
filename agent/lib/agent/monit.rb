@@ -7,11 +7,6 @@ module Bosh::Agent
     class << self
       attr_accessor :enabled
 
-      # SMTP credentials are overridable mostly for tests,
-      # normally we just rely on reader methods
-      # to provide sane credentials
-      attr_writer :smtp_user, :smtp_password
-
       # enable supposed to be called in the very beginning as it creates
       # sync primitives. Ideally this class should be refactored to minimize
       # the number of singleton methods having to keep track of the state.
@@ -122,11 +117,13 @@ module Bosh::Agent
 
       # This and other methods could probably be refactored into a separate management class to avoid keeping
       # all this state in a metaclass (as it's weird to test)
-      def setup_alerts(port, user, password)
+      def setup_alerts
+        return unless Config.process_alerts
+
         alerts_config = <<-CONFIG
         set alert bosh@localhost
-        set mailserver 127.0.0.1 port #{port}
-            username "#{user}" password "#{password}"
+        set mailserver 127.0.0.1 port #{Config.smtp_port}
+            username "#{Config.smtp_user}" password "#{Config.smtp_password}"
 
         set eventqueue
             basedir #{monit_events_dir}
@@ -213,6 +210,28 @@ module Bosh::Agent
           end
           raise e
         end
+      end
+
+      def job_state(num_retries=10)
+        # FIXME: state should be unknown if monit is disabled
+        # However right now that would break director interaction
+        # (at least in integration tests)
+        return "running" unless @enabled
+
+        retry_monit_request(num_retries) do |client|
+          status = client.status(:group => BOSH_APP_GROUP)
+
+          not_running = status.reject do |name, data|
+            # break early if any service is initializing
+            return "starting" if data[:monitor] == :init
+            # at least with monit_api a stopped services is still running
+            (data[:monitor] == :yes && data[:status][:message] == "running")
+          end
+          not_running.empty? ? "running" : "failing"
+        end
+      rescue => e
+        logger.info("Unable to determine job state: #{e}")
+        "unknown"
       end
 
     end

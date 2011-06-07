@@ -72,6 +72,7 @@ module Bosh::Agent
 
         Bosh::Agent::Monit.enable
         Bosh::Agent::Monit.start
+        Bosh::Agent::Monit.start_services
       else
         @logger.info("Skipping configuration step (use '-c' argument to configure on start) ")
       end

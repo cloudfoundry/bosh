@@ -35,18 +35,20 @@ describe Bosh::Agent::Monit do
   # because there is no monit binary or monitrc in a temporary base dir. However it helperd
   # in finding at least one bug so it's here to stay for a while.
   it "should provide interface for killing and starting monit process" do
-#    Bosh::Agent::Monit.enable
-#    Bosh::Agent::Monit.start
-#    Bosh::Agent::Monit.kill
-#    Bosh::Agent::Monit.start
-#    Bosh::Agent::Monit.kill
+    Bosh::Agent::Monit.enable
+    Bosh::Agent::Monit.start
+    Bosh::Agent::Monit.kill
+    Bosh::Agent::Monit.start
+    Bosh::Agent::Monit.kill
   end
 
-  it "should set up monit alerts" do
-    Bosh::Agent::Monit.smtp_user     = "vcap"
-    Bosh::Agent::Monit.smtp_password = "pass"
+  it "should set up monit alerts if alert processing is enabled" do
+    Bosh::Agent::Config.smtp_user      = "vcap"
+    Bosh::Agent::Config.smtp_password  = "pass"
+    Bosh::Agent::Config.smtp_port      = 55231
+    Bosh::Agent::Config.process_alerts = true
 
-    Bosh::Agent::Monit.setup_alerts(55231, "vcap", "pass")
+    Bosh::Agent::Monit.setup_alerts
 
     File.exist?(@monit_alerts_file).should == true
     monit_alert_config = File.read(@monit_alerts_file)

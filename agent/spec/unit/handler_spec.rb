@@ -52,22 +52,6 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
-  it "should setup monit alerts when handler starts (if Monit is enabled)" do
-    Bosh::Agent::Monit.enabled = true
-    Bosh::Agent::Monit.should_receive(:setup_alerts).with(55213, "user", "pass")
-
-    handler = Bosh::Agent::Handler.new
-    handler.start
-  end
-
-  it "should not setup monit alerts when handler starts (if Monit is not enabled)" do
-    Bosh::Agent::Monit.enabled = false
-    Bosh::Agent::Monit.should_not_receive(:setup_alerts)
-
-    handler = Bosh::Agent::Handler.new
-    handler.start
-  end
-
   it "should result in an exception payload" do
     handler = Bosh::Agent::Handler.new
 

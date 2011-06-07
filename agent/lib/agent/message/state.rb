@@ -24,23 +24,8 @@ module Bosh::Agent
       end
 
       def job_state
-        unless Bosh::Agent::Monit.enabled
-          return "running"
-        end
-
-        client = Bosh::Agent::Monit.monit_api_client
-
-        status = client.status(:group => BOSH_APP_GROUP)
-        not_running = status.reject do |name, data|
-          # break early if any service is initializing
-          return "starting" if data[:monitor] == :init
-
-          # at least with monit_api a stopped services is still running
-          (data[:monitor] == :yes && data[:status][:message] == "running")
-        end
-        not_running.empty? ? "running" : "failing"
+        Bosh::Agent::Monit.job_state
       end
-
     end
   end
 end

@@ -67,9 +67,6 @@ module Bosh::Agent
             @logger.error "Agent will be running but alerts will NOT be properly processed"
           else
             @logger.debug("SMTP: #{@smtp_password}")
-            if Bosh::Agent::Monit.enabled
-              Bosh::Agent::Monit.setup_alerts(@smtp_port, @smtp_user, @smtp_password)
-            end
             Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
           end
         end
