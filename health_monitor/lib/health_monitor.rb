@@ -38,7 +38,6 @@ require "health_monitor/agent"
 require "health_monitor/alert"
 
 # Managers
-require "health_monitor/deployment_manager"
 require "health_monitor/agent_manager"
 
 # Alert processing

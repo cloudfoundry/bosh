@@ -14,9 +14,7 @@ module Bosh::HealthMonitor
       @intervals = Bhm.intervals
       @mbus      = Bhm.mbus
 
-      # Things to manage:
-      @deployment_manager = DeploymentManager.new
-      @agent_manager      = AgentManager.new
+      @agent_manager = AgentManager.new
     end
 
     def run
@@ -57,7 +55,7 @@ module Bosh::HealthMonitor
     end
 
     def log_stats
-      @logger.info("Managing %s, %s" % [ pluralize(@deployment_manager.deployments_count, "deployment"), pluralize(@agent_manager.agents_count, "agent") ])
+      @logger.info("Managing %s, %s" % [ pluralize(@agent_manager.deployments_count, "deployment"), pluralize(@agent_manager.agents_count, "agent") ])
       @logger.info("Agent heartbeats received = %s" % [ @agent_manager.heartbeats_received ])
     end
 
@@ -115,7 +113,7 @@ module Bosh::HealthMonitor
     end
 
     def log_exception(e, level = :error)
-      level = :error unless level == :error || level == :fatal
+      level = :error unless level == :fatal
       @logger.send(level, e.to_s)
       if e.respond_to?(:backtrace) && e.backtrace.respond_to?(:join)
         @logger.send(level, e.backtrace.join("\n"))
@@ -125,6 +123,8 @@ module Bosh::HealthMonitor
     def fetch_deployments
       deployments = @director.get_deployments
 
+      @agent_manager.sync_deployments(deployments)
+
       deployments.each do |deployment|
         deployment_name = deployment["name"]
 
@@ -133,11 +133,9 @@ module Bosh::HealthMonitor
         vms = @director.get_deployment_vms(deployment_name)
         @logger.debug "Fetching VMs information for `#{deployment_name}'..."
 
-        @deployment_manager.update_deployment(deployment_name, deployment)
-        # TODO: handle missing deployments
-
         @agent_manager.sync_agents(deployment, vms)
       end
+
     rescue Bhm::DirectorError => e
       log_exception(e)
     end

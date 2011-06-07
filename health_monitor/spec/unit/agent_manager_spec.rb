@@ -59,6 +59,25 @@ describe Bhm::AgentManager do
     manager.agents_count.should == 1
   end
 
+  it "can sync deployments" do
+    manager = make_manager
+    vm1 = { "agent_id" => "007", "index" => "0", "job" => "mutator"}
+    vm2 = { "agent_id" => "008", "index" => "0", "job" => "nats"}
+    vm3 = { "agent_id" => "009", "index" => "28", "job" => "mysql_node"}
+    vm4 = { "agent_id" => "010", "index" => "52", "job" => "zb"}
+
+    cloud1 = [ vm1, vm2 ]
+    cloud2 = [ vm3, vm4 ]
+    manager.sync_agents("mycloud", cloud1)
+    manager.sync_agents("othercloud", cloud2)
+
+    manager.deployments_count.should == 2
+    manager.agents_count.should == 4
+
+    manager.sync_deployments([ { "name" => "mycloud" }]) # othercloud is gone
+    manager.agents_count.should == 2
+  end
+
   it "can sync agents" do
     manager = make_manager
     vm1 = { "agent_id" => "007", "index" => "0", "job" => "mutator"}

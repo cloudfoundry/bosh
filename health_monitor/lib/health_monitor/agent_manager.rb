@@ -61,6 +61,23 @@ module Bosh::HealthMonitor
       @agents.size
     end
 
+    def deployments_count
+      @deployments.size
+    end
+
+    # Syncs deployments list received from director
+    # with HM deployments.
+    # @param deployments Array list of deployments returned by director
+    def sync_deployments(deployments)
+      managed = Set.new(deployments.map { |d| d["name"] })
+      all     = Set.new(@deployments.keys)
+
+      (all - managed).each do |stale_deployment|
+        @logger.warn("Found stale deployment #{stale_deployment}, removing...")
+        remove_deployment(stale_deployment)
+      end
+    end
+
     def sync_agents(deployment, vms)
       managed_agent_ids = @deployments[deployment] || Set.new
       active_agent_ids  = Set.new
@@ -74,6 +91,16 @@ module Bosh::HealthMonitor
       (managed_agent_ids - active_agent_ids).each do |agent_id|
         remove_agent(agent_id)
       end
+    end
+
+    def remove_deployment(name)
+      agent_ids = @deployments[name]
+
+      agent_ids.to_a.each do |agent_id|
+        @agents.delete(agent_id)
+      end
+
+      @deployments.delete(name)
     end
 
     def remove_agent(agent_id)
