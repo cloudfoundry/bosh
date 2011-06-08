@@ -13,6 +13,7 @@ module Bosh::HealthMonitor
 
   class AlertProcessingError < Error; error_code(301); end
   class InvalidAlert < Error; error_code(302); end
+  class InvalidEvent < Error; error_code(303); end
 
   class DeliveryAgentError < Error; error_code(401); end
 

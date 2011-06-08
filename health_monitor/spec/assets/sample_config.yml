@@ -4,6 +4,11 @@ mbus:
   user:
   password:
 
+event_mbus:
+  endpoint: nats://127.0.0.1:4222
+  user: bosh
+  password: b0$H
+
 director:
   endpoint: http://127.0.0.1:25555
   user:
@@ -20,6 +25,8 @@ intervals:
 alert_delivery_agents:
 
   - plugin: logger
+
+  - plugin: nats
 
   - plugin: email
     recipients:

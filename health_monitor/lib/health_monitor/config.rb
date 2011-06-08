@@ -9,6 +9,7 @@ module Bosh::HealthMonitor
     attr_accessor :intervals
     attr_accessor :nats
     attr_accessor :mbus
+    attr_accessor :event_mbus
 
     attr_accessor :alert_delivery_agents
 
@@ -17,6 +18,7 @@ module Bosh::HealthMonitor
       @intervals  = OpenStruct.new(config["intervals"])
       @director   = Director.new(config["director"])
       @mbus       = OpenStruct.new(config["mbus"])
+      @event_mbus = OpenStruct.new(config["event_mbus"])
 
       if config["loglevel"].is_a?(String)
         @logger.level = config["loglevel"].to_sym
