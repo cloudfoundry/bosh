@@ -4,6 +4,11 @@ mbus:
   user: bosh
   password: b0$H
 
+event_mbus:
+  endpoint: nats://172.31.113.142:4222
+  user: bosh
+  password: b0$H
+
 director:
   endpoint: http://172.31.113.142:25555
   user: admin
@@ -25,6 +30,8 @@ alert_delivery_agents:
 
   - plugin: pagerduty
     service_key: b2b734f06898012e917512313d009e57
+
+  - plugin: nats
 
   - plugin: email
     recipients:

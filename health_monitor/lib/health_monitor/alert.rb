@@ -58,6 +58,18 @@ module Bosh::HealthMonitor
       @errors.empty?
     end
 
+    def to_json
+      payload = {
+        :id         => @id,
+        :severity   => @severity,
+        :title      => @title,
+        :summary    => @summary,
+        :source     => @source,
+        :created_at => @created_at.to_i
+      }
+      Yajl::Encoder.encode(payload)
+    end
+
   end
 
 end

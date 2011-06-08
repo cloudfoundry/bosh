@@ -45,7 +45,7 @@ module Bosh::HealthMonitor
       (Time.now - @discovered_at) > @intervals.rogue_agent_alert && @deployment.nil?
     end
 
-    def process_heartbeat(heartbeat_payload)
+    def process_heartbeat(heartbeat)
       @updated_at = Time.now
     end
 

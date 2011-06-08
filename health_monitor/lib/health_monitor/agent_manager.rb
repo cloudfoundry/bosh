@@ -15,6 +15,7 @@ module Bosh::HealthMonitor
       @alerts_processed    = 0
 
       @alert_processor = AlertProcessor.new
+      @event_publisher = EventPublisher.new
     end
 
     def lookup_delivery_agent(options)
@@ -27,12 +28,16 @@ module Bosh::HealthMonitor
         LoggingDeliveryAgent.new(options)
       when "pagerduty"
         PagerdutyDeliveryAgent.new(options)
+      when "nats"
+        NatsDeliveryAgent.new(options)
       else
         raise DeliveryAgentError, "Cannot find delivery agent plugin `#{plugin}'"
       end
     end
 
     def setup_events
+      @event_publisher.connect_to_mbus
+
       Bhm.alert_delivery_agents.each do |agent_options|
         @alert_processor.add_delivery_agent(lookup_delivery_agent(agent_options))
       end
@@ -241,7 +246,6 @@ module Bosh::HealthMonitor
       @logger.error(e)
     end
 
-
     def process_shutdown(agent_id, shutdown_payload = nil)
       agent = @agents[agent_id]
       # Agent sends shutdown message several times, so we
@@ -252,7 +256,7 @@ module Bosh::HealthMonitor
       remove_agent(agent_id)
     end
 
-    def process_heartbeat(agent_id, heartbeat_payload)
+    def process_heartbeat(agent_id, hb_payload)
       agent = @agents[agent_id]
 
       if agent.nil?
@@ -261,7 +265,36 @@ module Bosh::HealthMonitor
         @agents[agent_id] = agent
       end
 
-      agent.process_heartbeat(heartbeat_payload)
+      heartbeat = parse_heartbeat(hb_payload)
+
+      publish_heartbeat_event(agent, heartbeat)
+      agent.process_heartbeat(heartbeat)
+    end
+
+    def publish_heartbeat_event(agent, heartbeat)
+      unless heartbeat.kind_of?(Hash)
+        @logger.error("Invalid heartbeat payload format, expected Hash, got #{heartbeat.class}: #{heartbeat}")
+        return false
+      end
+
+      event_data = {
+        :summary   => "Heartbeat received",
+        :timestamp => Time.now.to_i,
+        :data      => heartbeat.merge(:agent_id => agent.id, :deployment => agent.deployment, :job => agent.job, :index => agent.index)
+      }
+
+      begin
+        @event_publisher.publish_event!(event_data)
+      rescue => e
+        @logger.error("Unable to publish event #{event_data}: #{e}")
+      end
+    end
+
+    def parse_heartbeat(hb_payload)
+      Yajl::Parser.parse(hb_payload)
+    rescue Yajl::ParseError => e
+      @logger.error("Unable to parse heartbeat payload: #{e}")
+      nil
     end
 
   end

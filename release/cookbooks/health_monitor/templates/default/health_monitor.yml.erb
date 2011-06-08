@@ -4,6 +4,11 @@ mbus:
   user: <%= node[:nats][:user] %>
   password: <%= node[:nats][:password] %>
 
+event_mbus:
+  endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+  user: <%= node[:nats][:user] %>
+  password: <%= node[:nats][:password] %>
+
 director:
   endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port] %>
   user: admin
@@ -18,7 +23,10 @@ intervals:
   rogue_agent_alert: 180
 
 alert_delivery_agents:
+
   - plugin: logger
+
+  - plugin: nats
 
   - plugin: email
     recipients:
