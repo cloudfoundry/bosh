@@ -88,7 +88,7 @@ describe Bosh::Agent::Alert do
     alert.register
   end
 
-  it "doesn't register alerts with severity >= 5" do
+  it "doesn't register alerts with severity >= 5 or <= 0" do
     alert = make_alert
 
     3.times do |i|
@@ -98,6 +98,9 @@ describe Bosh::Agent::Alert do
       alert.should_not_receive(:send_via_mbus)
       alert.register
     end
+
+    alert.stub!(:severity).and_return(-1)
+
   end
 
   it "sends JSON payload over NATS" do
