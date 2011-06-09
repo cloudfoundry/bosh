@@ -51,7 +51,7 @@ module Bosh::Cli
 
     def reload_config
       if File.exists?(@config_file)
-        config = YAML.load_file(@config_file) rescue nil
+        config = load_yaml_file(@config_file) rescue nil
         unless config.is_a?(Hash)
           raise InvalidRelease, "Can't read release configuration from `#{@config_file}'"
         end

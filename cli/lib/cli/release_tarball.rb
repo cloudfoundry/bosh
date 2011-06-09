@@ -7,7 +7,6 @@ module Bosh
     class ReleaseTarball
       include Validation
       include DependencyHelper
-      include YamlHelper
 
       attr_reader :release_name, :jobs, :packages, :version
       attr_reader :skipped # Mostly for tests
@@ -99,7 +98,7 @@ module Bosh
           File.exists?(manifest_file)
         end
 
-        manifest = YAML.load_file(manifest_file)
+        manifest = load_yaml_file(manifest_file)
 
         step("Release name/version", "Manifest doesn't contain release name and/or version") do
           manifest.is_a?(Hash) && manifest.has_key?("name") && manifest.has_key?("version")
@@ -182,7 +181,7 @@ module Bosh
 
             if job_extracted
               job_manifest_file   = File.expand_path("job.MF", job_tmp_dir)
-              job_manifest        = YAML.load_file(job_manifest_file) if File.exists?(job_manifest_file)
+              job_manifest        = load_yaml_file(job_manifest_file) if File.exists?(job_manifest_file)
               job_manifest_valid  = job_manifest.is_a?(Hash)
 
               step("Read job '#{name}' manifest", "Invalid job '#{name}' manifest") do

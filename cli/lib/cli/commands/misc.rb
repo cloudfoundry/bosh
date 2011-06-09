@@ -143,7 +143,7 @@ module Bosh::Cli::Command
 
       specs.each do |spec_file|
         if spec_file.is_a?(String) && File.file?(spec_file)
-          spec = YAML.load_file(spec_file)
+          spec = load_yaml_file(spec_file)
           name = spec["name"]
 
           unless name.bosh_valid_id?

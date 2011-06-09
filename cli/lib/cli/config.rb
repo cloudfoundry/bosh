@@ -20,7 +20,7 @@ module Bosh
           File.chmod(0600, @filename)
         end
 
-        @config_file = YAML.load_file(@filename)
+        @config_file = load_yaml_file(@filename, nil)
 
         unless @config_file.is_a?(Hash)
           @config_file = { } # Just ignore it if it's malformed
