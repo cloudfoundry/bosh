@@ -50,6 +50,63 @@ module BoshExtensions
     return sprintf("%.#{prec}fM", size/(1024.0*1024.0)) if size < (1024*1024*1024)
     return sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
   end
+
+  def load_yaml_file(path, expected_type = Hash)
+    err("Cannot find file `#{path}'") unless File.exists?(path)
+    yaml = YAML.load_file(path)
+
+    if expected_type && !yaml.is_a?(expected_type)
+      err("Incorrect file format in `#{path}', #{expected_type} expected")
+    end
+
+    check_duplicate_keys(path)
+
+    yaml
+  rescue SystemCallError => e
+    err("Cannot load YAML file at `#{path}': #{e}")
+  end
+
+  private
+    def process_object(o)
+      case o
+      when Syck::Map
+        process_map(o)
+      when Syck::Seq
+        process_seq(o)
+      when Syck::Scalar
+      else
+        err("Unhandled class #{o.class}, fix yaml duplicate check")
+      end
+    end
+
+    def process_seq(s)
+      s.value.each do |v|
+        process_object(v)
+      end
+    end
+
+    def process_map(m)
+      return if m.class != Syck::Map
+      s = Set.new
+      m.value.each_key do  |k|
+        raise "Found dup key #{k.value}" if s.include?(k.value)
+        s.add(k.value)
+      end
+
+      m.value.each_value do |v|
+        process_object(v)
+      end
+    end
+
+    def check_duplicate_keys(path)
+      File.open(path) do |f|
+        begin
+          process_map(YAML.parse(f))
+        rescue => e
+          raise "Bad yaml file #{path}, " + e.message
+        end
+      end
+    end
 end
 
 module BoshStringExtensions

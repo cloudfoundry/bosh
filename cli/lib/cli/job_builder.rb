@@ -5,7 +5,7 @@ module Bosh::Cli
     attr_reader :name, :version, :packages, :templates, :release_dir, :built_packages, :tarball_path
 
     def initialize(spec, release_dir, final, blobstore, built_packages = [])
-      spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
+      spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name           = spec["name"]
       @packages       = spec["packages"].to_a

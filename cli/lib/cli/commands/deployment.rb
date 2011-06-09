@@ -12,7 +12,7 @@ module Bosh::Cli::Command
         err("Missing manifest for #{name} (tried '#{manifest_filename}')")
       end
 
-      manifest   = YAML.load_file(manifest_filename)
+      manifest   = load_yaml_file(manifest_filename)
 
       unless manifest.is_a?(Hash) && manifest.has_key?("target")
         err("Deployment '#{name}' has no target defined")
@@ -54,7 +54,7 @@ module Bosh::Cli::Command
         err("Missing deployment at '#{deployment}'")
       end
 
-      new_manifest = YAML.load_file(manifest_filename)
+      new_manifest = load_yaml_file(manifest_filename)
 
       if new_manifest["name"].blank? || new_manifest["release"].blank? || new_manifest["target"].blank?
         err("Invalid manifest for '#{deployment}': name, release and target are all required")

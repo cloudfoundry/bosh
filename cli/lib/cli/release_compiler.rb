@@ -4,7 +4,6 @@ module Bosh::Cli
 
   # Compiles release tarball based on manifest
   class ReleaseCompiler
-    include YamlHelper
 
     attr_writer :tarball_path
 
