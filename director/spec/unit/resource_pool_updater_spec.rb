@@ -26,6 +26,20 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
   end
 
+  def update_resource_pool(resource_pool_updater)
+    thread_pool = Bosh::Director::ThreadPool.new(:max_threads => 32)
+
+    resource_pool_updater.delete_extra_vms(thread_pool)
+    thread_pool.wait
+
+    resource_pool_updater.delete_outdated_vms(thread_pool)
+    thread_pool.wait
+
+    resource_pool_updater.create_missing_vms(thread_pool)
+    thread_pool.wait
+    thread_pool.shutdown
+  end
+
   it "shouldn't do anything if nothing changed" do
     vm = Bosh::Director::Models::Vm.make
     idle_vm = mock("idle_vm")
@@ -38,7 +52,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.stub!(:changed?).and_return(false)
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
-    resource_pool_updater.update
+    update_resource_pool(resource_pool_updater)
 
     Bosh::Director::Models::Vm.all.should == [vm]
   end
@@ -79,7 +93,7 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
     resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
-    resource_pool_updater.update
+    update_resource_pool(resource_pool_updater)
     Bosh::Director::Models::Vm.all.should == [created_vm]
   end
 
@@ -126,7 +140,7 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
     resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
-    resource_pool_updater.update
+    update_resource_pool(resource_pool_updater)
     Bosh::Director::Models::Vm.all.should == [created_vm]
   end
 
@@ -148,7 +162,7 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
     resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
-    resource_pool_updater.update
+    update_resource_pool(resource_pool_updater)
 
     Bosh::Director::Models::Vm.all.should be_empty
   end
@@ -165,7 +179,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
 
     idle_vm.stub!(:network_settings).and_return({"ip" => "1.2.3.4"})
-    idle_vm.should_receive(:changed?).and_return(true)
+    idle_vm.should_receive(:changed?).exactly(2).times.and_return(true)
     idle_vm.stub!(:bound_instance).and_return(nil)
     idle_vm.stub!(:vm).and_return {current_vm}
 
@@ -195,7 +209,7 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
     resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
-    resource_pool_updater.update
+    update_resource_pool(resource_pool_updater)
 
     current_vm.should_not == old_vm
     Bosh::Director::Models::Vm.all.should == [current_vm]
