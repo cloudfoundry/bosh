@@ -42,11 +42,27 @@ module Bosh::Director
       end
 
       def update
+        thread_pool = ThreadPool.new(:max_threads => 32)
+
         @logger.info("Updating resource pools")
+        # delete extra VMs accross resource_pools
         @deployment_plan.resource_pools.each do |resource_pool|
-          @logger.info("Updating resource pool: #{resource_pool.name}")
-          ResourcePoolUpdater.new(resource_pool).update
+          ResourcePoolUpdater.new(resource_pool).delete_extra_vms(thread_pool)
         end
+        thread_pool.wait
+
+        # delete outdated VMs accross resource_pools
+        @deployment_plan.resource_pools.each do |resource_pool|
+          ResourcePoolUpdater.new(resource_pool).delete_outdated_vms(thread_pool)
+        end
+        thread_pool.wait
+
+        # create missing VMs accross resource_pools
+        @deployment_plan.resource_pools.each do |resource_pool|
+          ResourcePoolUpdater.new(resource_pool).create_missing_vms(thread_pool)
+        end
+        thread_pool.wait
+        thread_pool.shutdown
 
         @logger.info("Binding instance VMs")
         @deployment_plan_compiler.bind_instance_vms

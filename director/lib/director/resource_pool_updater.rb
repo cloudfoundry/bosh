@@ -9,18 +9,19 @@ module Bosh::Director
     end
 
     def update
-      @pool = ThreadPool.new(:max_threads => 32)
+      pool = ThreadPool.new(:max_threads => 32)
 
-      delete_extra_vms
-      delete_outdated_vms
-      create_missing_vms
-
-      @pool.wait
+      delete_extra_vms(pool)
+      pool.wait
+      delete_outdated_vms(pool)
+      pool.wait
+      create_missing_vms(pool)
+      pool.wait
     ensure
-      @pool.shutdown
+      pool.shutdown
     end
 
-    def delete_extra_vms
+    def delete_extra_vms(thread_pool)
       extra_vms = @resource_pool.active_vms + @resource_pool.idle_vms.size + @resource_pool.allocated_vms.size -
           @resource_pool.size
 
@@ -29,22 +30,28 @@ module Bosh::Director
         idle_vm = @resource_pool.idle_vms.shift
         vm_cid = idle_vm.vm.cid
         @logger.info("Deleting extra VM: #{vm_cid}")
-        @pool.process do
+        thread_pool.process do
           @cloud.delete_vm(vm_cid)
           idle_vm.vm.destroy
         end
       end
-      @pool.wait
     end
 
-    def delete_outdated_vms
+    def delete_outdated_vms(thread_pool)
       counter = 0
-      @pool.pause
       each_idle_vm do |idle_vm|
         if idle_vm.vm && idle_vm.changed?
-          index = counter += 1
+          counter += 1
+        end
+      end
+
+      index = 0
+      @logger.info("Deleting #{counter} outdated VMs")
+      each_idle_vm do |idle_vm|
+        if idle_vm.vm && idle_vm.changed?
+          index += 1
           vm_cid = idle_vm.vm.cid
-          @pool.process do
+          thread_pool.process do
             with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index}/#{counter})") do
               @logger.info("Deleting: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
@@ -56,28 +63,23 @@ module Bosh::Director
           end
         end
       end
-      @pool.resume
-      @logger.info("Deleting #{counter} outdated VMs")
-      @pool.wait
     end
 
-    def create_missing_vms
+    def create_missing_vms(thread_pool)
       counter = 0
-      @pool.pause
+      index = 0
+      each_idle_vm { |idle_vm| counter += 1 if (!idle_vm.vm) }
+
+      @logger.info("Creating #{counter} missing VMs")
       each_idle_vm do |idle_vm|
-        unless idle_vm.vm
-          index = counter += 1
-          @pool.process do
-            with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index}/#{counter})") do
-              create_missing_vm(idle_vm)
-            end
+        next if idle_vm.vm
+        index += 1
+        thread_pool.process do
+          with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index}/#{counter})") do
+            create_missing_vm(idle_vm)
           end
         end
       end
-
-      @pool.resume
-      @logger.info("Creating #{counter} missing VMs")
-      @pool.wait
     end
 
     def each_idle_vm

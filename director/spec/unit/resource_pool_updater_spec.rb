@@ -165,7 +165,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
 
     idle_vm.stub!(:network_settings).and_return({"ip" => "1.2.3.4"})
-    idle_vm.should_receive(:changed?).and_return(true)
+    idle_vm.should_receive(:changed?).exactly(2).times.and_return(true)
     idle_vm.stub!(:bound_instance).and_return(nil)
     idle_vm.stub!(:vm).and_return {current_vm}
 
