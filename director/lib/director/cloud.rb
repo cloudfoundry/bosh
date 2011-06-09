@@ -61,8 +61,8 @@ module Bosh::Director
     # @param [Hash] resource_pool cloud specific properties describing the resources needed
     #               for this VM
     # @param [Hash] networks list of networks and their settings needed for this VM
-    # @param [optional, String] disk_locality disk id if known of the disk that will be attached
-    #                           to this vm
+    # @param [optional, String, Array] disk_locality disk id(s) if known of the disk(s) that will be
+    #                                    attached to this vm
     # @param [optional, Hash] env environment that will be passed to this vm
     # @return [String] opaque id later used by {#configure_networks}, {#attach_disk},
     #                  {#detach_disk}, and {#delete_vm}
