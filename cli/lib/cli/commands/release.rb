@@ -1,7 +1,6 @@
 module Bosh::Cli::Command
   class Release < Base
     include Bosh::Cli::DependencyHelper
-    include Bosh::Cli::YamlHelper
 
     def verify(tarball_path, *options)
       tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)

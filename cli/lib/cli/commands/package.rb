@@ -79,7 +79,7 @@ module Bosh::Cli::Command
     end
 
     def read_spec(name)
-      YAML.load_file(find_spec(name))
+      load_yaml_file(find_spec(name))
     end
 
     def find_spec(name)
