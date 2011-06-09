@@ -186,8 +186,8 @@ module Bosh::Agent
         retry_monit_request(20) { |client| client.start(:group => BOSH_APP_GROUP) }
       end
 
-      def start_all_services
-        retry_monit_request(20) { |client| client.start({ }) }
+      def stop_services
+        retry_monit_request(20) { |client| client.stop(:group => BOSH_APP_GROUP) }
       end
 
       def retry_monit_request(attempts=10)
