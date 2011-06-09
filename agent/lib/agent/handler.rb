@@ -249,13 +249,23 @@ module Bosh::Agent
 
     # FIXME: temporary stop method
     class Stop
+
       def self.process(args)
+
         if Config.configure
-          monit_api_client = Bosh::Agent::Monit.monit_api_client
-          monit_api_client.stop(:group => BOSH_APP_GROUP)
+          Bosh::Agent::Monit.stop_services
         end
+
         "stopped"
+
+      rescue => e
+        # Monit retry logic should make it really hard to get here but if it happens we should yell.
+        # One potential problem is that drain process might have unmonitored and killed processes
+        # already but Monit became really unresponsive. In that case it might be a fake alert:
+        # however this is not common and can be handled on case-by-case basis.
+        raise Bosh::Agent::MessageHandlerError, "Cannot stop job: #{e}"
       end
+
     end
 
     class PrepareNetworkChange
