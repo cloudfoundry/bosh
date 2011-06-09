@@ -13,7 +13,7 @@ module Bosh::Cli
     # final builds metadata should be checked in
 
     def initialize(spec, release_dir, final, blobstore, sources_dir = nil)
-      spec = YAML.load_file(spec) if spec.is_a?(String) && File.file?(spec)
+      spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name         = spec["name"]
       @globs        = spec["files"]
