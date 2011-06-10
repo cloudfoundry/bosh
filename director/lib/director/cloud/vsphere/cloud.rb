@@ -33,7 +33,11 @@ module VSphereCloud
       cookie_str = @client.stub.cookie
       @rest_client.cookie_manager.parse(cookie_str, URI.parse("https://#{@vcenter["host"]}"))
 
-      @resources = Resources.new(@client, @vcenter)
+      mem_ratio = 1.0
+      if (options["mem_overcommit_ratio"])
+        mem_ratio = options["mem_overcommit_ratio"].to_f
+      end
+      @resources = Resources.new(@client, @vcenter, mem_ratio)
 
       @lock = Mutex.new
       @locks = {}

@@ -52,9 +52,10 @@ module VSphereCloud
       attr_accessor :total_memory
       attr_accessor :free_memory
       attr_accessor :unaccounted_memory
+      attr_accessor :mem_over_commit
 
       def real_free_memory
-        @free_memory - @unaccounted_memory
+        @free_memory - @unaccounted_memory * @mem_over_commit
       end
 
       def inspect
@@ -62,13 +63,14 @@ module VSphereCloud
       end
     end
 
-    def initialize(client, vcenter)
-      @client      = client
-      @vcenter     = vcenter
-      @datacenters = {}
-      @timestamp   = 0
-      @lock        = Monitor.new
-      @logger      = Bosh::Director::Config.logger
+    def initialize(client, vcenter, mem_over_commit = 1.0)
+      @client           = client
+      @vcenter          = vcenter
+      @datacenters      = {}
+      @timestamp        = 0
+      @lock             = Monitor.new
+      @logger           = Bosh::Director::Config.logger
+      @mem_over_commit  = mem_over_commit
     end
 
     def fetch_datacenters
@@ -119,6 +121,7 @@ module VSphereCloud
       clusters = []
       properties.each_value do |cluster_properties|
         cluster                    = Cluster.new
+        cluster.mem_over_commit    = @mem_over_commit
         cluster.mob                = cluster_properties[:obj]
         cluster.name               = cluster_properties["name"]
 
