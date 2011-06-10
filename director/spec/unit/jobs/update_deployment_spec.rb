@@ -72,7 +72,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_instance_vms)
       deployment_plan_compiler.should_receive(:delete_unneeded_vms)
       deployment_plan_compiler.should_receive(:delete_unneeded_instances)
-      resource_pool_updater.should_receive(:update)
+      resource_pool_updater.should_receive(:delete_extra_vms)
+      resource_pool_updater.should_receive(:delete_outdated_vms)
+      resource_pool_updater.should_receive(:create_missing_vms)
       job_updater.should_receive(:update)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
