@@ -5,6 +5,7 @@ module Bosh::Director
     def initialize(options = {})
       @actions = []
       @lock = Mutex.new
+      @cv = ConditionVariable.new
       @max_threads = options[:max_threads] || 1
       @available_threads = @max_threads
       @logger = Config.logger
@@ -62,7 +63,7 @@ module Bosh::Director
           loop do
             action = nil
             @lock.synchronize do
-              action = @actions.shift
+              action = @actions.shift unless @boom
               if action
                 @logger.debug("Found an action that needs to be processed")
               else
@@ -81,6 +82,7 @@ module Bosh::Director
             end
           end
         end
+        @lock.synchronize { @cv.signal unless working? }
       end
       @threads << thread
     end
@@ -92,13 +94,7 @@ module Bosh::Director
         @logger.debug("Worker thread raised exception: #{exception}")
       end
       @lock.synchronize do
-        if @boom.nil?
-          Thread.new do
-            @boom = exception
-            @logger.debug("Re-raising: #{@boom}")
-            @original_thread.raise(@boom)
-          end
-        end
+        @boom = exception if @boom.nil?
       end
     end
 
@@ -106,9 +102,12 @@ module Bosh::Director
       @boom.nil? && (@available_threads != @max_threads || !@actions.empty?)
     end
 
-    def wait(interval = 0.1)
+    def wait
       @logger.debug("Waiting for tasks to complete")
-      sleep(interval) while working?
+      @lock.synchronize do
+        @cv.wait(@lock) while working?
+        raise @boom if @boom
+      end
     end
 
     def shutdown
