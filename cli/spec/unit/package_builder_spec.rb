@@ -316,4 +316,25 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder2.version.should == "1.2-dev"
   end
 
+  it "includes dotfiles in a fingerprint" do
+    add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+
+    builder = make_builder("A", ["lib/*.rb", "README.*"])
+    builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+
+    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+
+    add_sources("lib/.zb.rb")
+    builder.reload
+
+    builder.files.should == [ "lib/.zb.rb", "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.fingerprint.should == "80a36ed79aa5c4aa23b6c21895107103c9673e99"
+
+    remove_sources("lib/.zb.rb")
+    builder.reload
+
+    builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+  end
+
 end
