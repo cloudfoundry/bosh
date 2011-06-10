@@ -180,7 +180,9 @@ module Bosh::Cli
 
     def resolve_globs
       in_sources_dir do
-        @globs.map { |glob| Dir[glob] }.flatten.sort
+        @globs.map { |glob|
+          Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
+        }.flatten.sort
       end
     end
 
