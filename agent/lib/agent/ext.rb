@@ -2,6 +2,16 @@ class Object
  def to_openstruct
    self
  end
+
+  def blank?
+    self.to_s.blank?
+  end
+end
+
+class String
+  def blank?
+    self =~ /^\s*$/
+  end
 end
 
 class Array

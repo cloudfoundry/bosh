@@ -5,32 +5,34 @@ describe Bosh::Agent::Message::State do
 
   before(:each) do
     setup_tmp_base_dir
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
-    Bosh::Agent::Config.settings = { "vm" => {}, "agent_id" => nil }
+
+    state_file = Tempfile.new("agent-state")
+
+    Bosh::Agent::Config.logger   = Logger.new(StringIO.new)
+    Bosh::Agent::Config.state    = Bosh::Agent::State.new(state_file.path)
+    Bosh::Agent::Config.settings = { "vm" => "zb", "agent_id" => "007" }
 
     Bosh::Agent::Monit.enabled = true
     @monit_mock = mock('monit_api_client')
     Bosh::Agent::Monit.stub!(:monit_api_client).and_return(@monit_mock)
   end
 
-  it 'shuold have initial empty state' do
-    handler = Bosh::Agent::Message::State.new(nil)
+  it 'should have initial empty state' do
+    handler = Bosh::Agent::Message::State.new
     initial_state = {
-      "deployment"=>"",
-      "networks"=>{},
-      "resource_pool"=>{},
-      "agent_id" => nil,
-      "vm" => {},
-      "job_state" => nil
+      "deployment"    => "",
+      "networks"      => { },
+      "resource_pool" => { },
+      "agent_id"      => "007",
+      "vm"            => "zb",
+      "job_state"     => nil
     }
-    handler.stub!(:job_state).and_return(nil)
+    handler.stub!(:job_state).and_return
     handler.state.should == initial_state
   end
 
   it "should report job_state as running" do
-    handler = Bosh::Agent::Message::State.new(nil)
+    handler = Bosh::Agent::Message::State.new
 
     status = { "foo" => { :status => { :message => "running" }, :monitor => :yes }}
     @monit_mock.should_receive(:status).and_return(status)
@@ -39,7 +41,7 @@ describe Bosh::Agent::Message::State do
   end
 
   it "should report job_state as starting" do
-    handler = Bosh::Agent::Message::State.new(nil)
+    handler = Bosh::Agent::Message::State.new
 
     status = { "foo" => { :status => { :message => "running" }, :monitor => :init }}
     @monit_mock.should_receive(:status).and_return(status)
@@ -48,7 +50,7 @@ describe Bosh::Agent::Message::State do
   end
 
   it "should report job_state as failing" do
-    handler = Bosh::Agent::Message::State.new(nil)
+    handler = Bosh::Agent::Message::State.new
 
     status = { "foo" => { :status => { :message => "born to run" }, :monitor => :yes }}
     @monit_mock.should_receive(:status).and_return(status)

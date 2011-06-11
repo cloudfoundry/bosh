@@ -1,15 +1,15 @@
-
 module Bosh::Agent
   module Message
     class Apply < Base
+
+      def self.long_running?; true; end
+
       def self.process(args)
         self.new(args).apply
       end
-      def self.long_running?; true; end
 
       def initialize(args)
         @monit_api_client = Bosh::Agent::Monit.monit_api_client
-
         @apply_spec = args.first
         @job = @apply_spec['job']
 
@@ -25,34 +25,19 @@ module Bosh::Agent
           FileUtils.mkdir_p(File.join(base_dir, dir))
         end
 
-        @state_file = File.join(base_dir, '/bosh/state.yml')
-
         @platform = Bosh::Agent::Config.platform
       end
 
       def apply
         logger.info("Applying: #{@apply_spec.inspect}")
+        state = Bosh::Agent::Config.state.to_hash
 
-        if File.exist?(@state_file)
-          @state = YAML.load_file(@state_file)
-        else
-          @state = {}
-          @state["deployment"] = ""
-        end
-
-        if @state["deployment"].empty?
-          @state["deployment"] = @apply_spec["deployment"]
-          @state["resource_pool"] = @apply_spec['resource_pool']
-          @state["networks"] = @apply_spec['networks']
-        end
-
-        unless @state["deployment"] == @apply_spec["deployment"]
-          raise Bosh::Agent::MessageHandlerError, 
-            "attempt to apply #{@apply_spec["deployment"]} to #{@state["deployment"]}"
+        if !state["deployment"].empty? && (state["deployment"] != @apply_spec["deployment"])
+          raise Bosh::Agent::MessageHandlerError, "attempt to apply #{@apply_spec["deployment"]} to #{state["deployment"]}"
         end
 
         # FIXME: tests
-        #return @state if @state['configuraton_hash'] == @apply_spec['configuration_hash']
+        # return @state if @state['configuraton_hash'] == @apply_spec['configuration_hash']
 
         if @apply_spec.key?('configuration_hash')
           begin
@@ -66,11 +51,13 @@ module Bosh::Agent
           end
         end
 
-        # FIXME: assumption right now: if apply succeeds @state should be
+        # FIXME: assumption right now: if apply succeeds state should be
         # identical with apply spec
-        @state = @apply_spec
-        write_state
-        @state
+        Bosh::Agent::Config.state.write(@apply_spec)
+        @apply_spec
+
+      rescue Bosh::Agent::StateError => e
+        raise Bosh::Agent::MessageHandlerError, e
       end
 
       def apply_job
@@ -171,8 +158,11 @@ module Bosh::Agent
 
           out_file = File.join(@job_install_dir, monitrc_name)
 
+          original_monitrc = template.result(Util.config_binding(@apply_spec))
+          result_monitrc   = add_modes(original_monitrc)
+
           File.open(out_file, 'w') do |fh|
-            fh.write(template.result(Util.config_binding(@apply_spec)))
+            fh.write(result_monitrc)
           end
 
           monit_link = File.join(base_dir, 'monit', "#{@job_template}.monitrc")
@@ -186,13 +176,40 @@ module Bosh::Agent
         end
       end
 
-      def write_state
-        # FIXME: use temporary file and move in place
-        File.open(@state_file, 'w') do |f|
-          f.puts(@state.to_yaml)
-        end
-      end
+      # HACK
+      # Force manual mode on all services which don't have mode already set.
+      # FIXME: this parser is very simple and thus generates space-delimited
+      # output. Can be improved to respect indentation for mode. Also it doesn't
+      # skip quoted tokens.
+      def add_modes(job_monitrc)
+        state     = :out
+        need_mode = true
+        result    = ""
 
+        tokens = job_monitrc.split(/\s+/)
+
+        while (t = tokens.shift)
+          if t == "check"
+            if state == :in && need_mode
+              result << "mode manual "
+            end
+            state = :in
+            need_mode = true
+
+          elsif t == "mode" && %w(passive manual active).include?(tokens[0])
+            need_mode = false
+          end
+
+          result << t << " "
+        end
+
+        if need_mode
+          result << "mode manual "
+        end
+
+        result.strip
+      end
     end
+
   end
 end
