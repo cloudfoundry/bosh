@@ -206,6 +206,32 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "getting deployment vms info" do
+      it "returns a list of agent_ids, jobs and indices" do
+        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
+        vms = [ ]
+
+        15.times do |i|
+          vm_params = { "agent_id" => "agent-#{i}", "cid" => "cid-#{i}", "deployment_id" => deployment.id }
+          vm = Bosh::Director::Models::Vm.create(vm_params)
+
+          instance_params = { "deployment_id" => deployment.id, "vm_id" => vm.id, "job" => "job-#{i}", "index" => i }
+          instance = Bosh::Director::Models::Instance.create(instance_params)
+        end
+
+        get "/deployments/test_deployment/vms"
+
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+        body.should be_kind_of Array
+        body.size.should == 15
+
+        15.times do |i|
+          body[i].should == { "agent_id" => "agent-#{i}", "job" => "job-#{i}", "index" => i }
+        end
+      end
+    end
+
     describe "getting release info" do
       it "returns versions" do
         release = Bosh::Director::Models::Release.create(:name => "test_release")
