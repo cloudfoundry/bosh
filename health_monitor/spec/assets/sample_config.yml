@@ -1,0 +1,43 @@
+---
+mbus:
+  endpoint: nats://127.0.0.1:4222
+  user:
+  password:
+
+event_mbus:
+  endpoint: nats://127.0.0.1:4222
+  user:
+  password:
+
+director:
+  endpoint: http://127.0.0.1:25555
+  user:
+  password:
+
+intervals:
+  poll_director: 60
+  poll_grace_period: 30
+  log_stats: 60
+  analyze_agents: 60
+  agent_timeout: 60
+  rogue_agent_alert: 120
+
+alert_delivery_agents:
+
+  - plugin: logger
+
+  - plugin: nats
+
+  - plugin: email
+    recipients:
+      - user@example.com
+    smtp:
+      from: bosh.alerts@example.com
+      host: smtp.example.com
+      port: 25
+      auth: plain
+      user: user
+      password: pass
+      tls: true
+      domain: example.com
+

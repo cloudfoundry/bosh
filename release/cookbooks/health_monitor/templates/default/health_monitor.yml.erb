@@ -1,0 +1,48 @@
+---
+mbus:
+  endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+  user: <%= node[:nats][:user] %>
+  password: <%= node[:nats][:password] %>
+
+event_mbus:
+  endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
+  user: <%= node[:nats][:user] %>
+  password: <%= node[:nats][:password] %>
+
+director:
+  endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port] %>
+  user: <%= node[:health_monitor][:director_account][:user] %>
+  password: <%= node[:health_monitor][:director_account][:password] %>
+
+intervals:
+  poll_director: <%= node[:health_monitor][:intervals][:poll_director] %>
+  poll_grace_period: <%= node[:health_monitor][:intervals][:poll_grace_period] %>
+  log_stats: <%= node[:health_monitor][:intervals][:log_stats] %>
+  analyze_agents: <%= node[:health_monitor][:intervals][:analyze_agents] %>
+  agent_timeout: <%= node[:health_monitor][:intervals][:agent_timeout] %>
+  rogue_agent_alert: <%= node[:health_monitor][:intervals][:rogue_agent_alert] %>
+
+alert_delivery_agents:
+
+  - plugin: logger
+
+  - plugin: nats
+
+<% if node[:health_monitor][:email_notifications] %>
+  - plugin: email
+    recipients:
+    <% for recipient in node[:health_monitor][:email_recipients].to_a %>
+      - <%= recipient %>
+    <% end %>
+    smtp:
+      from: <%= node[:health_monitor][:smtp][:from] %>
+      host: <%= node[:health_monitor][:smtp][:host] %>
+      port: <%= node[:health_monitor][:smtp][:port] %>
+      auth: <%= node[:health_monitor][:smtp][:auth] %>
+      user: <%= node[:health_monitor][:smtp][:user] %>
+      password: <%= node[:health_monitor][:smtp][:password] %>
+      domain: <%= node[:health_monitor][:smtp][:domain] %>
+<% end %>
+
+logfile: <%= node[:health_monitor][:path] %>/shared/logs/health_monitor.log
+loglevel: <%= node[:health_monitor][:loglevel] %>
