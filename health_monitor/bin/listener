@@ -1,0 +1,60 @@
+#!/usr/bin/env ruby
+
+APP_DIR = File.expand_path(File.join("..", ".."), __FILE__)
+ENV["BUNDLE_GEMFILE"] ||= File.join(APP_DIR, "Gemfile")
+
+$:.unshift(File.expand_path(File.join(APP_DIR, "lib")))
+
+require 'rubygems'
+require 'bundler/setup'
+require 'health_monitor'
+
+module Bosh
+  module HealthMonitor
+
+    class Listener
+      include YamlHelper
+
+      def self.start
+        new.start
+      end
+
+      def start
+        config_file = nil
+
+        opts = OptionParser.new do |opt|
+          opt.on("-c", "--config [ARG]", "configuration file") { |c| config_file = c }
+        end
+
+        opts.parse!(ARGV)
+
+        if config_file.nil?
+          puts opts
+          exit 1
+        end
+
+        puts "=> Loading #{config_file}"
+        Bhm.config = load_yaml_file(config_file)
+
+        nats_client_options = {
+          :uri       => Bhm.event_mbus.endpoint,
+          :user      => Bhm.event_mbus.user,
+          :pass      => Bhm.event_mbus.password,
+          :autostart => false
+        }
+
+        @nats = NATS.connect(nats_client_options)
+
+        @nats.subscribe("bosh.hm.events") { |msg| puts "Event : " + msg }
+        @nats.subscribe("bosh.hm.alerts") { |msg| puts "Alert : " + msg }
+      end
+
+    end
+
+  end
+end
+
+EM.run do
+  Bhm::Listener.start
+end
+
