@@ -4,10 +4,9 @@ require 'fileutils'
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
-    #setup_tmp_base_dir
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
+    setup_tmp_base_dir
+
+    Bosh::Agent::Config.state = Bosh::Agent::State.new(Tempfile.new("state").path)
 
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
@@ -24,7 +23,7 @@ describe Bosh::Agent::Message::Apply do
   end
 
   it 'should set deployment in agents state if blank' do
-    state = Bosh::Agent::Message::State.new(nil)
+    state = Bosh::Agent::Message::State.new
     state.stub!(:job_state).and_return("running")
 
     handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
@@ -37,7 +36,7 @@ describe Bosh::Agent::Message::Apply do
     response = mock("response")
     response.stub!(:status).and_return(200)
 
-    state = Bosh::Agent::Message::State.new(nil)
+    state = Bosh::Agent::Message::State.new
 
     package_sha1 = Digest::SHA1.hexdigest(dummy_package_data)
     apply_data = {
@@ -46,12 +45,12 @@ describe Bosh::Agent::Message::Apply do
       "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77" },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
-      "packages" => 
-        {"bubba" => 
+      "packages" =>
+        {"bubba" =>
           { "name" => "bubba", "version" => "2", "blobstore_id" => "some_blobstore_id", "sha1" => package_sha1 }
       },
     }
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_package_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
@@ -67,7 +66,7 @@ describe Bosh::Agent::Message::Apply do
     response = mock("response")
     response.stub!(:status).and_return(200)
 
-    state = Bosh::Agent::Message::State.new(nil)
+    state = Bosh::Agent::Message::State.new
 
     job_sha1 = Digest::SHA1.hexdigest(dummy_job_data)
     apply_data = {
@@ -77,7 +76,7 @@ describe Bosh::Agent::Message::Apply do
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
     }
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_job_data).and_return(response)
 
     handler = Bosh::Agent::Message::Apply.new([apply_data])
@@ -89,6 +88,39 @@ describe Bosh::Agent::Message::Apply do
 
     bin_file = File.join(bin_dir, 'my_sinatra_app')
     File.executable?(bin_file).should == true
+  end
+
+  it "should be able to add manual modes to monit configuration file" do
+    handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
+    handler.add_modes(<<-IN).should == <<-OUT.strip
+      check process nats mode active start program "bla" stop program "bla bla"
+    IN
+      check process nats mode active start program "bla" stop program "bla bla"
+    OUT
+
+    handler.add_modes(<<-IN).should == <<-OUT.strip
+      check process nats
+            start program "bla"
+            stop program "bla bla"
+    IN
+      check process nats start program "bla" stop program "bla bla" mode manual
+    OUT
+
+    handler.add_modes(<<-IN).should == <<-OUT.strip
+      check process nats
+            start program "bla"
+            stop program "bla bla"
+
+      check process zb
+      start program "ppc"
+      mode active
+
+
+      check filesystem aaa
+      start program "mode active"
+    IN
+      check process nats start program "bla" stop program "bla bla" mode manual check process zb start program "ppc" mode active check filesystem aaa start program "mode active" mode manual
+    OUT
   end
 
 end
