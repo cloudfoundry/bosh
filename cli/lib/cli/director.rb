@@ -102,7 +102,13 @@ module Bosh
 
       def delete_release(name, options = {})
         url = "/releases/#{name}"
-        url += "?force=true" if options[:force]
+
+        query_params = []
+        query_params << "force=true" if options[:force]
+        query_params << "version=#{options[:version]}" if options[:version]
+
+        url += "?#{query_params.join("&")}" if query_params.size > 0
+
         request_and_track(:delete, url, nil, nil)
       end
 
