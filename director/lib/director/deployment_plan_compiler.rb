@@ -53,6 +53,11 @@ module Bosh::Director
       deployment = @deployment_plan.deployment
       deployment.release = release
       deployment.save
+
+      unless deployment.release_versions.include?(release_version)
+        @logger.debug("Binding release version to deployment")
+        deployment.add_release_version(release_version)
+      end
     end
 
     def bind_existing_deployment

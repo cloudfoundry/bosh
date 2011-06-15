@@ -230,19 +230,31 @@ module Bosh::Cli::Command
 
     def delete(name, *options)
       auth_required
-      force = false
+      force = options.include?("--force")
+      options.delete("--force")
+      version = options.shift
 
-      if options.include?("--force")
-        force = true
-        say "Deleting release `#{name}' (FORCED DELETE, WILL IGNORE ERRORS)".red
+      desc = "release `#{name}'"
+      desc << " version #{version}" if version
+
+      if force
+        say "Deleting #{desc} (FORCED DELETE, WILL IGNORE ERRORS)".red
       elsif options.size > 0
         err "Unknown option, currently only '--force' is supported"
       else
-        say "Deleting release `#{name}'".red
+        say "Deleting #{desc}".red
       end
 
       if operation_confirmed?
-        director.delete_release(name, :force => force)
+        status, body = director.delete_release(name, :force => force, :version => version)
+        responses = {
+          :done          => "Deleted #{desc}",
+          :non_trackable => "Started deleting release but director at '#{target}' doesn't support deployment tracking",
+          :track_timeout => "Started deleting release but timed out out while tracking status",
+          :error         => "Started deleting release but received an error while tracking status",
+        }
+
+        say responses[status] || "Cannot delete release: #{body}"
       else
         say "Canceled deleting release".green
       end

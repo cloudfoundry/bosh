@@ -49,6 +49,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["delete", "stemcell", "a", "1"], :stemcell, :delete, ["a", "1"])
     test_cmd(["delete", "release", "a" ], :release, :delete, ["a"])
     test_cmd(["delete", "release", "a", "--force" ], :release, :delete, ["a", "--force"])
+    test_cmd(["delete", "release", "a", "2.2.1", "--force" ], :release, :delete, ["a", "2.2.1", "--force"])
 
     test_cmd(["create", "user", "admin"], :user, :create, ["admin"])
     test_cmd(["create", "user", "admin", "12321"], :user, :create, ["admin", "12321"])

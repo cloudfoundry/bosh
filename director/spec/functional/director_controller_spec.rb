@@ -232,6 +232,26 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "deleting release" do
+      it "deletes the whole release" do
+        release = Bosh::Director::Models::Release.create(:name => "test_release")
+        release.add_version(Bosh::Director::Models::ReleaseVersion.make(:version => "1"))
+        release.save
+
+        delete "/releases/test_release"
+        expect_redirect_to_queued_task(last_response)
+      end
+
+      it "deletes a particular version" do
+        release = Bosh::Director::Models::Release.create(:name => "test_release")
+        release.add_version(Bosh::Director::Models::ReleaseVersion.make(:version => "1"))
+        release.save
+
+        delete "/releases/test_release?version=1"
+        expect_redirect_to_queued_task(last_response)
+      end
+    end
+
     describe "getting release info" do
       it "returns versions" do
         release = Bosh::Director::Models::Release.create(:name => "test_release")
