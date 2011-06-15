@@ -441,7 +441,7 @@ describe Bosh::Spec::IntegrationTest do
     OUT
   end
 
-  it "supports sparse uploading release via manifest" do
+  it "release lifecycle: create, upload, update (w/sparse upload), delete" do
     assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/test_release-1.yml")
     release_2 = spec_asset("test_release/dev_releases/test_release-2.yml")
@@ -482,6 +482,22 @@ describe Bosh::Spec::IntegrationTest do
 
     Releases total: 1
     OUT
+
+    run_bosh("delete release test_release 2")
+    expect_output("releases", <<-OUT )
+    +--------------+----------+
+    | Name         | Versions |
+    +--------------+----------+
+    | test_release | 1        |
+    +--------------+----------+
+
+    Releases total: 1
+    OUT
+
+    run_bosh("delete release test_release 1")
+    expect_output("releases", <<-OUT )
+    No releases
+    OUT
   end
 
   it "can't upload malformed release" do
@@ -494,7 +510,33 @@ describe Bosh::Spec::IntegrationTest do
     out.should =~ /Release is invalid, please fix, verify and upload again/
   end
 
-  describe "deployment prequisites" do
+  it "allows deleting a whole release" do
+    release_filename = spec_asset("valid_release.tgz")
+
+    run_bosh("target http://localhost:57523")
+    run_bosh("login admin admin")
+    run_bosh("upload release #{release_filename}")
+
+    out = run_bosh("delete release appcloud")
+    out.should =~ /Deleted release `appcloud'/
+
+    expect_output("releases", <<-OUT)
+    No releases
+    OUT
+  end
+
+  it "allows deleting a particular release version" do
+    release_filename = spec_asset("valid_release.tgz")
+
+    run_bosh("target http://localhost:57523")
+    run_bosh("login admin admin")
+    run_bosh("upload release #{release_filename}")
+
+    out = run_bosh("delete release appcloud 0.1")
+    out.should =~ /Deleted release `appcloud' version 0.1/
+  end
+
+  describe "deployment prerequisites" do
     it "requires target and login" do
       run_bosh("deploy").should =~ /Please choose target first/
       run_bosh("target http://localhost:57523")

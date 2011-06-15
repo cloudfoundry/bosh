@@ -3,6 +3,7 @@ module Bosh::Director::Models
     many_to_one  :release
     many_to_many :packages
     many_to_many :templates
+    many_to_many :deployments
 
     def validate
       validates_presence [:release_id, :version]

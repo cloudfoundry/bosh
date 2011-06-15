@@ -136,49 +136,52 @@ usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
 Currently available bosh commands are:
 
   Deployment
-    deployment <name>                        Choose deployment to work with (it also updates current target)
-    delete deployment <name>                 Delete deployment
-    deployments                              Show the list of available deployments
-    deploy [--recreate]                         Deploy according to the currently selected deployment
+    deployment <name>                         Choose deployment to work with (it also updates current target)
+    delete deployment <name>                  Delete deployment
+    deployments                               Show the list of available deployments
+    deploy [--recreate]                       Deploy according to the currently selected deployment
 
   Releases
-    create release                           Attempt to create release (assumes current directory to contain release).
-                                             Release creation options:
+    create release                            Attempt to create release (assumes current directory to contain release).
+                                              Release creation options:
                                                --force        bypass git dirty state check
                                                --final        create production-ready release (stores artefacts in blobstore, bumps final version)
                                                --with-tarball create full release tarball (by default only manifest is created)
 
+    delete release <name>                     Delete release <name>
+    delete release <name> <version>           Delete version <version> of release <name> (if --force is set all errors while deleting parts of the release are ignored)
+                                              Release deletion options:
+                                               --force        ignore all errors while deleting parts of the release
 
-    create package <name>|<path>             Build a single package
-    verify release /path/to/release.tgz      Verify release tarball
-    upload release /path/to/release.tgz      Upload release tarball
-    releases                                 Show the list of uploaded releases
-    delete release <name> [--force]          Delete release <name> (if --force is set all errors while deleting parts of the release are ignored)
-    reset release                            Reset release development environment (deletes all dev artefacts)
+    create package <name>|<path>              Build a single package
+    verify release /path/to/release.tgz       Verify release tarball
+    upload release /path/to/release.tgz       Upload release tarball
+    releases                                  Show the list of uploaded releases
+    reset release                             Reset release development environment (deletes all dev artefacts)
 
-    generate package <name>                  Generate package template
-    generate job <name>                      Generate job template
+    generate package <name>                   Generate package template
+    generate job <name>                       Generate job template
 
   Stemcells
-    verify stemcell /path/to/stemcell.tgz    Verify the stemcell
-    upload stemcell /path/to/stemcell.tgz    Upload the stemcell
-    stemcells                                Show the list of uploaded stemcells
-    delete stemcell <name> <version>         Delete the stemcell
+    verify stemcell /path/to/stemcell.tgz     Verify the stemcell
+    upload stemcell /path/to/stemcell.tgz     Upload the stemcell
+    stemcells                                 Show the list of uploaded stemcells
+    delete stemcell <name> <version>          Delete the stemcell
 
   User management
-    create user [<username>] [<password>]    Create user
+    create user [<username>] [<password>]     Create user
 
   Monitoring
-    tasks [running]                          Show the list of running tasks
-    tasks recent [<number>]                  Show <number> recent tasks
-    task [<id>|last] [--no-cache]            Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
+    tasks [running]                           Show the list of running tasks
+    tasks recent [<number>]                   Show <number> recent tasks
+    task [<id>|last] [--no-cache]             Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
 
   Misc
-    status                                   Show current status (current target, user, deployment info etc.)
-    target [<name>] [<alias>]                Choose director to talk to (optionally creating an alias)
-    login [<username>] [<password>]          Use given credentials for the subsequent interactions with director
-    logout                                   Forgets currently saved credentials
-    purge                                    Purge local manifest cache
+    status                                    Show current status (current target, user, deployment info etc.)
+    target [<name>] [<alias>]                 Choose director to talk to (optionally creating an alias)
+    login [<username>] [<password>]           Use given credentials for the subsequent interactions with director
+    logout                                    Forgets currently saved credentials
+    purge                                     Purge local manifest cache
 
 USAGE
       end
@@ -295,8 +298,8 @@ USAGE
             usage("bosh delete stemcell <name> <version>")
             set_cmd(:stemcell, :delete, 2)
           when "release"
-            usage("bosh delete release <name> [--force]")
-            set_cmd(:release, :delete, 1..2)
+            usage("bosh delete release <name> [<version>] [--force]")
+            set_cmd(:release, :delete, 1..3)
           end
 
         when "reset"
@@ -361,7 +364,7 @@ USAGE
           "create"   => "user [<name>] [<password>]\npackage <path>\nrelease",
           "upload"   => "release <path>\nstemcell <path>",
           "verify"   => "release <path>\nstemcell <path>",
-          "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [--force]",
+          "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [<version>] [--force]",
           "generate" => "package <name>\njob <name>"
         }
 

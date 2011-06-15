@@ -195,9 +195,10 @@ module Bosh::Director
       raise ReleaseNotFound.new(params[:name]) if release.nil?
 
       options = {}
-      options["force"] = true if params["force"] == "true"
+      options["force"]   = true if params["force"] == "true"
+      options["version"] = params["version"]
 
-      task = @release_manager.delete_release(@task, release, options)
+      task = @release_manager.delete_release(@user, release, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -205,7 +206,7 @@ module Bosh::Director
       options = {}
       options["recreate"] = true if params["recreate"] == "true"
 
-      task = @deployment_manager.create_deployment(@task, request.body, options)
+      task = @deployment_manager.create_deployment(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -261,7 +262,7 @@ module Bosh::Director
     delete "/stemcells/:name/:version" do
       stemcell = Models::Stemcell[:name => params[:name], :version => params[:version]]
       raise StemcellNotFound.new(params[:name], params[:version]) if stemcell.nil?
-      task = @stemcell_manager.delete_stemcell(@task, stemcell)
+      task = @stemcell_manager.delete_stemcell(@user, stemcell)
       redirect "/tasks/#{task.id}"
     end
 
