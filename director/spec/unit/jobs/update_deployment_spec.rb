@@ -114,13 +114,21 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
   describe "perform" do
 
+    # TODO: refactor to use less mocks (and a real manifest)
     it "should do a basic update" do
       deployment_lock = mock("deployment_lock")
-      release_lock = mock("release_lock")
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
+      release_lock    = mock("release_lock")
 
-      @deployment_plan.stub!(:release).and_return(release)
+      deployment      = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
+      release         = Bosh::Director::Models::Release.make(:name => "test_release")
+      release_version = Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => 1)
+
+      release_spec = mock("release_spec")
+      release_spec.stub!(:release).and_return(release)
+      release_spec.stub!(:release_version).and_return(release_version)
+      release_spec.stub!(:name).and_return(release.name)
+
+      @deployment_plan.stub!(:release).and_return(release_spec)
       @deployment_plan.stub!(:deployment).and_return(deployment)
 
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(deployment_lock)
@@ -128,6 +136,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       deployment_lock.should_receive(:lock).and_yield
       release_lock.should_receive(:lock).and_yield
+
+      deployment.should_receive(:add_release_version).with(release_version)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
       update_deployment_job.should_receive(:prepare)

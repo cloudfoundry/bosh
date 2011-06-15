@@ -117,6 +117,13 @@ module Bosh::Director
               @logger.info("Finished preparing deployment")
               @logger.info("Updating deployment")
               update
+
+              # Now we know that deployment has succeded and can remove
+              # previous partial deployments release version references
+              # to be able to delete these release versions later.
+              deployment.remove_all_release_versions
+              deployment.add_release_version(@deployment_plan.release.release_version)
+
               deployment.manifest = @manifest
               deployment.save
               @logger.info("Finished updating deployment")
