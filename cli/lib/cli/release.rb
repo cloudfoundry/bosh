@@ -6,7 +6,8 @@ module Bosh::Cli
       "name" => nil,
       "jobs_order" => [],
       "min_cli_version" => "0.5",
-      "s3_options" => { }
+      "s3_options" => { },
+      "latest_release_filename" => nil
     }
 
     def self.dev(release_dir)
