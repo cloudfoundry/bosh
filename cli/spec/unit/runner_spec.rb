@@ -61,6 +61,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["purge"], :misc, :purge_cache)
 
     test_cmd(["upload", "release", "/path"], :release, :upload, ["/path"])
+    test_cmd(["upload", "release"], :release, :upload)
     test_cmd(["upload", "stemcell", "/path"], :stemcell, :upload, ["/path"])
 
     test_cmd(["generate", "package", "foo"], :package, :generate, ["foo"])
@@ -118,7 +119,7 @@ describe Bosh::Cli::Runner do
   end
 
   it "whines on too few arguments" do
-    runner = Bosh::Cli::Runner.new(["release", "upload"])
+    runner = Bosh::Cli::Runner.new(["stemcell", "upload"])
     runner.parse_command!
     runner.namespace.should == nil
     runner.action.should == nil

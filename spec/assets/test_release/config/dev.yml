@@ -6,3 +6,4 @@ jobs_order: []
 
 version: 1
 min_cli_version: "0.5"
+latest_release_filename: /Users/oleg/projects/bosh/spec/assets/test_release/dev_releases/test_release-1.yml

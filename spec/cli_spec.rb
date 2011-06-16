@@ -396,6 +396,28 @@ describe Bosh::Spec::IntegrationTest do
     OUT
   end
 
+  it "uploads the latest generated release if no release path given" do
+    assets_dir = File.dirname(spec_asset("foo"))
+
+    Dir.chdir(File.join(assets_dir, "test_release")) do
+      FileUtils.rm_rf("dev_releases")
+      run_bosh("create release", Dir.pwd)
+      run_bosh("target http://localhost:57523")
+      run_bosh("login admin admin")
+      run_bosh("upload release", Dir.pwd)
+    end
+
+    expect_output("releases", <<-OUT )
+    +--------------+----------+
+    | Name         | Versions |
+    +--------------+----------+
+    | test_release | 1        |
+    +--------------+----------+
+
+    Releases total: 1
+    OUT
+  end
+
   it "sparsely uploads the release" do
     assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/test_release-1.tgz")
