@@ -152,6 +152,7 @@ Currently available bosh commands are:
     create package <name>|<path>             Build a single package
     verify release /path/to/release.tgz      Verify release tarball
     upload release /path/to/release.tgz      Upload release tarball
+    upload release                           Upload the most recently generated release
     releases                                 Show the list of uploaded releases
     delete release <name> [--force]          Delete release <name> (if --force is set all errors while deleting parts of the release are ignored)
     reset release                            Reset release development environment (deletes all dev artefacts)
@@ -269,7 +270,7 @@ USAGE
             set_cmd(:stemcell, :upload, 1)
           when "release"
             usage("bosh upload release <path>")
-            set_cmd(:release, :upload, 1)
+            set_cmd(:release, :upload, 0..1)
           end
 
         when "verify", "validate"

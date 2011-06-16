@@ -20,8 +20,20 @@ module Bosh::Cli::Command
       end
     end
 
-    def upload(release_file)
+    def upload(release_file = nil)
       auth_required
+
+      if release_file.nil?
+        check_if_release_dir
+        release_file = Bosh::Cli::Release.dev(work_dir).latest_release_filename
+        if release_file.nil?
+          err("The information about latest generated release is missing, please provide release filename")
+        end
+        unless non_interactive? || ask("Are you sure you want to upload release `#{release_file.green}'? (type 'yes' to continue)") == 'yes'
+          err("Canceled upload")
+        end
+      end
+
       file_type = `file --mime-type -b '#{release_file}'`
 
       if file_type =~ /text\/(plain|yaml)/
@@ -98,11 +110,16 @@ module Bosh::Cli::Command
     end
 
     def create(*options)
+      check_if_release_dir
       if options.size == 1 && File.file?(options[0])
         create_from_manifest(options[0])
+        release_filename = options[0]
       else
-        create_from_spec(*options)
+        release_filename = create_from_spec(*options)
       end
+
+      dev_release = Bosh::Cli::Release.dev(work_dir)
+      dev_release.update_config(:latest_release_filename => release_filename)
     end
 
     def create_from_manifest(manifest_file)
@@ -118,7 +135,6 @@ module Bosh::Cli::Command
       force         = options.include?("--force")
       manifest_only = !options.include?("--with-tarball")
 
-      check_if_release_dir
       check_if_dirty_state unless force
 
       packages  = []
@@ -188,6 +204,7 @@ module Bosh::Cli::Command
       end
 
       say("Release manifest saved in '#{builder.manifest_path.green}'")
+      builder.manifest_path
     end
 
     def reset

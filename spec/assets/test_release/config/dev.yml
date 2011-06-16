@@ -1,8 +1,0 @@
---- 
-name: test_release
-s3_options: {}
-
-jobs_order: []
-
-version: 1
-min_cli_version: "0.5"
