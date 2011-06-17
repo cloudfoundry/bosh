@@ -1,44 +1,6 @@
 require "spec_helper"
-require "fileutils"
-require "redis"
-require "digest/sha1"
-require "tmpdir"
 
-describe Bosh::Spec::IntegrationTest do
-
-  DEV_RELEASES_DIR = File.expand_path("../assets/test_release/dev_releases", __FILE__)
-  BOSH_CONFIG      = File.expand_path("../assets/bosh_config.yml", __FILE__)
-  BOSH_CACHE_DIR   = Dir.mktmpdir
-  BOSH_WORK_DIR    = File.expand_path("../assets/bosh_work_dir", __FILE__)
-  CLOUD_DIR        = "/tmp/bosh_test_cloud"
-  CLI_DIR          = File.expand_path("../../cli", __FILE__)
-
-  before(:all) do
-    puts "Starting sandboxed environment for Bosh tests..."
-    Bosh::Spec::Sandbox.start
-  end
-
-  after(:all) do
-    puts "\nStopping sandboxed environment for Bosh tests..."
-    Bosh::Spec::Sandbox.stop
-    FileUtils.rm_rf(CLOUD_DIR)
-    FileUtils.rm_rf(DEV_RELEASES_DIR)
-  end
-
-  before :each do |example|
-    Bosh::Spec::Sandbox.reset(example.example.metadata[:description])
-    FileUtils.rm_rf(BOSH_CONFIG)
-    FileUtils.rm_rf(CLOUD_DIR)
-    FileUtils.rm_rf(BOSH_CACHE_DIR)
-    FileUtils.rm_rf(DEV_RELEASES_DIR)
-  end
-
-  def run_bosh(cmd, work_dir = nil)
-    Dir.chdir(work_dir || BOSH_WORK_DIR) do
-      ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-      `#{CLI_DIR}/bin/bosh --non-interactive --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
-    end
-  end
+describe Bosh::Spec::IntegrationTest::CliUsage do
 
   def rx(string)
     Regexp.compile(Regexp.escape(string))
@@ -50,95 +12,6 @@ describe Bosh::Spec::IntegrationTest do
 
   def expect_output(cmd, expected_output)
     format_output(run_bosh(cmd)).should == format_output(expected_output)
-  end
-
-  def yaml_file(name, object)
-    f = Tempfile.new(name)
-    f.write(YAML.dump(object))
-    f.close
-    f
-  end
-
-  def minimal_deployment_manifest
-    # This is a minimal manifest I was actually being able to deploy with. It doesn't even have any jobs,
-    # so it's not very realistic though
-    {
-      "name" => "minimal",
-      "release" => {
-        "name"    => "appcloud",
-        "version" => "0.1" # It's our dummy valid release from spec/assets/valid_release.tgz
-      },
-      "target" => "http://localhost:57523",
-      "networks" => [
-                     {
-                       "name" => "a",
-                       "subnets" => [  ]
-                     },
-                    ],
-      "compilation" => { "workers" => 1, "network" => "a", "cloud_properties" => { } },
-      "update" => {
-        "canaries"          => 2,
-        "canary_watch_time" => 4000,
-        "max_in_flight"     => 1,
-        "update_watch_time" => 20,
-        "max_errors"        => 1
-      },
-      "resource_pools" => [
-                          ]
-    }
-  end
-
-  def simple_deployment_manifest
-    extras = {
-      "name" => "simple",
-      "release" => {
-        "name"    => "test_release",
-        "version" => "1"
-      },
-
-      "networks" => [
-                     {
-                       "name" => "a",
-                       "subnets" => [
-                                     {
-                                       "range"    => "192.168.1.0/24",
-                                       "gateway"  => "192.168.1.1",
-                                       "dns"      => [ "192.168.1.1", "192.168.1.2" ],
-                                       "static"   => [ "192.168.1.10" ],
-                                       "reserved" => [ ],
-                                       "cloud_properties" => { }
-                                     }
-                                    ]
-                     },
-                    ],
-      "resource_pools" => [
-                           {
-                             "name" => "a",
-                             "size" => 10,
-                             "cloud_properties" => { },
-                             "network" => "a",
-                             "stemcell" => {
-                               "name"    => "ubuntu-stemcell",
-                               "version" => "1"
-                             }
-                           }
-                          ],
-      "jobs" => [
-                 {
-                   "name"          => "foobar",
-                   "template"      => "foobar",
-                   "resource_pool" => "a",
-                   "instances"     => 3,
-                   "networks" => [
-                                  {
-                                    "name" => "a",
-                                  }
-                                 ]
-                 }
-                ]
-    }
-
-    minimal_deployment_manifest.merge(extras)
   end
 
   it "shows status" do
@@ -511,7 +384,7 @@ describe Bosh::Spec::IntegrationTest do
   describe "deployment process" do
     it "successfully performed with minimal manifest" do
       release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
-      deployment_manifest = yaml_file("minimal", minimal_deployment_manifest)
+      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
 
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
@@ -531,7 +404,7 @@ describe Bosh::Spec::IntegrationTest do
         run_bosh("create release --with-tarball", Dir.pwd)
       end
 
-      deployment_manifest = yaml_file("simple", simple_deployment_manifest)
+      deployment_manifest = yaml_file("simple", Bosh::Spec::Deployments.simple_manifest)
 
       File.exists?(release_filename).should be_true
       File.exists?(deployment_manifest.path).should be_true
@@ -547,7 +420,7 @@ describe Bosh::Spec::IntegrationTest do
 
     it "can delete deployment" do
       release_filename = spec_asset("valid_release.tgz")
-      deployment_manifest = yaml_file("minimal", minimal_deployment_manifest)
+      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
 
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")

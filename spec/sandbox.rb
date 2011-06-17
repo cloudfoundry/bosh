@@ -1,9 +1,3 @@
-require "fileutils"
-require "tempfile"
-require "set"
-require "yaml"
-require "nats/client"
-
 module Bosh
   module Spec
     class Sandbox
@@ -21,13 +15,16 @@ module Bosh
 
       DIRECTOR_CONF  = File.join(ASSETS_PATH, "director_test.yml")
       BLOBSTORE_CONF = File.join(ASSETS_PATH, "blobstore_server.yml")
+      HM_CONF        = File.join(ASSETS_PATH, "health_monitor.yml")
 
       DIRECTOR_PID  = File.join(ASSETS_PATH, "director.pid")
       WORKER_PID    = File.join(ASSETS_PATH, "worker.pid")
       BLOBSTORE_PID = File.join(ASSETS_PATH, "blobstore.pid")
       NATS_PID      = File.join(ASSETS_PATH, "nats.pid")
+      HM_PID        = File.join(ASSETS_PATH, "health_monitor.pid")
 
       DIRECTOR_PATH   = File.expand_path("../../director", __FILE__)
+      HM_PATH         = File.expand_path("../../health_monitor", __FILE__)
       BLOBSTORE_PATH  = File.expand_path("../../simple_blobstore_server", __FILE__)
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
 
@@ -82,6 +79,8 @@ module Bosh
         def reset(name)
           kill_process(WORKER_PID, "QUIT")
           kill_process(DIRECTOR_PID)
+          kill_process(HM_PID)
+
           Redis.new(:host => "localhost", :port => 63795).flushdb
 
           FileUtils.cp(@sqlite_db, "/tmp/director.sqlite")
@@ -91,16 +90,21 @@ module Bosh
             base_log_path = File.join(LOGS_PATH, name)
             director_output = "#{base_log_path}.director.out"
             worker_output = "#{base_log_path}.worker.out"
+            hm_output = "#{base_log_path}.health_monitor.out"
           else
-            director_output = worker_output = "/dev/null"
+            director_output = worker_output = hm_output = "/dev/null"
           end
 
-          director_env  = { "BUNDLE_GEMFILE" => "#{DIRECTOR_PATH}/Gemfile" }
+          director_env = { "BUNDLE_GEMFILE" => "#{DIRECTOR_PATH}/Gemfile" }
           worker_env   = director_env.merge("QUEUE" => "*")
+          hm_env       = { "BUNDLE_GEMFILE" => "#{HM_PATH}/Gemfile" }
+
           run_with_pid("#{DIRECTOR_PATH}/bin/director -c #{DIRECTOR_CONF}", DIRECTOR_PID,
                        :output => director_output, :env => director_env)
           run_with_pid("#{DIRECTOR_PATH}/bin/worker -c #{DIRECTOR_CONF}", WORKER_PID,
                        :output => worker_output, :env => worker_env)
+          run_with_pid("#{HM_PATH}/bin/health_monitor -c #{HM_CONF}", HM_PID,
+                       :output => hm_output, :env => hm_env)
 
           loop do
             `lsof -i :57523 | grep LISTEN`
@@ -123,6 +127,7 @@ module Bosh
           kill_process(BLOBSTORE_PID)
           kill_process(REDIS_PID)
           kill_process(NATS_PID)
+          kill_process(HM_PID)
           FileUtils.rm_f(@sqlite_db)
           FileUtils.rm_f(DB_PATH)
           FileUtils.rm_rf(DIRECTOR_TMP_PATH)

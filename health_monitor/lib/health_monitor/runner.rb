@@ -27,6 +27,7 @@ module Bosh::HealthMonitor
       EM.run do
         connect_to_mbus
         @agent_manager.setup_events
+        setup_subscriptions
         setup_timers
         @logger.info "Bosh HealthMonitor #{Bhm::VERSION} is running..."
       end
@@ -36,6 +37,17 @@ module Bosh::HealthMonitor
       @logger.info("HealthMonitor shutting down...")
       EM.stop # This actually doesn't do much (given that we exit immediately after that)
       exit(1)
+    end
+
+    def setup_subscriptions
+      Bhm.nats.subscribe("bosh.hm.stats") do |msg, reply_channel|
+        reply = {
+          "agents_count"       => @agent_manager.agents_count,
+          "deployments_count"  => @agent_manager.deployments_count,
+          "hearbeats_received" => @agent_manager.heartbeats_received
+        }
+        Bhm.nats.publish(reply_channel, Yajl::Encoder.encode(reply))
+      end
     end
 
     def setup_timers
