@@ -11,6 +11,8 @@ module Bosh::Director
       attr_accessor :process_uuid
       attr_accessor :db
       attr_accessor :name
+      attr_accessor :event_logger
+      attr_accessor :max_tasks
 
       attr_reader :redis_options
       attr_reader :cloud_options
@@ -23,6 +25,11 @@ module Bosh::Director
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @logger.formatter = ThreadFormatter.new
+
+        @max_tasks = 500 # by default keep only last 500 tasks in disk
+        if config["max_tasks"]
+          @max_tasks = config["max_tasks"].to_i
+        end
 
         self.redis_options= {
           :host     => config["redis"]["host"],
