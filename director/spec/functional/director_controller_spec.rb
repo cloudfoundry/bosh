@@ -323,52 +323,44 @@ describe Bosh::Director::Controller do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
-        output_file = Tempfile.new("task_output")
-        begin
-          output_file.print("Test output")
-          output_file.close
+        output_file = File.new(File.join(@temp_dir, "debug"), 'w+')
+        output_file.print("Test output")
+        output_file.close
 
-          task = Bosh::Director::Models::Task[new_task_id]
-          task.output = output_file.path
-          task.save
+        task = Bosh::Director::Models::Task[new_task_id]
+        task.output = @temp_dir
+        task.save
 
-          get "/tasks/#{new_task_id}/output"
-          last_response.status.should == 200
-          last_response.body.should == "Test output"
-        ensure
-          output_file.unlink
-        end
+        get "/tasks/#{new_task_id}/output"
+        last_response.status.should == 200
+        last_response.body.should == "Test output"
       end
 
       it "has API call that return task output with ranges" do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
-        output_file = Tempfile.new("task_output")
-        begin
-          output_file.print("Test output")
-          output_file.close
+        output_file = File.new(File.join(@temp_dir, "debug"), 'w+')
+        output_file.print("Test output")
+        output_file.close
 
-          task = Bosh::Director::Models::Task[new_task_id]
-          task.output = output_file.path
-          task.save
+        task = Bosh::Director::Models::Task[new_task_id]
+        task.output = @temp_dir
+        task.save
 
-          # Range test
-          get "/tasks/#{new_task_id}/output", {}, {"HTTP_RANGE" => "bytes=0-3"}
-          last_response.status.should == 206
-          last_response.body.should == "Test"
-          last_response.headers["Content-Length"].should == "4"
-          last_response.headers["Content-Range"].should == "bytes 0-3/11"
+        # Range test
+        get "/tasks/#{new_task_id}/output", {}, {"HTTP_RANGE" => "bytes=0-3"}
+        last_response.status.should == 206
+        last_response.body.should == "Test"
+        last_response.headers["Content-Length"].should == "4"
+        last_response.headers["Content-Range"].should == "bytes 0-3/11"
 
-          # Range test
-          get "/tasks/#{new_task_id}/output", {}, {"HTTP_RANGE" => "bytes=5-"}
-          last_response.status.should == 206
-          last_response.body.should == "output"
-          last_response.headers["Content-Length"].should == "6"
-          last_response.headers["Content-Range"].should == "bytes 5-10/11"
-        ensure
-          output_file.unlink
-        end
+        # Range test
+        get "/tasks/#{new_task_id}/output", {}, {"HTTP_RANGE" => "bytes=5-"}
+        last_response.status.should == 206
+        last_response.body.should == "output"
+        last_response.headers["Content-Length"].should == "6"
+        last_response.headers["Content-Range"].should == "bytes 5-10/11"
       end
     end
 
