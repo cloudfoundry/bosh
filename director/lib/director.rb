@@ -33,6 +33,7 @@ require "director/validation_helper"
 
 require "director/version"
 require "director/config"
+require "director/event_log"
 
 require "director/client"
 require "director/ip_util"
