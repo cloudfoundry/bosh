@@ -6,16 +6,19 @@ module Bosh::Director
         task = Models::Task[task_id]
         raise TaskNotFound.new(task_id) if task.nil?
 
-        logger = Logger.new(task.output)
+        logger = Logger.new(File.join(task.output, "debug"))
         logger.level = Config.logger.level
         logger.formatter = ThreadFormatter.new
         logger.info("Starting task: #{task_id}")
+
+        event_log = Bosh::Director::EventLog.new(task_id, File.join(task.output, "event"))
+        Config.event_logger = event_log
         Config.logger = logger
         Sequel::Model.db.logger = logger
 
         cloud_options = Config.cloud_options
         if cloud_options && cloud_options["plugin"] == "vsphere"
-          cloud_options["properties"]["soap_log"] = task.output + ".soap"
+          cloud_options["properties"]["soap_log"] =  File.join(task.output, "soap")
           Config.cloud_options = cloud_options
         end
 

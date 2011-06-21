@@ -16,7 +16,9 @@ module Bosh::Director
        :redis_options,
        :cloud_options,
        :revision,
-       :task_checkpoint_interval
+       :task_checkpoint_interval,
+       :max_tasks,
+       :event_logger
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -48,6 +50,11 @@ module Bosh::Director
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @logger.formatter = ThreadFormatter.new
+
+        @max_tasks = 500 # by default keep only last 500 tasks in disk
+        if config["max_tasks"]
+          @max_tasks = config["max_tasks"].to_i
+        end
 
         self.redis_options= {
           :host     => config["redis"]["host"],
