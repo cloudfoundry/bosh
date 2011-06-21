@@ -33,6 +33,7 @@ require "director/validation_helper"
 
 require "director/version"
 require "director/config"
+require "director/event_log"
 
 require "director/client"
 require "director/ip_util"
@@ -350,8 +351,18 @@ module Bosh::Director
     get "/tasks/:id/output" do
       task = Models::Task[params[:id]]
       raise TaskNotFound.new(params[:id]) if task.nil?
-      if task.output && File.file?(task.output)
-        send_file(task.output, :type => "text/plain")
+      if task.output
+        if File.file?(task.output)
+          log_file = task.output
+        else
+          log_file = File.join(task.output, "debug")
+        end
+
+        if File.file?(log_file)
+          send_file(log_file, :type => "text/plain")
+        else
+          status(NO_CONTENT)
+        end
       else
         status(NO_CONTENT)
       end
