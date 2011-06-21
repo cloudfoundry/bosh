@@ -2,6 +2,10 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe Bosh::Director::Jobs::BaseJob do
 
+  before(:all) do
+    @event_log = Bosh::Director::EventLog.new(1, nil)
+  end
+
   it "should set up the task" do
     test = Class.new do
       extend(Bosh::Director::Jobs::BaseJob)
@@ -14,7 +18,7 @@ describe Bosh::Director::Jobs::BaseJob do
 
     logger = Logger.new(nil)
     Logger.stub!(:new).with("/some/path").and_return(logger)
-
+    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
     test.perform(1)
 
     task.refresh
@@ -38,6 +42,7 @@ describe Bosh::Director::Jobs::BaseJob do
 
     logger = Logger.new(nil)
     Logger.stub!(:new).with("/some/path").and_return(logger)
+    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 
@@ -58,6 +63,7 @@ describe Bosh::Director::Jobs::BaseJob do
 
     logger = Logger.new(nil)
     Logger.stub!(:new).with("/some/path").and_return(logger)
+    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 

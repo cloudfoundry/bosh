@@ -10,6 +10,9 @@ module Bosh::Director
         logger.level = Config.logger.level
         logger.formatter = ThreadFormatter.new
         logger.info("Starting task: #{task_id}")
+
+        event_log = Bosh::Director::EventLog.new(task_id, task.output + ".event")
+        Config.event_logger = event_log
         Config.logger = logger
         Sequel::Model.db.logger = logger
 
