@@ -88,7 +88,8 @@ module Bosh::Director
             end
           end
 
-          deployment.stemcells.each { |stemcell| stemcell.remove_deployment(deployment) }
+          deployment.remove_all_stemcells
+          deployment.remove_all_release_versions
           deployment.destroy
           "/deployments/#{@deployment_name}"
         end
