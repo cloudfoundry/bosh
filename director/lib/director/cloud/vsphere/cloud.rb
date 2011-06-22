@@ -43,6 +43,14 @@ module VSphereCloud
       @locks = {}
       @locks_mutex = Mutex.new
 
+      # We get disconnected if the connection is inactive for a long period.
+      Thread.new do
+        while true do
+          sleep(60)
+          @client.service_instance.current_time
+        end
+      end
+
       # HACK: finalizer not getting called, so we'll rely on at_exit
       at_exit { @client.logout }
     end
