@@ -43,8 +43,26 @@ module VSphereCloud
       @locks = {}
       @locks_mutex = Mutex.new
 
+      # We get disconnected if the connection is inactive for a long period.
+      @ping_thread = Thread.new do
+        while true do
+          # NOTE 
+          # 1 - I randomly picked 60 secs
+          # 2 - I don't know if we want to make the freq configurable...
+          sleep(60)
+          datacenters = @client.get_managed_objects(Vim::Datacenter)
+          if datacenters.empty?
+            # not sure how much this will help... best effort
+            @client.login!(@vcenter["user"], @vcenter["password"], "en")
+          end
+        end
+      end
+
       # HACK: finalizer not getting called, so we'll rely on at_exit
-      at_exit { @client.logout }
+      at_exit do
+        @ping_thread.kill
+        @client.logout
+      end
     end
 
     def create_stemcell(image, _)

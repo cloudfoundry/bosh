@@ -31,9 +31,13 @@ module VSphereCloud
       @logger = Bosh::Director::Config.logger
     end
 
+    def login!(username, password, locale)
+      @session = @service_content.session_manager.login(username, password, locale)
+    end
+
     def login(username, password, locale)
       raise AlreadyLoggedInException if @session
-      @session = @service_content.session_manager.login(username, password, locale)
+      login!(username, password, locale)
     end
 
     def logout
