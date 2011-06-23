@@ -3,16 +3,16 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::Monit do
 
   before(:each) do
-    setup_tmp_base_dir
-
-    Bosh::Agent::Config.logger    = Logger.new(StringIO.new)
     Bosh::Agent::Config.smtp_port = 55231
 
     monit_dir = File.join(base_dir, 'monit')
-    FileUtils.mkdir(monit_dir)
+    FileUtils.mkdir_p(monit_dir)
 
     @monit_user_file = File.join(monit_dir, 'monit.user')
     @monit_alerts_file = File.join(monit_dir, 'alerts.monitrc')
+  end
+
+  after(:each) do
   end
 
   it "should have monit user file" do

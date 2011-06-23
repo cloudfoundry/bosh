@@ -3,11 +3,6 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 describe Bosh::Agent::Message::Configure do
 
   before(:each) do
-    setup_tmp_base_dir
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
-
     @processor = Bosh::Agent::Message::Configure.new(nil)
 
     Bosh::Agent::Util.stub(:settings).and_return(complete_settings)

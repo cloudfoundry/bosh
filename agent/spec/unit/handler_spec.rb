@@ -11,8 +11,6 @@ describe Bosh::Agent::Handler do
     Bosh::Agent::AlertProcessor.stub(:start)
     Bosh::Agent::Heartbeat.stub(:enable)
 
-    Bosh::Agent::Config.logger = Logger.new(StringIO.new)
-
     Bosh::Agent::Config.process_alerts = true
     Bosh::Agent::Config.smtp_port      = 55213
     Bosh::Agent::Config.smtp_user      = "user"

@@ -4,13 +4,11 @@ describe Bosh::Agent::AlertProcessor do
 
   before(:each) do
     log     = StringIO.new
-    @logger = Logger.new(log)
     @port   = 54321
 
     @smtp_user     = "zb"
     @smtp_password = "zb"
 
-    Bosh::Agent::Config.logger = @logger
     @processor = Bosh::Agent::AlertProcessor.new("localhost", @port, @smtp_user, @smtp_password)
   end
 
