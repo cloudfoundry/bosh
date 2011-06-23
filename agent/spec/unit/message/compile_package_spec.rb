@@ -2,15 +2,12 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe Bosh::Agent::Message::CompilePackage do
 
-  before(:each) do 
+  before(:each) do
     Bosh::Agent::Config.blobstore_options = {}
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
 
-    logger = mock('logger')
-    logger.stub!(:info)
     Bosh::Agent::Config.agent_id = Time.now.to_i
-    Bosh::Agent::Config.logger = logger
 
     args = "some_blobstore_id", "some_sha1", "some_name", 1
     @handler = Bosh::Agent::Message::CompilePackage.new(args)
@@ -104,7 +101,7 @@ describe Bosh::Agent::Message::CompilePackage do
     FileUtils.rm_rf @handler.compile_base
     response = mock("response")
     response.stub!(:status).and_return(200)
-    get_args = [ "/resources/some_blobstore_id", {}, {} ] 
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).with(*get_args).and_yield(data).and_return(response)
   end
 

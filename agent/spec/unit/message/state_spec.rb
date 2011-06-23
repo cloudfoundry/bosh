@@ -4,11 +4,8 @@ require 'fileutils'
 describe Bosh::Agent::Message::State do
 
   before(:each) do
-    setup_tmp_base_dir
-
     state_file = Tempfile.new("agent-state")
 
-    Bosh::Agent::Config.logger   = Logger.new(StringIO.new)
     Bosh::Agent::Config.state    = Bosh::Agent::State.new(state_file.path)
     Bosh::Agent::Config.settings = { "vm" => "zb", "agent_id" => "007" }
 
