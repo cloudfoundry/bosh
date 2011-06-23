@@ -4,8 +4,6 @@ require 'fileutils'
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
-    setup_tmp_base_dir
-
     Bosh::Agent::Config.state = Bosh::Agent::State.new(Tempfile.new("state").path)
 
     Bosh::Agent::Config.blobstore_provider = "simple"
