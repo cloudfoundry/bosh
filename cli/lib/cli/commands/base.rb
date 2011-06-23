@@ -4,7 +4,6 @@ require "terminal-table/import"
 module Bosh::Cli
   module Command
     class Base
-      include Bosh::Cli::YamlHelper
 
       DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_config")
       DEFAULT_CACHE_DIR   = File.expand_path("~/.bosh_cache")
