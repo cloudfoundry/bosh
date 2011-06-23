@@ -22,7 +22,7 @@ module Bosh::Cli
       end
 
       @name_prefix = name_prefix
-      @data = YAML.load_file(@index_file)
+      @data = load_yaml_file(@index_file, nil)
       @data = { } unless @data.is_a?(Hash)
       @data["builds"] ||= {}
     end

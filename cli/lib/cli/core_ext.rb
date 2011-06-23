@@ -50,6 +50,21 @@ module BoshExtensions
     return sprintf("%.#{prec}fM", size/(1024.0*1024.0)) if size < (1024*1024*1024)
     return sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
   end
+
+  def load_yaml_file(path, expected_type = Hash)
+    err("Cannot find file `#{path}'") unless File.exists?(path)
+    yaml = YAML.load_file(path)
+
+    if expected_type && !yaml.is_a?(expected_type)
+      err("Incorrect file format in `#{path}', #{expected_type} expected")
+    end
+
+    Bosh::Cli::YamlHelper.check_duplicate_keys(path)
+
+    yaml
+  rescue SystemCallError => e
+    err("Cannot load YAML file at `#{path}': #{e}")
+  end
 end
 
 module BoshStringExtensions
