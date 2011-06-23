@@ -9,6 +9,7 @@ module VSphereCloud
 
     attr_accessor :service_content
     attr_accessor :stub
+    attr_accessor :service_instance
 
     def initialize(host, options = {})
       http_client = HTTPClient.new
@@ -24,7 +25,7 @@ module VSphereCloud
 
       @stub = Soap::StubAdapter.new(host, "vim.version.version6", http_client)
 
-      service_instance = Vim::ServiceInstance.new("ServiceInstance", stub)
+      @service_instance = Vim::ServiceInstance.new("ServiceInstance", stub)
       @service_content = service_instance.content
       @metrics_cache  = {}
       @lock = Mutex.new
