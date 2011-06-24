@@ -15,7 +15,8 @@ module Bosh::Director
        :name,
        :redis_options,
        :cloud_options,
-       :revision
+       :revision,
+       :task_checkpoint_interval
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -40,6 +41,9 @@ module Bosh::Director
       def configure(config)
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
+
+        # checkpoint task progress every 30 secs
+        @task_checkpoint_interval = 30
 
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
