@@ -73,7 +73,7 @@ namespace "spec" do
   RSpec::Core::RakeTask.new("run_unit") do |t|
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
-    t.pattern    = "unit/*_spec.rb"
+    t.pattern    = "unit/**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_functional") do |t|
