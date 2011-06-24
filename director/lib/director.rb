@@ -126,6 +126,15 @@ module Bosh::Director
       end
     end
 
+    helpers do
+      def task_timeout?(task)
+        # Some of the old task entries might not have the checkpoint_time
+        # If no checkpoint update in 3 cycles --> timeout
+        return task.state == "processing" && task.checkpoint_time && 
+          (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
+      end
+    end
+
     configure do
       set(:show_exceptions, false)
       set(:raise_errors, false)
@@ -315,6 +324,10 @@ module Bosh::Director
       end
 
       tasks = dataset.order_by(:timestamp.desc).map do |task|
+        if task_timeout?(task)
+          task.state = :timeout
+          task.save
+        end
         @task_manager.task_to_json(task)
       end
 
@@ -325,6 +338,10 @@ module Bosh::Director
     get "/tasks/:id" do
       task = Models::Task[params[:id]]
       raise TaskNotFound.new(params[:id]) if task.nil?
+      if task_timeout?(task)
+        task.state = :timeout
+        task.save
+      end
       content_type(:json)
       task_json = @task_manager.task_to_json(task)
       Yajl::Encoder.encode(task_json)

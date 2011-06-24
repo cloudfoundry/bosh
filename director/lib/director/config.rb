@@ -15,10 +15,14 @@ module Bosh::Director
       attr_reader :redis_options
       attr_reader :cloud_options
       attr_reader :revision
+      attr_reader :task_checkpoint_interval
 
       def configure(config)
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
+
+        # checkpoint task progress every 30 secs
+        @task_checkpoint_interval = 30
 
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
