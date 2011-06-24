@@ -152,11 +152,15 @@ end
 Rspec.configure do |rspec_config|
 
   rspec_config.before(:each) do
-    # hack to clean-up the db for the spec tests.
-    Bosh::Director::Models::Instance.each { |c| c.destroy }
-    Bosh::Director::Models::Vm.each { |c| c.destroy }
+    Bosh::Director::Config.clear
 
-    Sequel::Migrator.apply(db, migrate_dir, 0)
+    db = Sequel::Model.db
+    db.execute("PRAGMA foreign_keys = OFF")
+    db.tables.each do |table|
+      db.drop_table(table)
+    end
+    db.execute("PRAGMA foreign_keys = ON")
+
     Sequel::Migrator.apply(db, migrate_dir, nil)
     FileUtils.mkdir_p(bosh_dir)
     Bosh::Director::Config.logger = logger

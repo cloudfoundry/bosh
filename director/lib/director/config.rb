@@ -5,16 +5,37 @@ module Bosh::Director
 
     class << self
 
-      attr_accessor :base_dir
-      attr_accessor :logger
-      attr_accessor :uuid
-      attr_accessor :process_uuid
-      attr_accessor :db
-      attr_accessor :name
+      CONFIG_OPTIONS = \
+      [
+       :base_dir,
+       :logger,
+       :uuid,
+       :process_uuid,
+       :db,
+       :name,
+       :redis_options,
+       :cloud_options,
+       :revision
+      ]
 
-      attr_reader :redis_options
-      attr_reader :cloud_options
-      attr_reader :revision
+      CONFIG_OPTIONS.each do |option|
+        attr_accessor option
+      end
+
+      def clear
+        CONFIG_OPTIONS.each do |option|
+          self.instance_variable_set("@#{option}".to_sym, nil)
+        end
+
+        Thread.list.each do |thr|
+          thr[:bosh] = nil
+        end
+
+        @blobstore = nil
+        @nats = nil
+        @nats_rpc = nil
+        @cloud = nil
+      end
 
       def configure(config)
         @base_dir = config["dir"]
