@@ -32,6 +32,7 @@ Rspec.configure do |rspec_config|
     clear_configuration
     use_dummy_logger
     setup_directories(spec_tmp_dir)
+    disable_monit
   end
 
   rspec_config.after(:each) do
@@ -58,6 +59,10 @@ end
 
 def clear_configuration
   Bosh::Agent::Config.clear
+end
+
+def disable_monit
+  Bosh::Agent::Monit.enabled = false
 end
 
 def base_dir
