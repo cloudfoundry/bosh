@@ -28,7 +28,18 @@ module Bosh::Director
             logger.info("Performing task: #{task_id}")
             task.state = :processing
             task.timestamp = Time.now
+            task.checkpoint_time = Time.now
             task.save
+
+            Thread.new do
+              with_thread_name("task:#{task_id}-checkpoint") do
+                while true
+                  sleep(Config.task_checkpoint_interval)
+                  task.checkpoint_time = Time.now
+                  task.save
+                end
+              end
+            end
             result = job.perform
 
             logger.info("Done")
