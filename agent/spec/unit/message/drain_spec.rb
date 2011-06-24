@@ -11,7 +11,6 @@ describe Bosh::Agent::Message::Drain do
   end
 
   before(:each) do
-    setup_tmp_base_dir
     @nats = mock
 
     Bosh::Agent::Config.logger   = Logger.new(StringIO.new)

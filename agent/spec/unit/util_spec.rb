@@ -3,16 +3,11 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::Util do
 
   before(:each) do
-    logger = mock('logger')
-    logger.stub!(:info)
-    Bosh::Agent::Config.logger = logger
-
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
 
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
-    setup_tmp_base_dir
   end
 
   it "should unpack a blob" do
