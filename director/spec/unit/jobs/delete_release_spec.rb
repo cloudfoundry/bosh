@@ -241,7 +241,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
-          and_return(lock)
+        and_return(lock)
       lock.should_receive(:lock).exactly(2).times.and_yield
 
       job1.perform
