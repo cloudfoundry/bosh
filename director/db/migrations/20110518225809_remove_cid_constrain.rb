@@ -7,7 +7,7 @@ Sequel.migration do
 
   down do
     alter_table(:vms) do
-      set_column_allow_null :cid, false
+      raise Sequel::Error, "Irreversible migration, vms:cid might contain nulls so we cannot enforce 'not null' constraint"
     end
   end
 end
