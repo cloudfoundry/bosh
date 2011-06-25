@@ -59,6 +59,20 @@ describe Bosh::Cli::VersionsIndex do
     @index.latest_version.should == 3
   end
 
+  it "supports dev versions and proper version comparison when updating latest version" do
+    item1 = { "a" => 1, "b" => 2, "version" => "1.9-dev" }
+    item2 = { "a" => 3, "b" => 4, "version" => "1.8-dev" }
+    item3 = { "a" => 3, "b" => 4, "version" => "1.10-dev" }
+
+    @index.add_version("deadbeef", item1, "payload1")
+    @index.add_version("deadcafe", item2, "payload2")
+    @index.latest_version.should == "1.9-dev"
+    @index.add_version("deadcafe", item1, "payload2")
+    @index.latest_version.should == "1.9-dev"
+    @index.add_version("deadcafe", item3, "payload3")
+    @index.latest_version.should == "1.10-dev"
+  end
+
   it "supports finding entries by checksum" do
     item1 = { "a" => 1, "b" => 2, "version" => 1 }
     item2 = { "a" => 3, "b" => 4, "version" => 2 }
