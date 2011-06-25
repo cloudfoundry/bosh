@@ -1,6 +1,8 @@
 module Bosh::Cli
 
   class VersionsIndex
+    include VersionCalc
+
     def initialize(storage_dir, name_prefix = nil)
       @storage_dir = File.expand_path(storage_dir)
       @index_file  = File.join(@storage_dir, "index.yml")
@@ -61,7 +63,7 @@ module Bosh::Cli
 
       @data["builds"][fingerprint] = item
       @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload) if payload
-      @data["latest_version"] = version if version.to_f > @data["latest_version"].to_f
+      @data["latest_version"] = version if version_greater(version, @data["latest_version"])
 
       File.open(@index_file, "w") do |f|
         f.write(YAML.dump(@data))
