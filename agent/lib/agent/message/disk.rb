@@ -232,6 +232,11 @@ module Bosh::Agent
         def lookup_disk_by_cid(cid)
           settings = Bosh::Agent::Config.settings
           disk_id = settings['disks']['persistent'][cid]
+
+          unless disk_id
+            raise Bosh::Agent::MessageHandlerError, "Unknown persistent disk: #{cid}"
+          end
+
           sys_path = detect_block_device(disk_id)
           blockdev = File.basename(sys_path)
           File.join('/dev', blockdev)
