@@ -1,6 +1,7 @@
 module Bosh::Cli::Command
   class Release < Base
     include Bosh::Cli::DependencyHelper
+    include Bosh::Cli::VersionCalc
 
     def verify(tarball_path, *options)
       tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
@@ -150,7 +151,7 @@ module Bosh::Cli::Command
         release = dev_release
       end
 
-      if version_cmp(Bosh::Cli::VERSION, release.min_cli_version) < 0
+      if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
         err("You should use CLI >= %s with this release, you have %s" % [ release.min_cli_version, Bosh::Cli::VERSION ])
       end
 
@@ -277,16 +278,6 @@ module Bosh::Cli::Command
     end
 
     private
-
-    def version_cmp(v1, v2)
-      major1, minor1, patch1 = v1.to_s.split(".", 3).map { |v| v.to_i }
-      major2, minor2, patch2 = v2.to_s.split(".", 3).map { |v| v.to_i }
-
-      result = major1.to_i <=> major2.to_i
-      result = minor1.to_i <=> minor2.to_i if result == 0
-      result = patch1.to_i <=> patch2.to_i if result == 0
-      result
-    end
 
     def get_remote_release(name)
       release = director.get_release(name)
