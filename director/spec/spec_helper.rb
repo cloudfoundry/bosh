@@ -19,7 +19,6 @@ else
   logger = Logger.new(log_file)
 end
 
-
 require "director"
 
 Bosh::Director::Config.patch_sqlite
@@ -151,10 +150,9 @@ end
 
 Rspec.configure do |rspec_config|
 
-  rspec_config.before(:each) do
+  rspec_config.before(:each) do |example|
     Bosh::Director::Config.clear
 
-    db = Sequel::Model.db
     db.execute("PRAGMA foreign_keys = OFF")
     db.tables.each do |table|
       db.drop_table(table)
