@@ -1,7 +1,6 @@
-require "spec_helper"
+require File.expand_path("../../spec_helper", __FILE__)
 
 require "rack/test"
-require "director"
 
 describe Bosh::Director::Controller do
   include Rack::Test::Methods
