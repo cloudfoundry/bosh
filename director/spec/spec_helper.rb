@@ -52,7 +52,7 @@ class Object
 end
 
 def spec_asset(filename)
-  File.read(File.dirname(__FILE__) + "/assets/#{filename}")
+  File.read(File.expand_path("../assets/#{filename}", __FILE__))
 end
 
 def gzip(string)
