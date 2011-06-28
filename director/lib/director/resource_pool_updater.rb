@@ -38,8 +38,9 @@ module Bosh::Director
         if idle_vm.vm && idle_vm.changed?
           index += 1
           vm_cid = idle_vm.vm.cid
+          current_idx = index
           thread_pool.process do
-            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index}/#{counter})") do
+            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{current_idx}/#{counter})") do
               @logger.info("Deleting: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
               vm = idle_vm.vm
@@ -61,8 +62,9 @@ module Bosh::Director
       each_idle_vm do |idle_vm|
         next if idle_vm.vm
         index += 1
+        current_idx = index
         thread_pool.process do
-          with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index}/#{counter})") do
+          with_thread_name("create_missing_vm(#{@resource_pool.name}, #{current_idx}/#{counter})") do
             create_missing_vm(idle_vm)
           end
         end
