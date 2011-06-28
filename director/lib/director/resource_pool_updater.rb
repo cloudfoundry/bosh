@@ -32,14 +32,12 @@ module Bosh::Director
         end
       end
 
-      index = 0
       @logger.info("Deleting #{counter} outdated VMs")
-      each_idle_vm do |idle_vm|
+      each_idle_vm_with_index do |idle_vm, index|
         if idle_vm.vm && idle_vm.changed?
-          index += 1
           vm_cid = idle_vm.vm.cid
           thread_pool.process do
-            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index}/#{counter})") do
+            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
               @logger.info("Deleting: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
               vm = idle_vm.vm
@@ -54,15 +52,13 @@ module Bosh::Director
 
     def create_missing_vms(thread_pool)
       counter = 0
-      index = 0
       each_idle_vm { |idle_vm| counter += 1 if (!idle_vm.vm) }
 
       @logger.info("Creating #{counter} missing VMs")
-      each_idle_vm do |idle_vm|
+      each_idle_vm_with_index do |idle_vm, index|
         next if idle_vm.vm
-        index += 1
         thread_pool.process do
-          with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index}/#{counter})") do
+          with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
             create_missing_vm(idle_vm)
           end
         end
@@ -72,6 +68,19 @@ module Bosh::Director
     def each_idle_vm
       @resource_pool.allocated_vms.each { |idle_vm| yield idle_vm }
       @resource_pool.idle_vms.each { |idle_vm| yield idle_vm }
+    end
+
+    def each_idle_vm_with_index
+      idx = 0
+      @resource_pool.allocated_vms.each do |idle_vm|
+        yield(idle_vm, idx)
+        idx += 1
+      end
+
+      @resource_pool.idle_vms.each do |idle_vm|
+        yield(idle_vm, idx)
+        idx += 1
+      end
     end
 
     def create_missing_vm(idle_vm)
