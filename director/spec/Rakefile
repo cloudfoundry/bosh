@@ -79,7 +79,7 @@ namespace "spec" do
   RSpec::Core::RakeTask.new("run_functional") do |t|
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
-    t.pattern    = "functional/*_spec.rb"
+    t.pattern    = "functional/**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_rcov") do |t|
