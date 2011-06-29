@@ -31,3 +31,26 @@ describe Bosh::Agent::Message::UnmountDisk do
   end
 end
 
+describe Bosh::Agent::Message::DiskUtil do
+
+  it "should lookup disks through settings" do
+    settings = { "disks" => { "persistent" => { 199 => 2 }}}
+    Bosh::Agent::Config.settings = settings
+
+    dev_path = "/sys/bus/scsi/devices/2:0:2:0/block/sdc"
+    Bosh::Agent::Message::DiskUtil.stub!(:detect_block_device).and_return(dev_path)
+
+    Bosh::Agent::Message::DiskUtil.lookup_disk_by_cid(199).should == "/dev/sdc"
+  end
+
+  it "should raise exception if persistent disk cid is unknown" do
+    settings = { "disks" => { "persistent" => { 199 => 2 }}}
+    Bosh::Agent::Config.settings = settings
+
+    lambda {
+      Bosh::Agent::Message::DiskUtil.lookup_disk_by_cid(200)
+    }.should raise_error(Bosh::Agent::MessageHandlerError, /Unknown persistent disk/)
+  end
+
+end
+
