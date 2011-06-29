@@ -8,18 +8,21 @@ module Bosh::Director
       @job = job
       @cloud = Config.cloud
       @logger = Config.logger
+      @event_logger = Config.event_logger
     end
 
     def delete_unneeded_instances
       @logger.info("Deleting no longer needed instances")
       unless @job.unneeded_instances.empty?
+        total = @job.unneeded_instances.size
         ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-          @job.unneeded_instances.each do |instance|
+          @job.unneeded_instances.each_with_index do |instance, index|
             vm = instance.vm
             disk_cid = instance.disk_cid
             vm_cid = vm.cid
             agent_id = vm.agent_id
 
+            progress_log("Deleting unneeded instance", index, total)
             pool.process do
               agent = AgentClient.new(agent_id)
               drain_time = agent.drain("shutdown")
@@ -53,8 +56,9 @@ module Bosh::Director
 
           @logger.info("Starting canary update")
           # canaries first
-          num_canaries.times do
+          num_canaries.times do |index|
             instance = instances.shift
+            progress_log("canary update", index, num_canaries)
             pool.process do
               with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
@@ -79,7 +83,9 @@ module Bosh::Director
 
           # continue with the rest of the updates
           @logger.info("Continuing the rest of the update")
-          instances.each do |instance|
+          total = instances.size
+          instances.each_with_index do |instance, index|
+            progress_log("Updating instance", index, total)
             pool.process do
               with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
@@ -104,5 +110,9 @@ module Bosh::Director
       end
     end
 
+    private
+    def progress_log(msg, index, total)
+      @event_logger.progress_log("Updating job #{@job.name}", msg, index, total)
+    end
   end
 end

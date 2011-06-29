@@ -10,14 +10,15 @@ module Bosh::Director
       msg + "\n"
     end
 
-    def progress_log(stage, msg, index, total)
+    def progress_log(stage, msg, index, total, logger = nil)
       progress = {:time     => Time.now.to_i,
                   :id       => @id,
                   :stage    => stage,
                   :msg      => msg,
-                  :current  => index,
+                  :current  => index + 1,
                   :total    => total}
       info Yajl::Encoder.encode(progress)
+      logger.info msg if logger
     end
   end
 end
