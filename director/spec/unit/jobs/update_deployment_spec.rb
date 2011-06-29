@@ -16,6 +16,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     YAML.stub!(:load).with("manifest").and_return(@manifest)
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, false).and_return(@deployment_plan)
     Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
+
+    event_log = Bosh::Director::EventLog.new(1, nil)
+    Bosh::Director::Config.stub!(:event_logger).and_return(event_log)
   end
 
   after(:each) do
