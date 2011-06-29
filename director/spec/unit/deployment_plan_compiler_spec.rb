@@ -4,6 +4,11 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   IP_10_0_0_5 = 167772165
 
+  before(:each) do
+    @event_logger = Bosh::Director::EventLog.new(1, nil)
+    Bosh::Director::Config.stub!(:event_logger).and_return(@event_logger)
+  end
+
   describe "bind_existing_deployment" do
 
     BASIC_STATE = {
