@@ -2,8 +2,12 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::Jobs::BaseJob do
 
-  before(:all) do
+  before(:each) do
     @event_log = Bosh::Director::EventLog.new(1, nil)
+    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
+
+    @logger = Logger.new(nil)
+    Logger.stub!(:new).with("/some/path/debug").and_return(@logger)
   end
 
   it "should set up the task" do
@@ -16,16 +20,13 @@ describe Bosh::Director::Jobs::BaseJob do
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 
-    logger = Logger.new(nil)
-    Logger.stub!(:new).with("/some/path/debug").and_return(logger)
-    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
     test.perform(1)
 
     task.refresh
     task.state.should == "done"
     task.result.should == "5"
 
-    Bosh::Director::Config.logger.should eql(logger)
+    Bosh::Director::Config.logger.should eql(@logger)
   end
 
   it "should pass on the rest of the arguments to the actual job" do
@@ -39,10 +40,6 @@ describe Bosh::Director::Jobs::BaseJob do
         Yajl::Encoder.encode(@args)
       end
     end
-
-    logger = Logger.new(nil)
-    Logger.stub!(:new).with("/some/path/debug").and_return(logger)
-    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 
@@ -60,10 +57,6 @@ describe Bosh::Director::Jobs::BaseJob do
         raise "test"
       end
     end
-
-    logger = Logger.new(nil)
-    Logger.stub!(:new).with("/some/path/debug").and_return(logger)
-    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
 
     task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
 

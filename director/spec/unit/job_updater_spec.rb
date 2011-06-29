@@ -10,6 +10,8 @@ describe Bosh::Director::JobUpdater do
     @update_spec.stub!(:max_in_flight).and_return(5)
     @update_spec.stub!(:canaries).and_return(1)
     Bosh::Director::Config.stub!(:cloud).and_return(nil)
+    @event_logger = Bosh::Director::EventLog.new(1, nil)
+    Bosh::Director::Config.stub!(:event_logger).and_return(@event_logger)
   end
 
   it "should do nothing when the job is up to date" do
