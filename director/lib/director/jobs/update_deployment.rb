@@ -7,6 +7,7 @@ module Bosh::Director
 
       def initialize(manifest_file, options = {})
         @logger = Config.logger
+        @event_log = Config.event_logger
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) { |f| f.read }
@@ -21,23 +22,23 @@ module Bosh::Director
         @deployment_plan.deployment = Models::Deployment.find_or_create(:name => @deployment_plan.name)
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
 
-        @logger.info("Binding release")
+        progress_and_log("Preparing", "Binding release", 0, 9)
         @deployment_plan_compiler.bind_release
-        @logger.info("Binding existing deployment")
+        progress_and_log("Preparing", "Binding existing deployment", 1, 9)
         @deployment_plan_compiler.bind_existing_deployment
-        @logger.info("Binding resource pools")
+        progress_and_log("Preparing", "Binding resource pools", 2, 9)
         @deployment_plan_compiler.bind_resource_pools
-        @logger.info("Binding stemcells")
+        progress_and_log("Preparing", "Binding stemcells", 3, 9)
         @deployment_plan_compiler.bind_stemcells
-        @logger.info("Binding templates")
+        progress_and_log("Preparing", "Binding templates", 4, 9)
         @deployment_plan_compiler.bind_templates
-        @logger.info("Binding unallocated VMs")
+        progress_and_log("Preparing", "Binding unallocated VMs", 5, 9)
         @deployment_plan_compiler.bind_unallocated_vms
-        @logger.info("Binding instance networks")
+        progress_and_log("Preparing", "Binding instance networks", 6, 9)
         @deployment_plan_compiler.bind_instance_networks
-        @logger.info("Compiling and binding packages")
+        progress_and_log("Preparing", "Compiling and binding packages", 7, 9)
         PackageCompiler.new(@deployment_plan).compile
-        @logger.info("Binding configuration")
+        progress_and_log("Preparing", "Binding configuration", 8, 9)
         @deployment_plan_compiler.bind_configuration
       end
 
@@ -137,6 +138,12 @@ module Bosh::Director
         end
       ensure
         FileUtils.rm_rf(@manifest_file)
+      end
+
+      private
+      def progress_and_log(stage, msg, current, total)
+        @event_log.progress_log(stage, msg, current, total)
+        @logger.info(msg)
       end
     end
   end

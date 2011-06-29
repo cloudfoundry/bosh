@@ -24,6 +24,9 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
     @resource_pool_spec.stub!(:env).and_return({})
     @resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
+
+    event_log = Bosh::Director::EventLog.new(1, nil)
+    Bosh::Director::Config.stub!(:event_logger).and_return(event_log)
   end
 
   def update_resource_pool(resource_pool_updater)
