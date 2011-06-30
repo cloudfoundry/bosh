@@ -43,6 +43,8 @@ module VCAP
           install_micro
 
           @identity.save
+        rescue SystemExit => e
+          say("\nRestarting console...")
         rescue Exception => e
           # FIXME: crude hack to prevent console to restart and clear
           say("\nWARNING: Failed to configure Cloud Foundry Micro:\n")
@@ -73,7 +75,7 @@ module VCAP
         say("  Admin    : #{@identity.admins.join(', ')}\n")
         say("  Address  : #{@identity.ip}\n")
 
-        begin 
+        begin
           current_ip = VCAP::Micro::Network.local_ip
           if current_ip != @identity.ip
             say("WARNING: Current IP Address (#{current_ip}) differs from configured IP")
@@ -148,9 +150,9 @@ module VCAP
         begin
           @identity.install(@ip)
         rescue => e
-          say("Error registering identity with cf.vcloudlabs.com (will be www.cloudfoundry.com)\n")
+          say("Error registering identity with micro.cloudfoundry.com\n")
           say("\nException: #{e.message}")
-          say("\nBacktrace: #{e.backtrace}")
+          say("\nBacktrace: #{e.backtrace.join("\n")}")
         end
       end
 

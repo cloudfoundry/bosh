@@ -3,20 +3,28 @@ require 'yajl'
 
 module VCAP
   module Micro
-    class Identity 
+    class Identity
       attr_accessor :admins, :ip, :subdomain, :proxy
 
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
 
       def initialize
         @client = RestClient::Resource.new(
-          'http://cf.vcloudlabs.com/api/v1',
+          'http://micro.cloudfoundry.com/api/v1',
           :headers => { :content_type => 'application/json' }
         )
         if configured?
           load_config
+        else
+          # use some sane defaults in case we can't connect to the REST API
+          # so it can be used offline
+          @config ||= {
+            "admins" => ["admin@vcap.me"],
+            "subdomain" => "vcap.me"
+          }
+          @subdomain = @config['subdomain']
+          @admins = @config['admins']
         end
-        @config ||= {}
       end
 
       def configured?
@@ -29,6 +37,7 @@ module VCAP
           @subdomain = @config['subdomain']
           @admins = @config['admins']
           @ip = @config['ip']
+          @auth_token = @config['auth_token']
         end
       end
 
@@ -39,10 +48,12 @@ module VCAP
 
         @ip = @config['ip'] = ip
 
-        resp = auth
-        @admins = @config['admins'] = [ resp['email'] ]
-        @subdomain = @config['subdomain'] = resp['hostname']
-        @auth_token = @config['auth_token'] = resp['token']
+        unless @auth_token
+          resp = auth
+          @admins = @config['admins'] = [ resp['email'] ]
+          @subdomain = @config['subdomain'] = resp['hostname']
+          @auth_token = @config['auth_token'] = resp['token']
+        end
 
         update_dns
       end
@@ -62,6 +73,12 @@ module VCAP
         rescue RestClient::NotModified
           # Do nothing
         end
+      end
+
+      def update_ip(ip)
+        @ip = @config['ip'] = ip
+        save
+        update_dns
       end
 
       def token(nounce)
