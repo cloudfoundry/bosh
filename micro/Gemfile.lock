@@ -18,7 +18,7 @@ GEM
     httpclient (2.1.6.1)
     json_pure (1.5.1)
     mime-types (1.16)
-    monit_api (1.0.1)
+    monit_api (1.0.2)
       crack
     netaddr (1.5.0)
     posix-spawn (0.3.3)

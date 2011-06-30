@@ -19,6 +19,7 @@ require 'agent/config'
 require 'agent/version'
 require 'agent/message/base'
 require 'agent/message/apply'
+require 'agent/platform'
 require 'agent/monit'
 
 module VCAP
@@ -44,6 +45,7 @@ module VCAP
           "logging" => { "level" => "WARN" },
           "agent_id" => "micro",
           "base_dir" => "/var/vcap",
+          "platform_name" => "ubuntu",
           "blobstore_options" => { "blobstore_path" => "/var/vcap/data/cache" },
           "blobstore_provider" => "local"
         }
@@ -102,7 +104,9 @@ module VCAP
         started = []
 
         loop do
-          status = Bosh::Agent::Monit.retry_monit_request(:status)
+          status = Bosh::Agent::Monit.retry_monit_request do |client|
+            client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
+          end
 
           status.each do |name, data|
             if running_service?(data)
