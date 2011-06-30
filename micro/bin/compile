@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+$:.unshift(File.expand_path("../../lib", __FILE__))
+require 'micro/compiler'
+
+ENV['PATH'] = "/var/vcap/bosh/bin:#{ENV['PATH']}"
+
+manifest = ARGV[0]
+tarball = ARGV[1]
+
+unless ARGV.size == 2 && File.exist?(manifest) && File.exist?(tarball)
+  STDERR.puts "usage: #{$0} <deployment manifest> <release tarball>"
+  exit 1
+end
+
+opts = {
+  "logging" => {"level" => "DEBUG"},
+  "base_dir"  => File.expand_path("/var/vcap")
+}
+
+VCAP::Micro::Compiler.new(manifest, tarball, opts).run
