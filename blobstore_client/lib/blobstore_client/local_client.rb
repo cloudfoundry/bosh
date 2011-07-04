@@ -9,7 +9,14 @@ module Bosh
       end
 
       def create_file(file)
-        raise BlobstoreError, "Not Implemented: Bosh::Blobstore::LocalClient is read only"
+        id = UUIDTools::UUID.random_create.to_s
+        dst = File.join(@blobstore_path, id)
+        File.open(dst, 'w') do |fh|
+          until file.eof?
+            fh.write(file.read(CHUNK_SIZE))
+          end
+        end
+        id
       end
 
       def get_file(id, file)
