@@ -14,10 +14,14 @@ module Bosh
       attr_reader :bucket_name, :encryption_key
 
       def initialize(options)
-        options = options.dup
+        opts = options.dup
         options.each_key do |key|
-          options[key.to_sym] = options[key] if key.is_a?(String)
+          if key.is_a?(String)
+            opts[key.to_sym] = options[key]
+            opts.delete(key)
+          end
         end
+        options = opts
 
         @bucket_name    = options[:bucket_name]
         @encryption_key = options[:encryption_key]
