@@ -8,6 +8,7 @@ require 'micro/settings'
 module VCAP
   module Micro
     class Configurator
+      attr_accessor :identity
 
       def initialize
         @identity = Identity.new
@@ -15,7 +16,7 @@ module VCAP
 
       def run
         # TODO: check highline's signal handling - might get in the way here
-        %w{TERM INT}.each { |sig| trap(sig) { puts "Exiting Micro Cloud Configurator"; exit } }
+        %w{TERM INT}.each { |sig| trap(sig) { puts "Exiting Micro Cloud Foundry Configurator"; exit } }
 
         begin
           clear
@@ -35,11 +36,17 @@ module VCAP
           identity
 
           network
+
+          if @identity.configured?
+            @watcher = Watcher.new(@network, @identity).watch
+          end
+
           mounts
 
           @ip = VCAP::Micro::Network.local_ip
           install_identity
           setup_admin
+
           install_micro
 
           @identity.save
@@ -56,16 +63,16 @@ module VCAP
       end
 
       def header
-        say("BETA - Welcome to VMware Micro Cloud Download - BETA\n\n")
+        say("BETA - Welcome to VMware Micro Cloud Foundry Download - BETA\n\n")
 
         unless @identity.configured?
-          say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
-          exit unless agree("Micro Cloud Not Configured - Do you want to configure? (y/n) ")
+          say("Please visit http://CloudFoundry.com register for a Micro Cloud Foundry token.\n\n")
+          exit unless agree("Micro Cloud Foundry Not Configured - Do you want to configure? (y/n) ")
         else
-          say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n\n")
+          say("Target Micro Cloud Foundry: vmc http://api.#{@identity.subdomain}\n\n")
 
           current_configuration
-          exit unless agree("\nRe-configure Micro Cloud? (y/n): ")
+          exit unless agree("\nRe-configure Micro Cloud Foundry? (y/n): ")
         end
       end
 
@@ -90,14 +97,14 @@ module VCAP
         # TODO: ask for password if set 
 
         unless @identity.configured?
-          pass = ask("\nConfigure Micro Cloud Password:  ") { |q| q.echo = "*" }
+          pass = ask("\nConfigure Micro Cloud Foundry Password:  ") { |q| q.echo = "*" }
           # BIG HACK
           `echo "root:#{pass}\nvcap:#{pass}" | chpasswd`
         end
       end
 
       def identity
-        say("\nConfigure Micro Cloud identity:\n")
+        say("\nConfigure Micro Cloud Foundry identity:\n")
         choose do |menu|
           menu.prompt = "Choose identity type: "
           menu.choice(:token) { token }
@@ -116,7 +123,7 @@ module VCAP
       end
 
       def network
-        say("\nConfigure Micro Cloud networking")
+        say("\nConfigure Micro Cloud Foundry networking")
         choose do |menu|
           menu.prompt = "Type: "
           menu.choice(:dhcp) { dhcp_network }
@@ -127,7 +134,7 @@ module VCAP
       end
 
       def dhcp_network
-        VCAP::Micro::Network.new.dhcp
+        @network = VCAP::Micro::Network.new.dhcp
       end
 
       def manual_network
@@ -139,7 +146,7 @@ module VCAP
         net['gateway'] = ask("Gateway: ")
         net['dns'] =     ask("DNS:     ")
 
-        VCAP::Micro::Network.new.manual(net)
+        @network = VCAP::Micro::Network.new.manual(net)
       end
 
       def mounts
@@ -170,7 +177,7 @@ module VCAP
         say("\n")
         current_configuration
 
-        say("\nInstalling CloudFoundry Micro...\n\n")
+        say("\nInstalling Cloud Foundry Micro...\n\n")
 
         VCAP::Micro::Agent.apply(@identity)
       end

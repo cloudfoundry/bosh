@@ -1,4 +1,5 @@
 require 'netaddr'
+require 'socket'
 
 module VCAP
   module Micro
@@ -29,8 +30,28 @@ module VCAP
         nil
       end
 
-      def self.ping(host)
-        %{ping #{host}}
+      def self.ping(host, count=3)
+        %x{ping -c #{count} #{host}}
+        $? == 0
+      end
+
+      def self.lookup(name)
+        IPSocket.getaddress(name)
+      rescue SocketError
+        nil
+      end
+
+      # states: down -> restarting -> up
+      def initialize
+        @state = :down
+      end
+
+      def restarting?
+        @state == :restarting
+      end
+
+      def up?
+        @state == :up
       end
 
       def dhcp
@@ -81,9 +102,13 @@ module VCAP
         end
       end
 
+      # TODO detect if restart hangs and set state to failed instead
       def restart
+        raise RuntimeError, "network already restarting" if restarting?
+        @state = :restarting
         `service network-interface stop INTERFACE=eth0 2>/dev/null`
         `service network-interface start INTERFACE=eth0`
+        @state = :up
       end
 
       BASE_TEMPLATE = <<TEMPLATE
