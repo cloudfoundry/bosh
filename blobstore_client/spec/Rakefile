@@ -12,7 +12,7 @@ require "ci/reporter/rake/rspec"
 
 desc "Run all examples"
 RSpec::Core::RakeTask.new(:spec) do |t|
-  t.pattern    = "**/*_spec.rb"      
+  t.pattern    = "**/*_spec.rb"
   t.rspec_opts = %w[--color]
 end
 
@@ -45,7 +45,7 @@ namespace "spec" do
     clover_output  = File.join(coverage_dir, "clover.xml")
 
     sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
-    FileUtils.rm_rf(dump_file)    
-  end  
+    FileUtils.rm_rf(dump_file)
+  end
 
 end
