@@ -8,6 +8,7 @@ require 'micro/settings'
 module VCAP
   module Micro
     class Configurator
+      attr_accessor :identity
 
       def initialize
         @identity = Identity.new
@@ -26,6 +27,8 @@ module VCAP
             unless current_ip == @identity.ip
               @identity.install(current_ip)
             end
+
+            @watcher = Watcher.new(self).watch
 
             VCAP::Micro::Agent.start
           end
@@ -127,7 +130,7 @@ module VCAP
       end
 
       def dhcp_network
-        VCAP::Micro::Network.new.dhcp
+        @network = VCAP::Micro::Network.new.dhcp
       end
 
       def manual_network
@@ -139,7 +142,7 @@ module VCAP
         net['gateway'] = ask("Gateway: ")
         net['dns'] =     ask("DNS:     ")
 
-        VCAP::Micro::Network.new.manual(net)
+        @network = VCAP::Micro::Network.new.manual(net)
       end
 
       def mounts
