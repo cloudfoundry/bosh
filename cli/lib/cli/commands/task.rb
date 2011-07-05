@@ -40,7 +40,7 @@ module Bosh::Cli::Command
 
         sleep(0.5)
 
-      end while ["queued", "processing"].include?(state)
+      end while ["queued", "processing", "cancelling"].include?(state)
 
       final_out = task.flush_output
 
@@ -72,6 +72,12 @@ module Bosh::Cli::Command
       err("No recent tasks") if tasks.empty?
       show_tasks_table(tasks)
       say("Showing %d recent %s" % [ tasks.size, tasks.size == 1 ? "task" : "tasks" ])
+    end
+
+    def cancel(task_id)
+      task = Bosh::Cli::DirectorTask.new(director, task_id)
+      task.cancel
+      say("Cancelling task #{task_id}")
     end
 
     private

@@ -11,8 +11,7 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should set up the task" do
-    test = Class.new do
-      extend(Bosh::Director::Jobs::BaseJob)
+    test = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do
         5
       end
@@ -30,8 +29,7 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should pass on the rest of the arguments to the actual job" do
-    test = Class.new do
-      extend(Bosh::Director::Jobs::BaseJob)
+    test = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :initialize do |*args|
         @args = args
       end
@@ -51,8 +49,7 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should record the error when there is an exception" do
-    test = Class.new do
-      extend(Bosh::Director::Jobs::BaseJob)
+    test = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do
         raise "test"
       end
@@ -68,8 +65,7 @@ describe Bosh::Director::Jobs::BaseJob do
   end
 
   it "should raise an exception when the task was not found" do
-    test = Class.new do
-      extend(Bosh::Director::Jobs::BaseJob)
+    test = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :perform do
         fail
       end
