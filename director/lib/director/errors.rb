@@ -32,6 +32,7 @@ module Bosh::Director
 
   [
    ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
+   ["TaskCancelled", OK, 10001, "Task \"%s\" cancelled"],
 
    ["UserNotFound",          NOT_FOUND,    20000, "User \"%s\" doesn't exist"],
    ["UserImmutableUsername", BAD_REQUEST,  20001, "The username is immutable"],

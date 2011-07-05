@@ -19,6 +19,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     event_log = Bosh::Director::EventLog.new(1, nil)
     Bosh::Director::Config.stub!(:event_logger).and_return(event_log)
+
+    @job_cancel = Bosh::Director::JobCancel.new(1)
+    @job_cancel.stub!(:cancel?).and_return(false)
+    Bosh::Director::Config.stub!(:job_cancel).and_return(@job_cancel)
   end
 
   after(:each) do
