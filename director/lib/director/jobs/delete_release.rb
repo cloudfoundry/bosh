@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
-    class DeleteRelease
-      extend BaseJob
+    class DeleteRelease < BaseJob
 
       @queue = :normal
 

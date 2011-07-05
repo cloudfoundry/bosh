@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
-    class DeleteStemcell
-      extend BaseJob
+    class DeleteStemcell < BaseJob
 
       @queue = :normal
 

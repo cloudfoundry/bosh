@@ -1,8 +1,9 @@
 module Bosh::Director
   module Jobs
-    module BaseJob
+    class BaseJob
+      attr_accessor :task_id
 
-      def perform(task_id, *args)
+      def self.perform(task_id, *args)
         task = Models::Task[task_id]
         raise TaskNotFound.new(task_id) if task.nil?
 
@@ -11,8 +12,7 @@ module Bosh::Director
         logger.formatter = ThreadFormatter.new
         logger.info("Starting task: #{task_id}")
 
-        event_log = Bosh::Director::EventLog.new(task_id, File.join(task.output, "event"))
-        Config.event_logger = event_log
+        Config.event_logger = Bosh::Director::EventLog.new(task_id, File.join(task.output, "event"))
         Config.logger = logger
         Sequel::Model.db.logger = logger
 
@@ -27,6 +27,7 @@ module Bosh::Director
           begin
             logger.info("Creating job")
             job = self.send(:new, *args)
+            job.task_id = task_id
 
             logger.info("Performing task: #{task_id}")
             task.state = :processing
@@ -38,6 +39,7 @@ module Bosh::Director
               with_thread_name("task:#{task_id}-checkpoint") do
                 while true
                   sleep(Config.task_checkpoint_interval)
+                  task = Models::Task[task_id]
                   task.checkpoint_time = Time.now
                   task.save
                 end
@@ -51,8 +53,13 @@ module Bosh::Director
             task.timestamp = Time.now
             task.save
           rescue Exception => e
-            logger.error("#{e} - #{e.backtrace.join("\n")}")
-            task.state = :error
+            if e.kind_of?(Bosh::Director::TaskCancelled)
+              logger.info("task #{task_id} cancelled!")
+              task.state = :cancelled
+            else
+              logger.error("#{e} - #{e.backtrace.join("\n")}")
+              task.state = :error
+            end
             task.result = e.to_s
             task.timestamp = Time.now
             task.save
@@ -62,6 +69,12 @@ module Bosh::Director
         logger.info("Task took #{Duration.duration(ended - started)} to process.")
       end
 
+      def cancel_checkpoint
+        task = Models::Task[@task_id]
+        if task && task.state == "cancelling"
+          raise TaskCancelled.new(@task_id)
+        end
+      end
     end
   end
 end
