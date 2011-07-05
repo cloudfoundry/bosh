@@ -34,6 +34,7 @@ require "director/validation_helper"
 require "director/version"
 require "director/config"
 require "director/event_log"
+require "director/job_cancel"
 
 require "director/client"
 require "director/ip_util"
@@ -131,7 +132,7 @@ module Bosh::Director
       def task_timeout?(task)
         # Some of the old task entries might not have the checkpoint_time
         # If no checkpoint update in 3 cycles --> timeout
-        task.state == "processing" && task.checkpoint_time &&
+        (task.state == "processing" || task.state == "cancelling") && task.checkpoint_time &&
           (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
       end
     end
@@ -366,6 +367,24 @@ module Bosh::Director
       else
         status(NO_CONTENT)
       end
+    end
+
+    get "/task/:id/cancel" do
+      output = ""
+      task_id = params[:id]
+      task = Models::Task[task_id]
+      raise TaskNotFound.new(task_id) if task.nil?
+
+      if task.state != "processing"
+        output = "Task #{task_id} is not processing"
+        status(400)
+      else
+        output = "Cancelling task #{task_id}"
+        task.state = :cancelling
+        task.save
+        status(200)
+      end
+      output
     end
 
     get "/info" do

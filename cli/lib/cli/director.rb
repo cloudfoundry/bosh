@@ -139,6 +139,13 @@ module Bosh
         [ body, new_offset ]
       end
 
+      def cancel_task(task_id)
+        response_code, body = get("/task/#{task_id}/cancel")
+        raise AuthError if response_code == 401
+        raise MissingTask, "No task##{@task_id} found" if response_code == 404
+        [ body, response_code ]
+      end
+
       [ :post, :put, :get, :delete ].each do |method_name|
         define_method method_name do |*args|
           request(method_name, *args)
@@ -201,6 +208,9 @@ module Bosh
             break
           elsif state == "error"
             result = :error
+            break
+          elsif state == "cancelled"
+            result = :cancelled
             break
           elsif !max_polls.nil? && polls >= max_polls
             result = :track_timeout

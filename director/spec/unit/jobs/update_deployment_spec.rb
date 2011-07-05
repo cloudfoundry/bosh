@@ -16,6 +16,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     YAML.stub!(:load).with("manifest").and_return(@manifest)
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, false).and_return(@deployment_plan)
     Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
+    @job_cancel = Bosh::Director::JobCancel.new(1)
+    @job_cancel.stub!(:cancel?).and_return(false)
+    Bosh::Director::Config.stub!(:job_cancel).and_return(@job_cancel)
+
   end
 
   after(:each) do

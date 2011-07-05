@@ -14,6 +14,7 @@ module Bosh::Director
         @logger.info("Creating deployment plan")
         @deployment_plan = DeploymentPlan.new(YAML.load(@manifest), options["recreate"] || false)
         @logger.info("Created deployment plan")
+        @job_cancel = Config.job_cancel
       end
 
       def prepare
@@ -71,6 +72,7 @@ module Bosh::Director
 
         @logger.info("Updating resource pools")
         update_resource_pools
+        @job_cancel.cancel?
 
         @logger.info("Binding instance VMs")
         @deployment_plan_compiler.bind_instance_vms
@@ -83,6 +85,7 @@ module Bosh::Director
 
         @logger.info("Updating jobs")
         @deployment_plan.jobs.each do |job|
+          @job_cancel.cancel?
           @logger.info("Updating job: #{job.name}")
           JobUpdater.new(job).update
         end

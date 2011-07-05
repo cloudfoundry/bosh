@@ -171,10 +171,11 @@ Currently available bosh commands are:
   User management
     create user [<username>] [<password>]     Create user
 
-  Monitoring
+  Task
     tasks [running]                           Show the list of running tasks
     tasks recent [<number>]                   Show <number> recent tasks
     task [<id>|last] [--no-cache]             Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
+    cancel task <task-id>                     Cancel task-id
 
   Misc
     status                                    Show current status (current target, user, deployment info etc.)
@@ -308,6 +309,14 @@ USAGE
           when "release"
             usage("bosh reset release")
             set_cmd(:release, :reset, 0)
+          end
+ 
+        when "cancel"
+          what = @args.shift
+          case what
+          when "task"
+            usage("bosh cancel task <task-id>")
+            set_cmd(:task, :cancel, 1)
           end
 
         when "task"

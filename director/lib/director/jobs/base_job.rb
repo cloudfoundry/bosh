@@ -11,9 +11,9 @@ module Bosh::Director
         logger.formatter = ThreadFormatter.new
         logger.info("Starting task: #{task_id}")
 
-        event_log = Bosh::Director::EventLog.new(task_id, File.join(task.output, "event"))
-        Config.event_logger = event_log
+        Config.event_logger = Bosh::Director::EventLog.new(task_id, File.join(task.output, "event"))
         Config.logger = logger
+        Config.job_cancel = Bosh::Director::JobCancel.new(task_id)
         Sequel::Model.db.logger = logger
 
         cloud_options = Config.cloud_options
@@ -38,6 +38,7 @@ module Bosh::Director
               with_thread_name("task:#{task_id}-checkpoint") do
                 while true
                   sleep(Config.task_checkpoint_interval)
+                  task = Models::Task[task_id]
                   task.checkpoint_time = Time.now
                   task.save
                 end
@@ -51,8 +52,13 @@ module Bosh::Director
             task.timestamp = Time.now
             task.save
           rescue Exception => e
-            logger.error("#{e} - #{e.backtrace.join("\n")}")
-            task.state = :error
+            if e.kind_of?(Bosh::Director::TaskCancelled)
+              logger.info("task #{task_id} cancelled!")
+              task.state = :cancelled
+            else
+              logger.error("#{e} - #{e.backtrace.join("\n")}")
+              task.state = :error
+            end
             task.result = e.to_s
             task.timestamp = Time.now
             task.save

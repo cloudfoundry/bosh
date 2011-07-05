@@ -47,6 +47,9 @@ module Bosh
         out.blank? ? nil : "#{out}\n"
       end
 
+      def cancel
+        @director.cancel_task(@task_id)
+      end
     end
   end
 end
