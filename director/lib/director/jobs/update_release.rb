@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
-    class UpdateRelease
-      extend BaseJob
+    class UpdateRelease < BaseJob
 
       @queue = :normal
 

@@ -18,7 +18,8 @@ module Bosh::Director
        :revision,
        :task_checkpoint_interval,
        :max_tasks,
-       :event_logger
+       :event_logger,
+       :job_cancel
       ]
 
       CONFIG_OPTIONS.each do |option|

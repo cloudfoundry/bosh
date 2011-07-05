@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
-    class UpdateDeployment
-      extend BaseJob
+    class UpdateDeployment < BaseJob
 
       @queue = :normal
 
@@ -92,6 +91,7 @@ module Bosh::Director
       def update
         @logger.info("Updating resource pools")
         update_resource_pools
+        cancel_checkpoint
 
         @logger.info("Binding instance VMs")
         @deployment_plan_compiler.bind_instance_vms
@@ -104,6 +104,7 @@ module Bosh::Director
 
         @logger.info("Updating jobs")
         @deployment_plan.jobs.each do |job|
+          cancel_checkpoint
           @logger.info("Updating job: #{job.name}")
           JobUpdater.new(job).update
         end

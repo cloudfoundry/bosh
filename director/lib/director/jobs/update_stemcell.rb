@@ -1,7 +1,6 @@
 module Bosh::Director
   module Jobs
-    class UpdateStemcell
-      extend BaseJob
+    class UpdateStemcell < BaseJob
       include ValidationHelper
 
       @queue = :normal
