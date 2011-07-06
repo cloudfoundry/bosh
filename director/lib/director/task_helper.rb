@@ -27,10 +27,10 @@ module Bosh::Director
             FileUtils.mv(file_path + ".soap", File.join(tmpdir, "soap"), :force => true)
             FileUtils.mv(tmpdir, file_path, :force => true)
 
-            task = Models::Task[task_id]
-            if task
-              task.output = file_path
-              task.save
+            old_task = Models::Task[task_id]
+            if old_task
+              old_task.output = file_path
+              old_task.save
             end
           end
 
