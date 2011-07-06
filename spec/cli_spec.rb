@@ -7,6 +7,7 @@ require "tmpdir"
 describe Bosh::Spec::IntegrationTest do
 
   DEV_RELEASES_DIR = File.expand_path("../assets/test_release/dev_releases", __FILE__)
+  RELEASE_CONFIG   = File.expand_path("../assets/test_release/config/dev.yml", __FILE__)
   BOSH_CONFIG      = File.expand_path("../assets/bosh_config.yml", __FILE__)
   BOSH_CACHE_DIR   = Dir.mktmpdir
   BOSH_WORK_DIR    = File.expand_path("../assets/bosh_work_dir", __FILE__)
@@ -31,6 +32,14 @@ describe Bosh::Spec::IntegrationTest do
     FileUtils.rm_rf(CLOUD_DIR)
     FileUtils.rm_rf(BOSH_CACHE_DIR)
     FileUtils.rm_rf(DEV_RELEASES_DIR)
+    FileUtils.mkdir_p(File.dirname(RELEASE_CONFIG))
+    File.open(RELEASE_CONFIG, "w") do |f|
+      f.write(YAML.dump(release_config))
+    end
+  end
+
+  after :each do
+    FileUtils.rm_rf(RELEASE_CONFIG)
   end
 
   def run_bosh(cmd, work_dir = nil)
@@ -38,6 +47,13 @@ describe Bosh::Spec::IntegrationTest do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
       `#{CLI_DIR}/bin/bosh --non-interactive --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
     end
+  end
+
+  def release_config
+    {
+      "name" => "test_release",
+      "min_cli_version" => "0.5"
+    }
   end
 
   def rx(string)
@@ -391,6 +407,28 @@ describe Bosh::Spec::IntegrationTest do
     +----------+----------+
     | appcloud | 0.1      |
     +----------+----------+
+
+    Releases total: 1
+    OUT
+  end
+
+  it "uploads the latest generated release if no release path given" do
+    assets_dir = File.dirname(spec_asset("foo"))
+
+    Dir.chdir(File.join(assets_dir, "test_release")) do
+      FileUtils.rm_rf("dev_releases")
+      run_bosh("create release", Dir.pwd)
+      run_bosh("target http://localhost:57523")
+      run_bosh("login admin admin")
+      run_bosh("upload release", Dir.pwd)
+    end
+
+    expect_output("releases", <<-OUT )
+    +--------------+----------+
+    | Name         | Versions |
+    +--------------+----------+
+    | test_release | 1        |
+    +--------------+----------+
 
     Releases total: 1
     OUT
