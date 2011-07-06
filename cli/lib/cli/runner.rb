@@ -272,7 +272,7 @@ USAGE
             set_cmd(:stemcell, :upload, 1)
           when "release"
             usage("bosh upload release <path>")
-            set_cmd(:release, :upload, 1)
+            set_cmd(:release, :upload, 0..1)
           end
 
         when "verify", "validate"

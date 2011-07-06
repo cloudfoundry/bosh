@@ -19,4 +19,5 @@ cli/pkg
 blobstore_client/pkg
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
+spec/assets/test_release/config/dev.yml
 director/director.db
