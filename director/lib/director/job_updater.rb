@@ -93,7 +93,7 @@ module Bosh::Director
                     InstanceUpdater.new(instance).update
                   rescue Exception => e
                     @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
-                    @job.record_update_error(e)
+                    @job.record_update_error(e) # TODO: Shouldn't this be synchronized (as it modifies counter in job)?
                   end
                 end
               end

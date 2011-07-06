@@ -51,13 +51,26 @@ module Bosh::Director
       end
     end
 
+    # Creates VMs that are considered missing from the deployment
+    # @param thread_pool Thread pool that will be used to parallelize the operation
+    # If the block is given it is treated as a condition: only VMs that yield true
+    # for that condition will be created.
+    # Example:
+    # create_missing_vms(thread_pool) { |vm| vm
     def create_missing_vms(thread_pool)
       counter = 0
-      each_idle_vm { |idle_vm| counter += 1 if (!idle_vm.vm) }
+      vms_to_process = [ ]
+
+      each_idle_vm do |idle_vm|
+        next if idle_vm.vm
+        if !block_given? || yield(idle_vm)
+          counter += 1
+          vms_to_process << idle_vm
+        end
+      end
 
       @logger.info("Creating #{counter} missing VMs")
-      each_idle_vm_with_index do |idle_vm, index|
-        next if idle_vm.vm
+      vms_to_process.each_with_index do |idle_vm, index|
         thread_pool.process do
           with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
             progress_and_log("Creating missing VM", index, counter)
@@ -65,6 +78,12 @@ module Bosh::Director
           end
         end
       end
+    end
+
+    # Creates missing VMs that have bound instances
+    # (as opposed to missing resource pool VMs)
+    def create_bound_missing_vms(thread_pool)
+      create_missing_vms(thread_pool) { |idle_vm| !idle_vm.bound_instance.nil? }
     end
 
     def each_idle_vm
@@ -78,6 +97,22 @@ module Bosh::Director
         yield(idle_vm, index)
         index += 1
       end
+    end
+
+    # Attempts to allocate a dynamic IP address for all idle VMs
+    # (unless they already have one). This allows us to fail earlier
+    # in case any of resource pools is not big enough to accomodate
+    # those VMs.
+    def allocate_dynamic_ips
+      network = @resource_pool.network
+
+      each_idle_vm do |idle_vm|
+        unless idle_vm.ip
+          idle_vm.ip = network.allocate_dynamic_ip
+        end
+      end
+    rescue Bosh::Director::NotEnoughCapacity => e
+      raise "Not enough dynamic IP addresses in network `#{network.name}' for resource pool `#{@resource_pool.name}'"
     end
 
     def create_missing_vm(idle_vm)

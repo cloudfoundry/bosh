@@ -8,6 +8,17 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     @deployment_plan = mock("deployment_plan")
 
     @deployment_plan.stub!(:name).and_return("test_deployment")
+
+    pool1 = mock("resource_pool")
+    pool2 = mock("resource_pool")
+    updater1 = mock("resource_pool_updater")
+    updater2 = mock("resource_pool_updater")
+
+    Bosh::Director::ResourcePoolUpdater.stub!(:new).with(pool1).and_return(updater1)
+    Bosh::Director::ResourcePoolUpdater.stub!(:new).with(pool2).and_return(updater2)
+
+    @deployment_plan.stub!(:resource_pools).and_return([pool1, pool2])
+
     @file.stub!(:read).and_return("manifest")
 
     @tmpdir = Dir.mktmpdir("base_dir")
@@ -72,12 +83,17 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan.stub!(:resource_pools).and_return([resource_pool])
       @deployment_plan.stub!(:jobs).and_return([job])
 
-      deployment_plan_compiler.should_receive(:bind_instance_vms)
-      deployment_plan_compiler.should_receive(:delete_unneeded_vms)
-      deployment_plan_compiler.should_receive(:delete_unneeded_instances)
-      resource_pool_updater.should_receive(:delete_extra_vms)
-      resource_pool_updater.should_receive(:delete_outdated_vms)
-      resource_pool_updater.should_receive(:create_missing_vms)
+      deployment_plan_compiler.should_receive(:bind_instance_vms).ordered
+      deployment_plan_compiler.should_receive(:delete_unneeded_vms).ordered
+      deployment_plan_compiler.should_receive(:delete_unneeded_instances).ordered
+
+      resource_pool_updater.should_receive(:delete_extra_vms).ordered
+      resource_pool_updater.should_receive(:delete_outdated_vms).ordered
+
+      resource_pool_updater.should_receive(:create_bound_missing_vms).ordered
+      resource_pool_updater.should_receive(:allocate_dynamic_ips).ordered
+      resource_pool_updater.should_receive(:create_missing_vms).ordered
+
       job_updater.should_receive(:update)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
@@ -95,14 +111,19 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     it "should delete references to no longer used stemcells" do
       deployment = Bosh::Director::Models::Deployment.make
+
       resource_pool_spec = stub("resource_pool_spec")
       stemcell_spec = stub("stemcell_spec")
+
       new_stemcell = Bosh::Director::Models::Stemcell.make
       old_stemcell = Bosh::Director::Models::Stemcell.make
+
       deployment.add_stemcell(old_stemcell)
 
       @deployment_plan.stub!(:deployment).and_return(deployment)
       @deployment_plan.stub!(:resource_pools).and_return([resource_pool_spec])
+
+      Bosh::Director::ResourcePoolUpdater.stub!(:new).with(resource_pool_spec).and_return(mock("updater"))
 
       resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
       stemcell_spec.stub!(:stemcell).and_return(new_stemcell)

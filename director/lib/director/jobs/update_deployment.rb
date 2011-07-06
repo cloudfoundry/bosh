@@ -15,6 +15,10 @@ module Bosh::Director
         @logger.info("Creating deployment plan")
         @deployment_plan = DeploymentPlan.new(YAML.load(@manifest), options["recreate"] || false)
         @logger.info("Created deployment plan")
+
+        @resource_pool_updaters = @deployment_plan.resource_pools.map do |resource_pool|
+          ResourcePoolUpdater.new(resource_pool)
+        end
       end
 
       def prepare
@@ -45,31 +49,47 @@ module Bosh::Director
       def update_resource_pools
         resource_pool_updaters = []
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
-          @deployment_plan.resource_pools.each do |resource_pool|
-            resource_pool_updaters << ResourcePoolUpdater.new(resource_pool)
-          end
-
-          # delete extra VMs accross resource_pools
-          resource_pool_updaters.each do |resource_pool_updater|
+          # delete extra VMs across resource pools
+          @resource_pool_updaters.each do |resource_pool_updater|
             resource_pool_updater.delete_extra_vms(thread_pool)
           end
           thread_pool.wait
 
-          # delete outdated VMs accross resource_pools
-          resource_pool_updaters.each do |resource_pool_updater|
+          # delete outdated VMs across resource pools
+          @resource_pool_updaters.each do |resource_pool_updater|
             resource_pool_updater.delete_outdated_vms(thread_pool)
           end
           thread_pool.wait
 
-          # create missing VMs accross resource_pools
-          resource_pool_updaters.each do |resource_pool_updater|
+          # create missing VMs across resource pools phase 1:
+          # only creates VMs that have been bound to instances
+          # to avoid refilling the resource pool before instances
+          # that are no longer needed have been deleted.
+          @resource_pool_updaters.each do |resource_pool_updater|
+            resource_pool_updater.create_bound_missing_vms(thread_pool)
+          end
+        end
+      end
+
+      def refill_resource_pools
+        # Instance updaters might have added some idle vms
+        # so they can be returned to resource pool. In that case
+        # we need to pre-allocate network settings for all of them.
+        @resource_pool_updaters.each do |resource_pool_updater|
+          resource_pool_updater.allocate_dynamic_ips
+        end
+
+        ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
+          # create missing VMs across resource pools phase 2:
+          # should be called after all instance updaters are finished to
+          # create additional VMs in order to balance resource pools
+          @resource_pool_updaters.each do |resource_pool_updater|
             resource_pool_updater.create_missing_vms(thread_pool)
           end
         end
       end
 
       def update
-
         @logger.info("Updating resource pools")
         update_resource_pools
 
@@ -87,6 +107,9 @@ module Bosh::Director
           @logger.info("Updating job: #{job.name}")
           JobUpdater.new(job).update
         end
+
+        @logger.info("Refilling resource pools")
+        refill_resource_pools
       end
 
       def update_stemcell_references

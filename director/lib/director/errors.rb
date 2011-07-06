@@ -71,6 +71,8 @@ module Bosh::Director
    ["JobMissingTemplateFile",  BAD_REQUEST, 80002, "Job: \"%s\" missing template file: \"%s\""],
    ["JobMissingPackage",       BAD_REQUEST, 80003, "Job: \"%s\" missing package: \"%s\""],
    ["JobMissingMonit",         BAD_REQUEST, 80004, "Job: \"%s\" missing monit configuration"],
+
+   ["NotEnoughCapacity", BAD_REQUEST, 90000, "%s"]
   ].each do |e|
     class_name, response_code, error_code, format = e
 
