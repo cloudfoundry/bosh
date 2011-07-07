@@ -1,5 +1,8 @@
 source :rubygems
 
+# nats is not used, but is required by the agent code
+gem 'nats'
+
 gem 'highline'
 gem 'rest-client'
 gem "blobstore_client", "~> 0.3"
