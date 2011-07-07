@@ -20,3 +20,4 @@ blobstore_client/pkg
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
 director/director.db
+micro/tmp

@@ -1,0 +1,112 @@
+---
+name: micro
+target: http://172.31.113.154:25555
+release:
+  name: micro
+  version: 11
+
+networks:
+- name: local
+  subnets:
+  - reserved:
+    - 172.31.220.2 - 172.31.223.199
+    static:
+    - 172.31.223.200 - 172.31.223.240
+    range: 172.31.220.0/22
+    gateway: 172.31.220.1
+    dns:
+    - 172.30.22.153
+    - 172.30.22.154
+    cloud_properties:
+      name: VLAN2220
+
+resource_pools:
+- name: infrastructure
+  stemcell:
+    name: bosh-stemcell
+    version: 0.1.58
+  network: local
+  size: 1
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 1
+
+compilation:
+  workers: 12
+  network: local
+  cloud_properties:
+    ram: 4048
+    disk: 4048
+    cpu: 4
+
+update:
+  canaries: 1
+  canary_watch_time: 60000
+  update_watch_time: 60000
+  max_in_flight: 32
+  max_errors: 2
+
+jobs:
+- name: micro
+  template: micro
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 9096
+  networks:
+  - name: local
+    static_ips:
+    - 172.31.223.200
+
+properties:
+  domain: vcap.me
+
+  env:
+    http_proxy: none
+    https_proxy: none
+
+  networks:
+    apps: local
+    management: local
+
+  nats:
+    user: nats
+    password: z2b3ij3122
+    address: 127.0.0.1
+    port: 4222
+
+  ccdb:
+    address: 127.0.0.1
+    user: root
+    password: pass
+    port: 2544
+    dbname: appcloud
+
+  cc:
+    srv_api_uri: http://api.vcap.me
+    password: zbTuuLaap445hkn2
+    token: 287f4eaa8c1758f66d5cb7adcb24adb9d79d1df21a7e97ea0173cbc9b721068de42c57fa162106885b2805144866ee6417dc25ad80a9cfa0723f19a8a0b95754
+    local_register_only: false
+    admins: ['admin@vcap.me']
+
+  mysql_gateway:
+    token: "0xdeadbeef"
+  mysql_node:
+    available_storage: 100
+    password: pass
+
+  redis_gateway:
+    token: "0xdeadbeef"
+  redis_node:
+    available_memory: 100
+
+  mongodb_gateway:
+    token: "0xdeadbeef"
+  mongodb_node:
+    available_memory: 100
+
+  rabbit_gateway:
+    token: "0xdeadbeef"
+  rabbit_node:
+    available_memory: 100
+
