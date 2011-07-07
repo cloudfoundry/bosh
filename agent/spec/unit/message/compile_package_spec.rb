@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 describe Bosh::Agent::Message::CompilePackage do
 
   before(:each) do
+    Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
