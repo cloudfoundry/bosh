@@ -1,0 +1,2 @@
+<%= template_args[:base] %>/instance /var/vcap/bosh/src
+<%= template_args[:base] %>/micro /var/vcap/micro

@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+gemfile = File.expand_path("../../Gemfile", __FILE__)
+
+if File.exists?(gemfile)
+  ENV["BUNDLE_GEMFILE"] = gemfile
+  require "rubygems"
+  require "bundler/setup"
+end
+
+$:.unshift(File.expand_path("../../lib", __FILE__))
+require "vm_builder"
+
+trap("INT") { puts "Exiting..."; exit(0) }
+
+VMBuilder::Build.start
