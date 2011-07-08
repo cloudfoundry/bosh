@@ -1,5 +1,6 @@
 module Bosh::Cli::Command
   class Stemcell < Base
+    include Bosh::Cli::VersionCalc
 
     def verify(tarball_path)
       stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
@@ -47,7 +48,9 @@ module Bosh::Cli::Command
 
     def list
       auth_required
-      stemcells = director.list_stemcells
+      stemcells = director.list_stemcells.sort do |sc1, sc2|
+        sc1["name"] == sc2["name"] ? version_cmp(sc1["version"], sc2["version"]) : sc1["name"] <=> sc2["name"]
+      end
 
       err("No stemcells") if stemcells.size == 0
 

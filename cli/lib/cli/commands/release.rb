@@ -228,14 +228,14 @@ module Bosh::Cli::Command
 
     def list
       auth_required
-      releases = director.list_releases
+      releases = director.list_releases.sort { |r1, r2| r1["name"] <=> r2["name"] }
 
       err("No releases") if releases.size == 0
 
       releases_table = table do |t|
         t.headings = "Name", "Versions"
         releases.each do |r|
-          t << [ r["name"], r["versions"].join(", ") ]
+          t << [ r["name"], r["versions"].sort { |v1, v2| version_cmp(v1, v2) }.join(", ") ]
         end
       end
 
