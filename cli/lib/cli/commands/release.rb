@@ -204,6 +204,10 @@ module Bosh::Cli::Command
       end
 
       say("Release manifest saved in '#{builder.manifest_path.green}'")
+      [dev_release, final_release].each do |release|
+        release.update_config(:min_cli_version => Bosh::Cli::VERSION)
+      end
+
       builder.manifest_path
     end
 
