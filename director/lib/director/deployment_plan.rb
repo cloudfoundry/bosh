@@ -189,7 +189,9 @@ module Bosh::Director
           ip = subnet.allocate_dynamic_ip
           break if ip
         end
-        raise "not enough dynamic IPs" unless ip
+        unless ip
+          raise Bosh::Director::NotEnoughCapacity, "not enough dynamic IPs"
+        end
         ip
       end
 

@@ -218,4 +218,143 @@ describe Bosh::Director::ResourcePoolUpdater do
     Bosh::Director::Models::Vm.all.should == [current_vm]
   end
 
+
+  it "should only create bound missing vms" do
+    updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
+
+    instance1 = mock("instance")
+    instance2 = mock("instance")
+
+    instance1.stub!(:spec).and_return({"job" => "a", "index" => 1, "release" => "release_name"})
+    instance2.stub!(:spec).and_return({"job" => "a", "index" => 3, "release" => "release_name"})
+
+    vms = [ ]
+    (0..3).each do |i|
+      vms << mock("idle_vm", :network_settings => { "network_a" => { "ip" => "1.2.3.#{i}"}}, :vm => nil, :bound_instance => nil)
+    end
+
+    vms[1].stub!(:bound_instance).and_return(instance1)
+    vms[3].stub!(:bound_instance).and_return(instance2)
+
+    @resource_pool_spec.stub!(:size).and_return(4)
+    @resource_pool_spec.stub!(:active_vms).and_return(0)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([ vms[0], vms[1] ])
+    @resource_pool_spec.stub!(:idle_vms).and_return([ vms[2], vms[3] ])
+
+    [1, 3].each do |i|
+      @cloud.should_receive(:create_vm).
+        with("agent-#{i}",
+             "stemcell-id",
+             { "ram" => "2gb" },
+             { "network_a" => { "ip" => "1.2.3.#{i}" } },
+             nil,
+             {}).
+        and_return("vm-#{i}")
+
+      agent = mock("agent")
+      Bosh::Director::AgentClient.stub!(:new).with("agent-#{i}").and_return(agent)
+
+      vms[i].should_receive(:vm=).with do |vm|
+        vm.deployment.should == @deployment
+        vm.cid.should == "vm-#{i}"
+        vm.agent_id.should == "agent-#{i}"
+        true
+      end
+
+      agent.should_receive(:wait_until_ready)
+      agent.should_receive(:apply).
+        with({
+               "resource_pool" => {
+                 "name" => "foo"
+               },
+               "networks" => {
+                 "network_a" => {
+                   "ip" => "1.2.3.#{i}"
+                 }
+               },
+               "job" => "a",
+               "index" => i,
+               "release" => "release_name",
+               "deployment" => "deployment_name"
+             }).
+        and_return({"agent_task_id" => 5, "state" => "done"})
+
+      agent.should_receive(:get_state).and_return({"state" => "testing"})
+      vms[i].should_receive(:current_state=).with({"state" => "testing"})
+    end
+
+    updater.stub!(:generate_agent_id).and_return("agent-1", "agent-3")
+
+    fake_thread_pool = mock("thread pool") # To avoid messing stubs
+    fake_thread_pool.stub!(:process).and_yield
+
+    updater.create_bound_missing_vms(fake_thread_pool)
+
+    Bosh::Director::Models::Vm.count.should == 2
+  end
+
+  it "can bulk allocate ips for idle vms that need them" do
+    network = {
+      "name" => "network_a",
+      "subnets" => \
+      [
+       {
+         "static" => "192.168.30.1-192.168.30.5",
+         "range" => "192.168.30.0/28", # 14 VMs
+         "cloud_properties" => { }
+       }
+      ],
+    }
+
+    network_spec = Bosh::Director::DeploymentPlan::NetworkSpec.new(@deployment, network)
+
+    vms = [ ]
+    vms << mock("idle_vm", :ip => network_spec.allocate_dynamic_ip)
+
+    (7..14).map do |i|
+      vm = mock("idle_vm", :ip => nil)
+      vm.should_receive(:ip=).with(NetAddr.ip_to_i("192.168.30.#{i}"))
+      vms << vm
+    end
+
+    @resource_pool_spec.stub!(:network).and_return(network_spec)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
+    @resource_pool_spec.stub!(:idle_vms).and_return(vms)
+
+    updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
+    updater.allocate_dynamic_ips
+  end
+
+
+  it "whines when resource pool network doesn't have capacity for all IPs" do
+    network = {
+      "name" => "network_a",
+      "subnets" => \
+      [
+       {
+         "static" => "192.168.30.1-192.168.30.5",
+         "range" => "192.168.30.0/28", # 14 VMs
+         "cloud_properties" => { }
+       }
+      ],
+    }
+
+    vms = (6..15).map do |i|
+      vm = mock("idle_vm", :ip => nil)
+      vm.should_receive(:ip=) if i < 15
+      vm
+    end
+
+    network_spec = Bosh::Director::DeploymentPlan::NetworkSpec.new(@deployment, network)
+    @resource_pool_spec.stub!(:network).and_return(network_spec)
+    @resource_pool_spec.stub!(:allocated_vms).and_return([])
+    @resource_pool_spec.stub!(:idle_vms).and_return(vms)
+
+    updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
+
+    lambda {
+      updater.allocate_dynamic_ips
+    }.should raise_error(RuntimeError, "Not enough dynamic IP addresses in network `network_a' for resource pool `test'")
+  end
+
 end
