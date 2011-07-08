@@ -1,0 +1,20 @@
+[DEFAULT]
+arch = amd64
+firstboot = <%= template_args[:base] %>/firstboot.sh
+execscript = <%= template_args[:base] %>/execscript.sh
+copy = <%= template_args[:base] %>/copy.in
+part = <%= template_args[:base] %>/part
+rootpass = ca$hc0w
+user = vcap
+pass = ca$hc0w
+mem = 1024
+cpus = 2
+hostname = micro
+
+[ubuntu]
+suite = lucid
+# multiverse for open-vm-tools
+components = main,universe,multiverse
+flavor = virtual
+addpkg = runit
+addpkg = build-essential, libssl-dev, openssh-server, linux-headers-virtual, open-vm-dkms, open-vm-tools, lsof, strace, scsitools, dnsutils, tcpdump, tshark, iputils-arping, curl, wget, libcurl3, libcurl3-dev, bison, libreadline5-dev, libxml2, libxml2-dev, libxslt1.1, libxslt1-dev, zip, unzip, git-core, rsync, bind9-host, nfs-common, flex, psmisc, apparmor-utils, mg, runit
