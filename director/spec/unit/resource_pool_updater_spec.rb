@@ -308,21 +308,28 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     network_spec = Bosh::Director::DeploymentPlan::NetworkSpec.new(@deployment, network)
 
-    vms = [ ]
-    vms << mock("idle_vm", :ip => network_spec.allocate_dynamic_ip)
+    vm0 = Bosh::Director::DeploymentPlan::IdleVm.new(@resource_pool_spec)
+    vm0.ip = network_spec.allocate_dynamic_ip
+    vms = [vm0]
 
-    (7..14).map do |i|
-      vm = mock("idle_vm", :ip => nil)
-      vm.should_receive(:ip=).with(NetAddr.ip_to_i("192.168.30.#{i}"))
-      vms << vm
-    end
+    vms = (7..14).map { |i| Bosh::Director::DeploymentPlan::IdleVm.new(@resource_pool_spec) }
 
     @resource_pool_spec.stub!(:network).and_return(network_spec)
     @resource_pool_spec.stub!(:allocated_vms).and_return([])
     @resource_pool_spec.stub!(:idle_vms).and_return(vms)
 
     updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
+
     updater.allocate_dynamic_ips
+
+    ips = vms.map { |vm| vm.ip }
+
+    ips.each do |ip|
+      ip.should be >= NetAddr.ip_to_i("192.168.30.6")
+      ip.should be <= NetAddr.ip_to_i("192.168.30.14")
+    end
+
+    ips.size.should == ips.uniq.size
   end
 
 
