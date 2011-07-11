@@ -8,7 +8,6 @@ require 'monit_api'
 
 module Bosh
   module Agent
-    class MessageHandlerError < StandardError; end
     BOSH_APP = BOSH_APP_USER = BOSH_APP_GROUP = "vcap"
   end
 end
@@ -16,11 +15,18 @@ end
 require 'agent/ext'
 require 'agent/util'
 require 'agent/config'
+require 'agent/errors'
 require 'agent/version'
 require 'agent/message/base'
 require 'agent/message/apply'
 require 'agent/platform'
 require 'agent/monit'
+require 'agent/state'
+require 'agent/template'
+require 'agent/platform'
+require 'agent/platform/ubuntu'
+require 'agent/platform/ubuntu/logrotate'
+
 
 module VCAP
   module Micro
