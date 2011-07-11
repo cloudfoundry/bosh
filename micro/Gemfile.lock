@@ -5,7 +5,7 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.3.1)
+    blobstore_client (0.3.3)
       aws-s3
       httpclient
       uuidtools

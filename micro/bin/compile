@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
+# this is required to run the compiler from the source tree
+# when run as part of the vmbuilder, the agent lib is copied
+# into the micro lib
+$:.unshift(File.expand_path("../../../agent/lib", __FILE__))
+
+require 'micro/compiler'
+
+ENV['PATH'] = "/var/vcap/bosh/bin:#{ENV['PATH']}"
+
+manifest = File.expand_path(ARGV[0])
+tarball = File.expand_path(ARGV[1])
+
+unless ARGV.size == 2 && File.exist?(manifest) && File.exist?(tarball)
+  # should output this in red to make it easier to spot in among the
+  # gazillion messages in the build log
+  STDERR.puts "usage: #{$0} <deployment manifest> <release tarball>"
+  exit 1
+end
+
+opts = {
+  "logging" => {"level" => "DEBUG"},
+  "base_dir"  => File.expand_path("/var/vcap")
+}
+
+ngc = VCAP::Micro::Compiler.new(opts).compile(manifest, tarball)
+
