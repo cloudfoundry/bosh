@@ -1,4 +1,5 @@
 require 'netaddr'
+require 'socket'
 
 module VCAP
   module Micro
@@ -10,8 +11,47 @@ module VCAP
         route ||= A_ROOT_SERVER
         orig, Socket.do_not_reverse_lookup = Socket.do_not_reverse_lookup, true
         UDPSocket.open {|s| s.connect(route, 1); s.addr.last }
+      rescue Errno::ENETUNREACH
+        # happens on boot when dhcp hasn't completed when we get here
+        # TODO avoid being stuck here forever
+        sleep 3
+        retry
       ensure
         Socket.do_not_reverse_lookup = orig
+      end
+
+      def self.gateway
+        %x{netstat -rn 2>&1}.split("\n").each do |line|
+          fields = line.split(/\s+/)
+          if fields[0] =~ /^default|0\.0\.0\.0$/
+            return fields[1]
+          end
+        end
+        nil
+      end
+
+      def self.ping(host, count=3)
+        %x{ping -c #{count} #{host}}
+        $? == 0
+      end
+
+      def self.lookup(name)
+        IPSocket.getaddress(name)
+      rescue SocketError
+        nil
+      end
+
+      # states: down -> restarting -> up
+      def initialize
+        @state = :down
+      end
+
+      def restarting?
+        @state == :restarting
+      end
+
+      def up?
+        @state == :up
       end
 
       def dhcp
@@ -25,7 +65,7 @@ module VCAP
 
           net_cidr = NetAddr::CIDR.create(cidr_ip_mask)
           net['network'] = net_cidr.network
-          net['broadcast'] = net_cidr.broadcast 
+          net['broadcast'] = net_cidr.broadcast
         rescue NetAddr::ValidationError => e
           puts "hubba"
         end
@@ -55,16 +95,20 @@ module VCAP
         interface_file = "/etc/network/interfaces"
         FileUtils.mkdir_p(File.dirname(interface_file))
 
-        template = ERB.new(template_data, 0, '%<>') 
+        template = ERB.new(template_data, 0, '%<>')
         result = template.result(binding)
         File.open(interface_file, 'w') do |fh|
           fh.write(result)
         end
       end
 
+      # TODO detect if restart hangs and set state to failed instead
       def restart
+        raise RuntimeError, "network already restarting" if restarting?
+        @state = :restarting
         `service network-interface stop INTERFACE=eth0 2>/dev/null`
         `service network-interface start INTERFACE=eth0`
+        @state = :up
       end
 
       BASE_TEMPLATE = <<TEMPLATE
