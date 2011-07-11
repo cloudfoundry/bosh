@@ -14,10 +14,20 @@ module Bosh
       attr_reader :bucket_name, :encryption_key
 
       def initialize(options)
-        options = options.dup
+        opts = options.dup
         options.each_key do |key|
-          options[key.to_sym] = options[key] if key.is_a?(String)
+          if key.is_a?(String)
+            k = key.to_sym
+            # if we already have a symbol, don't overwrite it with a different value
+            if opts.has_key?(k) && opts[k] != options[key]
+              raise ArgumentError, "duplicate option '#{key}' with different values '#{options[key]}' and '#{opts[k]}'"
+            else
+              opts[k] = options[key]
+              opts.delete(key)
+            end
+          end
         end
+        options = opts
 
         @bucket_name    = options[:bucket_name]
         @encryption_key = options[:encryption_key]
