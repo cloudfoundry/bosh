@@ -26,7 +26,7 @@ module VCAP
       def console
 
         @form = Form.new(@window)
-        label_text = "VMware VCAP Micro Cloud"
+        label_text = "VMware VCAP Micro Cloud Foundry"
         label = RubyCurses::Label.new(@form, {'text' => label_text, "row" => Ncurses.LINES-3, "col" => 2, "color" => "yellow", "height"=>2})
 
         @form.repaint
