@@ -3,7 +3,7 @@ require 'yajl'
 
 module VCAP
   module Micro
-    class Identity 
+    class Identity
       attr_accessor :admins, :ip, :subdomain, :proxy
 
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
