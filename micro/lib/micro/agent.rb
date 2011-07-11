@@ -8,7 +8,6 @@ require 'monit_api'
 
 module Bosh
   module Agent
-    class MessageHandlerError < StandardError; end
     BOSH_APP = BOSH_APP_USER = BOSH_APP_GROUP = "vcap"
   end
 end
@@ -16,10 +15,17 @@ end
 require 'agent/ext'
 require 'agent/util'
 require 'agent/config'
+require 'agent/errors'
 require 'agent/version'
 require 'agent/message/base'
 require 'agent/message/apply'
 require 'agent/monit'
+require 'agent/state'
+require 'agent/template'
+require 'agent/platform'
+require 'agent/platform/ubuntu'
+require 'agent/platform/ubuntu/logrotate'
+
 
 module VCAP
   module Micro
@@ -44,6 +50,7 @@ module VCAP
           "logging" => { "level" => "WARN" },
           "agent_id" => "micro",
           "base_dir" => "/var/vcap",
+          "platform_name" => "ubuntu",
           "blobstore_options" => { "blobstore_path" => "/var/vcap/data/cache" },
           "blobstore_provider" => "local"
         }
@@ -102,7 +109,9 @@ module VCAP
         started = []
 
         loop do
-          status = Bosh::Agent::Monit.retry_monit_request(:status)
+          status = Bosh::Agent::Monit.retry_monit_request do |client|
+            client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
+          end
 
           status.each do |name, data|
             if running_service?(data)
