@@ -1,0 +1,3 @@
+#!/bin/bash
+exec 2>&1
+exec /var/vcap/bosh/agent/bin/agent -c

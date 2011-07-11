@@ -1,0 +1,19 @@
+[DEFAULT]
+arch = amd64
+firstboot = <%= template_args[:base] %>/firstboot.sh
+execscript = <%= template_args[:base] %>/execscript.sh
+copy = <%= template_args[:base] %>/copy.in
+part = <%= template_args[:base] %>/part
+rootpass = ca$hc0w
+user = vcap
+pass = ca$hc0w
+mem = 1024
+cpus = 2
+hostname = micro
+
+[ubuntu]
+suite = lucid
+# multiverse for open-vm-tools
+components = main,universe,multiverse
+flavor = virtual
+addpkg = runit
