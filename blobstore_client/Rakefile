@@ -1,5 +1,5 @@
 require "rubygems"
-require "rake/gempackagetask"
+require "rubygems/package_task"
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "lib"))
 require "blobstore_client/version"
@@ -24,7 +24,7 @@ gemspec = Gem::Specification.new do |s|
   s.add_dependency "uuidtools"
 end
 
-Rake::GemPackageTask.new(gemspec) do |pkg|
+Gem::PackageTask.new(gemspec) do |pkg|
   pkg.gem_spec = gemspec
 end
 

@@ -1,5 +1,5 @@
 require "rubygems"
-require "rake/gempackagetask"
+require "rubygems/package_task"
 
 $:.unshift File.join(File.dirname(__FILE__), "lib")
 require "cli/version"
@@ -28,7 +28,7 @@ gemspec = Gem::Specification.new do |s|
   s.add_dependency "terminal-table", "~> 1.4.2"
 end
 
-Rake::GemPackageTask.new(gemspec) do |pkg|
+Gem::PackageTask.new(gemspec) do |pkg|
   pkg.gem_spec = gemspec
 end
 
