@@ -45,6 +45,7 @@ module VMBuilder
 
           VMBuilder::Build.source_root(MICRO_PATH)
           directory(MICRO_PATH, "#{tmpdir}/micro")
+          # TODO only copy in the agent files we need
           directory(AGENT_LIB_PATH, "#{tmpdir}/micro/lib")
           File.new("#{tmpdir}/micro/bin/compile").chmod(0755)
 

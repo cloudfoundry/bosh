@@ -2,7 +2,6 @@ require 'highline/import'
 require 'micro/network'
 require 'micro/identity'
 require 'micro/agent'
-require 'micro/system'
 require 'micro/settings'
 
 module VCAP
