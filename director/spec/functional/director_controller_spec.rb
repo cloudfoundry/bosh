@@ -113,6 +113,25 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "job management" do
+      it "allows putting jobs into different states" do
+        Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({ "foo" => "bar" }))
+        put "/deployments/foo/jobs/nats?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        expect_redirect_to_queued_task(last_response)
+      end
+
+      it "allows putting job instances into different states" do
+        Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({ "foo" => "bar" }))
+        put "/deployments/foo/jobs/dea/2?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        expect_redirect_to_queued_task(last_response)
+      end
+
+      it "doesn't like invalid indices" do
+        put "/deployments/foo/jobs/dea/zb?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        last_response.status.should == 400
+      end
+    end
+
     describe "listing stemcells" do
       it "has API call that returns a list of stemcells in JSON" do
         stemcells = (1..10).map do |i|
@@ -214,7 +233,7 @@ describe Bosh::Director::Controller do
           vm_params = { "agent_id" => "agent-#{i}", "cid" => "cid-#{i}", "deployment_id" => deployment.id }
           vm = Bosh::Director::Models::Vm.create(vm_params)
 
-          instance_params = { "deployment_id" => deployment.id, "vm_id" => vm.id, "job" => "job-#{i}", "index" => i }
+          instance_params = { "deployment_id" => deployment.id, "vm_id" => vm.id, "job" => "job-#{i}", "index" => i, "state" => "started" }
           instance = Bosh::Director::Models::Instance.create(instance_params)
         end
 
