@@ -220,6 +220,46 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}
+    put "/deployments/:deployment/jobs/:job", :consumes => :yaml do
+      options = {
+        "job_states" => {
+          params[:job] => {
+            "state" => params["state"]
+          }
+        }
+      }
+
+      deployment = Models::Deployment.find(:name => params[:deployment])
+      raise DeploymentNotFound.new(name) if deployment.nil?
+      task = @deployment_manager.create_deployment(@user, request.body, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    # PUT /deployments/foo/jobs/dea/2?state={started,stopped,detached,restart,recreate}
+    put "/deployments/:deployment/jobs/:job/:index", :consumes => :yaml do
+      begin
+        index = Integer(params[:index])
+      rescue ArgumentError
+        raise InstanceInvalidIndex.new(params[:index])
+      end
+
+      options = {
+        "job_states" => {
+          params[:job] => {
+            "instance_states" => {
+              index => params["state"]
+            }
+          }
+        }
+      }
+
+      deployment = Models::Deployment.find(:name => params[:deployment])
+      raise DeploymentNotFound.new(name) if deployment.nil?
+      task = @deployment_manager.create_deployment(@user, request.body, options)
+      redirect "/tasks/#{task.id}"
+    end
+
     get "/deployments" do
       deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
         {

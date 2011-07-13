@@ -12,7 +12,15 @@ module Bosh::Director
         @manifest = File.open(@manifest_file) { |f| f.read }
         @logger.debug("Manifest:\n#{@manifest}")
         @logger.info("Creating deployment plan")
-        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest), options["recreate"] || false)
+
+        @logger.info("Deployment plan options: #{options.pretty_inspect}")
+
+        plan_options = {
+          "recreate"   => !!options["recreate"],
+          "job_states" => options["job_states"] || { }
+        }
+
+        @deployment_plan = DeploymentPlan.new(YAML.load(@manifest), plan_options)
         @logger.info("Created deployment plan")
 
         @resource_pool_updaters = @deployment_plan.resource_pools.map do |resource_pool|

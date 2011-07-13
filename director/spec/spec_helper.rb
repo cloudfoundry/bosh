@@ -179,3 +179,24 @@ RSpec::Matchers.define :have_a_path_of do |expected|
   end
 end
 
+RSpec::Matchers.define :have_flag_set do |method_name|
+  match do |actual|
+    actual.send(method_name).should be_true
+  end
+
+  failure_message_for_should do |actual|
+    "expected `#{method_name}' to be set"
+  end
+
+  failure_message_for_should_not do |actual|
+    "expected `#{method_name}' to be cleared"
+  end
+
+  description do
+    "have `#{method_name}' flag set"
+  end
+end
+
+
+
+
