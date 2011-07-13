@@ -171,7 +171,6 @@ module Bosh::Agent
 
           if Bosh::Agent::Config.configure
             Bosh::Agent::Monit.reload
-            Bosh::Agent::Monit.start_services
           end
         end
       end
