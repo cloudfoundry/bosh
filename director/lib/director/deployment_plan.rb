@@ -3,6 +3,112 @@ module Bosh::Director
   class DeploymentPlan
     include ValidationHelper
 
+    attr_accessor :name
+    attr_accessor :release
+    attr_accessor :deployment
+    attr_accessor :properties
+    attr_accessor :compilation
+    attr_accessor :update
+    attr_accessor :unneeded_instances
+    attr_accessor :unneeded_vms
+    attr_reader   :recreate
+
+    def initialize(manifest, options = { })
+      @name = safe_property(manifest, "name", :class => String)
+
+      @properties = safe_property(manifest, "properties", :class => Hash, :default => { })
+      @properties.extend(DeepCopy)
+
+      @recreate   = !!options["recreate"]
+      @job_states = safe_property(options, "job_states", :class => Hash, :default => { })
+
+      @release = ReleaseSpec.new(self, safe_property(manifest, "release", :class => Hash))
+
+      @networks = {}
+      networks = safe_property(manifest, "networks", :class => Array)
+      networks.each do |network_spec|
+        network = NetworkSpec.new(self, network_spec)
+        @networks[network.name] = network
+      end
+
+      @compilation = CompilationConfig.new(self, safe_property(manifest, "compilation", :class => Hash))
+      @update = UpdateConfig.new(safe_property(manifest, "update", :class => Hash))
+
+      @resource_pools = {}
+      resource_pools = safe_property(manifest, "resource_pools", :class => Array)
+      resource_pools.each do |resource_pool_spec|
+        resource_pool = ResourcePoolSpec.new(self, resource_pool_spec)
+        @resource_pools[resource_pool.name] = resource_pool
+      end
+
+      @templates = {}
+      @jobs = []
+      @jobs_name_index = {}
+
+      jobs = safe_property(manifest, "jobs", :class => Array, :default => [ ])
+
+      jobs.each do |job|
+        state_overrides = @job_states[job["name"]]
+
+        if state_overrides
+          job.recursive_merge!(state_overrides)
+        end
+
+        job = JobSpec.new(self, job)
+        @jobs << job
+        @jobs_name_index[job.name] = job
+      end
+
+      @unneeded_vms = []
+      @unneeded_instances = []
+    end
+
+    def jobs
+      @jobs
+    end
+
+    def job(name)
+      @jobs_name_index[name]
+    end
+
+    def template(name)
+      @templates[name] ||= TemplateSpec.new(@deployment, name)
+    end
+
+    def templates
+      @templates.values
+    end
+
+    def networks
+      @networks.values
+    end
+
+    def network(name)
+      @networks[name]
+    end
+
+    def resource_pools
+      @resource_pools.values
+    end
+
+    def resource_pool(name)
+      @resource_pools[name]
+    end
+
+    def delete_vm(vm)
+      @unneeded_vms << vm
+    end
+
+    def delete_instance(instance)
+      if @jobs_name_index.has_key?(instance.job)
+        @jobs_name_index[instance.job].unneeded_instances << instance
+      else
+        @unneeded_instances << instance
+      end
+    end
+
+
+    # DeploymentPlan::ReleaseSpec
     class ReleaseSpec
       include ValidationHelper
 
@@ -24,9 +130,10 @@ module Bosh::Director
           "version" => @version
         }
       end
-
     end
 
+
+    # DeploymentPlan::StemcellSpec
     class StemcellSpec
       include ValidationHelper
 
@@ -51,9 +158,10 @@ module Bosh::Director
       def method_missing(method_name, *args)
         @stemcell.send(method_name, *args)
       end
-
     end
 
+
+    # DeploymentPlan::ResourcePoolSpec
     class ResourcePoolSpec
       include ValidationHelper
 
@@ -117,9 +225,10 @@ module Bosh::Director
           "stemcell" => @stemcell.spec
         }
       end
-
     end
 
+
+    # DeploymentPlan::IdleVm
     class IdleVm
 
       attr_accessor :resource_pool
@@ -157,9 +266,10 @@ module Bosh::Director
       def changed?
         resource_pool_changed? || networks_changed?
       end
-
     end
 
+
+    # DeploymentPlan::NetworkSpec
     class NetworkSpec
       include IpUtil
       include ValidationHelper
@@ -240,9 +350,10 @@ module Bosh::Director
           end
         end
       end
-
     end
 
+
+    # DeploymentPlan::NetworkSubnetSpec
     class NetworkSubnetSpec
       include IpUtil
       include ValidationHelper
@@ -333,9 +444,10 @@ module Bosh::Director
         # TODO: would be nice to check if it was really a dynamic ip and not reserved/static/etc
         @available_dynamic_ips.add(ip.to_i)
       end
-
     end
 
+
+    # DeploymentPlan::TemplateSpec
     class TemplateSpec
       attr_accessor :deployment
       attr_accessor :template
@@ -352,9 +464,17 @@ module Bosh::Director
       end
     end
 
+
+    # DeploymentPlan::JobSpec
     class JobSpec
       include IpUtil
       include ValidationHelper
+
+      # started, stopped and detached are real states
+      # (persisting in DB and reflecting target instance state)
+      # recreate and restart are two virtual states
+      # (both set  target instance state to "started" and set appropriate instance spec modifiers)
+      VALID_JOB_STATES = %w(started stopped detached recreate restart)
 
       attr_accessor :deployment
       attr_accessor :name
@@ -367,37 +487,70 @@ module Bosh::Director
       attr_accessor :update
       attr_accessor :update_errors
       attr_accessor :unneeded_instances
+      attr_accessor :state
+      attr_accessor :instance_states
 
-      def initialize(deployment, job_spec)
+      # @param deployment DeploymentSpec
+      # @param job Hash
+      def initialize(deployment, job)
         @deployment = deployment
-        @name = safe_property(job_spec, "name", :class => String)
-        @template = deployment.template(safe_property(job_spec, "template", :class => String))
-        @persistent_disk = safe_property(job_spec, "persistent_disk", :class => Integer, :optional => true) || 0
+        @name = safe_property(job, "name", :class => String)
+        @template = deployment.template(safe_property(job, "template", :class => String))
+
+        @persistent_disk = safe_property(job, "persistent_disk", :class => Integer, :default => 0)
+
         @instances = []
         @packages = {}
-        properties = safe_property(job_spec, "properties", :class => Hash, :optional => true)
+        @instance_states = { }
+
+        properties = safe_property(job, "properties", :class => Hash, :optional => true)
         if properties.nil?
           @properties = deployment.properties
         else
           @properties = deployment.properties._deep_copy
           @properties.recursive_merge!(properties)
         end
-        @resource_pool = deployment.resource_pool(safe_property(job_spec, "resource_pool", :class => String))
+
+        @resource_pool = deployment.resource_pool(safe_property(job, "resource_pool", :class => String))
         if @resource_pool.nil?
-          raise ArgumentError, "Job #{@name} references an unknown resource pool: #{job_spec["resource_pool"]}"
+          raise ArgumentError, "Job #{@name} references an unknown resource pool: #{job["resource_pool"]}"
         end
-        @update = UpdateConfig.new(safe_property(job_spec, "update", :class => Hash, :optional => true), deployment.update)
+
+        @update = UpdateConfig.new(safe_property(job, "update", :class => Hash, :optional => true), deployment.update)
         @rollback = false
         @update_errors = 0
         @unneeded_instances = []
         @default_network = {}
 
-        safe_property(job_spec, "instances", :class => Integer).times do |index|
+        @state = safe_property(job, "state", :class => String, :optional => true)
+        job_size = safe_property(job, "instances", :class => Integer)
+        instance_states = safe_property(job, "instance_states", :class => Hash, :default => { })
+
+        instance_states.each_pair do |index, state|
+          begin
+            index = Integer(index)
+          rescue ArgumentError
+            raise "Invalid index value: #{index}, integer expected"
+          end
+          unless (0...job_size).include?(index)
+            raise ArgumentError, "Job '#{@name}' instance state '#{index}' is outside of (0..#{job_size-1}) range"
+          end
+          unless VALID_JOB_STATES.include?(state)
+            raise ArgumentError, "Job '#{@name}' instance '#{index}' has an unknown state '#{state}', valid states are: #{VALID_JOB_STATES.join(", ")}"
+          end
+          @instance_states[index] = state
+        end
+
+        if @state && !VALID_JOB_STATES.include?(@state)
+          raise ArgumentError, "Job '#{@name}' has an unknown state '#{@state}', valid states are: #{VALID_JOB_STATES.join(", ")}"
+        end
+
+        job_size.times do |index|
           @instances[index] = InstanceSpec.new(self, index)
           @resource_pool.reserve_vm
         end
 
-        network_specs = safe_property(job_spec, "networks", :class => Array)
+        network_specs = safe_property(job, "networks", :class => Array)
         if network_specs.empty?
           raise "Job #{@name} must specify at least one network"
         end
@@ -491,9 +644,10 @@ module Bosh::Director
           "blobstore_id" => @template.blobstore_id
         }
       end
-
     end
 
+
+    # DeploymentPlan::PackageSpec
     class PackageSpec
       attr_accessor :package
       attr_accessor :compiled_package
@@ -511,22 +665,37 @@ module Bosh::Director
           "blobstore_id" => @compiled_package.blobstore_id
         }
       end
-
     end
 
+
+    # DeploymentPlan::InstanceSpec
     class InstanceSpec
 
       attr_accessor :job
       attr_accessor :index
       attr_accessor :instance
       attr_accessor :configuration_hash
+      attr_accessor :state
       attr_accessor :current_state
       attr_accessor :idle_vm
+      attr_accessor :recreate
+      attr_accessor :restart
 
       def initialize(job, index)
         @job = job
         @index = index
         @networks = {}
+        @state = job.instance_states[index] || job.state
+
+        # Expanding virtual states
+        case @state
+        when "recreate"
+          @recreate = true
+          @state = "started"
+        when "restart"
+          @restart = true
+          @state = "started"
+        end
       end
 
       def add_network(name)
@@ -555,12 +724,22 @@ module Bosh::Director
         network_settings
       end
 
+      def disk_size
+        disk_currently_attached? ? current_state["persistent_disk"].to_i : @instance.disk_size.to_i
+      end
+
+      def disk_currently_attached?
+        current_state["persistent_disk"].to_i > 0
+      end
+
       def networks_changed?
         network_settings != @current_state["networks"]
       end
 
       def resource_pool_changed?
-        @job.resource_pool.spec != @current_state["resource_pool"] || @job.deployment.recreate
+        @recreate ||
+          @job.deployment.recreate ||
+          @job.resource_pool.spec != @current_state["resource_pool"]
       end
 
       def configuration_changed?
@@ -576,16 +755,25 @@ module Bosh::Director
       end
 
       def persistent_disk_changed?
-        @job.persistent_disk != @current_state["persistent_disk"]
+        @job.persistent_disk != disk_size
       end
 
-      def job_state_changed?
-        "running" != @current_state["job_state"]
+      # Checks if agent view of the instance state
+      # is consistent with target instance state.
+      # In case the instance current state is 'detached'
+      # we should never get to this method call.
+      def state_changed?
+        @state == "detached" ||
+          @state == "started" && @current_state["job_state"] != "running" ||
+          @state == "stopped" && @current_state["job_state"] == "running"
       end
 
       def changed?
-        resource_pool_changed? || networks_changed? || packages_changed? || persistent_disk_changed? ||
-                configuration_changed? || job_changed? || job_state_changed?
+        return false if @state == "detached" && @current_state.nil?
+
+        @restart ||
+          resource_pool_changed? || networks_changed? || packages_changed? ||
+          persistent_disk_changed? || configuration_changed? || job_changed? || state_changed?
       end
 
       def spec
@@ -603,9 +791,9 @@ module Bosh::Director
           "properties" => job.properties
         }
       end
-
     end
 
+    # DeploymentPlan::InstanceNetwork
     class InstanceNetwork
       include IpUtil
 
@@ -632,9 +820,10 @@ module Bosh::Director
           @reserved = true
         end
       end
-
     end
 
+
+    # DeploymentPlan::UpdateConfig
     class UpdateConfig
       include ValidationHelper
 
@@ -661,9 +850,10 @@ module Bosh::Director
           @max_errors ||= default_update_config.max_errors
         end
       end
-
     end
 
+
+    # DeploymentPlan::CompilationConfig
     class CompilationConfig
       include ValidationHelper
 
@@ -681,104 +871,6 @@ module Bosh::Director
         raise "Compilation workers reference an unknown network: '#{network_name}'" if @network.nil?
         @cloud_properties = safe_property(compilation_config, "cloud_properties", :class => Hash)
         @env = safe_property(compilation_config, "env", :class => Hash, :optional => true) || {}
-      end
-    end
-
-    attr_accessor :name
-    attr_accessor :release
-    attr_accessor :deployment
-    attr_accessor :properties
-    attr_accessor :compilation
-    attr_accessor :update
-    attr_accessor :unneeded_instances
-    attr_accessor :unneeded_vms
-    attr_reader   :recreate
-
-    def initialize(manifest, recreate = false)
-      @name = safe_property(manifest, "name", :class => String)
-      @release = ReleaseSpec.new(self, safe_property(manifest, "release", :class => Hash))
-      @properties = safe_property(manifest, "properties", :class => Hash, :optional => true) || {}
-      @properties.extend(DeepCopy)
-      @recreate = recreate
-
-      @networks = {}
-      networks = safe_property(manifest, "networks", :class => Array)
-      networks.each do |network_spec|
-        network = NetworkSpec.new(self, network_spec)
-        @networks[network.name] = network
-      end
-
-      @compilation = CompilationConfig.new(self, safe_property(manifest, "compilation", :class => Hash))
-      @update = UpdateConfig.new(safe_property(manifest, "update", :class => Hash))
-
-      @resource_pools = {}
-      resource_pools = safe_property(manifest, "resource_pools", :class => Array)
-      resource_pools.each do |resource_pool_spec|
-        resource_pool = ResourcePoolSpec.new(self, resource_pool_spec)
-        @resource_pools[resource_pool.name] = resource_pool
-      end
-
-      @templates = {}
-      @jobs = []
-      @jobs_name_index = {}
-      jobs = safe_property(manifest, "jobs", :class => Array, :optional => true)
-      if jobs
-        jobs.each do |job_spec|
-          job = JobSpec.new(self, job_spec)
-          @jobs << job
-          @jobs_name_index[job.name] = job
-        end
-      end
-
-      @unneeded_vms = []
-      @unneeded_instances = []
-    end
-
-    def jobs
-      @jobs
-    end
-
-    def job(name)
-      @jobs_name_index[name]
-    end
-
-    def template(name)
-      template = @templates[name]
-      if template.nil?
-        @templates[name] = template = TemplateSpec.new(@deployment, name)
-      end
-      template
-    end
-
-    def templates
-      @templates.values
-    end
-
-    def networks
-      @networks.values
-    end
-
-    def network(name)
-      @networks[name]
-    end
-
-    def resource_pools
-      @resource_pools.values
-    end
-
-    def resource_pool(name)
-      @resource_pools[name]
-    end
-
-    def delete_vm(vm)
-      @unneeded_vms << vm
-    end
-
-    def delete_instance(instance)
-      if @jobs_name_index.has_key?(instance.job)
-        @jobs_name_index[instance.job].unneeded_instances << instance
-      else
-        @unneeded_instances << instance
       end
     end
 

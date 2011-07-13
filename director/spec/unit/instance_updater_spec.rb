@@ -76,6 +76,10 @@ describe Bosh::Director::InstanceUpdater do
     end
   end
 
+  def make_updater(spec)
+    Bosh::Director::InstanceUpdater.new(spec)
+  end
+
   before(:each) do
     @deployment = Bosh::Director::Models::Deployment.make
     @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-id")
@@ -129,9 +133,12 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   it "should do a basic update" do
-    stub_object(@instance_spec, :resource_pool_changed? => false,
-                                :persistent_disk_changed? => false,
-                                :networks_changed? => false)
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => false,
+                :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
@@ -144,14 +151,40 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+    @agent_1.should_receive(:start)
 
     instance_updater.update
   end
 
+  it "should raise an error if instance is still running after stop" do
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => false,
+                :state => "stopped")
+
+    instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:stop)
+    @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return("id" => "task-1", "state" => "done")
+    @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE.merge("job_state" => "running"))
+
+    lambda {
+      instance_updater.update
+    }.should raise_error(RuntimeError, "instance is still running despite the stop command")
+  end
+
   it "should do a basic canary update" do
-    stub_object(@instance_spec, :resource_pool_changed? => false,
-                                :persistent_disk_changed? => false,
-                                :networks_changed? => false)
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => false,
+                :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
 
@@ -167,6 +200,7 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+    @agent_1.should_receive(:start)
 
     instance_updater.update(:canary => true)
   end
@@ -176,13 +210,16 @@ describe Bosh::Director::InstanceUpdater do
     @agent_2.stub!(:id).and_return("agent-2")
     Bosh::Director::AgentClient.stub!(:new).with("agent-2").and_return(@agent_2)
 
-    stub_object(@instance_spec, :resource_pool_changed? => true,
-                                :persistent_disk_changed? => false,
-                                :networks_changed? => false,
-                                :network_settings => BASIC_PLAN["networks"])
+    stub_object(@instance_spec,
+                :resource_pool_changed? => true,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => false,
+                :disk_size => 0,
+                :network_settings => BASIC_PLAN["networks"],
+                :state => "started")
 
     @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
-    @instance_spec.should_receive(:current_state).and_return(IDLE_STATE)
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:generate_agent_id).and_return("agent-2")
@@ -207,6 +244,7 @@ describe Bosh::Director::InstanceUpdater do
     })
     @agent_2.should_receive(:get_state).and_return(IDLE_STATE)
     @agent_2.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+    @agent_2.should_receive(:start)
 
     instance_updater.update
 
@@ -214,6 +252,7 @@ describe Bosh::Director::InstanceUpdater do
     vm = @instance.vm
     vm.cid.should == "vm-id-2"
     vm.agent_id.should == "agent-2"
+    @instance.state.should == "started"
     Bosh::Director::Models::Vm.filter(:cid => "vm-id").first.should be_nil
   end
 
@@ -225,13 +264,14 @@ describe Bosh::Director::InstanceUpdater do
     @agent_2.stub!(:id).and_return("agent-2")
     Bosh::Director::AgentClient.stub!(:new).with("agent-2").and_return(@agent_2)
 
-    stub_object(@instance_spec, :resource_pool_changed? => true,
-                                :persistent_disk_changed? => false,
-                                :networks_changed? => false,
-                                :network_settings => BASIC_PLAN["networks"])
-
-    @instance_spec.should_receive(:current_state=).with(IDLE_STATE)
-    @instance_spec.should_receive(:current_state).and_return(IDLE_STATE.merge({"persistent_disk" => "1gb"}))
+    stub_object(@instance_spec,
+                :resource_pool_changed? => true,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => true,
+                :disk_size => 1024,
+                :network_settings => BASIC_PLAN["networks"],
+                :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:generate_agent_id).and_return("agent-2")
@@ -239,27 +279,34 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
-    @agent_1.should_receive(:stop)
-    @agent_1.should_receive(:unmount_disk).with("disk-id").and_return({"state" => "done"})
-    @cloud.should_receive(:detach_disk).with("vm-id", "disk-id")
-    @cloud.should_receive(:delete_vm).with("vm-id")
-    @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"], ["disk-id"], {}).and_return("vm-id-2")
-    @cloud.should_receive(:attach_disk).with("vm-id-2", "disk-id")
+    @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(0.01)
+    @agent_1.should_receive(:stop).ordered
+    @agent_1.should_receive(:unmount_disk).with("disk-id").ordered.and_return({"state" => "done"})
+    @cloud.should_receive(:detach_disk).with("vm-id", "disk-id").ordered
 
-    @agent_2.should_receive(:wait_until_ready)
-    @agent_2.should_receive(:apply).with(IDLE_PLAN.merge({"persistent_disk" => "1gb"})).and_return({
+    @cloud.should_receive(:delete_vm).with("vm-id").ordered
+    @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
+      BASIC_PLAN["networks"], ["disk-id"], {}).ordered.and_return("vm-id-2")
+    @cloud.should_receive(:attach_disk).ordered.with("vm-id-2", "disk-id")
+
+    @agent_2.should_receive(:wait_until_ready).ordered
+    @agent_2.should_receive(:mount_disk).with("disk-id").ordered.and_return({"state" => "done"})
+
+    @agent_2.should_receive(:apply).with(IDLE_PLAN.merge({"persistent_disk" => 1024})).ordered.and_return({
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_2.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
-    @agent_2.should_receive(:apply).with(BASIC_PLAN).and_return({
+
+    @agent_2.should_receive(:get_state).ordered.and_return(IDLE_STATE)
+    @instance_spec.should_receive(:current_state=).with(IDLE_STATE).ordered
+
+    @agent_2.should_receive(:apply).with(BASIC_PLAN).ordered.and_return({
       "id" => "task-1",
       "state" => "done"
     })
-    @agent_2.should_receive(:get_state).and_return(IDLE_STATE)
-    @agent_2.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+
+    @agent_2.should_receive(:start).ordered
+    @agent_2.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE)
 
     instance_updater.update
 
@@ -272,10 +319,13 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   it "should update the networks when needed" do
-    stub_object(@instance_spec, :resource_pool_changed? => false,
-                                :persistent_disk_changed? => false,
-                                :networks_changed? => true,
-                                :network_settings =>BASIC_PLAN["networks"])
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => true,
+                :disk_currently_attached? => false,
+                :network_settings =>BASIC_PLAN["networks"],
+                :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
@@ -292,14 +342,18 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+    @agent_1.should_receive(:start)
 
     instance_updater.update
   end
 
   it "should create a persistent disk when needed" do
-    stub_object(@instance_spec, :resource_pool_changed? => false,
-                                :persistent_disk_changed? => true,
-                                :networks_changed? => false)
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => true,
+                :disk_currently_attached? => false,
+                :networks_changed? => false,
+                :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
@@ -316,6 +370,7 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+    @agent_1.should_receive(:start)
 
     instance_updater.update
 
@@ -328,9 +383,12 @@ describe Bosh::Director::InstanceUpdater do
     @instance.disk_cid = "old-disk-id"
     @instance.save
 
-    stub_object(@instance_spec, :resource_pool_changed? => false,
-                                :persistent_disk_changed? => true,
-                                :networks_changed? => false)
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => true,
+                :disk_currently_attached? => true,
+                :networks_changed? => false,
+                :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
@@ -354,6 +412,7 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+    @agent_1.should_receive(:start)
 
     instance_updater.update
 
@@ -372,14 +431,18 @@ describe Bosh::Director::InstanceUpdater do
     state = BASIC_INSTANCE_STATE._deep_copy
     state["persistent_disk"] = 0
 
-    stub_object(@instance_spec, :resource_pool_changed? => false,
-                                :persistent_disk_changed? => true,
-                                :networks_changed? => false)
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => true,
+                :networks_changed? => false,
+                :disk_currently_attached? => true,
+                :state => "started")
 
     @job_spec.stub!(:persistent_disk).and_return(plan["persistent_disk"])
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
+
 
     @instance_spec.stub!(:spec).and_return(plan)
 
@@ -393,12 +456,88 @@ describe Bosh::Director::InstanceUpdater do
       "state" => "done"
     })
     @agent_1.should_receive(:get_state).and_return(state)
+    @agent_1.should_receive(:start)
 
     instance_updater.update
 
     @instance.refresh
     @instance.vm.should == @vm
     @instance.disk_cid.should be_nil
+  end
+
+  describe "instance state transitions" do
+
+    def done_task(id = "task-1")
+      { "id" => id, "state" => "done" }
+    end
+
+    it "transition to started" do
+      @instance_spec.stub!(:resource_pool_changed? => false,
+                           :persistent_disk_changed? => false,
+                           :networks_changed? => false,
+                           :disk_currently_attached? => false,
+                           :state => "started",
+                           :spec => BASIC_PLAN)
+
+      updater = make_updater(@instance_spec)
+
+      @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(0.01)
+      @agent_1.should_receive(:stop).ordered
+      @agent_1.should_receive(:apply).with(BASIC_PLAN).ordered.and_return(done_task)
+      @agent_1.should_receive(:start).ordered
+      @agent_1.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE)
+
+      updater.update
+      @instance.refresh
+      @instance.vm.should_not be_nil
+    end
+
+    it "transition to stopped" do
+      @instance_spec.stub!(:resource_pool_changed? => false,
+                           :persistent_disk_changed? => false,
+                           :networks_changed? => false,
+                           :disk_currently_attached? => false,
+                           :state => "stopped",
+                           :spec => BASIC_PLAN)
+
+      updater = make_updater(@instance_spec)
+
+      @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+      @agent_1.should_receive(:stop)
+      @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return(done_task)
+      @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE.merge("job_state" => "stopped"))
+      @agent_1.should_not_receive(:start)
+
+      updater.update
+      @instance.refresh
+      @instance.vm.should_not be_nil
+    end
+
+    it "transition to detached" do
+      @instance.disk_cid = "deadbeef"
+      @instance.save
+
+      @instance_spec.stub!(:resource_pool_changed? => false,
+                           :persistent_disk_changed? => false,
+                           :networks_changed? => false,
+                           :disk_currently_attached? => true,
+                           :state => "detached",
+                           :spec => BASIC_PLAN)
+
+      updater = make_updater(@instance_spec)
+
+      @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(0.01)
+      @agent_1.should_receive(:stop).ordered
+      @agent_1.should_receive(:unmount_disk).with("deadbeef").ordered.and_return(done_task)
+      @cloud.should_receive(:detach_disk).with("vm-id", "deadbeef").ordered
+      @cloud.should_receive(:delete_vm).with("vm-id").ordered
+      @resource_pool_spec.should_receive(:add_idle_vm).ordered
+
+      updater.update
+      @instance.refresh
+      @instance.disk_cid.should == "deadbeef"
+      @instance.vm.should be_nil
+    end
   end
 
 end
