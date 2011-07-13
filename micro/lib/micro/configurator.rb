@@ -15,7 +15,7 @@ module VCAP
 
       def run
         # TODO: check highline's signal handling - might get in the way here
-        %w{TERM INT}.each { |sig| trap(sig) { puts "Exiting Micro Cloud Configurator"; exit } }
+        %w{TERM INT}.each { |sig| trap(sig) { puts "Exiting Micro Cloud Foundry Configurator"; exit } }
 
         begin
           clear
@@ -35,7 +35,10 @@ module VCAP
           identity
 
           network
-          mounts
+
+          if @identity.configured?
+            @watcher = Watcher.new(@network, @identity).watch
+          end
 
           @ip = VCAP::Micro::Network.local_ip
           install_identity
@@ -43,27 +46,29 @@ module VCAP
           install_micro
 
           @identity.save
+        rescue SystemExit => e
+          say("\nRestarting console...")
         rescue Exception => e
           # FIXME: crude hack to prevent console to restart and clear
-          say("\nWARNING: Failed to configure Cloud Foundry Micro:\n")
+          say("\nWARNING: Failed to configure Micro Cloud Foundry:\n")
           puts e
-          puts e.backtrace
+          puts e.backtrace.join("\n")
           STDIN.getc
           exit(1)
         end
       end
 
       def header
-        say("BETA - Welcome to VMware Micro Cloud Download - BETA\n\n")
+        say("BETA - Welcome to VMware Micro Cloud Foundry Download - BETA\n\n")
 
         unless @identity.configured?
-          say("Please visit http://CloudFoundry.com register for a Micro Cloud token.\n\n")
-          exit unless agree("Micro Cloud Not Configured - Do you want to configure? (y/n) ")
+          say("Please visit http://CloudFoundry.com register for a Micro Cloud Foundry token.\n\n")
+          exit unless agree("Micro Cloud Foundry Not Configured - Do you want to configure? (y/n) ")
         else
-          say("Target Micro Cloud: vmc http://api.#{@identity.subdomain}\n\n")
+          say("Target Micro Cloud Foundry: vmc http://api.#{@identity.subdomain}\n\n")
 
           current_configuration
-          exit unless agree("\nRe-configure Micro Cloud? (y/n): ")
+          exit unless agree("\nRe-configure Micro Cloud Foundry? (y/n): ")
         end
       end
 
@@ -73,7 +78,7 @@ module VCAP
         say("  Admin    : #{@identity.admins.join(', ')}\n")
         say("  Address  : #{@identity.ip}\n")
 
-        begin 
+        begin
           current_ip = VCAP::Micro::Network.local_ip
           if current_ip != @identity.ip
             say("WARNING: Current IP Address (#{current_ip}) differs from configured IP")
@@ -88,14 +93,14 @@ module VCAP
         # TODO: ask for password if set 
 
         unless @identity.configured?
-          pass = ask("\nConfigure Micro Cloud Password:  ") { |q| q.echo = "*" }
+          pass = ask("\nConfigure Micro Cloud Foundry Password:  ") { |q| q.echo = "*" }
           # BIG HACK
           `echo "root:#{pass}\nvcap:#{pass}" | chpasswd`
         end
       end
 
       def identity
-        say("\nConfigure Micro Cloud identity:\n")
+        say("\nConfigure Micro Cloud Foundry identity:\n")
         choose do |menu|
           menu.prompt = "Choose identity type: "
           menu.choice(:token) { token }
@@ -114,7 +119,7 @@ module VCAP
       end
 
       def network
-        say("\nConfigure Micro Cloud networking")
+        say("\nConfigure Micro Cloud Foundry networking")
         choose do |menu|
           menu.prompt = "Type: "
           menu.choice(:dhcp) { dhcp_network }
@@ -125,7 +130,8 @@ module VCAP
       end
 
       def dhcp_network
-        VCAP::Micro::Network.new.dhcp
+        @network = VCAP::Micro::Network.new
+        @network.dhcp
       end
 
       def manual_network
@@ -137,20 +143,18 @@ module VCAP
         net['gateway'] = ask("Gateway: ")
         net['dns'] =     ask("DNS:     ")
 
-        VCAP::Micro::Network.new.manual(net)
-      end
-
-      def mounts
-        VCAP::Micro::System.mounts
+        @network = VCAP::Micro::Network.new
+        @network.manual(net)
       end
 
       def install_identity
         begin
           @identity.install(@ip)
         rescue => e
-          say("Error registering identity with cf.vcloudlabs.com (will be www.cloudfoundry.com)\n")
+          say("Error registering identity with micro.cloudfoundry.com\n")
           say("\nException: #{e.message}")
-          say("\nBacktrace: #{e.backtrace}")
+          # TODO this stack trace should go into a log file
+          # say("\nBacktrace: #{e.backtrace.join("\n")}")
         end
       end
 
@@ -168,7 +172,7 @@ module VCAP
         say("\n")
         current_configuration
 
-        say("\nInstalling CloudFoundry Micro...\n\n")
+        say("\nInstalling Micro Cloud Foundry...\n\n")
 
         VCAP::Micro::Agent.apply(@identity)
       end
