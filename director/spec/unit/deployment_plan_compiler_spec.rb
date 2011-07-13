@@ -382,7 +382,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
                                                         :vm => nil,
                                                         :job => "test_job",
-                                                        :index => 5)
+                                                        :index => 5,
+                                                        :state => "started")
 
       @deployment_plan = mock("deployment_plan")
       @job_spec = mock("job_spec")
@@ -420,6 +421,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:ip).and_return(nil)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
 
+      @instance_spec.stub!(:state).and_return("started")
+
       @instance_spec.should_receive(:network).with("network-a").and_return(nil)
       @instance_spec.should_receive(:instance).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
@@ -436,18 +439,20 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:vm).and_return(@vm)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
 
+      @instance_spec.stub!(:state).and_return("started")
+
       @instance_spec.should_receive(:network).with("network-a").and_return(nil)
       @instance_spec.should_receive(:instance).and_return(nil)
       @instance_spec.should_receive(:instance=).with do |instance|
         instance.deployment.should == @deployment
         instance.job.should == "test_job"
         instance.index.should == 5
+        instance.state.should be_nil
         true
       end
       @instance_spec.should_receive(:idle_vm=).with(idle_vm)
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
       @deployment_plan_compiler.bind_unallocated_vms
     end
 
@@ -457,6 +462,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:vm).and_return(@vm)
       idle_vm.stub!(:ip).and_return(IP_10_0_0_5)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
+
+      @instance_spec.stub!(:state).and_return("started")
 
       @instance_spec.should_receive(:network).with("network-a").and_return(instance_network)
       @instance_spec.should_receive(:instance).and_return(nil)
@@ -479,6 +486,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:ip).and_return(nil)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
 
+      @instance_spec.stub!(:state).and_return("started")
+
       @instance_spec.should_receive(:network).with("network-a").and_return(instance_network)
       @instance_spec.should_receive(:instance).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
@@ -499,6 +508,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:ip).and_return(nil)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
 
+      @instance_spec.stub!(:state).and_return("started")
+
       @instance_spec.should_receive(:network).with("network-a").and_return(nil)
       @instance_spec.should_receive(:instance).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
@@ -516,6 +527,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       idle_vm.stub!(:vm).and_return(nil)
       idle_vm.stub!(:ip).and_return(IP_10_0_0_5)
       idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
+
+      @instance_spec.stub!(:state).and_return("started")
 
       @instance_spec.should_receive(:instance).and_return(nil)
       @instance_spec.should_receive(:instance=).with(@instance)
@@ -562,6 +575,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance_spec.stub!(:instance).and_return(@instance)
       @instance_spec.stub!(:job).and_return(@job_spec)
       @instance_spec.stub!(:index).and_return(5)
+      @instance_spec.stub!(:state).and_return("started")
 
       @idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
       @idle_vm.stub!(:vm).and_return(@vm)

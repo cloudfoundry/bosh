@@ -149,10 +149,26 @@ module Bosh::Director
 
           if instance.nil?
             # look up the instance again, in case it wasn't associated with a VM
-            instance = Models::Instance.find_or_create(:deployment_id => @deployment_plan.deployment.id,
-                                                       :job => job.name,
-                                                       :index => instance_spec.index)
+            instance_attrs = {
+              :deployment_id => @deployment_plan.deployment.id,
+              :job => job.name,
+              :index => instance_spec.index
+            }
+
+            instance = Models::Instance[instance_attrs] || Models::Instance.new(instance_attrs)
             instance_spec.instance = instance
+          end
+
+          if instance_spec.state
+            # Deployment plan already has state for this instance
+            instance.update(:state => instance_spec.state)
+          elsif instance.state
+            # Instance has its state persisted from the previous deployment
+            instance_spec.state = instance.state
+          else
+            # Target instance state should either be persisted in DB
+            # or provided via deployment plan, otherwise something is really wrong
+            raise "Instance `#{instance.job}/#{instance.index}' target state cannot be determined"
           end
 
           unless instance.vm
@@ -256,27 +272,29 @@ module Bosh::Director
       ThreadPool.new(:max_threads => 32).wrap do |pool|
         @deployment_plan.jobs.each do |job|
           job.instances.each do |instance_spec|
+            # Don't allocate resource pool VMs to instances in detached state
+            next if instance_spec.state == "detached"
+
             instance = instance_spec.instance
+            next if instance.vm
 
-            unless instance.vm
-              idle_vm = instance_spec.idle_vm
-              instance.update(:vm => idle_vm.vm)
+            idle_vm = instance_spec.idle_vm
+            instance.update(:vm => idle_vm.vm)
 
-              pool.process do
-                # Apply the assignment to the VM
-                state = idle_vm.current_state
-                state["job"] = job.spec
-                state["index"] = instance.index
-                state["release"] = @deployment_plan.release.spec
-                agent = AgentClient.new(idle_vm.vm.agent_id)
-                task = agent.apply(state)
-                while task["state"] == "running"
-                  sleep(1.0)
-                  task = agent.get_task(task["agent_task_id"])
-                end
-
-                instance_spec.current_state = state
+            pool.process do
+              # Apply the assignment to the VM
+              state = idle_vm.current_state
+              state["job"] = job.spec
+              state["index"] = instance.index
+              state["release"] = @deployment_plan.release.spec
+              agent = AgentClient.new(idle_vm.vm.agent_id)
+              task = agent.apply(state)
+              while task["state"] == "running"
+                sleep(1.0)
+                task = agent.get_task(task["agent_task_id"])
               end
+
+              instance_spec.current_state = state
             end
           end
         end

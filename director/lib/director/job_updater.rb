@@ -4,6 +4,7 @@ module Bosh::Director
 
     class RollbackException < StandardError; end
 
+    # @param job DeploymentPlan::JobSpec
     def initialize(job)
       @job = job
       @cloud = Config.cloud
@@ -48,6 +49,8 @@ module Bosh::Director
       @job.instances.each do |instance|
         instances << instance if instance.changed?
       end
+
+      @logger.info("Found #{instances.size} instances to update")
 
       unless instances.empty?
 

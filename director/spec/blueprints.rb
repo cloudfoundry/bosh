@@ -78,6 +78,7 @@ module Bosh::Director::Models
     index       { Sham.index }
     vm          { Vm.make }
     disk_cid    { Sham.disk_cid }
+    state       { "started" }
   end
 
   Task.blueprint do
