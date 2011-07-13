@@ -24,6 +24,8 @@ module Bosh::Cli
     def add_hash(hash, as)
       raise FormatError, "Trying to add #{hash.class} to a changeset, Hash expected" unless hash.is_a?(Hash)
 
+      self.values[as] = hash
+
       hash.each_pair do |k, v|
         self[k] ||= HashChangeset.new
         self[k].values[as] = v
