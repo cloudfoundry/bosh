@@ -13,4 +13,6 @@ cd $BASE
 bundle install --local
 
 bin/compile $BASE/config/micro.yml $BASE/config/micro.tgz
+
+rm -f $BASE/config/micro.yml $BASE/config/micro.tgz
 echo '============= compilation finished ============='
