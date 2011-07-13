@@ -140,8 +140,8 @@ module VSphereCloud
       #  - find disk with largest size that has been allocated. Use this disk
       #    as the disk_locality. (persistent_disk_locality)
       #  - find cluster in which the largest persistent disk resides.
-      #    - find all disks in this cluster. (allocted_disks)
-      #    - find all disks not in this cluster. (additinal_disks)
+      #    - find all disks in this cluster. (allocated_disks)
+      #    - find all disks not in this cluster. (additional_disks)
       pd_locality = nil
       allocated_disks = []
       additional_disks = []
