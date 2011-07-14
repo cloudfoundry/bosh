@@ -185,7 +185,15 @@ module Bosh::Cli::Command
       built_package_names = packages.map { |package| package.name }
 
       header "Building jobs"
-      Dir[File.join(work_dir, "jobs", "*", "spec")].each do |job_spec|
+      Dir[File.join(work_dir, "jobs", "*")].each do |job_dir|
+        prepare_script = File.join(job_dir, "prepare")
+        job_spec = File.join(job_dir, "spec")
+
+        if File.exists?(prepare_script)
+          say "Found prepare script in `#{File.basename(job_dir)}'"
+          Bosh::Cli::JobBuilder.run_prepare_script(prepare_script)
+        end
+
         job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final, blobstore, built_package_names)
         say "Building #{job.name.green}..."
         job.build
