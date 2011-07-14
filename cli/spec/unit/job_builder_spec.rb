@@ -5,6 +5,7 @@ describe Bosh::Cli::JobBuilder do
 
   before(:each) do
     @release_dir = Dir.mktmpdir
+    at_exit { FileUtils.rm_rf(@release_dir) }
   end
 
   def new_builder(name, packages = [], templates = { }, built_packages = [], create_spec = true, final = false, blobstore = mock("blobstore"))
@@ -148,6 +149,43 @@ describe Bosh::Cli::JobBuilder do
     lambda {
       new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
     }.should_not raise_error
+  end
+
+  it "supports preparation script" do
+    spec = {
+      "name"       => "foo",
+      "packages"   => ["bar", "baz"],
+      "templates"  => ["a.conf", "b.yml"]
+    }
+    spec_yaml = YAML.dump(spec)
+
+    script = <<-SCRIPT.gsub(/^\s*/, "")
+    #!/bin/sh
+    mkdir templates
+    touch templates/a.conf
+    touch templates/b.yml
+    echo '#{spec_yaml}' > spec
+    touch monit
+    SCRIPT
+
+    add_file("foo", "prepare", script)
+    script_path = File.join(@release_dir, "jobs", "foo", "prepare")
+    FileUtils.chmod(0755, script_path)
+    Bosh::Cli::JobBuilder.run_prepare_script(script_path)
+
+    builder = new_builder("foo", ["bar", "baz"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"], false)
+    builder.copy_files.should == 4
+
+    Dir.chdir(builder.build_dir) do
+      File.directory?("templates").should be_true
+      ["templates/a.conf", "templates/b.yml"].each do |file|
+        File.file?(file).should be_true
+      end
+      File.file?("job.MF").should be_true
+      File.read("job.MF").should == File.read(File.join(@release_dir, "jobs", "foo", "spec"))
+      File.exists?("monit").should be_true
+      File.exists?("prepare").should be_false
+    end
   end
 
   it "copies job files" do

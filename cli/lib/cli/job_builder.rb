@@ -4,6 +4,42 @@ module Bosh::Cli
 
     attr_reader :name, :version, :packages, :templates, :release_dir, :built_packages, :tarball_path
 
+    def self.run_prepare_script(script_path)
+      unless File.exists?(script_path)
+        raise InvalidJob, "Prepare script at `#{script_path}' doesn't exist"
+      end
+
+      unless File.executable?(script_path)
+        raise InvalidJob, "Prepare script at `#{script_path}' is not executable"
+      end
+
+      old_env = ENV
+
+      script_dir, script_name = File.dirname(script_path), File.basename(script_path)
+
+      begin
+        # We need to temporarily delete some rubygems related artefacts
+        # because preparation scripts shouldn't share any assumptions
+        # with CLI itself
+        %w{ BUNDLE_GEMFILE RUBYOPT }.each { |key| ENV.delete(key) }
+
+        Dir.chdir(script_dir) do
+          cmd = "./#{script_name} 2>&1"
+          say "Running #{cmd}..."
+          script_output = `#{cmd}`
+          script_output.split("\n").each do |line|
+            say "> #{line}"
+          end
+        end
+
+        unless $?.exitstatus == 0
+          raise InvalidJob, "`#{script_path}' script failed"
+        end
+      ensure
+        ENV.each_pair { |k, v| ENV[k] = old_env[k] }
+      end
+    end
+
     def initialize(spec, release_dir, final, blobstore, built_packages = [])
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
@@ -88,6 +124,10 @@ module Bosh::Cli
       FileUtils.cp(File.join(job_dir, "spec"), File.join(build_dir, "job.MF"), :preserve => true)
       copied += 2
       copied
+    end
+
+    def prepare_files
+      preparation_script = File.join(job_dir, "prepare")
     end
 
     def build_dir
