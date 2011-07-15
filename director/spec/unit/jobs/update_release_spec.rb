@@ -2,13 +2,12 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::Jobs::UpdateRelease do
 
-  describe "perform" do
+  before(:each) do
+    @blobstore = mock("blobstore_client")
+    @logger = Logger.new(StringIO.new)
 
-    before(:each) do
-      @blobstore_client = mock("blobstore_client")
-      Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore_client)
-    end
-
+    Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore)
+    Bosh::Director::Config.stub!(:logger).and_return(@logger)
   end
 
   describe "create_package" do
@@ -83,5 +82,81 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
   end
 
+
+  describe "create jobs" do
+    before :each do
+      @release = Bosh::Director::Models::Release.make
+      @tmp_dir = Dir.mktmpdir
+      @tarball = File.join(@tmp_dir, "jobs", "foo.tgz")
+      @job_bits = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} })
+
+      @job_attrs = {
+        "name" => "foo",
+        "version" => "1",
+        "sha1" => "deadbeef"
+      }
+
+      FileUtils.mkdir_p(File.dirname(@tarball))
+
+      @job = Bosh::Director::Jobs::UpdateRelease.new(@tmp_dir)
+      @job.tmp_release_dir = @tmp_dir
+      @job.release = @release
+
+      at_exit { FileUtils.rm_rf(@tmp_dir) }
+    end
+
+    it "should create a proper template and upload job bits to blobstore" do
+      File.open(@tarball, "w") { |f| f.write(@job_bits) }
+
+      @blobstore.should_receive(:create).with do |f|
+        f.rewind
+        Digest::SHA1.hexdigest(f.read).should == Digest::SHA1.hexdigest(@job_bits)
+      end
+
+      Bosh::Director::Models::Template.count.should == 0
+      @job.create_job(@job_attrs)
+
+      template = Bosh::Director::Models::Template.first
+      template.name.should == "foo"
+      template.version.should == "1"
+      template.release.should == @release
+      template.sha1.should == "deadbeef"
+    end
+
+    it "whines on invalid archive" do
+      File.open(@tarball, "w") { |f| f.write("deadcafe") }
+
+      lambda {
+        @job.create_job(@job_attrs)
+      }.should raise_error(Bosh::Director::JobInvalidArchive)
+    end
+
+    it "whines on missing manifest" do
+      @job_no_mf = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_manifest => true)
+      File.open(@tarball, "w") { |f| f.write(@job_no_mf) }
+
+      lambda {
+        @job.create_job(@job_attrs)
+      }.should raise_error(Bosh::Director::JobMissingManifest)
+    end
+
+    it "whines on missing monit file" do
+      @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_monit => true)
+      File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
+
+      lambda {
+        @job.create_job(@job_attrs)
+      }.should raise_error(Bosh::Director::JobMissingMonit)
+    end
+
+    it "whines on missing template" do
+      @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_templates => ["foo"])
+      File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
+
+      lambda {
+        @job.create_job(@job_attrs)
+      }.should raise_error(Bosh::Director::JobMissingTemplateFile)
+    end
+  end
 
 end

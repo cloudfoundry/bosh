@@ -4,6 +4,8 @@ module Bosh::Director
 
       @queue = :normal
 
+      attr_accessor :tmp_release_dir, :release
+
       def initialize(*args)
         if args.length == 1
           release_dir = args.first
@@ -180,21 +182,22 @@ module Bosh::Director
         FileUtils.mkdir_p(job_dir)
 
         output = `tar -C #{job_dir} -xzf #{job_tgz} 2>&1`
-        raise JobInvalidArchive.new(name, $?.exitstatus, output) if $?.exitstatus != 0
+
+        raise JobInvalidArchive.new(template.name, $?.exitstatus, output) if $?.exitstatus != 0
 
         manifest_file = File.join(job_dir, "job.MF")
-        raise JobMissingManifest.new(name) unless File.file?(manifest_file)
+        raise JobMissingManifest.new(template.name) unless File.file?(manifest_file)
 
         job_manifest = YAML.load_file(manifest_file)
 
         if job_manifest["templates"]
           job_manifest["templates"].each_key do |relative_path|
             path = File.join(job_dir, "templates", relative_path)
-            raise JobMissingTemplateFile.new(name, relative_path) unless File.file?(path)
+            raise JobMissingTemplateFile.new(template.name, relative_path) unless File.file?(path)
           end
         end
 
-        raise JobMissingMonit.new(name) unless File.file?(File.join(job_dir, "monit"))
+        raise JobMissingMonit.new(template.name) unless File.file?(File.join(job_dir, "monit"))
 
         # TODO: verify sha1
         File.open(job_tgz) do |f|
