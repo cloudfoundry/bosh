@@ -37,7 +37,19 @@ module Bosh::Director
       apply_state(@instance_spec.spec)
 
       if @target_state == "started"
-        agent.start
+        begin
+          agent.start
+        rescue RuntimeError => e
+          # FIXME: this is somewhat ghetto: we don't have a good way to negotiate
+          # on Bosh protocol between director and agent (yet), so updating from
+          # agent version that doesn't support 'start' RPC to the one that does might
+          # is hard. Right now we decided to just swallow the exception.
+          # This needs to be removed in one of the following cases:
+          # 1. Bosh protocol handshake gets implemented
+          # 2. All agents updated to support 'start' RPC
+          #    and we no longer care about backward compatibility.
+          @logger.warn("Agent start raised an exception: #{e.inspect}, ignoring for compatibility")
+        end
       end
 
       watch_time = options[:canary] ? @update_config.canary_watch_time : @update_config.update_watch_time
