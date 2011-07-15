@@ -82,12 +82,13 @@ def create_stemcell(name, version, cloud_properties, image)
   gzip(io.string)
 end
 
-def create_job(name, monit, configuration_files)
+def create_job(name, monit, configuration_files, options = { })
   io = StringIO.new
 
   manifest = {
     "name" => name,
-    "templates" => {}
+    "templates" => {},
+    "packages" => []
   }
 
   configuration_files.each do |path, configuration_file|
@@ -95,13 +96,19 @@ def create_job(name, monit, configuration_files)
   end
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
-    tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
-    tar.add_file("monit", {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
+    unless options[:skip_manifest]
+      tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
+    end
+    unless options[:skip_monit]
+      tar.add_file("monit", {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
+    end
 
     tar.mkdir("templates", {:mode => "0755", :mtime => 0})
     configuration_files.each do |path, configuration_file|
-      tar.add_file("templates/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
-        os.write(configuration_file["contents"])
+      unless options[:skip_templates] && options[:skip_templates].include?(path)
+        tar.add_file("templates/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
+          os.write(configuration_file["contents"])
+        end
       end
     end
   end
