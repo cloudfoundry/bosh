@@ -38,4 +38,11 @@ describe VCAP::Micro::Compiler do
     }.should raise_exception RuntimeError
   end
 
+  it "should raise an exception if the spec is missing" do
+    c = VCAP::Micro::Compiler.new(OPTS)
+    lambda {
+      c.compile("bogus/path", TGZ)
+    }.should raise_exception RuntimeError
+  end
+
 end
