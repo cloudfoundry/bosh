@@ -8,6 +8,7 @@ describe Bosh::Agent::Message::Apply do
 
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
+    Bosh::Agent::Config.platform_name = "dummy"
 
     FileUtils.mkdir_p(File.join(base_dir, 'monit'))
     Bosh::Agent::Monit.setup_monit_user
@@ -18,6 +19,29 @@ describe Bosh::Agent::Message::Apply do
 
     @httpclient = mock("httpclient")
     HTTPClient.stub!(:new).and_return(@httpclient)
+  end
+
+  it "should raise a useful error when it fails to write an ERB template" do
+    response = mock("response")
+    response.stub!(:status).and_return(200)
+
+    state = Bosh::Agent::Message::State.new
+
+    job_sha1 = Digest::SHA1.hexdigest(dummy_job_data)
+    apply_data = apply_data = {
+      "configuration_hash" => "bogus",
+      "deployment" => "foo",
+      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
+      "release" => { "version" => "99" }
+    }
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
+    @httpclient.should_receive(:get).with(*get_args).and_yield(dummy_job_data).and_return(response)
+
+    handler = Bosh::Agent::Message::Apply.new([apply_data])
+    handler.stub!(:apply_packages)
+    lambda {
+      handler.apply
+    }.should raise_error Bosh::Agent::MessageHandlerError, /^job 'bubba' failed to process template thin.yml.erb:.* on line 6/
   end
 
   it 'should set deployment in agents state if blank' do
