@@ -292,28 +292,32 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder2.version.should == "1.1-dev"
   end
 
-  it "bumps to x.1 if final x exists and no dev exists" do
+  it "whines on attempt to create final build if not matched by existing final or dev build" do
     add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
     globs = ["foo/**/*", "baz"]
 
     blobstore = mock("blobstore")
     blobstore.should_receive(:create).and_return("object_id")
+
     final_builder = Bosh::Cli::PackageBuilder.new({"name" => "bar", "files" => globs}, @release_dir, true, blobstore)
-    final_builder.build
+    lambda {
+      final_builder.build
+    }.should raise_error(Bosh::Cli::CliExit)
 
-    final_builder.version.should == 1
-
-    add_sources("foo/foo15.rb")
     builder = make_builder("bar", globs)
     builder.build
 
-    builder.version.should == "1.1-dev"
+    builder.version.should == "0.1-dev"
 
-    add_sources("foo/foo16.rb")
-    builder2 = make_builder("bar", globs)
-    builder2.build
+    final_builder2 = Bosh::Cli::PackageBuilder.new({"name" => "bar", "files" => globs}, @release_dir, true, blobstore)
+    final_builder2.build
+    final_builder2.version.should == 1
 
-    builder2.version.should == "1.2-dev"
+    add_sources("foo/foo15.rb")
+    final_builder3 = Bosh::Cli::PackageBuilder.new({"name" => "bar", "files" => globs}, @release_dir, true, blobstore)
+    lambda {
+      final_builder3.build
+    }.should raise_error(Bosh::Cli::CliExit)
   end
 
   it "includes dotfiles in a fingerprint" do

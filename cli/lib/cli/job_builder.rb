@@ -51,6 +51,7 @@ module Bosh::Cli
       @tarballs_dir   = File.join(release_dir, "tmp", "jobs")
       @final          = final
       @blobstore      = blobstore
+      @artefact_type  = "job"
 
       @templates = \
       case spec["templates"]
@@ -98,17 +99,6 @@ module Bosh::Cli
       at_exit { FileUtils.rm_rf(build_dir) }
 
       init_indices
-    end
-
-    def final?
-      @final
-    end
-
-    def build
-      with_indent("  ") do
-        use_final_version || use_dev_version || generate_tarball
-      end
-      upload_tarball(@tarball_path) if final?
     end
 
     def copy_files

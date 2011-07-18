@@ -1,7 +1,7 @@
 require "blobstore_client"
 
 # This relies on having the following instance variables in a host class:
-# @dev_builds_dir, @final_builds_dir, @blobstore, @name, @version, @tarball_path
+# @dev_builds_dir, @final_builds_dir, @blobstore, @name, @version, @tarball_path, @final, @artefact_type
 
 module Bosh
   module Cli
@@ -10,6 +10,17 @@ module Bosh
       def init_indices
         @dev_index   = VersionsIndex.new(@dev_builds_dir)
         @final_index = VersionsIndex.new(@final_builds_dir)
+      end
+
+      def final?
+        @final
+      end
+
+      def build
+        with_indent("  ") do
+          use_final_version || use_dev_version || generate_tarball
+        end
+        upload_tarball(@tarball_path) if final?
       end
 
       def use_final_version
@@ -91,6 +102,13 @@ module Bosh
       end
 
       def generate_tarball
+        if final?
+          err_message = "No matching build found for `#{@name}' #{@artefact_type}.\n" +
+            "Please consider creating a dev release first.\n" +
+            "The fingerpint is `#{fingerprint}'."
+          err err_message
+        end
+
         current_final = @final_index.latest_version.to_i
 
         if @dev_index.latest_version.to_s =~ /^(\d+)\.(\d+)/

@@ -288,26 +288,30 @@ describe Bosh::Cli::JobBuilder do
     builder2.version.should == "1.1-dev"
   end
 
-  it "bumps to x.1 if final x exists and no dev exists" do
+  it "whines on attempt to create final build if not matched by existing final or dev build" do
     add_templates("foo", "bar", "baz")
     add_monit("foo")
 
     blobstore = mock("blobstore")
-    blobstore.should_receive(:create).and_return("object_id")
-    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
-    final_builder.build
 
-    final_builder.version.should == 1
+    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    lambda {
+      final_builder.build
+    }.should raise_error(Bosh::Cli::CliExit)
+
+    dev_builder = new_builder("foo", [], ["bar", "baz"], [], true, false, blobstore)
+    dev_builder.build
+
+    final_builder2 = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    blobstore.should_receive(:create)
+    final_builder2.build
 
     add_templates("foo", "bzz")
-    builder = new_builder("foo", [], ["bar", "baz", "bzz"], [])
-    builder.build
-    builder.version.should == "1.1-dev"
+    final_builder3 = new_builder("foo", [], ["bar", "baz", "bzz"], [], true, true, blobstore)
 
-    add_templates("foo", "yo")
-    builder2 = new_builder("foo", [], ["bar", "baz", "bzz", "yo"], [])
-    builder2.build
-    builder2.version.should == "1.2-dev"
+    lambda {
+      final_builder3.build
+    }.should raise_error(Bosh::Cli::CliExit)
   end
 
 end
