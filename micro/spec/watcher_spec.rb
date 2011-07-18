@@ -70,11 +70,28 @@ describe VCAP::Micro::Watcher do
 
     VCAP::Micro::Network.stub(:local_ip).and_return(new_ip)
     VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
+    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::CLOUDFOUNDRY_IP)
     VCAP::Micro::Network.should_receive(:ping).exactly(2).times.and_return(true)
 
     identity = mock_identity("1.2.3.4")
     identity.should_receive(:update_ip).with(new_ip).exactly(1).times
 
+    w = VCAP::Micro::Watcher.new(mock_network(true), identity)
+    w.check
+  end
+
+  it "should refresh the IP regularly" do
+    ip = "1.2.3.4"
+
+    VCAP::Micro::Network.stub(:local_ip).and_return(ip)
+    VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
+    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::CLOUDFOUNDRY_IP)
+    VCAP::Micro::Network.should_receive(:ping).exactly(2).times.and_return(true)
+
+    identity = mock_identity(ip)
+    identity.should_receive(:update_ip).with(ip).exactly(1).times
+    now = Time.now.to_i
+    Time.stub(:now).and_return(now - 14500, now)
     w = VCAP::Micro::Watcher.new(mock_network(true), identity)
     w.check
   end
