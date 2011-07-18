@@ -3,6 +3,7 @@ require 'micro/network'
 require 'micro/identity'
 require 'micro/agent'
 require 'micro/settings'
+require 'micro/watcher'
 
 module VCAP
   module Micro
@@ -34,17 +35,18 @@ module VCAP
           identity
 
           network
+          @ip = VCAP::Micro::Network.local_ip
 
           if @identity.configured?
             @watcher = Watcher.new(@network, @identity).watch
           end
 
-          @ip = VCAP::Micro::Network.local_ip
-          install_identity
-          setup_admin
-          install_micro
+          if install_identity
+            setup_admin
+            install_micro
 
-          @identity.save
+            @identity.save
+          end
         rescue SystemExit => e
           say("\nRestarting console...")
         rescue Exception => e
@@ -100,21 +102,12 @@ module VCAP
 
       def identity
         say("\nConfigure Micro Cloud Foundry identity:\n")
-        choose do |menu|
-          menu.prompt = "Choose identity type: "
-          menu.choice(:token) { token }
-          menu.choice(:dns_wildcard_name) { dns_wildcard_name }
-        end
+        token
       end
 
       def token
         token = ask("\nToken: ")
-        @identity.token(token)
-      end
-
-      def dns_wildcard_name
-        name = ask("DNS wildcarded record: ")
-        @identity.dns_wildcard_name(name)
+        @identity.nonce = token
       end
 
       def network
@@ -147,14 +140,20 @@ module VCAP
       end
 
       def install_identity
-        begin
-          @identity.install(@ip)
-        rescue => e
-          say("Error registering identity with micro.cloudfoundry.com\n")
-          say("\nException: #{e.message}")
-          # TODO this stack trace should go into a log file
-          # say("\nBacktrace: #{e.backtrace.join("\n")}")
-        end
+        @identity.install(@ip)
+        true
+      rescue SocketError => e
+        say("Error contacting micro.cloudfoundry.com")
+        exit unless agree("Continue using vcap.me domain instead? ")
+        @identity.vcap_me
+        true
+      rescue => e
+        say("Error registering identity with micro.cloudfoundry.com\n")
+        say("\nException: #{e.message}")
+        # TODO this stack trace should go into a log file
+        # say("\nBacktrace: #{e.backtrace.join("\n")}")
+        STDIN.getc
+        false
       end
 
       def setup_admin

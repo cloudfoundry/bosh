@@ -124,10 +124,6 @@ module VCAP
         [@name, @cloud].compact.join(".") # compact in case @name is nil
       end
 
-      def dns_wildcard_name(subdomain)
-        @cloud = subdomain
-      end
-
       def save
         File.open(@config_file, 'w') do |f|
           Yajl::Encoder.encode(@config, f)
