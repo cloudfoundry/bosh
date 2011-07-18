@@ -15,13 +15,14 @@ module Bosh::Cli
     def initialize(spec, release_dir, final, blobstore, sources_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
-      @name         = spec["name"]
-      @globs        = spec["files"]
-      @dependencies = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []
-      @release_dir  = release_dir
-      @sources_dir  = sources_dir || File.join(@release_dir, "src")
-      @final        = final
-      @blobstore    = blobstore
+      @name          = spec["name"]
+      @globs         = spec["files"]
+      @dependencies  = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []
+      @release_dir   = release_dir
+      @sources_dir   = sources_dir || File.join(@release_dir, "src")
+      @final         = final
+      @blobstore     = blobstore
+      @artefact_type = "package"
 
       @metadata_files = %w(packaging pre_packaging)
 
@@ -47,17 +48,6 @@ module Bosh::Cli
       at_exit { FileUtils.rm_rf(build_dir) }
 
       init_indices
-    end
-
-    def build
-      with_indent("  ") do
-        use_final_version || use_dev_version || generate_tarball
-      end
-      upload_tarball(@tarball_path) if final_build?
-    end
-
-    def final_build?
-      @final
     end
 
     def reload # Mostly for tests
