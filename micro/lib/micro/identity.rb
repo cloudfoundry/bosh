@@ -4,42 +4,39 @@ require 'yajl'
 module VCAP
   module Micro
     class Identity
-      attr_accessor :admins, :ip, :subdomain, :proxy
+      attr_accessor :admins, :ip, :proxy, :nonce
+      attr_reader :name, :cloud
 
+      URL = "http://www-com-sa.cloudfoundry.com/api/v1/micro"
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
+      CLOUD = "cloudfoundry.me"
 
-      def initialize
-        @client = RestClient::Resource.new(
-          'http://micro.cloudfoundry.com/api/v1',
-          :headers => { :content_type => 'application/json' }
-        )
-        if configured?
-          load_config
-        else
-          # use some sane defaults in case we can't connect to the REST API
-          # so it can be used offline
-          @config ||= {
-            "admins" => ["admin@vcap.me"],
-            "subdomain" => "vcap.me"
-          }
-          @subdomain = @config['subdomain']
-          @admins = @config['admins']
-        end
+      def initialize(config_file=MICRO_CONFIG)
+        @config_file = config_file
+        load_config if configured?
         @config ||= {}
+        @client = resource
       end
 
       def configured?
-        File.exist?(MICRO_CONFIG)
+        File.exist?(@config_file)
       end
 
       def load_config
-        File.open(MICRO_CONFIG) do |f|
+        File.open(@config_file) do |f|
           @config = Yajl::Parser.parse(f)
-          @subdomain = @config['subdomain']
+          @name = @config['name']
+          @cloud = @config['cloud']
           @admins = @config['admins']
           @ip = @config['ip']
-          @auth_token = @config['auth_token']
+          @token = @config['token']
         end
+      end
+
+      def resource
+        headers = { :content_type => 'application/json' }
+        headers["Auth-Token"] = @token if @token
+        RestClient::Resource.new(URL, :headers => headers)
       end
 
       def install(ip)
@@ -49,31 +46,72 @@ module VCAP
 
         @ip = @config['ip'] = ip
 
-        unless @auth_token
+        unless @token
           resp = auth
           @admins = @config['admins'] = [ resp['email'] ]
-          @subdomain = @config['subdomain'] = resp['hostname']
-          @auth_token = @config['auth_token'] = resp['token']
+          @cloud = @config['cloud'] = resp['cloud']
+          @name = @config['name'] = resp['name']
+          @token = @config['token'] = resp['auth-token']
+          # replace the resource with one that includes the auth token
+          @client = resource
         end
 
         update_dns
       end
 
-      def auth
-        path = "/auth/#{CGI.escape(@nounce)}"
-        response = @client[path].get
-        resp = Yajl::Parser.new.parse(response)
-        resp
+      # used if you want to work in offline mode
+      def vcap_me
+        @admins = @config['admins'] = [ "admin@vcap.me" ]
+        @cloud = @config['cloud'] = "vcap.me"
+        @name = @config['name'] = ""
       end
 
+      # POST /api/v1/micro/token
+      #   cloud - the common domain for the micro cloud (ie "cloudfoundry.me")
+      #   name - the cloud specific domain for the micro cloud (ie "martin")
+      #   Request body:
+      #     {"nonce": "ethic-paper-thin"}
+      #   Response:
+      #     200 - nonce redeemed
+      #       {"auth-token" : "HAqyzvZsK8uQLRlaFESmadKiD1dTkGhy",
+      #        "name":"martin",
+      #        "cloud":"cloudfoundry.me",
+      #        "email":"martin@englund.nu"}
+      #     403 - nonce rejected / unknown cloud or host
+      #       no defined body
+      def auth
+        path = "/token"
+        payload = Yajl::Encoder.encode({"nonce" => @nonce})
+        response = @client[path].post(payload)
+        resp = Yajl::Parser.new.parse(response)
+        resp
+      rescue RestClient::Forbidden => e
+        puts "\nNotice: token rejected!"
+        raise e
+      end
+
+      # PUT /api/v1/micro/clouds/{domain}/{name}/dns
+      #   domain - the common domain for the micro cloud (ie "cloudfoundry.me")
+      #   name - the cloud specific domain for the micro cloud (ie "martin")
+      #   Request headers:
+      #     Auth-Token: dsNqjhk48eSDdowr7x98BDwfn8hTxIfr
+      #   Request body:
+      #     {"address": "1.2.3.4"}
+      #   Response:
+      #     202 - new address accepted
+      #       no defined body
+      #     304 - address has not changed
+      #       no defined body
+      #     403 - bad auth token / unknown cloud or host
+      #       no defined body
       def update_dns
-        dns_data = {:token => @auth_token, :ip => @ip}
-        payload = Yajl::Encoder.encode(dns_data)
-        begin
-          @client['/update_dns'].put(payload)
-        rescue RestClient::NotModified
-          # Do nothing
-        end
+        payload = Yajl::Encoder.encode({:address => @ip})
+        @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
+      rescue RestClient::Forbidden => e
+        puts "Notice: authorization token has expired"
+        raise e
+      rescue RestClient::NotModified
+        # do nothing
       end
 
       def update_ip(ip)
@@ -82,16 +120,16 @@ module VCAP
         update_dns
       end
 
-      def token(nounce)
-        @nounce = nounce
+      def subdomain
+        [@name, @cloud].compact.join(".") # compact in case @name is nil
       end
 
-      def dns_wildcard_name(subsdomain)
-        @subdomain = subdomain
+      def dns_wildcard_name(subdomain)
+        @cloud = subdomain
       end
 
       def save
-        File.open(MICRO_CONFIG, 'w') do |f|
+        File.open(@config_file, 'w') do |f|
           Yajl::Encoder.encode(@config, f)
         end
       end
