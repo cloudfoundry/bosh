@@ -122,8 +122,10 @@ module Bosh::Agent
         bin_dir = File.join(@job_install_dir, 'bin')
         FileUtils.mkdir_p(bin_dir)
 
+        file = nil
         job_mf = YAML.load_file(File.join(@job_install_dir, 'job.MF'))
         job_mf['templates'].each do |src, dst|
+          file = src
           template = ERB.new(File.read(File.join(@job_install_dir, 'templates', src)))
 
           out_file = File.join(@job_install_dir, dst)
@@ -137,6 +139,9 @@ module Bosh::Agent
             FileUtils.chmod(0755, out_file)
           end
         end
+      rescue NoMethodError => e
+        line = e.backtrace.first.match(/:(\d+):/).captures.first
+        raise FatalError, "job '#{@job["name"]}' failed to process template #{file}: #{e.message} on line #{line}"
       end
 
       def harden_job_permissions
