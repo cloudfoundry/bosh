@@ -5,6 +5,8 @@ module VCAP
 
       DEFAULT_SLEEP = 5
       MAX_SLEEP = 30 # 5 + 5*5, i.e. 5 consecutive failures
+      REFRESH_INTERVAL = 14400
+      TTL = 60
       A_ROOT_SERVER = '198.41.0.4'
       CLOUDFOUNDRY_COM = 'cloudfoundry.com'
       CLOUDFOUNDRY_IP = '173.243.49.35'
@@ -13,6 +15,7 @@ module VCAP
         @network = network
         @identity = identity
         @sleep = DEFAULT_SLEEP
+        @start = Time.now.to_i
       end
 
       def watch
@@ -40,7 +43,7 @@ module VCAP
             return
           end
 
-          # if we can't ping the local gateway or google's public DNS server,
+          # if we can't ping the local gateway or the DNS A server,
           # then something is wrong
           unless VCAP::Micro::Network.ping(gw) && VCAP::Micro::Network.ping(A_ROOT_SERVER)
             @network.restart
@@ -57,6 +60,18 @@ module VCAP
           unless ip == @identity.ip
             $stderr.puts "\nupdating from #{@identity.ip} to #{ip}..."
             @identity.update_ip(ip)
+            @sleep = TTL # don't run again until the DNS has been updated
+            return
+          end
+
+          # refresh DNS record
+          if Time.now.to_i - @start > REFRESH_INTERVAL
+            begin
+              @identity.update_ip(ip)
+            rescue RestClient::Forbidden
+              # do nothing
+            end
+            @start = Time.now
           end
 
           # reset sleep interval if everything worked
