@@ -73,7 +73,8 @@ module Bosh::Director
    ["JobMissingPackage",       BAD_REQUEST, 80003, "Job: \"%s\" missing package: \"%s\""],
    ["JobMissingMonit",         BAD_REQUEST, 80004, "Job: \"%s\" missing monit configuration"],
 
-   ["NotEnoughCapacity", BAD_REQUEST, 90000, "%s"]
+   ["NotEnoughCapacity",       BAD_REQUEST, 90000, "%s"],
+   ["InstanceInvalidIndex",    BAD_REQUEST, 90001, "Invalid job index: \"%s\""]
   ].each do |e|
     class_name, response_code, error_code, format = e
 

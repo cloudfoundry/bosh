@@ -1,7 +1,9 @@
 module Bosh::Director
   module ValidationHelper
+
     def safe_property(hash, property, options = {})
       result = nil
+
       if hash && hash.has_key?(property)
         result = hash[property]
         if options[:class]
@@ -19,10 +21,15 @@ module Bosh::Director
         end
         raise ValidationViolatedMin.new(property, options[:min]) if options[:min] && result < options[:min]
         raise ValidationViolatedMax.new(property, options[:max]) if options[:max] && result > options[:max]
+
+      elsif options[:default]
+        result = options[:default]
+
       elsif !options[:optional]
         raise ValidationMissingField.new(property, hash.pretty_inspect)
       end
       result
     end
+
   end
 end
