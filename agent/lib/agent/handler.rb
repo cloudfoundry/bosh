@@ -247,9 +247,22 @@ module Bosh::Agent
       end
     end
 
+    class Start
+      def self.process(args)
+
+        if Config.configure
+          Bosh::Agent::Monit.start_services
+        end
+
+        "started"
+
+      rescue => e
+        raise Bosh::Agent::MessageHandlerError, "Cannot start job: #{e}"
+      end
+    end
+
     # FIXME: temporary stop method
     class Stop
-
       def self.process(args)
 
         if Config.configure
@@ -265,7 +278,6 @@ module Bosh::Agent
         # however this is not common and can be handled on case-by-case basis.
         raise Bosh::Agent::MessageHandlerError, "Cannot stop job: #{e}"
       end
-
     end
 
     class PrepareNetworkChange
