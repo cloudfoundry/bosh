@@ -118,6 +118,13 @@ module Bosh
         upload_and_track(url, "text/yaml", filename)
       end
 
+      def change_job_state(deployment_name, manifest_filename, job_name, index, new_state)
+        url = "/deployments/#{deployment_name}/jobs/#{job_name}"
+        url += "/#{index}" if index
+        url += "?state=#{new_state}"
+        upload_and_track(url, "text/yaml", manifest_filename, :method => :put)
+      end
+
       def get_task_state(task_id)
         response_code, body = get("/tasks/#{task_id}")
         raise AuthError if response_code == 401
@@ -173,7 +180,8 @@ module Bosh
 
       def upload_and_track(uri, content_type, filename, options = {})
         file = FileWithProgressBar.open(filename, "r")
-        request_and_track(:post, uri, content_type, file)
+        method = options[:method] || :post
+        request_and_track(method, uri, content_type, file)
       ensure
         file.stop_progress_bar if file
       end

@@ -55,7 +55,8 @@ module Bosh
         Config.output   ||= STDOUT unless @options[:quiet]
 
         if @namespace && @action
-          eval("Bosh::Cli::Command::#{@namespace.to_s.capitalize}").new(@options).send(@action.to_sym, *@args)
+          ns_class_name = @namespace.to_s.gsub(/(?:^|_)(.)/) { $1.upcase }
+          eval("Bosh::Cli::Command::#{ns_class_name}").new(@options).send(@action.to_sym, *@args)
         else
           display_usage
         end
@@ -171,7 +172,15 @@ Currently available bosh commands are:
   User management
     create user [<username>] [<password>]     Create user
 
-  Task
+  Job management
+    start <job> [<index>]                     Start job/instance
+    stop  <job> [<index>] [--hard|--soft]     Stop job/instance (--soft stops processes, --hard also deletes the VM)
+    restart <job> [<index>]                   Restart job/instance (soft stop + start)
+    recreate <job> [<index>]                  Recreate job/instance (hard stop + start)
+                                              Job management options:
+                                              --force     allow job management even when local deployment manifest contains other changes
+
+  Task management
     tasks [running]                           Show the list of running tasks
     tasks recent [<number>]                   Show <number> recent tasks
     task [<id>|last] [--no-cache]             Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
@@ -251,6 +260,22 @@ USAGE
             usage("bosh create package <name>|<path>")
             set_cmd(:package, :create, 1)
           end
+
+        when "start"
+          usage("bosh start <job> [<index>] [--force]")
+          set_cmd(:job_management, :start_job, 1..3)
+
+        when "stop"
+          usage("bosh stop <job> [<index>] [--soft | --hard] [--force]")
+          set_cmd(:job_management, :stop_job, 1..4)
+
+        when "restart"
+          usage("bosh restart <job> [<index>] [--force]")
+          set_cmd(:job_management, :restart_job, 1..3)
+
+        when "recreate"
+          usage("bosh recreate <job> [<index>] [--force]")
+          set_cmd(:job_management, :recreate_job, 1..3)
 
         when "generate", "gen"
           verb_usage("generate")
