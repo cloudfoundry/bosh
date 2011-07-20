@@ -9,6 +9,7 @@ require 'yaml'
 
 require 'agent/config'
 require 'agent/state'
+require 'agent/errors'
 require 'agent/message/base'
 require 'agent/message/compile_package'
 require 'agent/util'
@@ -78,6 +79,9 @@ module VCAP
         File.open(apply_spec, 'w') { |f| f.write(YAML.dump(@spec)) }
 
         @spec["packages"]
+      rescue Bosh::Agent::MessageHandlerError => e
+        @logger.error e.message
+        exit 1
       rescue Errno::ENOENT => e
         raise RuntimeError, "Could not load spec file: #{deployment}"
       end

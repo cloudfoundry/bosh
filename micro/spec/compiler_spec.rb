@@ -5,6 +5,7 @@ describe VCAP::Micro::Compiler do
 
   SPEC = File.expand_path("spec/assets/micro.yml")
   TGZ = File.expand_path("spec/assets/spec.tgz")
+  FAIL = File.expand_path("spec/assets/fail.tgz")
   TMP = File.expand_path("tmp")
   CACHE = File.join(TMP, "data/cache")
 
@@ -45,4 +46,10 @@ describe VCAP::Micro::Compiler do
     }.should raise_exception RuntimeError
   end
 
+  it "should exit non zero on compile error" do
+    c = VCAP::Micro::Compiler.new(OPTS)
+    lambda {
+      c.compile(SPEC, FAIL)
+    }.should raise_exception SystemExit
+  end
 end
