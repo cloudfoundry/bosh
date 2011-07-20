@@ -207,6 +207,73 @@ describe Bosh::Cli::Command::Base do
 
   end
 
+  describe Bosh::Cli::Command::JobManagement do
+    before :each do
+      @manifest_path = spec_asset("deployment.MF")
+      @cmd = Bosh::Cli::Command::JobManagement.new(@opts)
+      @cmd.stub!(:prepare_deployment_manifest).and_return({ "name" => "foo" })
+      @cmd.stub!(:interactive?).and_return(false)
+      @cmd.stub!(:deployment).and_return(@manifest_path)
+      @cmd.stub!(:target).and_return("test.com")
+      @cmd.stub!(:target_name).and_return("dev2")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @director = mock(Bosh::Cli::Director)
+      @cmd.stub!(:director).and_return(@director)
+    end
+
+    it "allows starting jobs" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "started")
+      @cmd.start_job("dea")
+    end
+
+    it "allows starting job instances" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "started")
+      @cmd.start_job("dea", 3)
+    end
+
+    it "allows stopping jobs" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "stopped")
+      @cmd.stop_job("dea")
+    end
+
+    it "allows stopping job instances" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "stopped")
+      @cmd.stop_job("dea", 3)
+    end
+
+    it "allows restarting jobs" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "restart")
+      @cmd.restart_job("dea")
+    end
+
+    it "allows restart job instances" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "restart")
+      @cmd.restart_job("dea", 3)
+    end
+
+    it "allows recreating jobs" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "recreate")
+      @cmd.recreate_job("dea")
+    end
+
+    it "allows recreating job instances" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "recreate")
+      @cmd.recreate_job("dea", 3)
+    end
+
+    it "allows hard stop" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "detached")
+      @cmd.stop_job("dea", 3, "--hard")
+    end
+
+    it "allows soft stop (= regular stop)" do
+      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "stopped")
+      @cmd.stop_job("dea", 3, "--soft")
+    end
+
+  end
+
 end
 
 

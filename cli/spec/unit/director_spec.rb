@@ -121,6 +121,16 @@ describe Bosh::Cli::Director do
       @director.deploy("/path")
     end
 
+    it "changes job state" do
+      @director.should_receive(:upload_and_track).with("/deployments/foo/jobs/dea?state=stopped", "text/yaml", "/path", :method => :put).and_return(true)
+      @director.change_job_state("foo", "/path", "dea", nil, "stopped")
+    end
+
+    it "changes job instance state" do
+      @director.should_receive(:upload_and_track).with("/deployments/foo/jobs/dea/0?state=detached", "text/yaml", "/path", :method => :put).and_return(true)
+      @director.change_job_state("foo", "/path", "dea", 0, "detached")
+    end
+
     it "gets task state" do
       @director.should_receive(:get).with("/tasks/232").and_return([200, JSON.generate({"state" => "done"})])
       @director.get_task_state(232).should == "done"
