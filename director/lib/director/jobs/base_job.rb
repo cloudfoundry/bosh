@@ -28,6 +28,7 @@ module Bosh::Director
             logger.info("Creating job")
             job = self.send(:new, *args)
             job.task_id = task_id
+            job.cancel_checkpoint # cancelled in the queue?
 
             logger.info("Performing task: #{task_id}")
             task.state = :processing
