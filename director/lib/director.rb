@@ -374,8 +374,8 @@ module Bosh::Director
       task = Models::Task[task_id]
       raise TaskNotFound.new(task_id) if task.nil?
 
-      if task.state != "processing"
-        output = "Task #{task_id} is not processing"
+      if task.state != "processing" && task.state != "queued"
+        output = "Cannot cancel task #{task_id}: Invalid state(#{task.state})"
         status(400)
       else
         output = "Cancelling task #{task_id}"
