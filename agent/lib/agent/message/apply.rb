@@ -119,7 +119,8 @@ module Bosh::Agent
       end
 
       def template_configurations
-        bin_dir = File.join(@job_install_dir, 'bin')
+        bin = 'bin'
+        bin_dir = File.join(@job_install_dir, bin)
         FileUtils.mkdir_p(bin_dir)
 
         file = nil
@@ -135,7 +136,7 @@ module Bosh::Agent
             fh.write(template.result(Util.config_binding(@apply_spec)))
           end
 
-          if File.dirname(out_file) == bin_dir
+          if File.dirname(out_file).match("/#{bin}$")
             FileUtils.chmod(0755, out_file)
           end
         end
