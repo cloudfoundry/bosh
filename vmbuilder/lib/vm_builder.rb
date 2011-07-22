@@ -56,8 +56,12 @@ module VMBuilder
           vmopts[:config] = File.join(tmpdir, "vmbuilder.cfg")
           inside(opts[:work_dir]) do
             vmbuilder(vmopts)
-            ovftool(opts, "ubuntu-esxi/micro.ovf")
-            archive("ubuntu-esxi", "../micro.ovf.tgz", "micro*")
+            FileUtils.mkdir_p("micro")
+            ovftool(opts, "ubuntu-esxi/micro.vmx", "micro/micro.vmx")
+            # in micro/micro.vmx set
+            # displayName = "Micro Cloud Foundry v0.1.0"
+            # ethernet0.connectionType = "nat"
+            archive("micro", "micro.tgz")
           end
         end
       end
@@ -95,17 +99,15 @@ module VMBuilder
         end
       end
 
-      def ovftool(opts, dest)
+      def ovftool(opts, src, dst)
         timeit "ovftool" do
-          `#{opts[:ovftool]} ubuntu-esxi/micro.vmx #{dest}`
+          `#{opts[:ovftool]} #{src} #{dst}`
         end
       end
 
-      def archive(dir, dest, match="*")
+      def archive(dir, dst)
         timeit "archive" do
-          inside(dir) do
-            `tar zcf #{dest} #{match}`
-          end
+          `tar zcf #{dst} #{dir}`
         end
       end
 

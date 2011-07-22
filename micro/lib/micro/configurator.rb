@@ -4,6 +4,7 @@ require 'micro/identity'
 require 'micro/agent'
 require 'micro/settings'
 require 'micro/watcher'
+require 'micro/version'
 
 module VCAP
   module Micro
@@ -60,7 +61,7 @@ module VCAP
       end
 
       def header
-        say("BETA - Welcome to VMware Micro Cloud Foundry Download - BETA\n\n")
+        say("Welcome to VMware Micro Cloud Foundry version #{VCAP::Micro::VERSION}\n\n")
 
         unless @identity.configured?
           say("Please visit http://CloudFoundry.com register for a Micro Cloud Foundry token.\n\n")
@@ -101,12 +102,7 @@ module VCAP
       end
 
       def identity
-        say("\nConfigure Micro Cloud Foundry identity:\n")
-        token
-      end
-
-      def token
-        token = ask("\nToken: ")
+        token = ask("\nMicro Cloud Foundry configuration token:")
         @identity.nonce = token
       end
 
@@ -143,7 +139,7 @@ module VCAP
         @identity.install(@ip)
         true
       rescue SocketError => e
-        say("Error contacting micro.cloudfoundry.com")
+        say("\nError contacting micro.cloudfoundry.com")
         exit unless agree("Continue using vcap.me domain instead? ")
         @identity.vcap_me
         true
