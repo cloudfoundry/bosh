@@ -63,7 +63,7 @@ module VCAP
       def vcap_me
         @admins = @config['admins'] = [ "admin@vcap.me" ]
         @cloud = @config['cloud'] = "vcap.me"
-        @name = @config['name'] = ""
+        @name = @config['name'] = nil
       end
 
       # POST /api/v1/micro/token
@@ -77,8 +77,9 @@ module VCAP
       #        "name":"martin",
       #        "cloud":"cloudfoundry.me",
       #        "email":"martin@englund.nu"}
-      #     403 - nonce rejected / unknown cloud or host
-      #       no defined body
+      #     403 - nonce expired
+      #     404 - bogus nonce
+      #     409 - used nonce
       def auth
         path = "/token"
         payload = Yajl::Encoder.encode({"nonce" => @nonce})
@@ -86,7 +87,13 @@ module VCAP
         resp = Yajl::Parser.new.parse(response)
         resp
       rescue RestClient::Forbidden => e
-        puts "\nNotice: token rejected!"
+        puts "\nNotice: authorization token has expired"
+        raise e
+      rescue RestClient::ResourceNotFound => e
+        puts "\nNotice: no such authorization token"
+        raise e
+      rescue RestClient::Conflict => e
+        puts "\nNotice: authorization token already used"
         raise e
       end
 
@@ -107,9 +114,6 @@ module VCAP
       def update_dns
         payload = Yajl::Encoder.encode({:address => @ip})
         @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
-      rescue RestClient::Forbidden => e
-        puts "Notice: authorization token has expired"
-        raise e
       rescue RestClient::NotModified
         # do nothing
       end
