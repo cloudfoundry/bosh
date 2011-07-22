@@ -61,7 +61,7 @@ module Bosh::Cli
 
     def copy_packages
       packages.each do |package|
-       say "%-40s %s" % [ package.name.green, pretty_size(package.tarball_path) ]
+        say "%-40s %s" % [ package.name.green, pretty_size(package.tarball_path) ]
         FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"), :preserve => true)
       end
       @packages_copied = true
