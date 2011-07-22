@@ -56,8 +56,10 @@ module VMBuilder
           vmopts[:config] = File.join(tmpdir, "vmbuilder.cfg")
           inside(opts[:work_dir]) do
             vmbuilder(vmopts)
-            ovftool(opts, "ubuntu-esxi/micro.ovf")
-            archive("ubuntu-esxi", "../micro.ovf.tgz", "micro*")
+            ovftool(opts, "ubuntu-esxi/micro.vmx", "ovf")
+            ovftool(opts, "ovf/micro/micro.ovf", "fusion")
+            archive("ovf", "../micro-ovf.tgz")
+            archive("fusion", "../micro-fusion.tgz")
           end
         end
       end
@@ -95,16 +97,17 @@ module VMBuilder
         end
       end
 
-      def ovftool(opts, dest)
+      def ovftool(opts, src, dst)
         timeit "ovftool" do
-          `#{opts[:ovftool]} ubuntu-esxi/micro.vmx #{dest}`
+          FileUtils.mkdir dst unless Dir.exist? dst
+          `#{opts[:ovftool]} ubuntu-esxi/micro.vmx #{dst}`
         end
       end
 
-      def archive(dir, dest, match="*")
+      def archive(dir, dst, match="*")
         timeit "archive" do
           inside(dir) do
-            `tar zcf #{dest} #{match}`
+            `tar zcf #{dst} #{match}`
           end
         end
       end

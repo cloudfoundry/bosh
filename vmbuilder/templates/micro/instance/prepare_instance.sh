@@ -103,6 +103,10 @@ cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
 #  -a -not \( -name sudo -o -name su -o -name sudoedit \) \
 #  -exec chmod ug-s {} \;
 
+mkdir -p ${bosh_app_dir}/shared
+chown vcap:vcap ${bosh_app_dir}/shared
+chmod 0700 ${bosh_app_dir}/shared
+
 chmod 755 /var/vcap/micro/bin/microconsole
 
 #

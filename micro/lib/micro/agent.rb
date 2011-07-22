@@ -43,6 +43,7 @@ module VCAP
         Agent.config
         Bosh::Agent::Monit.enabled = true
         Bosh::Agent::Monit.start
+        Bosh::Agent::Monit.start_services
       end
 
       def self.config
@@ -106,8 +107,12 @@ module VCAP
         monitor_start
       end
 
+      # start monitoring all services and then go into a loop
+      # to print out the names of the started services
       def monitor_start
         started = []
+
+        Bosh::Agent::Monit.start_services
 
         loop do
           status = Bosh::Agent::Monit.retry_monit_request do |client|
