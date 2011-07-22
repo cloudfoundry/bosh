@@ -135,7 +135,7 @@ module Bosh::Agent
             fh.write(template.result(Util.config_binding(@apply_spec)))
           end
 
-          if File.dirname(out_file) == bin_dir
+          if File.dirname(out_file).split(File::SEPARATOR).last == "bin"
             FileUtils.chmod(0755, out_file)
           end
         end
