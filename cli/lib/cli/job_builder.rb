@@ -106,7 +106,11 @@ module Bosh::Cli
       copied = 0
 
       templates.each do |template|
-        FileUtils.cp(File.join(@templates_dir, template), File.join(build_dir, "templates"), :preserve => true)
+        src = File.join(@templates_dir, template)
+        dst = File.join(build_dir, "templates", template)
+        FileUtils.mkdir_p(File.dirname(dst))
+
+        FileUtils.cp(src, dst, :preserve => true)
         copied += 1
       end
 

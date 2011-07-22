@@ -26,10 +26,11 @@ describe Bosh::Cli::JobBuilder do
 
   def add_file(job_name, file, contents = nil)
     job_dir = File.join(@release_dir, "jobs", job_name)
-    FileUtils.mkdir_p(job_dir)
-    FileUtils.touch(File.join(job_dir, file))
+    file_path = File.join(job_dir, file)
+    FileUtils.mkdir_p(File.dirname(file_path))
+    FileUtils.touch(file_path)
     if contents
-      File.open(File.join(job_dir, file), "w") { |f| f.write(contents) }
+      File.open(file_path, "w") { |f| f.write(contents) }
     end
   end
 
@@ -312,6 +313,22 @@ describe Bosh::Cli::JobBuilder do
     lambda {
       final_builder3.build
     }.should raise_error(Bosh::Cli::CliExit)
+  end
+
+  it "allows template subdirectories" do
+    add_templates("foo", "foo/bar", "bar/baz")
+    add_monit("foo")
+
+    blobstore = mock("blobstore")
+    builder = new_builder("foo", [], ["foo/bar", "bar/baz"], [], true, false, blobstore)
+    builder.build
+
+    Dir.chdir(builder.build_dir) do
+      File.directory?("templates").should be_true
+      ["templates/foo/bar", "templates/bar/baz"].each do |file|
+        File.file?(file).should be_true
+      end
+    end
   end
 
 end
