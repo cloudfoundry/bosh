@@ -118,8 +118,10 @@ module Bosh::Cli::Command
         release_filename = create_from_spec(*options)
       end
 
-      dev_release = Bosh::Cli::Release.dev(work_dir)
-      dev_release.update_config(:latest_release_filename => release_filename)
+      if release_filename
+        dev_release = Bosh::Cli::Release.dev(work_dir)
+        dev_release.update_config(:latest_release_filename => release_filename)
+      end
     end
 
     def create_from_manifest(manifest_file)
@@ -134,6 +136,7 @@ module Bosh::Cli::Command
       final         = options.include?("--final")
       force         = options.include?("--force")
       manifest_only = !options.include?("--with-tarball")
+      dry_run       = options.include?("--dry-run")
 
       check_if_dirty_state unless force
 
@@ -166,6 +169,7 @@ module Bosh::Cli::Command
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
         package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, blobstore)
+        package.dry_run = dry_run
         say "Building #{package.name.green}..."
         package.build
         packages << package
@@ -195,6 +199,7 @@ module Bosh::Cli::Command
         end
 
         job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final, blobstore, built_package_names)
+        job.dry_run = dry_run
         say "Building #{job.name.green}..."
         job.build
         jobs << job
@@ -203,17 +208,21 @@ module Bosh::Cli::Command
 
       builder = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, :final => final)
 
-      if manifest_only
-        builder.build(:generate_tarball => false)
-      else
-        builder.build(:generate_tarball => true)
-        say("Built release #{builder.version} at '#{builder.tarball_path.green}'")
-        say("Release size: #{pretty_size(builder.tarball_path).green}")
+      unless dry_run
+        if manifest_only
+          builder.build(:generate_tarball => false)
+        else
+          builder.build(:generate_tarball => true)
+          say("Built release #{builder.version} at '#{builder.tarball_path.green}'")
+          say("Release size: #{pretty_size(builder.tarball_path).green}")
+        end
       end
 
       header "Release summary"
       show_summary(builder)
       nl
+
+      return nil if dry_run
 
       say("Release manifest saved in '#{builder.manifest_path.green}'")
       [dev_release, final_release].each do |release|
