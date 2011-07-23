@@ -331,4 +331,37 @@ describe Bosh::Cli::JobBuilder do
     end
   end
 
+  it "supports dry run" do
+    add_templates("foo", "bar", "baz")
+    add_monit("foo")
+
+    builder = new_builder("foo", [], ["bar", "baz"], [])
+    builder.dry_run = true
+    builder.build
+
+    builder.version.should == "0.1-dev"
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_false
+
+    builder.dry_run = false
+    builder.reload.build
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
+
+    blobstore = mock("blobstore")
+    blobstore.should_not_receive(:create)
+    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder.dry_run = true
+    final_builder.build
+
+    final_builder.version.should == "0.1-dev" # As it shouldn't be promoted during dry run
+    File.exists?(@release_dir + "/.final_builds/jobs/foo/1.tgz").should be_false
+
+    add_templates("foo", "bzz")
+    builder2 = new_builder("foo", [], ["bar", "baz", "bzz"], [])
+    builder2.dry_run = true
+    builder2.build
+    builder2.version.should == "0.2-dev"
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_false
+  end
+
 end

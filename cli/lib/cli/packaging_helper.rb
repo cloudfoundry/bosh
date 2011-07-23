@@ -6,6 +6,9 @@ require "blobstore_client"
 module Bosh
   module Cli
     module PackagingHelper
+      include Bosh::Cli::VersionCalc
+
+      attr_accessor :dry_run
 
       def init_indices
         @dev_index   = VersionsIndex.new(@dev_builds_dir)
@@ -16,24 +19,32 @@ module Bosh
         @final
       end
 
+      def dry_run?
+        @dry_run
+      end
+
       def new_version?
         @tarball_generated
       end
 
-      def latest_version?
+      def older_version?
         if @tarball_generated
-          true
+          false
         elsif @used_final_version
-          @version == @final_index.latest_version
+          version_cmp(@version, @final_index.latest_version) < 0
         else
-          @version == @dev_index.latest_version
+          version_cmp(@version, @dev_index.latest_version) < 0
         end
       end
 
       def notes
         notes = []
         notes << "new version" if new_version?
-        notes << "older than latest" unless latest_version?
+        notes << "older than latest" if older_version?
+        if final? && !@used_final_version
+          new_final_version = @final_index.latest_version.to_i + 1
+          notes << "will be promoted to #{new_final_version}"
+        end
         notes
       end
 
@@ -41,7 +52,7 @@ module Bosh
         with_indent("  ") do
           use_final_version || use_dev_version || generate_tarball
         end
-        upload_tarball(@tarball_path) if final?
+        upload_tarball(@tarball_path) if final? && !dry_run?
       end
 
       def use_final_version
@@ -160,9 +171,12 @@ module Bosh
           "version" => version
         }
 
-        @dev_index.add_version(fingerprint, item, payload)
-        @tarball_path   = @dev_index.filename(version)
-        @version        = version
+        unless dry_run?
+          @dev_index.add_version(fingerprint, item, payload)
+          @tarball_path = @dev_index.filename(version)
+        end
+
+        @version = version
         @tarball_generated = true
         say "Generated version #{version}".green
         true
