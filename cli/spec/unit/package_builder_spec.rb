@@ -341,4 +341,36 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
   end
 
+  it "supports dry run" do
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
+    globs = ["foo/**/*", "baz"]
+    builder = make_builder("bar", globs)
+    builder.dry_run = true
+    builder.build
+
+    builder.version.should == "0.1-dev"
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_false
+
+    builder.dry_run = false
+    builder.reload.build
+    builder.version.should == "0.1-dev"
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
+
+    blobstore = mock("blobstore")
+    blobstore.should_not_receive(:create)
+    final_builder = Bosh::Cli::PackageBuilder.new({"name" => "bar", "files" => globs}, @release_dir, true, blobstore)
+    final_builder.dry_run = true
+    final_builder.build
+
+    final_builder.version.should == "0.1-dev" # Hasn't been promoted b/c of dry run
+
+    add_sources("foo/foo15.rb")
+    builder2 = make_builder("bar", globs)
+    builder2.dry_run = true
+    builder2.build
+    builder2.version.should == "0.2-dev"
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").should be_false
+  end
+
 end
