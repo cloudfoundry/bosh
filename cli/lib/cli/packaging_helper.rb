@@ -16,6 +16,27 @@ module Bosh
         @final
       end
 
+      def new_version?
+        @tarball_generated
+      end
+
+      def latest_version?
+        if @tarball_generated
+          true
+        elsif @used_final_version
+          @version == @final_index.latest_version
+        else
+          @version == @dev_index.latest_version
+        end
+      end
+
+      def notes
+        notes = []
+        notes << "new version" if new_version?
+        notes << "older than latest" unless latest_version?
+        notes
+      end
+
       def build
         with_indent("  ") do
           use_final_version || use_dev_version || generate_tarball
@@ -66,6 +87,7 @@ module Bosh
         end
 
         @version = version
+        @used_final_version = true
         true
       rescue Bosh::Blobstore::NotFound => e
         raise BlobstoreError, "Final version of `#{name}' not found in blobstore"
@@ -95,6 +117,7 @@ module Bosh
         if file_checksum(filename) == item["sha1"]
           @tarball_path = filename
           @version      = version
+          @used_dev_version = true
         else
           say "`#{name} (#{version})' tarball corrupted".red
           return nil
@@ -140,7 +163,7 @@ module Bosh
         @dev_index.add_version(fingerprint, item, payload)
         @tarball_path   = @dev_index.filename(version)
         @version        = version
-
+        @tarball_generated = true
         say "Generated version #{version}".green
         true
       end
