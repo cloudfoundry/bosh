@@ -81,7 +81,7 @@ module BoshStringExtensions
   end
 
   def colorize(color_code)
-    if Bosh::Cli::Config.colorize
+    if Bosh::Cli::Config.colorize && $stdout.tty?
       "#{color_code}#{self}\e[0m"
     else
       self

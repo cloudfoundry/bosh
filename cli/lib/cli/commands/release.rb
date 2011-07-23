@@ -211,6 +211,10 @@ module Bosh::Cli::Command
         say("Release size: #{pretty_size(builder.tarball_path).green}")
       end
 
+      header "Release summary"
+      show_summary(builder)
+      nl
+
       say("Release manifest saved in '#{builder.manifest_path.green}'")
       [dev_release, final_release].each do |release|
         release.update_config(:min_cli_version => Bosh::Cli::VERSION)
@@ -290,6 +294,37 @@ module Bosh::Cli::Command
     end
 
     private
+
+    def show_summary(builder)
+      packages_table = table do |t|
+        t.headings = %w(Name Version Notes Fingerprint)
+        builder.packages.each do |package|
+          t << artefact_summary(package)
+        end
+      end
+
+      jobs_table = table do |t|
+        t.headings = %w(Name Version Notes Fingerprint)
+        builder.jobs.each do |job|
+          t << artefact_summary(job)
+        end
+      end
+
+      say "Packages"
+      say packages_table
+      nl
+      say "Jobs"
+      say jobs_table
+    end
+
+    def artefact_summary(artefact)
+      result = [ ]
+      result << artefact.name
+      result << artefact.version
+      result << artefact.notes.join(", ")
+      result << artefact.fingerprint
+      result
+    end
 
     def get_remote_release(name)
       release = director.get_release(name)
