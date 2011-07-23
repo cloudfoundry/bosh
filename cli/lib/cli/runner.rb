@@ -251,8 +251,8 @@ USAGE
           what = @args.shift
           case what
           when "release"
-            usage("bosh create release [--force] [--final] [--with-tarball]")
-            set_cmd(:release, :create, 0..2)
+            usage("bosh create release [--force] [--final] [--with-tarball] [--dry-run]")
+            set_cmd(:release, :create, 0..4)
           when "user"
             usage("bosh create user [<name>] [<password>]")
             set_cmd(:user, :create, 0..2)
