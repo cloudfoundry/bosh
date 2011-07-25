@@ -60,6 +60,15 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     }.should raise_error(Bosh::Cli::InvalidPackage, "Package 'aa' has 'packaging' file which conflicts with BOSH packaging")
   end
 
+  it "whines on globs not yielding any file names" do
+    add_sources("lib/1.rb", "lib/2.rb", "baz")
+    builder = make_builder("foo", ["lib/*.rb", "baz", "bar"])
+
+    lambda {
+      builder.build
+    }.should raise_error(Bosh::Cli::InvalidPackage, "`foo' has a glob that resolves to an empty file list: bar")
+  end
+
   it "has no way to calculate checksum for not yet generated package" do
     lambda {
       builder = make_builder("aa", ["*.rb", "packaging"])
@@ -124,18 +133,19 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.reload.fingerprint.should == s1
   end
 
-  it "changes fingerprint when empty directory added" do
+  it "changes fingerprint when empty directory added/removed" do
     add_sources("lib/1.rb", "lib/2.rb", "baz")
-    builder = make_builder("foo", ["lib/*.rb", "baz", "bar"])
+    builder = make_builder("foo", ["lib/*.rb", "baz", "bar/*"])
+    FileUtils.mkdir_p(@release_dir + "/src/bar/zb")
+
     s1 = builder.fingerprint
 
-    FileUtils.mkdir_p(@release_dir + "/src/bar")
+    FileUtils.mkdir_p(@release_dir + "/src/bar/zb2")
     s2 = builder.reload.fingerprint
     s2.should_not == s1
 
-    add_sources("bar/baz")
     builder.reload.fingerprint.should == s2
-    FileUtils.rm_rf(@release_dir + "/src/bar")
+    FileUtils.rm_rf(@release_dir + "/src/bar/zb2")
     builder.reload.fingerprint.should == s1
   end
 
