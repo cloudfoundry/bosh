@@ -171,7 +171,11 @@ module Bosh::Cli
     def resolve_globs
       in_sources_dir do
         @globs.map { |glob|
-          Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
+          matched_files = Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
+          if matched_files.size == 0
+            raise InvalidPackage, "`#{name}' has a glob that resolves to an empty file list: #{glob}"
+          end
+          matched_files
         }.flatten.sort
       end
     end
