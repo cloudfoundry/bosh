@@ -16,10 +16,23 @@ module VCAP
         load_config if configured?
         @config ||= {}
         @client = resource
+        @proxy = ""
+        @logger = Console.logger
       end
 
       def configured?
         File.exist?(@config_file)
+      end
+
+      def clear
+        FileUtils.rm_f(@config_file)
+        @config = {}
+        @name = @config['name'] = nil
+        @cloud = @config['cloud'] = nil
+        @admins = @config['admins'] = nil
+        @ip = @config['ip'] = nil
+        @token = @config['token'] = nil
+        @proxy = ""
       end
 
       def load_config
@@ -61,6 +74,7 @@ module VCAP
 
       # used if you want to work in offline mode
       def vcap_me
+        @logger.info("configuring vcap.me")
         @admins = @config['admins'] = [ "admin@vcap.me" ]
         @cloud = @config['cloud'] = "vcap.me"
         @name = @config['name'] = nil
@@ -85,16 +99,20 @@ module VCAP
         payload = Yajl::Encoder.encode({"nonce" => @nonce})
         response = @client[path].post(payload)
         resp = Yajl::Parser.new.parse(response)
+        @logger.debug("got response from API: #{resp["name"]}.#{resp["cloud"]}")
         resp
       rescue RestClient::Forbidden => e
-        puts "\nNotice: authorization token has expired"
-        raise e
+        warn("authorization token has expired", e)
       rescue RestClient::ResourceNotFound => e
-        puts "\nNotice: no such authorization token"
-        raise e
+        warn("no such authorization token", e)
       rescue RestClient::Conflict => e
-        puts "\nNotice: authorization token already used"
-        raise e
+        warn("authorization token already used", e)
+      end
+
+      def warn(msg, exception)
+        @logger.warn(msg)
+        $stderr.puts "\nNotice: #{msg}"
+        raise exception
       end
 
       # PUT /api/v1/micro/clouds/{domain}/{name}/dns
@@ -114,6 +132,8 @@ module VCAP
       def update_dns
         payload = Yajl::Encoder.encode({:address => @ip})
         @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
+      rescue RestClient::MethodNotAllowed
+        # do nothing
       rescue RestClient::NotModified
         # do nothing
       end

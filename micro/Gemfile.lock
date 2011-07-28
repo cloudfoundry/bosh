@@ -22,6 +22,7 @@ GEM
       crack
     netaddr (1.5.0)
     posix-spawn (0.3.3)
+    progressbar (0.9.0)
     rcov (0.9.9)
     rcov_analyzer (0.1)
       builder
@@ -37,6 +38,7 @@ GEM
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.1.0)
     rubyzip2 (2.0.1)
+    statemachine (1.2.0)
     terminal-table (1.4.2)
     uuidtools (2.1.1)
     vmc (0.2.6)
@@ -58,10 +60,12 @@ DEPENDENCIES
   monit_api
   netaddr
   posix-spawn
+  progressbar
   rcov
   rcov_analyzer
   rest-client
   rspec
+  statemachine
   uuidtools
   vmc
   yajl-ruby
