@@ -1,0 +1,15 @@
+                   __   ___ __ _____      ____ _ _ __ ___
+                   \ \ / / '_ ` _ \ \ /\ / / _` | '__/ _ \
+                    \ V /| | | | | \ V  V / (_| | | |  __/
+                     \_/ |_| |_| |_|\_/\_/ \__,_|_|  \___|
+
+Welcome to Micro Cloud Foundry (TM)
+
+http://support.cloudfoundry.com/entries/20316811
+
+Default configuration:
+VM:      1 GB RAM / 8 GB disk
+MySQL:   2GB storage, max 256MB storage per instance
+MongoDB: 256MB per instance
+Redis:   256MB per instance
+

@@ -43,7 +43,7 @@ describe VCAP::Micro::Compiler do
     c = VCAP::Micro::Compiler.new(OPTS)
     lambda {
       c.compile("bogus/path", TGZ)
-    }.should raise_exception RuntimeError
+    }.should raise_exception Errno::ENOENT
   end
 
   it "should exit non zero on compile error" do

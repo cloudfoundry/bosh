@@ -5,6 +5,8 @@ gem 'rest-client'
 gem "blobstore_client", "~> 0.3"
 gem "yajl-ruby", :require => "yajl"
 gem "monit_api"
+gem "statemachine"
+gem "progressbar"
 
 gem "uuidtools"
 gem "netaddr"
