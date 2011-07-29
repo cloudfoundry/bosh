@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cat /var/vcap/micro/banner

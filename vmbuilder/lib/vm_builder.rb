@@ -58,7 +58,7 @@ module VMBuilder
             vmbuilder(vmopts)
             FileUtils.mkdir_p("micro")
             ovftool(opts, "ubuntu-esxi/micro.vmx", "micro/micro.vmx")
-            # in micro/micro.vmx set
+            # TODO in micro/micro.vmx set
             # displayName = "Micro Cloud Foundry v0.1.0"
             # ethernet0.connectionType = "nat"
             archive("micro", "micro.tgz")
@@ -159,7 +159,8 @@ module VMBuilder
 
       def vmbuilder_options(options)
         opts = {
-          :debug => ""
+          :debug => "",
+          :rootsize => "8192"
         }
 
         if options[:iso]
