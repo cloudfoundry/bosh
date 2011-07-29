@@ -155,7 +155,7 @@ Currently available bosh commands are:
 
     create package <name>|<path>              Build a single package
     verify release /path/to/release.tgz       Verify release tarball
-    upload release /path/to/release.tgz       Upload release tarball
+    upload release /path/to/release.{tgz,yml} Upload release in tarball or by yml file
     releases                                  Show the list of uploaded releases
     reset release                             Reset release development environment (deletes all dev artefacts)
 
