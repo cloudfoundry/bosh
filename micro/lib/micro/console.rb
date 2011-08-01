@@ -8,6 +8,7 @@ require 'micro/agent'
 require 'micro/settings'
 require 'micro/watcher'
 require 'micro/version'
+require 'micro/core_ext'
 
 
 module VCAP
@@ -36,44 +37,57 @@ module VCAP
       def console
         @watcher = Watcher.new(@network, @identity).start
         VCAP::Micro::Agent.start if @identity.configured?
+        # TODO add a timeout so the console will be auto-refreshed
         while true
           clear
 
-          say("Welcome to VMware Micro Cloud Foundry version #{VCAP::Micro::VERSION}\n\n")
+          say("              Welcome to VMware Micro Cloud Foundry version #{VCAP::Micro::VERSION}\n\n")
 
           status
 
           menu
         end
       rescue Interrupt
-        puts "\nexiting..."
+        puts "\nrestarting console..."
       rescue => e
         clear
         say("Caught exeption: #{e.message}\n\n")
         # should we only display the first 15 so it won't scroll off the screen?
         say(e.backtrace.join("\n"))
+        @logger.error("caught exception: #{e.message}\n#{e.backtrace.join("\n")}")
         # retry instead of restart?
         say("\npress any key to restart the console")
         STDIN.getc
       end
 
       def status
-        say("Network: #{@network.status}")
-        if @identity.configured? && @network.status == :up
-          say("Micro Cloud Foundry operational, to access use:")
-          say("vmc target http://api.#{@identity.subdomain}\n\n")
-        elsif @identity.configured?
-          say("\n")
+        stat = @network.status.to_s
+        s = case @network.status
+          when :up
+            stat.green
+          when :failed
+            stat.red
+          else
+            stat.yellow
+          end
+
+        if @identity.configured?
+          say("Current Configuration:")
+          say(" Identity:   #{@identity.subdomain}")
+          say(" Admin:      #{@identity.admins.join(', ')}")
+          say(" IP Address: #{@identity.ip}  (network #{s})\n\n")
+          say("To access your Micro Cloud Foundry instance, use:")
           say("vmc target http://api.#{@identity.subdomain}\n\n")
         else
-          say("DNS not configured\n\n")
+          say("Network #{s}")
+          say("Micro Cloud Foundry not configured\n\n")
         end
       end
 
       def menu
         choose do |menu|
           menu.select_by = :index
-          menu.prompt = "Select option: "
+          menu.prompt = "\nSelect option: "
           unless @identity.configured?
             menu.choice("configure") { configure }
             menu.choice("refresh console") { }
@@ -83,8 +97,8 @@ module VCAP
             menu.choice("reconfigure vcap password") { configure_password }
             menu.choice("reconfigure domain") { configure_domain }
             menu.choice("reconfigure network [#{@network.type}]") { configure_network }
-            menu.choice("reconfigure proxy [#{@identity.proxy}]") { configure_proxy }
-            menu.choice("service status") { service_status }
+            menu.choice("reconfigure proxy [#{@identity.display_proxy}]") { configure_proxy }
+            menu.choice("service status [#{service_status}]") { display_services }
             menu.choice("restart network") { restart }
             menu.choice("restore defaults") { defaults }
           end
@@ -105,14 +119,27 @@ module VCAP
       end
 
       def configure_password
-        pass = ask("\nSet Micro Cloud Foundry VM user password:  ") { |q| q.echo = "*" }
+        password = "foo"
+        confirmation = "bar"
+        say("\nSet password Micro Cloud Foundry VM user")
+        while password != confirmation
+          password = ask("Password: ") { |q| q.echo = "*" }
+          confirmation = ask("Confirmation: ") { |q| q.echo = "*" }
+          say("Passwords do not match!\n".red) unless password == confirmation
+        end
         # BIG HACK
-        `echo "root:#{pass}\nvcap:#{pass}" | chpasswd`
+        `echo "root:#{password}\nvcap:#{password}" | chpasswd`
+        if $? == 0
+          say("Password changed!".green)
+        else
+          say("WARNING: unable to set password!".red)
+        end
+        sleep 3
       end
 
       def configure_domain
         @identity.clear
-        token = ask("\nEnter Micro Cloud Foundry configuration token (or vcap.me for local DNS):")
+        token = ask("\nEnter Micro Cloud Foundry configuration token: ")
         if token == ""
           return
         elsif token == "vcap.me"
@@ -160,27 +187,14 @@ module VCAP
       end
 
       def refresh_dns
-        ip = Network.local_ip
-        @identity.update_ip(ip) # spin off in a thread?
-        pbar = ProgressBar.new("updating", Watcher::TTL)
-        i = 1
-        while i <= Watcher::TTL
-          # break if vcap.me
-          break if Network.lookup(@identity.subdomain) == ip
-          pbar.inc
-          sleep(1)
-          i += 1
-        end
-        pbar.finish
-        sleep 3 # give it a few seconds to display the finished state
-        # TODO error message if it doesn't match after TTL seconds
+        @identity.update_ip(Network.local_ip)
       end
 
       def restart
         @network.reset
       end
 
-      def service_status
+      def display_services
         clear
         say("Service status:\n")
         status = Bosh::Agent::Monit.retry_monit_request do |client|
@@ -188,10 +202,24 @@ module VCAP
         end
         status.each do |name, data|
           if data[:monitor] == :yes
-            printf("%-25s: %s\n", name, data[:status][:message])
+            status = data[:status][:message]
+            printf(" %-25s %s\n", name, status == "running" ? status.green : status.red)
           end
         end
-        ask("\nPress return to continue")
+        say("\n")
+        press_return_to_continue
+      end
+
+      def service_status
+        status = Bosh::Agent::Monit.retry_monit_request do |client|
+          client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
+        end
+        status.each do |name, data|
+          if data[:monitor] == :yes
+            return "failed".red if data[:status][:message] != "running"
+          end
+        end
+        "ok".green
       end
 
       def defaults
@@ -207,20 +235,25 @@ module VCAP
           file.readlines.each { |line| puts line }
         end
 
-        ask("Press return to continue")
+        press_return_to_continue
       end
 
       def shutdown
-        # perhaps get confirmation?
+        return unless ask("Really shut down VM? ").match(/^y(es)*$/i)
         clear
+        say("Stopping Cloud Foundry services...")
+        Bosh::Agent::Monit.stop_services
+        sleep 5 # TODO loop and wait until all are stopped
         say("shutting down VM...")
-        # TODO issue monit stop all
         `poweroff`
         sleep 3600 # until the cows come home
       end
 
       def clear
         print "\e[H\e[2J"
+      end
+      def press_return_to_continue
+        ask("Press return to continue ")
       end
     end
   end

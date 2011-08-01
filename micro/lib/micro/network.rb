@@ -69,6 +69,7 @@ module VCAP
             event :restart, :starting
           end
         end
+        @previous = nil
 
         if dhcp?
           @type = :dhcp
@@ -87,13 +88,22 @@ module VCAP
         @state.state == :starting
       end
 
+      def failed?
+        @state.state == :failed
+      end
+
+      def offline?
+        @state.state == :offline
+      end
+
       def status
         @state.state
       end
 
       def connection_lost
-        $stderr.puts "\n\nnetwork connection lost :-("
+        $stderr.puts "\nnetwork connectivity lost :-("
         @state.connection_lost
+        @previous = @state.state
       end
 
       # async
@@ -112,9 +122,12 @@ module VCAP
             @state.timeout
           end
         end
+        $stderr.puts "network connectivity regained :-)" if @previous == :offline
         @state.started
       rescue Timeout::Error
         @state.timeout
+      ensure
+        @previous = @state.state
       end
 
       # manual reset

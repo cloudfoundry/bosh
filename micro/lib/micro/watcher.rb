@@ -87,7 +87,6 @@ module VCAP
           if @identity.ip && ip != @identity.ip
             # TODO use progress bar
             @logger.info("updating DNS for #{@identity.subdomain} from #{@identity.ip} to #{ip}")
-            $stderr.puts "\nupdating DNS for #{@identity.subdomain} from #{@identity.ip} to #{ip}..."
             @identity.update_ip(ip)
             @sleep = TTL # don't run again until the DNS has been updated
             return

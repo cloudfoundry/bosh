@@ -7,7 +7,7 @@ module VCAP
       attr_accessor :admins, :ip, :proxy, :nonce
       attr_reader :name, :cloud
 
-      URL = "http://www-com-sa.cloudfoundry.com/api/v1/micro"
+      URL = "http://mcapi.cloudfoundry.com/api/v1/micro"
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
       CLOUD = "cloudfoundry.me"
 
@@ -80,6 +80,10 @@ module VCAP
         @name = @config['name'] = nil
       end
 
+      def display_proxy
+        @proxy.empty? ? "none" : @proxy
+      end
+
       # POST /api/v1/micro/token
       #   cloud - the common domain for the micro cloud (ie "cloudfoundry.me")
       #   name - the cloud specific domain for the micro cloud (ie "martin")
@@ -130,12 +134,35 @@ module VCAP
       #     403 - bad auth token / unknown cloud or host
       #       no defined body
       def update_dns
+        return if @cloud == "vcap.me"
+
+        pbar = ProgressBar.new("updating DNS", Watcher::TTL)
+
         payload = Yajl::Encoder.encode({:address => @ip})
         @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
+
+        i = 1
+        while i <= Watcher::TTL
+          break if Network.lookup(subdomain) == ip
+          pbar.inc
+          sleep(1)
+          i += 1
+        end
+
       rescue RestClient::MethodNotAllowed
         # do nothing
       rescue RestClient::NotModified
         # do nothing
+      ensure
+        pbar.finish
+
+        if Network.lookup(subdomain) == ip
+          say("done".green)
+        else
+          say("DNS still not updated after #{Watcher::TTL} seconds".red)
+        end
+
+        sleep 3
       end
 
       def update_ip(ip)
