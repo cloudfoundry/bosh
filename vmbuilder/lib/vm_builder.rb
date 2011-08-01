@@ -1,4 +1,5 @@
 require "thor"
+require 'micro/version'
 
 module VMBuilder
   class Build < Thor
@@ -53,15 +54,25 @@ module VMBuilder
           copy_file(File.expand_path(manifest), "#{tmpdir}/micro/config/micro.yml")
           copy_file(File.expand_path(tarball), "#{tmpdir}/micro/config/micro.tgz")
 
+          version = VCAP::Micro::VERSION
           vmopts[:config] = File.join(tmpdir, "vmbuilder.cfg")
           inside(opts[:work_dir]) do
             vmbuilder(vmopts)
             FileUtils.mkdir_p("micro")
             ovftool(opts, "ubuntu-esxi/micro.vmx", "micro/micro.vmx")
-            # TODO in micro/micro.vmx set
-            # displayName = "Micro Cloud Foundry v0.1.0"
-            # ethernet0.connectionType = "nat"
-            archive("micro", "micro.tgz")
+            FileUtils.mv("micro/micro.vmx", "micro/micro.save")
+            lines = File.open("micro/micro.save") {|file| file.readlines}
+            File.open("micro/micro.vmx", "w") do |file|
+              lines.each do |line|
+                if line.match(/^displayname/)
+                  file.write("displayname = \"Micro Cloud Foundry v#{version}\"\n")
+                else
+                  file.write(line)
+                end
+              end
+            end
+            FileUtils.rm_rf("micro/micro.save")
+            archive("micro", "micro-#{version}.tgz")
           end
         end
       end

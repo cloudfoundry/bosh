@@ -9,6 +9,7 @@ if File.exists?(gemfile)
 end
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
+$:.unshift(File.expand_path("../../../micro/lib", __FILE__)) # for Micro::VERSION
 require "vm_builder"
 
 trap("INT") { puts "Exiting..."; exit(0) }
