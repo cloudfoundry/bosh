@@ -734,7 +734,7 @@ module VSphereCloud
       datastore = nil
       ephemeral_disks.each do |disk|
         if datastore
-          raise "Ephemeral disks should all be on the same datastore." unless datastore == disk.backing.datastore
+          raise "Ephemeral disks should all be on the same datastore." unless datastore.eql?(disk.backing.datastore)
         else
           datastore = disk.backing.datastore
         end
