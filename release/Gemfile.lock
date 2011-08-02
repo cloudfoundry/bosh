@@ -8,14 +8,14 @@ GEM
       erubis
       extlib
       highline
-      json (>= 1.4.4, <= 1.4.6)
+      json (<= 1.4.6, >= 1.4.4)
       mixlib-authentication (>= 1.1.0)
       mixlib-cli (>= 1.1.0)
       mixlib-config (>= 1.1.2)
       mixlib-log (>= 1.2.0)
       moneta
       ohai (>= 0.5.7)
-      rest-client (>= 1.0.4, < 1.7.0)
+      rest-client (< 1.7.0, >= 1.0.4)
       uuidtools
     erubis (2.6.6)
       abstract (>= 1.0.0)
@@ -36,7 +36,7 @@ GEM
       net-ssh (>= 1.99.1)
     ohai (0.5.8)
       extlib
-      json (>= 1.4.4, <= 1.4.6)
+      json (<= 1.4.6, >= 1.4.4)
       mixlib-cli
       mixlib-config
       mixlib-log
