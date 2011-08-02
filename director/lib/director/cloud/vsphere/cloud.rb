@@ -293,8 +293,8 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
         datacenter = client.find_parent(vm, Vim::Datacenter)
         properties = client.get_properties(vm, Vim::VirtualMachine, ["runtime.powerState", "runtime.question",
-                                                                     "config.hardware.device", "name", "datastore"],
-                                           :ensure => ["datastore", "config.hardware.device"])
+                                                                     "config.hardware.device", "name"],
+                                           :ensure => ["config.hardware.device"])
 
         question = properties["runtime.question"]
         if question
@@ -333,7 +333,7 @@ module VSphereCloud
         @logger.info("Deleted vm: #{vm_cid}")
 
         # Delete env.iso and VM specific files managed by the director
-        datastore = properties["datastore"].first
+        datastore = get_primary_datastore(devices)
         datastore_name = client.get_property(datastore, Vim::Datastore, "name")
         vm_name = properties["name"]
         client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
@@ -717,16 +717,34 @@ module VSphereCloud
       end
 
       if vm_name.nil? || datastore_name.nil?
-        vm_properties = client.get_properties(vm, Vim::VirtualMachine, ["datastore", "name"])
+        vm_properties = client.get_properties(vm, Vim::VirtualMachine, ["config.hardware.device", "name"],
+                                              :ensure_all => true)
         vm_name = vm_properties["name"]
 
         unless datastore_name
-          datastore = vm_properties["datastore"].first
+          devices = vm_properties["config.hardware.device"]
+          datastore = get_primary_datastore(devices)
           datastore_name = client.get_property(datastore, Vim::Datastore, "name")
         end
       end
 
       {:datacenter => datacenter_name, :datastore =>datastore_name, :vm =>vm_name}
+    end
+
+    def get_primary_datastore(devices)
+      ephemeral_disks = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+          device.backing.disk_mode != Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT }
+
+      datastore = nil
+      ephemeral_disks.each do |disk|
+        if datastore
+          raise "Ephemeral disks should all be on the same datastore." unless datastore == disk.backing.datastore
+        else
+          datastore = disk.backing.datastore
+        end
+      end
+
+      datastore
     end
 
     def get_current_agent_env(location)
