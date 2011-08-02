@@ -460,14 +460,10 @@ module VSphereCloud
 
         create_disk = false
         if disk.path
-          if disk.datacenter == datacenter_name && @resources.validate_persistent_datastore(datacenter_name,
-                                                                                            disk.datastore)
+          if disk.datacenter == datacenter_name &&
+                  @resources.validate_persistent_datastore(datacenter_name, disk.datastore) &&
+                  host_info["datastores"].include?(disk.datastore)
             # Looks like we have a valid persistent data store
-
-            # Sanity check, verify that the vm's host can access this persistent datastore
-            unless host_info["datastores"].include?(disk.datastore)
-              raise "Datastore not accessible to host, #{disk.datastore}, #{host_info["datastores"]}"
-            end
 
             @logger.info("Disk already in the right datastore #{datacenter_name} #{disk.datastore}")
             persistent_datastore = @resources.get_persistent_datastore(datacenter_name, host_info["cluster"],
