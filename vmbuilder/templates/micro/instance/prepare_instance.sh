@@ -81,7 +81,7 @@ chmod 0700 ${bosh_app_dir}/shared
 chmod 755 ${bosh_app_dir}/micro/bin/*
 
 rm /etc/update-motd.d/*
-cp 00-mcf /etc/update-motd.d
+cp motd/* /etc/update-motd.d
 chmod 755 /etc/update-motd.d/*
 
 cat > /etc/init/tty1.conf <<EOT
