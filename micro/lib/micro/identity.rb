@@ -4,7 +4,7 @@ require 'yajl'
 module VCAP
   module Micro
     class Identity
-      attr_accessor :admins, :ip, :proxy, :nonce
+      attr_accessor :admins, :ip, :proxy, :nonce, :version
       attr_reader :name, :cloud
 
       URL = "http://mcapi.cloudfoundry.com/api/v1/micro"
@@ -16,8 +16,8 @@ module VCAP
         load_config if configured?
         @config ||= {}
         @client = resource
-        @proxy = ""
         @logger = Console.logger
+        @version = VCAP::Micro::VERSION
       end
 
       def configured?
@@ -32,7 +32,7 @@ module VCAP
         @admins = @config['admins'] = nil
         @ip = @config['ip'] = nil
         @token = @config['token'] = nil
-        @proxy = ""
+        @proxy = @config['proxy'] = ""
       end
 
       def load_config
@@ -43,6 +43,7 @@ module VCAP
           @admins = @config['admins']
           @ip = @config['ip']
           @token = @config['token']
+          @proxy = @config['proxy']
         end
       end
 
@@ -78,6 +79,11 @@ module VCAP
         @admins = @config['admins'] = [ "admin@vcap.me" ]
         @cloud = @config['cloud'] = "vcap.me"
         @name = @config['name'] = nil
+        @ip = @config['ip'] = "127.0.0.1"
+      end
+
+      def proxy=(proxy)
+        @proxy = @config['proxy'] = proxy
       end
 
       def display_proxy
@@ -101,10 +107,14 @@ module VCAP
       def auth
         path = "/token"
         payload = Yajl::Encoder.encode({"nonce" => @nonce})
-        response = @client[path].post(payload)
-        resp = Yajl::Parser.new.parse(response)
-        @logger.debug("got response from API: #{resp["name"]}.#{resp["cloud"]}")
-        resp
+        json = @client[path].post(payload)
+        response = Yajl::Parser.new.parse(json)
+        @logger.debug("raw response: #{json.inspect}")
+        if response
+          values = response.collect {|k,v| "#{k} = #{v}"}.join("\n")
+          @logger.info("got following response for token: #{@nonce}\n#{values}")
+        end
+        response
       rescue RestClient::Forbidden => e
         warn("authorization token has expired", e)
       rescue RestClient::ResourceNotFound => e
@@ -139,16 +149,27 @@ module VCAP
         pbar = ProgressBar.new("updating DNS", Watcher::TTL)
 
         payload = Yajl::Encoder.encode({:address => @ip})
-        @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
+        json = @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
+        response = Yajl::Parser.new.parse(json)
+
+        if response
+          @version = response["mcf_version"] if response["mcf_version"]
+          values = response.collect {|k,v| "#{k} = #{v}"}.join("\n")
+          @logger.info("got following response from DNS update:\n#{values}")
+        end
 
         i = 1
-        while i <= Watcher::TTL
-          break if Network.lookup(subdomain) == ip
+        while i <= Watcher::TTL + 5 # add a little fudge to avoid a warning
+          break if Network.lookup(subdomain) == @ip
           pbar.inc
           sleep(1)
           i += 1
         end
 
+      rescue RestClient::Forbidden
+        @logger.error("DNS update forbidden for #{@name}.#{@cloud} -> #{@ip} using #{@token}")
+        $stderr.puts("DNS update failed!".red)
+        $stderr.puts("You need to install a new token (option 4 on the console menu)")
       rescue RestClient::MethodNotAllowed
         # do nothing
       rescue RestClient::NotModified
@@ -156,13 +177,11 @@ module VCAP
       ensure
         pbar.finish
 
-        if Network.lookup(subdomain) == ip
+        if Network.lookup(subdomain) == @ip
           say("done".green)
         else
           say("DNS still not updated after #{Watcher::TTL} seconds".red)
         end
-
-        sleep 3
       end
 
       def update_ip(ip)
