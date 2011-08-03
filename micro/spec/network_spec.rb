@@ -43,8 +43,11 @@ describe VCAP::Micro::Network do
     tmp = "tmp/interfaces"
     with_constants "VCAP::Micro::Network::RESOLV_CONF" => tmp do
       state = double('statemachine')
-      state.stub(:configure)
+      state.stub(:start)
+      state.stub(:started)
+      state.stub(:timeout)
       state.stub(:restart)
+      state.stub(:state).and_return(:starting)
       Statemachine.stub(:build).and_return(state)
       network = VCAP::Micro::Network.new
       network
