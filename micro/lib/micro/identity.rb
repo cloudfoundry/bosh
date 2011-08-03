@@ -143,10 +143,10 @@ module VCAP
       #       no defined body
       #     403 - bad auth token / unknown cloud or host
       #       no defined body
-      def update_dns
+      def update_dns(silent=false)
         return if @cloud == "vcap.me"
 
-        pbar = ProgressBar.new("updating DNS", Watcher::TTL)
+        pbar = ProgressBar.new("updating DNS", Watcher::TTL) unless silent
 
         payload = Yajl::Encoder.encode({:address => @ip})
         json = @client["/clouds/#{@cloud}/#{@name}/dns"].put(payload)
@@ -161,7 +161,7 @@ module VCAP
         i = 1
         while i <= Watcher::TTL + 5 # add a little fudge to avoid a warning
           break if Network.lookup(subdomain) == @ip
-          pbar.inc
+          pbar.inc unless silent
           sleep(1)
           i += 1
         end
@@ -175,19 +175,19 @@ module VCAP
       rescue RestClient::NotModified
         # do nothing
       ensure
-        pbar.finish
+        pbar.finish  unless silent
 
         if Network.lookup(subdomain) == @ip
-          say("done".green)
+          say("done".green) unless silent
         else
-          say("DNS still not updated after #{Watcher::TTL} seconds".red)
+          say("DNS still not updated after #{Watcher::TTL} seconds".red) unless silent
         end
       end
 
-      def update_ip(ip)
+      def update_ip(ip, silent=false)
         @ip = @config['ip'] = ip
         save
-        update_dns
+        update_dns(silent)
       end
 
       def subdomain
