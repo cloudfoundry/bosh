@@ -93,7 +93,11 @@ module VCAP
         properties['cc']['admins'] = admins
 
         if @identity.proxy.match(/\Ahttp/)
+          properties['env'] = {} unless properties['env']
           properties['env']['http_proxy'] = @identity.proxy
+          properties['env']['https_proxy'] = @identity.proxy
+        else
+          properties['env'] = nil
         end
 
         @spec['properties'] = properties

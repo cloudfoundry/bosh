@@ -15,13 +15,17 @@ describe VCAP::Micro::Watcher do
     identity
   end
 
+  def stub_network(ip, gw)
+    VCAP::Micro::Network.stub(:local_ip).and_return(ip)
+    VCAP::Micro::Network.stub(:gateway).and_return(gw)
+  end
   it "should watch network changes" do
     ip = "1.2.3.4"
 
-    VCAP::Micro::Network.stub(:local_ip).and_return(ip)
-    VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
+    stub_network(ip, "1.2.3.5")
     VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
-    VCAP::Micro::Network.should_receive(:lookup).exactly(1).times.and_return("173.243.49.35")
+    VCAP::Micro::Network.should_receive(:lookup).exactly(1).
+      times.and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
 
     w = VCAP::Micro::Watcher.new(mock_network(true), mock_identity(ip))
     w.check
@@ -38,9 +42,7 @@ describe VCAP::Micro::Watcher do
   it "should restart network if it can't ping the gateway" do
     ip = "1.2.3.4"
 
-    VCAP::Micro::Network.stub(:local_ip).and_return(ip)
-    VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
-
+    stub_network(ip, "1.2.3.5")
     VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(false)
     network = mock_network(true)
     network.should_receive(:connection_lost).exactly(1).times
@@ -52,9 +54,7 @@ describe VCAP::Micro::Watcher do
   it "should restart network if it can't lookup cloudfoundry.com" do
     ip = "1.2.3.4"
 
-    VCAP::Micro::Network.stub(:local_ip).and_return(ip)
-    VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
-
+    stub_network(ip, "1.2.3.5")
     VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
     VCAP::Micro::Network.should_receive(:lookup).and_return(nil)
 
@@ -68,14 +68,13 @@ describe VCAP::Micro::Watcher do
   it "should update the IP if it has changed" do
     new_ip = "1.2.3.6"
 
-    VCAP::Micro::Network.stub(:local_ip).and_return(new_ip)
-    VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
-    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::CLOUDFOUNDRY_IP)
+    stub_network(new_ip, "1.2.3.5")
+    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
     VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
 
     identity = mock_identity("1.2.3.4")
     identity.should_receive(:update_ip).with(new_ip).exactly(1).times
-    identity.should_receive(:subdomain).exactly(2).times.and_return("vcap.me")
+    identity.should_receive(:subdomain).exactly(1).times.and_return("vcap.me")
 
     w = VCAP::Micro::Watcher.new(mock_network(true), identity)
     w.check
@@ -84,9 +83,8 @@ describe VCAP::Micro::Watcher do
   it "should refresh the IP regularly" do
     ip = "1.2.3.4"
 
-    VCAP::Micro::Network.stub(:local_ip).and_return(ip)
-    VCAP::Micro::Network.stub(:gateway).and_return("1.2.3.5")
-    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::CLOUDFOUNDRY_IP)
+    stub_network(ip, "1.2.3.5")
+    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
     VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
 
     identity = mock_identity(ip)

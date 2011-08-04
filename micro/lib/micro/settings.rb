@@ -11,11 +11,13 @@ module VCAP
       def self.randomize_passwords(properties)
         properties['cc']['token'] = secret(64)
         properties['cc']['password'] = secret(64)
+        properties['router']['password'] = secret(8)
         properties['nats']['password'] = secret(8)
         properties['ccdb']['password'] = secret(8)
         properties['mysql_node']['password'] = properties['ccdb']['password']
         properties['mysql_gateway']['token'] = secret(4)
         properties['redis_gateway']['token'] = secret(4)
+        properties['mongodb_gateway']['token'] = secret(4)
         properties
       end
 
