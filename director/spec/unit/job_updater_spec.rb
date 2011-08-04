@@ -10,8 +10,6 @@ describe Bosh::Director::JobUpdater do
     @update_spec.stub!(:max_in_flight).and_return(5)
     @update_spec.stub!(:canaries).and_return(1)
     Bosh::Director::Config.stub!(:cloud).and_return(nil)
-    @event_logger = Bosh::Director::EventLog.new(1, nil)
-    Bosh::Director::Config.stub!(:event_logger).and_return(@event_logger)
   end
 
   it "should do nothing when the job is up to date" do
@@ -64,6 +62,14 @@ describe Bosh::Director::JobUpdater do
 
     job_updater = Bosh::Director::JobUpdater.new(@job_spec)
     job_updater.update
+
+    check_event_log do |events|
+      events.size.should == 4
+      events.map { |e| e["stage"] }.uniq.should == ["Updating job"]
+      events.map { |e| e["tags"] }.uniq.should == [ ["job_name"] ]
+      events.map { |e| e["total"] }.uniq.should == [2]
+      events.map { |e| e["task"] }.should == ["job_name/1 (canary)", "job_name/1 (canary)", "job_name/2", "job_name/2"]
+    end
   end
 
   it "should rollback the job if the canaries failed" do
@@ -160,6 +166,14 @@ describe Bosh::Director::JobUpdater do
 
     job_updater = Bosh::Director::JobUpdater.new(@job_spec)
     job_updater.update
+
+    check_event_log do |events|
+      events.size.should == 2
+      events.map { |e| e["stage"] }.uniq.should == ["Deleting unneeded instances"]
+      events.map { |e| e["tags"] }.uniq.should == [ ["job_name"] ]
+      events.map { |e| e["total"] }.uniq.should == [1]
+      events.map { |e| e["task"] }.uniq.should == ["vm-cid"]
+    end
   end
 
 end

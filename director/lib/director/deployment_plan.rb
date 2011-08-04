@@ -496,6 +496,7 @@ module Bosh::Director
         @deployment = deployment
         @name = safe_property(job, "name", :class => String)
         @template = deployment.template(safe_property(job, "template", :class => String))
+        @error_mutex = Mutex.new
 
         @persistent_disk = safe_property(job, "persistent_disk", :class => Integer, :default => 0)
 
@@ -629,9 +630,12 @@ module Bosh::Director
       end
 
       def record_update_error(error, options = {})
-        @update_errors += 1
-        if options[:canary] || (@update.max_errors > 0 && @update_errors >= @update.max_errors)
-          @rollback = true
+        @error_mutex.synchronize do
+          @update_errors += 1
+
+          if options[:canary] || (@update.max_errors > 0 && @update_errors >= @update.max_errors)
+            @rollback = true
+          end
         end
       end
 

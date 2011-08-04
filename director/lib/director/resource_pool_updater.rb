@@ -6,40 +6,63 @@ module Bosh::Director
       @resource_pool = resource_pool
       @cloud = Config.cloud
       @logger = Config.logger
-      @event_logger = Config.event_logger
+      @event_log = Config.event_log
     end
 
-    def delete_extra_vms(thread_pool)
-      extra_vms = @resource_pool.active_vms + @resource_pool.idle_vms.size + @resource_pool.allocated_vms.size -
-          @resource_pool.size
+    def extra_vms_count
+      # TODO: fix incosistent method naming:
+      # ideally @resource_pool should provide "xxx_count" methods
+      @resource_pool.active_vms +
+        @resource_pool.idle_vms.size +
+        @resource_pool.allocated_vms.size -
+        @resource_pool.size
+    end
 
-      @logger.info("Deleting #{extra_vms} extra VMs")
-      extra_vms.times do |index|
+    # Deletes extra VMs in a resource pool
+    # @param thread_pool Thread pool used to parallelize delete operations
+    def delete_extra_vms(thread_pool)
+      count = extra_vms_count
+      @logger.info("Deleting #{count} extra VMs")
+
+      count.times do |index|
         idle_vm = @resource_pool.idle_vms.shift
         vm_cid = idle_vm.vm.cid
-        progress_and_log("Deleting extra VM: #{vm_cid}", index, extra_vms.times)
+
         thread_pool.process do
-          @cloud.delete_vm(vm_cid)
-          idle_vm.vm.destroy
+          @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
+            @logger.info("Deleting extra VM: #{vm_cid}")
+            @cloud.delete_vm(vm_cid)
+            idle_vm.vm.destroy
+          end
         end
       end
+    end
+
+    def outdated_vms_count
+      count = 0
+      each_idle_vm do |idle_vm|
+        count += 1 if idle_vm.vm && idle_vm.changed?
+      end
+      count
     end
 
     def delete_outdated_vms(thread_pool)
-      counter = 0
-      each_idle_vm do |idle_vm|
-        if idle_vm.vm && idle_vm.changed?
-          counter += 1
-        end
-      end
+      count = outdated_vms_count
+      index = 0
+      index_lock = Mutex.new
 
-      @logger.info("Deleting #{counter} outdated VMs")
-      each_idle_vm_with_index do |idle_vm, index|
-        if idle_vm.vm && idle_vm.changed?
-          vm_cid = idle_vm.vm.cid
-          thread_pool.process do
-            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
-              progress_and_log("Deleting outdated VM: #{vm_cid}", index, counter)
+      @logger.info("Deleting #{count} outdated VMs")
+
+      each_idle_vm do |idle_vm|
+        next unless idle_vm.vm && idle_vm.changed?
+        vm_cid = idle_vm.vm.cid
+
+        thread_pool.process do
+          @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
+            index_lock.synchronize { index += 1 }
+
+            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index}/#{count})") do
+              @logger.info("Deleting outdated VM: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
               vm = idle_vm.vm
               idle_vm.vm = nil
@@ -51,12 +74,29 @@ module Bosh::Director
       end
     end
 
+    def missing_vms_count
+      counter = 0
+      each_idle_vm do |idle_vm|
+        next if idle_vm.vm
+        counter += 1
+      end
+      counter
+    end
+
+    def bound_missing_vms_count
+      counter = 0
+      each_idle_vm do |idle_vm|
+        next if idle_vm.vm
+        next if idle_vm.bound_instance.nil?
+        counter += 1
+      end
+      counter
+    end
+
     # Creates VMs that are considered missing from the deployment
     # @param thread_pool Thread pool that will be used to parallelize the operation
     # If the block is given it is treated as a condition: only VMs that yield true
     # for that condition will be created.
-    # Example:
-    # create_missing_vms(thread_pool) { |vm| vm
     def create_missing_vms(thread_pool)
       counter = 0
       vms_to_process = [ ]
@@ -72,9 +112,11 @@ module Bosh::Director
       @logger.info("Creating #{counter} missing VMs")
       vms_to_process.each_with_index do |idle_vm, index|
         thread_pool.process do
-          with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
-            progress_and_log("Creating missing VM", index, counter)
-            create_missing_vm(idle_vm)
+          @event_log.track("#{@resource_pool.name}/#{index+1}") do
+            with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
+              @logger.info("Creating missing VM")
+              create_missing_vm(idle_vm)
+            end
           end
         end
       end
@@ -165,12 +207,6 @@ module Bosh::Director
 
     def generate_agent_id
       UUIDTools::UUID.random_create.to_s
-    end
-
-    private
-    def progress_and_log(msg, current, total)
-      @event_logger.progress_log("Updating Resource Pool", msg, current, total)
-      @logger.info(msg)
     end
 
   end

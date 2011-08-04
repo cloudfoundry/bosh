@@ -18,7 +18,7 @@ module Bosh::Director
        :revision,
        :task_checkpoint_interval,
        :max_tasks,
-       :event_logger
+       :event_log
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -50,6 +50,10 @@ module Bosh::Director
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @logger.formatter = ThreadFormatter.new
+
+        # Event logger supposed to be overriden per task,
+        # the default one does nothing
+        @event_log = EventLog.new("/dev/null")
 
         @max_tasks = 500 # by default keep only last 500 tasks in disk
         if config["max_tasks"]

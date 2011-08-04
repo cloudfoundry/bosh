@@ -390,19 +390,23 @@ module Bosh::Director
 
     get "/tasks/:id/output" do
       task = Models::Task[params[:id]]
-      raise TaskNotFound.new(params[:id]) if task.nil?
-      if task.output
-        if File.file?(task.output)
-          log_file = task.output
-        else
-          log_file = File.join(task.output, "debug")
-        end
+      log_type = params[:type] || "debug"
 
-        if File.file?(log_file)
-          send_file(log_file, :type => "text/plain")
-        else
-          status(NO_CONTENT)
-        end
+      raise TaskNotFound.new(params[:id]) if task.nil?
+
+      if task.output.nil?
+        status(NO_CONTENT)
+        return
+      end
+
+      if File.file?(task.output)
+        log_file = task.output # Backward compatibility
+      else
+        log_file = File.join(task.output, log_type)
+      end
+
+      if File.file?(log_file)
+        send_file(log_file, :type => "text/plain")
       else
         status(NO_CONTENT)
       end
