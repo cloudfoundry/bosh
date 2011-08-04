@@ -5,7 +5,7 @@ module VCAP
   module Micro
     class Identity
       attr_accessor :admins, :ip, :proxy, :nonce, :version
-      attr_reader :name, :cloud
+      attr_reader :name, :cloud, :version, :url
 
       URL = "http://mcapi.cloudfoundry.com/api/v1/micro"
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
@@ -18,6 +18,7 @@ module VCAP
         @client = resource
         @logger = Console.logger
         @version = VCAP::Micro::VERSION
+        @url = URL
       end
 
       def configured?
@@ -50,7 +51,12 @@ module VCAP
       def resource
         headers = { :content_type => 'application/json' }
         headers["Auth-Token"] = @token if @token
-        RestClient::Resource.new(URL, :headers => headers)
+        RestClient::Resource.new(@url, :headers => headers)
+      end
+
+      def update_url(url)
+        @url = url
+        @client = resource
       end
 
       def install(ip)
