@@ -59,9 +59,9 @@ module VCAP
       end
 
       def status
-        unless @identity.version == VCAP::Micro::VERSION
+        if @identity.should_update?
           url = "http://cloudfoundry.com/micro"
-          say("Version #{@identity.version} is available for download from #{url}".yellow)
+          say("A new version is available for download at #{url}\n".yellow)
         end
         if @identity.configured?
           say("Current Configuration:")
