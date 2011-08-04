@@ -83,7 +83,8 @@ module VCAP
           if Time.now.to_i - @start > REFRESH_INTERVAL
             @logger.info("refreshing DNS record for #{ip}")
             begin
-              @identity.update_ip(ip)
+              # don't litter the console with dns update info
+              @identity.update_ip(ip, true)
             rescue RestClient::Forbidden
               # do nothing
             end
