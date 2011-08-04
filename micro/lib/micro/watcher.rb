@@ -3,6 +3,7 @@ module VCAP
     class Watcher
       attr_reader :sleep
 
+      PING_SLEEP = 5
       DEFAULT_SLEEP = 15
       MAX_SLEEP = DEFAULT_SLEEP * 6 # 5 consecutive failures (must not be less than TTL)
       REFRESH_INTERVAL = 14400
@@ -52,7 +53,7 @@ module VCAP
           end
 
           # if we can't ping the local gateway then something is wrong
-          unless VCAP::Micro::Network.ping(gw)
+          unless forgiving_ping(gw)
             @logger.warn("watcher could not ping gateway: #{gw}")
             @network.connection_lost
             return
@@ -102,6 +103,19 @@ module VCAP
             @logger.debug("restarting network")
             @network.restart
           end
+        end
+      end
+
+      # perhaps we should auto-adjust the number of tries if we detect
+      # network flapping?
+      def forgiving_ping(host, tries=3)
+        count = 0
+        while true
+          return true if VCAP::Micro::Network.ping(host)
+          count += 1
+          @logger.debug("ping failed: #{count} of #{tries}")
+          return false if count == tries
+          Kernel.sleep(PING_SLEEP)
         end
       end
 
