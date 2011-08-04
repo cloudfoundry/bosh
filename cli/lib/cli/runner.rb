@@ -51,8 +51,9 @@ module Bosh
         parse_options!
         parse_command!
 
-        Config.colorize   = @options.delete(:colorize)
-        Config.output   ||= STDOUT unless @options[:quiet]
+        Config.interactive = !@options[:non_interactive]
+        Config.colorize    = @options.delete(:colorize)
+        Config.output    ||= STDOUT unless @options[:quiet]
 
         if @namespace && @action
           ns_class_name = @namespace.to_s.gsub(/(?:^|_)(.)/) { $1.upcase }
@@ -183,8 +184,12 @@ Currently available bosh commands are:
   Task management
     tasks [running]                           Show the list of running tasks
     tasks recent [<number>]                   Show <number> recent tasks
-    task [<id>|last] [--no-cache]             Show task status (monitor if not done, output is cached if done unless --no-cache flag given)
-    cancel task <task-id>                     Cancel task-id
+    task [<id>|last] <options>                Show task status and start tracking its output
+                                              Tracking options:
+                                              --no-cache               don't cache task output locally
+                                              --event|--debug|--soap   choose between different log types to track
+                                              --raw                    show raw log contents (relevant for event log)
+    cancel task <id>                          Cancel task once it reaches the next cancel checkpoint
 
   Misc
     status                                    Show current status (current target, user, deployment info etc.)
@@ -345,8 +350,8 @@ USAGE
           end
 
         when "task"
-          usage("bosh task [<task_id>|last] [--no-cache]")
-          set_cmd(:task, :track, 0..2)
+          usage("bosh task [<task_id>|last] [--no-cache] [--event|--soap|--debug] [--raw]")
+          set_cmd(:task, :track, 0..4)
 
         when "stemcells"
           usage("bosh stemcells")

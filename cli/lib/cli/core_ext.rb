@@ -19,8 +19,8 @@ module BoshExtensions
     say filler.to_s * message.size
   end
 
-  def nl
-    say("\n")
+  def nl(count = 1)
+    say("\n" * count)
   end
 
   def err(message)

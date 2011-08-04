@@ -117,7 +117,7 @@ describe Bosh::Cli::Director do
     end
 
     it "deploys" do
-      @director.should_receive(:upload_and_track).with("/deployments", "text/yaml", "/path").and_return(true)
+      @director.should_receive(:upload_and_track).with("/deployments", "text/yaml", "/path", {:log_type => "event"}).and_return(true)
       @director.deploy("/path")
     end
 
@@ -193,7 +193,7 @@ describe Bosh::Cli::Director do
       f = Bosh::Cli::FileWithProgressBar.open(file, "r")
 
       Bosh::Cli::FileWithProgressBar.stub!(:open).with(file, "r").and_return(f)
-      @director.should_receive(:request_and_track).with(:post, "/stuff", "application/x-compressed", f)
+      @director.should_receive(:request_and_track).with(:post, "/stuff", "application/x-compressed", f, { })
       @director.upload_and_track("/stuff", "application/x-compressed", file)
       f.progress_bar.finished?.should be_true
     end
