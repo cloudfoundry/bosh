@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Micro Cloud Foundry license is available in /var/vcap/micro/LICENSE"
+echo ""
