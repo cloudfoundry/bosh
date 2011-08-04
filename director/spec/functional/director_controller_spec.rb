@@ -380,6 +380,33 @@ describe Bosh::Director::Controller do
         last_response.headers["Content-Length"].should == "6"
         last_response.headers["Content-Range"].should == "bytes 5-10/11"
       end
+
+
+      it "supports returning different types of output (debug, soap, event)" do
+        %w(debug event soap).each do |log_type|
+          output_file = File.new(File.join(@temp_dir, log_type), 'w+')
+          output_file.print("Test output #{log_type}")
+          output_file.close
+        end
+
+        task = Bosh::Director::Models::Task.new
+        task.state = "done"
+        task.timestamp = Time.now.to_i
+        task.description = "description"
+        task.output = @temp_dir
+        task.save
+
+        %w(debug event soap).each do |log_type|
+          get "/tasks/#{task.id}/output?type=#{log_type}"
+          last_response.status.should == 200
+          last_response.body.should == "Test output #{log_type}"
+        end
+
+        # Default output is debug
+        get "/tasks/#{task.id}/output"
+        last_response.status.should == 200
+        last_response.body.should == "Test output debug"
+      end
     end
 
     describe "users" do

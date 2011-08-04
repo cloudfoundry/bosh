@@ -24,9 +24,6 @@ describe Bosh::Director::ResourcePoolUpdater do
     @resource_pool_spec.stub!(:cloud_properties).and_return({"ram" => "2gb"})
     @resource_pool_spec.stub!(:env).and_return({})
     @resource_pool_spec.stub!(:spec).and_return({"name" => "foo"})
-
-    event_log = Bosh::Director::EventLog.new(1, nil)
-    Bosh::Director::Config.stub!(:event_logger).and_return(event_log)
   end
 
   def update_resource_pool(resource_pool_updater)
@@ -98,6 +95,10 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
     update_resource_pool(resource_pool_updater)
     Bosh::Director::Models::Vm.all.should == [created_vm]
+
+    check_event_log do |events|
+      events.size.should == 2
+    end
   end
 
   it "should set the state of the bound instance" do
@@ -168,6 +169,10 @@ describe Bosh::Director::ResourcePoolUpdater do
     update_resource_pool(resource_pool_updater)
 
     Bosh::Director::Models::Vm.all.should be_empty
+
+    check_event_log do |events|
+      events.size.should == 2
+    end
   end
 
   it "should update existing vms if needed" do
@@ -216,8 +221,11 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     current_vm.should_not == old_vm
     Bosh::Director::Models::Vm.all.should == [current_vm]
-  end
 
+    check_event_log do |events|
+      events.size.should == 4
+    end
+  end
 
   it "should only create bound missing vms" do
     updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
@@ -291,6 +299,10 @@ describe Bosh::Director::ResourcePoolUpdater do
     updater.create_bound_missing_vms(fake_thread_pool)
 
     Bosh::Director::Models::Vm.count.should == 2
+
+    check_event_log do |events|
+      events.size.should == 4
+    end
   end
 
   it "can bulk allocate ips for idle vms that need them" do

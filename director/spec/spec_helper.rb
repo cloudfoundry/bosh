@@ -155,6 +155,19 @@ def create_package(files)
   gzip(io.string)
 end
 
+def check_event_log
+  pos = @event_buffer.tell
+  @event_buffer.rewind
+
+  events = @event_buffer.read.split("\n").map do |line|
+    JSON.parse(line)
+  end
+
+  yield events
+ensure
+  @event_buffer.seek(pos)
+end
+
 Rspec.configure do |rspec_config|
 
   rspec_config.before(:each) do |example|
@@ -169,6 +182,10 @@ Rspec.configure do |rspec_config|
     Sequel::Migrator.apply(db, migrate_dir, nil)
     FileUtils.mkdir_p(bosh_dir)
     Bosh::Director::Config.logger = logger
+
+    @event_buffer = StringIO.new
+    @event_log = Bosh::Director::EventLog.new(@event_buffer)
+    Bosh::Director::Config.event_log = @event_log
   end
 
   rspec_config.after(:each) do

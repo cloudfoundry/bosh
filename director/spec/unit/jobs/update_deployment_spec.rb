@@ -4,7 +4,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
   before(:each) do
     @manifest = mock("manifest")
-    @file = mock("file")
     @deployment_plan = mock("deployment_plan")
 
     @deployment_plan.stub!(:name).and_return("test_deployment")
@@ -19,17 +18,17 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     @deployment_plan.stub!(:resource_pools).and_return([pool1, pool2])
 
-    @file.stub!(:read).and_return("manifest")
-
     @tmpdir = Dir.mktmpdir("base_dir")
 
-    File.stub!(:open).with("test_file").and_yield(@file)
+    @manifest_file = Tempfile.new("manifest")
+    File.open(@manifest_file.path, "w") do |f|
+      f.write("manifest")
+    end
+
     YAML.stub!(:load).with("manifest").and_return(@manifest)
+
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, "recreate" => false, "job_states" => { }).and_return(@deployment_plan)
     Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
-
-    event_log = Bosh::Director::EventLog.new(1, nil)
-    Bosh::Director::Config.stub!(:event_logger).and_return(event_log)
   end
 
   after(:each) do
@@ -58,8 +57,15 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       package_compiler.should_receive(:compile)
       deployment_plan_compiler.should_receive(:bind_configuration)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       update_deployment_job.prepare
+
+      check_event_log do |events|
+        events.size.should == 16
+        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 14
+        # There are no packages, hence no "package_compilation" step
+        events.select { |e| e["stage"] == "Binding configuration" }.size.should == 2
+      end
     end
 
   end
@@ -72,6 +78,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       resource_pool_updater = mock("resource_pool_updater")
       job = mock("job")
       job_updater = mock("job_updater")
+
+      resource_pool_updater.stub!(:extra_vms_count).and_return(2)
+      resource_pool_updater.stub!(:outdated_vms_count).and_return(3)
+      resource_pool_updater.stub!(:bound_missing_vms_count).and_return(4)
+      resource_pool_updater.stub!(:missing_vms_count).and_return(5)
 
       Bosh::Director::ResourcePoolUpdater.stub!(:new).with(resource_pool).and_return(resource_pool_updater)
       Bosh::Director::JobUpdater.stub!(:new).with(job).and_return(job_updater)
@@ -96,8 +107,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       job_updater.should_receive(:update)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
 
+      # TODO: replace with attr_writer to avoid instance_eval
       update_deployment_job.instance_eval do
         @deployment_plan_compiler = deployment_plan_compiler
       end
@@ -128,7 +140,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
       stemcell_spec.stub!(:stemcell).and_return(new_stemcell)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       update_deployment_job.update_stemcell_references
 
       old_stemcell.deployments.should be_empty
@@ -163,7 +175,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       deployment.should_receive(:add_release_version).with(release_version)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new("test_file")
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       update_deployment_job.should_receive(:prepare)
       update_deployment_job.should_receive(:update)
       update_deployment_job.should_receive(:update_stemcell_references)
