@@ -46,9 +46,10 @@ module VCAP
       end
 
       def initialize
+        @logger = Console.logger
         @state = Statemachine.build do
           state :unconfigured do
-            event :configure, :starting
+            event :start, :starting
             event :fail, :failed
           end
           state :starting do
@@ -57,7 +58,6 @@ module VCAP
             event :started, :up
           end
           state :failed do
-            event :configure, :starting
             event :restart, :starting
           end
           state :up do
@@ -76,8 +76,8 @@ module VCAP
         else
           @type = :static
         end
-        @state.configure
-        restart
+        @state.start
+        restart_with_timeout
       end
 
       def up?
@@ -108,6 +108,13 @@ module VCAP
 
       # async
       def restart
+        # warn unless it is the first time we run, i.e. no previous state
+        if starting? && @previous
+          $stderr.puts("network already restarting".red)
+          @logger.error("network already restarting: #{caller.join("\n")}")
+          return
+        end
+        @state.restart
         Thread.new do
           restart_with_timeout
         end
@@ -130,12 +137,6 @@ module VCAP
         @previous = @state.state
       end
 
-      # manual reset
-      def reset
-        @state.restart
-        restart
-      end
-
       INTERFACES = "/etc/network/interfaces"
       def dhcp?
         if File.exist?(INTERFACES)
@@ -149,9 +150,11 @@ module VCAP
       end
 
       def dhcp
+        previous = @type
         @type = :dhcp
         write_network_interfaces(BASE_TEMPLATE + DHCP_TEMPLATE, nil)
-        restart
+        # no need to restart if we already are running dhcp
+        restart unless @type == previous
       end
 
       def static(net)

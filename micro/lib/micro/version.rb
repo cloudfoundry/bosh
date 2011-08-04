@@ -1,5 +1,5 @@
 module VCAP
   module Micro
-    VERSION = "0.4.0"
+    VERSION = "1.0.0_rc1"
   end
 end
