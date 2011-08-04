@@ -98,23 +98,27 @@ module Bosh
         opts_parser = OptionParser.new do |opts|
           opts.on("-c", "--config FILE")    { |file|  @options[:config] = file }
           opts.on("--cache-dir DIR")        { |dir|   @options[:cache_dir] = dir }
-          opts.on("-v", "--verbose")        {         @options[:verbose] = true }
+          opts.on("--verbose")              {         @options[:verbose] = true }
           opts.on("--no-color")             {         @options[:colorize] = false }
           opts.on("--skip-director-checks") {         @options[:director_checks] = false }
           opts.on("--force")                {         @options[:director_checks] = false }
           opts.on("--quiet")                {         @options[:quiet] = true }
           opts.on("--non-interactive")      {         @options[:non_interactive] = true }
           opts.on("--debug")                {         @options[:debug] = true }
-          opts.on("--version")              {         set_cmd(:misc, :version) }
+          opts.on("-v", "--version")        {         set_cmd(:misc, :version); stop_parsing; }
           opts.on("--help")                 {}
         end
 
         @args = opts_parser.order!(@args)
       end
 
+      def stop_parsing
+        @stopped_parsing = true
+      end
+
       def basic_usage
         <<-OUT
-usage: bosh [--verbose|-v] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
+usage: bosh [--verbose] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
             [--no-color] [--skip-director-checks] [--quiet] [--non-interactive]
             command [<args>]
         OUT
@@ -197,6 +201,7 @@ USAGE
       end
 
       def parse_command!
+        return if @stopped_parsing
         head = @args.shift
 
         case head
