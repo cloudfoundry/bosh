@@ -59,6 +59,9 @@ module VCAP
       end
 
       def status
+        if @identity.url != Identity::URL
+          say("Using API URL: #{@identity.url}\n".yellow)
+        end
         if @identity.should_update?
           url = "http://cloudfoundry.com/micro"
           say("A new version is available for download at #{url}\n".yellow)
@@ -117,6 +120,7 @@ module VCAP
           menu.choice("help") { display_help }
           menu.choice("shutdown VM") { shutdown }
           menu.hidden("debug") { debug }
+          menu.hidden("api url") { configure_api_url }
         end
       end
 
@@ -226,6 +230,13 @@ module VCAP
         end
       end
 
+      def configure_api_url
+        url = ask("New API URL") do |q|
+          q.default = Identity::URL
+        end
+        @identity.update_url(url)
+      end
+
       def refresh_dns
         @identity.update_ip(Network.local_ip)
         press_return_to_continue
@@ -319,4 +330,3 @@ end
 if $0 == __FILE__
   VCAP::Micro::Console.run
 end
-
