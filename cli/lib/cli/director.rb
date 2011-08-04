@@ -115,7 +115,7 @@ module Bosh
       def deploy(filename, options = {})
         url = "/deployments"
         url += "?recreate=true" if options[:recreate]
-        upload_and_track(url, "text/yaml", filename)
+        upload_and_track(url, "text/yaml", filename, :log_type => "event")
       end
 
       def change_job_state(deployment_name, manifest_filename, job_name, index, new_state)
@@ -135,8 +135,11 @@ module Bosh
         raise TaskTrackError, "Cannot parse task JSON, incompatible director version"
       end
 
-      def get_task_output(task_id, offset)
-        response_code, body, headers = get("/tasks/#{task_id}/output", nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
+      def get_task_output(task_id, offset, log_type = nil)
+        uri = "/tasks/#{task_id}/output"
+        uri += "?type=#{log_type}" if log_type
+
+        response_code, body, headers = get(uri, nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
         new_offset = \
         if response_code == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
           $1.to_i + 1
@@ -166,7 +169,7 @@ module Bosh
 
         status = \
         if redirected
-          if location =~ /\/tasks\/(\d+)\/?$/ # Doesn't look like we received task URI
+          if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
             poll_task($1, options)
           else
             :non_trackable
@@ -181,7 +184,7 @@ module Bosh
       def upload_and_track(uri, content_type, filename, options = {})
         file = FileWithProgressBar.open(filename, "r")
         method = options[:method] || :post
-        request_and_track(method, uri, content_type, file)
+        request_and_track(method, uri, content_type, file, options)
       ensure
         file.stop_progress_bar if file
       end
@@ -189,13 +192,15 @@ module Bosh
       def poll_task(task_id, options = {})
         polls = 0
 
+        log_type      = options[:log_type]
         poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
 
-        task = DirectorTask.new(self, task_id)
+        task = DirectorTask.new(self, task_id, log_type)
 
         say("Tracking task output for task##{task_id}...")
 
+        renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
         no_output_yet = true
 
         while true
@@ -204,12 +209,14 @@ module Bosh
 
           if output
             no_output_yet = false
-            say(output)
+            renderer.add_output(output)
           end
 
           if no_output_yet && polls % 10 == 0
             say("Task state is '%s', waiting for output..." % [ state ])
           end
+
+          renderer.refresh
 
           if state == "done"
             result = :done
@@ -228,9 +235,25 @@ module Bosh
           wait(poll_interval)
         end
 
-        say(task.flush_output)
-        say("Task #{task_id}: state is '#{state}'")
-        return result
+        renderer.add_output(task.flush_output)
+
+        if result == :done
+          renderer.done
+        end
+
+        if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
+          confirm = ask("The task has returned an error status, do you want to see debug log? [Yn]: ")
+          if confirm.empty? || confirm =~ /y(es)?/i
+            poll_task(task_id, options.merge(:log_type => "debug"))
+          else
+            say("Please use 'bosh task #{task_id}' command to see the debug log".red)
+            result
+          end
+        else
+          nl
+          say("Task #{task_id}: state is '#{state}'")
+          result
+        end
       end
 
       def wait(interval) # Extracted for easier testing

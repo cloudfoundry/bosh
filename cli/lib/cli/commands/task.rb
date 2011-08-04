@@ -21,45 +21,62 @@ module Bosh::Cli::Command
         err("Task id is expected to be a positive integer")
       end
 
-      task = Bosh::Cli::DirectorTask.new(director, task_id)
+      log_type = \
+      if flags.include?("--soap")
+        "soap"
+      elsif flags.include?("--event")
+        "event"
+      else
+        "debug"
+      end
+
+      task = Bosh::Cli::DirectorTask.new(director, task_id, log_type)
       say("Task state: #{task.state}")
 
-      cached_output = get_cached_task_output(task_id) unless flags.include?("--no-cache")
+      no_cache = flags.include?("--no-cache")
+      cached_output = get_cached_task_output(task_id, log_type) unless no_cache
 
-      if cached_output
-        say cached_output
-        return
+      renderer = \
+      if flags.include?("--raw")
+        Bosh::Cli::TaskLogRenderer.new
+      else
+        Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
       end
-
-      complete_output = ""
 
       say("Task log:")
-      begin
-        state, output = task.state, task.output
 
-        if output
-          say(output)
-          complete_output << output
+      if cached_output
+        renderer.add_output(cached_output)
+        renderer.refresh
+        renderer.done
+      else
+        complete_output = ""
+
+        begin
+          state, output = task.state, task.output
+
+          if output
+            renderer.add_output(output)
+            complete_output << output
+          end
+
+          renderer.refresh
+          sleep(0.5)
+
+        end while ["queued", "processing", "cancelling"].include?(state)
+
+        final_out = task.flush_output
+
+        if final_out
+          renderer.add_output(final_out)
+          complete_output << final_out << "\n"
         end
 
-        sleep(0.5)
-
-      end while ["queued", "processing", "cancelling"].include?(state)
-
-      final_out = task.flush_output
-
-      if final_out
-        say(final_out)
-        complete_output << final_out
+        renderer.done
+        save_task_output(task_id, log_type, complete_output)
       end
 
-      status = "Task #{task_id}: state is '#{state}'"
-      complete_output << "\n" << status << "\n"
-
-      say "\n"
-      say status
-
-      save_task_output(task_id, complete_output)
+      say "Task #{task_id}: state is '#{task.state}'"
     end
 
     def list_running
@@ -100,16 +117,16 @@ module Bosh::Cli::Command
       say("\n")
     end
 
-    def get_cached_task_output(task_id)
-      cache.read(task_cache_key(task_id))
+    def get_cached_task_output(task_id, log_type)
+      cache.read(task_cache_key(task_id, log_type))
     end
 
-    def save_task_output(task_id, output)
-      cache.write(task_cache_key(task_id), output)
+    def save_task_output(task_id, log_type, output)
+      cache.write(task_cache_key(task_id, log_type), output)
     end
 
-    def task_cache_key(task_id)
-      "task/#{target}/#{task_id}"
+    def task_cache_key(task_id, log_type)
+      "task/#{target}/#{task_id}/#{log_type}"
     end
 
   end

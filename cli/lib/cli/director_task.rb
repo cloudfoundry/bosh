@@ -4,10 +4,11 @@ module Bosh
 
       attr_accessor :offset
 
-      def initialize(director, task_id)
+      def initialize(director, task_id, log_type = nil)
         @director = director
         @task_id  = task_id
         @offset   = 0
+        @log_type = log_type
         @buf      = ""
       end
 
@@ -16,7 +17,7 @@ module Bosh
       end
 
       def output
-        body, new_offset = @director.get_task_output(@task_id, @offset)
+        body, new_offset = @director.get_task_output(@task_id, @offset, @log_type)
 
         @buf << body if body
 
