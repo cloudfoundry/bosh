@@ -165,6 +165,7 @@ module VCAP
         @identity.save
         unless initial
           say("Reconfiguring Micro Cloud Foundry with new settings...")
+          Bosh::Agent::Monit.stop_services # is it enough to stop only cc?
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -295,6 +296,7 @@ module VCAP
 
       def debug
         @logger.level = Logger::DEBUG
+        @logger.info("debug output enabled")
         say("Debug output enabled in #{LOGFILE}")
         press_return_to_continue
       end
