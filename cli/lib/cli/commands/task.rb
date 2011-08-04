@@ -4,14 +4,18 @@ module Bosh::Cli::Command
     def track(*args)
       auth_required
 
-      task_id = args.shift
+      task_id = args.shift.to_i
+
+      if task_id <= 0
+        err("Task id is expected to be a positive integer")
+      end
+
       flags = args
 
-      if task_id.nil? || task_id == "last"
+      if task_id.nil? || %w(last latest).include?(task_id)
         last = director.list_recent_tasks(1)
         if last.size == 0
-          say("No tasks found!".red)
-          return
+          err("No tasks found")
         end
 
         task_id = last[0]["id"]

@@ -26,7 +26,7 @@ describe Bosh::Cli::Runner do
   end
 
   it "allows overriding global options" do
-    runner = Bosh::Cli::Runner.new(["-v", "--no-color", "--force", "--quiet", "--non-interactive", "release", "upload", "/path"])
+    runner = Bosh::Cli::Runner.new(["--verbose", "--no-color", "--force", "--quiet", "--non-interactive", "release", "upload", "/path"])
     runner.parse_options!
     runner.options[:verbose].should  == true
     runner.options[:colorize].should == false
