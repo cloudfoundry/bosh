@@ -1,0 +1,205 @@
+--- 
+deployment: micro
+release: 
+  name: micro
+  version: 11
+properties: 
+  micro: true
+  domain: englund.cloudfoundry.me
+  env: 
+  networks: 
+    apps: local
+    management: local
+  dea: 
+    max_memory: 1024
+  router: 
+    local_route: 127.0.0.1
+    status: 
+      port: 8080
+      user: uh43kJuhayC2fF3df
+      password: u5hrK0uhayC2fF3df
+  nats: 
+    user: nats
+    password: 81342d107095bc36
+    address: 127.0.0.1
+    port: 4222
+  ccdb: 
+    address: 127.0.0.1
+    user: root
+    password: 56c717c1af039be8
+    port: 2544
+    dbname: appcloud
+  cc: 
+    srv_api_uri: http://api.englund.cloudfoundry.me
+    password: 47fd2d925e2b3e122706472dc54415f1f3ff926edc879ed998e8c595038f6508feb4cb7e4866829d36f71c30071f84e6787fc0b27e356c87f8f4ad9ec2bf1027
+    token: ee016c469eaa437ffad29dc19046c27c3be420a9dc15bbd5fc519e28a0a9e3d1eb9f7fdbd91eb90b1c528506754affc7653b949046b54b415be0f2b10171e63a
+    local_register_only: false
+    admins: 
+    - martin@englund.nu
+    admin_account_capacity: 
+      memory: 1024
+      app_uris: 32
+      services: 16
+      apps: 16
+    default_account_capacity: 
+      memory: 512
+      app_uris: 8
+      services: 4
+      apps: 4
+  mysql_gateway: 
+    token: d3b9db4b
+  mysql_node: 
+    available_storage: 2048
+    password: 56c717c1af039be8
+    max_db_size: 256
+  redis_gateway: 
+    token: 5a3bf650
+  redis_node: 
+    available_memory: 256
+  mongodb_gateway: 
+    token: "0xdeadbeef"
+  mongodb_node: 
+    available_memory: 256
+index: 0
+networks: 
+  local: 
+    ip: 127.0.0.1
+packages: 
+  ruby: 
+    name: ruby
+    version: "3"
+    sha1: 4afe33957fde6647bcd02eec975e3adbda1d4e32
+    blobstore_id: 2dfd72d5-a014-4c1c-ac59-98b96908a950
+  nats: 
+    name: nats
+    version: "3"
+    sha1: 0e74dab1a5228fa7791e9871252c4f65f7811ac2
+    blobstore_id: 4fdcd7b6-8859-429b-8c77-6039d17be30c
+  postgres: 
+    name: postgres
+    version: "2"
+    sha1: b3e4ecb3fc70c40b059b0c918b5cefdddf0ac381
+    blobstore_id: b9662ba9-4516-4983-9145-ee623c3cf92e
+  libpq: 
+    name: libpq
+    version: "2"
+    sha1: e62d3e317e7249316dd1c9c979ef26f22a955102
+    blobstore_id: 2fb3c020-096c-406d-80b9-d5604f80837a
+  mysqlclient: 
+    name: mysqlclient
+    version: "1"
+    sha1: 1f843943e534de721447cc50877cc736cc1a0144
+    blobstore_id: 450f3c67-9cb0-4188-b165-019e53e2a520
+  sqlite: 
+    name: sqlite
+    version: "1"
+    sha1: 4a688b644a77f3fae0ee803e246643874832ffdb
+    blobstore_id: 89a13b8a-4590-4478-8385-97c426b7a26f
+  cloud_controller: 
+    name: cloud_controller
+    version: 12.1-dev
+    sha1: 87927e9423d534166af46e07981bee4cc2318c46
+    blobstore_id: 902f3e6a-6eef-47ba-a66a-7fcce2236148
+  dea_node: 
+    name: dea_node
+    version: "3"
+    sha1: 72ec0b61f30c8ed53233f3e2d6fd07e66fb700f0
+    blobstore_id: ae185910-fc1f-4035-ab64-11c54fc35caf
+  dea_ruby18: 
+    name: dea_ruby18
+    version: "3"
+    sha1: ddf796dfd9ef8fd0c1993d169553c08861a36134
+    blobstore_id: 582853bf-4508-4f42-a7d8-08876050ab21
+  dea_ruby19: 
+    name: dea_ruby19
+    version: "3"
+    sha1: 5282321dfc7330b240d136c3e9f3575cf0f6abbf
+    blobstore_id: f6ae6835-0d0e-45a2-96a7-6573956c1e26
+  dea_jvm: 
+    name: dea_jvm
+    version: "2"
+    sha1: 5ea76b790a51b6a7f827abec00b495f3c079f88c
+    blobstore_id: 912dea34-b7bc-4c25-89ae-32dda9f4fd85
+  dea_transition: 
+    name: dea_transition
+    version: "1"
+    sha1: 3282b4242b65cb03334d54b306db43a54bb74599
+    blobstore_id: 790cc749-ec60-4b33-b4e3-4bff8ceb07c8
+  dea_seed: 
+    name: dea_seed
+    version: "2"
+    sha1: 0576181aa43471a0678dc597b46a211a5e031a6d
+    blobstore_id: 70208d2b-d93a-4243-91a8-c133f679ece3
+  syslog_aggregator: 
+    name: syslog_aggregator
+    version: "1"
+    sha1: 9822d740807abee5b5f20c9a25288f6b121ed0bd
+    blobstore_id: 3aec823c-d8cd-436d-9c00-a06ad4bee523
+  router: 
+    name: router
+    version: "9"
+    sha1: 86f971808d07cc7242adfc8a39d181856456c419
+    blobstore_id: 291f77b7-3423-4481-b722-9c43456e9dcd
+  nginx: 
+    name: nginx
+    version: "2"
+    sha1: b3c5ce3360de21a32141305eaec136751a649197
+    blobstore_id: 6da3a83c-604c-4def-a27b-de19de78c2a3
+  dea: 
+    name: dea
+    version: "10"
+    sha1: 431bdc8d39709e2aa68491b05fa5032896a6fb83
+    blobstore_id: add83f8d-68e4-4c51-969f-9fab34ea9292
+  mysql_node: 
+    name: mysql_node
+    version: "13"
+    sha1: e2fe945bf4f59f786d39c5290d55abb1ad74dace
+    blobstore_id: 2dfde6e0-b04d-4dde-bf7d-d024e256f581
+  mysql: 
+    name: mysql
+    version: "1"
+    sha1: cf328e099fbc9a46ac5cd237f503f0d4d20fb7b7
+    blobstore_id: 72ef0ccb-0aa1-4314-9b60-963e96194789
+  mysql_gateway: 
+    name: mysql_gateway
+    version: "13"
+    sha1: 3c1a90e06d946983d78b2576ad0d098d03c53bfc
+    blobstore_id: 6dce1758-e7d0-4743-b866-66640fa87185
+  redis_node: 
+    name: redis_node
+    version: "13"
+    sha1: e5b122b478d1b3f455b7ca558f5a4678f9ae71cc
+    blobstore_id: 15b030de-6ac9-4290-bcaa-80a123e97af3
+  redis: 
+    name: redis
+    version: "1"
+    sha1: a9413611136f39d17c4a2137a70652fbd7f27061
+    blobstore_id: 914e8722-0bcb-4541-b2ec-b047ef7fe67e
+  redis_gateway: 
+    name: redis_gateway
+    version: "13"
+    sha1: 84db8a23bb823bca078500dbdff90c11e1981728
+    blobstore_id: 5cb71e74-72ca-410d-94ff-5710f3fc9c28
+  mongodb_gateway: 
+    name: mongodb_gateway
+    version: "14"
+    sha1: a7c426f5d5e8f6663b775521fe2923ebfa016079
+    blobstore_id: 008372a8-3fe6-448a-a82a-6d3d3be8b69d
+  mongodb_node: 
+    name: mongodb_node
+    version: "14"
+    sha1: 5bfb0e8072f1fea218e64e8400a5767262bfc360
+    blobstore_id: 32fcf57c-4923-4b00-b16d-8528ab961c1e
+  mongodb: 
+    name: mongodb
+    version: "2"
+    sha1: f048e21cdfb29fcc645e70f1d261c8e7a8a729df
+    blobstore_id: f3b9d66e-cd84-4d63-9a32-f2ea6f76712b
+configuration_hash: {}
+
+job: 
+  name: micro
+  version: 8.2-dev
+  sha1: 08e7b4db722291716dd0f254d488a0146f5b86c9
+  template: micro
+  blobstore_id: 09b8c70b-697b-499c-928a-871ba7fc54db
