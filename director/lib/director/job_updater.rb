@@ -9,29 +9,33 @@ module Bosh::Director
       @job = job
       @cloud = Config.cloud
       @logger = Config.logger
-      @event_logger = Config.event_logger
+      @event_log = Config.event_log
     end
 
     def delete_unneeded_instances
       @logger.info("Deleting no longer needed instances")
-      unless @job.unneeded_instances.empty?
-        total = @job.unneeded_instances.size
-        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-          @job.unneeded_instances.each_with_index do |instance, index|
-            vm = instance.vm
-            disk_cid = instance.disk_cid
-            vm_cid = vm.cid
-            agent_id = vm.agent_id
+      unneeded_instances = @job.unneeded_instances
 
-            progress_log("Deleting unneeded instance", index, total)
-            pool.process do
-              agent = AgentClient.new(agent_id)
+      return if unneeded_instances.empty?
+
+      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
+
+      ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
+        @job.unneeded_instances.each do |instance|
+          vm = instance.vm
+
+          pool.process do
+            @event_log.track(vm.cid) do
+              agent = AgentClient.new(vm.agent_id)
               drain_time = agent.drain("shutdown")
               sleep(drain_time)
               agent.stop
 
-              @cloud.delete_vm(vm_cid)
-              @cloud.delete_disk(disk_cid) if disk_cid
+              @cloud.delete_vm(vm.cid)
+
+              if instance.disk_cid
+                @cloud.delete_disk(instance.disk_cid)
+              end
 
               instance.destroy
               vm.destroy
@@ -50,19 +54,24 @@ module Bosh::Director
         instances << instance if instance.changed?
       end
 
+      if instances.empty?
+        @logger.info("No instances to update for `#{@job.name}'")
+        return
+      end
+
       @logger.info("Found #{instances.size} instances to update")
 
-      unless instances.empty?
+      @event_log.begin_stage("Updating job", instances.size, [ @job.name ])
 
-        ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-          num_canaries = [@job.update.canaries, instances.size].min
+      ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
+        num_canaries = [ @job.update.canaries, instances.size ].min
 
-          @logger.info("Starting canary update")
-          # canaries first
-          num_canaries.times do |index|
-            instance = instances.shift
-            progress_log("canary update", index, num_canaries)
-            pool.process do
+        @logger.info("Starting canary update")
+        # canaries first
+        num_canaries.times do |index|
+          instance = instances.shift
+          pool.process do
+            @event_log.track("#{@job.name}/#{instance.index} (canary)") do
               with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
                   begin
@@ -75,47 +84,44 @@ module Bosh::Director
               end
             end
           end
+        end
 
-          pool.wait
-          @logger.info("Finished canary update")
+        pool.wait
+        @logger.info("Finished canary update")
 
-          if @job.should_rollback?
-            @logger.warn("Rolling back due to a canary failure")
-            raise RollbackException
-          end
+        if @job.should_rollback?
+          @logger.warn("Rolling back due to a canary failure")
+          raise RollbackException
+        end
 
-          # continue with the rest of the updates
-          @logger.info("Continuing the rest of the update")
-          total = instances.size
-          instances.each_with_index do |instance, index|
-            progress_log("Updating instance", index, total)
-            pool.process do
+        # continue with the rest of the updates
+        @logger.info("Continuing the rest of the update")
+        total = instances.size
+        instances.each_with_index do |instance, index|
+          pool.process do
+            @event_log.track("#{@job.name}/#{instance.index}") do
               with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
                   begin
                     InstanceUpdater.new(instance).update
                   rescue Exception => e
                     @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
-                    @job.record_update_error(e) # TODO: Shouldn't this be synchronized (as it modifies counter in job)?
+                    @job.record_update_error(e)
                   end
                 end
               end
             end
           end
         end
+      end
 
-        @logger.info("Finished the rest of the update")
+      @logger.info("Finished the rest of the update")
 
-        if @job.should_rollback?
-          @logger.warn("Rolling back due to an update failure")
-          raise RollbackException
-        end
+      if @job.should_rollback?
+        @logger.warn("Rolling back due to an update failure")
+        raise RollbackException
       end
     end
 
-    private
-    def progress_log(msg, index, total)
-      @event_logger.progress_log("Updating job #{@job.name}", msg, index, total)
-    end
   end
 end

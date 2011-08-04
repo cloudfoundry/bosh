@@ -12,13 +12,13 @@ module Bosh::Director
         logger.formatter = ThreadFormatter.new
         logger.info("Starting task: #{task_id}")
 
-        Config.event_logger = Bosh::Director::EventLog.new(task_id, File.join(task.output, "event"))
+        Config.event_log = Bosh::Director::EventLog.new(File.join(task.output, "event"))
         Config.logger = logger
         Sequel::Model.db.logger = logger
 
         cloud_options = Config.cloud_options
         if cloud_options && cloud_options["plugin"] == "vsphere"
-          cloud_options["properties"]["soap_log"] =  File.join(task.output, "soap")
+          cloud_options["properties"]["soap_log"] = File.join(task.output, "soap")
           Config.cloud_options = cloud_options
         end
 
@@ -76,6 +76,7 @@ module Bosh::Director
           raise TaskCancelled.new(@task_id)
         end
       end
+
     end
   end
 end
