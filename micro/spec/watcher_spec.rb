@@ -43,7 +43,9 @@ describe VCAP::Micro::Watcher do
     ip = "1.2.3.4"
 
     stub_network(ip, "1.2.3.5")
-    VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(false)
+    VCAP::Micro::Network.should_receive(:ping).exactly(3).
+      times.and_return(false)
+    Kernel.should_receive(:sleep).with(5).exactly(2).times
     network = mock_network(true)
     network.should_receive(:connection_lost).exactly(1).times
 
@@ -55,7 +57,8 @@ describe VCAP::Micro::Watcher do
     ip = "1.2.3.4"
 
     stub_network(ip, "1.2.3.5")
-    VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
+    VCAP::Micro::Network.should_receive(:ping).exactly(1).
+      times.and_return(true)
     VCAP::Micro::Network.should_receive(:lookup).and_return(nil)
 
     network = mock_network(true)
@@ -69,8 +72,10 @@ describe VCAP::Micro::Watcher do
     new_ip = "1.2.3.6"
 
     stub_network(new_ip, "1.2.3.5")
-    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
-    VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
+    VCAP::Micro::Network.stub(:lookup).
+      and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
+    VCAP::Micro::Network.should_receive(:ping).exactly(1).times.
+      and_return(true)
 
     identity = mock_identity("1.2.3.4")
     identity.should_receive(:update_ip).with(new_ip).exactly(1).times
@@ -84,14 +89,59 @@ describe VCAP::Micro::Watcher do
     ip = "1.2.3.4"
 
     stub_network(ip, "1.2.3.5")
-    VCAP::Micro::Network.stub(:lookup).and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
-    VCAP::Micro::Network.should_receive(:ping).exactly(1).times.and_return(true)
+    VCAP::Micro::Network.stub(:lookup).
+      and_return(VCAP::Micro::Watcher::A_ROOT_SERVER_IP)
+    VCAP::Micro::Network.should_receive(:ping).exactly(1).times.
+      and_return(true)
 
     identity = mock_identity(ip)
-    identity.should_receive(:update_ip).with(ip).exactly(1).times
+    identity.should_receive(:update_ip).with(ip, true).exactly(1).times
     now = Time.now.to_i
     Time.stub(:now).and_return(now - 14500, now)
     w = VCAP::Micro::Watcher.new(mock_network(true), identity)
     w.check
   end
+
+  describe "ping" do
+    it "should try three pings before it considers it failed" do
+      ip = "127.0.0.1"
+      w = VCAP::Micro::Watcher.new(mock_network(true), mock_identity(ip))
+      VCAP::Micro::Network.should_receive(:ping).with(ip).exactly(3).times.
+        and_return(false)
+      Kernel.should_receive(:sleep).with(5).exactly(2).times
+
+      w.forgiving_ping(ip).should be_false
+    end
+
+    it "should succeed if the first ping returns true" do
+      ip = "127.0.0.1"
+      w = VCAP::Micro::Watcher.new(mock_network(true), mock_identity(ip))
+      VCAP::Micro::Network.should_receive(:ping).with(ip).exactly(1).times.
+        and_return(true)
+
+      w.forgiving_ping(ip).should be_true
+    end
+
+    it "should succeed if the second ping returns true" do
+      ip = "127.0.0.1"
+      w = VCAP::Micro::Watcher.new(mock_network(true), mock_identity(ip))
+      VCAP::Micro::Network.should_receive(:ping).with(ip).exactly(2).times.
+        and_return(false, true)
+        Kernel.should_receive(:sleep).with(5).exactly(1).times
+
+      w.forgiving_ping(ip).should be_true
+    end
+
+    it "should succeed if the thrid ping returns true" do
+      ip = "127.0.0.1"
+      w = VCAP::Micro::Watcher.new(mock_network(true), mock_identity(ip))
+      VCAP::Micro::Network.should_receive(:ping).with(ip).exactly(3).times.
+        and_return(false, false, true)
+        Kernel.should_receive(:sleep).with(5).exactly(2).times
+
+      w.forgiving_ping(ip).should be_true
+    end
+
+  end
+
 end
