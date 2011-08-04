@@ -4,11 +4,7 @@ module Bosh::Cli::Command
     def track(*args)
       auth_required
 
-      task_id = args.shift.to_i
-
-      if task_id <= 0
-        err("Task id is expected to be a positive integer")
-      end
+      task_id = args.shift
 
       flags = args
 
@@ -19,6 +15,10 @@ module Bosh::Cli::Command
         end
 
         task_id = last[0]["id"]
+      end
+
+      if task_id.to_i <= 0
+        err("Task id is expected to be a positive integer")
       end
 
       task = Bosh::Cli::DirectorTask.new(director, task_id)
