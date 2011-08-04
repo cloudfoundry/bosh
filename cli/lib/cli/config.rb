@@ -9,6 +9,7 @@ module Bosh
       class << self
         attr_accessor :colorize
         attr_accessor :output
+        attr_accessor :interactive
       end
 
       def initialize(filename, work_dir = Dir.pwd)

@@ -17,6 +17,8 @@ require "cli/packaging_helper"
 require "cli/package_builder"
 require "cli/job_builder"
 require "cli/changeset_helper"
+require "cli/task_log_renderer"
+require "cli/event_log_renderer"
 
 require "cli/release"
 require "cli/release_builder"
