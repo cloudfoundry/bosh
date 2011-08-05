@@ -9,7 +9,13 @@ module Bosh::HealthMonitor
       @event_mbus = Bhm.event_mbus
     end
 
+    def enabled?
+      !@event_mbus.nil?
+    end
+
     def connect_to_mbus
+      return unless enabled?
+
       unless EM.reactor_running?
         @logger.error("Event publishing requires event loop to be running")
         return false
@@ -35,6 +41,8 @@ module Bosh::HealthMonitor
     end
 
     def publish_event!(event)
+      return unless enabled?
+
       if @nats.nil?
         @logger.error("NATS should be initialized in order to publish events")
         return false
