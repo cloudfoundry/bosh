@@ -111,6 +111,18 @@ describe Bosh::Director::PackageCompiler do
       package_compiler.compile
 
       Bosh::Director::Models::CompiledPackage.all.should == [compiled_package]
+
+      check_event_log do |events|
+        events.size.should == 2
+        events[0].should == {
+          "time" => anything, "stage" => "Compiling packages", "tags" => [],
+          "task" => "test_pkg/33", "index" => 1, "total" => 1, "state" => "started"
+        }
+        events[1].should == {
+          "time" => anything, "stage" => "Compiling packages", "tags" => [],
+          "task" => "test_pkg/33", "index" => 1, "total" => 1, "state" => "finished"
+        }
+      end
     end
 
     it "should keep reference to compilation VM if create_vm fails" do
@@ -240,6 +252,27 @@ describe Bosh::Director::PackageCompiler do
       dep_compiled_package.dependency_key.should == "[]"
 
       Bosh::Director::Models::CompiledPackage.all.should =~ [compiled_package, dep_compiled_package]
+
+      check_event_log do |events|
+        events.size.should == 4
+
+        events[0].should == {
+          "time" => anything, "stage" => "Compiling packages", "tags" => [],
+          "task" => "dependency/77", "index" => 1, "total" => 2, "state" => "started"
+        }
+        events[1].should == {
+          "time" => anything, "stage" => "Compiling packages", "tags" => [],
+          "task" => "dependency/77", "index" => 1, "total" => 2, "state" => "finished"
+        }
+        events[2].should == {
+          "time" => anything, "stage" => "Compiling packages", "tags" => [],
+          "task" => "test_pkg/33", "index" => 2, "total" => 2, "state" => "started"
+        }
+        events[3].should == {
+          "time" => anything, "stage" => "Compiling packages", "tags" => [],
+          "task" => "test_pkg/33", "index" => 2, "total" => 2, "state" => "finished"
+        }
+      end
     end
   end
 

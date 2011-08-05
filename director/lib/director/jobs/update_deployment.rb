@@ -6,13 +6,14 @@ module Bosh::Director
 
       def initialize(manifest_file, options = {})
         @logger = Config.logger
-        @event_log = Config.event_logger
+        @event_log = Config.event_log
+
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) { |f| f.read }
         @logger.debug("Manifest:\n#{@manifest}")
-        @logger.info("Creating deployment plan")
 
+        @logger.info("Creating deployment plan")
         @logger.info("Deployment plan options: #{options.pretty_inspect}")
 
         plan_options = {
@@ -33,38 +34,61 @@ module Bosh::Director
         @deployment_plan.deployment = Models::Deployment.find_or_create(:name => @deployment_plan.name)
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
 
-        progress_and_log("Preparing", "Binding release", 0, 9)
-        @deployment_plan_compiler.bind_release
-        progress_and_log("Preparing", "Binding existing deployment", 1, 9)
-        @deployment_plan_compiler.bind_existing_deployment
-        progress_and_log("Preparing", "Binding resource pools", 2, 9)
-        @deployment_plan_compiler.bind_resource_pools
-        progress_and_log("Preparing", "Binding stemcells", 3, 9)
-        @deployment_plan_compiler.bind_stemcells
-        progress_and_log("Preparing", "Binding templates", 4, 9)
-        @deployment_plan_compiler.bind_templates
-        progress_and_log("Preparing", "Binding unallocated VMs", 5, 9)
-        @deployment_plan_compiler.bind_unallocated_vms
-        progress_and_log("Preparing", "Binding instance networks", 6, 9)
-        @deployment_plan_compiler.bind_instance_networks
-        progress_and_log("Preparing", "Compiling and binding packages", 7, 9)
+        @event_log.begin_stage("Preparing deployment", 7)
+
+        track_and_log("Binding release") do
+          @deployment_plan_compiler.bind_release
+        end
+
+        track_and_log("Binding existing deployment") do
+          @deployment_plan_compiler.bind_existing_deployment
+        end
+
+        track_and_log("Binding resource pools") do
+          @deployment_plan_compiler.bind_resource_pools
+        end
+
+        track_and_log("Binding stemcells") do
+          @deployment_plan_compiler.bind_stemcells
+        end
+
+        track_and_log("Binding templates") do
+          @deployment_plan_compiler.bind_templates
+        end
+
+        track_and_log("Binding unallocated VMs") do
+          @deployment_plan_compiler.bind_unallocated_vms
+        end
+
+        track_and_log("Binding instance networks") do
+          @deployment_plan_compiler.bind_instance_networks
+        end
+
+        @logger.info("Compliling and binding packages")
         PackageCompiler.new(@deployment_plan).compile
-        progress_and_log("Preparing", "Binding configuration", 8, 9)
-        @deployment_plan_compiler.bind_configuration
+
+        @event_log.begin_stage("Binding configuration", 1)
+
+        @event_log.track do
+          @logger.info("Binding configuration")
+          @deployment_plan_compiler.bind_configuration
+        end
       end
 
       def update_resource_pools
-        resource_pool_updaters = []
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
           # delete extra VMs across resource pools
-          @resource_pool_updaters.each do |resource_pool_updater|
-            resource_pool_updater.delete_extra_vms(thread_pool)
+
+          @event_log.begin_stage("Deleting extra VMs", sum_across_pools(:extra_vms_count))
+          @resource_pool_updaters.each do |updater|
+            updater.delete_extra_vms(thread_pool)
           end
           thread_pool.wait
 
           # delete outdated VMs across resource pools
-          @resource_pool_updaters.each do |resource_pool_updater|
-            resource_pool_updater.delete_outdated_vms(thread_pool)
+          @event_log.begin_stage("Deleting outdated VMs", sum_across_pools(:outdated_vms_count))
+          @resource_pool_updaters.each do |updater|
+            updater.delete_outdated_vms(thread_pool)
           end
           thread_pool.wait
 
@@ -72,8 +96,9 @@ module Bosh::Director
           # only creates VMs that have been bound to instances
           # to avoid refilling the resource pool before instances
           # that are no longer needed have been deleted.
-          @resource_pool_updaters.each do |resource_pool_updater|
-            resource_pool_updater.create_bound_missing_vms(thread_pool)
+          @event_log.begin_stage("Creating bound missing VMs", sum_across_pools(:bound_missing_vms_count))
+          @resource_pool_updaters.each do |updater|
+            updater.create_bound_missing_vms(thread_pool)
           end
         end
       end
@@ -86,6 +111,7 @@ module Bosh::Director
           resource_pool_updater.allocate_dynamic_ips
         end
 
+        @event_log.begin_stage("Refilling resource pools", sum_across_pools(:missing_vms_count))
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
           # create missing VMs across resource pools phase 2:
           # should be called after all instance updaters are finished to
@@ -173,10 +199,18 @@ module Bosh::Director
       end
 
       private
-      def progress_and_log(stage, msg, current, total)
-        @event_log.progress_log(stage, msg, current, total)
-        @logger.info(msg)
+
+      def track_and_log(stage_name)
+        @event_log.track(stage_name) do
+          @logger.info(stage_name)
+          yield
+        end
       end
+
+      def sum_across_pools(counting_method)
+        @resource_pool_updaters.inject(0) { |sum, updater| sum += updater.send(counting_method.to_sym) }
+      end
+
     end
   end
 end
