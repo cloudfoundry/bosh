@@ -18,7 +18,10 @@ module Bosh::HealthMonitor
       @intervals  = OpenStruct.new(config["intervals"])
       @director   = Director.new(config["director"])
       @mbus       = OpenStruct.new(config["mbus"])
-      @event_mbus = OpenStruct.new(config["event_mbus"])
+
+      if config["event_mbus"]
+        @event_mbus = OpenStruct.new(config["event_mbus"])
+      end
 
       if config["loglevel"].is_a?(String)
         @logger.level = config["loglevel"].to_sym

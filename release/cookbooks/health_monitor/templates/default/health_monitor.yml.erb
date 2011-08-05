@@ -4,10 +4,12 @@ mbus:
   user: <%= node[:nats][:user] %>
   password: <%= node[:nats][:password] %>
 
+<% if node[:hosts][:event_nats] %>
 event_mbus:
-  endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
-  user: <%= node[:nats][:user] %>
-  password: <%= node[:nats][:password] %>
+  endpoint: nats://<%= node[:hosts][:event_nats] %>:<%= node[:event_nats][:port] %>
+  user: <%= node[:event_nats][:user] %>
+  password: <%= node[:event_nats][:password] %>
+<% end %>
 
 director:
   endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port] %>
@@ -26,7 +28,9 @@ alert_delivery_agents:
 
   - plugin: logger
 
+<% if node[:hosts][:event_nats] %>
   - plugin: nats
+<% end %>
 
 <% if node[:health_monitor][:email_notifications] %>
   - plugin: email
