@@ -8,6 +8,7 @@ require 'micro/agent'
 require 'micro/settings'
 require 'micro/watcher'
 require 'micro/version'
+require 'micro/memory'
 require 'micro/core_ext'
 
 
@@ -33,6 +34,7 @@ module VCAP
         @logger = Console.logger
         @identity = Identity.new
         @network = Network.new
+        @memory = Memory.new
         @watcher = Watcher.new(@network, @identity).start
       end
 
@@ -59,9 +61,12 @@ module VCAP
       end
 
       def status
-        unless @identity.version == VCAP::Micro::VERSION
+        if @identity.url != Identity::URL
+          say("Using API URL: #{@identity.url}\n".yellow)
+        end
+        if @identity.should_update?
           url = "http://cloudfoundry.com/micro"
-          say("Version #{@identity.version} is available for download from #{url}".yellow)
+          say("A new version is available for download at #{url}\n".yellow)
         end
         if @identity.configured?
           say("Current Configuration:")
@@ -106,6 +111,9 @@ module VCAP
           else
             menu.choice("refresh console") { }
             menu.choice("refresh DNS") { refresh_dns }
+            if @memory.changed?
+              menu.choice("reconfigure memory".yellow) { configure_memory }
+            end
             menu.choice("reconfigure vcap password") { configure_password }
             menu.choice("reconfigure domain") { configure_domain }
             menu.choice("reconfigure network [#{@network.type}]") { configure_network }
@@ -117,15 +125,17 @@ module VCAP
           menu.choice("help") { display_help }
           menu.choice("shutdown VM") { shutdown }
           menu.hidden("debug") { debug }
+          menu.hidden("api url") { configure_api_url }
         end
       end
 
       def configure
         configure_password(true)
         configure_network(true)
-        configure_domain(true)
+        configure_memory(true) if @memory.changed?
         configure_proxy(true)
-        say("\nInstalling Micro Cloud Foundry: will take up to two minutes\n\n")
+        configure_domain(true)
+        say("\nInstalling Micro Cloud Foundry: will take up to five minutes\n\n")
         # TODO use a progres bar
         VCAP::Micro::Agent.apply(@identity)
         say("Installation complete\n".green)
@@ -221,9 +231,29 @@ module VCAP
         @identity.save
         if !initial && old_proxy != @identity.proxy
           say("Reconfiguring Micro Cloud Foundry with new proxy setting...")
+          Bosh::Agent::Monit.stop_services
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
+      end
+
+      def configure_memory(initial=false)
+        mem = @memory.current
+        say("Reconfiguring Micro Cloud Foundry with new memory: #{mem}")
+        @memory.save_spec(@memory.update_spec(mem))
+        @memory.update_previous
+        unless initial
+          Bosh::Agent::Monit.stop_services
+          VCAP::Micro::Agent.apply(@identity)
+          press_return_to_continue
+        end
+      end
+
+      def configure_api_url
+        url = ask("New API URL") do |q|
+          q.default = Identity::URL
+        end
+        @identity.update_url(url)
       end
 
       def refresh_dns
@@ -319,4 +349,3 @@ end
 if $0 == __FILE__
   VCAP::Micro::Console.run
 end
-
