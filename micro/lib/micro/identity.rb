@@ -5,7 +5,7 @@ module VCAP
   module Micro
     class Identity
       attr_accessor :admins, :ip, :proxy, :nonce, :version
-      attr_reader :name, :cloud
+      attr_reader :name, :cloud, :version, :url
 
       URL = "http://mcapi.cloudfoundry.com/api/v1/micro"
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
@@ -15,6 +15,7 @@ module VCAP
         @config_file = config_file
         load_config if configured?
         @config ||= {}
+        @url = URL
         @client = resource
         @logger = Console.logger
         @version = VCAP::Micro::VERSION
@@ -50,7 +51,12 @@ module VCAP
       def resource
         headers = { :content_type => 'application/json' }
         headers["Auth-Token"] = @token if @token
-        RestClient::Resource.new(URL, :headers => headers)
+        RestClient::Resource.new(@url, :headers => headers)
+      end
+
+      def update_url(url)
+        @url = url
+        @client = resource
       end
 
       def install(ip)
@@ -153,7 +159,7 @@ module VCAP
         response = Yajl::Parser.new.parse(json)
 
         if response
-          @version = response["mcf_version"] if response["mcf_version"]
+          @version = response["version"] if response["version"]
           values = response.collect {|k,v| "#{k} = #{v}"}.join("\n")
           @logger.info("got following response from DNS update:\n#{values}")
         end
@@ -175,12 +181,13 @@ module VCAP
       rescue RestClient::NotModified
         # do nothing
       ensure
-        pbar.finish  unless silent
+        return if silent
+        pbar.finish
 
         if Network.lookup(subdomain) == @ip
-          say("done".green) unless silent
+          say("done".green)
         else
-          say("DNS still not updated after #{Watcher::TTL} seconds".red) unless silent
+          say("DNS still not updated after #{Watcher::TTL} seconds".red)
         end
       end
 
@@ -200,6 +207,16 @@ module VCAP
         end
       end
 
+      def should_update?(installed=VCAP::Micro::VERSION)
+        regexp = /(\d+)\.(\d+)\.*(\d+)*_*(\S+)*/
+        inst = installed.match(regexp)
+        curr = @version.match(regexp)
+        ok = true
+        ok = (inst[1] >= curr[1]) if curr[1]
+        ok = ok && (inst[2] >= curr[2]) if curr[2]
+        ok = ok && (inst[3] >= curr[3]) if curr[3]
+        !ok
+      end
     end
   end
 end
