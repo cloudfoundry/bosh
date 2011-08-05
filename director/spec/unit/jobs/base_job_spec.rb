@@ -3,11 +3,12 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::Jobs::BaseJob do
 
   before(:each) do
-    @event_log = Bosh::Director::EventLog.new(1, nil)
-    Bosh::Director::EventLog.stub!(:new).and_return(@event_log)
+    @event_log = Bosh::Director::EventLog.new(StringIO.new)
+    @logger = Logger.new(StringIO.new)
 
-    @logger = Logger.new(nil)
+    # TODO: remove stubbing 'new'
     Logger.stub!(:new).with("/some/path/debug").and_return(@logger)
+    Bosh::Director::EventLog.stub!(:new).with("/some/path/event").and_return(@event_log)
   end
 
   it "should set up the task" do

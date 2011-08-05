@@ -53,6 +53,7 @@ module Bosh::Director
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
+      @event_log = Config.event_log
       @logger = Config.logger
       @tasks_mutex = Mutex.new
       @networks_mutex = Mutex.new
@@ -85,6 +86,13 @@ module Bosh::Director
         @networks << {@network.name => @network.network_settings(@network.allocate_dynamic_ip, defaults)}
       end
 
+      compilations_count = @compile_tasks.inject(0) do |sum, (key, task)|
+        sum += 1 if task.compiled_package.nil?
+        sum
+      end
+
+      @event_log.begin_stage("Compiling packages", compilations_count)
+
       ThreadPool.new(:max_threads => @deployment_plan.compilation.workers).wrap do |pool|
         loop do
           loop do
@@ -97,14 +105,15 @@ module Bosh::Director
             @logger.info("Enqueuing package ready for compilation: #{package.name}/#{stemcell.name}")
 
             pool.process do
-              with_thread_name("compile_package(#{package.name}/#{package.version}, " +
-                                   "#{stemcell.name}/#{stemcell.version})") do
+              package_desc = "#{package.name}/#{package.version}"
+              stemcell_desc = "#{stemcell.name}/#{stemcell.version})"
 
-                compile_package(task)
-                enqueue_unblocked_tasks(task)
-
-                @logger.info("Finished compiling package: #{package.name}/#{package.version} on " +
-                                 "stemcell: #{stemcell.name}/#{stemcell.version}")
+              with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
+                @event_log.track(package_desc) do
+                  compile_package(task)
+                  enqueue_unblocked_tasks(task)
+                  @logger.info("Finished compiling package: #{package_desc} on stemcell: #{stemcell_desc}")
+                end
               end
             end
           end
@@ -263,13 +272,15 @@ module Bosh::Director
         end
       end
 
-      bind_compile_tasks(packages_by_name)
+      bind_dependent_tasks(packages_by_name)
     end
 
-    def bind_compile_tasks(packages_by_name)
+
+    def bind_dependent_tasks(packages_by_name)
       @logger.info("Filling in compile tasks for dependencies")
       @compile_tasks.each do |key, task|
         package_name, stemcell_id = key
+
         if task.package.nil?
           @logger.info("Filling in dependencies for package: #{package_name}")
           package               = packages_by_name[package_name]

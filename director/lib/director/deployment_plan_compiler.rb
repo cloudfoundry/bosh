@@ -6,7 +6,7 @@ module Bosh::Director
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
       @logger = Config.logger
-      @event_logger = Config.event_logger
+      @event_log = Config.event_log
     end
 
     def process_ip_reservations(state)
@@ -274,24 +274,39 @@ module Bosh::Director
     end
 
     def bind_instance_vms
+      unbound_instances = []
+
+      @deployment_plan.jobs.each do |job|
+        job.instances.each do |instance_spec|
+          # Don't allocate resource pool VMs to instances in detached state
+          next if instance_spec.state == "detached"
+          # Skip bound instances
+          next if instance_spec.instance.vm
+          unbound_instances << instance_spec
+        end
+      end
+
+      return if unbound_instances.empty?
+
+      @event_log.begin_stage("Binding instance VMs", unbound_instances.size)
+
       ThreadPool.new(:max_threads => 32).wrap do |pool|
-        @deployment_plan.jobs.each do |job|
-          job.instances.each do |instance_spec|
-            # Don't allocate resource pool VMs to instances in detached state
-            next if instance_spec.state == "detached"
+        unbound_instances.each do |instance_spec|
+          instance = instance_spec.instance
+          job      = instance_spec.job
+          idle_vm  = instance_spec.idle_vm
 
-            instance = instance_spec.instance
-            next if instance.vm
+          instance.update(:vm => idle_vm.vm)
 
-            idle_vm = instance_spec.idle_vm
-            instance.update(:vm => idle_vm.vm)
+          pool.process do
+            @event_log.track("#{job.name}/#{instance.index}") do
 
-            pool.process do
               # Apply the assignment to the VM
               state = idle_vm.current_state
               state["job"] = job.spec
               state["index"] = instance.index
               state["release"] = @deployment_plan.release.spec
+
               agent = AgentClient.new(idle_vm.vm.agent_id)
               task = agent.apply(state)
               while task["state"] == "running"
@@ -307,15 +322,18 @@ module Bosh::Director
     end
 
     def delete_unneeded_vms
-      unless @deployment_plan.unneeded_vms.empty?
-        total = @deployment_plan.unneeded_vms.size
-        # TODO: make pool size configurable?
-        ThreadPool.new(:max_threads => 10).wrap do |pool|
-          @deployment_plan.unneeded_vms.each_with_index do |vm, index|
-            vm_cid = vm.cid
-            @event_logger.progress_log("Delete unneeded VMs", "vm #{vm_cid}", index, total)
-            pool.process do
-              @cloud.delete_vm(vm_cid)
+      unneeded_vms = @deployment_plan.unneeded_vms
+      return if unneeded_vms.empty?
+
+      @event_log.begin_stage("Deleting unneeded VMs", unneeded_vms.size)
+
+      # TODO: make pool size configurable?
+      ThreadPool.new(:max_threads => 10).wrap do |pool|
+        unneeded_vms.each do |vm|
+          pool.process do
+            @event_log.track(vm.cid) do
+              @logger.info("Delete unneeded VM #{vm.cid}")
+              @cloud.delete_vm(vm.cid)
               vm.destroy
             end
           end
@@ -324,25 +342,31 @@ module Bosh::Director
     end
 
     def delete_unneeded_instances
-      unless @deployment_plan.unneeded_instances.empty?
-        total = @deployment_plan.unneeded_instances.size
-        # TODO: make pool size configurable?
-        ThreadPool.new(:max_threads => 10).wrap do |pool|
-          @deployment_plan.unneeded_instances.each_with_index do |instance, index|
-            vm = instance.vm
-            disk_cid = instance.disk_cid
-            vm_cid = vm.cid
-            agent_id = vm.agent_id
-            @event_logger.progress_log("Delete unneeded instances", "#{vm_cid} - #{agent_id}",
-                                       index, total)
-            pool.process do
-              agent = AgentClient.new(agent_id)
+      unneeded_instances = @deployment_plan.unneeded_instances
+      return if unneeded_instances.empty?
+
+      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size)
+
+      # TODO: make pool size configurable?
+      ThreadPool.new(:max_threads => 10).wrap do |pool|
+        unneeded_instances.each do |instance|
+          vm = instance.vm
+
+          pool.process do
+            @event_log.track(vm.cid) do
+              @logger.info("Delete unneded instance #{vm.cid}")
+
+              agent = AgentClient.new(vm.agent_id)
               drain_time = agent.drain("shutdown")
               sleep(drain_time)
               agent.stop
 
-              @cloud.delete_vm(vm_cid)
-              @cloud.delete_disk(disk_cid) if disk_cid
+              @cloud.delete_vm(vm.cid)
+
+              if instance.disk_cid
+                @cloud.delete_disk(instance.disk_cid)
+              end
+
               instance.destroy
               vm.destroy
             end
@@ -350,5 +374,6 @@ module Bosh::Director
         end
       end
     end
+
   end
 end
