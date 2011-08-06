@@ -4,4 +4,5 @@ bosh:
   roles:
   - blobstore
   - director
+  - health_monitor
 
