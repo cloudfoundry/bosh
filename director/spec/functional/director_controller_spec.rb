@@ -292,13 +292,18 @@ describe Bosh::Director::Controller do
 
     describe "listing tasks" do
       it "has API call that returns a list of running tasks" do
-        ["queued", "processing"].each do |state|
+        ["queued", "processing", "cancelling", "done"].each do |state|
           (1..20).map { |i| Bosh::Director::Models::Task.make(:state => state, :timestamp => Time.now.to_i - i) }
         end
         get "/tasks?state=processing"
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
         body.size.should == 20
+
+        get "/tasks?state=processing,cancelling,queued"
+        last_response.status.should == 200
+        body = Yajl::Parser.parse(last_response.body)
+        body.size.should == 60
       end
 
       it "has API call that returns a list of recent tasks" do

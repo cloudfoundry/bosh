@@ -68,8 +68,15 @@ describe Bosh::Cli::Director do
       @director.list_deployments
     end
 
-    it "lists currently running tasks" do
+    it "lists currently running tasks (director version < 0.3.5)" do
+      @director.should_receive(:get).with("/info", "application/json").and_return([ 200, JSON.generate({ :version => "0.3.2"})])
       @director.should_receive(:get).with("/tasks?state=processing", "application/json").and_return([ 200, JSON.generate([]), {}])
+      @director.list_running_tasks
+    end
+
+    it "lists currently running tasks (director version >= 0.3.5)" do
+      @director.should_receive(:get).with("/info", "application/json").and_return([ 200, JSON.generate({ :version => "0.3.5"})])
+      @director.should_receive(:get).with("/tasks?state=processing,cancelling,queued", "application/json").and_return([ 200, JSON.generate([]), {}])
       @director.list_running_tasks
     end
 

@@ -20,6 +20,10 @@ module Bosh::Cli
       version_cmp(v1, v2) > 0
     end
 
+    def version_less(v1, v2)
+      version_cmp(v1, v2) < 0
+    end
+
     def version_same(v1, v2)
       version_cmp(v1, v2) == 0
     end
