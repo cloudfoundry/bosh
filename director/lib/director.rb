@@ -359,9 +359,10 @@ module Bosh::Director
         dataset = dataset.limit(limit)
       end
 
-      state = params["state"]
-      if state
-        dataset = dataset.filter(:state => state)
+      states = params["state"].to_s.split(",")
+
+      if states.size > 0
+        dataset = dataset.filter(:state => states)
       end
 
       tasks = dataset.order_by(:timestamp.desc).map do |task|

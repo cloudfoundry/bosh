@@ -5,6 +5,7 @@ require "json"
 module Bosh
   module Cli
     class Director
+      include VersionCalc
 
       DIRECTOR_HTTP_ERROR_CODES = [ 400, 403, 500 ]
 
@@ -53,6 +54,10 @@ module Bosh
         upload_and_track("/stemcells", "application/x-compressed", filename)
       end
 
+      def get_version
+        get_status["version"]
+      end
+
       def get_status
         get_json("/info")
       end
@@ -70,7 +75,11 @@ module Bosh
       end
 
       def list_running_tasks
-        get_json("/tasks?state=processing")
+        if version_less(get_version, "0.3.5")
+          get_json("/tasks?state=processing")
+        else
+          get_json("/tasks?state=processing,cancelling,queued")
+        end
       end
 
       def list_recent_tasks(count = 30)
