@@ -51,6 +51,11 @@ module BoshExtensions
     return sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
   end
 
+  def format_time(time)
+    ts = time.to_i
+    sprintf("%02d:%02d:%02d", ts / 3600, (ts / 60) % 60, ts % 60);
+  end
+
   def load_yaml_file(path, expected_type = Hash)
     err("Cannot find file `#{path}'") unless File.exists?(path)
     yaml = YAML.load_file(path)
