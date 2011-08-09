@@ -45,7 +45,8 @@ module Bosh::Cli
         unless @seen_stages.include?(stage_header)
           done_with_stage if @current_stage
           @current_stage = stage_header
-          @start_time = Time.at(event["time"]) rescue Time.now
+          @event_start_time = Time.at(event["time"]) rescue Time.now
+          @local_start_time = Time.now
           @seen_stages << @current_stage
           append_stage_header
         end
@@ -76,7 +77,7 @@ module Bosh::Cli
       # without advancing rendering buffer
       @lock.synchronize do
         if @in_progress
-          progress_bar.label = format_time(Time.now - @start_time)
+          progress_bar.label = format_time(Time.now - @local_start_time)
           progress_bar.refresh
         end
         render
@@ -110,7 +111,7 @@ module Bosh::Cli
       progress_bar.current = progress_bar.total
       progress_bar.title = "Done".green
       progress_bar.bar_visible = false
-      progress_bar.label = format_time(completion_time - @start_time)
+      progress_bar.label = format_time(completion_time - @event_start_time)
       progress_bar.refresh
       @buffer.print "\n"
       @in_progress = false
@@ -126,7 +127,7 @@ module Bosh::Cli
       @last_event = event
       progress_bar.total = event["total"]
       progress_bar.title = @tasks.to_a.join(", ").truncate(40)
-      progress_bar.label = format_time(Time.now - @start_time)
+      progress_bar.label = format_time(Time.now - @local_start_time)
       if event["state"] == "finished"
         @tasks.delete(event["task"])
         progress_bar.current += 1
