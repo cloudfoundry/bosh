@@ -151,12 +151,6 @@ module Bosh::Cli
     rescue JSON::JSONError
       raise InvalidEvent, "Cannot parse event, invalid JSON"
     end
-
-    def format_time(time)
-      ts = time.to_i
-      sprintf("%02d:%02d:%02d", ts / 3600, (ts / 60) % 60, ts % 60);
-    end
-
   end
 
   class StageProgressBar

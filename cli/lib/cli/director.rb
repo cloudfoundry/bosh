@@ -204,6 +204,7 @@ module Bosh
         log_type      = options[:log_type]
         poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
+        start_time    = Time.now
 
         task = DirectorTask.new(self, task_id, log_type)
 
@@ -251,7 +252,7 @@ module Bosh
         end
 
         if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
-          confirm = ask("The task has returned an error status, do you want to see debug log? [Yn]: ")
+          confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")
           if confirm.empty? || confirm =~ /y(es)?/i
             poll_task(task_id, options.merge(:log_type => "debug"))
           else
@@ -260,7 +261,9 @@ module Bosh
           end
         else
           nl
-          say("Task #{task_id}: state is '#{state}'")
+          status = "Task #{task_id}: state is '#{state}'"
+          status += ", took #{format_time(Time.now - start_time).green} to complete" if result == :done
+          say(status)
           result
         end
       end
@@ -334,6 +337,7 @@ module Bosh
       rescue JSON::ParserError
         "Director error (HTTP %s): %s" % [ status, body ]
       end
+
     end
 
     class FileWithProgressBar < ::File
