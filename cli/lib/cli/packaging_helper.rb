@@ -24,7 +24,7 @@ module Bosh
       end
 
       def new_version?
-        @tarball_generated || @version_promoted
+        @tarball_generated || @promoted || @will_be_promoted
       end
 
       def older_version?
@@ -39,12 +39,15 @@ module Bosh
 
       def notes
         notes = []
-        notes << "new version" if new_version?
-        notes << "older than latest" if older_version?
-        if dry_run? && final? && !@used_final_version
+
+        if @will_be_promoted
           new_final_version = @final_index.latest_version.to_i + 1
-          notes << "will be promoted to #{new_final_version}"
+          notes << "new final version #{new_final_version}"
+        elsif new_version?
+          notes << "new version"
         end
+
+        notes << "older than latest" if older_version?
         notes
       end
 
@@ -53,6 +56,7 @@ module Bosh
           use_final_version || use_dev_version || generate_tarball
         end
         upload_tarball(@tarball_path) if final? && !dry_run?
+        @will_be_promoted = true if final? && dry_run? && @used_dev_version
       end
 
       def use_final_version
@@ -206,8 +210,8 @@ module Bosh
         say "Uploaded, blobstore id #{blobstore_id}"
         @final_index.add_version(fingerprint, item, payload)
         @tarball_path = @final_index.filename(version)
-        @version      = version
-        @version_promoted = true
+        @version = version
+        @promoted = true
         true
       rescue Bosh::Blobstore::BlobstoreError => e
         raise BlobstoreError, "Blobstore error: #{e}"

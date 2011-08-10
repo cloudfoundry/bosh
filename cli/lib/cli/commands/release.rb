@@ -324,6 +324,22 @@ module Bosh::Cli::Command
       nl
       say "Jobs"
       say jobs_table
+
+      affected_jobs = builder.affected_jobs
+
+      if affected_jobs.size > 0
+        nl
+        say "Jobs affected by changes in this release"
+
+        affected_jobs_table = table do |t|
+          t.headings = %w(Name Version)
+          affected_jobs.each do |job|
+            t << [ job.name, job.version ]
+          end
+        end
+
+        say affected_jobs_table
+      end
     end
 
     def artefact_summary(artefact)

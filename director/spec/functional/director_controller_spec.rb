@@ -31,7 +31,6 @@ describe Bosh::Director::Controller do
 
   def expect_redirect_to_queued_task(response)
     response.should be_redirect
-
     (last_response.location =~ /\/tasks\/(\d+)/).should_not be_nil
 
     new_task = Bosh::Director::Models::Task[$1]
@@ -344,6 +343,7 @@ describe Bosh::Director::Controller do
 
       it "has API call that return task output and task output with ranges" do
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
+
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
         output_file = File.new(File.join(@temp_dir, "debug"), 'w+')
