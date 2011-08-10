@@ -8,7 +8,7 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :work_dir, :release, :packages, :jobs
+    attr_reader :work_dir, :release, :packages, :jobs, :changed_jobs
 
     def initialize(work_dir, packages, jobs, options = { })
       @final    = options.has_key?(:final) ? !!options[:final] : false
@@ -33,6 +33,22 @@ module Bosh::Cli
 
     def final?
       @final
+    end
+
+    def affected_jobs
+      result = Set.new(@jobs.select { |job| job.new_version? })
+      return result if @packages.empty?
+
+      new_package_names = @packages.inject([]) do |list, package|
+        list << package.name if package.new_version?
+        list
+      end
+
+      @jobs.each do |job|
+        result << job if (new_package_names & job.packages).size > 0
+      end
+
+      result.to_a
     end
 
     def build(options = {})
