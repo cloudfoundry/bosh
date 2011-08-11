@@ -131,7 +131,7 @@ module Bosh
         url = "/deployments/#{deployment_name}/jobs/#{job_name}"
         url += "/#{index}" if index
         url += "?state=#{new_state}"
-        upload_and_track(url, "text/yaml", manifest_filename, :method => :put)
+        upload_and_track(url, "text/yaml", manifest_filename, :method => :put, :log_type => "event")
       end
 
       def get_task_state(task_id)
