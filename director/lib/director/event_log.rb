@@ -45,30 +45,31 @@ module Bosh::Director
         index = @counter
       end
 
+      ticker = EventTicker.new(self, task, index)
+
       start_task(task, index)
-      yield
+      yield ticker
       finish_task(task, index)
     end
 
-    def start_task(task, index)
-      log(task, "started", index)
+    def start_task(task, index, progress = 0)
+      log(task, "started", index, progress)
     end
 
-    def finish_task(task, index)
-      log(task, "finished", index)
+    def finish_task(task, index, progress = 100)
+      log(task, "finished", index, progress)
     end
 
-    private
-
-    def log(task, state, index)
+    def log(task, state, index, progress = 0)
       entry = {
-        :time  => Time.now.to_i,
-        :stage => @stage,
-        :task  => task,
-        :tags  => @tags,
-        :index => index,
-        :total => @total,
-        :state => state
+        :time     => Time.now.to_i,
+        :stage    => @stage,
+        :task     => task,
+        :tags     => @tags,
+        :index    => index,
+        :total    => @total,
+        :state    => state,
+        :progress => progress
       }
 
       @logger.info(Yajl::Encoder.encode(entry))
@@ -78,6 +79,24 @@ module Bosh::Director
   class EventLogger < Logger
     def format_message(level, time, progname, msg)
       msg + "\n"
+    end
+  end
+
+  # Sometimes task needs to be split into subtasks so
+  # we can track its progress more granularily. In that
+  # case we can use EventTicker helper class to advance
+  # progress begween N and N+1 by small increments.
+  class EventTicker
+    def initialize(event_log, task, index)
+      @event_log = event_log
+      @task = task
+      @index = index
+      @progress = 0
+    end
+
+    def advance(delta)
+      @progress = [ @progress + delta, 100 ].min
+      @event_log.log(@task, "in_progress", @index, @progress.to_i)
     end
   end
 

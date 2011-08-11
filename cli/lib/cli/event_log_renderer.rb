@@ -3,6 +3,18 @@ module Bosh::Cli
 
     class InvalidEvent < StandardError; end
 
+    class Task
+      attr_accessor :name
+      attr_accessor :progress
+      attr_accessor :start_time
+      attr_accessor :finish_time
+
+      def initialize(name)
+        @name = name
+        @progress = 0
+      end
+    end
+
     attr_reader :current_stage
     attr_reader :events_count
 
@@ -15,7 +27,7 @@ module Bosh::Cli
       @buffer = StringIO.new
       @progress_bars = { }
       @pos = 0
-      @tasks = Set.new
+      @time_adjustment = 0
     end
 
     def add_output(output)
@@ -39,27 +51,42 @@ module Bosh::Cli
         tags = event["tags"].is_a?(Array) ? event["tags"] : []
         stage_header = event["stage"]
         if tags.size > 0
-          stage_header += " %s" % [ tags.join(", ").green ]
+          stage_header += " %s" % [ tags.sort.join(", ").green ]
         end
 
         unless @seen_stages.include?(stage_header)
           done_with_stage if @current_stage
-          @current_stage = stage_header
-          @event_start_time = Time.at(event["time"]) rescue Time.now
-          @local_start_time = Time.now
-          @seen_stages << @current_stage
-          append_stage_header
+          begin_stage(event, stage_header)
         end
 
         if @current_stage == stage_header
-          @events_count += 1
-          @tasks << event["task"]
           append_event(event)
         end
       end
 
     rescue InvalidEvent => e
       # Swallow for the moment
+    end
+
+    def begin_stage(event, header)
+      @current_stage = header
+      @seen_stages << @current_stage
+
+      @stage_start_time = Time.at(event["time"]) rescue Time.now
+      @local_start_time = adjusted_time(@stage_start_time)
+
+      @tasks = {}
+      @done_tasks = []
+
+      @eta = nil
+      # Tracks max_in_flight best guess
+      @tasks_batch_size = 0
+      @batches_count = 0
+
+      # Running average of task completion time
+      @running_avg = 0
+
+      append_stage_header
     end
 
     def render
@@ -77,7 +104,7 @@ module Bosh::Cli
       # without advancing rendering buffer
       @lock.synchronize do
         if @in_progress
-          progress_bar.label = format_time(Time.now - @local_start_time)
+          progress_bar.label = time_with_eta(Time.now - @local_start_time, @eta)
           progress_bar.refresh
         end
         render
@@ -108,10 +135,10 @@ module Bosh::Cli
         Time.now
       end
 
-      progress_bar.current = progress_bar.total
+      progress_bar.finished_steps = progress_bar.total
       progress_bar.title = "Done".green
       progress_bar.bar_visible = false
-      progress_bar.label = format_time(completion_time - @event_start_time)
+      progress_bar.label = format_time(completion_time - @stage_start_time)
       progress_bar.refresh
       @buffer.print "\n"
       @in_progress = false
@@ -124,16 +151,71 @@ module Bosh::Cli
     # We have to trust the first event in each stage
     # to have correct "total" and "current" fields.
     def append_event(event)
-      @last_event = event
-      progress_bar.total = event["total"]
-      progress_bar.title = @tasks.to_a.join(", ").truncate(40)
-      progress_bar.label = format_time(Time.now - @local_start_time)
-      if event["state"] == "finished"
-        @tasks.delete(event["task"])
-        progress_bar.current += 1
-        progress_bar.clear_line
-        @buffer.puts("  #{event["task"].downcase.yellow}")
+      progress = 0
+      total = event["total"].to_i
+
+      task = \
+      case event["state"]
+      when "started"
+        Task.new(event["task"])
+      else
+        @tasks[event["index"]]
       end
+
+      # Ignoring out-of-order events
+      return if task.nil?
+
+      @events_count += 1
+      @last_event = event
+
+      case event["state"]
+      when "started"
+        task.start_time = Time.at(event["time"]) rescue Time.now
+        task.progress = 0
+
+        @tasks[event["index"]] = task
+
+        if @tasks.size > @tasks_batch_size
+          # Heuristics here: we asssume that local maximum of
+          # tasks number is a "max_in_flight" value and batches count
+          # should only be recalculated once we refresh this maximum.
+          # It's unlikely that the first task in a batch will be finished
+          # before the last one is started so @done_tasks is expected
+          # to only have canaries.
+          @tasks_batch_size = @tasks.size
+          @non_canary_event_start_time = task.start_time
+          @batches_count = ((total - @done_tasks.size) / @tasks_batch_size.to_f).ceil
+        end
+      when "finished"
+        @tasks.delete(event["index"])
+        @done_tasks << task
+
+        task.finish_time = Time.at(event["time"]) rescue Time.now
+        task_time = task.finish_time - task.start_time
+
+        n_done_tasks = @done_tasks.size.to_f
+        @running_avg = @running_avg * (n_done_tasks - 1) / n_done_tasks + task_time.to_f / n_done_tasks
+
+        progress = 1
+        progress_bar.finished_steps += 1
+        progress_bar.label = time_with_eta(task_time, @eta)
+
+        progress_bar.clear_line
+        @buffer.puts("  #{task.name.downcase.yellow}")
+      when "in_progress"
+        progress = [ event["progress"].to_f / 100, 1 ].min
+      end
+
+      if @batches_count > 0 && @non_canary_event_start_time
+        @eta = adjusted_time(@non_canary_event_start_time + @running_avg * @batches_count)
+      end
+
+      progress_bar_gain = progress - task.progress
+      task.progress = progress
+
+      progress_bar.total = total
+      progress_bar.title = @tasks.values.map {|t| t.name }.sort.join(", ")
+      progress_bar.current += progress_bar_gain
       progress_bar.refresh
 
       @in_progress = true
@@ -151,6 +233,18 @@ module Bosh::Cli
     rescue JSON::JSONError
       raise InvalidEvent, "Cannot parse event, invalid JSON"
     end
+
+    # Expects time and eta to be adjusted
+    def time_with_eta(time, eta)
+      time_fmt = format_time(time)
+      eta_fmt = eta && eta > Time.now ? format_time(eta - Time.now) : "--:--:--"
+
+      "#{time_fmt}  ETA: #{eta_fmt}"
+    end
+
+    def adjusted_time(time)
+      time + @time_adjustment.to_f
+    end
   end
 
   class StageProgressBar
@@ -159,34 +253,48 @@ module Bosh::Cli
     attr_accessor :current
     attr_accessor :label
     attr_accessor :bar_visible
+    attr_accessor :finished_steps
+    attr_accessor :terminal_width
 
-    def initialize(output, width = 100)
+    def initialize(output)
       @output = output
       @current = 0
       @total = 100
       @bar_visible = true
-      @bar_width = 30 # characters
+      @finished_steps = 0
       @filler = "o"
+      @terminal_width = calculate_terminal_width
+      @bar_width = (0.24 * @terminal_width).to_i # characters
     end
 
     def refresh
       clear_line
       bar_repr = @bar_visible ? bar : ""
-      @output.print "#{@title.ljust(40)} #{bar_repr} #{@current}/#{@total}"
+      title_width = (0.35 * @terminal_width).to_i
+      title = @title.truncate(title_width).ljust(title_width)
+      @output.print "#{title} #{bar_repr} #{@finished_steps}/#{@total}"
       @output.print " #{@label}" if @label
     end
 
     def bar
-      n_fillers = (@bar_width * (@current.to_f / @total.to_f)).ceil
+      n_fillers = [ (@bar_width * (@current.to_f / @total.to_f)).floor, 0 ].max
+
       fillers = "#{@filler}" * n_fillers
-      spaces = " " * (@bar_width - n_fillers)
+      spaces = " " * [ (@bar_width - n_fillers), 0 ].max
       "|#{fillers}#{spaces}|"
     end
 
     def clear_line
       @output.print("\r")
-      @output.print(" " * 100)
+      @output.print(" " * @terminal_width)
       @output.print("\r")
+    end
+
+    def calculate_terminal_width
+      width = `tput cols`
+      $?.exitstatus == 0 ? [ width.to_i, 100 ].min : 80
+    rescue
+      80
     end
 
   end

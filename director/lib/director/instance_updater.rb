@@ -1,11 +1,13 @@
 module Bosh::Director
   class InstanceUpdater
     MAX_ATTACH_DISK_TRIES = 3
+    N_UPDATE_STEPS = 6
 
     # @params instance_spec Bosh::DeploymentPlan::InstanceSpec
-    def initialize(instance_spec)
-      @cloud = Config.cloud
+    def initialize(instance_spec, event_ticker = nil)
+      @cloud  = Config.cloud
       @logger = Config.logger
+      @ticker = event_ticker
 
       @instance_spec = instance_spec
       @job_spec      = instance_spec.job
@@ -20,8 +22,17 @@ module Bosh::Director
       @vm = @instance.vm
     end
 
+    def step
+      yield
+      report_progress
+    end
+
+    def report_progress
+      @ticker.advance(100.0 / N_UPDATE_STEPS) if @ticker
+    end
+
     def update(options = {})
-      stop
+      step { stop }
 
       if @target_state == "detached"
         detach_disk
@@ -30,11 +41,10 @@ module Bosh::Director
         return
       end
 
-      update_resource_pool
-      update_persistent_disk
-      update_networks
-
-      apply_state(@instance_spec.spec)
+      step { update_resource_pool }
+      step { update_persistent_disk }
+      step { update_networks }
+      step { apply_state(@instance_spec.spec) }
 
       if @target_state == "started"
         begin
@@ -53,9 +63,12 @@ module Bosh::Director
       end
 
       watch_time = options[:canary] ? @update_config.canary_watch_time : @update_config.update_watch_time
-      sleep(watch_time / 1000)
 
-      current_state = agent.get_state
+      current_state = nil
+      step do
+        sleep(watch_time / 1000)
+        current_state = agent.get_state
+      end
 
       if @target_state == "started" && current_state["job_state"] != "running"
         raise "updated instance not healthy"

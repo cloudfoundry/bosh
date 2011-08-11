@@ -36,11 +36,11 @@ module Bosh::Cli::Command
       no_cache = flags.include?("--no-cache")
       cached_output = get_cached_task_output(task_id, log_type) unless no_cache
 
-      renderer = \
       if flags.include?("--raw")
-        Bosh::Cli::TaskLogRenderer.new
+        renderer = Bosh::Cli::TaskLogRenderer.new
       else
-        Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
+        renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
+        renderer.time_adjustment = director.get_time_difference
       end
 
       say("Task log:")
