@@ -96,6 +96,7 @@ module VCAP
           properties['env'] = {} unless properties['env']
           properties['env']['http_proxy'] = @identity.proxy
           properties['env']['https_proxy'] = @identity.proxy
+          properties['env']['no_proxy'] = ".#{subdomain},127.0.0.1/8,localhost"
         else
           properties['env'] = nil
         end

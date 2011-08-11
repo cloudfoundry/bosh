@@ -53,7 +53,7 @@ module VCAP
       rescue => e
         clear
         @logger.error("caught exception: #{e.message}\n#{e.backtrace.join("\n")}")
-        say("Oh no, an uncaught exeption: #{e.message}\n\n")
+        say("Oh no, an uncaught exception: #{e.message}\n\n")
         say(e.backtrace.first(15).join("\n")) if @logger.level == Logger::DEBUG
         # retry instead of restart?
         say("\npress any key to restart the console")
@@ -61,8 +61,8 @@ module VCAP
       end
 
       def status
-        if @identity.url != Identity::URL
-          say("Using API URL: #{@identity.url}\n".yellow)
+        if @identity.api_host != Identity::DEFAULT_API_HOST
+          say("Using API host: #{@identity.api_host}\n".yellow)
         end
         if @identity.should_update?
           url = "http://cloudfoundry.com/micro"
@@ -124,8 +124,7 @@ module VCAP
           end
           menu.choice("help") { display_help }
           menu.choice("shutdown VM") { shutdown }
-          menu.hidden("debug") { debug }
-          menu.hidden("api url") { configure_api_url }
+          menu.hidden("debug") { debug_menu }
         end
       end
 
@@ -162,6 +161,10 @@ module VCAP
       end
 
       def configure_domain(initial=false)
+        unless initial
+          say("\nCreate a new domain or regenerate a token for an existing")
+          say("at www.cloudfoundry.com/micro\n")
+        end
         @identity.clear
         token = ask("\nEnter Micro Cloud Foundry configuration token: ")
         if token == "quit" && ! initial
@@ -224,6 +227,7 @@ module VCAP
           when /^none$/
             break
           when /^http:\/\//
+            # TODO validate that we can access the mcapi through the proxy
             break
           end
           say("Invalid proxy! Should start with http://\n".red)
@@ -250,10 +254,24 @@ module VCAP
       end
 
       def configure_api_url
-        url = ask("New API URL") do |q|
-          q.default = Identity::URL
+        while true
+          host = ask("\nNew API host:") do |q|
+            q.default = Identity::DEFAULT_API_HOST
+          end
+
+          if host == "quit"
+            say("Nevermind then...")
+            break
+          elsif Network.lookup(host)
+            @identity.update_api_host(host)
+            # request new token here too?
+            break
+          else
+            say("Could not resolve '#{host}', please try a different host")
+            say("or use 'quit' to abort\n")
+          end
         end
-        @identity.update_url(url)
+        press_return_to_continue
       end
 
       def refresh_dns
@@ -324,11 +342,46 @@ module VCAP
         sleep 3600 # until the cows come home
       end
 
-      def debug
+      DEBUG_LEVELS = %w[DEBUG INFO WARN ERROR FATAL UNKNOWN]
+      def debug_menu
+        while true
+          clear
+          say("Debug menu\n".red)
+          say("Log file: #{LOGFILE}\n".yellow)
+          choose do |menu|
+            menu.prompt = "\nSelect debug option: "
+            menu.select_by = :index
+            level = DEBUG_LEVELS[@logger.level]
+            menu.choice("set debug level to DEBUG [#{level}]") { debug_level }
+            menu.choice("display log") { display_debug_log }
+            menu.choice("change api url") { configure_api_url }
+            menu.choice("return to main menu") { return }
+          end
+        end
+      end
+
+      def debug_level
         @logger.level = Logger::DEBUG
         @logger.info("debug output enabled")
         say("Debug output enabled in #{LOGFILE}")
         press_return_to_continue
+      end
+
+      def display_debug_log
+        lines = nil
+        File.open(LOGFILE) do |file|
+          lines = file.readlines
+        end
+        current = 0
+        while true
+          clear
+          say("#{LOGFILE}\n".yellow)
+          say(lines[current..(current+20)].join)
+          q = ask("\n Return for next page, 'last' for last page or 'quit' to quit: ")
+          return if q.match(/^q(uit)*/i)
+          current += 20 if q.empty?
+          current = lines.size - 20 if q.match(/^l(ast)*/i)
+        end
       end
 
       def clear

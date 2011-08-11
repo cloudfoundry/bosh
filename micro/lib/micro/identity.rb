@@ -5,9 +5,10 @@ module VCAP
   module Micro
     class Identity
       attr_accessor :admins, :ip, :proxy, :nonce, :version
-      attr_reader :name, :cloud, :version, :url
+      attr_reader :name, :cloud, :version, :api_host
 
-      URL = "http://mcapi.cloudfoundry.com/api/v1/micro"
+      DEFAULT_API_HOST = "mcapi.cloudfoundry.com"
+      URL = "https://%s/api/v1/micro"
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
       CLOUD = "cloudfoundry.me"
 
@@ -15,7 +16,7 @@ module VCAP
         @config_file = config_file
         load_config if configured?
         @config ||= {}
-        @url = URL
+        @api_host ||= DEFAULT_API_HOST
         @client = resource
         @logger = Console.logger
         @version = VCAP::Micro::VERSION
@@ -34,6 +35,7 @@ module VCAP
         @ip = @config['ip'] = nil
         @token = @config['token'] = nil
         @proxy = @config['proxy'] = ""
+        @api_host = @config['api_host'] = DEFAULT_API_HOST
       end
 
       def load_config
@@ -45,17 +47,22 @@ module VCAP
           @ip = @config['ip']
           @token = @config['token']
           @proxy = @config['proxy']
+          @api_host = @config['api_host']
         end
+      end
+
+      def url
+        URL % @api_host
       end
 
       def resource
         headers = { :content_type => 'application/json' }
         headers["Auth-Token"] = @token if @token
-        RestClient::Resource.new(@url, :headers => headers)
+        RestClient::Resource.new(url, :headers => headers)
       end
 
-      def update_url(url)
-        @url = url
+      def update_api_host(host)
+        @api_host = @config['api_host'] =host
         @client = resource
       end
 
@@ -121,6 +128,10 @@ module VCAP
           @logger.info("got following response for token: #{@nonce}\n#{values}")
         end
         response
+      rescue Errno::ECONNREFUSED => e
+        warn("connection refused", e)
+      rescue Errno::ETIMEDOUT => e
+        warn("connection timed out", e)
       rescue RestClient::Forbidden => e
         warn("authorization token has expired", e)
       rescue RestClient::ResourceNotFound => e
