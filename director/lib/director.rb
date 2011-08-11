@@ -12,6 +12,7 @@ require "pp"
 require "thread"
 require "tmpdir"
 require "yaml"
+require "time"
 
 require "bcrypt"
 require "blobstore_client"
@@ -78,14 +79,20 @@ module Bosh::Director
     def call(env)
       api_controller = ApiController.new
 
-      return api_controller.call(env) unless perform_auth?(env)
+      if perform_auth?(env)
+        app = Rack::Auth::Basic.new(api_controller) do |user, password|
+          api_controller.authenticate(user, password)
+        end
 
-      app = Rack::Auth::Basic.new(api_controller) do |user, password|
-        api_controller.authenticate(user, password)
+        app.realm = "BOSH Director"
+      else
+        app = api_controller
       end
 
-      app.realm = "BOSH Director"
-      app.call(env)
+      status, headers, body = app.call(env)
+      headers["Date"] = Time.now.rfc822 # As thin doesn't inject date
+
+      [ status, headers, body ]
     end
 
     def perform_auth?(env)

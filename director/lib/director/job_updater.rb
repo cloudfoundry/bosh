@@ -71,11 +71,11 @@ module Bosh::Director
         num_canaries.times do |index|
           instance = instances.shift
           pool.process do
-            @event_log.track("#{@job.name}/#{instance.index} (canary)") do
+            @event_log.track("#{@job.name}/#{instance.index} (canary)") do |ticker|
               with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
                   begin
-                    InstanceUpdater.new(instance).update(:canary => true)
+                    InstanceUpdater.new(instance, ticker).update(:canary => true)
                   rescue Exception => e
                     @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
                     @job.record_update_error(e, :canary => true)
@@ -99,11 +99,11 @@ module Bosh::Director
         total = instances.size
         instances.each_with_index do |instance, index|
           pool.process do
-            @event_log.track("#{@job.name}/#{instance.index}") do
+            @event_log.track("#{@job.name}/#{instance.index}") do |ticker|
               with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
                 unless @job.should_rollback?
                   begin
-                    InstanceUpdater.new(instance).update
+                    InstanceUpdater.new(instance, ticker).update
                   rescue Exception => e
                     @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
                     @job.record_update_error(e)
