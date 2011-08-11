@@ -8,18 +8,19 @@ export HOME=/root
 chown root:root ${bosh_app_dir}/bosh
 chmod 0755 ${bosh_app_dir}/bosh
 
-# Shady work aroud vmbuilder in combination with ubuntu iso cache corrupting
+# Shady work around vmbuilder in combination with ubuntu iso cache corrupting
 # the debian list caches. There is s discussion in:
-#  https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
+# https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
 rm /var/lib/apt/lists/{archive,security,lock}*
 apt-get update
 
 # install here instead of in vmbuilder.cfg
 apt-get install -y --force-yes --no-install-recommends \
-	bison build-essential libssl-dev openssh-server linux-headers-virtual open-vm-dkms \
-	open-vm-tools lsof strace scsitools dnsutils tcpdump tshark iputils-arping curl \
-	wget libcurl4-openssl-dev libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
-  zip unzip git-core rsync bind9-host nfs-common flex psmisc apparmor-utils mg
+	bison build-essential libssl-dev openssh-server linux-headers-virtual \
+	open-vm-dkmsopen-vm-tools lsof strace scsitools dnsutils tcpdump tshark \
+	iputils-arping curl wget libcurl4-openssl-dev libreadline5-dev libxml2 \
+	libxml2-dev libxslt1.1 libxslt1-dev zip unzip git-core rsync bind9-host \
+	nfs-common flex psmisc apparmor-utils mg
 
 dpkg -l > ${bosh_app_dir}/bosh/micro_dpkg_l.out
 
@@ -83,6 +84,15 @@ chmod 755 ${bosh_app_dir}/micro/bin/*
 rm /etc/update-motd.d/*
 cp motd/* /etc/update-motd.d
 chmod 755 /etc/update-motd.d/*
+
+# disable rpcbind which will disable statd too
+sed 's/^\(start on start-portmap\)/#\1/' /etc/init/portmap.conf > \
+	/etc/init/portmap.new
+cat /etc/init/portmap.new > /etc/init/portmap.conf
+rm /etc/init/portmap.new
+
+# make sshd lisen to IPv4 only
+echo 'ListenAddress 0.0.0.0' >> /etc/ssh/sshd_config
 
 cat > /etc/init/tty1.conf <<EOT
 start on stopped rc RUNLEVEL=[2345]

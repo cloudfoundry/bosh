@@ -85,6 +85,10 @@ describe VCAP::Micro::Identity do
         i.should_update?("1.7.4").should be_true
       end
     end
+  end
 
+  it "should generate the correct default url" do
+    i = VCAP::Micro::Identity.new
+    i.url.should == "https://mcapi.cloudfoundry.com/api/v1/micro"
   end
 end
