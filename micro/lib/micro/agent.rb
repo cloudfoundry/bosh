@@ -92,13 +92,15 @@ module VCAP
         properties['cc']['srv_api_uri'] = "http://api.#{subdomain}"
         properties['cc']['admins'] = admins
 
-        if @identity.proxy.match(/\Ahttp/)
-          properties['env'] = {} unless properties['env']
-          properties['env']['http_proxy'] = @identity.proxy
-          properties['env']['https_proxy'] = @identity.proxy
-          properties['env']['no_proxy'] = ".#{subdomain},127.0.0.1/8,localhost"
+        if @identity.proxy.url.empty? && properties['env']
+          properties['env'].delete('http_proxy')
+          properties['env'].delete('https_proxy')
+          properties['env'].delete('no_proxy')
         else
-          properties['env'] = nil
+          properties['env'] = {} unless properties['env']
+          properties['env']['http_proxy'] = @identity.proxy.url
+          properties['env']['https_proxy'] = @identity.proxy.url
+          properties['env']['no_proxy'] = ".#{subdomain},127.0.0.1/8,localhost"
         end
 
         @spec['properties'] = properties
