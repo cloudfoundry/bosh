@@ -4,15 +4,16 @@ require 'yajl'
 module VCAP
   module Micro
     class Identity
-      attr_accessor :admins, :ip, :proxy, :nonce, :version
-      attr_reader :name, :cloud, :version, :api_host
+      attr_accessor :admins, :ip, :nonce, :version
+      attr_reader :name, :cloud, :version, :api_host, :proxy
 
       DEFAULT_API_HOST = "mcapi.cloudfoundry.com"
       URL = "https://%s/api/v1/micro"
       MICRO_CONFIG = "/var/vcap/micro/micro.json"
       CLOUD = "cloudfoundry.me"
 
-      def initialize(config_file=MICRO_CONFIG)
+      def initialize(proxy, config_file=MICRO_CONFIG)
+        @proxy = proxy
         @config_file = config_file
         load_config if configured?
         @config ||= {}
@@ -34,7 +35,6 @@ module VCAP
         @admins = @config['admins'] = nil
         @ip = @config['ip'] = nil
         @token = @config['token'] = nil
-        @proxy = @config['proxy'] = ""
         @api_host = @config['api_host'] = DEFAULT_API_HOST
       end
 
@@ -46,7 +46,6 @@ module VCAP
           @admins = @config['admins']
           @ip = @config['ip']
           @token = @config['token']
-          @proxy = @config['proxy']
           @api_host = @config['api_host']
         end
       end
@@ -67,8 +66,8 @@ module VCAP
       end
 
       def install(ip)
-        if @proxy.match(/\Ahttp/)
-          RestClient.proxy = proxy
+        unless @proxy.url.empty?
+          RestClient.proxy = @proxy.url
         end
 
         @ip = @config['ip'] = ip
@@ -93,14 +92,6 @@ module VCAP
         @cloud = @config['cloud'] = "vcap.me"
         @name = @config['name'] = nil
         @ip = @config['ip'] = "127.0.0.1"
-      end
-
-      def proxy=(proxy)
-        @proxy = @config['proxy'] = proxy
-      end
-
-      def display_proxy
-        @proxy.empty? ? "none" : @proxy
       end
 
       # POST /api/v1/micro/token
