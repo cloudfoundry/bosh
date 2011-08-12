@@ -17,7 +17,7 @@ apt-get update
 # install here instead of in vmbuilder.cfg
 apt-get install -y --force-yes --no-install-recommends \
 	bison build-essential libssl-dev openssh-server linux-headers-virtual \
-	open-vm-dkmsopen-vm-tools lsof strace scsitools dnsutils tcpdump tshark \
+	open-vm-dkms open-vm-tools lsof strace scsitools dnsutils tcpdump tshark \
 	iputils-arping curl wget libcurl4-openssl-dev libreadline5-dev libxml2 \
 	libxml2-dev libxslt1.1 libxslt1-dev zip unzip git-core rsync bind9-host \
 	nfs-common flex psmisc apparmor-utils mg
@@ -28,7 +28,7 @@ rm -fr /var/cache/apt/archives/*deb
 
 cd ${bosh_app_dir}/bosh/src
 
-tar zxvf monit-5.2.4.tar.gz
+tar zxf monit-5.2.4.tar.gz
 (
   cd monit-5.2.4
   ./configure --prefix=${bosh_app_dir}/bosh
@@ -36,7 +36,7 @@ tar zxvf monit-5.2.4.tar.gz
 )
 
 ruby_version="1.9.2-p180"
-tar jxvf ruby-${ruby_version}.tar.bz2
+tar jxf ruby-${ruby_version}.tar.bz2
 (
   cd ruby-${ruby_version}
   ./configure \
@@ -48,7 +48,7 @@ rm -fr ruby-${ruby_version}
 
 echo "gem: --no-ri --no-rdoc" > /etc/gemrc
 
-tar zxvf rubygems-1.8.6.tgz
+tar zxf rubygems-1.8.6.tgz
 (
   cd rubygems-1.8.6
   ${bosh_app_dir}/bosh/bin/ruby setup.rb

@@ -9,6 +9,7 @@ require 'micro/settings'
 require 'micro/watcher'
 require 'micro/version'
 require 'micro/memory'
+require 'micro/proxy'
 require 'micro/core_ext'
 
 
@@ -32,7 +33,8 @@ module VCAP
 
       def initialize
         @logger = Console.logger
-        @identity = Identity.new
+        @proxy = Proxy.new
+        @identity = Identity.new(@proxy)
         @network = Network.new
         @memory = Memory.new
         @watcher = Watcher.new(@network, @identity).start
@@ -117,7 +119,7 @@ module VCAP
             menu.choice("reconfigure vcap password") { configure_password }
             menu.choice("reconfigure domain") { configure_domain }
             menu.choice("reconfigure network [#{@network.type}]") { configure_network }
-            menu.choice("reconfigure proxy [#{@identity.display_proxy}]") { configure_proxy }
+            menu.choice("reconfigure proxy [#{@proxy.name}]") { configure_proxy }
             menu.choice("service status [#{service_status}]") { display_services }
             menu.choice("restart network") { restart }
             menu.choice("restore defaults") { defaults }
@@ -218,22 +220,18 @@ module VCAP
       end
 
       def configure_proxy(initial=false)
-        # TODO validate proxy string
-        old_proxy = @identity.proxy
+        old_url = @proxy.url
         while true
-          proxy = ask("\nHTTP proxy: ") { |q| q.default = "none" }
-          @identity.proxy = proxy == "none" ? "" : proxy
-          case proxy
-          when /^none$/
+          url = ask("\nHTTP proxy: ") { |q| q.default = "none" }
+          @proxy.url = url
+          if @proxy.url
             break
-          when /^http:\/\//
-            # TODO validate that we can access the mcapi through the proxy
-            break
+          else
+            say("Invalid proxy! Should start with http://\n".red)
           end
-          say("Invalid proxy! Should start with http://\n".red)
         end
-        @identity.save
-        if !initial && old_proxy != @identity.proxy
+        @proxy.save
+        if !initial && old_url != @proxy.url
           say("Reconfiguring Micro Cloud Foundry with new proxy setting...")
           Bosh::Agent::Monit.stop_services
           VCAP::Micro::Agent.apply(@identity)
@@ -315,7 +313,10 @@ module VCAP
       def defaults
         return unless are_you_sure?("Are you sure you want to restore default settings?")
         @identity.clear
+        @identity.save
         @network.dhcp
+        @proxy.url = "none"
+        @proxy.save
         # what about the agent?
         # what about the vcap password?
       end
