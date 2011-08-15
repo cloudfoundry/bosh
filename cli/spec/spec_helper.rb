@@ -2,6 +2,7 @@ require 'rspec/core'
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require 'cli'
+YAML::ENGINE.yamler = 'syck'
 
 def spec_asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), "assets", filename))

@@ -15,6 +15,8 @@ require "fileutils"
 require "tmpdir"
 require "zlib"
 
+YAML::ENGINE.yamler = 'syck'
+
 bosh_dir = Dir.mktmpdir("boshdir")
 bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
 spec_tmp_dir = File.join(File.dirname(__FILE__), "tmp")
