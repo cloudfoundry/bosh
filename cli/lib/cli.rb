@@ -27,5 +27,8 @@ require "cli/release_tarball"
 
 require "cli/runner"
 
+YAML::ENGINE.yamler = 'syck'
+
 require File.expand_path(File.dirname(__FILE__) + "/cli/commands/base")
+
 Dir[File.dirname(__FILE__) + "/cli/commands/*.rb"].each { |r| require File.expand_path(r) }
