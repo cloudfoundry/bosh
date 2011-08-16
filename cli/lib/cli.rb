@@ -27,7 +27,7 @@ require "cli/release_tarball"
 
 require "cli/runner"
 
-YAML::ENGINE.yamler = 'syck'
+YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
 
 require File.expand_path(File.dirname(__FILE__) + "/cli/commands/base")
 

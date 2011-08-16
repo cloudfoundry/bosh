@@ -41,7 +41,7 @@ require "agent/message/compile_package"
 
 require "agent/handler"
 
-YAML::ENGINE.yamler = 'syck'
+YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
 
 module Bosh::Agent
 
