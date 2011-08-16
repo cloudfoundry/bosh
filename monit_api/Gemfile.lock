@@ -1,6 +1,7 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    archive-tar-minitar (0.5.2)
     builder (3.0.0)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
@@ -8,6 +9,8 @@ GEM
     crack (0.1.8)
     diff-lcs (1.1.2)
     linecache (0.43)
+    linecache19 (0.5.12)
+      ruby_core_source (>= 0.1.4)
     rake (0.8.7)
     rcov (0.9.9)
     rcov_analyzer (0.2)
@@ -26,6 +29,16 @@ GEM
       ruby-debug-base (~> 0.10.4.0)
     ruby-debug-base (0.10.4)
       linecache (>= 0.3)
+    ruby-debug-base19 (0.11.25)
+      columnize (>= 0.3.1)
+      linecache19 (>= 0.5.11)
+      ruby_core_source (>= 0.1.4)
+    ruby-debug19 (0.11.6)
+      columnize (>= 0.3.1)
+      linecache19 (>= 0.5.11)
+      ruby-debug-base19 (>= 0.11.19)
+    ruby_core_source (0.1.5)
+      archive-tar-minitar (>= 0.5.2)
 
 PLATFORMS
   ruby
@@ -38,3 +51,4 @@ DEPENDENCIES
   rcov_analyzer
   rspec
   ruby-debug
+  ruby-debug19
