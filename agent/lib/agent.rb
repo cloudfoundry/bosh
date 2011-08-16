@@ -41,6 +41,8 @@ require "agent/message/compile_package"
 
 require "agent/handler"
 
+YAML::ENGINE.yamler = 'syck'
+
 module Bosh::Agent
 
   BOSH_APP = BOSH_APP_USER = BOSH_APP_GROUP = "vcap"
