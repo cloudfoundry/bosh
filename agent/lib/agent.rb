@@ -4,6 +4,7 @@ end
 require "logger"
 require "time"
 require "yaml"
+require "set"
 
 require "nats/client"
 require "yajl"
