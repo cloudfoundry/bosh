@@ -347,7 +347,7 @@ module VSphereCloud
         @logger.debug("Waiting for the VM to shutdown")
         state = :initial
         begin
-          wait_until_off(vm, 10)
+          wait_until_off(vm, 30)
         rescue TimeoutException
           case state
             when :initial

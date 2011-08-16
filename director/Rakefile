@@ -9,6 +9,12 @@ task "spec:unit" => ["bundler:install:test", "test:spec:unit"]
 desc "Run functional tests"
 task "spec:functional" => ["bundler:install:test", "test:spec:functional"]
 
+desc "Run CPI integration tests"
+task "spec:cpi" => ["bundler:install:test", "test:spec:cpi"]
+
+desc "Run CPI integration tests with coverage"
+task "spec:cpi_cov" => ["bundler:install:test", "test:spec:cpi_cov"]
+
 desc "Run specs using RCov"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
@@ -35,7 +41,7 @@ end
 
 namespace "test" do
 
-  ["spec", "spec:unit", "spec:functional", "spec:rcov", "spec:ci"].each do |task_name|
+  ["spec", "spec:unit", "spec:functional", "spec:rcov", "spec:ci", "spec:cpi", "spec:cpi_cov"].each do |task_name|
     task task_name do
       sh("cd spec && rake #{task_name}")
     end
