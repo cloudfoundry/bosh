@@ -1,0 +1,70 @@
+---
+test:
+  root_pass: ca$hc0w
+
+name: Test CPI
+port: 8081
+
+logging:
+  level: ERROR
+
+redis:
+  host: 127.0.0.1
+  port: 63790
+  password:
+
+dir: /tmp/boshdir
+db:
+  database: "sqlite:///:memory:"
+  max_connections: 32
+  pool_timeout: 10
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://127.0.0.1
+    user: admin
+    password:
+
+mbus: nats://localhost:4222
+
+network:
+  range:
+  - 172.31.12.150 -  172.31.12.200
+  netmask: 255.255.252.0
+  gateway: 172.31.12.1
+  dns:
+  - 172.30.22.153
+  - 172.30.22.154
+  cloud_properties:
+    name: VLAN2012
+
+cloud:
+  plugin: vsphere
+  properties:
+    agent:
+      ntp:
+       - ntp01.las01.emcatmos.com
+       - ntp02.las01.emcatmos.com
+      blobstore:
+        plugin: simple
+        properties:
+          endpoint: http:localhost:7777
+          user: vcap
+          password: vcap
+      mbus: nats://localhost:4222
+    soap_log: /tmp/soap.log
+    vcenters:
+      - host: 172.31.113.55
+        user: ad\TestDevCloudSC
+        password: TempP@ss
+        datacenters:
+          - name: LAS01
+            vm_folder: BOSH_VMs
+            template_folder: BOSH_Templates
+            disk_path: BOSH_Disks
+            datastore_pattern: las01-.*
+            persistent_datastore_pattern: las01-.*
+            allow_mixed_datastores: true
+            clusters:
+              - CLUSTER01
+
