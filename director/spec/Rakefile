@@ -56,6 +56,9 @@ namespace "spec" do
   desc "Run functional tests"
   task "functional" => ["redis:start", "run_functional", "redis:stop" ]
 
+  desc "Run CPI integration tests"
+  task "cpi" => ["run_cpi_ci"]
+
   task "all" => ["redis:start", "run_all", "redis:stop"]
 
   desc "Run specs for rcov"
@@ -67,7 +70,7 @@ namespace "spec" do
   RSpec::Core::RakeTask.new("run_all") do |t|
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
-    t.pattern    = "**/*_spec.rb"
+    t.pattern    = "{unit, functional}/**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_unit") do |t|
@@ -80,6 +83,12 @@ namespace "spec" do
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
     t.pattern    = "functional/**/*_spec.rb"
+  end
+
+  RSpec::Core::RakeTask.new("run_cpi_ci") do |t|
+    t.gemfile    = gemfile
+    t.rspec_opts = spec_opts
+    t.pattern    = "cpi/**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_rcov") do |t|
