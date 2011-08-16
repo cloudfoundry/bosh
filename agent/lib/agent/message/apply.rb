@@ -17,6 +17,7 @@ module Bosh::Agent
           @job_template = @job['template']
           @job_version = @job['version']
           @job_install_dir = File.join(base_dir, 'data', 'jobs', @job_template, @job_version)
+          @old_spec = Bosh::Agent::Config.state.to_hash
         end
 
         @packages_data = File.join(base_dir, 'data', 'packages')
@@ -83,7 +84,6 @@ module Bosh::Agent
       end
 
       def apply_packages
-
         if @apply_spec['packages'] == nil
           logger.info("No packages")
           return
@@ -94,18 +94,44 @@ module Bosh::Agent
 
           blobstore_id = pkg['blobstore_id']
           sha1 = pkg['sha1']
-          install_dir = File.join(@packages_data, pkg['name'], pkg['version'])
+          install_path, link_path, job_link_path = compute_package_paths(pkg)
 
-          Util.unpack_blob(blobstore_id, sha1, install_dir)
+          Util.unpack_blob(blobstore_id, sha1, install_path)
 
-          pkg_link_dst = File.join(base_dir, 'packages', pkg['name'])
-          job_pkg_link_dst = File.join(@job_install_dir, 'packages', pkg['name'])
-
-          [ pkg_link_dst, job_pkg_link_dst ].each do |dst|
-            link_installed(install_dir, dst, "Failed to link package: #{install_dir} #{dst}")
+          [ link_path, job_link_path ].each do |dst|
+            link_installed(install_path, dst, "Failed to link package: #{install_path} #{dst}")
           end
         end
 
+        clean_old_packages
+      end
+
+      def compute_package_paths(pkg)
+        [
+          File.join(@packages_data, pkg['name'], pkg['version']),
+          File.join(base_dir, 'packages', pkg['name']),
+          File.join(@job_install_dir, 'packages', pkg['name'])
+        ]
+      end
+
+      # We GC packages - leaving the package union of old_spec and apply_spec
+      def clean_old_packages
+        keep_paths = Set.new
+        [ @old_spec, @apply_spec ].each do |spec|
+          if spec.key?('packages')
+            spec['packages'].each do |pkg_name, pkg|
+              install_path, _, _ = compute_package_paths(pkg)
+              keep_paths << install_path
+            end
+          end
+        end
+
+        Dir["#{@packages_data}/*/*"].each do |path|
+          unless keep_paths.include?(path)
+            logger.info("Removing old package: #{path}")
+            FileUtils.rm_rf(path)
+          end
+        end
       end
 
       def link_installed(src, dst, error_msg="Failed to link #{src} to #{dst}")
