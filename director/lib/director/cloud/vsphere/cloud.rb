@@ -340,14 +340,14 @@ module VSphereCloud
       end
     end
 
-    def configure_networks(vm_cid, networks)
+    def configure_networks(vm_cid, networks, timeout = 10)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
         vm = get_vm_by_cid(vm_cid)
 
         @logger.debug("Waiting for the VM to shutdown")
         state = :initial
         begin
-          wait_until_off(vm, 10)
+          wait_until_off(vm, timeout)
         rescue TimeoutException
           case state
             when :initial
