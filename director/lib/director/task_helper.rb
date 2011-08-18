@@ -11,6 +11,7 @@ module Bosh::Director
       FileUtils.mkdir_p(log_dir)
       logger = Logger.new(task_status_file)
       logger.level= Config.logger.level
+      logger.info("Director Version : #{Bosh::Director::VERSION}")
       logger.info("Enqueuing task: #{task.id}")
 
       # remove old tasks
