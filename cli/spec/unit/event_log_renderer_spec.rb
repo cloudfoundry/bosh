@@ -64,15 +64,14 @@ describe Bosh::Cli::EventLogRenderer do
     lines.count.should == 3
     lines[1].should == "Preparing"
     lines[2].should =~ /Binding release/
-    lines[2].should =~ /\|\s{24}\| 0\/9/
+    lines[2].should =~ /\|\s+\| 0\/9/
 
     renderer.add_event(make_event("Preparing", "Moving stuff", 2, 9))
 
     lines = renderer.render.split("\n")
     lines.count.should == 1
     lines[0].should =~ /Binding release/
-    lines[0].should =~ /Moving stuff/
-    lines[0].should =~ /\|\s{24}\| 0\/9/
+    lines[0].should =~ /\|\s+\| 0\/9/
 
     renderer.add_event(make_event("Preparing", "Moving stuff", 2, 9, "finished"))
 
@@ -80,7 +79,7 @@ describe Bosh::Cli::EventLogRenderer do
     lines.count.should == 2
     lines[0].should =~ /moving stuff/
     lines[1].should =~ /Binding release/
-    lines[1].should =~ /\|o{2}\s{22}\| 1\/9/
+    lines[1].should =~ /\|o+\s+\| 1\/9/
 
     # throwing in out-of-order event
     renderer.add_event(make_event("Preparing", "Binding release", 1, 9, "finished"))
@@ -92,7 +91,7 @@ describe Bosh::Cli::EventLogRenderer do
 
     lines = renderer.render.split("\n")
     lines.count.should == 9
-    lines[-1].should =~ /\|o{24}\| 9\/9/
+    lines[-1].should =~ /\|o+\| 9\/9/
 
     renderer.add_event(make_event("Updating", "prepare update", 1, 2, "started", ["stuff", "thing"]))
 
@@ -118,21 +117,21 @@ describe Bosh::Cli::EventLogRenderer do
     lines = renderer.render.split("\n")
 
     lines[1].should =~ /Preparing/
-    lines[2].should =~ /\|o{3}\s{21}\| 0\/2/
+    lines[2].should =~ /\|o+\s+\| 0\/2/
     lines[2].should =~ /Binding release/
 
     renderer.add_event(make_event("Preparing", "Binding release", 1, 2, "in_progress", [], 50))
 
     lines = renderer.render.split("\n")
 
-    lines[0].should =~ /\|o{6}\s{18}\| 0\/2/
+    lines[0].should =~ /\|o+\s+\| 0\/2/
     lines[0].should =~ /Binding release/
 
     renderer.add_event(make_event("Preparing", "Binding release", 1, 2, "finished", []))
 
     lines = renderer.render.split("\n")
     lines[1].should_not =~ /Binding release/
-    lines[1].should =~ /\|o{12}\s{12}\| 1\/2/
+    lines[1].should =~ /\|o+\s+\| 1\/2/
   end
 
 end
