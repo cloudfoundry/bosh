@@ -134,6 +134,17 @@ module Bosh
         upload_and_track(url, "text/yaml", manifest_filename, :method => :put, :log_type => "event")
       end
 
+      def get_current_time
+        status, body, headers = get("/info")
+        Time.parse(headers[:date]) rescue nil
+      end
+
+      def get_time_difference
+        # This includes the roundtrip to director
+        ctime = get_current_time
+        ctime ? Time.now - ctime : 0
+      end
+
       def get_task_state(task_id)
         response_code, body = get("/tasks/#{task_id}")
         raise AuthError if response_code == 401
@@ -211,6 +222,8 @@ module Bosh
         say("Tracking task output for task##{task_id}...")
 
         renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
+        renderer.time_adjustment = get_time_difference
+
         no_output_yet = true
 
         while true

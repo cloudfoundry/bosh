@@ -162,6 +162,15 @@ describe Bosh::Cli::Director do
       @director.get_task_output(232, 42).should == ["test", nil]
     end
 
+    it "know how to find time difference with director" do
+      now = Time.now
+      server_time = now - 100
+      Time.stub!(:now).and_return(now)
+
+      @director.should_receive(:get).with("/info").and_return([200, JSON.generate("version" => 1), { :date => server_time.rfc822 }])
+      @director.get_time_difference.to_i.should == 100
+    end
+
   end
 
   describe "checking status" do
@@ -278,6 +287,7 @@ describe Bosh::Cli::Director do
     it "polls until success" do
       n_calls = 0
 
+      @director.stub!(:get_time_difference).and_return(0)
       @director.should_receive(:get).with("/tasks/1").exactly(5).times.and_return { n_calls += 1; [ 200, JSON.generate("state" => n_calls == 5 ? "done" : "processing") ] }
       @director.should_receive(:get).with("/tasks/1/output", nil, nil, "Range" => "bytes=0-").exactly(5).times.and_return(nil)
 
@@ -285,6 +295,7 @@ describe Bosh::Cli::Director do
     end
 
     it "respects max polls setting" do
+      @director.stub!(:get_time_difference).and_return(0)
       @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, JSON.generate("state" => "processing") ]
       @director.should_receive(:get).with("/tasks/1/output", nil, nil, "Range" => "bytes=0-").exactly(10).times.and_return(nil)
 
@@ -303,9 +314,10 @@ describe Bosh::Cli::Director do
 
     it "stops polling and returns error if status is not HTTP 200" do
       n_calls = 0
-      @director.stub(:get).and_return { n_calls += 1; [ n_calls == 5 ? 500 : 200, JSON.generate("state" => "processing") ] }
+      @director.stub!(:get_time_difference).and_return(0)
 
-      @director.should_receive(:get).exactly(3).times
+      @director.should_receive(:get).with("/tasks/1").and_return { [ 500, JSON.generate("state" => "processing") ] }
+
       lambda {
         @director.poll_task(1, :poll_interval => 0, :max_polls => 10)
       }.should raise_error(Bosh::Cli::TaskTrackError, "Got HTTP 500 while tracking task state")

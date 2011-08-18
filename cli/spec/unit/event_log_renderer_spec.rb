@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Cli::EventLogRenderer do
 
-  def make_event(stage, task, index, total, state = "started", tags = [])
+  def make_event(stage, task, index, total, state = "started", tags = [], progress = 0)
     event = {
       "time"  => Time.now.to_i,
       "stage" => stage,
@@ -10,7 +10,8 @@ describe Bosh::Cli::EventLogRenderer do
       "index" => index,
       "total" => total,
       "state" => state,
-      "tags"  => tags
+      "tags"  => tags,
+      "progress" => progress
     }
     JSON.generate(event)
   end
@@ -63,7 +64,7 @@ describe Bosh::Cli::EventLogRenderer do
     lines.count.should == 3
     lines[1].should == "Preparing"
     lines[2].should =~ /Binding release/
-    lines[2].should =~ /\|                              \| 0\/9/
+    lines[2].should =~ /\|\s{24}\| 0\/9/
 
     renderer.add_event(make_event("Preparing", "Moving stuff", 2, 9))
 
@@ -71,7 +72,7 @@ describe Bosh::Cli::EventLogRenderer do
     lines.count.should == 1
     lines[0].should =~ /Binding release/
     lines[0].should =~ /Moving stuff/
-    lines[0].should =~ /\|                              \| 0\/9/
+    lines[0].should =~ /\|\s{24}\| 0\/9/
 
     renderer.add_event(make_event("Preparing", "Moving stuff", 2, 9, "finished"))
 
@@ -79,9 +80,10 @@ describe Bosh::Cli::EventLogRenderer do
     lines.count.should == 2
     lines[0].should =~ /moving stuff/
     lines[1].should =~ /Binding release/
-    lines[1].should =~ /\|oooo                          \| 1\/9/
+    lines[1].should =~ /\|o{2}\s{22}\| 1\/9/
 
-    renderer.add_event(make_event("Preparing", "Binding release", 2, 9, "finished"))
+    # throwing in out-of-order event
+    renderer.add_event(make_event("Preparing", "Binding release", 1, 9, "finished"))
 
     (3..9).each do |i|
       renderer.add_event(make_event("Preparing", "event #{i}", i, 9))
@@ -90,7 +92,7 @@ describe Bosh::Cli::EventLogRenderer do
 
     lines = renderer.render.split("\n")
     lines.count.should == 9
-    lines[-1].should =~ /\|oooooooooooooooooooooooooooooo\| 9\/9/
+    lines[-1].should =~ /\|o{24}\| 9\/9/
 
     renderer.add_event(make_event("Updating", "prepare update", 1, 2, "started", ["stuff", "thing"]))
 
@@ -106,6 +108,31 @@ describe Bosh::Cli::EventLogRenderer do
     lines = renderer.done.split("\n")
     lines[0].should =~ /Done/
     lines[0].should =~ /2\/2/
+  end
+
+  it "supports tracking individual tasks progress" do
+    renderer = make_renderer
+    renderer.add_event(make_event("Preparing", "Binding release", 1, 2, "started", [], 0))
+    renderer.add_event(make_event("Preparing", "Binding release", 1, 2, "in_progress", [], 25))
+
+    lines = renderer.render.split("\n")
+
+    lines[1].should =~ /Preparing/
+    lines[2].should =~ /\|o{3}\s{21}\| 0\/2/
+    lines[2].should =~ /Binding release/
+
+    renderer.add_event(make_event("Preparing", "Binding release", 1, 2, "in_progress", [], 50))
+
+    lines = renderer.render.split("\n")
+
+    lines[0].should =~ /\|o{6}\s{18}\| 0\/2/
+    lines[0].should =~ /Binding release/
+
+    renderer.add_event(make_event("Preparing", "Binding release", 1, 2, "finished", []))
+
+    lines = renderer.render.split("\n")
+    lines[1].should_not =~ /Binding release/
+    lines[1].should =~ /\|o{12}\s{12}\| 1\/2/
   end
 
 end

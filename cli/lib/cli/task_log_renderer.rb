@@ -9,11 +9,14 @@ module Bosh::Cli
       end
     end
 
+    attr_accessor :time_adjustment
+
     def initialize
       @out = Bosh::Cli::Config.output || $stdout
       @out.sync = true
       @lock = Mutex.new
       @output = ""
+      @time_adjustment = 0
     end
 
     def add_output(output)
