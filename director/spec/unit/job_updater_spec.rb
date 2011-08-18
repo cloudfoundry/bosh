@@ -49,7 +49,7 @@ describe Bosh::Director::JobUpdater do
     instance_updater_1.should_receive(:update).with(:canary => true)
     instance_updater_2.should_receive(:update).with(no_args)
 
-    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance|
+    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance, ticker|
       case instance
         when instance_1
           instance_updater_1
@@ -93,7 +93,7 @@ describe Bosh::Director::JobUpdater do
     instance_updater_1.should_receive(:update).with(:canary => true).and_throw("bad update")
     instance_updater_2.should_not_receive(:update).with(no_args)
 
-    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance|
+    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance, ticker|
       case instance
         when instance_1
           instance_updater_1
@@ -129,7 +129,7 @@ describe Bosh::Director::JobUpdater do
     instance_updater_1.should_receive(:update).with(:canary => true)
     instance_updater_2.should_receive(:update).with(no_args).and_throw("bad update")
 
-    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance|
+    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance, ticker|
       case instance
         when instance_1
           instance_updater_1
