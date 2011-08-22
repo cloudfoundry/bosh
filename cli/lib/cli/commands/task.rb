@@ -47,8 +47,7 @@ module Bosh::Cli::Command
 
       if cached_output
         renderer.add_output(cached_output)
-        renderer.refresh
-        renderer.done
+        renderer.finish(task.state)
       else
         complete_output = ""
 
@@ -72,10 +71,11 @@ module Bosh::Cli::Command
           complete_output << final_out << "\n"
         end
 
-        renderer.done
+        renderer.finish(state)
         save_task_output(task_id, log_type, complete_output)
       end
 
+      nl
       say "Task #{task_id}: state is '#{task.state}'"
     end
 

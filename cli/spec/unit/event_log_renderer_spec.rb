@@ -104,9 +104,24 @@ describe Bosh::Cli::EventLogRenderer do
     lines[2].should == "Updating %s" % [ "stuff, thing".green ]
     lines[3].should =~ /0\/2/
 
-    lines = renderer.done.split("\n")
+    lines = renderer.finish(:done).split("\n")
     lines[0].should =~ /Done/
     lines[0].should =~ /2\/2/
+  end
+
+  it "renders erorr state properly" do
+    buf = StringIO.new
+    Bosh::Cli::Config.output = buf
+
+    renderer = make_renderer
+    renderer.add_event(make_event("Preparing", "Binding release", 1, 9))
+    renderer.add_event(make_event("Preparing", "Moving stuff", 2, 9))
+    renderer.add_event(make_event("Preparing", "Moving stuff", 2, 9, "finished"))
+    renderer.add_event(make_event("Updating", "prepare update", 1, 2, "started", ["stuff", "thing"]))
+
+    lines = renderer.finish(:error).split("\n")
+    lines[-1].should =~ /Error/
+    lines[-1].should =~ /0\/2/
   end
 
   it "supports tracking individual tasks progress" do
