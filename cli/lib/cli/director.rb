@@ -259,10 +259,7 @@ module Bosh
         end
 
         renderer.add_output(task.flush_output)
-
-        if result == :done
-          renderer.done
-        end
+        renderer.finish(state)
 
         if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
           confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")

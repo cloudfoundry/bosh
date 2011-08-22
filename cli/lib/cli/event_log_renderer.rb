@@ -111,12 +111,12 @@ module Bosh::Cli
       end
     end
 
-    def done
+    def finish(state)
       return if @events_count == 0
 
       @lock.synchronize do
         @done = true
-        done_with_stage
+        done_with_stage(state)
         render
       end
     end
@@ -127,7 +127,7 @@ module Bosh::Cli
       @buffer.print "\n#{@current_stage}\n"
     end
 
-    def done_with_stage
+    def done_with_stage(state = "done")
       completion_time = \
       if @last_event
         Time.at(@last_event["time"]) rescue Time.now
@@ -135,8 +135,16 @@ module Bosh::Cli
         Time.now
       end
 
-      progress_bar.finished_steps = progress_bar.total
-      progress_bar.title = "Done".green
+      case state.to_s
+      when "done"
+        progress_bar.title = "Done".green
+        progress_bar.finished_steps = progress_bar.total
+      when "error"
+        progress_bar.title = "Error".red
+      else
+        progress_bar.title = "Not done".yellow
+      end
+
       progress_bar.bar_visible = false
       progress_bar.label = format_time(completion_time - @stage_start_time)
       progress_bar.refresh

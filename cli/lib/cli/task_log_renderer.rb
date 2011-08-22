@@ -28,7 +28,7 @@ module Bosh::Cli
       @output = ""
     end
 
-    def done
+    def finish(state)
       refresh
       @done = true
     end
