@@ -13,6 +13,9 @@ coverage_dir   = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_
 reports_dir    = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
 dump_file      = File.join(Dir.tmpdir, "bosh-director.rcov")
 
+cpi_coverage_dir   = File.expand_path(File.join(File.dirname(__FILE__), "..", "cpi_spec_coverage"))
+cpi_dump_file      = File.join(Dir.tmpdir, "bosh-director-cpi.rcov")
+
 ENV["CI_REPORTS"] = reports_dir
 
 namespace "redis" do
@@ -64,10 +67,13 @@ namespace "spec" do
   desc "Run specs for ci"
   task "ci" => ["ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover"]
 
+  desc "Run CPI integration tests"
+  task "cpi" => ["run_cpi_ci"]
+
   RSpec::Core::RakeTask.new("run_all") do |t|
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
-    t.pattern    = "**/*_spec.rb"
+    t.pattern    = "{unit, functional}/**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_unit") do |t|
@@ -80,6 +86,12 @@ namespace "spec" do
     t.gemfile    = gemfile
     t.rspec_opts = spec_opts
     t.pattern    = "functional/**/*_spec.rb"
+  end
+
+  RSpec::Core::RakeTask.new("run_cpi_ci") do |t|
+    t.gemfile    = gemfile
+    t.rspec_opts = spec_opts
+    t.pattern    = "cpi/**/*_spec.rb"
   end
 
   RSpec::Core::RakeTask.new("run_rcov") do |t|
@@ -99,6 +111,44 @@ namespace "spec" do
     FileUtils.rm_rf(dump_file)
   end
 
+  desc "Run CPI integration tests with coverage"
+  task "cpi_cov" => ["run_cpi_cov"]
+
+  desc "Delete cpi coverage data"
+  task "cpi_del_cov" => ["cleanup_cpi_coverage"]
+
+  if RUBY_VERSION < "1.9"
+    RSpec::Core::RakeTask.new("run_cpi_cov") do |t|
+      FileUtils.rm_rf(cpi_dump_file)
+      t.gemfile    = gemfile
+      t.pattern    = "cpi/**/*_spec.rb"
+      t.rspec_opts = ["--format", "progress", "--colour"]
+      t.rcov       = true
+      t.rcov_opts  = %W{--aggregate #{cpi_dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{cpi_coverage_dir}"}
+    end
+
+    task "cleanup_cpi_coverage" do
+      FileUtils.rm_rf(cpi_coverage_dir)
+      FileUtils.rm_rf(cpi_dump_file)
+    end
+
+  else
+    task "run_cpi_cov" do
+      require "simplecov"
+
+      SimpleCov.start do
+        add_filter "/spec/"
+
+        require "rspec/core"
+        spec_dir = File.expand_path("../cpi", __FILE__)
+        RSpec::Core::Runner.disable_autorun!
+        RSpec::Core::Runner.run([spec_dir], STDERR, STDOUT)
+      end
+    end
+    task "cleanup_cpi_coverage" do
+      rm_rf "coverage"
+    end
+  end
 end
 
 
