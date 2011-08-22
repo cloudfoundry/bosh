@@ -125,7 +125,7 @@ describe Bosh::Director::Clouds::VSphere do
       # change the ip
       net_config['test']['ip'] = vm_ip_b
       agent.prepare_network_change(net_config)
-      @cloud.configure_networks(vm_cid, net_config, 20)
+      @cloud.configure_networks(vm_cid, net_config)
 
       # test network
       ping_vm(vm_ip_b).should == true
