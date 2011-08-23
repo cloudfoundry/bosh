@@ -2,8 +2,6 @@ module Bosh::Director
 
   class JobUpdater
 
-    class RollbackException < StandardError; end
-
     # @param job DeploymentPlan::JobSpec
     def initialize(job)
       @job = job
@@ -73,7 +71,7 @@ module Bosh::Director
           pool.process do
             @event_log.track("#{@job.name}/#{instance.index} (canary)") do |ticker|
               with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
-                unless @job.should_rollback?
+                unless @job.should_halt?
                   begin
                     InstanceUpdater.new(instance, ticker).update(:canary => true)
                   rescue Exception => e
@@ -89,9 +87,9 @@ module Bosh::Director
         pool.wait
         @logger.info("Finished canary update")
 
-        if @job.should_rollback?
-          @logger.warn("Rolling back due to a canary failure")
-          raise RollbackException
+        if @job.should_halt?
+          @logger.warn("Halting deployment due to a canary failure")
+          halt
         end
 
         # continue with the rest of the updates
@@ -101,7 +99,7 @@ module Bosh::Director
           pool.process do
             @event_log.track("#{@job.name}/#{instance.index}") do |ticker|
               with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
-                unless @job.should_rollback?
+                unless @job.should_halt?
                   begin
                     InstanceUpdater.new(instance, ticker).update
                   rescue Exception => e
@@ -117,10 +115,14 @@ module Bosh::Director
 
       @logger.info("Finished the rest of the update")
 
-      if @job.should_rollback?
-        @logger.warn("Rolling back due to an update failure")
-        raise RollbackException
+      if @job.should_halt?
+        @logger.warn("Halting deployment due to an update failure")
+        halt
       end
+    end
+
+    def halt
+      raise @job.halt_exception || RuntimeError.new("Deployment has been halted")
     end
 
   end

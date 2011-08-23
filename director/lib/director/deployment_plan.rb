@@ -489,6 +489,7 @@ module Bosh::Director
       attr_accessor :unneeded_instances
       attr_accessor :state
       attr_accessor :instance_states
+      attr_accessor :halt_exception
 
       # @param deployment DeploymentSpec
       # @param job Hash
@@ -518,7 +519,8 @@ module Bosh::Director
         end
 
         @update = UpdateConfig.new(safe_property(job, "update", :class => Hash, :optional => true), deployment.update)
-        @rollback = false
+
+        @halt = false
         @update_errors = 0
         @unneeded_instances = []
         @default_network = {}
@@ -625,8 +627,8 @@ module Bosh::Director
         result
       end
 
-      def should_rollback?
-        @rollback
+      def should_halt?
+        !!@halt
       end
 
       def record_update_error(error, options = {})
@@ -634,7 +636,8 @@ module Bosh::Director
           @update_errors += 1
 
           if options[:canary] || (@update.max_errors > 0 && @update_errors >= @update.max_errors)
-            @rollback = true
+            @halt = true
+            @halt_exception = error
           end
         end
       end
