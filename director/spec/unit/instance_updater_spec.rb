@@ -83,13 +83,13 @@ describe Bosh::Director::InstanceUpdater do
   before(:each) do
     @deployment = Bosh::Director::Models::Deployment.make
     @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-id")
-    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :disk_cid => nil)
+    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :disk_cid => nil, :index => "0")
     @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
 
     @cloud = mock("cloud")
     @agent_1 = mock("agent-1")
     @instance_spec = mock("instance_spec")
-    @job_spec = mock("job_spec")
+    @job_spec = mock("job_spec", :name => "job_a")
     @deployment_plan = mock("deployment_plan")
     @resource_pool_spec = mock("resource_pool_spec")
     @update_spec = mock("update_spec")
@@ -97,6 +97,7 @@ describe Bosh::Director::InstanceUpdater do
     @release_spec = mock("release_spec")
 
     @instance_spec.stub!(:job).and_return(@job_spec)
+    @instance_spec.stub!(:index).and_return(@instance.index)
     @instance_spec.stub!(:instance).and_return(@instance)
 
     @job_spec.stub!(:deployment).and_return(@deployment_plan)
@@ -108,7 +109,8 @@ describe Bosh::Director::InstanceUpdater do
     @job_spec.stub!(:properties).and_return(BASIC_PLAN["properties"])
     @job_spec.stub!(:spec).and_return(BASIC_PLAN["job"])
 
-    @update_spec.stub!(:update_watch_time).and_return(0.01)
+    @update_spec.stub!(:min_update_watch_time).and_return(0.01)
+    @update_spec.stub!(:max_update_watch_time).and_return(0.01)
 
     @release_spec.stub!(:name).and_return("test_release")
     @release_spec.stub!(:version).and_return(99)
@@ -190,8 +192,10 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @update_spec.should_not_receive(:update_watch_time)
-    @update_spec.should_receive(:canary_watch_time).and_return(0.01)
+    @update_spec.should_not_receive(:min_update_watch_time)
+    @update_spec.should_not_receive(:max_update_watch_time)
+    @update_spec.should_receive(:min_canary_watch_time).and_return(0.01)
+    @update_spec.should_receive(:max_canary_watch_time).and_return(0.01)
 
     @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(0.01)
     @agent_1.should_receive(:stop)
@@ -203,6 +207,65 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:start)
 
     instance_updater.update(:canary => true)
+  end
+
+  it "should respect watch ranges for canary update" do
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => false,
+                :state => "started")
+
+    instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+    @update_spec.should_receive(:min_canary_watch_time).and_return(1000)
+    @update_spec.should_receive(:max_canary_watch_time).and_return(4999)
+
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(30)
+    instance_updater.should_receive(:sleep).with(30).ordered
+    @agent_1.should_receive(:stop).ordered
+    @agent_1.should_receive(:apply).with(BASIC_PLAN).ordered.and_return({ "id" => "task-1", "state" => "done" })
+
+    @agent_1.should_receive(:start).ordered
+    instance_updater.should_receive(:sleep).with(1.0).ordered
+    @agent_1.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE.merge("job_state" => "failing"))
+    instance_updater.should_receive(:sleep).with(1.0).ordered
+    @agent_1.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE.merge("job_state" => "failing"))
+    instance_updater.should_receive(:sleep).with(1.0).ordered
+    @agent_1.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE.merge("job_state" => "running"))
+
+    instance_updater.update(:canary => true)
+  end
+
+  it "should respect watch ranges for regular update" do
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => false,
+                :disk_currently_attached? => false,
+                :state => "stopped")
+
+    instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+    @update_spec.should_receive(:min_update_watch_time).and_return(25000)
+    @update_spec.should_receive(:max_update_watch_time).and_return(30000)
+
+    @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(30)
+    instance_updater.should_receive(:sleep).with(30).ordered
+    @agent_1.should_receive(:stop).ordered
+    @agent_1.should_receive(:apply).with(BASIC_PLAN).ordered.and_return({ "id" => "task-1", "state" => "done" })
+
+    instance_updater.should_receive(:sleep).with(25.0).ordered
+    @agent_1.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE.merge("job_state" => "running"))
+    instance_updater.should_receive(:sleep).with(1.0).ordered
+    @agent_1.should_receive(:get_state).ordered.and_return(BASIC_INSTANCE_STATE.merge("job_state" => "stopped"))
+
+    instance_updater.update
   end
 
   it "should do a resource pool update" do
@@ -537,6 +600,19 @@ describe Bosh::Director::InstanceUpdater do
       @instance.refresh
       @instance.disk_cid.should == "deadbeef"
       @instance.vm.should be_nil
+    end
+  end
+
+  describe "watch time schedule" do
+    it "can generate a schedule for min and max watch time" do
+      @instance_spec.stub!(:state => "started")
+      updater = make_updater(@instance_spec)
+
+      updater.watch_schedule(5000, 10000, 5).should == [5000, 1000, 1000, 1000, 1000, 1000]
+      updater.watch_schedule(5000, 11000, 3).should == [5000, 2000, 2000, 2000]
+      updater.watch_schedule(5000, 10000, 10).should == [5000, 1000, 1000, 1000, 1000, 1000]
+      updater.watch_schedule(1000, 100000, 3).should == [1000, 33000, 33000, 33000]
+      updater.watch_schedule(2000, 15000, 2).should == [2000, 6500, 6500]
     end
   end
 
