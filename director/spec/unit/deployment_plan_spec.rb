@@ -291,16 +291,20 @@ describe Bosh::Director::DeploymentPlan do
 
       update_settings = deployment_plan.update
       update_settings.canaries.should eql(1)
-      update_settings.canary_watch_time.should eql(30000)
+      update_settings.min_canary_watch_time.should == 30000
+      update_settings.max_canary_watch_time.should == 30000
       update_settings.max_in_flight.should eql(5)
-      update_settings.update_watch_time.should eql(10000)
+      update_settings.min_update_watch_time.should == 10000
+      update_settings.max_update_watch_time.should == 10000
       update_settings.max_errors.should eql(2)
 
       update_settings = deployment_plan.job("job_a").update
       update_settings.canaries.should eql(1)
-      update_settings.canary_watch_time.should eql(30000)
+      update_settings.min_canary_watch_time.should == 30000
+      update_settings.max_canary_watch_time.should == 30000
       update_settings.max_in_flight.should eql(5)
-      update_settings.update_watch_time.should eql(10000)
+      update_settings.min_update_watch_time.should == 10000
+      update_settings.max_update_watch_time.should == 10000
       update_settings.max_errors.should eql(2)
     end
 
@@ -318,17 +322,74 @@ describe Bosh::Director::DeploymentPlan do
 
       update_settings = deployment_plan.update
       update_settings.canaries.should eql(1)
-      update_settings.canary_watch_time.should eql(30000)
+      update_settings.min_canary_watch_time.should == 30000
+      update_settings.max_canary_watch_time.should == 30000
       update_settings.max_in_flight.should eql(5)
-      update_settings.update_watch_time.should eql(10000)
+      update_settings.min_update_watch_time.should == 10000
+      update_settings.max_update_watch_time.should == 10000
       update_settings.max_errors.should eql(2)
 
       update_settings = deployment_plan.job("job_a").update
       update_settings.canaries.should eql(2)
-      update_settings.canary_watch_time.should eql(1000)
+      update_settings.min_canary_watch_time.should == 1000
+      update_settings.max_canary_watch_time.should == 1000
       update_settings.max_in_flight.should eql(3)
-      update_settings.update_watch_time.should eql(500)
+      update_settings.min_update_watch_time.should == 500
+      update_settings.max_update_watch_time.should == 500
       update_settings.max_errors.should eql(-1)
+    end
+
+    it "should parse min and max watch times from the deployment manifest (w/inheritance)" do
+      manifest = basic_manifest
+      manifest["update"]["canary_watch_time"] = "100-200"
+      manifest["update"]["update_watch_time"] = "300-400"
+
+      manifest["jobs"][0]["update"] = {
+        "canaries" => 2,
+        "canary_watch_time" => "1000 - 2400",
+        "max_in_flight" => 3,
+        "update_watch_time" => 3800,
+        "max_errors" => -1
+      }
+
+      deployment_plan = make_plan(manifest)
+      update_spec = deployment_plan.update
+
+      update_spec.min_canary_watch_time.should == 100
+      update_spec.max_canary_watch_time.should == 200
+
+      update_spec.min_update_watch_time.should == 300
+      update_spec.max_update_watch_time.should == 400
+
+      job_update_spec = deployment_plan.job("job_a").update
+
+      job_update_spec.min_canary_watch_time.should == 1000
+      job_update_spec.max_canary_watch_time.should == 2400
+
+      job_update_spec.min_update_watch_time.should == 3800
+      job_update_spec.max_update_watch_time.should == 3800
+    end
+
+    it "should whine on invalid watch times" do
+      ["a-b", "test", "2300a", "3-zb"].each do |value|
+        ["canary_watch_time", "update_watch_time"].each do |property|
+          manifest = basic_manifest
+          manifest["update"][property] = value
+
+          lambda {
+            make_plan(manifest)
+          }.should raise_error(ArgumentError, "Watch time should be an integer or a range of two integers")
+        end
+      end
+
+      ["canary_watch_time", "update_watch_time"].each do |property|
+        manifest = basic_manifest
+        manifest["update"][property] = "100-10"
+
+        lambda {
+          make_plan(manifest)
+        }.should raise_error(ArgumentError, "Min watch time cannot be greater than max watch time")
+      end
     end
 
     it "should parse the compilation settings from the deployment manifest" do
