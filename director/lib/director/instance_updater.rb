@@ -2,6 +2,7 @@ module Bosh::Director
   class InstanceUpdater
     MAX_ATTACH_DISK_TRIES = 3
     N_UPDATE_STEPS = 6
+    N_WATCH_INTERVALS = 10
 
     # @params instance_spec Bosh::DeploymentPlan::InstanceSpec
     def initialize(instance_spec, event_ticker = nil)
@@ -20,6 +21,10 @@ module Bosh::Director
       @update_config      = @job_spec.update
 
       @vm = @instance.vm
+    end
+
+    def instance_name
+      "#{@job_spec.name}/#{@instance_spec.index}"
     end
 
     def step
@@ -62,12 +67,26 @@ module Bosh::Director
         end
       end
 
-      watch_time = options[:canary] ? @update_config.canary_watch_time : @update_config.update_watch_time
-
+      min_watch_time, max_watch_time = options[:canary] ? canary_watch_times : update_watch_times
       current_state = nil
+
+      # Watch times don't include the get_state roundtrip time, so effective max watch time
+      # is roughly max_watch_time + N_WATCH_INTERVALS * avg_roundtrip_time
       step do
-        sleep(watch_time / 1000)
-        current_state = agent.get_state
+        watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
+          sleep_time = watch_time.to_f / 1000
+          @logger.info("Waiting for #{sleep_time} seconds to check #{self.instance_name} status")
+          sleep(sleep_time)
+          @logger.info("Checking if #{self.instance_name} has been updated after #{sleep_time} seconds")
+
+          current_state = agent.get_state
+
+          if @target_state == "started"
+            break if current_state["job_state"] == "running"
+          elsif @target_state == "stopped"
+            break if current_state["job_state"] != "running"
+          end
+        end
       end
 
       if @target_state == "started" && current_state["job_state"] != "running"
@@ -277,6 +296,26 @@ module Bosh::Director
 
     def generate_agent_id
       UUIDTools::UUID.random_create.to_s
+    end
+
+    # Returns an array of wait times distributed
+    # on the [min_watch_time..max_watch_time] interval.
+    # Tries to respect n_intervals but doesn't
+    # allow an interval to fall under 1 second.
+    # All times are in milliseconds.
+    def watch_schedule(min_watch_time, max_watch_time, n_intervals = N_WATCH_INTERVALS)
+      delta = (max_watch_time - min_watch_time).to_f
+      step = [ 1000, delta / n_intervals ].max
+
+      [ min_watch_time, [step] * (delta / step).floor ].flatten
+    end
+
+    def canary_watch_times
+      [ @update_config.min_canary_watch_time, @update_config.max_canary_watch_time ]
+    end
+
+    def update_watch_times
+      [ @update_config.min_update_watch_time, @update_config.max_update_watch_time ]
     end
 
   end
