@@ -1,6 +1,8 @@
 ---
 bosh:
-  uri: git@github.com:vmware-ac/bosh.git
+  scm: none
+  uri: /Users/oleg/projects/bosh
+  # uri: git@github.com:vmware-ac/bosh.git
   roles:
   - blobstore
   - director
