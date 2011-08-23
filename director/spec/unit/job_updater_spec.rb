@@ -41,7 +41,7 @@ describe Bosh::Director::JobUpdater do
 
     @job_spec.should_receive(:instances).and_return(instances)
     @job_spec.should_receive(:unneeded_instances).and_return([])
-    @job_spec.stub!(:should_rollback?).and_return(false)
+    @job_spec.stub!(:should_halt?).and_return(false)
 
     instance_1.should_receive(:changed?).and_return(true)
     instance_2.should_receive(:changed?).and_return(true)
@@ -73,6 +73,7 @@ describe Bosh::Director::JobUpdater do
   end
 
   it "should rollback the job if the canaries failed" do
+    # TODO: should this test use real job_spec, not the mock one?
     instance_1 = mock("instance-1")
     instance_1.stub!(:index).and_return(1)
     instance_2 = mock("instance-1")
@@ -82,10 +83,11 @@ describe Bosh::Director::JobUpdater do
     instance_updater_1 = mock("instance_updater_1")
     instance_updater_2 = mock("instance_updater_2")
 
-    @job_spec.stub!(:should_rollback?).and_return(false, true)
+    @job_spec.stub!(:should_halt?).and_return(false, true)
     @job_spec.should_receive(:instances).and_return(instances)
     @job_spec.should_receive(:record_update_error).with(anything, :canary => true)
     @job_spec.should_receive(:unneeded_instances).and_return([])
+    @job_spec.stub!(:halt_exception).and_return("bad update")
 
     instance_1.should_receive(:changed?).and_return(true)
     instance_2.should_receive(:changed?).and_return(true)
@@ -105,7 +107,8 @@ describe Bosh::Director::JobUpdater do
     end
 
     job_updater = Bosh::Director::JobUpdater.new(@job_spec)
-    lambda {job_updater.update}.should raise_exception(Bosh::Director::JobUpdater::RollbackException)
+
+    lambda { job_updater.update }.should raise_exception(RuntimeError, "bad update")
   end
 
   it "should rollback the job if it exceeded max number of errors" do
@@ -118,10 +121,11 @@ describe Bosh::Director::JobUpdater do
     instance_updater_1 = mock("instance_updater_1")
     instance_updater_2 = mock("instance_updater_2")
 
-    @job_spec.stub!(:should_rollback?).and_return(false, false, false, true)
+    @job_spec.stub!(:should_halt?).and_return(false, false, false, true)
     @job_spec.should_receive(:unneeded_instances).and_return([])
     @job_spec.should_receive(:instances).and_return(instances)
     @job_spec.should_receive(:record_update_error).with(anything)
+    @job_spec.stub!(:halt_exception).and_return("zb")
 
     instance_1.should_receive(:changed?).and_return(true)
     instance_2.should_receive(:changed?).and_return(true)
@@ -141,7 +145,8 @@ describe Bosh::Director::JobUpdater do
     end
 
     job_updater = Bosh::Director::JobUpdater.new(@job_spec)
-    lambda {job_updater.update}.should raise_exception(Bosh::Director::JobUpdater::RollbackException)
+
+    lambda { job_updater.update }.should raise_exception(RuntimeError, "zb")
   end
 
   it "should delete the unneeded instances" do

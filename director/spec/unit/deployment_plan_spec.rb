@@ -1246,24 +1246,39 @@ describe Bosh::Director::DeploymentPlan do
       job.update_errors.should eql(1)
     end
 
-    it "should issue a rollback when number of failures exceeds threshold" do
+    it "should keep track of the halt flag and halt exception" do
+      plan = make_plan
+      job = plan.job("job_a")
+      job.update_errors.should == 0
+      job.record_update_error("some error")
+      job.halt_exception.should be_nil
+
+      job.should_halt?.should be_false
+      job.record_update_error("error 2")
+      job.update_errors.should == 2
+      job.should_halt?.should be_true
+
+      job.halt_exception.should == "error 2"
+    end
+
+    it "should set halt flag when number of failures exceeds threshold" do
       deployment_plan = make_plan
       job = deployment_plan.job("job_a")
 
       2.times do
-        job.should_rollback?.should be_false
+        job.should_halt?.should be_false
         job.record_update_error("some error")
       end
 
-      job.should_rollback?.should be_true
+      job.should_halt?.should be_true
     end
 
-    it "should issue a rollback when it happened during a canary" do
+    it "should set halt flag when it happened during a canary" do
       deployment_plan = make_plan
       job = deployment_plan.job("job_a")
-      job.should_rollback?.should be_false
+      job.should_halt?.should be_false
       job.record_update_error("some error", :canary => true)
-      job.should_rollback?.should be_true
+      job.should_halt?.should be_true
     end
 
   end
