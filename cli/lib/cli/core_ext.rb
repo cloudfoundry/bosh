@@ -37,11 +37,10 @@ module BoshExtensions
   end
 
   def pretty_size(what, prec=1)
-    size = \
     if what.is_a?(String) && File.exists?(what)
-      File.size(what)
+      size = File.size(what)
     else
-      what.to_i
+      size = what.to_i
     end
 
     return 'NA' unless size

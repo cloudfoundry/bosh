@@ -3,26 +3,25 @@ module Bosh::Agent
     class << self
       DEFAULT_BASE_DIR = "/var/vcap"
 
-      CONFIG_OPTIONS = \
-      [
-       :base_dir,
-       :logger,
-       :mbus,
-       :agent_id,
-       :configure,
-       :blobstore,
-       :blobstore_provider,
-       :blobstore_options,
-       :system_root,
-       :platform_name,
-       :nats,
-       :process_alerts,
-       :smtp_port,
-       :smtp_user,
-       :smtp_password,
-       :heartbeat_interval,
-       :settings,
-       :state
+      CONFIG_OPTIONS = [
+        :base_dir,
+        :logger,
+        :mbus,
+        :agent_id,
+        :configure,
+        :blobstore,
+        :blobstore_provider,
+        :blobstore_options,
+        :system_root,
+        :platform_name,
+        :nats,
+        :process_alerts,
+        :smtp_port,
+        :smtp_user,
+        :smtp_password,
+        :heartbeat_interval,
+        :settings,
+        :state
       ]
 
       CONFIG_OPTIONS.each do |option|

@@ -26,9 +26,10 @@ namespace "redis" do
 
   desc "Start Redis instance"
   task :start do
-    redis_running = \
+    redis_running = false
+
     begin
-      File.exists?(REDIS_PID) && Process.kill(0, File.read(REDIS_PID).to_i)
+      redis_running = File.exists?(REDIS_PID) && Process.kill(0, File.read(REDIS_PID).to_i)
     rescue Errno::ESRCH
       FileUtils.rm REDIS_PID
       false

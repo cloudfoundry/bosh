@@ -128,11 +128,10 @@ module Bosh::Cli
     end
 
     def done_with_stage(state = "done")
-      completion_time = \
       if @last_event
-        Time.at(@last_event["time"]) rescue Time.now
+        completion_time = Time.at(@last_event["time"]) rescue Time.now
       else
-        Time.now
+        completion_time = Time.now
       end
 
       case state.to_s
@@ -162,12 +161,10 @@ module Bosh::Cli
       progress = 0
       total = event["total"].to_i
 
-      task = \
-      case event["state"]
-      when "started"
-        Task.new(event["task"])
+      if event["state"] == "started"
+        task = Task.new(event["task"])
       else
-        @tasks[event["index"]]
+        task = @tasks[event["index"]]
       end
 
       # Ignoring out-of-order events
