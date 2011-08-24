@@ -39,11 +39,10 @@ module Bosh
           opt.parse!(ARGV)
         end
 
-        config_file = \
         if options[:config]
-          File.expand_path(options[:config])
+          config_file = File.expand_path(options[:config])
         else
-          DEFAULT_DIRECTOR_CONFIG
+          config_file = DEFAULT_DIRECTOR_CONFIG
         end
 
         puts "=> Loading #{config_file}"

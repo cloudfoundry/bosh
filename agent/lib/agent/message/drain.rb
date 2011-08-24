@@ -23,6 +23,26 @@ module Bosh::Agent
         @spec       = args[1]
       end
 
+      def job_change
+        if !@old_spec.key?('job')
+          "job_new"
+        elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
+          "job_unchanged"
+        else
+          "job_changed"
+        end
+      end
+
+      def hash_change
+        if !@old_spec.key?('configuration_hash')
+          "hash_new"
+        elsif @old_spec['configuration_hash'] == @spec['configuration_hash']
+          "hash_unchanged"
+        else
+          "hash_changed"
+        end
+      end
+
       def drain
         @logger.info("Draining: #{@args.inspect}")
 
@@ -47,23 +67,6 @@ module Bosh::Agent
 
         if @old_spec.key?('job') && drain_script_exists?
           # HACK: We go through the motions below to be able to support drain scripts written as shell scripts
-          job_change = \
-          if !@old_spec.key?('job')
-            "job_new"
-          elsif @old_spec['job']['sha1'] == @spec['job']['sha1']
-            "job_unchanged"
-          else
-            "job_changed"
-          end
-
-          hash_change = \
-          if !@old_spec.key?('configuration_hash')
-            "hash_new"
-          elsif @old_spec['configuration_hash'] == @spec['configuration_hash']
-            "hash_unchanged"
-          else
-            "hash_changed"
-          end
           run_drain_script(job_change, hash_change, updated_packages.flatten)
         else
           0

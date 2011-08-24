@@ -160,11 +160,11 @@ module Bosh
         uri += "?type=#{log_type}" if log_type
 
         response_code, body, headers = get(uri, nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
-        new_offset = \
+
         if response_code == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
-          $1.to_i + 1
+          new_offset = $1.to_i + 1
         else
-          nil
+          new_offset = nil
         end
         [ body, new_offset ]
       end
@@ -187,15 +187,14 @@ module Bosh
         location   = headers[:location]
         redirected = http_status == 302
 
-        status = \
         if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
-            poll_task($1, options)
+            status = poll_task($1, options)
           else
-            :non_trackable
+            status = :non_trackable
           end
         else
-          :failed
+          status = :failed
         end
 
         [ status, body ]
