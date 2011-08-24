@@ -5,20 +5,19 @@ module Bosh::Director
 
     class << self
 
-      CONFIG_OPTIONS = \
-      [
-       :base_dir,
-       :logger,
-       :uuid,
-       :process_uuid,
-       :db,
-       :name,
-       :redis_options,
-       :cloud_options,
-       :revision,
-       :task_checkpoint_interval,
-       :max_tasks,
-       :event_log
+      CONFIG_OPTIONS = [
+        :base_dir,
+        :logger,
+        :uuid,
+        :process_uuid,
+        :db,
+        :name,
+        :redis_options,
+        :cloud_options,
+        :revision,
+        :task_checkpoint_interval,
+        :max_tasks,
+        :event_log
       ]
 
       CONFIG_OPTIONS.each do |option|

@@ -177,14 +177,13 @@ module Bosh::Cli
     end
 
     def make_fingerprint(item)
-      source = \
       case item
       when Array
-        item.map { |e| make_fingerprint(e) }.sort.join("")
+        source = item.map { |e| make_fingerprint(e) }.sort.join("")
       when Hash
-        item.keys.sort.map{ |k| make_fingerprint(item[k]) }.join("")
+        source = item.keys.sort.map{ |k| make_fingerprint(item[k]) }.join("")
       else
-        item.to_s
+        source = item.to_s
       end
       Digest::SHA1.hexdigest(source)
     end

@@ -1043,15 +1043,14 @@ describe Bosh::Director::DeploymentPlan do
     }
 
     def expect_instance_changes(instance, *expected_changes)
-      possible_changes = \
-      [
-       :networks_changed?,
-       :resource_pool_changed?,
-       :configuration_changed?,
-       :state_changed?,
-       :packages_changed?,
-       :persistent_disk_changed?,
-       :job_changed?,
+      possible_changes = [
+        :networks_changed?,
+        :resource_pool_changed?,
+        :configuration_changed?,
+        :state_changed?,
+        :packages_changed?,
+        :persistent_disk_changed?,
+        :job_changed?,
       ]
 
       expected_changes.each do |change|

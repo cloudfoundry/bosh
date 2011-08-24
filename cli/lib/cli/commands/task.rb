@@ -21,13 +21,12 @@ module Bosh::Cli::Command
         err("Task id is expected to be a positive integer")
       end
 
-      log_type = \
       if flags.include?("--soap")
-        "soap"
+        log_type = "soap"
       elsif flags.include?("--event")
-        "event"
+        log_type = "event"
       else
-        "debug"
+        log_type = "debug"
       end
 
       task = Bosh::Cli::DirectorTask.new(director, task_id, log_type)

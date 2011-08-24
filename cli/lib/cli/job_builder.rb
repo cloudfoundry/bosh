@@ -53,10 +53,9 @@ module Bosh::Cli
       @blobstore      = blobstore
       @artefact_type  = "job"
 
-      @templates = \
       case spec["templates"]
       when Hash
-        spec["templates"].keys
+        @templates = spec["templates"].keys
       else
         raise InvalidJob, "Incorrect templates section in `#{@name}' job spec (should resolve to a hash)"
       end
