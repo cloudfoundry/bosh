@@ -57,7 +57,10 @@ module Bosh
 
         if @namespace && @action
           ns_class_name = @namespace.to_s.gsub(/(?:^|_)(.)/) { $1.upcase }
-          eval("Bosh::Cli::Command::#{ns_class_name}").new(@options).send(@action.to_sym, *@args)
+          klass = eval("Bosh::Cli::Command::#{ns_class_name}")
+          command = klass.new(@options)
+          command.usage = @usage
+          command.send(@action.to_sym, *@args)
         else
           display_usage
         end

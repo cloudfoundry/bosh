@@ -133,12 +133,26 @@ module Bosh::Cli::Command
     end
 
     def create_from_spec(*options)
-      final         = options.include?("--final")
-      force         = options.include?("--force")
-      manifest_only = !options.include?("--with-tarball")
-      dry_run       = options.include?("--dry-run")
+      flags = options.inject({}) { |h, option| h[option] = true; h }
+
+      final         = flags.delete("--final")
+      force         = flags.delete("--force")
+      manifest_only = !flags.delete("--with-tarball")
+      dry_run       = flags.delete("--dry-run")
+
+      if flags.size > 0
+        say "Unknown flags: #{flags.keys.join(", ")}".red
+        show_usage
+        exit(1)
+      end
 
       check_if_dirty_state unless force
+
+      confirmation = "Are you sure you want to generate #{'final'.red} version? "
+      if final && !dry_run && interactive? && ask("#{confirmation}(type 'yes' to confirm) ") != "yes"
+        say "Canceled release generation".green
+        exit(1)
+      end
 
       packages  = []
       jobs      = []

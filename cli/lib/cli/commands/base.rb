@@ -9,7 +9,7 @@ module Bosh::Cli
       DEFAULT_CACHE_DIR   = File.expand_path("~/.bosh_cache")
 
       attr_reader   :cache, :config, :options, :work_dir
-      attr_accessor :out
+      attr_accessor :out, :usage
 
       def initialize(options = {})
         @options     = options.dup
@@ -41,6 +41,10 @@ module Bosh::Cli
       # TODO: implement it
       def dry_run?
         options[:dry_run]
+      end
+
+      def show_usage
+        say "Usage: #{@usage}" if @usage
       end
 
       def run(namespace, action, *args)
