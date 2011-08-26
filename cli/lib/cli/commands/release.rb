@@ -1,5 +1,7 @@
 module Bosh::Cli::Command
   class Release < Base
+    DEFAULT_RELEASE_NAME = "bosh-release"
+
     include Bosh::Cli::DependencyHelper
     include Bosh::Cli::VersionCalc
 
@@ -173,7 +175,8 @@ module Bosh::Cli::Command
       end
 
       if release.name.blank?
-        name = ask("Please enter %s release name: " % [ final ? "final" : "development" ])
+        confirmation = "Please enter %s release name: " % [ final ? "final" : "development" ]
+        name = interactive? ? ask(confirmation) : DEFAULT_RELEASE_NAME
         err("Canceled release creation, no name given") if name.blank?
         release.update_config(:name => name)
       end
