@@ -1,0 +1,9 @@
+#!/bin/bash
+if [ -x $0.local ]; then
+    $0.local "$@" || exit $?
+fi
+
+REPO_DIR=$(dirname $GIT_DIR)
+if [ -x $REPO_DIR/git/tracked_hooks/$(basename $0) ]; then
+    $REPO_DIR/git/tracked_hooks/$(basename $0) "$@" || exit $?
+fi
