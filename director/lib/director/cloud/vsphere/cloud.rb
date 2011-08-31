@@ -556,6 +556,15 @@ module VSphereCloud
         @logger.info("Detaching disk")
         client.reconfig_vm(vm, config)
         @logger.info("Finished detaching disk")
+
+        5.times do
+          devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
+          virtual_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+            device.backing.file_name == vmdk_path }
+          break if virtual_disk.nil?
+          sleep(1.0)
+        end
+        raise "Failed to detach disk: #{disk_cid} from vm: #{vm_cid}" unless virtual_disk.nil?
       end
     end
 
