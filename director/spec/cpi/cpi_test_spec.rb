@@ -4,7 +4,7 @@ require 'pty'
 require 'expect'
 require 'rack/test'
 
-$expect_verbose = true
+#$expect_verbose = true
 describe Bosh::Director::Clouds::VSphere do
   include Rack::Test::Methods
   include Bosh::Director::IpUtil
@@ -28,14 +28,17 @@ describe Bosh::Director::Clouds::VSphere do
     Dir.chdir(AGENT_SRC_PATH) do
       stemcell_tgz = ""
       PTY.spawn("rake ubuntu:stemcell:build") do |reader, writer, pid|
-        reader.expect(/.*password.*:.*/)
-        writer.puts(pass)
+        reader.expect(/.*password.*:.*/) {
+          writer.puts(pass)
+        }
 
-        reader.expect(/.*\['mount', '-o', 'loop', '-t', 'iso.*', '.*', '.*/)
-        iso_mnt = reader.gets.split('\'')[0]
+        reader.expect(/.*\['mount', '-o', 'loop', '-t', 'iso.*', '.*', '.*/) {
+          iso_mnt = reader.gets.split('\'')[0]
+        }
 
-        reader.expect(/Generated stemcell:.*/)
-        stemcell_tgz = reader.gets.strip
+        reader.expect(/Generated stemcell:.*/) {
+          stemcell_tgz = reader.gets.strip
+        }
       end
 
       sc_path = Dir.mktmpdir("tmp_sc", "/tmp").strip
