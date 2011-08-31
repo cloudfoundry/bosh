@@ -1,3 +1,5 @@
+include_recipe "ntp"
+
 # HACK to set up the proxies
 ["http_proxy", "https_proxy", "no_proxy"].each do |env|
   next unless Chef::Config[env]

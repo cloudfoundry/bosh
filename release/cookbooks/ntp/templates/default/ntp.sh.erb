@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# get time from ntp server and log it in syslog
+#
+/usr/sbin/ntpdate -s <%= @server %>
