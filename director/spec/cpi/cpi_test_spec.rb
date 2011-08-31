@@ -4,7 +4,6 @@ require 'pty'
 require 'expect'
 require 'rack/test'
 
-$expect_verbose = true
 describe Bosh::Director::Clouds::VSphere do
   include Rack::Test::Methods
   include Bosh::Director::IpUtil
