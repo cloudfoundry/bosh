@@ -18,7 +18,7 @@ module Bosh::Director::Cpi
 
       def start_nats_tunnel(vm_ip)
         pid_file = File.join("/tmp", "cpi-nats-tunnel-#{rand(1000)}.pid")
-        cmd = "sshpass -p 'ca$hc0w'  ssh -R #{NATS_PORT}:localhost:#{NATS_PORT} -o \"UserKnownHostsFile /dev/null\"  -N root@#{vm_ip}"
+        cmd = "sshpass -p 'ca$hc0w'  ssh -R #{NATS_PORT}:localhost:#{NATS_PORT} -o \"UserKnownHostsFile /dev/null\" -o StrictHostKeyChecking=no -N root@#{vm_ip}"
         run_with_pid(cmd, pid_file)
         pid_file
       end

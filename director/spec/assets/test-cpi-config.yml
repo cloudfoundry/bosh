@@ -1,6 +1,6 @@
 ---
 test:
-  root_pass: ca$hc0w
+  root_pass: cftest123
 
 name: Test CPI
 port: 8081
