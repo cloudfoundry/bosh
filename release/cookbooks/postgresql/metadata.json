@@ -1,32 +1,30 @@
 {
-  "version": "1.0.0",
+  "name": "postgresql",
+  "description": "Installs/Configures postgresql",
+  "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
+  "maintainer": "VMware",
+  "maintainer_email": "TBD",
+  "license": "TBD",
+  "platforms": {
+  },
+  "dependencies": {
+    "env": ">= 0.0.0"
+  },
+  "recommendations": {
+  },
+  "suggestions": {
+  },
   "conflicting": {
   },
   "providing": {
   },
-  "maintainer": "VMware",
   "replacing": {
-  },
-  "license": "TBD",
-  "maintainer_email": "TBD",
-  "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
-  "groupings": {
-  },
-  "dependencies": {
-    "env": [
-
-    ]
   },
   "attributes": {
   },
-  "recommendations": {
+  "groupings": {
   },
-  "name": "postgresql",
-  "suggestions": {
-  },
-  "description": "Installs/Configures postgresql",
   "recipes": {
   },
-  "platforms": {
-  }
+  "version": "1.0.0"
 }

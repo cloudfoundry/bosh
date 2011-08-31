@@ -1,33 +1,33 @@
 {
-  "dependencies": {
-    "runit": ">= 0.0.0",
-    "env": ">= 0.0.0",
-    "rubygems": ">= 0.0.0",
-    "ruby": ">= 0.0.0"
-  },
   "name": "health_monitor",
+  "description": "Installs/configures Bosh Health Monitor",
+  "long_description": "= DESCRIPTION:\n\nBosh Health Monitor configuration.\n\n",
+  "maintainer": "VMware",
   "maintainer_email": "olegs@vmware.com",
-  "attributes": {
-  },
   "license": "TBD",
-  "suggestions": {
-  },
   "platforms": {
   },
-  "maintainer": "VMware",
-  "long_description": "= DESCRIPTION:\n\nBosh Health Monitor configuration.\n\n",
-  "version": "0.0.1",
+  "dependencies": {
+    "env": ">= 0.0.0",
+    "ruby": ">= 0.0.0",
+    "rubygems": ">= 0.0.0",
+    "runit": ">= 0.0.0"
+  },
   "recommendations": {
   },
-  "recipes": {
-  },
-  "groupings": {
+  "suggestions": {
   },
   "conflicting": {
   },
+  "providing": {
+  },
   "replacing": {
   },
-  "description": "Installs/configures Bosh Health Monitor",
-  "providing": {
-  }
+  "attributes": {
+  },
+  "groupings": {
+  },
+  "recipes": {
+  },
+  "version": "0.0.1"
 }

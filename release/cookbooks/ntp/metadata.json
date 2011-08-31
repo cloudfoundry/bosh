@@ -1,14 +1,13 @@
 {
-  "name": "nginx",
-  "description": "Installs/Configures nginx",
+  "name": "ntp",
+  "description": "Installs/Configures ntp",
   "long_description": "= DESCRIPTION:\n\n= REQUIREMENTS:\n\n= ATTRIBUTES:\n\n= USAGE:\n\n",
   "maintainer": "VMware",
-  "maintainer_email": "TBD",
-  "license": "TBD",
+  "maintainer_email": "ac-eng@vmware.com",
+  "license": "All rights reserved",
   "platforms": {
   },
   "dependencies": {
-    "env": ">= 0.0.0"
   },
   "recommendations": {
   },
@@ -25,6 +24,7 @@
   "groupings": {
   },
   "recipes": {
+    "ntp": "Configures ntp synchronization hourly from cron"
   },
-  "version": "1.0.0"
+  "version": "0.0.1"
 }
