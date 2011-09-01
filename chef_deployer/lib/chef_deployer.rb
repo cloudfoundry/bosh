@@ -138,6 +138,7 @@ module ChefDeployer
                result = read_pipe.expect(/password:/i)
                next if result.nil?
                write_pipe.puts(password)
+               break
              end
 
              Process.wait(pid)
