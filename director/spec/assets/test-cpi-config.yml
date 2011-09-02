@@ -1,6 +1,7 @@
 ---
 test:
   root_pass: ca$hc0w
+#  stemcell: /var/tmp/bosh/agent-0.2.30-12821/bosh-stemcell-0.2.30.tgz
 
 name: Test CPI
 port: 8081

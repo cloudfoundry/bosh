@@ -23,8 +23,8 @@ describe Bosh::Director::Clouds::VSphere do
   end
 
   def build_stemcell(pass)
-    sc_path = ""
     iso_mnt = ""
+    stemcell_tgz = ""
     Dir.chdir(AGENT_SRC_PATH) do
       stemcell_tgz = ""
       PTY.spawn("rake ubuntu:stemcell:build") do |reader, writer, pid|
@@ -38,9 +38,6 @@ describe Bosh::Director::Clouds::VSphere do
         stemcell_tgz = reader.gets.strip
       end
 
-      sc_path = Dir.mktmpdir("tmp_sc", "/tmp").strip
-      `tar zxvf #{stemcell_tgz} -C #{sc_path}`
-      FileUtils.rm_rf(stemcell_tgz)
     end
 
     # un-mount ubuntu.iso used by vmbuilder.
@@ -48,7 +45,7 @@ describe Bosh::Director::Clouds::VSphere do
       reader.expect(/.*password.*:.*/)
       writer.puts(pass)
     end
-    sc_path
+    stemcell_tgz
   end
 
   before(:all) do
@@ -66,11 +63,17 @@ describe Bosh::Director::Clouds::VSphere do
       sleep 0.1
     end
 
-    stemcell_path = build_stemcell(@test_config["test"]["root_pass"])
+    stemcell_tgz = @test_config["test"]["stemcell"]
+    stemcell_tgz ||= build_stemcell(@test_config["test"]["root_pass"])
+
+    # un-tar stemcell
+    stemcell = Dir.mktmpdir("tmp_sc", "/tmp").strip
+    `tar zxvf #{stemcell_tgz} -C #{stemcell}`
+
     Bosh::Director::Config.configure(@test_config)
     @cloud = Bosh::Director::Clouds::VSphere.new(@test_config["cloud"]["properties"])
-    @stemcell_name = @cloud.create_stemcell("#{stemcell_path}/image", {})
-    FileUtils.rm_rf(stemcell_path)
+    @stemcell_name = @cloud.create_stemcell("#{stemcell}/image", {})
+    FileUtils.rm_rf(stemcell)
   end
 
   before(:each) do
