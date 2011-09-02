@@ -555,6 +555,20 @@ module VSphereCloud
         set_agent_env(vm, location, env)
         @logger.info("Detaching disk")
         client.reconfig_vm(vm, config)
+
+        # detach-disk is async and task completition does not necessarily mean
+        # that changes have been applied to VC side. Query VC until we confirm
+        # that the change has been applied. This is a known issue for vsphere 4.
+        # Fixed in vsphere 5.
+        5.times do
+          devices = client.get_property(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
+          virtual_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+            device.backing.file_name == vmdk_path }
+          break if virtual_disk.nil?
+          sleep(1.0)
+        end
+        raise "Failed to detach disk: #{disk_cid} from vm: #{vm_cid}" unless virtual_disk.nil?
+
         @logger.info("Finished detaching disk")
       end
     end
