@@ -16,14 +16,14 @@ describe Bosh::Director::Clouds::VSphere do
     ip_to_netaddr(avail_ip).ip
   end
 
-  def ping_vm(ip, timeout = 300)
+  def vm_reachable?(ip, timeout = 300)
     `ping -q -c 1 -w #{timeout} #{ip}`
     return $?.exitstatus == 0
   end
 
   def build_stemcell(pass)
-    sc_path = ""
     iso_mnt = ""
+    stemcell_tgz = ""
     Dir.chdir(AGENT_SRC_PATH) do
       stemcell_tgz = ""
       PTY.spawn("rake ubuntu:stemcell:build") do |reader, writer, pid|
@@ -40,9 +40,6 @@ describe Bosh::Director::Clouds::VSphere do
         end
       end
 
-      sc_path = Dir.mktmpdir("tmp_sc", "/tmp").strip
-      `tar zxvf #{stemcell_tgz} -C #{sc_path}`
-      FileUtils.rm_rf(stemcell_tgz)
     end
 
     # un-mount ubuntu.iso used by vmbuilder.
@@ -50,7 +47,7 @@ describe Bosh::Director::Clouds::VSphere do
       reader.expect(/.*password.*:.*/)
       writer.puts(pass)
     end
-    sc_path
+    stemcell_tgz
   end
 
   before(:all) do
@@ -68,11 +65,21 @@ describe Bosh::Director::Clouds::VSphere do
       sleep 0.1
     end
 
-    stemcell_path = build_stemcell(@test_config["test"]["root_pass"])
+    stemcell_tgz = @test_config["test"]["stemcell"]
+    stemcell_tgz ||= build_stemcell(@test_config["test"]["root_pass"])
+
+    # un-tar stemcell
+    stemcell = Dir.mktmpdir("tmp_sc")
+    `tar zxf #{stemcell_tgz} -C #{stemcell}`
+    if $?.exitstatus != 0
+      FileUtils.rm_rf(stemcell)
+      raise "Failed to un-tar #{stemcell_tgz}"
+    end
+
     Bosh::Director::Config.configure(@test_config)
     @cloud = Bosh::Director::Clouds::VSphere.new(@test_config["cloud"]["properties"])
-    @stemcell_name = @cloud.create_stemcell("#{stemcell_path}/image", {})
-    FileUtils.rm_rf(stemcell_path)
+    @stemcell_name = @cloud.create_stemcell("#{stemcell}/image", {})
+    FileUtils.rm_rf(stemcell)
   end
 
   before(:each) do
@@ -97,7 +104,7 @@ describe Bosh::Director::Clouds::VSphere do
                              'default' => ['dns', 'gateway']}}
     begin
       vm_cid = @cloud.create_vm(agent_id, @stemcell_name, @vm_resource, net_config)
-      ping_vm(vm_ip).should == true
+      vm_reachable?(vm_ip).should == true
     ensure
       @cloud.delete_vm(vm_cid) if vm_cid
     end
@@ -117,8 +124,8 @@ describe Bosh::Director::Clouds::VSphere do
       vm_cid = @cloud.create_vm(agent_id, @stemcell_name, @vm_resource, net_config)
 
       # test network
-      ping_vm(vm_ip_b, 10).should == false
-      ping_vm(vm_ip_a).should == true
+      vm_reachable?(vm_ip_b, 10).should == false
+      vm_reachable?(vm_ip_a).should == true
 
       pid = Bosh::Director::Cpi::Sandbox.start_nats_tunnel(vm_ip_a)
       agent = Bosh::Director::AgentClient.new(agent_id)
@@ -130,8 +137,8 @@ describe Bosh::Director::Clouds::VSphere do
       @cloud.configure_networks(vm_cid, net_config)
 
       # test network
-      ping_vm(vm_ip_b).should == true
-      ping_vm(vm_ip_a, 10).should == false
+      vm_reachable?(vm_ip_b).should == true
+      vm_reachable?(vm_ip_a, 10).should == false
     ensure
       Bosh::Director::Cpi::Sandbox.stop_nats_tunnel(pid) rescue nil
       @cloud.delete_vm(vm_cid) if vm_cid
@@ -152,8 +159,7 @@ describe Bosh::Director::Clouds::VSphere do
       begin
         vm_cid = @cloud.create_vm(agent_id, @stemcell_name, @vm_resource, net_config)
 
-        p = ping_vm(vm_ip)
-        p.should == true
+        vm_reachable?(vm_ip).should == true
 
         pid = Bosh::Director::Cpi::Sandbox.start_nats_tunnel(vm_ip)
         agent = Bosh::Director::AgentClient.new(agent_id)
