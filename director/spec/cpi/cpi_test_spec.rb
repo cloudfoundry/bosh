@@ -136,44 +136,47 @@ describe Bosh::Director::Clouds::VSphere do
     end
   end
 
-  it "create/attach and detach/delete a disk" do
-    agent_id = UUIDTools::UUID.random_create.to_s
-    vm_ip = get_ip
-    net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
-                             'netmask' => @net_conf['netmask'],
-                             'gateway' => @net_conf['gateway'],
-                             'ip'      => vm_ip,
-                             'dns'     => @net_conf['dns'],
-                             'default' => ['dns', 'gateway']}}
-    begin
-      vm_cid = @cloud.create_vm(agent_id, @stemcell_name, @vm_resource, net_config)
+  it "disk operations create/delete attach/detach and move disk" do
+    disk_cid = nil
+    2.times do
+      agent_id = UUIDTools::UUID.random_create.to_s
+      vm_ip = get_ip
+      net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
+        'netmask' => @net_conf['netmask'],
+        'gateway' => @net_conf['gateway'],
+        'ip'      => vm_ip,
+        'dns'     => @net_conf['dns'],
+        'default' => ['dns', 'gateway']}}
+      begin
+        vm_cid = @cloud.create_vm(agent_id, @stemcell_name, @vm_resource, net_config)
 
-      p = ping_vm(vm_ip)
-      p.should == true
+        p = ping_vm(vm_ip)
+        p.should == true
 
-      pid = Bosh::Director::Cpi::Sandbox.start_nats_tunnel(vm_ip)
-      agent = Bosh::Director::AgentClient.new(agent_id)
-      agent.get_state
+        pid = Bosh::Director::Cpi::Sandbox.start_nats_tunnel(vm_ip)
+        agent = Bosh::Director::AgentClient.new(agent_id)
+        agent.get_state
 
-      disk_cid = @cloud.create_disk(256, vm_cid)
-      @cloud.attach_disk(vm_cid, disk_cid)
+        disk_cid = @cloud.create_disk(256, vm_cid) unless disk_cid
+        @cloud.attach_disk(vm_cid, disk_cid)
 
-      task = agent.mount_disk(disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
+        task = agent.mount_disk(disk_cid)
+        while task["state"] == "running"
+          sleep(1.0)
+          task = agent.get_task(task["agent_task_id"])
+        end
+
+        task = agent.unmount_disk(disk_cid)
+        while task["state"] == "running"
+          sleep(1.0)
+          task = agent.get_task(task["agent_task_id"])
+        end
+      ensure
+        Bosh::Director::Cpi::Sandbox.stop_nats_tunnel(pid) rescue nil
+        @cloud.detach_disk(vm_cid, disk_cid) rescue nil
+        @cloud.delete_vm(vm_cid) rescue nil
       end
-
-      task = agent.unmount_disk(disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
-    ensure
-      Bosh::Director::Cpi::Sandbox.stop_nats_tunnel(pid) rescue nil
-      @cloud.detach_disk(vm_cid, disk_cid) rescue nil
-      @cloud.delete_disk(disk_cid) rescue nil
-      @cloud.delete_vm(vm_cid)
     end
+    @cloud.delete_disk(disk_cid) rescue nil
   end
 end
