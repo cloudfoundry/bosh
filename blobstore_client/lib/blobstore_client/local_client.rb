@@ -29,6 +29,8 @@ module Bosh
             end
           end
         end
+      rescue Errno::ENOENT
+        raise NotFound, "Blobstore object '#{id}' not found"
       end
 
     end
