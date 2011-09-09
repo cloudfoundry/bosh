@@ -28,7 +28,7 @@ GEM
     rcov_analyzer (0.2)
       builder
       rcov
-    rest-client (1.6.1)
+    rest-client (1.6.3)
       mime-types (>= 1.16)
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
@@ -69,7 +69,7 @@ DEPENDENCIES
   rake
   rcov
   rcov_analyzer
-  rest-client
+  rest-client (>= 1.6.3)
   rspec
   ruby-debug
   ruby-debug19

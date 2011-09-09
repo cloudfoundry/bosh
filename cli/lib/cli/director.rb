@@ -134,6 +134,22 @@ module Bosh
         upload_and_track(url, "text/yaml", manifest_filename, :method => :put, :log_type => "event")
       end
 
+      def fetch_logs(deployment_name, job_name, index, log_type, filters = nil)
+        url = "/deployments/#{deployment_name}/jobs/#{job_name}/#{index}/logs?type=#{log_type}&filters=#{filters}"
+        status, task_id = request_and_track(:get, url, nil, nil, :log_type => "event")
+        return nil if status != :done || task_id.nil?
+        get_task_result(task_id)
+      end
+
+      def download_resource(id)
+        status, tmp_file, headers = get("/resources/#{id}", nil, nil, {}, options = { :file => true })
+        if status == 200
+          tmp_file
+        else
+          raise DirectorError, "Cannot download resource `#{id}': HTTP status #{status}"
+        end
+      end
+
       def get_current_time
         status, body, headers = get("/info")
         Time.parse(headers[:date]) rescue nil
@@ -145,14 +161,22 @@ module Bosh
         ctime ? Time.now - ctime : 0
       end
 
-      def get_task_state(task_id)
+      def get_task(task_id)
         response_code, body = get("/tasks/#{task_id}")
         raise AuthError if response_code == 401
         raise MissingTask, "Task #{task_id} not found" if response_code == 404
         raise TaskTrackError, "Got HTTP #{response_code} while tracking task state" if response_code != 200
-        JSON.parse(body)["state"]
+        JSON.parse(body)
       rescue JSON::ParserError
         raise TaskTrackError, "Cannot parse task JSON, incompatible director version"
+      end
+
+      def get_task_state(task_id)
+        get_task(task_id)["state"]
+      end
+
+      def get_task_result(task_id)
+        get_task(task_id)["result"]
       end
 
       def get_task_output(task_id, offset, log_type = nil)
@@ -172,7 +196,7 @@ module Bosh
       def cancel_task(task_id)
         response_code, body = delete("/task/#{task_id}")
         raise AuthError if response_code == 401
-        raise MissingTask, "No task##{@task_id} found" if response_code == 404
+        raise MissingTask, "No task##{task_id} found" if response_code == 404
         [ body, response_code ]
       end
 
@@ -186,10 +210,12 @@ module Bosh
         http_status, body, headers = request(method, uri, content_type, payload)
         location   = headers[:location]
         redirected = http_status == 302
+        task_id    = nil
 
         if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
-            status = poll_task($1, options)
+            task_id = $1
+            status = poll_task(task_id, options)
           else
             status = :non_trackable
           end
@@ -197,7 +223,7 @@ module Bosh
           status = :failed
         end
 
-        [ status, body ]
+        [ status, task_id ]
       end
 
       def upload_and_track(uri, content_type, filename, options = {})
@@ -254,7 +280,7 @@ module Bosh
             break
           end
 
-          wait(poll_interval)
+          sleep(poll_interval)
         end
 
         renderer.add_output(task.flush_output)
@@ -277,11 +303,7 @@ module Bosh
         end
       end
 
-      def wait(interval) # Extracted for easier testing
-        sleep(interval)
-      end
-
-      def request(method, uri, content_type = nil, payload = nil, headers = {})
+      def request(method, uri, content_type = nil, payload = nil, headers = {}, options = { })
         headers = headers.dup
         headers["Content-Type"] = content_type if content_type
 
@@ -289,16 +311,27 @@ module Bosh
           :method => method, :url => @director_uri + uri,
           :payload => payload, :headers => headers,
           :user => @user, :password => @password,
-          :timeout => API_TIMEOUT, :open_timeout => OPEN_TIMEOUT
+          :timeout => API_TIMEOUT, :open_timeout => OPEN_TIMEOUT,
         }
 
-        status, body, response_headers = perform_http_request(req)
-
-        if DIRECTOR_HTTP_ERROR_CODES.include?(status)
-          raise DirectorError, parse_error_message(status, body)
+        # For streaming support
+        if options[:file]
+          req[:raw_response] = true
         end
 
-        [ status, body, response_headers ]
+        response = perform_http_request(req)
+
+        if response.respond_to?(:file)
+          result = response.file.path
+        else
+          result = response.body
+        end
+
+        if DIRECTOR_HTTP_ERROR_CODES.include?(response.code)
+          raise DirectorError, parse_error_message(response.code, result)
+        end
+
+        [ response.code, result, response.headers ]
 
       rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
         raise DirectorInaccessible, "cannot access director (%s)" % [ e.message ]
@@ -310,9 +343,7 @@ module Bosh
 
       def perform_http_request(req)
         result = nil
-        RestClient::Request.execute(req) do |response, request, req_result|
-          result = [ response.code, response.body, response.headers ]
-        end
+        RestClient::Request.execute(req) { |response, request, req_result| result = response }
         result
       rescue Net::HTTPBadResponse => e
         err("Received bad HTTP response from director: #{e}")

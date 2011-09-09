@@ -191,19 +191,19 @@ describe Bosh::Cli::Director do
     it "starts polling a task if request responded with a redirect to task URL" do
       @director.should_receive(:request).with(:get, "/stuff", "text/plain", "abc").and_return([302, "body", { :location => "/tasks/502" }])
       @director.should_receive(:poll_task).with("502", :arg1 => 1, :arg2 => 2).and_return("polling result")
-      @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ "polling result", "body" ]
+      @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ "polling result", "502" ]
     end
 
     it "considers all reponses but 302 a failure" do
       [200, 404, 403].each do |code|
         @director.should_receive(:request).with(:get, "/stuff", "text/plain", "abc").and_return([code, "body", { }])
-        @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ :failed, "body" ]
+        @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ :failed, nil ]
       end
     end
 
     it "reports task as non trackable if its URL is unfamiliar" do
       @director.should_receive(:request).with(:get, "/stuff", "text/plain", "abc").and_return([302, "body", { :location => "/track-task/502" }])
-      @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ :non_trackable, "body" ]
+      @director.request_and_track(:get, "/stuff", "text/plain", "abc", :arg1 => 1, :arg2 => 2).should == [ :non_trackable, nil ]
     end
 
     it "suppports uploading with progress bar" do
@@ -240,30 +240,35 @@ describe Bosh::Cli::Director do
     end
 
     it "performs HTTP request" do
+      mock_response = mock("response", :body => "test", :code => 200, :headers => { })
       @director.should_receive(:perform_http_request).
         with(req(:method => :get, :url => "http://target/stuff",
-                 :payload => "payload", :headers => { "Content-Type" => "app/zb", "h1" => "a", "h2" => "b"}))
+                 :payload => "payload", :headers => { "Content-Type" => "app/zb", "h1" => "a", "h2" => "b"})).
+        and_return(mock_response)
 
-      @director.request(:get, "/stuff", "app/zb", "payload", { "h1" => "a", "h2" => "b"})
+      @director.request(:get, "/stuff", "app/zb", "payload", { "h1" => "a", "h2" => "b"}).should == [200, "test", {}]
     end
 
     it "nicely wraps director error response" do
       [400, 403, 500].each do |code|
         lambda {
           # Familiar JSON
-          @director.should_receive(:perform_http_request).and_return([code, JSON.generate("code" => "40422", "description" => "Weird stuff happened"), { }])
+          mock_response = mock("response", :code => code, :body => JSON.generate("code" => "40422", "description" => "Weird stuff happened"), :headers => {})
+          @director.should_receive(:perform_http_request).and_return(mock_response)
           @director.request(:get, "/stuff", "application/octet-stream", "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError, "Director error 40422: Weird stuff happened")
 
         lambda {
           # Not JSON
-          @director.should_receive(:perform_http_request).and_return([code, "error message goes here", { }])
+          mock_response = mock("response", :code => code, :body => "error message goes here", :headers => {})
+          @director.should_receive(:perform_http_request).and_return(mock_response)
           @director.request(:get, "/stuff", "application/octet-stream", "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError, "Director error (HTTP #{code}): error message goes here")
 
         lambda {
           # JSON but weird
-          @director.should_receive(:perform_http_request).and_return([code, JSON.generate("a" => "b", "c" => "d"), { }])
+          mock_response = mock("response", :code => code, :body => JSON.generate("a" => "b", "c" => "d"), :headers => { })
+          @director.should_receive(:perform_http_request).and_return(mock_response)
           @director.request(:get, "/stuff", "application/octet-stream", "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError, %Q[Director error (HTTP #{code}): {"a":"b","c":"d"}])
       end
@@ -280,6 +285,12 @@ describe Bosh::Cli::Director do
       lambda {
         @director.request(:get, "/stuff", "app/zb", "payload", { })
       }.should raise_error Bosh::Cli::DirectorError
+    end
+
+    it "streams file" do
+      mock_response = mock("response", :code => 200, :file => mock("file", :path => "/tmp/foo"), :headers => { })
+      @director.should_receive(:perform_http_request).and_return(mock_response)
+      @director.request(:get, "/files/foo", nil, nil, { }, { :file => true }).should == [200, "/tmp/foo", { }]
     end
   end
 
@@ -307,7 +318,7 @@ describe Bosh::Cli::Director do
 
       @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, JSON.generate("state" => "processing") ]
       @director.should_receive(:get).with("/tasks/1/output", nil, nil, "Range" => "bytes=0-").exactly(10).times.and_return(nil)
-      @director.should_receive(:wait).with(5).exactly(9).times.and_return(nil)
+      @director.should_receive(:sleep).with(5).exactly(9).times.and_return(nil)
 
       @director.poll_task(1, :poll_interval => 5, :max_polls => 10).should == :track_timeout
     end
