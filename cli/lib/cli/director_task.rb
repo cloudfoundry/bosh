@@ -16,6 +16,10 @@ module Bosh
         @director.get_task_state(@task_id)
       end
 
+      def result
+        @director.get_task_result(@task_id)
+      end
+
       def output
         body, new_offset = @director.get_task_output(@task_id, @offset, @log_type)
 
