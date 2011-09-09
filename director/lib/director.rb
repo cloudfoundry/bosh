@@ -138,7 +138,11 @@ module Bosh::Director
       def task_timeout?(task)
         # Some of the old task entries might not have the checkpoint_time
         # If no checkpoint update in 3 cycles --> timeout
-        (task.state == "processing" || task.state == "cancelling") && task.checkpoint_time &&
+        unless task.checkpoint_time
+          task.checkpoint_time = Time.now
+          task.save
+        end
+        (task.state == "processing" || task.state == "cancelling") &&
           (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
       end
     end
