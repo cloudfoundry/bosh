@@ -75,4 +75,24 @@ describe Bosh::Director::Jobs::BaseJob do
     lambda { test.perform(1) }.should raise_exception(Bosh::Director::TaskNotFound)
   end
 
+  it "should cancel task" do
+    test = Class.new(Bosh::Director::Jobs::BaseJob)
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path", :state => "cancelling")
+
+    test.perform(1)
+    task.refresh
+    task.state.should == "cancelled"
+    Bosh::Director::Config.logger.should eql(@logger)
+  end
+
+  it "should cancel timeout-task" do
+    test = Class.new(Bosh::Director::Jobs::BaseJob)
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path", :state => "timeout")
+
+    test.perform(1)
+    task.refresh
+    task.state.should == "cancelled"
+    Bosh::Director::Config.logger.should eql(@logger)
+  end
+
 end
