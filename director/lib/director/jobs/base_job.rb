@@ -28,7 +28,7 @@ module Bosh::Director
             logger.info("Creating job")
             job = self.send(:new, *args)
             job.task_id = task_id
-            job.cancel_checkpoint # cancelled in the queue?
+            job.task_checkpoint # cancelled in the queue?
 
             logger.info("Performing task: #{task_id}")
             task.state = :processing
@@ -70,9 +70,9 @@ module Bosh::Director
         logger.info("Task took #{Duration.duration(ended - started)} to process.")
       end
 
-      def cancel_checkpoint
+      def task_checkpoint
         task = Models::Task[@task_id]
-        if task && task.state == "cancelling"
+        if task && (task.state == "cancelling" || task.state == "timeout")
           raise TaskCancelled.new(@task_id)
         end
       end
