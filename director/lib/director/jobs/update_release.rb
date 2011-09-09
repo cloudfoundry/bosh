@@ -212,6 +212,11 @@ module Bosh::Director
         end
         template.package_names = package_names
 
+        if job_manifest["logs"]
+          raise JobInvalidLogSpec.new(template.name) unless job_manifest["logs"].is_a?(Hash)
+          template.logs = job_manifest["logs"]
+        end
+
         template.save
       end
 
