@@ -52,6 +52,17 @@ module Bosh::Director
       finish_task(task, index)
     end
 
+    def track_and_log(task, logger)
+      track(task) do
+        logger.info(task)
+        yield
+      end
+    end
+
+    def start_task(task, index)
+      log(task, "started", index)
+    end
+
     def start_task(task, index, progress = 0)
       log(task, "started", index, progress)
     end

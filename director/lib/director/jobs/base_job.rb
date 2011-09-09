@@ -77,6 +77,13 @@ module Bosh::Director
         end
       end
 
+      def track_and_log(stage_name)
+        @event_log.track(stage_name) do
+          @logger.info(stage_name)
+          yield
+        end
+      end
+
     end
   end
 end

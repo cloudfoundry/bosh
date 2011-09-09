@@ -200,13 +200,6 @@ module Bosh::Director
 
       private
 
-      def track_and_log(stage_name)
-        @event_log.track(stage_name) do
-          @logger.info(stage_name)
-          yield
-        end
-      end
-
       def sum_across_pools(counting_method)
         @resource_pool_updaters.inject(0) { |sum, updater| sum += updater.send(counting_method.to_sym) }
       end
