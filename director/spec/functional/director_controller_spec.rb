@@ -7,9 +7,16 @@ describe Bosh::Director::Controller do
 
   before(:each) do
     @temp_dir = Dir.mktmpdir
+    @blobstore_dir = File.join(@temp_dir, "blobstore")
+    FileUtils.mkdir_p(@blobstore_dir)
     FileUtils.mkdir_p(@temp_dir)
+
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
+    test_config["blobstore"] = {
+      "plugin" => "local",
+      "properties" => { "blobstore_path" => @blobstore_dir }
+    }
     Bosh::Director::Config.configure(test_config)
   end
 
@@ -35,6 +42,7 @@ describe Bosh::Director::Controller do
 
     new_task = Bosh::Director::Models::Task[$1]
     new_task.state.should == "queued"
+    new_task
   end
 
   it "requires auth" do
@@ -128,6 +136,26 @@ describe Bosh::Director::Controller do
       it "doesn't like invalid indices" do
         put "/deployments/foo/jobs/dea/zb?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
         last_response.status.should == 400
+      end
+    end
+
+    describe "log management" do
+      it "allows fetching logs from a particular instance" do
+        deployment = Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({ "foo" => "bar" }))
+        instance = Bosh::Director::Models::Instance.create(:deployment => deployment, :job => "nats", :index => "0", :state => "started")
+        get "/deployments/foo/jobs/nats/0/logs", {}
+        expect_redirect_to_queued_task(last_response)
+      end
+
+      it "404 if no instance" do
+        get "/deployments/baz/jobs/nats/0/logs", {}
+        last_response.status.should == 404
+      end
+
+      it "404 if no deployment" do
+        deployment = Bosh::Director::Models::Deployment.create(:name => "bar", :manifest => YAML.dump({ "foo" => "bar" }))
+        get "/deployments/bar/jobs/nats/0/logs", {}
+        last_response.status.should == 404
       end
     end
 
@@ -386,7 +414,6 @@ describe Bosh::Director::Controller do
         last_response.headers["Content-Range"].should == "bytes 5-10/11"
       end
 
-
       it "supports returning different types of output (debug, soap, event)" do
         %w(debug event soap).each do |log_type|
           output_file = File.new(File.join(@temp_dir, log_type), 'w+')
@@ -411,6 +438,38 @@ describe Bosh::Director::Controller do
         get "/tasks/#{task.id}/output"
         last_response.status.should == 200
         last_response.body.should == "Test output debug"
+      end
+    end
+
+    describe "resources" do
+      it "404 on missing resource" do
+        get "/resources/deadbeef"
+        last_response.status.should == 404
+      end
+
+      it "can fetch resources from blobstore" do
+        id = Bosh::Director::Config.blobstore.create("some data")
+        get "/resources/#{id}"
+        last_response.status.should == 200
+        last_response.body.should == "some data"
+      end
+
+      it "cleans up temp file after serving it" do
+        tmp_file = File.join(Dir.tmpdir, "resource-#{UUIDTools::UUID.random_create}")
+
+        File.open(tmp_file, "w") do |f|
+          f.write("some data")
+        end
+
+        FileUtils.touch(tmp_file)
+        manager = mock("manager")
+        Bosh::Director::ResourceManager.stub!(:new).and_return(manager)
+        manager.stub!(:get_resource).with("deadbeef").and_return(tmp_file)
+
+        File.exists?(tmp_file).should be_true
+        get "/resources/deadbeef"
+        last_response.body.should == "some data"
+        File.exists?(tmp_file).should be_false
       end
     end
 
@@ -469,6 +528,7 @@ describe Bosh::Director::Controller do
         user.should be_nil
       end
     end
+
   end
 
 end

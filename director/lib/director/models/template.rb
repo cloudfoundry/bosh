@@ -12,6 +12,15 @@ module Bosh::Director::Models
       self.package_names_json = Yajl::Encoder.encode(packages)
     end
 
+    def logs=(logs_spec)
+      self.logs_json = Yajl::Encoder.encode(logs_spec)
+    end
+
+    def logs
+      result = self.logs_json
+      result ? Yajl::Parser.parse(result) : nil
+    end
+
     def validate
       validates_presence [:release_id, :name, :version, :blobstore_id, :sha1]
       validates_unique [:release_id, :name, :version]
