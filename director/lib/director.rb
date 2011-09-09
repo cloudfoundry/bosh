@@ -25,6 +25,7 @@ require "uuidtools"
 require "yajl"
 require "esxmq"
 
+require "director/api_helpers"
 require "director/thread_formatter"
 require "director/deep_copy"
 require "director/ext"
@@ -55,12 +56,14 @@ require "director/lock"
 require "director/nats_rpc"
 require "director/package_compiler"
 require "director/release_manager"
+require "director/resource_manager"
 require "director/resource_pool_updater"
 require "director/sequel"
 require "director/task_manager"
 require "director/thread_pool"
 require "director/user_manager"
 require "director/deployment_manager"
+require "director/instance_manager"
 require "director/stemcell_manager"
 require "director/jobs/base_job"
 require "director/jobs/delete_deployment"
@@ -69,6 +72,7 @@ require "director/jobs/delete_stemcell"
 require "director/jobs/update_deployment"
 require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
+require "director/jobs/fetch_logs"
 
 module Bosh::Director
   autoload :Models, "director/models"
@@ -103,6 +107,7 @@ module Bosh::Director
   end
 
   class ApiController < Sinatra::Base
+    include ApiHelpers
 
     def initialize
       super
@@ -111,6 +116,8 @@ module Bosh::Director
       @stemcell_manager   = StemcellManager.new
       @task_manager       = TaskManager.new
       @user_manager       = UserManager.new
+      @instance_manager   = InstanceManager.new
+      @resource_manager   = ResourceManager.new
       @logger             = Config.logger
     end
 
@@ -262,8 +269,23 @@ module Bosh::Director
       }
 
       deployment = Models::Deployment.find(:name => params[:deployment])
-      raise DeploymentNotFound.new(name) if deployment.nil?
+      raise DeploymentNotFound.new(params[:deployment]) if deployment.nil?
       task = @deployment_manager.create_deployment(@user, request.body, options)
+      redirect "/tasks/#{task.id}"
+    end
+
+    # GET /deployments/foo/jobs/dea/2/logs
+    get "/deployments/:deployment/jobs/:job/:index/logs" do
+      deployment = params[:deployment]
+      job = params[:job]
+      index = params[:index]
+
+      options = {
+        "type" => params[:type].to_s.strip,
+        "filters" => params[:filters].to_s.strip.split(/[\s\,]+/)
+      }
+
+      task = @instance_manager.fetch_logs(@user, deployment, job, index, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -278,14 +300,14 @@ module Bosh::Director
     end
 
     get "/deployments/:name" do
-      name       = params[:name].to_s.strip
+      name = params[:name].to_s.strip
       deployment = Models::Deployment.find(:name => name)
       raise DeploymentNotFound.new(name) if deployment.nil?
       @deployment_manager.deployment_to_json(deployment)
     end
 
     get "/deployments/:name/vms" do
-      name       = params[:name].to_s.strip
+      name = params[:name].to_s.strip
       deployment = Models::Deployment.find(:name => name)
       raise DeploymentNotFound.new(name) if deployment.nil?
       @deployment_manager.deployment_vms_to_json(deployment)
@@ -436,6 +458,12 @@ module Bosh::Director
         status(204)
       end
       output
+    end
+
+    # GET /resources/deadbeef
+    get "/resources/:id" do
+      tmp_file = @resource_manager.get_resource(params[:id])
+      send_disposable_file(tmp_file, :type => "application/x-gzip")
     end
 
     get "/info" do

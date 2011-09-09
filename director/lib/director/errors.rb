@@ -66,15 +66,22 @@ module Bosh::Director
    ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
 
    ["DeploymentNotFound",      NOT_FOUND,   70000, "Deployment \"%s\" doesn't exist"],
+   ["InstanceNotFound",        NOT_FOUND,   70001, "Job instance \"%s\" doesn't exist"],
 
    ["JobInvalidArchive",       BAD_REQUEST, 80000, "Job: \"%s\" invalid archive, tar exit status: %s, output: %s"],
    ["JobMissingManifest",      BAD_REQUEST, 80001, "Job: \"%s\" missing job manifest"],
    ["JobMissingTemplateFile",  BAD_REQUEST, 80002, "Job: \"%s\" missing template file: \"%s\""],
    ["JobMissingPackage",       BAD_REQUEST, 80003, "Job: \"%s\" missing package: \"%s\""],
    ["JobMissingMonit",         BAD_REQUEST, 80004, "Job: \"%s\" missing monit configuration"],
+   ["JobInvalidLogSpec",       BAD_REQUEST, 80005, "Job: \"%s\" invalid logs spec format"],
 
    ["NotEnoughCapacity",       BAD_REQUEST, 90000, "%s"],
-   ["InstanceInvalidIndex",    BAD_REQUEST, 90001, "Invalid job index: \"%s\""]
+   ["InstanceInvalidIndex",    BAD_REQUEST, 90001, "Invalid job index: \"%s\""],
+   ["InvalidRequest",          BAD_REQUEST, 90002, "Invalid request: \"%s\""],
+
+   ["ResourceError",           BAD_REQUEST,  100001, "Error fetching resource %s: %s"],
+   ["ResourceNotFound",        NOT_FOUND,    100002, "Resource %s not found"],
+
   ].each do |e|
     class_name, response_code, error_code, format = e
 
