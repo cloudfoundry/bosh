@@ -10,6 +10,10 @@ module Bosh::Agent
         Bosh::Agent::Config.base_dir
       end
 
+      def logs_dir
+        File.join(base_dir, "sys", "log")
+      end
+
       def settings
         Bosh::Agent::Config.settings
       end
@@ -20,6 +24,11 @@ module Bosh::Agent
 
       def store_migration_target
         File.join(base_dir, 'store_migraton_target')
+      end
+
+      def handler_error(message)
+        logger.error("Handler error: #{message}")
+        raise Bosh::Agent::MessageHandlerError, message
       end
 
     end

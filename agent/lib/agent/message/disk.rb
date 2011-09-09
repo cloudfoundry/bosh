@@ -4,6 +4,8 @@ module Bosh::Agent
   module Message
 
     class MigrateDisk < Base
+      def self.long_running?; true; end
+
       def self.process(args)
         #logger = Bosh::Agent::Config.logger
         #logger.info("MigrateDisk:" + args.inspect)
@@ -58,7 +60,6 @@ module Bosh::Agent
         end
       end
 
-      def self.long_running?; true; end
     end
 
     class MountDisk < Base
@@ -170,6 +171,8 @@ module Bosh::Agent
       GUARD_RETRIES = 300
       GUARD_SLEEP = 1
 
+      def self.long_running?; true; end
+
       def self.process(args)
         self.new.unmount(args)
       end
@@ -219,8 +222,6 @@ module Bosh::Agent
         }
         logger.info("Unmount umount_guard (attempts: #{GUARD_RETRIES-umount_attempts})")
       end
-
-      def self.long_running?; true; end
     end
 
     class DiskUtil
@@ -259,7 +260,7 @@ module Bosh::Agent
         def ensure_no_partition?(disk, partition)
           check_count = 2
           check_count.times do
-            if sfdisk_lookup_partition(disk, partition).empty? 
+            if sfdisk_lookup_partition(disk, partition).empty?
               # keep on trying
             else
               if File.blockdev?(partition)

@@ -6,7 +6,7 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.3.2)
+    blobstore_client (0.3.4)
       aws-s3
       httpclient
       uuidtools
@@ -18,7 +18,7 @@ GEM
     daemons (1.1.4)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
-    httpclient (2.2.0)
+    httpclient (2.2.0.1)
     json_pure (1.5.3)
     linecache (0.43)
     linecache19 (0.5.12)
@@ -71,7 +71,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  blobstore_client (~> 0.3)
+  blobstore_client (>= 0.3.4)
   ci_reporter
   monit_api
   nats
