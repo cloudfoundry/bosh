@@ -11,7 +11,7 @@ end
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
-trap("INT") { puts "\nExiting..."; exit(0) }
+trap("INT") { puts "\nExiting..."; exit(1) }
 
 Thread.abort_on_exception = true
 Bosh::Cli::Runner.run(ARGV.dup)
