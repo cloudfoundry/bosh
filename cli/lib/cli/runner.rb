@@ -65,6 +65,8 @@ module Bosh
           display_usage
         end
 
+        @normal_exit = true
+
       rescue OptionParser::InvalidOption => e
         puts(e.message.red)
         puts("\n")
@@ -96,6 +98,7 @@ module Bosh
         end
       ensure
         say("\n")
+        exit(@normal_exit ? 0 : 1)
       end
 
       def parse_options!
