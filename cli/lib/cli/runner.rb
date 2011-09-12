@@ -334,8 +334,8 @@ USAGE
           what = @args.shift
           case what
           when "deployment"
-            usage("bosh delete deployment <name>")
-            set_cmd(:deployment, :delete, 1)
+            usage("bosh delete deployment <name> [--force]")
+            set_cmd(:deployment, :delete, 1..2)
           when "stemcell"
             usage("bosh delete stemcell <name> <version>")
             set_cmd(:stemcell, :delete, 2)

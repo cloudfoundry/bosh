@@ -71,8 +71,9 @@ module Bosh::Cli::Command
       say responses[status] || "Cannot deploy: #{body}"
     end
 
-    def delete(name)
+    def delete(name, *options)
       auth_required
+      force = options.include?("--force")
 
       say "\nYou are going to delete deployment `#{name}'.\n\nTHIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red
 
@@ -81,7 +82,7 @@ module Bosh::Cli::Command
         return
       end
 
-      status, message = director.delete_deployment(name)
+      status, message = director.delete_deployment(name, :force => force)
 
       responses = {
         :done          => "Deleted deployment '%s'" % [ name ],
