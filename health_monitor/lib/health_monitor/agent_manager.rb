@@ -125,6 +125,7 @@ module Bosh::HealthMonitor
       end
 
       agent_id = vm_data["agent_id"]
+      agent_cid = vm_data["cid"]
 
       if agent_id.nil? # TODO: alert?
         @logger.warn("No agent id for VM: #{vm_data}")
@@ -140,12 +141,14 @@ module Bosh::HealthMonitor
 
       if agent.nil?
         @logger.debug("Discovered agent #{agent_id}")
-        @agents[agent_id] = Agent.new(agent_id, deployment_name, vm_data["job"], vm_data["index"])
-      else
-        agent.deployment = deployment_name
-        agent.job        = vm_data["job"]
-        agent.index      = vm_data["index"]
+        agent = Agent.new(agent_id)
+        @agents[agent_id] = agent
       end
+
+      agent.deployment = deployment_name
+      agent.job        = vm_data["job"]
+      agent.index      = vm_data["index"]
+      agent.cid        = vm_data["cid"]
 
       @deployments[deployment_name] ||= Set.new
       @deployments[deployment_name] << agent_id
