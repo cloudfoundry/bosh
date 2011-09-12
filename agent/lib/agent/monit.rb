@@ -139,20 +139,28 @@ module Bosh::Agent
         end
       end
 
-      def unmonitor_services
-        retry_monit_request { |client| client.unmonitor(:group => BOSH_APP_GROUP) }
+      def unmonitor_services(attempts=10)
+        retry_monit_request(attempts) do |client|
+          client.unmonitor(:group => BOSH_APP_GROUP)
+        end
       end
 
-      def monitor_services
-        retry_monit_request { |client| client.monitor(:group => BOSH_APP_GROUP) }
+      def monitor_services(attempts=10)
+        retry_monit_request(attempts) do |client|
+          client.monitor(:group => BOSH_APP_GROUP)
+        end
       end
 
-      def start_services
-        retry_monit_request(20) { |client| client.start(:group => BOSH_APP_GROUP) }
+      def start_services(attempts=20)
+        retry_monit_request(attempts) do |client|
+          client.start(:group => BOSH_APP_GROUP)
+        end
       end
 
-      def stop_services
-        retry_monit_request(20) { |client| client.stop(:group => BOSH_APP_GROUP) }
+      def stop_services(attempts=20)
+        retry_monit_request(attempts) do |client|
+          client.stop(:group => BOSH_APP_GROUP)
+        end
       end
 
       def retry_monit_request(attempts=10)
