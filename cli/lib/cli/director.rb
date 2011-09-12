@@ -105,8 +105,13 @@ module Bosh
         request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil)
       end
 
-      def delete_deployment(name)
-        request_and_track(:delete, "/deployments/%s" % [ name ], nil, nil)
+      def delete_deployment(name, options = {})
+        url = "/deployments/#{name}"
+        query_params = []
+        query_params << "force=true" if options[:force]
+        url += "?#{query_params.join("&")}" if query_params.size > 0
+
+        request_and_track(:delete, url, nil, nil)
       end
 
       def delete_release(name, options = {})

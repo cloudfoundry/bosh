@@ -4,10 +4,11 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(deployment_name)
+      def initialize(deployment_name, options = {})
         @logger = Config.logger
         @logger.info("Deleting: #{deployment_name}")
         @deployment_name = deployment_name
+        @force = options["force"] || false
         @cloud = Config.cloud
       end
 
@@ -18,21 +19,21 @@ module Bosh::Director
 
           if instance.disk_cid
             if vm
-              # TODO: by default we should not ignore this, only support this when we support a forceful delete
               begin
                 @logger.info("Detaching found disk: #{instance.disk_cid}")
                 @cloud.detach_disk(vm.cid, instance.disk_cid)
               rescue => e
                 @logger.warn("Could not detach disk from VM: #{e} - #{e.backtrace.join("")}")
+                raise unless @force
               end
             end
 
-            # TODO: by default we should not ignore this, only support this when we support a forceful delete
             begin
               @logger.info("Deleting found disk: #{instance.disk_cid}")
               @cloud.delete_disk(instance.disk_cid)
             rescue => e
               @logger.warn("Could not delete disk: #{e} - #{e.backtrace.join("")}")
+              raise unless @force
             end
           end
 
@@ -47,11 +48,11 @@ module Bosh::Director
       def delete_vm(vm)
         with_thread_name("delete_vm(#{vm.cid})") do
           @logger.info("Deleting VM: #{vm.cid}")
-          # TODO: by default we should not ignore this, only support this when we support a forceful delete
           begin
             @cloud.delete_vm(vm.cid)
           rescue => e
             @logger.warn("Could not delete VM: #{e} - #{e.backtrace.join("")}")
+            raise unless @force
           end
           vm.destroy
         end
