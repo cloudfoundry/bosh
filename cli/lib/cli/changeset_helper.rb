@@ -114,7 +114,7 @@ module Bosh::Cli
         :added
       elsif !old.nil? && new.nil?
         :removed
-      elsif old.class != new.class
+      elsif old.class != new.class && !(boolean?(old) && boolean?(new))
         :mismatch
       elsif old == new
         :same
@@ -127,6 +127,10 @@ module Bosh::Cli
       define_method("#{s}?".to_sym) do
         state == s
       end
+    end
+
+    def boolean?(value)
+      value.kind_of?(TrueClass) || value.kind_of?(FalseClass)
     end
   end
 end
