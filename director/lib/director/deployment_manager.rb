@@ -15,9 +15,9 @@ module Bosh::Director
       task
     end
 
-    def delete_deployment(user, deployment)
+    def delete_deployment(user, deployment, options = {})
       task = create_task(user, "delete deployment: #{deployment.name}")
-      Resque.enqueue(Jobs::DeleteDeployment, task.id, deployment.name)
+      Resque.enqueue(Jobs::DeleteDeployment, task.id, deployment.name, options)
       task
     end
 

@@ -299,7 +299,10 @@ module Bosh::Director
     delete "/deployments/:name" do
       deployment = Models::Deployment[:name => params[:name]]
       raise DeploymentNotFound.new(params[:name]) if deployment.nil?
-      task = @deployment_manager.delete_deployment(@task, deployment)
+
+      options = {}
+      options["force"] = true if params["force"] == "true"
+      task = @deployment_manager.delete_deployment(@task, deployment, options)
       redirect "/tasks/#{task.id}"
     end
 
