@@ -13,6 +13,13 @@ package "postgresql-9.0" do
   options "--force-yes" # since it's not authenticated
 end
 
+template "/etc/logrotate.d/postgresql-common" do
+  source "postgresql-common.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
 directory node[:postgresql][:data_directory] do
   owner "postgres"
   group "postgres"
