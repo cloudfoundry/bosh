@@ -37,6 +37,7 @@ module Bosh::Director
 
         vms << {
           "agent_id" => vm.agent_id,
+          "cid"      => vm.cid,
           "job"      => instance ? instance.job : nil,
           "index"    => instance ? instance.index : nil
         }

@@ -244,7 +244,7 @@ describe Bosh::Director::Controller do
         body.size.should == 15
 
         15.times do |i|
-          body[i].should == { "agent_id" => "agent-#{i}", "job" => "job-#{i}", "index" => i }
+          body[i].should == { "agent_id" => "agent-#{i}", "job" => "job-#{i}", "index" => i, "cid" => "cid-#{i}" }
         end
       end
     end
