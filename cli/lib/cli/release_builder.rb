@@ -54,10 +54,6 @@ module Bosh::Cli
     def build(options = {})
       options = { :generate_tarball => true }.merge(options)
 
-      header("Copying jobs...")
-      copy_jobs
-      header("Copying packages...")
-      copy_packages
       header("Generating manifest...")
       generate_manifest
       if options[:generate_tarball]
@@ -151,8 +147,15 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      copy_packages unless @packages_copied
-      copy_jobs unless @jobs_copied
+      unless @jobs_copied
+        header("Copying jobs...")
+        copy_jobs
+      end
+      unless @packages_copied
+        header("Copying packages...")
+        copy_packages
+      end
+
       generate_manifest unless @manifest_generated
 
       FileUtils.mkdir_p(File.dirname(tarball_path))
