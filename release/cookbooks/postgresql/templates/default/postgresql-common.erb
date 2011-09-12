@@ -1,0 +1,9 @@
+/var/log/postgresql/*.log {
+  size 10M
+  rotate 5
+  copytruncate
+  delaycompress
+  compress
+  notifempty
+  missingok
+}
