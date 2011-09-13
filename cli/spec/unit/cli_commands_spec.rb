@@ -130,7 +130,7 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the deployment" do
       mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_deployment).with("foo")
+      mock_director.should_receive(:delete_deployment).with("foo", :force => false)
 
       @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:target).and_return("test")
