@@ -39,12 +39,13 @@ describe Bhm::Agent do
 
   it "can exist without job name and index" do
     agent = make_agent("zb")
-    agent.name.should == "unknown deployment: unknown job(index n/a) [zb]"
+    agent.cid = "deadbeef"
+    agent.name.should == "unknown deployment: unknown job(index n/a) [agent_id=zb, cid=deadbeef]"
   end
 
   it "has well-formed name" do
     agent = make_agent("zb-023-ppc", "oleg-cloud", "mysql_node", "0")
-    agent.name.should == "oleg-cloud: mysql_node(0) [zb-023-ppc]"
+    agent.name.should == "oleg-cloud: mysql_node(0) [agent_id=zb-023-ppc, cid=]"
   end
 
 end

@@ -9,6 +9,7 @@ module Bosh::HealthMonitor
     attr_writer :job
     attr_writer :index
     attr_writer :deployment
+    attr_writer :cid
 
     def initialize(id, deployment = nil, job = nil, index = nil)
       @id            = id
@@ -19,10 +20,11 @@ module Bosh::HealthMonitor
       @deployment    = deployment
       @job           = job
       @index         = index
+      @cid           = nil
     end
 
     def name
-      "#{deployment}: #{job}(#{index}) [#{@id}]"
+      "#{deployment}: #{job}(#{index}) [agent_id=#{@id}, cid=#{@cid}]"
     end
 
     def job
@@ -35,6 +37,10 @@ module Bosh::HealthMonitor
 
     def deployment
       @deployment || "unknown deployment"
+    end
+
+    def cid
+      @cid || "unknown cid"
     end
 
     def timed_out?
