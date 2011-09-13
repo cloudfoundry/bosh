@@ -54,7 +54,7 @@ module VMBuilder
           copy_file(File.expand_path(manifest), "#{tmpdir}/micro/config/micro.yml")
           copy_file(File.expand_path(tarball), "#{tmpdir}/micro/config/micro.tgz")
 
-          version = VCAP::Micro::VERSION
+          version = VCAP::Micro::Version::VERSION
           vmopts[:config] = File.join(tmpdir, "vmbuilder.cfg")
           inside(opts[:work_dir]) do
             vmbuilder(vmopts)
