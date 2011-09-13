@@ -1,7 +1,7 @@
 module VCAP
   module Micro
     class Watcher
-      attr_reader :sleep
+      attr_reader :sleep, :paused
 
       PING_SLEEP = 5
       DEFAULT_SLEEP = 15
@@ -15,6 +15,7 @@ module VCAP
         @network = network
         @identity = identity
         @sleep = DEFAULT_SLEEP
+        @paused = false
         @start = Time.now.to_i
         @logger = Console.logger
       end
@@ -26,14 +27,22 @@ module VCAP
         end
       end
 
+      def pause
+        @paused = true
+        # reset sleep when we pause so it will be responsive when we resume
+        @sleep = DEFAULT_SLEEP
+      end
+
+      def resume
+        @paused = false
+      end
+
       def watch
-        while @sleep < MAX_SLEEP
-          check
+        while true
+          check unless @paused
           @logger.debug("sleeping for #{@sleep} seconds...")
           Kernel.sleep(@sleep)
         end
-        @logger.warn("sleep (#{@sleep}) > MAX_SLEEP (#{MAX_SLEEP})")
-        @network.connection_lost
       rescue => e
         @logger.error("watcher caught: #{e.message}\n#{e.backtrace.join("\n")}")
         retry
@@ -49,18 +58,23 @@ module VCAP
           # time and try again
           unless gw
             @sleep += DEFAULT_SLEEP
+            @sleep = MAX_SLEEP if @sleep > MAX_SLEEP
             return
           end
 
           # if we can't ping the local gateway then something is wrong
           unless forgiving_ping(gw)
             @logger.warn("watcher could not ping gateway: #{gw}")
-            @network.connection_lost
-            return
+            # some networks, like the free WiFi at McCarren, actually
+            # block ping to the gateway (why on earth are they doing that,
+            # it is NOT improving the security) so we can't count on it
+            # being a valid test - so just log the result
           else
             @logger.debug("watcher could ping gateway: #{gw}")
           end
 
+          # TODO investigate why this sometimes fail when it works from
+          # the OS (host s.root-servers.net)
           unless VCAP::Micro::Network.lookup(A_ROOT_SERVER) == A_ROOT_SERVER_IP
             @logger.warn("watcher could not look up #{A_ROOT_SERVER}")
             @network.connection_lost

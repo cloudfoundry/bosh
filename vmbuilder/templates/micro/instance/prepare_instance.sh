@@ -94,6 +94,10 @@ rm /etc/init/portmap.new
 # make sshd lisen to IPv4 only
 echo 'ListenAddress 0.0.0.0' >> /etc/ssh/sshd_config
 
+cp console.sh /etc/init.d
+chmod 755 /etc/init.d/console.sh
+ln -s /etc/init.d/console.sh /etc/rc2.d/S10console
+
 cat > /etc/init/tty1.conf <<EOT
 start on stopped rc RUNLEVEL=[2345]
 stop on runlevel [!2345]

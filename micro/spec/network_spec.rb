@@ -22,11 +22,33 @@ describe VCAP::Micro::Network do
   end
 
   it "should be able to ping localhost" do
-    VCAP::Micro::Network.ping("localhost").should be_true
+    VCAP::Micro::Network.ping("localhost", 1).should be_true
   end
 
   it "should be able to get the IP of the default gateway" do
     VCAP::Micro::Network.gateway.should_not be_nil
+  end
+
+  describe "DNS lookup" do
+    it "should work for www.ripe.net" do
+      VCAP::Micro::Network.lookup("www.ripe.net").should ==
+        "193.0.6.139"
+    end
+
+    it "should not work for an invalid name" do
+      VCAP::Micro::Network.lookup("foo.bar").should be_nil
+    end
+  end
+
+  describe "reverse DNS lookup" do
+    it "should work for www.ripe.net" do
+      VCAP::Micro::Network.reverse_lookup("193.0.6.139").should ==
+        "www.ripe.net"
+    end
+
+    it "should not work for an invalid IP address" do
+      VCAP::Micro::Network.reverse_lookup("260.0.6.139").should be_nil
+    end
   end
 
   it "should create network config for dhcp" do
