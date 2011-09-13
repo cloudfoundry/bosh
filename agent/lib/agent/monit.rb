@@ -177,23 +177,56 @@ module Bosh::Agent
         end
       end
 
-      def service_group_state(num_retries=10)
+      def get_status(num_retries=10)
+        return {} unless @enabled
+        retry_monit_request(num_retries) do |client|
+          client.status(:group => BOSH_APP_GROUP)
+        end
+      end
+
+      def get_vitals(status_data = nil, num_retries=10)
+        return { } unless @enabled
+        status = status_data || get_status(num_retries)
+
+        status.inject({}) do |result, (service, data)|
+          raw_data = data[:raw] || {}
+          cpu_data = raw_data["cpu"] || {}
+          mem_data = raw_data["memory"] || {}
+
+          result[service] = {
+            "status" => data[:status][:message],
+            "children" => raw_data["children"],
+            "uptime" => raw_data["uptime"],
+            "memory" => {
+              "percent" => mem_data["percent"],
+              "kb" => mem_data["kilobyte"],
+            },
+            "memory_total" => {
+              "percent" => mem_data["percenttotal"],
+              "kb" => mem_data["kilobytetotal"]
+            },
+            "cpu" => cpu_data["percent"],
+            "cpu_total" => cpu_data["percenttotal"]
+          }
+          result
+        end
+      end
+
+      def service_group_state(status_data=nil, num_retries=10)
         # FIXME: state should be unknown if monit is disabled
         # However right now that would break director interaction
         # (at least in integration tests)
         return "running" unless @enabled
+        status = status_data || get_status(num_retries)
 
-        retry_monit_request(num_retries) do |client|
-          status = client.status(:group => BOSH_APP_GROUP)
-
-          not_running = status.reject do |name, data|
-            # break early if any service is initializing
-            return "starting" if data[:monitor] == :init
-            # at least with monit_api a stopped services is still running
-            (data[:monitor] == :yes && data[:status][:message] == "running")
-          end
-          not_running.empty? ? "running" : "failing"
+        not_running = status.reject do |name, data|
+          # break early if any service is initializing
+          return "starting" if data[:monitor] == :init
+          # at least with monit_api a stopped services is still running
+          (data[:monitor] == :yes && data[:status][:message] == "running")
         end
+
+        not_running.empty? ? "running" : "failing"
       rescue => e
         logger.info("Unable to determine job state: #{e}")
         "unknown"
