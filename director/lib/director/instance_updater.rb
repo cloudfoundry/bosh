@@ -114,11 +114,7 @@ module Bosh::Director
         raise "Error while detaching disk: unknown disk attached to instance"
       end
 
-      task = agent.unmount_disk(@instance.disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
+      unmount_disk(agent, @instance.disk_cid)
       @cloud.detach_disk(@vm.cid, @instance.disk_cid)
     end
 
@@ -126,11 +122,7 @@ module Bosh::Director
       return if @instance.disk_cid.nil?
 
       @cloud.attach_disk(@vm.cid, @instance.disk_cid)
-      task = agent.mount_disk(@instance.disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
+      mount_disk(agent, @instance.disk_cid)
     end
 
     def delete_vm
@@ -173,6 +165,36 @@ module Bosh::Director
         sleep(1.0)
         task = agent.get_task(task["agent_task_id"])
       end
+    end
+
+    def mount_disk(agent, disk_cid)
+      task = agent.mount_disk(disk_cid)
+      while task["state"] == "running"
+        sleep(1.0)
+        task = agent.get_task(task["agent_task_id"])
+      end
+    end
+
+    def unmount_disk(agent, disk_cid)
+      task = agent.unmount_disk(disk_cid)
+      while task["state"] == "running"
+        sleep(1.0)
+        task = agent.get_task(task["agent_task_id"])
+      end
+    end
+
+    def migrate_disk(agent, src_disk_cid, dst_disk_cid)
+      task = agent.migrate_disk(src_disk_cid, dst_disk_cid)
+      while task["state"] == "running"
+        sleep(1.0)
+        task = agent.get_task(task["agent_task_id"])
+      end
+    end
+
+    def delete_disk(agent, vm_cid, disk_cid)
+      unmount_disk(agent, disk_cid) rescue nil if agent
+      @cloud.detach_disk(vm_cid, disk_cid) rescue nil if vm_cid
+      @cloud.delete_disk(disk_cid)
     end
 
     def update_resource_pool(new_disk_cid = nil)
@@ -246,34 +268,19 @@ module Bosh::Director
           end
         end
 
-        task = agent.mount_disk(disk_cid)
-        while task["state"] == "running"
-          sleep(1.0)
-          task = agent.get_task(task["agent_task_id"])
-        end
-
-        if old_disk_cid
-          task = agent.migrate_disk(old_disk_cid, disk_cid)
-          while task["state"] == "running"
-            sleep(1.0)
-            task = agent.get_task(task["agent_task_id"])
-          end
+        begin
+          mount_disk(agent, disk_cid)
+          migrate_disk(agent, old_disk_cid, disk_cid) if old_disk_cid
+        rescue
+          delete_disk(agent, nil, disk_cid) rescue nil
+          raise
         end
       end
 
       @instance.disk_cid = disk_cid
       @instance.disk_size = @job_spec.persistent_disk
       @instance.save
-
-      if old_disk_cid
-        task = agent.unmount_disk(old_disk_cid)
-        while task["state"] == "running"
-          sleep(1.0)
-          task = agent.get_task(task["agent_task_id"])
-        end
-        @cloud.detach_disk(@vm.cid, old_disk_cid)
-        @cloud.delete_disk(old_disk_cid) if old_disk_cid
-      end
+      delete_disk(agent, @vm.cid, old_disk_cid) if old_disk_cid
     end
 
     def update_networks
