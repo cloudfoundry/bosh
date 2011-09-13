@@ -52,7 +52,7 @@ template "/etc/postgresql/9.0/main/postgresql.conf" do
 end
 
 service "postgresql" do
-  supports :restart => true, :status => true, :reload => true
+  supports :restart => true, :status => false, :reload => true
   action :start
 end
 
