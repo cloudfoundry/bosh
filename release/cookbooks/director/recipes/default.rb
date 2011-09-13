@@ -24,6 +24,13 @@ runit_service "director" do
   run_restart false
 end
 
+template "/etc/logrotate.d/bosh-director" do
+  source "director-logrotate.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
 node[:director][:workers].times do |index|
   runit_service "director-worker-#{index}" do
     template_name "director-worker"
