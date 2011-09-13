@@ -47,50 +47,6 @@ describe VCAP::Micro::Identity do
     i.nonce.should == "foobar"
   end
 
-  describe "version matcher" do
-    it "should return false for 1.0.0 and 1.0.0" do
-      with_constants "VCAP::Micro::VERSION" => "1.0.0" do
-        i = VCAP::Micro::Identity.new(@proxy)
-        i.should_update?("1.0.0").should be_false
-      end
-    end
-
-    it "should return false for 1.2 and 1.2.3" do
-      with_constants "VCAP::Micro::VERSION" => "1.2" do
-        i = VCAP::Micro::Identity.new(@proxy)
-        i.should_update?("1.2.3").should be_false
-      end
-    end
-
-    it "should return true for 1.3 and 1.2.4" do
-      with_constants "VCAP::Micro::VERSION" => "1.3" do
-        i = VCAP::Micro::Identity.new(@proxy)
-        i.should_update?("1.2.4").should be_true
-      end
-    end
-
-    it "should return false for 1.4 and 1.5.3_rc1" do
-      with_constants "VCAP::Micro::VERSION" => "1.4" do
-        i = VCAP::Micro::Identity.new(@proxy)
-        i.should_update?("1.5.3_rc1").should be_false
-      end
-    end
-
-    it "should return true for 1.2.6 and 1.2.5" do
-      with_constants "VCAP::Micro::VERSION" => "1.2.6" do
-        i = VCAP::Micro::Identity.new(@proxy)
-        i.should_update?("1.2.5").should be_true
-      end
-    end
-
-    it "should return true for 2.7 and 1.7.4" do
-      with_constants "VCAP::Micro::VERSION" => "2.7" do
-        i = VCAP::Micro::Identity.new(@proxy)
-        i.should_update?("1.7.4").should be_true
-      end
-    end
-  end
-
   it "should generate the correct default url" do
     i = VCAP::Micro::Identity.new(@proxy)
     i.url.should == "https://mcapi.cloudfoundry.com/api/v1/micro"
