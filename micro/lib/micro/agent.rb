@@ -43,20 +43,33 @@ module VCAP
         Agent.config
         Bosh::Agent::Monit.enabled = true
         Bosh::Agent::Monit.start
-        Bosh::Agent::Monit.start_services
+        Bosh::Agent::Monit.start_services(60)
       end
 
       def self.config
         settings = {
           "configure" => true,
-          "logging" => { "level" => "WARN" },
+          "logging" => {
+              "level" => "DEBUG",
+              "file" => "/var/vcap/sys/log/micro/agent.log"
+            },
           "agent_id" => "micro",
           "base_dir" => "/var/vcap",
           "platform_name" => "ubuntu",
           "blobstore_options" => { "blobstore_path" => "/var/vcap/data/cache" },
           "blobstore_provider" => "local"
         }
+        logdir = File.dirname(settings['logging']['file'])
+        FileUtils.mkdir_p(logdir) unless Dir.exist?(logdir)
         Bosh::Agent::Config.setup(settings)
+      end
+
+      def self.randomize_passwords
+        spec = YAML.load_file(APPLY_SPEC)
+        properties = spec['properties']
+        properties = VCAP::Micro::Settings.randomize_passwords(properties)
+        spec['properties'] = properties
+        File.open(APPLY_SPEC, 'w') { |f| f.write(YAML.dump(spec)) }
       end
 
       def initialize(identity)
@@ -84,23 +97,24 @@ module VCAP
 
         properties = @spec['properties']
 
-        unless @identity.configured?
-          properties = VCAP::Micro::Settings.randomize_passwords(properties)
-        end
-
         properties['domain'] = subdomain
         properties['cc']['srv_api_uri'] = "http://api.#{subdomain}"
         properties['cc']['admins'] = admins
 
-        if @identity.proxy.url.empty? && properties['env']
-          properties['env'].delete('http_proxy')
-          properties['env'].delete('https_proxy')
-          properties['env'].delete('no_proxy')
+        env = properties['env']
+        if @identity.proxy.url.empty?
+          if env
+            env.delete('http_proxy')
+            env.delete('https_proxy')
+            env.delete('no_proxy')
+          end
         else
-          properties['env'] = {} unless properties['env']
-          properties['env']['http_proxy'] = @identity.proxy.url
-          properties['env']['https_proxy'] = @identity.proxy.url
-          properties['env']['no_proxy'] = ".#{subdomain},127.0.0.1/8,localhost"
+          unless env
+            env = properties['env'] = {}
+          end
+          env['http_proxy'] = @identity.proxy.url
+          env['https_proxy'] = @identity.proxy.url
+          env['no_proxy'] = ".#{subdomain},127.0.0.1/8,localhost"
         end
 
         @spec['properties'] = properties
@@ -119,7 +133,11 @@ module VCAP
       def monitor_start
         started = []
 
-        Bosh::Agent::Monit.start_services
+        # TODO change start_service() and friends to take an retries argument
+        # Bosh::Agent::Monit.retry_monit_request(60) do |client|
+        #   client.start(:group => Bosh::Agent::BOSH_APP_GROUP)
+        # end
+        Bosh::Agent::Monit.start_services(60)
 
         loop do
           status = Bosh::Agent::Monit.retry_monit_request do |client|

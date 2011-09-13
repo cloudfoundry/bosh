@@ -5,7 +5,7 @@ module VCAP
   module Micro
     class Identity
       attr_accessor :admins, :ip, :nonce, :version
-      attr_reader :name, :cloud, :version, :api_host, :proxy
+      attr_reader :name, :cloud, :version, :api_host, :proxy, :latest_version
 
       DEFAULT_API_HOST = "mcapi.cloudfoundry.com"
       URL = "https://%s/api/v1/micro"
@@ -20,7 +20,7 @@ module VCAP
         @api_host ||= DEFAULT_API_HOST
         @client = resource
         @logger = Console.logger
-        @version = VCAP::Micro::VERSION
+        @version = VCAP::Micro::Version::VERSION
       end
 
       def configured?
@@ -61,8 +61,9 @@ module VCAP
       end
 
       def update_api_host(host)
-        @api_host = @config['api_host'] =host
+        @api_host = @config['api_host'] = host
         @client = resource
+        save
       end
 
       def install(ip)
@@ -82,6 +83,7 @@ module VCAP
           @client = resource
         end
 
+        save
         update_dns
       end
 
@@ -123,6 +125,11 @@ module VCAP
         warn("connection refused", e)
       rescue Errno::ETIMEDOUT => e
         warn("connection timed out", e)
+      rescue Errno::ECONNRESET => e
+        # TODO this might be eternal if they are behind a crappy proxy
+        warn("connection reset, your proxy might be interfering", e)
+      rescue RestClient::Found => e
+        warn("page redirected - your proxy is interfering: switch to NAT", e)
       rescue RestClient::Forbidden => e
         warn("authorization token has expired", e)
       rescue RestClient::ResourceNotFound => e
@@ -161,6 +168,8 @@ module VCAP
         response = Yajl::Parser.new.parse(json)
 
         if response
+          # latest is the file name - micro-1.0.0_rc2.tgz
+          @latest_version = Version.file2version(response["latest"])
           @version = response["version"] if response["version"]
           values = response.collect {|k,v| "#{k} = #{v}"}.join("\n")
           @logger.info("got following response from DNS update:\n#{values}")
@@ -189,7 +198,7 @@ module VCAP
         if Network.lookup(subdomain) == @ip
           say("done".green)
         else
-          say("DNS still not updated after #{Watcher::TTL} seconds".red)
+          say("DNS still synchronizing, continuing after waiting #{Watcher::TTL} seconds".yellow)
         end
       end
 
@@ -209,16 +218,6 @@ module VCAP
         end
       end
 
-      def should_update?(installed=VCAP::Micro::VERSION)
-        regexp = /(\d+)\.(\d+)\.*(\d+)*_*(\S+)*/
-        inst = installed.match(regexp)
-        curr = @version.match(regexp)
-        ok = true
-        ok = (inst[1] >= curr[1]) if curr[1]
-        ok = ok && (inst[2] >= curr[2]) if curr[2]
-        ok = ok && (inst[3] >= curr[3]) if curr[3]
-        !ok
-      end
     end
   end
 end
