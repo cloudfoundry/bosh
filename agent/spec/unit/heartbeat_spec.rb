@@ -4,7 +4,7 @@ describe Bosh::Agent::Heartbeat do
 
   before(:each) do
     state_file = Tempfile.new("state")
-    state_file.write(YAML.dump({ "job" => "mutator", "configuration_hash" => "deadbeef" }))
+    state_file.write(YAML.dump({ "job" => {"name" => "mutator" }, "index" => 3, "configuration_hash" => "deadbeef" }))
     state_file.close
 
     @state = Bosh::Agent::State.new(state_file.path)
@@ -18,7 +18,78 @@ describe Bosh::Agent::Heartbeat do
   end
 
   it "publishes heartbeat via nats (with job state in payload)" do
-    @nats.should_receive(:publish).with("hm.agent.heartbeat.agent-zb", Yajl::Encoder.encode({ "job_state" => "running" }))
+    processes_status = {
+      "service1" => {
+        :monitor => :yes,
+        :type => :process,
+        :status => {
+          :code => 10,
+          :message => "running"
+        },
+      },
+      "service2" => {
+        :monitor => :yes,
+        :type => :process,
+        :status => {
+          :code => 12,
+          :message => "running"
+        },
+      }
+    }
+
+    system_status = {
+      "system_deadbeef" => {
+        :monitor => :yes,
+        :type => :system,
+        :raw => {
+          "system" => {
+            "load" => {
+              "avg01" => 0.05,
+              "avg05" => 0.1,
+              "avg15" => 0.27,
+            },
+            "memory" => {
+              "percent" => 2.7,
+              "kilobyte" => 23121
+            },
+            "swap" => {
+              "percent" => 0.0,
+              "kilobyte" => 0
+            },
+            "cpu" => {
+              "user" => 2.2,
+              "system" => 0.2,
+              "wait" => 3.2
+            }
+          }
+        }
+      }
+    }
+
+    client = mock("monit_client")
+    client.stub!(:status).with(:group => "vcap").and_return(processes_status)
+    client.stub!(:status).with(:type => :system).and_return(system_status)
+
+    Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
+    Bosh::Agent::Monit.enabled = true
+
+    expected_payload = {
+      "job" => "mutator",
+      "index" => 3,
+      "job_state" => "running",
+      "vitals" => {
+        "load" => [0.05, 0.1, 0.27],
+        "mem" => { "percent" => 2.7, "kb" => 23121 },
+        "swap" => { "percent" => 0.0, "kb" => 0 },
+        "cpu" => { "user" => 2.2, "sys" => 0.2, "wait" => 3.2 }
+      }
+    }
+
+    @nats.should_receive(:publish) do |*args|
+      args[0].should == "hm.agent.heartbeat.agent-zb"
+      payload = Yajl::Parser.parse(args[1])
+      payload.should == expected_payload
+    end
     @heartbeat.send_via_mbus
   end
 

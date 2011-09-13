@@ -14,7 +14,8 @@ module Bosh::Agent
         begin
           new.send_via_mbus
         rescue => e
-          @logger.warn("Error sending heartbeat: #{e}")
+          Config.logger.warn("Error sending heartbeat: #{e}")
+          Config.logger.warn(e.backtrace.join("\n"))
         end
       end
     end
@@ -45,8 +46,28 @@ module Bosh::Agent
       @logger.info("Heartbeat sent")
     end
 
+
+    # Heartbeat payload example:
+    # {
+    #   "job": "cloud_controller",
+    #   "index": 3,
+    #   "job_state":"running",
+    #   "vitals": {
+    #     "load": ["0.09","0.04","0.01"],
+    #     "cpu": {"user":"0.0","sys":"0.0","wait":"0.4"},
+    #     "mem": {"percent":"3.5","kb":"145996"},
+    #     "swap": {"percent":"0.0","kb":"0"}
+    #   }
+    # }
+
     def heartbeat_payload
-      Yajl::Encoder.encode({ "job_state" => Bosh::Agent::Monit.service_group_state })
+      job_state = Bosh::Agent::Monit.service_group_state
+      vitals = Bosh::Agent::Monit.get_vitals
+
+      job_name = @state["job"] ? @state["job"]["name"] : nil
+      index = @state["index"]
+
+      Yajl::Encoder.encode("job" => job_name, "index" => index, "job_state" => job_state, "vitals" => vitals)
     end
 
   end
