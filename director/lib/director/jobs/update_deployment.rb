@@ -5,9 +5,7 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(manifest_file, options = {})
-        @logger = Config.logger
-        @event_log = Config.event_log
-
+        super
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) { |f| f.read }
@@ -64,7 +62,7 @@ module Bosh::Director
           @deployment_plan_compiler.bind_instance_networks
         end
 
-        @logger.info("Compliling and binding packages")
+        @logger.info("Compiling and binding packages")
         PackageCompiler.new(@deployment_plan).compile
 
         @event_log.begin_stage("Binding configuration", 1)
