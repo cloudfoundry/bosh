@@ -4,7 +4,6 @@ module Bosh::Cli
     include PackagingHelper
 
     attr_reader :name, :globs, :version, :dependencies, :tarball_path
-
     # We have two ways of getting/storing a package:
     # development versions of packages, kept in release directory
     # final versions of packages, kept in blobstore
@@ -164,6 +163,8 @@ module Bosh::Cli
           contents << "%s%s" % [ file, File.read(file) ] if File.file?(file)
         end
       end
+
+      contents << @dependencies.sort.join(",")
 
       Digest::SHA1.hexdigest(contents)
     end
