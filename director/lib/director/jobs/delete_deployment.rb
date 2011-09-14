@@ -5,8 +5,7 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(deployment_name, options = {})
-        @logger = Config.logger
-        @logger.info("Deleting: #{deployment_name}")
+        super
         @deployment_name = deployment_name
         @force = options["force"] || false
         @cloud = Config.cloud
@@ -15,6 +14,7 @@ module Bosh::Director
       def delete_instance(instance)
         with_thread_name("delete_instance(#{instance.job}/#{instance.index})") do
           @logger.info("Deleting instance: #{instance.job}/#{instance.index}")
+
           vm = instance.vm
 
           if instance.disk_cid
@@ -59,6 +59,8 @@ module Bosh::Director
       end
 
       def perform
+        @logger.info("Deleting: #{@deployment_name}")
+
         deployment = Models::Deployment[:name => @deployment_name]
         raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
@@ -69,28 +71,45 @@ module Bosh::Director
           deployment = Models::Deployment[:name => @deployment_name]
           raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
+          instances = Models::Instance.filter(:deployment_id => deployment.id)
+
+          @event_log.begin_stage("Deleting instances", instances.count, [deployment.name])
           ThreadPool.new(:max_threads => 32).wrap do |pool|
-            instances = Models::Instance.filter(:deployment_id => deployment.id)
-            @logger.info("Deleting instances")
             instances.each do |instance|
               pool.process do
-                delete_instance(instance)
+                @event_log.track("#{instance.job}/#{instance.index}") do
+                  @logger.info("Deleting #{instance.job}/#{instance.index}")
+                  delete_instance(instance)
+                end
               end
             end
             pool.wait
 
             vms = Models::Vm.filter(:deployment_id => deployment.id)
-            @logger.info("Deleting idle VMs")
+
+            @event_log.begin_stage("Deleting idle VMs", vms.count, [deployment.name])
             vms.each do |vm|
               pool.process do
-                delete_vm(vm)
+                @event_log.track("#{vm.cid}") do
+                  @logger.info("Deleting idle vm #{vm.cid}")
+                  delete_vm(vm)
+                end
               end
             end
           end
 
-          deployment.remove_all_stemcells
-          deployment.remove_all_release_versions
-          deployment.destroy
+          @event_log.begin_stage("Removing deployment artifacts", 3, [deployment.name])
+          track_and_log("Detach stemcells") do
+            deployment.remove_all_stemcells
+          end
+
+          track_and_log("Detach release version") do
+            deployment.remove_all_release_versions
+          end
+
+          track_and_log("Destroy deployment") do
+            deployment.destroy
+          end
           "/deployments/#{@deployment_name}"
         end
       end
