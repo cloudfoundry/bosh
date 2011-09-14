@@ -3,18 +3,31 @@ module Bosh::Director
     class BaseJob
       attr_accessor :task_id
 
+      def initialize(*args)
+        # TODO: this logger and event_log are wrong one (default defined in Config.logger)
+        # it will be changed later in perform
+        # We need to refactor to have all the init work done in initialize and not in perform
+        # Meanwhile we need this to allow unit-test to pass (perform is not always first function to be called)
+        @logger = Config.logger
+        @event_log = Config.event_log
+      end
+
       def self.perform(task_id, *args)
         task = Models::Task[task_id]
         raise TaskNotFound.new(task_id) if task.nil?
 
-        logger = Logger.new(File.join(task.output, "debug"))
-        logger.level = Config.logger.level
-        logger.formatter = ThreadFormatter.new
-        logger.info("Starting task: #{task_id}")
+        @logger = Logger.new(File.join(task.output, "debug"))
+        @logger.level = Config.logger.level
+        @logger.formatter = ThreadFormatter.new
+        @logger.info("Starting task: #{task_id}")
 
         Config.event_log = Bosh::Director::EventLog.new(File.join(task.output, "event"))
-        Config.logger = logger
-        Sequel::Model.db.logger = logger
+        Config.event_log.external_logger = @logger
+        @event_log = Config.event_log
+
+        Config.logger = @logger
+
+        Sequel::Model.db.logger = @logger
 
         cloud_options = Config.cloud_options
         if cloud_options && cloud_options["plugin"] == "vsphere"
@@ -25,12 +38,12 @@ module Bosh::Director
         started = Time.now
         with_thread_name("task:#{task_id}") do
           begin
-            logger.info("Creating job")
+            @logger.info("Creating job")
             job = self.send(:new, *args)
             job.task_id = task_id
             job.task_checkpoint # cancelled in the queue?
 
-            logger.info("Performing task: #{task_id}")
+            @logger.info("Performing task: #{task_id}")
             task.state = :processing
             task.timestamp = Time.now
             task.checkpoint_time = Time.now
@@ -48,17 +61,17 @@ module Bosh::Director
             end
             result = job.perform
 
-            logger.info("Done")
+            @logger.info("Done")
             task.state = :done
             task.result = result
             task.timestamp = Time.now
             task.save
           rescue Exception => e
             if e.kind_of?(Bosh::Director::TaskCancelled)
-              logger.info("task #{task_id} cancelled!")
+              @logger.info("task #{task_id} cancelled!")
               task.state = :cancelled
             else
-              logger.error("#{e} - #{e.backtrace.join("\n")}")
+              @logger.error("#{e} - #{e.backtrace.join("\n")}")
               task.state = :error
             end
             task.result = e.to_s
@@ -67,7 +80,7 @@ module Bosh::Director
           end
         end
         ended = Time.now
-        logger.info("Task took #{Duration.duration(ended - started)} to process.")
+        @logger.info("Task took #{Duration.duration(ended - started)} to process.")
       end
 
       def task_checkpoint

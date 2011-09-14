@@ -62,8 +62,10 @@ require "director/thread_pool"
 require "director/user_manager"
 require "director/deployment_manager"
 require "director/stemcell_manager"
+require "director/dummy_job_manager"
 require "director/jobs/base_job"
 require "director/jobs/delete_deployment"
+require "director/jobs/dummy_job"
 require "director/jobs/delete_release"
 require "director/jobs/delete_stemcell"
 require "director/jobs/update_deployment"
@@ -189,6 +191,12 @@ module Bosh::Director
       status(204)
       nil
     end
+
+    delete "/dummy_job" do
+      task = DummyJobManager.new.run_dummy_job(@user)
+      redirect "/tasks/#{task.id}"
+    end
+
 
     delete "/users/:username" do
       @user_manager.delete_user(params[:username])
@@ -456,7 +464,5 @@ module Bosh::Director
       content_type(:json)
       Yajl::Encoder.encode(status)
     end
-
   end
-
 end
