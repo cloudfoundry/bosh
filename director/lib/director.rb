@@ -484,7 +484,5 @@ module Bosh::Director
       content_type(:json)
       Yajl::Encoder.encode(status)
     end
-
   end
-
 end
