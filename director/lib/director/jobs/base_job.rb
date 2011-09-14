@@ -3,6 +3,15 @@ module Bosh::Director
     class BaseJob
       attr_accessor :task_id
 
+      def initialize(*args)
+        # TODO: this logger and event_log are wrong one (default defined in Config.logger)
+        # it will be changed later in perform
+        # We need to refactor to have all the init work done in initialize and not in perform
+        # Meanwhile we need this to allow unit-test to pass (perform is not always first function to be called)
+        @logger = Config.logger
+        @event_log = Config.event_log
+      end
+
       def self.perform(task_id, *args)
         task = Models::Task[task_id]
         raise TaskNotFound.new(task_id) if task.nil?
@@ -13,7 +22,10 @@ module Bosh::Director
         logger.info("Starting task: #{task_id}")
 
         Config.event_log = Bosh::Director::EventLog.new(File.join(task.output, "event"))
+        @event_log = Config.event_log
+
         Config.logger = logger
+
         Sequel::Model.db.logger = logger
 
         cloud_options = Config.cloud_options
@@ -77,13 +89,12 @@ module Bosh::Director
         end
       end
 
-      def track_and_log(stage_name)
-        @event_log.track(stage_name) do
-          @logger.info(stage_name)
-          yield
+      def track_and_log(task)
+        @event_log.track(task) do |ticker|
+          @logger.info(task)
+          yield ticker if block_given?
         end
       end
-
     end
   end
 end

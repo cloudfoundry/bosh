@@ -65,8 +65,6 @@ module Bosh
           display_usage
         end
 
-        @normal_exit = true
-
       rescue OptionParser::InvalidOption => e
         puts(e.message.red)
         puts("\n")
@@ -98,7 +96,6 @@ module Bosh
         end
       ensure
         say("\n")
-        exit(@normal_exit ? 0 : 1)
       end
 
       def parse_options!
@@ -150,6 +147,7 @@ Currently available bosh commands are:
   Deployment
     deployment <name>                         Choose deployment to work with (it also updates current target)
     delete deployment <name>                  Delete deployment
+                                              --force        ignore all errors while deleting parts of the deployment
     deployments                               Show the list of available deployments
     deploy [--recreate]                       Deploy according to the currently selected deployment
 
@@ -171,7 +169,7 @@ Currently available bosh commands are:
     verify release /path/to/release.tgz       Verify release tarball
     upload release /path/to/release.{tgz,yml} Upload release in tarball or by yml file
     releases                                  Show the list of uploaded releases
-    reset release                             Reset release development environment (deletes all dev artefacts)
+    reset release                             Reset release development environment (deletes all dev artifacts)
 
     generate package <name>                   Generate package template
     generate job <name>                       Generate job template

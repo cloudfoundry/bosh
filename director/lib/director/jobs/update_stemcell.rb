@@ -6,48 +6,57 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(stemcell_file)
+        super
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
-        @logger = Config.logger
       end
 
       def perform
         @logger.info("Processing update stemcell")
+        @event_log.begin_stage("Update stemcell", 5, [@stemcell_file])
 
         stemcell_dir = Dir.mktmpdir("stemcell")
 
-        @logger.info("Extracting stemcell archive")
-        output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1`
+        track_and_log("Extracting stemcell archive") do
+          output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1`
+          raise StemcellInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
+        end
 
-        raise StemcellInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
 
-        @logger.info("Verifying stemcell manifest")
-        stemcell_manifest_file = File.join(stemcell_dir, "stemcell.MF")
-        stemcell_manifest = YAML.load_file(stemcell_manifest_file)
+        track_and_log("Verifying stemcell manifest") do
+          stemcell_manifest_file = File.join(stemcell_dir, "stemcell.MF")
+          stemcell_manifest = YAML.load_file(stemcell_manifest_file)
 
-        @name = safe_property(stemcell_manifest, "name", :class => String)
-        @version = safe_property(stemcell_manifest, "version", :class => String)
-        @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
-        @stemcell_image = File.join(stemcell_dir, "image")
-        @logger.info("Found: name=>#{@name}, version=>#{@version}, cloud_properties=>#{@cloud_properties}")
+          @name = safe_property(stemcell_manifest, "name", :class => String)
+          @version = safe_property(stemcell_manifest, "version", :class => String)
+          @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
+          @stemcell_image = File.join(stemcell_dir, "image")
+          @logger.info("Found: name=>#{@name}, version=>#{@version}, cloud_properties=>#{@cloud_properties}")
 
-        @logger.info("Verifying stemcell image")
-        raise StemcellInvalidImage unless File.file?(@stemcell_image)
+          @logger.info("Verifying stemcell image")
+          raise StemcellInvalidImage unless File.file?(@stemcell_image)
+        end
 
-        @logger.info("Checking if this stemcell already exists")
-        stemcell = Models::Stemcell[:name => @name, :version => @version]
-        raise StemcellAlreadyExists.new(@name, @version) if stemcell
-
-        @logger.info("Uploading stemcell to the cloud")
-        cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
-        @logger.info("Cloud created stemcell: #{cid}")
+        track_and_log("Checking if this stemcell already exists") do
+          stemcell = Models::Stemcell[:name => @name, :version => @version]
+          raise StemcellAlreadyExists.new(@name, @version) if stemcell
+        end
 
         stemcell = Models::Stemcell.new
         stemcell.name = @name
         stemcell.version = @version
-        stemcell.cid = cid
-        stemcell.save
+
+
+        track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
+          stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
+          @logger.info("Cloud created stemcell: #{stemcell.cid}")
+        end
+
+        track_and_log("Save stemcell: #{stemcell.name}/#{stemcell.version} (#{stemcell.cid})") do
+          stemcell.save
+        end
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
+
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
         FileUtils.rm_rf(@stemcell_file) if @stemcell_file

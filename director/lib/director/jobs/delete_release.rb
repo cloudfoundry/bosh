@@ -5,15 +5,17 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(name, options = {})
+        super
         @name = name
-        @logger = Config.logger
         @blobstore = Config.blobstore
         @errors = []
         @force = options["force"] || false
         @version = options["version"]
+
       end
 
       def delete_release_version(release_version)
+        @event_log.begin_stage("Deleting release version", 2, [ @name, @version ].reject {|x| !x})
         @logger.info("Deleting release #{@name} version #{@version}")
 
         release = release_version.release
@@ -42,9 +44,12 @@ module Bosh::Director
           end
         end
 
-        packages_to_delete.each do |package|
-          @logger.info("Package #{package.name}/#{package.version} is only used by this release version and will be deleted")
-          delete_package(package)
+        track_and_log("Deleting packages") do |ticker|
+          packages_to_delete.each do |package|
+            @logger.info("Package #{package.name}/#{package.version} is only used by this release version and will be deleted")
+            delete_package(package)
+            ticker.advance(100.0 / packages_to_delete.size, "#{package.name}/#{package.version}")
+          end
         end
 
         packages_to_keep.each do |package|
@@ -52,9 +57,12 @@ module Bosh::Director
           package.remove_release_version(release_version)
         end
 
-        templates_to_delete.each do |template|
-          @logger.info("Template #{template.name}/#{template.version} is only used by this release version and will be deleted")
-          delete_template(template)
+        track_and_log("Deleting templates") do |ticker|
+          templates_to_delete.each do |template|
+            @logger.info("Template #{template.name}/#{template.version} is only used by this release version and will be deleted")
+            delete_template(template)
+            ticker.advance(100.0 / templates_to_delete.size, "#{template.name}/#{template.version}")
+          end
         end
 
         templates_to_keep.each do |template|
@@ -62,6 +70,7 @@ module Bosh::Director
           template.remove_release_version(release_version)
         end
 
+        @logger.info("Remove all deployments in release version")
         release_version.remove_all_deployments
 
         if @errors.empty? || @force
@@ -74,14 +83,21 @@ module Bosh::Director
       end
 
       def delete_release(release)
+        @event_log.begin_stage("Deleting release", 2, [ @name ])
         @logger.info("Deleting release #{@name}")
 
-        release.packages.each do |package|
-          delete_package(package)
+        track_and_log("Deleting packages") do |ticker|
+          release.packages.each do |package|
+            delete_package(package)
+            ticker.advance(100.0 / release.packages.size, "#{package.name}/#{package.version}")
+          end
         end
 
-        release.templates.each do |template|
-          delete_template(template)
+        track_and_log("Deleting templates") do |ticker|
+          release.templates.each do |template|
+            delete_template(template)
+            ticker.advance(100.0 / release.templates.size, "#{template.name}/#{template.version}")
+          end
         end
 
         if @errors.empty? || @force
@@ -91,13 +107,17 @@ module Bosh::Director
       end
 
       def delete_package(package)
-        @logger.info("Deleting package #{package.name}/#{package.version}")
         compiled_packages = package.compiled_packages
+
+        @logger.info("Deleting package #{package.name}/#{package.version}")
+
         compiled_packages.each do |compiled_package|
           stemcell = compiled_package.stemcell
-          @logger.info("Deleting compiled package #{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}")
+          @logger.info("Deleting compiled package (#{compiled_package.blobstore_id}) #{package.name}/#{package.version} for #{stemcell.name}/#{stemcell.version}")
           delete_blobstore_id(compiled_package.blobstore_id) { compiled_package.destroy }
         end
+
+        @logger.info("Deleting package (#{package.blobstore_id}) #{package.name}/#{package.version}")
         delete_blobstore_id(package.blobstore_id) do
           package.remove_all_release_versions
           package.destroy
@@ -106,6 +126,7 @@ module Bosh::Director
 
       def delete_template(template)
         @logger.info("Deleting template: #{template.name}/#{template.version}")
+
         delete_blobstore_id(template.blobstore_id) do
           template.remove_all_release_versions
           template.destroy
