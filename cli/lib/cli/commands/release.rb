@@ -287,6 +287,29 @@ module Bosh::Cli::Command
       say("Releases total: %d" % releases.size)
     end
 
+    def clean(name)
+      auth_required
+
+      versions_to_keep = 2
+
+      desc = "release `#{name}'"
+      say "Cleaning release `#{name}'".red
+
+      if operation_confirmed?
+        status, body = director.delete_release(name, :versions_to_keep => versions_to_keep)
+        responses = {
+          :done => "Cleaned #{desc} (left " + versions_to_keep.to_s + " latest versions)",
+          :non_trackable => "Started cleaning release but director at '#{target}' doesn't support tracking",
+          :track_timeout => "Started cleaning release but timed out out while tracking status",
+          :error => "Started cleaning release but received an error while tracking status",
+        }
+
+        say responses[status] || "Cannot clean release: #{body}"
+      else
+        say "Canceled cleaning release".green
+      end
+    end
+
     def delete(name, *options)
       auth_required
       force = options.include?("--force")

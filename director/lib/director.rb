@@ -226,6 +226,7 @@ module Bosh::Director
       options = {}
       options["force"]   = true if params["force"] == "true"
       options["version"] = params["version"]
+      options["versions_to_keep"] = params["versions_to_keep"]
 
       task = @release_manager.delete_release(@user, release, options)
       redirect "/tasks/#{task.id}"
@@ -344,6 +345,13 @@ module Bosh::Director
         }
       end
       Yajl::Encoder.encode(stemcells)
+    end
+
+    delete "/stemcells/:name" do
+      stemcells = Models::Stemcell[:name => params[:name]]
+      raise StemcellNotFound.new(params[:name], "") if stemcells.nil?
+      task = @stemcell_manager.clean_stemcells(@user, params[:name], params["versions_to_keep"])
+      redirect "/tasks/#{task.id}"
     end
 
     delete "/stemcells/:name/:version" do

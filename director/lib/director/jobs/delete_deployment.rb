@@ -64,6 +64,8 @@ module Bosh::Director
         deployment = Models::Deployment[:name => @deployment_name]
         raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
 
+        @event_log.begin_stage("Delete deployment", 5, [deployment.name])
+
         @logger.info("Acquiring deployment lock: #{deployment.name}")
         deployment_lock = Lock.new("lock:deployment:#{@deployment_name}")
         deployment_lock.lock do

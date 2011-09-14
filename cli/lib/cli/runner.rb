@@ -173,6 +173,7 @@ Currently available bosh commands are:
     upload release /path/to/release.{tgz,yml} Upload release in tarball or by yml file
     releases                                  Show the list of uploaded releases
     reset release                             Reset release development environment (deletes all dev artifacts)
+    clean release <name>                      Delete all the releases <name> but last two versions
 
     generate package <name>                   Generate package template
     generate job <name>                       Generate job template
@@ -182,6 +183,7 @@ Currently available bosh commands are:
     upload stemcell /path/to/stemcell.tgz     Upload the stemcell
     stemcells                                 Show the list of uploaded stemcells
     delete stemcell <name> <version>          Delete the stemcell
+    clean stemcell <name>                     Delete all the stemcells but last two versions
 
   User management
     create user [<username>] [<password>]     Create user
@@ -362,6 +364,18 @@ USAGE
             set_cmd(:release, :delete, 1..3)
           end
 
+        when "clean"
+          verb_usage("clean")
+          what = @args.shift
+          case what
+            when "stemcell"
+              usage("bosh clean stemcell <name>")
+              set_cmd(:stemcell, :clean, 1)
+            when "release"
+              usage("bosh clean release <name>")
+              set_cmd(:release, :clean, 1)
+          end
+
         when "reset"
           what = @args.shift
           case what
@@ -433,6 +447,7 @@ USAGE
           "upload"   => "release <path>\nstemcell <path>",
           "verify"   => "release <path>\nstemcell <path>",
           "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [<version>] [--force]",
+          "clean"    => "stemcell <name>\nrelease <name>",
           "generate" => "package <name>\njob <name>"
         }
 

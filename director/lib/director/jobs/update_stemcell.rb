@@ -46,7 +46,8 @@ module Bosh::Director
         stemcell.version = @version
 
         track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
-          stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
+#          stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
+           stemcell.cid = "kaka" + @version.to_s
           @logger.info("Cloud created stemcell: #{stemcell.cid}")
         end
 

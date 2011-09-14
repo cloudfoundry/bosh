@@ -101,8 +101,12 @@ module Bosh
         upload_and_track("/releases", "application/x-compressed", filename, :log_type => "event")
       end
 
-      def delete_stemcell(name, version)
-        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, :log_type => "event")
+      def delete_stemcell(name, version, options = {})
+        if options.empty?
+          request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, :log_type => "event")
+        else
+          request_and_track(:delete, "/stemcells/%s?versions_to_keep=%s" % [ name, options[:versions_to_keep].to_s ], nil, nil, :log_type => "event")
+        end
       end
 
       def delete_deployment(name, options = {})
@@ -118,8 +122,12 @@ module Bosh
         url = "/releases/#{name}"
 
         query_params = []
-        query_params << "force=true" if options[:force]
-        query_params << "version=#{options[:version]}" if options[:version]
+        if options[:versions_to_keep]
+          query_params << "versions_to_keep=#{options[:versions_to_keep]}"
+        else
+          query_params << "force=true" if options[:force]
+          query_params << "version=#{options[:version]}" if options[:version]
+        end
 
         url += "?#{query_params.join("&")}" if query_params.size > 0
 
