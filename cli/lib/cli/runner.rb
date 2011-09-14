@@ -65,8 +65,6 @@ module Bosh
           display_usage
         end
 
-        @normal_exit = true
-
       rescue OptionParser::InvalidOption => e
         puts(e.message.red)
         puts("\n")
@@ -98,7 +96,6 @@ module Bosh
         end
       ensure
         say("\n")
-        exit(@normal_exit ? 0 : 1)
       end
 
       def parse_options!
@@ -305,6 +302,9 @@ USAGE
             set_cmd(:job, :generate, 1)
           end
 
+        when "test"
+            set_cmd(:misc, :dummy_job, 0)
+
         when "upload"
           verb_usage("upload")
           what = @args.shift
@@ -334,8 +334,8 @@ USAGE
           what = @args.shift
           case what
           when "deployment"
-            usage("bosh delete deployment <name> [--force]")
-            set_cmd(:deployment, :delete, 1..2)
+            usage("bosh delete deployment <name>")
+            set_cmd(:deployment, :delete, 1)
           when "stemcell"
             usage("bosh delete stemcell <name> <version>")
             set_cmd(:stemcell, :delete, 2)

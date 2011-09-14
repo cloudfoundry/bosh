@@ -24,3 +24,4 @@ spec/assets/test_release/config/final.yml
 director/director.db
 micro/tmp
 health_monitor/spec/assets/dev*.yml
+release/config/repos.yml

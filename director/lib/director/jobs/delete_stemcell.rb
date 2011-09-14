@@ -5,11 +5,11 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(*args)
+        super
         if args.length == 2
           @name, @version = args
           @cloud = Config.cloud
           @blobstore = Config.blobstore
-          @logger = Config.logger
         elsif args.empty?
           # used for testing only
         else
@@ -34,21 +34,30 @@ module Bosh::Director
             raise StemcellInUse.new(@name, @version, deployments.join(", "))
           end
 
-          @logger.info("Deleting stemcell from the cloud")
-          @cloud.delete_stemcell(@stemcell.cid)
+          @event_log.begin_stage("Delete stemcell", 3, [@stemcell.cid])
 
-          @logger.info("Looking for any compiled packages on this stemcell")
-          compiled_packages = Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
-          compiled_packages.each do |compiled_package|
-            next unless compiled_package
-            package = compiled_package.package
-            @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
-            @blobstore.delete(compiled_package.blobstore_id)
-            compiled_package.destroy
+          @event_log.track_and_log("Deleting stemcell #{@stemcell.cid}") do
+            @cloud.delete_stemcell(@stemcell.cid)
           end
 
-          @logger.info("Deleting stemcell meta")
-          @stemcell.destroy
+          @logger.info("Looking for any compiled packages on this stemcell")
+          @event_log.track_and_log("Deleting compiled packages") do |ticker|
+            compiled_packages = Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
+            count = compiled_packages.count
+            compiled_packages.each do |compiled_package|
+              next unless compiled_package
+              package = compiled_package.package
+
+              @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
+              @blobstore.delete(compiled_package.blobstore_id)
+              compiled_package.destroy
+              ticker.advance(100.0 / count, "#{package.name}/#{package.version}")
+            end
+          end
+
+          @event_log.track_and_log("Deleting stemcell meta") do
+            @stemcell.destroy
+          end
         end
 
         "/stemcells/#{@name}/#{@version}"

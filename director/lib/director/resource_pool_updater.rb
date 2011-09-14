@@ -7,6 +7,7 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @event_log = Config.event_log
+      @event_log.external_logger = @logger
     end
 
     def extra_vms_count
