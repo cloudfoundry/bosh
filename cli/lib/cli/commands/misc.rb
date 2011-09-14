@@ -6,6 +6,10 @@ module Bosh::Cli::Command
     end
 
     def status
+      if options[:director_checks]
+        set_target(config.target, nil, false)
+      end
+
       target_name = full_target_name ? full_target_name.green : "not set".red
       target_uuid = config.target_uuid ? config.target_uuid.green : "n/a".red
       user = logged_in? ? username.green : "not set".red
@@ -97,9 +101,13 @@ module Bosh::Cli::Command
       say(target ? "Current target is '#{full_target_name}'" : "Target not set")
     end
 
-    def set_target(director_url, name = nil)
+    def set_target(director_url, name = nil, verbose = true)
       if name.nil?
         director_url = config.resolve_alias(:target, director_url) || director_url
+      end
+
+      if director_url.nil?
+        err("Target is not set")
       end
 
       director_url = normalize_url(director_url)
@@ -130,7 +138,7 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to '#{full_target_name.green}'")
+      say("Target set to '#{full_target_name.green}'") if verbose
 
       if interactive? && (config.username.blank? || config.password.blank?)
         redirect :misc, :login
