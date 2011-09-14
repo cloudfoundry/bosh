@@ -14,7 +14,7 @@ module Bosh::Director
     # bar in CLI.
 
     # Sample rendering for event log entry:
-    # {"time":1312233461,"stage":"job_update","task":"update","tags":["mysql_node"],"index":2,"total":4,"state":"finished"}
+    # {"time":1312233461,"stage":"job_update","task":"update","tags":["mysql_node"],"index":2,"total":4,"state":"finished","progress_data":"optional progress data"}
 
     # Job update (mysql_node):
     # update |--------        | (2/4) 50%
@@ -48,7 +48,7 @@ module Bosh::Director
       ticker = EventTicker.new(self, task, index)
 
       start_task(task, index)
-      yield ticker
+      yield ticker if block_given?
       finish_task(task, index)
     end
 
@@ -60,7 +60,7 @@ module Bosh::Director
       log(task, "finished", index, progress)
     end
 
-    def log(task, state, index, progress = 0)
+    def log(task, state, index, progress = 0, progress_data = "")
       entry = {
         :time     => Time.now.to_i,
         :stage    => @stage,
@@ -69,11 +69,13 @@ module Bosh::Director
         :index    => index,
         :total    => @total,
         :state    => state,
-        :progress => progress
+        :progress => progress,
+        :progress_data => progress_data
       }
 
       @logger.info(Yajl::Encoder.encode(entry))
     end
+
   end
 
   class EventLogger < Logger
@@ -94,9 +96,9 @@ module Bosh::Director
       @progress = 0
     end
 
-    def advance(delta)
+    def advance(delta, progress_data = nil)
       @progress = [ @progress + delta, 100 ].min
-      @event_log.log(@task, "in_progress", @index, @progress.to_i)
+      @event_log.log(@task, "in_progress", @index, @progress.to_i, progress_data.to_s)
     end
   end
 
