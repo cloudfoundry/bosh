@@ -181,7 +181,7 @@ module Bosh::Cli
         @tasks[event["index"]] = task
 
         if @tasks.size > @tasks_batch_size
-          # Heuristics here: we asssume that local maximum of
+          # Heuristics here: we assume that local maximum of
           # tasks number is a "max_in_flight" value and batches count
           # should only be recalculated once we refresh this maximum.
           # It's unlikely that the first task in a batch will be finished
@@ -204,11 +204,13 @@ module Bosh::Cli
         progress = 1
         progress_bar.finished_steps += 1
         progress_bar.label = time_with_eta(task_time, @eta)
+        progress_bar.ticker_data = nil
 
         progress_bar.clear_line
         @buffer.puts("  #{task.name.downcase.yellow}")
       when "in_progress"
         progress = [ event["progress"].to_f / 100, 1 ].min
+        progress_bar.ticker_data = event["ticker_data"]
       end
 
       if @batches_count > 0 && @non_canary_event_start_time
@@ -220,6 +222,7 @@ module Bosh::Cli
 
       progress_bar.total = total
       progress_bar.title = @tasks.values.map {|t| t.name }.sort.join(", ")
+      progress_bar.title += " [#{progress_bar.ticker_data}] " if @tasks.values.size == 1 && progress_bar.ticker_data
       progress_bar.current += progress_bar_gain
       progress_bar.refresh
 
@@ -260,6 +263,7 @@ module Bosh::Cli
     attr_accessor :bar_visible
     attr_accessor :finished_steps
     attr_accessor :terminal_width
+    attr_accessor :ticker_data
 
     def initialize(output)
       @output = output
@@ -270,6 +274,7 @@ module Bosh::Cli
       @filler = "o"
       @terminal_width = calculate_terminal_width
       @bar_width = (0.24 * @terminal_width).to_i # characters
+      @ticker_data = nil
     end
 
     def refresh

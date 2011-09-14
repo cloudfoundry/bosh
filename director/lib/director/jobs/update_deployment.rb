@@ -5,9 +5,7 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(manifest_file, options = {})
-        @logger = Config.logger
-        @event_log = Config.event_log
-
+        super
         @logger.info("Reading deployment manifest")
         @manifest_file = manifest_file
         @manifest = File.open(@manifest_file) { |f| f.read }
@@ -64,7 +62,7 @@ module Bosh::Director
           @deployment_plan_compiler.bind_instance_networks
         end
 
-        @logger.info("Compliling and binding packages")
+        @logger.info("Compiling and binding packages")
         PackageCompiler.new(@deployment_plan).compile
 
         @event_log.begin_stage("Binding configuration", 1)
@@ -79,14 +77,14 @@ module Bosh::Director
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
           # delete extra VMs across resource pools
 
-          @event_log.begin_stage("Deleting extra VMs", sum_across_pools(:extra_vms_count))
+          @event_log.begin_stage("Deleting extra VMs", sum_across_pools(:extra_vms_count), [@deployment_plan.name])
           @resource_pool_updaters.each do |updater|
             updater.delete_extra_vms(thread_pool)
           end
           thread_pool.wait
 
           # delete outdated VMs across resource pools
-          @event_log.begin_stage("Deleting outdated VMs", sum_across_pools(:outdated_vms_count))
+          @event_log.begin_stage("Deleting outdated VMs", sum_across_pools(:outdated_vms_count),  [@deployment_plan.name])
           @resource_pool_updaters.each do |updater|
             updater.delete_outdated_vms(thread_pool)
           end
@@ -96,7 +94,7 @@ module Bosh::Director
           # only creates VMs that have been bound to instances
           # to avoid refilling the resource pool before instances
           # that are no longer needed have been deleted.
-          @event_log.begin_stage("Creating bound missing VMs", sum_across_pools(:bound_missing_vms_count))
+          @event_log.begin_stage("Creating bound missing VMs", sum_across_pools(:bound_missing_vms_count),  [@deployment_plan.name])
           @resource_pool_updaters.each do |updater|
             updater.create_bound_missing_vms(thread_pool)
           end
@@ -111,7 +109,7 @@ module Bosh::Director
           resource_pool_updater.allocate_dynamic_ips
         end
 
-        @event_log.begin_stage("Refilling resource pools", sum_across_pools(:missing_vms_count))
+        @event_log.begin_stage("Refilling resource pools", sum_across_pools(:missing_vms_count),  [@deployment_plan.name])
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
           # create missing VMs across resource pools phase 2:
           # should be called after all instance updaters are finished to
