@@ -36,10 +36,12 @@ module Bosh::Cli
       public
       def check_duplicate_keys(path)
         @syck_class = nil
-        if RUBY_VERSION =~  /^1\.9\.\d+/
-          @syck_class = Syck
-        else
+        if defined?(YAML::Syck)
+          # for ruby 1.8.7
           @syck_class = YAML::Syck
+        else
+          # for ruby 1.9.2
+          @syck_class = Syck
         end
 
         File.open(path) do |f|
