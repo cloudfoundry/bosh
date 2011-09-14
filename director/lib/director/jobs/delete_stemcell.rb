@@ -5,11 +5,11 @@ module Bosh::Director
       @queue = :normal
 
       def initialize(*args)
+        super
         if args.length == 2
           @name, @version = args
           @cloud = Config.cloud
           @blobstore = Config.blobstore
-          @logger = Config.logger
         elsif args.empty?
           # used for testing only
         else
@@ -34,21 +34,33 @@ module Bosh::Director
             raise StemcellInUse.new(@name, @version, deployments.join(", "))
           end
 
-          @logger.info("Deleting stemcell from the cloud")
-          @cloud.delete_stemcell(@stemcell.cid)
+          @event_log.begin_stage("Deleting stemcell from cloud", 1, [@name, @version])
+
+          @event_log.track("Delete stemcell") do
+            @cloud.delete_stemcell(@stemcell.cid)
+          end
 
           @logger.info("Looking for any compiled packages on this stemcell")
           compiled_packages = Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
+
+          @event_log.begin_stage("Deleting compiled packages", compiled_packages.count, [@name, @version])
+          @logger.info("Deleting compiled packages (#{compiled_packages.count}) for: #{@stemcell.pretty_inspect}")
+
           compiled_packages.each do |compiled_package|
             next unless compiled_package
+
             package = compiled_package.package
-            @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
-            @blobstore.delete(compiled_package.blobstore_id)
-            compiled_package.destroy
+            track_and_log("#{package.name}/#{package.version}") do
+              @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
+              @blobstore.delete(compiled_package.blobstore_id)
+              compiled_package.destroy
+            end
           end
 
-          @logger.info("Deleting stemcell meta")
-          @stemcell.destroy
+          @event_log.begin_stage("Deleting stemcell metadata", 1, [@name, @version])
+          @event_log.track("Deleting stemcell metadata") do
+            @stemcell.destroy
+          end
         end
 
         "/stemcells/#{@name}/#{@version}"
