@@ -173,17 +173,6 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     s3.should_not == s1
   end
 
-  it "strips package name from filename" do
-    builder = make_builder("foo", ["stuff/**/*.rb"])
-
-    builder.strip_package_name("foo/bar/dir/file.txt").should == "bar/dir/file.txt"
-    builder.strip_package_name("bar/dir/file.txt").should == "bar/dir/file.txt"
-    builder.strip_package_name("foo").should == "foo"
-    builder.strip_package_name("bar/foo").should == "bar/foo"
-    builder.strip_package_name("foo/foo").should == "foo"
-    builder.strip_package_name("/foo/foo").should == "/foo/foo"
-  end
-
   it "copies files to build directory" do
     add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
     globs = ["foo/**/*", "baz"]

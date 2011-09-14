@@ -59,17 +59,6 @@ module Bosh::Cli
       @fingerprint ||= make_fingerprint
     end
 
-    # lib/sphinx-0.9.tar.gz => lib/sphinx-0.9.tar.gz
-    # but "cloudcontroller/lib/cloud.rb => lib/cloud.rb"
-    def strip_package_name(filename)
-      pos = filename.index(File::SEPARATOR)
-      if pos && filename[0..pos-1] == @name
-        filename[pos+1..-1]
-      else
-        filename
-      end
-    end
-
     def resolved_globs
       @resolved_globs ||= resolve_globs
     end
@@ -88,7 +77,7 @@ module Bosh::Cli
       in_sources_dir do
 
         resolved_globs.each do |filename|
-          destination = File.join(build_dir, strip_package_name(filename))
+          destination = File.join(build_dir, filename)
 
           if File.directory?(filename)
             FileUtils.mkdir_p(destination)
