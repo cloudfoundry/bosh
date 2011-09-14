@@ -25,9 +25,10 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     end
   end
 
-  def make_builder(name, files, sources_dir = nil)
+  def make_builder(name, files, dependencies = [], sources_dir = nil)
     blobstore = mock("blobstore")
-    Bosh::Cli::PackageBuilder.new({"name" => name, "files" => files}, @release_dir, false, blobstore, sources_dir)
+    spec = {"name" => name, "files" => files, "dependencies" => dependencies}
+    Bosh::Cli::PackageBuilder.new(spec, @release_dir, false, blobstore, sources_dir)
   end
 
   it "whines on missing name" do
@@ -158,6 +159,20 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.reload.fingerprint.should == s1
   end
 
+  it "changes fingerprint when dependencies change" do
+    add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+
+    builder1 = make_builder("A", ["lib/*.rb", "README.*"], ["foo", "bar"])
+    s1 = builder1.fingerprint
+    builder2 = make_builder("A", ["lib/*.rb", "README.*"], ["bar", "foo"])
+    s2 = builder2.fingerprint
+
+    s1.should == s2
+    builder3 = make_builder("A", ["lib/*.rb", "README.*"], ["bar", "foo", "baz"])
+    s3 = builder3.fingerprint
+    s3.should_not == s1
+  end
+
   it "strips package name from filename" do
     builder = make_builder("foo", ["stuff/**/*.rb"])
 
@@ -176,7 +191,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder = make_builder("bar", globs)
     builder.copy_files.should == 5
 
-    builder2 = make_builder("bar", globs, builder.build_dir)
+    builder2 = make_builder("bar", globs, [], builder.build_dir)
 
     # Also turned out to be a nice test for directory portability
     builder.fingerprint.should == builder2.fingerprint

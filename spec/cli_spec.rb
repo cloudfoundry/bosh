@@ -7,6 +7,7 @@ require "tmpdir"
 describe Bosh::Spec::IntegrationTest do
 
   DEV_RELEASES_DIR = File.expand_path("../assets/test_release/dev_releases", __FILE__)
+  DEV_BUILDS_DIR   = File.expand_path("../assets/test_release/.dev_builds", __FILE__)
   RELEASE_CONFIG   = File.expand_path("../assets/test_release/config/dev.yml", __FILE__)
   BOSH_CONFIG      = File.expand_path("../assets/bosh_config.yml", __FILE__)
   BOSH_CACHE_DIR   = Dir.mktmpdir
@@ -24,6 +25,7 @@ describe Bosh::Spec::IntegrationTest do
     Bosh::Spec::Sandbox.stop
     FileUtils.rm_rf(CLOUD_DIR)
     FileUtils.rm_rf(DEV_RELEASES_DIR)
+    FileUtils.rm_rf(DEV_BUILDS_DIR)
   end
 
   before :each do |example|
@@ -32,6 +34,7 @@ describe Bosh::Spec::IntegrationTest do
     FileUtils.rm_rf(CLOUD_DIR)
     FileUtils.rm_rf(BOSH_CACHE_DIR)
     FileUtils.rm_rf(DEV_RELEASES_DIR)
+    FileUtils.rm_rf(DEV_BUILDS_DIR)
     FileUtils.mkdir_p(File.dirname(RELEASE_CONFIG))
     File.open(RELEASE_CONFIG, "w") do |f|
       f.write(YAML.dump(release_config))
