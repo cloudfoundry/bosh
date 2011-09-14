@@ -102,5 +102,31 @@ module Bosh::Cli::Command
 
       say responses[status] || "Cannot delete stemcell: #{message}"
     end
+
+    def clean(name)
+      auth_required
+
+      versions_to_keep = 2
+
+      desc = "stemcell `#{name}'"
+      say "You are going to clean #{desc}".red
+
+      unless operation_confirmed?
+        say "Canceled deleting stemcell".green
+        return
+      end
+
+      status, message = director.delete_stemcell(name, nil, :versions_to_keep => versions_to_keep)
+
+      responses = {
+        :done => "Cleaned #{desc} (left " + versions_to_keep.to_s + " latest versions)",
+        :non_trackable => "Started cleaning stemcell but director at '#{target}' doesn't support tracking",
+        :track_timeout => "Started cleaning stemcell but timed out out while tracking status",
+        :error => "Started cleaning stemcell but received an error while tracking status",
+      }
+
+      say responses[status] || "Cannot delete stemcell: #{message}"
+    end
+
   end
 end

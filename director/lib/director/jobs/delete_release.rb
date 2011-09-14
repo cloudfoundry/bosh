@@ -11,7 +11,7 @@ module Bosh::Director
         @errors = []
         @force = options["force"] || false
         @version = options["version"]
-
+        @versions_to_keep = options["versions_to_keep"]
       end
 
       def delete_release_version(release_version)
@@ -156,7 +156,28 @@ module Bosh::Director
             end
 
             delete_release_version(release_version)
+          elsif @versions_to_keep
+            release_versions = release.versions_dataset.reverse_order(:version)
 
+            skipped = 0
+            versions_to_delete = []
+            release_versions.each do |release_version|
+              if skipped < @versions_to_keep.to_i
+                skipped += 1
+                next
+              end
+              versions_to_delete << release_version
+            end
+
+            versions_to_delete.each do |release_version|
+              @logger.info("Found: #{release.name}/#{release_version.version}")
+
+              if release_version.deployments.empty?
+                delete_release_version(release_version)
+              else
+                @logger.info("Cannot delete version #{release_version.version} there are deployments still using it")
+              end
+            end
           else
             @logger.info("Checking for any deployments still using the release")
             unless release.deployments.empty?

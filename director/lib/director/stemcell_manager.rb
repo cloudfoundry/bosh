@@ -21,5 +21,10 @@ module Bosh::Director
       task
     end
 
+    def clean_stemcells(user, name, versions_to_keep)
+      task = create_task(user, "clean stemcell: #{name}")
+      Resque.enqueue(Jobs::DeleteStemcell, task.id, name, nil, versions_to_keep)
+      task
+    end
   end
 end

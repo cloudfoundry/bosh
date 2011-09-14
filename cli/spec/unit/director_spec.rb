@@ -108,6 +108,11 @@ describe Bosh::Cli::Director do
       @director.delete_stemcell("ubuntu", "123")
     end
 
+    it "cleans stemcell" do
+      @director.should_receive(:request_and_track).with(:delete, "/stemcells/ubuntu?versions_to_keep=2", nil, nil, :log_type=>"event").and_return(true)
+      @director.delete_stemcell("ubuntu", nil, :versions_to_keep => 2)
+    end
+
     it "deletes deployment" do
       @director.should_receive(:request_and_track).with(:delete, "/deployments/foo", nil, nil, :log_type=>"event").and_return(true)
       @director.delete_deployment("foo")
@@ -121,6 +126,11 @@ describe Bosh::Cli::Director do
     it "deletes release (force)" do
       @director.should_receive(:request_and_track).with(:delete, "/releases/zb?force=true", nil, nil, :log_type=>"event").and_return(true)
       @director.delete_release("zb", :force => true)
+    end
+
+    it "cleans release" do
+      @director.should_receive(:request_and_track).with(:delete, "/releases/zb?versions_to_keep=2", nil, nil, :log_type=>"event").and_return(true)
+      @director.delete_release("zb", :versions_to_keep => 2)
     end
 
     it "deploys" do
