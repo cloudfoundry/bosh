@@ -4,9 +4,8 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(deployment_name, options = {})
-        @logger = Config.logger
-        @logger.info("Deleting: #{deployment_name}")
+      def initialize(deployment_name)
+        super
         @deployment_name = deployment_name
         @force = options["force"] || false
         @cloud = Config.cloud
@@ -15,6 +14,7 @@ module Bosh::Director
       def delete_instance(instance)
         with_thread_name("delete_instance(#{instance.job}/#{instance.index})") do
           @logger.info("Deleting instance: #{instance.job}/#{instance.index}")
+
           vm = instance.vm
 
           if instance.disk_cid
@@ -59,8 +59,12 @@ module Bosh::Director
       end
 
       def perform
+        @logger.info("Deleting: #{@deployment_name}")
+
         deployment = Models::Deployment[:name => @deployment_name]
         raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
+
+        @event_log.begin_stage("Delete deployment", 5, [deployment.name])
 
         @logger.info("Acquiring deployment lock: #{deployment.name}")
         deployment_lock = Lock.new("lock:deployment:#{@deployment_name}")
@@ -71,27 +75,41 @@ module Bosh::Director
 
           ThreadPool.new(:max_threads => 32).wrap do |pool|
             instances = Models::Instance.filter(:deployment_id => deployment.id)
-            @logger.info("Deleting instances")
-            instances.each do |instance|
-              pool.process do
-                delete_instance(instance)
+            count = instances.count
+            @event_log.track_and_log("Deleting instances") do | ticker |
+              instances.each do |instance|
+                pool.process do
+                  delete_instance(instance)
+                  ticker.advance(100.0 / count, "Instance #{instance.job}/#{instance.index}")
+                end
               end
             end
             pool.wait
 
             vms = Models::Vm.filter(:deployment_id => deployment.id)
-            @logger.info("Deleting idle VMs")
-            vms.each do |vm|
-              pool.process do
-                delete_vm(vm)
+            @event_log.track_and_log("Deleting idle VMs") do | ticker |
+              vms.each do |vm|
+                pool.process do
+                  delete_vm(vm)
+                  ticker.advance(100.0 / vms.size, "VM: + #{vm.cid}")
+                end
               end
             end
           end
 
-          deployment.remove_all_stemcells
-          deployment.remove_all_release_versions
-          deployment.destroy
+          @event_log.track_and_log("Remove all stemcells") do
+            deployment.remove_all_stemcells
+          end
+
+          @event_log.track_and_log("Remove all release versions") do
+            deployment.remove_all_release_versions
+          end
+
+          @event_log.track_and_log("Destroy deployment: #{@deployment_name}") do
+            deployment.destroy
+          end
           "/deployments/#{@deployment_name}"
+
         end
       end
     end

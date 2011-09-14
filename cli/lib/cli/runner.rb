@@ -170,6 +170,7 @@ Currently available bosh commands are:
     upload release /path/to/release.{tgz,yml} Upload release in tarball or by yml file
     releases                                  Show the list of uploaded releases
     reset release                             Reset release development environment (deletes all dev artefacts)
+    clean release <name>                      Delete all the releases <name> but last two versions
 
     generate package <name>                   Generate package template
     generate job <name>                       Generate job template
@@ -179,6 +180,7 @@ Currently available bosh commands are:
     upload stemcell /path/to/stemcell.tgz     Upload the stemcell
     stemcells                                 Show the list of uploaded stemcells
     delete stemcell <name> <version>          Delete the stemcell
+    clean stemcell <name>                     Delete all the stemcells <name> but last two versions
 
   User management
     create user [<username>] [<password>]     Create user
@@ -261,6 +263,18 @@ USAGE
         when "purge"
           usage("bosh purge")
           set_cmd(:misc, :purge_cache)
+
+        when "clean"
+          verb_usage("clean")
+          what = @args.shift
+          case what
+          when "release"
+            usage("bosh clean release <version>")
+            set_cmd(:release, :clean_release, 0)
+          when "stemcell"
+            usage("bosh clean stemcell <name> <version>")
+            set_cmd(:stemcell, :clean_stemcell, 0)
+          end
 
         when "create", "build"
           verb_usage("create")
@@ -415,7 +429,8 @@ USAGE
           "upload"   => "release <path>\nstemcell <path>",
           "verify"   => "release <path>\nstemcell <path>",
           "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [<version>] [--force]",
-          "generate" => "package <name>\njob <name>"
+          "generate" => "package <name>\njob <name>",
+          "clean"    => "release <version>\nstemcell <name> <version>"
         }
 
         @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])

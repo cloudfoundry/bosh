@@ -6,7 +6,12 @@ module Bosh::Cli::Command
     end
 
     def status
-      say("Target:     %s" % [ full_target_name || "not set" ])
+
+    if options[:director_checks]
+        set_target(config.target, nil, false)
+    end
+
+      say("Target:     %s" % [ full_target_name + " [Director version #{config.target_version}]" || "not set" ])
       say("User:       %s" % [ logged_in? ? username : "not set" ])
       say("Deployment: %s" % [ deployment || "not set" ])
 
@@ -91,9 +96,14 @@ module Bosh::Cli::Command
       say(target ? "Current target is '#{full_target_name}'" : "Target not set")
     end
 
-    def set_target(director_url, name = nil)
+    def set_target(director_url, name = nil, verbose = true)
       if name.nil?
         director_url = config.resolve_alias(:target, director_url) || director_url
+      end
+
+      if director_url.nil?
+        err("Target is not set")
+       return
       end
 
       director_url = normalize_url(director_url)
@@ -122,7 +132,8 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to '#{full_target_name}'")
+
+      say("Target set to '#{full_target_name}'") if verbose
 
       if interactive? && (config.username.blank? || config.password.blank?)
         redirect :misc, :login

@@ -7,11 +7,11 @@ module Bosh::Director
       attr_accessor :tmp_release_dir, :release
 
       def initialize(*args)
+        super
         if args.length == 1
           release_dir = args.first
           @tmp_release_dir = release_dir
           @blobstore = Config.blobstore
-          @logger = Config.logger
         elsif args.empty?
           # used for testing only
         else
@@ -21,12 +21,17 @@ module Bosh::Director
 
       def perform
         @logger.info("Processing update release")
+        @event_log.begin_stage("Update release", 2, [@release_name])
 
-        @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
-        extract_release
+        @event_log.track_and_log("Extract release") do
+          @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
+          extract_release
+        end
 
-        @release_manifest_file = File.join(@tmp_release_dir, "release.MF")
-        verify_manifest
+        @event_log.track_and_log("Verify manifest") do
+          @release_manifest_file = File.join(@tmp_release_dir, "release.MF")
+          verify_manifest
+        end
 
         release_lock = Lock.new("lock:release:#{@release_name}")
         release_lock.lock do
@@ -50,47 +55,60 @@ module Bosh::Director
       end
 
       def process_release
-        @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
-        raise ReleaseAlreadyExists unless @release_version_entry.valid?
-        @release_version_entry.save
+        @event_log.begin_stage("Process release", 3, [@release_name, @release_version])
+
+        @event_log.track_and_log("Save release version") do
+          @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
+          raise ReleaseAlreadyExists unless @release_version_entry.valid?
+          @release_version_entry.save
+        end
 
         resolve_package_dependencies(@release_manifest["packages"])
 
         @packages = {}
-        @release_manifest["packages"].each do |package_meta|
-          @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
+        @event_log.track_and_log("Create new packages") do | ticker |
+          @release_manifest["packages"].each do |package_meta|
+            @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
                            "exists in release #{@release.pretty_inspect}")
-          package = Models::Package[:release_id => @release.id,
+            package = Models::Package[:release_id => @release.id,
                                     :name => package_meta["name"],
                                     :version => package_meta["version"]]
-          if package.nil?
-            @logger.info("Creating new package")
-            package = create_package(package_meta)
-          else
-            @logger.info("Package already exists: #{package.pretty_inspect}, verifying that it's the same")
-            # TODO: make sure package dependencies have not changed
-            raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
-            @logger.info("Package verified")
+
+            if package.nil?
+              @logger.info("Creating new package")
+              package = create_package(package_meta)
+            else
+              @logger.info("Package already exists: #{package.pretty_inspect}, verifying that it's the same")
+              # TODO: make sure package dependencies have not changed
+              raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
+              @logger.info("Package verified")
+            end
+            name = package_meta["name"]
+            @packages[name] = package
+            @release_version_entry.add_package(package)
+            ticker.advance(100.0 / @release_manifest["packages"].size, "#{name}")
           end
-          @packages[package_meta["name"]] = package
-          @release_version_entry.add_package(package)
         end
 
-        @release_manifest["jobs"].each do |job_meta|
-          @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
+        @event_log.track_and_log("Create new jobs") do | ticker |
+          @release_manifest["jobs"].each do |job_meta|
+            @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
                            "exists in release #{@release.pretty_inspect}")
-          template = Models::Template[:release_id => @release.id,
+            template = Models::Template[:release_id => @release.id,
                                       :name => job_meta["name"],
                                       :version => job_meta["version"]]
-          if template.nil?
-            @logger.info("Creating new template")
-            template = create_job(job_meta)
-          else
-            @logger.info("Template already exists: #{template.pretty_inspect}, verifying that it's the same")
-            raise ReleaseExistingJobHashMismatch if template.sha1 != job_meta["sha1"]
-            @logger.info("Template verified")
+
+            if template.nil?
+              @logger.info("Creating new template")
+              template = create_job(job_meta)
+            else
+              @logger.info("Template already exists: #{template.pretty_inspect}, verifying that it's the same")
+              raise ReleaseExistingJobHashMismatch if template.sha1 != job_meta["sha1"]
+              @logger.info("Template verified")
+            end
+            @release_version_entry.add_template(template)
+            ticker.advance(100.0 / @release_manifest["jobs"].size, "#{template.name}")
           end
-          @release_version_entry.add_template(template)
         end
       end
 
