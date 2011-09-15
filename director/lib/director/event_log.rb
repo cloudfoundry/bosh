@@ -53,7 +53,7 @@ module Bosh::Director
       ticker = EventTicker.new(self, task, index)
 
       start_task(task, index)
-      yield ticker
+      yield ticker if block_given?
       finish_task(task, index)
     end
 

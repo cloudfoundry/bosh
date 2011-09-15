@@ -8,6 +8,7 @@ module Bosh::Director
 
       def initialize(*args)
         super
+
         if args.length == 1
           release_dir = args.first
           @tmp_release_dir = release_dir

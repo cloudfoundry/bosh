@@ -80,13 +80,14 @@ module Bosh::Director
               instances.each do |instance|
                 pool.process do
                   delete_instance(instance)
-                  ticker.advance(100.0 / count, "Instance #{instance.job}/#{instance.index}")
+                  ticker.advance(100.0 / count, "instance #{instance.job}/#{instance.index}")
                 end
               end
             end
             pool.wait
 
             vms = Models::Vm.filter(:deployment_id => deployment.id)
+
             @event_log.track_and_log("Deleting idle VMs") do | ticker |
               vms.each do |vm|
                 pool.process do
@@ -109,7 +110,6 @@ module Bosh::Director
             deployment.destroy
           end
           "/deployments/#{@deployment_name}"
-
         end
       end
     end

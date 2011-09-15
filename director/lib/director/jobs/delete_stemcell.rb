@@ -36,7 +36,7 @@ module Bosh::Director
 
           @event_log.begin_stage("Delete stemcell", 3, [@stemcell.cid])
 
-          @event_log.track_and_log("Deleting stemcell #{@stemcell.cid} from the cloud") do
+          @event_log.track_and_log("Deleting stemcell #{@stemcell.cid}") do
             @cloud.delete_stemcell(@stemcell.cid)
           end
 
@@ -51,7 +51,7 @@ module Bosh::Director
               @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
               @blobstore.delete(compiled_package.blobstore_id)
               compiled_package.destroy
-              ticker.advance(100.0 / count, "Package #{package.name}/#{package.version}")
+              ticker.advance(100.0 / count, "#{package.name}/#{package.version}")
             end
           end
 

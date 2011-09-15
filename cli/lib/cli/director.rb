@@ -51,7 +51,7 @@ module Bosh
       end
 
       def upload_stemcell(filename)
-        upload_and_track("/stemcells", "application/x-compressed", filename)
+        upload_and_track("/stemcells", "application/x-compressed", filename, :log_type => "event")
       end
 
       def get_version
@@ -102,7 +102,7 @@ module Bosh
       end
 
       def delete_stemcell(name, version)
-        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, :log_type => "event")
+        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, :log_type => "event")
       end
 
       def delete_deployment(name, options = {})
@@ -111,7 +111,7 @@ module Bosh
         query_params << "force=true" if options[:force]
         url += "?#{query_params.join("&")}" if query_params.size > 0
 
-        request_and_track(:delete, url, nil, :log_type => "event")
+        request_and_track(:delete, url, nil, nil, :log_type => "event")
       end
 
       def delete_release(name, options = {})
@@ -123,7 +123,7 @@ module Bosh
 
         url += "?#{query_params.join("&")}" if query_params.size > 0
 
-        request_and_track(:delete, url, nil, :log_type => "event")
+        request_and_track(:delete, url, nil, nil, :log_type => "event")
       end
 
       def deploy(filename, options = {})
@@ -188,16 +188,14 @@ module Bosh
       end
 
       def run_dummy_job(options = {})
-        url = "/dummy_job/"
-
-        request_and_track(:delete, url, nil, :log_type => "event")
+        url = "/dummy_job"
+        request_and_track(:delete, url, nil, nil, :log_type => "event")
       end
 
       def request_and_track(method, uri, content_type, payload = nil, options = {})
         http_status, body, headers = request(method, uri, content_type, payload)
         location   = headers[:location]
         redirected = http_status == 302
-
         if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
             status = poll_task($1, options)
@@ -229,7 +227,6 @@ module Bosh
 
         task = DirectorTask.new(self, task_id, log_type)
 
-        say("Log type : #{log_type}" )
         say("Tracking task output for task##{task_id}...")
 
         renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)

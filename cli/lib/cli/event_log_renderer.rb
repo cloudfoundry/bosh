@@ -280,11 +280,10 @@ module Bosh::Cli
       clear_line
       bar_repr = @bar_visible ? bar : ""
       title_width = (0.35 * @terminal_width).to_i
-      title = @title.truncate(title_width).ljust(title_width)
-      @output.print "#{title} #{bar_repr} #{@finished_steps}/#{@total}"
+      @title = @title + " [ #{@ticker_data} ]" if @ticker_data
+      @title = @title.truncate(title_width).ljust(title_width)
+      @output.print "#{@title} #{bar_repr} #{@finished_steps}/#{@total}"
       @output.print " #{@label}" if @label
-      @output.print " [ @#{ticker_data} ]" if @ticker_data
-
     end
 
     def bar
