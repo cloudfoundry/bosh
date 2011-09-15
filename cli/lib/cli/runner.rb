@@ -302,6 +302,9 @@ USAGE
             set_cmd(:job, :generate, 1)
           end
 
+        when "test"
+            set_cmd(:misc, :dummy_job, 0)
+
         when "upload"
           verb_usage("upload")
           what = @args.shift

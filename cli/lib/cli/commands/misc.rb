@@ -140,6 +140,25 @@ module Bosh::Cli::Command
       end
     end
 
+    def dummy_job
+      auth_required
+      say "You are about to start the dummy job"
+
+      nl
+
+      status, body = director.run_dummy_job()
+
+      responses = {
+        :done          => "Done",
+        :non_trackable => "Started dummy job but director at '#{target}' doesn't support dummy job tracking",
+        :track_timeout => "Started dummy but timed out out while tracking status",
+        :error         => "Started dummy but received an error while tracking status",
+        :invalid       => "Dummy job is invalid, please fix it and run again"
+      }
+
+      say responses[status] || "Cannot run dummy job: #{body}"
+    end
+
     private
 
     def print_specs(entity, dir)

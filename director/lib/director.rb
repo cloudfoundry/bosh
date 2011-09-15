@@ -457,6 +457,12 @@ module Bosh::Director
       Yajl::Encoder.encode(status)
     end
 
+
+    delete "/dummy_job" do
+      task = DummyJobManager.new.run_dummy_job(@user)
+      redirect "/tasks/#{task.id}"
+    end
+
   end
 
 end
