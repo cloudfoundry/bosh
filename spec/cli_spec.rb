@@ -87,7 +87,7 @@ describe Bosh::Spec::IntegrationTest do
         "name"    => "appcloud",
         "version" => "0.1" # It's our dummy valid release from spec/assets/valid_release.tgz
       },
-      "target" => "http://localhost:57523",
+      "director_uuid" => "deadbeef",
       "networks" => [
                      {
                        "name" => "a",
@@ -162,9 +162,10 @@ describe Bosh::Spec::IntegrationTest do
 
   it "shows status" do
     expect_output("status", <<-OUT)
-      Target:     not set
-      User:       not set
-      Deployment: not set
+     Target         not set
+     UUID           n/a
+     User           not set
+     Deployment     not set
     OUT
   end
 
@@ -199,25 +200,20 @@ describe Bosh::Spec::IntegrationTest do
     OUT
   end
 
-  it "sets and reads existing deployment (also updating target in process, even if it cannot be accessed!)" do
+  it "doesn't let user use deployment with target anymore (needs uuid)" do
     deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
 
     expect_output("deployment vmforce", <<-OUT)
-      WARNING! Your target has been changed to 'http://vmforce-target:2560'
-      Deployment set to '#{deployment_manifest_path}'
-    OUT
-
-    expect_output("deployment", <<-OUT)
-      Current deployment is '#{deployment_manifest_path}'
-    OUT
-
-    expect_output("target", <<-OUT)
-      Current target is 'http://vmforce-target:2560'
+      Please upgrade your deployment manifest to use director UUID instead of target
+      Just replace 'target' key with 'director_uuid' key in your manifest.
+      You can get your director UUID by targeting your director with 'bosh target'
+      and running 'bosh status' command afterwards.
     OUT
   end
 
   it "unsets deployment when target is changed" do
-    run_bosh("deployment 'vmforce'")
+    run_bosh("target localhost:57523")
+    run_bosh("deployment 'test2'")
     expect_output("target http://localhost:57523", <<-OUT)
       WARNING! Your deployment has been unset
       Target set to 'Test Director (http://localhost:57523)'
@@ -234,16 +230,18 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("--force login jane pass")
 
     expect_output("status", <<-OUT)
-      Target:     Unknown Director (http://bar)
-      User:       jane
-      Deployment: not set
+      Target         Unknown Director (http://bar)
+      UUID           n/a
+      User           jane
+      Deployment     not set
     OUT
 
     run_bosh("--skip-director-checks target foo")
     expect_output("status", <<-OUT)
-      Target:     Unknown Director (http://foo)
-      User:       john
-      Deployment: not set
+      Target         Unknown Director (http://foo)
+      UUID           n/a
+      User           john
+      Deployment     not set
     OUT
   end
 
@@ -596,6 +594,7 @@ describe Bosh::Spec::IntegrationTest do
       release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
       deployment_manifest = yaml_file("minimal", minimal_deployment_manifest)
 
+      run_bosh("target localhost:57523")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
@@ -619,6 +618,7 @@ describe Bosh::Spec::IntegrationTest do
       File.exists?(release_filename).should be_true
       File.exists?(deployment_manifest.path).should be_true
 
+      run_bosh("target localhost:57523")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload stemcell #{stemcell_filename}")
@@ -632,6 +632,7 @@ describe Bosh::Spec::IntegrationTest do
       release_filename = spec_asset("valid_release.tgz")
       deployment_manifest = yaml_file("minimal", minimal_deployment_manifest)
 
+      run_bosh("target localhost:57523")
       run_bosh("deployment #{deployment_manifest.path}")
       run_bosh("login admin admin")
       run_bosh("upload release #{release_filename}")
