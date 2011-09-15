@@ -4,7 +4,7 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(deployment_name)
+      def initialize(deployment_name, options = {})
         super
         @deployment_name = deployment_name
         @force = options["force"] || false
