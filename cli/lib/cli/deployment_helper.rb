@@ -12,8 +12,12 @@ module Bosh::Cli
 
       new_manifest = load_yaml_file(manifest_filename)
 
-      if new_manifest["name"].blank? || new_manifest["release"].blank? || new_manifest["target"].blank?
-        err("Invalid manifest for '#{deployment}': name, release and target are all required")
+      if new_manifest["target"]
+        err manifest_target_upgrade_notice
+      end
+
+      if new_manifest["name"].blank? || new_manifest["release"].blank? || new_manifest["director_uuid"].blank?
+        err("Invalid manifest for '#{deployment}': name, release and director UUID are all required")
       end
 
       new_manifest
@@ -48,7 +52,7 @@ module Bosh::Cli
       diff = Bosh::Cli::HashChangeset.new
       diff.add_hash(normalize_deployment_manifest(manifest), :new)
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
-      @_diff_key_visited = { "name" => 1, "target" => 1 }
+      @_diff_key_visited = { "name" => 1, "director_uuid" => 1 }
 
       say "Detecting changes in deployment...".green
       nl
@@ -138,6 +142,15 @@ module Bosh::Cli
 
     def manifest_error(err)
       err("Deployment manifest error: #{err}")
+    end
+
+    def manifest_target_upgrade_notice
+      <<-EOS.gsub(/^\s*/, "").gsub(/\n$/, "")
+        Please upgrade your deployment manifest to use director UUID instead of target
+        Just replace 'target' key with 'director_uuid' key in your manifest.
+        You can get your director UUID by targeting your director with 'bosh target'
+        and running 'bosh status' command afterwards.
+      EOS
     end
 
     def print_summary(diff, key, title = nil)

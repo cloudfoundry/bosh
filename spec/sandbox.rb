@@ -14,6 +14,7 @@ module Bosh
       REDIS_PID   = File.join(ASSETS_PATH, "redis_db/redis.pid")
 
       NATS_PORT = 42112
+      DIRECTOR_UUID = "deadbeef"
 
       DB_PATH             = "/tmp/director.sqlite"
       DIRECTOR_TMP_PATH   = "/tmp/boshdir"
@@ -93,6 +94,12 @@ module Bosh
             worker_output = "#{base_log_path}.worker.out"
           else
             director_output = worker_output = "/dev/null"
+          end
+
+          FileUtils.mkdir_p(DIRECTOR_TMP_PATH)
+
+          File.open(File.join(DIRECTOR_TMP_PATH, "state.json"), "w") do |f|
+            f.write(Yajl::Encoder.encode({"uuid" => DIRECTOR_UUID}))
           end
 
           director_env  = { "BUNDLE_GEMFILE" => "#{DIRECTOR_PATH}/Gemfile" }

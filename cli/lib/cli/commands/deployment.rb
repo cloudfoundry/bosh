@@ -10,32 +10,47 @@ module Bosh::Cli::Command
       manifest_filename = find_deployment(name)
 
       if !File.exists?(manifest_filename)
-        err("Missing manifest for #{name} (tried '#{manifest_filename}')")
+        err "Missing manifest for #{name} (tried '#{manifest_filename}')"
       end
 
       manifest = load_yaml_file(manifest_filename)
 
-      unless manifest.is_a?(Hash) && manifest.has_key?("target")
-        err("Deployment '#{name}' has no target defined")
+      unless manifest.is_a?(Hash)
+        err "Invalid manifest format"
       end
 
-      new_target = normalize_url(manifest["target"])
-
-      if !new_target
-        err("Deployment manifest '#{name}' has no target, please add it before proceeding")
+      unless manifest["target"].blank?
+        err manifest_target_upgrade_notice
       end
 
-      if target != new_target
-        config.target = new_target
-        status = director.get_status rescue { } # generic rescue justified as we force target
+      if manifest["director_uuid"].blank?
+        err "Director UUID is not defined in deployment manifest"
+      end
 
+      if target
+        old_director = Bosh::Cli::Director.new(target, username, password)
+        old_director_uuid = old_director.get_status["uuid"] rescue nil
+      else
+        old_director_uuid = nil
+      end
+
+      if old_director_uuid != manifest["director_uuid"]
+        new_target_url = config.resolve_alias(:target, manifest["director_uuid"])
+        if new_target_url.blank?
+          err "Cannot find director url for UUID '#{manifest["director_uuid"]}'"
+        end
+
+        new_director = Bosh::Cli::Director.new(new_target_url, username, password)
+        status = new_director.get_status
+
+        config.target = new_target_url
         config.target_name = status["name"]
         config.target_version = status["version"]
-
-        say("WARNING! Your target has been changed to '#{full_target_name}'")
+        config.target_uuid = status["uuid"]
+        say "WARNING! Your target has been changed to #{full_target_name}!"
       end
 
-      say("Deployment set to '#{manifest_filename}'")
+      say "Deployment set to '#{manifest_filename}'"
       config.deployment = manifest_filename
       config.save
     end

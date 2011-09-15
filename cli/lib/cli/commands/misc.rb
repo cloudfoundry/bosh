@@ -6,9 +6,15 @@ module Bosh::Cli::Command
     end
 
     def status
-      say("Target:     %s" % [ full_target_name || "not set" ])
-      say("User:       %s" % [ logged_in? ? username : "not set" ])
-      say("Deployment: %s" % [ deployment || "not set" ])
+      target_name = full_target_name ? full_target_name.green : "not set".red
+      target_uuid = config.target_uuid ? config.target_uuid.green : "n/a".red
+      user = logged_in? ? username.green : "not set".red
+      deployment = config.deployment ? config.deployment.green : "not set".red
+
+      say("Target".ljust(15) + target_name)
+      say("UUID".ljust(15) + target_uuid)
+      say("User".ljust(15) + user)
+      say("Deployment".ljust(15) + deployment)
 
       if in_release_dir?
         header("You are in release directory")
@@ -114,7 +120,9 @@ module Bosh::Cli::Command
       config.target = director_url
       config.target_name = status["name"]
       config.target_version = status["version"]
+      config.target_uuid = status["uuid"]
       config.set_alias(:target, name, director_url) unless name.blank?
+      config.set_alias(:target, status["uuid"], director_url) unless status["uuid"].blank?
 
       if deployment
         say("WARNING! Your deployment has been unset")
@@ -122,7 +130,7 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to '#{full_target_name}'")
+      say("Target set to '#{full_target_name.green}'")
 
       if interactive? && (config.username.blank? || config.password.blank?)
         redirect :misc, :login
