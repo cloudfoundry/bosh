@@ -1,0 +1,28 @@
+
+task :check_tgt do
+  unless ENV['VCAP_BVT_TARGET']
+    fail "Please set the VCAP_BVT_TARGET environment variable"
+  end
+end
+
+desc "Bosh a cloud, run bvts"
+task "bvt_bosh" => [:check_tgt] do
+  Rake::Task['ci_bosh:create_and_deploy_keep_going'].invoke
+  sh("cd ../../vcap/tests; bundle exec rake bvt_rpt:bvt_rpt")
+end
+
+desc "Bosh a cloud, run bvts, send email"
+task "bvt_bosh_email" => [:check_tgt] do
+  Rake::Task['ci_bosh:create_and_deploy_keep_going'].invoke
+  sh("cd ../../vcap/tests; bundle exec rake bvt_rpt:bvt_rpt_email")
+end
+
+desc "Run BVTs, send email"
+task "bvt_email" => [:check_tgt] do
+  sh("cd ../../vcap/tests; bundle exec rake bvt_rpt:bvt_rpt_email")
+end
+
+desc "Run BVTs, show report"
+task "bvt_rpt" => [:check_tgt] do
+  sh("cd ../../vcap/tests; bundle exec rake bvt_rpt:bvt_rpt")
+end
