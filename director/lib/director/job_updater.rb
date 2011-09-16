@@ -31,10 +31,16 @@ module Bosh::Director
 
               @cloud.delete_vm(vm.cid)
 
-              if instance.disk_cid
-                @cloud.delete_disk(instance.disk_cid)
+              disks = instance.persistent_disks
+              disks.each do |disk|
+                @logger.info("Deleting an in-active disk #{disk.disk_cid}") unless disk.active
+                begin
+                  @cloud.delete_disk(disk.disk_cid)
+                rescue DiskNotFound
+                  raise if disk.active
+                end
+                disk.destroy
               end
-
               instance.destroy
               vm.destroy
             end

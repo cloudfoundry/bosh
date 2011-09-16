@@ -30,6 +30,22 @@ module Bosh::Director
     end
   end
 
+  class DiskNotAttached < StandardError
+    attr_accessor :ok_to_retry
+
+    def initialize(ok_to_retry)
+      @ok_to_retry = ok_to_retry
+    end
+  end
+
+  class DiskNotFound < StandardError
+    attr_accessor :ok_to_retry
+
+    def initialize(ok_to_retry)
+      @ok_to_retry = ok_to_retry
+    end
+  end
+
   [
    ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
    ["TaskCancelled", OK, 10001, "Task \"%s\" cancelled"],

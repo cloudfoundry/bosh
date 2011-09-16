@@ -51,8 +51,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
                                                         :vm => @vm,
                                                         :job => "test_job",
-                                                        :index => 5,
-                                                        :disk_size => 1024)
+                                                        :index => 5)
+      @persistent_disk = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid",
+                                                                     :instance_id => @instance.id,
+                                                                     :size => 1024)
 
       @deployment_plan = mock("deployment_plan")
       @agent = mock("agent")
@@ -120,6 +122,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state.delete("persistent_disk")
       state.delete("properties")
 
+      @persistent_disk.destroy
       @instance.destroy
 
       @agent.stub!(:get_state).and_return(state)
@@ -144,6 +147,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state.delete("properties")
       state["resource_pool"]["name"] = "unknown_resource_pool"
 
+      @persistent_disk.destroy
       @instance.destroy
 
       @agent.stub!(:get_state).and_return(state)
@@ -660,7 +664,9 @@ describe Bosh::Director::DeploymentPlanCompiler do
       deployment_plan = mock("deployment_plan")
       cloud = mock("cloud")
       vm = Bosh::Director::Models::Vm.make(:cid =>"vm-cid", :agent_id => "agent-id")
-      instance = Bosh::Director::Models::Instance.make(:vm => vm, :disk_cid => "disk-cid")
+      instance = Bosh::Director::Models::Instance.make(:vm => vm)
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
+
       agent = mock("agent")
 
       Bosh::Director::Config.stub!(:cloud).and_return(cloud)

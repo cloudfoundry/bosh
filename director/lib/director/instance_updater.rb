@@ -110,19 +110,19 @@ module Bosh::Director
     def detach_disk
       return unless @instance_spec.disk_currently_attached?
 
-      if @instance.disk_cid.nil?
+      if @instance.persistent_disk_cid.nil?
         raise "Error while detaching disk: unknown disk attached to instance"
       end
 
-      unmount_disk(agent, @instance.disk_cid)
-      @cloud.detach_disk(@vm.cid, @instance.disk_cid)
+      unmount_disk(agent, @instance.persistent_disk_cid)
+      @cloud.detach_disk(@vm.cid, @instance.persistent_disk_cid)
     end
 
     def attach_disk
-      return if @instance.disk_cid.nil?
+      return if @instance.persistent_disk_cid.nil?
 
-      @cloud.attach_disk(@vm.cid, @instance.disk_cid)
-      mount_disk(agent, @instance.disk_cid)
+      @cloud.attach_disk(@vm.cid, @instance.persistent_disk_cid)
+      mount_disk(agent, @instance.persistent_disk_cid)
     end
 
     def delete_vm
@@ -144,7 +144,7 @@ module Bosh::Director
       @vm.agent_id = agent_id
       @vm.save
 
-      disks = [@instance.disk_cid, new_disk_id].compact
+      disks = [@instance.persistent_disk_cid, new_disk_id].compact
 
       @vm.cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
                                  @instance_spec.network_settings, disks, @resource_pool_spec.env)
@@ -191,10 +191,29 @@ module Bosh::Director
       end
     end
 
-    def delete_disk(agent, vm_cid, disk_cid)
-      unmount_disk(agent, disk_cid) rescue nil if agent
-      @cloud.detach_disk(vm_cid, disk_cid) rescue nil if vm_cid
-      @cloud.delete_disk(disk_cid)
+    def disk_info
+      # retrieve list of mounted disks from the agent
+      return @disk_list if @disk_list
+      @disk_list = agent.list_disk
+    end
+
+    def delete_disk(disk, agent, vm_cid)
+      disk_cid = disk.disk_cid
+      # unmount the disk only if disk is known by the agent
+      unmount_disk(agent, disk_cid) if agent && disk_info.include?(disk_cid)
+
+      begin
+        @cloud.detach_disk(vm_cid, disk_cid) if vm_cid
+      rescue DiskNotAttached
+        raise if disk.active
+      end
+
+      begin
+        @cloud.delete_disk(disk_cid)
+      rescue DiskNotFound
+        raise if disk.active
+      end
+      disk.destroy
     end
 
     def update_resource_pool(new_disk_cid = nil)
@@ -232,21 +251,53 @@ module Bosh::Director
     end
 
     def attach_missing_disk
-      if @instance.disk_cid && !@instance_spec.disk_currently_attached?
+      if @instance.persistent_disk_cid && !@instance_spec.disk_currently_attached?
         attach_disk
       end
     rescue NoDiskSpace => e
-      update_resource_pool(@instance.disk_cid)
+      update_resource_pool(@instance.persistent_disk_cid)
+    end
+
+    def check_persistent_disk
+      # sync persistent_disks with the agent
+      # This code assumes that we only have 1 persistent disk
+      return if @instance.persistent_disks.empty?
+      agent_disk = nil
+      agent_disk_cid = disk_info.first
+      active_disk = @instance.persistent_disk
+
+      unless agent_disk_cid.nil?
+        agent_disk = @instance.persistent_disks.find { |disk| disk.disk_cid == agent_disk_cid }
+      end
+
+      if agent_disk_cid != @instance.persistent_disk_cid
+        raise "instance #{@instance.id} has invalid disks: Agent reports #{agent_disk_cid} while director's record shows #{@instance.persistent_disk_cid}"
+      end
+
+      @instance.persistent_disks.each do |disk|
+        next if disk.active
+        @logger.warn("instance #{@instance.id} has invalid disk #{disk.disk_cid}")
+      end
     end
 
     def update_persistent_disk
       attach_missing_disk
+      check_persistent_disk
 
+      disk_cid = nil
+      disk = nil
       return unless @instance_spec.persistent_disk_changed?
-      old_disk_cid = @instance.disk_cid
 
+      old_disk = @instance.persistent_disk
       if @job_spec.persistent_disk > 0
-        disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
+        @instance.db.transaction do
+          disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
+          disk = Models::PersistentDisk.create(:disk_cid => disk_cid,
+                                               :active => false,
+                                               :instance_id => @instance.id,
+                                               :size => @job_spec.persistent_disk)
+        end
+
         begin
           @cloud.attach_disk(@vm.cid, disk_cid)
         rescue NoDiskSpace => e
@@ -257,30 +308,32 @@ module Bosh::Director
             begin
               @cloud.attach_disk(@vm.cid, disk_cid)
             rescue
-              # Cleanup disk model entry
               @cloud.delete_disk(disk_cid)
+              disk.destroy
               raise
             end
           else
-            # Cleanup disk model entry
             @cloud.delete_disk(disk_cid)
+            disk.destroy
             raise
           end
         end
 
         begin
           mount_disk(agent, disk_cid)
-          migrate_disk(agent, old_disk_cid, disk_cid) if old_disk_cid
+          migrate_disk(agent, old_disk.disk_cid, disk_cid) if old_disk
         rescue
-          delete_disk(agent, nil, disk_cid) rescue nil
+          delete_disk(disk, agent, @vm.cid)
           raise
         end
       end
 
-      @instance.disk_cid = disk_cid
-      @instance.disk_size = @job_spec.persistent_disk
-      @instance.save
-      delete_disk(agent, @vm.cid, old_disk_cid) if old_disk_cid
+      @instance.db.transaction do
+        old_disk.update(:active => false) if old_disk
+        disk.update(:active => true) if disk
+      end
+
+      delete_disk(old_disk, agent, @vm.cid) if old_disk
     end
 
     def update_networks
@@ -324,6 +377,5 @@ module Bosh::Director
     def update_watch_times
       [ @update_config.min_update_watch_time, @update_config.max_update_watch_time ]
     end
-
   end
 end
