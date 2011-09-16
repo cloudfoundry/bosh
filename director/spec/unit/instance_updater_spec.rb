@@ -83,7 +83,7 @@ describe Bosh::Director::InstanceUpdater do
   before(:each) do
     @deployment = Bosh::Director::Models::Deployment.make
     @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-id")
-    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :disk_cid => nil, :index => "0")
+    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :index => "0")
     @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
 
     @cloud = mock("cloud")
@@ -320,8 +320,10 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   it "should do a resource pool update with an existing disk" do
-    @instance.disk_cid = "disk-id"
-    @instance.save
+    Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-id",
+                                                :instance_id => @instance.id,
+                                                :active => true)
+    @instance.persistent_disk_cid.should == "disk-id"
 
     @agent_2 = mock("agent-2")
     @agent_2.stub!(:id).and_return("agent-2")
@@ -354,6 +356,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @agent_2.should_receive(:wait_until_ready).ordered
     @agent_2.should_receive(:mount_disk).with("disk-id").ordered.and_return({"state" => "done"})
+    @agent_2.should_receive(:list_disk).and_return(["disk-id"])
 
     @agent_2.should_receive(:apply).with(IDLE_PLAN.merge({"persistent_disk" => 1024})).ordered.and_return({
       "id" => "task-1",
@@ -374,7 +377,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
 
     @instance.refresh
-    @instance.disk_cid.should == "disk-id"
+    @instance.persistent_disk_cid.should == "disk-id"
     vm = @instance.vm
     vm.cid.should == "vm-id-2"
     vm.agent_id.should == "agent-2"
@@ -439,12 +442,13 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance.refresh
     @instance.vm.should == @vm
-    @instance.disk_cid.should == "disk-id"
+    @instance.persistent_disk_cid.should == "disk-id"
   end
 
   it "should migrate a persistent disk when needed" do
-    @instance.disk_cid = "old-disk-id"
-    @instance.save
+    Bosh::Director::Models::PersistentDisk.make(:disk_cid => "old-disk-id",
+                                                :instance_id => @instance.id,
+                                                :active => true)
 
     stub_object(@instance_spec,
                 :resource_pool_changed? => false,
@@ -467,6 +471,7 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
+    @agent_1.should_receive(:list_disk).and_return(["old-disk-id"])
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
@@ -481,12 +486,11 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance.refresh
     @instance.vm.should == @vm
-    @instance.disk_cid.should == "disk-id"
+    @instance.persistent_disk_cid.should == "disk-id"
   end
 
   it "should delete a persistent disk when needed" do
-    @instance.disk_cid = "old-disk-id"
-    @instance.save
+    Bosh::Director::Models::PersistentDisk.make(:disk_cid => "old-disk-id", :instance_id => @instance.id)
 
     plan = BASIC_PLAN._deep_copy
     plan["persistent_disk"] = 0
@@ -511,6 +515,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
     @agent_1.should_receive(:stop)
+    @agent_1.should_receive(:list_disk).and_return(["old-disk-id"])
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
     @cloud.should_receive(:delete_disk).with("old-disk-id")
@@ -525,7 +530,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance.refresh
     @instance.vm.should == @vm
-    @instance.disk_cid.should be_nil
+    @instance.persistent_disk_cid.should be_nil
   end
 
   describe "instance state transitions" do
@@ -577,8 +582,7 @@ describe Bosh::Director::InstanceUpdater do
     end
 
     it "transition to detached" do
-      @instance.disk_cid = "deadbeef"
-      @instance.save
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "deadbeef", :instance_id => @instance.id)
 
       @instance_spec.stub!(:resource_pool_changed? => false,
                            :persistent_disk_changed? => false,
@@ -598,8 +602,230 @@ describe Bosh::Director::InstanceUpdater do
 
       updater.update
       @instance.refresh
-      @instance.disk_cid.should == "deadbeef"
+      @instance.persistent_disk_cid.should == "deadbeef"
       @instance.vm.should be_nil
+    end
+
+    # In the first attempt to migrate a disk:
+    # 1 - Create a persistentdisk with the new size (not-activated)
+    # 2 - Agent fails while trying to migrate.
+    #
+    # In the second attempt we should clean up the entry created in -1- and
+    # retry the migration.
+    it "should recover error from agent error while migrating a disk" do
+      stub_object(@instance_spec,
+                  :resource_pool_changed? => false,
+                  :persistent_disk_changed? => true,
+                  :disk_currently_attached? => true,
+                  :networks_changed? => false,
+                  :state => "started")
+
+      # good old disk
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "old-disk-id",
+                                                  :instance_id => @instance.id,
+                                                  :active => true,
+                                                  :size => 500)
+
+      # bad new disk
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "new-disk-id",
+                                                  :instance_id => @instance.id,
+                                                  :active => false,
+                                                  :size => 1024)
+
+      instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+      instance_updater.stub!(:cloud).and_return(@cloud)
+
+      @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+      @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+      @agent_1.should_receive(:stop)
+
+      # simulating a case where the agent fails to mount
+      # It still has the "old-disk-id" instead of "new-disk-id"
+      @agent_1.should_receive(:list_disk).and_return(["old-disk-id"])
+
+      # director should delete the half-created this.
+      @agent_1.should_not_receive(:unmount_disk).with("new-disk-id") # new-disk-id is not mounted
+      @cloud.should_receive(:detach_disk).with("vm-id", "new-disk-id")
+      @cloud.should_receive(:delete_disk).with("new-disk-id")
+
+      # detach and remove old-disk-id
+      @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
+      @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
+      @cloud.should_receive(:delete_disk).with("old-disk-id")
+
+      # create, attach, mount and migrate to new disk
+      @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
+      @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
+      @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
+      @agent_1.should_receive(:migrate_disk).with("old-disk-id", "disk-id").and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+      @agent_1.should_receive(:start)
+
+      instance_updater.update
+
+      @instance.refresh
+      @instance.vm.should == @vm
+      @instance.persistent_disk_cid.should == "disk-id"
+    end
+
+    # In the first attempt to migrate a disk:
+    # 1 - Create a persistentdisk with the new size (not-activated)
+    # 2 - Agent migrate is successful
+    # 3 - We fail to activate the disk created in -1-
+    #
+    # In the second attempt we should see that the agent is already has the new
+    # disk. Directory should activate the disk created in -1- and delete the
+    # old disk.
+    it "should recover from db error while migrating disks" do
+      stub_object(@instance_spec,
+                  :resource_pool_changed? => false,
+                  :persistent_disk_changed? => false,
+                  :disk_currently_attached? => true,
+                  :networks_changed? => false,
+                  :state => "started")
+
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "old-disk-id",
+                                                  :instance_id => @instance.id,
+                                                  :active => true,
+                                                  :size => 500)
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "new-disk-id",
+                                                  :instance_id => @instance.id,
+                                                  :active => false,
+                                                  :size => 1024)
+
+      instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+      instance_updater.stub!(:cloud).and_return(@cloud)
+
+      @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+      @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(0.01)
+      @agent_1.should_receive(:stop)
+
+      # the agent already has the new disk
+      @agent_1.should_receive(:list_disk).and_return(["new-disk-id"])
+
+      # We should leave the new-disk.
+      @cloud.should_not_receive(:detach_disk).with("vm-id", "new-disk-id")
+      @cloud.should_not_receive(:delete_disk).with("new-disk-id")
+
+      # detach and remove old-disk-id
+      @agent_1.should_not_receive(:unmount_disk).with("old-disk-id") # old-disk-id is not mounted
+      @cloud.should_receive(:detach_disk).with("vm-id", "old-disk-id")
+      @cloud.should_receive(:delete_disk).with("old-disk-id")
+
+      @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+      @agent_1.should_receive(:start)
+
+      instance_updater.update
+
+      @instance.refresh
+      @instance.vm.should == @vm
+      @instance.persistent_disk_cid.should == "new-disk-id"
+    end
+
+    # In the first attempt to migrate a disk:
+    # 1 - Create a persistentdisk with the new size (not-activated)
+    # 2 - Agent migrate is successful
+    # 3 - successfully activate disk created in -1-
+    # 4 - We fail to push the new disk-size to the agent ("apply_state").
+    #
+    # In the second attempt we shuold not do anything execpt retrying the
+    # "apply_state" call.
+    it "should recover from apply_state error while migrating disks" do
+      stub_object(@instance_spec,
+                  :resource_pool_changed? => false,
+                  :persistent_disk_changed? => false,
+                  :disk_currently_attached? => true,
+                  :networks_changed? => false,
+                  :state => "started")
+
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-id",
+                                                  :instance_id => @instance.id,
+                                                  :active => false,
+                                                  :size => 1024)
+
+      instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+      instance_updater.stub!(:cloud).and_return(@cloud)
+
+      @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+      @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(0.01)
+      @agent_1.should_receive(:stop)
+
+      # the agent already has the new disk
+      @agent_1.should_receive(:list_disk).and_return(["disk-id"])
+
+      # We should leave the disk.
+      @cloud.should_not_receive(:detach_disk).with("vm-id", "disk-id")
+      @cloud.should_not_receive(:delete_disk).with("disk-id")
+
+      @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+      @agent_1.should_receive(:start)
+
+      instance_updater.update
+
+      @instance.refresh
+      @instance.vm.should == @vm
+      @instance.persistent_disk_cid.should == "disk-id"
+    end
+
+    it "should recover from a mount_disk error while creating a disk" do
+      stub_object(@instance_spec,
+                  :resource_pool_changed? => false,
+                  :persistent_disk_changed? => true,
+                  :disk_currently_attached? => false,
+                  :networks_changed? => false,
+                  :state => "started")
+
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "bad-disk",
+                                                  :instance_id => @instance.id,
+                                                  :active => false)
+
+      instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+      instance_updater.stub!(:cloud).and_return(@cloud)
+
+      @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+
+      # simulating a case where the agent fails to mount
+      @agent_1.should_receive(:list_disk).and_return([])
+      # we should not call umount when we failed to mount the disk
+      @agent_1.should_not_receive(:unmount_disk)
+      @cloud.should_receive(:detach_disk).with("vm-id", "bad-disk")
+      @cloud.should_receive(:delete_disk).with("bad-disk")
+
+      @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+      @agent_1.should_receive(:stop)
+      @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
+      @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
+      @agent_1.should_receive(:mount_disk).with("disk-id").and_return({"state" => "done"})
+      @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
+        "id" => "task-1",
+        "state" => "done"
+      })
+      @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
+      @agent_1.should_receive(:start)
+
+      instance_updater.update
+
+      @instance.refresh
+      @instance.vm.should == @vm
+      @instance.persistent_disk_cid.should == "disk-id"
     end
   end
 

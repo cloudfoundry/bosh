@@ -151,7 +151,8 @@ describe Bosh::Director::JobUpdater do
 
   it "should delete the unneeded instances" do
     vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-id")
-    instance = Bosh::Director::Models::Instance.make(:vm => vm, :disk_cid => "disk-cid")
+    instance = Bosh::Director::Models::Instance.make(:vm => vm)
+    Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
 
     agent = mock("agent")
     cloud = mock("cloud")

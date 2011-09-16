@@ -84,9 +84,14 @@ module Bosh::Director
 
                 # does the job instance exist in the new deployment?
                 if instance
-                  if instance.disk_size.nil?
-                    @logger.debug("Updating instance persistent disk size")
-                    instance.update(:disk_size => state["persistent_disk"].to_i)
+                  disk_size = state["persistent_disk"].to_i
+                  persistent_disk = instance.persistent_disk
+
+                  # This is to support legacy deployments where we did not have
+                  # the disk_size specified. TODO : at some point we should
+                  # clean-up these hacks.
+                  if disk_size != 0 && persistent_disk && persistent_disk.size == 0
+                    persistent_disk.update(:size => disk_size)
                   end
 
                   @logger.debug("Binding instance VM")
@@ -362,11 +367,15 @@ module Bosh::Director
               agent.stop
 
               @cloud.delete_vm(vm.cid)
-
-              if instance.disk_cid
-                @cloud.delete_disk(instance.disk_cid)
+              instance.persistent_disks.each do |disk|
+                @logger.info("Deleting an in-active disk #{disk.disk_cid}") unless disk.active
+                begin
+                  @cloud.delete_disk(disk.disk_cid)
+                rescue DiskNotFound
+                  raise if disk.active
+                end
+                disk.destroy
               end
-
               instance.destroy
               vm.destroy
             end
@@ -374,6 +383,5 @@ module Bosh::Director
         end
       end
     end
-
   end
 end

@@ -541,7 +541,7 @@ module VSphereCloud
         vmdk_path = "#{disk.path}.vmdk"
         virtual_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
             device.backing.file_name == vmdk_path }
-        raise "Disk is not attached to this VM" if virtual_disk.nil?
+        raise Bosh::Director::DiskNotAttached.new(true), "Disk is not attached to this VM" if virtual_disk.nil?
 
         config = Vim::Vm::ConfigSpec.new
         config.device_change = []
@@ -591,6 +591,8 @@ module VSphereCloud
         if disk
           if disk.path
             datacenter = client.find_by_inventory_path(disk.datacenter)
+            raise Bosh::Director::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil? || disk.path.nil?
+
             client.delete_disk(datacenter, disk.path)
           end
           disk.destroy

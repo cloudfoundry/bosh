@@ -12,33 +12,36 @@ module Bosh::Director
         @cloud = Config.cloud
       end
 
+      def detach_delete_disk(disk, vm, force)
+        # detach the disk from the vm
+        if vm
+          begin
+            @logger.info("Detaching disk: #{disk.disk_cid} from vm (#{vm.cid})")
+            @cloud.detach_disk(vm.cid, disk.disk_cid)
+          rescue => e
+            @logger.warn("Could not detach disk from VM: #{e} - #{e.backtrace.join("")}")
+            raise unless force
+          end
+        end
+
+        #delete the disk
+        begin
+          @logger.info("Deleting found disk: #{disk.disk_cid}")
+          @cloud.delete_disk(disk.disk_cid)
+          disk.destroy
+        rescue => e
+          @logger.warn("Could not delete disk: #{e} - #{e.backtrace.join("")}")
+          raise unless force
+        end
+      end
+
       def delete_instance(instance)
         with_thread_name("delete_instance(#{instance.job}/#{instance.index})") do
           @logger.info("Deleting instance: #{instance.job}/#{instance.index}")
           vm = instance.vm
-
-          if instance.disk_cid
-            if vm
-              begin
-                @logger.info("Detaching found disk: #{instance.disk_cid}")
-                @cloud.detach_disk(vm.cid, instance.disk_cid)
-              rescue => e
-                @logger.warn("Could not detach disk from VM: #{e} - #{e.backtrace.join("")}")
-                raise unless @force
-              end
-            end
-
-            begin
-              @logger.info("Deleting found disk: #{instance.disk_cid}")
-              @cloud.delete_disk(instance.disk_cid)
-            rescue => e
-              @logger.warn("Could not delete disk: #{e} - #{e.backtrace.join("")}")
-              raise unless @force
-            end
-          end
-
+          disks = instance.persistent_disks
+          disks.each { |disk| detach_delete_disk(disk, vm, @force) }
           instance.destroy
-
           if vm
             delete_vm(vm)
           end
