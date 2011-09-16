@@ -10,6 +10,7 @@ require "director/models/task"
 require "director/models/template"
 require "director/models/user"
 require "director/models/vm"
+require "director/models/persistent_disk"
 
 module Bosh::Director
   module Models
