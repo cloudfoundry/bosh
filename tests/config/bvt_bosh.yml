@@ -1,0 +1,29 @@
+# Director URL is url for bosh director
+##director_url: http://10.150.82.150:25555
+
+# bosh_def_name is the name to be given to dev releases.
+#   The default is bvt_bosh.  It is only applicable if no name
+#   already exists.
+##bosh_dev_name: sgh
+
+# bosh_manifest is the relative path (from deployments dir) to deployment file
+##bosh_manifest: cfqa5/cfqa5.yml
+
+# vcap_dir is the relative path (from tests dir) to vcap
+#   The default is ../../vcap
+##vcap_dir: ../../vcap
+
+# services_dir is the relative path (from tests dir) to vcap-services
+#   The default is ../../vcap-services
+
+# release_dir is the relative path (from tests dir) to release
+#   The default is ../../release
+##release_dir: ../../release
+
+# deployments_dir is the relative path (from tests dir) to deployments
+#   The default is ../../deployments
+##deployments_dir: ../../deployments
+
+# results_dir is the relative path (from tests dir) to test_results
+#   The default is ./ci_artifacts_dir
+##results_dir: ~/results/
