@@ -77,7 +77,6 @@ module Bosh::Director::Models
     job         { Sham.job }
     index       { Sham.index }
     vm          { Vm.make }
-    disk_cid    { Sham.disk_cid }
     state       { "started" }
   end
 
@@ -94,4 +93,9 @@ module Bosh::Director::Models
     password { Sham.password }
   end
 
+  PersistentDisk.blueprint do
+    active      { true }
+    disk_cid    { Sham.disk_cid }
+    instance    { Instance.make }
+  end
 end
