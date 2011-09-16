@@ -11,7 +11,8 @@ describe Bosh::Director::Jobs::DeleteDeployment do
     end
 
     it "should delete the disk if it's not attached to the VM" do
-      instance = Bosh::Director::Models::Instance.make(:disk_cid => "disk-cid", :vm => nil)
+      instance = Bosh::Director::Models::Instance.make(:vm => nil)
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
 
       @cloud.should_receive(:delete_disk).with("disk-cid")
 
@@ -22,7 +23,8 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
     it "should detach and delete disk if there is a disk" do
       vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
-      instance = Bosh::Director::Models::Instance.make(:disk_cid => "disk-cid", :vm => vm)
+      instance = Bosh::Director::Models::Instance.make(:vm => vm)
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
 
       @cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid")
       @cloud.should_receive(:delete_disk).with("disk-cid")
@@ -36,7 +38,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
     it "should only delete the VM if there is no disk" do
       vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
-      instance = Bosh::Director::Models::Instance.make(:disk_cid => nil, :vm => vm)
+      instance = Bosh::Director::Models::Instance.make(:vm => vm)
 
       @job.should_receive(:delete_vm).with(vm)
 
@@ -46,7 +48,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
     end
 
     it "should only delete the model if there is no VM" do
-      instance = Bosh::Director::Models::Instance.make(:disk_cid => nil, :vm => nil)
+      instance = Bosh::Director::Models::Instance.make(:vm => nil)
 
       @job.delete_instance(instance)
 

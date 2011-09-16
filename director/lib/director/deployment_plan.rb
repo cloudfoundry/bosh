@@ -738,7 +738,10 @@ module Bosh::Director
       end
 
       def disk_size
-        disk_currently_attached? ? current_state["persistent_disk"].to_i : @instance.disk_size.to_i
+        return current_state["persistent_disk"].to_i if @instance.nil?
+        disk = @instance.persistent_disk
+        return disk.size if disk
+        0
       end
 
       def disk_currently_attached?
