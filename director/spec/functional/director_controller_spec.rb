@@ -318,8 +318,6 @@ describe Bosh::Director::Controller do
 
     describe "polling task status" do
       it "has API call that return task status" do
-        require "ruby-debug/debugger"
-        debugger
         post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 

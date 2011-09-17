@@ -82,7 +82,7 @@ module Bosh::Director
     end
 
     def track_and_log(task)
-      track(task) do | ticker |
+      track(task) do |ticker|
         @external_logger.info(task) if @external_logger
         yield ticker if block_given?
       end

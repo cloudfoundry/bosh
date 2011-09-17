@@ -67,7 +67,7 @@ module Bosh::Director
         resolve_package_dependencies(@release_manifest["packages"])
 
         @packages = {}
-        @event_log.track_and_log("Create new packages") do | ticker |
+        @event_log.track_and_log("Create new packages") do |ticker|
           @release_manifest["packages"].each do |package_meta|
             @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
                            "exists in release #{@release.pretty_inspect}")
@@ -91,7 +91,7 @@ module Bosh::Director
           end
         end
 
-        @event_log.track_and_log("Create new jobs") do | ticker |
+        @event_log.track_and_log("Create new jobs") do |ticker|
           @release_manifest["jobs"].each do |job_meta|
             @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
                            "exists in release #{@release.pretty_inspect}")
@@ -226,7 +226,7 @@ module Bosh::Director
         package_names = []
         job_manifest["packages"].each do |package_name|
           package = @packages[package_name]
-          raise JobMissingPackage.new(name, package_name) if package.nil?
+          raise JobMissingPackage.new(job_meta["name"], package_name) if package.nil?
           package_names << package.name
         end
         template.package_names = package_names

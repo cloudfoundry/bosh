@@ -222,6 +222,7 @@ module Bosh::Cli
 
       progress_bar.total = total
       progress_bar.title = @tasks.values.map {|t| t.name }.sort.join(", ")
+      progress_bar.title += " [#{progress_bar.ticker_data}] " if @tasks.values.size == 1 && progress_bar.ticker_data
       progress_bar.current += progress_bar_gain
       progress_bar.refresh
 
@@ -280,7 +281,6 @@ module Bosh::Cli
       clear_line
       bar_repr = @bar_visible ? bar : ""
       title_width = (0.35 * @terminal_width).to_i
-      @title = @title + " [ #{@ticker_data} ]" if @ticker_data
       @title = @title.truncate(title_width).ljust(title_width)
       @output.print "#{@title} #{bar_repr} #{@finished_steps}/#{@total}"
       @output.print " #{@label}" if @label

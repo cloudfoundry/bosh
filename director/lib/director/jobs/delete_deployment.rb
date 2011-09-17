@@ -76,7 +76,7 @@ module Bosh::Director
           ThreadPool.new(:max_threads => 32).wrap do |pool|
             instances = Models::Instance.filter(:deployment_id => deployment.id)
             count = instances.count
-            @event_log.track_and_log("Deleting instances") do | ticker |
+            @event_log.track_and_log("Deleting #{count} instances") do |ticker|
               instances.each do |instance|
                 pool.process do
                   delete_instance(instance)
@@ -88,7 +88,7 @@ module Bosh::Director
 
             vms = Models::Vm.filter(:deployment_id => deployment.id)
 
-            @event_log.track_and_log("Deleting idle VMs") do | ticker |
+            @event_log.track_and_log("Deleting idle VMs") do |ticker|
               vms.each do |vm|
                 pool.process do
                   delete_vm(vm)

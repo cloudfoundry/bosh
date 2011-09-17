@@ -15,7 +15,7 @@ module Bosh::Director
       end
 
       def delete_release_version(release_version)
-        @event_log.begin_stage("Deleting release", 3, [ @name, @version])
+        @event_log.begin_stage("Deleting release version", 2, [ @name, @version ].reject {|x| !x})
         @logger.info("Deleting release #{@name} version #{@version}")
 
         release = release_version.release
@@ -44,7 +44,7 @@ module Bosh::Director
           end
         end
 
-        @event_log.track_and_log("Deleting packages") do | ticker |
+        @event_log.track_and_log("Deleting packages") do |ticker|
           packages_to_delete.each do |package|
             @logger.info("Package #{package.name}/#{package.version} is only used by this release version and will be deleted")
             delete_package(package)
@@ -57,7 +57,7 @@ module Bosh::Director
           package.remove_release_version(release_version)
         end
 
-        @event_log.track_and_log("Deleting templates") do | ticker |
+        @event_log.track_and_log("Deleting templates") do |ticker|
           templates_to_delete.each do |template|
             @logger.info("Template #{template.name}/#{template.version} is only used by this release version and will be deleted")
             delete_template(template)
@@ -78,27 +78,22 @@ module Bosh::Director
         end
 
         if release.versions.empty?
-          @event_log.track("Delete release: #{release.name}") do
-            delete_release(release)
-          end
-        else
-          @logger.info("Cannot delete release: #{release.name} some versions are still in use")
-          @event_log.track("")
+          delete_release(release)
         end
       end
 
       def delete_release(release)
-        @event_log.begin_stage("Deleting release", 2, [ @name, @version ])
+        @event_log.begin_stage("Deleting release", 2, [ @name ])
         @logger.info("Deleting release #{@name}")
 
-        @event_log.track_and_log("Deleting packages") do | ticker |
+        @event_log.track_and_log("Deleting packages") do |ticker|
           release.packages.each do |package|
             delete_package(package)
             ticker.advance(100.0 / release.packages.size, "#{package.name}/#{package.version}")
           end
         end
 
-        @event_log.track_and_log("Deleting templates") do | ticker |
+        @event_log.track_and_log("Deleting templates") do |ticker|
           release.templates.each do |template|
             delete_template(template)
             ticker.advance(100.0 / release.templates.size, "#{template.name}/#{template.version}")

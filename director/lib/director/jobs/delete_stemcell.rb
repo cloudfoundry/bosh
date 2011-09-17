@@ -41,7 +41,7 @@ module Bosh::Director
           end
 
           @logger.info("Looking for any compiled packages on this stemcell")
-          @event_log.track_and_log("Deleting compiled packages") do | ticker |
+          @event_log.track_and_log("Deleting compiled packages") do |ticker|
             compiled_packages = Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
             count = compiled_packages.count
             compiled_packages.each do |compiled_package|

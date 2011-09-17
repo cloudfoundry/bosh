@@ -193,7 +193,7 @@ module Bosh::Director
     end
 
     delete "/dummy_job" do
-      task = @dummy_job_manager.run_dummy_job(@user)
+      task = DummyJobManager.new.run_dummy_job(@user)
       redirect "/tasks/#{task.id}"
     end
 
@@ -205,8 +205,6 @@ module Bosh::Director
     end
 
     post "/releases", :consumes => :tgz do
-#require "ruby-debug/debugger"
-#debugger
       task = @release_manager.create_release(@user, request.body)
       redirect "/tasks/#{task.id}"
     end
