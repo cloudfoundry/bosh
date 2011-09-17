@@ -11,7 +11,15 @@ end
 package "git-core"
 
 if node[:blobstore][:nginx]
-  template "#{node[:nginx][:path]}/sites/blobstore.conf" do
+  directory node[:blobstore][:nginx_storage] do
+    owner node[:blobstore][:runner]
+    group node[:blobstore][:runner]
+    mode "0755"
+    recursive true
+    action :create
+  end
+
+  template File.join(node[:nginx][:path], "sites/blobstore.conf") do
     source "nginx.conf.erb"
     owner node[:nginx][:runner]
     group node[:nginx][:runner]
@@ -19,13 +27,13 @@ if node[:blobstore][:nginx]
     notifies :restart, "service[nginx]"
   end
 else
-  file "#{node[:nginx][:path]}/sites/blobstore.conf" do
+  file File.join(node[:nginx][:path], "sites/blobstore.conf") do
     action :delete
     notifies :restart, "service[nginx]", :immediately
   end
 end
 
-directory "#{node[:blobstore][:path]}/shared" do
+directory File.join(node[:blobstore][:path], "shared") do
   owner node[:blobstore][:runner]
   group node[:blobstore][:runner]
   mode "0755"
@@ -40,7 +48,7 @@ directory node[:blobstore][:tmp] do
 end
 
 %w{config gems logs}.each do |dir|
-  directory "#{node[:blobstore][:path]}/shared/#{dir}" do
+  directory File.join(node[:blobstore][:path], "shared", dir) do
     owner node[:blobstore][:runner]
     group node[:blobstore][:runner]
     mode "0755"
@@ -48,7 +56,7 @@ end
   end
 end
 
-template "#{node[:blobstore][:path]}/shared/config/simple_blobstore_server.yml" do
+template File.join(node[:blobstore][:path], "shared/config/simple_blobstore_server.yml") do
   source "simple_blobstore_server.yml.erb"
   owner node[:blobstore][:runner]
   group node[:blobstore][:runner]
@@ -56,7 +64,7 @@ template "#{node[:blobstore][:path]}/shared/config/simple_blobstore_server.yml" 
 end
 
 deploy_revision node[:blobstore][:path] do
-  repo "#{node[:blobstore][:repos_path]}/bosh"
+  repo File.join(node[:blobstore][:repos_path], "bosh")
   user node[:blobstore][:runner]
   revision "HEAD"
   migrate false
@@ -72,9 +80,9 @@ deploy_revision node[:blobstore][:path] do
   symlinks({})
 
   before_migrate do
-    execute "#{node[:ruby][:path]}/bin/bundle install --deployment --without development test --local --path #{node[:blobstore][:path]}/shared/gems" do
+    execute "#{File.join(node[:ruby][:path], "bin/bundle")} install --deployment --without development test --local --path #{File.join(node[:blobstore][:path], "shared/gems")}" do
       ignore_failure true
-      cwd "#{release_path}/simple_blobstore_server"
+      cwd File.join(release_path, "simple_blobstore_server")
     end
   end
 end
