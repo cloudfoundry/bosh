@@ -332,11 +332,29 @@ module Bosh::Agent
       def harden_permissions
         setup_cron_at_allow
 
+        # use this instead of removing vcap from the cdrom group, as there
+        # is no way to easily do that from the command line
+        root_only_rw = %w{
+          /dev/sr0
+        }
+        root_only_rw.each do |path|
+          %x[chmod 0660 #{path}]
+          %x[chown root:root #{path}]
+        end
+
         root_app_user_rw = %w{
+          /dev/log
+        }
+        root_app_user_rw.each do |path|
+          %x[chmod 0660 #{path}]
+          %x[chown root:#{BOSH_APP_USER} #{path}]
+        end
+
+        root_app_user_rwx = %w{
           /dev/shm
           /var/lock
         }
-        root_app_user_rw.each do |path|
+        root_app_user_rwx.each do |path|
           %x[chmod 0770 #{path}]
           %x[chown root:#{BOSH_APP_USER} #{path}]
         end
