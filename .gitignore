@@ -16,6 +16,7 @@ spec/assets/**/*.pid
 spec/assets/bosh_config.yml
 agent/spec/tmp
 cli/pkg
+monit_api/pkg
 blobstore_client/pkg
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
