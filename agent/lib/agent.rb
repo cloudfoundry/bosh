@@ -30,6 +30,8 @@ require "agent/alert_processor"
 require "agent/smtp_server"
 require "agent/heartbeat"
 require "agent/state"
+require "agent/file_matcher"
+require "agent/file_aggregator"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
@@ -39,6 +41,7 @@ require "agent/message/state"
 require "agent/message/drain"
 require "agent/message/apply"
 require "agent/message/compile_package"
+require "agent/message/logs"
 
 require "agent/handler"
 
