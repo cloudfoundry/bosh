@@ -37,7 +37,8 @@ module VCAP
         @identity = Identity.new(@proxy)
         @network = Network.new
         @memory = Memory.new
-        @watcher = Watcher.new(@network, @identity).start
+        @watcher = Watcher.new(@network, @identity)
+        @watcher.start
       end
 
       def console
@@ -45,7 +46,7 @@ module VCAP
         # TODO add a timeout so the console will be auto-refreshed
         while true
           clear
-          say("              Welcome to VMware Micro Cloud Foundry version #{VCAP::Micro::VERSION}\n\n")
+          say("              Welcome to VMware Micro Cloud Foundry version #{VCAP::Micro::Version::VERSION}\n\n")
           status
           menu
         end
@@ -66,15 +67,20 @@ module VCAP
         if @identity.api_host != Identity::DEFAULT_API_HOST
           say("Using API host: #{@identity.api_host}\n".yellow)
         end
-        if @identity.should_update?
+        if Version.should_update?(@identity.version)
           url = "http://cloudfoundry.com/micro"
-          say("A new version is available for download at #{url}\n".yellow)
+          say("Version #{@identity.latest_version} is available for download at #{url}\n".yellow)
         end
         if @identity.configured?
           say("Current Configuration:")
           say(" Identity:   #{@identity.subdomain} (#{dns_status})")
           say(" Admin:      #{@identity.admins.join(', ')}")
-          say(" IP Address: #{@identity.ip} (network #{network_status})\n\n")
+          current = unless (ip = Network.local_ip) == @identity.ip
+            "(actual #{ip})"
+          else
+            ""
+          end
+          say(" IP Address: #{@identity.ip} (network #{network_status}) #{current}\n\n")
           say("To access your Micro Cloud Foundry instance, use:")
           say("vmc target http://api.#{@identity.subdomain}\n\n")
         else
@@ -138,6 +144,7 @@ module VCAP
         configure_domain(true)
         say("\nInstalling Micro Cloud Foundry: will take up to five minutes\n\n")
         # TODO use a progres bar
+        VCAP::Micro::Agent.randomize_passwords
         VCAP::Micro::Agent.apply(@identity)
         say("Installation complete\n".green)
         press_return_to_continue
@@ -167,20 +174,21 @@ module VCAP
           say("\nCreate a new domain or regenerate a token for an existing")
           say("at www.cloudfoundry.com/micro\n")
         end
-        @identity.clear
         token = ask("\nEnter Micro Cloud Foundry configuration token: ")
         if token == "quit" && ! initial
           return
         elsif token == "vcap.me"
+          @identity.clear
           @identity.vcap_me
         else
+          @identity.clear
           @identity.nonce = token
           @identity.install(VCAP::Micro::Network.local_ip)
         end
         @identity.save
         unless initial
           say("Reconfiguring Micro Cloud Foundry with new settings...")
-          Bosh::Agent::Monit.stop_services # is it enough to stop only cc?
+          Bosh::Agent::Monit.stop_services(60) # is it enough to stop only cc?
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -233,7 +241,7 @@ module VCAP
         @proxy.save
         if !initial && old_url != @proxy.url
           say("Reconfiguring Micro Cloud Foundry with new proxy setting...")
-          Bosh::Agent::Monit.stop_services
+          Bosh::Agent::Monit.stop_services(60)
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -245,7 +253,7 @@ module VCAP
         @memory.save_spec(@memory.update_spec(mem))
         @memory.update_previous
         unless initial
-          Bosh::Agent::Monit.stop_services
+          Bosh::Agent::Monit.stop_services(60)
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -335,7 +343,7 @@ module VCAP
         clear
         if @identity.configured?
           say("Stopping Cloud Foundry services...")
-          Bosh::Agent::Monit.stop_services
+          Bosh::Agent::Monit.stop_services(60)
           sleep 5 # TODO loop and wait until all are stopped
         end
         say("shutting down VM...")
@@ -356,6 +364,10 @@ module VCAP
             menu.choice("set debug level to DEBUG [#{level}]") { debug_level }
             menu.choice("display log") { display_debug_log }
             menu.choice("change api url") { configure_api_url }
+            state = @watcher.paused ? "enable" : "disable"
+            menu.choice("#{state} network watcher") { toggle_watcher }
+            menu.choice("reapply") { reapply }
+            menu.choice("network touble shooting") { network_troubleshooting }
             menu.choice("return to main menu") { return }
           end
         end
@@ -364,25 +376,107 @@ module VCAP
       def debug_level
         @logger.level = Logger::DEBUG
         @logger.info("debug output enabled")
-        say("Debug output enabled in #{LOGFILE}")
+        say("Debug output enabled")
         press_return_to_continue
       end
 
+      def reapply
+        Bosh::Agent::Monit.stop_services(60)
+        VCAP::Micro::Agent.apply(@identity)
+        press_return_to_continue
+      end
+
+      def toggle_watcher
+        if @watcher.paused
+          @watcher.resume
+        else
+          @watcher.pause
+        end
+      end
+
+      # a very naïve pager
+      LINES_PER_PAGE = 20
       def display_debug_log
         lines = nil
         File.open(LOGFILE) do |file|
           lines = file.readlines
         end
+        if lines.size == 0
+          say("logfile empty")
+          press_return_to_continue
+        end
         current = 0
         while true
           clear
           say("#{LOGFILE}\n".yellow)
-          say(lines[current..(current+20)].join)
+          say(lines[current..(current+LINES_PER_PAGE)].join)
           q = ask("\n Return for next page, 'last' for last page or 'quit' to quit: ")
-          return if q.match(/^q(uit)*/i)
-          current += 20 if q.empty?
-          current = lines.size - 20 if q.match(/^l(ast)*/i)
+          if q.match(/^q(uit)*/i)
+            return
+          elsif q.match(/^l(ast)*/i)
+            current = lines.size - LINES_PER_PAGE
+          elsif q.empty?
+            current += LINES_PER_PAGE
+            if current >= lines.size
+              # last page
+              if lines.size > LINES_PER_PAGE
+                current = lines.size - LINES_PER_PAGE
+              else
+                current = 0
+              end
+            end
+          end
         end
+      end
+
+      def network_troubleshooting
+        clear
+
+        # get IP
+        ip = Network.local_ip
+        ip_address = ip.to_s.green
+        say("VM IP address is: #{ip_address}")
+        say("configured IP address is: #{@identity.ip.green}")
+
+        # get router IP
+        gw = Network.gateway
+        gateway = gw.to_s.green
+        say("gateway IP address is: #{gateway}")
+
+        # ping router IP
+        ping = if Network.ping(gw, 1)
+          "yes".green
+        else
+          "no".red
+        end
+        say("can ping gateway: #{ping}")
+
+        say("configured domain: #{@identity.subdomain.green}")
+        say("reverse lookup of IP address: #{Network.lookup(ip).to_s.green}")
+
+        # DNS lookup
+        url = @idenity.subdomain
+        ip = Network.lookup(url)
+        say("DNS lookup of #{url} is #{ip.to_s.green}")
+
+        # proxy
+        say("proxy is #{@proxy.name.green}")
+
+        # get URL (through proxy)
+        rest = RestClient::Resource.new("http://#{url}")
+        unless @proxy.url.empty?
+          RestClient.proxy = @proxy.url
+        end
+        rest["/"].get
+        say("successfully got URL: #{url.green}")
+
+      rescue RestClient::Exception => e
+        say("failed to get URL: #{e.message}".red)
+      rescue => e
+        say("exception: #{e.message}".red)
+      ensure
+        say("\n")
+        press_return_to_continue
       end
 
       def clear
