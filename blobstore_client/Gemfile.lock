@@ -46,6 +46,9 @@ GEM
       ruby-debug-base19 (>= 0.11.19)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
+    simplecov (0.4.2)
+      simplecov-html (~> 0.4.4)
+    simplecov-html (0.4.5)
     uuidtools (2.1.1)
     xml-simple (1.0.12)
 
@@ -62,4 +65,5 @@ DEPENDENCIES
   rspec (= 2.3.0)
   ruby-debug
   ruby-debug19
+  simplecov
   uuidtools
