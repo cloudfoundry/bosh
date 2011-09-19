@@ -1,5 +1,6 @@
 require 'netaddr'
 require 'socket'
+require 'resolv'
 require 'statemachine'
 require 'timeout'
 
@@ -39,9 +40,34 @@ module VCAP
         $? == 0
       end
 
+      # create a class variable?
+      def self.ext_lookup(name)
+        Network.resolv_guard do
+          Resolv::DNS.open(:nameserver => ['208.78.70.9']) do |dns|
+            dns.getaddress(name)
+          end
+        end
+      end
+
       def self.lookup(name)
-        IPSocket.getaddress(name)
-      rescue SocketError
+        Network.resolv_guard(name) do
+          Resolv.getaddress(name)
+        end
+      end
+
+      def self.reverse_lookup(ip)
+        Network.resolv_guard(ip) do
+          Resolv.getname(ip)
+        end
+      end
+
+      def self.resolv_guard(query)
+        yield
+      rescue Errno::ENETUNREACH => e
+        Console.logger.error("network unreachable for #{query}: #{e.message}")
+        nil
+      rescue Resolv::ResolvError => e
+        Console.logger.error("failed to resolve #{query}: #{e.message}")
         nil
       end
 
