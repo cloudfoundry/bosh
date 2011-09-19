@@ -45,7 +45,7 @@ module Bosh::HealthMonitor
       Bhm.nats.subscribe("hm.agent.heartbeat.*") do |heartbeat_json, reply, subject|
         @heartbeats_received += 1
         agent_id = subject.split('.', 4).last
-        @logger.debug("Received heartbeat from #{agent_id}")
+        @logger.debug("Received heartbeat from #{agent_id}: #{heartbeat_json}")
         process_heartbeat(agent_id, heartbeat_json)
       end
 
