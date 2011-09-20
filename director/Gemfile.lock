@@ -11,7 +11,7 @@ GEM
       mime-types
       xml-simple
     bcrypt-ruby (2.1.4)
-    blobstore_client (0.3.2)
+    blobstore_client (0.3.4)
       aws-s3
       httpclient
       uuidtools
@@ -109,7 +109,7 @@ DEPENDENCIES
   SystemTimer
   autotest
   bcrypt-ruby
-  blobstore_client
+  blobstore_client (>= 0.3.4)
   ci_reporter
   esxmq (= 0.0.13)
   eventmachine
