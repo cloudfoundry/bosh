@@ -643,13 +643,19 @@ module Bosh::Director
       end
 
       def spec
-        {
+        result = {
           "name" => @name,
           "template" => @template.name,
           "version" => @template.version,
           "sha1" => @template.sha1,
-          "blobstore_id" => @template.blobstore_id
+          "blobstore_id" => @template.blobstore_id,
         }
+
+        if @template.logs
+          result["logs"] = @template.logs
+        end
+
+        result
       end
     end
 
