@@ -64,6 +64,7 @@ module Bosh
 
       post "/resources" do
         if params[:content] && params[:content][:tempfile]
+          # Process uploads coming directly to the simple blobstore
           object_id = generate_object_id
           file_name = get_file_name(object_id)
 
@@ -71,6 +72,17 @@ module Bosh
 
           FileUtils.mkdir_p(File.dirname(file_name))
           FileUtils.copy_file(tempfile.path, file_name)
+
+          status(200)
+          content_type(:text)
+          object_id
+        elsif params["content.name"] && params["content.path"]
+          # Process uploads arriving via nginx
+          object_id = generate_object_id
+          file_name = get_file_name(object_id)
+
+          FileUtils.mkdir_p(File.dirname(file_name))
+          FileUtils.mv(params["content.path"], file_name)
 
           status(200)
           content_type(:text)
