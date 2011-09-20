@@ -282,6 +282,11 @@ module Bosh::Agent
       end
 
       def setup_tmp
+        # use a custom TMPDIR for agent itself
+        agent_tmp_dir = File.join(base_dir, 'data', 'tmp')
+        FileUtils.mkdir_p(agent_tmp_dir)
+        ENV["TMPDIR"] = agent_tmp_dir
+
         # first time: for /tmp on the root fs
         tmp_permissions
 
