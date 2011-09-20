@@ -2,6 +2,7 @@ default[:blobstore][:path]       = "/var/vcap/deploy/bosh/blobstore"
 default[:blobstore][:tmp]        = "/var/vcap/deploy/tmp"
 default[:blobstore][:repos_path] = "/var/vcap/deploy/repos"
 default[:blobstore][:storage]    = "/var/vcap/storage/blobstore"
+default[:blobstore][:nginx_storage] = "/var/vcap/storage/nginx_upload"
 default[:blobstore][:runner]     = "vcap"
 default[:blobstore][:port]       = 25250
 default[:blobstore][:backend_port] = 25251
