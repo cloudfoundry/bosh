@@ -157,11 +157,13 @@ Currently available bosh commands are:
     create release                            Attempt to create release (assumes current directory to contain release).
                                               Release creation options:
                                                --force        bypass git dirty state check
-                                               --final        create production-ready release (stores artefacts in blobstore, bumps final version)
-                                               --with-tarball create full release tarball (by default only manifest is created)
+                                               --final        create production-ready release
+                                                              (stores artefacts in blobstore, bumps final version)
+                                               --with-tarball create full release tarball
+                                                              (by default only manifest is created)
 
     delete release <name>                     Delete release <name>
-    delete release <name> <version>           Delete version <version> of release <name> (if --force is set all errors while deleting parts of the release are ignored)
+    delete release <name> <version>           Delete version <version> of release <name>
                                               Release deletion options:
                                                --force        ignore all errors while deleting parts of the release
 
@@ -189,7 +191,18 @@ Currently available bosh commands are:
     restart <job> [<index>]                   Restart job/instance (soft stop + start)
     recreate <job> [<index>]                  Recreate job/instance (hard stop + start)
                                               Job management options:
-                                              --force     allow job management even when local deployment manifest contains other changes
+                                              --force     allow job management even when local
+                                                          deployment manifest contains other changes
+
+  Log management
+    logs <job> <index> [--agent|--job]        Fetch job (default) or agent (if --agent option is given) logs
+                                              from an instance
+                                              Log management options:
+                                              --only <filter1>[,<filter2>,...] only fetch logs that satisfy
+                                                                               given filters (defined in job spec),
+                                                                               i.e. "bosh logs router 0 --only nginx"
+                                              --all                            fetch all files in the job or
+                                                                               agent log directory
 
   Task management
     tasks [running]                           Show the list of running tasks
@@ -292,6 +305,10 @@ USAGE
         when "recreate"
           usage("bosh recreate <job> [<index>] [--force]")
           set_cmd(:job_management, :recreate_job, 1..3)
+
+        when "logs"
+          usage("bosh logs <job> <index> [--agent]")
+          set_cmd(:log_management, :fetch_logs, "*")
 
         when "generate", "gen"
           verb_usage("generate")

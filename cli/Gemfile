@@ -3,7 +3,7 @@ source :rubygems
 gem "highline"
 gem "json_pure"
 gem "progressbar"
-gem "rest-client"
+gem "rest-client", ">= 1.6.3"
 gem "terminal-table"
 gem "rake"
 gem "blobstore_client", "~> 0.2" # 0.2 has streaming support
