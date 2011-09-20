@@ -46,7 +46,7 @@ module Bosh::Agent
       end
 
       copied = 0
-      base_dir = File.realpath(@matcher.base_dir)
+      base_dir = realpath(@matcher.base_dir)
 
       Dir.chdir(base_dir) do
         @matcher.globs.each do |glob|
@@ -58,13 +58,19 @@ module Bosh::Agent
 
             dst_filename = File.join(dst_directory, path[base_dir.length..-1])
             FileUtils.mkdir_p(File.dirname(dst_filename))
-            FileUtils.cp(File.realpath(path), dst_filename, :preserve => true)
+            FileUtils.cp(realpath(path), dst_filename, :preserve => true)
             copied += 1
           end
         end
       end
 
       copied
+    end
+
+    private
+
+    def realpath(path)
+      Pathname.new(path).realpath.to_s
     end
 
   end
