@@ -69,11 +69,12 @@ module Bosh::Cli
       end
 
       def target_version
-        config.target_version ? "v" + config.target_version : ""
+        config.target_version ? "Ver: " + config.target_version : ""
       end
 
       def full_target_name
-        (target_name.blank? || target_name == target_url ? target_name : "%s (%s)" % [ target_name, target_url]) + " %s" % target_version
+        ret = (target_name.blank? || target_name == target_url ? target_name : "%s (%s)" % [ target_name, target_url])
+        ret + " %s" % target_version if ret
       end
 
       protected
