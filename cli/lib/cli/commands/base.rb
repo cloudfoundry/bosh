@@ -73,7 +73,8 @@ module Bosh::Cli
       end
 
       def full_target_name
-        (target_name.blank? || target_name == target_url ? target_name : "%s (%s)" % [ target_name, target_url]) + " %s" % target_version
+        ret  = (target_name.blank? || target_name == target_url ? target_name : "%s (%s)" % [ target_name, target_url])
+        ret + " %s" % target_version unless !ret
       end
 
       protected
