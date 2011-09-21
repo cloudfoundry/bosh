@@ -107,7 +107,7 @@ module Bosh::Cli::Command
       end
 
       if director_url.nil?
-        err("Target is not set")
+        return
       end
 
       director_url = normalize_url(director_url)

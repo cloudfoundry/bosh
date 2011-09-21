@@ -3,6 +3,7 @@ require "fileutils"
 require "redis"
 require "digest/sha1"
 require "tmpdir"
+require File.expand_path("../../director/lib/director/version", __FILE__)
 
 describe Bosh::Spec::IntegrationTest do
 
@@ -50,6 +51,10 @@ describe Bosh::Spec::IntegrationTest do
       ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
       `#{CLI_DIR}/bin/bosh --non-interactive --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
     end
+  end
+
+  def director_version
+    "Ver: #{Bosh::Director::VERSION} (#{`(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip})"
   end
 
   def release_config
@@ -179,24 +184,25 @@ describe Bosh::Spec::IntegrationTest do
   end
 
   it "sets correct target" do
+    ver = director_version
     expect_output("target http://localhost:57523", <<-OUT)
-      Target set to 'Test Director (http://localhost:57523)'
+      Target set to 'Test Director (http://localhost:57523) #{ver}'
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is 'Test Director (http://localhost:57523)'
+      Current target is 'Test Director (http://localhost:57523) #{ver}'
     OUT
 
     Dir.chdir("/tmp") do
       expect_output("target", <<-OUT)
-        Current target is 'Test Director (http://localhost:57523)'
+        Current target is 'Test Director (http://localhost:57523) #{ver}'
       OUT
     end
   end
 
   it "allows omitting http" do
     expect_output("target localhost:57523", <<-OUT)
-      Target set to 'Test Director (http://localhost:57523)'
+      Target set to 'Test Director (http://localhost:57523) #{director_version}'
     OUT
   end
 
@@ -216,9 +222,9 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("deployment 'test2'")
     expect_output("target http://localhost:57523", <<-OUT)
       WARNING! Your deployment has been unset
-      Target set to 'Test Director (http://localhost:57523)'
+      Target set to 'Test Director (http://localhost:57523) #{director_version}'
     OUT
-    expect_output("target", "Current target is 'Test Director (http://localhost:57523)'")
+    expect_output("target", "Current target is 'Test Director (http://localhost:57523) #{director_version}'")
     expect_output("deployment", "Deployment not set")
   end
 
@@ -229,19 +235,19 @@ describe Bosh::Spec::IntegrationTest do
     run_bosh("--force target bar")
     run_bosh("--force login jane pass")
 
-    expect_output("status", <<-OUT)
-      Target         Unknown Director (http://bar)
-      UUID           n/a
-      User           jane
-      Deployment     not set
+    expect_output("--skip-director-checks status", <<-OUT)
+        Target         Unknown Director (http://bar) Ver: n/a
+        UUID           n/a
+        User           jane
+        Deployment     not set
     OUT
 
     run_bosh("--skip-director-checks target foo")
-    expect_output("status", <<-OUT)
-      Target         Unknown Director (http://foo)
-      UUID           n/a
-      User           john
-      Deployment     not set
+    expect_output("--skip-director-checks status", <<-OUT)
+        Target         Unknown Director (http://foo) Ver: n/a
+        UUID           n/a
+        User           john
+        Deployment     not set
     OUT
   end
 
