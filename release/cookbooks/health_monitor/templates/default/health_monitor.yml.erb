@@ -1,4 +1,9 @@
 ---
+http:
+  port: <%= node[:health_monitor][:http][:port] %>
+  user: <%= node[:health_monitor][:http][:user] %>
+  password: <%= node[:health_monitor][:http][:password] %>
+
 mbus:
   endpoint: nats://<%= node[:hosts][:nats] %>:<%= node[:nats][:port] %>
   user: <%= node[:nats][:user] %>

@@ -6,6 +6,8 @@ gem "em-http-request", "~> 0.3.0"
 gem "nats", "~> 0.4.10"
 gem "yajl-ruby", "~> 0.8.2"
 gem "uuidtools"
+gem "thin"
+gem "sinatra"
 gem "rake"
 
 group :test do

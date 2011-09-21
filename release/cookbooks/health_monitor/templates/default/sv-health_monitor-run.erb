@@ -3,4 +3,4 @@
 PATH=<%= node[:ruby][:path] %>/bin:$PATH
 
 exec 2>&1
-exec chpst -u <%= node[:health_monitor][:runner] %> env TMPDIR=<%= node[:health_monitor][:tmp] %> <%= node[:health_monitor][:path] %>/current/health_monitor/bin/health_monitor -c <%= node[:health_monitor][:path] %>/shared/config/health_monitor.yml
+exec chpst -u <%= node[:health_monitor][:runner] %> env RACK_ENV=production TMPDIR=<%= node[:health_monitor][:tmp] %> <%= node[:health_monitor][:path] %>/current/health_monitor/bin/health_monitor -c <%= node[:health_monitor][:path] %>/shared/config/health_monitor.yml

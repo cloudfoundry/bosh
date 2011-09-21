@@ -15,6 +15,15 @@ module Bosh::HealthMonitor
       @mbus      = Bhm.mbus
 
       @agent_manager = AgentManager.new
+      @http_server = Thin::Server.new("0.0.0.0", Bhm.http_port, :signals => false) do
+        Thin::Logging.silent = true
+        use Rack::Auth::Basic do |user, password|
+          [ user, password ] == [ Bhm.http_user, Bhm.http_password ]
+        end
+        map "/" do
+          run Bhm::ApiController.new
+        end
+      end
     end
 
     def run
@@ -28,13 +37,17 @@ module Bosh::HealthMonitor
         connect_to_mbus
         @agent_manager.setup_events
         setup_timers
+        @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
+        @http_server.start!
         @logger.info "Bosh HealthMonitor #{Bhm::VERSION} is running..."
       end
     end
 
     def stop
       @logger.info("HealthMonitor shutting down...")
-      EM.stop # This actually doesn't do much (given that we exit immediately after that)
+      @http_server.stop!
+      EM.stop
+      sleep(0.5) # Giving EM.stop some time to stop gracefully
       exit(1)
     end
 
@@ -79,6 +92,8 @@ module Bosh::HealthMonitor
     def poll_director
       @logger.debug "Getting deployments from director..."
       Fiber.new { fetch_deployments }.resume
+      Bhm.set_varz("deployments_count", @agent_manager.deployments_count)
+      Bhm.set_varz("agents_count", @agent_manager.agents_count)
     end
 
     def analyze_agents

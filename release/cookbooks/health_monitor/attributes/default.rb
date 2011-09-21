@@ -14,6 +14,10 @@ default[:health_monitor][:smtp][:user]         = nil
 default[:health_monitor][:smtp][:password]     = nil
 default[:health_monitor][:smtp][:domain]       = nil
 
+default[:health_monitor][:http][:port] = 25923
+default[:health_monitor][:http][:user] = "admin"
+default[:health_monitor][:http][:password] = "admin"
+
 default[:health_monitor][:director_account][:user]     = "admin"
 default[:health_monitor][:director_account][:password] = "admin"
 

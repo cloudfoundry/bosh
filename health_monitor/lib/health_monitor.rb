@@ -21,6 +21,8 @@ require "nats/client"
 require "logging"
 require "yajl"
 require "uuidtools"
+require "thin"
+require "sinatra"
 
 require "set"
 
@@ -37,6 +39,9 @@ require "health_monitor/director"
 require "health_monitor/agent"
 require "health_monitor/alert"
 require "health_monitor/event"
+
+# HTTP endpoints
+require "health_monitor/api_controller"
 
 # Managers
 require "health_monitor/agent_manager"
