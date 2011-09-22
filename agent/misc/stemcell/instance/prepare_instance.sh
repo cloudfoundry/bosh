@@ -19,7 +19,8 @@ apt-get install -y --force-yes --no-install-recommends \
   open-vm-dkms open-vm-tools lsof strace scsitools bind9-host \
   dnsutils tcpdump tshark iputils-arping curl wget libcurl3 libcurl3-dev \
   bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
-  zip unzip nfs-common flex psmisc apparmor-utils mg htop iptables
+  zip unzip nfs-common flex psmisc apparmor-utils mg htop iptables \
+  sysstat traceroute
 
 dpkg -l > ${bosh_app_dir}/bosh/stemcell_dpkg_l.out
 
@@ -75,6 +76,8 @@ chmod 0700 ${bosh_app_dir}/bosh
 cp -a runit/agent /etc/sv/agent
 chmod +x /etc/sv/agent/run /etc/sv/agent/log/run
 ln -s /etc/sv/agent /etc/service/agent
+
+cp sysstat /etc/default/sysstat
 
 ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
 
