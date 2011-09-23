@@ -218,32 +218,29 @@ describe Bosh::Cli::Director do
   end
 
   describe "performing HTTP requests" do
-    it "delegates to RestClient" do
-      req = {
-        :user         => "user",
-        :password     => "pass",
-        :timeout      => 86400 * 3,
-        :open_timeout => 30,
-        :url          => "http://target/stuff",
-        :headers      => { "Content-Type" => "app/zb", "a" => "b", "c" => "d"}
-      }
-      RestClient::Request.should_receive(:execute).with(req)
-      @director.send(:perform_http_request, req)
+    it "delegates to HTTPClient" do
+      headers = { "Content-Type" => "app/zb", "a" => "b", "c" => "d"}
+      user = "user"
+      password = "pass"
+      auth = "Basic " + Base64.encode64("#{user}:#{password}").strip
+
+      client = mock("httpclient")
+      client.should_receive(:send_timeout=).with(Bosh::Cli::Director::API_TIMEOUT)
+      client.should_receive(:receive_timeout=).with(Bosh::Cli::Director::API_TIMEOUT)
+      client.should_receive(:connect_timeout=).with(Bosh::Cli::Director::CONNECT_TIMEOUT)
+      HTTPClient.stub!(:new).and_return(client)
+
+      client.should_receive(:request).with(:get, "http://target/stuff", :body => "payload", :header => headers.merge("Authorization" => auth))
+      @director.send(:perform_http_request, :get, "http://target/stuff", "payload", headers)
     end
   end
 
   describe "talking to REST API" do
-    def req(options = {})
-      {
-        :user => "user", :password => "pass", :timeout => 86400 * 3, :open_timeout => 30
-      }.merge(options)
-    end
-
     it "performs HTTP request" do
-      mock_response = mock("response", :body => "test", :code => 200, :headers => { })
+      mock_response = mock("response", :code => 200, :body => "test", :headers => {})
+
       @director.should_receive(:perform_http_request).
-        with(req(:method => :get, :url => "http://target/stuff",
-                 :payload => "payload", :headers => { "Content-Type" => "app/zb", "h1" => "a", "h2" => "b"})).
+        with(:get, "http://target/stuff", "payload", "h1" => "a", "h2" => "b", "Content-Type" => "app/zb").
         and_return(mock_response)
 
       @director.request(:get, "/stuff", "app/zb", "payload", { "h1" => "a", "h2" => "b"}).should == [200, "test", {}]
@@ -288,9 +285,14 @@ describe Bosh::Cli::Director do
     end
 
     it "streams file" do
-      mock_response = mock("response", :code => 200, :file => mock("file", :path => "/tmp/foo"), :headers => { })
-      @director.should_receive(:perform_http_request).and_return(mock_response)
-      @director.request(:get, "/files/foo", nil, nil, { }, { :file => true }).should == [200, "/tmp/foo", { }]
+      mock_response = mock("response", :code => 200, :body => "test body", :headers => { })
+      @director.should_receive(:perform_http_request).and_yield("test body").and_return(mock_response)
+
+      code, filename, headers = @director.request(:get, "/files/foo", nil, nil, { }, { :file => true })
+
+      code.should == 200
+      File.read(filename).should == "test body"
+      headers.should == { }
     end
   end
 
