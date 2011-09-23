@@ -421,6 +421,10 @@ module Bosh
         progress_bar.halt unless progress_bar.finished?
       end
 
+      def size
+        File.size(self.path)
+      end
+
       def read(*args)
         result = super(*args)
 
