@@ -24,8 +24,9 @@ gemspec = Gem::Specification.new do |s|
   s.add_dependency "json_pure",      "~> 1.4.6"
   s.add_dependency "highline",       "~> 1.6.1"
   s.add_dependency "progressbar",    "~> 0.9.0"
-  s.add_dependency "rest-client",    "~> 1.6.1"
+  s.add_dependency "httpclient",     "~> 2.2.1"
   s.add_dependency "terminal-table", "~> 1.4.2"
+  s.add_dependency "blobstore_client", "~> 0.2.0"
 end
 
 Gem::PackageTask.new(gemspec) do |pkg|

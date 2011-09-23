@@ -1,4 +1,4 @@
-require "restclient"
+require "httpclient"
 require "progressbar"
 require "json"
 
@@ -12,7 +12,7 @@ module Bosh
       DEFAULT_MAX_POLLS     = nil # Not limited
       DEFAULT_POLL_INTERVAL = 1
       API_TIMEOUT           = 86400 * 3
-      OPEN_TIMEOUT          = 30
+      CONNECT_TIMEOUT       = 30
 
       attr_reader :director_uri
 
@@ -147,7 +147,8 @@ module Bosh
       end
 
       def download_resource(id)
-        status, tmp_file, headers = get("/resources/#{id}", nil, nil, {}, options = { :file => true })
+        status, tmp_file, headers = get("/resources/#{id}", nil, nil, {}, :file => true)
+
         if status == 200
           tmp_file
         else
@@ -312,31 +313,38 @@ module Bosh
         headers = headers.dup
         headers["Content-Type"] = content_type if content_type
 
-        req = {
-          :method => method, :url => @director_uri + uri,
-          :payload => payload, :headers => headers,
-          :user => @user, :password => @password,
-          :timeout => API_TIMEOUT, :open_timeout => OPEN_TIMEOUT,
-        }
-
-        # For streaming support
         if options[:file]
-          req[:raw_response] = true
+          tmp_file = File.open(File.join(Dir.mktmpdir, "streamed-response"), "w")
+
+          response_reader = lambda do |part|
+            tmp_file.write(part)
+          end
+        else
+          response_reader = nil
         end
 
-        response = perform_http_request(req)
+        response = perform_http_request(method, @director_uri + uri, payload, headers, &response_reader)
 
-        if response.respond_to?(:file)
-          result = response.file.path
+        if options[:file]
+          tmp_file.close
+          body = tmp_file.path
         else
-          result = response.body
+          body = response.body
         end
 
         if DIRECTOR_HTTP_ERROR_CODES.include?(response.code)
-          raise DirectorError, parse_error_message(response.code, result)
+          raise DirectorError, parse_error_message(response.code, body)
         end
 
-        [ response.code, result, response.headers ]
+        headers = response.headers.inject({}) do |h, (k, v)|
+          # Some HTTP clients symbolize headers, some do not.
+          # To make it easier to switch between them, we try
+          # to symbolize them ourselves.
+          h[k.to_s.downcase.gsub(/-/, "_").to_sym] = v
+          h
+        end
+
+        [ response.code, body, headers ]
 
       rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
         raise DirectorInaccessible, "cannot access director (%s)" % [ e.message ]
@@ -346,13 +354,28 @@ module Bosh
 
       private
 
-      def perform_http_request(req)
-        result = nil
-        RestClient::Request.execute(req) { |response, request, req_result| result = response }
-        result
-      rescue Net::HTTPBadResponse => e
+      def perform_http_request(method, uri, payload = nil, headers = {}, &block)
+        http_client = HTTPClient.new
+
+        http_client.send_timeout = API_TIMEOUT
+        http_client.receive_timeout = API_TIMEOUT
+        http_client.connect_timeout = CONNECT_TIMEOUT
+
+        # HTTPClient#set_auth doesn't seem to work properly,
+        # injecting header manually instead.
+        # TODO: consider using vanilla Net::HTTP
+        if @user && @password
+          headers["Authorization"] = "Basic " + Base64.encode64("#{@user}:#{@password}").strip
+        end
+
+        http_client.request(method, uri, :body => payload, :header => headers, &block)
+
+      rescue HTTPClient::BadResponseError => e
         err("Received bad HTTP response from director: #{e}")
-      rescue RestClient::Exception => e
+      rescue URI::Error, SocketError, Errno::ECONNREFUSED, SystemCallError
+        raise # We handle these upstream
+      rescue => e
+        # httpclient (sadly) doesn't have a generic exception
         err("REST API call exception: #{e}")
       end
 
@@ -399,7 +422,7 @@ module Bosh
       end
 
       def read(*args)
-        result  = super(*args)
+        result = super(*args)
 
         if result && result.size > 0
           progress_bar.inc(result.size)
