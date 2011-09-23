@@ -2,6 +2,14 @@
 module VCAP
   module Micro
     class Settings
+      @preserve = {
+        'mysql_node' => {'password' => true},
+      }
+
+      # Service like mysql should preserve the secret between deployments
+      def self.preserve_secret(properties, service, key)
+        @preserve[service][key] if properties[service][key] and @preserve[service]
+      end
 
       def self.secret(n)
         OpenSSL::Random.random_bytes(n).unpack("H*")[0]
@@ -9,7 +17,7 @@ module VCAP
 
       def self.set_prop(properties, service, key, len)
         properties[service] = {} unless properties[service]
-        properties[service][key] = secret(len)
+        properties[service][key] = secret(len) unless preserve_secret(properties, service, key)
       end
 
       # TODO: template settings file
