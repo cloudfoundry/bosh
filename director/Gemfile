@@ -4,6 +4,7 @@ gem "bcrypt-ruby"
 gem "blobstore_client", ">=0.3.4"
 gem "esxmq" , "0.0.13"
 gem "eventmachine"
+gem "httpclient"
 gem "nats"
 gem "netaddr"
 gem "rack-test"         # needed for console

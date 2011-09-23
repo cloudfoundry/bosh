@@ -113,6 +113,7 @@ DEPENDENCIES
   ci_reporter
   esxmq (= 0.0.13)
   eventmachine
+  httpclient
   machinist
   minitar
   nats
