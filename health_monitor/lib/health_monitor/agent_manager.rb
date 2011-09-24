@@ -36,6 +36,7 @@ module Bosh::HealthMonitor
     end
 
     def setup_events
+      Bhm.set_varz("heartbeats_received", 0)
       @event_publisher.connect_to_mbus
 
       Bhm.alert_delivery_agents.each do |agent_options|
@@ -44,6 +45,7 @@ module Bosh::HealthMonitor
 
       Bhm.nats.subscribe("hm.agent.heartbeat.*") do |heartbeat_json, reply, subject|
         @heartbeats_received += 1
+        Bhm.set_varz("heartbeats_received", @heartbeats_received)
         agent_id = subject.split('.', 4).last
         @logger.debug("Received heartbeat from #{agent_id}: #{heartbeat_json}")
         process_heartbeat(agent_id, heartbeat_json)

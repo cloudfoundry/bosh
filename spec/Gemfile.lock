@@ -13,6 +13,7 @@ GEM
     linecache (0.43)
     linecache19 (0.5.11)
       ruby_core_source (>= 0.1.4)
+    mime-types (1.16)
     nats (0.3.12)
       daemons (>= 1.1.0)
       eventmachine (>= 0.12.10)
@@ -23,6 +24,8 @@ GEM
       builder
       rcov
     redis (2.1.1)
+    rest-client (1.6.3)
+      mime-types (>= 1.16)
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
       rspec-expectations (~> 2.3.0)
@@ -59,6 +62,7 @@ DEPENDENCIES
   rcov
   rcov_analyzer
   redis
+  rest-client
   rspec
   ruby-debug
   ruby-debug19
