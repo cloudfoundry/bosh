@@ -49,6 +49,8 @@ GEM
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
     simplecov-html (0.4.5)
+    simplecov-rcov (0.2.3)
+      simplecov (>= 0.4.1)
     uuidtools (2.1.1)
     xml-simple (1.0.12)
 
@@ -66,4 +68,5 @@ DEPENDENCIES
   ruby-debug
   ruby-debug19
   simplecov
+  simplecov-rcov
   uuidtools

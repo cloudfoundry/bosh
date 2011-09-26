@@ -39,4 +39,5 @@ group :test do
   gem "ruby-debug19", :platforms => :ruby_19
   gem "sqlite3"
   gem "simplecov", :platforms => :ruby_19
+  gem "simplecov-rcov", :platforms => :ruby_19
 end
