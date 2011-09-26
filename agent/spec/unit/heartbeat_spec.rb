@@ -73,6 +73,22 @@ describe Bosh::Agent::Heartbeat do
     Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
     Bosh::Agent::Monit.enabled = true
 
+    disk_usage_output = <<-EOS.gsub(/^\s+/, '')
+    Use% Mounted
+    87% /
+    1% /dev
+    0% /dev/shm
+    1% /var/run
+    0% /var/lock
+    0% /lib/init/rw
+    87% /var/lib/ureadahead/debugfs
+    4% #{Bosh::Agent::Config.base_dir}/data
+    5% /tmp
+    3% #{Bosh::Agent::Config.base_dir}/store
+    EOS
+
+    Bosh::Agent::Message::DiskUtil.stub!(:disk_usage_command).and_return("echo \"#{disk_usage_output}\"")
+
     expected_payload = {
       "job" => "mutator",
       "index" => 3,
@@ -81,7 +97,12 @@ describe Bosh::Agent::Heartbeat do
         "load" => [0.05, 0.1, 0.27],
         "mem" => { "percent" => 2.7, "kb" => 23121 },
         "swap" => { "percent" => 0.0, "kb" => 0 },
-        "cpu" => { "user" => 2.2, "sys" => 0.2, "wait" => 3.2 }
+        "cpu" => { "user" => 2.2, "sys" => 0.2, "wait" => 3.2 },
+        "disk" => {
+          "system" => { "percent" => "87" },
+          "ephemeral" => { "percent" => "4" },
+          "persistent" => { "percent" => "3" }
+        }
       }
     }
 
