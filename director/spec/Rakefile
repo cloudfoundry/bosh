@@ -110,7 +110,10 @@ namespace "spec" do
     desc "Run spec with coverage"
     task :run_rcov => :cleanup_coverage do
       require "simplecov"
+      require "simplecov-rcov"
 
+      SimpleCov.formatter = SimpleCov::Formatter::RcovFormatter
+      SimpleCov.coverage_dir('../../cov')
       SimpleCov.start do
         require "rspec/core"
         unit_dir = File.expand_path("../unit", __FILE__)
@@ -122,7 +125,7 @@ namespace "spec" do
   end
 
   task "cleanup_coverage" do
-    rm_rf "coverage"
+    rm_rf "../cov"
   end
 
   task "convert_rcov_to_clover" do |t|
