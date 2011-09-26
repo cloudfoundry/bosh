@@ -10,7 +10,7 @@ task :bundle_install do
   bundle_cmd = "cd spec && bundle --local install --without development production"
   sh(bundle_cmd)
 
-  %w(director cli simple_blobstore_server agent).each do |component|
+  %w(director cli simple_blobstore_server agent health_monitor).each do |component|
     sh("cd #{component} && #{bundle_cmd}")
   end
 end
