@@ -58,7 +58,7 @@ module Bosh
         end
 
         print_info(manifest)
-
+        return manifest
       ensure
         FileUtils.rm_rf(tmp_dir)
       end

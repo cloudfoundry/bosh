@@ -25,11 +25,25 @@ module Bosh::Cli::Command
       stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
 
       say("\nVerifying stemcell...")
-      stemcell.validate
+      manifest = stemcell.validate
       say("\n")
 
       if !stemcell.valid?
         err("Stemcell is invalid, please fix, verify and upload again")
+      end
+
+      say("Checking if stemcell already exists...")
+      name = manifest["name"]
+      vers = manifest["version"]
+
+      existing = director.list_stemcells.select { |sc|
+        sc["name"] == name and sc["version"] == vers
+      }
+
+      if existing.empty?
+        say "No"
+      else
+        err "Stemcell \"#{name}\":\"#{vers}\" already exists, increment the version if it has changed"
       end
 
       say("\nUploading stemcell...\n")
