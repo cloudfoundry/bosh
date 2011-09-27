@@ -4,7 +4,7 @@ module Bosh
     class Stemcell
       include Validation
 
-      attr_reader :stemcell_file
+      attr_reader :stemcell_file, :manifest
 
       def initialize(tarball_path, cache)
         @stemcell_file = File.expand_path(tarball_path, Dir.pwd)
@@ -58,7 +58,7 @@ module Bosh
         end
 
         print_info(manifest)
-
+        @manifest = manifest
       ensure
         FileUtils.rm_rf(tmp_dir)
       end

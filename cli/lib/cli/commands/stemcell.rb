@@ -32,6 +32,20 @@ module Bosh::Cli::Command
         err("Stemcell is invalid, please fix, verify and upload again")
       end
 
+      say("Checking if stemcell already exists...")
+      name = stemcell.manifest["name"]
+      version = stemcell.manifest["version"]
+
+      existing = director.list_stemcells.select do |sc|
+        sc["name"] == name and sc["version"] == version
+      end
+
+      if existing.empty?
+        say "No"
+      else
+        err "Stemcell \"#{name}\":\"#{version}\" already exists, increment the version if it has changed"
+      end
+
       say("\nUploading stemcell...\n")
 
       status, message = director.upload_stemcell(stemcell.stemcell_file)
