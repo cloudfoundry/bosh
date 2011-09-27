@@ -68,9 +68,11 @@ namespace "spec" do
       require "simplecov-rcov"
 
       SimpleCov.formatter = SimpleCov::Formatter::RcovFormatter
-      SimpleCov.coverage_dir('../cov')
+      SimpleCov.root('..')
+      SimpleCov.coverage_dir('cov')
       SimpleCov.start do
         require "rspec/core"
+        add_filter "/spec/"
         spec_dir = File.expand_path("..", __FILE__)
         RSpec::Core::Runner.disable_autorun!
         RSpec::Core::Runner.run([spec_dir], STDERR, STDOUT)
@@ -79,7 +81,7 @@ namespace "spec" do
   end
 
   task "cleanup_coverage" do
-    rm_rf "../cov"
+    rm_rf "cov"
   end
 
   task "convert_rcov_to_clover" do |t|
