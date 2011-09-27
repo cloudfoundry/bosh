@@ -320,12 +320,24 @@ module VCAP
 
       def defaults
         return unless are_you_sure?("Are you sure you want to restore default settings?")
+        say("Stopping Cloud Foundry services...")
+        Bosh::Agent::Monit.stop_services(60)
         @identity.clear
-        @identity.save
         @network.dhcp
         @proxy.url = "none"
         @proxy.save
-        # what about the agent?
+        FileUtils.rm_rf(Identity::MICRO_CONFIG)
+        Dir.glob("/var/vcap/data/*").each do |dir|
+          FileUtils.rm_rf(dir) unless dir.match(/cache/)
+        end
+        Dir.glob("/var/vcap/sys/log*").each do |dir|
+          FileUtils.rm_rf(dir) unless dir.match(/micro/)
+        end
+        %w{/var/vcap/sys/run /var/vcap/store /var/vcap/jobs
+           /var/vcap/packages
+        }.each do |dir|
+          FileUtils.rm_rf(dir)
+        end
         # what about the vcap password?
       end
 
@@ -366,7 +378,7 @@ module VCAP
             menu.choice("change api url") { configure_api_url }
             state = @watcher.paused ? "enable" : "disable"
             menu.choice("#{state} network watcher") { toggle_watcher }
-            menu.choice("reapply") { reapply }
+            menu.choice("reapply configuration") { reapply }
             menu.choice("network touble shooting") { network_troubleshooting }
             menu.choice("return to main menu") { return }
           end
@@ -381,6 +393,8 @@ module VCAP
       end
 
       def reapply
+        @logger.info("reapplying configuration")
+        say("Reapplying configuration, will take up to 5 minutes...")
         Bosh::Agent::Monit.stop_services(60)
         VCAP::Micro::Agent.apply(@identity)
         press_return_to_continue
@@ -410,6 +424,9 @@ module VCAP
           clear
           say("#{LOGFILE}\n".yellow)
           say(lines[current..(current+LINES_PER_PAGE)].join)
+          if current + LINES_PER_PAGE >= lines.size
+            say("end of log file".green)
+          end
           q = ask("\n Return for next page, 'last' for last page or 'quit' to quit: ")
           if q.match(/^q(uit)*/i)
             return
@@ -431,6 +448,12 @@ module VCAP
 
       def network_troubleshooting
         clear
+        say("Network troubleshooting\n".yellow)
+
+        unless @identity.configured?
+          say("Please configure Micro Cloud Foundry first...")
+          return
+        end
 
         # get IP
         ip = Network.local_ip
@@ -455,25 +478,25 @@ module VCAP
         say("reverse lookup of IP address: #{Network.lookup(ip).to_s.green}")
 
         # DNS lookup
-        url = @idenity.subdomain
+        url = @identity.subdomain
         ip = Network.lookup(url)
         say("DNS lookup of #{url} is #{ip.to_s.green}")
 
         # proxy
         say("proxy is #{@proxy.name.green}")
+        say("configured proxy is #{RestClient.proxy}\n")
 
         # get URL (through proxy)
+        url = "www.cloudfoundry.com"
         rest = RestClient::Resource.new("http://#{url}")
-        unless @proxy.url.empty?
-          RestClient.proxy = @proxy.url
-        end
         rest["/"].get
         say("successfully got URL: #{url.green}")
 
       rescue RestClient::Exception => e
-        say("failed to get URL: #{e.message}".red)
+        say("\nfailed to get URL: #{e.message}".red)
       rescue => e
         say("exception: #{e.message}".red)
+        @logger.error(e.backtrace.join("\n"))
       ensure
         say("\n")
         press_return_to_continue
