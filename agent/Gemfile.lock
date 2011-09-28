@@ -34,7 +34,7 @@ GEM
     posix-spawn (0.3.3)
     rake (0.8.7)
     rcov (0.9.9)
-    rcov_analyzer (0.1)
+    rcov_analyzer (0.2)
       builder
       rcov
     rspec (2.1.0)
@@ -62,6 +62,8 @@ GEM
       archive-tar-minitar (>= 0.5.2)
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
+    simplecov-clover (0.0.1)
+      simplecov (>= 0.4.1)
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
@@ -81,11 +83,12 @@ DEPENDENCIES
   posix-spawn
   rake
   rcov
-  rcov_analyzer
+  rcov_analyzer (>= 0.2)
   rspec
   ruby-debug
   ruby-debug19
   simplecov
+  simplecov-clover
   simplecov-rcov
   uuidtools
   yajl-ruby
