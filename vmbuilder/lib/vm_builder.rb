@@ -46,9 +46,19 @@ module VMBuilder
 
           VMBuilder::Build.source_root(MICRO_PATH)
           directory(MICRO_PATH, "#{tmpdir}/micro")
-          # TODO only copy in the agent files we need
-          directory(AGENT_LIB_PATH, "#{tmpdir}/micro/lib")
           File.new("#{tmpdir}/micro/bin/compile").chmod(0755)
+
+          # only copy in the agent files we need
+          %w{
+            agent/ext.rb agent/util.rb agent/config.rb agent/errors.rb
+            agent/version.rb agent/message/base.rb
+            agent/message/apply.rb agent/message/compile_package.rb
+            agent/monit.rb agent/state.rb agent/template.rb agent/platform.rb
+            agent/platform/ubuntu.rb agent/platform/ubuntu/logrotate.rb
+            agent/platform/ubuntu/templates/logrotate.erb
+          }.each do |path|
+            copy_file("#{AGENT_LIB_PATH}/#{path}", "#{tmpdir}/micro/lib/#{path}")
+          end
 
           # copy in deployment manifest & tarball
           copy_file(File.expand_path(manifest), "#{tmpdir}/micro/config/micro.yml")
@@ -72,7 +82,7 @@ module VMBuilder
               end
             end
             FileUtils.rm_rf("micro/micro.save")
-            archive("micro", "micro-#{version}.tgz")
+            archive("micro", "micro-#{version}.zip")
           end
         end
       end
@@ -118,7 +128,8 @@ module VMBuilder
 
       def archive(dir, dst)
         timeit "archive" do
-          `tar zcf #{dst} #{dir}`
+          # `tar zcf #{dst} #{dir}`
+          `zip -r #{dst} #{dir}`
         end
       end
 

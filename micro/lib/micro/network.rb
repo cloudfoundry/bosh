@@ -49,15 +49,17 @@ module VCAP
         end
       end
 
+      # use Resolve.new to force the lookup to use the current resolv.conf
       def self.lookup(name)
         Network.resolv_guard(name) do
-          Resolv.getaddress(name)
+          Resolv.new.getaddress(name)
         end
       end
 
+      # use Resolve.new to force the lookup to use the current resolv.conf
       def self.reverse_lookup(ip)
         Network.resolv_guard(ip) do
-          Resolv.getname(ip)
+          Resolv.new.getname(ip)
         end
       end
 
