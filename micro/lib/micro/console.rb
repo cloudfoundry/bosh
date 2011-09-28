@@ -74,7 +74,8 @@ module VCAP
         if @identity.configured?
           say("Current Configuration:")
           say(" Identity:   #{@identity.subdomain} (#{dns_status})")
-          say(" Admin:      #{@identity.admins.join(', ')}")
+          admins = @identity.admins.nil? ? "none" : @identity.admins.join(', ')
+          say(" Admin:      #{admins}")
           current = unless (ip = Network.local_ip) == @identity.ip
             "(actual #{ip})"
           else
@@ -189,6 +190,7 @@ module VCAP
         unless initial
           say("Reconfiguring Micro Cloud Foundry with new settings...")
           Bosh::Agent::Monit.stop_services(60) # is it enough to stop only cc?
+          wait_for_monit
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -242,6 +244,7 @@ module VCAP
         if !initial && old_url != @proxy.url
           say("Reconfiguring Micro Cloud Foundry with new proxy setting...")
           Bosh::Agent::Monit.stop_services(60)
+          wait_for_monit
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -254,6 +257,7 @@ module VCAP
         @memory.update_previous
         unless initial
           Bosh::Agent::Monit.stop_services(60)
+          wait_for_monit
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
@@ -322,6 +326,7 @@ module VCAP
         return unless are_you_sure?("Are you sure you want to restore default settings?")
         say("Stopping Cloud Foundry services...")
         Bosh::Agent::Monit.stop_services(60)
+        wait_for_monit
         @identity.clear
         @network.dhcp
         @proxy.url = "none"
@@ -330,7 +335,7 @@ module VCAP
         Dir.glob("/var/vcap/data/*").each do |dir|
           FileUtils.rm_rf(dir) unless dir.match(/cache/)
         end
-        Dir.glob("/var/vcap/sys/log*").each do |dir|
+        Dir.glob("/var/vcap/sys/log/*").each do |dir|
           FileUtils.rm_rf(dir) unless dir.match(/micro/)
         end
         %w{/var/vcap/sys/run /var/vcap/store /var/vcap/jobs
@@ -356,7 +361,7 @@ module VCAP
         if @identity.configured?
           say("Stopping Cloud Foundry services...")
           Bosh::Agent::Monit.stop_services(60)
-          sleep 5 # TODO loop and wait until all are stopped
+          wait_for_monit
         end
         say("shutting down VM...")
         `poweroff`
@@ -396,6 +401,7 @@ module VCAP
         @logger.info("reapplying configuration")
         say("Reapplying configuration, will take up to 5 minutes...")
         Bosh::Agent::Monit.stop_services(60)
+        wait_for_monit
         VCAP::Micro::Agent.apply(@identity)
         press_return_to_continue
       end
@@ -513,6 +519,35 @@ module VCAP
       def are_you_sure?(question)
         ask("#{question} ").match(/^y(es)*$/i)
       end
+
+      # yuk - code duplication
+      def wait_for_monit
+        stopped = []
+        loop do
+          status = Bosh::Agent::Monit.retry_monit_request do |client|
+            client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
+          end
+
+          status.each do |name, data|
+            @logger.debug("status: #{name}: #{data[:status]}")
+
+            if stopped_service?(data)
+              unless stopped.include?(name)
+                puts "Stopped: #{name}"
+                stopped << name
+              end
+            end
+          end
+
+          break if status.reject { |name, data| stopped_service?(data) }.empty?
+          sleep 1
+        end
+      end
+
+      def stopped_service?(data)
+        data[:monitor] == :no
+      end
+
     end
   end
 end
