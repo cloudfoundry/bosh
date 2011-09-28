@@ -86,6 +86,8 @@ GEM
     sequel (3.22.0)
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
+    simplecov-clover (0.0.1)
+      simplecov (>= 0.4.1)
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
@@ -124,7 +126,7 @@ DEPENDENCIES
   rack-test
   rake
   rcov
-  rcov_analyzer
+  rcov_analyzer (>= 0.2)
   redis
   resque
   rspec
@@ -133,6 +135,7 @@ DEPENDENCIES
   ruby_vim_sdk
   sequel
   simplecov
+  simplecov-clover
   simplecov-rcov
   sinatra
   sqlite3

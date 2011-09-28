@@ -48,6 +48,8 @@ GEM
       archive-tar-minitar (>= 0.5.2)
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
+    simplecov-clover (0.0.1)
+      simplecov (>= 0.4.1)
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
@@ -63,10 +65,11 @@ DEPENDENCIES
   httpclient
   rake
   rcov
-  rcov_analyzer
+  rcov_analyzer (>= 0.2)
   rspec (= 2.3.0)
   ruby-debug
   ruby-debug19
   simplecov
+  simplecov-clover
   simplecov-rcov
   uuidtools

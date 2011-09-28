@@ -28,10 +28,10 @@ namespace "spec" do
   gemfile   = "../Gemfile"
   spec_opts = ["--format", "documentation", "--colour"]
 
-  desc "Run specs for ci"
-  task "ci" => [ "ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover" ]
-
   if RUBY_VERSION < "1.9"
+    desc "Run specs for ci"
+    task "ci" => [ "ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover" ]
+
     desc "Run spec with coverage"
     RSpec::Core::RakeTask.new("rcov") do |t|
       FileUtils.rm_rf(dump_file)
@@ -42,13 +42,33 @@ namespace "spec" do
       t.rcov_opts  = %W{--aggregate #{dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{coverage_dir}"}
     end
 
+    task "convert_rcov_to_clover" do |t|
+      ignore_pattern = "spec,[.]bundle,[/]gems[/]"
+      clover_output  = File.join(coverage_dir, "clover.xml")
+
+      sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
+      FileUtils.rm_rf(dump_file)
+    end
+
   else
+    desc "Run specs for ci"
+    task "ci" => [ "ci:setup:rspec", "spec:rcov" ]
+
     desc "Run spec with coverage"
     task :rcov => :cleanup_coverage do
       require "simplecov"
       require "simplecov-rcov"
+      require "simplecov-clover"
 
-      SimpleCov.formatter = SimpleCov::Formatter::RcovFormatter
+      class SimpleCov::Formatter::CombinedFormatter
+        def format(result)
+          SimpleCov::Formatter::CloverFormatter.new.format(result)
+          SimpleCov::Formatter::RcovFormatter.new.format(result)
+        end
+      end
+
+      SimpleCov.formatter = SimpleCov::Formatter::CombinedFormatter
+
       SimpleCov.root('..')
       SimpleCov.coverage_dir('cov')
       SimpleCov.start do
@@ -64,13 +84,5 @@ namespace "spec" do
   task "cleanup_coverage" do
     rm_rf "cov"
   end
-
-  task "convert_rcov_to_clover" do |t|
-    ignore_pattern = "spec,[.]bundle,[/]gems[/]"
-    clover_output  = File.join(coverage_dir, "clover.xml")
-
-    sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
-    FileUtils.rm_rf(dump_file)    
-  end  
 
 end

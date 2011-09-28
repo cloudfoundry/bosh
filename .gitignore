@@ -4,6 +4,7 @@ TAGS
 \#*\#
 .\#*
 .bundle
+cov
 spec_reports
 spec_coverage
 spec.log

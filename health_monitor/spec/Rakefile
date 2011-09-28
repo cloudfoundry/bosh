@@ -18,9 +18,7 @@ end
 
 task :default => [:spec]
 
-coverage_dir   = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
-reports_dir    = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
-dump_file      = File.join(Dir.tmpdir, "bosh-hm.rcov")
+reports_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
 
 ENV["CI_REPORTS"] = reports_dir
 
@@ -29,48 +27,35 @@ namespace "spec" do
   spec_opts = ["--format", "documentation", "--colour"]
 
   desc "Run specs for ci"
-  task "ci" => [ "ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover" ]
+  task "ci" => [ "ci:setup:rspec", "spec:rcov" ]
 
-  if RUBY_VERSION < "1.9"
-    desc "Run spec with coverage"
-    RSpec::Core::RakeTask.new("rcov") do |t|
-      FileUtils.rm_rf(dump_file)
-      t.gemfile    = gemfile
-      t.pattern    = "**/*_spec.rb"
-      t.rspec_opts = ["--colour"]
-      t.rcov       = true
-      t.rcov_opts  = %W{--aggregate #{dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{coverage_dir}"}
+  desc "Run spec with coverage"
+  task :rcov => :cleanup_coverage do
+    require "simplecov"
+    require "simplecov-rcov"
+    require "simplecov-clover"
+
+    class SimpleCov::Formatter::CombinedFormatter
+      def format(result)
+        SimpleCov::Formatter::CloverFormatter.new.format(result)
+        SimpleCov::Formatter::RcovFormatter.new.format(result)
+      end
     end
 
-  else
-    desc "Run spec with coverage"
-    task :rcov => :cleanup_coverage do
-      require "simplecov"
-      require "simplecov-rcov"
-
-      SimpleCov.formatter = SimpleCov::Formatter::RcovFormatter
-      SimpleCov.root('..')
-      SimpleCov.coverage_dir('cov')
-      SimpleCov.start do
-        require "rspec/core"
-        add_filter "/spec/"
-        spec_dir = File.expand_path("..", __FILE__)
-        RSpec::Core::Runner.disable_autorun!
-        RSpec::Core::Runner.run([spec_dir], STDERR, STDOUT)
-      end
+    SimpleCov.formatter = SimpleCov::Formatter::CombinedFormatter
+    SimpleCov.root('..')
+    SimpleCov.coverage_dir('cov')
+    SimpleCov.start do
+      require "rspec/core"
+      add_filter "/spec/"
+      spec_dir = File.expand_path("..", __FILE__)
+      RSpec::Core::Runner.disable_autorun!
+      RSpec::Core::Runner.run([spec_dir], STDERR, STDOUT)
     end
   end
 
   task "cleanup_coverage" do
     rm_rf "cov"
-  end
-
-  task "convert_rcov_to_clover" do |t|
-    ignore_pattern = "spec,[.]bundle,[/]gems[/]"
-    clover_output  = File.join(coverage_dir, "clover.xml")
-
-    sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
-    FileUtils.rm_rf(dump_file)
   end
 
 end
