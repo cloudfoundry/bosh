@@ -120,6 +120,9 @@ module VSphereCloud
 
       clusters = []
       properties.each_value do |cluster_properties|
+        cluster_resource_pool = fetch_resource_pool(datacenter_spec["resource_pool"], cluster_properties)
+        next if cluster_resource_pool.nil?
+
         cluster                    = Cluster.new
         cluster.mem_over_commit    = @mem_over_commit
         cluster.mob                = cluster_properties[:obj]
@@ -127,7 +130,7 @@ module VSphereCloud
 
         @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
-        cluster.resource_pool      = cluster_properties["resourcePool"]
+        cluster.resource_pool      = cluster_resource_pool
         cluster.datacenter         = datacenter
         cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"],
                                                       datacenter.datastore_pattern)
@@ -148,11 +151,40 @@ module VSphereCloud
         end
         @logger.debug("non-persistent datastores are " + "#{datastore_names.pretty_inspect}\n " +
                       "persistent datastores are #{persistent_datastore_names.pretty_inspect}")
-        fetch_cluster_utilization(cluster, cluster_properties["host"])
+
+        if datacenter_spec["resource_pool"].nil?
+          fetch_cluster_utilization(cluster, cluster_properties["host"])
+        else
+          fetch_resource_pool_utilization(datacenter_spec["resource_pool"], cluster)
+        end
 
         clusters << cluster
       end
       clusters
+    end
+
+    def fetch_resource_pool(requested_resource_pool_name, cluster_properties)
+      root_resource_pool = cluster_properties["resourcePool"]
+
+      return root_resource_pool if requested_resource_pool_name.nil?
+
+      # Get list of resource pools under this cluster
+      properties = @client.get_properties(root_resource_pool, Vim::ResourcePool, ["resourcePool"])
+      if properties && properties["resourcePool"] && properties["resourcePool"].size != 0
+
+        # Get the name of each resource pool under this cluster
+        child_properties = @client.get_properties(properties["resourcePool"], Vim::ResourcePool, ["name"])
+        if child_properties
+          child_properties.each_value do | resource_pool |
+            if resource_pool["name"] == requested_resource_pool_name
+              @logger.info("Found requested resource pool #{requested_resource_pool_name} under cluster #{cluster_properties["name"]}")
+              return resource_pool[:obj]
+            end
+          end
+        end
+      end
+      @logger.info("Could not find requested resource pool #{requested_resource_pool_name} under cluster #{cluster_properties["name"]}")
+      nil
     end
 
     def fetch_datastores(datacenter, datastore_mobs, match_pattern)
@@ -206,6 +238,25 @@ module VSphereCloud
       cluster.unaccounted_memory = 0
     end
 
+    def fetch_resource_pool_utilization(resource_pool, cluster)
+      properties = @client.get_properties(cluster.resource_pool, Vim::ResourcePool, ["summary"])
+      raise "Failed to get utilization for resource pool #{resource_pool}" if properties.nil?
+
+      if properties["summary"].runtime.overall_status == "green"
+        runtime_info = properties["summary"].runtime
+        cluster.idle_cpu = runtime_info.cpu.max_usage - runtime_info.cpu.overall_usage
+        cluster.total_memory = (runtime_info.memory.reservation_used + runtime_info.memory.unreserved_for_vm)/(1024 * 1024)
+        cluster.free_memory = runtime_info.memory.unreserved_for_vm/(1024 * 1024)
+        cluster.unaccounted_memory = 0
+      else
+        # resource pool is in an unreliable state
+        cluster.idle_cpu = 0
+        cluster.total_memory = 0
+        cluster.free_memory = 0
+        cluster.unaccounted_memory = 0
+      end
+    end
+
     def average_csv(csv)
       values = csv.split(",")
       result = 0
@@ -213,9 +264,9 @@ module VSphereCloud
       result / values.size
     end
 
-    def datacenters
+    def datacenters(force_update = false)
       @lock.synchronize do
-        if Time.now.to_i - @timestamp > 60
+        if (Time.now.to_i - @timestamp > 60) || force_update
           @datacenters = fetch_datacenters
           @timestamp = Time.now.to_i
         end
@@ -237,20 +288,31 @@ module VSphereCloud
 
     def filter_used_resources(memory, disk_space, persistent_disks=[])
       resources = []
-      datacenters.each_value do |datacenter|
-        datacenter.clusters.each do |cluster|
-          next unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
+      force_update = false
+      begin
+        datacenters(force_update).each_value do |datacenter|
+          datacenter.clusters.each do |cluster|
+            next unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
 
-          next unless disk_space_available?(cluster, cluster.persistent_datastores, persistent_disks)
+            next unless disk_space_available?(cluster, cluster.persistent_datastores, persistent_disks)
 
-          datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
-          next unless datastore.real_free_space - disk_space > DISK_THRESHOLD
+            datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
+            next unless datastore.real_free_space - disk_space > DISK_THRESHOLD
 
-          resources << [cluster, datastore]
+            resources << [cluster, datastore]
+          end
         end
+        raise "No available resources" if resources.empty?
+      rescue
+        unless force_update
+          # Lets try to get updated utilization statistics before we give up
+          @logger.info("Forcing update of utilization statistics")
+          force_update = true
+          retry
+        end
+        raise
       end
 
-      raise "No available resources" if resources.empty?
       resources
     end
 
