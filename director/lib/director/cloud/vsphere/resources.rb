@@ -120,6 +120,9 @@ module VSphereCloud
 
       clusters = []
       properties.each_value do |cluster_properties|
+        cluster_resource_pool = fetch_resource_pool(datacenter_spec["resource_pool"], cluster_properties)
+        next if cluster_resource_pool.nil?
+
         cluster                    = Cluster.new
         cluster.mem_over_commit    = @mem_over_commit
         cluster.mob                = cluster_properties[:obj]
@@ -127,7 +130,7 @@ module VSphereCloud
 
         @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
-        cluster.resource_pool      = cluster_properties["resourcePool"]
+        cluster.resource_pool      = cluster_resource_pool
         cluster.datacenter         = datacenter
         cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"],
                                                       datacenter.datastore_pattern)
@@ -153,6 +156,30 @@ module VSphereCloud
         clusters << cluster
       end
       clusters
+    end
+
+    def fetch_resource_pool(requested_resource_pool_name, cluster_properties)
+      root_resource_pool = cluster_properties["resourcePool"]
+
+      return root_resource_pool if requested_resource_pool_name.nil?
+
+      # Get list of resource pools under this cluster
+      properties = @client.get_properties(root_resource_pool, Vim::ResourcePool, ["resourcePool"])
+      if properties && properties["resourcePool"] && properties["resourcePool"].size != 0
+
+        # Get the name of each resource pool under this cluster
+        child_properties = @client.get_properties(properties["resourcePool"], Vim::ResourcePool, ["name"])
+        if child_properties
+          child_properties.each_value do | resource_pool |
+            if resource_pool["name"] == requested_resource_pool_name
+              @logger.info("Found requested resource pool #{requested_resource_pool_name} under cluster #{cluster_properties["name"]}")
+              return resource_pool[:obj]
+            end
+          end
+        end
+      end
+      @logger.info("Could not find requested resource pool #{requested_resource_pool_name} under cluster #{cluster_properties["name"]}")
+      nil
     end
 
     def fetch_datastores(datacenter, datastore_mobs, match_pattern)
