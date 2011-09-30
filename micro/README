@@ -1,0 +1,81 @@
+Micro Cloud Foundry version 1.1
+===============================
+
+This is the second release of Micro Cloud Foundry.
+
+IMPORTANT : You MUST have a valid CloudFoundry.com account to get the required
+Micro Cloud Foundry Token needed to configure the Micro Cloud Foundry VM.
+To signup for a Cloud Foundry account, please go to http://cloudfoundry.com/signup
+after receiving your account information, get your token from
+http://cloudfoundry.com/micro
+by signing in with your CloudFoundry.com credentials.
+
+- The Cloud Foundry Team
+
+* Support is strictly through the Cloud Foundry community site.
+  NOTE: You will have to create a separate account for the Support site.
+  http://support.cloudfoundry.com
+
+* Installation and setup documentation at
+  http://support.cloudfoundry.com/entries/20316811
+
+* Signup for a Cloud Foundry account at
+  http://cloudfoundry.com/signup
+
+* Get your Micro Cloud Foundry token at
+  http://cloudfoundry.com/micro
+  by signing in with your Cloud Foundry account.
+
+* Learn more about Cloud Foundry at :
+  - http://www.cloudfoundry.com
+  - http://blog.cloudfoundry.com
+  - http://www.cloudfoundry.org
+  - On Twitter @cloudfoundry (hashtag #cfoundry)
+  - On Facebook at http://facebook.com/cloudfoundry
+
+Default configuration:
+
+Micro Cloud Foundry 
+VM:       1GB RAM / 8GB disk / 2 VCPUs
+-----------------------------------------------
+MySQL:    2GB storage, max 256MB storage per instance
+Postgres: 2GB storage, max 256MB storage per instance
+MongoDB:  256MB per instance
+Redis:    256MB per instance
+
+
+It ships with the following components:
+
+Runtimes
++--------+-------------+-----------+
+| Name   | Description | Version   |
++--------+-------------+-----------+
+| ruby18 | Ruby 1.8    | 1.8.7     |
+| ruby19 | Ruby 1.9    | 1.9.2p180 |
+| java   | Java 6      | 1.6       |
+| node   | Node.js     | 0.4.5     |
++--------+-------------+-----------+
+
+Frameworks
++----------+
+| Name     |
++----------+
+| rails3   |
+| sinatra  |
+| grails   |
+| node     |
+| java_web |
+| lift     |
+| spring   |
++----------+
+
+Services
++------------+---------+---------------------------------------+
+| Service    | Version | Description                           |
++------------+---------+---------------------------------------+
+| mongodb    | 1.8     | MongoDB NoSQL store                   |
+| mysql      | 5.1     | MySQL database service                |
+| postgresql | 9.0     | PostgreSQL database service (vFabric) |
+| rabbitmq   | 2.4     | RabbitMQ messaging service            |
+| redis      | 2.2     | Redis key-value store service         |
++------------+---------+---------------------------------------+
