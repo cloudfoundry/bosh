@@ -60,13 +60,22 @@ module Bosh::Agent
       end
 
       def filter_globs
-        unless @state["job"] && @state["job"]["logs"]
-          return []
+        custom_job_logs = {}
+
+        if @state["job"] && @state["job"]["logs"]
+          logs_spec = @state["job"]["logs"]
+
+          if logs_spec.is_a?(Hash)
+            custom_job_logs = logs_spec
+          else
+            logger.warn("Invalid format for job logs spec: Hash expected, #{logs_spec.class} given")
+            logger.warn("All custom filtering except '--all' thus disabled")
+          end
         end
 
         predefined = { "all" => "**/*" }
 
-        predefined.merge(@state["job"]["logs"]).inject([]) do |result, (filter_name, glob)|
+        predefined.merge(custom_job_logs).inject([]) do |result, (filter_name, glob)|
           result << glob if @filters.include?(filter_name)
           result
         end
