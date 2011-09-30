@@ -116,11 +116,11 @@ describe Bosh::Director::PackageCompiler do
         events.size.should == 2
         events[0].should == {
           "time" => anything, "stage" => "Compiling packages", "tags" => [],
-          "task" => "test_pkg/33", "index" => 1, "total" => 1, "state" => "started", "progress" => 0, "progress_data"=>""
+          "task" => "test_pkg/33", "index" => 1, "total" => 1, "state" => "started", "progress" => 0
         }
         events[1].should == {
           "time" => anything, "stage" => "Compiling packages", "tags" => [],
-          "task" => "test_pkg/33", "index" => 1, "total" => 1, "state" => "finished", "progress" => 100, "progress_data"=>""
+          "task" => "test_pkg/33", "index" => 1, "total" => 1, "state" => "finished", "progress" => 100
         }
       end
     end
@@ -258,19 +258,19 @@ describe Bosh::Director::PackageCompiler do
 
         events[0].should == {
           "time" => anything, "stage" => "Compiling packages", "tags" => [],
-          "task" => "dependency/77", "index" => 1, "total" => 2, "state" => "started", "progress" => 0, "progress_data"=>""
+          "task" => "dependency/77", "index" => 1, "total" => 2, "state" => "started", "progress" => 0
         }
         events[1].should == {
           "time" => anything, "stage" => "Compiling packages", "tags" => [],
-          "task" => "dependency/77", "index" => 1, "total" => 2, "state" => "finished", "progress" => 100, "progress_data"=>""
+          "task" => "dependency/77", "index" => 1, "total" => 2, "state" => "finished", "progress" => 100
         }
         events[2].should == {
           "time" => anything, "stage" => "Compiling packages", "tags" => [],
-          "task" => "test_pkg/33", "index" => 2, "total" => 2, "state" => "started", "progress" => 0, "progress_data"=>""
+          "task" => "test_pkg/33", "index" => 2, "total" => 2, "state" => "started", "progress" => 0
         }
         events[3].should == {
           "time" => anything, "stage" => "Compiling packages", "tags" => [],
-          "task" => "test_pkg/33", "index" => 2, "total" => 2, "state" => "finished", "progress" => 100, "progress_data"=>""
+          "task" => "test_pkg/33", "index" => 2, "total" => 2, "state" => "finished", "progress" => 100
         }
       end
     end

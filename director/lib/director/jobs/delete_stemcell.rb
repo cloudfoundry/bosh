@@ -34,7 +34,7 @@ module Bosh::Director
             raise StemcellInUse.new(@name, @version, deployments.join(", "))
           end
 
-          @event_log.begin_stage("Deleting stemcell from cloud", 1, [@name, @version])
+          @event_log.begin_stage("Deleting stemcell from cloud", 1)
 
           @event_log.track("Delete stemcell") do
             @cloud.delete_stemcell(@stemcell.cid)
@@ -57,7 +57,7 @@ module Bosh::Director
             end
           end
 
-          @event_log.begin_stage("Deleting stemcell metadata", 1, [@name, @version])
+          @event_log.begin_stage("Deleting stemcell metadata", 1)
           @event_log.track("Deleting stemcell metadata") do
             @stemcell.destroy
           end

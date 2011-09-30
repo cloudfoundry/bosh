@@ -14,7 +14,10 @@ module Bosh::Director
     # bar in CLI.
 
     # Sample rendering for event log entry:
-    # {"time":1312233461,"stage":"job_update","task":"update","tags":["mysql_node"],"index":2,"total":4,"state":"finished","progress_data":"optional progress data"}
+    # {
+    #   "time":1312233461,"stage":"job_update","task":"update","tags":["mysql_node"],
+    #   "index":2,"total":4,"state":"finished","progress":50,"progress_data":"draining"
+    # }
 
     # Job update (mysql_node):
     # update |--------        | (2/4) 50%
@@ -60,7 +63,7 @@ module Bosh::Director
       log(task, "finished", index, progress)
     end
 
-    def log(task, state, index, progress = 0, progress_data = "")
+    def log(task, state, index, progress = 0, progress_data = nil)
       entry = {
         :time     => Time.now.to_i,
         :stage    => @stage,
@@ -70,8 +73,11 @@ module Bosh::Director
         :total    => @total,
         :state    => state,
         :progress => progress,
-        :progress_data => progress_data
       }
+
+      if progress_data
+        entry[:progress_data] = progress_data
+      end
 
       @logger.info(Yajl::Encoder.encode(entry))
     end
@@ -87,7 +93,7 @@ module Bosh::Director
   # Sometimes task needs to be split into subtasks so
   # we can track its progress more granularily. In that
   # case we can use EventTicker helper class to advance
-  # progress begween N and N+1 by small increments.
+  # progress between N and N+1 by small increments.
   class EventTicker
     def initialize(event_log, task, index)
       @event_log = event_log
@@ -98,7 +104,7 @@ module Bosh::Director
 
     def advance(delta, progress_data = nil)
       @progress = [ @progress + delta, 100 ].min
-      @event_log.log(@task, "in_progress", @index, @progress.to_i, progress_data.to_s)
+      @event_log.log(@task, "in_progress", @index, @progress.to_i, progress_data)
     end
   end
 
