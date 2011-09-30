@@ -73,7 +73,7 @@ module Bosh::Director
 
           instances = Models::Instance.filter(:deployment_id => deployment.id)
 
-          @event_log.begin_stage("Deleting instances", instances.count, [deployment.name])
+          @event_log.begin_stage("Deleting instances", instances.count)
           ThreadPool.new(:max_threads => 32).wrap do |pool|
             instances.each do |instance|
               pool.process do
@@ -87,7 +87,7 @@ module Bosh::Director
 
             vms = Models::Vm.filter(:deployment_id => deployment.id)
 
-            @event_log.begin_stage("Deleting idle VMs", vms.count, [deployment.name])
+            @event_log.begin_stage("Deleting idle VMs", vms.count)
             vms.each do |vm|
               pool.process do
                 @event_log.track("#{vm.cid}") do
@@ -98,7 +98,7 @@ module Bosh::Director
             end
           end
 
-          @event_log.begin_stage("Removing deployment artifacts", 3, [deployment.name])
+          @event_log.begin_stage("Removing deployment artifacts", 3)
           track_and_log("Detach stemcells") do
             deployment.remove_all_stemcells
           end

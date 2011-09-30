@@ -22,7 +22,7 @@ module Bosh::Director
 
       def perform
         @logger.info("Processing update release")
-        @event_log.begin_stage("Update release", 3, [@release_name])
+        @event_log.begin_stage("Update release", 3)
 
         track_and_log("Extract release") do
           @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
@@ -65,7 +65,7 @@ module Bosh::Director
         resolve_package_dependencies(@release_manifest["packages"])
 
         @packages = {}
-        @event_log.begin_stage("Creating/Verifying new packages", @release_manifest["packages"].count, [@release_name, @release_version])
+        @event_log.begin_stage("Creating/Verifying new packages", @release_manifest["packages"].count)
         @release_manifest["packages"].each do |package_meta|
           @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
                         "exists in release #{@release.pretty_inspect}")
@@ -90,7 +90,7 @@ module Bosh::Director
           @release_version_entry.add_package(package)
         end
 
-        @event_log.begin_stage("Creating/Verifying new jobs", @release_manifest["jobs"].count, [@release_name, @release_version])
+        @event_log.begin_stage("Creating/Verifying new jobs", @release_manifest["jobs"].count)
         @release_manifest["jobs"].each do |job_meta|
           @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
                        "exists in release #{@release.pretty_inspect}")
