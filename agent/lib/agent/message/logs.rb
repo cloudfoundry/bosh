@@ -60,13 +60,15 @@ module Bosh::Agent
       end
 
       def filter_globs
-        unless @state["job"] && @state["job"]["logs"]
-          return []
+        if @state["job"] && @state["job"]["logs"] && @state["job"]["logs"].is_a?(Hash)
+          custom_job_logs = @state["job"]["logs"]
+        else
+          custom_job_logs = {}
         end
 
         predefined = { "all" => "**/*" }
 
-        predefined.merge(@state["job"]["logs"]).inject([]) do |result, (filter_name, glob)|
+        predefined.merge(custom_job_logs).inject([]) do |result, (filter_name, glob)|
           result << glob if @filters.include?(filter_name)
           result
         end
