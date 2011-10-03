@@ -1,7 +1,7 @@
 module VCAP
   module Micro
     class Version
-      VERSION = "1.1.0_rc4"
+      VERSION = "1.1.0"
       FILE_REGEXP = /micro-(\d+\.\d+\.*\d*_*\S*)\.tgz/
       VERSION_REGEXP = /(\d+)\.(\d+)\.*(\d+)*_*(\S*)/
 

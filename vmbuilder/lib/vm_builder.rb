@@ -82,6 +82,8 @@ module VMBuilder
               end
             end
             FileUtils.rm_rf("micro/micro.save")
+            copy_file("#{MICRO_PATH}/README", "micro/README")
+            copy_file("#{MICRO_PATH}/RELEASE_NOTES", "micro/RELEASE_NOTES")
             archive("micro", "micro-#{version}.zip")
           end
         end
