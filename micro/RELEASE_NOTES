@@ -1,0 +1,13 @@
+Micro Cloud Foundry version 1.1
+===============================
+
+Changes since version 1.0:
+--------------------------
+- added postgres & rabbit mq services
+- disabled screen blanking of the console
+- improved detection of when the VM switches network
+- added a network troubleshooting page
+
+Known issues
+------------
+Due to lack of functionality in the bundled Erlang version, SRS will have 2 ports open (in use by the beam and epmd processes) which are bound to the external IP address instead of localhost (127.0.0.1) and are exposed to anyone who can access the Micro Cloud Foundry VM.
