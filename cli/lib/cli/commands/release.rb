@@ -31,7 +31,7 @@ module Bosh::Cli::Command
         if release_file.nil?
           err("The information about latest generated release is missing, please provide release filename")
         end
-        unless non_interactive? || ask("Are you sure you want to upload release `#{release_file.green}'? (type 'yes' to continue)") == 'yes'
+        unless non_interactive? || ask("Are you sure you want to upload release `#{File.basename(release_file).green}'? (type 'yes' to continue): ") == 'yes'
           err("Canceled upload")
         end
       end

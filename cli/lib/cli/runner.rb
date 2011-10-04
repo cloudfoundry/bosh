@@ -215,6 +215,10 @@ Currently available bosh commands are:
                                               --raw                    show raw log contents (relevant for event log)
     cancel task <id>                          Cancel task once it reaches the next cancel checkpoint
 
+  Maintenance
+    cleanup                                   Remove all but several recent stemcells and releases from current
+                                              director (stemcells and releases that are in use are not deleted).
+
   Misc
     status                                    Show current status (current target, user, deployment info etc.)
     target [<name>] [<alias>]                 Choose director to talk to (optionally creating an alias)
@@ -407,6 +411,10 @@ USAGE
           else
             unknown_operation(kind)
           end
+
+        when "cleanup"
+          usage("bosh cleanup")
+          set_cmd(:maintenance, :cleanup)
 
         else
           # Try alternate verb noun order before giving up
