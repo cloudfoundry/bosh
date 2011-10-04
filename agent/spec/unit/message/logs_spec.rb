@@ -196,4 +196,38 @@ describe Bosh::Agent::Message::FetchLogs do
     end
   end
 
+  it "ignores invalid logs spec" do
+    write_state do
+      {
+        "job" => {
+          "template" => "job_a",
+          "logs" => [ "invalid format" ]
+        }
+      }
+    end
+
+    log_dir = File.join(@base_dir, "sys", "log")
+    FileUtils.mkdir_p(log_dir)
+
+    FileUtils.mkdir_p(File.join(log_dir, "foo"))
+
+    log1 = File.join(log_dir, "foo", "log1")
+    log2 = File.join(log_dir, "log2")
+    log3 = File.join(log_dir, "log3.log")
+
+    [ log1, log2, log3 ].each { |file| FileUtils.touch(file) }
+
+    test_handler(:job, ["foos"]) do
+      File.exists?("foo/log1").should be_false
+      File.exists?("log2").should be_false
+      File.exists?("log3.log").should be_false
+    end
+
+    test_handler(:job, ["all"]) do
+      File.exists?("foo/log1").should be_true
+      File.exists?("log2").should be_true
+      File.exists?("log3.log").should be_true
+    end
+  end
+
 end
