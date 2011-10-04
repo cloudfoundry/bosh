@@ -72,7 +72,7 @@ module Bosh
         auth ? auth["password"] : nil
       end
 
-      [ :target, :target_name, :target_version, :target_uuid, :deployment ].each do |attr|
+      [ :target, :target_name, :target_version, :target_uuid, :deployment, :status_timeout ].each do |attr|
         define_method attr do
           read(attr, false)
         end

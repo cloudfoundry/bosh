@@ -1,13 +1,34 @@
+require "timeout"
+
 module Bosh::Cli::Command
   class Misc < Base
+    DEFAULT_STATUS_TIMEOUT = 3 # seconds
 
     def version
       say("Bosh %s" % [ Bosh::Cli::VERSION ])
     end
 
     def status
-      if options[:director_checks]
-        set_target(config.target, nil, false)
+      if config.target && options[:director_checks]
+        say("Updating director data...", " ")
+
+        begin
+          timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
+            director = Bosh::Cli::Director.new(config.target)
+            status = director.get_status
+
+            config.target_name = status["name"]
+            config.target_version = status["version"]
+            config.target_uuid = status["uuid"]
+            config.save
+            say "done".green
+          end
+        rescue TimeoutError
+          say "timed out".red
+        rescue => e
+          say "error".red
+        end
+        nl
       end
 
       target_name = full_target_name ? full_target_name.green : "not set".red
@@ -101,13 +122,13 @@ module Bosh::Cli::Command
       say(target ? "Current target is '#{full_target_name}'" : "Target not set")
     end
 
-    def set_target(director_url, name = nil, verbose = true)
+    def set_target(director_url, name = nil)
       if name.nil?
         director_url = config.resolve_alias(:target, director_url) || director_url
       end
 
-      if director_url.nil?
-        return
+      if director_url.blank?
+        err "Target name cannot be blank"
       end
 
       director_url = normalize_url(director_url)
@@ -117,9 +138,9 @@ module Bosh::Cli::Command
         begin
           status = director.get_status
         rescue Bosh::Cli::AuthError
-          status = { }
+          status = {}
         rescue Bosh::Cli::DirectorError
-          err("Cannot talk to director at '#{director_url}', please set correct target") if options[:director_checks]
+          err("Cannot talk to director at '#{director_url}', please set correct target")
         end
       else
         status = { "name" => "Unknown Director", "version" => "n/a" }
@@ -138,7 +159,7 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to '#{full_target_name.green}'") if verbose
+      say("Target set to '#{full_target_name.green}'")
 
       if interactive? && (config.username.blank? || config.password.blank?)
         redirect :misc, :login
