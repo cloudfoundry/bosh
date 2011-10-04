@@ -230,6 +230,10 @@ module Bosh::Agent
           Bosh::Agent::Config.logger
         end
 
+        def base_dir
+          Bosh::Agent::Config.base_dir
+        end
+
         def lookup_disk_by_cid(cid)
           settings = Bosh::Agent::Config.settings
           disk_id = settings['disks']['persistent'][cid]
@@ -280,6 +284,45 @@ module Bosh::Agent
 
         def sfdisk_lookup_partition(disk, partition)
           `sfdisk -Llq #{disk}`.lines.select { |l| l.match(%q{/\A#{partition}.*83.*Linux}) }
+        end
+
+        def get_usage
+          result = {
+            "system" => { "percent" => nil },
+            "ephemeral" => { "percent" => nil },
+          }
+
+          disk_usage = `#{disk_usage_command}`
+
+          if $?.to_i != 0
+            logger.error("Failed to get disk usage data, df exit code = #{$?.to_i}")
+            return result
+          end
+
+          disk_usage.split("\n")[1..-1].each do |line|
+            usage, mountpoint = line.split(/\s+/)
+            usage.gsub!(/%$/, '')
+
+            case mountpoint
+            when "/"
+              result["system"]["percent"] = usage
+            when File.join("#{base_dir}", "data")
+              result["ephemeral"]["percent"] = usage
+            when File.join("#{base_dir}", "store")
+              # Only include persistent disk data if
+              # persistent disk is there
+              result["persistent"] = { }
+              result["persistent"]["percent"] = usage
+            end
+          end
+
+          result
+        end
+
+        def disk_usage_command
+          # '-l' excludes non-local partitions.
+          # This allows us not to worry about NFS.
+          "df -l | awk '{print $5, $6}'"
         end
 
       end
