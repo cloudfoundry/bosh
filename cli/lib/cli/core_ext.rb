@@ -50,6 +50,11 @@ module BoshExtensions
     return sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
   end
 
+  def pluralize(number, singular, plural = nil)
+    plural = plural || "#{singular}s"
+    number == 1 ? "1 #{singular}" : "#{number} #{plural}"
+  end
+
   def format_time(time)
     ts = time.to_i
     sprintf("%02d:%02d:%02d", ts / 3600, (ts / 60) % 60, ts % 60);
