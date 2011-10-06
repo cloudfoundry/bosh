@@ -50,13 +50,14 @@ module Bosh::Director
       end
     end
 
-    def initialize(deployment_plan)
+    def initialize(deployment_plan, job = nil)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
       @event_log = Config.event_log
       @logger = Config.logger
       @tasks_mutex = Mutex.new
       @networks_mutex = Mutex.new
+      @job = job
     end
 
     def compile
@@ -98,6 +99,7 @@ module Bosh::Director
           loop do
             task = @ready_tasks.pop
             break if task.nil?
+            break if @job && @job.task_cancelled?
 
             package = task.package
             stemcell = task.stemcell
@@ -109,10 +111,14 @@ module Bosh::Director
               stemcell_desc = "#{stemcell.name}/#{stemcell.version})"
 
               with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
-                @event_log.track(package_desc) do
-                  compile_package(task)
-                  enqueue_unblocked_tasks(task)
-                  @logger.info("Finished compiling package: #{package_desc} on stemcell: #{stemcell_desc}")
+                if @job && @job.task_cancelled?
+                  @logger.info("Cancelled compiling package #{package_desc} on stemcell #{stemcell_desc}")
+                else
+                  @event_log.track(package_desc) do
+                    compile_package(task)
+                    enqueue_unblocked_tasks(task)
+                    @logger.info("Finished compiling package: #{package_desc} on stemcell: #{stemcell_desc}")
+                  end
                 end
               end
             end
@@ -122,7 +128,7 @@ module Bosh::Director
           sleep(0.1)
         end
       end
-
+      @job.task_checkpoint if @job
       @networks.each do |network_settings|
         ip = network_settings[@network.name]["ip"]
         @network.release_dynamic_ip(ip)
