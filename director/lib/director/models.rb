@@ -1,5 +1,6 @@
 require "director/models/compiled_package"
 require "director/models/deployment"
+require "director/models/deployment_property"
 require "director/models/instance"
 require "director/models/log_bundle"
 require "director/models/package"

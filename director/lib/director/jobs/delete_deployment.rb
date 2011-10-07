@@ -106,8 +106,16 @@ module Bosh::Director
             deployment.remove_all_stemcells
           end
 
-          track_and_log("Detach release version") do
+          track_and_log("Detaching release versions") do
             deployment.remove_all_release_versions
+          end
+
+          @event_log.begin_stage("Deleting properties", deployment.properties.count)
+          @logger.info("Deleting deployment properties")
+          deployment.properties.each do |property|
+            @event_log.track(property.name) do
+              property.destroy
+            end
           end
 
           track_and_log("Destroy deployment") do

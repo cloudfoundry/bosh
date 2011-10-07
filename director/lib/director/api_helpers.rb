@@ -37,6 +37,14 @@ module Bosh::Director
       not_found
     end
 
+    def json_encode(payload)
+      Yajl::Encoder.encode(payload)
+    end
+
+    def json_decode(payload)
+      Yajl::Parser.parse(payload)
+    end
+
   end
 
 end
