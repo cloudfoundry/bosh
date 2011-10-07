@@ -1,26 +1,51 @@
 module Bosh::Cli
   module DeploymentHelper
 
-    def prepare_deployment_manifest
+    def prepare_deployment_manifest(options = {})
+      # TODO: extract to helper class
       err("Please choose deployment first") unless deployment
-
       manifest_filename = deployment
 
       if !File.exists?(manifest_filename)
-        err("Missing deployment at '#{deployment}'")
+        err("Cannot find deployment manifest in `#{manifest_filename}'")
       end
 
-      new_manifest = load_yaml_file(manifest_filename)
+      manifest = load_yaml_file(manifest_filename)
+      manifest_yaml = File.read(manifest_filename)
 
-      if new_manifest["target"]
+      if manifest["name"].blank?
+        err("Deployment name not found in the deployment manifest")
+      end
+
+      if manifest["target"]
         err manifest_target_upgrade_notice
       end
 
-      if new_manifest["name"].blank? || new_manifest["release"].blank? || new_manifest["director_uuid"].blank?
-        err("Invalid manifest for '#{deployment}': name, release and director UUID are all required")
+      if options[:resolve_properties]
+        compiler = DeploymentManifestCompiler.new(manifest_yaml)
+        properties = {}
+
+        begin
+          say "Getting deployment properties from director..."
+          properties = director.list_properties(manifest["name"])
+        rescue Bosh::Cli::DirectorError
+          say "Unable to get properties list from director, trying without it..."
+        end
+
+        say "Compiling deployment manifest..."
+        compiler.properties = properties.inject({}) do |h, property|
+          h[property["name"]] = property["value"]; h
+        end
+
+        manifest_yaml = compiler.result
+        manifest = YAML.load(manifest_yaml)
       end
 
-      new_manifest
+      if manifest["name"].blank? || manifest["release"].blank? || manifest["director_uuid"].blank?
+        err("Invalid manifest `#{File.basename(deployment)}': name, release and director UUID are all required")
+      end
+
+      options[:yaml] ? manifest_yaml : manifest
     end
 
     # Interactive walkthrough of deployment changes, expected to bail out of CLI using 'cancel_deployment'

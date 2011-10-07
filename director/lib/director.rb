@@ -55,6 +55,7 @@ require "director/job_updater"
 require "director/lock"
 require "director/nats_rpc"
 require "director/package_compiler"
+require "director/property_manager"
 require "director/release_manager"
 require "director/resource_manager"
 require "director/resource_pool_updater"
@@ -118,6 +119,7 @@ module Bosh::Director
       @user_manager       = UserManager.new
       @instance_manager   = InstanceManager.new
       @resource_manager   = ResourceManager.new
+      @property_manager   = PropertyManager.new
       @logger             = Config.logger
     end
 
@@ -472,6 +474,36 @@ module Bosh::Director
     get "/resources/:id" do
       tmp_file = @resource_manager.get_resource(params[:id])
       send_disposable_file(tmp_file, :type => "application/x-gzip")
+    end
+
+    # Property management
+    get "/deployments/:deployment/properties" do
+      properties = @property_manager.get_properties(params[:deployment]).map do |property|
+        { "name" => property.name, "value" => property.value }
+      end
+      json_encode(properties)
+    end
+
+    get "/deployments/:deployment/properties/:property" do
+      property = @property_manager.get_property(params[:deployment], params[:property])
+      json_encode("value" => property.value)
+    end
+
+    post "/deployments/:deployment/properties", :consumes => [:json] do
+      payload = json_decode(request.body)
+      @property_manager.create_property(params[:deployment], payload["name"], payload["value"])
+      status(204)
+    end
+
+    put "/deployments/:deployment/properties/:property", :consumes => [:json] do
+      payload = json_decode(request.body)
+      @property_manager.update_property(params[:deployment], params[:property], payload["value"])
+      status(204)
+    end
+
+    delete "/deployments/:deployment/properties/:property" do
+      @property_manager.delete_property(params[:deployment], params[:property])
+      status(204)
     end
 
     get "/info" do

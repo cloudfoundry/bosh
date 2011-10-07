@@ -101,6 +101,7 @@ module Bosh::Director
               release_version.destroy
             end
           end
+
           release.destroy
         end
       end

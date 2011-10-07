@@ -283,7 +283,7 @@ module Bosh::Cli
     end
 
     def bar
-      n_fillers = [ (@bar_width * (@current.to_f / @total.to_f)).floor, 0 ].max
+      n_fillers = @total == 0 ? 0 : [ (@bar_width * (@current.to_f / @total.to_f)).floor, 0 ].max
 
       fillers = "#{@filler}" * n_fillers
       spaces = " " * [ (@bar_width - n_fillers), 0 ].max

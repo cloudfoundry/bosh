@@ -77,6 +77,8 @@ module Bosh
         # Redirected bosh commands end up generating this exception (kind of goto)
       rescue Bosh::Cli::CliExit => e
         say(e.message.red)
+      rescue Bosh::Cli::DirectorError => e
+        say(e.message.red)
       rescue Bosh::Cli::CliError => e
         say("Error #{e.error_code}: #{e.message}".red)
       rescue => e
@@ -97,7 +99,6 @@ module Bosh
           end
         end
       ensure
-        say("\n")
         exit(@normal_exit ? 0 : 1)
       end
 
@@ -214,6 +215,12 @@ Currently available bosh commands are:
                                               --event|--debug|--soap   choose between different log types to track
                                               --raw                    show raw log contents (relevant for event log)
     cancel task <id>                          Cancel task once it reaches the next cancel checkpoint
+
+  Property management
+    set property <name> <value>
+    get property <name>
+    unset property <name>
+    properties <deployment>
 
   Maintenance
     cleanup                                   Remove all but several recent stemcells and releases from current
@@ -355,6 +362,7 @@ USAGE
         when "delete"
           verb_usage("delete")
           what = @args.shift
+
           case what
           when "deployment"
             usage("bosh delete deployment <name> [--force]")
@@ -366,6 +374,37 @@ USAGE
             usage("bosh delete release <name> [<version>] [--force]")
             set_cmd(:release, :delete, 1..3)
           end
+
+        when "set"
+          verb_usage("set")
+          what = @args.shift
+          case what
+          when "property"
+            usage("bosh set property <name> <value>")
+            set_cmd(:property_management, :set, 2)
+          end
+
+        when "unset"
+          verb_usage("unset")
+          what = @args.shift
+          case what
+          when "property"
+            usage("bosh unset property <name>")
+            set_cmd(:property_management, :unset, 1)
+          end
+
+        when "get"
+          verb_usage("get")
+          what = @args.shift
+          case what
+          when  "property"
+            usage("bosh get property <name>")
+            set_cmd(:property_management, :get, 1)
+          end
+
+        when "properties", "props"
+          usage("bosh properties [--terse]")
+          set_cmd(:property_management, :list, 0..1)
 
         when "reset"
           what = @args.shift
@@ -446,7 +485,10 @@ USAGE
           "upload"   => "release <path>\nstemcell <path>",
           "verify"   => "release <path>\nstemcell <path>",
           "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [<version>] [--force]",
-          "generate" => "package <name>\njob <name>"
+          "generate" => "package <name>\njob <name>",
+          "set"      => "property <name> <value>",
+          "unset"    => "property <name>",
+          "get"      => "property <name>",
         }
 
         @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])
