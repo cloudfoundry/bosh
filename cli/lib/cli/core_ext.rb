@@ -125,3 +125,4 @@ end
 class String
   include BoshStringExtensions
 end
+

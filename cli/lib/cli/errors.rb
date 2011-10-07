@@ -31,6 +31,7 @@ module Bosh
     class InvalidIndex         < CliError; error_code(506); end
     class BlobstoreError       < CliError; error_code(507); end
     class PackagingError       < CliError; error_code(508); end
-
+    class UndefinedProperty    < CliError; error_code(509); end
+    class MalformedManifest    < CliError; error_code(511); end
   end
 end
