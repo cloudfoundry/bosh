@@ -498,4 +498,52 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     end
   end
 
+  describe "property management" do
+
+    it "can get/set/delete deployment properties" do
+      release_filename = spec_asset("valid_release.tgz")
+      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
+
+      run_bosh("target localhost:57523")
+      run_bosh("deployment #{deployment_manifest.path}")
+      run_bosh("login admin admin")
+      run_bosh("upload release #{release_filename}")
+
+      run_bosh("deploy")
+
+      run_bosh("set deployment property minimal foo bar").should =~ rx("Property `foo' set to `bar'")
+      run_bosh("get deployment property minimal foo").should =~ rx("Property `foo' value is `bar'")
+      run_bosh("set deployment property minimal foo baz").should =~ rx("Property `foo' set to `baz'")
+      run_bosh("unset deployment property minimal foo").should =~ rx("Property `foo' has been unset")
+
+      run_bosh("set deployment property minimal nats.user admin")
+      run_bosh("set deployment property minimal nats.password pass")
+
+      props = run_bosh("list deployment properties minimal --terse")
+      props.should =~ rx("nats.user\tadmin")
+      props.should =~ rx("nats.password\tpass")
+    end
+
+    it "can get/set/delete release properties" do
+      release_filename = spec_asset("valid_release.tgz")
+
+      run_bosh("target localhost:57523")
+      run_bosh("login admin admin")
+      run_bosh("upload release #{release_filename}")
+
+      run_bosh("set release property appcloud foo bar").should =~ rx("Property `foo' set to `bar'")
+      run_bosh("get release property appcloud foo").should =~ rx("Property `foo' value is `bar'")
+      run_bosh("set release property appcloud foo baz").should =~ rx("Property `foo' set to `baz'")
+      run_bosh("unset release property appcloud foo").should =~ rx("Property `foo' has been unset")
+
+      run_bosh("set release property appcloud live.version 38")
+      run_bosh("set release property appcloud test.version 40")
+
+      props = run_bosh("list release properties appcloud --terse")
+      props.should =~ rx("live.version\t38")
+      props.should =~ rx("test.version\t40")
+    end
+
+  end
+
 end

@@ -131,17 +131,17 @@ module Bosh
         request_and_track(:delete, url, nil, nil, track_options)
       end
 
-      def deploy(filename, options = {})
+      def deploy(manifest_yaml, options = {})
         url = "/deployments"
         url += "?recreate=true" if options[:recreate]
-        upload_and_track(url, "text/yaml", filename, :log_type => "event")
+        request_and_track(:post, url, "text/yaml", manifest_yaml, :log_type => "event")
       end
 
-      def change_job_state(deployment_name, manifest_filename, job_name, index, new_state)
+      def change_job_state(deployment_name, manifest_yaml, job_name, index, new_state)
         url = "/deployments/#{deployment_name}/jobs/#{job_name}"
         url += "/#{index}" if index
         url += "?state=#{new_state}"
-        upload_and_track(url, "text/yaml", manifest_filename, :method => :put, :log_type => "event")
+        request_and_track(:put, url, "text/yaml", manifest_yaml, :log_type => "event")
       end
 
       def fetch_logs(deployment_name, job_name, index, log_type, filters = nil)
@@ -159,6 +159,33 @@ module Bosh
         else
           raise DirectorError, "Cannot download resource `#{id}': HTTP status #{status}"
         end
+      end
+
+      def create_property(scope_type, scope_name, property_name, value)
+        url = "/#{scope_type}s/#{scope_name}/properties"
+        payload = JSON.generate("name" => property_name, "value" => value)
+        post(url, "application/json", payload)
+      end
+
+      def update_property(scope_type, scope_name, property_name, value)
+        url = "/#{scope_type}s/#{scope_name}/properties/#{property_name}"
+        payload = JSON.generate("value" => value)
+        put(url, "application/json", payload)
+      end
+
+      def delete_property(scope_type, scope_name, property_name)
+        url = "/#{scope_type}s/#{scope_name}/properties/#{property_name}"
+        delete(url, "application/json")
+      end
+
+      def get_property(scope_type, scope_name, property_name)
+        url = "/#{scope_type}s/#{scope_name}/properties/#{property_name}"
+        get_json_with_status(url)
+      end
+
+      def list_properties(scope_type, scope_name)
+        url = "/#{scope_type}s/#{scope_name}/properties"
+        get_json(url)
       end
 
       def get_current_time
@@ -362,6 +389,18 @@ module Bosh
         raise DirectorError, "System call error while talking to director: #{e}"
       end
 
+      def parse_error_message(status, body)
+        parsed_body = JSON.parse(body.to_s)
+
+        if parsed_body["code"] && parsed_body["description"]
+          "Director error %s: %s" % [ parsed_body["code"], parsed_body["description"] ]
+        else
+          "Director error (HTTP %s): %s" % [ status, body ]
+        end
+      rescue JSON::ParserError
+        "Director error (HTTP %s): %s" % [ status, body ]
+      end
+
       private
 
       def perform_http_request(method, uri, payload = nil, headers = {}, &block)
@@ -392,7 +431,7 @@ module Bosh
       def get_json(url)
         status, body = get_json_with_status(url)
         raise AuthError if status == 401
-        raise DirectorError if status != 200
+        raise DirectorError, "Director HTTP #{status}" if status != 200
         body
       end
 
@@ -402,18 +441,6 @@ module Bosh
         [ status, body ]
       rescue JSON::ParserError
         raise DirectorError, "Cannot parse director response: #{body}"
-      end
-
-      def parse_error_message(status, body)
-        parsed_body = JSON.parse(body.to_s)
-
-        if parsed_body["code"] && parsed_body["description"]
-          "Director error %s: %s" % [ parsed_body["code"], parsed_body["description"] ]
-        else
-          "Director error (HTTP %s): %s" % [ status, body ]
-        end
-      rescue JSON::ParserError
-        "Director error (HTTP %s): %s" % [ status, body ]
       end
 
     end

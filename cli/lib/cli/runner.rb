@@ -77,6 +77,8 @@ module Bosh
         # Redirected bosh commands end up generating this exception (kind of goto)
       rescue Bosh::Cli::CliExit => e
         say(e.message.red)
+      rescue Bosh::Cli::DirectorError => e
+        say(e.message.red)
       rescue Bosh::Cli::CliError => e
         say("Error #{e.error_code}: #{e.message}".red)
       rescue => e
@@ -97,7 +99,6 @@ module Bosh
           end
         end
       ensure
-        say("\n")
         exit(@normal_exit ? 0 : 1)
       end
 
@@ -214,6 +215,17 @@ Currently available bosh commands are:
                                               --event|--debug|--soap   choose between different log types to track
                                               --raw                    show raw log contents (relevant for event log)
     cancel task <id>                          Cancel task once it reaches the next cancel checkpoint
+
+  Property management
+    set deployment property <deployment> <name> <value>
+    get deployment property <deployment> <name>
+    unset deployment property <deployment> <name>
+    list deployment properties <deployment>
+
+    set release property <release> <name> <value>
+    get release property <release> <name>
+    unset release property <release> <name>
+    list release properties <release>
 
   Maintenance
     cleanup                                   Remove all but several recent stemcells and releases from current
@@ -354,6 +366,7 @@ USAGE
         when "delete"
           verb_usage("delete")
           what = @args.shift
+
           case what
           when "deployment"
             usage("bosh delete deployment <name> [--force]")
@@ -364,6 +377,55 @@ USAGE
           when "release"
             usage("bosh delete release <name> [<version>] [--force]")
             set_cmd(:release, :delete, 1..3)
+          end
+
+        when "set"
+          verb_usage("set")
+          arg1, arg2 = @args.shift(2)
+          case [arg1, arg2]
+          when ["release", "property"]
+            usage("bosh set release property <release> <name> <value>")
+            set_cmd(:property_management, :release_set, 3)
+          when ["deployment", "property"]
+            usage("bosh set deployment property <deployment> <name> <value>")
+            set_cmd(:property_management, :deployment_set, 3)
+          end
+
+        when "unset"
+          verb_usage("unset")
+          arg1, arg2 = @args.shift(2)
+          case [arg1, arg2]
+          when ["release", "property"]
+            usage("bosh unset release property <release> <name>")
+            set_cmd(:property_management, :release_unset, 2)
+          when ["deployment", "property"]
+            usage("bosh unset deployment property <deployment> <name>")
+            set_cmd(:property_management, :deployment_unset, 2)
+          end
+
+        when "get"
+          verb_usage("get")
+          arg1, arg2 = @args.shift(2)
+          case [arg1, arg2]
+          when ["release", "property"]
+            usage("bosh get release property <release> <name>")
+            set_cmd(:property_management, :release_get, 2)
+          when ["deployment", "property"]
+            usage("bosh get deployment property <deployment> <name>")
+            set_cmd(:property_management, :deployment_get, 2)
+          end
+
+        when "list"
+          verb_usage("list")
+          arg1, arg2 = @args.shift(2)
+
+          case [arg1, arg2]
+          when ["deployment", "properties"]
+            usage("bosh list deployment properties <deployment> [--terse]")
+            set_cmd(:property_management, :deployment_list, 1..2)
+          when ["release", "properties"]
+            usage("bosh list release properties <release> [--terse]")
+            set_cmd(:property_management, :release_list, 1..2)
           end
 
         when "reset"
@@ -441,7 +503,11 @@ USAGE
           "upload"   => "release <path>\nstemcell <path>",
           "verify"   => "release <path>\nstemcell <path>",
           "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [<version>] [--force]",
-          "generate" => "package <name>\njob <name>"
+          "generate" => "package <name>\njob <name>",
+          "set"      => "release property <release> <name> <value>\ndeployment property <deployment> <name> <value>",
+          "unset"    => "release property <release><name>\ndeployment property <deployment> <name>",
+          "get"      => "release property <release> <name>\ndeployment property <deployment> <name> <value>",
+          "list"     => "deployment properties\nrelease properties"
         }
 
         @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])

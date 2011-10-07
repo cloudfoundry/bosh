@@ -3,7 +3,7 @@ module Bosh::Cli::Command
     include Bosh::Cli::DeploymentHelper
 
     def show_current
-      say(deployment ? "Current deployment is '#{deployment}'" : "Deployment not set")
+      say(deployment ? "Current deployment is '#{deployment.green}'" : "Deployment not set")
     end
 
     def set_current(name)
@@ -47,10 +47,10 @@ module Bosh::Cli::Command
         config.target_name = status["name"]
         config.target_version = status["version"]
         config.target_uuid = status["uuid"]
-        say "WARNING! Your target has been changed to #{full_target_name}!"
+        say "#{"WARNING!".red} Your target has been changed to `#{target.red}'!"
       end
 
-      say "Deployment set to '#{manifest_filename}'"
+      say "Deployment set to '#{manifest_filename.green}'"
       config.deployment = manifest_filename
       config.save
     end
@@ -59,12 +59,12 @@ module Bosh::Cli::Command
       auth_required
       recreate = options.include?("--recreate")
 
-      new_manifest = prepare_deployment_manifest
+      manifest_yaml = prepare_deployment_manifest(:yaml => true)
 
       desc = "to #{target_name.green} using '#{deployment.green}' deployment manifest"
       say "You are about to start the deployment #{desc}"
 
-      inspect_deployment_changes(new_manifest) if interactive?
+      inspect_deployment_changes(YAML.load(manifest_yaml)) if interactive?
 
       say "Deploying #{desc}..."
       nl
@@ -73,7 +73,7 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      status, body = director.deploy(deployment, :recreate => recreate)
+      status, body = director.deploy(manifest_yaml, :recreate => recreate)
 
       responses = {
         :done          => "Deployed #{desc}",

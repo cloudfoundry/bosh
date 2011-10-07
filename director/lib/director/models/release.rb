@@ -4,6 +4,7 @@ module Bosh::Director::Models
     one_to_many :packages
     one_to_many :templates
     one_to_many :deployments
+    one_to_many  :properties, :class => "Bosh::Director::Models::ReleaseProperty"
 
     def validate
       validates_presence :name

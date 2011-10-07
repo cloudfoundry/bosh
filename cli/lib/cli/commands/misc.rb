@@ -154,7 +154,7 @@ module Bosh::Cli::Command
       config.set_alias(:target, status["uuid"], director_url) unless status["uuid"].blank?
 
       if deployment
-        say("WARNING! Your deployment has been unset")
+        say("WARNING! Your deployment has been unset".red)
         config.deployment = nil
       end
 

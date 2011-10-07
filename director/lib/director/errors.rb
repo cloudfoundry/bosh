@@ -62,9 +62,9 @@ module Bosh::Director
    ["ReleaseManifestNotFound", BAD_REQUEST, 30003, "Release manifest not found"],
    ["ReleaseExistingJobHashMismatch", BAD_REQUEST, 30004,
     "The existing job with the same name and version has a different hash"],
-   ["ReleaseNotFound",         NOT_FOUND,   30005, "Release: \"%s\" doesn't exist"],
+   ["ReleaseNotFound",         NOT_FOUND,   30005, "Release \"%s\" doesn't exist"],
    ["ReleaseVersionNotFound",  NOT_FOUND,   30006, "Release \"%s\" version \"%s\" doesn't exist"],
-   ["ReleaseInUse",            BAD_REQUEST, 50006, "Release: \"%s\" is in use by these deployments: %s"],
+   ["ReleaseInUse",            BAD_REQUEST, 50006, "Release \"%s\" is in use by these deployments: %s"],
    ["ReleaseVersionInUse",     BAD_REQUEST, 50007, "Release \"%s\" version \"%s\" is in use by these deployments: %s"],
 
    ["ValidationInvalidType",   BAD_REQUEST, 40000, "Field: \"%s\" did not match the required type: \"%s\" in: %s"],
@@ -95,8 +95,12 @@ module Bosh::Director
    ["InstanceInvalidIndex",    BAD_REQUEST, 90001, "Invalid job index: \"%s\""],
    ["InvalidRequest",          BAD_REQUEST, 90002, "Invalid request: \"%s\""],
 
-   ["ResourceError",           BAD_REQUEST,  100001, "Error fetching resource %s: %s"],
-   ["ResourceNotFound",        NOT_FOUND,    100002, "Resource %s not found"],
+   ["ResourceError",           BAD_REQUEST, 100001, "Error fetching resource %s: %s"],
+   ["ResourceNotFound",        NOT_FOUND,   100002, "Resource %s not found"],
+
+   ["PropertyAlreadyExists",   BAD_REQUEST, 110001, "Property \"%s\" already exists for %s \"%s\"" ],
+   ["PropertyInvalid",         BAD_REQUEST, 110002, "Property is invalid: %s" ],
+   ["PropertyNotFound",        NOT_FOUND,   110003, "Property \"%s\" not found for %s \"%s\"" ]
 
   ].each do |e|
     class_name, response_code, error_code, format = e

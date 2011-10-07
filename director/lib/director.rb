@@ -55,6 +55,8 @@ require "director/job_updater"
 require "director/lock"
 require "director/nats_rpc"
 require "director/package_compiler"
+require "director/property_manager"
+require "director/property_scope"
 require "director/release_manager"
 require "director/resource_manager"
 require "director/resource_pool_updater"
@@ -118,6 +120,7 @@ module Bosh::Director
       @user_manager       = UserManager.new
       @instance_manager   = InstanceManager.new
       @resource_manager   = ResourceManager.new
+      @property_manager   = PropertyManager.new
       @logger             = Config.logger
     end
 
@@ -472,6 +475,47 @@ module Bosh::Director
     get "/resources/:id" do
       tmp_file = @resource_manager.get_resource(params[:id])
       send_disposable_file(tmp_file, :type => "application/x-gzip")
+    end
+
+    # Property management
+    before "/deployments/:name/properties*" do
+      @property_manager.scope = DeploymentPropertyScope.new(params[:name])
+    end
+
+    before "/releases/:name/properties*" do
+      @property_manager.scope = ReleasePropertyScope.new(params[:name])
+    end
+
+    [ :releases, :deployments ].each do |scope|
+      get "/#{scope}/:name/properties" do
+        properties = @property_manager.get_properties.map do |property|
+          { "name" => property.name, "value" => property.value }
+        end
+
+        Yajl::Encoder.encode(properties)
+      end
+
+      get "/#{scope}/:name/properties/:property" do
+        property = @property_manager.get_property(params[:property])
+        Yajl::Encoder.encode("value" => property.value)
+      end
+
+      post "/#{scope}/:name/properties", :consumes => [:json] do
+        payload = json_decode(request.body)
+        @property_manager.create_property(payload["name"], payload["value"])
+        status(204)
+      end
+
+      put "/#{scope}/:name/properties/:property", :consumes => [:json] do
+        payload = json_decode(request.body)
+        @property_manager.update_property(params[:property], payload["value"])
+        status(204)
+      end
+
+      delete "/#{scope}/:name/properties/:property" do
+        @property_manager.delete_property(params[:property])
+        status(204)
+      end
     end
 
     get "/info" do

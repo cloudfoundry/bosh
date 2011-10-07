@@ -94,6 +94,13 @@ module Bosh::Director
           end
         end
 
+        @event_log.begin_stage("Deleting properties", release.properties.count)
+        release.properties.each do |property|
+          @event_log.track(property.name) do
+            property.destroy
+          end
+        end
+
         if @errors.empty? || @force
           @event_log.begin_stage("Deleting release versions", release.versions.count)
           release.versions.each do |release_version|
@@ -101,6 +108,7 @@ module Bosh::Director
               release_version.destroy
             end
           end
+
           release.destroy
         end
       end

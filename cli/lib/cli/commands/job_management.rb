@@ -20,7 +20,8 @@ module Bosh::Cli::Command
 
     def change_job_state(operation, *args)
       auth_required
-      new_manifest = prepare_deployment_manifest
+      manifest_yaml = prepare_deployment_manifest(:yaml => true)
+      manifest = YAML.load(manifest_yaml)
 
       unless [:start, :stop, :restart, :recreate].include?(operation)
         err("Unknown operation `#{operation}': supported operations are `start', `stop', `restart', `recreate'")
@@ -74,7 +75,7 @@ module Bosh::Cli::Command
 
       if interactive?
         # TODO: refactor inspect_deployment_changes to decouple changeset structure and rendering
-        other_changes_present = inspect_deployment_changes(new_manifest, :show_empty_changeset => false)
+        other_changes_present = inspect_deployment_changes(manifest, :show_empty_changeset => false)
         if other_changes_present && !force
           err "Cannot perform job management when other deployment changes are present. Please use `--force' to override."
         end
@@ -86,7 +87,7 @@ module Bosh::Cli::Command
 
       say "Deploying #{deployment_desc}..."
 
-      status, body = director.change_job_state(new_manifest["name"], deployment, job, index, new_state)
+      status, body = director.change_job_state(manifest["name"], manifest_yaml, job, index, new_state)
 
       responses = {
         :done          => "Deployed #{deployment_desc}\n#{completion_desc}",

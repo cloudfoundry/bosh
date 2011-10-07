@@ -529,6 +529,78 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "property management" do
+
+      def payload(params)
+        { "CONTENT_TYPE" => "application/json", :input => Yajl::Encoder.encode(params)}
+      end
+
+      it "REST API for creating, updating, getting and deleting deployment properties" do
+        deployment = Bosh::Director::Models::Deployment.make(:name => "mycloud")
+
+        get "/deployments/mycloud/properties/foo"
+        last_response.status.should == 404
+
+        get "/deployments/othercloud/properties/foo"
+        last_response.status.should == 404
+
+        post "/deployments/mycloud/properties", {}, payload(:name => "foo", :value => "bar")
+        last_response.status.should == 204
+
+        get "/deployments/mycloud/properties/foo"
+        last_response.status.should == 200
+        Yajl::Parser.parse(last_response.body)["value"].should == "bar"
+
+        get "/deployments/othercloud/properties/foo"
+        last_response.status.should == 404
+
+        put "/deployments/mycloud/properties/foo", {}, payload(:value => "baz")
+        last_response.status.should == 204
+
+        get "/deployments/mycloud/properties/foo"
+        Yajl::Parser.parse(last_response.body)["value"].should == "baz"
+
+        delete "/deployments/mycloud/properties/foo"
+        last_response.status.should == 204
+
+        get "/deployments/mycloud/properties/foo"
+        last_response.status.should == 404
+      end
+
+      it "REST API for creating, updating, getting and deleting release properties" do
+        release = Bosh::Director::Models::Release.make(:name => "appcloud")
+
+        get "/releases/appcloud/properties/foo"
+        last_response.status.should == 404
+
+        get "/deployments/othercloud/properties/foo"
+        last_response.status.should == 404
+
+        post "/releases/appcloud/properties", {}, payload(:name => "foo", :value => "bar")
+        last_response.status.should == 204
+
+        get "/releases/appcloud/properties/foo"
+        last_response.status.should == 200
+        Yajl::Parser.parse(last_response.body)["value"].should == "bar"
+
+        get "/deployments/othercloud/properties/foo"
+        last_response.status.should == 404
+
+        put "/releases/appcloud/properties/foo", {}, payload(:value => "baz")
+        last_response.status.should == 204
+
+        get "/releases/appcloud/properties/foo"
+        Yajl::Parser.parse(last_response.body)["value"].should == "baz"
+
+        delete "/releases/appcloud/properties/foo"
+        last_response.status.should == 204
+
+        get "/releases/appcloud/properties/foo"
+        last_response.status.should == 404
+      end
+
+    end
+
   end
 
 end

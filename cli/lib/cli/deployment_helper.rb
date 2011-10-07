@@ -1,7 +1,8 @@
 module Bosh::Cli
   module DeploymentHelper
 
-    def prepare_deployment_manifest
+    def prepare_deployment_manifest(options = {})
+      # TODO: extract to helper class
       err("Please choose deployment first") unless deployment
 
       manifest_filename = deployment
@@ -10,17 +11,50 @@ module Bosh::Cli
         err("Missing deployment at '#{deployment}'")
       end
 
-      new_manifest = load_yaml_file(manifest_filename)
+      manifest = load_yaml_file(manifest_filename)
+      if manifest["name"].blank?
+        err("Deployment name not found in the deployment manifest")
+      end
 
-      if new_manifest["target"]
+      if !manifest["release"] || manifest["release"]["name"].blank?
+        err("Release name not found in the deployment manifest")
+      end
+
+      compiler = DeploymentManifestCompiler.new(File.read(manifest_filename))
+      deployment_properties = {}
+      release_properties = {}
+
+      begin
+        say "Getting deployment and release properties from director..."
+        deployment_properties = director.list_properties("deployment", manifest["name"])
+        release_properties = director.list_properties("release", manifest["release"]["name"])
+
+      rescue Bosh::Cli::DirectorError
+        say "Unable to get properties list from director, trying without it..."
+      end
+
+      say "Compiling deployment manifest..."
+      compiler.deployment_properties = deployment_properties.inject({}) do |h, property|
+        h[property["name"]] = property["value"]; h
+      end
+
+      compiler.release_properties = release_properties.inject({}) do |h, property|
+        h[property["name"]] = property["value"]; h
+      end
+
+      compiled_manifest_yaml = compiler.result
+
+      compiled_manifest = YAML.load(compiled_manifest_yaml)
+
+      if compiled_manifest["target"]
         err manifest_target_upgrade_notice
       end
 
-      if new_manifest["name"].blank? || new_manifest["release"].blank? || new_manifest["director_uuid"].blank?
-        err("Invalid manifest for '#{deployment}': name, release and director UUID are all required")
+      if compiled_manifest["name"].blank? || compiled_manifest["release"].blank? || compiled_manifest["director_uuid"].blank?
+        err("Invalid manifest `#{File.basename(deployment)}': name, release and director UUID are all required")
       end
 
-      new_manifest
+      options[:yaml] ? compiled_manifest_yaml : compiled_manifest
     end
 
     # Interactive walkthrough of deployment changes, expected to bail out of CLI using 'cancel_deployment'
