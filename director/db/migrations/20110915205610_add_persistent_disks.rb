@@ -1,6 +1,3 @@
-$:.unshift(File.expand_path("../../../lib", __FILE__))
-require "director"
-
 Sequel.migration do
   up do
     create_table(:persistent_disks) do
@@ -11,12 +8,17 @@ Sequel.migration do
       Boolean :active, :default => false
     end
 
-    Bosh::Director::Models::Instance.each do |instance|
-      next unless instance.disk_cid
-      Bosh::Director::Models::PersistentDisk.create(:disk_cid => instance.disk_cid,
-                                                    :size => instance.disk_size,
-                                                    :instance_id => instance.id,
-                                                    :active => true)
+    self[:instances].each do |instance|
+      next unless instance[:disk_cid]
+
+      new_disk_attrs = {
+        :disk_cid => instance[:disk_cid],
+        :size => instance[:disk_size],
+        :instance_id => instance[:id],
+        :active => true
+      }
+
+      self[:persistent_disks].insert(new_disk_attrs)
     end
 
     alter_table(:instances) do
@@ -30,14 +32,18 @@ Sequel.migration do
       add_column(:disk_size, Integer, :default => 0)
       add_column(:disk_cid, String)
     end
-    Bosh::Director::Models::PersistentDisk.each do |disk|
-      next unless disk.active
-      instance = disk.instance
-      instance.disk_cid = disk.disk_cid
-      instance.disk_size = disk.size
-      instance.save
-      disk.destroy
+
+    self[:persistent_disks].each do |disk|
+      next unless disk[:active]
+
+      instance_attrs = {
+        :disk_cid => disk[:disk_cid],
+        :disk_size => disk[:size]
+      }
+
+      self[:instances].filter(:id => disk[:instance_id]).update(instance_attrs)
     end
+
     drop_table(:persistent_disks)
   end
 end
