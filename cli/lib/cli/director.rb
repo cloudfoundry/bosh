@@ -102,7 +102,9 @@ module Bosh
       end
 
       def delete_stemcell(name, version, options = {})
-        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, :log_type => "event", :quiet => options[:quiet])
+        track_options = { :log_type => "event" }
+        track_options[:quiet] = options[:quiet] if options.has_key?(:quiet)
+        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, track_options)
       end
 
       def delete_deployment(name, options = {})
@@ -123,7 +125,10 @@ module Bosh
 
         url += "?#{query_params.join("&")}" if query_params.size > 0
 
-        request_and_track(:delete, url, nil, nil, :log_type => "event", :quiet => options[:quiet])
+        track_options = { :log_type => "event" }
+        track_options[:quiet] = options[:quiet] if options.has_key?(:quiet)
+
+        request_and_track(:delete, url, nil, nil, track_options)
       end
 
       def deploy(filename, options = {})
