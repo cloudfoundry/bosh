@@ -104,7 +104,7 @@ describe Bosh::Cli::Director do
     end
 
     it "deletes stemcell" do
-      @director.should_receive(:request_and_track).with(:delete, "/stemcells/ubuntu/123", nil, nil, :log_type=>"event").and_return(true)
+      @director.should_receive(:request_and_track).with(:delete, "/stemcells/ubuntu/123", nil, nil, :log_type=>"event", :quiet => nil).and_return(true)
       @director.delete_stemcell("ubuntu", "123")
     end
 
@@ -114,12 +114,12 @@ describe Bosh::Cli::Director do
     end
 
     it "deletes release (non-force)" do
-      @director.should_receive(:request_and_track).with(:delete, "/releases/za", nil, nil, :log_type=>"event").and_return(true)
+      @director.should_receive(:request_and_track).with(:delete, "/releases/za", nil, nil, :log_type=>"event", :quiet => nil).and_return(true)
       @director.delete_release("za")
     end
 
     it "deletes release (force)" do
-      @director.should_receive(:request_and_track).with(:delete, "/releases/zb?force=true", nil, nil, :log_type=>"event").and_return(true)
+      @director.should_receive(:request_and_track).with(:delete, "/releases/zb?force=true", nil, nil, :log_type=>"event", :quiet => nil).and_return(true)
       @director.delete_release("zb", :force => true)
     end
 
