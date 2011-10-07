@@ -22,40 +22,62 @@ module Bosh::Director
 
       def perform
         @logger.info("Processing update release")
-        @event_log.begin_stage("Update release", 3)
+        @event_log.begin_stage("Updating release", 3)
 
-        track_and_log("Extract release") do
-          @release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
-          extract_release
-        end
-
-        track_and_log("Verify manifest") do
-          @release_manifest_file = File.join(@tmp_release_dir, "release.MF")
-          verify_manifest
-        end
+        extract_release
+        verify_manifest
 
         release_lock = Lock.new("lock:release:#{@release_name}")
-        release_lock.lock do
-          @release = Models::Release.find_or_create(:name => @release_name)
-          process_release
-        end
+        release_lock.lock { process_release }
+
         "/releases/#{@release_name}/#{@release_version}"
       rescue Exception => e
         # cleanup
         if @release_version_entry && !@release_version_entry.new?
-          if @release_version_entry
-            @release_version_entry.remove_all_packages
-            @release_version_entry.remove_all_templates
-            @release_version_entry.destroy
-          end
+          @release_version_entry.remove_all_packages
+          @release_version_entry.remove_all_templates
+          @release_version_entry.destroy
         end
         raise e
       ensure
-        FileUtils.rm_rf(@tmp_release_dir)
+        FileUtils.rm_rf(@tmp_release_dir) if File.exists?(@tmp_release_dir)
         # TODO: delete task status file or cleanup later?
       end
 
+      def extract_release
+        track_and_log("Extracting release") do
+          begin
+            release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
+            tar_output = `tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1`
+            raise ReleaseInvalidArchive.new($?.exitstatus, tar_output) if $?.exitstatus != 0
+          ensure
+            FileUtils.rm(release_tgz) if File.exists?(release_tgz)
+          end
+        end
+      end
+
+      def verify_manifest
+        track_and_log("Verifying manifest") do
+          manifest_file = File.join(@tmp_release_dir, "release.MF")
+          raise ReleaseManifestNotFound unless File.file?(manifest_file)
+
+          @release_manifest = YAML.load_file(manifest_file)
+          normalize_manifest
+
+          @release_name = @release_manifest["name"]
+          @release_version = @release_manifest["version"]
+        end
+
+        # TODO: make sure all jobs are there
+        # TODO: make sure there are no extra jobs
+
+        # TODO: make sure all packages are there
+        # TODO: make sure there are no extra packages
+      end
+
       def process_release
+        @release = Models::Release.find_or_create(:name => @release_name)
+
         track_and_log("Save release version") do
           @release_version_entry = Models::ReleaseVersion.new(:release => @release, :version => @release_version)
           raise ReleaseAlreadyExists unless @release_version_entry.valid?
@@ -65,50 +87,22 @@ module Bosh::Director
         resolve_package_dependencies(@release_manifest["packages"])
 
         @packages = {}
-        @event_log.begin_stage("Creating/Verifying new packages", @release_manifest["packages"].count)
-        @release_manifest["packages"].each do |package_meta|
-          @logger.info("Checking if package: #{package_meta["name"]}:#{package_meta["version"]} already " +
-                        "exists in release #{@release.pretty_inspect}")
-          package = Models::Package[:release_id => @release.id,
-                                    :name => package_meta["name"],
-                                    :version => package_meta["version"]]
+        process_packages
 
+        process_jobs
+      end
 
-          track_and_log("#{package_meta["name"]}/#{package_meta["version"]}") do
-            if package.nil?
-              @logger.info("Creating new package #{package_meta["name"]}/#{package_meta["version"]}")
-              package = create_package(package_meta)
-            else
-              @logger.info("Package already exists: #{package.pretty_inspect}, verifying that it's the same")
-              # TODO: make sure package dependencies have not changed
-              raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
-              @logger.info("Package verified")
-            end
-          end
-
-          @packages[package_meta["name"]] = package
-          @release_version_entry.add_package(package)
+      def normalize_manifest
+        ["name", "version"].each do |property|
+          @release_manifest[property] = @release_manifest[property].to_s
         end
 
-        @event_log.begin_stage("Creating/Verifying new jobs", @release_manifest["jobs"].count)
-        @release_manifest["jobs"].each do |job_meta|
-          @logger.info("Checking if job: #{job_meta["name"]}:#{job_meta["version"]} already " +
-                       "exists in release #{@release.pretty_inspect}")
-          template = Models::Template[:release_id => @release.id,
-                                      :name => job_meta["name"],
-                                      :version => job_meta["version"]]
+        @release_manifest["packages"].each do |package_meta|
+          ["name", "version", "sha1"].each { |property| package_meta[property] = package_meta[property].to_s }
+        end
 
-          track_and_log("#{job_meta["name"]}/#{job_meta["version"]}") do
-            if template.nil?
-                @logger.info("Creating new template #{job_meta["name"]}/#{job_meta["version"]}")
-                template = create_job(job_meta)
-            else
-              @logger.info("Template already exists: #{template.pretty_inspect}, verifying that it's the same")
-              raise ReleaseExistingJobHashMismatch if template.sha1 != job_meta["sha1"]
-              @logger.info("Template verified")
-            end
-          end
-          @release_version_entry.add_template(template)
+        @release_manifest["jobs"].each do |job_meta|
+          ["name", "version", "sha1"].each { |property| job_meta[property] = job_meta[property].to_s }
         end
       end
 
@@ -129,48 +123,121 @@ module Bosh::Director
         end
       end
 
-      def extract_release
-        @logger.info("Extracting release")
+      def process_packages
+        @logger.info("Checking for new packages in release")
 
-        output = `tar -C #{@tmp_release_dir} -xzf #{@release_tgz} 2>&1`
-        raise ReleaseInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
-        FileUtils.rm(@release_tgz)
-      end
+        new_packages = []
+        existing_packages = []
 
-      def verify_manifest
-        @logger.info("Verifying manifest")
-
-        raise ReleaseManifestNotFound unless File.file?(@release_manifest_file)
-        @release_manifest = YAML.load_file(@release_manifest_file)
-
-        normalize_manifest
-
-        @release_name = @release_manifest["name"]
-        @release_version = @release_manifest["version"]
-
-        # TODO: make sure all jobs are there
-        # TODO: make sure there are no extra jobs
-
-        # TODO: make sure all packages are there
-        # TODO: make sure there are no extra packages
-      end
-
-      def normalize_manifest
-        ["name", "version"].each { |property| @release_manifest[property] = @release_manifest[property].to_s }
         @release_manifest["packages"].each do |package_meta|
-          ["name", "version", "sha1"].each { |property| package_meta[property] = package_meta[property].to_s }
+          package_attrs = {
+            :release_id => @release.id,
+            :name => package_meta["name"],
+            :version => package_meta["version"]
+          }
+
+          package = Models::Package[package_attrs]
+          if package.nil?
+            new_packages << package_meta
+          else
+            existing_packages << [ package, package_meta ]
+          end
         end
+
+        if new_packages.size > 0
+          @event_log.begin_stage("Creating new packages", new_packages.size)
+          new_packages.each do |package_meta|
+            package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
+            @event_log.track(package_desc) do
+              @logger.info("Creating new package `#{package_desc}'")
+              package = create_package(package_meta)
+              register_package(package)
+            end
+          end
+        end
+
+        if existing_packages.size > 0
+          n_packages = existing_packages.size
+          @event_log.begin_stage("Processing #{n_packages} existing package#{n_packages > 1 ? "s" : ""}", 1)
+          @event_log.track("Verifying checksums") do
+            existing_packages.each do |package, package_meta|
+              package_desc = "#{package.name}/#{package.version}"
+              @logger.info("Package `#{package_desc}' already exists, verifying checksum")
+              # TODO: make sure package dependencies have not changed
+              raise ReleaseExistingPackageHashMismatch if package.sha1 != package_meta["sha1"]
+              @logger.info("Package `#{package_desc}' verified")
+              register_package(package)
+            end
+          end
+        end
+      end
+
+      def register_package(package)
+        @packages[package.name] = package
+        @release_version_entry.add_package(package)
+      end
+
+      def process_jobs
+        @logger.info("Checking for new jobs in release")
+
+        new_jobs = []
+        existing_jobs = []
 
         @release_manifest["jobs"].each do |job_meta|
-          ["name", "version", "sha1"].each { |property| job_meta[property] = job_meta[property].to_s }
+          template_attrs = {
+            :release_id => @release.id,
+            :name => job_meta["name"],
+            :version => job_meta["version"]
+          }
+
+          template = Models::Template[template_attrs]
+          if template.nil?
+            new_jobs << job_meta
+          else
+            existing_jobs << [ template, job_meta ]
+          end
         end
+
+        if new_jobs.size > 0
+          @event_log.begin_stage("Creating new jobs", new_jobs.size)
+          new_jobs.each do |job_meta|
+            job_desc = "#{job_meta["name"]}/#{job_meta["version"]}"
+            @event_log.track(job_desc) do
+              @logger.info("Creating new template #{job_desc}")
+              template = create_job(job_meta)
+              register_template(template)
+            end
+          end
+        end
+
+        if existing_jobs.size > 0
+          n_jobs = existing_jobs.size
+          @event_log.begin_stage("Processing #{n_jobs} existing job#{n_jobs > 1 ? "s" : ""}", 1)
+          @event_log.track("Verifying checksums") do
+            existing_jobs.each do |template, job_meta|
+              job_desc = "#{template.name}/#{template.version} (#{job_meta["sha1"]})"
+              @logger.info("Job `#{job_desc}' already exists, verifying checksum")
+              raise ReleaseExistingJobHashMismatch if template.sha1 != job_meta["sha1"]
+              @logger.info("Job `#{job_desc}' verified")
+              register_template(template)
+            end
+          end
+        end
+      end
+
+      def register_template(template)
+        @release_version_entry.add_template(template)
       end
 
       def create_package(package_meta)
-        package = Models::Package.new(:release => @release,
-                                      :name => package_meta["name"],
-                                      :version => package_meta["version"],
-                                      :sha1 => package_meta["sha1"])
+        package_attrs = {
+          :release => @release,
+          :name => package_meta["name"],
+          :version => package_meta["version"],
+          :sha1 => package_meta["sha1"]
+        }
+
+        package = Models::Package.new(package_attrs)
         package.dependency_set = package_meta["dependencies"]
 
         @logger.info("Creating package: #{package.name}")
@@ -188,10 +255,14 @@ module Bosh::Director
       end
 
       def create_job(job_meta)
-        template = Models::Template.new(:release => @release,
-                                        :name => job_meta["name"],
-                                        :version => job_meta["version"],
-                                        :sha1 => job_meta["sha1"])
+        template_attrs = {
+          :release => @release,
+          :name => job_meta["name"],
+          :version => job_meta["version"],
+          :sha1 => job_meta["sha1"]
+        }
+
+        template = Models::Template.new(template_attrs)
 
         @logger.info("Processing job: #{template.name}")
         job_tgz = File.join(@tmp_release_dir, "jobs", "#{template.name}.tgz")
