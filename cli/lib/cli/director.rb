@@ -101,8 +101,8 @@ module Bosh
         upload_and_track("/releases", "application/x-compressed", filename, :log_type => "event")
       end
 
-      def delete_stemcell(name, version)
-        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, :log_type => "event")
+      def delete_stemcell(name, version, options = {})
+        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, :log_type => "event", :quiet => options[:quiet])
       end
 
       def delete_deployment(name, options = {})
@@ -123,7 +123,7 @@ module Bosh
 
         url += "?#{query_params.join("&")}" if query_params.size > 0
 
-        request_and_track(:delete, url, nil, nil, :log_type => "event")
+        request_and_track(:delete, url, nil, nil, :log_type => "event", :quiet => options[:quiet])
       end
 
       def deploy(filename, options = {})
@@ -247,10 +247,11 @@ module Bosh
         poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
         start_time    = Time.now
+        quiet         = options[:quiet] || false
 
         task = DirectorTask.new(self, task_id, log_type)
 
-        say("Tracking task output for task##{task_id}...")
+        say("Tracking task output for task##{task_id}...") unless quiet
 
         renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
         renderer.time_adjustment = get_time_difference
@@ -263,10 +264,10 @@ module Bosh
 
           if output
             no_output_yet = false
-            renderer.add_output(output)
+            renderer.add_output(output) unless quiet
           end
 
-          if no_output_yet && polls % 10 == 0
+          if no_output_yet && polls % 10 == 0 && !quiet
             say("Task state is '%s', waiting for output..." % [ state ])
           end
 
@@ -289,8 +290,12 @@ module Bosh
           sleep(poll_interval)
         end
 
-        renderer.add_output(task.flush_output)
-        renderer.finish(state)
+        unless quiet
+          renderer.add_output(task.flush_output)
+          renderer.finish(state)
+        end
+
+        return result if quiet
 
         if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
           confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")
