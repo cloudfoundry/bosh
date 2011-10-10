@@ -16,7 +16,9 @@ GEM
       rbx-require-relative (> 0.0.4)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
+    log4r (1.1.9)
     mime-types (1.16)
+    nokogiri (1.4.4)
     rake (0.8.7)
     rbx-require-relative (0.0.5)
     rcov (0.9.9)
@@ -31,6 +33,10 @@ GEM
     rspec-expectations (2.3.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.3.0)
+    ruby-atmos (0.4)
+      log4r (>= 1.1.9)
+      nokogiri (>= 1.4.4)
+      ruby-hmac (>= 0.4.0)
     ruby-debug (0.10.4)
       columnize (>= 0.1)
       ruby-debug-base (~> 0.10.4.0)
@@ -44,6 +50,7 @@ GEM
       columnize (>= 0.3.1)
       linecache19 (>= 0.5.11)
       ruby-debug-base19 (>= 0.11.19)
+    ruby-hmac (0.4.0)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
     simplecov (0.4.2)
@@ -67,6 +74,7 @@ DEPENDENCIES
   rcov
   rcov_analyzer (>= 0.2)
   rspec (= 2.3.0)
+  ruby-atmos
   ruby-debug
   ruby-debug19
   simplecov
