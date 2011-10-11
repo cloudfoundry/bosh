@@ -3,6 +3,7 @@
 module Bosh::Agent
   class Platform::Ubuntu::Logrotate
     DEFAULT_MAX_LOG_FILE_SIZE = "50M"
+    DEFAULT_EXTRA_DIR = "extra"
 
     def initialize(spec)
       @spec = spec
@@ -12,6 +13,9 @@ module Bosh::Agent
     def install
       base_dir = Bosh::Agent::Config.base_dir
       size = max_log_file_size
+      extra = extra_dir
+
+      Dir.mkdir("#{@system_root}/etc/logrotate.d/#{extra}")
 
       Template.write do |t|
         t.src 'platform/ubuntu/templates/logrotate.erb'
@@ -26,6 +30,10 @@ module Bosh::Agent
       else
         DEFAULT_MAX_LOG_FILE_SIZE
       end
+    end
+
+    def extra_dir
+      DEFAULT_EXTRA_DIR
     end
   end
 end
