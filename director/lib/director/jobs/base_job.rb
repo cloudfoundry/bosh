@@ -77,11 +77,13 @@ module Bosh::Director
         logger.info("Task took #{Duration.duration(ended - started)} to process.")
       end
 
-      def task_checkpoint
+      def task_cancelled?
         task = Models::Task[@task_id]
-        if task && (task.state == "cancelling" || task.state == "timeout")
-          raise TaskCancelled.new(@task_id)
-        end
+        task && (task.state == "cancelling" || task.state == "timeout")
+      end
+
+      def task_checkpoint
+        raise TaskCancelled.new(@task_id) if task_cancelled?
       end
 
       def track_and_log(task)
