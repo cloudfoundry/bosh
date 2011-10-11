@@ -274,6 +274,32 @@ describe Bosh::Director::PackageCompiler do
         }
       end
     end
-  end
 
+    it "should cancel package compilation" do
+      package = Bosh::Director::Models::Package.make(:release => @release,
+                                                     :name => "test_pkg",
+                                                     :version => 33,
+                                                     :blobstore_id => "package-blob",
+                                                     :sha1 => "package sha1")
+      @template_spec.stub!(:packages).and_return([package])
+      @release_version.add_package(package)
+
+      @compilation_config.stub!(:network).and_return(@network)
+      @compilation_config.stub!(:workers).and_return(1)
+      @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
+      @compilation_config.stub!(:env).and_return({})
+
+      @network.should_receive(:allocate_dynamic_ip).and_return(255)
+      @network.should_receive(:network_settings).with(255, ["dns", "gateway"]).and_return({"ip" => "1.2.3.4"})
+      @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
+
+      job = Bosh::Director::Jobs::BaseJob.new
+      job.stub!(:task_cancelled?).and_return(true)
+      package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan, job)
+      package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
+      lambda {
+        package_compiler.compile
+      }.should raise_error(Bosh::Director::TaskCancelled)
+    end
+  end
 end

@@ -43,7 +43,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       package_compiler = mock("package_compiler")
 
       Bosh::Director::DeploymentPlanCompiler.stub!(:new).with(@deployment_plan).and_return(deployment_plan_compiler)
-      Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan).and_return(package_compiler)
+      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
+      Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan, update_deployment_job).and_return(package_compiler)
 
       @deployment_plan.should_receive(:deployment=).with(deployment)
 
@@ -57,7 +58,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       package_compiler.should_receive(:compile)
       deployment_plan_compiler.should_receive(:bind_configuration)
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       update_deployment_job.prepare
 
       check_event_log do |events|
