@@ -194,7 +194,12 @@ module Bosh::Director
     def disk_info
       # retrieve list of mounted disks from the agent
       return @disk_list if @disk_list
-      @disk_list = agent.list_disk
+      begin
+        @disk_list = agent.list_disk
+      rescue
+        # old agents don't support list_disk rpc
+        [@instance.persistent_disk_cid]
+      end
     end
 
     def delete_disk(disk, agent, vm_cid)
