@@ -17,8 +17,7 @@ describe Bosh::Agent::Message::UnmountDisk do
     Bosh::Agent::Message::DiskUtil.stub!(:mount_entry).and_return('/dev/sdy1 /foomount fstype')
 
     handler = Bosh::Agent::Message::UnmountDisk.new
-    handler.stub!(:lsof_guard)
-    handler.stub!(:umount_guard)
+    Bosh::Agent::Message::DiskUtil.stub!(:umount_guard)
 
     handler.unmount(["4"]).should == { :message => "Unmounted /dev/sdy1 on /foomount"}
   end
@@ -30,7 +29,6 @@ describe Bosh::Agent::Message::UnmountDisk do
     Bosh::Agent::Message::DiskUtil.stub!(:mount_entry).and_return(nil)
 
     handler = Bosh::Agent::Message::UnmountDisk.new
-    handler.stub!(:lsof_guard)
     handler.stub!(:umount_guard)
 
     handler.unmount(["4"]).should == { :message => "Unknown mount for partition: /dev/sdx1" }
