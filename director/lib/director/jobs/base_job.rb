@@ -57,7 +57,7 @@ module Bosh::Director
 
             logger.info("Done")
             task.state = :done
-            task.result = result
+            task.result = truncate_str(result.to_s)
             task.timestamp = Time.now
             task.save
           rescue Exception => e
@@ -68,7 +68,7 @@ module Bosh::Director
               logger.error("#{e} - #{e.backtrace.join("\n")}")
               task.state = :error
             end
-            task.result = e.to_s
+            task.result = truncate_str(e.to_s)
             task.timestamp = Time.now
             task.save
           end
@@ -90,6 +90,16 @@ module Bosh::Director
         @event_log.track(task) do |ticker|
           @logger.info(task)
           yield ticker if block_given?
+        end
+      end
+
+      def self.truncate_str(str, len = 128)
+        etc = "..."
+        stripped = str.strip[0..len]
+        if stripped.length > len
+          stripped.gsub(/\s+?(\S+)?$/, "") + etc
+        else
+          stripped
         end
       end
     end
