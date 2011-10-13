@@ -181,7 +181,7 @@ module Bosh::Agent
     end
 
     class UnmountDisk < Base
-      GUARD_RETRIES = 300
+      GUARD_RETRIES = 600
       GUARD_SLEEP = 1
 
       def self.long_running?; true; end
@@ -197,7 +197,6 @@ module Bosh::Agent
 
         if DiskUtil.mount_entry(partition)
           @block, @mountpoint = DiskUtil.mount_entry(partition).split
-          lsof_guard
           umount_guard
           logger.info("Unmounted #{@block} on #{@mountpoint}")
           return {:message => "Unmounted #{@block} on #{@mountpoint}" }
@@ -207,30 +206,17 @@ module Bosh::Agent
         end
       end
 
-      def lsof_guard
-        lsof_attempts = GUARD_RETRIES
-        until lsof_output = `lsof -t +D #{@mountpoint}`.empty?
-          sleep GUARD_SLEEP
-          lsof_attempts -= 1
-          if lsof_attempts == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed lsof guard #{@block} on #{@mountpoint}: #{lsof_output}"
-          end
-        end
-        logger.info("Unmount lsof_guard (attempts: #{GUARD_RETRIES-lsof_attempts})")
-      end
-
       def umount_guard
         umount_attempts = GUARD_RETRIES
         loop {
-          umount_output = `umount #{@mountpoint}`
+          umount_output = `umount #{@mountpoint} 2>&1`
           if $?.exitstatus == 0
             break
-          else
+          elsif umount_attempts != 0 and umount_output =~ /device is busy/ #errno == EBUSY
             sleep GUARD_SLEEP
             umount_attempts -= 1
-            if umount_attempts == 0
-              raise Bosh::Agent::MessageHandlerError, "Failed to umount #{@block} on #{@mountpoint}: #{umount_output}"
-            end
+          else
+            raise Bosh::Agent::MessageHandlerError, "Failed to umount #{@block} on #{@mountpoint}: #{umount_output}"
           end
         }
         logger.info("Unmount umount_guard (attempts: #{GUARD_RETRIES-umount_attempts})")
