@@ -23,7 +23,8 @@ describe Bosh::Agent::Message::State do
       "agent_id"      => "007",
       "vm"            => "zb",
       "job_state"     => nil,
-      "bosh_protocol" => Bosh::Agent::BOSH_PROTOCOL
+      "bosh_protocol" => Bosh::Agent::BOSH_PROTOCOL,
+      "ntp"           => { "message" => Bosh::Agent::NTP::FILE_MISSING }
     }
     handler.stub!(:job_state).and_return
     handler.state.should == initial_state

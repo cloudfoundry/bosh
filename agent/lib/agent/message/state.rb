@@ -18,6 +18,7 @@ module Bosh::Agent
 
         response["job_state"] = job_state
         response["bosh_protocol"] = Bosh::Agent::BOSH_PROTOCOL
+        response["ntp"] = Bosh::Agent::NTP.offset
 
         response
 
