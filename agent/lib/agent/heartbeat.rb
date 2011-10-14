@@ -61,7 +61,10 @@ module Bosh::Agent
     #       "system": {"percent" => "82"},
     #       "ephemeral": {"percent" => "5"},
     #       "persistent": {"percent" => "94"}
-    #     }
+    #     },
+    #   "ntp": {
+    #       "offset": "-0.06423",
+    #       "timestamp": "14 Oct 11:13:19"
     #   }
     # }
 
@@ -77,7 +80,11 @@ module Bosh::Agent
 
       vitals = monit_vitals.merge("disk" => disk_usage)
 
-      Yajl::Encoder.encode("job" => job_name, "index" => index, "job_state" => job_state, "vitals" => vitals)
+      Yajl::Encoder.encode("job" => job_name,
+                           "index" => index,
+                           "job_state" => job_state,
+                           "vitals" => vitals,
+                           "ntp" => Bosh::Agent::NTP.offset)
     end
 
   end

@@ -103,7 +103,8 @@ describe Bosh::Agent::Heartbeat do
           "ephemeral" => { "percent" => "4" },
           "persistent" => { "percent" => "3" }
         }
-      }
+      },
+      "ntp" => { "message" => Bosh::Agent::NTP::FILE_MISSING }
     }
 
     @nats.should_receive(:publish) do |*args|
