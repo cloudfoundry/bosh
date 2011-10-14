@@ -46,6 +46,10 @@ module Bosh
 
         agent_pid = fork do
           ENV["BUNDLE_GEMFILE"] = File.join(agent_dir, 'Gemfile')
+          # exec will actually fork off another process (due to shell expansion),
+          # so in order to kill all these new processes when cleaning up we need them
+          # in a single process group.
+          Process.setpgid(0, 0)
           exec "ruby #{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
         end
 
@@ -53,12 +57,13 @@ module Bosh
 
         FileUtils.mkdir_p(File.join(@base_dir, "running_vms"))
         FileUtils.touch(File.join(@base_dir, "running_vms", agent_pid.to_s))
+
         agent_pid.to_s
       end
 
       def delete_vm(vm_name)
         agent_pid = vm_name.to_i
-        Process.kill("INT", agent_pid)
+        Process.kill("INT", -1 * agent_pid) # Kill the whole process group
       ensure
         FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_name))
       end

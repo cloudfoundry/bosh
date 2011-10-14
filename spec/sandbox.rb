@@ -81,6 +81,7 @@ module Bosh
           kill_process(WORKER_PID, "QUIT")
           kill_process(DIRECTOR_PID)
           kill_process(HM_PID)
+          kill_agents
 
           Redis.new(:host => "localhost", :port => 63795).flushdb
 
@@ -121,14 +122,7 @@ module Bosh
         end
 
         def stop
-          Dir[File.join(AGENT_TMP_PATH, "running_vms", "*")].each do |vm|
-            begin
-              Process.kill("INT", File.basename(vm).to_i)
-            rescue Errno::ESRCH
-              puts "Running VM found but no agent with #{agent_pid} is running"
-            end
-          end
-
+          kill_agents
           kill_process(WORKER_PID)
           kill_process(DIRECTOR_PID)
           kill_process(BLOBSTORE_PID)
@@ -143,6 +137,17 @@ module Bosh
         end
 
         private
+
+        def kill_agents
+          Dir[File.join(AGENT_TMP_PATH, "running_vms", "*")].each do |vm|
+            begin
+              agent_pid = File.basename(vm).to_i
+              Process.kill("INT", -1 * agent_pid) # Kill the whole process group
+            rescue Errno::ESRCH
+              puts "Running VM found but no agent with #{agent_pid} is running"
+            end
+          end
+        end
 
         def run_with_pid(cmd, pidfile, opts = {})
           env = opts[:env] || {}
