@@ -267,7 +267,6 @@ module Bosh::Agent
       status = Process.waitpid(pid) rescue nil
     rescue => e
       # TODO: send alert to HM
-      signal_pid(nil)
       @logger.error("Failed to run Monit: #{e.inspect} #{e.backtrace}")
 
       [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
