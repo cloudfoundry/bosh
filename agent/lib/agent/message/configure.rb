@@ -193,7 +193,6 @@ module Bosh::Agent
       end
 
       # Poor mans idempotency
-      # FIXME: fails if original file is missing
       def update_file(data, path)
         name = File.basename(path)
         dir = File.dirname(path)
@@ -202,7 +201,12 @@ module Bosh::Agent
         if_tmp_file.write(data)
         if_tmp_file.flush
 
-        old = Digest::SHA1.file(path).hexdigest
+        old = nil
+        begin
+          old = Digest::SHA1.file(path).hexdigest
+        rescue Errno::ENOENT
+          logger.debug("missing file: #{path}")
+        end
         new = Digest::SHA1.file(if_tmp_file.path).hexdigest
 
         updated = false
@@ -211,6 +215,7 @@ module Bosh::Agent
           updated = true
         end
         if_tmp_file.close
+        FileUtils.rm_rf(if_tmp_file.path)
         updated
       end
 
@@ -218,8 +223,11 @@ module Bosh::Agent
         ntp_servers = @settings['ntp'].join(" ")
         unless ntp_servers.empty?
           logger.info("Configure ntp-servers: #{ntp_servers}")
+          update_file(ntp_servers, '/var/vcap/bosh/etc/ntpserver')
           output = `ntpdate #{ntp_servers}`
           logger.info(output)
+        else
+          logger.warning("no ntp-servers configured")
         end
       end
 

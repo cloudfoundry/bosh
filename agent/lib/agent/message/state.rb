@@ -17,6 +17,8 @@ module Bosh::Agent
         end
 
         response["job_state"] = job_state
+        response["ntp"] = Bosh::Agent::NTP.offset
+
         response
 
       rescue Bosh::Agent::StateError => e

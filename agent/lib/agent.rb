@@ -32,6 +32,7 @@ require "agent/heartbeat"
 require "agent/state"
 require "agent/file_matcher"
 require "agent/file_aggregator"
+require "agent/ntp"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
