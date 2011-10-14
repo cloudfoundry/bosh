@@ -100,6 +100,14 @@ touch ${bosh_app_dir}/monit/empty.monitrc
 
 cp empty_state.yml ${bosh_app_dir}/bosh/state.yml
 
+# setup crontab for root to use ntpdate every 15 minutes
+mkdir -p ${bosh_app_dir}/bosh/log
+cp ntpdate ${bosh_app_dir}/bosh/bin
+chmod 0755 ${bosh_app_dir}/bosh/bin/ntpdate
+echo "0,15,30,45 * * * * ${bosh_app_dir}/bosh/bin/ntpdate" > /tmp/ntpdate.cron
+crontab -u root /tmp/ntpdate.cron
+rm /tmp/ntpdate.cron
+
 # TODO: We really want to lock these down - but we're having issues
 # with both our components and users apps assuming this is writable
 # Tempfile and friends - we'll punt on this for 4/12 and revisit it
