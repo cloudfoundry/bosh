@@ -97,6 +97,12 @@ module Bosh
         body
       end
 
+      def list_vms(name)
+        status, body = get_json_with_status("/deployments/#{name}/vms")
+        raise DeploymentNotFound, "Deployment `#{name}' not found" if status == 404
+        body
+      end
+
       def upload_release(filename)
         upload_and_track("/releases", "application/x-compressed", filename, :log_type => "event")
       end
