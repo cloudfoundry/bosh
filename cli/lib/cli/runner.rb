@@ -221,6 +221,7 @@ Currently available bosh commands are:
 
   Misc
     status                                    Show current status (current target, user, deployment info etc.)
+    vms [<deployment>]                        List all VMs in deployment
     target [<name>] [<alias>]                 Choose director to talk to (optionally creating an alias)
     login [<username>] [<password>]           Use given credentials for the subsequent interactions with director
     logout                                    Forgets currently saved credentials
@@ -411,6 +412,10 @@ USAGE
           else
             unknown_operation(kind)
           end
+
+        when "vms"
+          usage("bosh vms <deployment>")
+          set_cmd(:vms, :list, 0..1)
 
         when "cleanup"
           usage("bosh cleanup")
