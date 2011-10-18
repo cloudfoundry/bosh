@@ -414,7 +414,7 @@ USAGE
           end
 
         when "vms"
-          usage("bosh vms <deployment>")
+          usage("bosh vms [<deployment>]")
           set_cmd(:vms, :list, 0..1)
 
         when "cleanup"

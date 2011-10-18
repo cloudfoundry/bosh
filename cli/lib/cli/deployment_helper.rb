@@ -1,9 +1,9 @@
 module Bosh::Cli
   module DeploymentHelper
 
-    def prepare_deployment_manifest
-      err("Please choose deployment first") unless deployment
-
+    def prepare_deployment_manifest(options = {})
+      # TODO: extract to helper class
+      deployment_required
       manifest_filename = deployment
 
       if !File.exists?(manifest_filename)

@@ -88,6 +88,10 @@ module Bosh::Cli
         err("Please choose target first") if target.nil?
       end
 
+      def deployment_required
+        err("Please choose deployment first") if deployment.nil?
+      end
+
       def check_if_release_dir
         if !in_release_dir?
           err "Sorry, your current directory doesn't look like release directory"
