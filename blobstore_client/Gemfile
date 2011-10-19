@@ -4,6 +4,7 @@ gem "rake"
 gem "httpclient"
 gem "aws-s3"
 gem "uuidtools"
+gem "ruby-atmos"
 
 group :test do
   gem "ci_reporter"
