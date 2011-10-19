@@ -5,21 +5,6 @@ module Bosh::Agent
     # Mostly for tests so we can override these without touching Config
     attr_accessor :logger, :nats, :agent_id, :state
 
-    def self.enable(interval)
-      unless EM.reactor_running?
-        raise Bosh::Agent::HeartbeatError, "Event loop must be running in order to enable heartbeats"
-      end
-
-      EM.add_periodic_timer(interval) do
-        begin
-          new.send_via_mbus
-        rescue => e
-          Config.logger.warn("Error sending heartbeat: #{e}")
-          Config.logger.warn(e.backtrace.join("\n"))
-        end
-      end
-    end
-
     def initialize
       @logger   = Config.logger
       @nats     = Config.nats
@@ -33,19 +18,16 @@ module Bosh::Agent
         return
       end
 
-      if @state["job"].blank?
-        @logger.info("No job, skipping the heartbeat")
-        return
-      end
-
       if @nats.nil?
         raise Bosh::Agent::HeartbeatError, "NATS should be initialized in order to send heartbeats"
       end
 
-      @nats.publish("hm.agent.heartbeat.#{@agent_id}", heartbeat_payload)
+      @nats.publish("hm.agent.heartbeat.#{@agent_id}", heartbeat_payload) do
+        yield if block_given?
+        @logger.debug("Heartbeat delivered")
+      end
       @logger.info("Heartbeat sent")
     end
-
 
     # Heartbeat payload example:
     # {
