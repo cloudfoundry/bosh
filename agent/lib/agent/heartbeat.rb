@@ -2,6 +2,8 @@ module Bosh::Agent
 
   class Heartbeat
 
+    @@timer = nil
+
     # Mostly for tests so we can override these without touching Config
     attr_accessor :logger, :nats, :agent_id, :state
 
@@ -10,7 +12,12 @@ module Bosh::Agent
         raise Bosh::Agent::HeartbeatError, "Event loop must be running in order to enable heartbeats"
       end
 
-      EM.add_periodic_timer(interval) do
+      if @@timer
+        Config.logger.warn("Heartbeat timer already running, canceling")
+        self.disable
+      end
+
+      @@timer = EM.add_periodic_timer(interval) do
         begin
           new.send_via_mbus
         rescue => e
@@ -18,6 +25,12 @@ module Bosh::Agent
           Config.logger.warn(e.backtrace.join("\n"))
         end
       end
+    end
+
+    def self.disable
+      Config.logger.info("Disabled heartbeat")
+      @@timer.cancel if @@timer
+      @@timer = nil
     end
 
     def initialize

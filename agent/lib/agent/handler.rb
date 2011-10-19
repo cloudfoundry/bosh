@@ -67,10 +67,19 @@ module Bosh::Agent
             @logger.error "Agent will be running but alerts will NOT be properly processed"
           else
             @logger.debug("SMTP: #{@smtp_password}")
-            Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
+            @processor = Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
           end
         end
       end
+    rescue NATS::ConnectError => e
+      @logger.error("NATS connection error: #{e.message}")
+      Bosh::Agent::Heartbeat.disable
+      if @processor
+        @processor.stop
+        @processor = nil
+      end
+      sleep 0.1
+      retry
     end
 
     def shutdown
