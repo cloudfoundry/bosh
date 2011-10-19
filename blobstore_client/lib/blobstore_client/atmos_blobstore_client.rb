@@ -14,7 +14,7 @@ module Bosh
       end
 
       def create_file(file)
-        obj_conf = {:data => file, :length => file.size}
+        obj_conf = {:data => file, :length => File.size(file.path)}
         @atmos.create(obj_conf).aoid
       end
 
