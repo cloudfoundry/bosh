@@ -20,7 +20,7 @@ apt-get install -y --force-yes --no-install-recommends \
   dnsutils tcpdump tshark iputils-arping curl wget libcurl3 libcurl3-dev \
   bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
   zip unzip nfs-common flex psmisc apparmor-utils mg htop iptables \
-  sysstat traceroute
+  sysstat traceroute module-assistant debhelper
 
 dpkg -l > ${bosh_app_dir}/bosh/stemcell_dpkg_l.out
 
@@ -80,6 +80,27 @@ ln -s /etc/sv/agent /etc/service/agent
 cp sysstat /etc/default/sysstat
 
 ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
+
+# replace vmxnet3 from included kernel
+dpkg -i vmware-tools-vmxnet3-modules-source_1.0.36.0-2_amd64.deb
+( 
+  cd /usr/src
+  tar zxvf vmware-tools-vmxnet3-modules.tar.gz
+  cd modules/vmware-tools-vmxnet3-modules/vmxnet3-only
+
+  module_dir=`ls -d /lib/modules/2.6.*-server | tail -1`
+  kernel_uname_r=`basename ${module_dir}`
+
+  # Work around Makefile autodetection of environment - kernel version mismatch
+  # as the chroot reports the host OS version
+  sed "s/^VM_UNAME.*$/VM_UNAME = ${kernel_uname_r}/" Makefile > Makefile.vmxnet3_bosh
+
+  install_dir="${module_dir}/updates/vmxnet3"
+  mkdir -p $install_dir
+
+  make -f Makefile.vmxnet3_bosh
+  cp vmxnet3.ko $install_dir/
+)
 
 # vmbuilder will default to dhcp when no IP is specified - wipe
 echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
