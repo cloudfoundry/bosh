@@ -5,7 +5,7 @@ gem "blobstore_client", ">=0.3.4"
 gem "esxmq" , "0.0.13"
 gem "eventmachine"
 gem "httpclient"
-gem "nats"
+gem "nats", "=0.4.22.beta.1"
 gem "netaddr"
 gem "rack-test"         # needed for console
 gem "rake"
