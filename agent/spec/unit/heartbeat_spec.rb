@@ -111,12 +111,14 @@ describe Bosh::Agent::Heartbeat do
       payload = Yajl::Parser.parse(args[1])
       payload.should == expected_payload
     end
+    @heartbeat.should_receive(:message_sent)
     @heartbeat.send_via_mbus
   end
 
-  it "doesn't send heartbeats when there is no job" do
+  it "sends heartbeats when there is no job" do
     @state.write({ "job" => nil, "configuration_hash" => "deadbeef" })
-    @nats.should_not_receive(:publish)
+    @nats.should_receive(:publish)
+    @heartbeat.should_receive(:message_sent)
     @heartbeat.send_via_mbus
   end
 
