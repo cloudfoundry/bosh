@@ -286,6 +286,14 @@ module VSphereCloud
       end
     end
 
+    def try_twice
+      begin
+        yield
+      rescue RuntimeError
+        yield
+      end
+    end
+
     def delete_vm(vm_cid)
       with_thread_name("delete_vm(#{vm_cid})") do
         @logger.info("Deleting vm: #{vm_cid}")
@@ -296,20 +304,22 @@ module VSphereCloud
                                                                      "config.hardware.device", "name"],
                                            :ensure => ["config.hardware.device"])
 
-        question = properties["runtime.question"]
-        if question
-          choices = question.choice
-          @logger.info("VM is blocked on a question: #{question.text}, " +
-                           "providing default answer: #{choices.choice_info[choices.default_index].label}")
-          client.answer_vm(vm, question.id, choices.choice_info[choices.default_index].key)
-          power_state = client.get_property(vm, Vim::VirtualMachine, "runtime.powerState")
-        else
-          power_state = properties["runtime.powerState"]
-        end
+        try_twice do
+          question = properties["runtime.question"]
+          if question
+            choices = question.choice
+            @logger.info("VM is blocked on a question: #{question.text}, " +
+                         "providing default answer: #{choices.choice_info[choices.default_index].label}")
+                         client.answer_vm(vm, question.id, choices.choice_info[choices.default_index].key)
+                         power_state = client.get_property(vm, Vim::VirtualMachine, "runtime.powerState")
+          else
+            power_state = properties["runtime.powerState"]
+          end
 
-        if power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
-          @logger.info("Powering off vm: #{vm_cid}")
-          client.power_off_vm(vm)
+          if power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
+            @logger.info("Powering off vm: #{vm_cid}")
+            client.power_off_vm(vm)
+          end
         end
 
         # Detach any persistent disks in case they were not detached from the instance
@@ -325,18 +335,20 @@ module VSphereCloud
             @logger.info("Detaching: #{virtual_disk.backing.file_name}")
             config.device_change << create_delete_device_spec(virtual_disk)
           end
-          client.reconfig_vm(vm, config)
+          try_twice { client.reconfig_vm(vm, config) }
           @logger.info("Detached #{persistent_disks.size} persistent disk(s)")
         end
 
-        client.delete_vm(vm)
+        try_twice { client.delete_vm(vm) }
         @logger.info("Deleted vm: #{vm_cid}")
 
         # Delete env.iso and VM specific files managed by the director
-        datastore = get_primary_datastore(devices)
-        datastore_name = client.get_property(datastore, Vim::Datastore, "name")
-        vm_name = properties["name"]
-        client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
+        try_twice do
+          datastore = get_primary_datastore(devices)
+          datastore_name = client.get_property(datastore, Vim::Datastore, "name")
+          vm_name = properties["name"]
+          client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
+        end
       end
     end
 
