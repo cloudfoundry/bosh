@@ -7,6 +7,9 @@ module Bosh::Agent
       new.start
     end
 
+    MAX_NATS_RETRIES = 10
+    NATS_RECONNECT_SLEEP = 0.5
+
     def initialize
       @agent_id  = Config.agent_id
       @logger    = Config.logger
@@ -18,6 +21,8 @@ module Bosh::Agent
       @smtp_user      = Config.smtp_user
       @smtp_password  = Config.smtp_password
       @smtp_port      = Config.smtp_port
+
+      @hbp = Bosh::Agent::HeartbeatProcessor.new
 
       @lock = Mutex.new
 
@@ -67,10 +72,17 @@ module Bosh::Agent
             @logger.error "Agent will be running but alerts will NOT be properly processed"
           else
             @logger.debug("SMTP: #{@smtp_password}")
-            Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
+            @processor = Bosh::Agent::AlertProcessor.start("127.0.0.1", @smtp_port, @smtp_user, @smtp_password)
           end
         end
       end
+    rescue NATS::ConnectError => e
+      @nats_fail_count += 1
+      @logger.error("NATS connection error: #{e.message}")
+      sleep NATS_RECONNECT_SLEEP
+      # only retry a few times and then exit which lets the agent recover if we change credentials
+      retry if @nats_fail_count < MAX_NATS_RETRIES
+      @logger.fatal("Unable to reconnect to NATS after #{MAX_NATS_RETRIES} retries, exiting...")
     end
 
     def shutdown
@@ -81,12 +93,13 @@ module Bosh::Agent
     def on_connect
       subscription = "agent.#{@agent_id}"
       @nats.subscribe(subscription) { |raw_msg| handle_message(raw_msg) }
+      @nats_fail_count = 0
     end
 
     def setup_heartbeats
       interval = Config.heartbeat_interval.to_i
       if interval > 0
-        Bosh::Agent::Heartbeat.enable(interval)
+        @hbp.enable(interval)
         @logger.info("Heartbeats are enabled and will be sent every #{interval} seconds")
       else
         @logger.warn("Heartbeats are disabled")
