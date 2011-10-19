@@ -124,20 +124,20 @@ describe Bosh::Cli::Director do
     end
 
     it "deploys" do
-      @director.should_receive(:upload_and_track).with("/deployments", "text/yaml", "/path", :log_type => "event").and_return(true)
-      @director.deploy("/path")
+      @director.should_receive(:request_and_track).with(:post, "/deployments", "text/yaml", "manifest", :log_type => "event").and_return(true)
+      @director.deploy("manifest")
     end
 
     it "changes job state" do
-      @director.should_receive(:upload_and_track).
-        with("/deployments/foo/jobs/dea?state=stopped", "text/yaml", "/path", :method => :put, :log_type => "event").and_return(true)
-      @director.change_job_state("foo", "/path", "dea", nil, "stopped")
+      @director.should_receive(:request_and_track).
+        with(:put, "/deployments/foo/jobs/dea?state=stopped", "text/yaml", "manifest", :log_type => "event").and_return(true)
+      @director.change_job_state("foo", "manifest", "dea", nil, "stopped")
     end
 
     it "changes job instance state" do
-      @director.should_receive(:upload_and_track).
-        with("/deployments/foo/jobs/dea/0?state=detached", "text/yaml", "/path", :method => :put, :log_type => "event").and_return(true)
-      @director.change_job_state("foo", "/path", "dea", 0, "detached")
+      @director.should_receive(:request_and_track).
+        with(:put, "/deployments/foo/jobs/dea/0?state=detached", "text/yaml", "manifest", :log_type => "event").and_return(true)
+      @director.change_job_state("foo", "manifest", "dea", 0, "detached")
     end
 
     it "gets task state" do

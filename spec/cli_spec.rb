@@ -460,8 +460,10 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     it "generates release and deploys it via simple manifest" do
       assets_dir = File.dirname(spec_asset("foo"))
-      release_filename = spec_asset("test_release/dev_releases/test_release-1.tgz") # It's a test release created with bosh (see spec/assets/test_release)
-      stemcell_filename = spec_asset("valid_stemcell.tgz") # It's a dummy stemcell (ubuntu-stemcell 1)
+      # Test release created with bosh (see spec/assets/test_release)
+      release_filename = spec_asset("test_release/dev_releases/test_release-1.tgz")
+      # Dummy stemcell (ubuntu-stemcell 1)
+      stemcell_filename = spec_asset("valid_stemcell.tgz")
 
       Dir.chdir(File.join(assets_dir, "test_release")) do
         FileUtils.rm_rf("dev_releases")
@@ -494,8 +496,38 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
       run_bosh("deploy")
       run_bosh("delete deployment minimal").should =~ rx("Deleted deployment 'minimal'")
-      # TODO: test that we don't have artefacts, possibly upgrade to more featured deployment, possibly merge to the previous spec
+      # TODO: test that we don't have artefacts,
+      # possibly upgrade to more featured deployment,
+      # possibly merge to the previous spec
     end
+  end
+
+  describe "property management" do
+
+    it "can get/set/delete deployment properties" do
+      release_filename = spec_asset("valid_release.tgz")
+      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
+
+      run_bosh("target localhost:57523")
+      run_bosh("deployment #{deployment_manifest.path}")
+      run_bosh("login admin admin")
+      run_bosh("upload release #{release_filename}")
+
+      run_bosh("deploy")
+
+      run_bosh("set property foo bar").should =~ rx("Property `foo' set to `bar'")
+      run_bosh("get property foo").should =~ rx("Property `foo' value is `bar'")
+      run_bosh("set property foo baz").should =~ rx("Property `foo' set to `baz'")
+      run_bosh("unset property foo").should =~ rx("Property `foo' has been unset")
+
+      run_bosh("set property nats.user admin")
+      run_bosh("set property nats.password pass")
+
+      props = run_bosh("properties --terse")
+      props.should =~ rx("nats.user\tadmin")
+      props.should =~ rx("nats.password\tpass")
+    end
+
   end
 
 end
