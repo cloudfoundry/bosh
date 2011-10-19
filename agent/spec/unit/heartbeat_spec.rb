@@ -114,9 +114,9 @@ describe Bosh::Agent::Heartbeat do
     @heartbeat.send_via_mbus
   end
 
-  it "doesn't send heartbeats when there is no job" do
+  it "sends heartbeats when there is no job" do
     @state.write({ "job" => nil, "configuration_hash" => "deadbeef" })
-    @nats.should_not_receive(:publish)
+    @nats.should_receive(:publish)
     @heartbeat.send_via_mbus
   end
 
