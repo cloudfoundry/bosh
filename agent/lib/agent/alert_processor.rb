@@ -7,7 +7,9 @@ module Bosh::Agent
     class Error < StandardError; end
 
     def self.start(host, port, user, password)
-      new(host, port, user, password).start
+      processor = new(host, port, user, password)
+      processor.start
+      processor
     end
 
     def initialize(host, port, smtp_user, smtp_password)
@@ -23,8 +25,18 @@ module Bosh::Agent
         raise Error, "Cannot start SMTP server as event loop is not running"
       end
 
-      EM.start_server(@host, @port, Bosh::Agent::SmtpServer, :user => @smtp_user, :password => @smtp_password, :processor => self)
+      @server = EM.start_server(@host, @port, Bosh::Agent::SmtpServer, :user => @smtp_user, :password => @smtp_password, :processor => self)
       @logger.info "Now accepting SMTP connections on address #{@host}, port #{@port}"
+    end
+
+    def stop
+      if @server
+        if EM.reactor_running?
+          EM.stop_server(@server)
+          @logger.info "Stopped alert processor"
+        end
+        @server = nil
+      end
     end
 
     # Processes raw alert received by email (i.e. from Monit).

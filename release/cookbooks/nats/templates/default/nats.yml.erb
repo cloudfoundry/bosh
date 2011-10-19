@@ -7,3 +7,10 @@ authorization:
 logtime: true
 no_epoll:  false
 no_kqueue: true
+ping:
+  interval: 5
+  max_outstanding: 2
+http:
+  port: 9222
+  user: <%= node[:nats][:user] %>
+  password: <%= node[:nats][:password] %>
