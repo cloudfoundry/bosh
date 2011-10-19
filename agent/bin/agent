@@ -37,6 +37,10 @@ opts = OptionParser.new do |opts|
     options["base_dir"] = opt
   end
 
+  opts.on("-l", "--log_level String", "Log level") do |opt|
+    options["logging"] = { "level" => opt }
+  end
+
   opts.on("-n", "--nats String", "Nats/mbus (nats://user:pass@host:port)") do |opt|
     options["mbus"] = opt
   end
