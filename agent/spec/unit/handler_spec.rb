@@ -30,18 +30,6 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
-  it "should setup hearbeats on start if interval is provided" do
-    Bosh::Agent::Config.heartbeat_interval = 20
-    Bosh::Agent::Heartbeat.should_receive(:enable).with(20)
-    Bosh::Agent::Handler.new.start
-  end
-
-  it "shouldn't attemtp setting up hearbeats on start if interval is not provided" do
-    Bosh::Agent::Config.heartbeat_interval = 0
-    Bosh::Agent::Heartbeat.should_not_receive(:enable)
-    Bosh::Agent::Handler.new.start
-  end
-
   it "should not start alert processor if alerts are disabled via config" do
     Bosh::Agent::Config.process_alerts = false
     Bosh::Agent::AlertProcessor.should_not_receive(:start)

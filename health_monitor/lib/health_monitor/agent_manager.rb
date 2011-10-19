@@ -130,9 +130,9 @@ module Bosh::HealthMonitor
         return false
       end
 
-      if vm_data["job"].nil? # Idle VMs, we don't care about them
+      # Idle VMs, we don't care about them, but we still want to track them
+      if vm_data["job"].nil?
         @logger.debug("VM with no job found: #{agent_id}")
-        return false
       end
 
       agent = @agents[agent_id]
