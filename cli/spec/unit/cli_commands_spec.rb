@@ -210,8 +210,9 @@ describe Bosh::Cli::Command::Base do
   describe Bosh::Cli::Command::JobManagement do
     before :each do
       @manifest_path = spec_asset("deployment.MF")
+      @manifest_yaml = YAML.dump({ "name" => "foo" })
       @cmd = Bosh::Cli::Command::JobManagement.new(@opts)
-      @cmd.stub!(:prepare_deployment_manifest).and_return({ "name" => "foo" })
+      @cmd.stub!(:prepare_deployment_manifest).with(:yaml => true).and_return(@manifest_yaml)
       @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:deployment).and_return(@manifest_path)
       @cmd.stub!(:target).and_return("test.com")
@@ -223,52 +224,52 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "allows starting jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "started")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "started")
       @cmd.start_job("dea")
     end
 
     it "allows starting job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "started")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "started")
       @cmd.start_job("dea", 3)
     end
 
     it "allows stopping jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "stopped")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "stopped")
       @cmd.stop_job("dea")
     end
 
     it "allows stopping job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "stopped")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.stop_job("dea", 3)
     end
 
     it "allows restarting jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "restart")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "restart")
       @cmd.restart_job("dea")
     end
 
     it "allows restart job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "restart")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "restart")
       @cmd.restart_job("dea", 3)
     end
 
     it "allows recreating jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", nil, "recreate")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "recreate")
       @cmd.recreate_job("dea")
     end
 
     it "allows recreating job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "recreate")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "recreate")
       @cmd.recreate_job("dea", 3)
     end
 
     it "allows hard stop" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "detached")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "detached")
       @cmd.stop_job("dea", 3, "--hard")
     end
 
     it "allows soft stop (= regular stop)" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_path, "dea", 3, "stopped")
+      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.stop_job("dea", 3, "--soft")
     end
 
