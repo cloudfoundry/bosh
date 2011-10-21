@@ -110,7 +110,7 @@ module Bosh::Cli::Command
     end
 
     def purge_cache
-      if cache.cache_dir != DEFAULT_CACHE_DIR
+      if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
         say("Cache directory '#{@cache.cache_dir}' differs from default, please remove manually")
       else
         FileUtils.rm_rf(cache.cache_dir)
@@ -119,7 +119,7 @@ module Bosh::Cli::Command
     end
 
     def show_target
-      say(target ? "Current target is '#{full_target_name}'" : "Target not set")
+      say(target ? "Current target is '#{full_target_name.green}'" : "Target not set")
     end
 
     def set_target(director_url, name = nil)
@@ -132,6 +132,11 @@ module Bosh::Cli::Command
       end
 
       director_url = normalize_url(director_url)
+      if director_url == target
+        say "Target already set to '#{full_target_name.green}'"
+        return
+      end
+
       director = Bosh::Cli::Director.new(director_url)
 
       if options[:director_checks]
@@ -164,6 +169,12 @@ module Bosh::Cli::Command
       if interactive? && (config.username.blank? || config.password.blank?)
         redirect :misc, :login
       end
+    end
+
+    def set_alias(name, value)
+      config.set_alias(:cli, name, value.to_s.strip)
+      config.save
+      say("Alias `#{name.green}' created for command `#{value.green}'")
     end
 
     private

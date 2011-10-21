@@ -9,7 +9,9 @@ describe Bosh::Cli::Runner do
 
   def test_cmd(args, namespace, action, cmd_args = [])
     runner = Bosh::Cli::Runner.new(args)
-    runner.parse_command!
+    runner.prepare
+    runner.dispatch
+
     runner.namespace.should == namespace
     runner.action.should    == action
     runner.args.should  == cmd_args
@@ -26,7 +28,7 @@ describe Bosh::Cli::Runner do
   end
 
   it "allows overriding global options" do
-    runner = Bosh::Cli::Runner.new(["--verbose", "--no-color", "--force", "--quiet", "--non-interactive", "release", "upload", "/path"])
+    runner = Bosh::Cli::Runner.new(["--verbose", "--no-color", "--skip-director-checks", "--quiet", "--non-interactive", "release", "upload", "/path"])
     runner.parse_options!
     runner.options[:verbose].should  == true
     runner.options[:colorize].should == false
@@ -77,54 +79,8 @@ describe Bosh::Cli::Runner do
 
     test_cmd(["tasks"], :task, :list_running)
     test_cmd(["task", "500"], :task, :track, ["500"])
-    test_cmd(["tasks", "running"], :task, :list_running)
-    test_cmd(["tasks", "recent"], :task, :list_recent)
-    test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
-  end
-
-  it "dispatches commands to appropriate methods (old school)" do
-    test_cmd(["version"], :misc, :version)
-    test_cmd(["status"], :misc, :status)
-    test_cmd(["target"], :misc, :show_target)
-    test_cmd(["target", "test"], :misc, :set_target, ["test"])
-    test_cmd(["deploy"], :deployment, :perform)
-    test_cmd(["deployment"], :deployment, :show_current)
-    test_cmd(["deployment", "test"], :deployment, :set_current, ["test"])
-    test_cmd(["deployment", "delete", "foo"], :deployment, :delete, ["foo"])
-    test_cmd(["user", "create", "admin"], :user, :create, ["admin"])
-    test_cmd(["user", "create", "admin", "12321"], :user, :create, ["admin", "12321"])
-    test_cmd(["login", "admin", "12321"], :misc, :login, ["admin", "12321"])
-    test_cmd(["logout"], :misc, :logout)
-    test_cmd(["purge"], :misc, :purge_cache)
-    test_cmd(["task", "500"], :task, :track, ["500"])
-    test_cmd(["release", "upload", "/path"], :release, :upload, ["/path"])
-    test_cmd(["release", "verify", "/path"], :release, :verify, ["/path"])
-    test_cmd(["stemcell", "verify", "/path"], :stemcell, :verify, ["/path"])
-    test_cmd(["stemcell", "upload", "/path"], :stemcell, :upload, ["/path"])
-    test_cmd(["stemcell", "delete", "a", "1"], :stemcell, :delete, ["a", "1"])
-    test_cmd(["stemcells"], :stemcell, :list)
-    test_cmd(["releases"], :release, :list)
-    test_cmd(["deployments"], :deployment, :list)
     test_cmd(["tasks"], :task, :list_running)
-    test_cmd(["tasks", "running"], :task, :list_running)
     test_cmd(["tasks", "recent"], :task, :list_recent)
     test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
   end
-
-  it "whines on extra arguments" do
-    runner = Bosh::Cli::Runner.new(["deploy", "--recreate", "me", "bla"])
-    runner.parse_command!
-    runner.namespace.should == nil
-    runner.action.should == nil
-    runner.usage_error.should == "Too many arguments: 'me', 'bla'"
-  end
-
-  it "whines on too few arguments" do
-    runner = Bosh::Cli::Runner.new(["stemcell", "upload"])
-    runner.parse_command!
-    runner.namespace.should == nil
-    runner.action.should == nil
-    runner.usage_error.should == "Not enough arguments"
-  end
-
 end

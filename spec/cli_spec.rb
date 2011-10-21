@@ -66,24 +66,29 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     OUT
   end
 
-  it "unsets deployment when target is changed" do
+  it "unsets deployment when target is changed (but only if it is a different target)" do
     run_bosh("target localhost:57523")
     run_bosh("deployment 'test2'")
+
     expect_output("target http://localhost:57523", <<-OUT)
-      WARNING! Your deployment has been unset
-      Target set to 'Test Director (http://localhost:57523) #{director_version}'
+      Target already set to 'Test Director (http://localhost:57523) #{director_version}'
     OUT
-    expect_output("target", "Current target is 'Test Director (http://localhost:57523) #{director_version}'")
+
+    expect_output("--skip-director-checks target http://local", <<-OUT)
+      WARNING! Your deployment has been unset
+      Target set to 'Unknown Director (http://local) Ver: n/a'
+    OUT
+
     expect_output("deployment", "Deployment not set")
   end
 
   it "keeps track of user associated with target" do
-    run_bosh("--force target foo")
-    run_bosh("--force login john pass")
+    run_bosh("--skip-director-checks target foo")
+    run_bosh("--skip-director-checks login john pass")
 
-    run_bosh("--force target bar")
-    run_bosh("--force login jane pass")
+    run_bosh("--skip-director-checks target bar")
 
+    run_bosh("--skip-director-checks login jane pass")
     expect_output("--skip-director-checks status", <<-OUT)
         Target         Unknown Director (http://bar) Ver: n/a
         UUID           n/a
