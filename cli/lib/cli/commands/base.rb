@@ -4,18 +4,14 @@ require "terminal-table/import"
 module Bosh::Cli
   module Command
     class Base
-
-      DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_config")
-      DEFAULT_CACHE_DIR   = File.expand_path("~/.bosh_cache")
-
       attr_reader   :cache, :config, :options, :work_dir
       attr_accessor :out, :usage
 
       def initialize(options = {})
         @options     = options.dup
         @work_dir    = Dir.pwd
-        @config      = Config.new(@options[:config] || DEFAULT_CONFIG_PATH)
-        @cache       = Cache.new(@options[:cache_dir] || DEFAULT_CACHE_DIR)
+        @config      = Config.new(@options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH)
+        @cache       = Cache.new(@options[:cache_dir] || Bosh::Cli::DEFAULT_CACHE_DIR)
       end
 
       def director

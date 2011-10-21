@@ -1,0 +1,60 @@
+<%= basic_usage %>
+Currently available bosh commands are:
+
+Deployment
+<%= command_usage(:deployment) %>
+<%= command_usage(:delete_deployment) %>
+<%= command_usage(:list_deployments) %>
+<%= command_usage(:deploy) %>
+
+Release management
+<%= command_usage(:create_release) %>
+<%= command_usage(:delete_release) %>
+<%= command_usage(:verify_release) %>
+<%= command_usage(:upload_release) %>
+<%= command_usage(:list_releases) %>
+<%= command_usage(:reset_release) %>
+
+<%= command_usage(:generate_package) %>
+<%= command_usage(:generate_job) %>
+
+Stemcells
+<%= command_usage(:upload_stemcell) %>
+<%= command_usage(:verify_stemcell) %>
+<%= command_usage(:list_stemcells) %>
+<%= command_usage(:delete_stemcell) %>
+
+User management
+<%= command_usage(:create_user) %>
+
+Job management
+<%= command_usage(:start_job) %>
+<%= command_usage(:stop_job) %>
+<%= command_usage(:restart_job) %>
+<%= command_usage(:recreate_job) %>
+
+Log management
+<%= command_usage(:fetch_logs) %>
+
+Task management
+<%= command_usage(:list_running_tasks) %>
+<%= command_usage(:list_recent_tasks) %>
+<%= command_usage(:track_task) %>
+<%= command_usage(:cancel_task) %>
+
+Property management
+<%= command_usage(:set_property) %>
+<%= command_usage(:get_property) %>
+<%= command_usage(:unset_property) %>
+<%= command_usage(:list_properties) %>
+
+Maintenance
+<%= command_usage(:cleanup) %>
+
+Misc
+<%= command_usage(:status) %>
+<%= command_usage(:list_vms) %>
+<%= command_usage(:target) %>
+<%= command_usage(:login) %>
+<%= command_usage(:logout) %>
+<%= command_usage(:purge) %>
