@@ -1,3 +1,10 @@
+module Bosh
+  module Cli
+    DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_config")
+    DEFAULT_CACHE_DIR   = File.expand_path("~/.bosh_cache")
+  end
+end
+
 require "cli/version"
 require "cli/config"
 require "cli/core_ext"
@@ -26,6 +33,7 @@ require "cli/release_builder"
 require "cli/release_compiler"
 require "cli/release_tarball"
 
+require "cli/command_definition"
 require "cli/runner"
 
 YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)

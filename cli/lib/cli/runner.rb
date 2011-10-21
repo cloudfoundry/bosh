@@ -4,501 +4,566 @@ require "highline/import"
 
 module Bosh
   module Cli
+    class ParseTreeNode < Hash
+      attr_accessor :command
+    end
 
     class Runner
+      COMMANDS = { }
+      ALL_KEYWORDS = []
 
-      attr_reader   :namespace
-      attr_reader   :action
-      attr_reader   :args
-      attr_reader   :options
+      attr_reader :usage
+      attr_reader :namespace
+      attr_reader :action
+      attr_reader :args
+      attr_reader :options
 
       def self.run(args)
         new(args).run
       end
 
       def initialize(args)
+        define_commands
         @args = args
         @options = {
           :director_checks => true,
-          :colorize        => true,
+          :colorize => true,
         }
       end
 
-      def set_cmd(namespace, action, args_range = 0)
-        unless args_range == "*" || args_range.is_a?(Range)
-          args_range = (args_range.to_i..args_range.to_i)
-        end
-
-        if args_range == "*" || args_range.include?(@args.size)
-          @namespace = namespace
-          @action    = action
-        elsif @args.size > args_range.last
-          usage_error("Too many arguments: %s" % [ @args[args_range.last..-1].map{|a| "'#{a}'"}.join(', ') ])
-        else
-          usage_error("Not enough arguments")
-        end
-      end
-
-      def unknown_operation(op)
-        if op.blank?
-          usage_error("No operation given")
-        else
-          usage_error("Unknown operation: '#{op}'")
-        end
-      end
-
-      def run
+      def prepare
+        define_commands
+        build_parse_tree
+        add_shortcuts
         parse_options!
-        parse_command!
 
         Config.interactive = !@options[:non_interactive]
         Config.colorize    = @options.delete(:colorize)
         Config.output    ||= STDOUT unless @options[:quiet]
+      end
+
+      def run
+        prepare
+        dispatch unless @namespace && @action
 
         if @namespace && @action
-          ns_class_name = @namespace.to_s.gsub(/(?:^|_)(.)/) { $1.upcase }
+          ns_class_name = @namespace.to_s.gsub(/(?:_|^)(.)/) { $1.upcase }
           klass = eval("Bosh::Cli::Command::#{ns_class_name}")
-          command = klass.new(@options)
-          command.usage = @usage
-          command.send(@action.to_sym, *@args)
-        else
-          display_usage
-        end
+          runner = klass.new(@options)
+          runner.usage = @usage
 
-        @normal_exit = true
+          action_arity = runner.method(@action.to_sym).arity
+          n_required_args = action_arity >= 0 ? action_arity : -action_arity - 1
+
+          if n_required_args > @args.size
+            err("Not enough arguments, correct usage is: bosh #{@usage}")
+          end
+          if action_arity >= 0 && n_required_args < @args.size
+            err("Too many arguments, correct usage is: bosh #{@usage}")
+          end
+
+          runner.send(@action.to_sym, *@args)
+        elsif @args.empty? || @args == ["help"]
+          say(help_message)
+        elsif @args[0] == "help"
+          cmd_args = @args[1..-1]
+          suggestions = command_suggestions(cmd_args).map do |cmd|
+            command_usage(cmd, 0)
+          end
+          if suggestions.empty?
+            unknown_command(cmd_args.join(" "))
+          else
+            say(suggestions.uniq.join("\n"))
+          end
+        else
+          unknown_command(@args.join(" "))
+
+          suggestions = command_suggestions(@args).map { |cmd| "bosh #{cmd.usage}" }
+          if suggestions.size > 0
+            say("Did you mean any of these?")
+            say("\n" + suggestions.uniq.join("\n"))
+          end
+          exit(1)
+        end
 
       rescue OptionParser::InvalidOption => e
-        puts(e.message.red)
-        puts("\n")
-        puts(basic_usage)
-      rescue Bosh::Cli::AuthError
-        say("Director auth error")
+        say(e.message.red + "\n" + basic_usage)
+        exit(1)
       rescue Bosh::Cli::GracefulExit => e
         # Redirected bosh commands end up generating this exception (kind of goto)
-      rescue Bosh::Cli::CliExit => e
+      rescue Bosh::Cli::CliExit, Bosh::Cli::DirectorError => e
         say(e.message.red)
-      rescue Bosh::Cli::DirectorError => e
-        say(e.message.red)
+        exit(e.exit_code)
       rescue Bosh::Cli::CliError => e
         say("Error #{e.error_code}: #{e.message}".red)
+        exit(e.exit_code)
       rescue => e
-        if @options[:debug] || ENV["DEBUG"]
+        if @options[:debug]
           raise e
         else
-          say("BOSH CLI Error: #{e.message}".red)
-          begin
-            errfile = File.expand_path("~/.bosh_error")
-            File.open(errfile, "w") do |f|
-              f.write(e.message)
-              f.write("\n")
-              f.write(e.backtrace.join("\n"))
-            end
-            say("Error information saved in #{errfile}")
-          rescue => e
-            say("Error information couldn't be saved: #{e.message}")
-          end
+          save_exception(e)
+          exit(1)
         end
-      ensure
-        exit(@normal_exit ? 0 : 1)
+      end
+
+      def command(name, &block)
+        cmd_def = CommandDefinition.new
+        cmd_def.instance_eval(&block)
+        COMMANDS[name] = cmd_def
+        ALL_KEYWORDS.push(*cmd_def.keywords)
+      end
+
+      def find_command(name)
+        COMMANDS[name] || raise("Unknown command definition: #{name}")
+      end
+
+      def dispatch(command = nil)
+        command ||= search_parse_tree(@parse_tree)
+        command = try_alias if command.nil? && Config.interactive
+        return if command.nil?
+        @usage = command.usage
+
+        case command.route
+        when Array
+          @namespace, @action = command.route
+        when Proc
+          @namespace, @action = command.route.call(@args)
+        else
+          raise "Command definition is invalid, route should be an Array or Proc"
+        end
+      end
+
+      def define_commands
+        command :version do
+          usage "version"
+          desc  "Show version"
+          route :misc, :version
+        end
+
+        command :alias do
+          usage "alias <name> <command>"
+          desc  "Create an alias <name> for command <command>"
+          route :misc, :set_alias
+        end
+
+        command :target do
+          usage "target [<name>] [<alias>]"
+          desc  "Choose director to talk to (optionally creating an alias). " +
+                "If no arguments given, show currently targeted director"
+          route { |args| (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target] }
+        end
+
+        command :deployment do
+          usage "deployment [<name>]"
+          desc  "Choose deployment to work with (it also updates current target)"
+          route { |args| (args.size > 0) ? [:deployment, :set_current] : [:deployment, :show_current] }
+        end
+
+        command :deploy do
+          usage  "deploy"
+          desc   "Deploy according to the currently selected deployment manifest"
+          option "--recreate", "recreate all VMs in deployment"
+          route  :deployment, :perform
+        end
+
+        command :status do
+          usage "status"
+          desc  "Show current status (current target, user, deployment info etc.)"
+          route :misc, :status
+        end
+
+        command :login do
+          usage "login [<name>] [<password>]"
+          desc  "Provide credentials for the subsequent interactions with targeted director"
+          route :misc, :login
+        end
+
+        command :logout do
+          usage "logout"
+          desc  "Forget saved credentials for targeted director"
+          route :misc, :logout
+        end
+
+        command :purge do
+          usage "purge"
+          desc  "Purge local manifest cache"
+          route :misc, :purge_cache
+        end
+
+        command :create_release do
+          usage  "create release"
+          desc   "Create release (assumes current directory to be a release repository)"
+          route  :release, :create
+          option "--force", "bypass git dirty state check"
+          option "--final", "create production-ready release (stores artefacts in blobstore, bumps final version)"
+          option "--with-tarball", "create full release tarball (by default only manifest is created)"
+          option "--dry-run", "stop before writing release manifest (for diagnostics)"
+        end
+
+        command :create_user do
+          usage "create user [<name>] [<password>]"
+          desc  "Create user"
+          route :user, :create
+        end
+
+        command :create_package do
+          usage "create package <name>|<path>"
+          desc  "Build a single package"
+          route :package, :create
+        end
+
+        command :start_job do
+          usage  "start <job> [<index>]"
+          desc   "Start job/instance"
+          route  :job_management, :start_job
+
+          power_option "--force"
+        end
+
+        command :stop_job do
+          usage  "stop <job> [<index>]"
+          desc   "Stop job/instance"
+          route  :job_management, :stop_job
+          option "--soft", "stop process only"
+          option "--hard", "power off VM"
+
+          power_option "--force"
+        end
+
+        command :restart_job do
+          usage  "restart <job> [<index>]"
+          desc   "Restart job/instance (soft stop + start)"
+          route  :job_management, :restart_job
+
+          power_option "--force"
+        end
+
+        command :recreate_job do
+          usage "recreate <job> [<index>]"
+          desc  "Recreate job/instance (hard stop + start)"
+          route :job_management, :recreate_job
+
+          power_option "--force"
+        end
+
+        command :fetch_logs do
+          usage  "logs <job> <index>"
+          desc   "Fetch job (default) or agent (if option provided) logs"
+          route  :log_management, :fetch_logs
+          option "--agent", "fetch agent logs"
+          option "--only <filter1>[...]", "only fetch logs that satisfy given filters (defined in job spec)"
+          option "--all", "fetch all files in the job or agent log directory"
+        end
+
+        command :set_property do
+          usage "set property <name> <value>"
+          desc  "Set deployment property"
+          route :property_management, :set
+        end
+
+        command :get_property do
+          usage "get property <name>"
+          desc  "Get deployment property"
+          route :property_management, :get
+        end
+
+        command :unset_property do
+          usage "unset property <name>"
+          desc  "Unset deployment property"
+          route :property_management, :unset
+        end
+
+        command :list_properties do
+          usage  "properties"
+          desc   "List current deployment properties"
+          route  :property_management, :list
+          option "--terse", "easy to parse output"
+        end
+
+        command :generate_package do
+          usage "generate package <name>"
+          desc  "Generate package template"
+          route :package, :generate
+        end
+
+        command :generate_job do
+          usage "generate job <name>"
+          desc  "Generate job template"
+          route :job, :generate
+        end
+
+        command :upload_stemcell do
+          usage "upload stemcell <path>"
+          desc  "Upload the stemcell"
+          route :stemcell, :upload
+        end
+
+        command :upload_release do
+          usage "upload release [<path>]"
+          desc  "Upload release (<path> can point to tarball or manifest, " +
+                "defaults to the most recently created release)"
+          route :release, :upload
+        end
+
+        command :verify_stemcell do
+          usage "verify stemcell <path>"
+          desc  "Verify stemcell"
+          route :stemcell, :verify
+        end
+
+        command :verify_release do
+          usage "verify release <path>"
+          desc  "Verify release"
+          route :release, :verify
+        end
+
+        command :delete_deployment do
+          usage "delete deployment <name>"
+          desc  "Delete deployment"
+          route :deployment, :delete
+          option "--force", "ignore all errors while deleting parts of the deployment"
+        end
+
+        command :delete_stemcell do
+          usage "delete stemcell <name> <version>"
+          desc  "Delete the stemcell"
+          route :stemcell, :delete
+        end
+
+        command :delete_release do
+          usage  "delete release <name> [<version>]"
+          desc   "Delete release (or a particular release version)"
+          route  :release, :delete
+          option "--force", "ignore errors during deletion"
+        end
+
+        command :reset_release do
+          usage "reset release"
+          desc  "Reset release development environment (deletes all dev artifacts)"
+          route :release, :reset
+        end
+
+        command :cancel_task do
+          usage "cancel task <id>"
+          desc  "Cancel task once it reaches the next cancel checkpoint"
+          route :task, :cancel
+        end
+
+        command :track_task do
+          usage  "task [<task_id>|last]"
+          desc   "Show task status and start tracking its output"
+          route  :task, :track
+          option "--no-cache", "don't cache output locally"
+          option "--event|--soap|--debug", "different log types to track"
+          option "--raw", "don't beautify log"
+        end
+
+        command :list_stemcells do
+          usage "stemcells"
+          desc  "Show the list of available stemcells"
+          route :stemcell, :list
+        end
+
+        command :list_releases do
+          usage "releases"
+          desc  "Show the list of available releases"
+          route :release, :list
+        end
+
+        command :list_deployments do
+          usage "deployments"
+          desc  "Show the list of available deployments"
+          route :deployment, :list
+        end
+
+        command :list_running_tasks do
+          usage "tasks"
+          desc  "Show the list of running tasks"
+          route :task, :list_running
+        end
+
+        command :list_recent_tasks do
+          usage "tasks recent [<number>]"
+          desc  "Show <number> recent tasks"
+          route :task, :list_recent
+        end
+
+        command :list_vms do
+          usage "vms [<deployment>]"
+          desc  "List all VMs that supposed to be in a deployment"
+          route :vms, :list
+        end
+
+        command :cleanup do
+          usage "cleanup"
+          desc  "Remove all but several recent stemcells and releases from current director " +
+                "(stemcells and releases currently in use are NOT deleted)"
+          route :maintenance, :cleanup
+        end
       end
 
       def parse_options!
         opts_parser = OptionParser.new do |opts|
-          opts.on("-c", "--config FILE")    { |file|  @options[:config] = file }
-          opts.on("--cache-dir DIR")        { |dir|   @options[:cache_dir] = dir }
-          opts.on("--verbose")              {         @options[:verbose] = true }
-          opts.on("--no-color")             {         @options[:colorize] = false }
-          opts.on("--skip-director-checks") {         @options[:director_checks] = false }
-          opts.on("--force")                {         @options[:director_checks] = false }
-          opts.on("--quiet")                {         @options[:quiet] = true }
-          opts.on("--non-interactive")      {         @options[:non_interactive] = true }
-          opts.on("--debug")                {         @options[:debug] = true }
-          opts.on("-v", "--version")        {         set_cmd(:misc, :version); stop_parsing; }
-          opts.on("--help")                 {}
+          opts.on("-c", "--config FILE") { |file| @options[:config] = file }
+          opts.on("--cache-dir DIR") { |dir|  @options[:cache_dir] = dir }
+          opts.on("--verbose") { @options[:verbose] = true }
+          opts.on("--no-color") { @options[:colorize] = false }
+          opts.on("-q", "--quiet") { @options[:quiet] = true }
+          opts.on("-s", "--skip-director-checks") { @options[:director_checks] = false }
+          opts.on("-n", "--non-interactive") { @options[:non_interactive] = true }
+          opts.on("-d", "--debug") { @options[:debug] = true }
+          opts.on("-v", "--version") { dispatch(find_command(:version)); }
         end
 
         @args = opts_parser.order!(@args)
       end
 
-      def stop_parsing
-        @stopped_parsing = true
+      def build_parse_tree
+        @parse_tree = ParseTreeNode.new
+
+        COMMANDS.each_pair do |id, command|
+          p = @parse_tree
+          n_kw = command.keywords.size
+
+          keywords = command.keywords.each_with_index do |kw, i|
+            p[kw] ||= ParseTreeNode.new
+            p = p[kw]
+            p.command = command if i == n_kw - 1
+          end
+        end
+      end
+
+      def add_shortcuts
+        { "st" => "status", "props" => "properties" }.each do |short, long|
+          @parse_tree[short] = @parse_tree[long]
+        end
       end
 
       def basic_usage
-        <<-OUT
-usage: bosh [--verbose] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
-            [--no-color] [--skip-director-checks] [--quiet] [--non-interactive]
-            command [<args>]
+        <<-OUT.gsub(/^\s{10}/, "")
+          usage: bosh [--verbose] [--config|-c <FILE>] [--cache-dir <DIR] [--force]
+                      [--no-color] [--skip-director-checks] [--quiet] [--non-interactive]
+                      command [<args>]
         OUT
       end
 
-      def display_usage
-        if @usage
-          say @usage_error if @usage_error
-          say "Usage: #{@usage}"
-          return
-        elsif @verb_usage
-          say @verb_usage
-          return
+      def command_usage(cmd, margin = nil)
+        command = cmd.is_a?(Symbol) ? find_command(cmd) : cmd
+        usage = command.usage
+
+        margin ||= 2
+        usage_width = 25
+        desc_width = 43
+        option_width = 10
+
+        output = " " * margin
+        output << usage.ljust(usage_width) + " "
+        char_count = usage.size > usage_width ? 100 : 0
+
+        command.description.to_s.split(/\s+/).each do |word|
+          if char_count + word.size + 1 > desc_width # +1 accounts for space
+            char_count = 0
+            output << "\n" + " " * (margin + usage_width + 1)
+          end
+          char_count += word.size
+          output << word << " "
         end
 
-        say <<-USAGE
+        command.options.each do |name, value|
+          output << "\n" + " " * (margin + usage_width + 1)
+          output << name.ljust(option_width) + " "
+          # Long option name eats the whole line,
+          # short one gives space to description
+          char_count = name.size > option_width ? 100 : 0
 
-#{basic_usage}
-
-Currently available bosh commands are:
-
-  Deployment
-    deployment <name>                         Choose deployment to work with (it also updates current target)
-    delete deployment <name>                  Delete deployment
-                                              --force        ignore all errors while deleting parts of the deployment
-    deployments                               Show the list of available deployments
-    deploy [--recreate]                       Deploy according to the currently selected deployment
-
-  Releases
-    create release                            Attempt to create release (assumes current directory to contain release).
-                                              Release creation options:
-                                               --force        bypass git dirty state check
-                                               --final        create production-ready release
-                                                              (stores artefacts in blobstore, bumps final version)
-                                               --with-tarball create full release tarball
-                                                              (by default only manifest is created)
-
-    delete release <name>                     Delete release <name>
-    delete release <name> <version>           Delete version <version> of release <name>
-                                              Release deletion options:
-                                               --force        ignore all errors while deleting parts of the release
-
-    create package <name>|<path>              Build a single package
-    verify release /path/to/release.tgz       Verify release tarball
-    upload release /path/to/release.{tgz,yml} Upload release in tarball or by yml file
-    releases                                  Show the list of uploaded releases
-    reset release                             Reset release development environment (deletes all dev artifacts)
-
-    generate package <name>                   Generate package template
-    generate job <name>                       Generate job template
-
-  Stemcells
-    verify stemcell /path/to/stemcell.tgz     Verify the stemcell
-    upload stemcell /path/to/stemcell.tgz     Upload the stemcell
-    stemcells                                 Show the list of uploaded stemcells
-    delete stemcell <name> <version>          Delete the stemcell
-
-  User management
-    create user [<username>] [<password>]     Create user
-
-  Job management
-    start <job> [<index>]                     Start job/instance
-    stop  <job> [<index>] [--hard|--soft]     Stop job/instance (--soft stops processes, --hard also deletes the VM)
-    restart <job> [<index>]                   Restart job/instance (soft stop + start)
-    recreate <job> [<index>]                  Recreate job/instance (hard stop + start)
-                                              Job management options:
-                                              --force     allow job management even when local
-                                                          deployment manifest contains other changes
-
-  Log management
-    logs <job> <index> [--agent|--job]        Fetch job (default) or agent (if --agent option is given) logs
-                                              from an instance
-                                              Log management options:
-                                              --only <filter1>[,<filter2>,...] only fetch logs that satisfy
-                                                                               given filters (defined in job spec),
-                                                                               i.e. "bosh logs router 0 --only nginx"
-                                              --all                            fetch all files in the job or
-                                                                               agent log directory
-
-  Task management
-    tasks [running]                           Show the list of running tasks
-    tasks recent [<number>]                   Show <number> recent tasks
-    task [<id>|last] <options>                Show task status and start tracking its output
-                                              Tracking options:
-                                              --no-cache               don't cache task output locally
-                                              --event|--debug|--soap   choose between different log types to track
-                                              --raw                    show raw log contents (relevant for event log)
-    cancel task <id>                          Cancel task once it reaches the next cancel checkpoint
-
-  Property management
-    set property <name> <value>
-    get property <name>
-    unset property <name>
-    properties <deployment>
-
-  Maintenance
-    cleanup                                   Remove all but several recent stemcells and releases from current
-                                              director (stemcells and releases that are in use are not deleted).
-
-  Misc
-    status                                    Show current status (current target, user, deployment info etc.)
-    vms [<deployment>]                        List all VMs in deployment
-    target [<name>] [<alias>]                 Choose director to talk to (optionally creating an alias)
-    login [<username>] [<password>]           Use given credentials for the subsequent interactions with director
-    logout                                    Forgets currently saved credentials
-    purge                                     Purge local manifest cache
-
-USAGE
-      end
-
-      def parse_command!
-        return if @stopped_parsing
-        head = @args.shift
-
-        case head
-
-        when "version"
-          usage("bosh version")
-          set_cmd(:misc, :version)
-
-        when "target"
-          usage("bosh target [<name>] [<alias>]")
-          if @args.size >= 1
-            set_cmd(:misc, :set_target, 1..2)
-          else
-            set_cmd(:misc, :show_target)
-          end
-
-        when "deploy"
-          usage("bosh deploy [--recreate]")
-          set_cmd(:deployment, :perform, 0..1)
-
-        when "deployment"
-          usage("bosh deployment [<name>]")
-          if @args.size >= 1
-            if @args[0] == "delete"
-              @args.unshift(head)
-              @args[0], @args[1] = @args[1], @args[0]
-              return parse_command!
+          value.to_s.split(/\s+/).each do |word|
+            if char_count + word.size + 1 > desc_width - option_width
+              char_count = 0
+              output << "\n" + " " * (margin + usage_width + option_width + 2)
             end
-            set_cmd(:deployment, :set_current, 1)
-          else
-            set_cmd(:deployment, :show_current)
+            char_count += word.size
+            output << word << " "
           end
+        end
 
-        when "status", "st"
-          usage("bosh status")
-          set_cmd(:misc, :status)
+        output
+      end
 
-        when "login"
-          usage("bosh login [<name>] [<password>]")
-          set_cmd(:misc, :login, 0..2)
+      def help_message
+        template = File.join(File.dirname(__FILE__), "templates", "help_message.erb")
+        ERB.new(File.read(template), 4).result(binding.taint)
+      end
 
-        when "logout"
-          usage("bosh logout")
-          set_cmd(:misc, :logout)
+      def search_parse_tree(node)
+        return nil if node.nil?
+        arg = @args.shift
 
-        when "purge"
-          usage("bosh purge")
-          set_cmd(:misc, :purge_cache)
+        longer_command = search_parse_tree(node[arg])
 
-        when "create", "build"
-          verb_usage("create")
-          what = @args.shift
-          case what
-          when "release"
-            usage("bosh create release [--force] [--final] [--with-tarball] [--dry-run]")
-            set_cmd(:release, :create, 0..4)
-          when "user"
-            usage("bosh create user [<name>] [<password>]")
-            set_cmd(:user, :create, 0..2)
-          when "package"
-            usage("bosh create package <name>|<path>")
-            set_cmd(:package, :create, 1)
-          end
-
-        when "start"
-          usage("bosh start <job> [<index>] [--force]")
-          set_cmd(:job_management, :start_job, 1..3)
-
-        when "stop"
-          usage("bosh stop <job> [<index>] [--soft | --hard] [--force]")
-          set_cmd(:job_management, :stop_job, 1..4)
-
-        when "restart"
-          usage("bosh restart <job> [<index>] [--force]")
-          set_cmd(:job_management, :restart_job, 1..3)
-
-        when "recreate"
-          usage("bosh recreate <job> [<index>] [--force]")
-          set_cmd(:job_management, :recreate_job, 1..3)
-
-        when "logs"
-          usage("bosh logs <job> <index> [--agent]")
-          set_cmd(:log_management, :fetch_logs, "*")
-
-        when "generate", "gen"
-          verb_usage("generate")
-          what = @args.shift
-          case what
-          when "package"
-            usage("bosh generate package <name>")
-            set_cmd(:package, :generate, 1)
-          when "job"
-            usage("bosh generate job <name>")
-            set_cmd(:job, :generate, 1)
-          end
-
-        when "upload"
-          verb_usage("upload")
-          what = @args.shift
-          case what
-          when "stemcell"
-            usage("bosh upload stemcell <path>")
-            set_cmd(:stemcell, :upload, 1)
-          when "release"
-            usage("bosh upload release <path>")
-            set_cmd(:release, :upload, 0..1)
-          end
-
-        when "verify", "validate"
-          verb_usage("verify")
-          what = @args.shift
-          case what
-          when "stemcell"
-            usage("bosh verify stemcell <path>")
-            set_cmd(:stemcell, :verify, 1)
-          when "release"
-            usage("bosh verify release <path>")
-            set_cmd(:release, :verify, 1)
-          end
-
-        when "delete"
-          verb_usage("delete")
-          what = @args.shift
-
-          case what
-          when "deployment"
-            usage("bosh delete deployment <name> [--force]")
-            set_cmd(:deployment, :delete, 1..2)
-          when "stemcell"
-            usage("bosh delete stemcell <name> <version>")
-            set_cmd(:stemcell, :delete, 2)
-          when "release"
-            usage("bosh delete release <name> [<version>] [--force]")
-            set_cmd(:release, :delete, 1..3)
-          end
-
-        when "set"
-          verb_usage("set")
-          what = @args.shift
-          case what
-          when "property"
-            usage("bosh set property <name> <value>")
-            set_cmd(:property_management, :set, 2)
-          end
-
-        when "unset"
-          verb_usage("unset")
-          what = @args.shift
-          case what
-          when "property"
-            usage("bosh unset property <name>")
-            set_cmd(:property_management, :unset, 1)
-          end
-
-        when "get"
-          verb_usage("get")
-          what = @args.shift
-          case what
-          when  "property"
-            usage("bosh get property <name>")
-            set_cmd(:property_management, :get, 1)
-          end
-
-        when "properties", "props"
-          usage("bosh properties [--terse]")
-          set_cmd(:property_management, :list, 0..1)
-
-        when "reset"
-          what = @args.shift
-          case what
-          when "release"
-            usage("bosh reset release")
-            set_cmd(:release, :reset, 0)
-          end
-
-        when "cancel"
-          what = @args.shift
-          case what
-          when "task"
-            usage("bosh cancel task <task-id>")
-            set_cmd(:task, :cancel, 1)
-          end
-
-        when "task"
-          usage("bosh task [<task_id>|last] [--no-cache] [--event|--soap|--debug] [--raw]")
-          set_cmd(:task, :track, 0..4)
-
-        when "stemcells"
-          usage("bosh stemcells")
-          set_cmd(:stemcell, :list, 0)
-
-        when "releases"
-          usage("bosh releases")
-          set_cmd(:release, :list, 0)
-
-        when "deployments"
-          usage("bosh deployments")
-          set_cmd(:deployment, :list, 0)
-
-        when "tasks"
-          args.unshift("running") if args.size == 0
-          kind = args.shift
-          case kind
-          when "running"
-            usage("bosh tasks [running]")
-            set_cmd(:task, :list_running, 0)
-          when "recent"
-            usage("bosh tasks recent [<number>]")
-            set_cmd(:task, :list_recent, 0..1)
-          else
-            unknown_operation(kind)
-          end
-
-        when "vms"
-          usage("bosh vms [<deployment>]")
-          set_cmd(:vms, :list, 0..1)
-
-        when "cleanup"
-          usage("bosh cleanup")
-          set_cmd(:maintenance, :cleanup)
-
+        if longer_command.nil?
+          @args.unshift(arg) if arg # backtrack if needed
+          node.command
         else
-          # Try alternate verb noun order before giving up
-          verbs = ["upload", "build", "verify", "validate", "create", "delete"]
-          if @args.size >= 1 && !verbs.include?(head) && verbs.include?(@args[0])
-            @args.unshift(head)
-            @args[0], @args[1] = @args[1], @args[0]
-            return parse_command!
-          end
+          longer_command
         end
       end
 
-      def usage(msg = nil)
-        if msg
-          @usage = msg
-        else
-          @usage
+      def try_alias
+        # Tries to find best match among aliases (possibly multiple words),
+        # then unwinds it onto the remaining args and searches parse tree again.
+        # Not the most effective algorithm but does the job.
+        config = Bosh::Cli::Config.new(@options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH)
+        candidate = []
+        best_match = nil
+        save_args = @args.dup
+
+        while arg = @args.shift
+          candidate << arg
+          resolved = config.resolve_alias(:cli, candidate.join(" "))
+          if best_match && resolved.nil?
+            @args.unshift(arg)
+            break
+          end
+          best_match = resolved
+        end
+
+        if best_match.nil?
+          @args = save_args
+          return
+        end
+
+        best_match.split(/\s+/).reverse.each do |arg|
+          @args.unshift(arg)
+        end
+
+        search_parse_tree(@parse_tree)
+      end
+
+      def command_suggestions(args)
+        non_keywords = args - ALL_KEYWORDS
+
+        COMMANDS.values.select do |cmd|
+          (args & cmd.keywords).size > 0 && args - cmd.keywords == non_keywords
         end
       end
 
-      def verb_usage(verb)
-        options = {
-          "create"   => "user [<name>] [<password>]\npackage <path>\nrelease",
-          "upload"   => "release <path>\nstemcell <path>",
-          "verify"   => "release <path>\nstemcell <path>",
-          "delete"   => "deployment <name>\nstemcell <name> <version>\nrelease <name> [<version>] [--force]",
-          "generate" => "package <name>\njob <name>",
-          "set"      => "property <name> <value>",
-          "unset"    => "property <name>",
-          "get"      => "property <name>",
-        }
-
-        @verb_usage = ("What do you want to #{verb}? The options are:\n\n%s" % [ options[verb] ])
+      def unknown_command(cmd)
+        say("Command `#{cmd}' not found.")
+        say("Please use `bosh help' to get the list of bosh commands.")
       end
 
-      def usage_error(msg = nil)
-        if msg
-          @usage_error = msg
-        else
-          @usage_error
+      def save_exception(e)
+        say("BOSH CLI Error: #{e.message}".red)
+        begin
+          errfile = File.expand_path("~/.bosh_error")
+          File.open(errfile, "w") do |f|
+            f.write(e.message)
+            f.write("\n")
+            f.write(e.backtrace.join("\n"))
+          end
+          say("Error information saved in #{errfile}")
+        rescue => e
+          say("Error information couldn't be saved: #{e.message}")
         end
       end
 

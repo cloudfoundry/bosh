@@ -9,7 +9,7 @@ module Bosh
       attr_reader :cache_dir
 
       def initialize(cache_dir = nil)
-        @cache_dir = cache_dir || DEFAULT_CACHE_DIR
+        @cache_dir = cache_dir || Bosh::Cli::DEFAULT_CACHE_DIR
 
         if File.exists?(@cache_dir) && !File.directory?(@cache_dir)
           raise CacheDirectoryError, "Bosh cache directory error: '#{@cache_dir}' is a file, not directory"

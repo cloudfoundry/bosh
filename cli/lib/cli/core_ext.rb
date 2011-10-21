@@ -1,4 +1,5 @@
 module BoshExtensions
+
   def say(message, sep = "\n")
     return unless Bosh::Cli::Config.output && message
     message = message.dup.to_s
@@ -24,7 +25,7 @@ module BoshExtensions
   end
 
   def err(message)
-    raise Bosh::Cli::CliExit, message
+    raise Bosh::Cli::CliExit.new message
   end
 
   def quit(message = nil)
