@@ -1,7 +1,3 @@
-require "yaml"
-require "optparse"
-require "highline/import"
-
 module Bosh
   module Cli
     class ParseTreeNode < Hash

@@ -1,6 +1,3 @@
-require "fileutils"
-require "yaml"
-
 module Bosh::Cli
 
   class ReleaseBuilder

@@ -1,12 +1,12 @@
 source :rubygems
 
-gem "highline"
-gem "httpclient", "=2.2.1"
-gem "json_pure"
-gem "progressbar"
-gem "terminal-table"
 gem "rake"
-gem "blobstore_client", "~> 0.2" # 0.2 has streaming support
+gem "highline", "=1.6.2"
+gem "httpclient", "=2.2.1"
+gem "json_pure", "=1.6.1"
+gem "progressbar", "=0.9.0"
+gem "terminal-table", "=1.4.2"
+gem "blobstore_client", "=0.3.4"
 
 group :test do
   gem "ci_reporter"

@@ -21,12 +21,12 @@ gemspec = Gem::Specification.new do |s|
   s.require_path = "lib"
   s.files        = %w(README Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
 
-  s.add_dependency "json_pure",      "~> 1.4.6"
-  s.add_dependency "highline",       "~> 1.6.1"
-  s.add_dependency "progressbar",    "~> 0.9.0"
-  s.add_dependency "httpclient",     "~> 2.2.1"
-  s.add_dependency "terminal-table", "~> 1.4.2"
-  s.add_dependency "blobstore_client", "~> 0.2.0"
+  s.add_dependency "json_pure",      "1.6.1"
+  s.add_dependency "highline",       "1.6.2"
+  s.add_dependency "progressbar",    "0.9.0"
+  s.add_dependency "httpclient",     "2.2.1"
+  s.add_dependency "terminal-table", "1.4.2"
+  s.add_dependency "blobstore_client", "0.3.4"
 end
 
 Gem::PackageTask.new(gemspec) do |pkg|
@@ -34,7 +34,7 @@ Gem::PackageTask.new(gemspec) do |pkg|
 end
 
 task :install => [ :package ] do
-  sh "gem install --no-ri --no-rdoc vendor/cache/blobstore_client-0.2.0.gem"
+  sh "gem install --no-ri --no-rdoc vendor/cache/blobstore_client-0.3.4.gem"
   sh "gem install --no-ri --no-rdoc pkg/#{GEM}-#{GEM_VERSION}"
 end
 

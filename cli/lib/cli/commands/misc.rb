@@ -1,5 +1,3 @@
-require "timeout"
-
 module Bosh::Cli::Command
   class Misc < Base
     DEFAULT_STATUS_TIMEOUT = 3 # seconds

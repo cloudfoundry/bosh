@@ -5,6 +5,25 @@ module Bosh
   end
 end
 
+autoload :HTTPClient, "httpclient"
+Bosh.autoload :Blobstore, "blobstore_client"
+
+require "base64"
+require "digest/sha1"
+require "fileutils"
+require "highline/import"
+require "json"
+require "monitor"
+require "optparse"
+require "ostruct"
+require "progressbar"
+require "set"
+require "tempfile"
+require "terminal-table/import"
+require "timeout"
+require "tmpdir"
+require "yaml"
+
 require "cli/version"
 require "cli/config"
 require "cli/core_ext"
