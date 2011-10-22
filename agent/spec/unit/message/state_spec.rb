@@ -22,7 +22,8 @@ describe Bosh::Agent::Message::State do
       "resource_pool" => { },
       "agent_id"      => "007",
       "vm"            => "zb",
-      "job_state"     => nil
+      "job_state"     => nil,
+      "bosh_protocol" => Bosh::Agent::BOSH_PROTOCOL
     }
     handler.stub!(:job_state).and_return
     handler.state.should == initial_state

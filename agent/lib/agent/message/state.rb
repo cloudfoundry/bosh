@@ -17,6 +17,8 @@ module Bosh::Agent
         end
 
         response["job_state"] = job_state
+        response["bosh_protocol"] = Bosh::Agent::BOSH_PROTOCOL
+
         response
 
       rescue Bosh::Agent::StateError => e
