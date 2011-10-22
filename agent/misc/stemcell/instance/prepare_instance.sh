@@ -20,7 +20,7 @@ apt-get install -y --force-yes --no-install-recommends \
   dnsutils tcpdump tshark iputils-arping curl wget libcurl3 libcurl3-dev \
   bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
   zip unzip nfs-common flex psmisc apparmor-utils mg htop iptables \
-  sysstat traceroute module-assistant debhelper
+  sysstat traceroute module-assistant debhelper rsync
 
 dpkg -l > ${bosh_app_dir}/bosh/stemcell_dpkg_l.out
 
