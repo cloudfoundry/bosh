@@ -1,7 +1,3 @@
-require "httpclient"
-require "progressbar"
-require "json"
-
 module Bosh
   module Cli
     class Director

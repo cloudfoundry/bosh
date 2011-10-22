@@ -1,5 +1,3 @@
-require "set"
-
 module Bosh::Cli
 
   module DependencyHelper

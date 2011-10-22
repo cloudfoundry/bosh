@@ -1,6 +1,3 @@
-require "blobstore_client"
-require "tempfile"
-
 # This relies on having the following instance variables in a host class:
 # @dev_builds_dir, @final_builds_dir, @blobstore, @name, @version, @tarball_path, @final, @artefact_type
 

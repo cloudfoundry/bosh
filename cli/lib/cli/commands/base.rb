@@ -1,6 +1,3 @@
-require "yaml"
-require "terminal-table/import"
-
 module Bosh::Cli
   module Command
     class Base

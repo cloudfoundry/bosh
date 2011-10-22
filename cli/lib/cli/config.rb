@@ -1,5 +1,3 @@
-require "yaml"
-
 module Bosh
   module Cli
     class Config

@@ -1,6 +1,3 @@
-require "digest/sha1"
-require "fileutils"
-
 module Bosh
   module Cli
 

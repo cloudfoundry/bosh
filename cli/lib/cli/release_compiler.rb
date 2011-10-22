@@ -1,5 +1,3 @@
-require 'ostruct'
-
 module Bosh::Cli
 
   # Compiles release tarball based on manifest
