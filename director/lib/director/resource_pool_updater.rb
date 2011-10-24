@@ -38,42 +38,6 @@ module Bosh::Director
       end
     end
 
-    def outdated_vms_count
-      count = 0
-      each_idle_vm do |idle_vm|
-        count += 1 if idle_vm.vm && idle_vm.changed?
-      end
-      count
-    end
-
-    def delete_outdated_vms(thread_pool)
-      count = outdated_vms_count
-      index = 0
-      index_lock = Mutex.new
-
-      @logger.info("Deleting #{count} outdated VMs")
-
-      each_idle_vm do |idle_vm|
-        next unless idle_vm.vm && idle_vm.changed?
-        vm_cid = idle_vm.vm.cid
-
-        thread_pool.process do
-          @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
-            index_lock.synchronize { index += 1 }
-
-            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index}/#{count})") do
-              @logger.info("Deleting outdated VM: #{vm_cid}")
-              @cloud.delete_vm(vm_cid)
-              vm = idle_vm.vm
-              idle_vm.vm = nil
-              idle_vm.current_state = nil
-              vm.destroy
-            end
-          end
-        end
-      end
-    end
-
     def missing_vms_count
       counter = 0
       each_idle_vm do |idle_vm|

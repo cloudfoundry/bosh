@@ -225,6 +225,13 @@ module Bosh::Director
           "stemcell" => @stemcell.spec
         }
       end
+
+      def outdated_vm?(vm_state, vm_ip)
+        idleVM = IdleVm.new(self)
+        idleVM.ip = vm_ip
+        idleVM.current_state = vm_state
+        idleVM.changed?
+      end
     end
 
 

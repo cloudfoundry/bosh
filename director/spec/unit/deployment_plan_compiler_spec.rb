@@ -125,6 +125,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @persistent_disk.destroy
       @instance.destroy
 
+      @resource_pool_spec.stub!(:outdated_vm?).and_return(false)
       @agent.stub!(:get_state).and_return(state)
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
 
@@ -154,6 +155,21 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
       @deployment_plan.stub!(:resource_pool).with("unknown_resource_pool").and_return(nil)
+      @deployment_plan.should_receive(:delete_vm).with(@vm)
+
+      @deployment_plan_compiler.bind_existing_deployment
+    end
+
+    it "should mark the VM for deletion if it is outdated" do
+      state = BASIC_STATE._deep_copy
+
+      @persistent_disk.destroy
+      @instance.destroy
+
+      @agent.stub!(:get_state).and_return(state)
+      @resource_pool_spec.stub!(:outdated_vm?).and_return(true)
+
+      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
       @deployment_plan.should_receive(:delete_vm).with(@vm)
 
       @deployment_plan_compiler.bind_existing_deployment

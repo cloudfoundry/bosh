@@ -32,9 +32,6 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_updater.delete_extra_vms(thread_pool)
     thread_pool.wait
 
-    resource_pool_updater.delete_outdated_vms(thread_pool)
-    thread_pool.wait
-
     resource_pool_updater.create_missing_vms(thread_pool)
     thread_pool.wait
     thread_pool.shutdown
@@ -172,58 +169,6 @@ describe Bosh::Director::ResourcePoolUpdater do
 
     check_event_log do |events|
       events.size.should == 2
-    end
-  end
-
-  it "should update existing vms if needed" do
-    old_vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :cid => "vm-1")
-    idle_vm = mock("idle_vm")
-    agent = mock("agent")
-    current_vm = old_vm
-
-    @resource_pool_spec.stub!(:size).and_return(1)
-    @resource_pool_spec.stub!(:active_vms).and_return(0)
-    @resource_pool_spec.stub!(:allocated_vms).and_return([])
-    @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
-
-    idle_vm.stub!(:network_settings).and_return({"ip" => "1.2.3.4"})
-    idle_vm.should_receive(:changed?).exactly(2).times.and_return(true)
-    idle_vm.stub!(:bound_instance).and_return(nil)
-    idle_vm.stub!(:vm).and_return {current_vm}
-
-    @cloud.should_receive(:delete_vm).with("vm-1")
-    @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
-                                           {"ip" => "1.2.3.4"}, nil, {}).and_return("vm-2")
-
-    Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
-
-    idle_vm.should_receive(:vm=).with(nil).and_return { |vm| current_vm = vm }
-    idle_vm.should_receive(:current_state=).with(nil)
-
-    agent.should_receive(:wait_until_ready)
-    agent.should_receive(:apply).with({"resource_pool" => {"name" => "foo"}, "networks" => {"ip" => "1.2.3.4"},
-                                       "deployment" => "deployment_name"}).
-        and_return({"agent_task_id" => 5, "state" => "done"})
-    agent.should_receive(:get_state).and_return({"state" => "testing"})
-    idle_vm.should_receive(:vm=).with { |vm|
-      vm.deployment.should == @deployment
-      vm.cid.should == "vm-2"
-      vm.agent_id.should == "agent-1"
-      true
-    }.and_return { |vm|
-      current_vm = vm
-    }
-    idle_vm.should_receive(:current_state=).with({"state" => "testing"})
-
-    resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
-    resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
-    update_resource_pool(resource_pool_updater)
-
-    current_vm.should_not == old_vm
-    Bosh::Director::Models::Vm.all.should == [current_vm]
-
-    check_event_log do |events|
-      events.size.should == 4
     end
   end
 

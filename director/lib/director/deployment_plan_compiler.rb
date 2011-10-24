@@ -117,12 +117,18 @@ module Bosh::Director
                   @logger.debug("Binding resource pool VM")
                   resource_pool = @deployment_plan.resource_pool(state["resource_pool"]["name"])
                   if resource_pool
-                    @logger.debug("Adding to resource pool")
-                    idle_vm = resource_pool.add_idle_vm
-                    idle_vm.vm = vm
-                    idle_vm.current_state = state
                     network_reservation = ip_reservations[resource_pool.network.name]
-                    idle_vm.ip = network_reservation[:ip] if network_reservation && !network_reservation[:static?]
+                    if network_reservation.nil? || network_reservation[:static?] ||
+                      resource_pool.outdated_vm?(state, network_reservation[:ip])
+                      @logger.debug("Marking outdated vm #{vm.cid} for deletion")
+                      @deployment_plan.delete_vm(vm)
+                    else
+                      @logger.debug("Adding to resource pool")
+                      idle_vm = resource_pool.add_idle_vm
+                      idle_vm.vm = vm
+                      idle_vm.current_state = state
+                      idle_vm.ip = ip_reservations[resource_pool.network.name][:ip]
+                    end
                   else
                     @logger.debug("Resource pool doesn't exist, marking for deletion")
                     @deployment_plan.delete_vm(vm)

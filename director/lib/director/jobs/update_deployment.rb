@@ -83,13 +83,6 @@ module Bosh::Director
           end
           thread_pool.wait
 
-          # delete outdated VMs across resource pools
-          @event_log.begin_stage("Deleting outdated VMs", sum_across_pools(:outdated_vms_count))
-          @resource_pool_updaters.each do |updater|
-            updater.delete_outdated_vms(thread_pool)
-          end
-          thread_pool.wait
-
           # create missing VMs across resource pools phase 1:
           # only creates VMs that have been bound to instances
           # to avoid refilling the resource pool before instances
