@@ -3,10 +3,14 @@ require File.expand_path("../sandbox", __FILE__)
 require 'pty'
 require 'expect'
 require 'rack/test'
+require "ruby_vim_sdk"
+require "director/cloud/vsphere/client"
+require "director/cloud/vsphere/resources"
 
 describe Bosh::Director::Clouds::VSphere do
   include Rack::Test::Methods
   include Bosh::Director::IpUtil
+  include VimSdk
 
   AGENT_SRC_PATH  = File.expand_path("../../../../agent", __FILE__)
 
@@ -50,6 +54,37 @@ describe Bosh::Director::Clouds::VSphere do
     stemcell_tgz
   end
 
+  def check_vm_tools(vm_cid)
+    vm = @vsphere_client.find_by_inventory_path([@datacenter.name, "vm", @datacenter.vm_folder_name, vm_cid])
+    return false if vm.nil?
+    vm_tools_status = @vsphere_client.get_property(vm, Vim::VirtualMachine, "guest.toolsRunningStatus")
+    vm_tools_status == Vim::Vm::GuestInfo::ToolsRunningStatus::GUEST_TOOLS_RUNNING
+  end
+
+  # vmbuilder generates bogus stemcells once in a while.
+  # deploy a dummy VM to verify the stemcell.
+  def stemcell_check
+    result = false
+    agent_id = UUIDTools::UUID.random_create.to_s
+    vm_ip = get_ip
+    net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
+      'netmask' => @net_conf['netmask'],
+      'gateway' => @net_conf['gateway'],
+      'ip'      => vm_ip,
+      'dns'     => @net_conf['dns'],
+      'default' => ['dns', 'gateway']}}
+    begin
+      vm_cid = @cloud.create_vm(agent_id, @stemcell_name, @vm_resource, net_config)
+      2.times do
+        result = check_vm_tools(vm_cid) || vm_reachable?(vm_ip)
+        break if result
+      end
+    ensure
+      @cloud.delete_vm(vm_cid) if vm_cid
+    end
+    result
+  end
+
   before(:all) do
     @test_config = Bosh::Director::Cpi::Sandbox.start
     @net_conf = @test_config['network']
@@ -65,21 +100,47 @@ describe Bosh::Director::Clouds::VSphere do
       sleep 0.1
     end
 
-    stemcell_tgz = @test_config["test"]["stemcell"]
-    stemcell_tgz ||= build_stemcell(@test_config["test"]["root_pass"])
+    Bosh::Director::Config.configure(@test_config)
+    cloud_properties = @test_config["cloud"]["properties"]
+    @cloud = Bosh::Director::Clouds::VSphere.new(cloud_properties)
 
-    # un-tar stemcell
-    stemcell = Dir.mktmpdir("tmp_sc")
-    `tar zxf #{stemcell_tgz} -C #{stemcell}`
-    if $?.exitstatus != 0
+    vcenter = cloud_properties["vcenters"][0]
+    @vsphere_client = VSphereCloud::Client.new("https://#{vcenter["host"]}/sdk/vimService", cloud_properties)
+    @vsphere_client.login(vcenter["user"], vcenter["password"], "en")
+    resources = VSphereCloud::Resources.new(@vsphere_client, vcenter, 1.0)
+    @datacenter = resources.datacenters.values.first
+
+    valid_stemcell = false
+    # try up to 3 times
+    3.times do
+      stemcell_tgz = @test_config["test"]["stemcell"]
+      stemcell_tgz ||= build_stemcell(@test_config["test"]["root_pass"])
+
+      # un-tar stemcell
+      stemcell = Dir.mktmpdir("tmp_sc")
+      `tar zxf #{stemcell_tgz} -C #{stemcell}`
+      if $?.exitstatus != 0
+        FileUtils.rm_rf(stemcell)
+        raise "Failed to un-tar #{stemcell_tgz}"
+      end
+
+      @stemcell_name = @cloud.create_stemcell("#{stemcell}/image", {})
       FileUtils.rm_rf(stemcell)
-      raise "Failed to un-tar #{stemcell_tgz}"
+
+      # verify stemcell
+      valid_stemcell = stemcell_check
+      break if valid_stemcell
+      @cloud.delete_stemcell(@stemcell_name)
+      break if @test_config["test"]["stemcell"]
     end
 
-    Bosh::Director::Config.configure(@test_config)
-    @cloud = Bosh::Director::Clouds::VSphere.new(@test_config["cloud"]["properties"])
-    @stemcell_name = @cloud.create_stemcell("#{stemcell}/image", {})
-    FileUtils.rm_rf(stemcell)
+    unless valid_stemcell
+      if @test_config["test"]["stemcell"]
+        raise "Invalid stemcell #{@test_config["test"]["stemcell"]}"
+      else
+        raise "Failed to create a valid stemcell"
+      end
+    end
   end
 
   before(:each) do
