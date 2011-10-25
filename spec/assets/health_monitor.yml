@@ -9,11 +9,6 @@ mbus:
   user:
   password:
 
-event_mbus:
-  endpoint: nats://localhost:42112
-  user:
-  password:
-
 director:
   endpoint: http://127.0.0.1:57523
   user: admin
@@ -27,7 +22,15 @@ intervals:
   agent_timeout: 10
   rogue_agent_alert: 20
 
-alert_delivery_agents:
-  - plugin: logger
-  - plugin: nats
-
+plugins:
+  - name: logger
+    events:
+      - alert
+  - name: nats
+    events:
+      - alert
+      - heartbeat
+    options:
+      endpoint: nats://localhost:42112
+      user:
+      password:

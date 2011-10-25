@@ -7,7 +7,7 @@ describe Bhm::AgentManager do
 
     # Just use 2 loggers to test multiple agents without having to care
     # about stubbing delivery operations and providing well formed configs
-    Bhm.alert_delivery_agents = [ { "plugin" => "logger" }, { "plugin" => "logger" } ]
+    Bhm.plugins = [ { "name" => "logger" }, { "name" => "logger" } ]
     Bhm.intervals = OpenStruct.new(:agent_timeout => 10, :rogue_agent_alert => 10)
   end
 
@@ -18,9 +18,9 @@ describe Bhm::AgentManager do
   it "can process heartbeats" do
     manager = make_manager
     manager.agents_count.should == 0
-    manager.process_heartbeat("agent007", "payload")
-    manager.process_heartbeat("agent007", "payload")
-    manager.process_heartbeat("agent008", "payload")
+    manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
+    manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
+    manager.process_event(:heartbeat, "hm.agent.heartbeat.agent008")
 
     manager.agents_count.should == 2
   end
@@ -28,13 +28,13 @@ describe Bhm::AgentManager do
   it "can process alerts" do
     manager = make_manager
 
-    good_alert_json      = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i })
-    bad_alert_json       = Yajl::Encoder.encode({"id" => "778", "severity" => -2, "title" => nil, "summary" => "zbb", "created_at" => Time.now.utc.to_i })
-    malformed_alert_json = Yajl::Encoder.encode("zb")
+    good_alert = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i })
+    bad_alert = Yajl::Encoder.encode({"id" => "778", "severity" => -2, "title" => nil, "summary" => "zbb", "created_at" => Time.now.utc.to_i })
+    malformed_alert = Yajl::Encoder.encode("zb")
 
-    manager.process_alert("007", good_alert_json)
-    manager.process_alert("007", bad_alert_json)
-    manager.process_alert("007", malformed_alert_json)
+    manager.process_event(:alert, "hm.agent.alert.007", good_alert)
+    manager.process_event(:alert, "hm.agent.alert.007", bad_alert)
+    manager.process_event(:alert, "hm.agent.alert.007", malformed_alert)
 
     manager.alerts_processed.should == 1
   end
@@ -47,7 +47,7 @@ describe Bhm::AgentManager do
 
     manager.agents_count.should == 3
     manager.analyze_agents.should == 3
-    manager.process_shutdown("008")
+    manager.process_event(:shutdown, "hm.agent.shutdown.008")
     manager.agents_count.should == 2
     manager.analyze_agents.should == 2
   end
@@ -111,7 +111,10 @@ describe Bhm::AgentManager do
   end
 
   it "can analyze all agents" do
+    processor = Bhm::EventProcessor.new
     manager = make_manager
+    manager.processor = processor
+
     manager.analyze_agents.should == 0
 
     # 3 regular agents
@@ -123,33 +126,31 @@ describe Bhm::AgentManager do
     alert = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i })
 
     # Alert for already managed agent
-    manager.process_alert("007", alert)
+    manager.process_event(:alert, "hm.agent.alert.007", alert)
     manager.analyze_agents.should == 3
 
     # Alert for non managed agent
-    manager.process_alert("256", alert)
+    manager.process_event(:alert, "hm.agent.alert.256", alert)
     manager.analyze_agents.should == 4
 
-    manager.process_heartbeat("256", nil) # Heartbeat from managed agent
-    manager.process_heartbeat("512", nil) # Heartbeat from unmanaged agent
+    manager.process_event(:heartbeat, "256", nil) # Heartbeat from managed agent
+    manager.process_event(:heartbeat, "512", nil) # Heartbeat from unmanaged agent
 
     manager.analyze_agents.should == 5
 
     ts = Time.now
     Time.stub!(:now).and_return(ts + [ Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert ].max + 10)
 
-    manager.process_heartbeat("512", nil)
+    manager.process_event(:heartbeat, "512", nil)
     # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
-    $A = 1
-    manager.should_receive(:register_alert).exactly(4).times
+    processor.should_receive(:process).with(:alert, anything).exactly(4).times
     manager.analyze_agents.should == 5
-
     manager.agents_count.should == 4
 
     # Now previously removed "256" gets reported as a good citizen
     # 5 agents total, 3 timed out, 1 rogue
     manager.add_agent("mycloud", { "agent_id" => "256", "index" => "0", "job" => "redis_node" })
-    manager.should_receive(:register_alert).exactly(4).times
+    processor.should_receive(:process).with(:alert, anything).exactly(4).times
     manager.analyze_agents.should == 5
   end
 

@@ -1,46 +1,38 @@
 module Bosh::HealthMonitor
-
   class Agent
 
     attr_reader   :id
     attr_reader   :discovered_at
     attr_accessor :updated_at
 
-    attr_writer :job
-    attr_writer :index
-    attr_writer :deployment
-    attr_writer :cid
+    ATTRIBUTES = [ :deployment, :job, :index, :cid ]
 
-    def initialize(id, deployment = nil, job = nil, index = nil)
+    ATTRIBUTES.each do |attribute|
+      attr_accessor attribute
+    end
+
+    def initialize(id)
+      raise ArgumentError, "Agent must have an id" if id.nil?
+
       @id            = id
       @discovered_at = Time.now
       @updated_at    = Time.now
       @logger        = Bhm.logger
       @intervals     = Bhm.intervals
-      @deployment    = deployment
-      @job           = job
-      @index         = index
-      @cid           = nil
     end
 
     def name
-      "#{deployment}: #{job}(#{index}) [agent_id=#{@id}, cid=#{@cid}]"
-    end
+      if @deployment && @job && @index
+        "#{@deployment}: #{@job}(#{@index}) [id=#{@id}, cid=#{@cid}]"
+      else
+        state = ATTRIBUTES.inject([]) do |acc, attribute|
+          value = send(attribute)
+          acc << "#{attribute}=#{value}" if value
+          acc
+        end
 
-    def job
-      @job || "unknown job"
-    end
-
-    def index
-      @index || "index n/a"
-    end
-
-    def deployment
-      @deployment || "unknown deployment"
-    end
-
-    def cid
-      @cid || "unknown cid"
+        "agent #{@id} [#{state.join(", ")}]"
+      end
     end
 
     def timed_out?
@@ -50,11 +42,5 @@ module Bosh::HealthMonitor
     def rogue?
       (Time.now - @discovered_at) > @intervals.rogue_agent_alert && @deployment.nil?
     end
-
-    def process_heartbeat(heartbeat)
-      @updated_at = Time.now
-    end
-
   end
-
 end

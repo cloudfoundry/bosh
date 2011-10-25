@@ -15,6 +15,9 @@ describe Bhm::Runner do
     Bhm.mbus.endpoint.should == "nats://127.0.0.1:4222"
     Bhm.mbus.user.should be_nil
     Bhm.mbus.password.should be_nil
+
+    Bhm.plugins.size.should == 4
+
   end
 
   it "validates configuration file" do

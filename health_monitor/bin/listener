@@ -5,86 +5,53 @@ ENV["BUNDLE_GEMFILE"] ||= File.join(APP_DIR, "Gemfile")
 
 $:.unshift(File.expand_path(File.join(APP_DIR, "lib")))
 
-require 'rubygems'
-require 'bundler/setup'
-require 'health_monitor'
+require "rubygems"
+require "bundler/setup"
+require "eventmachine"
+require "nats/client"
 
-module Bosh
-  module HealthMonitor
+class Listener
 
-    class Listener
-      include YamlHelper
+  def self.start
+    new.start
+  end
 
-      def self.start
-        new.start
-      end
+  def start
+    filter = nil
+    nats_uri = nil
 
-      def start
-        config_file = nil
-        subscribe_to_events = false
-        subscribe_to_alerts = false
-        filter = nil
-
-        opts = OptionParser.new do |opt|
-          opt.on("-c", "--config FILE") { |c| config_file = c }
-          opt.on("-a", "--alerts") { subscribe_to_alerts = true }
-          opt.on("-e", "--events") { subscribe_to_events = true }
-          opt.on("-f", "--filter ARG") { |f| filter = f }
-        end
-
-        opts.parse!(ARGV)
-
-        unless subscribe_to_events || subscribe_to_alerts
-          subscribe_to_alerts = true
-          subscribe_to_events = true
-        end
-
-        if config_file.nil?
-          puts opts
-          exit 1
-        end
-
-        puts "=> Loading #{config_file}"
-        Bhm.config = load_yaml_file(config_file)
-
-        nats_client_options = {
-          :uri       => Bhm.event_mbus.endpoint,
-          :user      => Bhm.event_mbus.user,
-          :pass      => Bhm.event_mbus.password,
-          :autostart => false
-        }
-
-        @nats = NATS.connect(nats_client_options)
-
-        if filter
-          puts "> Filter is set to `#{filter}'"
-        end
-
-        if subscribe_to_events
-          puts "> Subscribing to events"
-          @nats.subscribe("bosh.hm.events") do |msg|
-            if filter.nil? || msg =~ Regexp.new(Regexp.quote(filter))
-              puts "Event : " + msg
-            end
-          end
-        end
-
-        if subscribe_to_alerts
-          puts "> Subscribing to alerts"
-          @nats.subscribe("bosh.hm.alerts") do |msg|
-            if filter.nil? || msg =~ Regexp.new(Regexp.quote(filter))
-              puts "Alert : " + msg
-            end
-          end
-        end
-      end
-
+    opts = OptionParser.new do |opt|
+      opt.on("-f", "--filter ARG") { |f| filter = f }
+      opt.on("-n", "--nats URI") { |n| nats_uri = n }
     end
 
+    opts.parse!(ARGV)
+
+    if nats_uri.nil?
+      puts "Usage: listener [options] <nats_uri>"
+    end
+
+    nats_client_options = {
+      :uri => nats_uri,
+      :autostart => false
+    }
+
+    @nats = NATS.connect(nats_client_options)
+
+    if filter
+      puts "> Filter is set to `#{filter}'"
+    end
+
+    puts "> Subscribing to events"
+    @nats.subscribe("bosh.hm.events") do |msg|
+      if filter.nil? || msg =~ Regexp.new(Regexp.quote(filter))
+        puts "#{Time.now.strftime("%Y-%m-%d %H:%M:%S")} >> " + msg
+      end
+    end
   end
 end
 
 EM.run do
-  Bhm::Listener.start
+  Listener.start
 end
 
