@@ -21,12 +21,23 @@ module Bosh
 
       def start
         config_file = nil
+        subscribe_to_events = false
+        subscribe_to_alerts = false
+        filter = nil
 
         opts = OptionParser.new do |opt|
-          opt.on("-c", "--config [ARG]", "configuration file") { |c| config_file = c }
+          opt.on("-c", "--config FILE") { |c| config_file = c }
+          opt.on("-a", "--alerts") { subscribe_to_alerts = true }
+          opt.on("-e", "--events") { subscribe_to_events = true }
+          opt.on("-f", "--filter ARG") { |f| filter = f }
         end
 
         opts.parse!(ARGV)
+
+        unless subscribe_to_events || subscribe_to_alerts
+          subscribe_to_alerts = true
+          subscribe_to_events = true
+        end
 
         if config_file.nil?
           puts opts
@@ -45,8 +56,27 @@ module Bosh
 
         @nats = NATS.connect(nats_client_options)
 
-        @nats.subscribe("bosh.hm.events") { |msg| puts "Event : " + msg }
-        @nats.subscribe("bosh.hm.alerts") { |msg| puts "Alert : " + msg }
+        if filter
+          puts "> Filter is set to `#{filter}'"
+        end
+
+        if subscribe_to_events
+          puts "> Subscribing to events"
+          @nats.subscribe("bosh.hm.events") do |msg|
+            if filter.nil? || msg =~ Regexp.new(Regexp.quote(filter))
+              puts "Event : " + msg
+            end
+          end
+        end
+
+        if subscribe_to_alerts
+          puts "> Subscribing to alerts"
+          @nats.subscribe("bosh.hm.alerts") do |msg|
+            if filter.nil? || msg =~ Regexp.new(Regexp.quote(filter))
+              puts "Alert : " + msg
+            end
+          end
+        end
       end
 
     end
