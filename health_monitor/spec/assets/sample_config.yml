@@ -9,11 +9,6 @@ mbus:
   user:
   password:
 
-event_mbus:
-  endpoint: nats://127.0.0.1:4222
-  user:
-  password:
-
 director:
   endpoint: http://127.0.0.1:25555
   user:
@@ -27,22 +22,39 @@ intervals:
   agent_timeout: 60
   rogue_agent_alert: 120
 
-alert_delivery_agents:
+plugins:
 
-  - plugin: logger
+  - name: logger
 
-  - plugin: nats
+  - name: nats
+    events:
+      - alert
+      - heartbeat
+    options:
+      endpoint: nats://127.0.0.1:4222
+      user:
+      password:
 
-  - plugin: email
-    recipients:
-      - user@example.com
-    smtp:
-      from: bosh.alerts@example.com
-      host: smtp.example.com
-      port: 25
-      auth: plain
-      user: user
-      password: pass
-      tls: true
-      domain: example.com
+  - name: email
+    events:
+      - alert
+    options:
+      recipients:
+        - user@example.com
+      smtp:
+        from: bosh.alerts@example.com
+        host: smtp.example.com
+        port: 25
+        auth: plain
+        user: user
+        password: pass
+        tls: true
+        domain: example.com
 
+  - name: tsdb
+    events:
+      - alert
+      - heartbeat
+    options:
+      host: localhost
+      port: 4242
