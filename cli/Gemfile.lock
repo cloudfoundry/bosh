@@ -1,3 +1,14 @@
+PATH
+  remote: .
+  specs:
+    bosh_cli (0.9.0)
+      blobstore_client (= 0.3.5)
+      highline (~> 1.6.2)
+      httpclient (= 2.2.1)
+      json_pure (~> 1.6.1)
+      progressbar (~> 0.9.0)
+      terminal-table (~> 1.4.2)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -6,9 +17,10 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.3.4)
+    blobstore_client (0.3.5)
       aws-s3
       httpclient
+      ruby-atmos
       uuidtools
     builder (3.0.0)
     ci_reporter (1.6.3)
@@ -21,7 +33,9 @@ GEM
     linecache (0.43)
     linecache19 (0.5.11)
       ruby_core_source (>= 0.1.4)
-    mime-types (1.16)
+    log4r (1.1.9)
+    mime-types (1.17.1)
+    nokogiri (1.4.4)
     progressbar (0.9.0)
     rake (0.8.7)
     rcov (0.9.9)
@@ -36,6 +50,10 @@ GEM
     rspec-expectations (2.3.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.3.0)
+    ruby-atmos (0.4)
+      log4r (>= 1.1.9)
+      nokogiri (>= 1.4.4)
+      ruby-hmac (>= 0.4.0)
     ruby-debug (0.10.4)
       columnize (>= 0.1)
       ruby-debug-base (~> 0.10.4.0)
@@ -49,6 +67,7 @@ GEM
       columnize (>= 0.3.1)
       linecache19 (>= 0.5.11)
       ruby-debug-base19 (>= 0.11.19)
+    ruby-hmac (0.4.0)
     ruby_core_source (0.1.4)
       archive-tar-minitar (>= 0.5.2)
     simplecov (0.4.2)
@@ -60,18 +79,14 @@ GEM
       simplecov (>= 0.4.1)
     terminal-table (1.4.2)
     uuidtools (2.1.2)
-    xml-simple (1.0.15)
+    xml-simple (1.1.1)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  blobstore_client (= 0.3.4)
+  bosh_cli!
   ci_reporter
-  highline (= 1.6.2)
-  httpclient (= 2.2.1)
-  json_pure (= 1.6.1)
-  progressbar (= 0.9.0)
   rake
   rcov
   rcov_analyzer (>= 0.2)
@@ -81,4 +96,3 @@ DEPENDENCIES
   simplecov
   simplecov-clover
   simplecov-rcov
-  terminal-table (= 1.4.2)

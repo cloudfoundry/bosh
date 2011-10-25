@@ -1,39 +1,8 @@
 require "rubygems"
-require "rubygems/package_task"
-
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "lib"))
-require "blobstore_client/version"
-
-GEM = "blobstore_client"
-GEM_VERSION = Bosh::Blobstore::Client::VERSION
-
-gemspec = Gem::Specification.new do |s|
-  s.name         = GEM
-  s.version      = GEM_VERSION
-  s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh blobstore client"
-  s.description  = s.summary
-  s.authors      = [ "Vadim Spivak", "Oleg Shaldybin" ]
-  s.email        = "vspivak@vmware.com"
-  s.homepage     = "http://vmware.com"
-  s.require_path = "lib"
-  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
-
-  s.add_dependency "httpclient"
-  s.add_dependency "aws-s3"
-  s.add_dependency "uuidtools"
-end
-
-Gem::PackageTask.new(gemspec) do |pkg|
-  pkg.gem_spec = gemspec
-end
-
-task :install => [ :package ] do
-  sh "gem install pkg/#{GEM}-#{GEM_VERSION}"
-end
+require "bundler"
 
 desc "Run specs"
-task :spec => [ "bundler:install:test", "test:spec" ]
+task "spec" => [ "bundler:install:test", "test:spec" ]
 
 desc "Run specs for CI"
 task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
@@ -41,10 +10,20 @@ task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
 desc "Run specs w/coverage"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
-environments = %w(test development production)
+gem_helper = Bundler::GemHelper.new(Dir.pwd)
+
+desc "Build Bosh CLI gem into the pkg directory"
+task "build" do
+  gem_helper.build_gem
+end
+
+desc "Build and install Bosh CLI into system gems"
+task "install" do
+  sh("bundle install --local --without test development")
+  gem_helper.install_gem
+end
 
 namespace "bundler" do
-
   desc "Install gems"
   task "install" do
     sh("bundle install")
@@ -58,7 +37,6 @@ namespace "bundler" do
       sh("bundle install --local --without #{(environments - [env]).join(' ')}")
     end
   end
-
 end
 
 namespace "test" do
