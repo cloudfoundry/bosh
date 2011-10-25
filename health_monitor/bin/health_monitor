@@ -12,21 +12,25 @@ require "health_monitor"
 config_file = nil
 
 opts = OptionParser.new do |opts|
-  opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
+  opts.on("-c", "--config FILE", "configuration file") do |opt|
     config_file = opt
   end
 end
 
 opts.parse!(ARGV.dup)
 
-Signal.trap("INT") do
-  puts "Interrupted..."
-  exit
-end
-
 if config_file.nil?
   puts opts
   exit 1
 end
 
-Bosh::HealthMonitor::Runner.run(config_file)
+runner = Bosh::HealthMonitor::Runner.new(config_file)
+
+Signal.trap("INT") do
+  runner.stop
+  exit(1)
+end
+
+runner.run
+
+

@@ -15,21 +15,12 @@ module Bosh::HealthMonitor
       @mbus      = Bhm.mbus
 
       @agent_manager = AgentManager.new
-      @http_server = Thin::Server.new("0.0.0.0", Bhm.http_port, :signals => false) do
-        Thin::Logging.silent = true
-        use Rack::Auth::Basic do |user, password|
-          [ user, password ] == [ Bhm.http_user, Bhm.http_password ]
-        end
-        map "/" do
-          run Bhm::ApiController.new
-        end
-      end
     end
 
     def run
       @logger.info("HealthMonitor starting...")
       EM.kqueue if EM.kqueue?
-      EM.epoll  if EM.epoll?
+      EM.epoll if EM.epoll?
 
       EM.error_handler { |e| handle_em_error(e) }
 
@@ -37,17 +28,15 @@ module Bosh::HealthMonitor
         connect_to_mbus
         @agent_manager.setup_events
         setup_timers
-        @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
-        @http_server.start!
+        start_http_server
         @logger.info "Bosh HealthMonitor #{Bhm::VERSION} is running..."
       end
     end
 
     def stop
       @logger.info("HealthMonitor shutting down...")
-      @http_server.stop!
+      @http_server.stop! if @http_server
       EM.stop
-      sleep(0.5) # Giving EM.stop some time to stop gracefully
       exit(1)
     end
 
@@ -64,16 +53,20 @@ module Bosh::HealthMonitor
     end
 
     def log_stats
-      @logger.info("Managing %s, %s" % [ pluralize(@agent_manager.deployments_count, "deployment"), pluralize(@agent_manager.agents_count, "agent") ])
+      n_deployments = pluralize(@agent_manager.deployments_count, "deployment")
+      n_agents = pluralize(@agent_manager.agents_count, "agent")
+      @logger.info("Managing #{n_deployments}, #{n_agents}")
       @logger.info("Agent heartbeats received = %s" % [ @agent_manager.heartbeats_received ])
     end
 
     def connect_to_mbus
       NATS.on_error do |e|
-        if e.kind_of?(NATS::ConnectError)
-          handle_em_error(e)
-        else
-          log_exception(e)
+        unless @shutting_down
+          if e.kind_of?(NATS::ConnectError)
+            handle_em_error(e)
+          else
+            log_exception(e)
+          end
         end
       end
 
@@ -89,6 +82,20 @@ module Bosh::HealthMonitor
       end
     end
 
+    def start_http_server
+      @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
+      @http_server = Thin::Server.new("0.0.0.0", Bhm.http_port, :signals => false) do
+        Thin::Logging.silent = true
+        use Rack::Auth::Basic do |user, password|
+          [ user, password ] == [ Bhm.http_user, Bhm.http_password ]
+        end
+        map "/" do
+          run Bhm::ApiController.new
+        end
+      end
+      @http_server.start!
+    end
+
     def poll_director
       @logger.debug "Getting deployments from director..."
       Fiber.new { fetch_deployments }.resume
@@ -97,7 +104,7 @@ module Bosh::HealthMonitor
     end
 
     def analyze_agents
-      # N.B. Yes, this will block event loop,
+      # N.B. Yes, his will block event loop,
       # possibly consider deferring
       @agent_manager.analyze_agents
     end
@@ -117,6 +124,7 @@ module Bosh::HealthMonitor
     # when it actually just swallows some exception and effectively does nothing.
     # We might revisit that later
     def handle_em_error(e)
+      @shutting_down = true
       log_exception(e, :fatal)
       stop
     end

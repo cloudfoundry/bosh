@@ -1,9 +1,11 @@
 module Bosh::HealthMonitor
 
   class AgentManager
-    # TODO: make threadsafe? Not supposed to be deferred though...
+    attr_reader :heartbeats_received
+    attr_reader :alerts_received
+    attr_reader :alerts_processed
 
-    attr_reader :heartbeats_received, :alerts_received, :alerts_processed
+    attr_accessor :processor
 
     def initialize
       @agents = { }
@@ -11,56 +13,49 @@ module Bosh::HealthMonitor
 
       @logger = Bhm.logger
       @heartbeats_received = 0
-      @alerts_received     = 0
-      @alerts_processed    = 0
+      @alerts_received = 0
+      @alerts_processed = 0
 
-      @alert_processor = AlertProcessor.new
-      @event_publisher = EventPublisher.new
+      @processor = EventProcessor.new
     end
 
-    def lookup_delivery_agent(options)
-      plugin = options["plugin"].to_s
-
-      case plugin
+    def lookup_plugin(name, options = {})
+      # TODO: dynamic lookup?
+      case name.to_s
       when "email"
-        EmailDeliveryAgent.new(options)
+        plugin_class = Bhm::Plugins::Email
       when "logger"
-        LoggingDeliveryAgent.new(options)
+        plugin_class = Bhm::Plugins::Logger
       when "pagerduty"
-        PagerdutyDeliveryAgent.new(options)
+        plugin_class = Bhm::Plugins::Pagerduty
       when "nats"
-        NatsDeliveryAgent.new(options)
+        plugin_class = Bhm::Plugins::Nats
+      when "tsdb"
+        plugin_class = Bhm::Plugins::Tsdb
       else
-        raise DeliveryAgentError, "Cannot find delivery agent plugin `#{plugin}'"
+        raise PluginError, "Cannot find `#{name}' plugin"
       end
+
+      plugin_class.new(options)
     end
 
     def setup_events
       Bhm.set_varz("heartbeats_received", 0)
-      @event_publisher.connect_to_mbus
 
-      Bhm.alert_delivery_agents.each do |agent_options|
-        @alert_processor.add_delivery_agent(lookup_delivery_agent(agent_options))
+      Bhm.plugins.each do |plugin|
+        @processor.add_plugin(lookup_plugin(plugin["name"], plugin["options"]), plugin["events"])
       end
 
-      Bhm.nats.subscribe("hm.agent.heartbeat.*") do |heartbeat_json, reply, subject|
-        @heartbeats_received += 1
-        Bhm.set_varz("heartbeats_received", @heartbeats_received)
-        agent_id = subject.split('.', 4).last
-        @logger.debug("Received heartbeat from #{agent_id}: #{heartbeat_json}")
-        process_heartbeat(agent_id, heartbeat_json)
+      Bhm.nats.subscribe("hm.agent.heartbeat.*") do |message, reply, subject|
+        process_event(:heartbeat, subject, message)
       end
 
       Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
-        @alerts_received += 1
-        agent_id = subject.split('.', 4).last
-        @logger.info("Received alert from `#{agent_id}': #{message}")
-        process_alert(agent_id, message)
+        process_event(:alert, subject, message)
       end
 
       Bhm.nats.subscribe("hm.agent.shutdown.*") do |message, reply, subject|
-        agent_id = subject.split('.', 4).last
-        process_shutdown(agent_id, message)
+        process_event(:shutdown, subject, message)
       end
     end
 
@@ -148,9 +143,9 @@ module Bosh::HealthMonitor
       end
 
       agent.deployment = deployment_name
-      agent.job        = vm_data["job"]
-      agent.index      = vm_data["index"]
-      agent.cid        = vm_data["cid"]
+      agent.job = vm_data["job"]
+      agent.index = vm_data["index"]
+      agent.cid = vm_data["cid"]
 
       @deployments[deployment_name] ||= Set.new
       @deployments[deployment_name] << agent_id
@@ -186,7 +181,7 @@ module Bosh::HealthMonitor
 
     def analyze_agent(agent_id)
       agent = @agents[agent_id]
-      ts    = Time.now.to_i
+      ts = Time.now.to_i
 
       if agent.nil?
         # TODO: consider alerting about missing agent?
@@ -195,111 +190,104 @@ module Bosh::HealthMonitor
       end
 
       if agent.timed_out? && agent.rogue?
+        # Agent has timed out but it was never
+        # actually a proper member of the deployment,
+        # so we don't really care about it
         remove_agent(agent.id)
-      elsif agent.timed_out?
-        alert = {
-          :id         => "timeout-#{agent.id}-#{ts}",
-          :severity   => 2,
-          :source     => agent.name,
-          :title      => "#{agent.id} has timed out",
-          :created_at => ts
-        }
+        return
+      end
 
-        register_alert(alert)
-      elsif agent.rogue?
-        alert = {
-          :id         => "rogue-#{agent.id}-#{ts}",
-          :severity   => 2,
-          :source     => agent.name,
-          :title      => "#{agent.id} is not a part of any deployment",
-          :created_at => ts
-        }
+      if agent.timed_out?
+        @processor.process(:alert,
+          :severity => 2,
+          :source => agent.name,
+          :title => "#{agent.id} has timed out",
+          :created_at => ts)
+      end
 
-        register_alert(alert)
+      if agent.rogue?
+        @processor.process(:alert,
+          :severity => 2,
+          :source => agent.name,
+          :title => "#{agent.id} is not a part of any deployment",
+          :created_at => ts)
       end
 
       true
     end
 
-    def register_alert(alert)
-      @alert_processor.register_alert(alert)
-    end
-
-    # Subscription callbacks
-    def process_alert(agent_id, alert_json)
+    def process_event(kind, subject, payload = {})
+      kind = kind.to_s
+      agent_id = subject.split('.', 4).last
       agent = @agents[agent_id]
 
       if agent.nil?
-        @logger.warn("Received an alert from an unmanaged agent: #{agent_id}")
+        # There might be more than a single shutdown event,
+        # we are only interested in processing it if agent
+        # is still managed
+        return if kind == "shutdown"
+
+        @logger.warn("Received #{kind} from unmanaged agent: #{agent_id}")
         agent = Agent.new(agent_id)
         @agents[agent_id] = agent
+      else
+        @logger.debug("Received #{kind} from #{agent_id}: #{payload}")
       end
 
-      alert = Yajl::Parser.parse(alert_json)
-
-      if alert.is_a?(Hash) && !alert.has_key?("source")
-        alert["source"] = agent.name
+      case payload
+      when String
+        message = Yajl::Parser.parse(payload)
+      when Hash
+        message = payload
       end
 
-      if register_alert(alert)
-        @alerts_processed += 1
+      case kind.to_s
+      when "alert"
+        on_alert(agent, message)
+      when "heartbeat"
+        on_heartbeat(agent, message)
+      when "shutdown"
+        on_shutdown(agent, message)
+      else
+        @logger.warn("No handler found for `#{kind}' event")
       end
 
+      # TODO: log backtrace
     rescue Yajl::ParseError => e
-      @logger.error("Cannot parse incoming alert: #{e}")
-    rescue Bhm::InvalidAlert => e
-      @logger.error(e)
+      @logger.error("Cannot parse incoming event: #{e}")
+    rescue Bhm::InvalidEvent => e
+      @logger.error("Invalid event: #{e}")
     end
 
-    def process_shutdown(agent_id, shutdown_payload = nil)
-      agent = @agents[agent_id]
-      # Agent sends shutdown message several times, so we
-      # earlier if we know this agent is no longer managed
-      # to avoid flooding logs with the same message
-      return if agent.nil?
-      @logger.info("Agent `#{agent_id}' shutting down...")
-      remove_agent(agent_id)
-    end
-
-    def process_heartbeat(agent_id, hb_payload)
-      agent = @agents[agent_id]
-
-      if agent.nil?
-        @logger.warn("Received a heartbeat from an unmanaged agent: #{agent_id}")
-        agent = Agent.new(agent_id)
-        @agents[agent_id] = agent
+    def on_alert(agent, message)
+      if message.is_a?(Hash) && !message.has_key?("source")
+        message["source"] = agent.name
       end
 
-      heartbeat = parse_heartbeat(hb_payload)
-
-      publish_heartbeat_event(agent, heartbeat)
-      agent.process_heartbeat(heartbeat)
+      @processor.process(:alert, message)
+      @alerts_processed += 1
+      Bhm.set_varz("alerts_processed", @alerts_processed)
     end
 
-    def publish_heartbeat_event(agent, heartbeat)
-      unless heartbeat.kind_of?(Hash)
-        @logger.error("Invalid heartbeat payload format, expected Hash, got #{heartbeat.class}: #{heartbeat}")
-        return false
+    def on_heartbeat(agent, message)
+      # TODO: check if job and index are the same
+      # from director POV and actual heartbeat
+      agent.updated_at = Time.now
+
+      if message.is_a?(Hash)
+        message["timestamp"] = Time.now.to_i if message["timestamp"].nil?
+        message["agent_id"] = agent.id
+        message["deployment"] = agent.deployment
       end
 
-      event_data = {
-        :summary   => "Heartbeat received",
-        :timestamp => Time.now.to_i,
-        :data      => heartbeat.merge(:agent_id => agent.id, :deployment => agent.deployment, :job => agent.job, :index => agent.index)
-      }
-
-      begin
-        @event_publisher.publish_event!(event_data)
-      rescue => e
-        @logger.error("Unable to publish event #{event_data}: #{e}")
-      end
+      @processor.process(:heartbeat, message)
+      @heartbeats_received += 1
+      Bhm.set_varz("heartbeats_received", @heartbeats_received)
     end
 
-    def parse_heartbeat(hb_payload)
-      Yajl::Parser.parse(hb_payload)
-    rescue Yajl::ParseError => e
-      @logger.error("Unable to parse heartbeat payload: #{e}")
-      nil
+    def on_shutdown(agent, message)
+      @logger.info("Agent `#{agent.id}' shutting down...")
+      remove_agent(agent.id)
     end
 
   end

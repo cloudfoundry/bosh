@@ -14,45 +14,50 @@ rescue LoadError
   end
 end
 
-# Deps
-require "eventmachine"
-require "em-http-request"
-require "nats/client"
-require "logging"
-require "yajl"
-require "uuidtools"
-require "thin"
-require "sinatra"
-
+require "ostruct"
 require "set"
+
+require "em-http-request"
+require "eventmachine"
+require "logging"
+require "nats/client"
+require "sinatra"
+require "thin"
+require "uuidtools"
+require "yajl"
 
 # Helpers
 require "health_monitor/yaml_helper"
 
 # Basic blocks
+require "health_monitor/agent"
 require "health_monitor/config"
 require "health_monitor/core_ext"
-require "health_monitor/version"
-require "health_monitor/errors"
-require "health_monitor/runner"
 require "health_monitor/director"
-require "health_monitor/agent"
-require "health_monitor/alert"
-require "health_monitor/event"
+require "health_monitor/errors"
+require "health_monitor/metric"
+require "health_monitor/runner"
+require "health_monitor/version"
+
+# Processing
+require "health_monitor/agent_manager"
+require "health_monitor/event_processor"
 
 # HTTP endpoints
 require "health_monitor/api_controller"
 
-# Managers
-require "health_monitor/agent_manager"
+# Protocols
+require "health_monitor/protocols/tsdb"
 
-# Alert and event processing
-require "health_monitor/alert_processor"
-require "health_monitor/event_publisher"
+# Events
+require "health_monitor/events/base"
+require "health_monitor/events/alert"
+require "health_monitor/events/heartbeat"
 
-# Alert delivery
-require "health_monitor/delivery_agents/base"
-require "health_monitor/delivery_agents/logging"
-require "health_monitor/delivery_agents/email"
-require "health_monitor/delivery_agents/pagerduty"
-require "health_monitor/delivery_agents/nats"
+# Plugins
+require "health_monitor/plugins/base"
+require "health_monitor/plugins/email"
+require "health_monitor/plugins/logger"
+require "health_monitor/plugins/nats"
+require "health_monitor/plugins/pagerduty"
+require "health_monitor/plugins/tsdb"
