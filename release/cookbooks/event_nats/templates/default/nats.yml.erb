@@ -1,0 +1,9 @@
+---
+port: <%= node[:event_nats][:port] %>
+authorization:
+  user: <%= node[:event_nats][:user] %>
+  password: <%= node[:event_nats][:password] %>
+  timeout: 1
+logtime: true
+no_epoll:  false
+no_kqueue: true
