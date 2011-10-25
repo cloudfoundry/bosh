@@ -22,6 +22,7 @@ require "tempfile"
 require "terminal-table/import"
 require "timeout"
 require "tmpdir"
+require "uri"
 require "yaml"
 
 require "cli/version"

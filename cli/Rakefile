@@ -1,45 +1,8 @@
 require "rubygems"
-require "rubygems/package_task"
-
-$:.unshift File.join(File.dirname(__FILE__), "lib")
-require "cli/version"
-
-GEM = "bosh_cli"
-GEM_VERSION = Bosh::Cli::VERSION
-
-gemspec = Gem::Specification.new do |s|
-  s.name         = GEM
-  s.version      = GEM_VERSION
-  s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh CLI"
-  s.description  = s.summary
-  s.author       = "Oleg Shaldybin"
-  s.email        = "olegs@vmware.com"
-  s.homepage     = "http://vmware.com"
-  s.executables  = %w(bosh)
-  s.bindir       = "bin"
-  s.require_path = "lib"
-  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec,vendor}/**/*")
-
-  s.add_dependency "json_pure",      "1.6.1"
-  s.add_dependency "highline",       "1.6.2"
-  s.add_dependency "progressbar",    "0.9.0"
-  s.add_dependency "httpclient",     "2.2.1"
-  s.add_dependency "terminal-table", "1.4.2"
-  s.add_dependency "blobstore_client", "0.3.4"
-end
-
-Gem::PackageTask.new(gemspec) do |pkg|
-  pkg.gem_spec = gemspec
-end
-
-task :install => [ :package ] do
-  sh "gem install --no-ri --no-rdoc vendor/cache/blobstore_client-0.3.4.gem"
-  sh "gem install --no-ri --no-rdoc pkg/#{GEM}-#{GEM_VERSION}"
-end
+require "bundler"
 
 desc "Run specs"
-task :spec => [ "bundler:install:test", "test:spec" ]
+task "spec" => [ "bundler:install:test", "test:spec" ]
 
 desc "Run specs for CI"
 task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
@@ -47,17 +10,26 @@ task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
 desc "Run specs w/coverage"
 task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
-environments = %w(test development production)
+gem_helper = Bundler::GemHelper.new(Dir.pwd)
+
+desc "Build Bosh CLI gem into the pkg directory"
+task "build" do
+  gem_helper.build_gem
+end
+
+desc "Build and install Bosh CLI into system gems"
+task "install" do
+  sh("bundle install --local --without test development")
+  gem_helper.install_gem
+end
 
 namespace "bundler" do
-
   desc "Install gems"
   task "install" do
     sh("bundle install")
   end
 
   environments = %w(test development production)
-
   environments.each do |env|
     desc "Install gems for #{env}"
     task "install:#{env}" do
@@ -68,11 +40,9 @@ namespace "bundler" do
 end
 
 namespace "test" do
-
   ["spec", "spec:rcov", "spec:ci" ].each do |task_name|
     task task_name do
       sh("cd spec && rake #{task_name}")
     end
   end
-
 end
