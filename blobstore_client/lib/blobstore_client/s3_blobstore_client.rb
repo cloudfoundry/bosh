@@ -59,7 +59,16 @@ module Bosh
 
       def get_file(object_id, file)
         object = AWS::S3::S3Object.find(object_id, bucket_name)
-        decrypt_stream(lambda { |callback| object.value { |segment| callback.call(segment) } }, file)
+        from = lambda { |callback|
+          object.value { |segment|
+            # Looks like the aws code calls this block even if segment is empty.
+            # Ideally it should be fixed upstream in the aws gem.
+            unless segment.empty?
+              callback.call(segment)
+            end
+          }
+        }
+        decrypt_stream(from, file)
       rescue AWS::S3::NoSuchKey => e
         raise NotFound, "S3 object '#{object_id}' not found"
       rescue AWS::S3::S3Exception => e
