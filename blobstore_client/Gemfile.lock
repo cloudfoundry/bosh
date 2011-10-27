@@ -1,3 +1,12 @@
+PATH
+  remote: .
+  specs:
+    blobstore_client (0.3.5)
+      aws-s3
+      httpclient
+      ruby-atmos
+      uuidtools
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -11,13 +20,13 @@ GEM
       builder (>= 2.1.2)
     columnize (0.3.3)
     diff-lcs (1.1.2)
-    httpclient (2.1.6.1)
+    httpclient (2.2.2)
     linecache (0.46)
       rbx-require-relative (> 0.0.4)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
     log4r (1.1.9)
-    mime-types (1.16)
+    mime-types (1.17.1)
     nokogiri (1.4.4)
     rake (0.8.7)
     rbx-require-relative (0.0.5)
@@ -60,24 +69,21 @@ GEM
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
-    uuidtools (2.1.1)
-    xml-simple (1.0.12)
+    uuidtools (2.1.2)
+    xml-simple (1.1.1)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  aws-s3
+  blobstore_client!
   ci_reporter
-  httpclient
   rake
   rcov
   rcov_analyzer (>= 0.2)
-  rspec (= 2.3.0)
-  ruby-atmos
+  rspec
   ruby-debug
   ruby-debug19
   simplecov
   simplecov-clover
   simplecov-rcov
-  uuidtools
