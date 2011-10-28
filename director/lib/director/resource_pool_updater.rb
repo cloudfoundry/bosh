@@ -38,22 +38,22 @@ module Bosh::Director
       end
     end
 
-    def outdated_vms_count
+    def outdated_idle_vms_count
       count = 0
-      each_idle_vm do |idle_vm|
+      @resource_pool.idle_vms.each do |idle_vm|
         count += 1 if idle_vm.vm && idle_vm.changed?
       end
       count
     end
 
-    def delete_outdated_vms(thread_pool)
-      count = outdated_vms_count
+    def delete_outdated_idle_vms(thread_pool)
+      count = outdated_idle_vms_count
       index = 0
       index_lock = Mutex.new
 
-      @logger.info("Deleting #{count} outdated VMs")
+      @logger.info("Deleting #{count} outdated idle VMs")
 
-      each_idle_vm do |idle_vm|
+      @resource_pool.idle_vms.each do |idle_vm|
         next unless idle_vm.vm && idle_vm.changed?
         vm_cid = idle_vm.vm.cid
 

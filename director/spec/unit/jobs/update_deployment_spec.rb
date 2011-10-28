@@ -80,7 +80,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       job_updater = mock("job_updater")
 
       resource_pool_updater.stub!(:extra_vms_count).and_return(2)
-      resource_pool_updater.stub!(:outdated_vms_count).and_return(3)
+      resource_pool_updater.stub!(:outdated_idle_vms_count).and_return(3)
       resource_pool_updater.stub!(:bound_missing_vms_count).and_return(4)
       resource_pool_updater.stub!(:missing_vms_count).and_return(5)
 
@@ -99,7 +99,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:delete_unneeded_instances).ordered
 
       resource_pool_updater.should_receive(:delete_extra_vms).ordered
-      resource_pool_updater.should_receive(:delete_outdated_vms).ordered
+      resource_pool_updater.should_receive(:delete_outdated_idle_vms).ordered
 
       resource_pool_updater.should_receive(:create_bound_missing_vms).ordered
       resource_pool_updater.should_receive(:allocate_dynamic_ips).ordered
