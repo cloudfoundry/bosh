@@ -32,7 +32,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     resource_pool_updater.delete_extra_vms(thread_pool)
     thread_pool.wait
 
-    resource_pool_updater.delete_outdated_vms(thread_pool)
+    resource_pool_updater.delete_outdated_idle_vms(thread_pool)
     thread_pool.wait
 
     resource_pool_updater.create_missing_vms(thread_pool)

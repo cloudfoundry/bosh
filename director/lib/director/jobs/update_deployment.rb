@@ -83,10 +83,11 @@ module Bosh::Director
           end
           thread_pool.wait
 
-          # delete outdated VMs across resource pools
-          @event_log.begin_stage("Deleting outdated VMs", sum_across_pools(:outdated_vms_count))
+          # Delete outdated idle VMs across resource pools. Outdated allocated vms
+          # are handled by instance updater
+          @event_log.begin_stage("Deleting outdated idle VMs", sum_across_pools(:outdated_idle_vms_count))
           @resource_pool_updaters.each do |updater|
-            updater.delete_outdated_vms(thread_pool)
+            updater.delete_outdated_idle_vms(thread_pool)
           end
           thread_pool.wait
 
