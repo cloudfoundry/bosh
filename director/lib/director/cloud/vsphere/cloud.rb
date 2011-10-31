@@ -34,10 +34,15 @@ module VSphereCloud
       @rest_client.cookie_manager.parse(cookie_str, URI.parse("https://#{@vcenter["host"]}"))
 
       mem_ratio = 1.0
-      if (options["mem_overcommit_ratio"])
+      if options["mem_overcommit_ratio"]
         mem_ratio = options["mem_overcommit_ratio"].to_f
       end
+
       @resources = Resources.new(@client, @vcenter, mem_ratio)
+
+      # HACK: provide a way to copy the disks instead of moving them.
+      # Used for extra data protection until we have proper backups
+      @copy_disks = options["copy_disks"] || false
 
       @lock = Mutex.new
       @locks = {}
@@ -491,15 +496,21 @@ module VSphereCloud
             # Find the destination datastore
             persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
 
-            # need to move disk to right datastore
+            # Need to move disk to right datastore
             source_datacenter = client.find_by_inventory_path(disk.datacenter)
             source_path = disk.path
             datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
 
             destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.id}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
-            client.move_disk(source_datacenter, source_path, datacenter, destination_path)
-            @logger.info("Moved disk successfully")
+
+            if @copy_disks
+              client.copy_disk(source_datacenter, source_path, datacenter, destination_path)
+              @logger.info("Copied disk successfully")
+            else
+              client.move_disk(source_datacenter, source_path, datacenter, destination_path)
+              @logger.info("Moved disk successfully")
+            end
 
             disk.datacenter = datacenter_name
             disk.datastore = persistent_datastore.name
@@ -512,7 +523,7 @@ module VSphereCloud
           # Find the destination datastore
           persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
 
-          # need to create disk
+          # Need to create disk
           disk.datacenter = datacenter_name
           disk.datastore = persistent_datastore.name
           datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
@@ -573,7 +584,7 @@ module VSphereCloud
         @logger.info("Detaching disk")
         client.reconfig_vm(vm, config)
 
-        # detach-disk is async and task completition does not necessarily mean
+        # detach-disk is async and task completion does not necessarily mean
         # that changes have been applied to VC side. Query VC until we confirm
         # that the change has been applied. This is a known issue for vsphere 4.
         # Fixed in vsphere 5.
