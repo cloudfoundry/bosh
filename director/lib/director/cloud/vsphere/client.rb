@@ -179,11 +179,21 @@ module VSphereCloud
       tasks.each { |task| wait_for_task(task) }
     end
 
-    def move_disk(source_datacenter, source_path, destination_datacenter, destination_path)
+    def move_disk(source_datacenter, source_path, dest_datacenter, dest_path)
       tasks = []
       [".vmdk", "-flat.vmdk"].each do |extension|
         tasks << @service_content.file_manager.move_file("#{source_path}#{extension}", source_datacenter,
-                                                         "#{destination_path}#{extension}", destination_datacenter, false)
+                                                         "#{dest_path}#{extension}", dest_datacenter, false)
+      end
+
+      tasks.each { |task| wait_for_task(task) }
+    end
+
+    def copy_disk(source_datacenter, source_path, dest_datacenter, dest_path)
+      tasks = []
+      [".vmdk", "-flat.vmdk"].each do |extension|
+        tasks << @service_content.file_manager.copy_file("#{source_path}#{extension}", source_datacenter,
+                                                         "#{dest_path}#{extension}", dest_datacenter, false)
       end
 
       tasks.each { |task| wait_for_task(task) }
