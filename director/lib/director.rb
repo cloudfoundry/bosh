@@ -66,7 +66,15 @@ require "director/user_manager"
 require "director/deployment_manager"
 require "director/instance_manager"
 require "director/stemcell_manager"
+require "director/cloud_check_manager"
+require "director/base_cloud_check"
+require "director/bcck/disk_check"
+require "director/bcck/vm_check"
+require "director/bcck/instance_check"
+require "director/cloud_check_helper"
 require "director/jobs/base_job"
+require "director/jobs/cloud_scan"
+require "director/jobs/cloud_fix"
 require "director/jobs/delete_deployment"
 require "director/jobs/delete_release"
 require "director/jobs/delete_stemcell"
@@ -112,15 +120,16 @@ module Bosh::Director
 
     def initialize
       super
-      @deployment_manager = DeploymentManager.new
-      @release_manager    = ReleaseManager.new
-      @stemcell_manager   = StemcellManager.new
-      @task_manager       = TaskManager.new
-      @user_manager       = UserManager.new
-      @instance_manager   = InstanceManager.new
-      @resource_manager   = ResourceManager.new
-      @property_manager   = PropertyManager.new
-      @logger             = Config.logger
+      @deployment_manager  = DeploymentManager.new
+      @release_manager     = ReleaseManager.new
+      @stemcell_manager    = StemcellManager.new
+      @task_manager        = TaskManager.new
+      @user_manager        = UserManager.new
+      @instance_manager    = InstanceManager.new
+      @resource_manager    = ResourceManager.new
+      @property_manager    = PropertyManager.new
+      @cloud_check_manager = CloudCheckManager.new
+      @logger              = Config.logger
     end
 
     mime_type :tgz, "application/x-compressed"
