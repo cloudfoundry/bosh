@@ -388,10 +388,9 @@ module VSphereCloud
             end
           end
         end
-        raise "Could not find disk local resources for: #{disk.pretty_inspect}" if cluster.nil?
 
         # Use this cluster only if it can accomodate all the additional persistent disks
-        if disk_space_available?(cluster, cluster.persistent_datastores, additional_persistent_disks)
+        if cluster && disk_space_available?(cluster, cluster.persistent_datastores, additional_persistent_disks)
 
           @lock.synchronize do
             break if cluster.real_free_memory - memory < MEMORY_THRESHOLD
