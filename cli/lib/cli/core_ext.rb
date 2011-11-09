@@ -78,21 +78,28 @@ module BoshExtensions
 end
 
 module BoshStringExtensions
+
+  COLOR_CODES = {
+    :red => "\e[0m\e[31m",
+    :green => "\e[0m\e[32m",
+    :yellow => "\e[0m\e[33m"
+  }
+
   def red
-    colorize("\e[0m\e[31m")
+    colorize(:red)
   end
 
   def green
-    colorize("\e[0m\e[32m")
+    colorize(:green)
   end
 
   def yellow
-    colorize("\e[0m\e[33m")
+    colorize(:yellow)
   end
 
   def colorize(color_code)
-    if Bosh::Cli::Config.colorize
-      "#{color_code}#{self}\e[0m"
+    if Bosh::Cli::Config.colorize && COLOR_CODES[color_code]
+      "#{COLOR_CODES[color_code]}#{self}\e[0m"
     else
       self
     end

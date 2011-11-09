@@ -75,7 +75,21 @@ module Bosh::Cli::Command
       end
 
       nl
-      say "Task #{task_id}: state is '#{task.state}'"
+
+      final_state = task.state
+      color = {
+        "done" => :green,
+        "error" => :red,
+      }[final_state] || :yellow
+
+      status = "Task #{task_id.green} state is #{final_state.colorize(color)}"
+
+      duration = renderer.duration
+      if final_state == "done" && duration && duration.kind_of?(Numeric)
+        status += ", took #{format_time(duration).green} to complete"
+      end
+
+      say(status)
     end
 
     def list_running
