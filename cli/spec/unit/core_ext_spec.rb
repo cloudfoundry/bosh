@@ -26,11 +26,13 @@ describe String do
     "string".red.should   == "string"
     "string".green.should == "string"
     "string".colorize("a").should == "string"
+    "string".colorize(:green).should == "string"
 
     Bosh::Cli::Config.colorize = true
     "string".red.should == "\e[0m\e[31mstring\e[0m"
     "string".green.should == "\e[0m\e[32mstring\e[0m"
-    "string".colorize("a").should == "astring\e[0m"    
+    "string".colorize("a").should == "string"
+    "string".colorize(:green).should == "\e[0m\e[32mstring\e[0m"
   end
 end
 
@@ -66,7 +68,7 @@ describe Object do
     o.stub!(:to_s).and_return("  ")
     o.should be_blank
     o.stub!(:to_s).and_return("Object 1")
-    o.should_not be_blank    
+    o.should_not be_blank
   end
-  
+
 end
