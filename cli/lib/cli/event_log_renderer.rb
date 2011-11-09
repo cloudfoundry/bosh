@@ -28,6 +28,8 @@ module Bosh::Cli
       @progress_bars = { }
       @pos = 0
       @time_adjustment = 0
+      @started_at = nil
+      @finished_at = nil
     end
 
     def add_output(output)
@@ -121,6 +123,11 @@ module Bosh::Cli
       end
     end
 
+    def duration
+      return nil if @started_at.nil? || @finished_at.nil?
+      @finished_at - @started_at
+    end
+
     private
 
     def append_stage_header
@@ -175,7 +182,14 @@ module Bosh::Cli
 
       case event["state"]
       when "started"
-        task.start_time = Time.at(event["time"]) rescue Time.now
+        begin
+          task.start_time = Time.at(event["time"])
+          # Treat first "started" event as task start time
+          @started_at = task.start_time if @started_at.nil?
+        rescue
+          task.start_time = Time.now
+        end
+
         task.progress = 0
 
         @tasks[event["index"]] = task
@@ -195,7 +209,12 @@ module Bosh::Cli
         @tasks.delete(event["index"])
         @done_tasks << task
 
-        task.finish_time = Time.at(event["time"]) rescue Time.now
+        begin
+          task.finish_time = @finished_at = Time.at(event["time"])
+        rescue
+          task.finish_time = Time.now
+        end
+
         task_time = task.finish_time - task.start_time
 
         n_done_tasks = @done_tasks.size.to_f

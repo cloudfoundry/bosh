@@ -10,6 +10,7 @@ module Bosh::Cli
     end
 
     attr_accessor :time_adjustment
+    attr_accessor :duration
 
     def initialize
       @out = Bosh::Cli::Config.output || $stdout

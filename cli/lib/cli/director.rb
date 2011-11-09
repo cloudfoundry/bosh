@@ -342,7 +342,8 @@ module Bosh
         else
           nl
           status = "Task #{task_id}: state is '#{state}'"
-          status += ", took #{format_time(Time.now - start_time).green} to complete" if result == :done
+          duration = renderer.duration || (Time.now - start_time)
+          status += ", took #{format_time(duration).green} to complete" if result == :done
           say(status)
           result
         end
