@@ -2,6 +2,8 @@ module Bosh::HealthMonitor
   module Events
     class Heartbeat < Base
 
+      CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router stager vcap_redis))
+
       attr_reader :metrics
 
       def initialize(attributes = {})
@@ -19,6 +21,7 @@ module Bosh::HealthMonitor
         @job_state = @attributes["job_state"]
 
         @tags = { "job" => @job, "index" => @index }
+        @tags["role"] = guess_role
 
         @vitals = @attributes["vitals"] || {}
         @load = @vitals["load"] || []
@@ -91,6 +94,20 @@ module Bosh::HealthMonitor
         add_metric("system.disk.ephemeral.percent", @ephemeral_disk["percent"])
         add_metric("system.disk.persistent.percent", @persistent_disk["percent"])
         add_metric("system.healthy", @job_state == "running" ? 1 : 0)
+      end
+
+      def guess_role
+        # Dashboard might want to partition jobs
+        # into several buckets, so let's help it
+        # by applying a couple of heuristics
+
+        return "core" if CORE_JOBS.include?(@job.to_s.downcase)
+
+        if @job =~ /(_node$|_gateway$|service)/i
+          return "service"
+        end
+
+        return "unknown"
       end
 
     end
