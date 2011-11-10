@@ -6,8 +6,8 @@ describe Bhm::Agent do
     Bhm.intervals = OpenStruct.new(:agent_timeout => 344, :rogue_agent_alert => 124)
   end
 
-  def make_agent(id, deployment = nil, job = nil, index = nil)
-    Bhm::Agent.new(id, deployment, job, index)
+  def make_agent(id)
+    Bhm::Agent.new(id)
   end
 
   it "knows if it is timed out" do
@@ -37,15 +37,16 @@ describe Bhm::Agent do
     agent.rogue?.should be_false
   end
 
-  it "can exist without job name and index" do
+  it "has name that depends on the currently known state" do
     agent = make_agent("zb")
     agent.cid = "deadbeef"
-    agent.name.should == "unknown deployment: unknown job(index n/a) [agent_id=zb, cid=deadbeef]"
-  end
-
-  it "has well-formed name" do
-    agent = make_agent("zb-023-ppc", "oleg-cloud", "mysql_node", "0")
-    agent.name.should == "oleg-cloud: mysql_node(0) [agent_id=zb-023-ppc, cid=]"
+    agent.name.should == "agent zb [cid=deadbeef]"
+    agent.deployment = "oleg-cloud"
+    agent.name.should == "agent zb [deployment=oleg-cloud, cid=deadbeef]"
+    agent.job = "mysql_node"
+    agent.name.should == "agent zb [deployment=oleg-cloud, job=mysql_node, cid=deadbeef]"
+    agent.index = "0"
+    agent.name.should == "oleg-cloud: mysql_node(0) [id=zb, cid=deadbeef]"
   end
 
 end

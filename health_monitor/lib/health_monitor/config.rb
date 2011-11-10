@@ -1,5 +1,3 @@
-require "ostruct"
-
 module Bosh::HealthMonitor
 
   class << self
@@ -7,15 +5,18 @@ module Bosh::HealthMonitor
     attr_accessor :logger
     attr_accessor :director
     attr_accessor :intervals
-    attr_accessor :nats
     attr_accessor :mbus
     attr_accessor :event_mbus
 
     attr_accessor :http_port, :http_user, :http_password
-    attr_accessor :alert_delivery_agents
+    attr_accessor :plugins
     attr_accessor :varz
 
+    attr_accessor :nats
+
     def config=(config)
+      validate_config(config)
+
       @logger     = Logging.logger(config["logfile"] || STDOUT)
       @intervals  = OpenStruct.new(config["intervals"])
       @director   = Director.new(config["director"])
@@ -37,16 +38,20 @@ module Bosh::HealthMonitor
         @logger.level = config["loglevel"].to_sym
       end
 
-      if config["alert_delivery_agents"].kind_of?(Array)
-        @alert_delivery_agents = config["alert_delivery_agents"]
-      else
-        @alert_delivery_agents = [ ]
-        @logger.warn("Unknown format for alert_delivery_agents in config file, Array expected")
+      if config["plugins"].is_a?(Enumerable)
+        @plugins = config["plugins"]
       end
     end
 
     def set_varz(key, value)
+      @varz ||= {}
       @varz[key] = value
+    end
+
+    def validate_config(config)
+      if !config.is_a?(Hash)
+        raise ConfigError, "Invalid config format, Hash epxpected, #{config.class} given"
+      end
     end
 
   end
