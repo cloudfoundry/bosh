@@ -9,13 +9,6 @@ mbus:
   user: <%= node[:nats][:user] %>
   password: <%= node[:nats][:password] %>
 
-<% if node[:hosts][:event_nats] %>
-event_mbus:
-  endpoint: nats://<%= node[:hosts][:event_nats] %>:<%= node[:event_nats][:port] %>
-  user: <%= node[:event_nats][:user] %>
-  password: <%= node[:event_nats][:password] %>
-<% end %>
-
 director:
   endpoint: http://<%= node[:hosts][:director] %>:<%= node[:director][:port] %>
   user: <%= node[:health_monitor][:director_account][:user] %>
@@ -29,29 +22,51 @@ intervals:
   agent_timeout: <%= node[:health_monitor][:intervals][:agent_timeout] %>
   rogue_agent_alert: <%= node[:health_monitor][:intervals][:rogue_agent_alert] %>
 
-alert_delivery_agents:
-
-  - plugin: logger
-
-<% if node[:hosts][:event_nats] %>
-  - plugin: nats
-<% end %>
-
-<% if node[:health_monitor][:email_notifications] %>
-  - plugin: email
-    recipients:
-    <% for recipient in node[:health_monitor][:email_recipients].to_a %>
-      - <%= recipient %>
-    <% end %>
-    smtp:
-      from: <%= node[:health_monitor][:smtp][:from] %>
-      host: <%= node[:health_monitor][:smtp][:host] %>
-      port: <%= node[:health_monitor][:smtp][:port] %>
-      auth: <%= node[:health_monitor][:smtp][:auth] %>
-      user: <%= node[:health_monitor][:smtp][:user] %>
-      password: <%= node[:health_monitor][:smtp][:password] %>
-      domain: <%= node[:health_monitor][:smtp][:domain] %>
-<% end %>
-
 logfile: <%= node[:health_monitor][:path] %>/shared/logs/health_monitor.log
 loglevel: <%= node[:health_monitor][:loglevel] %>
+
+plugins:
+
+  - name: logger
+    events:
+      - alert
+
+  <% if node[:hosts][:event_nats] %>
+  - name: nats
+    events:
+      - alert
+      - heartbeat
+    options:
+      endpoint: nats://<%= node[:hosts][:event_nats] %>:<%= node[:event_nats][:port] %>
+      user: <%= node[:event_nats][:user] %>
+      password: <%= node[:event_nats][:password] %>
+  <% end %>
+
+  <% if node[:health_monitor][:email_notifications] %>
+  - name: email
+    events:
+      - alert
+    options:
+      recipients:
+        <% for recipient in node[:health_monitor][:email_recipients].to_a %>
+        - <%= recipient %>
+        <% end %>
+      smtp:
+        from: <%= node[:health_monitor][:smtp][:from] %>
+        host: <%= node[:health_monitor][:smtp][:host] %>
+        port: <%= node[:health_monitor][:smtp][:port] %>
+        auth: <%= node[:health_monitor][:smtp][:auth] %>
+        user: <%= node[:health_monitor][:smtp][:user] %>
+        password: <%= node[:health_monitor][:smtp][:password] %>
+        domain: <%= node[:health_monitor][:smtp][:domain] %>
+  <% end %>
+
+  <% if node[:health_monitor][:tsdb_enabled] %>
+  - name: tsdb
+    events:
+      - alert
+      - heartbeat
+    options:
+      host: <%= node[:health_monitor][:tsdb][:host] %>
+      port: <%= node[:health_monitor][:tsdb][:port] %>
+  <% end %>

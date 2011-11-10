@@ -17,12 +17,12 @@ end
 
 desc "run spec tests"
 task :spec => [ :bundle_install ] do
-  sh("cd spec && rake spec")
+  sh("cd spec && bundle exec rake spec")
 end
 
 desc "run CI spec tests"
 task "spec:ci" => [ :bundle_install ] do
-  sh("cd spec && rake spec:ci")
+  sh("cd spec && bundle exec rake spec:ci")
 end
 
 
