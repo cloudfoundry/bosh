@@ -6,6 +6,7 @@ module Bosh::Director::Models
     one_to_many  :job_instances, :class => "Bosh::Director::Models::Instance"
     one_to_many  :vms
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
+    one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
 
     def validate
       validates_presence :name

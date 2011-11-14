@@ -1,6 +1,7 @@
 module Bosh::Director
   module Jobs
     class BaseJob
+
       attr_accessor :task_id
 
       def initialize(*args)
