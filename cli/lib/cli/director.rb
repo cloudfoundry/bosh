@@ -190,6 +190,23 @@ module Bosh
         get_json(url)
       end
 
+      def perform_cloud_scan(deployment_name)
+        url = "/deployments/#{deployment_name}/scans"
+        request_and_track(:post, url, nil, nil, :log_type => "event", :log_only => true)
+      end
+
+      def list_problems(deployment_name)
+        url = "/deployments/#{deployment_name}/problems"
+        get_json(url)
+      end
+
+      def apply_resolutions(deployment_name, resolutions)
+        url = "/deployments/#{deployment_name}/problems"
+        request_and_track(:put, url, "application/json",
+                          JSON.generate("resolutions" => resolutions),
+                          :log_type => "event", :log_only => true)
+      end
+
       def get_current_time
         status, body, headers = get("/info")
         Time.parse(headers[:date]) rescue nil
@@ -282,10 +299,11 @@ module Bosh
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
         start_time    = Time.now
         quiet         = options[:quiet] || false
+        log_only      = options[:log_only] || false
 
         task = DirectorTask.new(self, task_id, log_type)
 
-        say("Tracking task output for task##{task_id}...") unless quiet
+        say("Tracking task output for task##{task_id}...") unless quiet || log_only
 
         renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
         renderer.time_adjustment = get_time_difference
@@ -301,7 +319,7 @@ module Bosh
             renderer.add_output(output) unless quiet
           end
 
-          if no_output_yet && polls % 10 == 0 && !quiet
+          if no_output_yet && polls % 10 == 0 && !quiet && !log_only
             say("Task state is '%s', waiting for output..." % [ state ])
           end
 
@@ -330,6 +348,7 @@ module Bosh
         end
 
         return result if quiet
+        return result if log_only && result == :done
 
         if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
           confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")
