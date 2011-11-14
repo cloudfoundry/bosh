@@ -1,6 +1,7 @@
 module Bosh::Director
   module Jobs
     class BaseJob
+
       attr_accessor :task_id
 
       def initialize(*args)
@@ -84,6 +85,11 @@ module Bosh::Director
 
       def task_checkpoint
         raise TaskCancelled.new(@task_id) if task_cancelled?
+      end
+
+      def begin_stage(stage_name, n_steps)
+        @event_log.begin_stage(stage_name, n_steps)
+        @logger.info(stage_name)
       end
 
       def track_and_log(task)
