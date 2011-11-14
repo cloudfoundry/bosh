@@ -1,4 +1,5 @@
 require 'rake'
+require 'fileutils'
 
 desc "Run specs"
 task "spec" => ["bundler:install:test", "test:spec"]
@@ -20,6 +21,21 @@ task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
 desc "Run specs for CI"
 task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
+
+desc "Generate new migration"
+task "new_migration", :name do |t, args|
+  name = args[:name]
+  if name.nil?
+    puts "Please provide migration name: rake new_migration name=<name>"
+    exit(1)
+  end
+
+  timestamp = Time.new.getutc.strftime("%Y%m%d%H%M%S")
+  filename = "db/migrations/#{timestamp}_#{name}.rb"
+
+  puts "Creating #{filename}"
+  FileUtils.touch(filename)
+end
 
 namespace "bundler" do
 
