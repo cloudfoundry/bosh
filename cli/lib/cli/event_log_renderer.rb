@@ -174,6 +174,7 @@ module Bosh::Cli
         task = @tasks[event["index"]]
       end
 
+      event_data = event["data"] || {}
       # Ignoring out-of-order events
       return if task.nil?
 
@@ -205,7 +206,7 @@ module Bosh::Cli
           @non_canary_event_start_time = task.start_time
           @batches_count = ((total - @done_tasks.size) / @tasks_batch_size.to_f).ceil
         end
-      when "finished"
+      when "finished", "failed"
         @tasks.delete(event["index"])
         @done_tasks << task
 
@@ -225,7 +226,14 @@ module Bosh::Cli
         progress_bar.label = time_with_eta(task_time, @eta)
 
         progress_bar.clear_line
-        @buffer.puts("  #{task.name.downcase.yellow}")
+        task_name = task.name.downcase
+
+        if event["state"] == "failed"
+          status = [task_name.red, event_data["error"]].compact.join(": ") # TODO: truncate?
+        else
+          status = task_name.yellow
+        end
+        @buffer.puts("  #{status}")
       when "in_progress"
         progress = [ event["progress"].to_f / 100, 1 ].min
       end

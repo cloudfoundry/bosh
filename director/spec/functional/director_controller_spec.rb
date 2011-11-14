@@ -568,6 +568,33 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "problem management" do
+
+      def payload(params)
+        { "CONTENT_TYPE" => "application/json", :input => Yajl::Encoder.encode(params)}
+      end
+
+      it "exposes problem managent REST API" do
+        deployment = Bosh::Director::Models::Deployment.make(:name => "mycloud")
+
+        get "/deployments/mycloud/problems"
+        last_response.status.should == 200
+        Yajl::Parser.parse(last_response.body).should == []
+
+        post "/deployments/mycloud/scans"
+        expect_redirect_to_queued_task(last_response)
+
+        put "/deployments/mycloud/problems", payload(:solutions => {42 => "do_this", 43 => "do_that", 44 => nil})
+        last_response.status.should == 404
+
+        problem = Bosh::Director::Models::DeploymentProblem.
+          create(:deployment_id => deployment.id, :resource_id => 2, :type => "test", :state => "open", :data => { })
+
+        put "/deployments/mycloud/problems", {}, payload(:solution => "default")
+        expect_redirect_to_queued_task(last_response)
+      end
+    end
+
   end
 
 end

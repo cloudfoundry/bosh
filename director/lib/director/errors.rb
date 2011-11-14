@@ -100,7 +100,7 @@ module Bosh::Director
 
    ["PropertyAlreadyExists",   BAD_REQUEST, 110001, "Property \"%s\" already exists for deployment \"%s\"" ],
    ["PropertyInvalid",         BAD_REQUEST, 110002, "Property is invalid: %s" ],
-   ["PropertyNotFound",        NOT_FOUND,   110003, "Property \"%s\" not found for deployment \"%s\"" ]
+   ["PropertyNotFound",        NOT_FOUND,   110003, "Property \"%s\" not found for deployment \"%s\"" ],
 
   ].each do |e|
     class_name, response_code, error_code, format = e
