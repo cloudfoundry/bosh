@@ -396,6 +396,13 @@ module Bosh
                 "(stemcells and releases currently in use are NOT deleted)"
           route :maintenance, :cleanup
         end
+
+        command :cloudcheck do
+          usage  "cloudcheck"
+          desc   "Cloud consistency check and interactive repair"
+          option "--auto", "resolve problems automatically (not recommended for production)"
+          route  :cloud_check, :perform
+        end
       end
 
       def parse_options!

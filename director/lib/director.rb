@@ -56,6 +56,7 @@ require "director/job_updater"
 require "director/lock"
 require "director/nats_rpc"
 require "director/package_compiler"
+require "director/problem_manager"
 require "director/property_manager"
 require "director/release_manager"
 require "director/resource_manager"
@@ -68,6 +69,10 @@ require "director/user_manager"
 require "director/deployment_manager"
 require "director/instance_manager"
 require "director/stemcell_manager"
+
+require "director/problem_handlers/base"
+require "director/problem_handlers/orphan_disk"
+
 require "director/jobs/base_job"
 require "director/jobs/delete_deployment"
 require "director/jobs/delete_release"
@@ -77,6 +82,8 @@ require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
 require "director/jobs/fetch_logs"
 require "director/jobs/vm_state"
+require "director/jobs/cloud_check/scan"
+require "director/jobs/cloud_check/apply_resolutions"
 
 module Bosh::Director
   autoload :Models, "director/models"
@@ -124,6 +131,7 @@ module Bosh::Director
       @resource_manager   = ResourceManager.new
       @property_manager   = PropertyManager.new
       @vm_state_manager   = VmStateManager.new
+      @problem_manager    = ProblemManager.new
       @logger             = Config.logger
     end
 
@@ -515,6 +523,34 @@ module Bosh::Director
     delete "/deployments/:deployment/properties/:property" do
       @property_manager.delete_property(params[:deployment], params[:property])
       status(204)
+    end
+
+    # Cloud check
+
+    # Initiate deployment scan
+    post "/deployments/:deployment/scans" do
+      start_task { @problem_manager.perform_scan(@user, params[:deployment]) }
+    end
+
+    # Get the list of problems for a particular deployment
+    get "/deployments/:deployment/problems" do
+      problems = @problem_manager.get_problems(params[:deployment]).map do |problem|
+        {
+          "id" => problem.id,
+          "type" => problem.type,
+          "data" => problem.data,
+          "description" => problem.description,
+          "resolutions" => problem.resolutions
+        }
+      end
+
+      json_encode(problems)
+    end
+
+    # Try to resolve a set of problems
+    put "/deployments/:deployment/problems", :consumes => [:json] do
+      payload = json_decode(request.body)
+      start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload["resolutions"]) }
     end
 
     get "/info" do
