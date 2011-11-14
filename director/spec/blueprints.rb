@@ -98,4 +98,11 @@ module Bosh::Director::Models
     disk_cid    { Sham.disk_cid }
     instance    { Instance.make }
   end
+
+  DeploymentProblem.blueprint do
+    deployment { Deployment.make }
+    type       { "unknown_issue" }
+    data_json  { "{}" }
+    state      { "open" }
+  end
 end
