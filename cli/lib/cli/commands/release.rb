@@ -176,7 +176,7 @@ module Bosh::Cli::Command
 
       if release.name.blank?
         confirmation = "Please enter %s release name: " % [ final ? "final" : "development" ]
-        name = interactive? ? ask(confirmation) : DEFAULT_RELEASE_NAME
+        name = interactive? ? ask(confirmation).to_s : DEFAULT_RELEASE_NAME
         err("Canceled release creation, no name given") if name.blank?
         release.update_config(:name => name)
       end
