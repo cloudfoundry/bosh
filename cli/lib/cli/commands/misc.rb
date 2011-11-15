@@ -70,11 +70,11 @@ module Bosh::Cli::Command
       target_required
 
       unless options[:non_interactive]
-        username = ask("Your username: ") if username.blank?
+        username = ask("Your username: ").to_s if username.blank?
 
         password_retries = 0
         while password.blank? && password_retries < 3
-          password = ask("Enter password: ") { |q| q.echo = "*" }
+          password = ask("Enter password: ").to_s { |q| q.echo = "*" }
           password_retries += 1
         end
       end
