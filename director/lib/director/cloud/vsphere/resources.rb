@@ -109,17 +109,44 @@ module VSphereCloud
       datacenters
     end
 
+    # Allow clusters to be specified as
+    #
+    # clusters:                      clusters:
+    #   - CLUSTER1                     - CLUSTER1:
+    #   - CLUSTER2       OR                resource_pool: SOME_RP
+    #   - CLUSTER3                     - CLUSTER2
+    #                                  - CLUSTER3
+    def get_cluster_spec(clusters)
+      cluster_spec = {}
+      clusters.each do |cluster|
+        case cluster
+        when String
+          cluster_spec[cluster] = nil
+        when Hash
+          cluster_spec[cluster.keys.first] = cluster[cluster.keys.first]["resource_pool"]
+        else
+          raise "Bad cluster information in datacenter spec #{clusters.pretty_inspect}"
+        end
+      end
+      cluster_spec
+    end
+
     def fetch_clusters(datacenter)
       datacenter_spec = datacenter.spec
       cluster_mobs    = @client.get_managed_objects(Vim::ClusterComputeResource, :root => datacenter.mob)
       properties      = @client.get_properties(cluster_mobs, Vim::ClusterComputeResource,
                                                ["name", "datastore", "resourcePool", "host"], :ensure_all => true)
 
-      cluster_names   = Set.new(datacenter_spec["clusters"])
+      cluster_spec = get_cluster_spec(datacenter_spec["clusters"])
+      cluster_names = Set.new(cluster_spec.keys)
       properties.delete_if { |_, cluster_properties| !cluster_names.include?(cluster_properties["name"]) }
 
       clusters = []
       properties.each_value do |cluster_properties|
+        requested_resource_pool = cluster_spec[cluster_properties["name"]]
+        cluster_resource_pool = fetch_resource_pool(requested_resource_pool, cluster_properties)
+        next if cluster_resource_pool.nil?
+
         cluster                    = Cluster.new
         cluster.mem_over_commit    = @mem_over_commit
         cluster.mob                = cluster_properties[:obj]
@@ -127,7 +154,7 @@ module VSphereCloud
 
         @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
 
-        cluster.resource_pool      = cluster_properties["resourcePool"]
+        cluster.resource_pool      = cluster_resource_pool
         cluster.datacenter         = datacenter
         cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"],
                                                       datacenter.datastore_pattern)
@@ -148,11 +175,43 @@ module VSphereCloud
         end
         @logger.debug("non-persistent datastores are " + "#{datastore_names.pretty_inspect}\n " +
                       "persistent datastores are #{persistent_datastore_names.pretty_inspect}")
-        fetch_cluster_utilization(cluster, cluster_properties["host"])
+
+        if requested_resource_pool.nil?
+          # Ideally we would just get the utilization for the root resource pool, but
+          # VC does not really have "real time" updates for utilization so for
+          # now we work around that by querying the cluster hosts directly.
+          fetch_cluster_utilization(cluster, cluster_properties["host"])
+        else
+          fetch_resource_pool_utilization(requested_resource_pool, cluster)
+        end
 
         clusters << cluster
       end
       clusters
+    end
+
+    def fetch_resource_pool(requested_resource_pool, cluster_properties)
+      root_resource_pool = cluster_properties["resourcePool"]
+
+      return root_resource_pool if requested_resource_pool.nil?
+
+      # Get list of resource pools under this cluster
+      properties = @client.get_properties(root_resource_pool, Vim::ResourcePool, ["resourcePool"])
+      if properties && properties["resourcePool"] && properties["resourcePool"].size != 0
+
+        # Get the name of each resource pool under this cluster
+        child_properties = @client.get_properties(properties["resourcePool"], Vim::ResourcePool, ["name"])
+        if child_properties
+          child_properties.each_value do | resource_pool |
+            if resource_pool["name"] == requested_resource_pool
+              @logger.info("Found requested resource pool #{requested_resource_pool} under cluster #{cluster_properties["name"]}")
+              return resource_pool[:obj]
+            end
+          end
+        end
+      end
+      @logger.info("Could not find requested resource pool #{requested_resource_pool} under cluster #{cluster_properties["name"]}")
+      nil
     end
 
     def fetch_datastores(datacenter, datastore_mobs, match_pattern)
@@ -206,6 +265,25 @@ module VSphereCloud
       cluster.unaccounted_memory = 0
     end
 
+    def fetch_resource_pool_utilization(resource_pool, cluster)
+      properties = @client.get_properties(cluster.resource_pool, Vim::ResourcePool, ["summary"])
+      raise "Failed to get utilization for resource pool #{resource_pool}" if properties.nil?
+
+      if properties["summary"].runtime.overall_status == "green"
+        runtime_info = properties["summary"].runtime
+        cluster.idle_cpu = ((runtime_info.cpu.max_usage - runtime_info.cpu.overall_usage) * 1.0)/runtime_info.cpu.max_usage
+        cluster.total_memory = (runtime_info.memory.reservation_used + runtime_info.memory.unreserved_for_vm)/(1024 * 1024)
+        cluster.free_memory = [runtime_info.memory.unreserved_for_vm, runtime_info.memory.max_usage - runtime_info.memory.overall_usage].min/(1024 * 1024)
+        cluster.unaccounted_memory = 0
+      else
+        # resource pool is in an unreliable state
+        cluster.idle_cpu = 0
+        cluster.total_memory = 0
+        cluster.free_memory = 0
+        cluster.unaccounted_memory = 0
+      end
+    end
+
     def average_csv(csv)
       values = csv.split(",")
       result = 0
@@ -223,34 +301,17 @@ module VSphereCloud
       @datacenters
     end
 
-    def disk_space_available?(cluster, datastores, disks)
-      stores = datastores.dup
-      # Do we need best fit etc?
-      disks.each do |disk|
-        ds = pick_datastore(cluster, stores, disk.size)
-        return false if ds.nil?
-        # Ok to muck around with the accounting as we are working with a copy(dup) of the datastores
-        ds.unaccounted_space += disk.size
-      end
-      return true
-    end
-
-    def filter_used_resources(memory, disk_space, persistent_disks=[])
+    def filter_used_resources(memory, vm_disk_size, persistent_disks_size, cluster_affinity)
       resources = []
       datacenters.each_value do |datacenter|
         datacenter.clusters.each do |cluster|
+          next unless cluster_affinity.nil? || cluster.mob == cluster_affinity.mob
           next unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
-
-          next unless disk_space_available?(cluster, cluster.persistent_datastores, persistent_disks)
-
-          datastore = cluster.datastores.max_by { |datastore| datastore.real_free_space }
-          next unless datastore.real_free_space - disk_space > DISK_THRESHOLD
-
+          next if pick_datastore(cluster.persistent_datastores, persistent_disks_size).nil?
+          next if (datastore = pick_datastore(cluster.datastores, vm_disk_size)).nil?
           resources << [cluster, datastore]
         end
       end
-
-      raise "No available resources" if resources.empty?
       resources
     end
 
@@ -289,7 +350,7 @@ module VSphereCloud
       datastore
     end
 
-    def pick_datastore(cluster, datastores, disk_space)
+    def pick_datastore(datastores, disk_space)
       selected_datastores = {}
       datastores.each { |ds|
         if ds.real_free_space - disk_space > DISK_THRESHOLD
@@ -300,20 +361,15 @@ module VSphereCloud
       pick_random_with_score(selected_datastores)
     end
 
-    def get_persistent_disk_cluster(disk)
-      return nil if disk.datastore.nil? || disk.datacenter.nil?
-
-      datacenter = datacenters[disk.datacenter]
-      return nil if datacenter.nil?
-
-      cluster = nil
-      datacenter.clusters.each do |c|
-        # For now we assume that a datastore only belongs to one cluster
-        cluster, _ = c.persistent_datastores.select do |ds|
-          ds.name == disk.datastore
+    def get_datastore_cluster(datacenter, datastore)
+      datacenter = datacenters[datacenter]
+      if !datacenter.nil?
+        datacenter.clusters.each do |c|
+          c.persistent_datastores.select do |ds|
+            yield c if ds.name == datastore
+          end
         end
       end
-      return cluster
     end
 
     def find_persistent_datastore(dc_name, cluster_name, disk_space)
@@ -322,7 +378,7 @@ module VSphereCloud
 
       chosen_datastore = nil
       @lock.synchronize do
-        chosen_datastore = pick_datastore(cluster, cluster.persistent_datastores, disk_space)
+        chosen_datastore = pick_datastore(cluster.persistent_datastores, disk_space)
         break if chosen_datastore.nil?
 
         chosen_datastore.unaccounted_space += disk_space
@@ -330,20 +386,21 @@ module VSphereCloud
       chosen_datastore
     end
 
-    def find_resources(memory, disk_space, persistent_disks=[])
+    def find_resources(memory, disk_size, persistent_disks_size, cluster_affinity)
       cluster = nil
       datastore = nil
 
       # account for swap
-      disk_space += memory
+      disk_size += memory
 
       @lock.synchronize do
-        resources = filter_used_resources(memory, disk_space, persistent_disks)
+        resources = filter_used_resources(memory, disk_size, persistent_disks_size, cluster_affinity)
+        break if resources.empty?
 
         scored_resources = {}
         resources.each do |resource|
           cluster, datastore = resource
-          scored_resources[resource] = score_resource(cluster, datastore, memory, disk_space)
+          scored_resources[resource] = score_resource(cluster, datastore, memory, disk_size)
         end
 
         scored_resources = scored_resources.sort_by { |resource| 1 - resource.last }
@@ -359,56 +416,54 @@ module VSphereCloud
         @logger.debug("Picked: #{cluster.inspect} / #{datastore.inspect}")
 
         cluster.unaccounted_memory += memory
-        datastore.unaccounted_space += disk_space
+        datastore.unaccounted_space += disk_size
       end
 
+      return [] if cluster.nil?
       [cluster, datastore]
     end
 
-    def find_resources_near_persistent_disk(disk_locality, memory, disk_space, additional_persistent_disks)
-      disk = Models::Disk[disk_locality]
-      raise "Disk not found: #{disk_locality}" if disk.nil?
+    def get_resources(memory_size=1, disks=[])
+      # Sort out the persistent and non persistent disks
+      non_persistent_disks_size = 0
+      persistent_disks = {}
+      persistent_disks_size = 0
+      disks.each do |disk|
+        if disk["persistent"]
+          if !disk["datastore"].nil?
+            # sanity check the persistent disks
+            raise "Invalid persistent disk #{disk.pretty_inspect}" unless validate_persistent_datastore(disk["datacenter"], disk["datastore"])
 
-      # account for swap
-      disk_space += memory
-
-      cluster = nil
-      datastore = nil
-      found = false
-
-      # locality only if the given disk is a persistent disk
-      if disk.path && validate_persistent_datastore(disk.datacenter, disk.datastore)
-        datacenter = datacenters.values.find { |dc| dc.name == disk.datacenter }
-        datacenter.clusters.each do |c|
-          c.persistent_datastores.each do |ds|
-            if ds.name == disk.datastore
-              @logger.info("Found #{c.name} @ #{c.mob}")
-              cluster = c
-              break
-            end
+            # sort the persistent disks into clusters they belong to
+            get_datastore_cluster(disk["datacenter"], disk["datastore"]) { |cluster|
+              persistent_disks[cluster] ||= 0
+              persistent_disks[cluster] += disk["size"]
+            }
           end
-        end
-
-        # Use this cluster only if it can accomodate all the additional persistent disks
-        if cluster && disk_space_available?(cluster, cluster.persistent_datastores, additional_persistent_disks)
-
-          @lock.synchronize do
-            break if cluster.real_free_memory - memory < MEMORY_THRESHOLD
-
-            # Find a datastore with sufficient free space
-            datastore = pick_datastore(cluster, cluster.datastores, disk_space)
-            break if datastore.nil?
-
-            datastore.unaccounted_space += disk_space
-            cluster.unaccounted_memory += memory
-            found = true
-          end
-
+          persistent_disks_size += disk["size"]
+        else
+          non_persistent_disks_size += disk["size"]
         end
       end
+      non_persistent_disks_size = 1 if non_persistent_disks_size == 0
+      persistent_disks_size = 1 if persistent_disks_size == 0
 
-      return nil unless found
-      [cluster, datastore]
+      if !persistent_disks.empty?
+        # Sort clusters by largest persistent disk footprint
+        persistent_disks_by_size = persistent_disks.sort { |a, b| b[1] <=> a [1] }
+
+        # Search for resources near the desired cluster
+        persistent_disks_by_size.each do |cluster, size|
+          resources = find_resources(memory_size, non_persistent_disks_size, persistent_disks_size - size, cluster)
+          return resources unless resources.empty?
+        end
+        @logger.info("Ignoring datastore locality as we could not find any resources near persistent disks" +
+                     "#{persistent_disks.pretty_inspect}")
+      end
+
+      resources = find_resources(memory_size, non_persistent_disks_size, persistent_disks_size, nil)
+      raise "No available resources" if resources.empty?
+      resources
     end
 
     def score_datastore(datastore, disk)
@@ -424,9 +479,7 @@ module VSphereCloud
       memory_score = percent_of_free_mem * 0.5 + percent_of_total_mem * 0.25 + percent_free_mem_left * 0.25
 
       cpu_score = cluster.idle_cpu
-
       disk_score = score_datastore(datastore, disk)
-
       memory_score * 0.5 + cpu_score * 0.25 + disk_score * 0.25
     end
 

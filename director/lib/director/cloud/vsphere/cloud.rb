@@ -76,7 +76,7 @@ module VSphereCloud
           @logger.info("Generated name: #{name}")
 
           # TODO: make stemcell friendly version of the calls below
-          cluster, datastore = @resources.find_resources(1, 1)
+          cluster, datastore = @resources.get_resources
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
@@ -133,74 +133,16 @@ module VSphereCloud
       end
     end
 
-    # Find the cluster and datastore that can host this vm
-    def place_vm(memory, vm_disk, disk_locality)
-      if disk_locality.nil? ||(disk_locality.is_a?(Array) && disk_locality.size == 0)
-        # VM does not have any persistent disk
-        return @resources.find_resources(memory, vm_disk)
+    def disk_spec(vm_disk, persistent_disks)
+      disks = []
+      disks << {"size" => vm_disk, "persistent" => false}
+
+      persistent_disks ||= {}
+      persistent_disks.each do |disk_id|
+        disk = Models::Disk[disk_id]
+        disks << {"size" => disk.size, "persistent" => true, "datacenter" => disk.datacenter, "datastore" => disk.datastore}
       end
-
-      # Figure out the amount of persistent disk space required by this VM.
-      # Given the list of persistent disks (disk_locality)
-      #  - find disk with largest size that has been allocated. Use this disk
-      #    as the disk_locality. (persistent_disk_locality)
-      #  - find cluster in which the largest persistent disk resides.
-      #    - find all disks in this cluster. (allocated_disks)
-      #    - find all disks not in this cluster. (additional_disks)
-      pd_locality = nil
-      allocated_disks = []
-      additional_disks = []
-
-      if disk_locality.is_a?(Array)
-        # find largest allocated persistent disk
-        disks = []
-        disk_locality.each do |d|
-          disks << disk = Models::Disk[d]
-          raise "Bad disk locality #{d} #{disk_locality.pretty_inspect}" if disk.nil?
-          if !disk.datacenter.nil? && !disk.datastore.nil? &&
-             (pd_locality.nil? || pd_locality.size < disk.size)
-            pd_locality = disk
-          end
-        end
-
-        # find cluster in which max disk resides.
-        max_disk_cluster = @resources.get_persistent_disk_cluster(pd_locality) unless pd_locality.nil?
-
-        disks.each do |disk|
-          if !disk.datacenter.nil? && !disk.datastore.nil? && !pd_locality.nil? &&
-             @resources.get_persistent_disk_cluster(disk) == max_disk_cluster
-            # collect all disks that are in the same cluster as the max disk
-            allocated_disks << disk
-          else
-            # collect all disks that are in a different cluster
-            additional_disks << disk
-          end
-        end
-      else
-        disk = Models::Disk[disk_locality]
-        if !disk.datacenter.nil? && !disk.datastore.nil?
-          pd_locality = disk
-          allocated_disks << disk
-        else
-          additional_disks << disk
-        end
-      end
-
-      cluster = datastore = nil
-      if !pd_locality.nil?
-        # VM has a persistent disk that has already been allocated, try to
-        # place the vm in the same locality as this disk
-        @logger.info("Looking for resources near disk: #{pd_locality.pretty_inspect}")
-        cluster, datastore = @resources.find_resources_near_persistent_disk(pd_locality.id, memory, vm_disk, additional_disks)
-      end
-
-      if cluster.nil?
-        # We get here if the vm has no persistent disks locality OR if we failed to
-        # find resources near the persistent disk
-        @logger.info("Disk was not allocated, allocating resources based on system capacity")
-        cluster, datastore = @resources.find_resources(memory, vm_disk, additional_disks + allocated_disks)
-      end
-      [cluster, datastore]
+      disks
     end
 
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil)
@@ -209,7 +151,8 @@ module VSphereCloud
         disk = resource_pool["disk"]
         cpu = resource_pool["cpu"]
 
-        cluster, datastore = place_vm(memory, disk, disk_locality)
+        disks = disk_spec(disk, disk_locality)
+        cluster, datastore = @resources.get_resources(memory, disks)
 
         name = "vm-#{generate_unique_name}"
         @logger.info("Creating vm:: #{name} on #{cluster.mob} stored in #{datastore.mob}")
