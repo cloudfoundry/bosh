@@ -10,11 +10,13 @@ module Bosh
           :uid => options[:uid],
           :secret => options[:secret]
         }
-        @atmos = Atmos::Store.new(atmos_options)
+        @tag = options[:tag]
+        @atmos = Atmos::Store.new(atmos_options) rescue nil
       end
 
       def create_file(file)
         obj_conf = {:data => file, :length => File.size(file.path)}
+        obj_conf[:listable_metadata] = {@tag => true} if @tag
         @atmos.create(obj_conf).aoid
       end
 

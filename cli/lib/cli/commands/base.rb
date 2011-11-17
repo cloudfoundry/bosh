@@ -112,15 +112,28 @@ module Bosh::Cli
         non_interactive? || (ask(prompt) == "yes")
       end
 
-      def init_blobstore(options)
-        bs_options = {
-          :access_key_id     => options["access_key_id"].to_s,
-          :secret_access_key => options["secret_access_key"].to_s,
-          :encryption_key    => options["encryption_key"].to_s,
-          :bucket_name       => options["bucket_name"].to_s
-        }
+      def init_blobstore(provider, options)
+        bs_options = {}
+        case provider
+        when "s3"
+          bs_options = {
+            :access_key_id     => options["access_key_id"].to_s,
+            :secret_access_key => options["secret_access_key"].to_s,
+            :encryption_key    => options["encryption_key"].to_s,
+            :bucket_name       => options["bucket_name"].to_s
+          }
+        when "atmos"
+          bs_options = {
+            :url    => options["url"].to_s,
+            :uid    => options["uid"].to_s,
+            :secret => options["secret"].to_s,
+            :tag    => options["tag"].to_s
+          }
+        else
+          raise "Unknown provider #{provider}"
+        end
 
-        Bosh::Blobstore::Client.create("s3", bs_options)
+        Bosh::Blobstore::Client.create(provider, bs_options)
       rescue Bosh::Blobstore::BlobstoreError => e
         err "Cannot init blobstore: #{e}"
       end

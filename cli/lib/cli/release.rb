@@ -7,6 +7,7 @@ module Bosh::Cli
       "jobs_order" => [],
       "min_cli_version" => "0.5",
       "s3_options" => { },
+      "atmos_options" => { },
       "latest_release_filename" => nil
     }
 
