@@ -11,7 +11,7 @@ module Bosh::Director
     end
 
     def get_problems(deployment_name)
-      filters = { :deployment_id => find_deployment(deployment_name).id,  }
+      filters = { :deployment_id => find_deployment(deployment_name).id, :state => "open" }
       Models::DeploymentProblem.filter(filters).order(:created_at).all
     end
 

@@ -17,10 +17,7 @@ module Bosh::Director
 
           # Normalizing problem ids
           @resolutions = resolutions.inject({}) do |h, (problem_id, solution_name)|
-            if problem_id.to_s !~ /^\d+$/
-              raise "Invalid problem id provided: #{problem_id}"
-            end
-            h[problem_id.to_i] = solution_name
+            h[problem_id.to_s] = solution_name
             h
           end
         end
@@ -37,7 +34,7 @@ module Bosh::Director
           @unresolved_count = problems.count
 
           problems.each do |problem|
-            if !@resolutions.has_key?(problem.id)
+            if !@resolutions.has_key?(problem.id.to_s)
               raise "Resolution for problem #{problem.id} (#{problem.type}) is not provided"
             end
           end
@@ -53,7 +50,7 @@ module Bosh::Director
           handler.job = self
 
           if handler.problem_still_exists?
-            resolution = @resolutions[problem.id]
+            resolution = @resolutions[problem.id.to_s]
 
             if resolution
               resolved = handler.apply_resolution(resolution)
