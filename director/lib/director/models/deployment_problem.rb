@@ -27,9 +27,16 @@ module Bosh::Director::Models
       self.data_json = Yajl::Encoder.encode(raw_data)
     end
 
+    def handler
+      @handler ||= Bosh::Director::ProblemHandlers::Base.create_from_model(self)
+    end
+
     def resolutions
-      handler = ProlemHandlers::Base.create_from_model(self)
       handler.resolutions
+    end
+
+    def description
+      handler.description
     end
 
   end

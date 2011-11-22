@@ -524,7 +524,13 @@ module Bosh::Director
     # Get the list of problems for a particular deployment
     get "/deployments/:deployment/problems" do
       problems = @problem_manager.get_problems(params[:deployment]).map do |problem|
-        { "type" => problem.type, "data" => problem.data, "resolutions" => problem.resolutions }
+        {
+          "id" => problem.id,
+          "type" => problem.type,
+          "data" => problem.data,
+          "description" => problem.description,
+          "resolutions" => problem.resolutions
+        }
       end
 
       json_encode(problems)
