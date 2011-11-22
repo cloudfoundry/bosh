@@ -19,6 +19,10 @@ describe Bosh::Director::ProblemHandlers::Base do
       @message = data["message"]
     end
 
+    def description
+      message
+    end
+
     resolution :baz do
       plan { "foo baz #{@message}"}
       action do
@@ -89,6 +93,14 @@ describe Bosh::Director::ProblemHandlers::Base do
 
     foo_handler.auto_resolve
     foo_handler.message.should == "foo baz action complete"
+  end
+
+  it "can be queried from the model" do
+    problem = Bosh::Director::Models::DeploymentProblem.
+      make(:type => "foo", :resource_id => 1, :data_json => Yajl::Encoder.encode("message" => "hello"))
+
+    problem.description.should =="hello"
+    problem.resolutions.should == [ { :name => "baz", :plan => "foo baz hello" } ]
   end
 
 end

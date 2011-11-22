@@ -64,7 +64,7 @@ module Bosh::Director
       end
 
       def handler_error(message)
-        raise ProblemHandlerError, message
+        raise HandlerError, message
       end
 
       # Registration DSL
