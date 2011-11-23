@@ -10,7 +10,6 @@ module Bosh::Director
         @disk_id = disk_id
         @data = data
         @disk = Models::PersistentDisk[@disk_id]
-        @cloud  = Config.cloud
 
         if @disk.nil?
           handler_error("Disk `#{@disk_id}' is no longer in the database")
@@ -48,39 +47,53 @@ module Bosh::Director
       end
 
       def activate_disk
-        handler_error("Disk #{@disk_id} is not mounted") unless disk_mounted?
+        handler_error("Disk #{@disk_id} is not mounted") if disk_vm.nil?
+        # Currently the director allows ONLY-ONE persistent disk per
+        # instance. We are about to activate a disk but the instance already
+        # has an active disk.
+        # For now let's be conservative and return an error.
+        instance = @disk.instance
+        unless instance.persistent_disk.nil?
+          handler_error("Instance #{instance.id} already has an active disk #{instance.persistent_disk}")
+        end
         @disk.active = true
         @disk.save
         true
       end
 
       def delete_disk
-        handler_error("Disk #{@disk_id} is currently in use by vm #{vm.id}") if disk_mounted?
+        vm = disk_vm
+        handler_error("Disk #{@disk_id} is currently in use (vmid = #{vm.cid})") unless vm.nil?
+        cloud  = Config.cloud
 
         disk_cid = @disk.disk_cid
-        vm_cid = get_disk_vm.cid
-        @cloud.detach_disk(vm_cid, disk_cid) rescue nil
-        @cloud.delete_disk(disk_cid) rescue nil
+        if vm
+          cloud.detach_disk(vm.cid, disk_cid) rescue nil
+        end
+        cloud.delete_disk(disk_cid) rescue nil
         @disk.destroy
         true
       end
 
-      # return the VM associated with the disk
-      def get_disk_vm
-        vm = nil
+      # return the owner(vm) of the disk
+      def disk_vm
         instance = @disk.instance
-        vm = instance.vm unless instance.nil?
-        vm
-      end
+        return nil if instance.nil?
 
-      # ping the agent to see if the disk in question is being used (mounted)
-      def disk_mounted?
-        vm = get_disk_vm
-        return false if vm.nil?
+        vm = instance.vm
+        return nil if vm.nil?
+
         agent = AgentClient.new(vm.agent_id)
-        disk_list = agent.list_disk
+        begin
+          disk_list = agent.list_disk
+        rescue RuntimeError
+          # old stemcells without 'list_disk' support. We need to play
+          # conservative and assume that the disk is mounted.
+          return vm
+        end
         disk_cid = @disk.disk_cid
-        !disk_list.find { |disk_cid| disk_cid == disk_cid}.nil?
+        return nil if disk_list.find { |d_cid| d_cid == disk_cid }.nil?
+        vm
       end
     end
   end

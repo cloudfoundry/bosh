@@ -66,7 +66,7 @@ module Bosh::Director
           else
             # TODO: signal back that problem is no longer there
           end
-        rescue Bosh::Director::ProblemHandlers::ProblemHandlerError => e
+        rescue Bosh::Director::ProblemHandlers::HandlerError => e
           @logger.error("Problem while resolving problem `#{problem.id}': #{e}")
           @logger.error(e.backtrace.join("\n"))
           # TODO: decide whether we want to bail out now based on some criteria
