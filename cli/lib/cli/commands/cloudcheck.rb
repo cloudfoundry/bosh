@@ -19,10 +19,10 @@ module Bosh::Cli::Command
       scan_failed(status, body) if status != :done
 
       say "Scan is complete, checking if any problems found..."
-
       @problems = director.list_problems(deployment_name)
 
       verify_problems
+      nl
       say "Found #{pluralize(@problems.size, "problem")}".yellow
       nl
 
@@ -40,7 +40,6 @@ module Bosh::Cli::Command
       end
 
       confirm_resolutions unless @auto_mode
-
       say "Applying resolutions..."
 
       action_map = @resolutions.inject({}) do |h, (id, resolution)|

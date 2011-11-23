@@ -39,6 +39,7 @@ module Bosh::Director
             end
           end
 
+          begin_stage("Applying problem resolutions", problems.size)
           problems.each do |problem|
             apply_resolution(problem)
           end
@@ -49,27 +50,20 @@ module Bosh::Director
           handler = ProblemHandlers::Base.create_from_model(problem)
           handler.job = self
 
-          if handler.problem_still_exists?
-            resolution = @resolutions[problem.id.to_s]
+          resolution = @resolutions[problem.id.to_s] || handler.auto_resolution
+          resolution_summary = "#{handler.description} [#{handler.resolution_plan(resolution) || "n/a"}]"
 
-            if resolution
-              resolved = handler.apply_resolution(resolution)
-            else
-              resolved = handler.auto_resolve
-            end
-
-            if resolved
+          track_and_log(resolution_summary) do
+            if !handler.problem_still_exists? || handler.apply_resolution(resolution)
               problem.state = "resolved"
               problem.save
               @resolved_count += 1
             end
-          else
-            # TODO: signal back that problem is no longer there
           end
-        rescue Bosh::Director::ProblemHandlers::ProblemHandlerError => e
-          @logger.error("Problem while resolving problem `#{problem.id}': #{e}")
+
+        rescue Bosh::Director::ProblemHandlers::HandlerError => e
+          @logger.error("Error resolving problem `#{problem.id}': #{e}")
           @logger.error(e.backtrace.join("\n"))
-          # TODO: decide whether we want to bail out now based on some criteria
         end
 
         private

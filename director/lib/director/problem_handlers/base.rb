@@ -50,17 +50,21 @@ module Bosh::Director
         instance_eval(&plan)
       end
 
+      def auto_resolution
+        self.class.get_auto_resolution
+      end
+
       # @param resolution desired resolution
       def apply_resolution(resolution)
         action = self.class.action_for(resolution)
         if action.nil?
-          raise "Cannot find `#{resolution}' resolution for `#{self.class}'"
+          handler_error("Cannot find `#{resolution}' resolution for `#{self.class}'")
         end
         instance_eval(&action)
       end
 
       def auto_resolve
-        apply_resolution(self.class.get_auto_resolution)
+        apply_resolution(auto_resolution)
       end
 
       def handler_error(message)

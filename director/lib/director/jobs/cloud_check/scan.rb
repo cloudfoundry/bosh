@@ -33,24 +33,26 @@ module Bosh::Director
         end
 
         def scan_disks
-          @logger.info("Scanning persistent disks")
-          @logger.info("Looking for orphaned disks")
-          Models::PersistentDisk.filter(:active => false).all.each do |disk|
-            # TODO: filter further by deployment, right now this
-            # tries to operate on disks from other deployments!
-            @logger.info("Found orphaned disk: #{disk.id}")
-            problem_found(:orphan_disk, disk)
+          begin_stage("Scanning persistent disks", 1)
+
+          track_and_log("Looking for orphaned disks") do
+            Models::PersistentDisk.filter(:active => false).all.each do |disk|
+              # TODO: filter further by deployment, right now this
+              # tries to operate on disks from other deployments!
+              @logger.info("Found orphaned disk: #{disk.id}")
+              problem_found(:orphan_disk, disk)
+            end
           end
         end
 
         def scan_vms
-          @logger.info("Scanning VMs")
-          # TBD
+          begin_stage("Scanning VMs", 1)
+          track_and_log("Dummy task") { }
         end
 
         def scan_instances
-          @logger.info("Scanning instances")
-          # TBD
+          begin_stage("Scanning instances", 1)
+          track_and_log("Dummy task") { }
         end
 
         def problem_found(type, resource, data = {})

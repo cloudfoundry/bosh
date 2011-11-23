@@ -87,6 +87,11 @@ module Bosh::Director
         raise TaskCancelled.new(@task_id) if task_cancelled?
       end
 
+      def begin_stage(stage_name, n_steps)
+        @event_log.begin_stage(stage_name, n_steps)
+        @logger.info(stage_name)
+      end
+
       def track_and_log(task)
         @event_log.track(task) do |ticker|
           @logger.info(task)
