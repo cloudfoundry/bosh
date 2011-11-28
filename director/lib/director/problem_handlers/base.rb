@@ -10,6 +10,13 @@ module Bosh::Director
         create_by_type(model.type, model.resource_id, model.data)
       end
 
+      # create_by_type might not be able to initialize
+      # problem handler if some part of its state
+      # or dependencies is invalid. In this case it
+      # just substitutes a generic "invalid_problem"
+      # handler that reports the fact that the original
+      # problem is invalid and offers closing it as
+      # the only solution.
       def self.create_by_type(type, resource_id, data)
         handler_class = Base.handlers[type.to_s]
         if handler_class.nil?
@@ -17,6 +24,8 @@ module Bosh::Director
         end
 
         handler_class.new(resource_id, data)
+      rescue HandlerError => e
+        create_by_type(:invalid_problem, resource_id, { "error" => e, "original_type" => type.to_s })
       end
 
       # Problem state is  described by constructor parameters.
@@ -31,6 +40,15 @@ module Bosh::Director
 
       def checkpoint
         @job.task_checkpoint if @job
+      end
+
+      # Talking to cloud should only be possible
+      # in the context of Resque job
+      def cloud
+        if @job.nil?
+          handler_error("Cannot talk to cloud out of job context")
+        end
+        @cloud ||= Config.cloud
       end
 
       def problem_still_exists?; end
