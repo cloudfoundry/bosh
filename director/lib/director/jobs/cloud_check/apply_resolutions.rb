@@ -31,17 +31,42 @@ module Bosh::Director
 
         def apply_resolutions
           problems = Models::DeploymentProblem.filter(:deployment_id => @deployment.id, :state => "open").all
-          @unresolved_count = problems.count
+          problem_ids = Set.new
 
           problems.each do |problem|
+            problem_ids << problem.id.to_s
             if !@resolutions.has_key?(problem.id.to_s)
               raise "Resolution for problem #{problem.id} (#{problem.type}) is not provided"
             end
           end
 
-          begin_stage("Applying problem resolutions", problems.size)
+          # We might have some resolutions for problems that are no longer open
+          # or just some bogus problem ids, in that case we still need to mention
+          # them in event log so end user understands what actually happened.
+          missing_problem_ids = @resolutions.keys.to_set - problem_ids
+
+          begin_stage("Applying problem resolutions", problems.size + missing_problem_ids.size)
           problems.each do |problem|
             apply_resolution(problem)
+          end
+
+          missing_problem_ids.each do |problem_id|
+            if problem_id !~ /^\d+$/
+              reason = "malformed id"
+            else
+              problem = Models::DeploymentProblem[problem_id.to_i]
+              if problem.nil?
+                reason = "not found"
+              elsif problem.state != "open"
+                reason = "state is '#{problem.state}'"
+              elsif problem.deployment_id != @deployment.id
+                reason = "not a part of this deployment"
+              else
+                reason = "reason unknown"
+              end
+            end
+
+            track_and_log("Ignoring problem #{problem_id} (#{reason})") { }
           end
         end
 
@@ -54,11 +79,12 @@ module Bosh::Director
           resolution_summary = "#{handler.description} [#{handler.resolution_plan(resolution) || "n/a"}]"
 
           track_and_log(resolution_summary) do
-            if !handler.problem_still_exists? || handler.apply_resolution(resolution)
-              problem.state = "resolved"
-              problem.save
-              @resolved_count += 1
+            if handler.problem_still_exists?
+              handler.apply_resolution(resolution)
             end
+            problem.state = "resolved"
+            problem.save
+            @resolved_count += 1
           end
 
         rescue Bosh::Director::ProblemHandlers::HandlerError => e
