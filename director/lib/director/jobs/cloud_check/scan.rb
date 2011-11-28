@@ -35,12 +35,12 @@ module Bosh::Director
         def scan_disks
           begin_stage("Scanning persistent disks", 1)
 
-          track_and_log("Looking for orphaned disks") do
+          track_and_log("Looking for inactive disks") do
             Models::PersistentDisk.filter(:active => false).all.each do |disk|
               # TODO: filter further by deployment, right now this
               # tries to operate on disks from other deployments!
-              @logger.info("Found orphaned disk: #{disk.id}")
-              problem_found(:orphan_disk, disk)
+              @logger.info("Found inactive disk: #{disk.id}")
+              problem_found(:inactive_disk, disk)
             end
           end
         end

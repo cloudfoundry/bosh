@@ -12,8 +12,8 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(@lock)
     end
 
-    it "scans for problems (using orphan disks as an example of a problem)" do
-      # Couple of orphan disks
+    it "scans for problems (using inactive disks as an example of a problem)" do
+      # Couple of inactive disks
       2.times do
         Bosh::Director::Models::PersistentDisk.make(:active => false)
       end
@@ -25,7 +25,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       Bosh::Director::Models::DeploymentProblem.all.each do |problem|
         problem.counter.should == 1
-        problem.type.should == "orphan_disk"
+        problem.type.should == "inactive_disk"
         problem.deployment.should == @mycloud
         problem.state.should == "open"
       end
@@ -36,7 +36,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
       Bosh::Director::Models::DeploymentProblem.all.each do |problem|
         problem.counter.should == 2
         problem.last_seen_at.should >= problem.created_at
-        problem.type.should == "orphan_disk"
+        problem.type.should == "inactive_disk"
         problem.deployment.should == @mycloud
         problem.state.should == "open"
       end
