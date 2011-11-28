@@ -437,7 +437,7 @@ module Bosh
       end
 
       def add_shortcuts
-        { "st" => "status", "props" => "properties" }.each do |short, long|
+        { "st" => "status", "props" => "properties", "cck" => "cloudcheck" }.each do |short, long|
           @parse_tree[short] = @parse_tree[long]
         end
       end
