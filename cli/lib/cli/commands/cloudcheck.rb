@@ -9,9 +9,20 @@ module Bosh::Cli::Command
         err "Cloudcheck cannot be run in non-interactive mode\n" +
             "Please use `--auto' flag if you want automated resolutions"
       end
+
+      @auto_mode = options.delete("--auto")
+      @report_mode = options.delete("--report")
+
+      if options.size > 0
+        err "Unknown options: #{options.join(", ")}"
+      end
+
+      if @auto_mode && @report_mode
+        err "Can't use --auto and --report mode together"
+      end
+
       say "Performing cloud check..."
 
-      @auto_mode = options.include?("--auto")
       manifest = prepare_deployment_manifest
       deployment_name = manifest["name"]
 
@@ -31,6 +42,7 @@ module Bosh::Cli::Command
       @problems.each_with_index do |problem, index|
         description = problem["description"].to_s.chomp(".") + "."
         say "Problem #{index+1} of #{@problems.size}: #{description}".yellow
+        next if @report_mode
         if @auto_mode
           @resolutions[problem["id"]] = { "name" => nil, "plan" => "apply default resolution"}
         else
@@ -38,6 +50,8 @@ module Bosh::Cli::Command
         end
         nl
       end
+
+      exit(@problems.size) if @report_mode
 
       confirm_resolutions unless @auto_mode
       say "Applying resolutions..."
