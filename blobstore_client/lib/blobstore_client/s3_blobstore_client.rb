@@ -34,7 +34,9 @@ module Bosh
 
         aws_options = {
           :access_key_id     => options[:access_key_id],
-          :secret_access_key => options[:secret_access_key]
+          :secret_access_key => options[:secret_access_key],
+          :use_ssl           => true,
+          :port              => 443
         }
 
         AWS::S3::Base.establish_connection!(aws_options)
