@@ -5,7 +5,9 @@ describe Bosh::Blobstore::S3BlobstoreClient do
   before(:each) do
     @aws_mock_options = {
       :access_key_id     => "KEY",
-      :secret_access_key => "SECRET"
+      :secret_access_key => "SECRET",
+      :use_ssl           => true,
+      :port              => 443
     }
   end
 
