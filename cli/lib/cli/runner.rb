@@ -401,6 +401,7 @@ module Bosh
           usage  "cloudcheck"
           desc   "Cloud consistency check and interactive repair"
           option "--auto", "resolve problems automatically (not recommended for production)"
+          option "--report", "generate report only, don't attempt to resolve problems"
           route  :cloud_check, :perform
         end
       end
