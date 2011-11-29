@@ -44,7 +44,7 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
         problems << orphan_disk(disk.id)
       end
 
-      job = make_job("mycloud", { problems[0].id => "delete_disk", problems[1].id => "report" })
+      job = make_job("mycloud", { problems[0].id => "delete_disk", problems[1].id => "ignore" })
 
       @lock.should_receive(:lock).and_yield
 
@@ -73,12 +73,12 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
       problems = [ orphan_disk(disks[0].id), orphan_disk(disks[1].id), orphan_disk(disks[2].id, @other_deployment.id) ]
       @lock.stub!(:lock).and_yield
 
-      job1 = make_job("mycloud", { problems[0].id => "report", problems[1].id => "report" })
+      job1 = make_job("mycloud", { problems[0].id => "ignore", problems[1].id => "ignore" })
       job1.perform
 
       job2 = make_job("mycloud", {
-                        problems[0].id => "report", problems[1].id => "report",
-                        problems[2].id => "report", "foobar" => "ignore", 318 => "do_stuff"
+                        problems[0].id => "ignore", problems[1].id => "ignore",
+                        problems[2].id => "ignore", "foobar" => "ignore", 318 => "do_stuff"
                       })
 
       messages = []
