@@ -100,9 +100,10 @@ module Bosh::Director::Models
   end
 
   DeploymentProblem.blueprint do
-    deployment { Deployment.make }
-    type       { "unknown_issue" }
-    data_json  { "{}" }
-    state      { "open" }
+    deployment  { Deployment.make }
+    type        { "orphan_disk" }
+    resource_id { PersistentDisk.make.id }
+    data_json   { "{}" }
+    state       { "open" }
   end
 end

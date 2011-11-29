@@ -84,7 +84,7 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       @job = Bosh::Director::Jobs::DeleteDeployment.new("test_deployment")
     end
 
-    it "should delete all the associated instances, VMs, and disks" do
+    it "should delete all the associated instances, VMs, disks and problems" do
       lock = mock("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(lock)
 
@@ -96,6 +96,8 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
       vm = Bosh::Director::Models::Vm.make(:deployment => deployment)
       instance = Bosh::Director::Models::Instance.make(:deployment => deployment, :vm => vm)
+      problem = Bosh::Director::Models::DeploymentProblem.make(:deployment => deployment)
+      disk = Bosh::Director::Models::PersistentDisk.make(:instance => instance)
 
       @cloud.stub!(:delete_vm)
       @cloud.stub!(:delete_disk)
@@ -103,14 +105,15 @@ describe Bosh::Director::Jobs::DeleteDeployment do
 
       @job.perform
 
-      deployment = Bosh::Director::Models::Deployment[deployment.id]
-      deployment.should be_nil
+      Bosh::Director::Models::Deployment[deployment.id].should be_nil
 
       stemcell.refresh
       stemcell.deployments.should be_empty
 
       Bosh::Director::Models::Vm[vm.id].should be_nil
       Bosh::Director::Models::Instance[instance.id].should be_nil
+      Bosh::Director::Models::DeploymentProblem[problem.id].should be_nil
+      Bosh::Director::Models::PersistentDisk[disk.id].should be_nil
     end
 
     it "should fail if the deployment is not found" do
