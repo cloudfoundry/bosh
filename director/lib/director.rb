@@ -69,7 +69,7 @@ require "director/instance_manager"
 require "director/stemcell_manager"
 
 require "director/problem_handlers/base"
-require "director/problem_handlers/orphan_disk"
+require "director/problem_handlers/inactive_disk"
 
 require "director/jobs/base_job"
 require "director/jobs/delete_deployment"

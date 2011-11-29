@@ -1,9 +1,9 @@
 module Bosh::Director
   module ProblemHandlers
-    class OrphanDisk < Base
+    class InactiveDisk < Base
 
-      register_as :orphan_disk
-      auto_resolution :report
+      register_as :inactive_disk
+      auto_resolution :ignore
 
       def initialize(disk_id, data)
         super
