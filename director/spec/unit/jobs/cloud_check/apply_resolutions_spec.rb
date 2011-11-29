@@ -16,11 +16,11 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
       Bosh::Director::Jobs::CloudCheck::ApplyResolutions.new(deployment_name, resolutions)
     end
 
-    def orphan_disk(id, deployment_id = nil)
+    def inactive_disk(id, deployment_id = nil)
       Bosh::Director::Models::DeploymentProblem.
         make(:deployment_id => deployment_id || @deployment.id,
              :resource_id => id,
-             :type => "orphan_disk",
+             :type => "inactive_disk",
              :state => "open")
     end
 
@@ -41,7 +41,7 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
       2.times do
         disk = Bosh::Director::Models::PersistentDisk.make(:active => false)
         disks << disk
-        problems << orphan_disk(disk.id)
+        problems << inactive_disk(disk.id)
       end
 
       job = make_job("mycloud", { problems[0].id => "delete_disk", problems[1].id => "ignore" })
@@ -57,20 +57,20 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
     end
 
     it "whines on missing resolutions" do
-      problem = orphan_disk(22)
+      problem = inactive_disk(22)
 
       job = make_job("mycloud", { 32 => "delete_disk" })
       @lock.should_receive(:lock).and_yield
 
       lambda {
         job.perform
-      }.should raise_error(RuntimeError, "Resolution for problem #{problem.id} (orphan_disk) is not provided")
+      }.should raise_error(RuntimeError, "Resolution for problem #{problem.id} (inactive_disk) is not provided")
     end
 
     it "notices and logs extra resolutions" do
       disks = (1..3).map { |i| Bosh::Director::Models::PersistentDisk.make(:active => false) }
 
-      problems = [ orphan_disk(disks[0].id), orphan_disk(disks[1].id), orphan_disk(disks[2].id, @other_deployment.id) ]
+      problems = [ inactive_disk(disks[0].id), inactive_disk(disks[1].id), inactive_disk(disks[2].id, @other_deployment.id) ]
       @lock.stub!(:lock).and_yield
 
       job1 = make_job("mycloud", { problems[0].id => "ignore", problems[1].id => "ignore" })
