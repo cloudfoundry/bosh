@@ -23,12 +23,12 @@ module Bosh::Director
       end
 
       def description
-        "Disk #{@disk_id} is in in-active state"
+        "Disk #{@disk_id} is inactive"
       end
 
-      resolution :report do
-        plan { "Report problem" }
-        action { report }
+      resolution :ignore do
+        plan { "Ignore problem" }
+        action { }
       end
 
       resolution :delete_disk do
@@ -39,11 +39,6 @@ module Bosh::Director
       resolution :activate_disk do
         plan { "Activate disk #{@disk_id}" }
         action { activate_disk }
-      end
-
-      def report
-        # TODO
-        true
       end
 
       def activate_disk
@@ -64,7 +59,7 @@ module Bosh::Director
       def delete_disk
         handler_error("Disk #{@disk_id} is currently in use") if disk_mounted?
 
-        cloud  = Config.cloud
+        cloud = Config.cloud
         disk_cid = @disk.disk_cid
         vm = disk_vm
         if vm
