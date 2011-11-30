@@ -18,6 +18,16 @@ module Bosh::Director
       Resque.enqueue(Jobs::FetchLogs, task.id, instance.id, options)
       task
     end
+
+    def ssh(user, options)
+      task = create_task(user, "ssh: #{options["command"]}:#{options["target"]}")
+
+      deployment = Models::Deployment.find(:name => options["deployment_name"])
+      raise DeploymentNotFound.new(deployment_name) if deployment.nil?
+
+      Resque.enqueue(Jobs::Ssh, task.id, deployment.id, options)
+      task
+    end
   end
 
 end
