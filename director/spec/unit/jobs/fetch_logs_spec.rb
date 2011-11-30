@@ -52,8 +52,8 @@ describe Bosh::Director::Jobs::FetchLogs do
     @lock.should_receive(:lock).and_yield
     job.perform.should == "deadbeef"
 
-    Bosh::Director::Models::LogBundle.count.should == 1
-    Bosh::Director::Models::LogBundle.filter(:blobstore_id => "deadbeef").count.should == 1
+    Bosh::Director::Models::TransitDatum.count.should == 1
+    Bosh::Director::Models::TransitDatum.filter(:blobstore_id => "deadbeef", :tag => "fetch_logs").count.should == 1
   end
 
   it "cleans up old log bundles" do
@@ -69,7 +69,7 @@ describe Bosh::Director::Jobs::FetchLogs do
     agent.should_receive(:fetch_logs).once.and_return("blobstore_id" => "deadbeef1")
 
     job.perform.should == "deadbeef1"
-    Bosh::Director::Models::LogBundle.filter(:blobstore_id => "deadbeef1").count.should == 1
+    Bosh::Director::Models::TransitDatum.filter(:blobstore_id => "deadbeef1", :tag => "fetch_logs").count.should == 1
 
     agent.should_receive(:fetch_logs).once.and_return("blobstore_id" => "deadbeef2")
     @blobstore.should_receive(:delete).with("deadbeef1").and_return(true)
@@ -77,8 +77,8 @@ describe Bosh::Director::Jobs::FetchLogs do
     sleep(0.05)
     job.perform.should == "deadbeef2"
 
-    Bosh::Director::Models::LogBundle.filter(:blobstore_id => "deadbeef1").count.should == 0
-    Bosh::Director::Models::LogBundle.filter(:blobstore_id => "deadbeef2").count.should == 1
+    Bosh::Director::Models::TransitDatum.filter(:blobstore_id => "deadbeef1", :tag => "fetch_logs").count.should == 0
+    Bosh::Director::Models::TransitDatum.filter(:blobstore_id => "deadbeef2", :tag => "fetch_logs").count.should == 1
   end
 
 end
