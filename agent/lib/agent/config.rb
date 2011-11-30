@@ -2,6 +2,8 @@ module Bosh::Agent
   class Config
     class << self
       DEFAULT_BASE_DIR = "/var/vcap"
+      DEFAULT_SSHD_MONITOR_INTERVAL = 30
+      DEFAULT_SSHD_START_DELAY = 30
 
       CONFIG_OPTIONS = [
         :base_dir,
@@ -22,7 +24,10 @@ module Bosh::Agent
         :smtp_password,
         :heartbeat_interval,
         :settings,
-        :state
+        :state,
+        :sshd_monitor_interval,
+        :sshd_start_delay,
+        :sshd_monitor_enabled
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -66,6 +71,10 @@ module Bosh::Agent
 
         @heartbeat_interval = config["heartbeat_interval"]
 
+        @sshd_monitor_interval = config["sshd_monitor_interval"] || DEFAULT_SSHD_MONITOR_INTERVAL
+        @sshd_start_delay = config["sshd_start_delay"] || DEFAULT_SSHD_START_DELAY
+        @sshd_monitor_enabled = config["sshd_monitor_enabled"]
+
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")
         end
@@ -85,6 +94,17 @@ module Bosh::Agent
 
       def random_password(len)
         OpenSSL::Random.random_bytes(len).unpack("H*")[0]
+      end
+
+      def default_ip
+        ip = nil
+        @state["networks"].each do |k, v|
+          ip = v["ip"] if ip.nil?
+          if v.key?('default')
+            ip = v["ip"]
+          end
+        end
+        ip
       end
 
     end
