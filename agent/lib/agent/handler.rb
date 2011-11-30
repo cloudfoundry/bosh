@@ -60,6 +60,7 @@ module Bosh::Agent
         end
 
         setup_heartbeats
+        setup_sshd_monitor
 
         if @process_alerts
           if (@smtp_port.nil? || @smtp_user.nil? || @smtp_password.nil?)
@@ -90,6 +91,17 @@ module Bosh::Agent
         @logger.info("Heartbeats are enabled and will be sent every #{interval} seconds")
       else
         @logger.warn("Heartbeats are disabled")
+      end
+    end
+
+    def setup_sshd_monitor
+      interval = Config.sshd_monitor_interval.to_i
+      if interval > 0
+        Bosh::Agent::SshdMonitor.enable(interval, Config.sshd_start_delay)
+        @logger.info("sshd monitor is enabled, interval of #{interval} and start " +
+                     "delay of #{Config.sshd_start_delay} seconds")
+      else
+        @logger.warn("SSH is disabled")
       end
     end
 
