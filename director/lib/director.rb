@@ -77,6 +77,7 @@ require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
 require "director/jobs/fetch_logs"
 require "director/jobs/vm_state"
+require "director/jobs/ssh"
 
 module Bosh::Director
   autoload :Models, "director/models"
@@ -504,6 +505,12 @@ module Bosh::Director
       payload = json_decode(request.body)
       @property_manager.create_property(params[:deployment], payload["name"], payload["value"])
       status(204)
+    end
+
+    post "/deployments/:deployment/ssh", :consumes => [:json] do
+      payload = json_decode(request.body)
+      task = @instance_manager.ssh(@user, payload)
+      redirect "/tasks/#{task.id}"
     end
 
     put "/deployments/:deployment/properties/:property", :consumes => [:json] do
