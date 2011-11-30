@@ -12,6 +12,7 @@ require "director/models/template"
 require "director/models/user"
 require "director/models/vm"
 require "director/models/persistent_disk"
+require "director/models/transit_datum"
 
 module Bosh::Director
   module Models

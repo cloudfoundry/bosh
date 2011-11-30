@@ -12,6 +12,7 @@ require "uuidtools"
 require "ostruct"
 require "posix/spawn"
 require "monit_api"
+require "fileutils"
 
 require "agent/ext"
 require "agent/version"
@@ -32,6 +33,7 @@ require "agent/heartbeat"
 require "agent/state"
 require "agent/file_matcher"
 require "agent/file_aggregator"
+require "agent/sshd_monitor"
 
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
@@ -42,6 +44,7 @@ require "agent/message/drain"
 require "agent/message/apply"
 require "agent/message/compile_package"
 require "agent/message/logs"
+require "agent/message/ssh"
 
 require "agent/handler"
 

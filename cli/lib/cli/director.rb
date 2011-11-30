@@ -139,6 +139,25 @@ module Bosh
         request_and_track(:post, url, "text/yaml", manifest_yaml, :log_type => "event")
       end
 
+      def setup_ssh(deployment_name, job, index, user, public_key, password)
+        url = "/ssh"
+        payload = JSON.generate("command" => "setup", "deployment_name" => deployment_name,
+                                "target" => {"job" => job, "indexes" => [index].compact},
+                                "params" => { "user" => user, "public_key" => public_key,
+                                               "password" => password})
+        status, task_id = request_and_track(:post, url, "application/json", payload, :quiet => true)
+        return nil if status != :done
+        get_task_result(task_id)
+      end
+
+      def cleanup_ssh(deployment_name, job, user, user_regex, indexes)
+        url = "/ssh"
+        payload = JSON.generate("command" => "cleanup", "deployment_name" => deployment_name,
+                                "target" => {"job" => job, "indexes" => indexes.compact},
+                                "params" => { "user" => user, "user_regex" => user_regex})
+        request_and_track(:post, url, "application/json", payload, :quiet => true)
+      end
+
       def change_job_state(deployment_name, manifest_yaml, job_name, index, new_state)
         url = "/deployments/#{deployment_name}/jobs/#{job_name}"
         url += "/#{index}" if index
