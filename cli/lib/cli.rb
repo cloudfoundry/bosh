@@ -25,6 +25,9 @@ require "timeout"
 require "tmpdir"
 require "uri"
 require "yaml"
+require 'net/ssh'
+require 'net/scp'
+require 'net/ssh/gateway'
 
 require "cli/version"
 require "cli/config"
