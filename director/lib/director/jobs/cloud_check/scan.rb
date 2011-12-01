@@ -20,6 +20,7 @@ module Bosh::Director
             scan_disks
             scan_vms
             scan_instances
+            scan_agents
             "scan complete"
           end
         end
@@ -41,6 +42,30 @@ module Bosh::Director
               # tries to operate on disks from other deployments!
               @logger.info("Found inactive disk: #{disk.id}")
               problem_found(:inactive_disk, disk)
+            end
+          end
+        end
+
+        def scan_agents
+          @logger.info("Looking for unresponsive agents")
+          begin_stage("Scanning agents", Models::Vm.count)
+
+          ThreadPool.new(:max_threads => 32).wrap do |pool|
+            Models::Vm.all.each do |vm|
+              pool.process do
+                track_and_log("Inspecting VM #{vm.cid} agent #{vm.agent_id}") do
+                  agent = AgentClient.new(vm.agent_id)
+                  begin
+                    state = agent.get_state
+                    if vm.instance.nil? && !state["job"].nil?
+                      problem_found(:unbounded_instance_vm, vm, state)
+                    end
+                  rescue Bosh::Director::Client::TimeoutException
+                    @logger.info("Found unresponsive agent #{vm.agent_id}")
+                    problem_found(:unresponsive_agent, vm)
+                  end
+                end
+              end
             end
           end
         end

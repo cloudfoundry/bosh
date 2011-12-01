@@ -10,16 +10,20 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       @lock = mock("deployment_lock")
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(@lock)
+
+      @agent = mock("agent")
+      Bosh::Director::AgentClient.stub!(:new).and_return(@agent)
     end
 
     it "scans for problems (using inactive disks as an example of a problem)" do
       # Couple of inactive disks
-      2.times do
-        Bosh::Director::Models::PersistentDisk.make(:active => false)
+      2.times do |idx|
+        Bosh::Director::Models::PersistentDisk.make(:instance_id => idx, :active => false)
       end
 
       Bosh::Director::Models::DeploymentProblem.count.should == 0
       @lock.should_receive(:lock).and_yield
+      @agent.stub!(:get_state).and_return({})
       @job.perform
       Bosh::Director::Models::DeploymentProblem.count.should == 2
 

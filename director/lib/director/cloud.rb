@@ -80,6 +80,16 @@ module Bosh::Director
     end
 
     ##
+    # Reboots a VM
+    #
+    # @param [String] vm vm id that was once returned by {#create_vm}
+    # @param [Optional, Hash] CPI specific options (e.g hard/soft reboot)
+    # @return nil
+    def reboot_vm(vm)
+
+    end
+
+    ##
     # Configures networking an existing VM.
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
