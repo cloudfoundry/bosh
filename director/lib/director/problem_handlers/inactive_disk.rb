@@ -14,16 +14,27 @@ module Bosh::Director
         if @disk.nil?
           handler_error("Disk `#{@disk_id}' is no longer in the database")
         end
+
+        @instance = @disk.instance
+        if @instance.nil?
+          handler_error("Cannot find instance for disk `#{@disk_id}'")
+        end
+
+        @vm = @instance.vm
       end
 
       def problem_still_exists?
-        @disk = Models::PersistentDisk[@disk_id]
-        return false if @disk.nil?
         !@disk.active
       end
 
+      def disk_label
+        job = @instance.job || "unknown job"
+        index = @instance.index || "unknown index"
+        "#{@disk.disk_cid} (#{job}/#{index}, #{@disk.size.to_i}M)"
+      end
+
       def description
-        "Disk #{@disk_id} is inactive"
+        "Disk #{disk_label} is inactive"
       end
 
       resolution :ignore do
@@ -32,65 +43,70 @@ module Bosh::Director
       end
 
       resolution :delete_disk do
-        plan { "Delete disk #{@disk_id}" }
+        plan { "Delete disk" }
         action { delete_disk }
       end
 
       resolution :activate_disk do
-        plan { "Activate disk #{@disk_id}" }
+        plan { "Activate disk" }
         action { activate_disk }
       end
 
       def activate_disk
-        handler_error("Disk #{@disk_id} is not mounted") unless disk_mounted?
+        unless disk_mounted?
+          handler_error("Disk is not mounted")
+        end
         # Currently the director allows ONLY one persistent disk per
         # instance. We are about to activate a disk but the instance already
         # has an active disk.
         # For now let's be conservative and return an error.
-        instance = @disk.instance
-        unless instance.persistent_disk.nil?
-          handler_error("Instance #{instance.id} already has an active disk #{instance.persistent_disk}")
+        if @instance.persistent_disk
+          handler_error("Instance already has an active disk")
         end
         @disk.active = true
         @disk.save
-        true
       end
 
       def delete_disk
-        handler_error("Disk #{@disk_id} is currently in use") if disk_mounted?
-
-        cloud = Config.cloud
-        disk_cid = @disk.disk_cid
-        vm = disk_vm
-        if vm
-          cloud.detach_disk(vm.cid, disk_cid) rescue nil
+        if disk_mounted?
+          handler_error("Disk is currently in use")
         end
-        cloud.delete_disk(disk_cid) rescue nil
-        @disk.destroy
-        true
-      end
 
-      # return the owner(vm) of the disk
-      def disk_vm
-        instance = @disk.instance
-        return nil if instance.nil?
-        instance.vm
+        if @vm
+          begin
+            cloud.detach_disk(@vm.cid, @disk.disk_cid)
+          rescue => e
+            # We are going to delete this disk anyway
+            # and we know it's not in use, so we can ignore
+            # detach errors here.
+            @logger.warn(e)
+          end
+        end
+
+        # FIXME: Curently there is no good way to know if delete_disk
+        # failed because of cloud error or because disk doesn't exist
+        # in vsphere_disks.
+        begin
+          cloud.delete_disk(@disk.disk_cid)
+        rescue Bosh::Director::DiskNotFound, RuntimeError => e # FIXME
+          @logger.warn(e)
+        end
+
+        @disk.destroy
       end
 
       # check to see if the disk is mounted
       def disk_mounted?
-        vm = disk_vm
-        return false if vm.nil?
-        agent = AgentClient.new(vm.agent_id)
+        return false if @vm.nil?
+        agent = AgentClient.new(@vm.agent_id)
+
         begin
-          disk_list = agent.list_disk
+          agent.list_disk.include?(@disk.disk_cid)
         rescue RuntimeError
           # old stemcells without 'list_disk' support. We need to play
           # conservative and assume that the disk is mounted.
-          return true
+          true
         end
-        disk_cid = @disk.disk_cid
-        !disk_list.find { |d_cid| d_cid == disk_cid }.nil?
       end
     end
   end

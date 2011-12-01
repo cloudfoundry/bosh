@@ -76,7 +76,7 @@ module Bosh::Director
           handler.job = self
 
           resolution = @resolutions[problem.id.to_s] || handler.auto_resolution
-          resolution_summary = "#{handler.description} [#{handler.resolution_plan(resolution) || "n/a"}]"
+          resolution_summary = "#{handler.description} [#{handler.resolution_plan(resolution) || "no resolution"}]"
 
           track_and_log(resolution_summary) do
             if handler.problem_still_exists?
