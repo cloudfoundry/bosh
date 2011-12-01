@@ -20,6 +20,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       Bosh::Director::Models::DeploymentProblem.count.should == 0
       @lock.should_receive(:lock).and_yield
+      @job.stub!(:scan_agents)
       @job.perform
       Bosh::Director::Models::DeploymentProblem.count.should == 2
 

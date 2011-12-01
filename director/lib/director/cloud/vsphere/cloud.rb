@@ -362,6 +362,30 @@ module VSphereCloud
       end
     end
 
+    # TODO add option to force hard/soft reboot
+    def reboot_vm(vm_cid)
+      with_thread_name("reboot_vm(#{vm_cid})") do
+        vm = get_vm_by_cid(vm_cid)
+        datacenter = client.find_parent(vm, Vim::Datacenter)
+        power_state = client.get_property(vm, Vim::VirtualMachine, "runtime.powerState")
+
+        @logger.info("Reboot vm = #{vm_cid}")
+        if power_state != Vim::VirtualMachine::PowerState::POWERED_ON
+          raise "Guest VM is not on powered-on state"
+        else
+          begin
+            vm.reboot_guest
+          rescue => e
+            @logger.error("Soft reboot failed #{e} -#{e.backtrace.join("\n")}")
+            @logger.info("Try hard reboot")
+            # if we fail to perform a soft-reboot we force a hard-reboot
+            retry_block { client.power_off_vm(vm) }
+            retry_block { client.power_on_vm(datacenter, vm) }
+          end
+        end
+      end
+    end
+
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
         vm = get_vm_by_cid(vm_cid)
