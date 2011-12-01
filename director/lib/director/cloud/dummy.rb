@@ -68,6 +68,10 @@ module Bosh
         FileUtils.rm_rf(File.join(@base_dir, "running_vms", vm_name))
       end
 
+      def reboot_vm(vm)
+        raise NotImplemented, "reboot_vm"
+      end
+
       def configure_networks(vm, networks)
         raise NotImplemented, "configure_networks"
       end
