@@ -10,6 +10,9 @@ module Bosh::Director
         @agent_id = @vm.agent_id
         @agent = AgentClient.new(@agent_id)
         @state = data
+        if @state["job"].nil?
+          handler_error("Agent #{@agent_id} does not have a job in the state")
+        end
       end
 
       def problem_still_exists?
@@ -33,17 +36,13 @@ module Bosh::Director
 
       def delete_vm
         # Paranoia. agent/vm without an instance should never have a disk
-        if has_persistent_disk?
+        disk_list = @agent.list_disk
+        if disk_list.size != 0
           handler_error("Agent reports a persistent disk (#{disk_list.first})")
         end
 
         cloud.delete_vm(@vm.cid)
         @vm.destroy
-      end
-
-      def has_persistent_disk?
-        disk_list = @agent.list_disk
-        disk_list.size != 0
       end
     end
   end
