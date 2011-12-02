@@ -32,7 +32,7 @@ module Bosh::Director
     def deployment_vms_to_json(deployment)
       vms = [ ]
 
-      deployment.vms.each do |vm|
+      Bosh::Director::Models::Vm.eager(:instance).filter(:deployment_id => deployment.id).all.each do |vm|
         instance = vm.instance
 
         vms << {
