@@ -34,7 +34,7 @@ module Bosh::Director
       def delete_vm
         # Paranoia. agent/vm without an instance should never have a disk
         if has_persistent_disk?
-          handler_error("Agent reports a persistent disk (#{disk_list.first})")
+          handler_error("Agent reports a persistent disk (#{@agent.list_disk.first})")
         end
 
         cloud.delete_vm(@vm.cid)
