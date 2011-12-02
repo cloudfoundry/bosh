@@ -51,7 +51,7 @@ module Bosh::Director
           begin_stage("Scanning agents", Models::Vm.count)
 
           ThreadPool.new(:max_threads => 32).wrap do |pool|
-            Models::Vm.all.each do |vm|
+            Models::Vm.eager(:instance).all.each do |vm|
               pool.process do
                 track_and_log("Inspecting VM #{vm.cid} agent #{vm.agent_id}") do
                   agent = AgentClient.new(vm.agent_id)
