@@ -24,6 +24,15 @@ module Bosh::HealthMonitor
 
       @varz = { }
 
+      # Interval defaults
+      @intervals.prune_events ||= 30
+      @intervals.poll_director ||= 60
+      @intervals.poll_grace_period ||= 30
+      @intervals.log_stats ||= 60
+      @intervals.analyze_agents ||= 60
+      @intervals.agent_timeout ||= 60
+      @intervals.rogue_agent_alert ||= 120
+
       if config["http"].is_a?(Hash)
         @http_port      = config["http"]["port"]
         @http_user      = config["http"]["user"]

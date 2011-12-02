@@ -67,7 +67,7 @@ describe Bhm::EventProcessor do
     @processor.process(:heartbeat, heartbeat_payload(:id => 2))
     @processor.process(:heartbeat, heartbeat_payload(:id => 2))
 
-    @processor.processed_events_count.should == 4
+    @processor.events_count.should == 4
   end
 
   it "logs and swallows plugin exceptions" do
@@ -86,4 +86,25 @@ describe Bhm::EventProcessor do
     @processor.process(:alert, alert_payload)
     @processor.process(:heartbeat, heartbeat_payload)
   end
+
+  it "can prune old events" do
+    @processor.add_plugin(@logger_plugin, ["alert"])
+    @processor.add_plugin(@email_plugin, ["heartbeat"])
+
+    ts = Time.now
+
+    @processor.process(:alert, alert_payload(:id => 1))
+    @processor.process(:alert, alert_payload(:id => 2))
+    @processor.process(:alert, alert_payload(:id => 2))
+    @processor.events_count.should == 2
+
+    Time.stub!(:now).and_return(ts + 6)
+    @processor.prune_events(5)
+
+    @processor.events_count.should == 0
+    @processor.process(:alert, alert_payload(:id => 1))
+    @processor.process(:alert, alert_payload(:id => 2))
+    @processor.events_count.should == 2
+  end
+
 end
