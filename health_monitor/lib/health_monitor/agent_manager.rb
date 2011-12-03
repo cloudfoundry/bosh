@@ -42,6 +42,7 @@ module Bosh::HealthMonitor
     def setup_events
       Bhm.set_varz("heartbeats_received", 0)
 
+      @processor.enable_pruning(Bhm.intervals.prune_events)
       Bhm.plugins.each do |plugin|
         @processor.add_plugin(lookup_plugin(plugin["name"], plugin["options"]), plugin["events"])
       end
