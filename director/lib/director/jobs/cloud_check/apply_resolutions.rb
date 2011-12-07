@@ -76,23 +76,33 @@ module Bosh::Director
           handler.job = self
 
           resolution = @resolutions[problem.id.to_s] || handler.auto_resolution
-          resolution_summary = "#{handler.description} [#{handler.resolution_plan(resolution) || "no resolution"}]"
+          problem_summary = "#{problem.type} #{problem.resource_id}"
+          resolution_summary = handler.resolution_plan(resolution) || "no resolution"
 
-          track_and_log(resolution_summary) do
-            if handler.problem_still_exists?
+          begin
+            track_and_log("#{problem_summary}: #{resolution_summary}") do
               handler.apply_resolution(resolution)
             end
-            problem.state = "resolved"
-            problem.save
-            @resolved_count += 1
+          rescue Bosh::Director::ProblemHandlers::HandlerError => e
+            log_resolution_error(problem, e)
           end
 
-        rescue Bosh::Director::ProblemHandlers::HandlerError => e
-          @logger.error("Error resolving problem `#{problem.id}': #{e}")
-          @logger.error(e.backtrace.join("\n"))
+          problem.state = "resolved" # TODO: add 'ignored' state?
+          problem.save
+          @resolved_count += 1
+
+        rescue => e
+          # TODO: need to understand if something here is potentially fatal
+          # and deserves re-raising
+          log_resolution_error(problem, e)
         end
 
         private
+
+        def log_resolution_error(problem, error)
+          @logger.error("Error resolving problem `#{problem.id}': #{error}")
+          @logger.error(error.backtrace.join("\n"))
+        end
 
         def with_deployment_lock
           Lock.new("lock:deployment:#{@deployment.name}").lock do
