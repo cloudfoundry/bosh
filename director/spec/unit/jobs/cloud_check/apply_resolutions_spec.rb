@@ -93,4 +93,8 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
     ]
   end
 
+  it "continues despite erroneous resolutions" do
+    pending
+  end
+
 end
