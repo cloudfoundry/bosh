@@ -2,6 +2,7 @@ module Bosh::Director
   module Jobs
     module CloudCheck
       class Scan < BaseJob
+        AGENT_TIMEOUT = 10 # seconds
         @queue = :normal
 
         # TODO: add event and regular logging
@@ -19,8 +20,6 @@ module Bosh::Director
             # extracted into their own classes (for clarity)
             scan_disks
             scan_vms
-            scan_instances
-            scan_agents
             "scan complete"
           end
         end
@@ -34,50 +33,77 @@ module Bosh::Director
         end
 
         def scan_disks
-          begin_stage("Scanning persistent disks", 1)
+          disks = Models::PersistentDisk.eager(:instance).all.select do |disk|
+            disk.instance && disk.instance.deployment_id == @deployment.id
+          end
+          results = Hash.new(0)
+
+          begin_stage("Scanning #{disks.size} persistent disks", 2)
 
           track_and_log("Looking for inactive disks") do
-            Models::PersistentDisk.filter(:active => false).all.each do |disk|
-              # TODO: filter further by deployment, right now this
-              # tries to operate on disks from other deployments!
-              @logger.info("Found inactive disk: #{disk.id}")
-              problem_found(:inactive_disk, disk)
+            disks.each do |disk|
+              scan_result = scan_disk(disk)
+              results[scan_result] += 1
             end
           end
+
+          track_and_log("#{results[:ok]} OK, #{results[:inactive]} inactive")
         end
 
-        def scan_agents
-          @logger.info("Looking for unresponsive agents")
-          begin_stage("Scanning agents", Models::Vm.count)
+        def scan_vms
+          vms = Models::Vm.eager(:instance).filter(:deployment_id => @deployment.id).all
+          begin_stage("Scanning #{vms.size} VMs", 2)
+          results = Hash.new(0)
+          lock = Mutex.new
 
-          ThreadPool.new(:max_threads => 32).wrap do |pool|
-            Models::Vm.eager(:instance).all.each do |vm|
-              pool.process do
-                track_and_log("Inspecting VM #{vm.cid} agent #{vm.agent_id}") do
-                  agent = AgentClient.new(vm.agent_id)
-                  begin
-                    state = agent.get_state
-                    if vm.instance.nil? && !state["job"].nil?
-                      problem_found(:unbounded_instance_vm, vm, state)
-                    end
-                  rescue Bosh::Director::Client::TimeoutException
-                    @logger.info("Found unresponsive agent #{vm.agent_id}")
-                    problem_found(:unresponsive_agent, vm)
-                  end
+          track_and_log("Checking VM states") do
+            ThreadPool.new(:max_threads => 32).wrap do |pool|
+              vms.each do |vm|
+                pool.process do
+                  scan_result = scan_vm(vm)
+                  lock.synchronize { results[scan_result] += 1 }
                 end
               end
             end
           end
+
+          track_and_log("#{results[:ok]} OK, " +
+                        "#{results[:unresponsive]} unresponsive, " +
+                        "#{results[:unbound]} unbound")
         end
 
-        def scan_vms
-          begin_stage("Scanning VMs", 1)
-          track_and_log("Dummy task") { }
+        def scan_disk(disk)
+          if !disk.active
+            @logger.info("Found inactive disk: #{disk.id}")
+            problem_found(:inactive_disk, disk)
+            :inactive
+          end
+          :ok
         end
 
-        def scan_instances
-          begin_stage("Scanning instances", 1)
-          track_and_log("Dummy task") { }
+        def scan_vm(vm)
+          agent_options = {
+            :timeout => AGENT_TIMEOUT,
+            :retry_methods => { :get_state => 0 }
+          }
+
+          agent = AgentClient.new(vm.agent_id, agent_options)
+          begin
+            state = agent.get_state
+            # TODO: handle invalid state
+            if vm.instance.nil? && !state["job"].nil?
+              job = state["job"].kind_of?(Hash) ? state["job"]["name"] : nil
+              index = state["index"]
+              problem_found(:unbound_instance_vm, vm, :job => job, :index => index)
+              :unbound
+            else
+              :ok
+            end
+          rescue Bosh::Director::Client::TimeoutException
+            @logger.info("Found unresponsive agent #{vm.agent_id}")
+            problem_found(:unresponsive_agent, vm)
+            :unresponsive
+          end
         end
 
         def problem_found(type, resource, data = {})

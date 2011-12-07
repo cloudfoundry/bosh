@@ -1,59 +1,114 @@
 require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::ProblemHandlers::InactiveDisk do
+
+  def make_handler(disk_id, data = {})
+    Bosh::Director::ProblemHandlers::InactiveDisk.new(disk_id, data)
+  end
+
   before(:each) do
     @cloud = mock("cloud")
     @agent = mock("agent")
-    Bosh::Director::AgentClient.stub!(:new).and_return(@agent)
-    @disk = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid",
-                                                        :instance_id => 1,
-                                                        :size => 1024,
-                                                        :active => false)
-    @handler = Bosh::Director::ProblemHandlers::Base.create_by_type(:inactive_disk, @disk.id, {})
-    @handler.stub(:cloud).and_return(@cloud)
+
+    @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
+
+    @instance = Bosh::Director::Models::Instance.
+      make(:job => "mysql_node", :index => 3, :vm_id => @vm.id)
+
+    @disk = Bosh::Director::Models::PersistentDisk.
+      make(:disk_cid => "disk-cid", :instance_id => @instance.id,
+           :size => 300, :active => false)
+
+    @handler = make_handler(@disk.id)
+    @handler.stub!(:cloud).and_return(@cloud)
+    @handler.stub!(:agent_client).with(@instance.vm).and_return(@agent)
   end
 
-  it "should detect if problem still exists" do
-    @handler.problem_still_exists?.should be_true
-    @disk.update(:active => true)
-    @handler.problem_still_exists?.should be_false
+  it "registers under inactive_disk type" do
+    handler = Bosh::Director::ProblemHandlers::Base.create_by_type(:inactive_disk, @disk.id, {})
+    handler.should be_kind_of(Bosh::Director::ProblemHandlers::InactiveDisk)
   end
 
-  it "should delete inactive disk" do
-    @agent.stub(:list_disk).and_return([])
-    @cloud.should_receive(:detach_disk)
-    @cloud.should_receive(:delete_disk).with("disk-cid")
-    @handler.delete_disk
-    Bosh::Director::Models::PersistentDisk[@disk.id].should be_nil
+  it "has well-formed description" do
+    @handler.description.should == "Disk `disk-cid' (mysql_node/3, 300M) is inactive"
   end
 
-  it "should refuse to delete if the invalid disk is currently mounted" do
-    @agent.stub(:list_disk).and_return(["disk-cid"])
-    @cloud.should_not_receive(:detach_disk)
-    @cloud.should_not_receive(:delete_disk)
-    lambda {@handler.delete_disk}.should raise_error Bosh::Director::ProblemHandlers::HandlerError
-    Bosh::Director::Models::PersistentDisk[@disk.id].should_not be_nil
+  describe "invalid states" do
+    it "is invalid if disk is gone" do
+      @disk.destroy
+      lambda {
+        make_handler(@disk.id)
+      }.should raise_error("Disk `#{@disk.id}' is no longer in the database")
+    end
+
+    it "is invalid if disk is active" do
+      @disk.update(:active => true)
+      lambda {
+        make_handler(@disk.id)
+      }.should raise_error("Disk `disk-cid' is no longer inactive")
+    end
   end
 
-  it "should activate disk" do
-    @agent.stub(:list_disk).and_return(["disk-cid"])
-    @handler.activate_disk
-    Bosh::Director::Models::PersistentDisk[@disk.id].active.should be_true
+  describe "activate_disk resolution" do
+    it "fails if disk is not mounted" do
+      @agent.should_receive(:list_disk).and_return([])
+      lambda {
+        @handler.apply_resolution(:activate_disk)
+      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Disk is not mounted")
+    end
+
+    it "fails if instance has another persistent disk according to DB" do
+      Bosh::Director::Models::PersistentDisk.
+        make(:instance_id => @instance.id, :active => true)
+
+      @agent.should_receive(:list_disk).and_return(["disk-cid"])
+
+      lambda {
+        @handler.apply_resolution(:activate_disk)
+      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Instance already has an active disk")
+    end
+
+    it "marks disk as active in DB" do
+      @agent.should_receive(:list_disk).and_return(["disk-cid"])
+      @handler.apply_resolution(:activate_disk)
+      @disk.reload
+
+      @disk.active.should be_true
+    end
   end
 
-  it "should refuse to activate disk if not mounted" do
-    @agent.stub(:list_disk).and_return([])
-    lambda {@handler.activate_disk}.should raise_error Bosh::Director::ProblemHandlers::HandlerError
-    Bosh::Director::Models::PersistentDisk[@disk.id].active.should be_false
-  end
+  describe "delete disk solution" do
+    it "fails if disk is mounted" do
+      @agent.should_receive(:list_disk).and_return(["disk-cid"])
+      lambda {
+        @handler.apply_resolution(:delete_disk)
+      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Disk is currently in use")
+    end
 
-  it "should refuse to activate disk if the instance already has a persistent disk" do
-    disk_1 = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid-1",
-                                                         :instance_id => 1,
-                                                         :size => 1024,
-                                                         :active => true)
-    @agent.stub(:list_disk).and_return(["disk-cid"])
-    lambda {@handler.activate_disk}.should raise_error Bosh::Director::ProblemHandlers::HandlerError
-    Bosh::Director::Models::PersistentDisk[@disk.id].active.should be_false
+    it "detaches disk from VM and deletes it from DB and cloud (if instance has VM)" do
+      @agent.should_receive(:list_disk).and_return(["other-disk"])
+      @cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid")
+      @cloud.should_receive(:delete_disk).with("disk-cid")
+      @handler.apply_resolution(:delete_disk)
+
+      lambda {
+        @disk.reload
+      }.should raise_error(Sequel::Error, "Record not found")
+    end
+
+    it "ignores cloud errors and proceeds with deletion from DB" do
+      @agent.should_receive(:list_disk).and_return(["other-disk"])
+
+      @cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid").
+        and_raise(RuntimeError.new("Cannot detach disk"))
+      @cloud.should_receive(:delete_disk).with("disk-cid").
+        and_raise(RuntimeError.new("Cannot delete disk"))
+
+      @handler.apply_resolution(:delete_disk)
+
+      lambda {
+        @disk.reload
+      }.should raise_error(Sequel::Error, "Record not found")
+    end
   end
 end

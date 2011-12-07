@@ -2,6 +2,11 @@ module Bosh::Director
   module ProblemHandlers
     class HandlerError < StandardError; end
 
+    # This timeout has been made pretty short mainly
+    # to avoid long cloudchecks, however 10 seconds should
+    # still be pretty generous interval for agent to respond.
+    AGENT_TIMEOUT = 10
+
     class Base
       attr_reader :data
       attr_accessor :job # so we can checkpoint task
@@ -46,12 +51,18 @@ module Bosh::Director
       # in the context of Resque job
       def cloud
         if @job.nil?
-          handler_error("Cannot talk to cloud out of job context")
+          handler_error("Cannot talk to cloud outside of job context")
         end
         @cloud ||= Config.cloud
       end
 
-      def problem_still_exists?; end
+      def agent_client(vm, timeout = AGENT_TIMEOUT, retries = 0)
+        options = {
+          :timeout => timeout,
+          :retry_methods => { :get_state => retries }
+        }
+        AgentClient.new(vm.agent_id, options)
+      end
 
       # Problem description
       def description; end

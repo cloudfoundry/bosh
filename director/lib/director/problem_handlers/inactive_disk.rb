@@ -15,26 +15,22 @@ module Bosh::Director
           handler_error("Disk `#{@disk_id}' is no longer in the database")
         end
 
+        if @disk.active
+          handler_error("Disk `#{@disk.disk_cid}' is no longer inactive")
+        end
+
         @instance = @disk.instance
         if @instance.nil?
-          handler_error("Cannot find instance for disk `#{@disk_id}'")
+          handler_error("Cannot find instance for disk `#{@disk.disk_cid}'")
         end
 
         @vm = @instance.vm
       end
 
-      def problem_still_exists?
-        @disk = Models::PersistentDisk[@disk_id]
-        !@disk.nil? && !@disk.active
-      end
-
-      def disk_label
+      def description
         job = @instance.job || "unknown job"
         index = @instance.index || "unknown index"
-        "#{@disk.disk_cid} (#{job}/#{index}, #{@disk.size.to_i}M)"
-      end
-
-      def description
+        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
         "Disk #{disk_label} is inactive"
       end
 
@@ -96,18 +92,18 @@ module Bosh::Director
         @disk.destroy
       end
 
-      # check to see if the disk is mounted
       def disk_mounted?
         return false if @vm.nil?
-        agent = AgentClient.new(@vm.agent_id)
 
         begin
-          agent.list_disk.include?(@disk.disk_cid)
+          agent_client(@vm).list_disk.include?(@disk.disk_cid)
         rescue RuntimeError
           # old stemcells without 'list_disk' support. We need to play
           # conservative and assume that the disk is mounted.
           true
         end
+      rescue Bosh::Director::Client::TimeoutException
+        handler_error("VM `#{@vm.cid}' is not responding")
       end
     end
   end
