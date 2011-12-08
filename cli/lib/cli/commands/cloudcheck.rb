@@ -5,13 +5,13 @@ module Bosh::Cli::Command
     def perform(*options)
       auth_required
 
-      if non_interactive?
-        err "Cloudcheck cannot be run in non-interactive mode\n" +
-            "Please use `--auto' flag if you want automated resolutions"
-      end
-
       @auto_mode = options.delete("--auto")
       @report_mode = options.delete("--report")
+
+      if non_interactive? && !@report_mode
+        err "Cloudcheck cannot be run in non-interactive mode\n" +
+          "Please use `--auto' flag if you want automated resolutions"
+      end
 
       if options.size > 0
         err "Unknown options: #{options.join(", ")}"
