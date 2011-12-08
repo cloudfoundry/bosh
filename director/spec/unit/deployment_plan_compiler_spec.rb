@@ -47,7 +47,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
     before(:each) do
       @deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1")
+      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-cid")
       @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
                                                         :vm => @vm,
                                                         :job => "test_job",
@@ -85,6 +85,56 @@ describe Bosh::Director::DeploymentPlanCompiler do
       Bosh::Director::Config.stub!(:cloud).and_return(nil)
 
       @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    end
+
+    describe "inconsistent VM states" do
+      it "fails when VM and instance in DB are referencing different deployments" do
+        @agent.stub!(:get_state).and_return("doesn't matter")
+        new_deployment = Bosh::Director::Models::Deployment.make(:name => "new_deployment")
+        @instance.update(:deployment => new_deployment)
+
+        lambda {
+          @deployment_plan_compiler.bind_existing_deployment
+        }.should raise_error("VM `vm-cid' is out of sync: DB record mismatch, " +
+                             "instance belongs to deployment `#{new_deployment.id}', " +
+                             "VM belongs to deployment `#{@deployment.id}'")
+      end
+
+      it "fails when VM returns invalid state" do
+        @agent.stub!(:get_state).and_return("malformed state")
+
+        lambda {
+          @deployment_plan_compiler.bind_existing_deployment
+        }.should raise_error("VM `vm-cid' returns invalid state: expected Hash, got String")
+      end
+
+      it "fails when VM reports a different deployment name" do
+        @agent.stub!(:get_state).and_return("deployment" => "foo")
+
+        lambda {
+          @deployment_plan_compiler.bind_existing_deployment
+        }.should raise_error("VM `vm-cid' is out of sync: expected to be a part of `test_deployment' " +
+                             "deployment but is actually a part of `foo' deployment")
+      end
+
+      it "fails when job in DB and job reported by agent are out of sync" do
+        @agent.stub!(:get_state).and_return("deployment" => "test_deployment", "job" => {"name" => "foo"}, "index" => 0)
+
+        lambda {
+          @deployment_plan_compiler.bind_existing_deployment
+        }.should raise_error("VM `vm-cid' is out of sync: it reports itself as `foo/0' " +
+                             "but according to DB it is `test_job/5'")
+      end
+
+      it "fails when VM has a job but isn't referenced by an instance" do
+        @agent.stub!(:get_state).and_return("deployment" => "test_deployment", "job" => {"name" => "foo"}, "index" => 0)
+        @instance.update(:vm => nil)
+
+        lambda {
+          @deployment_plan_compiler.bind_existing_deployment
+        }.should raise_error("VM `vm-cid' is out of sync: it reports itself as `foo/0' " +
+                             "but there is no instance referencing it")
+      end
     end
 
     it "should bind the valid resources" do

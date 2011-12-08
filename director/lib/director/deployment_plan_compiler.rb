@@ -22,19 +22,41 @@ module Bosh::Director
       ip_reservations
     end
 
-    def verify_state(instance, state, vm)
-      if state["deployment"] != @deployment_plan.deployment.name
-        raise "Deployment state out of sync: #{state.pretty_inspect}"
+    def verify_state(vm, instance, state)
+      # TODO: consider a special kind of exception
+      # instead of generic RuntimeError
+      if instance && instance.deployment_id != vm.deployment_id
+        raise "VM `#{vm.cid}' is out of sync: DB record mismatch, " +
+          "instance belongs to deployment `#{instance.deployment_id}', " +
+          "VM belongs to deployment `#{vm.deployment_id}'"
       end
 
-      if instance
-        if instance.deployment.id != vm.deployment.id
-          raise "Vm/Instance models out of sync: #{state.pretty_inspect}"
-        end
+      if !state.kind_of?(Hash)
+        @logger.error("Invalid state for `#{vm.cid}': #{state.pretty_inspect}")
+        raise "VM `#{vm.cid}' returns invalid state: expected Hash, got #{state.class}"
+      end
 
-        if state["job"]["name"] != instance.job || state["index"] != instance.index
-          raise "Instance state out of sync: #{state.pretty_inspect}"
-        end
+      actual_deployment_name = state["deployment"]
+      expected_deployment_name = @deployment_plan.deployment.name
+
+      if actual_deployment_name != expected_deployment_name
+        raise "VM `#{vm.cid}' is out of sync: expected to be a part of " +
+          "`#{expected_deployment_name}' deployment " +
+          "but is actually a part of `#{actual_deployment_name}' deployment"
+      end
+
+      actual_job = state["job"].is_a?(Hash) ? state["job"]["name"] : nil
+      actual_index = state["index"]
+
+      if instance.nil? && !actual_job.nil?
+        raise "VM `#{vm.cid}' is out of sync: it reports itself as " +
+          "`#{actual_job}/#{actual_index}' but there is no instance referencing it"
+      end
+
+      if instance && (instance.job != actual_job || instance.index != actual_index)
+        raise "VM `#{vm.cid}' is out of sync: it reports itself as " +
+          "`#{actual_job}/#{actual_index}' but according to DB " +
+          "it is `#{instance.job}/#{instance.index}'"
       end
     end
 
@@ -74,7 +96,7 @@ module Bosh::Director
               state = agent.get_state
               @logger.debug("Received VM state: #{state.pretty_inspect}")
 
-              verify_state(instance, state, vm)
+              verify_state(vm, instance, state)
               @logger.debug("Verified VM state")
 
               lock.synchronize do
