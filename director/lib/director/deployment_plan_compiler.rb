@@ -16,7 +16,9 @@ module Bosh::Director
         if network
           ip = ip_to_i(network_config["ip"])
           reservation = network.reserve_ip(ip)
-          ip_reservations[name] = {:ip => ip, :static? => reservation == :static} if reservation
+          if reservation
+            ip_reservations[name] = {:ip => ip, :static? => reservation == :static}
+          end
         end
       end
       ip_reservations
@@ -85,6 +87,8 @@ module Bosh::Director
 
     def bind_existing_deployment
       lock = Mutex.new
+      idle_vms_without_reservations = []
+
       ThreadPool.new(:max_threads => 32).wrap do |pool|
         vms = Models::Vm.filter(:deployment_id => @deployment_plan.deployment.id)
         vms.each do |vm|
@@ -138,23 +142,44 @@ module Bosh::Director
                 else
                   @logger.debug("Binding resource pool VM")
                   resource_pool = @deployment_plan.resource_pool(state["resource_pool"]["name"])
+
                   if resource_pool
                     @logger.debug("Adding to resource pool")
+
                     idle_vm = resource_pool.add_idle_vm
                     idle_vm.vm = vm
                     idle_vm.current_state = state
+
                     network_reservation = ip_reservations[resource_pool.network.name]
-                    idle_vm.ip = network_reservation[:ip] if network_reservation && !network_reservation[:static?]
+                    if network_reservation
+                      if network_reservation[:static?]
+                        @logger.debug("Resource pool VM `#{vm.cid}' has static reservation, releasing IP")
+                        resource_pool.network.release_ip(network_reservation[:ip])
+                        # We can't allocate dynamic IPs here, as we probably didn't process
+                        # the rest reservations yet and some of them might hold onto these IPs.
+                        # Just noticing this VM instead:
+                        idle_vms_without_reservations << idle_vm
+                      else
+                        idle_vm.ip = network_reservation[:ip]
+                      end
+                    else
+                      @logger.debug("No network reservation for VM `#{vm.cid}'")
+                    end
                   else
                     @logger.debug("Resource pool doesn't exist, marking for deletion")
                     @deployment_plan.delete_vm(vm)
                   end
                 end
                 @logger.debug("Finished binding VM")
-              end
+              end # synchronize
             end
           end
         end
+      end # Thread pool
+
+      idle_vms_without_reservations.each do |idle_vm|
+        @logger.debug("Allocating dynamic IP for `#{idle_vm.vm.cid}'")
+        idle_vm.ip = idle_vm.resource_pool.network.allocate_dynamic_ip
       end
     end
 
@@ -217,7 +242,7 @@ module Bosh::Director
               idle_vm.bound_instance = instance_spec
 
               # this also means we no longer need the reserved IP for this VM
-              idle_vm.resource_pool.network.release_dynamic_ip(idle_vm.ip)
+              idle_vm.resource_pool.network.release_ip(idle_vm.ip)
               idle_vm.ip = nil
             end
           end
@@ -389,7 +414,7 @@ module Bosh::Director
 
               @cloud.delete_vm(vm.cid)
               instance.persistent_disks.each do |disk|
-                @logger.info("Deleting an in-active disk #{disk.disk_cid}") unless disk.active
+                @logger.info("Deleting inactive disk #{disk.disk_cid}") unless disk.active
                 begin
                   @cloud.delete_disk(disk.disk_cid)
                 rescue DiskNotFound
