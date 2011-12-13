@@ -341,17 +341,16 @@ module Bosh::Director
         config
       end
 
-      def release_dynamic_ip(ip)
+      def release_ip(ip)
         ip = ip_to_netaddr(ip)
         @subnets.each do |subnet|
           if subnet.range.contains?(ip)
-            subnet.release_dynamic_ip(ip)
+            subnet.release_ip(ip)
             break
           end
         end
       end
     end
-
 
     # DeploymentPlan::NetworkSubnetSpec
     class NetworkSubnetSpec
@@ -396,6 +395,7 @@ module Bosh::Director
 
         first_ip = @range.first(:Objectify => true)
         last_ip = @range.last(:Objectify => true)
+
         (first_ip.to_i .. last_ip.to_i).each { |ip| @available_dynamic_ips << ip }
 
         @available_dynamic_ips.delete(@gateway.to_i) if @gateway
@@ -415,6 +415,10 @@ module Bosh::Director
           @available_static_ips.add(ip)
         end
 
+        # Keeping track of initial pools to understand
+        # where to release no longer needed IPs
+        @dynamic_ip_pool = @available_dynamic_ips.dup
+        @static_ip_pool = @available_static_ips.dup
       end
 
       def overlaps?(subnet)
@@ -422,13 +426,25 @@ module Bosh::Director
       end
 
       def reserve_ip(ip)
-        reservation = nil
-        if @available_static_ips.delete?(ip)
-          reservation = :static
-        elsif @available_dynamic_ips.delete?(ip)
-          reservation = :dynamic
+        if @available_static_ips.delete?(ip.to_i)
+          :static
+        elsif @available_dynamic_ips.delete?(ip.to_i)
+          :dynamic
+        else
+          nil
         end
-        reservation
+      end
+
+      def release_ip(ip)
+        ip = ip.to_i
+
+        if @dynamic_ip_pool.include?(ip)
+          @available_dynamic_ips.add(ip)
+        elsif @static_ip_pool.include?(ip)
+          @available_static_ips.add(ip)
+        else
+          raise "Invalid IP to release: neither in dynamic nor in static pool"
+        end
       end
 
       def allocate_dynamic_ip
@@ -438,14 +454,7 @@ module Bosh::Director
         end
         ip
       end
-
-      def release_dynamic_ip(ip)
-        raise "Invalid dynamic ip" unless @range.contains?(ip)
-        # TODO: would be nice to check if it was really a dynamic ip and not reserved/static/etc
-        @available_dynamic_ips.add(ip.to_i)
-      end
     end
-
 
     # DeploymentPlan::TemplateSpec
     class TemplateSpec
