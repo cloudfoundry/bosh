@@ -131,7 +131,7 @@ module Bosh::Director
 
       @networks.each do |network_settings|
         ip = network_settings[@network.name]["ip"]
-        @network.release_dynamic_ip(ip)
+        @network.release_ip(ip)
       end
       @job.task_checkpoint if @job
     end
