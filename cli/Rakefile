@@ -42,7 +42,7 @@ end
 namespace "test" do
   ["spec", "spec:rcov", "spec:ci" ].each do |task_name|
     task task_name do
-      sh("cd spec && rake #{task_name}")
+      sh("cd spec && bundle exec rake #{task_name}")
     end
   end
 end
