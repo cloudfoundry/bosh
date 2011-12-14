@@ -23,6 +23,7 @@ describe String do
   end
 
   it "has colorization helpers" do
+    Bosh::Cli::Config.colorize = false
     "string".red.should   == "string"
     "string".green.should == "string"
     "string".colorize("a").should == "string"
