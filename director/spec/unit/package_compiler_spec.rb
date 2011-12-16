@@ -91,7 +91,7 @@ describe Bosh::Director::PackageCompiler do
                          "blobstore_id" => "some blobstore id"}
           })
       @cloud.should_receive(:delete_vm).with("vm-1")
-      @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
+      @network.should_receive(:release_ip).with("1.2.3.4")
 
       compiled_package = nil
       @job_spec.should_receive(:add_package).with do |bound_package, bound_compiled_package|
@@ -223,7 +223,7 @@ describe Bosh::Director::PackageCompiler do
           })
 
       @cloud.should_receive(:delete_vm).with("vm-2")
-      @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
+      @network.should_receive(:release_ip).with("1.2.3.4")
 
       compiled_package = nil
       @job_spec.should_receive(:add_package).with do |bound_package, bound_compiled_package|
@@ -291,7 +291,7 @@ describe Bosh::Director::PackageCompiler do
 
       @network.should_receive(:allocate_dynamic_ip).and_return(255)
       @network.should_receive(:network_settings).with(255, ["dns", "gateway"]).and_return({"ip" => "1.2.3.4"})
-      @network.should_receive(:release_dynamic_ip).with("1.2.3.4")
+      @network.should_receive(:release_ip).with("1.2.3.4")
 
       job = Bosh::Director::Jobs::BaseJob.new
       job.stub!(:task_cancelled?).and_return(true)
