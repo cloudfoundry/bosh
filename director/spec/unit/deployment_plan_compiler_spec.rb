@@ -591,7 +591,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       idle_vm.should_receive(:bound_instance=).with(@instance_spec)
       idle_vm.should_receive(:ip=).with(nil)
-      @network_spec.should_receive(:release_dynamic_ip).with(IP_10_0_0_5)
+      @network_spec.should_receive(:release_ip).with(IP_10_0_0_5)
 
       @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
 
