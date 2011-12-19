@@ -226,9 +226,10 @@ module VSphereCloud
 
           @logger.info("Powering on VM: #{vm} (#{name})")
           client.power_on_vm(cluster.datacenter.mob, vm)
-        rescue
+        rescue => e
+          @logger.info("#{e} - #{e.backtrace.join("\n")}")
           delete_vm(name)
-          raise
+          raise e
         end
         name
       end
