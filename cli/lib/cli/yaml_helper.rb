@@ -1,5 +1,5 @@
 module Bosh::Cli
-  class YamlHelper 
+  class YamlHelper
     class << self
       private
       def process_object(o)
@@ -35,13 +35,15 @@ module Bosh::Cli
 
       public
       def check_duplicate_keys(path)
-        @syck_class = nil
-        if defined?(YAML::Syck)
-          # for ruby 1.8.7
+        # Some Ruby builds on Ubuntu seem to expose a bug
+        # with the opposite order of Syck check, so we first
+        # check for Syck and then for YAML::Syck
+        if defined?(Syck)
+          @syck_class = Syck
+        elsif defined?(YAML::Syck)
           @syck_class = YAML::Syck
         else
-          # for ruby 1.9.2
-          @syck_class = Syck
+          raise "Cannot find Syck parser for YAML, please check your Ruby installation"
         end
 
         File.open(path) do |f|
