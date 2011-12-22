@@ -9,6 +9,8 @@ describe Bosh::Director::Jobs::BaseJob do
     # TODO: remove stubbing 'new'
     Logger.stub!(:new).with("/some/path/debug").and_return(@logger)
     Bosh::Director::EventLog.stub!(:new).with("/some/path/event").and_return(@event_log)
+    @result_file = mock("result-file")
+    Bosh::Director::TaskResultFile.stub!(:new).with("/some/path/result").and_return(@result_file)
   end
 
   it "should set up the task" do
