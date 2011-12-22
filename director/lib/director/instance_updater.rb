@@ -160,6 +160,7 @@ module Bosh::Director
     end
 
     def apply_state(state)
+      @vm.update(:apply_spec => state)
       task = agent.apply(state)
       while task["state"] == "running"
         sleep(1.0)

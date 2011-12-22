@@ -175,6 +175,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @persistent_disk.destroy
       @instance.destroy
 
+      @vm.update(:apply_spec => state)
       @agent.stub!(:get_state).and_return(state)
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
 
@@ -200,6 +201,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @persistent_disk.destroy
       @instance.destroy
 
+      @vm.update(:apply_spec => state)
       @agent.stub!(:get_state).and_return(state)
 
       @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
