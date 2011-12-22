@@ -153,6 +153,13 @@ module Bosh
         get_task_result(task_id)
       end
 
+      def fetch_vm_state(deployment_name, &output_fn)
+        url = "/deployments/#{deployment_name}/vmstate"
+        status, task_id = request_and_track(:get, url, nil, nil, :log_type => "result", :output_fn => output_fn)
+        return nil if status != :done || task_id.nil?
+        get_task_result(task_id)
+      end
+
       def download_resource(id)
         status, tmp_file, headers = get("/resources/#{id}", nil, nil, {}, :file => true)
 
@@ -282,12 +289,13 @@ module Bosh
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
         start_time    = Time.now
         quiet         = options[:quiet] || false
+        output_fn     = options[:output_fn]
 
         task = DirectorTask.new(self, task_id, log_type)
 
         say("Tracking task output for task##{task_id}...") unless quiet
 
-        renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
+        renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type, output_fn)
         renderer.time_adjustment = get_time_difference
 
         no_output_yet = true
@@ -334,6 +342,7 @@ module Bosh
         if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
           confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")
           if confirm.empty? || confirm =~ /y(es)?/i
+            options.delete(:output_fn)
             poll_task(task_id, options.merge(:log_type => "debug"))
           else
             say("Please use 'bosh task #{task_id}' command to see the debug log".red)
