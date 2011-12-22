@@ -435,13 +435,14 @@ describe Bosh::Director::InstanceUpdater do
       "id" => "task-1",
       "state" => "done"
     })
+
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE)
     @agent_1.should_receive(:start)
 
     instance_updater.update
 
     @instance.refresh
-    @instance.vm.should == @vm
+    @instance.vm.should == @vm.reload
     @instance.persistent_disk_cid.should == "disk-id"
   end
 
@@ -485,7 +486,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
 
     @instance.refresh
-    @instance.vm.should == @vm
+    @instance.vm.should == @vm.reload
     @instance.persistent_disk_cid.should == "disk-id"
   end
 
@@ -529,7 +530,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
 
     @instance.refresh
-    @instance.vm.should == @vm
+    @instance.vm.should == @vm.reload
     @instance.persistent_disk_cid.should be_nil
   end
 
@@ -594,7 +595,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
 
     @instance.refresh
-    @instance.vm.should == @vm
+    @instance.vm.should == @vm.reload
     @instance.persistent_disk_cid.should == "disk-id"
   end
 
@@ -645,7 +646,7 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   # Previous state:
-  # 1 - Create a persistentdisk with the new size (not-activated)
+  # 1 - Create a persistent disk with new size (not-activated)
   # 2 - Agent migrate is successful
   # 3 - successfully activate disk created in -1-
   # 4 - We fail to push the new disk-size to the agent ("apply_state").
@@ -674,8 +675,8 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:list_disk).and_return(["disk-id"])
 
     # We should leave the disk.
-    @cloud.should_not_receive(:detach_disk).with("vm-id", "disk-id")
-    @cloud.should_not_receive(:delete_disk).with("disk-id")
+    @cloud.should_not_receive(:detach_disk)
+    @cloud.should_not_receive(:delete_disk)
 
     # Everything went ok execpt the last 'apply_state' call. Agent and Director
     # are in agreement. Thus the only thing left to do is to do the last apply
@@ -690,7 +691,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
 
     @instance.refresh
-    @instance.vm.should == @vm
+    @instance.vm.should == @vm.reload
     @instance.persistent_disk_cid.should == "disk-id"
   end
 
