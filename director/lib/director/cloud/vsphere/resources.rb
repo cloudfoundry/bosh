@@ -73,10 +73,18 @@ module VSphereCloud
       @mem_over_commit  = mem_over_commit
     end
 
+    def resource_pools_in_use?(datacenter_spec)
+      cluster_spec = get_cluster_spec(datacenter_spec["clusters"])
+      cluster_spec.each_value do |properties|
+        return true if properties["resource_pool"]
+      end
+      false
+    end
+
     def setup_folder(datacenter, base_folder_name)
       base_folder = @client.find_by_inventory_path([datacenter.name, "vm", base_folder_name])
       raise "Missing folder #{base_folder_name}" if base_folder.nil?
-      return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"]
+      return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"] || resource_pools_in_use?(datacenter.spec)
 
       # Create unique folder
       sub_folder_name = [base_folder_name, Bosh::Director::Config.uuid]
@@ -139,9 +147,9 @@ module VSphereCloud
       clusters.each do |cluster|
         case cluster
         when String
-          cluster_spec[cluster] = nil
+          cluster_spec[cluster] = {}
         when Hash
-          cluster_spec[cluster.keys.first] = cluster[cluster.keys.first]["resource_pool"]
+          cluster_spec[cluster.keys.first] = {"resource_pool" => cluster[cluster.keys.first]["resource_pool"]}
         else
           raise "Bad cluster information in datacenter spec #{clusters.pretty_inspect}"
         end
@@ -161,7 +169,7 @@ module VSphereCloud
 
       clusters = []
       properties.each_value do |cluster_properties|
-        requested_resource_pool = cluster_spec[cluster_properties["name"]]
+        requested_resource_pool = cluster_spec[cluster_properties["name"]]["resource_pool"]
         cluster_resource_pool = fetch_resource_pool(requested_resource_pool, cluster_properties)
         next if cluster_resource_pool.nil?
 
