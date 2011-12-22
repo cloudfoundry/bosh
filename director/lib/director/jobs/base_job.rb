@@ -18,7 +18,7 @@ module Bosh::Director
         logger.info("Starting task: #{task_id}")
 
         Config.event_log = Bosh::Director::EventLog.new(File.join(task.output, "event"))
-
+        Config.result = File.open(File.join(task.output, "result"), "w")
         Config.logger = logger
 
         Sequel::Model.db.logger = logger
@@ -54,6 +54,7 @@ module Bosh::Director
               end
             end
             result = job.perform
+            Config.result.flush
 
             logger.info("Done")
             task.state = :done
@@ -61,6 +62,7 @@ module Bosh::Director
             task.timestamp = Time.now
             task.save
           rescue Exception => e
+            Config.result.flush
             if e.kind_of?(Bosh::Director::TaskCancelled)
               logger.info("task #{task_id} cancelled!")
               task.state = :cancelled
