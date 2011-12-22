@@ -73,10 +73,15 @@ module VSphereCloud
       @mem_over_commit  = mem_over_commit
     end
 
+    def resource_pools_in_use?(datacenter_spec)
+      cluster_spec = get_cluster_spec(datacenter_spec["clusters"])
+      cluster_spec.values.compact.size > 0
+    end
+
     def setup_folder(datacenter, base_folder_name)
       base_folder = @client.find_by_inventory_path([datacenter.name, "vm", base_folder_name])
       raise "Missing folder #{base_folder_name}" if base_folder.nil?
-      return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"]
+      return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"] || resource_pools_in_use?(datacenter.spec)
 
       # Create unique folder
       sub_folder_name = [base_folder_name, Bosh::Director::Config.uuid]
