@@ -73,6 +73,24 @@ module VSphereCloud
       @mem_over_commit  = mem_over_commit
     end
 
+    def setup_folder(datacenter, base_folder_name)
+      base_folder = @client.find_by_inventory_path([datacenter.name, "vm", base_folder_name])
+      raise "Missing folder #{base_folder_name}" if base_folder.nil?
+      return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"]
+
+      # Create unique folder
+      sub_folder_name = [base_folder_name, Bosh::Director::Config.uuid]
+      @logger.debug("Searching for folder #{sub_folder_name.join("/")}")
+      sub_folder = @client.find_by_inventory_path([datacenter.name, "vm", sub_folder_name])
+      if sub_folder.nil?
+        @logger.info("Creating folder #{sub_folder_name.join("/")}")
+        sub_folder = base_folder.create_folder(Bosh::Director::Config.uuid)
+      else
+        @logger.debug("Found folder #{sub_folder_name.join("/")}")
+      end
+      [sub_folder_name, sub_folder]
+    end
+
     def fetch_datacenters
       datacenters      = @client.get_managed_objects(Vim::Datacenter)
       properties       = @client.get_properties(datacenters, Vim::Datacenter, ["name"])
@@ -90,12 +108,12 @@ module VSphereCloud
         @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
 
         datacenter.spec                 = datacenter_specs[datacenter.name]
-        datacenter.vm_folder_name       = datacenter.spec["vm_folder"]
-        datacenter.template_folder_name = datacenter.spec["template_folder"]
-        datacenter.template_folder      = @client.find_by_inventory_path([datacenter.name, "vm",
-                                                                          datacenter.spec["template_folder"]])
-        datacenter.vm_folder            = @client.find_by_inventory_path([datacenter.name, "vm",
-                                                                          datacenter.spec["vm_folder"]])
+
+        # Setup folders
+        datacenter.template_folder_name, datacenter.template_folder = setup_folder(datacenter,
+                                                                                   datacenter.spec["template_folder"])
+        datacenter.vm_folder_name, datacenter.vm_folder = setup_folder(datacenter, datacenter.spec["vm_folder"])
+
         datacenter.disk_path            = datacenter.spec["disk_path"]
         datacenter.datastore_pattern    = Regexp.new(datacenter.spec["datastore_pattern"])
         raise "Missing persistent_datastore_pattern in director config" if datacenter.spec["persistent_datastore_pattern"].nil?
