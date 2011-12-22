@@ -185,6 +185,8 @@ module Bosh::Director
         ["job", "index", "release"].each { |key| state[key] = instance_spec[key] }
       end
 
+      vm.update(:apply_spec => state)
+
       task = agent.apply(state)
       while task["state"] == "running"
         sleep(1.0)
