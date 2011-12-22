@@ -13,22 +13,29 @@ module Bosh::Cli::Command
       end
 
       say("Deployment `#{name.green}'")
-      vms = director.list_vms(name)
+
+      begin
+        vms = director.fetch_vm_state(name)
+      rescue RuntimeError
+        say("Error while fetching vm-states from director".red)
+        vms = []
+      end
       err("No VMs") if vms.size == 0
 
       sorted = vms.sort do |a, b|
-        s = a["job"].to_s <=> b["job"].to_s
+        s = b["job_name"].to_s <=> a["job_name"].to_s
         s = a["index"].to_i <=> b["index"].to_i if s == 0
+        s = a["resource_pool"].to_s <=> b["resource_pool"].to_s if s == 0
         s
       end
 
       vms_table = table do |t|
-        t.headings = "Instance", "CID", "Agent ID"
+        t.headings = "Job", "CID", "Agent ID", "Job-State", "Resource-Pool", "IPs"
         sorted.each do |vm|
-          job = vm["job"]
-          index = vm["index"]
-          instance = job ? "#{job}/#{index}" : ""
-          t << [ instance, vm["cid"], vm["agent_id"] ]
+          ips = ""
+          vm["ips"].each {|ip| ips += ip + " " } if vm["ips"]
+          job = "#{vm["job_name"]}/#{vm["index"]}" if vm["job_name"]
+          t << [job, vm["vm_cid"], vm["agent_id"], vm["job_state"], vm["resource_pool"], ips]
         end
       end
 
