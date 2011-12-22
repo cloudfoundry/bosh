@@ -162,7 +162,7 @@ module Bosh::Director
         agent = AgentClient.new(agent_id)
         agent.wait_until_ready
 
-        configure_vm(agent, network_settings)
+        configure_vm(vm, agent, network_settings)
 
         @logger.info("Compiling package on compilation VM")
         agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name,
@@ -315,12 +315,16 @@ module Bosh::Director
       end
     end
 
-    def configure_vm(agent, network_settings)
-      task = agent.apply({
+    def configure_vm(vm, agent, network_settings)
+      state = {
         "deployment"    => @deployment_plan.name,
         "resource_pool" => "package_compiler",
         "networks"      => network_settings
-      })
+      }
+
+      vm.update(:apply_spec => state)
+
+      task = agent.apply(state)
       while task["state"] == "running"
         sleep(1.0)
         task = agent.get_task(task["agent_task_id"])

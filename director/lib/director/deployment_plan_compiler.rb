@@ -103,6 +103,14 @@ module Bosh::Director
               instance = vm.instance
               agent = AgentClient.new(vm.agent_id)
               state = agent.get_state
+
+              # Persisting apply spec for VMs that were introduced before we started
+              # persisting it on apply itself (this is for cloudcheck purposes only)
+              if vm.apply_spec.nil?
+                # The assumption is that apply_spec <=> VM state
+                vm.update(:apply_spec => state)
+              end
+
               @logger.debug("Received VM state: #{state.pretty_inspect}")
 
               verify_state(vm, instance, state)
@@ -364,6 +372,8 @@ module Bosh::Director
               state["job"] = job.spec
               state["index"] = instance.index
               state["release"] = @deployment_plan.release.spec
+
+              idle_vm.vm.update(:apply_spec => state)
 
               agent = AgentClient.new(idle_vm.vm.agent_id)
               task = agent.apply(state)
