@@ -36,6 +36,7 @@ require "director/validation_helper"
 require "director/version"
 require "director/config"
 require "director/event_log"
+require "director/task_result_file"
 
 require "director/client"
 require "director/ip_util"
@@ -58,6 +59,7 @@ require "director/package_compiler"
 require "director/property_manager"
 require "director/release_manager"
 require "director/resource_manager"
+require "director/vm_state_manager"
 require "director/resource_pool_updater"
 require "director/sequel"
 require "director/task_manager"
@@ -74,6 +76,7 @@ require "director/jobs/update_deployment"
 require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
 require "director/jobs/fetch_logs"
+require "director/jobs/vm_state"
 
 module Bosh::Director
   autoload :Models, "director/models"
@@ -120,6 +123,7 @@ module Bosh::Director
       @instance_manager   = InstanceManager.new
       @resource_manager   = ResourceManager.new
       @property_manager   = PropertyManager.new
+      @vm_state_manager   = VmStateManager.new
       @logger             = Config.logger
     end
 
@@ -318,6 +322,13 @@ module Bosh::Director
       deployment = Models::Deployment.find(:name => name)
       raise DeploymentNotFound.new(name) if deployment.nil?
       @deployment_manager.deployment_vms_to_json(deployment)
+    end
+
+    get "/deployments/:name/full_vm_states" do
+      deployment = Models::Deployment.find(:name => params[:name])
+      raise DeploymentNotFound.new(params[:name]) if deployment.nil?
+      task = @vm_state_manager.fetch_vm_state(@user, params[:name])
+      redirect "/tasks/#{task.id}"
     end
 
     delete "/deployments/:name" do

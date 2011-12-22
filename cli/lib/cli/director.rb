@@ -153,6 +153,20 @@ module Bosh
         get_task_result(task_id)
       end
 
+      def fetch_vm_state(deployment_name)
+        url = "/deployments/#{deployment_name}/full_vm_states"
+        vms = []
+        output_fn = lambda do |vm_states|
+          vm_states.to_s.split("\n").each do |vm_state|
+            vms << JSON.parse(vm_state)
+          end
+          ""
+        end
+        status, task_id = request_and_track(:get, url, nil, nil, :log_type => "result", :output_fn => output_fn)
+        raise "Failed to fetch vm-state from director" if status != :done || task_id.nil?
+        vms
+      end
+
       def download_resource(id)
         status, tmp_file, headers = get("/resources/#{id}", nil, nil, {}, :file => true)
 
@@ -282,6 +296,7 @@ module Bosh
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
         start_time    = Time.now
         quiet         = options[:quiet] || false
+        output_fn     = options[:output_fn]
 
         task = DirectorTask.new(self, task_id, log_type)
 
@@ -298,6 +313,7 @@ module Bosh
 
           if output
             no_output_yet = false
+            output = output_fn.call(output) unless output_fn.nil?
             renderer.add_output(output) unless quiet
           end
 
@@ -334,6 +350,7 @@ module Bosh
         if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
           confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")
           if confirm.empty? || confirm =~ /y(es)?/i
+            options.delete(:output_fn)
             poll_task(task_id, options.merge(:log_type => "debug"))
           else
             say("Please use 'bosh task #{task_id}' command to see the debug log".red)
