@@ -606,7 +606,7 @@ module VSphereCloud
       # TODO: fix when we go to multiple DCs
       datacenter = @resources.datacenters.values.first
       vm = client.find_by_inventory_path([datacenter.name, "vm", datacenter.vm_folder_name, vm_cid])
-      raise "VM: #{vm_cid} not found" if vm.nil?
+      raise Bosh::Director::VMNotFound, "VM `#{vm_cid}' not found" if vm.nil?
       vm
     end
 
