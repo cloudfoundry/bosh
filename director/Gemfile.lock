@@ -11,9 +11,10 @@ GEM
       mime-types
       xml-simple
     bcrypt-ruby (2.1.4)
-    blobstore_client (0.3.4)
+    blobstore_client (0.3.6)
       aws-s3
       httpclient
+      ruby-atmos-pure
       uuidtools
     builder (3.0.0)
     ci_reporter (1.6.4)
@@ -30,8 +31,9 @@ GEM
     linecache (0.43)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
+    log4r (1.1.9)
     machinist (1.0.6)
-    mime-types (1.16)
+    mime-types (1.17.1)
     minitar (0.5.3)
     nats (0.4.10)
       daemons (>= 1.1.0)
@@ -64,6 +66,9 @@ GEM
     rspec-expectations (2.5.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.5.0)
+    ruby-atmos-pure (0.6.0)
+      log4r (>= 1.1.9)
+      ruby-hmac (>= 0.4.0)
     ruby-debug (0.10.4)
       columnize (>= 0.1)
       ruby-debug-base (~> 0.10.4.0)
@@ -77,6 +82,7 @@ GEM
       columnize (>= 0.3.1)
       linecache19 (>= 0.5.11)
       ruby-debug-base19 (>= 0.11.19)
+    ruby-hmac (0.4.0)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
     ruby_vim_sdk (0.0.2)
@@ -103,7 +109,7 @@ GEM
     uuidtools (2.1.2)
     vegas (0.1.8)
       rack (>= 1.0.0)
-    xml-simple (1.0.15)
+    xml-simple (1.1.1)
     yajl-ruby (0.8.2)
 
 PLATFORMS
