@@ -1,9 +1,9 @@
-require File.dirname(__FILE__) + '/../../spec_helper'
+require File.dirname(__FILE__) + '/../spec_helper'
 
-describe Bosh::Agent::Message::Configure do
+describe Bosh::Agent::Bootstrap do
 
   before(:each) do
-    @processor = Bosh::Agent::Message::Configure.new(nil)
+    @processor = Bosh::Agent::Bootstrap.new
 
     Bosh::Agent::Util.stub(:settings).and_return(complete_settings)
     Bosh::Agent::Util.stub(:block_device_size).and_return(7903232)
