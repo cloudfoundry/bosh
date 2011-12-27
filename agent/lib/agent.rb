@@ -25,6 +25,8 @@ require "agent/monit"
 
 require "agent/platform"
 
+require "agent/bootstrap"
+
 require "agent/alert"
 require "agent/alert_processor"
 require "agent/smtp_server"
@@ -37,7 +39,6 @@ require "agent/ntp"
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
 require "agent/message/disk"
-require "agent/message/configure"
 require "agent/message/state"
 require "agent/message/drain"
 require "agent/message/apply"
@@ -75,7 +76,7 @@ module Bosh::Agent
         # The whole thing should be refactored so that
         # regular code doesn't use RPC handlers other than
         # for responding to RPC.
-        Bosh::Agent::Message::Configure.process(nil)
+        Bosh::Agent::Bootstrap.new.configure
 
         Bosh::Agent::Monit.enable
         Bosh::Agent::Monit.start
