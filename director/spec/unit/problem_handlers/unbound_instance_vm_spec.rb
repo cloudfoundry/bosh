@@ -51,7 +51,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
         lambda {
           @handler.apply_resolution(resolution)
-        }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM now properly reports no job")
+        }.should raise_error(Bosh::Director::ProblemHandlerError, "VM now properly reports no job")
       end
 
       it "fails if VM now has no job according to agent state" do
@@ -59,7 +59,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
         lambda {
           @handler.apply_resolution(resolution)
-        }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Instance is now bound to VM")
+        }.should raise_error(Bosh::Director::ProblemHandlerError, "Instance is now bound to VM")
       end
 
       it "fails if VM is not responding" do
@@ -67,7 +67,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
         lambda {
           @handler.apply_resolution(:delete_vm)
-        }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM `vm-cid' is not responding")
+        }.should raise_error(Bosh::Director::ProblemHandlerError, "VM `vm-cid' is not responding")
       end
     end
   end
@@ -79,7 +79,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
       lambda {
         @handler.apply_resolution(:delete_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM has persistent disk attached")
+      }.should raise_error(Bosh::Director::ProblemHandlerError, "VM has persistent disk attached")
     end
 
     it "deletes VM from the cloud and DB" do
@@ -101,7 +101,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
       lambda {
         @handler.apply_resolution(:reassociate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "No instances in DB match this VM")
+      }.should raise_error(Bosh::Director::ProblemHandlerError, "No instances in DB match this VM")
     end
 
     it "fails if instance is referencing another VM" do
@@ -111,7 +111,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
 
       lambda {
         @handler.apply_resolution(:reassociate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "The corresponding instance is associated with another VM")
+      }.should raise_error(Bosh::Director::ProblemHandlerError, "The corresponding instance is associated with another VM")
     end
 
     it "reassociates VM record with its instance record" do
