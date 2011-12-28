@@ -38,7 +38,7 @@ module Bosh::Director
 
       resolution :delete_vm do
         plan { "Delete VM (unless it has persistent disk)" }
-        action { validate; delete_vm }
+        action { validate; delete_vm(@vm) }
       end
 
       resolution :reassociate_vm do
@@ -55,17 +55,6 @@ module Bosh::Director
         if state["job"].nil?
           handler_error("VM now properly reports no job")
         end
-      end
-
-      def delete_vm
-        # Paranoia: don't blindly delete VMs with persistent disk
-        disk_list = agent_timeout_guard(@vm) { |agent| agent.list_disk }
-        if disk_list.size != 0
-          handler_error("VM has persistent disk attached")
-        end
-
-        cloud.delete_vm(@vm.cid)
-        @vm.destroy
       end
 
       def reassociate_vm

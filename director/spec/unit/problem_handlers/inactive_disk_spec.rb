@@ -54,7 +54,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       @agent.should_receive(:list_disk).and_return([])
       lambda {
         @handler.apply_resolution(:activate_disk)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Disk is not mounted")
+      }.should raise_error(Bosh::Director::ProblemHandlerError, "Disk is not mounted")
     end
 
     it "fails if instance has another persistent disk according to DB" do
@@ -65,7 +65,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
 
       lambda {
         @handler.apply_resolution(:activate_disk)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Instance already has an active disk")
+      }.should raise_error(Bosh::Director::ProblemHandlerError, "Instance already has an active disk")
     end
 
     it "marks disk as active in DB" do
@@ -82,7 +82,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       @agent.should_receive(:list_disk).and_return(["disk-cid"])
       lambda {
         @handler.apply_resolution(:delete_disk)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Disk is currently in use")
+      }.should raise_error(Bosh::Director::ProblemHandlerError, "Disk is currently in use")
     end
 
     it "detaches disk from VM and deletes it from DB and cloud (if instance has VM)" do
