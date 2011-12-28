@@ -68,6 +68,7 @@ require "director/deployment_manager"
 require "director/instance_manager"
 require "director/stemcell_manager"
 
+require "director/cloudcheck_helper"
 require "director/problem_handlers/base"
 require "director/problem_handlers/invalid_problem"
 require "director/problem_handlers/inactive_disk"

@@ -83,7 +83,7 @@ module Bosh::Director
             track_and_log("#{problem_summary}: #{resolution_summary}") do
               handler.apply_resolution(resolution)
             end
-          rescue Bosh::Director::ProblemHandlers::HandlerError => e
+          rescue Bosh::Director::ProblemHandlerError => e
             log_resolution_error(problem, e)
           end
 

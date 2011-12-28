@@ -36,6 +36,8 @@ module Bosh::Director
   class DiskNotAttached < RetriableCloudError; end
   class DiskNotFound < RetriableCloudError; end
 
+  class ProblemHandlerError < StandardError; end
+
   [
    ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
    ["TaskCancelled", OK, 10001, "Task \"%s\" cancelled"],
