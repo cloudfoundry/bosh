@@ -1,4 +1,4 @@
-require "atmos"
+require "atmos/store"
 
 module Bosh
   module Blobstore
