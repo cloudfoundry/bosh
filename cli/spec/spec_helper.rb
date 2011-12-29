@@ -10,5 +10,11 @@ end
 File.umask(022)
 
 RSpec.configure do |c|
+  c.before(:each) do
+    Bosh::Cli::Config.interactive = false
+    Bosh::Cli::Config.colorize = false
+    Bosh::Cli::Config.output = StringIO.new
+  end
+
   c.color_enabled = true
 end
