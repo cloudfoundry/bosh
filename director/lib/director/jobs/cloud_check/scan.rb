@@ -9,6 +9,7 @@ module Bosh::Director
         def initialize(deployment_name)
           super
           @deployment = Models::Deployment.find(:name => deployment_name)
+          @problem_lock = Mutex.new
           raise "Deployment `#{deployment_name}' not found" if @deployment.nil?
         end
 
@@ -69,7 +70,8 @@ module Bosh::Director
 
           track_and_log("#{results[:ok]} OK, " +
                         "#{results[:unresponsive]} unresponsive, " +
-                        "#{results[:unbound]} unbound")
+                        "#{results[:unbound]} unbound, " +
+                        "#{results[:out_of_sync]} out of sync")
         end
 
         def scan_disk(disk)
@@ -86,19 +88,28 @@ module Bosh::Director
             :timeout => AGENT_TIMEOUT,
             :retry_methods => { :get_state => 0 }
           }
-
           agent = AgentClient.new(vm.agent_id, agent_options)
           begin
-            state = agent.get_state
-            # TODO: handle invalid state
-            if vm.instance.nil? && !state["job"].nil?
-              job = state["job"].kind_of?(Hash) ? state["job"]["name"] : nil
-              index = state["index"]
-              problem_found(:unbound_instance_vm, vm, :job => job, :index => index)
-              :unbound
-            else
-              :ok
+            state = agent.get_state # TODO: handle invalid state
+
+            instance = vm.instance
+            job = state["job"] ? state["job"]["name"] : nil
+            index = state["index"]
+
+            if state["deployment"] != @deployment.name ||
+                (instance && (instance.job != job || instance.index != index))
+              problem_found(:out_of_sync_vm, vm, :deployment => state["deployment"],
+                            :job => job, :index => index)
+              return :out_of_sync
             end
+
+            if job && !instance
+              @logger.info("Found unbound VM #{vm.agent_id}")
+              problem_found(:unbound_instance_vm, vm, :job => job, :index => index)
+              return :unbound
+            end
+
+            :ok
           rescue Bosh::Director::Client::TimeoutException
             @logger.info("Found unresponsive agent #{vm.agent_id}")
             problem_found(:unresponsive_agent, vm)
@@ -107,30 +118,32 @@ module Bosh::Director
         end
 
         def problem_found(type, resource, data = {})
-          # TODO: audit trail
-          similar_open_problems = Models::DeploymentProblem.
-            filter(:deployment_id => @deployment.id, :type => type.to_s,
-                   :resource_id => resource.id, :state => "open").all
+          @problem_lock.synchronize do
+            # TODO: audit trail
+            similar_open_problems = Models::DeploymentProblem.
+              filter(:deployment_id => @deployment.id, :type => type.to_s,
+                     :resource_id => resource.id, :state => "open").all
 
-          if similar_open_problems.size > 1
-            raise "More than one problem of type `#{type}' exists for resource #{resource.id}"
-          end
+            if similar_open_problems.size > 1
+              raise "More than one problem of type `#{type}' exists for resource #{resource.id}"
+            end
 
-          if similar_open_problems.empty?
-            problem = Models::DeploymentProblem.
-              create(:type => type.to_s, :resource_id => resource.id, :state => "open",
-                     :deployment_id => @deployment.id, :data => data, :counter => 1)
+            if similar_open_problems.empty?
+              problem = Models::DeploymentProblem.
+                create(:type => type.to_s, :resource_id => resource.id, :state => "open",
+                       :deployment_id => @deployment.id, :data => data, :counter => 1)
 
-            @logger.info("Created problem #{problem.id} (#{problem.type})")
-          else
-            # This assumes we are running with deployment lock acquired,
-            # so there is no possible update conflict
-            problem = similar_open_problems[0]
-            problem.data = data
-            problem.last_seen_at = Time.now
-            problem.counter += 1
-            problem.save
-            @logger.info("Updated problem #{problem.id} (#{problem.type}), count is now #{problem.counter}")
+              @logger.info("Created problem #{problem.id} (#{problem.type})")
+            else
+              # This assumes we are running with deployment lock acquired,
+              # so there is no possible update conflict
+              problem = similar_open_problems[0]
+              problem.data = data
+              problem.last_seen_at = Time.now
+              problem.counter += 1
+              problem.save
+              @logger.info("Updated problem #{problem.id} (#{problem.type}), count is now #{problem.counter}")
+            end
           end
         end
 

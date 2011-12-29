@@ -17,8 +17,6 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     @instance = Bosh::Director::Models::Instance.make(:job => "mysql_node", :index => 0, :vm_id => @vm.id)
 
     @handler = make_handler(@vm, @cloud, @agent)
-    @handler.stub!(:cloud).and_return(@cloud)
-    @handler.stub!(:agent_client).with(@vm).and_return(@agent)
   end
 
   it "registers under unresponsive_agent type" do
