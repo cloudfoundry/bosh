@@ -107,37 +107,6 @@ module Bosh::Agent
         result.to_i
       end
 
-      def settings
-        settings_dir = File.join(base_dir, 'bosh', 'settings')
-
-        begin
-          File.read('/dev/cdrom', 0)
-        rescue Errno::ENOMEDIUM # 1.8: Errno::E123
-          raise Bosh::Agent::LoadSettingsError, 'No bosh cdrom env'
-        end
-
-        FileUtils.mkdir_p(settings_dir)
-        FileUtils.chmod(700, settings_dir)
-
-        output = `mount /dev/cdrom #{settings_dir} 2>&1`
-        raise Bosh::Agent::LoadSettingsError,
-          "Failed to mount settings on #{settings_dir}: #{output}" unless $?.exitstatus == 0
-
-        settings_json = File.read(File.join(settings_dir, 'env'))
-
-        `umount #{settings_dir} 2>&1`
-
-        settings = Yajl::Parser.new.parse(settings_json)
-
-        cache = File.join(base_dir, 'bosh', 'settings.json')
-        File.open(cache, 'w') { |f| f.write(settings_json) }
-
-        # Only eject cdrom after we have written the settings cache
-        `eject /dev/cdrom`
-
-        settings
-      end
-
       def run_hook(hook, job_template_name)
         hook_file = File.join(base_dir, 'jobs', job_template_name, 'bin', hook)
 

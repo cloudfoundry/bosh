@@ -13,6 +13,7 @@ module Bosh::Agent
         :blobstore_provider,
         :blobstore_options,
         :system_root,
+        :infrastructure_name,
         :platform_name,
         :nats,
         :process_alerts,
@@ -53,6 +54,7 @@ module Bosh::Agent
         @blobstore_options  = config["blobstore_options"]
         @blobstore_provider = config["blobstore_provider"]
 
+        @infrastructure_name = config['infrastructure_name']
         @platform_name = config['platform_name']
 
         @system_root = config['root_dir'] || "/"
@@ -71,6 +73,10 @@ module Bosh::Agent
         @settings = {}
 
         @state = State.new(File.join(@base_dir, "bosh", "state.yml"))
+      end
+
+      def infrastructure
+        @infrastructure||= Bosh::Agent::Infrastructure.new(@infrastructure_name).infrastructure
       end
 
       def platform

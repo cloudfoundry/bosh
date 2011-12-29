@@ -17,6 +17,7 @@ options = {
   "agent_id"           => "not_configured",
   "blobstore_options"  => {},
   "blobstore_provider" => "simple",
+  "infrastructure_name"      => "vsphere",
   "platform_name"      => "ubuntu",
   "base_dir"           => "/var/vcap",
   "smtp_port"          => 2825,
@@ -43,6 +44,10 @@ opts = OptionParser.new do |opts|
 
   opts.on("-p", "--provider String", "Blobstore provider") do |opt|
     options["blobstore_provider"] = opt
+  end
+
+  opts.on("-I", "--infrastructure String", "Infrastructure") do |opt|
+    options["infrastructure_name"] = opt
   end
 
   opts.on("-P", "--platform String", "Platform") do |opt|

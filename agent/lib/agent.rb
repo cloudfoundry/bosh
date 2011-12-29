@@ -23,6 +23,7 @@ require "agent/config"
 require "agent/util"
 require "agent/monit"
 
+require "agent/infrastructure"
 require "agent/platform"
 
 require "agent/bootstrap"

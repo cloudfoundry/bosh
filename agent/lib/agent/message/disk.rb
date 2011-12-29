@@ -95,7 +95,8 @@ module Bosh::Agent
       end
 
       def update_settings
-        Bosh::Agent::Config.settings = Bosh::Agent::Util.settings
+        Bosh::Agent::Config.settings = Bosh::Agent::Config.infrastructure.load_settings
+        logger.info("Settings: #{settings}")
       end
 
       def rescan_scsi_bus
