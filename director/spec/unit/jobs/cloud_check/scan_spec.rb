@@ -53,9 +53,10 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
     describe "VM scan" do
       it "scans for unresponsive agents" do
-        2.times do |idx|
-          vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{idx}", :deployment => @mycloud)
-          Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud)
+        2.times do |i|
+          vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}", :deployment => @mycloud)
+          Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                :job => "job-#{i}", :index => i)
         end
 
         agent_1 = mock("agent-1")
@@ -67,55 +68,98 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         # Unresponsive agent
         agent_1.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
         # Working agent
-        agent_2.should_receive(:get_state).and_return({})
+        good_state = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job-1" },
+          "index" => 1
+        }
+        agent_2.should_receive(:get_state).and_return(good_state)
 
         @job.scan_vms
         Bosh::Director::Models::DeploymentProblem.count.should == 1
 
-        Bosh::Director::Models::DeploymentProblem.all.each do |problem|
-          problem.counter.should == 1
-          problem.last_seen_at.should >= problem.created_at
-          problem.type.should == "unresponsive_agent"
-          problem.deployment.should == @mycloud
-          problem.state.should == "open"
-          problem.resource_id.should == 1
-        end
+        problem = Bosh::Director::Models::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "unresponsive_agent"
+        problem.deployment.should == @mycloud
+        problem.resource_id.should == 1
+        problem.data.should == {}
       end
 
       it "scans for unbound instance vms" do
-        3.times do |idx|
-          vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{idx}", :deployment => @mycloud)
-          Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud) if idx == 1
+        vms = (1..3).collect do |i|
+          Bosh::Director::Models::Vm.make(:agent_id => "agent-#{i}", :deployment => @mycloud)
         end
+
+        Bosh::Director::Models::Instance.make(:vm => vms[1], :deployment => @mycloud,
+                                              :job => "mysql_node", :index => 3)
 
         agent_1 = mock("agent-1")
         agent_2 = mock("agent-2")
         agent_3 = mock("agent-3")
-        Bosh::Director::AgentClient.stub!(:new).with("agent-0", anything).and_return(agent_1)
-        Bosh::Director::AgentClient.stub!(:new).with("agent-1", anything).and_return(agent_2)
-        Bosh::Director::AgentClient.stub!(:new).with("agent-2", anything).and_return(agent_3)
+        Bosh::Director::AgentClient.stub!(:new).with("agent-1", anything).and_return(agent_1)
+        Bosh::Director::AgentClient.stub!(:new).with("agent-2", anything).and_return(agent_2)
+        Bosh::Director::AgentClient.stub!(:new).with("agent-3", anything).and_return(agent_3)
 
         # valid idle resource pool VM
-        agent_1.should_receive(:get_state).and_return({})
-        # valid bounded instance VM
-        agent_2.should_receive(:get_state).and_return({"job" => "test-job"})
-        # problem. unbound instance VM
-        agent_3.should_receive(:get_state).and_return({"job" => "test-job"})
+        agent_1.should_receive(:get_state).and_return({"deployment" => "mycloud"})
+
+        # valid bound instance
+        bound_vm_state = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "mysql_node" },
+          "index" => 3
+        }
+        agent_2.should_receive(:get_state).and_return(bound_vm_state)
+
+        # problem: unbound instance VM
+        unbound_vm_state = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "test-job" },
+          "index" => 22
+        }
+        agent_3.should_receive(:get_state).and_return(unbound_vm_state)
 
         @job.scan_vms
 
         Bosh::Director::Models::DeploymentProblem.count.should == 1
 
-        Bosh::Director::Models::DeploymentProblem.all.each do |problem|
-          problem.counter.should == 1
-          problem.last_seen_at.should >= problem.created_at
-          problem.type.should == "unbound_instance_vm"
-          problem.deployment.should == @mycloud
-          problem.state.should == "open"
-          problem.resource_id.should == 3 # agent_3 is bad
-        end
+        problem = Bosh::Director::Models::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "unbound_instance_vm"
+        problem.deployment.should == @mycloud
+        problem.resource_id.should == 3
+        problem.data.should == { "job" => "test-job", "index" => 22 }
+      end
+
+      it "scans for out-of-sync VMs" do
+        vm = Bosh::Director::Models::Vm.make(:agent_id => "agent-id", :deployment => @mycloud)
+
+        Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                              :job => "mysql_node", :index => 3)
+
+        agent = mock("agent-id")
+        Bosh::Director::AgentClient.stub!(:new).with("agent-id", anything).and_return(agent)
+
+        out_of_sync_state = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "mysql_node" },
+          "index" => 4
+        }
+
+        agent.should_receive(:get_state).and_return(out_of_sync_state)
+
+        @job.scan_vms
+
+        Bosh::Director::Models::DeploymentProblem.count.should == 1
+
+        problem = Bosh::Director::Models::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "out_of_sync_vm"
+        problem.deployment.should == @mycloud
+        problem.resource_id.should == vm.id
+        problem.data.should == { "job" => "mysql_node", "index" => 4, "deployment" => "mycloud" }
       end
     end
   end
-
 end
