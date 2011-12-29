@@ -173,7 +173,19 @@ namespace "spec" do
   else
     task "run_cpi_cov" do
       require "simplecov"
+      require "simplecov-rcov"
+      require "simplecov-clover"
 
+      class SimpleCov::Formatter::CombinedFormatter
+        def format(result)
+          SimpleCov::Formatter::CloverFormatter.new.format(result)
+          SimpleCov::Formatter::RcovFormatter.new.format(result)
+        end
+      end
+
+      SimpleCov.formatter = SimpleCov::Formatter::CombinedFormatter
+      SimpleCov.root('..')
+      SimpleCov.coverage_dir('cov')
       SimpleCov.start do
         add_filter "/spec/"
         require "rspec/core"
