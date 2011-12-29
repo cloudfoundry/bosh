@@ -12,7 +12,6 @@ module Bosh::Agent
     # TODO: set up iptables
     def initialize
       FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
-      @settings_file = File.join(base_dir, 'bosh', 'settings.json')
     end
 
     def logger
@@ -53,21 +52,8 @@ module Bosh::Agent
     end
 
     def load_settings
-      begin
-        @settings = Bosh::Agent::Util.settings
-      rescue LoadSettingsError
-        if File.exist?(@settings_file)
-          load_settings_file
-        else
-          raise LoadSettingsError, "No cdrom or cached settings.json"
-        end
-      end
+      @settings = Bosh::Agent::Config.infrastructure.load_settings
       Bosh::Agent::Config.settings = @settings
-    end
-
-    def load_settings_file
-      settings_json = File.read(@settings_file)
-      @settings = Yajl::Parser.new.parse(settings_json)
     end
 
     def update_agent_id
@@ -335,17 +321,7 @@ module Bosh::Agent
       else
         cid = @settings['disks']['persistent'].keys.first
         if cid
-          disk = DiskUtil.lookup_disk_by_cid(cid)
-          partition = "#{disk}1"
-
-          if File.blockdev?(partition) && !DiskUtil.mount_entry(partition)
-            logger.info("Mount #{partition} #{store_path}")
-            `mount #{partition} #{store_path}`
-            unless $?.exitstatus == 0
-              raise Bosh::Agent::FatalError, "Failed to mount: #{partition} #{store_path}"
-            end
-          end
-
+          Bosh::Agent::Config.platform.mount_persistent_disk(cid)
         end
       end
     end

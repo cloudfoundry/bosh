@@ -3,13 +3,14 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::Bootstrap do
 
   before(:each) do
+    Bosh::Agent::Config.infrastructure_name = "dummy"
+
     @processor = Bosh::Agent::Bootstrap.new
 
-    Bosh::Agent::Util.stub(:settings).and_return(complete_settings)
     Bosh::Agent::Util.stub(:block_device_size).and_return(7903232)
+    Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
 
     # We just want to avoid this to accidently be invoked on dev systems
-    #@processor.stub(:load_settings).and_return(complete_settings)
     @processor.stub(:update_file)
     @processor.stub(:restart_networking_service)
     @processor.stub(:setup_data_disk)
