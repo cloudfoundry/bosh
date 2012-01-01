@@ -12,6 +12,7 @@ module Bosh::Agent
     # TODO: set up iptables
     def initialize
       FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
+      @platform = Bosh::Agent::Config.platform
     end
 
     def logger
@@ -33,6 +34,7 @@ module Bosh::Agent
       logger.info("Loaded settings: #{@settings.inspect}")
 
       if @settings
+        update_passwords
         update_agent_id
         update_hostname
         update_mbus
@@ -54,6 +56,10 @@ module Bosh::Agent
     def load_settings
       @settings = Bosh::Agent::Config.infrastructure.load_settings
       Bosh::Agent::Config.settings = @settings
+    end
+
+    def update_passwords
+      @platform.update_passwords(@settings)
     end
 
     def update_agent_id
