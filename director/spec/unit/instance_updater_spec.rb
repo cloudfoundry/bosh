@@ -286,6 +286,7 @@ describe Bosh::Director::InstanceUpdater do
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:generate_agent_id).and_return("agent-2")
+    instance_updater.stub!(:generate_agent_credentials).and_return({"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"})
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
@@ -294,7 +295,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:delete_vm).with("vm-id")
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"], [], {}).and_return("vm-id-2")
+      BASIC_PLAN["networks"], [], {"bosh"=>{"credentials"=>{"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}}}).and_return("vm-id-2")
 
     @agent_2.should_receive(:wait_until_ready)
     @agent_2.should_receive(:apply).with(IDLE_PLAN).and_return({
@@ -315,6 +316,7 @@ describe Bosh::Director::InstanceUpdater do
     vm = @instance.vm
     vm.cid.should == "vm-id-2"
     vm.agent_id.should == "agent-2"
+    vm.credentials.should == {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
     @instance.state.should == "started"
     Bosh::Director::Models::Vm.filter(:cid => "vm-id").first.should be_nil
   end
@@ -340,6 +342,7 @@ describe Bosh::Director::InstanceUpdater do
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:generate_agent_id).and_return("agent-2")
+    instance_updater.stub!(:generate_agent_credentials).and_return({"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"})
     instance_updater.stub!(:cloud).and_return(@cloud)
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
@@ -351,7 +354,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @cloud.should_receive(:delete_vm).with("vm-id").ordered
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
-      BASIC_PLAN["networks"], ["disk-id"], {}).ordered.and_return("vm-id-2")
+      BASIC_PLAN["networks"], ["disk-id"], {"bosh"=>{"credentials"=>{"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}}}).ordered.and_return("vm-id-2")
     @cloud.should_receive(:attach_disk).ordered.with("vm-id-2", "disk-id")
 
     @agent_2.should_receive(:wait_until_ready).ordered
@@ -381,6 +384,7 @@ describe Bosh::Director::InstanceUpdater do
     vm = @instance.vm
     vm.cid.should == "vm-id-2"
     vm.agent_id.should == "agent-2"
+    vm.credentials.should == {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
     Bosh::Director::Models::Vm.filter(:cid => "vm-id").first.should be_nil
   end
 

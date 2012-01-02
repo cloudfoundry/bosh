@@ -139,15 +139,22 @@ module Bosh::Director
       stemcell = @resource_pool_spec.stemcell.stemcell
       agent_id = generate_agent_id
 
+
+      credentials = generate_agent_credentials
+      env = @resource_pool_spec.env
+      env['bosh'] ||= {}
+      env['bosh']['credentials'] = credentials
+
       @vm = Models::Vm.new
       @vm.deployment = @deployment_plan.deployment
       @vm.agent_id = agent_id
+      @vm.credentials = credentials
       @vm.save
 
       disks = [@instance.persistent_disk_cid, new_disk_id].compact
 
       @vm.cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
-                                 @instance_spec.network_settings, disks, @resource_pool_spec.env)
+                                 @instance_spec.network_settings, disks, env)
 
       @instance.db.transaction do
         @vm.save
@@ -355,6 +362,12 @@ module Bosh::Director
 
     def generate_agent_id
       UUIDTools::UUID.random_create.to_s
+    end
+
+    def generate_agent_credentials
+      [ 'crypt_key', 'sign_key' ].inject({}) do |credentials, key|
+        credentials.merge({ key => SecureRandom.base64(48) })
+      end
     end
 
     # Returns an array of wait times distributed

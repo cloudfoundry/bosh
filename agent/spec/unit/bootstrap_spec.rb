@@ -1,5 +1,7 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
+Bosh::Agent::Config.platform_name = "ubuntu"
+
 describe Bosh::Agent::Bootstrap do
 
   before(:each) do
@@ -17,6 +19,21 @@ describe Bosh::Agent::Bootstrap do
     @processor.stub(:partition_disk)
     @processor.stub(:mem_total).and_return(3951616)
     @processor.stub(:gratuitous_arp)
+  end
+
+  it 'should update credentials' do
+    @processor.load_settings
+    @processor.update_credentials
+    Bosh::Agent::Config.credentials.should == nil
+
+    new_settings = complete_settings
+    new_settings['bosh'] ||= {}
+    new_settings['bosh']['credentials'] = {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
+
+    Bosh::Agent::Config.infrastructure.stub!(:load_settings).and_return(new_settings)
+    @processor.load_settings
+    @processor.update_credentials
+    Bosh::Agent::Config.credentials.should == {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
   end
 
   it 'should setup networking' do

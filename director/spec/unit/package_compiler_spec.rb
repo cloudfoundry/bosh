@@ -79,7 +79,8 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-1").and_return(agent)
 
       @cloud.should_receive(:create_vm).with("agent-1", "stemcell-id", {"ram" => "2gb"},
-                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-1")
+                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil,
+                                             {"bosh"=>{"credentials"=>{"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}}}).and_return("vm-1")
       agent.should_receive(:wait_until_ready)
       agent.should_receive(:apply).with(({"resource_pool" => "package_compiler",
                                           "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
@@ -108,6 +109,7 @@ describe Bosh::Director::PackageCompiler do
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
+      package_compiler.stub!(:generate_agent_credentials).and_return({"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"})
       package_compiler.compile
 
       Bosh::Director::Models::CompiledPackage.all.should == [compiled_package]
@@ -186,7 +188,8 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-a").and_return(agent_a)
 
       @cloud.should_receive(:create_vm).with("agent-a", "stemcell-id", {"ram" => "2gb"},
-                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-1")
+                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil,
+                                             {"bosh"=>{"credentials"=>{"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}}}).and_return("vm-1")
       agent_a.should_receive(:wait_until_ready)
       agent_a.should_receive(:apply).with(({"resource_pool" => "package_compiler",
                                             "networks" => {"network_a" => {"ip" => "1.2.3.4"}},
@@ -204,7 +207,8 @@ describe Bosh::Director::PackageCompiler do
       Bosh::Director::AgentClient.should_receive(:new).with("agent-b").and_return(agent_b)
 
       @cloud.should_receive(:create_vm).with("agent-b", "stemcell-id", {"ram" => "2gb"},
-                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil, {}).and_return("vm-2")
+                                             {"network_a" => {"ip" => "1.2.3.4"}}, nil,
+                                             {"bosh"=>{"credentials"=>{"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}}}).and_return("vm-2")
 
       agent_b.should_receive(:wait_until_ready)
       agent_b.should_receive(:apply).with(({"resource_pool" => "package_compiler",
@@ -240,6 +244,7 @@ describe Bosh::Director::PackageCompiler do
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
       package_compiler.stub!(:generate_agent_id).and_return("agent-a", "agent-b", "invalid")
+      package_compiler.stub!(:generate_agent_credentials).and_return({"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"})
       package_compiler.compile
 
       dep_compiled_package = Bosh::Director::Models::CompiledPackage[:package_id => dependent_package.id]
