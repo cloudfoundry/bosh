@@ -22,7 +22,8 @@ module Bosh::Agent
         :smtp_password,
         :heartbeat_interval,
         :settings,
-        :state
+        :state,
+        :credentials
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -69,6 +70,8 @@ module Bosh::Agent
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")
         end
+
+        @credentials = config["credentials"]
 
         @settings = {}
 
