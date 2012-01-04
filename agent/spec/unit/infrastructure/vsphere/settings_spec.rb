@@ -6,36 +6,30 @@ Bosh::Agent::Config.infrastructure
 describe Bosh::Agent::Infrastructure::Vsphere::Settings do
 
   before(:each) do
-    #Bosh::Agent::Config.settings = { 'disks' => { 'persistent' => { 2 => '333'} } }
+    @settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
+    @settings.stub!(:check_cdrom)
+    @settings.stub!(:mount_cdrom)
+    @settings.stub!(:eject_cdrom)
   end
 
   it 'should load settings' do
-
-    settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
-    settings.stub!(:check_cdrom)
-    settings.stub!(:mount_cdrom)
-
     cdrom_dir = File.join(base_dir, 'bosh', 'settings')
     env = File.join(cdrom_dir, 'env')
 
     FileUtils.mkdir_p(cdrom_dir)
     File.open(env, 'w') { |f| f.write(settings_json) }
 
-    settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
+    @settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
   end
 
   it 'should write env to settings file' do
-    settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
-    settings.stub!(:check_cdrom)
-    settings.stub!(:mount_cdrom)
-
     cdrom_dir = File.join(base_dir, 'bosh', 'settings')
     env = File.join(cdrom_dir, 'env')
 
     FileUtils.mkdir_p(cdrom_dir)
     File.open(env, 'w') { |f| f.write(settings_json) }
 
-    data = settings.load_settings
+    data = @settings.load_settings
 
     settings_file = File.join(base_dir, 'bosh', 'settings.json')
     settings_json_from_file = File.read(settings_file)
@@ -45,16 +39,14 @@ describe Bosh::Agent::Infrastructure::Vsphere::Settings do
   end
 
   it 'should fall back to load settings from file' do
-    settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
-    settings.stub!(:check_cdrom).and_raise(Bosh::Agent::LoadSettingsError)
-    settings.stub!(:mount_cdrom)
+    @settings.stub!(:check_cdrom).and_raise(Bosh::Agent::LoadSettingsError)
 
     FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
     settings_file = File.join(base_dir, 'bosh', 'settings.json')
 
     File.open(settings_file, 'w') { |f| f.write(settings_json) }
 
-    settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
+    @settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
   end
 
   def settings_json
