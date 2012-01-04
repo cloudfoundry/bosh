@@ -19,6 +19,12 @@ else
   logger = Logger.new(log_file)
 end
 
+require "tmpdir"
+tmpdir = Dir.mktmpdir
+ENV["TMPDIR"] = tmpdir
+FileUtils.mkdir_p(tmpdir)
+at_exit { FileUtils.rm_rf(tmpdir) }
+
 require "director"
 
 Bosh::Director::Config.patch_sqlite
@@ -33,17 +39,11 @@ Sequel::Migrator.apply(db, migrate_dir, nil)
 require "archive/tar/minitar"
 require "digest/sha1"
 require "fileutils"
-require "tmpdir"
 require "zlib"
 
 require "machinist/sequel"
 require "sham"
 require "blueprints"
-
-bosh_dir = Dir.mktmpdir("boshdir")
-bosh_tmp_dir = Dir.mktmpdir("bosh_tmpdir")
-
-ENV["TMPDIR"] = bosh_tmp_dir
 
 logger.formatter = ThreadFormatter.new
 
@@ -168,9 +168,8 @@ ensure
   @event_buffer.seek(pos)
 end
 
-Rspec.configure do |rspec_config|
-
-  rspec_config.before(:each) do |example|
+Rspec.configure do |rspec|
+  rspec.before(:each) do |example|
     Bosh::Director::Config.clear
 
     db.execute("PRAGMA foreign_keys = OFF")
@@ -180,20 +179,11 @@ Rspec.configure do |rspec_config|
     db.execute("PRAGMA foreign_keys = ON")
 
     Sequel::Migrator.apply(db, migrate_dir, nil)
-    FileUtils.mkdir_p(bosh_dir)
     Bosh::Director::Config.logger = logger
 
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
-  end
-
-  rspec_config.after(:each) do
-    FileUtils.rm_rf(bosh_dir)
-  end
-
-  rspec_config.after(:all) do
-    FileUtils.rm_rf(bosh_tmp_dir)
   end
 end
 
