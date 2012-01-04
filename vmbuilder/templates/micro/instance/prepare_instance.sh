@@ -32,10 +32,13 @@ EOT
 # install here instead of in vmbuilder.cfg
 apt-get install -y --force-yes --no-install-recommends \
   bison build-essential libssl-dev openssh-server linux-headers-virtual \
-  open-vm-dkms open-vm-tools lsof strace scsitools dnsutils tcpdump tshark \
+  lsof strace scsitools dnsutils tcpdump tshark \
   iputils-arping curl wget libcurl4-openssl-dev libreadline5-dev libxml2 \
   libxml2-dev libxslt1.1 libxslt1-dev zip unzip git-core rsync bind9-host \
   nfs-common flex psmisc mg console-data
+
+# add vmware tools
+apt-get install -y --force-yes --no-install-recommends vmware-tools-core vmware-tools-plugins-vix
 
 dpkg -l > ${bosh_app_dir}/bosh/micro_dpkg_l.out
 
@@ -74,8 +77,6 @@ gem install bundler-1.0.15.gem
 mkdir -p ${bosh_app_dir}/bosh/log
 chown root:root ${bosh_app_dir}/bosh
 chmod 0700 ${bosh_app_dir}/bosh
-
-ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
 
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
