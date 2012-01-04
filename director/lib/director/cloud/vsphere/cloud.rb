@@ -786,17 +786,19 @@ module VSphereCloud
     end
 
     def fetch_file(datacenter_name, datastore_name, path)
-      url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
-            "&dsName=#{URI.escape(datastore_name)}"
+      retry_block do
+        url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
+        "&dsName=#{URI.escape(datastore_name)}"
 
-      response = @rest_client.get(url)
+        response = @rest_client.get(url)
 
-      if response.code < 400
-        response.body
-      elsif response.code == 404
-        nil
-      else
-        raise "Could not fetch file: #{url}, status code: #{response.code}"
+        if response.code < 400
+          response.body
+        elsif response.code == 404
+          nil
+        else
+          raise "Could not fetch file: #{url}, status code: #{response.code}"
+        end
       end
     end
 
