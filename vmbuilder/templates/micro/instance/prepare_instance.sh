@@ -12,15 +12,24 @@ chmod 0755 ${bosh_app_dir}/bosh
 # the debian list caches. There is s discussion in:
 # https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
 rm /var/lib/apt/lists/{archive,security,lock}*
+
+# add vmware package repo
+apt-key add VMWARE-PACKAGING-GPG-KEY.pub
+echo 'deb http://packages.vmware.com/tools/esx/5.0latest/ubuntu natty main' > /etc/apt/sources.list.d/vmware.list
+
+# update due to above hack and the addition of vmware package repo
 apt-get update
 
 # install here instead of in vmbuilder.cfg
 apt-get install -y --force-yes --no-install-recommends \
   bison build-essential libssl-dev openssh-server linux-headers-virtual \
-  open-vm-dkms open-vm-tools lsof strace scsitools dnsutils tcpdump tshark \
+  lsof strace scsitools dnsutils tcpdump tshark \
   iputils-arping curl wget libcurl4-openssl-dev libreadline5-dev libxml2 \
   libxml2-dev libxslt1.1 libxslt1-dev zip unzip git-core rsync bind9-host \
   nfs-common flex psmisc apparmor-utils mg
+
+# add vmware tools
+apt-get install -y --force-yes --no-install-recommends vmware-tools-core vmware-tools-plugins-vix
 
 dpkg -l > ${bosh_app_dir}/bosh/micro_dpkg_l.out
 
@@ -59,8 +68,6 @@ gem install bundler-1.0.15.gem
 mkdir -p ${bosh_app_dir}/bosh/log
 chown root:root ${bosh_app_dir}/bosh
 chmod 0700 ${bosh_app_dir}/bosh
-
-ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
 
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /root/.bashrc
 echo 'export PATH=/var/vcap/bosh/bin:$PATH' >> /home/vcap/.bashrc
