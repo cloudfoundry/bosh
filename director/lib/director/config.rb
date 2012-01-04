@@ -17,7 +17,8 @@ module Bosh::Director
         :revision,
         :task_checkpoint_interval,
         :max_tasks,
-        :event_log
+        :event_log,
+        :result
       ]
 
       CONFIG_OPTIONS.each do |option|

@@ -6,6 +6,7 @@ module Bosh::Director
       def initialize(*args)
         @logger = Config.logger
         @event_log = Config.event_log
+        @result_file = Config.result
       end
 
       def self.perform(task_id, *args)
@@ -18,7 +19,7 @@ module Bosh::Director
         logger.info("Starting task: #{task_id}")
 
         Config.event_log = Bosh::Director::EventLog.new(File.join(task.output, "event"))
-
+        Config.result = Bosh::Director::TaskResultFile.new(File.join(task.output, "result"))
         Config.logger = logger
 
         Sequel::Model.db.logger = logger
