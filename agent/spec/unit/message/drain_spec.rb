@@ -56,12 +56,16 @@ describe Bosh::Agent::Message::Drain do
     set_state(old_spec)
 
     bindir = File.join(@base_dir, 'jobs', 'cloudcontroller', 'bin')
+    tmpdir = File.join(@base_dir, 'tmp')
+
     FileUtils.mkdir_p(bindir)
+    FileUtils.mkdir_p(tmpdir)
 
     drain_script = File.join(bindir, 'drain')
+    drain_out    = File.join(tmpdir, 'yay.out')
 
     File.open(drain_script, 'w') do |fh|
-      fh.puts "#!/bin/bash\necho $@ > /tmp/yay.out\necho -n '10'"
+      fh.puts "#!/bin/bash\necho $@ > #{drain_out}\necho -n '10'"
     end
     FileUtils.chmod(0777, drain_script)
 
