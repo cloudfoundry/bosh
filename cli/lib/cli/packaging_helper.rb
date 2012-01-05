@@ -146,16 +146,9 @@ module Bosh
         end
 
         current_final = @final_index.latest_version.to_i
+        new_minor = minor_version(@dev_index.latest_version(current_final)) + 1
 
-        if @dev_index.latest_version.to_s =~ /^(\d+)\.(\d+)/
-          major, minor = $1.to_i, $2.to_i
-          minor = major == current_final ? minor + 1 : 1
-          major = current_final
-        else
-          major, minor = current_final, 1
-        end
-
-        version  = "#{major}.#{minor}-dev"
+        version  = "#{current_final}.#{new_minor}-dev"
         tmp_file = Tempfile.new(name)
 
         say "Generating..."

@@ -305,6 +305,39 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder2.version.should == "1.1-dev"
   end
 
+  it "uses the appropriate final version for bumping a dev version" do
+    add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
+    globs = ["foo/**/*", "baz"]
+    builder = make_builder("bar", globs)
+    final_builds_dir = File.join(@release_dir, ".final_builds", "packages", "bar")
+    builder.build
+
+    final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
+    final_index.add_version("deadbeef", { "version" => 34}, "payload")
+
+    add_sources("foo/foo14.rb")
+    builder.reload.build
+    builder.version.should == "34.1-dev"
+
+    final_index.add_version("deadbeef2", { "version" => 37}, "payload")
+
+    add_sources("foo/foo15.rb")
+    builder.reload.build
+    builder.version.should == "37.1-dev"
+
+    add_sources("foo/foo16.rb")
+    builder.reload.build
+    builder.version.should == "37.2-dev"
+
+    FileUtils.rm_rf(final_builds_dir)
+    final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
+    final_index.add_version("deadbeef3", { "version" => 34}, "payload")
+
+    add_sources("foo/foo17.rb")
+    builder.reload.build
+    builder.version.should == "34.2-dev"
+  end
+
   it "whines on attempt to create final build if not matched by existing final or dev build" do
     add_sources("foo/foo.rb", "foo/lib/1.rb", "foo/lib/2.rb", "foo/README", "baz")
     globs = ["foo/**/*", "baz"]

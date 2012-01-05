@@ -12,8 +12,7 @@ module Bosh::Cli
       @work_dir = work_dir
       @release  = @final ? Release.final(@work_dir) : Release.dev(@work_dir)
       @packages = packages
-      job_order = partial_order_sort(jobs.map{ |job| job.name }, @release.jobs_order)
-      @jobs     = jobs.sort_by { |job| job_order.index(job.name) }
+      @jobs     = jobs
 
       @index = VersionsIndex.new(releases_dir, release_name)
       create_release_build_dir
@@ -57,15 +56,7 @@ module Bosh::Cli
         header("Generating tarball...")
         generate_tarball
       end
-      header("Saving new version...")
       @build_complete = true
-    ensure
-      rollback unless @build_complete || @reused_old_version
-    end
-
-    def rollback
-      header "Rolling back...".red
-      say("\n")
     end
 
     def copy_packages
@@ -113,21 +104,16 @@ module Bosh::Cli
 
       fingerprint = make_fingerprint(manifest)
 
-      old_release = @index[fingerprint]
-      unless old_release.nil?
-        old_version = old_release["version"]
+      if @index[fingerprint]
+        old_version = @index[fingerprint]["version"]
         say "Looks like this version is no different from version #{old_version}"
-        if @index.version_exists?(old_version)
-          @reused_old_version = true
-          fn = @index.filename(old_version)
-          say("Found matching version %s: %s, size is %s".green % [ old_version, fn, pretty_size(fn) ])
-          quit
-        else
-          self.version = old_version
-        end
+        @version = old_version
+      else
+        @version = assign_version
+        @index.add_version(fingerprint, { "version" => @version })
       end
 
-      manifest["version"] = version
+      manifest["version"] = @version
       manifest_yaml = YAML.dump(manifest)
 
       say "Writing manifest..."
@@ -139,21 +125,23 @@ module Bosh::Cli
         f.write(manifest_yaml)
       end
 
-      @index.add_version(fingerprint, { "version" => version })
       @manifest_generated = true
     end
 
     def generate_tarball
+      generate_manifest unless @manifest_generated
+      return if @index.version_exists?(@version)
+
       unless @jobs_copied
         header("Copying jobs...")
         copy_jobs
+        nl
       end
       unless @packages_copied
         header("Copying packages...")
         copy_packages
+        nl
       end
-
-      generate_manifest unless @manifest_generated
 
       FileUtils.mkdir_p(File.dirname(tarball_path))
 
@@ -191,7 +179,7 @@ module Bosh::Cli
     private
 
     def version=(version)
-      @version=version
+      @version = version
     end
 
     def assign_version

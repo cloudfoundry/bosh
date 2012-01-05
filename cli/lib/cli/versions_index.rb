@@ -26,6 +26,7 @@ module Bosh::Cli
       @name_prefix = name_prefix
       @data = load_yaml_file(@index_file, nil)
       @data = { } unless @data.is_a?(Hash)
+      @data.delete("latest_version") # Indices used to track latest versions
       @data["builds"] ||= {}
     end
 
@@ -40,8 +41,26 @@ module Bosh::Cli
       @data["builds"][fingerprint]
     end
 
-    def latest_version
-      @data["latest_version"]
+    def latest_version(major = nil)
+      builds = @data["builds"].values
+
+      if major
+        builds = builds.select do |build|
+          major_version(build["version"]) == major
+        end
+      end
+
+      return nil if builds.empty?
+
+      sorted = builds.sort { |build1, build2|
+        cmp = version_cmp(build2["version"], build1["version"])
+        if cmp == 0
+          raise "There is a duplicate version `#{version}' in index `#{@index_file}'"
+        end
+        cmp
+      }
+
+      sorted[0]["version"]
     end
 
     def version_exists?(version)
@@ -61,9 +80,18 @@ module Bosh::Cli
         end
       end
 
+      if @data["builds"][fingerprint]
+        raise "Build with fingerprint `#{fingerprint}' already exists"
+      end
+
+      @data["builds"].each_value do |build|
+        if version_cmp(build["version"], version) == 0
+          raise "Trying to add duplicate version `#{version}' into index `#{@index_file}'"
+        end
+      end
+
       @data["builds"][fingerprint] = item
       @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload) if payload
-      @data["latest_version"] = version if version_greater(version, @data["latest_version"])
 
       File.open(@index_file, "w") do |f|
         f.write(YAML.dump(@data))

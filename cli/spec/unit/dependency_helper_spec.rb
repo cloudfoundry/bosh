@@ -42,11 +42,4 @@ describe Bosh::Cli::DependencyHelper do
     sorted.index("D").should <= sorted.index("C")
   end
 
-  it "can sort jobs according to some partial order list" do
-    partial_order_sort(%w(a b c d e)).should == %w(a b c d e)
-    partial_order_sort(%w(a b c d e), %w(d b a)).should == %w(d b a c e)
-    partial_order_sort(%w(a b c d e), %w()).should == %w(a b c d e)
-    partial_order_sort(%w(a b c d e), %w(e d c b a)).should == %w(e d c b a)
-  end
-
 end
