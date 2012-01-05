@@ -51,17 +51,6 @@ module Bosh::Cli
 
       sorted
     end
-
-    def partial_order_sort(names, partial_order = nil)
-      head, tail, ordered = [], [], partial_order.to_a.uniq
-
-      names.each do |name|
-        (ordered.include?(name) ? head : tail) << name
-      end
-
-      head = head.sort_by { |name| ordered.index(name) }
-      head + tail
-    end
   end
 
 end

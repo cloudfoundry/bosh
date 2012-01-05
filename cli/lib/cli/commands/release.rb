@@ -230,8 +230,6 @@ module Bosh::Cli::Command
           builder.build(:generate_tarball => false)
         else
           builder.build(:generate_tarball => true)
-          say("Built release #{builder.version} at '#{builder.tarball_path.green}'")
-          say("Release size: #{pretty_size(builder.tarball_path).green}")
         end
       end
 
@@ -241,7 +239,13 @@ module Bosh::Cli::Command
 
       return nil if dry_run
 
-      say("Release manifest saved in '#{builder.manifest_path.green}'")
+      say("Release version: #{builder.version.to_s.green}")
+      say("Release manifest: #{builder.manifest_path.green}")
+
+      unless manifest_only
+        say("Release tarball (#{pretty_size(builder.tarball_path)}): #{builder.tarball_path.green}")
+      end
+
       [dev_release, final_release].each do |release|
         release.update_config(:min_cli_version => Bosh::Cli::VERSION)
       end

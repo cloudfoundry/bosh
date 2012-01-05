@@ -52,6 +52,7 @@ module Bosh::Cli
     def reload # Mostly for tests
       @fingerprint    = nil
       @resolved_globs = nil
+      init_indices
       self
     end
 

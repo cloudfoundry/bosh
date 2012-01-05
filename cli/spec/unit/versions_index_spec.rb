@@ -53,9 +53,9 @@ describe Bosh::Cli::VersionsIndex do
     @index.add_version("deadbeef", item1, "payload1")
     @index.add_version("deadcafe", item2, "payload2")
     @index.latest_version.should == 2
-    @index.add_version("deadcafe", item1, "payload2")
-    @index.latest_version.should == 2
-    @index.add_version("deadcafe", item3, "payload3")
+    @index.add_version("addedface", item3, "payload2")
+    @index.latest_version.should == 3
+    @index.add_version("facedbeef", item1.merge("version" => "1.5"), "payload3")
     @index.latest_version.should == 3
   end
 
@@ -67,10 +67,25 @@ describe Bosh::Cli::VersionsIndex do
     @index.add_version("deadbeef", item1, "payload1")
     @index.add_version("deadcafe", item2, "payload2")
     @index.latest_version.should == "1.9-dev"
-    @index.add_version("deadcafe", item1, "payload2")
-    @index.latest_version.should == "1.9-dev"
-    @index.add_version("deadcafe", item3, "payload3")
+    @index.add_version("facedead", item3, "payload2")
     @index.latest_version.should == "1.10-dev"
+    @index.add_version("badbed", item1.merge("version" => "2.15-dev"), "payload3")
+    @index.latest_version.should == "2.15-dev"
+  end
+
+  it "doesn't allow duplicate fingerprints or versions" do
+    item1 = { "a" => 1, "b" => 2, "version" => "1.9-dev" }
+    item2 = { "a" => 3, "b" => 4, "version" => "1.8-dev" }
+
+    @index.add_version("deadbeef", item1, "payload1")
+    lambda {
+      @index.add_version("deadbeef", item2, "payload2")
+    }.should raise_error("Build with fingerprint `deadbeef' already exists")
+
+    lambda {
+      @index.add_version("deadcafe", item1, "payload3")
+    }.should raise_error("Trying to add duplicate version `1.9-dev' " +
+                         "into index `#{File.join(@dir, "index.yml")}'")
   end
 
   it "supports finding entries by checksum" do
