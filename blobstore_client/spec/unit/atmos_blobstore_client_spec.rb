@@ -27,7 +27,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   it "should delete an object" do
     object = mock("object")
-    @atmos.should_receive(:get).with("test-key").and_return(object)
+    @atmos.should_receive(:get).with(:id => "test-key").and_return(object)
     object.should_receive(:delete)
 
     @client.delete("test-key")
@@ -35,7 +35,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
 
   it "should fetch an object" do
     object = mock("object")
-    @atmos.should_receive(:get).with("test-key").and_return(object)
+    @atmos.should_receive(:get).with(:id => "test-key").and_return(object)
     object.should_receive(:data_as_stream).and_yield("some-content")
 
     @client.get("test-key").should eql("some-content")

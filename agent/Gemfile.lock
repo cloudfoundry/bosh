@@ -6,10 +6,10 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.3.5)
+    blobstore_client (0.3.7)
       aws-s3
       httpclient
-      ruby-atmos
+      ruby-atmos-pure (>= 1.0.3)
       uuidtools
     builder (3.0.0)
     ci_reporter (1.6.3)
@@ -52,6 +52,9 @@ GEM
       log4r (>= 1.1.9)
       nokogiri (>= 1.4.4)
       ruby-hmac (>= 0.4.0)
+    ruby-atmos-pure (1.0.3)
+      log4r (>= 1.1.9)
+      ruby-hmac (>= 0.4.0)
     ruby-debug (0.10.4)
       columnize (>= 0.1)
       ruby-debug-base (~> 0.10.4.0)
@@ -83,7 +86,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  blobstore_client (>= 0.3.5)
+  blobstore_client (>= 0.3.7)
   ci_reporter
   monit_api
   nats
