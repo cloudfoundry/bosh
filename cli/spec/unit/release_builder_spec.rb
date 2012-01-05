@@ -28,10 +28,7 @@ describe Bosh::Cli::ReleaseBuilder do
   it "doesn't build a new release if nothing has changed" do
     builder = new_builder
     builder.build
-
-    lambda {
-      builder.build
-    }.should raise_error(Bosh::Cli::GracefulExit)
+    builder.build
 
     File.file?(File.join(@work_dir, "dev_releases", "bosh_release-1.tgz")).should be_true
     File.file?(File.join(@work_dir, "dev_releases", "bosh_release-2.tgz")).should be_false
