@@ -70,18 +70,7 @@ module VMBuilder
             vmbuilder(vmopts)
             FileUtils.mkdir_p("micro")
             ovftool(opts, "ubuntu-esxi/micro.vmx", "micro/micro.vmx")
-            FileUtils.mv("micro/micro.vmx", "micro/micro.save")
-            lines = File.open("micro/micro.save") {|file| file.readlines}
-            File.open("micro/micro.vmx", "w") do |file|
-              lines.each do |line|
-                if line.match(/^displayname/)
-                  file.write("displayname = \"Micro Cloud Foundry v#{version}\"\n")
-                else
-                  file.write(line)
-                end
-              end
-            end
-            FileUtils.rm_rf("micro/micro.save")
+            patch_vmx(version, "micro/micro.vmx")
             copy_file("#{MICRO_PATH}/README", "micro/README")
             copy_file("#{MICRO_PATH}/RELEASE_NOTES", "micro/RELEASE_NOTES")
             archive("micro", "micro-#{version}.zip")
@@ -203,6 +192,25 @@ module VMBuilder
         end
 
         opts
+      end
+
+      def patch_vmx(version, file)
+        tmp = file.gsub(/\.vmx/, '.save')
+        FileUtils.mv(file, tmp)
+        lines = File.open(tmp) {|file| file.readlines}
+        File.open(file, "w") do |file|
+          lines.each do |line|
+            case line
+            when /^displayname/
+              file.write("displayname = \"Micro Cloud Foundry v#{version}\"\n")
+            when /^ethernet0.connectionType/
+              file.write("ethernet0.connectionType = \"nat\"\n")
+            else
+              file.write(line)
+            end
+          end
+        end
+        FileUtils.rm_rf(tmp)
       end
 
     end # no_tasks
