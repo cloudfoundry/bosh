@@ -20,7 +20,7 @@ module Bosh
 
       def get_file(object_id, file)
         begin
-          obj = @atmos.get(object_id)
+          obj = @atmos.get(:id => object_id)
         rescue Atmos::Exceptions::NoSuchObjectException => e
           raise NotFound, "Atmos object '#{object_id}' not found"
         end
@@ -31,7 +31,7 @@ module Bosh
 
       def delete(object_id)
         begin
-          obj = @atmos.get(object_id)
+          obj = @atmos.get(:id => object_id)
         rescue Atmos::Exceptions::NoSuchObjectException => e
           raise NotFound, "Atmos object '#{object_id}' not found"
         end
