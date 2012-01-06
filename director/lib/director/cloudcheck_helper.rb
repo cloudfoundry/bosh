@@ -131,6 +131,11 @@ module Bosh::Director
         @logger.warn("VM `#{vm.cid}' might have already been deleted from the cloud")
       end
 
+      vm.db.transaction do
+        instance.update(:vm => nil) if instance
+        vm.destroy
+      end
+
       new_agent_id = generate_agent_id
 
       new_vm = Models::Vm.new
@@ -143,11 +148,7 @@ module Bosh::Director
       new_vm.apply_spec = spec
       new_vm.save
 
-      new_vm.db.transaction do
-        instance.update(:vm => new_vm) if instance
-        vm.destroy
-      end
-
+      instance.update(:vm => new_vm) if instance
       agent_client(new_vm).wait_until_ready
 
       # After this point agent is actually responding to

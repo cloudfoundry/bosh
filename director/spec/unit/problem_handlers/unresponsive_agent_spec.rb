@@ -153,6 +153,10 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       disk = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => @instance.id)
       stemcell = Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
 
+      # SQLite resets autoincrement id when table becomes empty,
+      # so having this dummy record VM allows us to distinguish
+      # between deleted VM and new VM (otherwise the'll have same id)
+      dummy_vm = Bosh::Director::Models::Vm.make
       @vm.update(:apply_spec => spec)
 
       handler = make_handler(@vm, @cloud, @agent)
