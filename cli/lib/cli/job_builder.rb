@@ -84,6 +84,10 @@ module Bosh::Cli
         raise InvalidJob, "Some template files required by '#{name}' job are missing: %s" % [ missing_templates.join(", ")]
       end
 
+      if extra_templates.size > 0
+        raise InvalidJob, "There are unused template files for job '#{name}': %s" % [ extra_templates.join(", ")]
+      end
+
       unless File.exists?(File.join(job_dir, "monit"))
         raise InvalidJob, "Cannot find monit file for '#{name}'"
       end
@@ -176,6 +180,16 @@ module Bosh::Cli
     def missing_templates
       templates.select do |template|
         !File.exists?(File.join(@templates_dir, template))
+      end
+    end
+
+    def extra_templates
+      return [] if !File.directory?(@templates_dir)
+
+      Dir.chdir(@templates_dir) do
+        Dir["**/*"].reject do |file|
+          File.directory?(file) || templates.include?(file)
+        end
       end
     end
 
