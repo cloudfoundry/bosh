@@ -14,11 +14,20 @@ chmod 0755 ${bosh_app_dir}/bosh
 rm /var/lib/apt/lists/{archive,security,lock}*
 
 # add vmware package repo
-apt-key add VMWARE-PACKAGING-GPG-KEY.pub
-echo 'deb http://packages.vmware.com/tools/esx/5.0latest/ubuntu natty main' > /etc/apt/sources.list.d/vmware.list
+apt-key add ${bosh_app_dir}/bosh/src/VMWARE-PACKAGING-GPG-KEY.pub
+echo 'deb http://packages.vmware.com/tools/esx/latest/ubuntu lucid main' > /etc/apt/sources.list.d/vmware.list
 
 # update due to above hack and the addition of vmware package repo
 apt-get update
+
+# set console data so apt-get won't try to prompt for it
+debconf-set-selections <<EOT
+console-data console-data/keymap/policy select Select keymap from arch list
+console-data console-data/keymap/family select qwerty
+console-data console-data/keymap/qwerty/layout select US american
+console-data console-data/keymap/qwerty/us_american/standard/keymap select Standard
+console-data console-data/keymap/qwerty/us_american/variant select Standard
+EOT
 
 # install here instead of in vmbuilder.cfg
 apt-get install -y --force-yes --no-install-recommends \
@@ -26,7 +35,7 @@ apt-get install -y --force-yes --no-install-recommends \
   lsof strace scsitools dnsutils tcpdump tshark \
   iputils-arping curl wget libcurl4-openssl-dev libreadline5-dev libxml2 \
   libxml2-dev libxslt1.1 libxslt1-dev zip unzip git-core rsync bind9-host \
-  nfs-common flex psmisc apparmor-utils mg
+  nfs-common flex psmisc mg console-data
 
 # add vmware tools
 apt-get install -y --force-yes --no-install-recommends vmware-tools-core vmware-tools-plugins-vix
@@ -91,6 +100,11 @@ chmod 755 ${bosh_app_dir}/micro/bin/*
 rm /etc/update-motd.d/*
 cp motd/* /etc/update-motd.d
 chmod 755 /etc/update-motd.d/*
+
+# replace dhcp config with one that prepends the local dns server
+cp dhclient.conf /etc/dhcp3
+cp dnsmasq.sh /etc/dhcp3/dhclient-enter-hooks.d
+cp extra.conf /etc/dnsmasq.d
 
 # disable rpcbind which will disable statd too
 sed 's/^\(start on start-portmap\)/#\1/' /etc/init/portmap.conf > \
