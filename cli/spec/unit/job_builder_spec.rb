@@ -51,6 +51,14 @@ describe Bosh::Cli::JobBuilder do
     end
   end
 
+  def remove_templates(job_name, *files)
+    job_template_path = File.join(@release_dir, "jobs", job_name, "templates")
+
+    files.each do |file|
+      FileUtils.rm_rf(File.join(job_template_path, file))
+    end
+  end
+
   it "creates a new builder" do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
@@ -126,6 +134,14 @@ describe Bosh::Cli::JobBuilder do
     lambda {
       new_builder("foo", [], ["a.conf", "b.conf", "c.conf"])
     }.should raise_error(Bosh::Cli::InvalidJob, "Some template files required by 'foo' job are missing: c.conf")
+  end
+
+  it "whines about extra packages" do
+    add_templates("foo", "a.conf", "b.conf")
+
+    lambda {
+      new_builder("foo", [], ["a.conf"], [])
+    }.should raise_error(Bosh::Cli::InvalidJob, "There are unused template files for job 'foo': b.conf")
   end
 
   it "whines if some packages are missing" do
@@ -232,6 +248,8 @@ describe Bosh::Cli::JobBuilder do
 
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_true
+
+    remove_templates("foo", "zb.yml")
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
     builder.build
