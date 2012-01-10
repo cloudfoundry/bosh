@@ -147,3 +147,11 @@ mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
 # Clean out src
 cd /var/tmp
 rm -fr ${bosh_app_dir}/bosh/src
+
+# Remove existing rp_filter settings
+grep -v "net.ipv4.conf.default.rp_filter" /etc/sysctl.conf | grep -v "net.ipv4.conf.all.rp_filter" > /tmp/sysctl.conf
+mv /tmp/sysctl.conf /etc/sysctl.conf
+
+echo "# Setup rp_filter in loose mode" >> /etc/sysctl.conf
+echo "net.ipv4.conf.default.rp_filter=2" >> /etc/sysctl.conf
+echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.conf
