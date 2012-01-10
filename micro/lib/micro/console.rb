@@ -385,6 +385,12 @@ module VCAP
             menu.choice("#{state} network watcher") { toggle_watcher }
             menu.choice("reapply configuration") { reapply }
             menu.choice("network touble shooting") { network_troubleshooting }
+            # nasty hack warning:
+            # exec-ing causes the console program to restart when dpkg-reconfigrue exits
+            menu.choice("change keyboard layout") do
+              ENV['TERM'] = 'linux' # make sure we have a usable terminal type
+              exec "dpkg-reconfigure console-data"
+            end
             menu.choice("return to main menu") { return }
           end
         end
