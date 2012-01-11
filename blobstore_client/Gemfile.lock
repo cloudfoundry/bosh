@@ -1,10 +1,10 @@
 PATH
   remote: .
   specs:
-    blobstore_client (0.3.7)
+    blobstore_client (0.3.8)
       aws-s3
       httpclient
-      ruby-atmos-pure (>= 1.0.4)
+      ruby-atmos-pure (>= 1.0.5)
       uuidtools
 
 GEM
@@ -41,7 +41,7 @@ GEM
     rspec-expectations (2.3.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.3.0)
-    ruby-atmos-pure (1.0.4)
+    ruby-atmos-pure (1.0.5)
       log4r (>= 1.1.9)
       ruby-hmac (>= 0.4.0)
     ruby-debug (0.10.4)
