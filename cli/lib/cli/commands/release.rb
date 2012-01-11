@@ -48,7 +48,7 @@ module Bosh::Cli::Command
     def upload_manifest(manifest_path)
       manifest       = load_yaml_file(manifest_path)
       remote_release = get_remote_release(manifest["name"]) rescue nil
-      blobstore      = init_blobstore(Bosh::Cli::Release.final(work_dir).s3_options)
+      blobstore      = init_blobstore(Bosh::Cli::Release.final(work_dir).blobstore_options)
       tmpdir         = Dir.mktmpdir
 
       at_exit { FileUtils.rm_rf(tmpdir) }
@@ -129,7 +129,7 @@ module Bosh::Cli::Command
     def create_from_manifest(manifest_file)
       say "Recreating release from the manifest"
       final_release = Bosh::Cli::Release.final(work_dir)
-      blobstore     = init_blobstore(final_release.s3_options)
+      blobstore     = init_blobstore(final_release.blobstore_options)
 
       Bosh::Cli::ReleaseCompiler.compile(manifest_file, blobstore)
     end
@@ -181,7 +181,7 @@ module Bosh::Cli::Command
         release.update_config(:name => name)
       end
 
-      blobstore = init_blobstore(final_release.s3_options)
+      blobstore = init_blobstore(final_release.blobstore_options)
 
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|

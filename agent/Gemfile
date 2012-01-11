@@ -5,7 +5,7 @@ gem "nats"
 gem "yajl-ruby", :require => "yajl"
 gem "uuidtools"
 gem "netaddr"
-gem "blobstore_client", ">= 0.3.7"
+gem "blobstore_client", ">= 0.3.8"
 gem "posix-spawn"
 gem "monit_api"
 

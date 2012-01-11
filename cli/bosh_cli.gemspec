@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency "progressbar", "~>0.9.0"
   s.add_dependency "httpclient", "=2.2.1"
   s.add_dependency "terminal-table", "~>1.4.2"
-  s.add_dependency "blobstore_client", "=0.3.7"
+  s.add_dependency "blobstore_client", "=0.3.8"
 
   s.add_development_dependency "rspec"
 end
