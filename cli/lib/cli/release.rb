@@ -6,7 +6,7 @@ module Bosh::Cli
       "name" => nil,
       "jobs_order" => [],
       "min_cli_version" => "0.5",
-      "s3_options" => { },
+      "blobstore_options" => { },
       "latest_release_filename" => nil
     }
 
