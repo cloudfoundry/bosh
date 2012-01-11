@@ -18,7 +18,7 @@ gemspec = Gem::Specification.new do |s|
   s.add_dependency "httpclient"
   s.add_dependency "aws-s3"
   s.add_dependency "uuidtools"
-  s.add_dependency "ruby-atmos-pure", ">= 1.0.4"
+  s.add_dependency "ruby-atmos-pure", ">= 1.0.5"
 
   s.add_development_dependency "rspec"
 end

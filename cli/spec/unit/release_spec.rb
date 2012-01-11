@@ -16,7 +16,7 @@ describe Bosh::Cli::Release do
     r.name.should be_nil
     r.min_cli_version.should == "0.5"
     r.jobs_order.should == []
-    r.s3_options.should == { }
+    r.blobstore_options.should == { "provider" => "atmos", "atmos_options" => {} }
   end
 
   it "can be created as dev or final" do
