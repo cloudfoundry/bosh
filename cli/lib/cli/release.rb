@@ -6,7 +6,7 @@ module Bosh::Cli
       "name" => nil,
       "jobs_order" => [],
       "min_cli_version" => "0.5",
-      "s3_options" => { },
+      "blobstore_options" => { "provider" => "atmos", "atmos_options" => {}},
       "latest_release_filename" => nil
     }
 
@@ -55,6 +55,10 @@ module Bosh::Cli
         config = load_yaml_file(@config_file) rescue nil
         unless config.is_a?(Hash)
           raise InvalidRelease, "Can't read release configuration from `#{@config_file}'"
+        end
+
+        if config["blobstore_options"].nil?
+          raise InvalidRelease, "configuration from #{@config_file} doesn't specify 'blobstore_options'"
         end
         config
       elsif final?

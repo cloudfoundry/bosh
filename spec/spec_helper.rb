@@ -28,6 +28,7 @@ BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
 
 RELEASE_CONFIG = File.join(TEST_RELEASE_DIR, "config/dev.yml")
+FINAL_RELEASE_CONFIG = File.join(TEST_RELEASE_DIR, "config/final.yml")
 
 module Bosh
   module Spec
@@ -77,7 +78,8 @@ end
 def release_config
   {
     "name" => "test_release",
-    "min_cli_version" => "0.5"
+    "min_cli_version" => "0.5",
+    "blobstore_options" => {"provider" => "atmos", "atmos_options" => {}}
   }
 end
 
@@ -110,6 +112,7 @@ def cleanup_bosh
   end
 
   FileUtils.rm_rf(BOSH_CONFIG)
+  FileUtils.rm_rf(FINAL_RELEASE_CONFIG)
 end
 
 start_sandbox
