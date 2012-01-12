@@ -36,6 +36,7 @@ module VCAP
         randomize_password(properties, 'postgresql_gateway', 'admin_passwd_hash', 4)
         randomize_password(properties, 'postgresql_gateway', 'token', 8)
 
+        properties['postgresql_node'] = {} unless properties['postgresql_node']
         properties['postgresql_node']['admin_passwd_hash'] = properties['postgresql_gateway']['admin_passwd_hash']
 
         randomize_password(properties, 'rabbitmq_srs', 'admin_passwd_hash', 4)
