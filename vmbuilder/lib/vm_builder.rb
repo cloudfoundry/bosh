@@ -55,6 +55,7 @@ module VMBuilder
             agent/message/apply.rb agent/message/compile_package.rb
             agent/monit.rb agent/state.rb agent/template.rb agent/platform.rb
             agent/platform/ubuntu.rb agent/platform/ubuntu/logrotate.rb
+            agent/platform/ubuntu/disk.rb agent/platform/ubuntu/password.rb
             agent/platform/ubuntu/templates/logrotate.erb
           }.each do |path|
             copy_file("#{AGENT_LIB_PATH}/#{path}", "#{tmpdir}/micro/lib/#{path}")

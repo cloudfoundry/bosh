@@ -19,6 +19,7 @@ describe VCAP::Micro::Watcher do
     VCAP::Micro::Network.stub(:local_ip).and_return(ip)
     VCAP::Micro::Network.stub(:gateway).and_return(gw)
   end
+
   it "should watch network changes" do
     ip = "1.2.3.4"
 
@@ -48,7 +49,7 @@ describe VCAP::Micro::Watcher do
     VCAP::Micro::Network.should_receive(:lookup).and_return(nil)
 
     network = mock_network(true)
-    network.should_receive(:connection_lost).exactly(1).times
+    network.should_receive(:online?).exactly(1).times
 
     w = VCAP::Micro::Watcher.new(network, mock_identity(ip))
     w.check
@@ -118,7 +119,7 @@ describe VCAP::Micro::Watcher do
       w.forgiving_ping(ip).should be_true
     end
 
-    it "should succeed if the thrid ping returns true" do
+    it "should succeed if the third ping returns true" do
       ip = "127.0.0.1"
       w = VCAP::Micro::Watcher.new(mock_network(true), mock_identity(ip))
       VCAP::Micro::Network.should_receive(:ping).with(ip).exactly(3).times.

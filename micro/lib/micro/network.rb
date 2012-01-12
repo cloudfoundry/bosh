@@ -10,6 +10,7 @@ module VCAP
       attr_accessor :type
 
       A_ROOT_SERVER = '198.41.0.4'
+      OFFLINE_FILE = "/var/vcap/micro/offline"
 
       def self.local_ip(route = A_ROOT_SERVER)
         retries ||= 0
@@ -73,6 +74,11 @@ module VCAP
         nil
       end
 
+      def sh(cmd)
+        result = %x{#{cmd}}
+        yield result if block_given? && $? != 0
+      end
+
       def initialize
         @logger = Console.logger
         @state = Statemachine.build do
@@ -105,7 +111,8 @@ module VCAP
           @type = :static
         end
         @state.start
-        restart_with_timeout
+        # assume that the network is up and running on start
+        @state.started
       end
 
       def up?
@@ -126,6 +133,23 @@ module VCAP
 
       def status
         @state.state
+      end
+
+      def online?
+        !File.exist?(OFFLINE_FILE)
+      end
+
+      def online_status
+        online? ? "online" : "offline"
+      end
+
+      # use a file as a flag so offline mode can be toggled externally through vmrun
+      def toggle_online_status
+        if online?
+          FileUtils.touch(OFFLINE_FILE)
+        else
+          FileUtils.rm(OFFLINE_FILE)
+        end
       end
 
       def connection_lost
@@ -150,10 +174,9 @@ module VCAP
 
       def restart_with_timeout
         Timeout::timeout(10) do
-          out = `service network-interface stop INTERFACE=eth0 2>&1`
+          sh 'service network-interface stop INTERFACE=eth0 2>&1'
           # ignoring failures on stop
-          out = `service network-interface start INTERFACE=eth0 2>&1`
-          unless $? == 0
+          sh 'service network-interface start INTERFACE=eth0 2>&1' do
             @state.timeout
           end
         end

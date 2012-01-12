@@ -8,6 +8,8 @@ require 'rspec'
 
 $:.unshift(File.expand_path("../../../agent/lib", __FILE__))
 
+ENV['LOGFILE'] = "tmp/micro.log"
+
 require 'micro/console'
 
 def with_warnings(flag)
@@ -46,5 +48,16 @@ def with_constants(constants, &block)
       # Kernel::silence_warnings { source_object.const_set(const_name, saved_constants[constant]) }
       with_warnings(nil) { source_object.const_set(const_name, saved_constants[constant]) }
     end
+  end
+end
+
+# e.g. path_to_foo.should be_same_file_as(path_to_bar)
+RSpec::Matchers.define(:be_same_file_as) do |exected_file_path|
+  match do |actual_file_path|
+    md5_hash(actual_file_path).should == md5_hash(exected_file_path)
+  end
+
+  def md5_hash(file_path)
+    Digest::MD5.hexdigest(File.read(file_path))
   end
 end
