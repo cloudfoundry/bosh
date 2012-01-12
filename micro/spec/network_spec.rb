@@ -72,7 +72,7 @@ describe VCAP::Micro::Network do
       state.stub(:state).and_return(:starting)
       Statemachine.stub(:build).and_return(state)
       network = VCAP::Micro::Network.new
-      network
+      network.should_receive(:write_network_interfaces)
       network.should_receive(:restart).exactly(1).times
       conf = {
         "address" => "1.2.3.4",

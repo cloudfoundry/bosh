@@ -1,0 +1,4 @@
+if [ "$reason" = "BOUND" ]; then
+  echo "address=/<%= @domain %>/$new_ip_address" > /etc/dnsmasq.conf
+  service dnsmasq restart
+fi
