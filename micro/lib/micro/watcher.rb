@@ -37,9 +37,13 @@ module VCAP
         @paused = false
       end
 
+      def paused?
+        @paused
+      end
+
       def watch
         while true
-          check unless @paused
+          check unless paused? || @network.offline?
           @logger.debug("sleeping for #{@sleep} seconds...")
           Kernel.sleep(@sleep)
         end
@@ -77,7 +81,7 @@ module VCAP
           # the OS (host s.root-servers.net)
           unless VCAP::Micro::Network.lookup(A_ROOT_SERVER) == A_ROOT_SERVER_IP
             @logger.warn("watcher could not look up #{A_ROOT_SERVER}")
-            @network.connection_lost
+            @network.connection_lost if @network.online?
             return
           else
             @logger.debug("watcher could look up #{A_ROOT_SERVER}")
@@ -115,7 +119,7 @@ module VCAP
           @logger.debug("network down")
           unless @network.starting?
             @logger.debug("restarting network")
-            @network.restart
+            @network.restart if @network.online?
           end
         end
       end
