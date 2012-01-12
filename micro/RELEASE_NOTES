@@ -1,5 +1,11 @@
-Micro Cloud Foundry version 1.1
+Micro Cloud Foundry version 1.2
 ===============================
+
+Changes since version 1.1:
+--------------------------
+- added offline mode
+- updated node.js to version 0.4.12
+- added keyboard reconfiguration option
 
 Changes since version 1.0:
 --------------------------

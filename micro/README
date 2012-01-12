@@ -1,4 +1,4 @@
-Micro Cloud Foundry version 1.1
+Micro Cloud Foundry version 1.2
 ===============================
 
 This is the second release of Micro Cloud Foundry.
@@ -7,7 +7,7 @@ IMPORTANT : You MUST have a valid CloudFoundry.com account to get the required
 Micro Cloud Foundry Token needed to configure the Micro Cloud Foundry VM.
 To signup for a Cloud Foundry account, please go to http://cloudfoundry.com/signup
 after receiving your account information, get your token from
-http://cloudfoundry.com/micro
+http://my.cloudfoundry.com/micro
 by signing in with your CloudFoundry.com credentials.
 
 - The Cloud Foundry Team
@@ -23,7 +23,7 @@ by signing in with your CloudFoundry.com credentials.
   http://cloudfoundry.com/signup
 
 * Get your Micro Cloud Foundry token at
-  http://cloudfoundry.com/micro
+  http://my.cloudfoundry.com/micro
   by signing in with your Cloud Foundry account.
 
 * Learn more about Cloud Foundry at :
@@ -35,8 +35,8 @@ by signing in with your CloudFoundry.com credentials.
 
 Default configuration:
 
-Micro Cloud Foundry 
-VM:       1GB RAM / 8GB disk / 2 VCPUs
+Micro Cloud Foundry
+VM:       1GB RAM / 16GB disk / 2 VCPUs
 -----------------------------------------------
 MySQL:    2GB storage, max 256MB storage per instance
 Postgres: 2GB storage, max 256MB storage per instance
@@ -53,7 +53,7 @@ Runtimes
 | ruby18 | Ruby 1.8    | 1.8.7     |
 | ruby19 | Ruby 1.9    | 1.9.2p180 |
 | java   | Java 6      | 1.6       |
-| node   | Node.js     | 0.4.5     |
+| node   | Node.js     | 0.4.12    |
 +--------+-------------+-----------+
 
 Frameworks
