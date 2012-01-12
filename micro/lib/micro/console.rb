@@ -11,7 +11,7 @@ require 'micro/version'
 require 'micro/memory'
 require 'micro/proxy'
 require 'micro/core_ext'
-
+require 'micro/dns'
 
 module VCAP
   module Micro
@@ -23,9 +23,10 @@ module VCAP
 
       LOGFILE = "/var/vcap/sys/log/micro/micro.log"
       def self.logger
-        FileUtils.mkdir_p(File.dirname(LOGFILE))
+        logfile = ENV['LOGFILE'] ? ENV['LOGFILE'] : LOGFILE
+        FileUtils.mkdir_p(File.dirname(logfile))
         unless defined? @@logger
-          @@logger = Logger.new(LOGFILE, 5, 1024*100)
+          @@logger = Logger.new(logfile, 5, 1024*100)
           @@logger.level = Logger::INFO
         end
         @@logger
@@ -100,6 +101,8 @@ module VCAP
         else
           stat.yellow
         end
+        stat += " / #{@network.online_status}" unless @network.online?
+        stat
       end
 
       def dns_status
@@ -126,6 +129,7 @@ module VCAP
             menu.choice("reconfigure vcap password") { configure_password }
             menu.choice("reconfigure domain") { configure_domain }
             menu.choice("reconfigure network [#{@network.type}]") { configure_network }
+            menu.choice("toggle #{@network.online_status} mode") { @network.toggle_online_status }
             menu.choice("reconfigure proxy [#{@proxy.name}]") { configure_proxy }
             menu.choice("service status [#{service_status}]") { display_services }
             menu.choice("restart network") { restart }
@@ -154,7 +158,7 @@ module VCAP
       def configure_password(initial=false)
         password = "foo"
         confirmation = "bar"
-        say("\nSet password Micro Cloud Foundry VM user")
+        say("\nSet password Micro Cloud Foundry VM user (vcap)")
         while password != confirmation
           password = ask("Password: ") { |q| q.echo = "*" }
           confirmation = ask("Confirmation: ") { |q| q.echo = "*" }
@@ -171,22 +175,26 @@ module VCAP
       end
 
       def configure_domain(initial=false)
+        ip = VCAP::Micro::Network.local_ip
         unless initial
           say("\nCreate a new domain or regenerate a token for an existing")
-          say("at www.cloudfoundry.com/micro\n")
+          say("at my.cloudfoundry.com/micro\n")
         end
-        token = ask("\nEnter Micro Cloud Foundry configuration token: ")
+        token = ask("\nEnter Micro Cloud Foundry configuration token or offline domain name:")
         if token == "quit" && ! initial
           return
-        elsif token == "vcap.me"
+        elsif token =~ /[^\.]+\.[^\.]+/
+          # TODO sanity check of admin email
+          email = ask("Admin email: ")
           @identity.clear
-          @identity.vcap_me
+          @identity.offline(ip, token, email)
         else
           @identity.clear
           @identity.nonce = token
-          @identity.install(VCAP::Micro::Network.local_ip)
+          @identity.install(ip)
         end
         @identity.save
+        DNS.new(ip, @identity.subdomain).generate
         unless initial
           say("Reconfiguring Micro Cloud Foundry with new settings...")
           Bosh::Agent::Monit.stop_services(60) # is it enough to stop only cc?
@@ -253,6 +261,7 @@ module VCAP
       def configure_memory(initial=false)
         mem = @memory.current
         say("Reconfiguring Micro Cloud Foundry with new memory: #{mem}")
+        say("Will take up to 5 minutes...")
         @memory.save_spec(@memory.update_spec(mem))
         @memory.update_previous
         unless initial
@@ -384,7 +393,7 @@ module VCAP
             state = @watcher.paused ? "enable" : "disable"
             menu.choice("#{state} network watcher") { toggle_watcher }
             menu.choice("reapply configuration") { reapply }
-            menu.choice("network touble shooting") { network_troubleshooting }
+            menu.choice("network trouble shooting") { network_troubleshooting }
             # nasty hack warning:
             # exec-ing causes the console program to restart when dpkg-reconfigrue exits
             menu.choice("change keyboard layout") do
@@ -393,6 +402,7 @@ module VCAP
             end
             menu.choice("return to main menu") { return }
           end
+          press_return_to_continue
         end
       end
 

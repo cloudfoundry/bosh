@@ -17,12 +17,4 @@ describe VCAP::Micro::Network do
     p1.should == p2
   end
 
-  it "should set a random password at the sequent invocations" do
-    props = {}
-    VCAP::Micro::Settings.randomize_passwords(props)
-    p1 = props['nats']['password']
-    VCAP::Micro::Settings.randomize_passwords(props)
-    p2 = props['nats']['password']
-    p1.should_not == p2
-  end
 end

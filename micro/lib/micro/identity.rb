@@ -88,12 +88,13 @@ module VCAP
       end
 
       # used if you want to work in offline mode
-      def vcap_me
-        @logger.info("configuring vcap.me")
-        @admins = @config['admins'] = [ "admin@vcap.me" ]
-        @cloud = @config['cloud'] = "vcap.me"
-        @name = @config['name'] = nil
-        @ip = @config['ip'] = "127.0.0.1"
+      def offline(ip, domain, admin)
+        @logger.info("configuring offline mode with: #{domain}")
+        @admins = @config['admins'] = [ admin ]
+        name, cloud = domain.split(/\./, 2)
+        @cloud = @config['cloud'] = cloud
+        @name = @config['name'] = name
+        @ip = @config['ip'] = ip
       end
 
       # POST /api/v1/micro/token
