@@ -59,7 +59,9 @@ module Bosh::Agent
     end
 
     def update_passwords
-      @platform.update_passwords(@settings)
+      if !@settings["env"].nil?
+        @platform.update_passwords(@settings)
+      end
     end
 
     def update_agent_id
