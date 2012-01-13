@@ -39,6 +39,15 @@ module Bosh
           :port              => 443
         }
 
+        http_proxy = ENV['http_proxy'] || ENV['HTTP_PROXY']
+        if http_proxy
+          uri = URI.parse(http_proxy)
+          proxy = {:host => uri.host, :port => uri.port}
+          proxy[:user] = uri.user if uri.user
+          proxy[:password] = uri.password if uri.password
+          aws_options[:proxy] = proxy
+        end
+
         AWS::S3::Base.establish_connection!(aws_options)
       rescue AWS::S3::S3Exception => e
         raise BlobstoreError, "Failed to initialize S3 blobstore: #{e.message}"
