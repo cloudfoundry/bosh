@@ -43,7 +43,7 @@ module VCAP
 
       def watch
         while true
-          check unless paused? || @network.offline?
+          check unless paused? || !@network.online?
           @logger.debug("sleeping for #{@sleep} seconds...")
           Kernel.sleep(@sleep)
         end
@@ -53,6 +53,7 @@ module VCAP
       end
 
       def check
+        return unless @identity.configured? # prevent nagging
         if @network.up?
           @logger.debug("network is up")
           ip = VCAP::Micro::Network.local_ip
@@ -103,7 +104,7 @@ module VCAP
             @logger.info("refreshing DNS record for #{ip}")
             begin
               # don't litter the console with dns update info
-              @identity.update_ip(ip, true)
+              @identity.update_ip(ip, true) if @network.online?
             rescue RestClient::Forbidden
               # do nothing
             end
