@@ -35,7 +35,7 @@ apt-get install -y --force-yes --no-install-recommends \
   lsof strace scsitools dnsutils tcpdump tshark \
   iputils-arping curl wget libcurl4-openssl-dev libreadline5-dev libxml2 \
   libxml2-dev libxslt1.1 libxslt1-dev zip unzip git-core rsync bind9-host \
-  nfs-common flex psmisc mg console-data
+  nfs-common flex psmisc mg console-data dnsmasq
 
 # add vmware tools
 apt-get install -y --force-yes --no-install-recommends vmware-tools-core vmware-tools-plugins-vix
@@ -108,6 +108,9 @@ chmod 755 /etc/update-motd.d/*
 cp dhclient.conf /etc/dhcp3
 cp dnsmasq.sh /etc/dhcp3/dhclient-enter-hooks.d
 cp extra.conf /etc/dnsmasq.d
+
+# start in offline mode
+touch /var/vcap/micro/offline
 
 # disable rpcbind which will disable statd too
 sed 's/^\(start on start-portmap\)/#\1/' /etc/init/portmap.conf > \
