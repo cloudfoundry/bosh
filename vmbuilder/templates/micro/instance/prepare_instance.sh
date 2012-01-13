@@ -95,6 +95,9 @@ mkdir -p ${bosh_app_dir}/shared
 chown vcap:vcap ${bosh_app_dir}/shared
 chmod 0700 ${bosh_app_dir}/shared
 
+# prevent delays in offline mode
+echo 'UseDNS no' >> /etc/ssh/sshd_config
+
 chmod 755 ${bosh_app_dir}/micro/bin/*
 
 rm /etc/update-motd.d/*
