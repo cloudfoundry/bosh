@@ -160,7 +160,8 @@ module VCAP
       #     403 - bad auth token / unknown cloud or host
       #       no defined body
       def update_dns(silent=false)
-        return if @cloud == "vcap.me"
+        # only update if there is a auth token, i.e. a cloudfoundry.me domain is used
+        return unless @token
 
         pbar = ProgressBar.new("updating DNS", Watcher::TTL) unless silent
 
@@ -198,6 +199,8 @@ module VCAP
 
         if Network.lookup(subdomain) == @ip
           say("done".green)
+        elsif Network.ext_lookup(subdomain) == @ip
+          say("External DNS updated, cached information is still being served".yellow)
         else
           say("DNS still synchronizing, continuing after waiting #{Watcher::TTL} seconds".yellow)
         end
