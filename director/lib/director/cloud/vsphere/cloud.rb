@@ -145,7 +145,7 @@ module VSphereCloud
       disks
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil)
+    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = {}, environment = {})
       with_thread_name("create_vm(#{agent_id}, ...)") do
         memory = resource_pool["ram"]
         disk = resource_pool["disk"]

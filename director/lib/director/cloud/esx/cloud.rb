@@ -170,7 +170,7 @@ module EsxCloud
       end
     end
 
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
+    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = {}, env = {})
       with_thread_name("create_vm(#{agent_id}, ...)") do
         result = nil
 
