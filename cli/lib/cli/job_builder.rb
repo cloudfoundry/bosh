@@ -88,7 +88,7 @@ module Bosh::Cli
         raise InvalidJob, "There are unused template files for job '#{name}': %s" % [ extra_templates.join(", ")]
       end
 
-      unless File.exists?(File.join(job_dir, "monit"))
+      unless File.exists?(File.join(job_dir, "monit")) || Dir.glob("#{job_dir}/*.monit").size > 0
         raise InvalidJob, "Cannot find monit file for '#{name}'"
       end
 
@@ -117,9 +117,19 @@ module Bosh::Cli
         copied += 1
       end
 
-      FileUtils.cp(File.join(job_dir, "monit"), build_dir, :preserve => true)
+      Dir.glob("#{job_dir}/*.monit").each do |file|
+        FileUtils.cp(file, build_dir, :preserve => true)
+        copied += 1
+      end
+
+      file = File.join(job_dir, "monit")
+      if File.exist?(file)
+        FileUtils.cp(file, build_dir, :preserve => true)
+        copied += 1
+      end
+
       FileUtils.cp(File.join(job_dir, "spec"), File.join(build_dir, "job.MF"), :preserve => true)
-      copied += 2
+      copied += 1
       copied
     end
 
