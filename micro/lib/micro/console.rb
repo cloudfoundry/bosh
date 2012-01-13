@@ -12,6 +12,7 @@ require 'micro/memory'
 require 'micro/proxy'
 require 'micro/core_ext'
 require 'micro/dns'
+require 'micro/service_manager'
 
 module VCAP
   module Micro
@@ -20,6 +21,8 @@ module VCAP
       def self.run
         Console.new.console
       end
+
+      CC_CONFIG = "/var/vcap/job/cloud_controller/config/cloud_controller.yml"
 
       LOGFILE = "/var/vcap/sys/log/micro/micro.log"
       def self.logger
@@ -39,6 +42,7 @@ module VCAP
         @network = Network.new
         @memory = Memory.new
         @watcher = Watcher.new(@network, @identity)
+        @svcmgr = ServiceManager.new
         @watcher.start
       end
 
@@ -106,7 +110,9 @@ module VCAP
       end
 
       def dns_status
-        if @identity.ip != VCAP::Micro::Network.local_ip
+        if !@network.online? # dont't warn when offline
+          "ok".green
+        elsif @identity.ip != VCAP::Micro::Network.local_ip
           "DNS out of sync".red
         else
           "ok".green
@@ -129,15 +135,15 @@ module VCAP
             menu.choice("reconfigure vcap password") { configure_password }
             menu.choice("reconfigure domain") { configure_domain }
             menu.choice("reconfigure network [#{@network.type}]") { configure_network }
-            menu.choice("toggle #{@network.online_status} mode") { @network.toggle_online_status }
+            menu.choice("#{@network.online? ? "enable" : "disable"} offline mode") { @network.toggle_online_status }
             menu.choice("reconfigure proxy [#{@proxy.name}]") { configure_proxy }
-            menu.choice("service status [#{service_status}]") { display_services }
+            menu.choice("services [#{@svcmgr.status_summary}]") { @svcmgr.service_menu }
             menu.choice("restart network") { restart }
             menu.choice("restore defaults") { defaults }
           end
+          menu.choice("expert menu") { expert_menu }
           menu.choice("help") { display_help }
           menu.choice("shutdown VM") { shutdown }
-          menu.hidden("debug") { debug_menu }
         end
       end
 
@@ -180,17 +186,21 @@ module VCAP
           say("\nCreate a new domain or regenerate a token for an existing")
           say("at my.cloudfoundry.com/micro\n")
         end
-        token = ask("\nEnter Micro Cloud Foundry configuration token or offline domain name:")
+        # make sure we get a String not a HighLine::String
+        token = ask("\nEnter Micro Cloud Foundry configuration token or offline domain name:").to_s
         if token == "quit" && ! initial
           return
         elsif token =~ /[^\.]+\.[^\.]+/
           # TODO sanity check of admin email
-          email = ask("Admin email: ")
+          # make sure we get a String not a HighLine::String
+          email = ask("Admin email: ").to_s
           @identity.clear
+          @network.offline!
           @identity.offline(ip, token, email)
         else
           @identity.clear
           @identity.nonce = token
+          @network.online!
           @identity.install(ip)
         end
         @identity.save
@@ -202,14 +212,11 @@ module VCAP
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
-      rescue SocketError
+      rescue SocketError => e
         say("Unable to contact cloudfoundry.com to redeem configuration token".red)
-        retry unless are_you_sure?("Configure vcap.me instead?")
-        @identity.vcap_me
-        @identity.save
-        say("Micro Cloud Foundry is now bound to localhost (127.0.0.1)".yellow)
-        say("You must use ssh tunneling to access it")
-        press_return_to_continue
+        @logger.error("SockerError: #{e}")
+        retry if initial
+        retry unless are_you_sure?("Configure in offline mode using a domain instead?")
       rescue RestClient::ResourceNotFound, RestClient::Forbidden, RestClient::Conflict
         say("Enter \"quit\" to cancel") unless initial
         retry
@@ -226,10 +233,11 @@ module VCAP
             net = Hash.new
             say("\nEnter network configuration (address/netmask/gateway/DNS)")
 
-            net['address'] = ask("Address: ")
-            net['netmask'] = ask("Netmask: ")
-            net['gateway'] = ask("Gateway: ")
-            net['dns'] =     ask("DNS:     ")
+            # make sure we get a String not a HighLine::String
+            net['address'] = ask("Address: ").to_s
+            net['netmask'] = ask("Netmask: ").to_s
+            net['gateway'] = ask("Gateway: ").to_s
+            net['dns'] =     ask("DNS:     ").to_s
             # TODO validate network
             @network.static(net)
           end
@@ -240,7 +248,8 @@ module VCAP
       def configure_proxy(initial=false)
         old_url = @proxy.url
         while true
-          url = ask("\nHTTP proxy: ") { |q| q.default = "none" }
+          # make sure we get a String not a HighLine::String
+          url = ask("\nHTTP proxy: ") { |q| q.default = "none" }.to_s
           @proxy.url = url
           if @proxy.url
             break
@@ -272,63 +281,18 @@ module VCAP
         end
       end
 
-      def configure_api_url
-        while true
-          host = ask("\nNew API host:") do |q|
-            q.default = Identity::DEFAULT_API_HOST
-          end
-
-          if host == "quit"
-            say("Nevermind then...")
-            break
-          elsif Network.lookup(host)
-            @identity.update_api_host(host)
-            # request new token here too?
-            break
-          else
-            say("Could not resolve '#{host}', please try a different host")
-            say("or use 'quit' to abort\n")
-          end
-        end
-        press_return_to_continue
-      end
-
       def refresh_dns
-        @identity.update_ip(Network.local_ip)
+        if @network.online?
+          @identity.update_ip(Network.local_ip)
+        else
+          say("Can't refresh DNS when offline".red)
+        end
         press_return_to_continue
       end
 
       def restart
         @network.restart
         press_return_to_continue
-      end
-
-      def display_services
-        clear
-        say("Service status:\n")
-        status = Bosh::Agent::Monit.retry_monit_request do |client|
-          client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
-        end
-        status.each do |name, data|
-          if data[:monitor] == :yes
-            status = data[:status][:message]
-            printf(" %-25s %s\n", name, status == "running" ? status.green : status.red)
-          end
-        end
-        say("\n")
-        press_return_to_continue
-      end
-
-      def service_status
-        status = Bosh::Agent::Monit.retry_monit_request do |client|
-          client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
-        end
-        status.each do |name, data|
-          if data[:monitor] == :yes
-            return "failed".red if data[:status][:message] != "running"
-          end
-        end
-        "ok".green
       end
 
       def defaults
@@ -340,6 +304,7 @@ module VCAP
         @network.dhcp
         @proxy.url = "none"
         @proxy.save
+        @network.offline!
         FileUtils.rm_rf(Identity::MICRO_CONFIG)
         Dir.glob("/var/vcap/data/*").each do |dir|
           FileUtils.rm_rf(dir) unless dir.match(/cache/)
@@ -378,13 +343,13 @@ module VCAP
       end
 
       DEBUG_LEVELS = %w[DEBUG INFO WARN ERROR FATAL UNKNOWN]
-      def debug_menu
+      def expert_menu
         while true
           clear
-          say("Debug menu\n".red)
+          say("Expert menu\n".red)
           say("Log file: #{LOGFILE}\n".yellow)
           choose do |menu|
-            menu.prompt = "\nSelect debug option: "
+            menu.prompt = "\nSelect option: "
             menu.select_by = :index
             level = DEBUG_LEVELS[@logger.level]
             menu.choice("set debug level to DEBUG [#{level}]") { debug_level }
@@ -393,6 +358,7 @@ module VCAP
             state = @watcher.paused ? "enable" : "disable"
             menu.choice("#{state} network watcher") { toggle_watcher }
             menu.choice("reapply configuration") { reapply }
+            menu.choice("toggle cloud controller registration") { toggle_cc_registration }
             menu.choice("network trouble shooting") { network_troubleshooting }
             # nasty hack warning:
             # exec-ing causes the console program to restart when dpkg-reconfigrue exits
@@ -410,16 +376,48 @@ module VCAP
         @logger.level = Logger::DEBUG
         @logger.info("debug output enabled")
         say("Debug output enabled")
-        press_return_to_continue
+      end
+
+      def configured?
+        File.exist?(CC_CONFIG)
+      end
+
+      def configure_api_url
+        unless configured?
+          say("You need to configure Micro Cloud Foundry before you can configure the api url".red)
+          return
+        end
+
+        while true
+          host = ask("\nNew API host:") do |q|
+            q.default = Identity::DEFAULT_API_HOST
+          end
+
+          if host == "quit"
+            say("Nevermind then...")
+            break
+          elsif Network.lookup(host)
+            @identity.update_api_host(host)
+            # request new token here too?
+            break
+          else
+            say("Could not resolve '#{host}', please try a different host")
+            say("or use 'quit' to abort\n")
+          end
+        end
       end
 
       def reapply
+        unless configured?
+          say("You need to configure Micro Cloud Foundry before you can reapply the configuration".red)
+          return
+        end
+
         @logger.info("reapplying configuration")
         say("Reapplying configuration, will take up to 5 minutes...")
         Bosh::Agent::Monit.stop_services(60)
         wait_for_monit
         VCAP::Micro::Agent.apply(@identity)
-        press_return_to_continue
       end
 
       def toggle_watcher
@@ -428,6 +426,21 @@ module VCAP
         else
           @watcher.pause
         end
+      end
+
+      def toggle_cc_registration
+        unless configured?
+          say("You need to configure Micro Cloud Foundry before you can disable account registration".red)
+          return
+        end
+
+        say("Toggling cloud controller registration:")
+        yaml = YAML.load_file(CC_CONFIG)
+        yaml['allow_registration'] = !yaml['allow_registration']
+        File.open(CC_CONFIG, 'w') { |f| f.write(YAML.dump(yaml))}
+        # note that this doesn't persist across a reset to defaults
+        say("Restarting cloud controller...")
+        %x{monit restart cloud_controller}
       end
 
       # a very naïve pager
@@ -499,29 +512,30 @@ module VCAP
         say("configured domain: #{@identity.subdomain.green}")
         say("reverse lookup of IP address: #{Network.lookup(ip).to_s.green}")
 
-        # DNS lookup
-        url = @identity.subdomain
-        ip = Network.lookup(url)
-        say("DNS lookup of #{url} is #{ip.to_s.green}")
+        if @network.online?
+          # DNS lookup
+          url = @identity.subdomain
+          ip = Network.lookup(url)
+          say("DNS lookup of #{url} is #{ip.to_s.green}")
 
-        # proxy
-        say("proxy is #{@proxy.name.green}")
-        say("configured proxy is #{RestClient.proxy}\n")
+          # proxy
+          say("proxy is #{@proxy.name.green}")
+          say("configured proxy is #{RestClient.proxy}\n")
 
-        # get URL (through proxy)
-        url = "www.cloudfoundry.com"
-        rest = RestClient::Resource.new("http://#{url}")
-        rest["/"].get
-        say("successfully got URL: #{url.green}")
+          # get URL (through proxy)
+          url = "www.cloudfoundry.com"
+          rest = RestClient::Resource.new("http://#{url}")
+          rest["/"].get
+          say("successfully got URL: #{url.green}")
+        else
+          puts "in offline mode - skipping DNS and remote connections"
+        end
 
       rescue RestClient::Exception => e
         say("\nfailed to get URL: #{e.message}".red)
       rescue => e
         say("exception: #{e.message}".red)
         @logger.error(e.backtrace.join("\n"))
-      ensure
-        say("\n")
-        press_return_to_continue
       end
 
       def clear

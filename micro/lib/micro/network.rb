@@ -11,6 +11,8 @@ module VCAP
 
       A_ROOT_SERVER = '198.41.0.4'
       OFFLINE_FILE = "/var/vcap/micro/offline"
+      OFFLINE_CONF = "/etc/dnsmasq.d/offline.conf"
+      OFFLINE_TEMPLATE = "/var/vcap/micro/config/offline.conf"
 
       def self.local_ip(route = A_ROOT_SERVER)
         retries ||= 0
@@ -145,11 +147,25 @@ module VCAP
 
       # use a file as a flag so offline mode can be toggled externally through vmrun
       def toggle_online_status
-        if online?
-          FileUtils.touch(OFFLINE_FILE)
-        else
-          FileUtils.rm(OFFLINE_FILE)
-        end
+        online? ? offline! : online!
+      end
+
+      def online!
+        FileUtils.rm_f(OFFLINE_FILE)
+        FileUtils.rm_f(OFFLINE_CONF)
+        restart_dnsmasq
+      end
+
+      def offline!
+        FileUtils.touch(OFFLINE_FILE)
+        FileUtils.cp(OFFLINE_TEMPLATE, OFFLINE_CONF)
+        restart_dnsmasq
+      end
+
+      def restart_dnsmasq
+        # restart command doesn't always work, start and stop seems to be more reliable
+        %x{/etc/init.d/dnsmasq stop}
+        %x{/etc/init.d/dnsmasq start}
       end
 
       def connection_lost
@@ -180,6 +196,7 @@ module VCAP
             @state.timeout
           end
         end
+        # TODO this should only be displayed when it can resolve DNS queries again
         $stderr.puts "network connectivity regained :-)" if @previous == :offline
         @state.started
       rescue Timeout::Error
