@@ -145,11 +145,15 @@ module VCAP
 
       # use a file as a flag so offline mode can be toggled externally through vmrun
       def toggle_online_status
-        if online?
-          FileUtils.touch(OFFLINE_FILE)
-        else
-          FileUtils.rm(OFFLINE_FILE)
-        end
+        online? ? offline! : online!
+      end
+
+      def online!
+        FileUtils.rm_f(OFFLINE_FILE)
+      end
+
+      def offline!
+        FileUtils.touch(OFFLINE_FILE)
       end
 
       def connection_lost
