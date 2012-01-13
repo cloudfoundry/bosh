@@ -202,7 +202,7 @@ module Bosh
               end
 
               step("Monit file for '#{name}'", "Monit script missing for job '#{name}'") do
-                File.exists?(File.expand_path("monit", job_tmp_dir))
+                File.exists?(File.expand_path("monit", job_tmp_dir)) || Dir.glob("#{job_tmp_dir}/*.monit").size > 0
               end
             end
           end

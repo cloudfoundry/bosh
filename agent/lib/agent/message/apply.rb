@@ -181,29 +181,37 @@ module Bosh::Agent
       end
 
       def configure_monit
-        # TODO ERB/Template
-        monit_template = File.join(@job_install_dir, 'monit')
-        if File.exist?(monit_template)
-          template = ERB.new(File.read(monit_template))
-          monitrc_name = "#{@job_template}.monitrc"
-
-          out_file = File.join(@job_install_dir, monitrc_name)
-
-          original_monitrc = template.result(Util.config_binding(@apply_spec))
-          result_monitrc   = add_modes(original_monitrc)
-
-          File.open(out_file, 'w') do |fh|
-            fh.write(result_monitrc)
+        Dir.glob("#{@job_install_dir}/*monit").each do |template|
+          file = File.basename(template)
+          if file == "monit"
+            monitrc = "#{@job_template}.monitrc"
+          else
+            monitrc = file + "rc"
           end
-
-          monit_link = File.join(base_dir, 'monit', "#{@job_template}.monitrc")
-
-          link_installed(out_file, monit_link, "Failed to link monit file: #{out_file} #{monit_link}" )
-
-          if Bosh::Agent::Config.configure
-            Bosh::Agent::Monit.reload
-          end
+          prepare_monit_file(template, monitrc)
         end
+
+        if Bosh::Agent::Config.configure
+          Bosh::Agent::Monit.reload
+        end
+      end
+
+      def prepare_monit_file(monit_template, monitrc_name)
+        template = ERB.new(File.read(monit_template))
+
+        out_file = File.join(@job_install_dir, monitrc_name)
+
+        original_monitrc = template.result(Util.config_binding(@apply_spec))
+        result_monitrc   = add_modes(original_monitrc)
+
+        File.open(out_file, 'w') do |fh|
+          fh.write(result_monitrc)
+        end
+
+        monit_link = File.join(base_dir, 'monit', monitrc_name)
+
+        link_installed(out_file, monit_link, "Failed to link monit file: #{out_file} #{monit_link}" )
+
       end
 
       # HACK
