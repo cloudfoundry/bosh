@@ -38,8 +38,8 @@ describe Bosh::Cli::JobBuilder do
     add_file(job_name, "spec")
   end
 
-  def add_monit(job_name)
-    add_file(job_name, "monit")
+  def add_monit(job_name, file="monit")
+    add_file(job_name, file)
   end
 
   def add_templates(job_name, *files)
@@ -107,6 +107,18 @@ describe Bosh::Cli::JobBuilder do
 
     add_file("foo", "templates/a.conf", "bzz")
     b1.reload.fingerprint.should_not == f1
+  end
+
+  it "changes fingerprint when new monit file is added" do
+    add_templates("foo", "a.conf", "b.yml")
+    add_monit("foo", "foo.monit")
+
+    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    f1 = b1.fingerprint
+
+    add_monit("foo", "bar.monit")
+    b2 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b2.fingerprint.should_not == f1
   end
 
   it "can read template file names from hash" do

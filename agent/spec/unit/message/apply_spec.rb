@@ -174,6 +174,33 @@ describe Bosh::Agent::Message::Apply do
     File.executable?(bin_file).should == true
   end
 
+  it 'should install a job with a .monit file' do
+    response = mock("response")
+    response.stub!(:status).and_return(200)
+
+    state = Bosh::Agent::Message::State.new
+
+    job_data = read_asset('hubba.tgz')
+    job_sha1 = Digest::SHA1.hexdigest(job_data)
+    apply_data = {
+      "configuration_hash" => "bogus",
+      "deployment" => "foo",
+      "job" => { "name" => "hubba", "template" => "hubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
+      "release" => { "version" => "99" },
+      "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
+    }
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
+    @httpclient.should_receive(:get).with(*get_args).and_yield(job_data).and_return(response)
+
+    handler = Bosh::Agent::Message::Apply.new([apply_data])
+    handler.stub!(:apply_packages)
+    handler.apply
+
+    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.monitrc')
+    File.exist?(monitrc).should == true
+  end
+
+
   it "should be able to add manual modes to monit configuration file" do
     handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
     handler.add_modes(<<-IN).should == <<-OUT.strip
