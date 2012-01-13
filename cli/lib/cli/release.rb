@@ -4,7 +4,6 @@ module Bosh::Cli
 
     DEFAULT_CONFIG = {
       "name" => nil,
-      "jobs_order" => [],
       "min_cli_version" => "0.5",
       "blobstore_options" => { "provider" => "atmos", "atmos_options" => {}},
       "latest_release_filename" => nil
@@ -65,8 +64,7 @@ module Bosh::Cli
         DEFAULT_CONFIG
       else
         final_release = self.class.final(@release_dir)
-        DEFAULT_CONFIG.merge("jobs_order" => final_release.jobs_order,
-                             "min_cli_version" => final_release.min_cli_version)
+        DEFAULT_CONFIG.merge("min_cli_version" => final_release.min_cli_version)
       end
     end
 
