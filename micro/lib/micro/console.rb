@@ -131,7 +131,7 @@ module VCAP
             menu.choice("reconfigure network [#{@network.type}]") { configure_network }
             menu.choice("toggle #{@network.online_status} mode") { @network.toggle_online_status }
             menu.choice("reconfigure proxy [#{@proxy.name}]") { configure_proxy }
-            menu.choice("service status [#{service_status}]") { display_services }
+            menu.choice("service status [#{service_status}]") { display_grouped_services }
             menu.choice("restart network") { restart }
             menu.choice("restore defaults") { defaults }
           end
@@ -180,12 +180,14 @@ module VCAP
           say("\nCreate a new domain or regenerate a token for an existing")
           say("at my.cloudfoundry.com/micro\n")
         end
-        token = ask("\nEnter Micro Cloud Foundry configuration token or offline domain name:")
+        # make sure we get a String not a HighLine::String
+        token = ask("\nEnter Micro Cloud Foundry configuration token or offline domain name:").to_s
         if token == "quit" && ! initial
           return
         elsif token =~ /[^\.]+\.[^\.]+/
           # TODO sanity check of admin email
-          email = ask("Admin email: ")
+          # make sure we get a String not a HighLine::String
+          email = ask("Admin email: ").to_s
           @identity.clear
           @identity.offline(ip, token, email)
         else
@@ -202,14 +204,11 @@ module VCAP
           VCAP::Micro::Agent.apply(@identity)
           press_return_to_continue
         end
-      rescue SocketError
+      rescue SocketError => e
         say("Unable to contact cloudfoundry.com to redeem configuration token".red)
-        retry unless are_you_sure?("Configure vcap.me instead?")
-        @identity.vcap_me
-        @identity.save
-        say("Micro Cloud Foundry is now bound to localhost (127.0.0.1)".yellow)
-        say("You must use ssh tunneling to access it")
-        press_return_to_continue
+        @logger.error("SockerError: #{e}")
+        retry if initial
+        retry unless are_you_sure?("Configure in offline mode using a domain instead?")
       rescue RestClient::ResourceNotFound, RestClient::Forbidden, RestClient::Conflict
         say("Enter \"quit\" to cancel") unless initial
         retry
@@ -226,10 +225,11 @@ module VCAP
             net = Hash.new
             say("\nEnter network configuration (address/netmask/gateway/DNS)")
 
-            net['address'] = ask("Address: ")
-            net['netmask'] = ask("Netmask: ")
-            net['gateway'] = ask("Gateway: ")
-            net['dns'] =     ask("DNS:     ")
+            # make sure we get a String not a HighLine::String
+            net['address'] = ask("Address: ").to_s
+            net['netmask'] = ask("Netmask: ").to_s
+            net['gateway'] = ask("Gateway: ").to_s
+            net['dns'] =     ask("DNS:     ").to_s
             # TODO validate network
             @network.static(net)
           end
@@ -240,7 +240,8 @@ module VCAP
       def configure_proxy(initial=false)
         old_url = @proxy.url
         while true
-          url = ask("\nHTTP proxy: ") { |q| q.default = "none" }
+          # make sure we get a String not a HighLine::String
+          url = ask("\nHTTP proxy: ") { |q| q.default = "none" }.to_s
           @proxy.url = url
           if @proxy.url
             break
@@ -300,6 +301,48 @@ module VCAP
 
       def restart
         @network.restart
+        press_return_to_continue
+      end
+
+      def toggle_account_registration
+        # open /var/vcap/jobs/cloud_controller/config/cloud_controller.yml
+        # and set allow_registration to true/false
+      end
+
+      SERVICE_GROUPS = {
+        "core" => %w[ccdb_postgres, nats, nginx, router, dea, health_manager, cloud_controller],
+        "mysql" => %w[mysql, mysql_node, mysql_gateway],
+        "postgres" => %w[postgresql, postgresql_node, postgresql_gateway],
+        "redis" => %w[redis_node, redis_gateway],
+        "mongodb" => %w[mongodb_node, mongodb_gateway],
+        "rabbitmq" => %w[rabbitmq, rabbitmq_srs_agent, rabbitmq_srs_vcap_web, rabbitmq_srs_controller]
+      }
+
+      def display_grouped_services
+        clear
+        say("Micro Cloud Foundry services status:\n\n")
+        status = Bosh::Agent::Monit.retry_monit_request do |client|
+          client.status(:group => Bosh::Agent::BOSH_APP_GROUP)
+        end
+        SERVICE_GROUPS.each do |group, services|
+          ok = true
+          services.each do |service|
+            s = status[service]
+            ok = false if s[:status] && s[:status][:message] != "running"
+            # puts "#{service} = #{s[:status][:message]}"
+            # puts s.inspect
+          end
+          if ok
+            printf(" %-25s %s\n", group, "ok".green)
+          else
+            printf(" %-25s %s\n", group, "failed".red)
+            services.each do |service|
+              s = status[:status] ? status[:status][:message] : "unknown"
+              printf("   %-23s %s\n", service, s == "running" ? s.green : s.red)
+            end
+          end
+        end
+        puts("\n")
         press_return_to_continue
       end
 
