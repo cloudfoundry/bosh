@@ -12,6 +12,7 @@ describe VCAP::Micro::Watcher do
   def mock_identity(ip)
     identity = stub("identity")
     identity.stub(:ip).and_return(ip)
+    identity.stub(:configured?).and_return(true)
     identity
   end
 
@@ -85,7 +86,9 @@ describe VCAP::Micro::Watcher do
     identity.should_receive(:update_ip).with(ip, true).exactly(1).times
     now = Time.now.to_i
     Time.stub(:now).and_return(now - 14500, now)
-    w = VCAP::Micro::Watcher.new(mock_network(true), identity)
+    network = mock_network(true)
+    network.stub(:online?).and_return(true)
+    w = VCAP::Micro::Watcher.new(network, identity)
     w.check
   end
 
