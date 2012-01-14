@@ -80,12 +80,8 @@ module Bosh::Cli
         end
       end
 
-      if @data["builds"][fingerprint]
-        raise "Build with fingerprint `#{fingerprint}' already exists"
-      end
-
-      @data["builds"].each_value do |build|
-        if version_cmp(build["version"], version) == 0
+      @data["builds"].each_pair do |fp, build|
+        if version_cmp(build["version"], version) == 0 && fp != fingerprint
           raise "Trying to add duplicate version `#{version}' into index `#{@index_file}'"
         end
       end
