@@ -80,4 +80,11 @@ describe Bosh::Agent::State do
     state["c"].should == { "d" => 3, "e" => 4 }
   end
 
+  it "retrieves the list of IPs from state" do
+    state = make_state(@state_file)
+    state.write({"networks" => { "a" => { "ip" => "10.0.0.1"}, "b" => { "ip" => "192.168.1.30"}}})
+
+    state.ips.sort.should == ["10.0.0.1", "192.168.1.30"]
+  end
+
 end

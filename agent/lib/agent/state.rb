@@ -18,6 +18,8 @@ module Bosh::Agent
 
     # Fetches the state from file (unless it's been already fetched)
     # and returns the value of a given key.
+    # TODO: ideally agent shouldn't expose naked hash but use
+    # some kind of abstraction.
     # @param key Key that will be looked up in state hash
     def [](key)
       @lock.synchronize { @data[key] }
@@ -25,6 +27,18 @@ module Bosh::Agent
 
     def to_hash
       @lock.synchronize { @data.dup }
+    end
+
+    def ips
+      result = []
+      networks = self["networks"] || {}
+      return [] unless networks.kind_of?(Hash)
+
+      networks.each_pair do |name, network |
+        result << network["ip"] if network["ip"]
+      end
+
+      result
     end
 
     # Reads the current agent state from the state file and saves it internally.

@@ -39,6 +39,20 @@ describe Bosh::Agent::Alert do
     alert.timestamp.should == t
   end
 
+  it "has well-formed title that includes IPs" do
+    state = {
+      "job" => "foo",
+      "networks" => {
+        "a" => { "ip" => "10.0.0.1" },
+        "b" => { "ip" => "192.168.1.30" }
+      }
+    }
+
+    @state.write(state)
+    alert = make_alert
+    alert.title.should == "service (10.0.0.1, 192.168.1.30) - event - action"
+  end
+
   it "can lookup severity by monit event names" do
     alert = make_alert(:event => "does not exist")
     alert.calculate_severity.should == 1

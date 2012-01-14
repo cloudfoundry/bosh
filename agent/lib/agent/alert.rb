@@ -66,10 +66,16 @@ module Bosh::Agent
       {
         "id"         => @id,
         "severity"   => self.calculate_severity,
-        "title"      => "#{@service} - #{@event} - #{@action}",
+        "title"      => self.title,
         "summary"    => @description,
         "created_at" => self.timestamp
       }
+    end
+
+    def title
+      ips = @state.ips
+      service = ips.size > 0 ? "#{@service} (#{ips.sort.join(", ")})" : @service
+      "#{service} - #{@event} - #{@action}"
     end
 
     def timestamp
