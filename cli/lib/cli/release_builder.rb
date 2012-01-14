@@ -106,7 +106,7 @@ module Bosh::Cli
 
       if @index[fingerprint]
         old_version = @index[fingerprint]["version"]
-        say "Looks like this version is no different from version #{old_version}"
+        say "This version is no different from version #{old_version}"
         @version = old_version
       else
         @version = assign_version

@@ -78,9 +78,6 @@ describe Bosh::Cli::VersionsIndex do
     item2 = { "a" => 3, "b" => 4, "version" => "1.8-dev" }
 
     @index.add_version("deadbeef", item1, "payload1")
-    lambda {
-      @index.add_version("deadbeef", item2, "payload2")
-    }.should raise_error("Build with fingerprint `deadbeef' already exists")
 
     lambda {
       @index.add_version("deadcafe", item1, "payload3")
