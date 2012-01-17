@@ -24,7 +24,8 @@ module Bosh::Director
       end
 
       def problem_still_exists?
-        !@disk.active
+        @disk = Models::PersistentDisk[@disk_id]
+        !@disk.nil? && !@disk.active
       end
 
       def disk_label
