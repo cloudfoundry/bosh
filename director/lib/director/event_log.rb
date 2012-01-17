@@ -16,7 +16,7 @@ module Bosh::Director
     # Sample rendering for event log entry:
     # {
     #   "time":1312233461,"stage":"job_update","task":"update","tags":["mysql_node"],
-    #   "index":2,"total":4,"state":"finished","progress":50,"progress_data":"draining"
+    #   "index":2,"total":4,"state":"finished","progress":50,"data":{"key1" => "value1"}
     # }
 
     # Job update (mysql_node):
@@ -51,7 +51,12 @@ module Bosh::Director
       ticker = EventTicker.new(self, task, index)
 
       start_task(task, index)
-      yield ticker if block_given?
+      begin
+        yield ticker if block_given?
+      rescue => e
+        task_failed(task, index, 100, e.to_s)
+        raise
+      end
       finish_task(task, index)
     end
 
@@ -63,7 +68,11 @@ module Bosh::Director
       log(task, "finished", index, progress)
     end
 
-    def log(task, state, index, progress = 0, progress_data = nil)
+    def task_failed(task, index, progress = 100, error = nil)
+      log(task, "failed", index, progress, { "error" => error })
+    end
+
+    def log(task, state, index, progress = 0, data = {})
       entry = {
         :time     => Time.now.to_i,
         :stage    => @stage,
@@ -75,8 +84,8 @@ module Bosh::Director
         :progress => progress,
       }
 
-      if progress_data
-        entry[:progress_data] = progress_data
+      if data.size > 0
+        entry[:data] = data
       end
 
       @logger.info(Yajl::Encoder.encode(entry))
@@ -102,9 +111,9 @@ module Bosh::Director
       @progress = 0
     end
 
-    def advance(delta, progress_data = nil)
+    def advance(delta, data = {})
       @progress = [ @progress + delta, 100 ].min
-      @event_log.log(@task, "in_progress", @index, @progress.to_i, progress_data)
+      @event_log.log(@task, "in_progress", @index, @progress.to_i, data)
     end
   end
 

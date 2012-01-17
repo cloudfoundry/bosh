@@ -45,6 +45,14 @@ module Bosh::Director
       Yajl::Parser.parse(payload)
     end
 
+    def start_task(&block)
+      task = yield
+      unless task.kind_of?(Models::Task)
+        raise "Block didn't return Task object"
+      end
+      redirect "/tasks/#{task.id}"
+    end
+
   end
 
 end
