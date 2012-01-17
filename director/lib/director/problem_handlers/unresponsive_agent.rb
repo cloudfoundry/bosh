@@ -7,37 +7,64 @@ module Bosh::Director
 
       def initialize(vm_id, data)
         super
-        @vm_id = vm_id
-        @vm = Models::Vm[@vm_id]
-        @agent_id = @vm.agent_id
-        @agent = AgentClient.new(@agent_id)
-      end
+        @vm = Models::Vm[vm_id]
 
-      def problem_still_exists?
-        @agent.wait_until_ready
-        false
-      rescue Bosh::Director::Client::TimeoutException
-        true
+        if @vm.nil?
+          handler_error("VM `#{vm_id}' is no longer in the database")
+        end
+
+        if @vm.agent_id.nil?
+          handler_error("VM `#{vm_id}' doesn't have an agent id")
+        end
+
+        if @vm.cid.nil?
+          handler_error("VM `#{vm_id}' doesn't have a cloud id")
+        end
       end
 
       def description
-        "Agent #{@agent_id} in VM #{@vm_id} is NOT responding"
+        instance = @vm.instance
+        if instance.nil?
+          vm_description = "Unknown VM"
+        else
+          job = instance.job || "unknown job"
+          index = instance.index || "unknown index"
+          vm_description = "#{job}/#{index}"
+        end
+        "#{vm_description} (#{@vm.cid}) is not responding"
       end
 
       resolution :ignore do
-        plan { "Report problem" }
+        plan { "Ignore problem" }
         action { }
       end
 
       resolution :reboot_vm do
-        plan { "Reboot vm #{@vm_id}" }
+        plan { "Reboot VM" }
         action { reboot_vm }
       end
 
-      def reboot_vm
-        cloud.reboot_vm(@vm.cid)
-        handler_error("Agent still unresponsive after reboot") if problem_still_exists?
+      def agent_alive?
+        agent_client(@vm).ping
+        true
+      rescue Bosh::Director::Client::TimeoutException
+        false
       end
+
+      def reboot_vm
+        # TODO: think about flapping agent problem
+        if agent_alive?
+          handler_error("Agent is responding now, skipping reboot")
+        end
+
+        cloud.reboot_vm(@vm.cid)
+        begin
+          agent_client(@vm).wait_until_ready
+        rescue Bosh::Director::Client::TimeoutException
+          handler_error("Agent still unresponsive after reboot")
+        end
+      end
+
     end
   end
 end
