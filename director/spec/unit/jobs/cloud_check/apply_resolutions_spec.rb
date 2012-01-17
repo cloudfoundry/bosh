@@ -19,6 +19,15 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
       disks = []
       problems = [ ]
       # Couple of orphan disks
+      agent = mock("agent")
+      agent.should_receive(:list_disk).and_return([])
+
+      cloud = mock("cloud")
+      Bosh::Director::Config.stub!(:cloud).and_return(cloud)
+      cloud.should_receive(:detach_disk).exactly(1).times
+      cloud.should_receive(:delete_disk).exactly(1).times
+
+      Bosh::Director::AgentClient.stub!(:new).and_return(agent)
       2.times do
         disk = Bosh::Director::Models::PersistentDisk.make(:active => false)
         disks << disk
