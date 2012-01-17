@@ -401,6 +401,7 @@ module Bosh
           usage  "cloudcheck"
           desc   "Cloud consistency check and interactive repair"
           option "--auto", "resolve problems automatically (not recommended for production)"
+          option "--report", "generate report only, don't attempt to resolve problems"
           route  :cloud_check, :perform
         end
       end
@@ -437,7 +438,7 @@ module Bosh
       end
 
       def add_shortcuts
-        { "st" => "status", "props" => "properties" }.each do |short, long|
+        { "st" => "status", "props" => "properties", "cck" => "cloudcheck" }.each do |short, long|
           @parse_tree[short] = @parse_tree[long]
         end
       end

@@ -15,5 +15,6 @@ module Bosh::Director::Models
     end
   end
 
-  Deployment.plugin :association_dependencies, :stemcells => :nullify
+  Deployment.plugin :association_dependencies
+  Deployment.add_association_dependencies :stemcells => :nullify, :problems => :destroy
 end
