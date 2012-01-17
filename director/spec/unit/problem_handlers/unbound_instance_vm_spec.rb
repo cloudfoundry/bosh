@@ -44,25 +44,37 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
     @handler.description.should == "VM `vm-cid' reports itself as `mysql_node/0' but does not have a bound instance"
   end
 
+  describe "common validations" do
+    [:delete_vm, :reassociate_vm].each do |resolution|
+      it "fails if VM now has no job according to agent state" do
+        @agent.should_receive(:get_state).and_return("job" => nil)
+
+        lambda {
+          @handler.apply_resolution(resolution)
+        }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM now properly reports no job")
+      end
+
+      it "fails if VM now has no job according to agent state" do
+        Bosh::Director::Models::Instance.make(:job => "mysql_node", :index => 0, :vm_id => @vm.id)
+
+        lambda {
+          @handler.apply_resolution(resolution)
+        }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Instance is now bound to VM")
+      end
+
+      it "fails if VM is not responding" do
+        @agent.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
+
+        lambda {
+          @handler.apply_resolution(:delete_vm)
+        }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM `vm-cid' is not responding")
+      end
+    end
+  end
+
   describe "delete_vm resolution" do
-    it "fails if VM now has no job according to agent state" do
-      @agent.should_receive(:get_state).and_return("job" => nil)
-
-      lambda {
-        @handler.apply_resolution(:delete_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM now properly reports no job")
-    end
-
-    it "fails if VM now has no job according to agent state" do
-      Bosh::Director::Models::Instance.make(:job => "mysql_node", :index => 0, :vm_id => @vm.id)
-
-      lambda {
-        @handler.apply_resolution(:delete_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "Instance is now bound to VM")
-    end
-
     it "fails if VM has a persistent disk" do
-      @agent.should_receive(:get_state).and_return("job" => "mysql_node")
+      @agent.should_receive(:get_state).and_return("job" => {"name" => "mysql_node"})
       @agent.should_receive(:list_disk).and_return(["some-disk"])
 
       lambda {
@@ -70,16 +82,8 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
       }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM has persistent disk attached")
     end
 
-    it "fails if VM is not responding" do
-      @agent.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
-
-      lambda {
-        @handler.apply_resolution(:delete_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "VM is not responding")
-    end
-
     it "deletes VM from the cloud and DB" do
-      @agent.should_receive(:get_state).and_return("job" => "mysql_node")
+      @agent.should_receive(:get_state).and_return("job" => {"name" => "mysql_node"})
       @agent.should_receive(:list_disk).and_return([])
       @cloud.should_receive(:delete_vm).with("vm-cid")
 
@@ -88,6 +92,38 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
       lambda {
         @vm.reload
       }.should raise_error(Sequel::Error, "Record not found")
+    end
+  end
+
+  describe "reassociate_vm resolution" do
+    it "fails if no instances in DB match this VM" do
+      @agent.should_receive(:get_state).and_return("job" => {"name" => "mysql_node"})
+
+      lambda {
+        @handler.apply_resolution(:reassociate_vm)
+      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "No instances in DB match this VM")
+    end
+
+    it "fails if instance is referencing another VM" do
+      instance = Bosh::Director::Models::Instance.
+        make(:deployment_id => @vm.deployment_id, :job => "mysql_node", :index => 0)
+      @agent.should_receive(:get_state).and_return("job" => {"name" => "mysql_node"})
+
+      lambda {
+        @handler.apply_resolution(:reassociate_vm)
+      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError, "The corresponding instance is associated with another VM")
+    end
+
+    it "reassociates VM record with its instance record" do
+      instance = Bosh::Director::Models::Instance.
+        make(:deployment_id => @vm.deployment_id, :job => "mysql_node", :index => 0)
+      instance.update(:vm => nil)
+
+      @agent.should_receive(:get_state).and_return("job" => {"name" => "mysql_node"})
+      @handler.apply_resolution(:reassociate_vm)
+
+      instance.reload
+      instance.vm_id.should == @vm.id
     end
   end
 end
