@@ -1,13 +1,9 @@
 module Bosh::Director
   module ProblemHandlers
-    class HandlerError < StandardError; end
-
-    # This timeout has been made pretty short mainly
-    # to avoid long cloudchecks, however 10 seconds should
-    # still be pretty generous interval for agent to respond.
-    DEFAULT_AGENT_TIMEOUT = 10
 
     class Base
+      include CloudcheckHelper
+
       attr_reader :data
       attr_accessor :job # so we can checkpoint task
 
@@ -29,8 +25,9 @@ module Bosh::Director
         end
 
         handler_class.new(resource_id, data)
-      rescue HandlerError => e
-        create_by_type(:invalid_problem, resource_id, { "error" => e, "original_type" => type.to_s })
+      rescue ProblemHandlerError => e
+        create_by_type(:invalid_problem, resource_id,
+                       { "error" => e, "original_type" => type.to_s })
       end
 
       # Problem state is  described by constructor parameters.
@@ -53,22 +50,7 @@ module Bosh::Director
         if @job.nil?
           handler_error("Cannot talk to cloud outside of job context")
         end
-        @cloud ||= Config.cloud
-      end
-
-      def agent_client(vm, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
-        options = {
-          :timeout => timeout,
-          :retry_methods => { :get_state => retries }
-        }
-        @clients ||= {}
-        @clients[vm.agent_id] ||= AgentClient.new(vm.agent_id, options)
-      end
-
-      def agent_timeout_guard(vm, &block)
-        yield agent_client(vm)
-      rescue Bosh::Director::Client::TimeoutException
-        handler_error("VM `#{vm.cid}' is not responding")
+        super
       end
 
       # Problem description
@@ -101,10 +83,6 @@ module Bosh::Director
 
       def auto_resolve
         apply_resolution(auto_resolution)
-      end
-
-      def handler_error(message)
-        raise HandlerError, message
       end
 
       # Registration DSL

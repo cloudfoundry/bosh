@@ -53,7 +53,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         @handler.apply_resolution(:reboot_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Agent is responding now, skipping reboot")
     end
 
@@ -72,7 +72,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         @handler.apply_resolution(:reboot_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Agent still unresponsive after reboot")
     end
   end
@@ -84,7 +84,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         @handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Agent is responding now, skipping reboot")
     end
 
@@ -93,7 +93,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         @handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Unable to look up VM apply spec")
     end
 
@@ -104,7 +104,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Invalid apply spec format")
     end
 
@@ -115,7 +115,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Unknown stemcell name and/or version")
     end
 
@@ -135,7 +135,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       lambda {
         handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlers::HandlerError,
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Unable to find stemcell `bosh-stemcell 3.0.2'")
     end
 
