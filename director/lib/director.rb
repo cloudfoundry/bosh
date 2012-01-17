@@ -74,6 +74,7 @@ require "director/cloudcheck_helper"
 require "director/problem_handlers/base"
 require "director/problem_handlers/invalid_problem"
 require "director/problem_handlers/inactive_disk"
+require "director/problem_handlers/out_of_sync_vm"
 require "director/problem_handlers/unresponsive_agent"
 require "director/problem_handlers/unbound_instance_vm"
 

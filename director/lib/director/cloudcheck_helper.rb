@@ -60,7 +60,10 @@ module Bosh::Director
       end
 
       cloud.delete_vm(vm.cid)
-      vm.destroy
+      vm.db.transaction do
+        vm.instance.update(:vm => nil) if vm.instance
+        vm.destroy
+      end
     end
 
     def recreate_vm(vm)
