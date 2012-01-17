@@ -1,5 +1,6 @@
 require "director/models/compiled_package"
 require "director/models/deployment"
+require "director/models/deployment_problem"
 require "director/models/deployment_property"
 require "director/models/instance"
 require "director/models/log_bundle"
@@ -18,3 +19,4 @@ module Bosh::Director
     VALID_ID = /^[-a-z0-9_.]+$/i
   end
 end
+
