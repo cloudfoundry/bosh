@@ -19,10 +19,12 @@ module Bosh::Director
       super(msg)
       @omit_stack = options[:omit_stack]
     end
-
   end
 
-  class NoDiskSpace < StandardError
+  class CloudError < StandardError; end
+  class VMNotFound < CloudError; end
+
+  class RetriableCloudError < CloudError
     attr_accessor :ok_to_retry
 
     def initialize(ok_to_retry)
@@ -30,21 +32,9 @@ module Bosh::Director
     end
   end
 
-  class DiskNotAttached < StandardError
-    attr_accessor :ok_to_retry
-
-    def initialize(ok_to_retry)
-      @ok_to_retry = ok_to_retry
-    end
-  end
-
-  class DiskNotFound < StandardError
-    attr_accessor :ok_to_retry
-
-    def initialize(ok_to_retry)
-      @ok_to_retry = ok_to_retry
-    end
-  end
+  class NoDiskSpace < RetriableCloudError; end
+  class DiskNotAttached < RetriableCloudError; end
+  class DiskNotFound < RetriableCloudError; end
 
   [
    ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
