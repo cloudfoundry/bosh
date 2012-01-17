@@ -226,7 +226,11 @@ module Bosh::Cli
         progress_bar.label = time_with_eta(task_time, @eta)
 
         progress_bar.clear_line
-        task_name = task.name.downcase
+
+        task_name = task.name
+        if task_name !~ /^[A-Z]{2}/
+          task_name = task_name[0].downcase + task_name[1..-1]
+        end
 
         if event["state"] == "failed"
           status = [task_name.red, event_data["error"]].compact.join(": ") # TODO: truncate?
