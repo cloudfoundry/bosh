@@ -144,15 +144,10 @@ find / -xdev -perm +6000 -a -type f \
 # the bosh agent installs a config that rotates on size
 mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
 
+# Setup bosh specific sysctl
+cp 60-bosh-sysctl.conf /etc/sysctl.d
+chmod 0644 /etc/sysctl.d/60-bosh-sysctl.conf
+
 # Clean out src
 cd /var/tmp
 rm -fr ${bosh_app_dir}/bosh/src
-
-# Remove existing rp_filter settings
-cp /etc/sysctl.conf /tmp/sysctl.conf
-grep -v "net.ipv4.conf.default.rp_filter" /tmp/sysctl.conf | grep -v "net.ipv4.conf.all.rp_filter" > /etc/sysctl.conf
-rm /tmp/sysctl.conf
-
-echo "# Setup rp_filter in loose mode" >> /etc/sysctl.conf
-echo "net.ipv4.conf.default.rp_filter=2" >> /etc/sysctl.conf
-echo "net.ipv4.conf.all.rp_filter=2" >> /etc/sysctl.conf
