@@ -77,6 +77,7 @@ require "director/problem_handlers/inactive_disk"
 require "director/problem_handlers/out_of_sync_vm"
 require "director/problem_handlers/unresponsive_agent"
 require "director/problem_handlers/unbound_instance_vm"
+require "director/problem_handlers/mount_info_mismatch"
 
 require "director/jobs/base_job"
 require "director/jobs/delete_deployment"

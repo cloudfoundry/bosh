@@ -11,6 +11,7 @@ module Bosh::Director
           @deployment = Models::Deployment.find(:name => deployment_name)
           @problem_lock = Mutex.new
           raise "Deployment `#{deployment_name}' not found" if @deployment.nil?
+          @agent_disks = {}
         end
 
         def perform
@@ -19,8 +20,9 @@ module Bosh::Director
             reset
             # TODO: decide if scanning procedures should be
             # extracted into their own classes (for clarity)
-            scan_disks
             scan_vms
+            # always run 'scan_vms' before 'scan_disks'
+            scan_disks
             "scan complete"
           end
         end
@@ -48,7 +50,9 @@ module Bosh::Director
             end
           end
 
-          track_and_log("#{results[:ok]} OK, #{results[:inactive]} inactive")
+          track_and_log("#{results[:ok]} OK, " +
+                        "#{results[:inactive]} inactive, " +
+                        "#{results[:mount_info_mismatch]} mount-info mismatch")
         end
 
         def scan_vms
@@ -75,10 +79,29 @@ module Bosh::Director
         end
 
         def scan_disk(disk)
+          # inactive disks
           if !disk.active
             @logger.info("Found inactive disk: #{disk.id}")
             problem_found(:inactive_disk, disk)
-            :inactive
+            return :inactive
+          end
+
+          disk_cid = disk.disk_cid
+
+          vm_cid = disk.instance.vm.cid if disk.instance && disk.instance.vm
+          if vm_cid.nil?
+            # With the db dependencies this should not happen.
+            @logger.warn("Disk #{disk_cid} is not associated to any VM. Skipping scan")
+            return :ok
+          end
+
+          owner_vms = get_disk_owners(disk_cid) || []
+          # active disk is not mounted or mounted more than once -or-
+          # the disk is mounted on a vm that is different form the record.
+          if owner_vms.size != 1 || owner_vms.first != vm_cid
+            @logger.info("Found problem in mount info: active disk #{disk_cid} mounted on #{owner_vms.join(', ')}")
+            problem_found(:mount_info_mismatch, disk, :owner_vms => owner_vms)
+            return :mount_info_mismatch
           end
           :ok
         end
@@ -88,13 +111,28 @@ module Bosh::Director
             :timeout => AGENT_TIMEOUT,
             :retry_methods => { :get_state => 0 }
           }
+
+          instance = nil
+          mounted_disk_cid = nil
+          @problem_lock.synchronize do
+            instance = vm.instance
+            mounted_disk_cid = instance.persistent_disk_cid if instance
+          end
+
           agent = AgentClient.new(vm.agent_id, agent_options)
           begin
             state = agent.get_state # TODO: handle invalid state
-
-            instance = vm.instance
             job = state["job"] ? state["job"]["name"] : nil
             index = state["index"]
+
+            # gather mounted disk info. (used by scan_disk)
+            begin
+              disk_list = agent.list_disk
+              mounted_disk_cid = disk_list.first
+            rescue RuntimeError => e
+              @logger.info("agent.list_disk failed on agent #{vm.agent_id}")
+            end
+            add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 
             if state["deployment"] != @deployment.name ||
                 (instance && (instance.job != job || instance.index != index))
@@ -108,9 +146,11 @@ module Bosh::Director
               problem_found(:unbound_instance_vm, vm, :job => job, :index => index)
               return :unbound
             end
-
             :ok
           rescue Bosh::Director::Client::TimeoutException
+            # unresponsive disk, not invalid disk_info
+            add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
+
             @logger.info("Found unresponsive agent #{vm.agent_id}")
             problem_found(:unresponsive_agent, vm)
             :unresponsive
@@ -148,6 +188,15 @@ module Bosh::Director
         end
 
         private
+
+        def add_disk_owner(disk_cid, vm_cid)
+          @agent_disks[disk_cid] ||= []
+          @agent_disks[disk_cid] << vm_cid
+        end
+
+        def get_disk_owners(disk_cid)
+          @agent_disks[disk_cid]
+        end
 
         def with_deployment_lock
           Lock.new("lock:deployment:#{@deployment.name}").lock do
