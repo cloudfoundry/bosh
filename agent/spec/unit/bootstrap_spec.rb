@@ -51,7 +51,7 @@ describe Bosh::Agent::Bootstrap do
   # This doesn't quite belong here
   it "should configure mbus with nats server uri" do
     @processor.load_settings
-    Bosh::Agent::Config.setup({"logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore_options" => {}})
+    Bosh::Agent::Config.setup({"logging" => { "file" => StringIO.new, "level" => "DEBUG" }, "mbus" => nil, "blobstore_options" => {}})
     @processor.update_mbus
     Bosh::Agent::Config.mbus.should == "nats://user:pass@11.0.0.11:4222"
   end
@@ -60,7 +60,7 @@ describe Bosh::Agent::Bootstrap do
     @processor.load_settings
 
     settings = {
-      "logging" => { "level" => "DEBUG" }, "mbus" => nil, "blobstore_options" => { "user" => "agent" }
+      "logging" => { "file" => StringIO.new, "level" => "DEBUG" }, "mbus" => nil, "blobstore_options" => { "user" => "agent" }
     }
     Bosh::Agent::Config.setup(settings)
 
