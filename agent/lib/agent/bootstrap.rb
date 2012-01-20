@@ -132,15 +132,8 @@ module Bosh::Agent
       verify_networks
       write_ubuntu_network_interfaces
       write_resolv_conf
+      gratuitous_arp
 
-      # HACK to send a gratuitous arp every 10 seconds for the first minute
-      # after networking has been reconfigured.
-      Thread.new do
-        6.times do
-          gratuitous_arp
-          sleep 10
-        end
-      end
     end
 
     def verify_networks
@@ -176,12 +169,19 @@ module Bosh::Agent
     end
 
     def gratuitous_arp
-      @networks.each do |name, n|
-        until File.exist?("/sys/class/net/#{n['interface']}")
-          sleep 0.1
+      # HACK to send a gratuitous arp every 10 seconds for the first minute
+      # after networking has been reconfigured.
+      Thread.new do
+        6.times do
+          @networks.each do |name, n|
+            until File.exist?("/sys/class/net/#{n['interface']}")
+              sleep 0.1
+            end
+            logger.info("arping -c 1 -U -I #{n['interface']} #{n['ip']}")
+            `arping -c 1 -U -I #{n['interface']} #{n['ip']}`
+          end
+          sleep 10
         end
-        logger.info("arping -c 1 -U -I #{n['interface']} #{n['ip']}")
-        `arping -c 1 -U -I #{n['interface']} #{n['ip']}`
       end
     end
 
