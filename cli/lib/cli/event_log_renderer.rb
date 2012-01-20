@@ -229,7 +229,7 @@ module Bosh::Cli
 
         task_name = task.name
         if task_name !~ /^[A-Z]{2}/
-          task_name = task_name[0].downcase + task_name[1..-1]
+          task_name = task_name[0..0].downcase + task_name[1..-1]
         end
 
         if event["state"] == "failed"
