@@ -1,8 +1,7 @@
 module Bosh::HealthMonitor
   class TsdbConnection < EventMachine::Connection
 
-    RECONNECT_INTERVAL = 2 # seconds
-    MAX_RETRIES = 10
+    BACKOFF_CEILING = 9
 
     def initialize(host, port)
       @host = host
@@ -28,24 +27,21 @@ module Bosh::HealthMonitor
       if @connected
         @logger.warn("Lost connection to TSDB server at #{@host}:#{@port}")
       end
+      @connected = false
 
-      if @connected || @reconnecting
-        if @retries <= MAX_RETRIES
-          EM.add_timer(RECONNECT_INTERVAL) do
-            @retries += 1
-            @logger.info("Trying to reconnect to TSDB server at #{@host}:#{@port} (#{@retries})...")
-            reconnect(@host, @port)
-          end
-          @reconnecting = true
-        else
-          @reconnecting = false
-        end
-        @connected = false
-      else
-        error_msg = "Couldn't connect to TSDB server at #{@host}:#{@port}"
-        @logger.fatal(error_msg)
-        raise ConnectionError, error_msg
+      retry_in = 2**[@retries, BACKOFF_CEILING].min - 1
+      @retries += 1
+
+      if @retries > 1
+        @logger.info("Failed to reconnect to TSDB, will try again in #{retry_in} seconds...")
       end
+
+      EM.add_timer(retry_in) { tsdb_reconnect }
+    end
+
+    def tsdb_reconnect
+      @logger.info("Trying to reconnect to TSDB server at #{@host}:#{@port} (#{@retries})...")
+      reconnect(@host, @port)
     end
 
     def receive_data(data)
