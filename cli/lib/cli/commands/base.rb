@@ -1,6 +1,9 @@
 module Bosh::Cli
   module Command
     class Base
+      BLOBS_DIR = "blobs"
+      BLOBS_INDEX_FILE = "blob_index.yml"
+
       attr_reader   :cache, :config, :options, :work_dir
       attr_accessor :out, :usage
 
@@ -19,6 +22,10 @@ module Bosh::Cli
         return @release if @release
         check_if_release_dir
         @release = Bosh::Cli::Release.new(@work_dir)
+      end
+
+      def blobstore
+        release.blobstore
       end
 
       def logged_in?
@@ -139,6 +146,79 @@ module Bosh::Cli
         URI.parse(url).to_s
       end
 
+      def check_if_blobs_supported
+        check_if_release_dir
+        if !File.directory?(BLOBS_DIR)
+          err "Can't find blob directory '#{BLOBS_DIR}'."
+        end
+
+        if !File.file?(BLOBS_INDEX_FILE)
+          err "Can't find '#{BLOBS_INDEX_FILE}'"
+        end
+      end
+
+      def check_dirty_blobs
+        if File.file?(File.join(work_dir, BLOBS_INDEX_FILE)) && blob_status != 0
+          err "Your 'blobs' directory is not in sync. Resolve using 'bosh blobs' commands"
+        end
+      end
+
+      def get_blobs_index
+        load_yaml_file(File.join(work_dir, BLOBS_INDEX_FILE))
+      end
+
+      def blob_status(verbose = false)
+        check_if_blobs_supported
+        untracked = []
+        modified = []
+        tracked= []
+        unsynced = []
+
+        local_blobs = {}
+        Dir.chdir(BLOBS_DIR) do
+          Dir.glob("**/*").select { |entry| File.file?(entry) }.each do |file|
+            local_blobs[file] = Digest::SHA1.file(file).hexdigest
+          end
+        end
+        remote_blobs = get_blobs_index
+
+        local_blobs.each do |blob_name, blob_sha|
+          if remote_blobs[blob_name].nil?
+            untracked << blob_name
+          elsif blob_sha != remote_blobs[blob_name]["sha"]
+            modified << blob_name
+          else
+            tracked << blob_name
+          end
+        end
+
+        remote_blobs.each_key do |blob_name|
+          unsynced << blob_name if local_blobs[blob_name].nil?
+        end
+
+        changes = modified.size + untracked.size + unsynced.size
+        return changes unless verbose
+
+        if modified.size > 0
+          say "\nModified blobs ('bosh upload blob' to update): ".green
+          modified.each { |blob| say blob }
+        end
+
+        if untracked.size > 0
+          say "\nNew blobs ('bosh upload blob' to add): ".green
+          untracked.each { |blob| say blob }
+        end
+
+        if unsynced.size > 0
+          say "\nMissing blobs ('bosh sync blob' to fetch) : ".green
+          unsynced.each { |blob| say blob }
+        end
+
+        if changes == 0
+          say "\nRelease blob in sync".green
+        end
+        changes
+      end
     end
   end
 end
