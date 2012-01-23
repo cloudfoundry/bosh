@@ -63,6 +63,9 @@ describe Bosh::Cli::Runner do
     test_cmd(["logout"], :misc, :logout)
     test_cmd(["purge"], :misc, :purge_cache)
 
+    test_cmd(["init", "release"], :release, :init)
+    test_cmd(["init", "release", "/path"], :release, :init, ["/path"])
+
     test_cmd(["upload", "release", "/path"], :release, :upload, ["/path"])
     test_cmd(["upload", "release"], :release, :upload)
     test_cmd(["upload", "stemcell", "/path"], :stemcell, :upload, ["/path"])
