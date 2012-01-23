@@ -27,10 +27,19 @@ describe "messages" do
     end
   end
 
+  def get_free_port
+    socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+    socket.bind(Addrinfo.tcp("127.0.0.1", 0))
+    port = socket.local_address.ip_port
+    socket.close
+    # race condition, but good enough for now
+    port
+  end
+
   before(:all) do
     @user = "nats"
     @pass = "nats"
-    @port = "4224"
+    @port = get_free_port
     @nats_uri = "nats://#{@user}:#{@pass}@localhost:#{@port}"
     @agent_id = "rspec_agent"
 
