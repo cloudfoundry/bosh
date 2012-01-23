@@ -145,7 +145,10 @@ module Bosh::Cli::Command
         exit(1)
       end
 
-      check_if_dirty_state unless force
+      if !force
+        check_dirty_blobs
+        check_if_dirty_state
+      end
 
       confirmation = "Are you sure you want to generate #{'final'.red} version? "
       if final && !dry_run && interactive? && ask("#{confirmation}(type 'yes' to confirm) ") != "yes"
