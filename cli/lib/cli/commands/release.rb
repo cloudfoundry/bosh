@@ -5,6 +5,20 @@ module Bosh::Cli::Command
     include Bosh::Cli::DependencyHelper
     include Bosh::Cli::VersionCalc
 
+    def init(base=nil)
+      if base
+        FileUtils.mkdir_p(base) unless Dir.exist?(base)
+        Dir.chdir(base)
+      end
+
+      err "release already initialized" if in_release_dir?
+
+      %w[jobs packages src].each do |dir|
+        FileUtils.mkdir(dir)
+      end
+      say("release directory initialized".green)
+    end
+
     def verify(tarball_path, *options)
       tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 

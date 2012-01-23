@@ -276,6 +276,12 @@ module Bosh
           option "--terse", "easy to parse output"
         end
 
+        command :init_release do
+          usage "init release [<path>]"
+          desc  "Initialize release directory"
+          route :release, :init
+        end
+
         command :generate_package do
           usage "generate package <name>"
           desc  "Generate package template"
