@@ -11,7 +11,7 @@ module Bosh::Cli
     # final build tarballs should be ignored as well
     # final builds metadata should be checked in
 
-    def initialize(spec, release_dir, final, blobstore, sources_dir = nil)
+    def initialize(spec, release_dir, final, blobstore, sources_dir = nil, blob_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name          = spec["name"]
@@ -19,6 +19,7 @@ module Bosh::Cli
       @dependencies  = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []
       @release_dir   = release_dir
       @sources_dir   = sources_dir || File.join(@release_dir, "src")
+      @blob_dir      = blob_dir || File.join(@release_dir, "blob")
       @final         = final
       @blobstore     = blobstore
       @artefact_type = "package"
@@ -63,7 +64,18 @@ module Bosh::Cli
     def resolved_globs
       @resolved_globs ||= resolve_globs
     end
-    alias_method :files, :resolved_globs
+
+    def source_files
+      resolved_globs[:source]
+    end
+
+    def blob_files
+      resolved_globs[:blob]
+    end
+
+    def files
+      (resolved_globs[:blob] + resolved_globs[:source]).sort
+    end
 
     def build_dir
       @build_dir ||= Dir.mktmpdir
@@ -75,18 +87,17 @@ module Bosh::Cli
 
     def copy_files
       copied = 0
-      in_sources_dir do
 
-        resolved_globs.each do |filename|
-          destination = File.join(build_dir, filename)
+      files.each do |filename|
+        file_path = get_glob_path(filename)
+        destination = File.join(build_dir, filename)
 
-          if File.directory?(filename)
-            FileUtils.mkdir_p(destination)
-          else
-            FileUtils.mkdir_p(File.dirname(destination))
-            FileUtils.cp(filename, destination, :preserve => true)
-            copied += 1
-          end
+        if File.directory?(file_path)
+          FileUtils.mkdir_p(destination)
+        else
+          FileUtils.mkdir_p(File.dirname(destination))
+          FileUtils.cp(file_path, destination, :preserve => true)
+          copied += 1
         end
       end
 
@@ -139,14 +150,23 @@ module Bosh::Cli
 
     private
 
+    def get_glob_path(glob)
+      file_path = File.join(@sources_dir, glob)
+      if !File.exists?(file_path)
+        file_path = File.join(@blob_dir, glob)
+        raise InvalidPackage, "#{glob} cannot be found" if !File.exists?(file_path)
+      end
+      file_path
+    end
+
     def make_fingerprint
       contents = ""
-      # First, source files (+ permissions)
-      in_sources_dir do
-        contents << resolved_globs.sort.map { |file|
-          "%s%s%s" % [ file, File.directory?(file) ? nil : File.read(file), File.stat(file).mode.to_s(8) ]
-        }.join("")
+
+      signatures = files.map do |file|
+        path = get_glob_path(file)
+        "%s%s%s" % [ file, File.directory?(path) ? nil : File.read(path), File.stat(path).mode.to_s(8) ]
       end
+      contents << signatures.join("")
 
       in_package_dir do
         @metadata_files.each do |file|
@@ -159,15 +179,43 @@ module Bosh::Cli
       Digest::SHA1.hexdigest(contents)
     end
 
+    def resolve_globs_helper(list)
+      missing = []
+      matching = []
+
+      list.each do |glob|
+        matched_files = Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
+        if matched_files.size == 0
+          missing << glob
+        else
+          matching += matched_files
+        end
+      end
+      return matching.flatten.sort, missing
+    end
+
     def resolve_globs
+      glob_map = {:blob => [], :source => []}
+      missing = []
+
       in_sources_dir do
-        @globs.map { |glob|
-          matched_files = Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
-          if matched_files.size == 0
-            raise InvalidPackage, "`#{name}' has a glob that resolves to an empty file list: #{glob}"
-          end
-          matched_files
-        }.flatten.sort
+        glob_map[:source], missing = resolve_globs_helper(@globs)
+      end
+
+      in_blob_dir do
+        glob_map[:blob], missing = resolve_globs_helper(missing)
+      end
+
+      if missing.size != 0
+        raise InvalidPackage, "`#{name}' has a glob that resolves to an empty file list: #{missing.join(', ')}"
+      end
+      glob_map
+    end
+
+    def in_blob_dir(&block)
+      # old release does not have 'blob'
+      if File.directory?(@blob_dir)
+        Dir.chdir(@blob_dir) { yield }
       end
     end
 
