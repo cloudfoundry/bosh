@@ -20,7 +20,9 @@ module Bosh::HealthMonitor
         @index = @attributes["index"]
         @job_state = @attributes["job_state"]
 
-        @tags = { "job" => @job, "index" => @index }
+        @tags = {}
+        @tags["job"] = @job if @job
+        @tags["index"] = @index if @index
         @tags["role"] = guess_role
 
         @vitals = @attributes["vitals"] || {}
@@ -103,7 +105,7 @@ module Bosh::HealthMonitor
 
         return "core" if CORE_JOBS.include?(@job.to_s.downcase)
 
-        if @job =~ /(_node$|_gateway$|service)/i
+        if @job.to_s =~ /(_node$|_gateway$|service)/i
           return "service"
         end
 
