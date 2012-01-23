@@ -404,6 +404,27 @@ module Bosh
           option "--report", "generate report only, don't attempt to resolve problems"
           route  :cloud_check, :perform
         end
+
+        command :upload_blob do
+          usage  "upload blob <blobs>"
+          desc   "Upload given blob to the blobstore"
+          option "--force", "bypass duplicate checking"
+          route  :blob, :upload_blob
+        end
+
+        command :sync_blob do
+          usage "sync blob"
+          desc  "Sync blob with the blobstore"
+          option "--force", "overwrite all local copies with the remote blob"
+          route :blob, :sync_blob
+        end
+
+        command :blob_status do
+          usage "blob status"
+          desc  "Print blob status"
+          route :blob, :blob_status
+        end
+
       end
 
       def parse_options!
