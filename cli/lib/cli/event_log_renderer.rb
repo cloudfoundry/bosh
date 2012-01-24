@@ -227,7 +227,7 @@ module Bosh::Cli
 
         progress_bar.clear_line
 
-        task_name = task.name
+        task_name = task.name.to_s
         if task_name !~ /^[A-Z]{2}/
           task_name = task_name[0..0].downcase + task_name[1..-1]
         end
