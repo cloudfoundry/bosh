@@ -55,7 +55,7 @@ module Bosh::Cli
       sorted = builds.sort { |build1, build2|
         cmp = version_cmp(build2["version"], build1["version"])
         if cmp == 0
-          raise "There is a duplicate version `#{version}' in index `#{@index_file}'"
+          raise "There is a duplicate version `#{build1["version"]}' in index `#{@index_file}'"
         end
         cmp
       }
