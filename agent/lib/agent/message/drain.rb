@@ -78,12 +78,14 @@ module Bosh::Agent
         delivery_cond = lock.new_cond
         delivered = false
 
-        # HM notification should be in sync with VM shutdown
-        Thread.new do
-          @nats.publish("hm.agent.shutdown.#{@agent_id}") do
-            lock.synchronize do
-              delivered = true
-              delivery_cond.signal
+        if @nats
+          # HM notification should be in sync with VM shutdown
+          Thread.new do
+            @nats.publish("hm.agent.shutdown.#{@agent_id}") do
+              lock.synchronize do
+                delivered = true
+                delivery_cond.signal
+              end
             end
           end
         end
