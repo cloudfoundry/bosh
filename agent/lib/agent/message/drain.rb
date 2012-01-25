@@ -86,7 +86,7 @@ module Bosh::Agent
               delivery_cond.signal
             end
           end
-        end
+        end if @nats
 
         lock.synchronize do
           delivery_cond.wait(HM_NOTIFY_TIMEOUT) unless delivered

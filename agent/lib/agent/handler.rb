@@ -138,7 +138,7 @@ module Bosh::Agent
             payload = process(processor, args)
 
             if Config.configure && method == 'prepare_network_change'
-              @nats.publish(reply_to, Yajl::Encoder.encode(payload)) {
+              publish(reply_to, payload) {
                 post_prepare_network_change
               }
             else
@@ -171,9 +171,9 @@ module Bosh::Agent
       end
     end
 
-    def publish(reply_to, payload)
+    def publish(reply_to, payload, &blk)
       @logger.info("reply_to: #{reply_to}: payload: #{payload.inspect}")
-      @nats.publish(reply_to, Yajl::Encoder.encode(payload))
+      @nats.publish(reply_to, Yajl::Encoder.encode(payload), blk)
     end
 
     def process_long_running(reply_to, processor, args)
@@ -230,7 +230,7 @@ module Bosh::Agent
     end
 
     def handle_shutdown(reply_to)
-      @logger.info("Shutting down NATS connection")
+      @logger.info("Shutting down #{URI.parse(Config.mbus).scheme.upcase} connection")
       payload = {:value => "shutdown"}
 
       if Bosh::Agent::Config.configure
@@ -238,7 +238,7 @@ module Bosh::Agent
         at_exit { `sv stop agent` }
       end
 
-      @nats.publish(reply_to, Yajl::Encoder.encode(payload)) {
+      publish(reply_to, payload) {
         shutdown
       }
     end

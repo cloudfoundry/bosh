@@ -8,6 +8,9 @@ gem "netaddr"
 gem "blobstore_client", ">= 0.3.8"
 gem "posix-spawn"
 gem "monit_api"
+gem "thin"
+gem "sinatra"
+gem "rack-test"
 
 group :test do
   gem "ci_reporter"
