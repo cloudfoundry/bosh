@@ -87,7 +87,7 @@ module Bosh::Director
         # in vsphere_disks.
         begin
           cloud.delete_disk(@disk.disk_cid)
-        rescue Bosh::Director::DiskNotFound, RuntimeError => e # FIXME
+        rescue Bosh::Clouds::DiskNotFound, RuntimeError => e # FIXME
           @logger.warn(e)
         end
 

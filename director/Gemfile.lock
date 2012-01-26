@@ -15,14 +15,14 @@ GEM
       aws-s3
       httpclient
       uuidtools
+    bosh_common (0.4.0)
+    bosh_cpi (0.4.0)
     builder (3.0.0)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
     columnize (0.3.2)
     daemons (1.1.5)
     diff-lcs (1.1.2)
-    esxmq (0.0.13)
-      nats
     eventmachine (0.12.10)
     httpclient (2.2.0)
     json (1.4.6)
@@ -104,6 +104,12 @@ GEM
     uuidtools (2.1.2)
     vegas (0.1.8)
       rack (>= 1.0.0)
+    vsphere_cpi (0.4.5)
+      bosh_cpi
+      ruby_vim_sdk
+      sequel
+      sqlite3
+      uuidtools
     xml-simple (1.0.15)
     yajl-ruby (0.8.2)
 
@@ -115,8 +121,9 @@ DEPENDENCIES
   autotest
   bcrypt-ruby
   blobstore_client (>= 0.3.4)
+  bosh_common (>= 0.4.0)
+  bosh_cpi (>= 0.4.0)
   ci_reporter
-  esxmq (= 0.0.13)
   eventmachine
   httpclient
   machinist
@@ -133,7 +140,6 @@ DEPENDENCIES
   rspec
   ruby-debug
   ruby-debug19
-  ruby_vim_sdk
   sequel
   simplecov
   simplecov-clover
@@ -142,4 +148,5 @@ DEPENDENCIES
   sqlite3
   thin
   uuidtools
+  vsphere_cpi (>= 0.4.5)
   yajl-ruby
