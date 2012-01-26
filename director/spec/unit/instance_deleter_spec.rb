@@ -84,14 +84,14 @@ describe Bosh::Director::InstanceDeleter do
 
     it "should ignore errors to inactive persistent disks" do
       disk = Models::PersistentDisk.make(:active => false)
-      @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(DiskNotFound.new(true))
+      @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
       @deleter.delete_persistent_disks([disk])
     end
 
     it "should not ignore errors to active persistent disks" do
       disk = Models::PersistentDisk.make(:active => true)
-      @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(DiskNotFound.new(true))
-      lambda { @deleter.delete_persistent_disks([disk]) }.should raise_error(DiskNotFound)
+      @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
+      lambda { @deleter.delete_persistent_disks([disk]) }.should raise_error(Bosh::Clouds::DiskNotFound)
     end
 
   end
