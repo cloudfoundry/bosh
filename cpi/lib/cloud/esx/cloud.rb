@@ -15,7 +15,7 @@ module EsxCloud
     attr_accessor :client
 
     def initialize(options)
-      @logger = Bosh::Director::Config.logger
+      @logger = Bosh::Clouds::Config.logger
       @agent_properties = options["agent"]
       @esxmgr = options["esxmgr"]
 

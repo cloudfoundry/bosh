@@ -3,7 +3,7 @@ require "fileutils"
 
 module Bosh
 
-  module Director
+  module Clouds
     class DummyCloud
 
       class NotImplemented < StandardError; end

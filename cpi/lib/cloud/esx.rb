@@ -1,6 +1,6 @@
 autoload :EsxCloud, "director/cloud/esx/cloud"
 
-module Bosh::Director
+module Bosh
 
   module Clouds
 

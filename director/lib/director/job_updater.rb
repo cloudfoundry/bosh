@@ -36,7 +36,7 @@ module Bosh::Director
                 @logger.info("Deleting an in-active disk #{disk.disk_cid}") unless disk.active
                 begin
                   @cloud.delete_disk(disk.disk_cid)
-                rescue DiskNotFound
+                rescue Bosh::Clouds::DiskNotFound
                   raise if disk.active
                 end
                 disk.destroy

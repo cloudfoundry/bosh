@@ -2,6 +2,7 @@ source :rubygems
 
 gem "bcrypt-ruby"
 gem "blobstore_client", ">=0.3.4"
+gem "bosh_cpi", ">=0.4.1"
 gem "esxmq" , "0.0.13"
 gem "eventmachine"
 gem "httpclient"

@@ -29,7 +29,7 @@ module VSphereCloud
       @service_content = service_instance.content
       @metrics_cache  = {}
       @lock = Mutex.new
-      @logger = Bosh::Director::Config.logger
+      @logger = Bosh::Clouds::Config.logger
     end
 
     def login(username, password, locale)
