@@ -6,10 +6,10 @@ require 'pty'
 require 'expect'
 require 'rack/test'
 require "ruby_vim_sdk"
-require "director/cloud/vsphere/client"
-require "director/cloud/vsphere/resources"
+require "cloud/vsphere/client"
+require "cloud/vsphere/resources"
 
-describe Bosh::Director::Clouds::VSphere do
+describe Bosh::Clouds::VSphere do
   include Rack::Test::Methods
   include Bosh::Director::IpUtil
   include VimSdk
@@ -104,7 +104,7 @@ describe Bosh::Director::Clouds::VSphere do
 
     Bosh::Director::Config.configure(@test_config)
     cloud_properties = @test_config["cloud"]["properties"]
-    @cloud = Bosh::Director::Clouds::VSphere.new(cloud_properties)
+    @cloud = Bosh::Clouds::VSphere.new(cloud_properties)
 
     vcenter = cloud_properties["vcenters"][0]
     @vsphere_client = VSphereCloud::Client.new("https://#{vcenter["host"]}/sdk/vimService", cloud_properties)
@@ -147,11 +147,11 @@ describe Bosh::Director::Clouds::VSphere do
 
   before(:each) do
     Bosh::Director::Config.configure(@test_config)
-    @cloud = Bosh::Director::Clouds::VSphere.new(@test_config["cloud"]["properties"])
+    @cloud = Bosh::Clouds::VSphere.new(@test_config["cloud"]["properties"])
   end
 
   after(:all) do
-    @cloud = Bosh::Director::Clouds::VSphere.new(@test_config["cloud"]["properties"])
+    @cloud = Bosh::Clouds::VSphere.new(@test_config["cloud"]["properties"])
     @cloud.delete_stemcell(@stemcell_name)
     Bosh::Director::Cpi::Sandbox.stop
   end

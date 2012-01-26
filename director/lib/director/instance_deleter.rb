@@ -76,7 +76,7 @@ module Bosh::Director
         @logger.info("Deleting disk: '#{disk.disk_cid}', #{disk.active ? "active" : "inactive"}")
         begin
           @cloud.delete_disk(disk.disk_cid)
-        rescue DiskNotFound => e
+        rescue Bosh::Clouds::DiskNotFound => e
           @logger.warn("Disk not found: #{disk.disk_cid}")
           # TODO: investigate if we really want to swallow this for inactive disks
           raise if disk.active
