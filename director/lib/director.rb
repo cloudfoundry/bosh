@@ -28,13 +28,13 @@ require "sequel"
 require "sinatra/base"
 require "uuidtools"
 require "yajl"
-require "esxmq"
+require "nats/client"
 
 require "director/deep_copy"
 require "director/dns_helper"
 require "director/ext"
 require "director/ip_util"
-require "director/thread_formatter"
+require "common/thread_formatter"
 require "director/validation_helper"
 
 require "director/version"
@@ -45,10 +45,7 @@ require "director/task_result_file"
 require "director/api"
 require "director/client"
 require "director/agent_client"
-require "director/cloud"
-require "director/cloud/vsphere"
-require "director/cloud/esx"
-require "director/cloud/dummy"
+require "cloud"
 require "director/configuration_hasher"
 require "director/cycle_helper"
 require "director/deployment_plan"
@@ -63,7 +60,7 @@ require "director/nats_rpc"
 require "director/package_compiler"
 require "director/resource_pool_updater"
 require "director/sequel"
-require "director/thread_pool"
+require "common/thread_pool"
 
 require "director/cloudcheck_helper"
 require "director/problem_handlers/base"
@@ -89,6 +86,8 @@ require "director/jobs/ssh"
 
 module Bosh::Director
   autoload :Models, "director/models"
+
+  ThreadPool = Bosh::ThreadPool
 
   class Controller
     PUBLIC_URLS = ["/info"]

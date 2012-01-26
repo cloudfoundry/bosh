@@ -67,6 +67,7 @@ module SpecHelper
       @db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
       @db.loggers << @logger
       Bosh::Director::Config.db = @db
+      Bosh::Clouds::Config.db = @db
 
       @dns_db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
       @dns_db.loggers << @logger
@@ -97,6 +98,7 @@ module SpecHelper
 
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @db
+      Bosh::Clouds::Config.db = @db
       Bosh::Director::Config.dns_db = @dns_db
       Bosh::Director::Config.logger = @logger
     end
