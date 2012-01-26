@@ -2,7 +2,9 @@ source :rubygems
 
 gem "bcrypt-ruby"
 gem "blobstore_client", ">=0.3.4"
-gem "esxmq" , "0.0.13"
+gem "bosh_common", ">=0.4.0"
+gem "bosh_cpi", ">=0.4.0"
+gem "vsphere_cpi", ">=0.4.5"
 gem "eventmachine"
 gem "httpclient"
 gem "nats", "=0.4.22.beta.4"
@@ -11,7 +13,6 @@ gem "rack-test"         # needed for console
 gem "rake"
 gem "redis"
 gem "resque"
-gem "ruby_vim_sdk"
 gem "sequel"
 gem "sinatra"
 gem "SystemTimer", :platforms => :ruby_18

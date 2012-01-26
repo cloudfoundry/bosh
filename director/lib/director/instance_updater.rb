@@ -195,13 +195,13 @@ module Bosh::Director
 
       begin
         @cloud.detach_disk(vm_cid, disk_cid) if vm_cid
-      rescue DiskNotAttached
+      rescue Bosh::Clouds::DiskNotAttached
         raise if disk.active
       end
 
       begin
         @cloud.delete_disk(disk_cid)
-      rescue DiskNotFound
+      rescue Bosh::Clouds::DiskNotFound
         raise if disk.active
       end
       disk.destroy
@@ -233,7 +233,7 @@ module Bosh::Director
         delete_vm
         create_vm(new_disk_cid)
         attach_disk
-      rescue NoDiskSpace => e
+      rescue Bosh::Clouds::NoDiskSpace => e
         if e.ok_to_retry && num_retries < MAX_ATTACH_DISK_TRIES
           num_retries += 1
           @logger.warn("Retrying attach disk operation #{num_retries}")
@@ -260,7 +260,7 @@ module Bosh::Director
 
     def attach_missing_disk
       attach_disk if @instance.persistent_disk_cid && !@instance_spec.disk_currently_attached?
-    rescue NoDiskSpace => e
+    rescue Bosh::Clouds::NoDiskSpace => e
       update_resource_pool(@instance.persistent_disk_cid)
     end
 
@@ -305,7 +305,7 @@ module Bosh::Director
 
         begin
           @cloud.attach_disk(@vm.cid, disk_cid)
-        rescue NoDiskSpace => e
+        rescue Bosh::Clouds::NoDiskSpace => e
           if e.ok_to_retry
             @logger.warn("Retrying attach disk operation after persistent disk update failed")
             # Recreate the vm

@@ -129,7 +129,7 @@ module Bosh::Director
         end
 
         cloud.delete_vm(vm.cid)
-      rescue VMNotFound => e
+      rescue Bosh::Clouds::VMNotFound => e
         @logger.warn("VM `#{vm.cid}' might have already been deleted from the cloud")
       end
 
