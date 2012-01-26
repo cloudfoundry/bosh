@@ -95,6 +95,8 @@ module Bosh::Director
         @db = configure_db(config["db"])
         @dns_db = configure_db(config["dns"]["db"]) if config["dns"] && config["dns"]["db"]
 
+        Bosh::Clouds::Config.configure(self)
+
         @lock = Monitor.new
       end
 
@@ -122,16 +124,8 @@ module Bosh::Director
       def cloud
         @lock.synchronize do
           if @cloud.nil?
-            case @cloud_options["plugin"]
-            when "vsphere"
-              @cloud = Clouds::VSphere.new(@cloud_options["properties"])
-            when "esx"
-              @cloud = Clouds::Esx.new(@cloud_options["properties"])
-            when "dummy"
-              @cloud = DummyCloud.new(@cloud_options["properties"])
-            else
-              raise "Could not find Cloud Provider Plugin: #{@cloud_options["plugin"]}"
-            end
+            @cloud = Bosh::Clouds::Provider.create(@cloud_options["plugin"],
+                                                   @cloud_options["properties"])
           end
         end
         @cloud
