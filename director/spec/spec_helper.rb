@@ -193,6 +193,7 @@ Rspec.configure do |rspec|
     Bosh::Director::Config.db = db
     Bosh::Director::Config.dns_db = dns_db
     Bosh::Director::Config.logger = logger
+    Bosh::Clouds::Config.db = db
 
     reset_db(db)
     reset_db(dns_db)
