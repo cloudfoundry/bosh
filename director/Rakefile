@@ -22,19 +22,67 @@ task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 desc "Run specs for CI"
 task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
 
-desc "Generate new migration"
-task "new_migration", :name do |t, args|
-  name = args[:name]
-  if name.nil?
-    puts "Please provide migration name: rake new_migration name=<name>"
-    exit(1)
+namespace "migration" do
+  desc "Generate new migration"
+  task "new", :type, :name do |task, args|
+    type = args[:type]
+    if type.nil?
+      puts "Please provide migration type: rake #{task.name}[<type>, <name>]"
+      exit(1)
+    elsif !File.directory?("db/migrations/#{type}")
+      Dir.chdir("db/migrations")
+      valid_types = Dir["*"].select {|file| File.directory?(file)}
+      puts "Invalid type: '#{type}', must be one of: #{valid_types.join(", ")}"
+      exit(1)
+    end
+
+    name = args[:name]
+    if name.nil?
+      puts "Please provide migration name: rake #{task.name}[<type>, <name>]"
+      exit(1)
+    end
+
+    timestamp = Time.new.getutc.strftime("%Y%m%d%H%M%S")
+    filename = "db/migrations/#{type}/#{timestamp}_#{name}.rb"
+
+    puts "Creating #{filename}"
+    FileUtils.touch(filename)
   end
 
-  timestamp = Time.new.getutc.strftime("%Y%m%d%H%M%S")
-  filename = "db/migrations/#{timestamp}_#{name}.rb"
+  desc "Run migrations"
+  task "run", :config do |task, args|
+    config_file = args[:config]
+    if config_file.nil?
+      abort("Please provide a path to the config file: rake #{task.name}[<path to config file>]")
+    elsif !File.file?(config_file)
+      abort("Invalid config file '#{config_file}'")
+    end
 
-  puts "Creating #{filename}"
-  FileUtils.touch(filename)
+    config = YAML.load_file(config_file)
+    abort ("Director database config missing from config file") unless config["db"] && config["db"]["database"]
+
+    migrate(config["db"]["database"], nil, "db/migrations/director", nil)
+    migrate(config["db"]["database"], "vsphere_cpi_schema", "db/migrations/vsphere_cpi", nil)
+  end
+
+  def migrate(database, schema_table, dir, target)
+    dir = "\"#{dir}\""
+    schema_table = schema_table ? "\"#{schema_table}\"" : "nil"
+    target = target ? "\"#{target}\"" : "nil"
+
+    script=<<-EOS
+      Sequel.extension :migration
+      Sequel::TimestampMigrator.new(DB, #{dir}, :table => #{schema_table}, :target => #{target}).run
+    EOS
+
+    IO.popen("bundle exec sequel '#{database}'", :mode => "r+") do |io|
+      io.write(script)
+      io.close_write
+      puts io.read
+    end
+
+    exit(1) unless $?.exitstatus == 0
+  end
 end
 
 namespace "bundler" do

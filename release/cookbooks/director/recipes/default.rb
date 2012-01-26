@@ -103,7 +103,7 @@ deploy_revision node[:director][:path] do
   user node[:director][:runner]
   revision "HEAD"
   migrate true
-  migration_command "cd director && PATH=#{node[:ruby][:path]}/bin:$PATH #{node[:ruby][:path]}/bin/bundle exec sequel -m db/migrations 'postgres://#{node[:postgresql][:user]}:#{node[:postgresql][:password]}@#{node[:hosts][:postgresql]}/#{node[:postgresql][:database]}'"
+  migration_command "cd director && PATH=#{node[:ruby][:path]}/bin:$PATH #{node[:ruby][:path]}/bin/bundle exec rake migration:run[#{node[:director][:path]}/shared/config/director.yml]"
   shallow_clone true
   action :force_deploy
   restart_command do

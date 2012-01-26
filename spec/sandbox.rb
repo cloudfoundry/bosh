@@ -30,6 +30,7 @@ module Bosh
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
 
       BLOBSTORE_STORAGE_DIR = "/tmp/bosh_test_blobstore"
+      TESTCASE_SQLITE_DB = "/tmp/director.sqlite"
 
       class << self
 
@@ -49,7 +50,16 @@ module Bosh
 
         def start
           @sqlite_db = File.join(ASSETS_PATH, "director.db")
-          `BUNDLE_GEMFILE="#{DIRECTOR_PATH}/Gemfile" bundle exec sequel sqlite://#{@sqlite_db} -m #{MIGRATIONS_PATH}`
+          FileUtils.rm_rf(TESTCASE_SQLITE_DB)
+
+          Bundler.with_clean_env do
+            Dir.chdir(DIRECTOR_PATH) do
+              output = `BUNDLE_GEMFILE=#{DIRECTOR_PATH}/Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
+              puts output unless $?.exitstatus == 0
+            end
+
+          end
+          FileUtils.cp(TESTCASE_SQLITE_DB, @sqlite_db)
 
           blobstore_env = { "BUNDLE_GEMFILE" => "#{BLOBSTORE_PATH}/Gemfile" }
 
@@ -85,7 +95,7 @@ module Bosh
 
           Redis.new(:host => "localhost", :port => 63795).flushdb
 
-          FileUtils.cp(@sqlite_db, "/tmp/director.sqlite")
+          FileUtils.cp(@sqlite_db, TESTCASE_SQLITE_DB)
 
           if ENV['DEBUG']
             name = pick_unique_name(name)
