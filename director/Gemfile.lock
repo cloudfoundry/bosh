@@ -15,6 +15,11 @@ GEM
       aws-s3
       httpclient
       uuidtools
+    bosh_cpi (0.4.1)
+      esxmq
+      ruby_vim_sdk
+      sequel
+      uuidtools
     builder (3.0.0)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
@@ -115,6 +120,7 @@ DEPENDENCIES
   autotest
   bcrypt-ruby
   blobstore_client (>= 0.3.4)
+  bosh_cpi (>= 0.4.1)
   ci_reporter
   esxmq (= 0.0.13)
   eventmachine

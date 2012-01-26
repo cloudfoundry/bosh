@@ -69,7 +69,7 @@ module VSphereCloud
       @datacenters      = {}
       @timestamp        = 0
       @lock             = Monitor.new
-      @logger           = Bosh::Director::Config.logger
+      @logger           = Bosh::Clouds::Config.logger
       @mem_over_commit  = mem_over_commit
     end
 
@@ -84,12 +84,12 @@ module VSphereCloud
       return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"] || resource_pools_in_use?(datacenter.spec)
 
       # Create unique folder
-      sub_folder_name = [base_folder_name, Bosh::Director::Config.uuid]
+      sub_folder_name = [base_folder_name, Bosh::Clouds::Config.uuid]
       @logger.debug("Searching for folder #{sub_folder_name.join("/")}")
       sub_folder = @client.find_by_inventory_path([datacenter.name, "vm", sub_folder_name])
       if sub_folder.nil?
         @logger.info("Creating folder #{sub_folder_name.join("/")}")
-        sub_folder = base_folder.create_folder(Bosh::Director::Config.uuid)
+        sub_folder = base_folder.create_folder(Bosh::Clouds::Config.uuid)
       else
         @logger.debug("Found folder #{sub_folder_name.join("/")}")
       end

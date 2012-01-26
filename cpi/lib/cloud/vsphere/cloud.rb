@@ -1,8 +1,8 @@
 require "ruby_vim_sdk"
-require "director/cloud/vsphere/client"
-require "director/cloud/vsphere/lease_updater"
-require "director/cloud/vsphere/resources"
-require "director/cloud/vsphere/models/disk"
+require "cloud/vsphere/client"
+require "cloud/vsphere/lease_updater"
+require "cloud/vsphere/resources"
+require "cloud/vsphere/models/disk"
 
 module VSphereCloud
 
@@ -18,7 +18,7 @@ module VSphereCloud
       raise "Invalid number of VCenters" unless @vcenters.size == 1
       @vcenter = @vcenters[0]
 
-      @logger = Bosh::Director::Config.logger
+      @logger = Bosh::Clouds::Config.logger
 
       @agent_properties = options["agent"]
 
@@ -112,7 +112,7 @@ module VSphereCloud
 
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
-        Bosh::Director::ThreadPool.new(:max_threads => 32).wrap do |pool|
+        Bosh::Clouds::ThreadPool.new(:max_threads => 32).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
             templates = client.get_property(datacenter.template_folder, Vim::Folder, "childEntity", :ensure_all => true)
@@ -423,7 +423,7 @@ module VSphereCloud
       datastore = @resources.find_persistent_datastore(datacenter_name, host_info["cluster"], disk_size)
 
       if datastore.nil?
-        raise Bosh::Director::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info["cluster"]}, #{disk_size}"
+        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info["cluster"]}, #{disk_size}"
       end
 
       # Sanity check, verify that the vm's host can access this datastore
@@ -537,7 +537,7 @@ module VSphereCloud
         vmdk_path = "#{disk.path}.vmdk"
         virtual_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
             device.backing.file_name == vmdk_path }
-        raise Bosh::Director::DiskNotAttached.new(true), "Disk (#{disk_cid}) is not attached to VM (#{vm_cid})" if virtual_disk.nil?
+        raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk_cid}) is not attached to VM (#{vm_cid})" if virtual_disk.nil?
 
         config = Vim::Vm::ConfigSpec.new
         config.device_change = []
@@ -587,7 +587,7 @@ module VSphereCloud
         if disk
           if disk.path
             datacenter = client.find_by_inventory_path(disk.datacenter)
-            raise Bosh::Director::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil? || disk.path.nil?
+            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil? || disk.path.nil?
 
             client.delete_disk(datacenter, disk.path)
           end
@@ -607,7 +607,7 @@ module VSphereCloud
       # TODO: fix when we go to multiple DCs
       datacenter = @resources.datacenters.values.first
       vm = client.find_by_inventory_path([datacenter.name, "vm", datacenter.vm_folder_name, vm_cid])
-      raise Bosh::Director::VMNotFound, "VM `#{vm_cid}' not found" if vm.nil?
+      raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found" if vm.nil?
       vm
     end
 
@@ -1039,7 +1039,7 @@ module VSphereCloud
     end
 
     def delete_all_vms
-      Bosh::Director::ThreadPool.new(:max_threads => 32).wrap do |pool|
+      Bosh::Clouds::ThreadPool.new(:max_threads => 32).wrap do |pool|
         index = 0
 
         @resources.datacenters.each_value do |datacenter|

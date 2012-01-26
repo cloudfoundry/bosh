@@ -21,21 +21,6 @@ module Bosh::Director
     end
   end
 
-  class CloudError < StandardError; end
-  class VMNotFound < CloudError; end
-
-  class RetriableCloudError < CloudError
-    attr_accessor :ok_to_retry
-
-    def initialize(ok_to_retry)
-      @ok_to_retry = ok_to_retry
-    end
-  end
-
-  class NoDiskSpace < RetriableCloudError; end
-  class DiskNotAttached < RetriableCloudError; end
-  class DiskNotFound < RetriableCloudError; end
-
   class ProblemHandlerError < StandardError; end
 
   [

@@ -1,4 +1,16 @@
-module Bosh::Director
+module Bosh; module Clouds; end; end
+
+require "cloud/vsphere"
+require "cloud/esx"
+require "cloud/dummy"
+require "cloud/config"
+require "cloud/errors"
+require "cloud/thread_pool"
+
+require "logger"
+require "uuidtools"
+
+module Bosh
 
   ##
   # CPI - Cloud Provider Interface, used for interfacing with various IaaS APIs.

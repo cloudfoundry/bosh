@@ -1,6 +1,6 @@
-autoload :VSphereCloud, "director/cloud/vsphere/cloud"
+autoload :VSphereCloud, "cloud/vsphere/cloud"
 
-module Bosh::Director
+module Bosh
 
   module Clouds
 

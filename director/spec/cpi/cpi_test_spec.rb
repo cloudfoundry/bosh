@@ -4,8 +4,8 @@ require 'pty'
 require 'expect'
 require 'rack/test'
 require "ruby_vim_sdk"
-require "director/cloud/vsphere/client"
-require "director/cloud/vsphere/resources"
+require "cloud/vsphere/client"
+require "cloud/vsphere/resources"
 
 describe Bosh::Director::Clouds::VSphere do
   include Rack::Test::Methods
