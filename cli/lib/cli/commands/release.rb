@@ -27,7 +27,7 @@ module Bosh::Cli::Command
 
       if release_file.nil?
         check_if_release_dir
-        release_file = Bosh::Cli::Release.dev(work_dir).latest_release_filename
+        release_file = release.latest_release_filename
         if release_file.nil?
           err("The information about latest generated release is missing, please provide release filename")
         end
@@ -48,20 +48,20 @@ module Bosh::Cli::Command
     def upload_manifest(manifest_path)
       manifest       = load_yaml_file(manifest_path)
       remote_release = get_remote_release(manifest["name"]) rescue nil
-      blobstore      = init_blobstore(Bosh::Cli::Release.final(work_dir).blobstore_options)
+      blobstore      = release.blobstore
       tmpdir         = Dir.mktmpdir
 
       at_exit { FileUtils.rm_rf(tmpdir) }
 
-      release = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, remote_release)
+      compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, remote_release)
       need_repack = true
 
-      unless release.exists?
-        release.tarball_path = File.join(tmpdir, "release.tgz")
-        release.compile
+      unless compiler.exists?
+        compiler.tarball_path = File.join(tmpdir, "release.tgz")
+        compiler.compile
         need_repack = false
       end
-      upload_tarball(release.tarball_path, :repack => need_repack)
+      upload_tarball(compiler.tarball_path, :repack => need_repack)
     end
 
     def upload_tarball(tarball_path, options = {})
@@ -121,17 +121,14 @@ module Bosh::Cli::Command
       end
 
       if release_filename
-        dev_release = Bosh::Cli::Release.dev(work_dir)
-        dev_release.update_config(:latest_release_filename => release_filename)
+        release.latest_release_filename = release_filename
+        release.save_config
       end
     end
 
     def create_from_manifest(manifest_file)
       say "Recreating release from the manifest"
-      final_release = Bosh::Cli::Release.final(work_dir)
-      blobstore     = init_blobstore(final_release.blobstore_options)
-
-      Bosh::Cli::ReleaseCompiler.compile(manifest_file, blobstore)
+      Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
     end
 
     def create_from_spec(*options)
@@ -159,33 +156,33 @@ module Bosh::Cli::Command
       packages  = []
       jobs      = []
 
-      final_release = Bosh::Cli::Release.final(work_dir)
-      dev_release   = Bosh::Cli::Release.dev(work_dir)
-
       if final
         header "Building FINAL release".green
-        release = final_release
+        release_name = release.final_name
       else
+        release_name = release.dev_name
         header "Building DEV release".green
-        release = dev_release
       end
 
       if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
         err("You should use CLI >= %s with this release, you have %s" % [ release.min_cli_version, Bosh::Cli::VERSION ])
       end
 
-      if release.name.blank?
+      if release_name.blank?
         confirmation = "Please enter %s release name: " % [ final ? "final" : "development" ]
         name = interactive? ? ask(confirmation).to_s : DEFAULT_RELEASE_NAME
         err("Canceled release creation, no name given") if name.blank?
-        release.update_config(:name => name)
+        if final
+          release.final_name = name
+        else
+          release.dev_name = name
+        end
+        release.save_config
       end
-
-      blobstore = init_blobstore(final_release.blobstore_options)
 
       header "Building packages"
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
-        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, blobstore)
+        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, release.blobstore)
         package.dry_run = dry_run
         say "Building #{package.name.green}..."
         package.build
@@ -215,7 +212,7 @@ module Bosh::Cli::Command
           Bosh::Cli::JobBuilder.run_prepare_script(prepare_script)
         end
 
-        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final, blobstore, built_package_names)
+        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final, release.blobstore, built_package_names)
         job.dry_run = dry_run
         say "Building #{job.name.green}..."
         job.build
@@ -223,7 +220,7 @@ module Bosh::Cli::Command
         nl
       end
 
-      builder = Bosh::Cli::ReleaseBuilder.new(work_dir, packages, jobs, :final => final)
+      builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, :final => final)
 
       unless dry_run
         if manifest_only
@@ -246,23 +243,22 @@ module Bosh::Cli::Command
         say("Release tarball (#{pretty_size(builder.tarball_path)}): #{builder.tarball_path.green}")
       end
 
-      [dev_release, final_release].each do |release|
-        release.update_config(:min_cli_version => Bosh::Cli::VERSION)
-      end
+      release.min_cli_version = Bosh::Cli::VERSION
+      release.save_config
 
       builder.manifest_path
     end
 
     def reset
       check_if_release_dir
-      release = Bosh::Cli::Release.dev(work_dir)
 
       say "Your dev release environment will be completely reset".red
       if (non_interactive? || ask("Are you sure? (type 'yes' to continue): ") == "yes")
         say "Removing dev_builds index..."
         FileUtils.rm_rf(".dev_builds")
-        say "Clearing dev name and version..."
-        release.update_config(:name => nil)
+        say "Clearing dev name..."
+        release.dev_name = nil
+        release.save_config
         say "Removing dev tarballs..."
         FileUtils.rm_rf("dev_releases")
 

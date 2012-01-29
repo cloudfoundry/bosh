@@ -30,7 +30,7 @@ module Bosh::Spec
       extras = {
         "name" => "simple",
         "release" => {
-          "name"    => "test_release",
+          "name"    => "bosh-release",
           "version" => "1"
         },
 

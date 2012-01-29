@@ -5,12 +5,11 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :work_dir, :release, :packages, :jobs, :changed_jobs
+    attr_reader :release, :packages, :jobs, :changed_jobs
 
-    def initialize(work_dir, packages, jobs, options = { })
+    def initialize(release, packages, jobs, options = { })
+      @release  = release
       @final    = options.has_key?(:final) ? !!options[:final] : false
-      @work_dir = work_dir
-      @release  = @final ? Release.final(@work_dir) : Release.dev(@work_dir)
       @packages = packages
       @jobs     = jobs
 
@@ -19,7 +18,7 @@ module Bosh::Cli
     end
 
     def release_name
-      name = @release.name
+      name = @final ? @release.final_name : @release.dev_name
       name.blank? ? DEFAULT_RELEASE_NAME : name
     end
 
@@ -153,7 +152,7 @@ module Bosh::Cli
     end
 
     def releases_dir
-       File.join(work_dir, final? ? "releases" : "dev_releases")
+       File.join(@release.dir, final? ? "releases" : "dev_releases")
     end
 
     def tarball_path
@@ -196,10 +195,6 @@ module Bosh::Cli
         FileUtils.mkdir("packages")
         FileUtils.mkdir("jobs")
       end
-    end
-
-    def in_work_dir(&block)
-      Dir.chdir(work_dir) { yield }
     end
 
     def in_build_dir(&block)
