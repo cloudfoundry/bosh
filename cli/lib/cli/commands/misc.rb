@@ -41,13 +41,11 @@ module Bosh::Cli::Command
 
       if in_release_dir?
         header("You are in release directory")
-        dev_release = Bosh::Cli::Release.dev(work_dir)
-        final_release = Bosh::Cli::Release.final(work_dir)
 
-        dev_name    = dev_release.name
+        dev_name    = release.dev_name
         dev_version = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "dev_releases")).latest_version
 
-        final_name    = final_release.name
+        final_name    = release.final_name
         final_version = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "releases")).latest_version
 
         say("Dev name:      %s" % [ dev_name ? dev_name.green : "not set".red ])

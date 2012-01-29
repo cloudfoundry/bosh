@@ -4,11 +4,13 @@ require "fileutils"
 describe Bosh::Cli::ReleaseBuilder do
 
   before(:each) do
-    @work_dir = Dir.mktmpdir
+    @release_dir = Dir.mktmpdir
+    FileUtils.mkdir_p(File.join(@release_dir, "config"))
+    @release = Bosh::Cli::Release.new(@release_dir)
   end
 
   def new_builder
-    Bosh::Cli::ReleaseBuilder.new(@work_dir, [], [])
+    Bosh::Cli::ReleaseBuilder.new(@release, [], [])
   end
 
   it "uses version 1 if no previous releases have been created" do
@@ -19,7 +21,7 @@ describe Bosh::Cli::ReleaseBuilder do
     builder = new_builder
     builder.build
 
-    expected_tarball_path = File.join(@work_dir, "dev_releases", "bosh_release-1.tgz")
+    expected_tarball_path = File.join(@release_dir, "dev_releases", "bosh_release-1.tgz")
 
     builder.tarball_path.should == expected_tarball_path
     File.file?(expected_tarball_path).should be_true
@@ -30,8 +32,8 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.build
     builder.build
 
-    File.file?(File.join(@work_dir, "dev_releases", "bosh_release-1.tgz")).should be_true
-    File.file?(File.join(@work_dir, "dev_releases", "bosh_release-2.tgz")).should be_false
+    File.file?(File.join(@release_dir, "dev_releases", "bosh_release-1.tgz")).should be_true
+    File.file?(File.join(@release_dir, "dev_releases", "bosh_release-2.tgz")).should be_false
   end
 
   it "has a list of jobs affected by building this release" do
@@ -45,7 +47,7 @@ describe Bosh::Cli::ReleaseBuilder do
     package3 = mock(:package, :name => "baz", :new_version? => false)
     package4 = mock(:package, :name => "zb", :new_version? => true)
 
-    builder = Bosh::Cli::ReleaseBuilder.new(@work_dir, [package1, package2, package3, package4], [job1, job2, job3, job4])
+    builder = Bosh::Cli::ReleaseBuilder.new(@release, [package1, package2, package3, package4], [job1, job2, job3, job4])
     builder.affected_jobs.should =~ [job1, job2, job3 ]
   end
 

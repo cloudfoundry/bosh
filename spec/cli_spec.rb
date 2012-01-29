@@ -278,6 +278,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
+
       run_bosh("create release", Dir.pwd)
       run_bosh("target http://localhost:57523")
       run_bosh("login admin admin")
@@ -288,7 +289,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     +--------------+----------+
     | Name         | Versions |
     +--------------+----------+
-    | test_release | 1        |
+    | bosh-release | 1        |
     +--------------+----------+
 
     Releases total: 1
@@ -297,8 +298,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   it "sparsely uploads the release" do
     assets_dir = File.dirname(spec_asset("foo"))
-    release_1 = spec_asset("test_release/dev_releases/test_release-1.tgz")
-    release_2 = spec_asset("test_release/dev_releases/test_release-2.tgz")
+    release_1 = spec_asset("test_release/dev_releases/bosh-release-1.tgz")
+    release_2 = spec_asset("test_release/dev_releases/bosh-release-2.tgz")
 
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
@@ -333,7 +334,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     +--------------+----------+
     | Name         | Versions |
     +--------------+----------+
-    | test_release | 1, 2     |
+    | bosh-release | 1, 2     |
     +--------------+----------+
 
     Releases total: 1
@@ -342,8 +343,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   it "release lifecycle: create, upload, update (w/sparse upload), delete" do
     assets_dir = File.dirname(spec_asset("foo"))
-    release_1 = spec_asset("test_release/dev_releases/test_release-1.yml")
-    release_2 = spec_asset("test_release/dev_releases/test_release-2.yml")
+    release_1 = spec_asset("test_release/dev_releases/bosh-release-1.yml")
+    release_2 = spec_asset("test_release/dev_releases/bosh-release-2.yml")
 
     release_dir = File.join(assets_dir, "test_release")
 
@@ -376,24 +377,24 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     +--------------+----------+
     | Name         | Versions |
     +--------------+----------+
-    | test_release | 1, 2     |
+    | bosh-release | 1, 2     |
     +--------------+----------+
 
     Releases total: 1
     OUT
 
-    run_bosh("delete release test_release 2")
+    run_bosh("delete release bosh-release 2")
     expect_output("releases", <<-OUT )
     +--------------+----------+
     | Name         | Versions |
     +--------------+----------+
-    | test_release | 1        |
+    | bosh-release | 1        |
     +--------------+----------+
 
     Releases total: 1
     OUT
 
-    run_bosh("delete release test_release 1")
+    run_bosh("delete release bosh-release 1")
     expect_output("releases", <<-OUT )
     No releases
     OUT
@@ -465,8 +466,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     it "generates release and deploys it via simple manifest" do
       assets_dir = File.dirname(spec_asset("foo"))
-      # Test release created with bosh (see spec/assets/test_release)
-      release_filename = spec_asset("test_release/dev_releases/test_release-1.tgz")
+      # Test release created with bosh (see spec/assets/test_release_template)
+      release_filename = spec_asset("test_release/dev_releases/bosh-release-1.tgz")
       # Dummy stemcell (ubuntu-stemcell 1)
       stemcell_filename = spec_asset("valid_stemcell.tgz")
 
