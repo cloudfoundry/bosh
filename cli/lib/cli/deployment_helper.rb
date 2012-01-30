@@ -58,7 +58,7 @@ module Bosh::Cli
       current_deployment = director.get_deployment(manifest["name"])
 
       if current_deployment["manifest"].nil?
-        say "Director currently has an information about this deployment but it's missing the manifest.".red
+        say "Director currently has information about this deployment but it's missing the manifest.".red
         say "This is something you probably need to fix before proceeding.".red
         if ask("Please enter 'yes' if you want to ignore this fact and still deploy: ") == 'yes'
           return

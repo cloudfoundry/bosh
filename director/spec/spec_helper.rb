@@ -29,12 +29,14 @@ require "director"
 
 Bosh::Director::Config.patch_sqlite
 
-migrate_dir = File.expand_path("../../db/migrations", __FILE__)
+director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
+vsphere_cpi_migrations = File.expand_path("../../db/migrations/vsphere_cpi", __FILE__)
 Sequel.extension :migration
 db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
 db.loggers << logger
 Sequel::Model.db = db
-Sequel::Migrator.apply(db, migrate_dir, nil)
+Sequel::Migrator.apply(db, director_migrations, nil)
+Sequel::TimestampMigrator.new(db, vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
 
 require "archive/tar/minitar"
 require "digest/sha1"
@@ -178,7 +180,9 @@ Rspec.configure do |rspec|
     end
     db.execute("PRAGMA foreign_keys = ON")
 
-    Sequel::Migrator.apply(db, migrate_dir, nil)
+    Sequel::Migrator.apply(db, director_migrations, nil)
+    Sequel::TimestampMigrator.new(db, vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
+
     Bosh::Director::Config.logger = logger
 
     @event_buffer = StringIO.new
