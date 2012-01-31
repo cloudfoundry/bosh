@@ -11,24 +11,16 @@ require "redis"
 require "restclient"
 require File.expand_path("../../director/lib/director/version", __FILE__)
 
-TEST_RELEASE_DIR = File.expand_path("../assets/test_release", __FILE__)
-
-DEV_RELEASES_DIR   = File.join(TEST_RELEASE_DIR, "dev_releases")
-FINAL_RELEASES_DIR = File.join(TEST_RELEASE_DIR, "releases")
-
-DEV_BUILDS_DIR   = File.join(TEST_RELEASE_DIR, ".dev_builds")
-FINAL_BUILDS_DIR = File.join(TEST_RELEASE_DIR, ".final_builds")
-
 ASSETS_DIR = File.expand_path("../assets", __FILE__)
+
+TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
+TEST_RELEASE_DIR = File.join(ASSETS_DIR, "test_release")
 
 CLOUD_DIR      = "/tmp/bosh_test_cloud"
 CLI_DIR        = File.expand_path("../../cli", __FILE__)
 BOSH_CACHE_DIR = Dir.mktmpdir
 BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
-
-RELEASE_CONFIG = File.join(TEST_RELEASE_DIR, "config/dev.yml")
-FINAL_RELEASE_CONFIG = File.join(TEST_RELEASE_DIR, "config/final.yml")
 
 module Bosh
   module Spec
@@ -43,6 +35,8 @@ RSpec.configure do |c|
   c.before(:each) do |example|
     reset_sandbox(example)
     cleanup_bosh
+    FileUtils.rm_rf(TEST_RELEASE_DIR)
+    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
   end
 
   c.filter_run :focus => true if ENV["FOCUS"]
@@ -75,14 +69,6 @@ def yaml_file(name, object)
   f
 end
 
-def release_config
-  {
-    "name" => "test_release",
-    "min_cli_version" => "0.5",
-    "blobstore_options" => {"provider" => "atmos", "atmos_options" => {}}
-  }
-end
-
 def director_version
   "Ver: #{Bosh::Director::VERSION} (#{`(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip})"
 end
@@ -96,23 +82,13 @@ end
 
 def cleanup_bosh
   [
+   BOSH_CONFIG,
    CLOUD_DIR,
-   DEV_RELEASES_DIR,
-   FINAL_RELEASES_DIR,
-   FINAL_BUILDS_DIR,
    BOSH_CACHE_DIR,
-   DEV_BUILDS_DIR
-  ].each do |dir|
-    FileUtils.rm_rf(dir)
+   TEST_RELEASE_DIR,
+  ].each do |item|
+    FileUtils.rm_rf(item)
   end
-
-  FileUtils.mkdir_p(File.dirname(RELEASE_CONFIG))
-  File.open(RELEASE_CONFIG, "w") do |f|
-    f.write(YAML.dump(release_config))
-  end
-
-  FileUtils.rm_rf(BOSH_CONFIG)
-  FileUtils.rm_rf(FINAL_RELEASE_CONFIG)
 end
 
 start_sandbox

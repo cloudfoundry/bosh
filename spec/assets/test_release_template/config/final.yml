@@ -1,0 +1,5 @@
+--- 
+min_cli_version: "0.12"
+blobstore: 
+  provider: atmos
+  options: 
