@@ -15,6 +15,12 @@ module Bosh::Cli
         @director ||= Bosh::Cli::Director.new(target, username, password)
       end
 
+      def release
+        return @release if @release
+        check_if_release_dir
+        @release = Bosh::Cli::Release.new(@work_dir)
+      end
+
       def logged_in?
         username && password
       end
@@ -110,38 +116,6 @@ module Bosh::Cli
 
       def operation_confirmed?(prompt = "Are you sure? (type 'yes' to continue): ")
         non_interactive? || (ask(prompt) == "yes")
-      end
-
-      def init_blobstore(options)
-        if options.nil?
-          err "Failed to initialize blobstore. Try updating the release config file"
-        end
-        bs_options = {}
-        provider = options["provider"]
-        case provider
-        when "s3"
-          provider_options = options["s3_options"]
-          bs_options = {
-            :access_key_id     => provider_options["access_key_id"].to_s,
-            :secret_access_key => provider_options["secret_access_key"].to_s,
-            :encryption_key    => provider_options["encryption_key"].to_s,
-            :bucket_name       => provider_options["bucket_name"].to_s
-          }
-        when "atmos"
-          provider_options = options["atmos_options"]
-          bs_options = {
-            :url    => provider_options["url"].to_s,
-            :uid    => provider_options["uid"].to_s,
-            :secret => provider_options["secret"].to_s,
-            :tag    => provider_options["tag"].to_s
-          }
-        else
-          raise "Unknown provider #{provider}"
-        end
-
-        Bosh::Blobstore::Client.create(provider, bs_options)
-      rescue Bosh::Blobstore::BlobstoreError => e
-        err "Cannot init blobstore: #{e}"
       end
 
       def normalize_url(url)

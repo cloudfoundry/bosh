@@ -1,78 +1,141 @@
 module Bosh::Cli
 
+  # This class encapsulates the detals of handling dev and final releases:
+  # also it partitions release metadata between public config (which is
+  # under version control) and user private config.
   class Release
+    attr_reader :dir
 
-    DEFAULT_CONFIG = {
-      "name" => nil,
-      "min_cli_version" => "0.5",
-      "blobstore_options" => { "provider" => "atmos", "atmos_options" => {}},
-      "latest_release_filename" => nil
-    }
+    def initialize(dir)
+      @dir = dir
+      config_dir = File.join(dir, "config")
+      @public_config_file = File.join(config_dir, "final.yml")
+      @private_config_file = File.join(config_dir, "dev.yml")
 
-    def self.dev(release_dir)
-      new(release_dir, false)
+      unless File.directory?(dir)
+        err("Cannot find release directory `#{dir}'")
+      end
+
+      unless File.directory?(config_dir)
+        err("Cannot find release config directory `#{config_dir}'")
+      end
+
+      @public_config  = load_yaml_file(@public_config_file) rescue {}
+      @private_config = load_yaml_file(@private_config_file) rescue {}
+      migrate_legacy_configs
     end
 
-    def self.final(release_dir)
-      new(release_dir, true)
-    end
-
-    attr_reader :config
-
-    def initialize(release_dir, final = false)
-      @release_dir = release_dir
-      @final  = final
-      @config_file = File.join(@release_dir, "config", final ? "final.yml" : "dev.yml")
-      @config = reload_config
-    end
-
-    DEFAULT_CONFIG.keys.each do |attr|
+    [:dev_name, :latest_release_filename].each do |attr|
       define_method(attr) do
-        @config[attr.to_s]
+        @private_config[attr.to_s]
+      end
+
+      define_method("#{attr}=".to_sym) do |value|
+        @private_config[attr.to_s] = value
       end
     end
 
-    def final?
-      @final
-    end
-
-    def update_config(attrs = { })
-      @config = @config.merge(stringify_keys(attrs))
-
-      FileUtils.mkdir_p(File.dirname(@config_file))
-      FileUtils.touch(@config_file)
-
-      File.open(@config_file, "w") do |f|
-        f.write(YAML.dump(@config))
+    [:final_name, :min_cli_version].each do |attr|
+      define_method(attr) do
+        @public_config[attr.to_s]
       end
 
-      reload_config
+      define_method("#{attr}=".to_sym) do |value|
+        @public_config[attr.to_s] = value
+      end
     end
 
-    def reload_config
-      if File.exists?(@config_file)
-        config = load_yaml_file(@config_file) rescue nil
-        unless config.is_a?(Hash)
-          raise InvalidRelease, "Can't read release configuration from `#{@config_file}'"
-        end
+    # Picks blobstore client to use with current release.
+    #
+    # @return [Bosh::Blobstore::Client] blobstore client
+    def blobstore
+      return @blobstore if @blobstore
+      blobstore_config = @private_config["blobstore"] || @public_config["blobstore"]
 
-        if config["blobstore_options"].nil?
-          raise InvalidRelease, "Configuration from #{@config_file} doesn't specify 'blobstore_options'"
-        end
-        config
-      elsif final?
-        DEFAULT_CONFIG
-      else
-        final_release = self.class.final(@release_dir)
-        DEFAULT_CONFIG.merge("min_cli_version" => final_release.min_cli_version)
+      if blobstore_config.nil?
+        err("Missing blobstore configuration, please update your release")
+      end
+
+      provider = blobstore_config["provider"]
+      options  = blobstore_config["options"] || {}
+
+      @blobstore = Bosh::Blobstore::Client.create(provider, symbolize_keys(options))
+
+    rescue Bosh::Blobstore::BlobstoreError => e
+      err("Cannot initialize blobstore: #{e}")
+    end
+
+    def save_config
+      #TODO: introduce write_yaml helper
+      File.open(@private_config_file, "w") do |f|
+        YAML.dump(@private_config, f)
+      end
+
+      File.open(@public_config_file, "w") do |f|
+        YAML.dump(@public_config, f)
       end
     end
 
     private
 
-    def stringify_keys(hash)
+    # Upgrade path for legacy clients that kept release metadata
+    # in config/dev.yml and config/final.yml
+    #
+    def migrate_legacy_configs
+      # We're using blobstore_options as old config marker.
+      # Unfortunately old CLI won't tell you to upgrade because it checks
+      # for valid blobstore options first, so instead of removing blobstore_options
+      # we mark it as deprecated, so new CLI proceeds to migrate while the old one
+      # tells you to upgrade.
+      if @private_config.has_key?("blobstore_options") &&
+          @private_config["blobstore_options"] != "deprecated"
+        say("Found legacy dev config file `#{@private_config_file}'".yellow)
+
+        new_private_config = {
+          "dev_name" => @private_config["name"],
+          "latest_release_filename" => @private_config["latest_release_filename"],
+
+          # Following two options are only needed for older clients
+          # to fail gracefully and never actually read by a new client
+          "blobstore_options" => "deprecated",
+          "min_cli_version" => "0.12"
+        }
+
+        @private_config = new_private_config
+
+        File.open(@private_config_file, "w") { |f| YAML.dump(@private_config, f) }
+        say("Migrated dev config file format".green)
+      end
+
+      if @public_config.has_key?("blobstore_options") &&
+          @public_config["blobstore_options"] != "deprecated"
+        say("Found legacy config file `#{@public_config_file}'".yellow)
+
+        unless @public_config["blobstore_options"]["provider"] == "atmos" &&
+            @public_config["blobstore_options"].has_key?("atmos_options")
+          err("Please update your release to the version that uses Atmos blobstore")
+        end
+
+        new_public_config = {
+          "final_name" => @public_config["name"],
+          "min_cli_version" => @public_config["min_cli_version"],
+          "blobstore" => {
+            "provider" => "atmos",
+            "options" => @public_config["blobstore_options"]["atmos_options"]
+          },
+          "blobstore_options" => "deprecated"
+        }
+
+        @public_config = new_public_config
+
+        File.open(@public_config_file, "w") { |f| YAML.dump(@public_config, f) }
+        say("Migrated final config file format".green)
+      end
+    end
+
+    def symbolize_keys(hash)
       hash.inject({}) do |h, (key, value)|
-        h[key.to_s] = value
+        h[key.to_sym] = value
         h
       end
     end
