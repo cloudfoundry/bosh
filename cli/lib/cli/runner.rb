@@ -14,17 +14,46 @@ module Bosh
       attr_reader :args
       attr_reader :options
 
+      # The runner is an instance of the command type that the user issued,
+      # such as a Deployment instance.  This is an accessor for testing.
+      # @return [Bosh::Cli::Command::<type>] Instance of the command instance.
+      attr_accessor :runner
+
       def self.run(args)
         new(args).run
       end
 
       def initialize(args)
+        trap("SIGINT") {
+          handle_ctrl_c
+        }
         define_commands
         @args = args
         @options = {
           :director_checks => true,
           :colorize => true,
         }
+      end
+
+      ##
+      # When user issues ctrl-c it asks if they really want to quit. If so
+      # then it will cancel the current running task if it exists.
+      def handle_ctrl_c
+        if !@runner.task_running?
+          exit(1)
+        elsif kill_current_task?
+          @runner.cancel_current_task
+          exit(1)
+        end
+      end
+
+      ##
+      # Asks user if they really want to quit and returns the boolean answer.
+      #
+      # @return [Boolean] Whether the user wants to quit or not.
+      def kill_current_task?
+        say("\nAre you sure you'd like to cancel running tasks? [Yn]")
+        $stdin.gets.chomp.downcase == "y"
       end
 
       def prepare
@@ -45,10 +74,10 @@ module Bosh
         if @namespace && @action
           ns_class_name = @namespace.to_s.gsub(/(?:_|^)(.)/) { $1.upcase }
           klass = eval("Bosh::Cli::Command::#{ns_class_name}")
-          runner = klass.new(@options)
-          runner.usage = @usage
+          @runner = klass.new(@options)
+          @runner.usage = @usage
 
-          action_arity = runner.method(@action.to_sym).arity
+          action_arity = @runner.method(@action.to_sym).arity
           n_required_args = action_arity >= 0 ? action_arity : -action_arity - 1
 
           if n_required_args > @args.size
@@ -58,7 +87,7 @@ module Bosh
             err("Too many arguments, correct usage is: bosh #{@usage}")
           end
 
-          runner.send(@action.to_sym, *@args)
+          @runner.send(@action.to_sym, *@args)
         elsif @args.empty? || @args == ["help"]
           say(help_message)
         elsif @args[0] == "help"

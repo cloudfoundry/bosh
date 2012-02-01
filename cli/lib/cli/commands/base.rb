@@ -76,6 +76,22 @@ module Bosh::Cli
         ret + " %s" % target_version if ret
       end
 
+      ##
+      # Returns whether there is currently a task running.  A wrapper for the
+      # director.rb method.
+      #
+      # @return [Boolean] Whether there is a task currently running.
+      def task_running?
+        director.has_current?
+      end
+
+      ##
+      # Cancels the task currently running.  A wrapper for the director.rb
+      # method.
+      def cancel_current_task
+        director.cancel_current
+      end
+
       protected
 
       def auth_required
