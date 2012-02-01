@@ -26,9 +26,7 @@ module Bosh::Cli::Command
 
       say("\n#{desc}\n")
 
-      if interactive? && !operation_confirmed?
-        err("Cleanup canceled")
-      end
+      err("Cleanup canceled") unless confirmed?
 
       nl
       cleanup_stemcells(stemcells_to_keep)
