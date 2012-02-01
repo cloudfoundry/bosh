@@ -51,7 +51,7 @@ module Bosh::Cli::Command
       end
 
       say "Deployment set to '#{manifest_filename.green}'"
-      config.deployment = manifest_filename
+      config.set_deployment(manifest_filename)
       config.save
     end
 
