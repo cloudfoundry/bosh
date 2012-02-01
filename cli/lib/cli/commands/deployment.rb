@@ -61,15 +61,14 @@ module Bosh::Cli::Command
 
       manifest_yaml = prepare_deployment_manifest(:yaml => true, :resolve_properties => true)
 
-      desc = "to #{target_name.green} using '#{deployment.green}' deployment manifest"
-      say "You are about to start the deployment #{desc}"
+      if interactive?
+        inspect_deployment_changes(YAML.load(manifest_yaml))
+        say "Please review all changes carefully".yellow
+      end
 
-      inspect_deployment_changes(YAML.load(manifest_yaml)) if interactive?
+      desc = "`#{File.basename(deployment).green}' to `#{target_name.green}'"
 
-      say "Deploying #{desc}..."
-      nl
-
-      if interactive? && ask("Please review all changes above and type 'yes' if you are ready to deploy: ") != "yes"
+      unless confirmed?("Deploying #{desc}")
         cancel_deployment
       end
 
@@ -77,7 +76,7 @@ module Bosh::Cli::Command
 
       responses = {
         :done          => "Deployed #{desc}",
-        :non_trackable => "Started deployment but director at '#{target}' doesn't support deployment tracking",
+        :non_trackable => "Started deployment but director at `#{target}' doesn't support deployment tracking",
         :track_timeout => "Started deployment but timed out out while tracking status",
         :error         => "Started deployment but received an error while tracking status",
         :invalid       => "Deployment is invalid, please fix it and deploy again"
@@ -92,7 +91,7 @@ module Bosh::Cli::Command
 
       say "\nYou are going to delete deployment `#{name}'.\n\nTHIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red
 
-      unless operation_confirmed?
+      unless confirmed?
         say "Canceled deleting deployment".green
         return
       end
@@ -130,4 +129,3 @@ module Bosh::Cli::Command
     end
   end
 end
-
