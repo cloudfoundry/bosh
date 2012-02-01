@@ -146,9 +146,7 @@ module Bosh::Cli::Command
       end
 
       # TODO: allow editing resolutions?
-      if ask("Please type 'yes' if you want to apply these resolutions: ") != "yes"
-        cancel
-      end
+      cancel unless confirmed?("Apply resolutions?")
     end
 
     def cancel

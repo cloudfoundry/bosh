@@ -62,6 +62,10 @@ module Bosh::Cli
         raise Bosh::Cli::GracefulExit, "redirected to %s" % [ args.join(" ") ]
       end
 
+      def confirmed?(question = "Are you sure?")
+        non_interactive? || ask("#{question} (type 'yes' to continue): ") == "yes"
+      end
+
       [:username, :password, :target, :deployment].each do |attr_name|
         define_method attr_name do
           config.send(attr_name)
@@ -135,10 +139,6 @@ module Bosh::Cli
         `which git`
         return false unless $? == 0
         File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
-      end
-
-      def operation_confirmed?(prompt = "Are you sure? (type 'yes' to continue): ")
-        non_interactive? || (ask(prompt) == "yes")
       end
 
       def normalize_url(url)

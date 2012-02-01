@@ -461,7 +461,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ rx("Deployed to Test Director using '#{deployment_manifest.path}' deployment manifest")
+      out.should =~ rx("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
     end
 
     it "generates release and deploys it via simple manifest" do
@@ -487,7 +487,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload stemcell #{stemcell_filename}")
       run_bosh("upload release #{release_filename}")
 
-      run_bosh("deploy").should =~ rx("Deployed to Test Director using '#{deployment_manifest.path}' deployment manifest")
+      run_bosh("deploy").should =~ rx("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
       run_bosh("cloudcheck --report").should =~ rx("No problems found")
       $?.should == 0 # Cloudcheck shouldn't find any problems with this new deployment
       # TODO: figure out which artefacts should be created by the given manifest
