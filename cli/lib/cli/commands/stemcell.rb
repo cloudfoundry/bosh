@@ -86,7 +86,7 @@ module Bosh::Cli::Command
 
       say "You are going to delete stemcell `#{name} (#{version})'".red
 
-      unless operation_confirmed?
+      unless confirmed?
         say "Canceled deleting stemcell".green
         return
       end

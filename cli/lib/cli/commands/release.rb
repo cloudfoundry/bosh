@@ -31,7 +31,7 @@ module Bosh::Cli::Command
         if release_file.nil?
           err("The information about latest generated release is missing, please provide release filename")
         end
-        unless non_interactive? || ask("Are you sure you want to upload release `#{File.basename(release_file).green}'? (type 'yes' to continue): ") == 'yes'
+        unless confirmed?("Upload release `#{File.basename(release_file).green}' to `#{target_name.green}'")
           err("Canceled upload")
         end
       end
@@ -94,7 +94,7 @@ module Bosh::Cli::Command
           end
         end
       rescue Bosh::Cli::DirectorError
-        say "Cannot get this release information from director, possibly a new release"
+        # It's OK for director to choke on getting a release info (think new releases)
       end
 
       say("\nUploading release...\n")
@@ -148,7 +148,7 @@ module Bosh::Cli::Command
       check_if_dirty_state unless force
 
       confirmation = "Are you sure you want to generate #{'final'.red} version? "
-      if final && !dry_run && interactive? && ask("#{confirmation}(type 'yes' to confirm) ") != "yes"
+      if final && !dry_run && interactive? && !confirmed?(confirmation)
         say "Canceled release generation".green
         exit(1)
       end
@@ -254,7 +254,7 @@ module Bosh::Cli::Command
       check_if_release_dir
 
       say "Your dev release environment will be completely reset".red
-      if (non_interactive? || ask("Are you sure? (type 'yes' to continue): ") == "yes")
+      if confirmed?
         say "Removing dev_builds index..."
         FileUtils.rm_rf(".dev_builds")
         say "Clearing dev name..."
@@ -305,7 +305,7 @@ module Bosh::Cli::Command
         say "Deleting #{desc}".red
       end
 
-      if operation_confirmed?
+      if confirmed?
         status, body = director.delete_release(name, :force => force, :version => version)
         responses = {
           :done          => "Deleted #{desc}",
