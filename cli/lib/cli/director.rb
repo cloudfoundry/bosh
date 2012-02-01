@@ -12,6 +12,10 @@ module Bosh
 
       attr_reader :director_uri
 
+      # The current task number. An accessor so it can be used in tests.
+      # @return [Integer] The task number.
+      attr_accessor :current_running_task
+
       def initialize(director_uri, user = nil, password = nil)
         if director_uri.nil? || director_uri =~ /^\s*$/
           raise DirectorMissing, "no director URI given"
@@ -299,6 +303,23 @@ module Bosh
         [ body, response_code ]
       end
 
+      ##
+      # Cancels the task currently running.
+      def cancel_current
+        body, response_code = cancel_task(@current_running_task)
+        if (200..299).include?(response_code)
+          say("Cancelling task ##{@current_running_task}.".red)
+        end
+      end
+
+      ##
+      # Returns whether there is a task currently running.
+      #
+      # @return [Boolean] Whether there is a task currently running.
+      def has_current?
+        @current_running_task != nil
+      end
+
       [ :post, :put, :get, :delete ].each do |method_name|
         define_method method_name do |*args|
           request(method_name, *args)
@@ -314,6 +335,7 @@ module Bosh
         if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
             task_id = $1
+            @current_running_task = task_id
             status = poll_task(task_id, options)
           else
             status = :non_trackable
