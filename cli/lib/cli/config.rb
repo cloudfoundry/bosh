@@ -69,8 +69,49 @@ module Bosh
         auth ? auth["password"] : nil
       end
 
+      # Deployment used to be a string that was only stored for your
+      # current target.  As soon as you switched targets, the deployment
+      # was erased. If the user has the old config we convert it to the
+      # new config.
+      #
+      # @return [Boolean] Whether config is using the old deployment format.
+      def is_old_deployment_config?
+        @config_file["deployment"].is_a?(String)
+      end
+
+      # Read the deployment configuration.  Return the deployment for the
+      # current target.
+      #
+      # @raise [MissingTarget] If there is no target set.
+      # @return [String?] The deployment path for the current target.
+      def deployment
+        raise MissingTarget, "Must have a target set." if target.nil?
+        if @config_file.has_key?("deployment")
+          if is_old_deployment_config?
+            set_deployment(@config_file["deployment"])
+            save
+          end
+          if @config_file["deployment"].is_a?(Hash)
+            return @config_file["deployment"][target]
+          end
+        end
+      end
+
+      # Sets the deployment file for the current target. If the deployment is
+      # the old deployment configuration, it will turn it into the format.
+      #
+      # @raise [MissingTarget] If there is no target set.
+      # @param [String] deployment_file_path The string path to the
+      #     deployment file.
+      def set_deployment(deployment_file_path)
+        raise MissingTarget, "Must have a target set." if target.nil?
+        @config_file["deployment"] = { } if is_old_deployment_config?
+        @config_file["deployment"] ||= { }
+        @config_file["deployment"][target] = deployment_file_path
+      end
+
       [ :target, :target_name, :target_version, :release,
-        :target_uuid, :deployment, :status_timeout ].each do |attr|
+        :target_uuid, :status_timeout ].each do |attr|
         define_method attr do
           read(attr, false)
         end
