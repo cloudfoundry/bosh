@@ -43,7 +43,7 @@ module Bosh
             rescue BlobstoreError => e
               raise e
             rescue Exception => e
-              raise BlobstoreError, "Failed to get object: #{id}, underlying error: #{e.message}"
+              raise BlobstoreError, "Failed to get object: #{id}, underlying error: #{e.message} #{e.backtrace.join("\n")}"
             end
           end
           result
