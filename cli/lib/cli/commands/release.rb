@@ -204,6 +204,7 @@ module Bosh::Cli::Command
 
       header "Building jobs"
       Dir[File.join(work_dir, "jobs", "*")].each do |job_dir|
+        next unless File.directory?(job_dir)
         prepare_script = File.join(job_dir, "prepare")
         job_spec = File.join(job_dir, "spec")
 
