@@ -315,17 +315,18 @@ module VSphereCloud
 
         @logger.info("Reboot vm = #{vm_cid}")
         if power_state != Vim::VirtualMachine::PowerState::POWERED_ON
-          raise "Guest VM is not on powered-on state"
-        else
-          begin
-            vm.reboot_guest
-          rescue => e
-            @logger.error("Soft reboot failed #{e} -#{e.backtrace.join("\n")}")
-            @logger.info("Try hard reboot")
-            # if we fail to perform a soft-reboot we force a hard-reboot
+          @logger.info("VM not in POWERED_ON state. Current state : #{power_state}")
+        end
+        begin
+          vm.reboot_guest
+        rescue => e
+          @logger.error("Soft reboot failed #{e} -#{e.backtrace.join("\n")}")
+          @logger.info("Try hard reboot")
+          # if we fail to perform a soft-reboot we force a hard-reboot
+          if power_state == Vim::VirtualMachine::PowerState::POWERED_ON
             retry_block { client.power_off_vm(vm) }
-            retry_block { client.power_on_vm(datacenter, vm) }
           end
+          retry_block { client.power_on_vm(datacenter, vm) }
         end
       end
     end
