@@ -1,8 +1,11 @@
 require "atmos"
+require "uri"
+require "json"
 
 module Bosh
   module Blobstore
     class AtmosBlobstoreClient < BaseClient
+      SHARE_URL_EXP = "1893484800" # expires on 2030 Jan-1
 
       def initialize(options)
         @atmos_options = {
@@ -11,30 +14,70 @@ module Bosh
           :secret => options[:secret]
         }
         @tag = options[:tag]
+        @http_client = HTTPClient.new
+        # TODO: Remove this line once we get the proper certificate for atmos
+        @http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
 
       def atmos_server
+        raise "Atmos password is missing (read-only mode)" if @atmos_options[:secret].nil?
         @atmos ||= Atmos::Store.new(@atmos_options)
       end
 
       def create_file(file)
         obj_conf = {:data => file, :length => File.size(file.path)}
         obj_conf[:listable_metadata] = {@tag => true} if @tag
-        atmos_server.create(obj_conf).aoid
+        object_id = atmos_server.create(obj_conf).aoid
+        encode_object_id(object_id)
       end
 
       def get_file(object_id, file)
-        atmos_server.get(:id => object_id).data_as_stream do |chunk|
-          file.write(chunk)
+        object_info = decode_object_id(object_id)
+        oid = object_info["oid"]
+        sig = object_info["sig"]
+
+        url = @atmos_options[:url] + "/rest/objects/#{oid}?uid=" +
+              URI::escape(@atmos_options[:uid]) +
+              "&expires=#{SHARE_URL_EXP}&signature=#{URI::escape(sig)}"
+
+        response = @http_client.get(url) do |block|
+          file.write(block)
         end
+
+        if response.status != 200
+          raise BlobstoreError, "Could not fetch object, #{response.status}/#{response.content}"
+        end
+      end
+
+      def delete(object_id)
+        object_info = decode_object_id(object_id)
+        oid = object_info["oid"]
+        atmos_server.get(:id => oid).delete
       rescue Atmos::Exceptions::NoSuchObjectException => e
         raise NotFound, "Atmos object '#{object_id}' not found"
       end
 
-      def delete(object_id)
-        atmos_server.get(:id => object_id).delete
-      rescue Atmos::Exceptions::NoSuchObjectException => e
-        raise NotFound, "Atmos object '#{object_id}' not found"
+      private
+
+      def decode_object_id(object_id)
+        begin
+          object_info = JSON.load(Base64.decode64(URI::unescape(object_id)))
+        rescue JSON::ParserError => e
+          raise BlobstoreError, "Failed to parse object_id. Please try updating the release"
+        end
+
+        if !object_info.kind_of?(Hash) || object_info["oid"].nil? || object_info["sig"].nil?
+          raise BlobstoreError, "Invalid object_id (#{object_id})"
+        end
+        object_info
+      end
+
+      def encode_object_id(object_id)
+        hash_string = "GET" + "\n" + "/rest/objects/" + object_id + "\n" +
+                      @atmos_options[:uid] + "\n" + SHARE_URL_EXP
+        sig = HMAC::SHA1.digest(Base64.decode64(@atmos_options[:secret]), hash_string)
+        signature = Base64.encode64(sig.to_s).chomp
+        URI::escape(Base64.encode64(JSON.dump(:oid => object_id, :sig => signature)))
       end
     end
   end
