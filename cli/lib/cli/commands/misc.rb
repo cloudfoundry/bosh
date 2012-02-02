@@ -72,7 +72,7 @@ module Bosh::Cli::Command
 
         password_retries = 0
         while password.blank? && password_retries < 3
-          password = ask("Enter password: ").to_s { |q| q.echo = "*" }
+          password = ask("Enter password: ") { |q| q.echo = "*" }.to_s
           password_retries += 1
         end
       end
