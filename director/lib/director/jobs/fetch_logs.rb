@@ -36,14 +36,9 @@ module Bosh::Director
           blobstore_id = nil
 
           track_and_log("Finding and packing log files") do
-            # TODO: extract construct below as an AgentClient method
             @logger.info("Fetching logs from agent: log_type='#{@log_type}', filters='#{@filters}'")
             task = agent.fetch_logs(@log_type, @filters)
-            while task["state"] == "running"
-              sleep(1.0)
-              task = agent.get_task(task["agent_task_id"])
-            end
-
+            # FIXME CLEANUP (should be using result?)
             blobstore_id = task["blobstore_id"]
           end
 
