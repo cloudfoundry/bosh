@@ -34,7 +34,13 @@ namespace "bundler" do
   environments.each do |env|
     desc "Install gems for #{env}"
     task "install:#{env}" do
-      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
+      Bundler.with_clean_env do
+        if ENV.has_key? 'RUBYOPT'
+          ENV['RUBYOPT'] = ENV['RUBYOPT'].sub '-rbundler/setup', ''
+          ENV['RUBYOPT'] = ENV['RUBYOPT'].sub "-I#{File.expand_path('..', __FILE__)}", ''
+        end
+	      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
+      end
     end
   end
 end
