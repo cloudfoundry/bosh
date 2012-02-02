@@ -12,12 +12,14 @@ module Bosh::Director
       super("agent", id, defaults.merge(options))
     end
 
-    def run_task(method, *args)
-      task = send(method, *args)
+    [:apply, :compile_package, :fetch_logs, :migrate_disk, :mount_disk, :unmount_disk].each do |method|
+      define_method (method) do |*args|
+        task = super.send(method, *args)
 
-      while task["state"] == "running"
-        sleep(DEFAULT_POLL_INTERVAL)
-        task = get_task(task["agent_task_id"])
+        while task["state"] == "running"
+          sleep(DEFAULT_POLL_INTERVAL)
+          task = get_task(task["agent_task_id"])
+        end
       end
     end
 

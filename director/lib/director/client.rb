@@ -18,8 +18,8 @@ module Bosh::Director
       retries = @retry_methods[method_name] || 0
       begin
         handle_method(method_name, args)
-      rescue TimeoutException => e
-        if (retries > 0)
+      rescue TimeoutException
+        if retries > 0
           retries -= 1
           retry
         end
