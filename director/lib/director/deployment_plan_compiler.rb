@@ -376,12 +376,7 @@ module Bosh::Director
               idle_vm.vm.update(:apply_spec => state)
 
               agent = AgentClient.new(idle_vm.vm.agent_id)
-              task = agent.apply(state)
-              while task["state"] == "running"
-                sleep(1.0)
-                task = agent.get_task(task["agent_task_id"])
-              end
-
+              agent.apply(state)
               instance_spec.current_state = state
             end
           end

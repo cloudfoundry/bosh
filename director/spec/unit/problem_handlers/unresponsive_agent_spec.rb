@@ -176,8 +176,8 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       @cloud.should_receive(:attach_disk).with("new-vm-cid", "disk-cid").ordered
 
       new_agent.should_receive(:wait_until_ready).ordered
-      new_agent.should_receive(:run_task).with(:mount_disk, "disk-cid").ordered
-      new_agent.should_receive(:run_task).with(:apply, spec).ordered
+      new_agent.should_receive(:mount_disk).with("disk-cid").ordered
+      new_agent.should_receive(:apply).with(spec).ordered
       new_agent.should_receive(:start).ordered
 
       handler.apply_resolution(:recreate_vm)
@@ -224,7 +224,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       Bosh::Director::AgentClient.stub!(:new).with("agent-222", anything).and_return(new_agent)
 
       new_agent.should_receive(:wait_until_ready).ordered
-      new_agent.should_receive(:run_task).with(:apply, spec).ordered
+      new_agent.should_receive(:apply).with(spec).ordered
       new_agent.should_receive(:start).ordered
 
       handler.apply_resolution(:recreate_vm)

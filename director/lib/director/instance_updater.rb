@@ -2,23 +2,23 @@ module Bosh::Director
   class InstanceUpdater
     MAX_ATTACH_DISK_TRIES = 3
     N_UPDATE_STEPS = 6
-    N_WATCH_INTERVALS = 10
+    WATCH_INTERVALS = 10
 
     # @params instance_spec Bosh::DeploymentPlan::InstanceSpec
     def initialize(instance_spec, event_ticker = nil)
-      @cloud  = Config.cloud
+      @cloud = Config.cloud
       @logger = Config.logger
       @ticker = event_ticker
 
       @instance_spec = instance_spec
-      @job_spec      = instance_spec.job
+      @job_spec = instance_spec.job
 
-      @instance     = @instance_spec.instance
+      @instance = @instance_spec.instance
       @target_state = @instance_spec.state
 
-      @deployment_plan    = @job_spec.deployment
+      @deployment_plan = @job_spec.deployment
       @resource_pool_spec = @job_spec.resource_pool
-      @update_config      = @job_spec.update
+      @update_config = @job_spec.update
 
       @vm = @instance.vm
     end
@@ -114,7 +114,7 @@ module Bosh::Director
         raise "Error while detaching disk: unknown disk attached to instance"
       end
 
-      unmount_disk(agent, @instance.persistent_disk_cid)
+      agent.unmount_disk(@instance.persistent_disk_cid)
       @cloud.detach_disk(@vm.cid, @instance.persistent_disk_cid)
     end
 
@@ -122,7 +122,7 @@ module Bosh::Director
       return if @instance.persistent_disk_cid.nil?
 
       @cloud.attach_disk(@vm.cid, @instance.persistent_disk_cid)
-      mount_disk(agent, @instance.persistent_disk_cid)
+      agent.mount_disk(@instance.persistent_disk_cid)
     end
 
     def delete_vm
@@ -161,40 +161,14 @@ module Bosh::Director
 
     def apply_state(state)
       @vm.update(:apply_spec => state)
-      task = agent.apply(state)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
+      agent.apply(state)
     end
 
-    def mount_disk(agent, disk_cid)
-      task = agent.mount_disk(disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
-    end
-
-    def unmount_disk(agent, disk_cid)
-      task = agent.unmount_disk(disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
-    end
-
-    def migrate_disk(agent, src_disk_cid, dst_disk_cid)
-      task = agent.migrate_disk(src_disk_cid, dst_disk_cid)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
-    end
-
+    # Retrieve list of mounted disks from the agent
+    # @return []Array<String>] list of disk CIDs
     def disk_info
-      # retrieve list of mounted disks from the agent
       return @disk_list if @disk_list
+
       begin
         @disk_list = agent.list_disk
       rescue RuntimeError
@@ -203,10 +177,10 @@ module Bosh::Director
       end
     end
 
-    def delete_disk(disk, agent, vm_cid)
+    def delete_disk(disk, vm_cid)
       disk_cid = disk.disk_cid
-      # unmount the disk only if disk is known by the agent
-      unmount_disk(agent, disk_cid) if agent && disk_info.include?(disk_cid)
+      # Unmount the disk only if disk is known by the agent
+      agent.unmount_disk(disk_cid) if agent && disk_info.include?(disk_cid)
 
       begin
         @cloud.detach_disk(vm_cid, disk_cid) if vm_cid
@@ -243,9 +217,9 @@ module Bosh::Director
       end
 
       state = {
-        "deployment" => @deployment_plan.name,
-        "networks" => @instance_spec.network_settings,
-        "resource_pool" => @job_spec.resource_pool.spec,
+          "deployment" => @deployment_plan.name,
+          "networks" => @instance_spec.network_settings,
+          "resource_pool" => @job_spec.resource_pool.spec,
       }
 
       if @instance_spec.disk_size > 0
@@ -257,21 +231,23 @@ module Bosh::Director
     end
 
     def attach_missing_disk
-      if @instance.persistent_disk_cid && !@instance_spec.disk_currently_attached?
-        attach_disk
-      end
+      attach_disk if @instance.persistent_disk_cid && !@instance_spec.disk_currently_attached?
     rescue NoDiskSpace => e
       update_resource_pool(@instance.persistent_disk_cid)
     end
 
+    # Synchronizes persistent_disks with the agent.
+    #
+    # NOTE: Currently assumes that we only have 1 persistent disk.
+    # @return [void]
     def check_persistent_disk
-      # sync persistent_disks with the agent
-      # This code assumes that we only have 1 persistent disk
       return if @instance.persistent_disks.empty?
       agent_disk_cid = disk_info.first
 
       if agent_disk_cid != @instance.persistent_disk_cid
-        raise "instance #{@instance.id} has invalid disks: Agent reports #{agent_disk_cid} while director's record shows #{@instance.persistent_disk_cid}"
+        raise "instance #{@instance.id} has invalid disks: Agent reports " +
+                  "#{agent_disk_cid} while director's record shows " +
+                  "#{@instance.persistent_disk_cid}"
       end
 
       @instance.persistent_disks.each do |disk|
@@ -281,6 +257,7 @@ module Bosh::Director
     end
 
     def update_persistent_disk
+      # CLEANUP FIXME
       attach_missing_disk
       check_persistent_disk
 
@@ -320,10 +297,10 @@ module Bosh::Director
         end
 
         begin
-          mount_disk(agent, disk_cid)
-          migrate_disk(agent, old_disk.disk_cid, disk_cid) if old_disk
+          agent.mount_disk(disk_cid)
+          agent.migrate_disk(old_disk.disk_cid, disk_cid) if old_disk
         rescue
-          delete_disk(disk, agent, @vm.cid)
+          delete_disk(disk, @vm.cid)
           raise
         end
       end
@@ -333,7 +310,7 @@ module Bosh::Director
         disk.update(:active => true) if disk
       end
 
-      delete_disk(old_disk, agent, @vm.cid) if old_disk
+      delete_disk(old_disk, @vm.cid) if old_disk
     end
 
     def update_networks
@@ -358,24 +335,27 @@ module Bosh::Director
       UUIDTools::UUID.random_create.to_s
     end
 
-    # Returns an array of wait times distributed
-    # on the [min_watch_time..max_watch_time] interval.
-    # Tries to respect n_intervals but doesn't
-    # allow an interval to fall under 1 second.
+    # Returns an array of wait times distributed on the [min_watch_time..max_watch_time] interval.
+    #
+    # Tries to respect intervals but doesn't allow an interval to fall under 1 second.
     # All times are in milliseconds.
-    def watch_schedule(min_watch_time, max_watch_time, n_intervals = N_WATCH_INTERVALS)
+    # @param [Numeric] min_watch_time minimum time to watch the jobs
+    # @param [Numeric] max_watch_time maximum time to watch the jobs
+    # @param [Numeric] intervals number of intervals between polling the state of the jobs
+    # @return [Array<Numeric>] watch schedule
+    def watch_schedule(min_watch_time, max_watch_time, intervals = WATCH_INTERVALS)
       delta = (max_watch_time - min_watch_time).to_f
-      step = [ 1000, delta / n_intervals ].max
+      step = [1000, delta / intervals].max
 
-      [ min_watch_time, [step] * (delta / step).floor ].flatten
+      [min_watch_time, [step] * (delta / step).floor].flatten
     end
 
     def canary_watch_times
-      [ @update_config.min_canary_watch_time, @update_config.max_canary_watch_time ]
+      [@update_config.min_canary_watch_time, @update_config.max_canary_watch_time]
     end
 
     def update_watch_times
-      [ @update_config.min_update_watch_time, @update_config.max_update_watch_time ]
+      [@update_config.min_update_watch_time, @update_config.max_update_watch_time]
     end
   end
 end
