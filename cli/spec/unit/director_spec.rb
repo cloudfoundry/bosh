@@ -345,4 +345,12 @@ describe Bosh::Cli::Director do
     end
   end
 
+  it "calls cancel_task on the current task when cancel_current is called" do
+    task_num = 1
+    @director.stub(:cancel_task).and_return(["body", 200])
+    @director.should_receive(:cancel_task).once.with(task_num)
+    @director.should_receive(:say).once.with("Cancelling task ##{task_num}.")
+    @director.current_running_task = task_num
+    @director.cancel_current
+  end
 end
