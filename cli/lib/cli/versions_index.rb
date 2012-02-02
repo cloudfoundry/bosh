@@ -6,28 +6,13 @@ module Bosh::Cli
     def initialize(storage_dir, name_prefix = nil)
       @storage_dir = File.expand_path(storage_dir)
       @index_file  = File.join(@storage_dir, "index.yml")
-
-      unless File.directory?(@storage_dir)
-        begin
-          FileUtils.mkdir_p(@storage_dir)
-        rescue
-          raise InvalidIndex, "Cannot create index storage directory: #{@storage_dir}"
-        end
-      end
-
-      unless File.file?(@index_file) && File.readable?(@index_file)
-        begin
-          FileUtils.touch(@index_file)
-        rescue
-          raise InvalidIndex, "Cannot create index file: #{@index_file}"
-        end
-      end
-
       @name_prefix = name_prefix
-      @data = load_yaml_file(@index_file, nil)
-      @data = { } unless @data.is_a?(Hash)
-      @data.delete("latest_version") # Indices used to track latest versions
-      @data["builds"] ||= {}
+
+      if File.file?(@index_file)
+        init_index(load_yaml_file(@index_file, nil))
+      else
+        init_index({})
+      end
     end
 
     def find_by_checksum(checksum)
@@ -74,6 +59,8 @@ module Bosh::Cli
         raise InvalidIndex, "Cannot save index entry without knowing its version"
       end
 
+      create_directories
+
       if payload
         File.open(filename(version), "w") do |f|
           f.write(payload)
@@ -99,6 +86,33 @@ module Bosh::Cli
     def filename(version)
       name = @name_prefix.blank? ? "#{version}.tgz" : "#{@name_prefix}-#{version}.tgz"
       File.join(@storage_dir, name)
+    end
+
+    private
+
+    def create_directories
+      begin
+        FileUtils.mkdir_p(@storage_dir)
+      rescue SystemCallError => e
+        raise InvalidIndex, "Cannot create index storage directory: #{e}"
+      end
+
+      begin
+        FileUtils.touch(@index_file)
+      rescue SystemCallError => e
+        raise InvalidIndex, "Cannot create index file: #{e}"
+      end
+    end
+
+    def init_index(data)
+      data ||= {}
+
+      unless data.kind_of?(Hash)
+        raise InvalidIndex, "Invalid versions index data type, #{data.class} given, Hash expected"
+      end
+      @data = data
+      @data.delete("latest_version") # Indices used to track latest versions
+      @data["builds"] ||= {}
     end
 
   end
