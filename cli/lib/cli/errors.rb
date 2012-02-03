@@ -44,5 +44,6 @@ module Bosh
     class PackagingError       < CliError; error_code(508); end
     class UndefinedProperty    < CliError; error_code(509); end
     class MalformedManifest    < CliError; error_code(511); end
+    class MissingTarget        < CliError; error_code(512); end
   end
 end
