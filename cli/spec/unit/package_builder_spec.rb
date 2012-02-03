@@ -4,6 +4,13 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
   before(:each) do
     @release_dir = Dir.mktmpdir
+    @src_dir = FileUtils.mkdir(File.join(@release_dir, "src"))
+    @blobs_dir = FileUtils.mkdir(File.join(@release_dir, "blobs"))
+  end
+
+  after(:each) do
+    FileUtils.rm_rf(@src_dir)
+    FileUtils.rm_rf(@blobs_dir)
   end
 
   def source_path(filename)
@@ -21,6 +28,24 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
   def remove_sources(*files)
     files.each do |file|
       FileUtils.rm(source_path(file))
+    end
+  end
+
+  def blob_path(filename)
+    File.join(@release_dir, "blobs", filename)
+  end
+
+  def add_blobs(*files)
+    files.each do |file|
+      path = blob_path(file)
+      FileUtils.mkdir_p(File.dirname(path))
+      FileUtils.touch(path)
+    end
+  end
+
+  def remove_blobs(*files)
+    files.each do |file|
+      FileUtils.rm(blob_path(file))
     end
   end
 
@@ -52,7 +77,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     lambda {
       builder = make_builder("aa", ["*.rb", "packaging"])
       add_sources("1.rb", "packaging")
-      builder.files.include?("packaging").should be_true
+      builder.source_files.include?("packaging").should be_true
 
       File.open("#{@release_dir}/packages/aa/packaging", "w") { |f| f.puts("make install") }
 
@@ -94,7 +119,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
-    builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.source_files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
     builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
   end
 
@@ -370,20 +395,20 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
 
     builder = make_builder("A", ["lib/*.rb", "README.*"])
-    builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.source_files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
 
     builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
 
     add_sources("lib/.zb.rb")
     builder.reload
 
-    builder.files.should == [ "lib/.zb.rb", "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.source_files.should == [ "lib/.zb.rb", "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
     builder.fingerprint.should == "80a36ed79aa5c4aa23b6c21895107103c9673e99"
 
     remove_sources("lib/.zb.rb")
     builder.reload
 
-    builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.source_files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
     builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
   end
 
@@ -417,6 +442,43 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder2.version.should == "0.2-dev"
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.1-dev.tgz").should be_true
     File.exists?(@release_dir + "/.dev_builds/packages/bar/0.2-dev.tgz").should be_false
+  end
+
+  it "resolves files using blob" do
+    add_blobs("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+
+    builder = make_builder("A", ["lib/*.rb", "README.*"])
+    builder.blob_files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+  end
+
+  it "resolves files using both blob and source" do
+    add_sources("lib/1.rb", "lib/2.rb")
+    add_blobs("lib/README.txt", "README.2", "README.md")
+
+    builder = make_builder("A", ["lib/*.rb", "README.*"])
+
+    builder.source_files.should == [ "lib/1.rb", "lib/2.rb"].sort
+    builder.blob_files.should == [ "README.2", "README.md" ].sort
+    builder.files.should == [ "lib/1.rb", "lib/2.rb", "README.2", "README.md" ].sort
+    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+  end
+
+  it "should keep same fingerprint moving packages from source_dir to blob_dir" do
+
+    # compute fingerprint when all the files are 'blob'
+    add_blobs("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+    builder = make_builder("A", ["lib/*.rb", "README.*"])
+    blob_fingerprint = builder.fingerprint
+    remove_blobs("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+
+    # compute fingerprint when all the files are in 'source'
+    add_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+    builder = make_builder("A", ["lib/*.rb", "README.*"])
+    blob_sources = builder.fingerprint
+    remove_sources("lib/1.rb", "lib/2.rb", "lib/README.txt", "README.2", "README.md")
+
+    builder.fingerprint.should == blob_fingerprint
   end
 
 end
