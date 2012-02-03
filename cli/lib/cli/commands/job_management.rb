@@ -42,7 +42,7 @@ module Bosh::Cli::Command
 
       job = args.shift
       index = args.shift
-      deployment_desc = "to #{target_name.green} using `#{deployment.green}' deployment manifest"
+      deployment_desc = "`#{deployment.green}' to `#{target_name.green}'"
       job_desc = index ? "#{job}(#{index})" : "#{job}"
 
       case operation
@@ -71,7 +71,6 @@ module Bosh::Cli::Command
       end
 
       say "You are about to #{op_desc.green}"
-      say "This will trigger a new deployment #{deployment_desc}"
 
       if interactive?
         # TODO: refactor inspect_deployment_changes to decouple changeset structure and rendering
@@ -79,18 +78,18 @@ module Bosh::Cli::Command
         if other_changes_present && !force
           err "Cannot perform job management when other deployment changes are present. Please use `--force' to override."
         end
-        if ask("Please review all changes above and type 'yes' if you are ready: ") != "yes"
+        unless confirmed?("#{op_desc.capitalize}?")
           cancel_deployment
         end
       end
       nl
 
-      say "Deploying #{deployment_desc}..."
+      say "Performing `#{op_desc}'..."
 
       status, body = director.change_job_state(manifest["name"], manifest_yaml, job, index, new_state)
 
       responses = {
-        :done          => "Deployed #{deployment_desc}\n#{completion_desc}",
+        :done          => completion_desc,
         :non_trackable => "Started deployment but director at '#{target}' doesn't support deployment tracking",
         :track_timeout => "Started deployment but timed out out while tracking status",
         :error         => "Started deployment but received an error while tracking status",
@@ -102,4 +101,3 @@ module Bosh::Cli::Command
 
   end
 end
-
