@@ -14,8 +14,8 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
       Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
 
       lock.should_receive(:lock).and_yield
-      @job.should_receive(:scan_disks).ordered
       @job.should_receive(:scan_vms).ordered
+      @job.should_receive(:scan_disks).ordered
       @job.perform.should == "scan complete"
     end
 
@@ -51,12 +51,201 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
       end
     end
 
+    describe "Mount info scan" do
+      it "unresponsive agents should not be considered disk info mismatch" do
+        lock = mock("deployment_lock")
+        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
+        lock.should_receive(:lock).and_yield
+
+        vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
+        instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                         :job => "job", :index => 0)
+        disk = Bosh::Director::Models::PersistentDisk.make(:instance_id => instance.id, :active => true)
+
+        agent = mock("agent")
+        Bosh::Director::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+        agent.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
+        # for un-responsive agents pick up the vm-id from the DB
+        @job.perform == "scan complete"
+
+        Bosh::Director::Models::DeploymentProblem.count.should == 1
+        problem = Bosh::Director::Models::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "unresponsive_agent"
+        problem.deployment.should == @mycloud
+        problem.resource_id.should == 1
+        problem.data.should == {}
+      end
+
+      it "old agents without list_disk method" do
+        lock = mock("deployment_lock")
+        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
+        lock.should_receive(:lock).and_yield
+
+        vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
+        instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                         :job => "job", :index => 1)
+        disk = Bosh::Director::Models::PersistentDisk.make(:instance_id => instance.id, :active => true)
+
+        agent = mock("agent")
+        Bosh::Director::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+
+        good_state = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job" },
+          "index" => 1
+        }
+        agent.should_receive(:get_state).and_return(good_state)
+        agent.should_receive(:list_disk).and_raise("No 'list_disk' method")
+
+        # if list_disk is not present fall back to db --> no error
+        @job.perform == "scan complete"
+        Bosh::Director::Models::DeploymentProblem.count.should == 0
+      end
+
+      it "scan not-mounted active disk" do
+        lock = mock("deployment_lock")
+        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
+        lock.should_receive(:lock).and_yield
+
+        vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
+        instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                         :job => "job", :index => 1)
+        disk = Bosh::Director::Models::PersistentDisk.make(:instance_id => instance.id, :active => true)
+
+        agent = mock("agent")
+        Bosh::Director::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
+
+        good_state = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job" },
+          "index" => 1
+        }
+        agent.should_receive(:get_state).and_return(good_state)
+        agent.should_receive(:list_disk).and_return([])
+
+        # if list_disk is not present fall back to db --> no error
+        @job.perform == "scan complete"
+        Bosh::Director::Models::DeploymentProblem.count.should == 1
+        problem = Bosh::Director::Models::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "mount_info_mismatch"
+        problem.deployment.should == @mycloud
+        problem.resource_id.should == 1
+        problem.data.should == {'owner_vms' => []}
+      end
+
+      it "scan disks mounted twice" do
+        lock = mock("deployment_lock")
+        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
+        lock.should_receive(:lock).and_yield
+
+        (1..2).each do |i|
+          vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid-#{i}", :agent_id => "agent-#{i}", :deployment => @mycloud)
+          instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                           :job => "job-#{i}", :index => i)
+        end
+        Bosh::Director::Models::PersistentDisk.make(:instance_id => 1, :active => true, :disk_cid => 'disk-cid-1')
+
+        agent_1 = mock("agent-1")
+        agent_2 = mock("agent-2")
+
+        Bosh::Director::AgentClient.stub!(:new).with("agent-1", anything).and_return(agent_1)
+        Bosh::Director::AgentClient.stub!(:new).with("agent-2", anything).and_return(agent_2)
+
+        good_state_1 = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job-1" },
+          "index" => 1
+        }
+        agent_1.should_receive(:get_state).and_return(good_state_1)
+
+        good_state_2 = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job-2" },
+          "index" => 2
+        }
+        agent_2.should_receive(:get_state).and_return(good_state_2)
+
+        # disk-cid-1 mounted on both 'agent_1' and 'agent_2'
+        agent_1.should_receive(:list_disk).and_return(["disk-cid-1"])
+        agent_2.should_receive(:list_disk).and_return(["disk-cid-1"])
+
+        @job.perform
+        Bosh::Director::Models::DeploymentProblem.count.should == 1
+        problem = Bosh::Director::Models::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "mount_info_mismatch"
+        problem.deployment.should == @mycloud
+        problem.resource_id.should == 1
+        problem.data.should == {'owner_vms' => ["vm-cid-1", "vm-cid-2"]}
+      end
+
+      it "scan disks mounted in a different VM" do
+        lock = mock("deployment_lock")
+        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
+        lock.should_receive(:lock).and_yield
+
+        (1..2).each do |i|
+          vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid-#{i}", :agent_id => "agent-#{i}", :deployment => @mycloud)
+          instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                           :job => "job-#{i}", :index => i)
+          Bosh::Director::Models::PersistentDisk.make(:instance_id => instance.id, :active => true, :disk_cid => "disk-cid-#{i}")
+        end
+
+        agent_1 = mock("agent-1")
+        agent_2 = mock("agent-2")
+
+        Bosh::Director::AgentClient.stub!(:new).with("agent-1", anything).and_return(agent_1)
+        Bosh::Director::AgentClient.stub!(:new).with("agent-2", anything).and_return(agent_2)
+
+        good_state_1 = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job-1" },
+          "index" => 1
+        }
+        agent_1.should_receive(:get_state).and_return(good_state_1)
+
+        good_state_2 = {
+          "deployment" => "mycloud",
+          "job" => { "name" => "job-2" },
+          "index" => 2
+        }
+        agent_2.should_receive(:get_state).and_return(good_state_2)
+
+        # mount info flipped
+        agent_1.should_receive(:list_disk).and_return(["disk-cid-2"])
+        agent_2.should_receive(:list_disk).and_return(["disk-cid-1"])
+
+        @job.perform
+        Bosh::Director::Models::DeploymentProblem.count.should == 2
+
+        problem = Bosh::Director::Models::DeploymentProblem.all[0]
+        problem.counter.should == 1
+        problem.type.should == "mount_info_mismatch"
+        problem.deployment.should == @mycloud
+        problem.state.should == "open"
+        problem.resource_id.should == 1
+        problem.data.should == {'owner_vms' => ['vm-cid-2']}
+
+        problem = Bosh::Director::Models::DeploymentProblem.all[1]
+        problem.counter.should == 1
+        problem.type.should == "mount_info_mismatch"
+        problem.deployment.should == @mycloud
+        problem.state.should == "open"
+        problem.resource_id.should == 2
+        problem.data.should == {'owner_vms' => ['vm-cid-1']}
+      end
+
+    end
+
+
     describe "VM scan" do
       it "scans for unresponsive agents" do
         2.times do |i|
           vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}", :deployment => @mycloud)
-          Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
-                                                :job => "job-#{i}", :index => i)
+          instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
+                                                           :job => "job-#{i}", :index => i)
         end
 
         agent_1 = mock("agent-1")
@@ -74,6 +263,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
           "index" => 1
         }
         agent_2.should_receive(:get_state).and_return(good_state)
+        agent_2.should_receive(:list_disk).and_return([])
 
         @job.scan_vms
         Bosh::Director::Models::DeploymentProblem.count.should == 1
@@ -103,6 +293,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
         # valid idle resource pool VM
         agent_1.should_receive(:get_state).and_return({"deployment" => "mycloud"})
+        agent_1.should_receive(:list_disk).and_return([])
 
         # valid bound instance
         bound_vm_state = {
@@ -111,6 +302,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
           "index" => 3
         }
         agent_2.should_receive(:get_state).and_return(bound_vm_state)
+        agent_2.should_receive(:list_disk).and_return([])
 
         # problem: unbound instance VM
         unbound_vm_state = {
@@ -119,6 +311,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
           "index" => 22
         }
         agent_3.should_receive(:get_state).and_return(unbound_vm_state)
+        agent_3.should_receive(:list_disk).and_return([])
 
         @job.scan_vms
 
@@ -148,6 +341,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         }
 
         agent.should_receive(:get_state).and_return(out_of_sync_state)
+        agent.should_receive(:list_disk).and_return([])
 
         @job.scan_vms
 
