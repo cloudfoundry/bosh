@@ -2,23 +2,39 @@ require "spec_helper"
 
 describe Bosh::Cli::VersionsIndex do
 
-  def prepare_index(dir, data = nil)
-    index_file = File.join(dir, "index.yml")
-    return if data.nil?
-
-    File.open(index_file, "w") do |f|
-      f.write(YAML.dump(data))
-    end
-  end
-
   before :each do
     @dir = Dir.mktmpdir
-    prepare_index(@dir)
+    @index_file = File.join(@dir, "index.yml")
     @index = Bosh::Cli::VersionsIndex.new(@dir)
   end
 
   after :each do
     FileUtils.rm_rf(@dir)
+  end
+
+  it "only creates directory structure on writes to index" do
+    File.exists?(@index_file).should be_false
+    @index.version_exists?(1).should be_false
+    @index["deadbeef"].should be_nil
+    @index.latest_version.should be_nil
+    File.exists?(@index_file).should be_false
+
+    @index.add_version("deadcafe", { "version" => 2 }, "payload2")
+    File.exists?(@index_file).should be_true
+  end
+
+  it "chokes on malformed index file" do
+    File.open(@index_file, "w") { |f| f.write("deadbeef") }
+
+    lambda {
+      @index = Bosh::Cli::VersionsIndex.new(@dir)
+    }.should raise_error(Bosh::Cli::InvalidIndex, "Invalid versions index data type, String given, Hash expected")
+  end
+
+  it "doesn't choke on empty index file" do
+    File.open(@index_file, "w") { |f| f.write("") }
+    @index = Bosh::Cli::VersionsIndex.new(@dir)
+    @index.latest_version.should be_nil
   end
 
   it "can be used to add versioned payloads to index" do
