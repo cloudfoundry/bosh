@@ -39,7 +39,7 @@ namespace "bundler" do
           ENV['RUBYOPT'] = ENV['RUBYOPT'].sub '-rbundler/setup', ''
           ENV['RUBYOPT'] = ENV['RUBYOPT'].sub "-I#{File.expand_path('..', __FILE__)}", ''
         end
-	      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
+        sh("bundle install --local --without #{(environments - [env]).join(' ')}")
       end
     end
   end
