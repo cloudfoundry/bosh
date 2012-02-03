@@ -57,16 +57,11 @@ module Bosh::Cli
       manifest = manifest.dup
       current_deployment = director.get_deployment(manifest["name"])
 
-      if current_deployment["manifest"].nil?
-        say "Director currently has information about this deployment but it's missing the manifest.".red
-        say "This is something you probably need to fix before proceeding.".red
-        if ask("Please enter 'yes' if you want to ignore this fact and still deploy: ") == 'yes'
-          return
-        else
-          cancel_deployment
-        end
-      end
-
+      # We cannot retrieve current manifest until there was at least one
+      # successful deployment. There used to be a warning about that
+      # but it turned out to be confusing to many users and thus has
+      # been removed.
+      return if current_deployment["manifest"].nil?
       current_manifest = YAML.load(current_deployment["manifest"])
 
       unless current_manifest.is_a?(Hash)
@@ -90,12 +85,12 @@ module Bosh::Cli
 
       if diff[:release][:name].changed?
         say "Release name has changed: %s -> %s".red % [ diff[:release][:name].old, diff[:release][:name].new ]
-        if ask("This is very serious and potentially destructive change. ARE YOU SURE YOU WANT TO DO IT? (type 'yes' to confirm): ") != 'yes'
+        unless confirmed?("This is very serious and potentially destructive change. ARE YOU SURE YOU WANT TO DO IT?")
           cancel_deployment
         end
       elsif diff[:release][:version].changed?
         say "Release version has changed: %s -> %s".yellow % [ diff[:release][:version].old, diff[:release][:version].new ]
-        if ask("Are you sure you want to deploy this version? (type 'yes' to confirm): ") != 'yes'
+        unless confirmed?("Are you sure you want to deploy this version?")
           cancel_deployment
         end
       end
@@ -118,14 +113,14 @@ module Bosh::Cli
       end
 
       if old_stemcells != new_stemcells
-        if ask("Stemcell update has been detected. Are you sure you want to update stemcells? (type 'yes' to confirm): ") != 'yes'
+        unless confirmed?("Stemcell update has been detected. Are you sure you want to update stemcells?")
           cancel_deployment
         end
       end
 
       if old_stemcells.size != new_stemcells.size
         say "Stemcell update seems to be inconsistent with current deployment. Please carefully review changes above.".red
-        if ask("Are you sure this configuration is correct? (type 'yes' to confirm): ") != 'yes'
+        unless confirmed?("Are you sure this configuration is correct?")
           cancel_deployment
         end
       end
