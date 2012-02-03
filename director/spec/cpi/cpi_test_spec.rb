@@ -229,17 +229,8 @@ describe Bosh::Director::Clouds::VSphere do
         disk_cid = @cloud.create_disk(256, vm_cid) unless disk_cid
         @cloud.attach_disk(vm_cid, disk_cid)
 
-        task = agent.mount_disk(disk_cid)
-        while task["state"] == "running"
-          sleep(1.0)
-          task = agent.get_task(task["agent_task_id"])
-        end
-
-        task = agent.unmount_disk(disk_cid)
-        while task["state"] == "running"
-          sleep(1.0)
-          task = agent.get_task(task["agent_task_id"])
-        end
+        agent.mount_disk(disk_cid)
+        agent.unmount_disk(disk_cid)
       ensure
         Bosh::Director::Cpi::Sandbox.stop_nats_tunnel(pid) rescue nil
         @cloud.detach_disk(vm_cid, disk_cid) rescue nil

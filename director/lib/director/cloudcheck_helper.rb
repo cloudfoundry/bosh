@@ -165,10 +165,10 @@ module Bosh::Director
         # the data has been lost (e.g. someone deleted VM from vCenter
         # along with the disk.
         cloud.attach_disk(new_vm.cid, disk_cid)
-        agent_client(new_vm).run_task(:mount_disk, disk_cid)
+        agent_client(new_vm).mount_disk(disk_cid)
       end
 
-      agent_client(new_vm).run_task(:apply, spec)
+      agent_client(new_vm).apply(spec)
 
       if instance && instance.state == "started"
         agent_client(new_vm).start

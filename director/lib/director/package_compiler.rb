@@ -7,7 +7,7 @@ module Bosh::Director
       attr_accessor :jobs
       attr_accessor :package
       attr_accessor :stemcell
-      attr_reader   :compiled_package
+      attr_reader :compiled_package
       attr_accessor :dependency_key
       attr_accessor :dependencies
 
@@ -40,9 +40,9 @@ module Bosh::Director
           package = dependency.package
           compiled_package = dependency.compiled_package
           spec[package.name] = {
-              "name"         => package.name,
-              "version"      => "#{package.version}.#{compiled_package.build}",
-              "sha1"         => compiled_package.sha1,
+              "name" => package.name,
+              "version" => "#{package.version}.#{compiled_package.build}",
+              "sha1" => compiled_package.sha1,
               "blobstore_id" => compiled_package.blobstore_id
           }
         end
@@ -137,7 +137,7 @@ module Bosh::Director
     end
 
     def compile_package(task)
-      package  = task.package
+      package = task.package
       stemcell = task.stemcell
 
       build = Models::CompiledPackage.filter(:package_id => package.id, :stemcell_id => stemcell.id).max(:build)
@@ -167,10 +167,6 @@ module Bosh::Director
         @logger.info("Compiling package on compilation VM")
         agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name,
                                            "#{package.version}.#{build}", task.dependency_spec)
-        while agent_task["state"] == "running"
-          sleep(1.0)
-          agent_task = agent.get_task(agent_task["agent_task_id"])
-        end
       ensure
         @logger.info("Deleting compilation VM: #{vm_cid}")
         @cloud.delete_vm(vm_cid)
@@ -216,8 +212,7 @@ module Bosh::Director
         dependency_key << [package.name, package.version]
       end
       dependency_key.sort! { |a, b| a.first <=> b.first }
-      dependency_key = Yajl::Encoder.encode(dependency_key)
-      dependency_key
+      Yajl::Encoder.encode(dependency_key)
     end
 
     def generate_compile_tasks
@@ -227,7 +222,7 @@ module Bosh::Director
       @logger.info("Building package index for this release")
       packages = release_version.packages
       packages_by_name = {}
-      packages.each { |package| packages_by_name[package.name] = package}
+      packages.each { |package| packages_by_name[package.name] = package }
 
       @logger.info("Generating a list of compile tasks")
 
@@ -290,16 +285,16 @@ module Bosh::Director
 
         if task.package.nil?
           @logger.info("Filling in dependencies for package: #{package_name}")
-          package               = packages_by_name[package_name]
-          dependencies          = package.dependency_set
-          dependency_key        = generate_dependency_key(dependencies, packages_by_name)
-          compiled_package      = Models::CompiledPackage[:package_id  => package.id,
-                                                          :stemcell_id => stemcell_id,
-                                                          :dependency_key => dependency_key]
-          task.package          = package
-          task.dependency_key   = dependency_key
+          package = packages_by_name[package_name]
+          dependencies = package.dependency_set
+          dependency_key = generate_dependency_key(dependencies, packages_by_name)
+          compiled_package = Models::CompiledPackage[:package_id => package.id,
+                                                     :stemcell_id => stemcell_id,
+                                                     :dependency_key => dependency_key]
+          task.package = package
+          task.dependency_key = dependency_key
           task.compiled_package = compiled_package
-          task.dependencies     = []
+          task.dependencies = []
 
           dependencies.each { |dependency| task.dependencies << @compile_tasks[[dependency, stemcell_id]] }
         end
@@ -317,18 +312,13 @@ module Bosh::Director
 
     def configure_vm(vm, agent, network_settings)
       state = {
-        "deployment"    => @deployment_plan.name,
-        "resource_pool" => "package_compiler",
-        "networks"      => network_settings
+          "deployment" => @deployment_plan.name,
+          "resource_pool" => "package_compiler",
+          "networks" => network_settings
       }
 
       vm.update(:apply_spec => state)
-
-      task = agent.apply(state)
-      while task["state"] == "running"
-        sleep(1.0)
-        task = agent.get_task(task["agent_task_id"])
-      end
+      agent.apply(state)
     end
 
     def generate_agent_id
