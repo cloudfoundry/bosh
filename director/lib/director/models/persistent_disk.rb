@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class PersistentDisk < Sequel::Model
+  class PersistentDisk < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :instance
 
     def validate

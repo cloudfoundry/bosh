@@ -17,6 +17,8 @@ require "director/models/persistent_disk"
 module Bosh::Director
   module Models
     VALID_ID = /^[-a-z0-9_.]+$/i
+
+    autoload :Dns, "director/models/dns"
   end
 end
 

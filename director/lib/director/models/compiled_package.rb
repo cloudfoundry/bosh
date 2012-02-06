@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class CompiledPackage < Sequel::Model
+  class CompiledPackage < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :package
     many_to_one :stemcell
 
