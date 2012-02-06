@@ -91,7 +91,9 @@ module Bosh
             set_deployment(@config_file["deployment"])
             save
           end
-          return @config_file["deployment"][target]
+          if @config_file["deployment"].is_a?(Hash)
+            return @config_file["deployment"][target]
+          end
         end
       end
 
