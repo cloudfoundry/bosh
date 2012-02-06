@@ -7,18 +7,19 @@ module Bosh::Director
 
       CONFIG_OPTIONS = [
         :base_dir,
-        :logger,
-        :uuid,
-        :process_uuid,
-        :db,
-        :name,
-        :redis_options,
         :cloud_options,
+        :db,
+        :dns_db,
+        :event_log,
+        :logger,
+        :max_tasks,
+        :name,
+        :process_uuid,
+        :redis_options,
+        :result,
         :revision,
         :task_checkpoint_interval,
-        :max_tasks,
-        :event_log,
-        :result
+        :uuid
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -90,18 +91,22 @@ module Bosh::Director
 
         @blobstore = nil
 
-        if config["db"]["database"].index("sqlite://") == 0
-          patch_sqlite
-        end
-
-        connection_options = {}
-        [:max_connections, :pool_timeout].each { |key| connection_options[key] = config["db"][key.to_s] }
-
-        @db = Sequel.connect(config["db"]["database"], connection_options)
-        @db.logger = @logger
-        @db.sql_log_level = :debug
+        @db = configure_db(config["db"])
+        @dns_db = configure_db(config["dns"]["db"]) if config["dns"] && config["dns"]["db"]
 
         @lock = Monitor.new
+      end
+
+      def configure_db(db_config)
+        patch_sqlite if db_config["database"].index("sqlite://") == 0
+
+        connection_options = {}
+        [:max_connections, :pool_timeout].each { |key| connection_options[key] = db_config[key.to_s] }
+
+        db = Sequel.connect(db_config["database"], connection_options)
+        db.logger = @logger
+        db.sql_log_level = :debug
+        db
       end
 
       def blobstore
@@ -178,11 +183,18 @@ module Bosh::Director
         !threaded[:redis].nil?
       end
 
+      def dns_enabled?
+        !@dns_db.nil?
+      end
+
       def threaded
         Thread.current[:bosh] ||= {}
       end
 
       def patch_sqlite
+        return if @patched_sqlite
+        @patched_sqlite = true
+
         require "sequel"
         require "sequel/adapters/sqlite"
 

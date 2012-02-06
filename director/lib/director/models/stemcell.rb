@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class Stemcell < Sequel::Model
+  class Stemcell < Sequel::Model(Bosh::Director::Config.db)
     many_to_many :deployments
     one_to_many :compiled_packages
 
