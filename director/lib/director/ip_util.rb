@@ -1,4 +1,5 @@
 module Bosh::Director
+  # TODO: rename to IpHelper to be consistent
   module IpUtil
 
     def each_ip(ranges, &block)

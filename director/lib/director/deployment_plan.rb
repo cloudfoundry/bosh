@@ -17,7 +17,7 @@ module Bosh::Director
     attr_accessor :dns_domain
     attr_reader   :recreate
 
-    def initialize(manifest, options = { })
+    def initialize(manifest, options = {})
       @name = safe_property(manifest, "name", :class => String)
       @canonical_name = canonical(@name)
 
@@ -306,7 +306,7 @@ module Bosh::Director
         safe_property(network_spec, "subnets", :class => Array).each do |subnet_spec|
           new_subnet = NetworkSubnetSpec.new(self, subnet_spec)
           @subnets.each do |subnet|
-            raise "overlapping subnets" if subnet.overlaps?(new_subnet)
+            raise "Overlapping subnets" if subnet.overlaps?(new_subnet)
           end
           @subnets << new_subnet
         end
@@ -570,13 +570,15 @@ module Bosh::Director
             raise ArgumentError, "Job '#{@name}' instance state '#{index}' is outside of (0..#{job_size-1}) range"
           end
           unless VALID_JOB_STATES.include?(state)
-            raise ArgumentError, "Job '#{@name}' instance '#{index}' has an unknown state '#{state}', valid states are: #{VALID_JOB_STATES.join(", ")}"
+            raise ArgumentError, "Job '#{@name}' instance '#{index}' has an unknown state '#{state}', " +
+                "valid states are: #{VALID_JOB_STATES.join(", ")}"
           end
           @instance_states[index] = state
         end
 
         if @state && !VALID_JOB_STATES.include?(@state)
-          raise ArgumentError, "Job '#{@name}' has an unknown state '#{@state}', valid states are: #{VALID_JOB_STATES.join(", ")}"
+          raise ArgumentError, "Job '#{@name}' has an unknown state '#{@state}', " +
+              "valid states are: #{VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times do |index|
@@ -628,7 +630,8 @@ module Bosh::Director
           missing_default_properties = NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.dup
           @default_network.each_key { |key| missing_default_properties.delete(key) }
           unless missing_default_properties.empty?
-            raise "Job #{@name} must specify a default network for '#{missing_default_properties.to_a.sort.join(", ")}' " +
+            raise "Job #{@name} must specify a default network for " +
+                      "'#{missing_default_properties.to_a.sort.join(", ")}' " +
                       "since it has more than one network configured"
           end
         else
@@ -925,7 +928,8 @@ module Bosh::Director
 
         @canaries = safe_property(update_config, "canaries", :class => Integer, :optional => optional)
 
-        @max_in_flight = safe_property(update_config, "max_in_flight", :class => Integer, :optional => optional, :min => 1, :max => 32)
+        @max_in_flight = safe_property(update_config, "max_in_flight", :class => Integer, :optional => optional,
+                                       :min => 1, :max => 32)
         @max_errors = safe_property(update_config, "max_errors", :class => Integer, :optional => optional)
 
         canary_watch_times = safe_property(update_config, "canary_watch_time", :class => String, :optional => optional)
@@ -955,7 +959,6 @@ module Bosh::Director
 
       def parse_watch_times(value)
         value = value.to_s
-        result = nil
 
         if value =~ /^\s*(\d+)\s*\-\s*(\d+)\s*$/
           result = [$1.to_i, $2.to_i]

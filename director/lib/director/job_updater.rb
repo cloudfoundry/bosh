@@ -45,8 +45,8 @@ module Bosh::Director
         num_canaries = [ @job.update.canaries, instances.size ].min
 
         @logger.info("Starting canary update")
-        # canaries first
-        num_canaries.times do |index|
+        # Canaries first
+        num_canaries.times do
           instance = instances.shift
           pool.process do
             @event_log.track("#{@job.name}/#{instance.index} (canary)") do |ticker|
@@ -72,10 +72,9 @@ module Bosh::Director
           halt
         end
 
-        # continue with the rest of the updates
+        # Continue with the rest of the updates
         @logger.info("Continuing the rest of the update")
-        total = instances.size
-        instances.each_with_index do |instance, index|
+        instances.each do |instance|
           pool.process do
             @event_log.track("#{@job.name}/#{instance.index}") do |ticker|
               with_thread_name("instance_update(#{@job.name}/#{instance.index})") do

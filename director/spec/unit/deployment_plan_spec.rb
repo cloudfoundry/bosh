@@ -895,7 +895,7 @@ describe Bosh::Director::DeploymentPlan do
         }
       }
 
-      lambda { make_plan(manifest) }.should raise_error("overlapping subnets")
+      lambda { make_plan(manifest) }.should raise_error("Overlapping subnets")
     end
 
     it "should not allow you to reserve the same IP twice" do
