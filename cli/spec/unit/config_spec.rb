@@ -68,6 +68,15 @@ describe Bosh::Cli::Config do
     cfg.deployment.should == "/path/to/deploy/1"
   end
 
+  it "returns nil when the deployments key exists but has no value" do
+    add_config("target" => "localhost:8080", "deployment" => nil)
+
+    cfg = create_config
+    yaml_file = load_yaml_file(@config, nil)
+    yaml_file["deployment"].should == nil
+    cfg.deployment.should == nil
+  end
+
   it "should throw MissingTarget when getting deployment without target set" do
     add_config({})
     cfg = create_config
