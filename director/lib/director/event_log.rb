@@ -41,7 +41,7 @@ module Bosh::Director
       end
     end
 
-    def track(task = nil, total = nil)
+    def track(task = nil)
       index = nil
       @lock.synchronize do
         @counter += 1
@@ -69,18 +69,18 @@ module Bosh::Director
     end
 
     def task_failed(task, index, progress = 100, error = nil)
-      log(task, "failed", index, progress, { "error" => error })
+      log(task, "failed", index, progress, {"error" => error})
     end
 
     def log(task, state, index, progress = 0, data = {})
       entry = {
-        :time     => Time.now.to_i,
-        :stage    => @stage,
-        :task     => task,
-        :tags     => @tags,
-        :index    => index,
-        :total    => @total,
-        :state    => state,
+        :time => Time.now.to_i,
+        :stage => @stage,
+        :task => task,
+        :tags => @tags,
+        :index => index,
+        :total => @total,
+        :state => state,
         :progress => progress,
       }
 
@@ -99,10 +99,9 @@ module Bosh::Director
     end
   end
 
-  # Sometimes task needs to be split into subtasks so
-  # we can track its progress more granularily. In that
-  # case we can use EventTicker helper class to advance
-  # progress between N and N+1 by small increments.
+  # Sometimes task needs to be split into subtasks so we can track its progress more
+  # granularity. In that case we can use EventTicker helper class to advance progress
+  # between N and N+1 by small increments.
   class EventTicker
     def initialize(event_log, task, index)
       @event_log = event_log
@@ -112,7 +111,7 @@ module Bosh::Director
     end
 
     def advance(delta, data = {})
-      @progress = [ @progress + delta, 100 ].min
+      @progress = [@progress + delta, 100].min
       @event_log.log(@task, "in_progress", @index, @progress.to_i, data)
     end
   end

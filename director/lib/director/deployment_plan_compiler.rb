@@ -11,11 +11,8 @@ module Bosh::Director
     end
 
     def process_ip_reservations(state)
-      # TODO: this should be refactored
-      # to clarify reservation logic
-      # and avoid passing this hash around
-      # (i.e. replaced with some abstraction
-      # for ip reservations)
+      # TODO CLEANUP: this should be refactored to clarify reservation logic and avoid passing this hash around
+      # (i.e. replaced with some abstraction for ip reservations)
       ip_reservations = {}
       state["networks"].each do |name, network_config|
         network = @deployment_plan.network(name)
@@ -31,15 +28,14 @@ module Bosh::Director
     end
 
     def verify_state(vm, instance, state)
-      # TODO: consider a special kind of exception
-      # instead of generic RuntimeError
+      # TODO: consider a special kind of exception instead of generic RuntimeError
       if instance && instance.deployment_id != vm.deployment_id
         raise "VM `#{vm.cid}' is out of sync: DB record mismatch, " +
           "instance belongs to deployment `#{instance.deployment_id}', " +
           "VM belongs to deployment `#{vm.deployment_id}'"
       end
 
-      if !state.kind_of?(Hash)
+      unless state.kind_of?(Hash)
         @logger.error("Invalid state for `#{vm.cid}': #{state.pretty_inspect}")
         raise "VM `#{vm.cid}' returns invalid state: expected Hash, got #{state.class}"
       end
@@ -138,7 +134,7 @@ module Bosh::Director
                 ip_reservations = process_ip_reservations(state)
                 @logger.debug("Processed IP reservations")
 
-                # does the job instance exist in the new deployment?
+                # Does the job instance exist in the new deployment?
                 if instance
                   disk_size = state["persistent_disk"].to_i
                   persistent_disk = instance.persistent_disk
@@ -156,14 +152,14 @@ module Bosh::Director
                     instance_spec.current_state = state
 
                     @logger.debug("Copying network reservations")
-                    # copy network reservations
+                    # Copy network reservations
                     instance_spec.networks.each do |network_config|
                       reservation = ip_reservations[network_config.name]
                       network_config.use_reservation(reservation[:ip], reservation[:static?]) if reservation
                     end
 
                     @logger.debug("Copying resource pool reservation")
-                    # copy resource pool reservation
+                    # Copy resource pool reservation
                     instance_spec.job.resource_pool.mark_active_vm
                   else
                     @logger.debug("Job/instance not found, marking for deletion")

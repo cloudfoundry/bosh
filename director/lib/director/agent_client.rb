@@ -4,7 +4,7 @@ module Bosh::Director
     DEFAULT_POLL_INTERVAL = 1.0
 
     def initialize(id, options = {})
-      # retry 'get_state' and 'get_task' in case of timeout errors
+      # Retry 'get_state' and 'get_task' in case of timeout errors
       defaults = {
         :retry_methods => { :get_state => 2, :get_task => 2}
       }
