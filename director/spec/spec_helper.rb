@@ -29,14 +29,22 @@ require "director"
 
 Bosh::Director::Config.patch_sqlite
 
+# TODO: CLEANUP, duplication between here and below in the reset
 director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
 vsphere_cpi_migrations = File.expand_path("../../db/migrations/vsphere_cpi", __FILE__)
+dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
+
 Sequel.extension :migration
 db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
 db.loggers << logger
-Sequel::Model.db = db
+Bosh::Director::Config.db = db
 Sequel::Migrator.apply(db, director_migrations, nil)
 Sequel::TimestampMigrator.new(db, vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
+
+dns_db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
+dns_db.loggers << logger
+Bosh::Director::Config.dns_db = dns_db
+Sequel::Migrator.apply(dns_db, dns_migrations, nil)
 
 require "archive/tar/minitar"
 require "digest/sha1"
@@ -170,20 +178,27 @@ ensure
   @event_buffer.seek(pos)
 end
 
+def reset_db(db)
+  db.execute("PRAGMA foreign_keys = OFF")
+  db.tables.each do |table|
+    db.drop_table(table)
+  end
+  db.execute("PRAGMA foreign_keys = ON")
+end
+
 Rspec.configure do |rspec|
   rspec.before(:each) do |example|
     Bosh::Director::Config.clear
+    Bosh::Director::Config.db = db
+    Bosh::Director::Config.dns_db = dns_db
+    Bosh::Director::Config.logger = logger
 
-    db.execute("PRAGMA foreign_keys = OFF")
-    db.tables.each do |table|
-      db.drop_table(table)
-    end
-    db.execute("PRAGMA foreign_keys = ON")
+    reset_db(db)
+    reset_db(dns_db)
 
     Sequel::Migrator.apply(db, director_migrations, nil)
     Sequel::TimestampMigrator.new(db, vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
-
-    Bosh::Director::Config.logger = logger
+    Sequel::Migrator.apply(dns_db, dns_migrations, nil)
 
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog.new(@event_buffer)

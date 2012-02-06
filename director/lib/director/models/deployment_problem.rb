@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class DeploymentProblem < Sequel::Model
+  class DeploymentProblem < Sequel::Model(Bosh::Director::Config.db)
 
     many_to_one :deployment
 

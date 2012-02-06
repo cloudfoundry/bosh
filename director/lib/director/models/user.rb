@@ -1,5 +1,5 @@
   module Bosh::Director::Models
-  class User < Sequel::Model
+  class User < Sequel::Model(Bosh::Director::Config.db)
     def validate
       validates_presence :username
       validates_presence :password

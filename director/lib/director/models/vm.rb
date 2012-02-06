@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class Vm < Sequel::Model
+  class Vm < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :deployment
     one_to_one  :instance
 
