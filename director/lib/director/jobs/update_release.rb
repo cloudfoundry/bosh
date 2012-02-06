@@ -286,7 +286,9 @@ module Bosh::Director
           end
         end
 
-        raise JobMissingMonit.new(template.name) unless File.file?(File.join(job_dir, "monit"))
+        unless File.exists?(File.join(job_dir, "monit")) || Dir.glob(File.join(job_dir, "*.monit")).size > 0
+          raise JobMissingMonit.new(template.name)
+        end
 
         # TODO: verify sha1
         File.open(job_tgz) do |f|
