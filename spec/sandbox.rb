@@ -11,6 +11,7 @@ module Bosh
       DIRECTOR_UUID = "deadbeef"
 
       DB_PATH             = "/tmp/director.sqlite"
+      DNS_DB_PATH         = "/tmp/director-dns.sqlite"
       DIRECTOR_TMP_PATH   = "/tmp/boshdir"
       AGENT_TMP_PATH      = "/tmp/bosh_test_cloud"
 
@@ -141,6 +142,7 @@ module Bosh
           kill_process(HM_PID)
           FileUtils.rm_f(@sqlite_db)
           FileUtils.rm_f(DB_PATH)
+          FileUtils.rm_f(DNS_DB_PATH)
           FileUtils.rm_rf(DIRECTOR_TMP_PATH)
           FileUtils.rm_rf(AGENT_TMP_PATH)
           FileUtils.rm_rf(BLOBSTORE_STORAGE_DIR)

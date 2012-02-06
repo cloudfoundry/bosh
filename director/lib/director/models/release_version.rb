@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class ReleaseVersion < Sequel::Model
+  class ReleaseVersion < Sequel::Model(Bosh::Director::Config.db)
     many_to_one  :release
     many_to_many :packages
     many_to_many :templates

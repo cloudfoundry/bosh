@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class DeploymentProperty < Sequel::Model
+  class DeploymentProperty < Sequel::Model(Bosh::Director::Config.db)
 
     VALID_PROPERTY_NAME = /^[-a-z0-9_.]+$/i
 

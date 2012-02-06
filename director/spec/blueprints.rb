@@ -13,6 +13,7 @@ Sham.define do
   index         { |index| index }
   description   { |index| "description #{index}"}
   sha1          { |index| "sha1-#{index}" }
+  ip            { |index| "#{index % 255}.#{index % 255}.#{index % 255}.#{index % 255}"}
   build         { rand(1000) }
 end
 
@@ -106,4 +107,20 @@ module Bosh::Director::Models
     data_json   { "{}" }
     state       { "open" }
   end
+end
+
+module Bosh::Director::Models::Dns
+
+  Domain.blueprint do
+    name     { Sham.name }
+    type     { "NATIVE" }
+  end
+
+  Record.blueprint do
+    domain   { Domain.make }
+    name     { Sham.name }
+    type     { "A" }
+    content  { Sham.ip }
+  end
+
 end

@@ -13,6 +13,11 @@ db:
   database: sqlite:///tmp/director.sqlite
   max_connections: 32
   pool_timeout: 10
+dns:
+  db:
+    database: sqlite:///tmp/director-dns.sqlite
+    max_connections: 32
+    pool_timeout: 10
 blobstore:
   plugin: simple
   properties:

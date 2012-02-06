@@ -23,7 +23,8 @@ module Bosh::Director
         Config.result = Bosh::Director::TaskResultFile.new(File.join(task.output, "result"))
         Config.logger = logger
 
-        Sequel::Model.db.logger = logger
+        Config.db.logger = logger
+        Config.dns_db.logger = logger if Config.dns_enabled?
 
         cloud_options = Config.cloud_options
         if cloud_options && cloud_options["plugin"] == "vsphere"

@@ -1,5 +1,5 @@
 module Bosh::Director::Models
-  class Deployment < Sequel::Model
+  class Deployment < Sequel::Model(Bosh::Director::Config.db)
     many_to_one  :release
     many_to_many :stemcells
     many_to_many :release_versions
