@@ -102,7 +102,8 @@ def create_job(name, monit, configuration_files, options = { })
       tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
     end
     unless options[:skip_monit]
-      tar.add_file("monit", {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
+      monit_file = options[:monit_file] ? options[:monit_file] : "monit"
+      tar.add_file(monit_file, {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
     end
 
     tar.mkdir("templates", {:mode => "0755", :mtime => 0})

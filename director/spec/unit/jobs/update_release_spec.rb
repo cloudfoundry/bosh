@@ -149,6 +149,15 @@ describe Bosh::Director::Jobs::UpdateRelease do
       }.should raise_error(Bosh::Director::JobMissingMonit)
     end
 
+    it "does not whine when it has a foo.monit file" do
+      @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :monit_file => "foo.monit")
+      File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
+
+      lambda {
+        @job.create_job(@job_attrs)
+      }.should_not raise_error(Bosh::Director::JobMissingMonit)
+    end
+
     it "whines on missing template" do
       @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_templates => ["foo"])
       File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
