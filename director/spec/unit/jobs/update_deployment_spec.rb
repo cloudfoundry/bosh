@@ -46,8 +46,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan, update_deployment_job).and_return(package_compiler)
 
-      @deployment_plan.should_receive(:deployment=).with(deployment)
-
+      deployment_plan_compiler.should_receive(:bind_deployment)
       deployment_plan_compiler.should_receive(:bind_existing_deployment)
       deployment_plan_compiler.should_receive(:bind_resource_pools)
       deployment_plan_compiler.should_receive(:bind_release)
@@ -61,8 +60,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       update_deployment_job.prepare
 
       check_event_log do |events|
-        events.size.should == 16
-        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 14
+        events.size.should == 18
+        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 16
         # There are no packages, hence no "package_compilation" step
         events.select { |e| e["stage"] == "Binding configuration" }.size.should == 2
       end
@@ -85,7 +84,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       resource_pool_updater.stub!(:missing_vms_count).and_return(5)
 
       Bosh::Director::ResourcePoolUpdater.stub!(:new).with(resource_pool).and_return(resource_pool_updater)
-      Bosh::Director::JobUpdater.stub!(:new).with(job).and_return(job_updater)
+      Bosh::Director::JobUpdater.stub!(:new).with(@deployment_plan, job).and_return(job_updater)
 
       resource_pool.stub!(:name).and_return("resource_pool_name")
 
@@ -94,6 +93,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan.stub!(:resource_pools).and_return([resource_pool])
       @deployment_plan.stub!(:jobs).and_return([job])
 
+      deployment_plan_compiler.should_receive(:bind_dns).ordered
       deployment_plan_compiler.should_receive(:bind_instance_vms).ordered
       deployment_plan_compiler.should_receive(:delete_unneeded_vms).ordered
       deployment_plan_compiler.should_receive(:delete_unneeded_instances).ordered

@@ -28,11 +28,12 @@ module Bosh::Director
       end
 
       def prepare
-        @logger.info("Looking up deployment record")
-        @deployment_plan.deployment = Models::Deployment.find_or_create(:name => @deployment_plan.name)
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-
         @event_log.begin_stage("Preparing deployment", 7)
+
+        track_and_log("Binding deployment") do
+          @deployment_plan_compiler.bind_deployment
+        end
 
         track_and_log("Binding release") do
           @deployment_plan_compiler.bind_release
@@ -122,7 +123,13 @@ module Bosh::Director
       end
 
       def update
-        @logger.info("Updating resource pools")
+        if Config.dns_enabled?
+          track_and_log("Binding DNS") do
+            @deployment_plan_compiler.bind_dns
+          end
+        end
+
+          @logger.info("Updating resource pools")
         update_resource_pools
         task_checkpoint
 
@@ -139,7 +146,7 @@ module Bosh::Director
         @deployment_plan.jobs.each do |job|
           task_checkpoint
           @logger.info("Updating job: #{job.name}")
-          JobUpdater.new(job).update
+          JobUpdater.new(@deployment_plan, job).update
         end
 
         @logger.info("Refilling resource pools")

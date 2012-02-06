@@ -2,8 +2,10 @@ module Bosh::Director
 
   class JobUpdater
 
-    # @param job DeploymentPlan::JobSpec
-    def initialize(job)
+    # @param [Bosh::Director::DeploymentPlan] deployment_plan
+    # @param [DeploymentPlan::JobSpec] job
+    def initialize(deployment_plan, job)
+      @deployment_plan = deployment_plan
       @job = job
       @cloud = Config.cloud
       @logger = Config.logger
@@ -17,36 +19,8 @@ module Bosh::Director
       return if unneeded_instances.empty?
 
       @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
-
-      ThreadPool.new(:max_threads => @job.update.max_in_flight).wrap do |pool|
-        @job.unneeded_instances.each do |instance|
-          vm = instance.vm
-
-          pool.process do
-            @event_log.track(vm.cid) do
-              agent = AgentClient.new(vm.agent_id)
-              drain_time = agent.drain("shutdown")
-              sleep(drain_time)
-              agent.stop
-
-              @cloud.delete_vm(vm.cid)
-
-              disks = instance.persistent_disks
-              disks.each do |disk|
-                @logger.info("Deleting an in-active disk #{disk.disk_cid}") unless disk.active
-                begin
-                  @cloud.delete_disk(disk.disk_cid)
-                rescue DiskNotFound
-                  raise if disk.active
-                end
-                disk.destroy
-              end
-              instance.destroy
-              vm.destroy
-            end
-          end
-        end
-      end
+      InstanceDeleter.new(@deployment_plan).delete_instances(unneeded_instances,
+                                                             :max_threads => @job.update.max_in_flight)
       @logger.info("Deleted no longer needed instances")
     end
 

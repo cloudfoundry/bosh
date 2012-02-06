@@ -1,6 +1,7 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlanCompiler do
+  include Bosh::Director
 
   IP_10_0_0_5 = 167772165
 
@@ -432,6 +433,101 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
   end
 
+  describe "bind_deployment" do
+    before(:each) do
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+      @deployment_plan = mock("deployment_plan")
+      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    end
+
+    it "should create the deployment if it doesn't exit" do
+      @deployment_plan.stub!(:name).and_return("deployment")
+      @deployment_plan.stub!(:canonical_name).and_return("deployment")
+
+      deployment = nil
+      @deployment_plan.should_receive(:deployment=).and_return { |*args| deployment = args.first }
+
+      @deployment_plan_compiler.bind_deployment
+
+      Models::Deployment.count.should == 1
+      Models::Deployment.first.should == deployment
+      deployment.name.should == "deployment"
+    end
+
+    it "should reuse a deployment if it already exists" do
+      @deployment_plan.stub!(:name).and_return("deployment")
+      @deployment_plan.stub!(:canonical_name).and_return("deployment")
+
+      deployment = Models::Deployment.make(:name => "deployment")
+      @deployment_plan.should_receive(:deployment=).with(deployment)
+
+      @deployment_plan_compiler.bind_deployment
+
+      Models::Deployment.count.should == 1
+    end
+
+    it "should not allow you to create a deployment if it clashes with a canonical name" do
+      @deployment_plan.stub!(:name).and_return("dep-a")
+      @deployment_plan.stub!(:canonical_name).and_return("dep-a")
+
+      Models::Deployment.make(:name => "dep_a")
+
+      lambda { @deployment_plan_compiler.bind_deployment }.should raise_error(
+          "Invalid deployment name: 'dep-a', canonical name already taken.")
+    end
+  end
+
+  describe "bind_dns" do
+    before(:each) do
+      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+      @deployment_plan = mock("deployment_plan")
+      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    end
+
+    it "should create the domain if it doesn't exist" do
+      domain = nil
+      @deployment_plan.should_receive(:dns_domain=).and_return { |*args| domain = args.first }
+      @deployment_plan_compiler.bind_dns
+
+      Models::Dns::Domain.count.should == 1
+      Models::Dns::Domain.first.should == domain
+      domain.name.should == "bosh"
+      domain.type.should == "NATIVE"
+    end
+
+    it "should reuse the domain if it exists" do
+      domain = Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
+      @deployment_plan.should_receive(:dns_domain=).with(domain)
+      @deployment_plan_compiler.bind_dns
+
+      Models::Dns::Domain.count.should == 1
+    end
+
+    it "should create the SOA record if it doesn't exist" do
+      domain = Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
+      @deployment_plan.should_receive(:dns_domain=)
+      @deployment_plan_compiler.bind_dns
+
+      Models::Dns::Record.count.should == 1
+      record = Models::Dns::Record.first
+      record.domain.should == domain
+      record.name.should == "bosh"
+      record.type.should == "SOA"
+    end
+
+    it "should reuse the SOA record if it exists" do
+      domain = Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
+      record = Models::Dns::Record.make(:domain => domain, :name => "bosh", :type => "SOA")
+      @deployment_plan.should_receive(:dns_domain=)
+      @deployment_plan_compiler.bind_dns
+
+      record.refresh
+
+      Models::Dns::Record.count.should == 1
+      Models::Dns::Record.first.should == record
+    end
+  end
+
   describe "bind_unallocated_vms" do
     before(:each) do
       @deployment = Bosh::Director::Models::Deployment.make
@@ -715,29 +811,16 @@ describe Bosh::Director::DeploymentPlanCompiler do
     it "should delete unneeded instances" do
       deployment_plan = mock("deployment_plan")
       cloud = mock("cloud")
-      vm = Bosh::Director::Models::Vm.make(:cid =>"vm-cid", :agent_id => "agent-id")
-      instance = Bosh::Director::Models::Instance.make(:vm => vm)
-      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
-
-      agent = mock("agent")
-
       Bosh::Director::Config.stub!(:cloud).and_return(cloud)
 
-      agent.should_receive(:drain).and_return(0.01)
-      agent.should_receive(:stop)
-
-      Bosh::Director::AgentClient.stub!(:new).with("agent-id").and_return(agent, nil)
-
+      instance = mock("instance")
       deployment_plan.stub!(:unneeded_instances).and_return([instance])
-
-      cloud.should_receive(:delete_vm).with("vm-cid")
-      cloud.should_receive(:delete_disk).with("disk-cid")
+      instance_deleter = mock("instance_deleter")
+      instance_deleter.should_receive(:delete_instances).with([instance])
+      Bosh::Director::InstanceDeleter.stub!(:new).and_return(instance_deleter)
 
       deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
       deployment_plan_compiler.delete_unneeded_instances
-
-      Bosh::Director::Models::Vm[vm.id].should be_nil
-      Bosh::Director::Models::Instance[instance.id].should be_nil
     end
   end
 
