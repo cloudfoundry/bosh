@@ -21,7 +21,6 @@ module Bosh::Director
         end
         raise ValidationViolatedMin.new(property, options[:min]) if options[:min] && result < options[:min]
         raise ValidationViolatedMax.new(property, options[:max]) if options[:max] && result > options[:max]
-
       elsif options[:default]
         result = options[:default]
 
