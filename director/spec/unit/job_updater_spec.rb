@@ -3,6 +3,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::JobUpdater do
 
   before(:each) do
+    @deployment_plan = mock("deployment_plan")
     @job_spec = mock("job_spec")
     @update_spec = mock("update_spec")
     @job_spec.stub!(:update).and_return(@update_spec)
@@ -25,7 +26,7 @@ describe Bosh::Director::JobUpdater do
     instance_1.should_receive(:changed?).and_return(false)
     instance_2.should_receive(:changed?).and_return(false)
 
-    job_updater = Bosh::Director::JobUpdater.new(@job_spec)
+    job_updater = Bosh::Director::JobUpdater.new(@deployment_plan, @job_spec)
     job_updater.update
   end
 
@@ -49,7 +50,7 @@ describe Bosh::Director::JobUpdater do
     instance_updater_1.should_receive(:update).with(:canary => true)
     instance_updater_2.should_receive(:update).with(no_args)
 
-    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance, ticker|
+    Bosh::Director::InstanceUpdater.stub!(:new).and_return do |instance, _|
       case instance
         when instance_1
           instance_updater_1
@@ -60,7 +61,7 @@ describe Bosh::Director::JobUpdater do
       end
     end
 
-    job_updater = Bosh::Director::JobUpdater.new(@job_spec)
+    job_updater = Bosh::Director::JobUpdater.new(@deployment_plan, @job_spec)
     job_updater.update
 
     check_event_log do |events|
@@ -106,7 +107,7 @@ describe Bosh::Director::JobUpdater do
       end
     end
 
-    job_updater = Bosh::Director::JobUpdater.new(@job_spec)
+    job_updater = Bosh::Director::JobUpdater.new(@deployment_plan, @job_spec)
 
     lambda { job_updater.update }.should raise_exception(RuntimeError, "bad update")
   end
@@ -144,42 +145,22 @@ describe Bosh::Director::JobUpdater do
       end
     end
 
-    job_updater = Bosh::Director::JobUpdater.new(@job_spec)
+    job_updater = Bosh::Director::JobUpdater.new(@deployment_plan, @job_spec)
 
     lambda { job_updater.update }.should raise_exception(RuntimeError, "zb")
   end
 
   it "should delete the unneeded instances" do
-    vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent-id")
-    instance = Bosh::Director::Models::Instance.make(:vm => vm)
-    Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
-
-    agent = mock("agent")
-    cloud = mock("cloud")
-
-    Bosh::Director::Config.stub!(:cloud).and_return(cloud)
-
-    agent.should_receive(:drain).and_return(0.01)
-    agent.should_receive(:stop)
-
-    cloud.should_receive(:delete_vm).with("vm-cid")
-    cloud.should_receive(:delete_disk).with("disk-cid")
-
-    Bosh::Director::AgentClient.stub!(:new).and_return(agent, nil)
-
+    instance = mock("instance")
     @job_spec.stub!(:instances).and_return([])
     @job_spec.stub!(:unneeded_instances).and_return([instance])
 
-    job_updater = Bosh::Director::JobUpdater.new(@job_spec)
-    job_updater.update
+    instance_deleter = mock("instance_deleter")
+    instance_deleter.should_receive(:delete_instances).with([instance], {:max_threads => 5})
+    Bosh::Director::InstanceDeleter.stub!(:new).and_return(instance_deleter)
 
-    check_event_log do |events|
-      events.size.should == 2
-      events.map { |e| e["stage"] }.uniq.should == ["Deleting unneeded instances"]
-      events.map { |e| e["tags"] }.uniq.should == [ ["job_name"] ]
-      events.map { |e| e["total"] }.uniq.should == [1]
-      events.map { |e| e["task"] }.uniq.should == ["vm-cid"]
-    end
+    job_updater = Bosh::Director::JobUpdater.new(@deployment_plan, @job_spec)
+    job_updater.update
   end
 
 end
