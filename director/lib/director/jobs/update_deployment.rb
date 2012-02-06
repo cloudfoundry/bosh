@@ -76,30 +76,23 @@ module Bosh::Director
 
       def update_resource_pools
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
-          # delete extra VMs across resource pools
-
+          # Delete extra VMs across resource pools
           @event_log.begin_stage("Deleting extra VMs", sum_across_pools(:extra_vms_count))
-          @resource_pool_updaters.each do |updater|
-            updater.delete_extra_vms(thread_pool)
-          end
+          @resource_pool_updaters.each { |updater| updater.delete_extra_vms(thread_pool) }
           thread_pool.wait
 
-          # delete outdated idle vms across resource pools, outdated allocated vms
+          # Delete outdated idle vms across resource pools, outdated allocated VMs
           # are handled by instance updater
           @event_log.begin_stage("Deleting outdated idle VMs", sum_across_pools(:outdated_idle_vms_count))
-          @resource_pool_updaters.each do |updater|
-            updater.delete_outdated_idle_vms(thread_pool)
-          end
+          @resource_pool_updaters.each { |updater| updater.delete_outdated_idle_vms(thread_pool) }
           thread_pool.wait
 
-          # create missing VMs across resource pools phase 1:
+          # Create missing VMs across resource pools phase 1:
           # only creates VMs that have been bound to instances
           # to avoid refilling the resource pool before instances
           # that are no longer needed have been deleted.
           @event_log.begin_stage("Creating bound missing VMs", sum_across_pools(:bound_missing_vms_count))
-          @resource_pool_updaters.each do |updater|
-            updater.create_bound_missing_vms(thread_pool)
-          end
+          @resource_pool_updaters.each { |updater| updater.create_bound_missing_vms(thread_pool) }
         end
       end
 
@@ -107,18 +100,14 @@ module Bosh::Director
         # Instance updaters might have added some idle vms
         # so they can be returned to resource pool. In that case
         # we need to pre-allocate network settings for all of them.
-        @resource_pool_updaters.each do |resource_pool_updater|
-          resource_pool_updater.allocate_dynamic_ips
-        end
+        @resource_pool_updaters.each { |resource_pool_updater| resource_pool_updater.allocate_dynamic_ips }
 
         @event_log.begin_stage("Refilling resource pools", sum_across_pools(:missing_vms_count))
         ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
-          # create missing VMs across resource pools phase 2:
+          # Create missing VMs across resource pools phase 2:
           # should be called after all instance updaters are finished to
           # create additional VMs in order to balance resource pools
-          @resource_pool_updaters.each do |resource_pool_updater|
-            resource_pool_updater.create_missing_vms(thread_pool)
-          end
+          @resource_pool_updaters.each { |resource_pool_updater| resource_pool_updater.create_missing_vms(thread_pool) }
         end
       end
 
@@ -183,7 +172,7 @@ module Bosh::Director
               @logger.info("Updating deployment")
               update
 
-              # Now we know that deployment has succeded and can remove
+              # Now we know that deployment has succeeded and can remove
               # previous partial deployments release version references
               # to be able to delete these release versions later.
               deployment.db.transaction do
@@ -207,7 +196,7 @@ module Bosh::Director
       private
 
       def sum_across_pools(counting_method)
-        @resource_pool_updaters.inject(0) { |sum, updater| sum += updater.send(counting_method.to_sym) }
+        @resource_pool_updaters.inject(0) { |sum, updater| sum + updater.send(counting_method.to_sym) }
       end
 
     end
