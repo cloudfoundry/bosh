@@ -1,5 +1,7 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
+# TODO: CLEANUP, too much duplication
+
 describe Bosh::Director::InstanceUpdater do
 
   BASIC_PLAN = {
@@ -140,6 +142,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -164,6 +168,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "stopped")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -186,6 +192,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -215,6 +223,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -246,6 +256,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "stopped")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -278,6 +290,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :disk_size => 0,
                 :network_settings => BASIC_PLAN["networks"],
                 :state => "started")
@@ -334,6 +348,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :networks_changed? => false,
                 :disk_currently_attached? => true,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :disk_size => 1024,
                 :network_settings => BASIC_PLAN["networks"],
                 :state => "started")
@@ -389,6 +405,8 @@ describe Bosh::Director::InstanceUpdater do
                 :resource_pool_changed? => false,
                 :persistent_disk_changed? => false,
                 :networks_changed? => true,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :disk_currently_attached? => false,
                 :network_settings =>BASIC_PLAN["networks"],
                 :state => "started")
@@ -413,12 +431,45 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
   end
 
+  it "should update the dns when needed" do
+    stub_object(@instance_spec,
+                :resource_pool_changed? => false,
+                :persistent_disk_changed? => false,
+                :networks_changed? => true,
+                :dns_changed? => true,
+                :changes => Set.new([:dns]),
+                :disk_currently_attached? => false,
+                :network_settings =>BASIC_PLAN["networks"],
+                :state => "started")
+
+    instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
+    instance_updater.stub!(:cloud).and_return(@cloud)
+
+    dns_domain = Bosh::Director::Models::Dns::Domain.make
+    Bosh::Director::Models::Dns::Record.make(:domain => dns_domain, :name => "0.some.record", :content => "0.0.0.0")
+
+    @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
+    dns_records = {"0.some.record" => "1.2.3.4", "0.some.other.record" => "5.6.7.8"}
+    @instance_spec.stub!(:dns_records).and_return(dns_records)
+    @deployment_plan.stub!(:dns_domain).and_return(dns_domain)
+
+    instance_updater.update
+
+    map = {}
+    records = Bosh::Director::Models::Dns::Record.all
+    records.size.should == 2
+    records.each { |record| map[record.name] = record.content }
+    map.should == dns_records
+  end
+
   it "should create a persistent disk when needed" do
     stub_object(@instance_spec,
                 :resource_pool_changed? => false,
                 :persistent_disk_changed? => true,
                 :disk_currently_attached? => false,
                 :networks_changed? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -456,6 +507,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => true,
                 :disk_currently_attached? => true,
                 :networks_changed? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
@@ -504,6 +557,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => true,
                 :networks_changed? => false,
                 :disk_currently_attached? => true,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     @job_spec.stub!(:persistent_disk).and_return(plan["persistent_disk"])
@@ -543,6 +598,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => true,
                 :disk_currently_attached? => true,
                 :networks_changed? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     # good old disk
@@ -609,6 +666,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :disk_currently_attached? => true,
                 :networks_changed? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     Bosh::Director::Models::PersistentDisk.make(:disk_cid => "old-disk-id",
@@ -656,6 +715,8 @@ describe Bosh::Director::InstanceUpdater do
                 :persistent_disk_changed? => false,
                 :disk_currently_attached? => true,
                 :networks_changed? => false,
+                :dns_changed? => false,
+                :changes => Set.new,
                 :state => "started")
 
     Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-id",
@@ -706,6 +767,8 @@ describe Bosh::Director::InstanceUpdater do
                            :persistent_disk_changed? => false,
                            :networks_changed? => false,
                            :disk_currently_attached? => false,
+                           :dns_changed? => false,
+                           :changes => Set.new,
                            :state => "started",
                            :spec => BASIC_PLAN)
 
@@ -727,6 +790,8 @@ describe Bosh::Director::InstanceUpdater do
                            :persistent_disk_changed? => false,
                            :networks_changed? => false,
                            :disk_currently_attached? => false,
+                           :dns_changed? => false,
+                           :changes => Set.new,
                            :state => "stopped",
                            :spec => BASIC_PLAN)
 
@@ -750,6 +815,8 @@ describe Bosh::Director::InstanceUpdater do
                            :persistent_disk_changed? => false,
                            :networks_changed? => false,
                            :disk_currently_attached? => true,
+                           :dns_changed? => false,
+                           :changes => Set.new,
                            :state => "detached",
                            :spec => BASIC_PLAN)
 

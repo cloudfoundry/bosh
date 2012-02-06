@@ -86,7 +86,9 @@ describe Bosh::Director::DeploymentPlan do
   describe "Basic parsing" do
 
     it "should parse a deployment manifest" do
-      make_plan.name.should eql("test_deployment")
+      deployment = make_plan
+      deployment.name.should eql("test_deployment")
+      deployment.canonical_name.should eql("test-deployment")
     end
 
     it "should parse the release spec from the deployment manifest" do
@@ -108,6 +110,7 @@ describe Bosh::Director::DeploymentPlan do
       network = networks[0]
       network.should eql(deployment_plan.network("network_a"))
       network.name.should eql("network_a")
+      network.canonical_name.should eql("network-a")
       network.deployment.should eql(deployment_plan)
     end
 
@@ -156,6 +159,7 @@ describe Bosh::Director::DeploymentPlan do
 
       job.should eql(deployment_plan.job("job_a"))
       job.name.should eql("job_a")
+      job.canonical_name.should eql("job-a")
       job.persistent_disk.should eql(2048)
       job.resource_pool.should eql(resource_pool)
       job.template.name.should eql("job_a")
@@ -443,6 +447,21 @@ describe Bosh::Director::DeploymentPlan do
       jobs[3].name.should eql("job_a_2")
       jobs[4].name.should eql("job_a_3")
       jobs[5].name.should eql("job_a_4")
+    end
+
+    it "should reject jobs that violate canonical uniqueness" do
+      manifest = basic_manifest
+      job_a = manifest["jobs"].first
+      job_a["instances"] = 1
+      job_a["networks"] = [{"name" => "network_a"}]
+
+      job_b = job_a._deep_copy
+      job_b["name"] = "job-a"
+      manifest["jobs"] << job_b
+
+      lambda {
+        make_plan(manifest)
+      }.should raise_error("Invalid job name: 'job-a', canonical name already taken.")
     end
 
     it "should fail when the number of instances exceeds resource pool capacity" do
@@ -1063,6 +1082,17 @@ describe Bosh::Director::DeploymentPlan do
       counter_b.should eql(98)
     end
 
+    it "should not allow two networks with the same canonical name" do
+      manifest = basic_manifest
+      network_b = manifest["networks"].first._deep_copy
+      network_b["name"] = "network-a"
+      manifest["networks"] << network_b
+
+      lambda {
+        make_plan(manifest)
+      }.should raise_error("Invalid network name: 'network-a', canonical name already taken.")
+    end
+
   end
 
   describe "Instances" do
@@ -1124,6 +1154,8 @@ describe Bosh::Director::DeploymentPlan do
 
       if expected_changes.size > 0
         instance.should have_flag_set(:changed?)
+      else
+        instance.should_not have_flag_set(:changed?)
       end
     end
 
@@ -1134,24 +1166,28 @@ describe Bosh::Director::DeploymentPlan do
     end
 
     before(:each) do
-      tmpl_data = {
+      template_data = {
         :name => "template_name",
         :version => 1,
         :sha1 => "job-sha1",
         :blobstore_id => "template_blob"
       }
 
-      @template = Bosh::Director::Models::Template.make(tmpl_data)
+      @domain = Bosh::Director::Models::Dns::Domain.make
+      @dns_record = Bosh::Director::Models::Dns::Record.make(:domain => @domain,
+        :name => "0.job-a.network-a.test-deployment.bosh", :type => "A", :content => "10.0.0.100")
+
+      @template = Bosh::Director::Models::Template.make(template_data)
       @package = Bosh::Director::Models::Package.make(:name => "test_package", :version => "33")
 
-      cpkg_data = {
+      compiled_package_data = {
         :package => @package,
         :sha1 => "pkg-sha1",
         :blobstore_id => "pkg-blob-id",
         :build => 1
       }
 
-      @compiled_package = Bosh::Director::Models::CompiledPackage.make(cpkg_data)
+      @compiled_package = Bosh::Director::Models::CompiledPackage.make(compiled_package_data)
 
       @manifest = basic_manifest
       @deployment_plan = make_plan(@manifest)
@@ -1166,6 +1202,18 @@ describe Bosh::Director::DeploymentPlan do
       it "tracks no change" do
         @instance.current_state = tap_state
         expect_instance_changes(@instance, *[])
+      end
+
+      it "tracks DNS change with missing DNS record" do
+        @dns_record.destroy
+        @instance.current_state = tap_state
+        expect_instance_changes(@instance, :dns_changed?)
+      end
+
+      it "tracks DNS change with changed DNS record" do
+        @dns_record.update(:content => "1.2.3.4")
+        @instance.current_state = tap_state
+        expect_instance_changes(@instance, :dns_changed?)
       end
 
       it "tracks job change" do

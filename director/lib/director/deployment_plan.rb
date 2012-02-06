@@ -1,9 +1,12 @@
 module Bosh::Director
 
+  # TODO: CLEANUP, refactor into multiple files and cleanup exceptions
   class DeploymentPlan
+    include DnsHelper
     include ValidationHelper
 
     attr_accessor :name
+    attr_accessor :canonical_name
     attr_accessor :release
     attr_accessor :deployment
     attr_accessor :properties
@@ -11,10 +14,12 @@ module Bosh::Director
     attr_accessor :update
     attr_accessor :unneeded_instances
     attr_accessor :unneeded_vms
+    attr_accessor :dns_domain
     attr_reader   :recreate
 
     def initialize(manifest, options = { })
       @name = safe_property(manifest, "name", :class => String)
+      @canonical_name = canonical(@name)
 
       @properties = safe_property(manifest, "properties", :class => Hash, :default => { })
       @properties.extend(DeepCopy)
@@ -25,10 +30,15 @@ module Bosh::Director
       @release = ReleaseSpec.new(self, safe_property(manifest, "release", :class => Hash))
 
       @networks = {}
+      @networks_canonical_name_index = Set.new
       networks = safe_property(manifest, "networks", :class => Array)
       networks.each do |network_spec|
         network = NetworkSpec.new(self, network_spec)
+        if @networks_canonical_name_index.include?(network.canonical_name)
+          raise "Invalid network name: '#{network.name}', canonical name already taken."
+        end
         @networks[network.name] = network
+        @networks_canonical_name_index << network.canonical_name
       end
 
       @compilation = CompilationConfig.new(self, safe_property(manifest, "compilation", :class => Hash))
@@ -44,6 +54,7 @@ module Bosh::Director
       @templates = {}
       @jobs = []
       @jobs_name_index = {}
+      @jobs_canonical_name_index = Set.new
 
       jobs = safe_property(manifest, "jobs", :class => Array, :default => [ ])
 
@@ -55,8 +66,13 @@ module Bosh::Director
         end
 
         job = JobSpec.new(self, job)
+        if @jobs_canonical_name_index.include?(job.canonical_name)
+          raise "Invalid job name: '#{job.name}', canonical name already taken."
+        end
+
         @jobs << job
         @jobs_name_index[job.name] = job
+        @jobs_canonical_name_index << job.canonical_name
       end
 
       @unneeded_vms = []
@@ -272,6 +288,7 @@ module Bosh::Director
     # DeploymentPlan::NetworkSpec
     class NetworkSpec
       include IpUtil
+      include DnsHelper
       include ValidationHelper
 
       VALID_DEFAULT_NETWORK_PROPERTIES = Set.new(["dns", "gateway"])
@@ -279,10 +296,12 @@ module Bosh::Director
 
       attr_accessor :deployment
       attr_accessor :name
+      attr_accessor :canonical_name
 
       def initialize(deployment, network_spec)
         @deployment = deployment
         @name = safe_property(network_spec, "name", :class => String)
+        @canonical_name = canonical(@name)
         @subnets = []
         safe_property(network_spec, "subnets", :class => Array).each do |subnet_spec|
           new_subnet = NetworkSubnetSpec.new(self, subnet_spec)
@@ -477,6 +496,7 @@ module Bosh::Director
     # DeploymentPlan::JobSpec
     class JobSpec
       include IpUtil
+      include DnsHelper
       include ValidationHelper
 
       # started, stopped and detached are real states
@@ -487,6 +507,7 @@ module Bosh::Director
 
       attr_accessor :deployment
       attr_accessor :name
+      attr_accessor :canonical_name
       attr_accessor :persistent_disk
       attr_accessor :resource_pool
       attr_accessor :default_network
@@ -505,6 +526,7 @@ module Bosh::Director
       def initialize(deployment, job)
         @deployment = deployment
         @name = safe_property(job, "name", :class => String)
+        @canonical_name = canonical(@name)
         @template = deployment.template(safe_property(job, "template", :class => String))
         @error_mutex = Mutex.new
 
@@ -692,6 +714,7 @@ module Bosh::Director
 
     # DeploymentPlan::InstanceSpec
     class InstanceSpec
+      include DnsHelper
 
       attr_accessor :job
       attr_accessor :index
@@ -756,6 +779,16 @@ module Bosh::Director
         end
       end
 
+      def dns_records
+        return @dns_records if @dns_records
+        @dns_records = {}
+        network_settings.each do |network_name, network|
+          name = [index, job.canonical_name, canonical(network_name), job.deployment.canonical_name, :bosh].join(".")
+          @dns_records[name] = network["ip"]
+        end
+        @dns_records
+      end
+
       def disk_currently_attached?
         current_state["persistent_disk"].to_i > 0
       end
@@ -786,6 +819,14 @@ module Bosh::Director
         @job.persistent_disk != disk_size
       end
 
+      def dns_changed?
+        if Config.dns_enabled?
+          dns_records.any? { |name, ip| Models::Dns::Record.find(:name => name, :type => "A", :content => ip).nil? }
+        else
+          false
+        end
+      end
+
       # Checks if agent view of the instance state
       # is consistent with target instance state.
       # In case the instance current state is 'detached'
@@ -797,11 +838,23 @@ module Bosh::Director
       end
 
       def changed?
-        return false if @state == "detached" && @current_state.nil?
+        !changes.empty?
+      end
 
-        @restart ||
-          resource_pool_changed? || networks_changed? || packages_changed? ||
-          persistent_disk_changed? || configuration_changed? || job_changed? || state_changed?
+      def changes
+        changes = Set.new
+        unless @state == "detached" && @current_state.nil?
+          changes << :restart if @restart
+          changes << :resource_pool if resource_pool_changed?
+          changes << :network if networks_changed?
+          changes << :packages if packages_changed?
+          changes << :persistent_disk if persistent_disk_changed?
+          changes << :configuration if configuration_changed?
+          changes << :job if job_changed?
+          changes << :state if state_changed?
+          changes << :dns if dns_changed?
+        end
+        changes
       end
 
       def spec
