@@ -1,5 +1,6 @@
 module Bosh::Director
   class DeploymentPlanCompiler
+    include DnsHelper
     include IpUtil
 
     def initialize(deployment_plan)
@@ -64,6 +65,22 @@ module Bosh::Director
         raise "VM `#{vm.cid}' is out of sync: it reports itself as " +
           "`#{actual_job}/#{actual_index}' but according to DB " +
           "it is `#{instance.job}/#{instance.index}'"
+      end
+    end
+
+    def bind_deployment
+      Models::Deployment.db.transaction do
+        deployment = Models::Deployment.find(:name => @deployment_plan.name)
+        # HACK, since canonical uniqueness is not enforced in the DB
+        if deployment.nil?
+          canonical_name_index = Set.new
+          Models::Deployment.each { |other_deployment| canonical_name_index << canonical(other_deployment.name) }
+          if canonical_name_index.include? @deployment_plan.canonical_name
+            raise "Invalid deployment name: '#{@deployment_plan.name}', canonical name already taken."
+          end
+          deployment = Models::Deployment.create(:name => @deployment_plan.name)
+        end
+        @deployment_plan.deployment = deployment
       end
     end
 
@@ -339,6 +356,18 @@ module Bosh::Director
       @deployment_plan.jobs.each { |job| ConfigurationHasher.new(job).hash }
     end
 
+    def bind_dns
+      domain = Models::Dns::Domain.find_or_create(:name => "bosh", :type => "NATIVE")
+      @deployment_plan.dns_domain = domain
+
+      soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id, :name => "bosh", :type => "SOA")
+      # TODO: make configurable?
+      # The format of the SOA record is: primary_ns contact serial refresh retry expire minimum
+      soa_record.content = "localhost hostmaster@localhost 0 10800 604800 30"
+      soa_record.ttl = 300
+      soa_record.save
+    end
+
     def bind_instance_vms
       unbound_instances = []
 
@@ -409,37 +438,8 @@ module Bosh::Director
       return if unneeded_instances.empty?
 
       @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size)
-
-      # TODO: make pool size configurable?
-      ThreadPool.new(:max_threads => 10).wrap do |pool|
-        unneeded_instances.each do |instance|
-          vm = instance.vm
-
-          pool.process do
-            @event_log.track(vm.cid) do
-              @logger.info("Delete unneded instance #{vm.cid}")
-
-              agent = AgentClient.new(vm.agent_id)
-              drain_time = agent.drain("shutdown")
-              sleep(drain_time)
-              agent.stop
-
-              @cloud.delete_vm(vm.cid)
-              instance.persistent_disks.each do |disk|
-                @logger.info("Deleting inactive disk #{disk.disk_cid}") unless disk.active
-                begin
-                  @cloud.delete_disk(disk.disk_cid)
-                rescue DiskNotFound
-                  raise if disk.active
-                end
-                disk.destroy
-              end
-              instance.destroy
-              vm.destroy
-            end
-          end
-        end
-      end
+      InstanceDeleter.new.delete_instances(unneeded_instances)
+      @logger.info("Deleted no longer needed instances")
     end
   end
 end

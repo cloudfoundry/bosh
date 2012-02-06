@@ -1,7 +1,7 @@
 module Bosh::Director
   class InstanceUpdater
     MAX_ATTACH_DISK_TRIES = 3
-    N_UPDATE_STEPS = 6
+    UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
 
     # @params instance_spec Bosh::DeploymentPlan::InstanceSpec
@@ -33,10 +33,18 @@ module Bosh::Director
     end
 
     def report_progress
-      @ticker.advance(100.0 / N_UPDATE_STEPS) if @ticker
+      @ticker.advance(100.0 / UPDATE_STEPS) if @ticker
     end
 
     def update(options = {})
+      changes = @instance_spec.changes
+
+      # Optimization to only update DNS if nothing else changed.
+      if changes.include?(:dns) && changes.size == 1
+        update_dns
+        return
+      end
+
       step { stop }
 
       if @target_state == "detached"
@@ -49,6 +57,7 @@ module Bosh::Director
       step { update_resource_pool }
       step { update_persistent_disk }
       step { update_networks }
+      step { update_dns }
       step { apply_state(@instance_spec.spec) }
 
       if @target_state == "started"
@@ -194,6 +203,23 @@ module Bosh::Director
         raise if disk.active
       end
       disk.destroy
+    end
+
+    def update_dns
+      return unless @instance_spec.dns_changed?
+
+      domain = @deployment_plan.dns_domain
+      @instance_spec.dns_records.each do |record_name, content|
+        @logger.info("Updating DNS for: #{record_name} to #{content}")
+        record = Models::Dns::Record.find(:domain_id => domain.id, :name => record_name)
+        if record.nil?
+          record = Models::Dns::Record.new(:domain_id => domain.id, :name => record_name)
+        end
+        record.type = "A"
+        record.content = content
+        record.change_date = Time.now.to_i
+        record.save
+      end
     end
 
     def update_resource_pool(new_disk_cid = nil)
