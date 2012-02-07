@@ -1,0 +1,35 @@
+#!/bin/env ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
+
+require "package_compiler"
+
+def usage
+  puts "Usage: package_compiler (compile <manifest> <release_tgz> <mbus_uri>) | (apply <apply_spec> <mbus_uri>)"
+  exit 0
+end
+
+usage unless ["apply", "compile"].index(ARGV[0])
+
+options = {}
+case ARGV[0]
+when "compile"
+  usage if ARGV.size != 4
+  options["command"] = ARGV[0]
+  options["manifest"] = ARGV[1]
+  options["release"] = ARGV[2]
+  options["agent_uri"] = ARGV[3]
+when "apply"
+  usage if ARGV.size != 3
+  options["command"] = ARGV[0]
+  options["apply_spec"] = ARGV[1]
+  options["agent_uri"] = ARGV[2]
+end
+
+options.delete_if {|k,v| v.nil?}
+Bosh::PackageCompiler::Runner.start(options)
