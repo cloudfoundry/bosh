@@ -1,0 +1,3 @@
+Package compiler for compiling micro bosh (or in the future micro cloud) packages.
+
+NOTE: It does not start the agent. It expects the agent to be up and running.
