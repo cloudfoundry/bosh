@@ -81,8 +81,8 @@ module Bosh::Cli::Command
     # sanity check the input file and returns the blob_name
     def get_blob_name(file)
       err "Invalid file #{file}" unless File.file?(file)
-      blobs_dir = File.join(work_dir, "#{BLOBS_DIR}/")
-      file_path = File.expand_path(file)
+      blobs_dir = File.join(File.realpath(work_dir), "#{BLOBS_DIR}/")
+      file_path = File.realpath(File.expand_path(file))
 
       if file_path[0..blobs_dir.length - 1] != blobs_dir
         err "#{file_path} is NOT under #{blobs_dir}"
