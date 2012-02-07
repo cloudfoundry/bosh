@@ -310,7 +310,7 @@ describe Bosh::Cli::Command::Base do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         lambda {
           @cmd.upload_blob("test.tgz")
-        }.should raise_error(Bosh::Cli::CliExit, "#{File.join(@release_dir,"test.tgz")} is NOT under #{@blob_dir}")
+        }.should raise_error(Bosh::Cli::CliExit, "#{File.join(File.realpath(@release_dir),"test.tgz")} is NOT under #{File.realpath(@blob_dir)}/")
       end
     end
 
