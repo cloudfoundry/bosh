@@ -1,0 +1,20 @@
+#!/var/vcap/bosh/bin/ruby
+#
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
+
+require "package_compiler"
+
+def usage
+  puts "Usage: package_compiler [ <compile> <manifest> <package_tgz> | <apply> <apply_spec> <mbus_uri>]"
+  exit 0
+end
+
+usage if ARGV.size != 3
+usage unless ["apply", "compile"].index(ARGV[0])
+
+Bosh::PackageCompiler::Runner.start
