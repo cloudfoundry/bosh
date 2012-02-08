@@ -22,9 +22,12 @@ module VCAP
         Console.new.console
       end
 
-      CC_CONFIG = "/var/vcap/job/cloud_controller/config/cloud_controller.yml"
-
+      CC_CONFIG = "/var/vcap/jobs/cloud_controller/config/cloud_controller.yml"
+      SBTA = "/var/vcap/micro/SBTA"
+      TOS = "/var/vcap/micro/TOS"
+      TOS_ACCEPTED = "/var/vcap/micro/.tos"
       LOGFILE = "/var/vcap/sys/log/micro/micro.log"
+
       def self.logger
         logfile = ENV['LOGFILE'] ? ENV['LOGFILE'] : LOGFILE
         FileUtils.mkdir_p(File.dirname(logfile))
@@ -193,7 +196,15 @@ module VCAP
         elsif token =~ /[^\.]+\.[^\.]+/
           # TODO sanity check of admin email
           # make sure we get a String not a HighLine::String
-          email = ask("Admin email: ").to_s
+          email = ask("\nAdmin email: ").to_s
+
+          while !tos_accepted?
+            display_file(TOS)
+            if agree("\nDo you agree to the Terms of Service? ")
+              FileUtils.touch(TOS_ACCEPTED)
+            end
+          end
+
           @identity.clear
           @network.offline!
           @identity.offline(ip, token, email)
@@ -353,7 +364,7 @@ module VCAP
             menu.select_by = :index
             level = DEBUG_LEVELS[@logger.level]
             menu.choice("set debug level to DEBUG [#{level}]") { debug_level }
-            menu.choice("display log") { display_debug_log }
+            menu.choice("display log") { display_file(LOGFILE) }
             menu.choice("change api url") { configure_api_url }
             state = @watcher.paused ? "enable" : "disable"
             menu.choice("#{state} network watcher") { toggle_watcher }
@@ -380,6 +391,10 @@ module VCAP
 
       def configured?
         File.exist?(CC_CONFIG)
+      end
+
+      def tos_accepted?
+        File.exist?(TOS_ACCEPTED)
       end
 
       def configure_api_url
@@ -445,22 +460,22 @@ module VCAP
 
       # a very naïve pager
       LINES_PER_PAGE = 20
-      def display_debug_log
+      def display_file(file)
         lines = nil
-        File.open(LOGFILE) do |file|
-          lines = file.readlines
+        File.open(file) do |f|
+          lines = f.readlines
         end
         if lines.size == 0
-          say("logfile empty")
+          say("file is empty")
           press_return_to_continue
         end
         current = 0
         while true
           clear
-          say("#{LOGFILE}\n".yellow)
+          say("#{file}\n".yellow)
           say(lines[current..(current+LINES_PER_PAGE)].join)
           if current + LINES_PER_PAGE >= lines.size
-            say("end of log file".green)
+            say("end of file".green)
           end
           q = ask("\n Return for next page, 'last' for last page or 'quit' to quit: ")
           if q.match(/^q(uit)*/i)
