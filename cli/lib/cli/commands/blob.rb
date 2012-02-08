@@ -78,7 +78,7 @@ module Bosh::Cli::Command
 
     private
 
-    # sanity check the input file and returns the blob_name
+    # Sanity check the input file and returns the blob_name
     def get_blob_name(file)
       err "Invalid file #{file}" unless File.file?(file)
       blobs_dir = File.join(File.realpath(work_dir), "#{BLOBS_DIR}/")
@@ -90,7 +90,7 @@ module Bosh::Cli::Command
       file_path[blobs_dir.length..file_path.length]
     end
 
-    # download the blob (blob_info) into dst_file
+    # Download the blob (blob_info) into dst_file
     def fetch_blob(dst_file, blob_info)
       object_id = blob_info["object_id"]
 
@@ -99,12 +99,12 @@ module Bosh::Cli::Command
       blobstore.get(object_id, new_blob)
       new_blob.close
 
-      # Paranoia...
       if blob_info["sha"] != Digest::SHA1.file(new_blob.path).hexdigest
         err "Fatal error: Inconsistent checksum for object #{blob_info["object_id"]}"
       end
 
       FileUtils.mkdir_p(File.dirname(dst_file))
+      FileUtils.chmod(0644, new_blob.path)
       FileUtils.mv(new_blob.path, dst_file)
     end
   end
