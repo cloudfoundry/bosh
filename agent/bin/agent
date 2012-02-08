@@ -50,6 +50,10 @@ opts = OptionParser.new do |opts|
     options["blobstore_provider"] = opt
   end
 
+  opts.on("-d", "--blobstore_path String", "Blobstore path") do |opt|
+    options["blobstore_options"]['blobstore_path'] = opt
+  end
+
   opts.on("-I", "--infrastructure String", "Infrastructure") do |opt|
     options["infrastructure_name"] = opt
   end
@@ -78,7 +82,7 @@ opts = OptionParser.new do |opts|
   opts.on("-s", "--blobstore String", "Blobstore options") do |opt|
     credentials, endpoint = opt.split("@", 2)
     user, password = credentials.split(":", 2)
-    options["blobstore_options"] = { "endpoint" => endpoint, "user" => user, "password" => password }
+    options["blobstore_options"].merge!("endpoint" => endpoint, "user" => user, "password" => password)
   end
 end
 opts.parse!(ARGV.dup)
