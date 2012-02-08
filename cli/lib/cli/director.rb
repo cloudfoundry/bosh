@@ -188,14 +188,21 @@ module Bosh
       def fetch_vm_state(deployment_name)
         url = "/deployments/#{deployment_name}/vms?format=full"
         vms = []
+        # CLEANUP TODO output stream only being used for side effects
         output_stream = lambda do |vm_states|
           vm_states.to_s.split("\n").each do |vm_state|
             vms << JSON.parse(vm_state)
           end
           ""
         end
-        status, task_id = request_and_track(:get, url, nil, nil, :log_type => "result", :output_stream => output_stream)
-        raise "Failed to fetch vm-state from director" if status != :done || task_id.nil?
+
+        status, task_id = request_and_track(:get, url, nil, nil,
+                                            :log_type => "result",
+                                            :output_stream => output_stream,
+                                            :quiet => true)
+        if status != :done || task_id.nil?
+          raise DirectorError, "Failed to fetch VMs information from director"
+        end
         vms
       end
 

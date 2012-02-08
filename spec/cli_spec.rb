@@ -66,20 +66,22 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     OUT
   end
 
-  it "unsets deployment when target is changed (but only if it is a different target)" do
+  it "remembers deployment when switching targets" do
     run_bosh("target localhost:57523")
-    run_bosh("deployment 'test2'")
+    run_bosh("deployment test2")
 
     expect_output("target http://localhost:57523", <<-OUT)
       Target already set to 'Test Director (http://localhost:57523) #{director_version}'
     OUT
 
     expect_output("--skip-director-checks target http://local", <<-OUT)
-      WARNING! Your deployment has been unset
       Target set to 'Unknown Director (http://local) Ver: n/a'
     OUT
 
     expect_output("deployment", "Deployment not set")
+    run_bosh("target localhost:57523")
+    out = run_bosh("deployment")
+    out.should =~ rx("test2")
   end
 
   it "keeps track of user associated with target" do
