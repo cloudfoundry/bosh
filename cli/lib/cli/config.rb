@@ -82,10 +82,9 @@ module Bosh
       # Read the deployment configuration.  Return the deployment for the
       # current target.
       #
-      # @raise [MissingTarget] If there is no target set.
       # @return [String?] The deployment path for the current target.
       def deployment
-        raise MissingTarget, "Must have a target set." unless target
+        return nil if target.nil?
         if @config_file.has_key?("deployment")
           if is_old_deployment_config?
             set_deployment(@config_file["deployment"])

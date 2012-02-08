@@ -15,12 +15,12 @@ module Bosh::Cli::Command
         blob_sha = Digest::SHA1.file(blob_file).hexdigest
 
         if blob_index[blob_name] && !force
-          # we already have this binary on record
+          # We already have this binary on record
           if blob_index[blob_name]["sha"] == blob_sha
             say "[#{count}/#{total}] Skipping #{blob_name}".green
             next
           end
-          # local copy is different from the remote copy
+          # Local copy is different from the remote copy
           confirm = ask("\nBlob #{blob_name} changed, do you want to update the binary [yN]: ")
           if confirm.empty? || !(confirm =~ /y(es)?$/i)
             say "[#{count}/#{total}] Skipping #{blob_name}".green
@@ -28,7 +28,7 @@ module Bosh::Cli::Command
           end
         end
 
-        #TODO: We could use the sha and try to avoid uploading duplicated objects.
+        # TODO: We could use the sha and try to avoid uploading duplicated objects.
         say "[#{count}/#{total}] Uploading #{blob_name}".green
         blob_id = blobstore.create(File.open(blob_file, "r"))
         blob_index[blob_name] = {"object_id" => blob_id, "sha" => blob_sha}
@@ -81,8 +81,8 @@ module Bosh::Cli::Command
     # Sanity check the input file and returns the blob_name
     def get_blob_name(file)
       err "Invalid file #{file}" unless File.file?(file)
-      blobs_dir = File.join(File.realpath(work_dir), "#{BLOBS_DIR}/")
-      file_path = File.realpath(File.expand_path(file))
+      blobs_dir = File.join(realpath(work_dir), "#{BLOBS_DIR}/")
+      file_path = realpath(File.expand_path(file))
 
       if file_path[0..blobs_dir.length - 1] != blobs_dir
         err "#{file_path} is NOT under #{blobs_dir}"
@@ -106,6 +106,10 @@ module Bosh::Cli::Command
       FileUtils.mkdir_p(File.dirname(dst_file))
       FileUtils.chmod(0644, new_blob.path)
       FileUtils.mv(new_blob.path, dst_file)
+    end
+
+    def realpath(path)
+      Pathname.new(path).realpath.to_s
     end
   end
 end

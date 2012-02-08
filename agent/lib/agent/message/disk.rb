@@ -66,7 +66,14 @@ module Bosh::Agent
       def self.process(args = nil)
         disk_info = []
         settings = Bosh::Agent::Config.settings
-        cids = settings['disks']['persistent']
+
+        # TODO abstraction for settings
+        if settings["disks"].kind_of?(Hash) && settings["disk"]["persistent"].kind_of?(Hash)
+          cids = settings["disks"]["persistent"]
+        else
+          cids = {}
+        end
+
         cids.each_key do |cid|
           partition = "#{DiskUtil.lookup_disk_by_cid(cid)}1"
           disk_info << cid unless DiskUtil.mount_entry(partition).nil?

@@ -4,6 +4,8 @@ module Bosh::Cli::Command
 
     def list(*args)
       auth_required
+
+      show_full_stats = !args.delete("--full").nil?
       name = args.first
 
       if name.nil?
@@ -14,28 +16,27 @@ module Bosh::Cli::Command
 
       say("Deployment `#{name.green}'")
 
-      begin
-        vms = director.fetch_vm_state(name)
-      rescue RuntimeError
-        say("Error while fetching vm-states from director".red)
-        vms = []
-      end
+      vms = director.fetch_vm_state(name)
       err("No VMs") if vms.size == 0
 
       sorted = vms.sort do |a, b|
-        s = b["job_name"].to_s <=> a["job_name"].to_s
+        s = a["job_name"].to_s <=> b["job_name"].to_s
         s = a["index"].to_i <=> b["index"].to_i if s == 0
         s = a["resource_pool"].to_s <=> b["resource_pool"].to_s if s == 0
         s
       end
 
       vms_table = table do |t|
-        t.headings = "Job", "CID", "Agent ID", "Job-State", "Resource-Pool", "IPs"
+        headings = ["Job/index", "State", "Resource Pool", "IPs"]
+        headings += ["Agent ID", "CID"] if show_full_stats
+
+        t.headings = headings
+
         sorted.each do |vm|
-          ips = ""
-          vm["ips"].each {|ip| ips += ip + " " } if vm["ips"]
           job = "#{vm["job_name"]}/#{vm["index"]}" if vm["job_name"]
-          t << [job, vm["vm_cid"], vm["agent_id"], vm["job_state"], vm["resource_pool"], ips]
+          row = [job, vm["job_state"], vm["resource_pool"], Array(vm["ips"]).join(", ")]
+          row += [vm["vm_cid"], vm["agent_id"]] if show_full_stats
+          t << row
         end
       end
 

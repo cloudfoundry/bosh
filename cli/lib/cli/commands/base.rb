@@ -210,12 +210,12 @@ module Bosh::Cli
         end
 
         if unsynced.size > 0
-          say "\nMissing blobs ('bosh sync blob' to fetch) : ".green
+          say "\nMissing blobs ('bosh sync blobs' to fetch) : ".green
           unsynced.each { |blob| say blob }
         end
 
         if changes == 0
-          say "\nRelease blob in sync".green
+          say "\nRelease blobs are up to date".green
         end
         changes
       end

@@ -308,9 +308,11 @@ describe Bosh::Cli::Command::Base do
       Dir.chdir(@release_dir) do
         FileUtils.touch("test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
+        blob_path = Pathname.new(@release_dir).realpath.to_s
+        blobs_dir = Pathname.new(@blob_dir).realpath.to_s
         lambda {
           @cmd.upload_blob("test.tgz")
-        }.should raise_error(Bosh::Cli::CliExit, "#{File.join(File.realpath(@release_dir),"test.tgz")} is NOT under #{File.realpath(@blob_dir)}/")
+        }.should raise_error(Bosh::Cli::CliExit, "#{File.join(blob_path, "test.tgz")} is NOT under #{blobs_dir}/")
       end
     end
 
@@ -416,7 +418,7 @@ describe Bosh::Cli::Command::Base do
       Dir.chdir(@release_dir) do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         @cmd.should_receive(:get_blobs_index).and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
-        @cmd.should_receive(:say).with("\nMissing blobs ('bosh sync blob' to fetch) : ".green)
+        @cmd.should_receive(:say).with("\nMissing blobs ('bosh sync blobs' to fetch) : ".green)
         @cmd.should_receive(:say).with("test/test.tgz")
         @cmd.blobs_info
       end
@@ -424,5 +426,3 @@ describe Bosh::Cli::Command::Base do
   end
 
 end
-
-
