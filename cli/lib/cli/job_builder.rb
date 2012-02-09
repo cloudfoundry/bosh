@@ -179,7 +179,7 @@ module Bosh::Cli
       files << File.join(job_dir, "spec")
 
       files.each do |filename|
-        contents << "%s%s%s" % [ File.basename(filename), File.read(filename), File.stat(filename).mode.to_s(8) ]
+        contents << "%s%s%s" % [ File.basename(filename), File.read(filename), tracked_permissions(filename) ]
       end
 
       Digest::SHA1.hexdigest(contents)
