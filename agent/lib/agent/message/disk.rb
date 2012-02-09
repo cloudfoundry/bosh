@@ -68,7 +68,7 @@ module Bosh::Agent
         settings = Bosh::Agent::Config.settings
 
         # TODO abstraction for settings
-        if settings["disks"].kind_of?(Hash) && settings["disk"]["persistent"].kind_of?(Hash)
+        if settings["disks"].kind_of?(Hash) && settings["disks"]["persistent"].kind_of?(Hash)
           cids = settings["disks"]["persistent"]
         else
           cids = {}
