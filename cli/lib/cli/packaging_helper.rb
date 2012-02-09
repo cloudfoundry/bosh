@@ -95,7 +95,8 @@ module Bosh
           if Digest::SHA1.hexdigest(payload) == item["sha1"]
             @tarball_path = @final_index.add_version(fingerprint, item, payload)
           else
-            err("`#{name}' (#{version}) is corrupted in blobstore (id=#{blobstore_id}), please remove it manually and re-generate the final release")
+            err("`#{name}' (#{version}) is corrupted in blobstore (id=#{blobstore_id}), " +
+                "please remove it manually and re-generate the final release")
           end
         end
 
@@ -220,6 +221,21 @@ module Bosh
         end
       end
 
+      # Git doesn't really track file permissions, it just looks at executable
+      # bit and uses 0755 if it's set or 0644 if not. We have to mimic that
+      # behavior in the fingerprint calculation to avoid the situation where
+      # seemingly clean working copy would trigger new fingreprints for
+      # artifacts with changed permissions. Also we don't want current
+      # fingerprints to change, hence the exact values below.
+      def tracked_permissions(path)
+        if File.directory?(path)
+          "40755"
+        elsif File.executable?(path)
+          "100755"
+        else
+          "100644"
+        end
+      end
     end
   end
 end

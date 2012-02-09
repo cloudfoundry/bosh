@@ -164,7 +164,9 @@ module Bosh::Cli
 
       signatures = files.map do |file|
         path = get_file_path(file)
-        "%s%s%s" % [ file, File.directory?(path) ? nil : File.read(path), File.stat(path).mode.to_s(8) ]
+
+        # TODO change fingerprint to use file checksum, not the raw contents
+        "%s%s%s" % [ file, File.directory?(path) ? nil : File.read(path), tracked_permissions(path) ]
       end
       contents << signatures.join("")
 
