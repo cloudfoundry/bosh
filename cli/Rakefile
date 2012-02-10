@@ -18,9 +18,14 @@ task "build" do
 end
 
 desc "Build and install Bosh CLI into system gems"
-task "install" do
+task "install_head" do
   sh("bundle install --local --without test development")
   gem_helper.install_gem
+end
+
+task "install" do
+  sh("bundle install --local --without test development")
+  system("gem install bosh_cli-current.gem")
 end
 
 namespace "bundler" do
