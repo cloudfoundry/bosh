@@ -190,9 +190,10 @@ module Bosh::Director
         @logger.debug("Request failed with response code: #{exception.response_code} error code: " +
                          "#{exception.error_code} error: #{exception.message}")
         status(exception.response_code)
-        error_payload                = Hash.new
-        error_payload['code']        = exception.error_code
-        error_payload['description'] = exception.message
+        error_payload = {
+          "code" => exception.error_code,
+          "description" => exception.message
+        }
         Yajl::Encoder.encode(error_payload)
       else
         msg = ["#{exception.class} - #{exception.message}"]
