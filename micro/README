@@ -1,10 +1,11 @@
 Micro Cloud Foundry version 1.2
 ===============================
 
-This is the second release of Micro Cloud Foundry.
+This is the third release of Micro Cloud Foundry.
 
 IMPORTANT : You MUST have a valid CloudFoundry.com account to get the required
-Micro Cloud Foundry Token needed to configure the Micro Cloud Foundry VM.
+Micro Cloud Foundry Token to configure the Micro Cloud Foundry VM for online
+use.
 To signup for a Cloud Foundry account, please go to http://cloudfoundry.com/signup
 after receiving your account information, get your token from
 http://my.cloudfoundry.com/micro
@@ -50,10 +51,11 @@ Runtimes
 +--------+-------------+-----------+
 | Name   | Description | Version   |
 +--------+-------------+-----------+
+| java   | Java 6      | 1.6       |
 | ruby18 | Ruby 1.8    | 1.8.7     |
 | ruby19 | Ruby 1.9    | 1.9.2p180 |
-| java   | Java 6      | 1.6       |
 | node   | Node.js     | 0.4.12    |
+| node06 | Node.js     | 0.6.8     |
 +--------+-------------+-----------+
 
 Frameworks

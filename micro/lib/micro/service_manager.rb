@@ -91,7 +91,7 @@ module VCAP::Micro
             s = if data && data[:status]
               data[:status][:message]
             else
-              @logger.warning("unknown service state for #{service}: #{data.inspect}")
+              @logger.warn("unknown service state for #{service}: #{data.inspect}")
               "unknown"
             end
             s = data && data[:status] ? data[:status][:message] : "unknown"
