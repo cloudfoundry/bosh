@@ -20,9 +20,9 @@ ENV["CI_REPORTS"] = reports_dir
 
 namespace "redis" do
 
-  REDIS_DIR = File.dirname(__FILE__) + "/assets"
-  REDIS_CNF = REDIS_DIR + "/redis_test.conf"
-  REDIS_PID = REDIS_DIR + "/redis_db/redis.pid"
+  REDIS_DIR = File.join(File.dirname(__FILE__), "assets")
+  REDIS_CNF = File.join(REDIS_DIR, "redis_test.conf")
+  REDIS_PID = File.join(REDIS_DIR, "redis_db/redis.pid")
 
   desc "Start Redis instance"
   task :start do
@@ -34,8 +34,8 @@ namespace "redis" do
       FileUtils.rm REDIS_PID
       false
     end
-
-    system "redis-server #{REDIS_CNF}" unless redis_running
+    # TODO: make more robust, detect when it fails, etc.
+    system "redis-server \"#{REDIS_CNF}\"" unless redis_running
   end
 
   desc "Stop Redis instance"
