@@ -55,6 +55,21 @@ describe Bosh::Director::Jobs::DeleteDeployment do
       Bosh::Director::Models::Instance[instance.id].should be_nil
     end
 
+    it "should ignore cpi errors if forced" do
+      vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
+      instance = Bosh::Director::Models::Instance.make(:vm => vm)
+      Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => instance.id)
+
+      @cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid").and_raise("ERROR")
+      @cloud.should_receive(:delete_disk).with("disk-cid").and_raise("ERROR")
+
+      job = Bosh::Director::Jobs::DeleteDeployment.new("test_deployment", "force" => true)
+      job.should_receive(:delete_vm).with(vm)
+      job.delete_instance(instance)
+
+      Bosh::Director::Models::Instance[instance.id].should be_nil
+    end
+
   end
 
   describe "delete_vm" do

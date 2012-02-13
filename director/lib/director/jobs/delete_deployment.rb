@@ -27,11 +27,11 @@ module Bosh::Director
         begin
           @logger.info("Deleting found disk: #{disk.disk_cid}")
           @cloud.delete_disk(disk.disk_cid)
-          disk.destroy
         rescue => e
           @logger.warn("Could not delete disk: #{e} - #{e.backtrace.join("")}")
           raise unless force
         end
+        disk.destroy
       end
 
       def delete_instance(instance)
