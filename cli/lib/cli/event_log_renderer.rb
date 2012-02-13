@@ -17,6 +17,7 @@ module Bosh::Cli
 
     attr_reader :current_stage
     attr_reader :events_count
+    attr_reader :started_at, :finished_at
 
     def initialize
       @lock = Monitor.new
@@ -28,8 +29,6 @@ module Bosh::Cli
       @progress_bars = { }
       @pos = 0
       @time_adjustment = 0
-      @started_at = nil
-      @finished_at = nil
     end
 
     def add_output(output)
@@ -237,7 +236,7 @@ module Bosh::Cli
         else
           status = task_name.yellow
         end
-        @buffer.puts("  #{status}")
+        @buffer.puts("  #{status} (#{format_time(task_time)})")
       when "in_progress"
         progress = [ event["progress"].to_f / 100, 1 ].min
       end
