@@ -1,7 +1,8 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Director
   module Jobs
     class UpdateRelease < BaseJob
-
       @queue = :normal
 
       attr_accessor :tmp_release_dir, :release
@@ -47,11 +48,14 @@ module Bosh::Director
       def extract_release
         track_and_log("Extracting release") do
           begin
-            release_tgz = File.join(@tmp_release_dir, ReleaseManager::RELEASE_TGZ)
+            release_tgz = File.join(@tmp_release_dir,
+                                    Api::ReleaseManager::RELEASE_TGZ)
             tar_output = `tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1`
             raise ReleaseInvalidArchive.new($?.exitstatus, tar_output) if $?.exitstatus != 0
           ensure
-            FileUtils.rm(release_tgz) if File.exists?(release_tgz)
+            if release_tgz && File.exists?(release_tgz)
+              FileUtils.rm(release_tgz)
+            end
           end
         end
       end
@@ -310,7 +314,6 @@ module Bosh::Director
 
         template.save
       end
-
     end
   end
 end

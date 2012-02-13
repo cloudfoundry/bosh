@@ -1,4 +1,9 @@
-module Bosh; module Director; end; end
+# Copyright (c) 2009-2012 VMware, Inc.
+
+module Bosh
+  module Director
+  end
+end
 
 require "digest/sha1"
 require "erb"
@@ -25,13 +30,11 @@ require "uuidtools"
 require "yajl"
 require "esxmq"
 
-require "director/api_helpers"
-require "director/dns_helper"
-require "director/thread_formatter"
 require "director/deep_copy"
+require "director/dns_helper"
 require "director/ext"
-require "director/http_constants"
-require "director/task_helper"
+require "director/ip_util"
+require "director/thread_formatter"
 require "director/validation_helper"
 
 require "director/version"
@@ -39,8 +42,8 @@ require "director/config"
 require "director/event_log"
 require "director/task_result_file"
 
+require "director/api"
 require "director/client"
-require "director/ip_util"
 require "director/agent_client"
 require "director/cloud"
 require "director/cloud/vsphere"
@@ -58,19 +61,9 @@ require "director/job_updater"
 require "director/lock"
 require "director/nats_rpc"
 require "director/package_compiler"
-require "director/problem_manager"
-require "director/property_manager"
-require "director/release_manager"
-require "director/resource_manager"
-require "director/vm_state_manager"
 require "director/resource_pool_updater"
 require "director/sequel"
-require "director/task_manager"
 require "director/thread_pool"
-require "director/user_manager"
-require "director/deployment_manager"
-require "director/instance_manager"
-require "director/stemcell_manager"
 
 require "director/cloudcheck_helper"
 require "director/problem_handlers/base"
@@ -127,21 +120,22 @@ module Bosh::Director
   end
 
   class ApiController < Sinatra::Base
-    include ApiHelpers
+    include Api::ApiHelper
+    include Api::Http
 
     def initialize
       super
-      @deployment_manager = DeploymentManager.new
-      @release_manager    = ReleaseManager.new
-      @stemcell_manager   = StemcellManager.new
-      @task_manager       = TaskManager.new
-      @user_manager       = UserManager.new
-      @instance_manager   = InstanceManager.new
-      @resource_manager   = ResourceManager.new
-      @property_manager   = PropertyManager.new
-      @vm_state_manager   = VmStateManager.new
-      @problem_manager    = ProblemManager.new
-      @logger             = Config.logger
+      @deployment_manager = Api::DeploymentManager.new
+      @instance_manager = Api::InstanceManager.new
+      @problem_manager = Api::ProblemManager.new
+      @property_manager = Api::PropertyManager.new
+      @resource_manager = Api::ResourceManager.new
+      @release_manager = Api::ReleaseManager.new
+      @stemcell_manager = Api::StemcellManager.new
+      @task_manager = Api::TaskManager.new
+      @user_manager = Api::UserManager.new
+      @vm_state_manager = Api::VmStateManager.new
+      @logger = Config.logger
     end
 
     mime_type :tgz, "application/x-compressed"
@@ -201,7 +195,7 @@ module Bosh::Director
           msg[0] = msg[0] + ":"
           msg.concat(exception.backtrace)
         end
-        @logger.warn(msg.join("\n"))
+        @logger.error(msg.join("\n"))
         status(500)
       end
     end

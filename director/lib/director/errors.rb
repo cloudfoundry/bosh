@@ -1,4 +1,7 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Director
+  include Api::Http
 
   class DirectorError < StandardError
     attr_reader :response_code
