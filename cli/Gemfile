@@ -1,6 +1,7 @@
 source :rubygems
 gemspec
 
+gem "netaddr"
 gem "rake"
 
 group :test do
