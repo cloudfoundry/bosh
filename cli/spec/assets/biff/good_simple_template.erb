@@ -1,0 +1,69 @@
+---
+name: <%= find("name") %>
+director_uuid: <%= find("director_uuid")%>
+
+networks:
+
+- name: default
+  subnets:
+  <%- for @subnet in find("networks.default.subnets") -%>
+  - reserved:
+    - <%= ip_range(2..9, "default") %>
+    - <%= ip_range(-11..-2, "default") %>
+    static:
+    - <%= ip_range(10..140, "default") %>
+    range: <%= find_in("range", @subnet) %>
+    gateway: <%= find_in("gateway", @subnet) %>
+    dns:
+    <%- for @dns in find_in("dns", @subnet) -%>
+    - <%= @dns %>
+    <%- end -%>
+    cloud_properties:
+      name: <%= find_in("cloud_properties.name", @subnet) %>
+  <%- end -%>
+- name: lb
+  subnets:
+  <%- for @subnet in find("networks.lb.subnets") -%>
+  - static:
+    - <%= ip_range(1..2, "lb") %>
+    range: <%= find_in("range", @subnet) %>
+    dns:
+    <%- for @dns in find_in("dns", @subnet) -%>
+    - <%= @dns %>
+    <%- end -%>
+    cloud_properties:
+      name: <%= find_in("cloud_properties.name", @subnet) %>
+  <%- end -%>
+
+jobs:
+
+- name: debian_nfs_server
+  template: debian_nfs_server
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 8192
+  networks:
+  - name: default
+    static_ips:
+    - <%= ip(10, "default") %>
+
+- name: syslog_aggregator
+  template: syslog_aggregator
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 600
+  networks:
+  - name: default
+    static_ips:
+    - <%= ip(13, "default") %>
+
+properties:
+  domain: <%= find("properties.domain") %>
+
+  nfs_server:
+    address: <%= ip(10, "default") %>
+    network: <%= get_network_and_mask("default") %>
+
+  syslog_aggregator:
+    address: <%= ip(13, "default") %>
+    port: 54321
