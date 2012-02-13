@@ -437,6 +437,14 @@ module Bosh
           route :deployment, :list
         end
 
+        command :bosh_biff do
+          usage "biff [<template_file>]"
+          desc  "Diffs your current BOSH deployment configuration against " +
+                "the newest BOSH deployment configuration template so that " +
+                "you can keep your deployment configuration file up to date."
+          route :biff, :biff
+        end
+
         command :list_running_tasks do
           usage "tasks"
           desc  "Show the list of running tasks"
