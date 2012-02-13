@@ -1,0 +1,68 @@
+# To be diffed with network_only_template.erb
+# See comments to see what is different and should be changed in the output
+---
+name: ben-cloud
+director_uuid: a8f335a4-30f0-4a92-ab88-5c3feb55577a
+
+
+networks:
+- name: default
+  subnets:
+  - reserved:
+    - 172.31.4.2 - 172.31.4.9
+    static:
+    - 172.31.4.10 - 172.31.4.140
+    range: 172.31.4.0/22
+    gateway: 172.31.4.1
+    dns:
+    - 172.30.22.153
+    - 172.30.22.154
+    cloud_properties:
+      name: VLAN2004
+- name: lb
+  subnets:
+    - static:
+      - 172.28.6.241 - 172.28.6.242
+      range: 172.28.6.240/28
+      dns:
+      - 172.30.22.153
+      - 172.30.22.154
+      cloud_properties:
+        name: VLAN3121
+
+
+jobs:
+
+- name: debian_nfs_server
+  template: debian_nfs_server
+  instances: 1
+  # Resource pool is gone, persistent disk is different.
+  persistent_disk: 4000
+  networks:
+  - name: default
+    static_ips:
+    - 172.31.4.17
+
+- name: syslog_aggregator
+  template: syslog_aggregator
+  instances: 1
+  resource_pool: infrastructure
+  # Persistend disk is different.
+  persistent_disk: 900
+  networks:
+  - name: default
+    static_ips:
+    - 172.31.4.18
+
+properties:
+  domain: appcloud23.dev.mozycloud.com
+
+  # These addresses should be ignored in the output. Biff generates addresses
+  # based on the template + the network section specified in this file.
+  nfs_server:
+    address: 1.1.1.1
+    network: 1.1.1.1/22
+
+  syslog_aggregator:
+    address: 172.31.4.18
+    port: 54321
