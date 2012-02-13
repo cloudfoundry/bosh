@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
@@ -121,6 +123,9 @@ module SpecHelper
 end
 
 SpecHelper.init
+
+BD = Bosh::Director
+BDA = BD::Api
 
 Rspec.configure do |rspec|
   rspec.before(:each) do

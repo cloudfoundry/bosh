@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require File.expand_path("../../spec_helper", __FILE__)
 
 require "rack/test"
@@ -14,8 +16,8 @@ describe Bosh::Director::Controller do
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     test_config["blobstore"] = {
-      "plugin" => "local",
-      "properties" => { "blobstore_path" => @blobstore_dir }
+        "plugin" => "local",
+        "properties" => {"blobstore_path" => @blobstore_dir}
     }
     Bosh::Director::Config.configure(test_config)
   end
@@ -70,10 +72,10 @@ describe Bosh::Director::Controller do
 
       last_response.status.should == 200
       expected = {
-        "name"    => "Test Director",
-        "version" => "#{Bosh::Director::VERSION} (#{Bosh::Director::Config.revision})",
-        "uuid"    => Bosh::Director::Config.uuid,
-        "user"    => "admin"
+          "name" => "Test Director",
+          "version" => "#{Bosh::Director::VERSION} (#{Bosh::Director::Config.revision})",
+          "uuid" => Bosh::Director::Config.uuid,
+          "user" => "admin"
       }
 
       Yajl::Parser.parse(last_response.body).should == expected
@@ -86,62 +88,62 @@ describe Bosh::Director::Controller do
 
     describe "creating a stemcell" do
       it "expects compressed stemcell file" do
-        post "/stemcells", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
+        post "/stemcells", {}, {"CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz")}
         expect_redirect_to_queued_task(last_response)
       end
 
       it "only consumes application/x-compressed" do
-        post "/stemcells", {}, { "CONTENT_TYPE" => "application/octet-stream", :input => spec_asset("tarball.tgz") }
+        post "/stemcells", {}, {"CONTENT_TYPE" => "application/octet-stream", :input => spec_asset("tarball.tgz")}
         last_response.status.should == 404
       end
     end
 
     describe "creating a release" do
       it "expects compressed release file" do
-        post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
+        post "/releases", {}, {"CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz")}
         expect_redirect_to_queued_task(last_response)
       end
 
       it "only consumes application/x-compressed" do
-        post "/releases", {}, { "CONTENT_TYPE" => "application/octet-stream", :input => spec_asset("tarball.tgz") }
+        post "/releases", {}, {"CONTENT_TYPE" => "application/octet-stream", :input => spec_asset("tarball.tgz")}
         last_response.status.should == 404
       end
     end
 
     describe "creating a deployment" do
       it "expects compressed deployment file" do
-        post "/deployments", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        post "/deployments", {}, {"CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml")}
         expect_redirect_to_queued_task(last_response)
       end
 
       it "only consumes text/yaml" do
-        post "/deployments", {}, { "CONTENT_TYPE" => "text/plain", :input => spec_asset("test_conf.yaml") }
+        post "/deployments", {}, {"CONTENT_TYPE" => "text/plain", :input => spec_asset("test_conf.yaml")}
         last_response.status.should == 404
       end
     end
 
     describe "job management" do
       it "allows putting jobs into different states" do
-        Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({ "foo" => "bar" }))
-        put "/deployments/foo/jobs/nats?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({"foo" => "bar"}))
+        put "/deployments/foo/jobs/nats?state=stopped", {}, {"CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml")}
         expect_redirect_to_queued_task(last_response)
       end
 
       it "allows putting job instances into different states" do
-        Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({ "foo" => "bar" }))
-        put "/deployments/foo/jobs/dea/2?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({"foo" => "bar"}))
+        put "/deployments/foo/jobs/dea/2?state=stopped", {}, {"CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml")}
         expect_redirect_to_queued_task(last_response)
       end
 
       it "doesn't like invalid indices" do
-        put "/deployments/foo/jobs/dea/zb?state=stopped", {}, { "CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml") }
+        put "/deployments/foo/jobs/dea/zb?state=stopped", {}, {"CONTENT_TYPE" => "text/yaml", :input => spec_asset("test_conf.yaml")}
         last_response.status.should == 400
       end
     end
 
     describe "log management" do
       it "allows fetching logs from a particular instance" do
-        deployment = Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({ "foo" => "bar" }))
+        deployment = Bosh::Director::Models::Deployment.create(:name => "foo", :manifest => YAML.dump({"foo" => "bar"}))
         instance = Bosh::Director::Models::Instance.create(:deployment => deployment, :job => "nats", :index => "0", :state => "started")
         get "/deployments/foo/jobs/nats/0/logs", {}
         expect_redirect_to_queued_task(last_response)
@@ -153,7 +155,7 @@ describe Bosh::Director::Controller do
       end
 
       it "404 if no deployment" do
-        deployment = Bosh::Director::Models::Deployment.create(:name => "bar", :manifest => YAML.dump({ "foo" => "bar" }))
+        deployment = Bosh::Director::Models::Deployment.create(:name => "bar", :manifest => YAML.dump({"foo" => "bar"}))
         get "/deployments/bar/jobs/nats/0/logs", {}
         last_response.status.should == 404
       end
@@ -162,7 +164,7 @@ describe Bosh::Director::Controller do
     describe "listing stemcells" do
       it "has API call that returns a list of stemcells in JSON" do
         stemcells = (1..10).map do |i|
-          Bosh::Director::Models::Stemcell.create(:name => "stemcell-#{i}", :version => i,  :cid => rand(25000 * i))
+          Bosh::Director::Models::Stemcell.create(:name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
         end
 
         get "/stemcells", {}, {}
@@ -173,8 +175,8 @@ describe Bosh::Director::Controller do
         body.kind_of?(Array).should be_true
         body.size.should == 10
 
-        response_collection = body.map{ |e| [ e["name"], e["version"], e["cid"] ] }
-        expected_collection = stemcells.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.version.to_s, e.cid.to_s ] }
+        response_collection = body.map { |e| [e["name"], e["version"], e["cid"]] }
+        expected_collection = stemcells.sort_by { |e| e.name }.map { |e| [e.name.to_s, e.version.to_s, e.cid.to_s] }
 
         response_collection.should == expected_collection
       end
@@ -205,8 +207,8 @@ describe Bosh::Director::Controller do
         body.kind_of?(Array).should be_true
         body.size.should == 10
 
-        response_collection = body.map{ |e| [ e["name"], e["versions"].join(" ") ] }
-        expected_collection = releases.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s, e.versions.map{ |v| v.version.to_s }.join(" ") ] }
+        response_collection = body.map { |e| [e["name"], e["versions"].join(" ")] }
+        expected_collection = releases.sort_by { |e| e.name }.map { |e| [e.name.to_s, e.versions.map { |v| v.version.to_s }.join(" ")] }
 
         response_collection.should == expected_collection
       end
@@ -233,8 +235,8 @@ describe Bosh::Director::Controller do
         body.kind_of?(Array).should be_true
         body.size.should == 10
 
-        response_collection = body.map{ |e| [ e["name"] ] }
-        expected_collection = deployments.sort_by{ |e| e.name }.map{ |e| [ e.name.to_s ] }
+        response_collection = body.map { |e| [e["name"]] }
+        expected_collection = deployments.sort_by { |e| e.name }.map { |e| [e.name.to_s] }
 
         response_collection.should == expected_collection
       end
@@ -242,25 +244,25 @@ describe Bosh::Director::Controller do
 
     describe "getting deployment info" do
       it "returns manifest" do
-        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
+        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({"foo" => "bar"}))
         get "/deployments/test_deployment"
 
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
-        YAML.load(body["manifest"]).should == { "foo" => "bar" }
+        YAML.load(body["manifest"]).should == {"foo" => "bar"}
       end
     end
 
     describe "getting deployment vms info" do
       it "returns a list of agent_ids, jobs and indices" do
-        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({ "foo" => "bar" }))
-        vms = [ ]
+        deployment = Bosh::Director::Models::Deployment.create(:name => "test_deployment", :manifest => YAML.dump({"foo" => "bar"}))
+        vms = []
 
         15.times do |i|
-          vm_params = { "agent_id" => "agent-#{i}", "cid" => "cid-#{i}", "deployment_id" => deployment.id }
+          vm_params = {"agent_id" => "agent-#{i}", "cid" => "cid-#{i}", "deployment_id" => deployment.id}
           vm = Bosh::Director::Models::Vm.create(vm_params)
 
-          instance_params = { "deployment_id" => deployment.id, "vm_id" => vm.id, "job" => "job-#{i}", "index" => i, "state" => "started" }
+          instance_params = {"deployment_id" => deployment.id, "vm_id" => vm.id, "job" => "job-#{i}", "index" => i, "state" => "started"}
           instance = Bosh::Director::Models::Instance.create(instance_params)
         end
 
@@ -272,7 +274,7 @@ describe Bosh::Director::Controller do
         body.size.should == 15
 
         15.times do |i|
-          body[i].should == { "agent_id" => "agent-#{i}", "job" => "job-#{i}", "index" => i, "cid" => "cid-#{i}" }
+          body[i].should == {"agent_id" => "agent-#{i}", "job" => "job-#{i}", "index" => i, "cid" => "cid-#{i}"}
         end
       end
     end
@@ -309,7 +311,7 @@ describe Bosh::Director::Controller do
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
 
-        body["versions"].sort.should == (1..10).map{ |i| i.to_s }.sort
+        body["versions"].sort.should == (1..10).map { |i| i.to_s }.sort
       end
 
       it "returns packages and jobs" do
@@ -346,7 +348,7 @@ describe Bosh::Director::Controller do
 
     describe "polling task status" do
       it "has API call that return task status" do
-        post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
+        post "/releases", {}, {"CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz")}
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
         get "/tasks/#{new_task_id}"
@@ -370,7 +372,7 @@ describe Bosh::Director::Controller do
       end
 
       it "has API call that return task output and task output with ranges" do
-        post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
+        post "/releases", {}, {"CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz")}
 
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
@@ -388,7 +390,7 @@ describe Bosh::Director::Controller do
       end
 
       it "has API call that return task output with ranges" do
-        post "/releases", {}, { "CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz") }
+        post "/releases", {}, {"CONTENT_TYPE" => "application/x-compressed", :input => spec_asset("tarball.tgz")}
         new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
 
         output_file = File.new(File.join(@temp_dir, "debug"), 'w+')
@@ -463,7 +465,7 @@ describe Bosh::Director::Controller do
 
         FileUtils.touch(tmp_file)
         manager = mock("manager")
-        Bosh::Director::ResourceManager.stub!(:new).and_return(manager)
+        Bosh::Director::Api::ResourceManager.stub!(:new).and_return(manager)
         manager.stub!(:get_resource).with("deadbeef").and_return(tmp_file)
 
         File.exists?(tmp_file).should be_true
@@ -477,8 +479,8 @@ describe Bosh::Director::Controller do
       it "creates a user" do
         Bosh::Director::Models::User.all.size.should == 0
 
-        user_data = Yajl::Encoder.encode({ "username" => "john", "password" => "123" })
-        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
+        user_data = Yajl::Encoder.encode({"username" => "john", "password" => "123"})
+        post "/users", {}, {"CONTENT_TYPE" => "application/json", :input => user_data}
 
         new_user = Bosh::Director::Models::User[:username => "john"]
         new_user.should_not be_nil
@@ -486,38 +488,38 @@ describe Bosh::Director::Controller do
       end
 
       it "doesn't create a user with exising username" do
-        user_data = Yajl::Encoder.encode({ "username" => "john", "password" => "123" })
-        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
+        user_data = Yajl::Encoder.encode({"username" => "john", "password" => "123"})
+        post "/users", {}, {"CONTENT_TYPE" => "application/json", :input => user_data}
 
         login_as("john", "123")
-        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
+        post "/users", {}, {"CONTENT_TYPE" => "application/json", :input => user_data}
 
         last_response.status.should == 400
         Bosh::Director::Models::User.all.size.should == 1
       end
 
       it "updates user password but not username" do
-        user_data = Yajl::Encoder.encode({ "username" => "john", "password" => "123" })
-        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
+        user_data = Yajl::Encoder.encode({"username" => "john", "password" => "123"})
+        post "/users", {}, {"CONTENT_TYPE" => "application/json", :input => user_data}
 
         login_as("john", "123")
-        new_data = Yajl::Encoder.encode({ "username" => "john", "password" => "456" })
-        put "/users/john", {}, { "CONTENT_TYPE" => "application/json", :input => new_data }
+        new_data = Yajl::Encoder.encode({"username" => "john", "password" => "456"})
+        put "/users/john", {}, {"CONTENT_TYPE" => "application/json", :input => new_data}
 
         last_response.status.should == 204
         user = Bosh::Director::Models::User[:username => "john"]
         BCrypt::Password.new(user.password).should == "456"
 
         login_as("john", "456")
-        change_name = Yajl::Encoder.encode({ "username" => "john2", "password" => "123" })
-        put "/users/john", {}, { "CONTENT_TYPE" => "application/json", :input => change_name }
+        change_name = Yajl::Encoder.encode({"username" => "john2", "password" => "123"})
+        put "/users/john", {}, {"CONTENT_TYPE" => "application/json", :input => change_name}
         last_response.status.should == 400
         last_response.body.should == "{\"code\":20001,\"description\":\"The username is immutable\"}"
       end
 
       it "deletes user" do
-        user_data = Yajl::Encoder.encode({ "username" => "john", "password" => "123" })
-        post "/users", {}, { "CONTENT_TYPE" => "application/json", :input => user_data }
+        user_data = Yajl::Encoder.encode({"username" => "john", "password" => "123"})
+        post "/users", {}, {"CONTENT_TYPE" => "application/json", :input => user_data}
 
         login_as("john", "123")
         delete "/users/john"
@@ -532,7 +534,7 @@ describe Bosh::Director::Controller do
     describe "property management" do
 
       def payload(params)
-        { "CONTENT_TYPE" => "application/json", :input => Yajl::Encoder.encode(params)}
+        {"CONTENT_TYPE" => "application/json", :input => Yajl::Encoder.encode(params)}
       end
 
       it "REST API for creating, updating, getting and deleting deployment properties" do
@@ -571,7 +573,7 @@ describe Bosh::Director::Controller do
     describe "problem management" do
 
       def payload(params)
-        { "CONTENT_TYPE" => "application/json", :input => Yajl::Encoder.encode(params)}
+        {"CONTENT_TYPE" => "application/json", :input => Yajl::Encoder.encode(params)}
       end
 
       it "exposes problem managent REST API" do
@@ -588,7 +590,7 @@ describe Bosh::Director::Controller do
         last_response.status.should == 404
 
         problem = Bosh::Director::Models::DeploymentProblem.
-          create(:deployment_id => deployment.id, :resource_id => 2, :type => "test", :state => "open", :data => { })
+            create(:deployment_id => deployment.id, :resource_id => 2, :type => "test", :state => "open", :data => {})
 
         put "/deployments/mycloud/problems", {}, payload(:solution => "default")
         expect_redirect_to_queued_task(last_response)
