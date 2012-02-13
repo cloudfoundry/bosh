@@ -43,6 +43,7 @@ GEM
     net-ssh (2.2.2)
     net-ssh-gateway (1.1.0)
       net-ssh (>= 1.99.1)
+    netaddr (1.5.0)
     progressbar (0.9.2)
     rake (0.8.7)
     rcov (0.9.9)
@@ -93,6 +94,7 @@ PLATFORMS
 DEPENDENCIES
   bosh_cli!
   ci_reporter
+  netaddr
   rake
   rcov
   rcov_analyzer (>= 0.2)
