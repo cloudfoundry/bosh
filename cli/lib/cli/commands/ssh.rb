@@ -11,17 +11,20 @@ module Bosh::Cli::Command
 
     def parse_options(args)
       options = {}
-      ["public_key", "gateway_host", "gateway_user", "index", "job"].each do |option|
+      # Check if index is supplied on the command line
+      begin
+        options["index"] = Integer(args[0])
+        args.shift
+      rescue ArgumentError
+      end
+
+      ["public_key", "gateway_host", "gateway_user"].each do |option|
         pos = args.index("--#{option}")
         if pos
           options[option] = args[pos + 1]
           args.delete_at(pos + 1)
           args.delete_at(pos)
         end
-      end
-      if index = options["index"]
-        valid_index = Integer(index) rescue nil
-        err "Please specify a valid job index: #{index} is invalid" unless valid_index
       end
       options
     end
@@ -52,6 +55,26 @@ module Bosh::Cli::Command
       public_key
     end
 
+    def get_salt_charset
+      charset = []
+      charset.concat(("a".."z").to_a)
+      charset.concat(("A".."Z").to_a)
+      charset.concat(("0".."9").to_a)
+      charset << "."
+      charset << "/"
+      charset
+    end
+
+    def encrypt_password(plain_text)
+      return unless plain_text
+      @salt_charset ||= get_salt_charset
+      salt = ""
+      8.times do |_|
+        salt << @salt_charset[rand(@salt_charset.size)]
+      end
+      plain_text.crypt(salt)
+    end
+
     def setup_ssh(job, index, password, options, &block)
       # Get public key
       public_key = get_public_key(options)
@@ -63,7 +86,7 @@ module Bosh::Cli::Command
       manifest_name = prepare_deployment_manifest["name"]
 
       say "Target deployment is #{manifest_name}"
-      results = director.setup_ssh(manifest_name, job, index, user, public_key, password)
+      results = director.setup_ssh(manifest_name, job, index, user, public_key, encrypt_password(password))
       if results.nil?
         err "Error setting up ssh"
       end
@@ -177,6 +200,7 @@ module Bosh::Cli::Command
                 file = File.basename(args[0])
                 path = "#{args[1]}/#{file}.#{job}.#{result["index"]}"
                 ssh.scp.download!(args[0], path)
+                say "Downloaded file to #{path}"
               end
             end
           end
@@ -198,6 +222,7 @@ module Bosh::Cli::Command
     end
 
     def cleanup(*args)
+      job = args.shift
       options = parse_options(args)
       manifest_name = prepare_deployment_manifest["name"]
       results = nil
@@ -205,8 +230,8 @@ module Bosh::Cli::Command
         results = []
         results << {"index" => options["index"]}
       end
-      say "Cleaning up ssh artifacts from job #{options["job"]}, index #{options["index"]}"
-      director.cleanup_ssh(manifest_name, options["job"], "^#{SSH_USER_PREFIX}", [options["index"]])
+      say "Cleaning up ssh artifacts from job #{job}, index #{options["index"]}"
+      director.cleanup_ssh(manifest_name, job, "^#{SSH_USER_PREFIX}", [options["index"]])
     end
   end
 end
