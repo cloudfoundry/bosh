@@ -19,7 +19,8 @@ module Bosh::Director
         :result,
         :revision,
         :task_checkpoint_interval,
-        :uuid
+        :uuid,
+        :current_job
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -144,6 +145,10 @@ module Bosh::Director
         if redis?
           redis.client.logger = @logger
         end
+      end
+
+      def job_cancelled?
+        @current_job.task_checkpoint if @current_job
       end
 
       def redis_options=(options)

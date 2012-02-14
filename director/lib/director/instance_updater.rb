@@ -112,7 +112,22 @@ module Bosh::Director
       else
         drain_time = agent.drain("update", @instance_spec.spec)
       end
-      sleep(drain_time)
+
+      if drain_time < 0
+        drain_time = drain_time.abs
+        begin
+          Config.job_cancelled?
+          @logger.info("Drain - check back in #{drain_time} seconds")
+          sleep(drain_time)
+          drain_time = agent.drain("status")
+        rescue => e
+          @logger.warn("Failed to check drain-status: #{e.inspect}")
+          raise if e.kind_of?(Bosh::Director::TaskCancelled)
+          break
+        end while drain_time > 0
+      else
+        sleep(drain_time)
+      end
       agent.stop
     end
 
