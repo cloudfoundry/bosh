@@ -48,7 +48,7 @@ describe Bosh::Cli::Command::Base do
       @execute_command = false
       ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
       ssh.stub(:execute_command) { @execute_command = true }
-      ssh.shell("dea", "--index", "0")
+      ssh.shell("dea", "0")
       @interactive_shell.should == true && @execute_command.should == false
     end
 
