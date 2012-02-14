@@ -63,6 +63,29 @@ describe Bosh::Director::InstanceDeleter do
       @deleter.drain("some_agent_id")
     end
 
+    it "should dynamically drain the VM" do
+      agent = mock("agent")
+      AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
+      Bosh::Director::CurrentJob.stub!(:job_cancelled?).and_return(nil)
+
+      agent.should_receive(:drain).with("shutdown").and_return(-2)
+      agent.should_receive(:drain).with("status").and_return(1, 0)
+
+      @deleter.should_receive(:sleep).with(2)
+      @deleter.should_receive(:sleep).with(1)
+
+      agent.should_receive(:stop)
+      @deleter.drain("some_agent_id")
+    end
+
+    it "should stop vm-drain if task is cancelled" do
+      agent = mock("agent")
+      AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
+      Bosh::Director::CurrentJob.stub!(:job_cancelled?).and_raise(Bosh::Director::TaskCancelled.new(1))
+      agent.should_receive(:drain).with("shutdown").and_return(-2)
+      lambda {@deleter.drain("some_agent_id")}.should raise_error(Bosh::Director::TaskCancelled)
+    end
+  
   end
 
   describe :delete_persistent_disks do
