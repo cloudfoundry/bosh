@@ -14,6 +14,7 @@ module Bosh::Director
         task = Models::Task[task_id]
         raise TaskNotFound.new(task_id) if task.nil?
 
+        Config.cur_job = nil
         logger = Logger.new(File.join(task.output, "debug"))
         logger.level = Config.logger.level
         logger.formatter = ThreadFormatter.new
@@ -37,6 +38,7 @@ module Bosh::Director
           begin
             logger.info("Creating job")
             job = self.send(:new, *args)
+            Config.cur_job = job
             job.task_id = task_id
             job.task_checkpoint # cancelled in the queue?
 
