@@ -42,14 +42,21 @@ describe Bosh::Cli::Command::Base do
       }
     end
 
-    it "should try to setup interactive shell" do
+    it "should try to setup interactive shell when a job index is given" do
       ssh = Bosh::Cli::Command::Ssh.new
       @interactive_shell = false
       @execute_command = false
       ssh.stub(:setup_interactive_shell) { @interactive_shell = true }
       ssh.stub(:execute_command) { @execute_command = true }
-      ssh.shell("dea", "--index", "0")
+      ssh.shell("dea", "0")
       @interactive_shell.should == true && @execute_command.should == false
+    end
+
+    it "should fail to setup interactive shell when a job index is not given" do
+      ssh = Bosh::Cli::Command::Ssh.new
+      lambda {
+        ssh.shell("dea")
+      }.should raise_error(Bosh::Cli::CliExit, "Please specify a job index")
     end
 
     it "should try to execute given command remotely" do
