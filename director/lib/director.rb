@@ -39,6 +39,7 @@ require "director/validation_helper"
 
 require "director/version"
 require "director/config"
+require "director/current_job"
 require "director/event_log"
 require "director/task_result_file"
 
