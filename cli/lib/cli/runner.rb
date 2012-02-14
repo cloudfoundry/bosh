@@ -192,9 +192,8 @@ module Bosh
         end
 
         command :ssh do
-          usage "ssh <job> [<options>] [command]"
+          usage "ssh <job> [index] [<options>] [command]"
           desc  "Given a job, execute the given command or start an interactive session"
-          option "--index <job_index>"
           option "--public_key <file>"
           option "--gateway_host <host>"
           option "--gateway_user <user>"
@@ -203,18 +202,16 @@ module Bosh
         end
 
         command :ssh_cleanup do
-          usage "ssh_cleanup [options]"
+          usage "ssh_cleanup <job> [index]"
           desc  "Cleanup SSH artifacts"
-          option "--job <job>", "job to cleanup"
-          option "--index <index>", "index to cleanup"
           route :ssh, :cleanup
         end
 
         command :scp do
-          usage "scp <job> <--upload | --download> [options] /path/to/source /path/to/destination"
+          usage "scp <job> [index] (--upload|--download) [options]" +
+                "/path/to/source /path/to/destination"
           desc  "upload/download the source file to the given job. " +
                 "Note: for dowload /path/to/destination is a directory"
-          option "--index <job_index>"
           option "--public_key <file>"
           option "--gateway_host <host>"
           option "--gateway_user <user>"
