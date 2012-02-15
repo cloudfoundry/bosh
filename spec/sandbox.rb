@@ -3,6 +3,7 @@ module Bosh
     class Sandbox
 
       ASSETS_PATH = File.expand_path("../assets", __FILE__)
+      CONF_DIR    = File.join(ASSETS_PATH, "conf")
       LOGS_PATH   = File.join(ASSETS_PATH, "logs")
       REDIS_CONF  = File.join(ASSETS_PATH, "redis_test.conf")
       REDIS_PID   = File.join(ASSETS_PATH, "redis_db/redis.pid")
@@ -12,10 +13,12 @@ module Bosh
 
       DB_PATH             = "/tmp/director.sqlite"
       DNS_DB_PATH         = "/tmp/director-dns.sqlite"
-      DIRECTOR_TMP_PATH   = "/tmp/boshdir"
+      DIRECTOR_TMP_PATH   = LOGS_PATH
+      TASK_LOGS_DIR       = File.join(DIRECTOR_TMP_PATH, "tasks")
       AGENT_TMP_PATH      = "/tmp/bosh_test_cloud"
 
-      DIRECTOR_CONF  = File.join(ASSETS_PATH, "director_test.yml")
+      DIRECTOR_CONF_TEMPLATE  = File.join(ASSETS_PATH, "director_test.yml.erb")
+      DIRECTOR_CONF  = File.join(CONF_DIR, "director_test.yml")
       BLOBSTORE_CONF = File.join(ASSETS_PATH, "blobstore_server.yml")
       HM_CONF        = File.join(ASSETS_PATH, "health_monitor.yml")
 
@@ -53,6 +56,11 @@ module Bosh
           @sqlite_db = File.join(ASSETS_PATH, "director.db")
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
+          FileUtils.mkdir_p(CONF_DIR)
+          File.open(DIRECTOR_CONF, "w+") do |f|
+            f.write(ERB.new(File.read(DIRECTOR_CONF_TEMPLATE)).result(binding))
+          end
+
           Bundler.with_clean_env do
             Dir.chdir(DIRECTOR_PATH) do
               output = `BUNDLE_GEMFILE=#{DIRECTOR_PATH}/Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
@@ -70,8 +78,10 @@ module Bosh
           run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
 
           if ENV["DEBUG"]
-            FileUtils.rm_rf(LOGS_PATH)
-            FileUtils.mkdir_p(LOGS_PATH)
+            [LOGS_PATH, DIRECTOR_TMP_PATH].uniq.each do |path|
+              FileUtils.rm_rf(path)
+              FileUtils.mkdir_p(path)
+            end
           end
 
           tries = 0
@@ -132,6 +142,15 @@ module Bosh
           end
         end
 
+        def save_task_logs(name)
+          return unless ENV['DEBUG']
+
+          if File.directory?(TASK_LOGS_DIR)
+            task_name = pick_unique_name("task_#{name}")
+            FileUtils.mv(TASK_LOGS_DIR, File.join(DIRECTOR_TMP_PATH, task_name))
+          end
+        end
+
         def stop
           kill_agents
           kill_process(WORKER_PID)
@@ -143,9 +162,13 @@ module Bosh
           FileUtils.rm_f(@sqlite_db)
           FileUtils.rm_f(DB_PATH)
           FileUtils.rm_f(DNS_DB_PATH)
-          FileUtils.rm_rf(DIRECTOR_TMP_PATH)
+          # Keep the task logs when debugging
+          unless ENV['DEBUG']
+            FileUtils.rm_rf(DIRECTOR_TMP_PATH)
+          end
           FileUtils.rm_rf(AGENT_TMP_PATH)
           FileUtils.rm_rf(BLOBSTORE_STORAGE_DIR)
+          FileUtils.rm_rf(CONF_DIR)
         end
 
         private

@@ -8,7 +8,7 @@ redis:
   host: 127.0.0.1
   port: 63795
   password:
-dir: /tmp/boshdir
+dir: <%= LOGS_PATH %>
 db:
   database: sqlite:///tmp/director.sqlite
   max_connections: 32
