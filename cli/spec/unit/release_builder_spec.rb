@@ -1,5 +1,6 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require "spec_helper"
-require "fileutils"
 
 describe Bosh::Cli::ReleaseBuilder do
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Cli::Command
   class Misc < Base
     DEFAULT_STATUS_TIMEOUT = 3 # seconds
