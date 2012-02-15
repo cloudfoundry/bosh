@@ -13,6 +13,7 @@ module Bosh
       DB_PATH             = "/tmp/director.sqlite"
       DNS_DB_PATH         = "/tmp/director-dns.sqlite"
       DIRECTOR_TMP_PATH   = "/tmp/boshdir"
+      TASK_LOGS_DIR       = "/tmp/boshdir/tasks"
       AGENT_TMP_PATH      = "/tmp/bosh_test_cloud"
 
       DIRECTOR_CONF  = File.join(ASSETS_PATH, "director_test.yml")
@@ -129,6 +130,15 @@ module Bosh
             `lsof -i :57523 | grep LISTEN`
             break if $?.exitstatus == 0
             sleep(0.5)
+          end
+        end
+
+        def save_task_logs(name)
+          return unless ENV['DEBUG']
+
+          if File.directory?(TASK_LOGS_DIR)
+            task_name = pick_unique_name("task_#{name}")
+            FileUtils.mv(TASK_LOGS_DIR, File.join(LOGS_PATH, task_name))
           end
         end
 
