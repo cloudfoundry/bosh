@@ -23,19 +23,6 @@ module Bosh::Director
           task_file = File.basename(file_path)
           task_id = Integer(task_file)
 
-          if File.file?(file_path)
-            tmpdir = Dir.mktmpdir(task_file)
-            FileUtils.mv(file_path, File.join(tmpdir, "debug"), :force => true)
-            FileUtils.mv(file_path + ".soap", File.join(tmpdir, "soap"), :force => true)
-            FileUtils.mv(tmpdir, file_path, :force => true)
-
-            old_task = Models::Task[task_id]
-            if old_task
-              old_task.output = file_path
-              old_task.save
-            end
-          end
-
           if task_id < min_task_id && task_id >= 0
             logger.info("Delete #{task_file}")
             FileUtils.rm_rf file_path
