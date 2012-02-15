@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh
   module Cli
     DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_config")

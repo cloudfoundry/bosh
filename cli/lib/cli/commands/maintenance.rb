@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Cli::Command
   class Maintenance < Base
     include Bosh::Cli::VersionCalc
