@@ -45,7 +45,6 @@ update:
   canary_watch_time: 60000
   update_watch_time: 60000
   max_in_flight: 32
-  max_errors: 2
 
 jobs:
 - name: micro
