@@ -9,6 +9,7 @@ require "sandbox"
 require "deployments"
 require "redis"
 require "restclient"
+require "erb"
 require File.expand_path("../../director/lib/director/version", __FILE__)
 
 ASSETS_DIR = File.expand_path("../assets", __FILE__)
@@ -39,6 +40,10 @@ RSpec.configure do |c|
     FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
   end
 
+  c.after(:each) do |example|
+    save_task_logs(example)
+  end
+
   c.filter_run :focus => true if ENV["FOCUS"]
 end
 
@@ -60,6 +65,11 @@ end
 def reset_sandbox(example)
   desc = example ? example.example.metadata[:description] : ""
   Bosh::Spec::Sandbox.reset(desc)
+end
+
+def save_task_logs(example)
+  desc = example ? example.example.metadata[:description] : ""
+  Bosh::Spec::Sandbox.save_task_logs(desc)
 end
 
 def yaml_file(name, object)
