@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 libdir = File.expand_path("../lib", __FILE__)
 $:.unshift(libdir) unless $:.include?(libdir)
 require "cli/version"

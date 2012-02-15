@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Cli
   class CommandDefinition
     attr_reader :options
