@@ -13,6 +13,7 @@ module Bosh
       DB_PATH             = "/tmp/director.sqlite"
       DNS_DB_PATH         = "/tmp/director-dns.sqlite"
       DIRECTOR_TMP_PATH   = "/tmp/boshdir"
+      TASK_LOGS_DIR       = "/tmp/boshdir/tasks"
       AGENT_TMP_PATH      = "/tmp/bosh_test_cloud"
 
       DIRECTOR_CONF  = File.join(ASSETS_PATH, "director_test.yml")
@@ -72,6 +73,9 @@ module Bosh
           if ENV["DEBUG"]
             FileUtils.rm_rf(LOGS_PATH)
             FileUtils.mkdir_p(LOGS_PATH)
+
+            FileUtils.rm_rf(DIRECTOR_TMP_PATH)
+            FileUtils.mkdir_p(DIRECTOR_TMP_PATH)
           end
 
           tries = 0
@@ -132,6 +136,15 @@ module Bosh
           end
         end
 
+        def save_task_logs(name)
+          return unless ENV['DEBUG']
+
+          if File.directory?(TASK_LOGS_DIR)
+            task_name = pick_unique_name("task_#{name}")
+            FileUtils.mv(TASK_LOGS_DIR, File.join(DIRECTOR_TMP_PATH, task_name))
+          end
+        end
+
         def stop
           kill_agents
           kill_process(WORKER_PID)
@@ -143,7 +156,10 @@ module Bosh
           FileUtils.rm_f(@sqlite_db)
           FileUtils.rm_f(DB_PATH)
           FileUtils.rm_f(DNS_DB_PATH)
-          FileUtils.rm_rf(DIRECTOR_TMP_PATH)
+          # Keep the task logs when debugging
+          unless ENV['DEBUG']
+            FileUtils.rm_rf(DIRECTOR_TMP_PATH)
+          end
           FileUtils.rm_rf(AGENT_TMP_PATH)
           FileUtils.rm_rf(BLOBSTORE_STORAGE_DIR)
         end
