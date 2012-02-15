@@ -1,7 +1,9 @@
-require 'rspec/core'
+# Copyright (c) 2009-2012 VMware, Inc.
+
+require "rspec/core"
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
-require 'cli'
+require "cli"
 
 def spec_asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), "assets", filename))

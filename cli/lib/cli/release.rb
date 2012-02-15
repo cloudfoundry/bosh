@@ -1,6 +1,8 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Cli
 
-  # This class encapsulates the detals of handling dev and final releases:
+  # This class encapsulates the details of handling dev and final releases:
   # also it partitions release metadata between public config (which is
   # under version control) and user private config.
   class Release
