@@ -20,8 +20,7 @@ module Bosh::Spec
           "canaries"          => 2,
           "canary_watch_time" => 4000,
           "max_in_flight"     => 1,
-          "update_watch_time" => 20,
-          "max_errors"        => 1
+          "update_watch_time" => 20
         }
       }
     end

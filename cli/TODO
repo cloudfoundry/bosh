@@ -15,7 +15,6 @@ Subnet:
  - update["canary_watch_time"] ditto
  - update["max_in_flight"] ditto
  - update["update_watch_time"] ditto
- - update["max_errors"] ditto
 
 - resource_pools (Array)
 
