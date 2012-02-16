@@ -136,7 +136,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder = make_builder("A", ["lib/*.rb", "README.*"])
     builder.source_files.should == ["lib/1.rb", "lib/2.rb",
                                     "README.2", "README.md"].sort
-    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+    builder.fingerprint.should == "397a99ccd267ebc9bcc632b746db2cd5b29db050"
   end
 
   it "has stable fingerprint" do
@@ -247,7 +247,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
                 "foo/README", "baz")
     globs = ["foo/**/*", "baz"]
 
-    fingerprint = "9c956631508dfc0ccd677434c18e093912682414"
+    fingerprint = "86e8d5f5530a89659f588f5884fe8c13e639d94b"
 
     final_versions = Bosh::Cli::VersionsIndex.new(
         File.join(@release_dir, ".final_builds", "packages", "bar"))
@@ -262,7 +262,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
                              "dev_payload")
 
     builder = make_builder("bar", globs)
-    builder.fingerprint.should == "9c956631508dfc0ccd677434c18e093912682414"
+    builder.fingerprint.should == fingerprint
 
     builder.use_final_version
     builder.version.should == "4"
@@ -464,21 +464,21 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.source_files.should == ["lib/1.rb", "lib/2.rb",
                                     "README.2", "README.md"].sort
 
-    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+    builder.fingerprint.should == "397a99ccd267ebc9bcc632b746db2cd5b29db050"
 
     add_sources("lib/.zb.rb")
     builder.reload
 
     builder.source_files.should == ["lib/.zb.rb", "lib/1.rb",
                                     "lib/2.rb", "README.2", "README.md"].sort
-    builder.fingerprint.should == "80a36ed79aa5c4aa23b6c21895107103c9673e99"
+    builder.fingerprint.should == "351b3bb8dc430e58a3264bcfb5c9c19c06ece4af"
 
     remove_sources("lib/.zb.rb")
     builder.reload
 
     builder.source_files.should == ["lib/1.rb", "lib/2.rb",
                                     "README.2", "README.md"].sort
-    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+    builder.fingerprint.should == "397a99ccd267ebc9bcc632b746db2cd5b29db050"
   end
 
   it "supports dry run" do
@@ -526,7 +526,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder = make_builder("A", ["lib/*.rb", "README.*"])
     builder.blob_files.should == ["lib/1.rb", "lib/2.rb",
                                   "README.2", "README.md"].sort
-    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+    builder.fingerprint.should == "397a99ccd267ebc9bcc632b746db2cd5b29db050"
   end
 
   it "resolves files using both blob and source" do
@@ -539,7 +539,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.blob_files.should == ["README.2", "README.md"].sort
     builder.files.should == ["lib/1.rb", "lib/2.rb",
                              "README.2", "README.md"].sort
-    builder.fingerprint.should == "72d79bae15daf0f25e5672b9bd753a794107a89f"
+    builder.fingerprint.should == "397a99ccd267ebc9bcc632b746db2cd5b29db050"
   end
 
   it "should keep same fingerprint moving packages " +
