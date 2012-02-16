@@ -34,10 +34,11 @@ module Bosh::Cli::Command
         public_key = File.read(options["public_key"])
       else
         # See if ssh-add can be used
-        %x[ssh-add -L 1>/dev/null 2>&1]
-        if $?.exitstatus == 0
-          keys = %x[ssh-add -L]
-          public_key = keys.split("\n")[0]
+        result = execute("ssh-add -L")
+        unless result.failed?
+          # it only picks the first key
+          # TODO make it configurable or ask which to use if there are multiple
+          public_key = result.stdout.first.split("\n").first
         else
           # Pick up public key from home dir
           [SSH_DSA_PUB, SSH_RSA_PUB].each do |key_file|

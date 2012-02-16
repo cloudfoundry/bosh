@@ -26,6 +26,7 @@ require "timeout"
 require "tmpdir"
 require "uri"
 require "yaml"
+require "dotanuki"
 require 'net/ssh'
 require 'net/scp'
 require 'net/ssh/gateway'
