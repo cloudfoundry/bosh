@@ -44,7 +44,7 @@ GEM
     rack (1.4.0)
     rack-test (0.5.7)
       rack (>= 1.0)
-    rake (0.8.7)
+    rake (0.9.2.2)
     rcov (0.9.9)
     rcov_analyzer (0.2)
       builder
