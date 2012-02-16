@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 Sequel.extension :blank
 
 Sequel::Model.plugin :validation_helpers
