@@ -1,5 +1,6 @@
-module Bosh::Director
+# Copyright (c) 2009-2012 VMware, Inc.
 
+module Bosh::Director
   class EventLog
 
     # Event log conventions:
@@ -115,5 +116,4 @@ module Bosh::Director
       @event_log.log(@task, "in_progress", @index, @progress.to_i, data)
     end
   end
-
 end

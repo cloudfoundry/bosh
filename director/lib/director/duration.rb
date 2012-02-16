@@ -1,5 +1,6 @@
-module Bosh::Director
+# Copyright (c) 2009-2012 VMware, Inc.
 
+module Bosh::Director
   module Duration
 
     def duration(delta)
@@ -32,5 +33,4 @@ module Bosh::Director
     module_function :duration, :duration_helper
 
   end
-
 end
