@@ -2,6 +2,7 @@ module Bosh::Cli
 
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
+    include Bosh::Exec
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
@@ -145,8 +146,8 @@ module Bosh::Cli
       FileUtils.mkdir_p(File.dirname(tarball_path))
 
       in_build_dir do
-        `tar -czf #{tarball_path} . 2>&1`
-        raise InvalidRelease, "Cannot create release tarball" unless $?.exitstatus == 0
+        result = sh("tar -czf #{tarball_path} .")
+        raise InvalidRelease, "Cannot create release tarball" if result.failed?
         say "Generated #{tarball_path}"
       end
     end
