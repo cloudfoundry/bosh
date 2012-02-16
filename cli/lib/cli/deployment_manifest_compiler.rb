@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli
-
   class DeploymentManifestCompiler
     attr_accessor :properties
 
@@ -11,7 +10,8 @@ module Bosh::Cli
     end
 
     def property(name)
-      @properties[name] || raise(UndefinedProperty, "Cannot resolve deployment property `#{name}'")
+      @properties[name] || raise(UndefinedProperty,
+                                 "Cannot resolve deployment property `#{name}'")
     end
 
     def result
@@ -20,7 +20,8 @@ module Bosh::Cli
       # Note that we use $SAFE=4 for ERB which is a strawman sandbox.
       ERB.new(@raw_manifest, 4).result(binding.taint)
     rescue SyntaxError => e
-      raise MalformedManifest, "Deployment manifest contains a syntax error\n" + e.to_s
+      raise MalformedManifest,
+            "Deployment manifest contains a syntax error\n" + e.to_s
     end
   end
 

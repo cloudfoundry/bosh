@@ -19,21 +19,23 @@ module Bosh::Cli::Command
         if blob_index[blob_name] && !force
           # We already have this binary on record
           if blob_index[blob_name]["sha"] == blob_sha
-            say "[#{count}/#{total}] Skipping #{blob_name}".green
+            say("[#{count}/#{total}] Skipping #{blob_name}".green)
             next
           end
           # Local copy is different from the remote copy
-          confirm = ask("\nBlob #{blob_name} changed, do you want to update the binary [yN]: ")
+          confirm = ask("\nBlob #{blob_name} changed, " +
+                            "do you want to update the binary [yN]: ")
           if confirm.empty? || !(confirm =~ /y(es)?$/i)
-            say "[#{count}/#{total}] Skipping #{blob_name}".green
+            say("[#{count}/#{total}] Skipping #{blob_name}".green)
             next
           end
         end
 
-        # TODO: We could use the sha and try to avoid uploading duplicated objects.
-        say "[#{count}/#{total}] Uploading #{blob_name}".green
+        # TODO: We could use the sha and try to avoid
+        # uploading duplicated objects.
+        say("[#{count}/#{total}] Uploading #{blob_name}".green)
         blob_id = blobstore.create(File.open(blob_file, "r"))
-        blob_index[blob_name] = {"object_id" => blob_id, "sha" => blob_sha}
+        blob_index[blob_name] = { "object_id" => blob_id, "sha" => blob_sha }
       end
 
       # update the index file
@@ -59,17 +61,18 @@ module Bosh::Cli::Command
         if File.file?(blob_file) && !force
           blob_sha = Digest::SHA1.file(blob_file).hexdigest
           if blob_sha == blob_info["sha"]
-            say "[#{count}/#{total}] Skipping blob #{name}".green
+            say("[#{count}/#{total}] Skipping blob #{name}".green)
             next
           end
 
-          confirm = ask("\nLocal blob (#{name}) conflicts with remote object, overwrite local copy? [yN]: ")
+          confirm = ask("\nLocal blob (#{name}) conflicts with " +
+                        "remote object, overwrite local copy? [yN]: ")
           if confirm.empty? || !(confirm =~ /y(es)?$/i)
-            say "[#{count}/#{total}] Skipping blob #{name}".green
+            say("[#{count}/#{total}] Skipping blob #{name}".green)
             next
           end
         end
-        say "[#{count}/#{total}] Updating #{blob_file}".green
+        say("[#{count}/#{total}] Updating #{blob_file}".green)
         fetch_blob(blob_file, blob_info)
       end
     end
@@ -82,12 +85,12 @@ module Bosh::Cli::Command
 
     # Sanity check the input file and returns the blob_name
     def get_blob_name(file)
-      err "Invalid file #{file}" unless File.file?(file)
+      err("Invalid file #{file}") unless File.file?(file)
       blobs_dir = File.join(realpath(work_dir), "#{BLOBS_DIR}/")
       file_path = realpath(File.expand_path(file))
 
       if file_path[0..blobs_dir.length - 1] != blobs_dir
-        err "#{file_path} is NOT under #{blobs_dir}"
+        err("#{file_path} is NOT under #{blobs_dir}")
       end
       file_path[blobs_dir.length..file_path.length]
     end
@@ -102,7 +105,8 @@ module Bosh::Cli::Command
       new_blob.close
 
       if blob_info["sha"] != Digest::SHA1.file(new_blob.path).hexdigest
-        err "Fatal error: Inconsistent checksum for object #{blob_info["object_id"]}"
+        err("Fatal error: " +
+                "Inconsistent checksum for object #{blob_info["object_id"]}")
       end
 
       FileUtils.mkdir_p(File.dirname(dst_file))

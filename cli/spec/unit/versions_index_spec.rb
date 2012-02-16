@@ -30,7 +30,9 @@ describe Bosh::Cli::VersionsIndex do
 
     lambda {
       @index = Bosh::Cli::VersionsIndex.new(@dir)
-    }.should raise_error(Bosh::Cli::InvalidIndex, "Invalid versions index data type, String given, Hash expected")
+    }.should raise_error(Bosh::Cli::InvalidIndex,
+                         "Invalid versions index data type, " +
+                         "String given, Hash expected")
   end
 
   it "doesn't choke on empty index file" do
@@ -46,8 +48,10 @@ describe Bosh::Cli::VersionsIndex do
     @index.add_version("deadcafe", item2, "payload2")
 
     @index.latest_version.should == 2
-    @index["deadbeef"].should == item1.merge("sha1" => Digest::SHA1.hexdigest("payload1"))
-    @index["deadcafe"].should == item2.merge("sha1" => Digest::SHA1.hexdigest("payload2"))
+    @index["deadbeef"].should ==
+        item1.merge("sha1" => Digest::SHA1.hexdigest("payload1"))
+    @index["deadcafe"].should ==
+        item2.merge("sha1" => Digest::SHA1.hexdigest("payload2"))
     @index.version_exists?(1).should be_true
     @index.version_exists?(2).should be_true
     @index.version_exists?(3).should be_false
@@ -60,7 +64,8 @@ describe Bosh::Cli::VersionsIndex do
     item_noversion = { "a" => 1, "b" => 2 }
     lambda {
       @index.add_version("deadbeef", item_noversion, "payload1")
-    }.should raise_error(Bosh::Cli::InvalidIndex, "Cannot save index entry without knowing its version")
+    }.should raise_error(Bosh::Cli::InvalidIndex,
+                         "Cannot save index entry without knowing its version")
   end
 
   it "latest version only gets updated if it's greater than current latest" do

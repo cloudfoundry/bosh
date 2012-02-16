@@ -18,7 +18,8 @@ describe Bosh::Cli::Command::Base do
       public_key.should == "PUBLIC_KEY"
     end
 
-    it "should get the public key from users home directory or raise exception" do
+    it "should get the public key from users home directory " +
+       "or raise exception" do
       ssh = Bosh::Cli::Command::Ssh.new
       public_key = nil
       begin
@@ -31,17 +32,20 @@ describe Bosh::Cli::Command::Base do
 
     it "should contact director to setup ssh on the job" do
       mock_director = mock(Object)
-      mock_director.stub(:setup_ssh).and_return([{ "status" => "success", "ip" => "127.0.0.1" }])
+      mock_director.stub(:setup_ssh).and_return([{ "status" => "success",
+                                                   "ip" => "127.0.0.1" }])
       mock_director.stub(:cleanup_ssh)
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
       ssh = Bosh::Cli::Command::Ssh.new
       ssh.stub(:prepare_deployment_manifest).and_return("test")
       ssh.stub(:cleanup_ssh)
-      ssh.setup_ssh("dea", 0, "temp_pass", {"public_key" => @public_key}) { |results, user|
+      ssh.setup_ssh("dea", 0, "temp_pass",
+                    {"public_key" => @public_key}) do |results, user|
         results.each do |result|
-          result["status"].should == "success" && result["ip"].should == "127.0.0.1"
+          result["status"].should == "success"
+          result["ip"].should == "127.0.0.1"
         end
-      }
+      end
     end
 
     it "should try to setup interactive shell" do

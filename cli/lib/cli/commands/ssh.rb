@@ -13,7 +13,8 @@ module Bosh::Cli::Command
 
     def parse_options(args)
       options = {}
-      ["public_key", "gateway_host", "gateway_user", "index", "job"].each do |option|
+      ["public_key", "gateway_host",
+       "gateway_user", "index", "job"].each do |option|
         pos = args.index("--#{option}")
         if pos
           options[option] = args[pos + 1]
@@ -23,7 +24,9 @@ module Bosh::Cli::Command
       end
       if index = options["index"]
         valid_index = Integer(index) rescue nil
-        err "Please specify a valid job index: #{index} is invalid" unless valid_index
+        unless valid_index
+          err("Please specify a valid job index: #{index} is invalid")
+        end
       end
       options
     end
@@ -32,7 +35,9 @@ module Bosh::Cli::Command
       # Get public key
       public_key = nil
       if options["public_key"]
-        err("Please specify a valid public key file") unless File.file?(options["public_key"])
+        unless File.file?(options["public_key"])
+          err("Please specify a valid public key file")
+        end
         public_key = File.read(options["public_key"])
       else
         # See if ssh-add can be used
@@ -64,16 +69,19 @@ module Bosh::Cli::Command
       # Get deployment name
       manifest_name = prepare_deployment_manifest["name"]
 
-      say "Target deployment is #{manifest_name}"
-      results = director.setup_ssh(manifest_name, job, index, user, public_key, password)
+      say("Target deployment is #{manifest_name}")
+      results = director.setup_ssh(manifest_name, job, index,
+                                   user, public_key, password)
       if results.nil?
-        err "Error setting up ssh"
+        err("Error setting up ssh")
       end
 
-      yield(results, user) if block
+      if block_given?
+        yield results, user
+      end
     ensure
       if results
-        say "Cleaning up ssh artifacts"
+        say("Cleaning up ssh artifacts")
         indexes = results.map {|result| result["index"]}
         # Cleanup only this one 'user'
         director.cleanup_ssh(manifest_name, job, "^#{user}$", indexes)
@@ -92,12 +100,13 @@ module Bosh::Cli::Command
 
     def setup_interactive_shell(job, password, options)
       index = options["index"]
-      err "Please specify a job index" if index.nil?
+      err("Please specify a job index") if index.nil?
 
       if password.nil?
         password_retries = 0
         while password.blank? && password_retries < 3
-          password = ask("Enter password (use it to sudo on remote host): ") { |q| q.echo = "*" }
+          password = ask("Enter password " +
+                     "(use it to sudo on remote host): ") { |q| q.echo = "*" }
           password_retries += 1
         end
         err("Please provide ssh password") if password.blank?
@@ -106,28 +115,33 @@ module Bosh::Cli::Command
       setup_ssh(job, index, password, options) do |results, user|
         result = results.first
         if result["status"] != "success" || result["ip"].nil?
-          err "Failed to setup ssh on index #{result["index"]}, error: #{result["error"]}"
+          err("Failed to setup ssh on index #{result["index"]}, " +
+              "error: #{result["error"]}")
         end
 
-        say "Starting interactive shell on job #{job}, index #{index}"
+        say("Starting interactive shell on job #{job}, index #{index}")
         # Start interactive session
         if options["gateway_host"]
           local_port = get_free_port
           say("Connecting to local port #{local_port}")
           # Create the ssh tunnel
-          fork {
-            gateway = (options["gateway_user"] ? "#{options["gateway_user"]}@" : "") + options["gateway_host"]
-            # Tunnel will close after 30 seconds, so no need to worry about cleaning it up
-            exec("ssh -f -L#{local_port}:#{result["ip"]}:22 #{gateway} sleep 30")
-          }
+          fork do
+            gateway = (options["gateway_user"] ?
+                "#{options["gateway_user"]}@" : "") +
+                options["gateway_host"]
+            # Tunnel will close after 30 seconds,
+            # so no need to worry about cleaning it up
+            exec("ssh -f -L#{local_port}:#{result["ip"]}:22 #{gateway} " +
+                 "sleep 30")
+          end
           result["ip"] = "localhost -p #{local_port}"
           # Wait for tunnel to get established
           sleep 3
         end
-        p = fork {
+        ssh_session = fork do
           exec("ssh #{user}@#{result["ip"]}")
-        }
-        Process.waitpid(p)
+        end
+        Process.waitpid(ssh_session)
       end
     end
 
@@ -139,7 +153,7 @@ module Bosh::Cli::Command
       if args.size == 0
         setup_interactive_shell(job, password, options)
       else
-        say "Executing command '#{args.join(" ")}' on job #{job}"
+        say("Executing command '#{args.join(" ")}' on job #{job}")
         execute_command(CMD_EXEC, job, options, args)
       end
     end
@@ -165,13 +179,17 @@ module Bosh::Cli::Command
 
     def execute_command(command, job, options, args)
       setup_ssh(job, options["index"], nil, options) do |results, user|
-        with_gateway(options["gateway_host"], options["gateway_user"]) do |gateway|
+        with_gateway(options["gateway_host"],
+                     options["gateway_user"]) do |gateway|
           results.each do | result|
-            err "Failed to setup ssh on index #{result["index"]}, error: #{result["error"]}" if result["status"] != "success"
+            if result["status"] != "success"
+              err("Failed to setup ssh on index #{result["index"]}, " +
+                  "error: #{result["error"]}")
+            end
             with_ssh(gateway, result["ip"], user) do |ssh|
               case command
               when CMD_EXEC
-                say "\nJob #{job} index #{result["index"]}"
+                say("\nJob #{job} index #{result["index"]}")
                 puts ssh.exec!(args.join(" "))
               when CMD_UPLOAD
                 ssh.scp.upload!(args[0], args[1])
@@ -192,10 +210,13 @@ module Bosh::Cli::Command
       upload = args.delete("--upload")
       download = args.delete("--download")
       if upload.nil? && download.nil?
-        err "Please specify one of --upload or --download"
+        err("Please specify one of --upload or --download")
       end
-      err "Please enter valid source and destination paths" if args.empty? || args.size < 2
-      say "Executing file operations on job #{job}"
+
+      if args.empty? || args.size < 2
+        err("Please enter valid source and destination paths")
+      end
+      say("Executing file operations on job #{job}")
       execute_command(upload ? CMD_UPLOAD : CMD_DOWNLOAD, job, options, args)
     end
 
@@ -207,8 +228,11 @@ module Bosh::Cli::Command
         results = []
         results << {"index" => options["index"]}
       end
-      say "Cleaning up ssh artifacts from job #{options["job"]}, index #{options["index"]}"
-      director.cleanup_ssh(manifest_name, options["job"], "^#{SSH_USER_PREFIX}", [options["index"]])
+      say("Cleaning up ssh artifacts from job #{options["job"]}, " +
+          "index #{options["index"]}")
+
+      director.cleanup_ssh(manifest_name, options["job"],
+                           "^#{SSH_USER_PREFIX}", [options["index"]])
     end
   end
 end

@@ -4,7 +4,8 @@ module Bosh::Cli
   class JobBuilder
     include PackagingHelper
 
-    attr_reader :name, :version, :packages, :templates, :release_dir, :built_packages, :tarball_path
+    attr_reader :name, :version, :packages, :templates,
+                :release_dir, :built_packages, :tarball_path
 
     def self.run_prepare_script(script_path)
       unless File.exists?(script_path)
@@ -17,7 +18,8 @@ module Bosh::Cli
 
       old_env = ENV
 
-      script_dir, script_name = File.dirname(script_path), File.basename(script_path)
+      script_dir = File.dirname(script_path)
+      script_name = File.basename(script_path)
 
       begin
         # We need to temporarily delete some rubygems related artefacts
@@ -27,10 +29,10 @@ module Bosh::Cli
 
         Dir.chdir(script_dir) do
           cmd = "./#{script_name} 2>&1"
-          say "Running #{cmd}..."
+          say("Running #{cmd}...")
           script_output = `#{cmd}`
           script_output.split("\n").each do |line|
-            say "> #{line}"
+            say("> #{line}")
           end
         end
 
@@ -59,7 +61,8 @@ module Bosh::Cli
       when Hash
         @templates = spec["templates"].keys
       else
-        raise InvalidJob, "Incorrect templates section in `#{@name}' job spec (should resolve to a hash)"
+        raise InvalidJob, "Incorrect templates section in `#{@name}' " +
+            "job spec (should resolve to a hash)"
       end
 
       if @name.blank?
@@ -67,7 +70,8 @@ module Bosh::Cli
       end
 
       if @templates.nil?
-        raise InvalidJob, "Please include templates section with at least 1 (possibly dummy) file into `#{@name}' job spec"
+        raise InvalidJob, "Please include templates section with at least 1 " +
+            "(possibly dummy) file into `#{@name}' job spec"
       end
 
       unless @name.bosh_valid_id?
@@ -79,15 +83,18 @@ module Bosh::Cli
       end
 
       if missing_packages.size > 0
-        raise InvalidJob, "Some packages required by '#{name}' job are missing: %s" % [ missing_packages.join(", ") ]
+        raise InvalidJob, "Some packages required by '#{name}' job " +
+            "are missing: %s" % [ missing_packages.join(", ") ]
       end
 
       if missing_templates.size > 0
-        raise InvalidJob, "Some template files required by '#{name}' job are missing: %s" % [ missing_templates.join(", ")]
+        raise InvalidJob, "Some template files required by '#{name}' job " +
+            "are missing: %s" % [ missing_templates.join(", ")]
       end
 
       if extra_templates.size > 0
-        raise InvalidJob, "There are unused template files for job '#{name}': %s" % [ extra_templates.join(", ")]
+        raise InvalidJob, "There are unused template files for job " +
+            "'#{name}': %s" % [ extra_templates.join(", ")]
       end
 
       unless monit_files.size > 0
@@ -95,7 +102,8 @@ module Bosh::Cli
       end
 
       @dev_builds_dir = File.join(@release_dir, ".dev_builds", "jobs", @name)
-      @final_builds_dir = File.join(@release_dir, ".final_builds", "jobs", @name)
+      @final_builds_dir = File.join(@release_dir, ".final_builds",
+                                    "jobs", @name)
 
       FileUtils.mkdir_p(job_dir)
       FileUtils.mkdir_p(@dev_builds_dir)
@@ -124,7 +132,8 @@ module Bosh::Cli
         copied += 1
       end
 
-      FileUtils.cp(File.join(job_dir, "spec"), File.join(build_dir, "job.MF"), :preserve => true)
+      FileUtils.cp(File.join(job_dir, "spec"), File.join(build_dir, "job.MF"),
+                   :preserve => true)
       copied += 1
       copied
     end
@@ -181,7 +190,8 @@ module Bosh::Cli
       files << File.join(job_dir, "spec")
 
       files.each do |filename|
-        contents << "%s%s%s" % [ File.basename(filename), File.read(filename), tracked_permissions(filename) ]
+        contents << "%s%s%s" % [ File.basename(filename), File.read(filename),
+                                 tracked_permissions(filename) ]
       end
 
       Digest::SHA1.hexdigest(contents)

@@ -39,7 +39,8 @@ module Bosh
 
       def authenticated?
         status = get_status
-        # Backward compatibility: older directors return 200 only for logged in users
+        # Backward compatibility: older directors return 200
+        # only for logged in users
         return true if !status.has_key?("version")
         !status["user"].nil?
       rescue DirectorError
@@ -53,7 +54,8 @@ module Bosh
       end
 
       def upload_stemcell(filename)
-        upload_and_track("/stemcells", "application/x-compressed", filename, :log_type => "event")
+        upload_and_track("/stemcells", "application/x-compressed",
+                         filename, :log_type => "event")
       end
 
       def get_version
@@ -95,24 +97,30 @@ module Bosh
 
       def get_deployment(name)
         status, body = get_json_with_status("/deployments/#{name}")
-        raise DeploymentNotFound, "Deployment `#{name}' not found" if status == 404
+        if status == 404
+          raise DeploymentNotFound, "Deployment `#{name}' not found"
+        end
         body
       end
 
       def list_vms(name)
         status, body = get_json_with_status("/deployments/#{name}/vms")
-        raise DeploymentNotFound, "Deployment `#{name}' not found" if status == 404
+        if status == 404
+          raise DeploymentNotFound, "Deployment `#{name}' not found"
+        end
         body
       end
 
       def upload_release(filename)
-        upload_and_track("/releases", "application/x-compressed", filename, :log_type => "event")
+        upload_and_track("/releases", "application/x-compressed",
+                         filename, :log_type => "event")
       end
 
       def delete_stemcell(name, version, options = {})
         track_options = { :log_type => "event" }
         track_options[:quiet] = options[:quiet] if options.has_key?(:quiet)
-        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ], nil, nil, track_options)
+        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ],
+                          nil, nil, track_options)
       end
 
       def delete_deployment(name, options = {})
@@ -142,15 +150,22 @@ module Bosh
       def deploy(manifest_yaml, options = {})
         url = "/deployments"
         url += "?recreate=true" if options[:recreate]
-        request_and_track(:post, url, "text/yaml", manifest_yaml, :log_type => "event")
+        request_and_track(:post, url, "text/yaml",
+                          manifest_yaml, :log_type => "event")
       end
 
       def setup_ssh(deployment_name, job, index, user, public_key, password)
         url = "/deployments/#{deployment_name}/ssh"
-        payload = JSON.generate("command" => "setup", "deployment_name" => deployment_name,
-                                "target" => {"job" => job, "indexes" => [index].compact},
-                                "params" => { "user" => user, "public_key" => public_key,
-                                               "password" => password})
+        payload = JSON.generate("command" => "setup",
+                                "deployment_name" => deployment_name,
+                                "target" => {
+                                    "job" => job,
+                                    "indexes" => [index].compact
+                                },
+                                "params" => {
+                                    "user" => user,
+                                    "public_key" => public_key,
+                                    "password" => password })
 
         results = ""
         output_stream = lambda do |entries|
@@ -158,8 +173,9 @@ module Bosh
           ""
         end
 
-        status, task_id = request_and_track(:post, url, "application/json", payload,
-                                            :log_type => "result", :output_stream => output_stream)
+        status, task_id = request_and_track(:post, url, "application/json",
+                                            payload, :log_type => "result",
+                                            :output_stream => output_stream)
         return nil if status != :done || task_id.nil?
         JSON.parse(results)
       end
@@ -167,22 +183,31 @@ module Bosh
       def cleanup_ssh(deployment_name, job, user_regex, indexes)
         indexes ||= []
         url = "/deployments/#{deployment_name}/ssh"
-        payload = JSON.generate("command" => "cleanup", "deployment_name" => deployment_name,
-                                "target" => {"job" => job, "indexes" => indexes.compact},
-                                "params" => {"user_regex" => user_regex})
-        request_and_track(:post, url, "application/json", payload, :quiet => true)
+        payload = JSON.generate("command" => "cleanup",
+                                "deployment_name" => deployment_name,
+                                "target" => {
+                                    "job" => job,
+                                    "indexes" => indexes.compact
+                                },
+                                "params" => { "user_regex" => user_regex })
+        request_and_track(:post, url, "application/json",
+                          payload, :quiet => true)
       end
 
-      def change_job_state(deployment_name, manifest_yaml, job_name, index, new_state)
+      def change_job_state(deployment_name, manifest_yaml,
+          job_name, index, new_state)
         url = "/deployments/#{deployment_name}/jobs/#{job_name}"
         url += "/#{index}" if index
         url += "?state=#{new_state}"
-        request_and_track(:put, url, "text/yaml", manifest_yaml, :log_type => "event")
+        request_and_track(:put, url, "text/yaml",
+                          manifest_yaml, :log_type => "event")
       end
 
       def fetch_logs(deployment_name, job_name, index, log_type, filters = nil)
-        url = "/deployments/#{deployment_name}/jobs/#{job_name}/#{index}/logs?type=#{log_type}&filters=#{filters}"
-        status, task_id = request_and_track(:get, url, nil, nil, :log_type => "event")
+        url = "/deployments/#{deployment_name}/jobs/#{job_name}" +
+            "/#{index}/logs?type=#{log_type}&filters=#{filters}"
+        status, task_id = request_and_track(:get, url, nil,
+                                            nil, :log_type => "event")
         return nil if status != :done || task_id.nil?
         get_task_result(task_id)
       end
@@ -209,12 +234,14 @@ module Bosh
       end
 
       def download_resource(id)
-        status, tmp_file, headers = get("/resources/#{id}", nil, nil, {}, :file => true)
+        status, tmp_file, headers = get("/resources/#{id}", nil,
+                                        nil, {}, :file => true)
 
         if status == 200
           tmp_file
         else
-          raise DirectorError, "Cannot download resource `#{id}': HTTP status #{status}"
+          raise DirectorError, "Cannot download resource `#{id}': " +
+              "HTTP status #{status}"
         end
       end
 
@@ -247,7 +274,8 @@ module Bosh
 
       def perform_cloud_scan(deployment_name)
         url = "/deployments/#{deployment_name}/scans"
-        request_and_track(:post, url, nil, nil, :log_type => "event", :log_only => true)
+        request_and_track(:post, url, nil, nil,
+                          :log_type => "event", :log_only => true)
       end
 
       def list_problems(deployment_name)
@@ -277,10 +305,16 @@ module Bosh
         response_code, body = get("/tasks/#{task_id}")
         raise AuthError if response_code == 401
         raise MissingTask, "Task #{task_id} not found" if response_code == 404
-        raise TaskTrackError, "Got HTTP #{response_code} while tracking task state" if response_code != 200
+
+        if response_code != 200
+          raise TaskTrackError, "Got HTTP #{response_code} " +
+              "while tracking task state"
+        end
+
         JSON.parse(body)
       rescue JSON::ParserError
-        raise TaskTrackError, "Cannot parse task JSON, incompatible director version"
+        raise TaskTrackError, "Cannot parse task JSON, " +
+            "incompatible director version"
       end
 
       def get_task_state(task_id)
@@ -295,9 +329,11 @@ module Bosh
         uri = "/tasks/#{task_id}/output"
         uri += "?type=#{log_type}" if log_type
 
-        response_code, body, headers = get(uri, nil, nil, { "Range" => "bytes=%d-" % [ offset ] })
+        headers = { "Range" => "bytes=%d-" % [ offset ] }
+        response_code, body, headers = get(uri, nil, nil, headers)
 
-        if response_code == 206 && headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
+        if response_code == 206 &&
+            headers[:content_range].to_s =~ /bytes \d+-(\d+)\/\d+/
           new_offset = $1.to_i + 1
         else
           new_offset = nil
@@ -335,7 +371,8 @@ module Bosh
         end
       end
 
-      def request_and_track(method, uri, content_type, payload = nil, options = {})
+      def request_and_track(method, uri, content_type,
+          payload = nil, options = {})
         http_status, body, headers = request(method, uri, content_type, payload)
         location   = headers[:location]
         redirected = http_status == 302
@@ -371,13 +408,15 @@ module Bosh
         poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
         max_polls     = options[:max_polls]     || DEFAULT_MAX_POLLS
         start_time    = Time.now
-        quiet         = options[:quiet] || false
+        quiet         = options[:quiet]
         output_stream = options[:output_stream]
-        log_only      = options[:log_only] || false
+        log_only      = options[:log_only]
 
         task = DirectorTask.new(self, task_id, log_type)
 
-        say("Tracking task output for task##{task_id}...") unless quiet || log_only
+        unless quiet || log_only
+          say("Tracking task output for task##{task_id}...")
+        end
 
         renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(log_type)
         renderer.time_adjustment = get_time_difference
@@ -425,31 +464,38 @@ module Bosh
         return result if quiet
         return result if log_only && result == :done
 
-        if Bosh::Cli::Config.interactive && log_type != "debug" && result == :error
-          confirm = ask("\nThe task has returned an error status, do you want to see debug log? [Yn]: ")
+        if Bosh::Cli::Config.interactive &&
+            log_type != "debug" && result == :error
+          confirm = ask("\nThe task has returned an error status, " +
+                            "do you want to see debug log? [Yn]: ")
           if confirm.empty? || confirm =~ /y(es)?/i
             options.delete(:output_stream)
             poll_task(task_id, options.merge(:log_type => "debug"))
           else
-            say("Please use 'bosh task #{task_id}' command to see the debug log".red)
+            say("Please use 'bosh task #{task_id}' command " +
+                    "to see the debug log".red)
             result
           end
         else
           nl
           status = "Task #{task_id}: state is '#{state}'"
           duration = renderer.duration || (Time.now - start_time)
-          status += ", took #{format_time(duration).green} to complete" if result == :done
+          if result == :done
+            status += ", took #{format_time(duration).green} to complete"
+          end
           say(status)
           result
         end
       end
 
-      def request(method, uri, content_type = nil, payload = nil, headers = {}, options = { })
+      def request(method, uri, content_type = nil, payload = nil,
+          headers = {}, options = { })
         headers = headers.dup
         headers["Content-Type"] = content_type if content_type
 
         if options[:file]
-          tmp_file = File.open(File.join(Dir.mktmpdir, "streamed-response"), "w")
+          tmp_file = File.open(File.join(Dir.mktmpdir, "streamed-response"),
+                               "w")
 
           response_reader = lambda do |part|
             tmp_file.write(part)
@@ -458,7 +504,8 @@ module Bosh
           response_reader = nil
         end
 
-        response = perform_http_request(method, @director_uri + uri, payload, headers, &response_reader)
+        response = perform_http_request(method, @director_uri + uri,
+                                        payload, headers, &response_reader)
 
         if options[:file]
           tmp_file.close
@@ -482,7 +529,8 @@ module Bosh
         [ response.code, body, headers ]
 
       rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
-        raise DirectorInaccessible, "cannot access director (%s)" % [ e.message ]
+        raise DirectorInaccessible,
+              "cannot access director (%s)" % [ e.message ]
       rescue SystemCallError => e
         raise DirectorError, "System call error while talking to director: #{e}"
       end
@@ -491,7 +539,8 @@ module Bosh
         parsed_body = JSON.parse(body.to_s)
 
         if parsed_body["code"] && parsed_body["description"]
-          "Director error %s: %s" % [ parsed_body["code"], parsed_body["description"] ]
+          "Director error %s: %s" % [ parsed_body["code"],
+                                      parsed_body["description"] ]
         else
           "Director error (HTTP %s): %s" % [ status, body ]
         end
@@ -512,10 +561,12 @@ module Bosh
         # injecting header manually instead.
         # TODO: consider using vanilla Net::HTTP
         if @user && @password
-          headers["Authorization"] = "Basic " + Base64.encode64("#{@user}:#{@password}").strip
+          headers["Authorization"] = "Basic " +
+              Base64.encode64("#{@user}:#{@password}").strip
         end
 
-        http_client.request(method, uri, :body => payload, :header => headers, &block)
+        http_client.request(method, uri, :body => payload,
+                            :header => headers, &block)
 
       rescue HTTPClient::BadResponseError => e
         err("Received bad HTTP response from director: #{e}")
@@ -547,7 +598,8 @@ module Bosh
       def progress_bar
         return @progress_bar if @progress_bar
         out = Bosh::Cli::Config.output || StringIO.new
-        @progress_bar = ProgressBar.new(File.basename(self.path), File.size(self.path), out)
+        @progress_bar = ProgressBar.new(File.basename(self.path),
+                                        File.size(self.path), out)
         @progress_bar.file_transfer_mode
         @progress_bar
       end

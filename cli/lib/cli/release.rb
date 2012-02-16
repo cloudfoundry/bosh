@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli
-
   # This class encapsulates the details of handling dev and final releases:
   # also it partitions release metadata between public config (which is
   # under version control) and user private config.
@@ -52,7 +51,8 @@ module Bosh::Cli
     # @return [Bosh::Blobstore::Client] blobstore client
     def blobstore
       return @blobstore if @blobstore
-      blobstore_config = @private_config["blobstore"] || @public_config["blobstore"]
+      blobstore_config = @private_config["blobstore"] ||
+          @public_config["blobstore"]
 
       if blobstore_config.nil?
         err("Missing blobstore configuration, please update your release")
@@ -61,7 +61,8 @@ module Bosh::Cli
       provider = blobstore_config["provider"]
       options  = blobstore_config["options"] || {}
 
-      @blobstore = Bosh::Blobstore::Client.create(provider, symbolize_keys(options))
+      @blobstore = Bosh::Blobstore::Client.create(provider,
+                                                  symbolize_keys(options))
 
     rescue Bosh::Blobstore::BlobstoreError => e
       err("Cannot initialize blobstore: #{e}")
@@ -86,16 +87,17 @@ module Bosh::Cli
     def migrate_legacy_configs
       # We're using blobstore_options as old config marker.
       # Unfortunately old CLI won't tell you to upgrade because it checks
-      # for valid blobstore options first, so instead of removing blobstore_options
-      # we mark it as deprecated, so new CLI proceeds to migrate while the old one
-      # tells you to upgrade.
+      # for valid blobstore options first, so instead of removing
+      # blobstore_options we mark it as deprecated, so new CLI proceeds
+      # to migrate while the old one tells you to upgrade.
       if @private_config.has_key?("blobstore_options") &&
           @private_config["blobstore_options"] != "deprecated"
         say("Found legacy dev config file `#{@private_config_file}'".yellow)
 
         new_private_config = {
           "dev_name" => @private_config["name"],
-          "latest_release_filename" => @private_config["latest_release_filename"],
+          "latest_release_filename" =>
+              @private_config["latest_release_filename"],
 
           # Following two options are only needed for older clients
           # to fail gracefully and never actually read by a new client
@@ -105,7 +107,9 @@ module Bosh::Cli
 
         @private_config = new_private_config
 
-        File.open(@private_config_file, "w") { |f| YAML.dump(@private_config, f) }
+        File.open(@private_config_file, "w") do
+          YAML.dump(@private_config, f)
+        end
         say("Migrated dev config file format".green)
       end
 
@@ -115,7 +119,8 @@ module Bosh::Cli
 
         unless @public_config["blobstore_options"]["provider"] == "atmos" &&
             @public_config["blobstore_options"].has_key?("atmos_options")
-          err("Please update your release to the version that uses Atmos blobstore")
+          err("Please update your release to the version " +
+                  "that uses Atmos blobstore")
         end
 
         new_public_config = {
