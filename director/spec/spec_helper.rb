@@ -52,6 +52,7 @@ module SpecHelper
 
       SimpleCov.root(File.expand_path("../..", __FILE__))
       SimpleCov.add_filter("spec")
+      SimpleCov.add_filter("vendor")
       SimpleCov.coverage_dir(ENV["SIMPLECOV_DIR"] || "spec_coverage")
       SimpleCov.start
     end
