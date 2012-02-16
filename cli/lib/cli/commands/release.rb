@@ -4,6 +4,7 @@ module Bosh::Cli::Command
 
     include Bosh::Cli::DependencyHelper
     include Bosh::Cli::VersionCalc
+    include Dotanuki
 
     def init(base=nil)
       if base
@@ -50,9 +51,11 @@ module Bosh::Cli::Command
         end
       end
 
-      file_type = `file --mime-type -b '#{release_file}'`
+      result = execute("file --mime-type -b '#{release_file}'")
 
-      if file_type =~ /text\/(plain|yaml)/
+      if result.failed?
+        err("Failed to get file type of #{release_file}: #{result.stderr.join("\n")}")
+      elsif result.stdout.first =~ /text\/(plain|yaml)/
         upload_manifest(release_file)
       else # Just assume tarball
         upload_tarball(release_file)
