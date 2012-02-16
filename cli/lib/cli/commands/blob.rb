@@ -36,7 +36,7 @@ module Bosh::Cli::Command
 
       # update the index file
       index_file = Tempfile.new("tmp_blob_index")
-      index_file.write(YAML.dump(blob_index))
+      dump_yaml_to_file(blob_index, index_file)
       index_file.close
       FileUtils.mv(index_file.path, File.join(work_dir, BLOBS_INDEX_FILE))
     end
