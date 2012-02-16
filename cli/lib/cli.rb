@@ -29,6 +29,7 @@ require "yaml"
 require 'net/ssh'
 require 'net/scp'
 require 'net/ssh/gateway'
+require "common/exec"
 
 require "cli/version"
 require "cli/config"

@@ -3,6 +3,7 @@ module Bosh
 
     class Stemcell
       include Validation
+      include Bosh::Exec
 
       attr_reader :stemcell_file, :manifest
 
@@ -28,8 +29,7 @@ module Bosh
           say("Manifest not found in cache, verifying tarball...")
 
           step("Extract tarball", "Cannot extract tarball #{@stemcell_file}", :fatal) do
-            `tar -C #{tmp_dir} -xzf #{@stemcell_file} 2>&1`
-            $?.exitstatus == 0
+            sh("tar -C #{tmp_dir} -xzf #{@stemcell_file}").ok?
           end
 
           manifest_file = File.expand_path("stemcell.MF", tmp_dir)

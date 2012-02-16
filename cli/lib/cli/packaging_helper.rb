@@ -5,6 +5,7 @@ module Bosh
   module Cli
     module PackagingHelper
       include Bosh::Cli::VersionCalc
+      include Bosh::Exec
 
       attr_accessor :dry_run
 
@@ -157,8 +158,11 @@ module Bosh
         copy_files
 
         in_build_dir do
-          tar_out = `tar -chzf #{tmp_file.path} . 2>&1`
-          raise PackagingError, "Cannot create tarball: #{tar_out}" unless $?.exitstatus == 0
+          result = sh("tar -chzf #{tmp_file.path} . 2>&1")
+          if result.failed?
+            output = result.stdout.join("\n")
+            raise PackagingError, "Cannot create tarball: #{output}"
+          end
         end
 
         payload = tmp_file.read

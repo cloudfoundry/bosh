@@ -1,6 +1,8 @@
 module Bosh::Cli
   module Command
     class Base
+      include Bosh::Exec
+
       BLOBS_DIR = "blobs"
       BLOBS_INDEX_FILE = "blob_index.yml"
 
@@ -126,7 +128,7 @@ module Bosh::Cli
 
       def check_if_dirty_state
         if dirty_state?
-          say "\n%s\n" % [ `git status` ]
+          say "\n%s\n" % [ sh("git status").stdout ]
           err "Your current directory has some local modifications, please discard or commit them first"
         end
       end
@@ -136,9 +138,9 @@ module Bosh::Cli
       end
 
       def dirty_state?
-        `which git`
-        return false unless $? == 0
-        File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
+        return false if sh("which git").failed?
+        result = sh("git status --porcelain | wc -l")
+        File.directory?(".git") && !result.failed? && result.stdout.to_i > 0
       end
 
       def normalize_url(url)
