@@ -13,7 +13,9 @@ module VCAP::Micro
     end
 
     def status_summary
-      monit_status.each do |name, data|
+      status = monit_status
+      return "unknown" unless status
+      status.each do |name, data|
           return "failed".red if data && data[:status][:message] != "running"
       end
       "ok".green
