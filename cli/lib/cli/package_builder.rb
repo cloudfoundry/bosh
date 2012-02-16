@@ -111,7 +111,7 @@ module Bosh::Cli
           next unless File.exists?(filename)
           if File.exists?(destination)
             raise InvalidPackage, "Package '#{name}' has '#{filename}' file " +
-                "which conflicts with BOSH packaging"
+              "which conflicts with BOSH packaging"
           end
           FileUtils.cp(filename, destination, :preserve => true)
           copied += 1
@@ -173,16 +173,20 @@ module Bosh::Cli
 
       signatures = files.map do |file|
         path = get_file_path(file)
+        unless File.directory?(path)
+          file_digest = Digest::SHA1.file(path).hexdigest
+        end
 
-        # TODO change fingerprint to use file checksum, not the raw contents
-        "%s%s%s" % [ file, File.directory?(path) ? nil : File.read(path),
-                     tracked_permissions(path) ]
+        "%s%s%s" % [ file, file_digest, tracked_permissions(path) ]
       end
       contents << signatures.join("")
 
       in_package_dir do
         @metadata_files.each do |file|
-          contents << "%s%s" % [ file, File.read(file) ] if File.file?(file)
+          if File.file?(file)
+            file_digest = Digest::SHA1.file(file).hexdigest
+            contents << "%s%s" % [ file, file_digest ]
+          end
         end
       end
 
