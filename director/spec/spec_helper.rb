@@ -1,61 +1,159 @@
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "digest/sha1"
+require "fileutils"
+require "logger"
+require "tmpdir"
+require "zlib"
+
 require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
 
-require "rspec"
-
-ENV["RACK_ENV"] = "test"
-
-require "logger"
-if ENV['DEBUG']
-  logger = Logger.new(STDOUT)
-else
-  path = File.expand_path("../spec.log", __FILE__)
-  log_file = File.open(path, "w")
-  log_file.sync = true
-  logger = Logger.new(log_file)
-end
-
-require "tmpdir"
-tmpdir = Dir.mktmpdir
-ENV["TMPDIR"] = tmpdir
-FileUtils.mkdir_p(tmpdir)
-at_exit { FileUtils.rm_rf(tmpdir) }
-
-require "director"
-
-Bosh::Director::Config.patch_sqlite
-
-# TODO: CLEANUP, duplication between here and below in the reset
-director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
-vsphere_cpi_migrations = File.expand_path("../../db/migrations/vsphere_cpi", __FILE__)
-dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
-
-Sequel.extension :migration
-db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
-db.loggers << logger
-Bosh::Director::Config.db = db
-Sequel::Migrator.apply(db, director_migrations, nil)
-Sequel::TimestampMigrator.new(db, vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
-
-dns_db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
-dns_db.loggers << logger
-Bosh::Director::Config.dns_db = dns_db
-Sequel::Migrator.apply(dns_db, dns_migrations, nil)
-
 require "archive/tar/minitar"
-require "digest/sha1"
-require "fileutils"
-require "zlib"
-
+require "rspec"
 require "machinist/sequel"
 require "sham"
-require "blueprints"
 
-logger.formatter = ThreadFormatter.new
+module SpecHelper
+  class << self
+    attr_accessor :logger
+    attr_accessor :temp_dir
+
+    def init
+      ENV["RACK_ENV"] = "test"
+      enable_simplecov if ENV["SIMPLECOV"]
+      configure_logging
+      configure_temp_dir
+
+      require "director"
+      @logger.formatter = ThreadFormatter.new
+
+      init_database
+
+      require "blueprints"
+    end
+
+    def enable_simplecov
+      require "simplecov"
+      require "simplecov-rcov"
+      require "simplecov-clover"
+
+      SimpleCov.formatter = Class.new do
+        def format(result)
+          SimpleCov::Formatter::CloverFormatter.new.format(result)
+          SimpleCov::Formatter::RcovFormatter.new.format(result)
+        end
+      end
+
+      SimpleCov.root(File.expand_path("../..", __FILE__))
+      SimpleCov.add_filter("spec")
+      SimpleCov.coverage_dir(ENV["SIMPLECOV_DIR"] || "spec_coverage")
+      SimpleCov.start
+    end
+
+    def configure_logging
+      if ENV["DEBUG"]
+        @logger = Logger.new(STDOUT)
+      else
+        path = File.expand_path("../spec.log", __FILE__)
+        log_file = File.open(path, "w")
+        log_file.sync = true
+        @logger = Logger.new(log_file)
+      end
+    end
+
+    def configure_temp_dir
+      @temp_dir = Dir.mktmpdir
+      ENV["TMPDIR"] = @temp_dir
+      FileUtils.mkdir_p(@temp_dir)
+      at_exit { FileUtils.rm_rf(@temp_dir) }
+    end
+
+    def init_database
+      Bosh::Director::Config.patch_sqlite
+
+      @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
+      @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
+      @vsphere_cpi_migrations = File.expand_path("../../db/migrations/vsphere_cpi", __FILE__)
+
+      Sequel.extension :migration
+
+      @db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
+      @db.loggers << @logger
+      Bosh::Director::Config.db = @db
+
+      @dns_db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
+      @dns_db.loggers << @logger
+      Bosh::Director::Config.dns_db = @dns_db
+
+      run_migrations
+    end
+
+    def run_migrations
+      Sequel::Migrator.apply(@dns_db, @dns_migrations, nil)
+      Sequel::Migrator.apply(@db, @director_migrations, nil)
+      Sequel::TimestampMigrator.new(@db, @vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
+    end
+
+    def reset_database
+      [@db, @dns_db].each do |db|
+        db.execute("PRAGMA foreign_keys = OFF")
+        db.tables.each do |table|
+          db.drop_table(table)
+        end
+        db.execute("PRAGMA foreign_keys = ON")
+      end
+    end
+
+    def reset
+      reset_database
+      run_migrations
+
+      Bosh::Director::Config.clear
+      Bosh::Director::Config.db = @db
+      Bosh::Director::Config.dns_db = @dns_db
+      Bosh::Director::Config.logger = @logger
+    end
+  end
+end
+
+SpecHelper.init
+
+Rspec.configure do |rspec|
+  rspec.before(:each) do
+    SpecHelper.reset
+    @event_buffer = StringIO.new
+    @event_log = Bosh::Director::EventLog.new(@event_buffer)
+    Bosh::Director::Config.event_log = @event_log
+  end
+end
+
+RSpec::Matchers.define :have_a_path_of do |expected|
+  match do |actual|
+    actual.path == expected
+  end
+end
+
+RSpec::Matchers.define :have_flag_set do |method_name|
+  match do |actual|
+    actual.send(method_name).should be_true
+  end
+
+  failure_message_for_should do |_|
+    "expected '#{method_name}' to be set"
+  end
+
+  failure_message_for_should_not do |_|
+    "expected '#{method_name}' to be cleared"
+  end
+
+  description do
+    "have '#{method_name}' flag set"
+  end
+end
 
 class Object
   include Bosh::Director::DeepCopy
@@ -177,58 +275,6 @@ def check_event_log
   yield events
 ensure
   @event_buffer.seek(pos)
-end
-
-def reset_db(db)
-  db.execute("PRAGMA foreign_keys = OFF")
-  db.tables.each do |table|
-    db.drop_table(table)
-  end
-  db.execute("PRAGMA foreign_keys = ON")
-end
-
-Rspec.configure do |rspec|
-  rspec.before(:each) do |example|
-    Bosh::Director::Config.clear
-    Bosh::Director::Config.db = db
-    Bosh::Director::Config.dns_db = dns_db
-    Bosh::Director::Config.logger = logger
-
-    reset_db(db)
-    reset_db(dns_db)
-
-    Sequel::Migrator.apply(db, director_migrations, nil)
-    Sequel::TimestampMigrator.new(db, vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
-    Sequel::Migrator.apply(dns_db, dns_migrations, nil)
-
-    @event_buffer = StringIO.new
-    @event_log = Bosh::Director::EventLog.new(@event_buffer)
-    Bosh::Director::Config.event_log = @event_log
-  end
-end
-
-RSpec::Matchers.define :have_a_path_of do |expected|
-  match do |actual|
-    actual.path == expected
-  end
-end
-
-RSpec::Matchers.define :have_flag_set do |method_name|
-  match do |actual|
-    actual.send(method_name).should be_true
-  end
-
-  failure_message_for_should do |actual|
-    "expected `#{method_name}' to be set"
-  end
-
-  failure_message_for_should_not do |actual|
-    "expected `#{method_name}' to be cleared"
-  end
-
-  description do
-    "have `#{method_name}' flag set"
-  end
 end
 
 

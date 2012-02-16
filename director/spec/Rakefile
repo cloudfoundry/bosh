@@ -1,20 +1,22 @@
-require "rake"
-require "tempfile"
+if RUBY_VERSION < "1.9"
+  puts("BOSH Director requires Ruby 1.9+")
+  exit(1)
+end
 
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "tempfile"
+
 require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
 
+require "rake"
 require "rspec/core/rake_task"
 require "ci/reporter/rake/rspec"
 
-coverage_dir   = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
-reports_dir    = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
-dump_file      = File.join(Dir.tmpdir, "bosh-director.rcov")
-
-cpi_coverage_dir   = File.expand_path(File.join(File.dirname(__FILE__), "..", "cpi_spec_coverage"))
-cpi_dump_file      = File.join(Dir.tmpdir, "bosh-director-cpi.rcov")
+coverage_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_coverage"))
+reports_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_reports"))
 
 ENV["CI_REPORTS"] = reports_dir
 
@@ -24,7 +26,6 @@ namespace "redis" do
   REDIS_CNF = File.join(REDIS_DIR, "redis_test.conf")
   REDIS_PID = File.join(REDIS_DIR, "redis_db/redis.pid")
 
-  desc "Start Redis instance"
   task :start do
     redis_running = false
 
@@ -34,11 +35,16 @@ namespace "redis" do
       FileUtils.rm REDIS_PID
       false
     end
-    # TODO: make more robust, detect when it fails, etc.
-    system "redis-server \"#{REDIS_CNF}\"" unless redis_running
+
+    unless redis_running
+      output = `redis-server "#{REDIS_CNF}"`
+      unless $?.exitstatus == 0
+        puts("Can't start redis-server: \n#{output}")
+        exit(1)
+      end
+    end
   end
 
-  desc "Stop Redis instance"
   task :stop do
     if File.exists?(REDIS_PID)
       Process.kill "INT", File.read(REDIS_PID).to_i
@@ -48,156 +54,98 @@ namespace "redis" do
 
 end
 
-task :spec => ["spec:all"]
+desc "Run Director functional and unit tests"
+task :spec => %W(spec:smoke:run)
 
-namespace "spec" do
-  gemfile   = "../Gemfile"
-  spec_opts = ["--format", "documentation", "--colour"]
+namespace :spec do
+  gemfile = "../Gemfile"
+  spec_opts = %W(--format documentation --colour)
 
-  desc "Run unit tests"
-  task "unit" => ["run_unit"]
+  desc "Run Director unit tests"
+  task :unit => %W(spec:unit:run)
 
-  desc "Run functional tests"
-  task "functional" => ["redis:start", "run_functional", "redis:stop" ]
-
-  task "all" => ["redis:start", "run_all", "redis:stop"]
-
-  desc "Run specs for rcov"
-  task "rcov" => ["redis:start", "run_rcov", "redis:stop"]
-
-  desc "Run CPI integration tests"
-  task "cpi" => ["run_cpi_ci"]
-
-  RSpec::Core::RakeTask.new("run_all") do |t|
-    t.gemfile    = gemfile
-    t.rspec_opts = spec_opts
-    t.pattern    = "{unit,functional}/**/*_spec.rb"
+  task :cleanup_cov do
+    FileUtils.rm_rf(coverage_dir)
   end
 
-  RSpec::Core::RakeTask.new("run_unit") do |t|
-    t.gemfile    = gemfile
-    t.rspec_opts = spec_opts
-    t.pattern    = "unit/**/*_spec.rb"
+  task :cleanup_reports do
+    FileUtils.rm_rf(reports_dir)
   end
 
-  RSpec::Core::RakeTask.new("run_functional") do |t|
-    t.gemfile    = gemfile
-    t.rspec_opts = spec_opts
-    t.pattern    = "functional/**/*_spec.rb"
-  end
-
-  RSpec::Core::RakeTask.new("run_cpi_ci") do |t|
-    t.gemfile    = gemfile
-    t.rspec_opts = spec_opts
-    t.pattern    = "cpi/**/*_spec.rb"
-  end
-
-  if RUBY_VERSION < "1.9"
-    desc "Run specs for ci"
-    task "ci" => ["ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover"]
-
-    desc "Run spec with coverage"
-    RSpec::Core::RakeTask.new("run_rcov") do |t|
-      FileUtils.rm_rf(dump_file)
-      t.gemfile    = gemfile
-      t.pattern    = "{unit,functional}/**/*_spec.rb"
-      t.rspec_opts = ["--format", "progress", "--colour"]
-      t.rcov       = true
-      t.rcov_opts  = %W{--aggregate #{dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{coverage_dir}"}
+  namespace :unit do
+    desc ""
+    RSpec::Core::RakeTask.new(:run) do |task|
+      task.gemfile = gemfile
+      task.rspec_opts = spec_opts
+      task.pattern = "unit/**/*_spec.rb"
     end
 
-    task "convert_rcov_to_clover" do |t|
-      ignore_pattern = "spec,[.]bundle,[/]gems[/]"
-      clover_output  = File.join(coverage_dir, "clover.xml")
-
-      sh("bundle exec rcov_analyzer #{dump_file} #{ignore_pattern} > #{clover_output}")
-      FileUtils.rm_rf(dump_file)
+    desc "Run Director unit tests with code coverage"
+    task :cov do
+      ENV["SIMPLECOV"] = "1"
+      Rake::Task["spec:cleanup_cov"].invoke
+      Rake::Task["spec:unit:run"].invoke
     end
 
-  else
-    desc "Run specs for ci"
-    task "ci" => ["ci:setup:rspec", "spec:rcov"]
+    desc "Run Director unit tests for CI"
+    task :ci => %W(ci:setup:rspec spec:cleanup_reports spec:unit:cov)
+  end
 
-    desc "Run spec with coverage"
-    task :run_rcov => :cleanup_coverage do
-      require "simplecov"
-      require "simplecov-rcov"
-      require "simplecov-clover"
+  desc "Run Director functional tests"
+  task :functional => %W(spec:functional:run)
 
-      class SimpleCov::Formatter::CombinedFormatter
-        def format(result)
-          SimpleCov::Formatter::CloverFormatter.new.format(result)
-          SimpleCov::Formatter::RcovFormatter.new.format(result)
-        end
-      end
+  namespace :functional do
+    task :run => %W(redis:start spec:functional:tests redis:stop)
 
-      SimpleCov.formatter = SimpleCov::Formatter::CombinedFormatter
-      SimpleCov.root('..')
-      SimpleCov.coverage_dir('cov')
-      SimpleCov.start do
-        require "rspec/core"
-        add_filter "/spec/"
-        unit_dir = File.expand_path("../unit", __FILE__)
-        func_dir = File.expand_path("../functional", __FILE__)
-        RSpec::Core::Runner.disable_autorun!
-        RSpec::Core::Runner.run([unit_dir,func_dir], STDERR, STDOUT)
-      end
+    desc ""
+    RSpec::Core::RakeTask.new(:tests) do |task|
+      task.gemfile = gemfile
+      task.rspec_opts = spec_opts
+      task.pattern = "functional/**/*_spec.rb"
+    end
+
+    desc "Run Director functional tests with code coverage"
+    task :cov do
+      ENV["SIMPLECOV"] = "1"
+      Rake::Task["spec:cleanup_cov"].invoke
+      Rake::Task["spec:functional:run"].invoke
+    end
+
+    desc "Run Director functional tests for CI"
+    task :ci => %W(ci:setup:rspec spec:cleanup_reports spec:functional:cov)
+  end
+
+  namespace :smoke do
+    task :run => %W(redis:start spec:smoke:tests redis:stop)
+
+    desc ""
+    RSpec::Core::RakeTask.new(:tests) do |task|
+      task.gemfile = gemfile
+      task.rspec_opts = spec_opts
+      task.pattern = "{unit,functional}/**/*_spec.rb"
     end
   end
 
-  task "cleanup_coverage" do
-    rm_rf "cov"
+  desc "Run Director functional tests"
+  task :cpi => %W(spec:cpi:run)
+
+  namespace :cpi do
+    desc ""
+    RSpec::Core::RakeTask.new(:run) do |task|
+      task.gemfile = gemfile
+      task.rspec_opts = spec_opts
+      task.pattern = "cpi/**/*_spec.rb"
+    end
+
+    desc "Run Director CPI tests with code coverage"
+    task :cov do
+      ENV["SIMPLECOV"] = "1"
+      Rake::Task["spec:cleanup_cov"].invoke
+      Rake::Task["spec:cpi:run"].invoke
+    end
+
+    desc "Run Director CPI tests for CI"
+    task :ci => %W(ci:setup:rspec spec:cleanup_reports spec:cpi:cov)
   end
 
-  desc "Run CPI integration tests with coverage"
-  task "cpi_cov" => ["run_cpi_cov"]
-
-  desc "Delete cpi coverage data"
-  task "cpi_del_cov" => ["cleanup_cpi_coverage"]
-
-  if RUBY_VERSION < "1.9"
-    RSpec::Core::RakeTask.new("run_cpi_cov") do |t|
-      FileUtils.rm_rf(cpi_dump_file)
-      t.gemfile    = gemfile
-      t.pattern    = "cpi/**/*_spec.rb"
-      t.rspec_opts = ["--format", "progress", "--colour"]
-      t.rcov       = true
-      t.rcov_opts  = %W{--aggregate #{cpi_dump_file} --exclude osx\/objc,gems\/,spec\/,unit\/,features\/ -o "#{cpi_coverage_dir}"}
-    end
-
-    task "cleanup_cpi_coverage" do
-      FileUtils.rm_rf(cpi_coverage_dir)
-      FileUtils.rm_rf(cpi_dump_file)
-    end
-
-  else
-    task "run_cpi_cov" do
-      require "simplecov"
-      require "simplecov-rcov"
-      require "simplecov-clover"
-
-      class SimpleCov::Formatter::CombinedFormatter
-        def format(result)
-          SimpleCov::Formatter::CloverFormatter.new.format(result)
-          SimpleCov::Formatter::RcovFormatter.new.format(result)
-        end
-      end
-
-      SimpleCov.formatter = SimpleCov::Formatter::CombinedFormatter
-      SimpleCov.root('..')
-      SimpleCov.coverage_dir('cov')
-      SimpleCov.start do
-        add_filter "/spec/"
-        require "rspec/core"
-        spec_dir = File.expand_path("../cpi", __FILE__)
-        RSpec::Core::Runner.disable_autorun!
-        RSpec::Core::Runner.run([spec_dir], STDERR, STDOUT)
-      end
-    end
-    task "cleanup_cpi_coverage" do
-      rm_rf "coverage"
-    end
-  end
 end
-
-
