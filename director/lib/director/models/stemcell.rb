@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Director::Models
   class Stemcell < Sequel::Model(Bosh::Director::Config.db)
     many_to_many :deployments

@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 Sham.define do
   name          { |index| "name-#{index}" }
   username      { |index| "username-#{index}" }

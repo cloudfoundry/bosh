@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 class ThreadFormatter
   FORMAT = "%s, [%s#%d] [%s] %5s -- %s: %s\n"
 
