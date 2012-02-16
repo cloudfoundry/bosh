@@ -22,7 +22,8 @@ describe Bosh::Cli::Config do
     cfg.username && cfg.password
   end
 
-  it "should convert old deployment configs to the new config when set_deployment is called" do
+  it "should convert old deployment configs to the new config " +
+     "when set_deployment is called" do
     add_config("target" => "localhost:8080", "deployment" => "test")
 
     cfg = create_config
@@ -35,7 +36,8 @@ describe Bosh::Cli::Config do
     yaml_file["deployment"]["localhost:8080"].should == "test2"
   end
 
-  it "should convert old deployment configs to the new config when deployment is called" do
+  it "should convert old deployment configs to the new config " +
+     "when deployment is called" do
     add_config("target" => "localhost:8080", "deployment" => "test")
 
     cfg = create_config
@@ -82,7 +84,8 @@ describe Bosh::Cli::Config do
   it "should throw MissingTarget when getting deployment without target set" do
     add_config({})
     cfg = create_config
-    expect { cfg.set_deployment("/path/to/deploy/1") }.to raise_error(Bosh::Cli::MissingTarget)
+    expect { cfg.set_deployment("/path/to/deploy/1") }.
+        to raise_error(Bosh::Cli::MissingTarget)
   end
 
   it "whines on missing config file" do

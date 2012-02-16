@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli
-
   class VersionsIndex
     include VersionCalc
 
@@ -42,7 +41,8 @@ module Bosh::Cli
       sorted = builds.sort { |build1, build2|
         cmp = version_cmp(build2["version"], build1["version"])
         if cmp == 0
-          raise "There is a duplicate version `#{build1["version"]}' in index `#{@index_file}'"
+          raise "There is a duplicate version `#{build1["version"]}' " +
+                    "in index `#{@index_file}'"
         end
         cmp
       }
@@ -58,7 +58,8 @@ module Bosh::Cli
       version = item["version"]
 
       if version.blank?
-        raise InvalidIndex, "Cannot save index entry without knowing its version"
+        raise InvalidIndex,
+              "Cannot save index entry without knowing its version"
       end
 
       create_directories
@@ -71,12 +72,15 @@ module Bosh::Cli
 
       @data["builds"].each_pair do |fp, build|
         if version_cmp(build["version"], version) == 0 && fp != fingerprint
-          raise "Trying to add duplicate version `#{version}' into index `#{@index_file}'"
+          raise "Trying to add duplicate version `#{version}' " +
+                    "into index `#{@index_file}'"
         end
       end
 
       @data["builds"][fingerprint] = item
-      @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload) if payload
+      if payload
+        @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload)
+      end
 
       File.open(@index_file, "w") do |f|
         f.write(YAML.dump(@data))
@@ -86,7 +90,8 @@ module Bosh::Cli
     end
 
     def filename(version)
-      name = @name_prefix.blank? ? "#{version}.tgz" : "#{@name_prefix}-#{version}.tgz"
+      name = @name_prefix.blank? ?
+          "#{version}.tgz" : "#{@name_prefix}-#{version}.tgz"
       File.join(@storage_dir, name)
     end
 
@@ -110,12 +115,12 @@ module Bosh::Cli
       data ||= {}
 
       unless data.kind_of?(Hash)
-        raise InvalidIndex, "Invalid versions index data type, #{data.class} given, Hash expected"
+        raise InvalidIndex, "Invalid versions index data type, " +
+            "#{data.class} given, Hash expected"
       end
       @data = data
       @data.delete("latest_version") # Indices used to track latest versions
       @data["builds"] ||= {}
     end
-
   end
 end

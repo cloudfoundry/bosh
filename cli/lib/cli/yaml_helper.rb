@@ -45,7 +45,8 @@ module Bosh::Cli
         elsif defined?(YAML::Syck)
           @syck_class = YAML::Syck
         else
-          raise "Cannot find Syck parser for YAML, please check your Ruby installation"
+          raise "Cannot find Syck parser for YAML, " +
+                    "please check your Ruby installation"
         end
 
         File.open(path) do |f|

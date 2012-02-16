@@ -8,7 +8,7 @@ module Bosh::Cli
       deployment_required
       manifest_filename = deployment
 
-      if !File.exists?(manifest_filename)
+      unless File.exists?(manifest_filename)
         err("Cannot find deployment manifest in `#{manifest_filename}'")
       end
 
@@ -20,7 +20,7 @@ module Bosh::Cli
       end
 
       if manifest["target"]
-        err manifest_target_upgrade_notice
+        err(manifest_target_upgrade_notice)
       end
 
       if options[:resolve_properties]
@@ -28,33 +28,43 @@ module Bosh::Cli
         properties = {}
 
         begin
-          say "Getting deployment properties from director..."
+          say("Getting deployment properties from director...")
           properties = director.list_properties(manifest["name"])
         rescue Bosh::Cli::DirectorError
-          say "Unable to get properties list from director, trying without it..."
+          say("Unable to get properties list from director, " +
+                  "trying without it...")
         end
 
-        say "Compiling deployment manifest..."
-        compiler.properties = properties.inject({}) do |h, property|
-          h[property["name"]] = property["value"]; h
+        say("Compiling deployment manifest...")
+        compiler.properties = properties.inject({}) do |hash, property|
+          hash[property["name"]] = property["value"]
+          hash
         end
 
         manifest_yaml = compiler.result
         manifest = YAML.load(manifest_yaml)
       end
 
-      if manifest["name"].blank? || manifest["release"].blank? || manifest["director_uuid"].blank?
-        err("Invalid manifest `#{File.basename(deployment)}': name, release and director UUID are all required")
+      if manifest["name"].blank? || manifest["release"].blank? ||
+          manifest["director_uuid"].blank?
+        err("Invalid manifest `#{File.basename(deployment)}': " +
+                "name, release and director UUID are all required")
       end
 
       options[:yaml] ? manifest_yaml : manifest
     end
 
-    # Interactive walkthrough of deployment changes, expected to bail out of CLI using 'cancel_deployment'
-    # if something goes wrong, so it doesn't need to have a meaningful return value.
+    # Interactive walkthrough of deployment changes,
+    # expected to bail out of CLI using 'cancel_deployment'
+    # if something goes wrong, so it doesn't need to have
+    # a meaningful return value.
     # @return Boolean Were there any changes in deployment manifest?
     def inspect_deployment_changes(manifest, options = { })
-      show_empty_changeset = options.has_key?(:show_empty_changeset) ? !!options[:show_empty_changeset] : true
+      show_empty_changeset = true
+
+      if options.has_key?(:show_empty_changeset)
+        show_empty_changeset = options[:show_empty_changeset]
+      end
 
       manifest = manifest.dup
       current_deployment = director.get_deployment(manifest["name"])
@@ -67,7 +77,8 @@ module Bosh::Cli
       current_manifest = YAML.load(current_deployment["manifest"])
 
       unless current_manifest.is_a?(Hash)
-        err "Current deployment manifest format is invalid, check if director works properly"
+        err("Current deployment manifest format is invalid, " +
+                "check if director works properly")
       end
 
       # TODO: validate new deployment manifest
@@ -76,7 +87,7 @@ module Bosh::Cli
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
       @_diff_key_visited = { "name" => 1, "director_uuid" => 1 }
 
-      say "Detecting changes in deployment...".green
+      say("Detecting changes in deployment...".green)
       nl
 
       if !diff.changed? && !show_empty_changeset
@@ -86,12 +97,15 @@ module Bosh::Cli
       print_summary(diff, :release)
 
       if diff[:release][:name].changed?
-        say "Release name has changed: %s -> %s".red % [ diff[:release][:name].old, diff[:release][:name].new ]
-        unless confirmed?("This is very serious and potentially destructive change. ARE YOU SURE YOU WANT TO DO IT?")
+        say("Release name has changed: %s -> %s".red % [
+            diff[:release][:name].old, diff[:release][:name].new ])
+        unless confirmed?("This is very serious and potentially destructive " +
+                              "change. ARE YOU SURE YOU WANT TO DO IT?")
           cancel_deployment
         end
       elsif diff[:release][:version].changed?
-        say "Release version has changed: %s -> %s".yellow % [ diff[:release][:version].old, diff[:release][:version].new ]
+        say("Release version has changed: %s -> %s".yellow % [
+            diff[:release][:version].old, diff[:release][:version].new ])
         unless confirmed?("Are you sure you want to deploy this version?")
           cancel_deployment
         end
@@ -110,18 +124,26 @@ module Bosh::Cli
       new_stemcells = Set.new
 
       diff[:resource_pools].each do |pool|
-        old_stemcells << { :name => pool[:stemcell][:name].old, :version => pool[:stemcell][:version].old }
-        new_stemcells << { :name => pool[:stemcell][:name].new, :version => pool[:stemcell][:version].new }
+        old_stemcells << {
+            :name => pool[:stemcell][:name].old,
+            :version => pool[:stemcell][:version].old
+        }
+        new_stemcells << {
+            :name => pool[:stemcell][:name].new,
+            :version => pool[:stemcell][:version].new
+        }
       end
 
       if old_stemcells != new_stemcells
-        unless confirmed?("Stemcell update has been detected. Are you sure you want to update stemcells?")
+        unless confirmed?("Stemcell update has been detected. " +
+                          "Are you sure you want to update stemcells?")
           cancel_deployment
         end
       end
 
       if old_stemcells.size != new_stemcells.size
-        say "Stemcell update seems to be inconsistent with current deployment. Please carefully review changes above.".red
+        say("Stemcell update seems to be inconsistent with current " +
+            "deployment. Please carefully review changes above.".red)
         unless confirmed?("Are you sure this configuration is correct?")
           cancel_deployment
         end
@@ -144,7 +166,8 @@ module Bosh::Cli
 
       diff.changed?
     rescue Bosh::Cli::DeploymentNotFound
-      say "Cannot get current deployment information from director, possibly a new deployment".red
+      say("Cannot get current deployment information from director, " +
+          "possibly a new deployment".red)
       true
     end
 
@@ -159,7 +182,7 @@ module Bosh::Cli
     end
 
     def cancel_deployment
-      quit "Deployment canceled".red
+      quit("Deployment canceled".red)
     end
 
     def manifest_error(err)
@@ -168,22 +191,22 @@ module Bosh::Cli
 
     def manifest_target_upgrade_notice
       <<-EOS.gsub(/^\s*/, "").gsub(/\n$/, "")
-        Please upgrade your deployment manifest to use director UUID instead of target
-        Just replace 'target' key with 'director_uuid' key in your manifest.
-        You can get your director UUID by targeting your director with 'bosh target'
-        and running 'bosh status' command afterwards.
+        Please upgrade your deployment manifest to use director UUID instead
+        of target. Just replace 'target' key with 'director_uuid' key in your
+        manifest. You can get your director UUID by targeting your director
+        with 'bosh target' and running 'bosh status' command afterwards.
       EOS
     end
 
     def print_summary(diff, key, title = nil)
       title ||= key.to_s.gsub(/[-_]/, " ").capitalize
 
-      say title.green
+      say(title.green)
       summary = diff[key].summary
       if summary.empty?
-        say "No changes"
+        say("No changes")
       else
-        say summary.join("\n")
+        say(summary.join("\n"))
       end
       @_diff_key_visited[key.to_s] = 1
     end
@@ -192,7 +215,10 @@ module Bosh::Cli
       normalized = manifest.dup
 
       %w(networks jobs resource_pools).each do |section|
-        manifest_error("#{section} is expected to be an array") unless normalized[section].kind_of?(Array)
+        unless normalized[section].kind_of?(Array)
+          manifest_error("#{section} is expected to be an array")
+        end
+
         normalized[section] = normalized[section].inject({}) do |acc, e|
           if e["name"].blank?
             manifest_error("missing name for one of entries in '#{section}'")
@@ -206,17 +232,24 @@ module Bosh::Cli
       end
 
       normalized["networks"].each do |network_name, network|
-        manifest_error("network subnets is expected to be an array") unless network["subnets"].kind_of?(Array)
-        normalized["networks"][network_name]["subnets"] = network["subnets"].inject({}) do |acc, e|
+        unless network["subnets"].kind_of?(Array)
+          manifest_error("network subnets is expected to be an array")
+        end
+
+        subnets = network["subnets"].inject({}) do |acc, e|
           if e["range"].blank?
-            manifest_error("missing range for one of subnets in '#{network_name}'")
+            manifest_error("missing range for one of subnets " +
+                               "in '#{network_name}'")
           end
           if acc.has_key?(e["range"])
-            manifest_error("duplicate network range '#{e['range']}' in '#{network}'")
+            manifest_error("duplicate network range '#{e['range']}' " +
+                               "in '#{network}'")
           end
           acc[e["range"]] = e
           acc
         end
+
+        normalized["networks"][network_name]["subnets"] = subnets
       end
 
       normalized

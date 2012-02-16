@@ -13,12 +13,12 @@ module Bosh::Cli::Command
         Dir.chdir(base)
       end
 
-      err "release already initialized" if in_release_dir?
+      err("Release already initialized") if in_release_dir?
 
       %w[jobs packages src].each do |dir|
         FileUtils.mkdir(dir)
       end
-      say("release directory initialized".green)
+      say("Release directory initialized".green)
     end
 
     def verify(tarball_path, *options)
@@ -45,9 +45,12 @@ module Bosh::Cli::Command
         check_if_release_dir
         release_file = release.latest_release_filename
         if release_file.nil?
-          err("The information about latest generated release is missing, please provide release filename")
+          err("The information about latest generated release is missing, " +
+              "please provide release filename")
         end
-        unless confirmed?("Upload release `#{File.basename(release_file).green}' to `#{target_name.green}'")
+        unless confirmed?("Upload release " +
+                          "`#{File.basename(release_file).green}' " +
+                          "to `#{target_name.green}'")
           err("Canceled upload")
         end
       end
@@ -62,14 +65,15 @@ module Bosh::Cli::Command
     end
 
     def upload_manifest(manifest_path)
-      manifest       = load_yaml_file(manifest_path)
+      manifest = load_yaml_file(manifest_path)
       remote_release = get_remote_release(manifest["name"]) rescue nil
-      blobstore      = release.blobstore
-      tmpdir         = Dir.mktmpdir
+      blobstore = release.blobstore
+      tmpdir = Dir.mktmpdir
 
       at_exit { FileUtils.rm_rf(tmpdir) }
 
-      compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, remote_release)
+      compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path,
+                                                blobstore, remote_release)
       need_repack = true
 
       unless compiler.exists?
@@ -89,42 +93,45 @@ module Bosh::Cli::Command
       tarball.validate(:allow_sparse => true)
       nl
 
-      if !tarball.valid?
+      unless tarball.valid?
         err("Release is invalid, please fix, verify and upload again")
       end
 
       begin
         remote_release = get_remote_release(tarball.release_name)
         if remote_release["versions"].include?(tarball.version)
-          err "This release version has already been uploaded"
+          err("This release version has already been uploaded")
         end
 
         if repack
-          say "Checking if can repack release for faster upload..."
+          say("Checking if can repack release for faster upload...")
           repacked_path = tarball.repack(remote_release)
           if repacked_path.nil?
-            say "Uploading the whole release".green
+            say("Uploading the whole release".green)
           else
-            say "Release repacked (new size is #{pretty_size(repacked_path)})".green
+            say("Release repacked " +
+                "(new size is #{pretty_size(repacked_path)})".green)
             tarball_path = repacked_path
           end
         end
       rescue Bosh::Cli::DirectorError
-        # It's OK for director to choke on getting a release info (think new releases)
+        # It's OK for director to choke on getting
+        # a release info (think new releases)
       end
 
       say("\nUploading release...\n")
-
       status, message = director.upload_release(tarball_path)
 
       responses = {
-        :done          => "Release uploaded and updated",
-        :non_trackable => "Uploaded release but director at #{target} doesn't support update tracking",
-        :track_timeout => "Uploaded release but timed out out while tracking status",
-        :error         => "Uploaded release but received an error while tracking status"
+        :done => "Release uploaded and updated",
+        :non_trackable => "Uploaded release but director at #{target} " +
+                           "doesn't support update tracking",
+        :track_timeout => "Uploaded release but timed out out " +
+                           "while tracking status",
+        :error => "Uploaded release but received an error while tracking status"
       }
 
-      say responses[status] || "Cannot upload release: #{message}"
+      say(responses[status] || "Cannot upload release: #{message}")
     end
 
     def create(*options)
@@ -143,7 +150,7 @@ module Bosh::Cli::Command
     end
 
     def create_from_manifest(manifest_file)
-      say "Recreating release from the manifest"
+      say("Recreating release from the manifest")
       Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
     end
 
@@ -156,7 +163,7 @@ module Bosh::Cli::Command
       dry_run       = flags.delete("--dry-run")
 
       if flags.size > 0
-        say "Unknown flags: #{flags.keys.join(", ")}".red
+        say("Unknown flags: #{flags.keys.join(", ")}".red)
         show_usage
         exit(1)
       end
@@ -166,9 +173,11 @@ module Bosh::Cli::Command
         check_if_dirty_state
       end
 
-      confirmation = "Are you sure you want to generate #{'final'.red} version? "
+      confirmation = "Are you sure you want to " +
+                     "generate #{'final'.red} version? "
+
       if final && !dry_run && !confirmed?(confirmation)
-        say "Canceled release generation".green
+        say("Canceled release generation".green)
         exit(1)
       end
 
@@ -176,19 +185,21 @@ module Bosh::Cli::Command
       jobs      = []
 
       if final
-        header "Building FINAL release".green
+        header("Building FINAL release".green)
         release_name = release.final_name
       else
         release_name = release.dev_name
-        header "Building DEV release".green
+        header("Building DEV release".green)
       end
 
       if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
-        err("You should use CLI >= %s with this release, you have %s" % [ release.min_cli_version, Bosh::Cli::VERSION ])
+        err("You should use CLI >= #{release.min_cli_version} " +
+            "with this release, you have #{Bosh::Cli::VERSION}")
       end
 
       if release_name.blank?
-        confirmation = "Please enter %s release name: " % [ final ? "final" : "development" ]
+        confirmation = "Please enter %s release name: " % [
+            final ? "final" : "development" ]
         name = interactive? ? ask(confirmation).to_s : DEFAULT_RELEASE_NAME
         err("Canceled release creation, no name given") if name.blank?
         if final
@@ -199,20 +210,25 @@ module Bosh::Cli::Command
         release.save_config
       end
 
-      header "Building packages"
+      header("Building packages")
       Dir[File.join(work_dir, "packages", "*", "spec")].each do |package_spec|
-        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir, final, release.blobstore)
+        package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir,
+                                                final, release.blobstore)
         package.dry_run = dry_run
-        say "Building #{package.name.green}..."
+        say("Building #{package.name.green}...")
         package.build
         packages << package
         nl
       end
 
       if packages.size > 0
-        sorted_packages = tsort_packages(packages.inject({}) { |h, p| h[p.name] = p.dependencies; h })
-        header "Resolving dependencies"
-        say "Dependencies resolved, correct build order is:"
+        package_index = packages.inject({}) do |index, package|
+          index[package.name] = package.dependencies
+          index
+        end
+        sorted_packages = tsort_packages(package_index)
+        header("Resolving dependencies")
+        say("Dependencies resolved, correct build order is:")
         for package_name in sorted_packages
           say("- %s" % [ package_name ])
         end
@@ -221,26 +237,28 @@ module Bosh::Cli::Command
 
       built_package_names = packages.map { |package| package.name }
 
-      header "Building jobs"
+      header("Building jobs")
       Dir[File.join(work_dir, "jobs", "*")].each do |job_dir|
         next unless File.directory?(job_dir)
         prepare_script = File.join(job_dir, "prepare")
         job_spec = File.join(job_dir, "spec")
 
         if File.exists?(prepare_script)
-          say "Found prepare script in `#{File.basename(job_dir)}'"
+          say("Found prepare script in `#{File.basename(job_dir)}'")
           Bosh::Cli::JobBuilder.run_prepare_script(prepare_script)
         end
 
-        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final, release.blobstore, built_package_names)
+        job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final,
+                                        release.blobstore, built_package_names)
         job.dry_run = dry_run
-        say "Building #{job.name.green}..."
+        say("Building #{job.name.green}...")
         job.build
         jobs << job
         nl
       end
 
-      builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, :final => final)
+      builder = Bosh::Cli::ReleaseBuilder.new(release, packages,
+                                              jobs, :final => final)
 
       unless dry_run
         if manifest_only
@@ -250,7 +268,7 @@ module Bosh::Cli::Command
         end
       end
 
-      header "Release summary"
+      header("Release summary")
       show_summary(builder)
       nl
 
@@ -260,7 +278,8 @@ module Bosh::Cli::Command
       say("Release manifest: #{builder.manifest_path.green}")
 
       unless manifest_only
-        say("Release tarball (#{pretty_size(builder.tarball_path)}): #{builder.tarball_path.green}")
+        say("Release tarball (#{pretty_size(builder.tarball_path)}): " +
+            builder.tarball_path.green)
       end
 
       release.min_cli_version = Bosh::Cli::VERSION
@@ -272,32 +291,38 @@ module Bosh::Cli::Command
     def reset
       check_if_release_dir
 
-      say "Your dev release environment will be completely reset".red
+      say("Your dev release environment will be completely reset".red)
       if confirmed?
-        say "Removing dev_builds index..."
+        say("Removing dev_builds index...")
         FileUtils.rm_rf(".dev_builds")
-        say "Clearing dev name..."
+        say("Clearing dev name...")
         release.dev_name = nil
         release.save_config
-        say "Removing dev tarballs..."
+        say("Removing dev tarballs...")
         FileUtils.rm_rf("dev_releases")
 
-        say "Release has been reset".green
+        say("Release has been reset".green)
       else
-        say "Canceled"
+        say("Canceled")
       end
     end
 
     def list
       auth_required
-      releases = director.list_releases.sort { |r1, r2| r1["name"] <=> r2["name"] }
+      releases = director.list_releases.sort do |r1, r2|
+        r1["name"] <=> r2["name"]
+      end
 
-      err("No releases") if releases.size == 0
+      err("No releases") if releases.empty?
 
       releases_table = table do |t|
         t.headings = "Name", "Versions"
         releases.each do |r|
-          t << [ r["name"], r["versions"].sort { |v1, v2| version_cmp(v1, v2) }.join(", ") ]
+          versions = r["versions"].sort do |v1, v2|
+            version_cmp(v1, v2)
+          end
+
+          t << [r["name"], versions.join(", ")]
         end
       end
 
@@ -317,25 +342,30 @@ module Bosh::Cli::Command
       desc << " version #{version}" if version
 
       if force
-        say "Deleting #{desc} (FORCED DELETE, WILL IGNORE ERRORS)".red
+        say("Deleting #{desc} (FORCED DELETE, WILL IGNORE ERRORS)".red)
       elsif options.size > 0
-        err "Unknown option, currently only '--force' is supported"
+        err("Unknown option, currently only '--force' is supported")
       else
-        say "Deleting #{desc}".red
+        say("Deleting #{desc}".red)
       end
 
       if confirmed?
-        status, body = director.delete_release(name, :force => force, :version => version)
+        status, body = director.delete_release(name, :force => force,
+                                               :version => version)
         responses = {
-          :done          => "Deleted #{desc}",
-          :non_trackable => "Started deleting release but director at '#{target}' doesn't support deployment tracking",
-          :track_timeout => "Started deleting release but timed out out while tracking status",
-          :error         => "Started deleting release but received an error while tracking status",
+          :done => "Deleted #{desc}",
+          :non_trackable => "Started deleting release but director " +
+                            "at '#{target}' doesn't support " +
+                            "deployment tracking",
+          :track_timeout => "Started deleting release but timed out out " +
+                            "while tracking status",
+          :error => "Started deleting release but received an error " +
+                    "while tracking status",
         }
 
-        say responses[status] || "Cannot delete release: #{body}"
+        say(responses[status] || "Cannot delete release: #{body}")
       else
-        say "Canceled deleting release".green
+        say("Canceled deleting release".green)
       end
     end
 
@@ -356,17 +386,17 @@ module Bosh::Cli::Command
         end
       end
 
-      say "Packages"
-      say packages_table
+      say("Packages")
+      say(packages_table)
       nl
-      say "Jobs"
-      say jobs_table
+      say("Jobs")
+      say(jobs_table)
 
       affected_jobs = builder.affected_jobs
 
       if affected_jobs.size > 0
         nl
-        say "Jobs affected by changes in this release"
+        say("Jobs affected by changes in this release")
 
         affected_jobs_table = table do |t|
           t.headings = %w(Name Version)
@@ -375,7 +405,7 @@ module Bosh::Cli::Command
           end
         end
 
-        say affected_jobs_table
+        say(affected_jobs_table)
       end
     end
 
@@ -391,8 +421,12 @@ module Bosh::Cli::Command
     def get_remote_release(name)
       release = director.get_release(name)
 
-      unless release.is_a?(Hash) && release.has_key?("jobs") && release.has_key?("packages")
-        raise Bosh::Cli::DirectorError, "Cannot find version, jobs and packages info in the director response, maybe old director?"
+      unless release.is_a?(Hash) &&
+          release.has_key?("jobs") &&
+          release.has_key?("packages")
+        raise Bosh::Cli::DirectorError,
+              "Cannot find version, jobs and packages info " +
+              "in the director response, maybe old director?"
       end
 
       release

@@ -205,7 +205,8 @@ module Bosh::Cli
           # to only have canaries.
           @tasks_batch_size = @tasks.size
           @non_canary_event_start_time = task.start_time
-          @batches_count = ((total - @done_tasks.size) / @tasks_batch_size.to_f).ceil
+          @batches_count = ((total - @done_tasks.size) /
+              @tasks_batch_size.to_f).ceil
         end
       when "finished", "failed"
         @tasks.delete(event["index"])
@@ -220,7 +221,8 @@ module Bosh::Cli
         task_time = task.finish_time - task.start_time
 
         n_done_tasks = @done_tasks.size.to_f
-        @running_avg = @running_avg * (n_done_tasks - 1) / n_done_tasks + task_time.to_f / n_done_tasks
+        @running_avg = @running_avg * (n_done_tasks - 1) / n_done_tasks +
+            task_time.to_f / n_done_tasks
 
         progress = 1
         progress_bar.finished_steps += 1
@@ -234,7 +236,8 @@ module Bosh::Cli
         end
 
         if event["state"] == "failed"
-          status = [task_name.red, event_data["error"]].compact.join(": ") # TODO: truncate?
+          # TODO: truncate?
+          status = [task_name.red, event_data["error"]].compact.join(": ")
         else
           status = task_name.yellow
         end
@@ -244,7 +247,8 @@ module Bosh::Cli
       end
 
       if @batches_count > 0 && @non_canary_event_start_time
-        @eta = adjusted_time(@non_canary_event_start_time + @running_avg * @batches_count)
+        @eta = adjusted_time(@non_canary_event_start_time +
+                                 @running_avg * @batches_count)
       end
 
       progress_bar_gain = progress - task.progress
@@ -262,10 +266,12 @@ module Bosh::Cli
     def parse_event(event_line)
       event = JSON.parse(event_line)
 
-      if event["time"] && event["stage"] && event["task"] && event["index"] && event["total"] && event["state"]
+      if event["time"] && event["stage"] && event["task"] &&
+          event["index"] && event["total"] && event["state"]
         event
       else
-        raise InvalidEvent, "Invalid event structure: stage, time, task, index, total, state are all required"
+        raise InvalidEvent, "Invalid event structure: stage, time, task, " +
+            "index, total, state are all required"
       end
 
     rescue JSON::JSONError
@@ -315,7 +321,8 @@ module Bosh::Cli
     end
 
     def bar
-      n_fillers = @total == 0 ? 0 : [ (@bar_width * (@current.to_f / @total.to_f)).floor, 0 ].max
+      n_fillers = @total == 0 ? 0 : [ (@bar_width *
+          (@current.to_f / @total.to_f)).floor, 0 ].max
 
       fillers = "#{@filler}" * n_fillers
       spaces = " " * [ (@bar_width - n_fillers), 0 ].max
