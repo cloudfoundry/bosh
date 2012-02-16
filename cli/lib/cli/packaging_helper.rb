@@ -157,8 +157,8 @@ module Bosh
         copy_files
 
         in_build_dir do
-          tar_out = `tar -chzf #{tmp_file.path} . 2>&1`
-          raise PackagingError, "Cannot create tarball: #{tar_out}" unless $?.exitstatus == 0
+          result = execute("tar -chzf #{tmp_file.path} . 2>&1")
+          raise PackagingError, "Cannot create tarball: #{result.stdout.join("\n")}" if result.failed?
         end
 
         payload = tmp_file.read
