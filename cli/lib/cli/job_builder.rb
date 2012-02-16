@@ -1,6 +1,7 @@
 module Bosh::Cli
   class JobBuilder
     include PackagingHelper
+    include Dotanuki
 
     attr_reader :name, :version, :packages, :templates, :release_dir, :built_packages, :tarball_path
 
@@ -24,17 +25,16 @@ module Bosh::Cli
         %w{ BUNDLE_GEMFILE RUBYOPT }.each { |key| ENV.delete(key) }
 
         Dir.chdir(script_dir) do
+          say "Running #{script_name}..."
           cmd = "./#{script_name} 2>&1"
-          say "Running #{cmd}..."
-          script_output = `#{cmd}`
-          script_output.split("\n").each do |line|
+          result = Dotanuki.execute(cmd, :on_error => :exception)
+          result.stdout.each do |line|
             say "> #{line}"
           end
         end
 
-        unless $?.exitstatus == 0
-          raise InvalidJob, "`#{script_path}' script failed"
-        end
+      rescue Dotanuki::ExecError
+        raise InvalidJob, "`#{script_path}' script failed"
       ensure
         ENV.each_pair { |k, v| ENV[k] = old_env[k] }
       end

@@ -1,5 +1,6 @@
 module Bosh::Cli
   class EventLogRenderer < TaskLogRenderer
+    include Dotanuki
 
     class InvalidEvent < StandardError; end
 
@@ -328,8 +329,7 @@ module Bosh::Cli
 
     def calculate_terminal_width
       if !ENV["TERM"].blank?
-        width = `tput cols`
-        $?.exitstatus == 0 ? [ width.to_i, 100 ].min : 80
+        [ execute("tput cols", :on_error => :exception).first.to_i, 100 ].min
       else
         80
       end
