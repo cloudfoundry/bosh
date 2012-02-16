@@ -9,7 +9,7 @@ module BoshExtensions
     Bosh::Cli::Config.output.print("#{$indent}#{message}#{sep}")
   end
 
-  def with_indent(indent, &block)
+  def with_indent(indent)
     old_indent, $indent = $indent, old_indent.to_s + indent.to_s
     yield
   ensure
@@ -17,9 +17,9 @@ module BoshExtensions
   end
 
   def header(message, filler = '-')
-    say "\n"
-    say message
-    say filler.to_s * message.size
+    say("\n")
+    say(message)
+    say(filler.to_s * message.size)
   end
 
   def nl(count = 1)
@@ -31,7 +31,7 @@ module BoshExtensions
   end
 
   def quit(message = nil)
-    say message
+    say(message)
     raise Bosh::Cli::GracefulExit, message
   end
 
@@ -46,11 +46,13 @@ module BoshExtensions
       size = what.to_i
     end
 
-    return 'NA' unless size
+    return "NA" unless size
     return "#{size}B" if size < 1024
     return sprintf("%.#{prec}fK", size/1024.0) if size < (1024*1024)
-    return sprintf("%.#{prec}fM", size/(1024.0*1024.0)) if size < (1024*1024*1024)
-    return sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
+    if size < (1024*1024*1024)
+      return sprintf("%.#{prec}fM", size/(1024.0*1024.0))
+    end
+    sprintf("%.#{prec}fG", size/(1024.0*1024.0*1024.0))
   end
 
   def pluralize(number, singular, plural = nil)

@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli
-
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
 
@@ -62,16 +61,21 @@ module Bosh::Cli
 
     def copy_packages
       packages.each do |package|
-        say "%-40s %s" % [ package.name.green, pretty_size(package.tarball_path) ]
-        FileUtils.cp(package.tarball_path, File.join(build_dir, "packages", "#{package.name}.tgz"), :preserve => true)
+        say("%-40s %s" % [package.name.green,
+                           pretty_size(package.tarball_path)])
+        FileUtils.cp(package.tarball_path,
+                     File.join(build_dir, "packages", "#{package.name}.tgz"),
+                     :preserve => true)
       end
       @packages_copied = true
     end
 
     def copy_jobs
       jobs.each do |job|
-        say "%-40s %s" % [ job.name.green, pretty_size(job.tarball_path) ]
-        FileUtils.cp(job.tarball_path, File.join(build_dir, "jobs", "#{job.name}.tgz"), :preserve => true)
+        say("%-40s %s" % [job.name.green, pretty_size(job.tarball_path)])
+        FileUtils.cp(job.tarball_path,
+                     File.join(build_dir, "jobs", "#{job.name}.tgz"),
+                     :preserve => true)
       end
       @jobs_copied = true
     end
@@ -100,14 +104,15 @@ module Bosh::Cli
       manifest["name"] = release_name
 
       unless manifest["name"].bosh_valid_id?
-        raise InvalidRelease, "Release name '%s' is not a valid Bosh identifier" % [ manifest["name"] ]
+        raise InvalidRelease, "Release name '#{manifest["name"]}' " +
+            "is not a valid Bosh identifier"
       end
 
       fingerprint = make_fingerprint(manifest)
 
       if @index[fingerprint]
         old_version = @index[fingerprint]["version"]
-        say "This version is no different from version #{old_version}"
+        say("This version is no different from version #{old_version}")
         @version = old_version
       else
         @version = assign_version
@@ -117,7 +122,7 @@ module Bosh::Cli
       manifest["version"] = @version
       manifest_yaml = YAML.dump(manifest)
 
-      say "Writing manifest..."
+      say("Writing manifest...")
       File.open(File.join(build_dir, "release.MF"), "w") do |f|
         f.write(manifest_yaml)
       end
@@ -148,8 +153,10 @@ module Bosh::Cli
 
       in_build_dir do
         `tar -czf #{tarball_path} . 2>&1`
-        raise InvalidRelease, "Cannot create release tarball" unless $?.exitstatus == 0
-        say "Generated #{tarball_path}"
+        unless $?.exitstatus == 0
+          raise InvalidRelease, "Cannot create release tarball"
+        end
+        say("Generated #{tarball_path}")
       end
     end
 

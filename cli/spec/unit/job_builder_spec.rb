@@ -9,7 +9,8 @@ describe Bosh::Cli::JobBuilder do
     at_exit { FileUtils.rm_rf(@release_dir) }
   end
 
-  def new_builder(name, packages = [], templates = { }, built_packages = [], create_spec = true, final = false, blobstore = mock("blobstore"))
+  def new_builder(name, packages = [], templates = { }, built_packages = [],
+      create_spec = true, final = false, blobstore = mock("blobstore"))
     # Workaround for Hash requirement
     if templates.is_a?(Array)
       templates = templates.inject({ }) { |h, e| h[e] = e; h }
@@ -22,7 +23,8 @@ describe Bosh::Cli::JobBuilder do
     }
     add_spec(name) if create_spec
 
-    Bosh::Cli::JobBuilder.new(spec, @release_dir, final, blobstore, built_packages)
+    Bosh::Cli::JobBuilder.new(spec, @release_dir,
+                              final, blobstore, built_packages)
   end
 
   def add_file(job_name, file, contents = nil)
@@ -63,7 +65,8 @@ describe Bosh::Cli::JobBuilder do
   it "creates a new builder" do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
-    builder = new_builder("foo", ["foo", "bar", "baz"], ["a.conf", "b.yml"], ["foo", "bar", "baz"])
+    builder = new_builder("foo", ["foo", "bar", "baz"],
+                          ["a.conf", "b.yml"], ["foo", "bar", "baz"])
     builder.packages.should    == ["foo", "bar", "baz"]
     builder.templates.should     =~ ["a.conf", "b.yml"]
     builder.release_dir.should == @release_dir
@@ -72,18 +75,21 @@ describe Bosh::Cli::JobBuilder do
   it "has a fingerprint" do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
-    builder = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    builder = new_builder("foo", ["foo", "bar"],
+                          ["a.conf", "b.yml"], ["foo", "bar"])
     builder.fingerprint.should == "8c648313f029ee50612bfbb99b507eef1eb6f6c0"
   end
 
   it "has a stable portable fingerprint" do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
-    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b1 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml"], ["foo", "bar"])
     f1 = b1.fingerprint
     b1.reload.fingerprint.should == f1
 
-    b2 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b2 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml"], ["foo", "bar"])
     b2.fingerprint.should == f1
   end
 
@@ -91,11 +97,13 @@ describe Bosh::Cli::JobBuilder do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
 
-    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b1 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml"], ["foo", "bar"])
     f1 = b1.fingerprint
 
     add_templates("foo", "baz")
-    b2 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml", "baz"], ["foo", "bar"])
+    b2 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml", "baz"], ["foo", "bar"])
     b2.fingerprint.should_not == f1
   end
 
@@ -103,7 +111,8 @@ describe Bosh::Cli::JobBuilder do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
 
-    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b1 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml"], ["foo", "bar"])
     f1 = b1.fingerprint
 
     add_file("foo", "templates/a.conf", "bzz")
@@ -114,18 +123,21 @@ describe Bosh::Cli::JobBuilder do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo", "foo.monit")
 
-    b1 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b1 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml"], ["foo", "bar"])
     f1 = b1.fingerprint
 
     add_monit("foo", "bar.monit")
-    b2 = new_builder("foo", ["foo", "bar"], ["a.conf", "b.yml"], ["foo", "bar"])
+    b2 = new_builder("foo", ["foo", "bar"],
+                     ["a.conf", "b.yml"], ["foo", "bar"])
     b2.fingerprint.should_not == f1
   end
 
   it "can read template file names from hash" do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
-    builder = new_builder("foo", ["foo", "bar", "baz"], {"a.conf" => 1, "b.yml" => 2}, ["foo", "bar", "baz"])
+    builder = new_builder("foo", ["foo", "bar", "baz"],
+                          {"a.conf" => 1, "b.yml" => 2}, ["foo", "bar", "baz"])
     builder.templates.should =~ ["a.conf", "b.yml"]
   end
 
@@ -138,7 +150,8 @@ describe Bosh::Cli::JobBuilder do
   it "whines on funny characters in name" do
     lambda {
       new_builder("@#!", [])
-    }.should raise_error(Bosh::Cli::InvalidJob, "`@#!' is not a valid Bosh identifier")
+    }.should raise_error(Bosh::Cli::InvalidJob,
+                         "`@#!' is not a valid Bosh identifier")
   end
 
   it "whines if some templates are missing" do
@@ -146,7 +159,9 @@ describe Bosh::Cli::JobBuilder do
 
     lambda {
       new_builder("foo", [], ["a.conf", "b.conf", "c.conf"])
-    }.should raise_error(Bosh::Cli::InvalidJob, "Some template files required by 'foo' job are missing: c.conf")
+    }.should raise_error(Bosh::Cli::InvalidJob,
+                         "Some template files required by 'foo' job " +
+                         "are missing: c.conf")
   end
 
   it "whines about extra packages" do
@@ -154,30 +169,39 @@ describe Bosh::Cli::JobBuilder do
 
     lambda {
       new_builder("foo", [], ["a.conf"], [])
-    }.should raise_error(Bosh::Cli::InvalidJob, "There are unused template files for job 'foo': b.conf")
+    }.should raise_error(Bosh::Cli::InvalidJob,
+                         "There are unused template files for job 'foo'" +
+                         ": b.conf")
   end
 
   it "whines if some packages are missing" do
     lambda {
       new_builder("foo", ["foo", "bar", "baz", "app42"], { }, ["foo", "bar"])
-    }.should raise_error(Bosh::Cli::InvalidJob, "Some packages required by 'foo' job are missing: baz, app42")
+    }.should raise_error(Bosh::Cli::InvalidJob,
+                         "Some packages required by 'foo' job are missing: " +
+                         "baz, app42")
   end
 
   it "whines if there is no spec file" do
     lambda {
-      new_builder("foo", ["foo", "bar", "baz", "app42"], { }, ["foo", "bar", "baz", "app42"], false)
-    }.should raise_error(Bosh::Cli::InvalidJob, "Cannot find spec file for 'foo'")
+      new_builder("foo", ["foo", "bar", "baz", "app42"], { },
+                  ["foo", "bar", "baz", "app42"], false)
+    }.should raise_error(Bosh::Cli::InvalidJob,
+                         "Cannot find spec file for 'foo'")
   end
 
   it "whines if there is no monit file" do
     lambda {
       add_templates("foo", "a.conf", "b.yml")
-      new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
-    }.should raise_error(Bosh::Cli::InvalidJob, "Cannot find monit file for 'foo'")
+      new_builder("foo", ["foo", "bar", "baz", "app42"],
+                  ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
+    }.should raise_error(Bosh::Cli::InvalidJob,
+                         "Cannot find monit file for 'foo'")
 
     add_monit("foo")
     lambda {
-      new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
+      new_builder("foo", ["foo", "bar", "baz", "app42"],
+                  ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
     }.should_not raise_error
   end
 
@@ -203,7 +227,8 @@ describe Bosh::Cli::JobBuilder do
     FileUtils.chmod(0755, script_path)
     Bosh::Cli::JobBuilder.run_prepare_script(script_path)
 
-    builder = new_builder("foo", ["bar", "baz"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"], false)
+    builder = new_builder("foo", ["bar", "baz"], ["a.conf", "b.yml"],
+                          ["foo", "bar", "baz", "app42"], false)
     builder.copy_files.should == 4
 
     Dir.chdir(builder.build_dir) do
@@ -212,7 +237,8 @@ describe Bosh::Cli::JobBuilder do
         File.file?(file).should be_true
       end
       File.file?("job.MF").should be_true
-      File.read("job.MF").should == File.read(File.join(@release_dir, "jobs", "foo", "spec"))
+      File.read("job.MF").should == File.read(
+          File.join(@release_dir, "jobs", "foo", "spec"))
       File.exists?("monit").should be_true
       File.exists?("prepare").should be_false
     end
@@ -221,7 +247,8 @@ describe Bosh::Cli::JobBuilder do
   it "copies job files" do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
-    builder = new_builder("foo", ["foo", "bar", "baz", "app42"], ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
+    builder = new_builder("foo", ["foo", "bar", "baz", "app42"],
+                          ["a.conf", "b.yml"], ["foo", "bar", "baz", "app42"])
 
     builder.copy_files.should == 4
 
@@ -231,7 +258,8 @@ describe Bosh::Cli::JobBuilder do
         File.file?(file).should be_true
       end
       File.file?("job.MF").should be_true
-      File.read("job.MF").should == File.read(File.join(@release_dir, "jobs", "foo", "spec"))
+      File.read("job.MF").should == File.read(
+          File.join(@release_dir, "jobs", "foo", "spec"))
       File.exists?("monit").should be_true
     end
   end
@@ -250,17 +278,21 @@ describe Bosh::Cli::JobBuilder do
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_false
     builder.build
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_true
     v1_fingerprint = builder.fingerprint
 
     add_templates("foo", "zb.yml")
     builder = new_builder("foo", [], ["bar", "baz", "zb.yml"], [])
     builder.build
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").
+        should be_true
 
     remove_templates("foo", "zb.yml")
 
@@ -269,9 +301,12 @@ describe Bosh::Cli::JobBuilder do
     builder.version.should == "0.1-dev"
 
     builder.fingerprint.should == v1_fingerprint
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.3-dev.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").
+        should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.3-dev.tgz").
+        should be_false
   end
 
   it "can point to either dev or a final version of a job" do
@@ -279,11 +314,17 @@ describe Bosh::Cli::JobBuilder do
     add_monit("foo")
     fingerprint = "ea9931b04f6a736b8806d2f56c68096fb4dc1ee6"
 
-    final_versions = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".final_builds", "jobs", "foo"))
-    dev_versions   = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, ".dev_builds", "jobs", "foo"))
+    final_versions = Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, ".final_builds", "jobs", "foo"))
+    dev_versions   = Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, ".dev_builds", "jobs", "foo"))
 
-    final_versions.add_version(fingerprint, { "version" => "4", "blobstore_id" => "12321" }, "payload")
-    dev_versions.add_version(fingerprint, { "version" => "0.7-dev" }, "dev_payload")
+    final_versions.add_version(fingerprint,
+                               { "version" => "4", "blobstore_id" => "12321" },
+                               "payload")
+    dev_versions.add_version(fingerprint,
+                             { "version" => "0.7-dev" },
+                             "dev_payload")
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
@@ -291,11 +332,13 @@ describe Bosh::Cli::JobBuilder do
 
     builder.use_final_version
     builder.version.should == "4"
-    builder.tarball_path.should == File.join(@release_dir, ".final_builds", "jobs", "foo", "4.tgz")
+    builder.tarball_path.should == File.join(
+        @release_dir, ".final_builds", "jobs", "foo", "4.tgz")
 
     builder.use_dev_version
     builder.version.should == "0.7-dev"
-    builder.tarball_path.should == File.join(@release_dir, ".dev_builds", "jobs", "foo", "0.7-dev.tgz")
+    builder.tarball_path.should == File.join(
+        @release_dir, ".dev_builds", "jobs", "foo", "0.7-dev.tgz")
   end
 
   it "bumps major dev version in sync with final version" do
@@ -309,7 +352,8 @@ describe Bosh::Cli::JobBuilder do
 
     blobstore = mock("blobstore")
     blobstore.should_receive(:create).and_return("object_id")
-    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder = new_builder("foo", [], ["bar", "baz"], [],
+                                true, true, blobstore)
     final_builder.build
 
     final_builder.version.should == 1
@@ -320,26 +364,31 @@ describe Bosh::Cli::JobBuilder do
     builder2.version.should == "1.1-dev"
   end
 
-  it "whines on attempt to create final build if not matched by existing final or dev build" do
+  it "whines on attempt to create final build if not matched " +
+     "by existing final or dev build" do
     add_templates("foo", "bar", "baz")
     add_monit("foo")
 
     blobstore = mock("blobstore")
 
-    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder = new_builder("foo", [], ["bar", "baz"],
+                                [], true, true, blobstore)
     lambda {
       final_builder.build
     }.should raise_error(Bosh::Cli::CliExit)
 
-    dev_builder = new_builder("foo", [], ["bar", "baz"], [], true, false, blobstore)
+    dev_builder = new_builder("foo", [], ["bar", "baz"],
+                              [], true, false, blobstore)
     dev_builder.build
 
-    final_builder2 = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder2 = new_builder("foo", [], ["bar", "baz"],
+                                 [], true, true, blobstore)
     blobstore.should_receive(:create)
     final_builder2.build
 
     add_templates("foo", "bzz")
-    final_builder3 = new_builder("foo", [], ["bar", "baz", "bzz"], [], true, true, blobstore)
+    final_builder3 = new_builder("foo", [], ["bar", "baz", "bzz"],
+                                 [], true, true, blobstore)
 
     lambda {
       final_builder3.build
@@ -351,7 +400,8 @@ describe Bosh::Cli::JobBuilder do
     add_monit("foo")
 
     blobstore = mock("blobstore")
-    builder = new_builder("foo", [], ["foo/bar", "bar/baz"], [], true, false, blobstore)
+    builder = new_builder("foo", [], ["foo/bar", "bar/baz"],
+                          [], true, false, blobstore)
     builder.build
 
     Dir.chdir(builder.build_dir) do
@@ -371,19 +421,23 @@ describe Bosh::Cli::JobBuilder do
     builder.build
 
     builder.version.should == "0.1-dev"
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_false
 
     builder.dry_run = false
     builder.reload.build
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_true
 
     blobstore = mock("blobstore")
     blobstore.should_not_receive(:create)
-    final_builder = new_builder("foo", [], ["bar", "baz"], [], true, true, blobstore)
+    final_builder = new_builder("foo", [], ["bar", "baz"], [],
+                                true, true, blobstore)
     final_builder.dry_run = true
     final_builder.build
 
-    final_builder.version.should == "0.1-dev" # As it shouldn't be promoted during dry run
+    # Shouldn't be promoted during dry run:
+    final_builder.version.should == "0.1-dev"
     File.exists?(@release_dir + "/.final_builds/jobs/foo/1.tgz").should be_false
 
     add_templates("foo", "bzz")
@@ -391,8 +445,10 @@ describe Bosh::Cli::JobBuilder do
     builder2.dry_run = true
     builder2.build
     builder2.version.should == "0.2-dev"
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").should be_true
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").should be_false
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.1-dev.tgz").
+        should be_true
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/0.2-dev.tgz").
+        should be_false
   end
 
 end

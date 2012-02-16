@@ -6,7 +6,8 @@ describe Bosh::Cli::Stemcell do
 
   describe "verifying a stemcell" do
     it "verifies and reports a valid stemcell" do
-      sc = Bosh::Cli::Stemcell.new(spec_asset("valid_stemcell.tgz"), Bosh::Cli::Cache.new(Dir.mktmpdir))
+      sc = Bosh::Cli::Stemcell.new(spec_asset("valid_stemcell.tgz"),
+                                   Bosh::Cli::Cache.new(Dir.mktmpdir))
       sc.should be_valid
     end    
   end

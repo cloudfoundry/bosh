@@ -6,14 +6,16 @@ module Bosh::Cli
       BLOBS_DIR = "blobs"
       BLOBS_INDEX_FILE = "blob_index.yml"
 
-      attr_reader   :cache, :config, :options, :work_dir
+      attr_reader :cache, :config, :options, :work_dir
       attr_accessor :out, :usage
 
       def initialize(options = {})
-        @options     = options.dup
-        @work_dir    = Dir.pwd
-        @config      = Config.new(@options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH)
-        @cache       = Cache.new(@options[:cache_dir] || Bosh::Cli::DEFAULT_CACHE_DIR)
+        @options = options.dup
+        @work_dir = Dir.pwd
+        config_file = @options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
+        cache_dir = @options[:cache_dir] || Bosh::Cli::DEFAULT_CACHE_DIR
+        @config = Config.new(config_file)
+        @cache = Cache.new(cache_dir)
       end
 
       def director
@@ -52,7 +54,7 @@ module Bosh::Cli
       end
 
       def show_usage
-        say "Usage: #{@usage}" if @usage
+        say("Usage: #{@usage}") if @usage
       end
 
       def run(namespace, action, *args)
@@ -65,7 +67,8 @@ module Bosh::Cli
       end
 
       def confirmed?(question = "Are you sure?")
-        non_interactive? || ask("#{question} (type 'yes' to continue): ") == "yes"
+        non_interactive? ||
+            ask("#{question} (type 'yes' to continue): ") == "yes"
       end
 
       [:username, :password, :target, :deployment].each do |attr_name|
@@ -85,7 +88,9 @@ module Bosh::Cli
       end
 
       def full_target_name
-        ret = (target_name.blank? || target_name == target_url ? target_name : "%s (%s)" % [ target_name, target_url])
+        # TODO refactor this method
+        ret = (target_name.blank? || target_name == target_url ?
+            target_name : "%s (%s)" % [ target_name, target_url])
         ret + " %s" % target_version if ret
       end
 
@@ -121,20 +126,24 @@ module Bosh::Cli
       end
 
       def check_if_release_dir
-        if !in_release_dir?
-          err "Sorry, your current directory doesn't look like release directory"
+        unless in_release_dir?
+          err("Sorry, your current directory doesn't look " +
+              "like release directory")
         end
       end
 
       def check_if_dirty_state
         if dirty_state?
-          say "\n%s\n" % [ `git status` ]
-          err "Your current directory has some local modifications, please discard or commit them first"
+          say("\n%s\n" % [ `git status` ])
+          err("Your current directory has some local modifications, " +
+              "please discard or commit them first")
         end
       end
 
       def in_release_dir?
-        File.directory?("packages") && File.directory?("jobs") && File.directory?("src")
+        File.directory?("packages") &&
+            File.directory?("jobs") &&
+            File.directory?("src")
       end
 
       def dirty_state?
@@ -150,18 +159,19 @@ module Bosh::Cli
 
       def check_if_blobs_supported
         check_if_release_dir
-        if !File.directory?(BLOBS_DIR)
-          err "Can't find blob directory '#{BLOBS_DIR}'."
+        unless File.directory?(BLOBS_DIR)
+          err("Can't find blob directory '#{BLOBS_DIR}'.")
         end
 
-        if !File.file?(BLOBS_INDEX_FILE)
-          err "Can't find '#{BLOBS_INDEX_FILE}'"
+        unless File.file?(BLOBS_INDEX_FILE)
+          err("Can't find '#{BLOBS_INDEX_FILE}'")
         end
       end
 
       def check_dirty_blobs
         if File.file?(File.join(work_dir, BLOBS_INDEX_FILE)) && blob_status != 0
-          err "Your 'blobs' directory is not in sync. Resolve using 'bosh blobs' commands"
+          err("Your 'blobs' directory is not in sync. " +
+                  "Resolve using 'bosh sync blobs' command")
         end
       end
 
@@ -202,22 +212,22 @@ module Bosh::Cli
         return changes unless verbose
 
         if modified.size > 0
-          say "\nModified blobs ('bosh upload blob' to update): ".green
-          modified.each { |blob| say blob }
+          say("\nModified blobs ('bosh upload blob' to update): ".green)
+          modified.each { |blob| say(blob) }
         end
 
         if untracked.size > 0
-          say "\nNew blobs ('bosh upload blob' to add): ".green
-          untracked.each { |blob| say blob }
+          say("\nNew blobs ('bosh upload blob' to add): ".green)
+          untracked.each { |blob| say(blob) }
         end
 
         if unsynced.size > 0
-          say "\nMissing blobs ('bosh sync blobs' to fetch) : ".green
-          unsynced.each { |blob| say blob }
+          say("\nMissing blobs ('bosh sync blobs' to fetch) : ".green)
+          unsynced.each { |blob| say(blob) }
         end
 
         if changes == 0
-          say "\nRelease blobs are up to date".green
+          say("\nRelease blobs are up to date".green)
         end
         changes
       end

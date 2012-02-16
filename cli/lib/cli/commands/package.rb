@@ -27,7 +27,8 @@ module Bosh::Cli::Command
       print_spec(spec)
       header("Building package...")
 
-      builder = Bosh::Cli::PackageBuilder.new(spec, work_dir, false, release.blobstore)
+      builder = Bosh::Cli::PackageBuilder.new(spec, work_dir,
+                                              false, release.blobstore)
       builder.build
       builder
     end
@@ -35,43 +36,43 @@ module Bosh::Cli::Command
     def generate(name)
       check_if_release_dir
 
-      if !name.bosh_valid_id?
-        err "`#{name}' is not a vaild Bosh id"
+      unless name.bosh_valid_id?
+        err("`#{name}' is not a vaild Bosh id")
       end
 
       package_dir = File.join("packages", name)
 
       if File.exists?(package_dir)
-        err "Package `#{name}' already exists, please pick another name"
+        err("Package `#{name}' already exists, please pick another name")
       end
 
-      say "create\t#{package_dir}"
+      say("create\t#{package_dir}")
       FileUtils.mkdir_p(package_dir)
 
       packaging_file = File.join(package_dir, "packaging")
-      say "create\t#{packaging_file}"
+      say("create\t#{packaging_file}")
       FileUtils.touch(packaging_file)
 
       spec_file = File.join(package_dir, "spec")
-      say "create\t#{spec_file}"
+      say("create\t#{spec_file}")
       FileUtils.touch(spec_file)
 
       pre_packaging_file = File.join(package_dir, "pre_packaging")
-      say "create\t#{pre_packaging_file}"
+      say("create\t#{pre_packaging_file}")
       FileUtils.touch(pre_packaging_file)
 
       File.open(spec_file, "w") do |f|
         f.write("---\nname: #{name}\n\ndependencies:\n\nfiles:\n")
       end
 
-      say "\nGenerated skeleton for `#{name}' package in `#{package_dir}'"
+      say("\nGenerated skeleton for `#{name}' package in `#{package_dir}'")
     end
 
     private
 
     def print_spec(spec)
-      say "Package name: %s" % [ spec["name"] ]
-      say "Files:"
+      say("Package name: #{spec["name"]}")
+      say("Files:")
       for file in spec["files"]
         say("  - #{file}")
       end
