@@ -16,7 +16,7 @@ module Bosh::Cli::Command
       for_agent = args.delete("--agent")
 
       if for_job && for_agent
-        err "Please specify which logs you want, job or agent"
+        err("Please specify which logs you want, job or agent")
       elsif for_agent
         log_type = "agent"
       else # default log type is 'job'
@@ -27,7 +27,7 @@ module Bosh::Cli::Command
         pos = args.index("--only")
         filters = args[pos+1]
         if filters.nil?
-          err "Please provide a list of filters separated by comma"
+          err("Please provide a list of filters separated by comma")
         end
         args.delete("--only")
         args.delete(filters)
@@ -37,36 +37,39 @@ module Bosh::Cli::Command
       end
 
       if for_agent && !filters.nil? && filters != "all"
-        err "Custom filtering is not supported for agent logs"
+        err("Custom filtering is not supported for agent logs")
       end
 
       if index !~ /^\d+$/
-        err "Job index is expected to be a positive integer"
+        err("Job index is expected to be a positive integer")
       end
 
       if args.size > 0
-        err "Unknown arguments: #{args.join(", ")}"
+        err("Unknown arguments: #{args.join(", ")}")
       end
 
       manifest = prepare_deployment_manifest
 
-      resource_id = director.fetch_logs(manifest["name"], job, index, log_type, filters)
+      resource_id = director.fetch_logs(manifest["name"], job, index,
+                                        log_type, filters)
 
       if resource_id.nil?
-        err "Error retrieving logs"
+        err("Error retrieving logs")
       end
 
       nl
-      say "Downloading log bundle (#{resource_id.to_s.green})..."
+      say("Downloading log bundle (#{resource_id.to_s.green})...")
 
       begin
-        log_file = File.join(Dir.pwd, "#{job}.#{index}.#{Time.now.strftime("%Y-%m-%d@%H-%M-%S")}.tgz")
+        time = Time.now.strftime("%Y-%m-%d@%H-%M-%S")
+        log_file = File.join(Dir.pwd, "#{job}.#{index}.#{time}.tgz")
+
         tmp_file = director.download_resource(resource_id)
 
         FileUtils.mv(tmp_file, log_file)
-        say "Logs saved in `#{log_file.green}'"
+        say("Logs saved in `#{log_file.green}'")
       rescue Bosh::Cli::DirectorError => e
-        err "Unable to download logs from director: #{e}"
+        err("Unable to download logs from director: #{e}")
       ensure
         FileUtils.rm_rf(tmp_file) if File.exists?(tmp_file)
       end

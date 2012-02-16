@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli
-
   class PackageBuilder
     include PackagingHelper
 
@@ -13,17 +12,18 @@ module Bosh::Cli
     # final build tarballs should be ignored as well
     # final builds metadata should be checked in
 
-    def initialize(spec, release_dir, final, blobstore, sources_dir = nil, blobs_dir = nil)
+    def initialize(spec, release_dir, final, blobstore,
+        sources_dir = nil, blobs_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
-      @name          = spec["name"]
-      @globs         = spec["files"]
-      @dependencies  = spec["dependencies"].is_a?(Array) ? spec["dependencies"] : []
-      @release_dir   = release_dir
-      @sources_dir   = sources_dir || File.join(@release_dir, "src")
-      @blobs_dir     = blobs_dir || File.join(@release_dir, "blobs")
-      @final         = final
-      @blobstore     = blobstore
+      @name = spec["name"]
+      @globs = spec["files"]
+      @dependencies = Array(spec["dependencies"])
+      @release_dir = release_dir
+      @sources_dir = sources_dir || File.join(@release_dir, "src")
+      @blobs_dir = blobs_dir || File.join(@release_dir, "blobs")
+      @final = final
+      @blobstore = blobstore
       @artefact_type = "package"
 
       @metadata_files = %w(packaging pre_packaging)
@@ -40,8 +40,10 @@ module Bosh::Cli
         raise InvalidPackage, "Package '#{@name}' doesn't include any files"
       end
 
-      @dev_builds_dir = File.join(@release_dir, ".dev_builds", "packages", @name)
-      @final_builds_dir = File.join(@release_dir, ".final_builds", "packages", @name)
+      @dev_builds_dir = File.join(@release_dir, ".dev_builds",
+                                  "packages", @name)
+      @final_builds_dir = File.join(@release_dir, ".final_builds",
+                                    "packages", @name)
 
       FileUtils.mkdir_p(package_dir)
       FileUtils.mkdir_p(@dev_builds_dir)
@@ -108,7 +110,8 @@ module Bosh::Cli
           destination = File.join(build_dir, filename)
           next unless File.exists?(filename)
           if File.exists?(destination)
-            raise InvalidPackage, "Package '#{name}' has '#{filename}' file which conflicts with BOSH packaging"
+            raise InvalidPackage, "Package '#{name}' has '#{filename}' file " +
+                "which conflicts with BOSH packaging"
           end
           FileUtils.cp(filename, destination, :preserve => true)
           copied += 1
@@ -136,9 +139,11 @@ module Bosh::Cli
           in_build_dir do
             pre_packaging_out = `bash -x pre_packaging 2>&1`
             pre_packaging_out.split("\n").each do |line|
-              say "> #{line}"
+              say("> #{line}")
             end
-            raise InvalidPackage, "`#{name}' pre-packaging failed" unless $?.exitstatus == 0
+            unless $?.exitstatus == 0
+              raise InvalidPackage, "`#{name}' pre-packaging failed"
+            end
           end
 
         ensure
@@ -156,7 +161,9 @@ module Bosh::Cli
       file_path = File.join(@sources_dir, file)
       if !File.exists?(file_path)
         file_path = File.join(@blobs_dir, file)
-        raise InvalidPackage, "#{file} cannot be found" if !File.exists?(file_path)
+        unless File.exists?(file_path)
+          raise InvalidPackage, "#{file} cannot be found"
+        end
       end
       file_path
     end
@@ -168,7 +175,8 @@ module Bosh::Cli
         path = get_file_path(file)
 
         # TODO change fingerprint to use file checksum, not the raw contents
-        "%s%s%s" % [ file, File.directory?(path) ? nil : File.read(path), tracked_permissions(path) ]
+        "%s%s%s" % [ file, File.directory?(path) ? nil : File.read(path),
+                     tracked_permissions(path) ]
       end
       contents << signatures.join("")
 
@@ -193,15 +201,20 @@ module Bosh::Cli
         matching_blob = []
 
         in_sources_dir do
-          matching_source = Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
+          matching_source = Dir.glob(glob, File::FNM_DOTMATCH).reject do |fn|
+            [".", ".."].include?(File.basename(fn))
+          end
         end
 
         in_blobs_dir do
-          matching_blob = Dir.glob(glob, File::FNM_DOTMATCH).reject { |fn| [".", ".."].include?(File.basename(fn)) }
+          matching_blob = Dir.glob(glob, File::FNM_DOTMATCH).reject do |fn|
+            [".", ".."].include?(File.basename(fn))
+          end
         end
 
         if matching_blob.size == 0 && matching_source.size ==0
-          raise InvalidPackage, "`#{name}' has a glob that resolves to an empty file list: #{glob}"
+          raise InvalidPackage, "`#{name}' has a glob that " +
+              "resolves to an empty file list: #{glob}"
         end
 
         blob_list << matching_blob

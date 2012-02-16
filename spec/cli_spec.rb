@@ -58,12 +58,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it "doesn't let user use deployment with target anymore (needs uuid)" do
     deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
 
-    expect_output("deployment vmforce", <<-OUT)
-      Please upgrade your deployment manifest to use director UUID instead of target
-      Just replace 'target' key with 'director_uuid' key in your manifest.
-      You can get your director UUID by targeting your director with 'bosh target'
-      and running 'bosh status' command afterwards.
-    OUT
+    out = run_bosh("deployment vmforce")
+    out.should =~ rx("Please upgrade your deployment manifest")
   end
 
   it "remembers deployment when switching targets" do

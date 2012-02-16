@@ -23,7 +23,8 @@ module Bosh
       end
 
       def output
-        body, new_offset = @director.get_task_output(@task_id, @offset, @log_type)
+        body, new_offset = @director.get_task_output(@task_id, @offset,
+                                                     @log_type)
 
         @buf << body if body
 

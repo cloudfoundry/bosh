@@ -35,15 +35,19 @@ describe Bosh::Cli::Command::Base do
       lambda {
         mock_director = mock(Object)
         mock_director.stub!(:get_status).and_raise(Bosh::Cli::DirectorError)
-        Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
+        Bosh::Cli::Director.should_receive(:new).
+            with("http://test").and_return(mock_director)
         @cmd.set_target("test")
-      }.should raise_error(Bosh::Cli::CliExit, "Cannot talk to director at 'http://test', please set correct target")
+      }.should raise_error(Bosh::Cli::CliExit,
+                           "Cannot talk to director at 'http://test', " +
+                           "please set correct target")
 
       @cmd.target.should == nil
 
       mock_director = mock(Object)
       mock_director.stub!(:get_status).and_return("name" => "ZB")
-      Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
+      Bosh::Cli::Director.should_receive(:new).
+          with("http://test").and_return(mock_director)
       @cmd.set_target("test")
       @cmd.target.should == "http://test"
     end
@@ -80,13 +84,16 @@ describe Bosh::Cli::Command::Base do
       @cmd.options[:director_checks] = true
 
       mock_director = mock(Object)
-      mock_director.stub(:get_status).and_return({ "user" => "user", "name" => "ZB" })
+      mock_director.stub(:get_status).
+          and_return({ "user" => "user", "name" => "ZB" })
       mock_director.stub(:authenticated?).and_return(true)
 
-      Bosh::Cli::Director.should_receive(:new).with("http://test").and_return(mock_director)
+      Bosh::Cli::Director.should_receive(:new).
+          with("http://test").and_return(mock_director)
       @cmd.set_target("test")
 
-      Bosh::Cli::Director.should_receive(:new).with("http://test", "user", "pass").and_return(mock_director)
+      Bosh::Cli::Director.should_receive(:new).
+          with("http://test", "user", "pass").and_return(mock_director)
 
       @cmd.login("user", "pass")
       @cmd.logged_in?.should be_true
@@ -132,7 +139,8 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the deployment" do
       mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_deployment).with("foo", :force => false)
+      mock_director.should_receive(:delete_deployment).
+          with("foo", :force => false)
 
       @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:target).and_return("test")
@@ -165,7 +173,8 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the release (non-force)" do
       mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).with("foo", :force => false, :version => nil)
+      mock_director.should_receive(:delete_release).
+          with("foo", :force => false, :version => nil)
 
       @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:director).and_return(mock_director)
@@ -174,7 +183,8 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the release (non-force)" do
       mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).with("foo", :force => true, :version => nil)
+      mock_director.should_receive(:delete_release).
+          with("foo", :force => true, :version => nil)
 
       @cmd.stub!(:ask).and_return("yes")
       @cmd.stub!(:director).and_return(mock_director)
@@ -183,7 +193,8 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting a particular release version (non-force)" do
       mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).with("foo", :force => false, :version => "42")
+      mock_director.should_receive(:delete_release).
+          with("foo", :force => false, :version => "42")
 
       @cmd.stub!(:ask).and_return("yes")
       @cmd.stub!(:director).and_return(mock_director)
@@ -192,7 +203,8 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting a particular release version (non-force)" do
       mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).with("foo", :force => true, :version => "42")
+      mock_director.should_receive(:delete_release).
+          with("foo", :force => true, :version => "42")
 
       @cmd.stub!(:ask).and_return("yes")
       @cmd.stub!(:director).and_return(mock_director)
@@ -214,7 +226,8 @@ describe Bosh::Cli::Command::Base do
       @manifest_path = spec_asset("deployment.MF")
       @manifest_yaml = YAML.dump({ "name" => "foo" })
       @cmd = Bosh::Cli::Command::JobManagement.new(@opts)
-      @cmd.stub!(:prepare_deployment_manifest).with(:yaml => true).and_return(@manifest_yaml)
+      @cmd.stub!(:prepare_deployment_manifest).
+          with(:yaml => true).and_return(@manifest_yaml)
       @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:deployment).and_return(@manifest_path)
       @cmd.stub!(:target).and_return("test.com")
@@ -226,52 +239,62 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "allows starting jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "started")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", nil, "started")
       @cmd.start_job("dea")
     end
 
     it "allows starting job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "started")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", 3, "started")
       @cmd.start_job("dea", 3)
     end
 
     it "allows stopping jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "stopped")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", nil, "stopped")
       @cmd.stop_job("dea")
     end
 
     it "allows stopping job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "stopped")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.stop_job("dea", 3)
     end
 
     it "allows restarting jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "restart")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", nil, "restart")
       @cmd.restart_job("dea")
     end
 
     it "allows restart job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "restart")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", 3, "restart")
       @cmd.restart_job("dea", 3)
     end
 
     it "allows recreating jobs" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", nil, "recreate")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", nil, "recreate")
       @cmd.recreate_job("dea")
     end
 
     it "allows recreating job instances" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "recreate")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", 3, "recreate")
       @cmd.recreate_job("dea", 3)
     end
 
     it "allows hard stop" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "detached")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", 3, "detached")
       @cmd.stop_job("dea", 3, "--hard")
     end
 
     it "allows soft stop (= regular stop)" do
-      @director.should_receive(:change_job_state).with("foo", @manifest_yaml, "dea", 3, "stopped")
+      @director.should_receive(:change_job_state).
+          with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.stop_job("dea", 3, "--soft")
     end
 
@@ -295,18 +318,24 @@ describe Bosh::Cli::Command::Base do
     it "refuse to run outside of the release directory" do
       lambda {
         @cmd.upload_blob("foo")
-      }.should raise_error(Bosh::Cli::CliExit, "Sorry, your current directory doesn't look like release directory".red)
+      }.should raise_error(Bosh::Cli::CliExit,
+                           "Sorry, your current directory doesn't " +
+                           "look like release directory".red)
 
       lambda {
         @cmd.sync_blobs
-      }.should raise_error(Bosh::Cli::CliExit, "Sorry, your current directory doesn't look like release directory".red)
+      }.should raise_error(Bosh::Cli::CliExit,
+                           "Sorry, your current directory doesn't " +
+                           "look like release directory".red)
 
       lambda {
         @cmd.blobs_info
-      }.should raise_error(Bosh::Cli::CliExit, "Sorry, your current directory doesn't look like release directory".red)
+      }.should raise_error(Bosh::Cli::CliExit,
+                           "Sorry, your current directory doesn't " +
+                           "look like release directory".red)
     end
 
-    it "refuse to upload blob ouside of release/blobs" do
+    it "refuse to upload blob outside of release/blobs" do
       Dir.chdir(@release_dir) do
         FileUtils.touch("test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
@@ -314,7 +343,9 @@ describe Bosh::Cli::Command::Base do
         blobs_dir = Pathname.new(@blob_dir).realpath.to_s
         lambda {
           @cmd.upload_blob("test.tgz")
-        }.should raise_error(Bosh::Cli::CliExit, "#{File.join(blob_path, "test.tgz")} is NOT under #{blobs_dir}/")
+        }.should raise_error(Bosh::Cli::CliExit,
+                             "#{File.join(blob_path, "test.tgz")} is " +
+                             "NOT under #{blobs_dir}/")
       end
     end
 
@@ -326,9 +357,12 @@ describe Bosh::Cli::Command::Base do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         @blobstore.should_receive(:create).and_return(2)
         @cmd.upload_blob("./blobs/test/test.tgz")
-        expected_content = YAML.dump('test/test.tgz' => {'object_id' => 2,
-                                     'sha' => Digest::SHA1.file(blob.first).hexdigest}).gsub(" \n", "\n")
-        File.read("blob_index.yml").should == expected_content
+        YAML.load_file("blob_index.yml").should == {
+          "test/test.tgz" => {
+            "object_id" => 2,
+            "sha" => Digest::SHA1.file(blob.first).hexdigest
+          }
+        }
       end
     end
 
@@ -337,8 +371,10 @@ describe Bosh::Cli::Command::Base do
         FileUtils.mkdir("./blobs/test")
         blob = FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {'sha' => Digest::SHA1.file(blob.first).hexdigest,
-                                                                              'object_id' => 2})
+        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
+          "sha" => Digest::SHA1.file(blob.first).hexdigest,
+          "object_id" => 2
+        })
         @blobstore.should_not_receive(:create)
         @cmd.upload_blob("./blobs/test/test.tgz")
       end
@@ -349,8 +385,10 @@ describe Bosh::Cli::Command::Base do
         FileUtils.mkdir("./blobs/test")
         blob = FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {'sha' => 1,
-                                                                              'object_id' => 2})
+        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
+          "sha" => 1,
+          "object_id" => 2
+        })
         @cmd.should_receive(:ask).and_return("no")
         @blobstore.should_not_receive(:create)
         @cmd.upload_blob("./blobs/test/test.tgz")
@@ -360,10 +398,13 @@ describe Bosh::Cli::Command::Base do
     it "should sync if file is not present" do
       Dir.chdir(@release_dir) do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {'sha' => 1,
-                                                                              'object_id' => 2})
-        @cmd.should_receive(:fetch_blob).with(File.join(@release_dir, "blobs", "test/test.tgz"),
-                                              {'sha' => 1, 'object_id' => 2})
+        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
+          "sha" => 1,
+          "object_id" => 2
+        })
+        @cmd.should_receive(:fetch_blob).
+            with(File.join(@release_dir, "blobs", "test/test.tgz"),
+                 {"sha" => 1, "object_id" => 2})
         @cmd.sync_blobs
       end
     end
@@ -373,8 +414,10 @@ describe Bosh::Cli::Command::Base do
         FileUtils.mkdir("./blobs/test")
         blob = FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {'sha' => Digest::SHA1.file(blob.first).hexdigest,
-                                                                              'object_id' => 2})
+        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
+          "sha" => Digest::SHA1.file(blob.first).hexdigest,
+          "object_id" => 2
+        })
         @cmd.should_not_receive(:fetch_blob)
         @cmd.sync_blobs
       end
@@ -385,8 +428,10 @@ describe Bosh::Cli::Command::Base do
         FileUtils.mkdir("./blobs/test")
         blob = FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {'sha' => 1,
-                                                                              'object_id' => 2})
+        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
+          "sha" => 1,
+          "object_id" => 2
+        })
         @cmd.should_receive(:ask).and_return("")
         @cmd.should_not_receive(:fetch_blob)
         @cmd.sync_blobs
@@ -399,7 +444,8 @@ describe Bosh::Cli::Command::Base do
         FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         @cmd.should_receive(:get_blobs_index).and_return({})
-        @cmd.should_receive(:say).with("\nNew blobs ('bosh upload blob' to add): ".green)
+        @cmd.should_receive(:say).
+            with("\nNew blobs ('bosh upload blob' to add): ".green)
         @cmd.should_receive(:say).with("test/test.tgz")
         @cmd.blobs_info
       end
@@ -410,8 +456,10 @@ describe Bosh::Cli::Command::Base do
         FileUtils.mkdir("./blobs/test")
         FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
-        @cmd.should_receive(:say).with("\nModified blobs ('bosh upload blob' to update): ".green)
+        @cmd.should_receive(:get_blobs_index).
+            and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
+        @cmd.should_receive(:say).
+            with("\nModified blobs ('bosh upload blob' to update): ".green)
         @cmd.should_receive(:say).with("test/test.tgz")
         @cmd.blobs_info
       end
@@ -420,8 +468,10 @@ describe Bosh::Cli::Command::Base do
     it "reports unsynced blobs" do
       Dir.chdir(@release_dir) do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
-        @cmd.should_receive(:say).with("\nMissing blobs ('bosh sync blobs' to fetch) : ".green)
+        @cmd.should_receive(:get_blobs_index).
+            and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
+        @cmd.should_receive(:say).
+            with("\nMissing blobs ('bosh sync blobs' to fetch) : ".green)
         @cmd.should_receive(:say).with("test/test.tgz")
         @cmd.blobs_info
       end
