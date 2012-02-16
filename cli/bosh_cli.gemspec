@@ -25,4 +25,5 @@ Gem::Specification.new do |s|
   s.add_dependency "net-ssh", "~>2.2.1"
   s.add_dependency "net-ssh-gateway", "~>1.1.0"
   s.add_dependency "net-scp", "~>1.0.4"
+  s.add_dependency "bosh_common", "~>0.5.0"
 end

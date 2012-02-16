@@ -2,6 +2,7 @@ module Bosh::Cli
 
   # Compiles release tarball based on manifest
   class ReleaseCompiler
+    include Bosh::Exec
 
     attr_writer :tarball_path
 
@@ -71,8 +72,8 @@ module Bosh::Cli
 
       header "Building tarball"
       Dir.chdir(@build_dir) do
-        tar_out = `tar -czf #{tarball_path} . 2>&1`
-        raise InvalidRelease, "Cannot create release tarball: #{tar_out}" unless $?.exitstatus == 0
+        result = sh("tar -czf #{tarball_path} . 2>&1")
+        raise InvalidRelease, "Cannot create release tarball: #{result.stdout}" if result.failed?
         say "Generated #{tarball_path.green}"
         say("Release size: #{pretty_size(tarball_path).green}")
       end

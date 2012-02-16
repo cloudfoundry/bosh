@@ -2,6 +2,7 @@ module Bosh::Cli
 
   class PackageBuilder
     include PackagingHelper
+    include Bosh::Exec
 
     attr_reader :name, :globs, :version, :dependencies, :tarball_path
     # We have two ways of getting/storing a package:
@@ -132,13 +133,14 @@ module Bosh::Cli
           ENV["BUILD_DIR"] = build_dir
 
           in_build_dir do
-            pre_packaging_out = `bash -x pre_packaging 2>&1`
-            pre_packaging_out.split("\n").each do |line|
+            result = sh("bash -x pre_packaging 2>&1", true)
+            result.stdout.split("\n").each do |line|
               say "> #{line}"
             end
-            raise InvalidPackage, "`#{name}' pre-packaging failed" unless $?.exitstatus == 0
           end
 
+        rescue Bosh::Exec::Error
+          raise InvalidPackage, "`#{name}' pre-packaging failed"
         ensure
           ENV.delete("BUILD_DIR")
           old_env.each { |k, v| ENV[k] = old_env[k] }

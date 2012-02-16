@@ -4,6 +4,7 @@ module Bosh
     class ReleaseTarball
       include Validation
       include DependencyHelper
+      include Bosh::Exec
 
       attr_reader :release_name, :jobs, :packages, :version
       attr_reader :skipped # Mostly for tests
@@ -18,8 +19,8 @@ module Bosh
       # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
       def unpack
         return @unpacked unless @unpacked.nil?
-        `tar -C #{@unpack_dir} -xzf #{@tarball_path} 2>&1`
-        @unpacked = $?.exitstatus == 0
+        result = sh("tar -C #{@unpack_dir} -xzf #{@tarball_path}")
+        @unpacked = result.ok?
       end
 
       def exists?
@@ -70,8 +71,8 @@ module Bosh
           end
 
           return nil if @skipped == 0
-          `tar -czf #{repacked_path} . 2>&1`
-          return repacked_path if $? == 0
+          result = sh("tar -czf #{repacked_path} .")
+          return repacked_path unless result.failed?
         end
       end
 
@@ -169,8 +170,8 @@ module Bosh
 
             job_tmp_dir = Dir.mktmpdir
             FileUtils.mkdir_p(job_tmp_dir)
-            `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
-            job_extracted = $?.exitstatus == 0
+            result = sh("tar -C #{job_tmp_dir} -xzf #{job_file}")
+            job_extracted = result.ok?
 
             step("Extract job '#{name}'", "Cannot extract job '#{name}'") do
               job_extracted
