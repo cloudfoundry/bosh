@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli
-
   module DependencyHelper
 
     # Expects package dependency graph
@@ -9,18 +8,19 @@ module Bosh::Cli
     def tsort_packages(map)
       resolved = Set.new
       in_degree = { }
-      graph     = { }
+      graph = { }
 
       map.each_pair do |package, dependencies|
-        graph[package]     ||= Set.new
-        in_degree[package]   = dependencies.size
+        graph[package] ||= Set.new
+        in_degree[package] = dependencies.size
 
         resolved << package if in_degree[package] == 0
 
         # Reverse edges to avoid dfs
         dependencies.each do |dependency|
           unless map.has_key?(dependency)
-            raise MissingDependency, "Package '%s' depends on missing package '%s'" % [ package, dependency ]
+            raise MissingDependency, ("Package '%s' depends on " +
+                "missing package '%s'") % [ package, dependency ]
           end
 
           graph[dependency] ||= Set.new
@@ -43,11 +43,13 @@ module Bosh::Cli
         graph[p].clear
       end
 
-      # each_pair gives different (correct) results in 1.8 in 1.9, stabilizing for tests
+      # each_pair gives different (correct) results in 1.8 in 1.9,
+      # stabilizing for tests
       graph.keys.sort.each do |v|
         e = graph[v]
         unless e.empty?
-          raise CircularDependency, "Cannot resolve dependencies for '%s': circular dependency with '%s'" % [ v, e.first ]
+          raise CircularDependency, ("Cannot resolve dependencies for '%s': " +
+              "circular dependency with '%s'") % [ v, e.first ]
         end
       end
 

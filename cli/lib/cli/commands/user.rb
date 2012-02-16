@@ -8,17 +8,19 @@ module Bosh::Cli::Command
 
       unless options[:non_interactive]
         username = ask("Enter username: ") if username.blank?
-        password = ask("Enter password: ") { |q| q.echo = "*" } if password.blank?
+        if password.blank?
+          password = ask("Enter password: ") { |q| q.echo = "*" }
+        end
       end
 
       if username.blank? || password.blank?
-        err "Please enter username and password"
+        err("Please enter username and password")
       end
 
       if director.create_user(username, password)
-        say "User #{username} has been created"
+        say("User #{username} has been created")
       else
-        say "Error creating user"
+        say("Error creating user")
       end
     end
 

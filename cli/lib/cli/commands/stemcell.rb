@@ -30,7 +30,7 @@ module Bosh::Cli::Command
       stemcell.validate
       say("\n")
 
-      if !stemcell.valid?
+      unless stemcell.valid?
         err("Stemcell is invalid, please fix, verify and upload again")
       end
 
@@ -43,9 +43,10 @@ module Bosh::Cli::Command
       end
 
       if existing.empty?
-        say "No"
+        say("No")
       else
-        err "Stemcell \"#{name}\":\"#{version}\" already exists, increment the version if it has changed"
+        err("Stemcell \"#{name}\":\"#{version}\" already exists, " +
+            "increment the version if it has changed")
       end
 
       say("\nUploading stemcell...\n")
@@ -53,19 +54,24 @@ module Bosh::Cli::Command
       status, message = director.upload_stemcell(stemcell.stemcell_file)
 
       responses = {
-        :done          => "Stemcell uploaded and created",
-        :non_trackable => "Uploaded stemcell but director at '#{target}' doesn't support creation tracking",
-        :track_timeout => "Uploaded stemcell but timed out out while tracking status",
-        :error         => "Uploaded stemcell but received an error while tracking status",
+        :done => "Stemcell uploaded and created",
+        :non_trackable => "Uploaded stemcell but director at '#{target}' " +
+                          "doesn't support creation tracking",
+        :track_timeout => "Uploaded stemcell but timed out out " +
+                          "while tracking status",
+        :error => "Uploaded stemcell but received an error " +
+                  "while tracking status",
       }
 
-      say responses[status] || "Cannot upload stemcell: #{message}"
+      say(responses[status] || "Cannot upload stemcell: #{message}")
     end
 
     def list
       auth_required
       stemcells = director.list_stemcells.sort do |sc1, sc2|
-        sc1["name"] == sc2["name"] ? version_cmp(sc1["version"], sc2["version"]) : sc1["name"] <=> sc2["name"]
+        sc1["name"] == sc2["name"] ?
+            version_cmp(sc1["version"], sc2["version"]) :
+            sc1["name"] <=> sc2["name"]
       end
 
       err("No stemcells") if stemcells.size == 0
@@ -73,7 +79,7 @@ module Bosh::Cli::Command
       stemcells_table = table do |t|
         t.headings = "Name", "Version", "CID"
         stemcells.each do |sc|
-          t << [ sc["name"], sc["version"], sc["cid"] ]
+          t << [sc["name"], sc["version"], sc["cid"]]
         end
       end
 
@@ -86,23 +92,26 @@ module Bosh::Cli::Command
     def delete(name, version)
       auth_required
 
-      say "You are going to delete stemcell `#{name} (#{version})'".red
+      say("You are going to delete stemcell `#{name} (#{version})'".red)
 
       unless confirmed?
-        say "Canceled deleting stemcell".green
+        say("Canceled deleting stemcell".green)
         return
       end
 
       status, message = director.delete_stemcell(name, version)
 
       responses = {
-        :done          => "Deleted stemcell %s (%s)" % [ name, version ],
-        :non_trackable => "Stemcell delete in progress but director at '#{target}' doesn't support task tracking",
-        :track_timeout => "Timed out out while tracking stemcell deletion progress",
-        :error         => "Attempted to delete stemcell but received an error while tracking status",
+        :done => "Deleted stemcell %s (%s)" % [ name, version ],
+        :non_trackable => "Stemcell delete in progress but director " +
+                          "at '#{target}' doesn't support task tracking",
+        :track_timeout => "Timed out out while tracking " +
+                          "stemcell deletion progress",
+        :error => "Attempted to delete stemcell but received an error " +
+                  "while tracking status",
       }
 
-      say responses[status] || "Cannot delete stemcell: #{message}"
+      say(responses[status] || "Cannot delete stemcell: #{message}")
     end
   end
 end

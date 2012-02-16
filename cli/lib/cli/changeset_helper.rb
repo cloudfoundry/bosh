@@ -24,7 +24,10 @@ module Bosh::Cli
     end
 
     def add_hash(hash, as)
-      raise FormatError, "Trying to add #{hash.class} to a changeset, Hash expected" unless hash.is_a?(Hash)
+      unless hash.is_a?(Hash)
+        raise FormatError, "Trying to add #{hash.class} to a changeset, " +
+            "Hash expected"
+      end
 
       self.values[as] = hash
 
@@ -46,13 +49,14 @@ module Bosh::Cli
       @children.each_value { |v| yield v }
     end
 
-    def summary(lev = 0)
-      indent = "  " * lev
+    def summary(level = 0)
+      indent = "  " * level
       out = [ ]
 
       @children.each_pair do |k, v|
         if v.state == :mismatch
-          out << indent + "type mismatch in #{k}: ".red + "was #{v.old.class.to_s}, now #{v.new.class.to_s}"
+          out << indent + "type mismatch in #{k}: ".red + 
+              "was #{v.old.class.to_s}, now #{v.new.class.to_s}"
           out << diff(v.old, v.new, indent + "  ")
         elsif v.leaf?
           case v.state
@@ -66,7 +70,7 @@ module Bosh::Cli
           end
         else
           # TODO: track renames?
-          child_summary = v.summary(lev+1)
+          child_summary = v.summary(level+1)
 
           unless child_summary.empty?
             out << indent + k
@@ -77,12 +81,12 @@ module Bosh::Cli
       out
     end
 
-    def diff(oldval, newval, indent)
-      oldval  = [ oldval ] unless oldval.kind_of?(Array)
-      newval  = [ newval ] unless newval.kind_of?(Array)
+    def diff(old_value, new_value, indent)
+      old_value  = [ old_value ] unless old_value.kind_of?(Array)
+      new_value  = [ new_value ] unless new_value.kind_of?(Array)
 
-      added   = newval - oldval
-      removed = oldval - newval
+      added   = new_value - old_value
+      removed = old_value - new_value
 
       lines = []
 

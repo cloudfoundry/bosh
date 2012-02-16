@@ -28,9 +28,9 @@ require "timeout"
 require "tmpdir"
 require "uri"
 require "yaml"
-require 'net/ssh'
-require 'net/scp'
-require 'net/ssh/gateway'
+require "net/ssh"
+require "net/scp"
+require "net/ssh/gateway"
 
 require "cli/version"
 require "cli/config"
@@ -67,4 +67,6 @@ YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
 
 require File.expand_path(File.dirname(__FILE__) + "/cli/commands/base")
 
-Dir[File.dirname(__FILE__) + "/cli/commands/*.rb"].each { |r| require File.expand_path(r) }
+Dir[File.dirname(__FILE__) + "/cli/commands/*.rb"].each do |file|
+  require File.expand_path(file)
+end

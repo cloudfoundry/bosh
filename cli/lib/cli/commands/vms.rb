@@ -36,7 +36,8 @@ module Bosh::Cli::Command
 
         sorted.each do |vm|
           job = "#{vm["job_name"]}/#{vm["index"]}" if vm["job_name"]
-          row = [job, vm["job_state"], vm["resource_pool"], Array(vm["ips"]).join(", ")]
+          row = [job, vm["job_state"],
+                 vm["resource_pool"], Array(vm["ips"]).join(", ")]
           row += [vm["vm_cid"], vm["agent_id"]] if show_full_stats
           t << row
         end

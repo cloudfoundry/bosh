@@ -21,12 +21,12 @@ module Bosh::Cli::Command
             config.target_version = status["version"]
             config.target_uuid = status["uuid"]
             config.save
-            say "done".green
+            say("done".green)
           end
         rescue TimeoutError
-          say "timed out".red
+          say("timed out".red)
         rescue => e
-          say "error".red
+          say("error".red)
         end
         nl
       end
@@ -44,24 +44,32 @@ module Bosh::Cli::Command
       if in_release_dir?
         header("You are in release directory")
 
-        dev_name    = release.dev_name
-        dev_version = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "dev_releases")).latest_version
+        dev_name = release.dev_name
+        dev_version = Bosh::Cli::VersionsIndex.new(
+            File.join(work_dir, "dev_releases")).latest_version
 
-        final_name    = release.final_name
-        final_version = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "releases")).latest_version
+        final_name = release.final_name
+        final_version = Bosh::Cli::VersionsIndex.new(
+            File.join(work_dir, "releases")).latest_version
 
         say("Dev name:      %s" % [ dev_name ? dev_name.green : "not set".red ])
-        say("Dev version:   %s" % [ dev_version && dev_version > 0 ? dev_version.to_s.green : "no versions yet".red ])
+        say("Dev version:   %s" % [ dev_version && dev_version > 0 ?
+                                        dev_version.to_s.green : "
+                                        no versions yet".red ])
         say("\n")
-        say("Final name:    %s" % [ final_name ? final_name.green : "not set".red ])
-        say("Final version: %s" % [ final_version && final_version > 0 ? final_version.to_s.green : "no versions yet".red ])
+        say("Final name:    %s" % [ final_name ?
+                                        final_name.green :
+                                        "not set".red ])
+        say("Final version: %s" % [ final_version && final_version > 0 ?
+                                        final_version.to_s.green :
+                                        "no versions yet".red ])
 
         say("\n")
-        say "Packages"
+        say("Packages")
         print_specs("package", "packages")
 
         say("\n")
-        say "Jobs"
+        say("Jobs")
         print_specs("job", "jobs")
       end
     end
@@ -79,7 +87,9 @@ module Bosh::Cli::Command
         end
       end
 
-      err("Please provide username and password") if username.blank? || password.blank?
+      if username.blank? || password.blank?
+        err("Please provide username and password")
+      end
       logged_in = false
 
       if options[:director_checks]
@@ -90,7 +100,9 @@ module Bosh::Cli::Command
           logged_in = true
         else
           say("Cannot log in as '#{username}', please try again")
-          redirect(:misc, :login, username, nil) unless options[:non_interactive]
+          unless options[:non_interactive]
+            redirect(:misc, :login, username, nil)
+          end
         end
       end
 
@@ -109,7 +121,8 @@ module Bosh::Cli::Command
 
     def purge_cache
       if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
-        say("Cache directory '#{@cache.cache_dir}' differs from default, please remove manually")
+        say("Cache directory '#{@cache.cache_dir}' differs from default, " +
+            "please remove manually")
       else
         FileUtils.rm_rf(cache.cache_dir)
         say("Purged cache")
@@ -117,21 +130,24 @@ module Bosh::Cli::Command
     end
 
     def show_target
-      say(target ? "Current target is '#{full_target_name.green}'" : "Target not set")
+      say(target ?
+              "Current target is '#{full_target_name.green}'" :
+              "Target not set")
     end
 
     def set_target(director_url, name = nil)
       if name.nil?
-        director_url = config.resolve_alias(:target, director_url) || director_url
+        director_url = config.resolve_alias(:target, director_url) ||
+            director_url
       end
 
       if director_url.blank?
-        err "Target name cannot be blank"
+        err("Target name cannot be blank")
       end
 
       director_url = normalize_url(director_url)
       if director_url == target
-        say "Target already set to '#{full_target_name.green}'"
+        say("Target already set to '#{full_target_name.green}'")
         return
       end
 
@@ -143,7 +159,8 @@ module Bosh::Cli::Command
         rescue Bosh::Cli::AuthError
           status = {}
         rescue Bosh::Cli::DirectorError
-          err("Cannot talk to director at '#{director_url}', please set correct target")
+          err("Cannot talk to director at '#{director_url}', " +
+              "please set correct target")
         end
       else
         status = { "name" => "Unknown Director", "version" => "n/a" }
@@ -153,14 +170,20 @@ module Bosh::Cli::Command
       config.target_name = status["name"]
       config.target_version = status["version"]
       config.target_uuid = status["uuid"]
-      config.set_alias(:target, name, director_url) unless name.blank?
-      config.set_alias(:target, status["uuid"], director_url) unless status["uuid"].blank?
+
+      unless name.blank?
+        config.set_alias(:target, name, director_url)
+      end
+
+      unless status["uuid"].blank?
+        config.set_alias(:target, status["uuid"], director_url)
+      end
 
       config.save
       say("Target set to '#{full_target_name.green}'")
 
       if interactive? && (config.username.blank? || config.password.blank?)
-        redirect :misc, :login
+        redirect(:misc, :login)
       end
     end
 
@@ -173,11 +196,10 @@ module Bosh::Cli::Command
     private
 
     def print_specs(entity, dir)
-
       specs = Dir[File.join(work_dir, dir, "*", "spec")]
 
       if specs.empty?
-        say "No #{entity} specs found"
+        say("No #{entity} specs found")
       end
 
       t = table [ "Name", "Dev", "Final" ]
@@ -188,22 +210,26 @@ module Bosh::Cli::Command
           name = spec["name"]
 
           unless name.bosh_valid_id?
-            err "`#{name}' is an invalid #{entity} name, please fix before proceeding"
+            err("`#{name}' is an invalid #{entity} name, " +
+                "please fix before proceeding")
           end
 
           begin
-            dev_index   = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".dev_builds", dir, name))
-            final_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, ".final_builds", dir, name))
+            dev_index   = Bosh::Cli::VersionsIndex.new(
+                File.join(work_dir, ".dev_builds", dir, name))
+            final_index = Bosh::Cli::VersionsIndex.new(
+                File.join(work_dir, ".final_builds", dir, name))
 
             dev_version   = dev_index.latest_version || "n/a"
             final_version = final_index.latest_version || "n/a"
 
-            t << [ name, dev_version.gsub(/\-dev$/, "").rjust(8), final_version.to_s.rjust(8) ]
+            t << [name, dev_version.gsub(/\-dev$/, "").rjust(8),
+                  final_version.to_s.rjust(8)]
           rescue Bosh::Cli::InvalidIndex => e
-            say "Problem with #{entity} index for `%s': %s".red % [ name, e.message ]
+            say("Problem with #{entity} index for `#{name}': #{e.message}".red)
           end
         else
-          say "Spec file `#{spec_file}' is invalid"
+          say("Spec file `#{spec_file}' is invalid")
         end
       end
 

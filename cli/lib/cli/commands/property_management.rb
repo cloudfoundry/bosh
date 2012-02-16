@@ -12,13 +12,19 @@ module Bosh::Cli::Command
       existing_property = status == 200
 
       if existing_property
-        say "Current `#{name.green}' value is `#{format_property(body["value"]).green}'"
+        say("Current `#{name.green}' value is " +
+            "`#{format_property(body["value"]).green}'")
       else
-        say "This will be a new property"
+        say("This will be a new property")
       end
 
-      prompt = "Are you sure you want to set property `#{name.green}' to `#{format_property(value).green}'? (type yes to proceed): "
-      err "Canceled" if interactive? && ask(prompt) != "yes"
+      prompt = "Are you sure you want to set property" +
+          " `#{name.green}' to `#{format_property(value).green}'? " +
+          "(type yes to proceed): "
+
+      if interactive? && ask(prompt) != "yes"
+        err("Canceled")
+      end
 
       if existing_property
         status, body = director.update_property(@deployment_name, name, value)
@@ -27,9 +33,9 @@ module Bosh::Cli::Command
       end
 
       if status == 204
-        say "Property `#{name.green}' set to `#{value.green}'"
+        say("Property `#{name.green}' set to `#{value.green}'")
       else
-        err director.parse_error_message(status, body)
+        err(director.parse_error_message(status, body))
       end
     end
 
@@ -37,15 +43,19 @@ module Bosh::Cli::Command
       prepare
       show_header
 
-      prompt = "Are you sure you want to unset property `#{name.green}'? (type yes to proceed): "
-      err "Canceled" if interactive? && ask(prompt) != "yes"
+      prompt = "Are you sure you want to unset property " +
+          "`#{name.green}'? (type yes to proceed): "
+
+      if interactive? && ask(prompt) != "yes"
+        err("Canceled")
+      end
 
       status, body = director.delete_property(@deployment_name, name)
 
       if status == 204
-        say "Property `#{name.green}' has been unset"
+        say("Property `#{name.green}' has been unset")
       else
-        err director.parse_error_message(status, body)
+        err(director.parse_error_message(status, body))
       end
     end
 
@@ -55,9 +65,10 @@ module Bosh::Cli::Command
 
       status, body = director.get_property(@deployment_name, name)
       if status == 200
-        say "Property `#{name.green}' value is `#{format_property(body["value"]).green}'"
+        say("Property `#{name.green}' value is " +
+            "`#{format_property(body["value"]).green}'")
       else
-        err director.parse_error_message(status, body)
+        err(director.parse_error_message(status, body))
       end
     end
 
@@ -68,24 +79,26 @@ module Bosh::Cli::Command
 
       properties = director.list_properties(@deployment_name)
       unless properties.kind_of?(Enumerable)
-        err "Invalid properties format, please check your director"
+        err("Invalid properties format, please check your director")
       end
 
-      output = properties.sort { |a,b| a["name"] <=> b["name"] }.map do |property|
+      output = properties.sort do |a, b|
+        a["name"] <=> b["name"]
+      end.map do |property|
         [ property["name"], format_property(property["value"]) ]
       end
 
       if terse
-        output.each { |row| say "#{row[0]}\t#{row[1]}" }
+        output.each { |row| say("#{row[0]}\t#{row[1]}") }
       else
         if output.size > 0
           properties_table = table do |t|
             t.headings = [ "Name", "Value" ]
             output.each { |row| t << [ row[0], row[1].truncate(40) ] }
           end
-          say properties_table
+          say(properties_table)
         else
-          say "No properties found"
+          say("No properties found")
         end
       end
     end
@@ -99,8 +112,8 @@ module Bosh::Cli::Command
     end
 
     def show_header
-      say "Target #{target_name.green}"
-      say "Deployment #{@deployment_name.green}"
+      say("Target #{target_name.green}")
+      say("Deployment #{@deployment_name.green}")
       nl
     end
 

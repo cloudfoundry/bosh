@@ -16,7 +16,8 @@ describe Bosh::Cli::Command::Base do
   end
 
   def make_command(options = { })
-    Bosh::Cli::Command::Base.new({:config => @config, :cache_dir => @cache_dir}.merge(options))
+    Bosh::Cli::Command::Base.new({:config => @config,
+                                  :cache_dir => @cache_dir}.merge(options))
   end
 
   it "can access configuration and respects options" do
@@ -48,7 +49,8 @@ describe Bosh::Cli::Command::Base do
     cmd.run("misc", "status", :arg1, :arg2)
   end
 
-  it "can redirect to other commands (effectively exiting after running them)" do
+  it "can redirect to other commands " +
+     "(effectively exiting after running them)" do
     cmd     = make_command
     new_cmd = mock(Object)
 
@@ -57,7 +59,8 @@ describe Bosh::Cli::Command::Base do
 
     lambda {
       cmd.redirect("misc", "status", :arg1, :arg2)
-    }.should raise_error(Bosh::Cli::GracefulExit, "redirected to misc status arg1 arg2")
+    }.should raise_error(Bosh::Cli::GracefulExit,
+                         "redirected to misc status arg1 arg2")
   end
 
 end

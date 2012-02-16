@@ -26,7 +26,8 @@ module Bosh::Cli::Command
       manifest = YAML.load(manifest_yaml)
 
       unless [:start, :stop, :restart, :recreate].include?(operation)
-        err("Unknown operation `#{operation}': supported operations are `start', `stop', `restart', `recreate'")
+        err("Unknown operation `#{operation}': supported operations are " +
+            "`start', `stop', `restart', `recreate'")
       end
 
       args  = args.dup
@@ -55,11 +56,13 @@ module Bosh::Cli::Command
       when :stop
         if hard
           op_desc = "stop #{job_desc} and power off its VM(s)"
-          completion_desc = "#{job_desc.green} has been stopped, VM(s) powered off"
+          completion_desc = "#{job_desc.green} has been stopped, " +
+                            "VM(s) powered off"
           new_state = "detached"
         else
           op_desc = "stop #{job_desc}"
-          completion_desc = "#{job_desc.green} has been stopped, VM(s) still running"
+          completion_desc = "#{job_desc.green} has been stopped, " +
+                            "VM(s) still running"
           new_state = "stopped"
         end
       when :restart
@@ -72,13 +75,17 @@ module Bosh::Cli::Command
         completion_desc = "#{job_desc.green} has been recreated"
       end
 
-      say "You are about to #{op_desc.green}"
+      say("You are about to #{op_desc.green}")
 
       if interactive?
-        # TODO: refactor inspect_deployment_changes to decouple changeset structure and rendering
-        other_changes_present = inspect_deployment_changes(manifest, :show_empty_changeset => false)
+        # TODO: refactor inspect_deployment_changes
+        # to decouple changeset structure and rendering
+        other_changes_present = inspect_deployment_changes(
+            manifest, :show_empty_changeset => false)
+
         if other_changes_present && !force
-          err "Cannot perform job management when other deployment changes are present. Please use `--force' to override."
+          err("Cannot perform job management when other deployment changes " +
+              "are present. Please use `--force' to override.")
         end
         unless confirmed?("#{op_desc.capitalize}?")
           cancel_deployment
@@ -86,19 +93,24 @@ module Bosh::Cli::Command
       end
       nl
 
-      say "Performing `#{op_desc}'..."
+      say("Performing `#{op_desc}'...")
 
-      status, body = director.change_job_state(manifest["name"], manifest_yaml, job, index, new_state)
+      status, body = director.change_job_state(manifest["name"],
+                                               manifest_yaml,
+                                               job, index, new_state)
 
       responses = {
-        :done          => completion_desc,
-        :non_trackable => "Started deployment but director at '#{target}' doesn't support deployment tracking",
-        :track_timeout => "Started deployment but timed out out while tracking status",
-        :error         => "Started deployment but received an error while tracking status",
-        :invalid       => "Deployment is invalid, please fix it and deploy again"
+        :done => completion_desc,
+        :non_trackable => "Started deployment but director at '#{target}' " +
+                          "doesn't support deployment tracking",
+        :track_timeout => "Started deployment but timed out out "+
+                          "while tracking status",
+        :error => "Started deployment but received an error " +
+                  "while tracking status",
+        :invalid => "Deployment is invalid, please fix it and deploy again"
       }
 
-      say responses[status] || "Cannot deploy: #{body}"
+      say(responses[status] || "Cannot deploy: #{body}")
     end
 
   end

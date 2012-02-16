@@ -30,7 +30,10 @@ describe Bosh::Cli::Runner do
   end
 
   it "allows overriding global options" do
-    runner = Bosh::Cli::Runner.new(["--verbose", "--no-color", "--skip-director-checks", "--quiet", "--non-interactive", "release", "upload", "/path"])
+    runner = Bosh::Cli::Runner.new(["--verbose", "--no-color",
+                                    "--skip-director-checks", "--quiet",
+                                    "--non-interactive", "release",
+                                    "upload", "/path"])
     runner.parse_options!
     runner.options[:verbose].should  == true
     runner.options[:colorize].should == false
@@ -52,11 +55,14 @@ describe Bosh::Cli::Runner do
     test_cmd(["delete", "deployment", "foo"], :deployment, :delete, ["foo"])
     test_cmd(["delete", "stemcell", "a", "1"], :stemcell, :delete, ["a", "1"])
     test_cmd(["delete", "release", "a" ], :release, :delete, ["a"])
-    test_cmd(["delete", "release", "a", "--force" ], :release, :delete, ["a", "--force"])
-    test_cmd(["delete", "release", "a", "2.2.1", "--force" ], :release, :delete, ["a", "2.2.1", "--force"])
+    test_cmd(["delete", "release", "a", "--force" ],
+             :release, :delete, ["a", "--force"])
+    test_cmd(["delete", "release", "a", "2.2.1", "--force" ],
+             :release, :delete, ["a", "2.2.1", "--force"])
 
     test_cmd(["create", "user", "admin"], :user, :create, ["admin"])
-    test_cmd(["create", "user", "admin", "12321"], :user, :create, ["admin", "12321"])
+    test_cmd(["create", "user", "admin", "12321"],
+             :user, :create, ["admin", "12321"])
     test_cmd(["create", "release"], :release, :create)
     test_cmd(["reset", "release"], :release, :reset)
     test_cmd(["create", "package", "bla"], :package, :create, ["bla"])
@@ -89,7 +95,8 @@ describe Bosh::Cli::Runner do
     test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
   end
 
-  it "cancels running task and quits when ctrl-c is issued and user agrees to quit" do
+  it "cancels running task and quits when ctrl-c is issued " +
+     "and user agrees to quit" do
     runner = Bosh::Cli::Runner.new(["any", "command"])
     runner.runner = {}
     runner.runner.stub(:task_running?).and_return(true)
