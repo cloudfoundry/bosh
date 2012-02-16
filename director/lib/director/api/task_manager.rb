@@ -1,6 +1,7 @@
-module Bosh::Director
-  class TaskManager
+# Copyright (c) 2009-2012 VMware, Inc.
 
+module Bosh::Director::Api
+  class TaskManager
     def task_to_json(task)
       {
         "id" => task.id,
@@ -11,6 +12,5 @@ module Bosh::Director
         "user" => task.user ? task.user.username : "admin"
       }
     end
-
   end
 end
