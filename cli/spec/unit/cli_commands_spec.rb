@@ -324,8 +324,9 @@ describe Bosh::Cli::Command::Base do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         @blobstore.should_receive(:create).and_return(2)
         @cmd.upload_blob("./blobs/test/test.tgz")
-        File.read("blob_index.yml").should == YAML.dump('test/test.tgz' => {'object_id' => 2,
-                                                                            'sha' => Digest::SHA1.file(blob.first).hexdigest})
+        expected_content = YAML.dump('test/test.tgz' => {'object_id' => 2,
+                                     'sha' => Digest::SHA1.file(blob.first).hexdigest}).gsub(" \n", "\n")
+        File.read("blob_index.yml").should == expected_content
       end
     end
 
