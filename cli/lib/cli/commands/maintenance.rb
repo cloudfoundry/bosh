@@ -45,7 +45,7 @@ module Bosh::Cli::Command
 
     def cleanup_stemcells(n_to_keep)
       stemcells_by_name = director.list_stemcells.inject({}) do |h, stemcell|
-        h[stemcell["name"]] ||= [ ]
+        h[stemcell["name"]] ||= []
         h[stemcell["name"]] << stemcell
         h
       end
@@ -82,7 +82,7 @@ module Bosh::Cli::Command
         versions = release["versions"].sort { |v1, v2| version_cmp(v1, v2) }
 
         versions[0...(-n_to_keep)].each do |version|
-          delete_list << [ name, version ]
+          delete_list << [name, version]
         end
       end
 

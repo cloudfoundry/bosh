@@ -5,7 +5,7 @@ module Bosh
     class Director
       include VersionCalc
 
-      DIRECTOR_HTTP_ERROR_CODES = [ 400, 403, 500 ]
+      DIRECTOR_HTTP_ERROR_CODES = [400, 403, 500]
 
       DEFAULT_MAX_POLLS     = nil # Not limited
       DEFAULT_POLL_INTERVAL = 1
@@ -119,7 +119,7 @@ module Bosh
       def delete_stemcell(name, version, options = {})
         track_options = { :log_type => "event" }
         track_options[:quiet] = options[:quiet] if options.has_key?(:quiet)
-        request_and_track(:delete, "/stemcells/%s/%s" % [ name, version ],
+        request_and_track(:delete, "/stemcells/%s/%s" % [name, version],
                           nil, nil, track_options)
       end
 
@@ -329,7 +329,7 @@ module Bosh
         uri = "/tasks/#{task_id}/output"
         uri += "?type=#{log_type}" if log_type
 
-        headers = { "Range" => "bytes=%d-" % [ offset ] }
+        headers = { "Range" => "bytes=#{offset}-" }
         response_code, body, headers = get(uri, nil, nil, headers)
 
         if response_code == 206 &&
@@ -338,14 +338,14 @@ module Bosh
         else
           new_offset = nil
         end
-        [ body, new_offset ]
+        [body, new_offset]
       end
 
       def cancel_task(task_id)
         response_code, body = delete("/task/#{task_id}")
         raise AuthError if response_code == 401
         raise MissingTask, "No task##{task_id} found" if response_code == 404
-        [ body, response_code ]
+        [body, response_code]
       end
 
       ##
@@ -365,7 +365,7 @@ module Bosh
         !@current_running_task.nil?
       end
 
-      [ :post, :put, :get, :delete ].each do |method_name|
+      [:post, :put, :get, :delete].each do |method_name|
         define_method method_name do |*args|
           request(method_name, *args)
         end
@@ -390,7 +390,7 @@ module Bosh
           status = :failed
         end
 
-        [ status, task_id ]
+        [status, task_id]
       end
 
       def upload_and_track(uri, content_type, filename, options = {})
@@ -434,7 +434,7 @@ module Bosh
           end
 
           if no_output_yet && polls % 10 == 0 && !quiet && !log_only
-            say("Task state is '%s', waiting for output..." % [ state ])
+            say("Task state is '#{state}', waiting for output...")
           end
 
           renderer.refresh
@@ -518,19 +518,19 @@ module Bosh
           raise DirectorError, parse_error_message(response.code, body)
         end
 
-        headers = response.headers.inject({}) do |h, (k, v)|
+        headers = response.headers.inject({}) do |hash, (k, v)|
           # Some HTTP clients symbolize headers, some do not.
           # To make it easier to switch between them, we try
           # to symbolize them ourselves.
-          h[k.to_s.downcase.gsub(/-/, "_").to_sym] = v
-          h
+          hash[k.to_s.downcase.gsub(/-/, "_").to_sym] = v
+          hash
         end
 
-        [ response.code, body, headers ]
+        [response.code, body, headers]
 
       rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
         raise DirectorInaccessible,
-              "cannot access director (%s)" % [ e.message ]
+              "cannot access director (#{e.message})"
       rescue SystemCallError => e
         raise DirectorError, "System call error while talking to director: #{e}"
       end
@@ -539,13 +539,13 @@ module Bosh
         parsed_body = JSON.parse(body.to_s)
 
         if parsed_body["code"] && parsed_body["description"]
-          "Director error %s: %s" % [ parsed_body["code"],
-                                      parsed_body["description"] ]
+          "Director error %s: %s" % [parsed_body["code"],
+                                     parsed_body["description"]]
         else
-          "Director error (HTTP %s): %s" % [ status, body ]
+          "Director error (HTTP %s): %s" % [status, body]
         end
       rescue JSON::ParserError
-        "Director error (HTTP %s): %s" % [ status, body ]
+        "Director error (HTTP %s): %s" % [status, body]
       end
 
       private
@@ -587,7 +587,7 @@ module Bosh
       def get_json_with_status(url)
         status, body, headers = get(url, "application/json")
         body = JSON.parse(body) if status == 200
-        [ status, body ]
+        [status, body]
       rescue JSON::ParserError
         raise DirectorError, "Cannot parse director response: #{body}"
       end

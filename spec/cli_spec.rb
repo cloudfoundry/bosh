@@ -2,7 +2,7 @@ require "spec_helper"
 
 describe Bosh::Spec::IntegrationTest::CliUsage do
 
-  def rx(string)
+  def regexp(string)
     Regexp.compile(Regexp.escape(string))
   end
 
@@ -59,7 +59,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
 
     out = run_bosh("deployment vmforce")
-    out.should =~ rx("Please upgrade your deployment manifest")
+    out.should =~ regexp("Please upgrade your deployment manifest")
   end
 
   it "remembers deployment when switching targets" do
@@ -77,7 +77,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     expect_output("deployment", "Deployment not set")
     run_bosh("target localhost:57523")
     out = run_bosh("deployment")
-    out.should =~ rx("test2")
+    out.should =~ regexp("test2")
   end
 
   it "keeps track of user associated with target" do
@@ -321,11 +321,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     end
 
     out = run_bosh("upload release #{release_2}")
-    out.should =~ rx("foo (0.1-dev)                 SKIP\n")
-    out.should =~ rx("foobar (0.1-dev)              SKIP\n")
-    out.should =~ rx("bar (0.2-dev)                 UPLOAD\n")
-    out.should =~ rx("Checking if can repack release for faster upload")
-    out.should =~ rx("Release repacked")
+    out.should =~ regexp("foo (0.1-dev)                 SKIP\n")
+    out.should =~ regexp("foobar (0.1-dev)              SKIP\n")
+    out.should =~ regexp("bar (0.2-dev)                 UPLOAD\n")
+    out.should =~ regexp("Checking if can repack release for faster upload")
+    out.should =~ regexp("Release repacked")
     out.should =~ /Release uploaded and updated/
 
     expect_output("releases", <<-OUT )
@@ -365,9 +365,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       end
 
       out = run_bosh("upload release #{release_2}", Dir.pwd)
-      out.should =~ rx("Building tarball")
-      out.should_not =~ rx("Checking if can repack release for faster upload")
-      out.should_not =~ rx("Release repacked")
+      out.should =~ regexp("Building tarball")
+      out.should_not =~ regexp("Checking if can repack release for faster upload")
+      out.should_not =~ regexp("Release repacked")
       out.should =~ /Release uploaded and updated/
     end
 
@@ -459,7 +459,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ rx("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
+      out.should =~ regexp("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
     end
 
     it "generates release and deploys it via simple manifest" do
@@ -485,8 +485,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload stemcell #{stemcell_filename}")
       run_bosh("upload release #{release_filename}")
 
-      run_bosh("deploy").should =~ rx("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
-      run_bosh("cloudcheck --report").should =~ rx("No problems found")
+      run_bosh("deploy").should =~ regexp("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
+      run_bosh("cloudcheck --report").should =~ regexp("No problems found")
       $?.should == 0 # Cloudcheck shouldn't find any problems with this new deployment
       # TODO: figure out which artefacts should be created by the given manifest
     end
@@ -501,7 +501,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       run_bosh("deploy")
-      run_bosh("delete deployment minimal").should =~ rx("Deleted deployment 'minimal'")
+      run_bosh("delete deployment minimal").should =~ regexp("Deleted deployment 'minimal'")
       # TODO: test that we don't have artefacts,
       # possibly upgrade to more featured deployment,
       # possibly merge to the previous spec
@@ -521,17 +521,17 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
       run_bosh("deploy")
 
-      run_bosh("set property foo bar").should =~ rx("Property `foo' set to `bar'")
-      run_bosh("get property foo").should =~ rx("Property `foo' value is `bar'")
-      run_bosh("set property foo baz").should =~ rx("Property `foo' set to `baz'")
-      run_bosh("unset property foo").should =~ rx("Property `foo' has been unset")
+      run_bosh("set property foo bar").should =~ regexp("Property `foo' set to `bar'")
+      run_bosh("get property foo").should =~ regexp("Property `foo' value is `bar'")
+      run_bosh("set property foo baz").should =~ regexp("Property `foo' set to `baz'")
+      run_bosh("unset property foo").should =~ regexp("Property `foo' has been unset")
 
       run_bosh("set property nats.user admin")
       run_bosh("set property nats.password pass")
 
       props = run_bosh("properties --terse")
-      props.should =~ rx("nats.user\tadmin")
-      props.should =~ rx("nats.password\tpass")
+      props.should =~ regexp("nats.user\tadmin")
+      props.should =~ regexp("nats.password\tpass")
     end
 
   end

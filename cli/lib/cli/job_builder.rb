@@ -84,17 +84,17 @@ module Bosh::Cli
 
       if missing_packages.size > 0
         raise InvalidJob, "Some packages required by '#{name}' job " +
-            "are missing: %s" % [ missing_packages.join(", ") ]
+            "are missing: %s" % [missing_packages.join(", ")]
       end
 
       if missing_templates.size > 0
         raise InvalidJob, "Some template files required by '#{name}' job " +
-            "are missing: %s" % [ missing_templates.join(", ")]
+            "are missing: %s" % [missing_templates.join(", ")]
       end
 
       if extra_templates.size > 0
         raise InvalidJob, "There are unused template files for job " +
-            "'#{name}': %s" % [ extra_templates.join(", ")]
+            "'#{name}': %s" % [extra_templates.join(", ")]
       end
 
       unless monit_files.size > 0
@@ -192,7 +192,7 @@ module Bosh::Cli
       files.each do |filename|
         path = File.basename(filename)
         digest = Digest::SHA1.file(filename).hexdigest
-        contents << "%s%s%s" % [ path, digest, tracked_permissions(filename) ]
+        contents << "%s%s%s" % [path, digest, tracked_permissions(filename)]
       end
 
       Digest::SHA1.hexdigest(contents)

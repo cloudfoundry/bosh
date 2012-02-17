@@ -404,7 +404,7 @@ describe Bosh::Cli::Command::Base do
         })
         @cmd.should_receive(:fetch_blob).
             with(File.join(@release_dir, "blobs", "test/test.tgz"),
-                 {"sha" => 1, "object_id" => 2})
+                 { "sha" => 1, "object_id" => 2 })
         @cmd.sync_blobs
       end
     end
@@ -457,7 +457,7 @@ describe Bosh::Cli::Command::Base do
         FileUtils.touch("./blobs/test/test.tgz")
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         @cmd.should_receive(:get_blobs_index).
-            and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
+            and_return({ "test/test.tgz" => { "sha" => 1, "object_id" => 2}})
         @cmd.should_receive(:say).
             with("\nModified blobs ('bosh upload blob' to update): ".green)
         @cmd.should_receive(:say).with("test/test.tgz")
@@ -469,7 +469,7 @@ describe Bosh::Cli::Command::Base do
       Dir.chdir(@release_dir) do
         @cmd.should_receive(:check_if_blobs_supported).and_return(true)
         @cmd.should_receive(:get_blobs_index).
-            and_return({'test/test.tgz' => {'sha' => 1, 'object_id' => 2}})
+            and_return({ "test/test.tgz" => { "sha" => 1, "object_id" => 2}})
         @cmd.should_receive(:say).
             with("\nMissing blobs ('bosh sync blobs' to fetch) : ".green)
         @cmd.should_receive(:say).with("test/test.tgz")

@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require "spec_helper"
 
 describe Bosh::Cli::HashChangeset do
@@ -22,7 +24,7 @@ describe Bosh::Cli::HashChangeset do
         },
         :arr => %w(a b c)
       },
-      :arr => [ 1, 2, 3 ],
+      :arr => [1, 2, 3],
       :zb => { :a => 2, :b => 3}
     }
 
@@ -38,7 +40,7 @@ describe Bosh::Cli::HashChangeset do
         },
         :arr => %w(a b c d e)
       },
-      :arr => [ 1, 2, 3 ],
+      :arr => [1, 2, 3],
       :zb => "test"
     }
 

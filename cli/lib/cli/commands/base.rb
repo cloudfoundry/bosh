@@ -63,7 +63,7 @@ module Bosh::Cli
 
       def redirect(*args)
         run(*args)
-        raise Bosh::Cli::GracefulExit, "redirected to %s" % [ args.join(" ") ]
+        raise Bosh::Cli::GracefulExit, "redirected to %s" % [args.join(" ")]
       end
 
       def confirmed?(question = "Are you sure?")
@@ -90,7 +90,7 @@ module Bosh::Cli
       def full_target_name
         # TODO refactor this method
         ret = (target_name.blank? || target_name == target_url ?
-            target_name : "%s (%s)" % [ target_name, target_url])
+            target_name : "%s (%s)" % [target_name, target_url])
         ret + " %s" % target_version if ret
       end
 
@@ -134,7 +134,7 @@ module Bosh::Cli
 
       def check_if_dirty_state
         if dirty_state?
-          say("\n%s\n" % [ `git status` ])
+          say("\n%s\n" % [`git status`])
           err("Your current directory has some local modifications, " +
               "please discard or commit them first")
         end

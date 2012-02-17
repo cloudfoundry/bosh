@@ -26,7 +26,7 @@ module Bosh::Cli
       end
 
     rescue SystemCallError => e
-      raise ConfigError, "Cannot read config file: %s" % [ e.message ]
+      raise ConfigError, "Cannot read config file: #{e.message}"
     end
 
     def auth
@@ -111,8 +111,8 @@ module Bosh::Cli
       @config_file["deployment"][target] = deployment_file_path
     end
 
-    [ :target, :target_name, :target_version, :release,
-      :target_uuid, :status_timeout ].each do |attr|
+    [:target, :target_name, :target_version, :release,
+     :target_uuid, :status_timeout].each do |attr|
       define_method attr do
         read(attr, false)
       end
