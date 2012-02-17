@@ -373,7 +373,7 @@ describe Bosh::Cli::Director do
         lambda {
           # JSON but weird
           mock_response = mock("response", :code => code,
-                               :body => JSON.generate("a" => "b", "c" => "d"),
+                               :body => '{"c":"d","a":"b"}',
                                :headers => { })
           @director.should_receive(:perform_http_request).
               and_return(mock_response)
@@ -381,7 +381,7 @@ describe Bosh::Cli::Director do
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
                              "Director error (HTTP #{code}): " +
-                             %Q[{"a":"b","c":"d"}])
+                             %Q[{"c":"d","a":"b"}])
       end
     end
 
