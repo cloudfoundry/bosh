@@ -18,7 +18,7 @@ by signing in with your CloudFoundry.com credentials.
   http://support.cloudfoundry.com
 
 * Installation and setup documentation at
-  http://support.cloudfoundry.com/entries/20316811
+  http://start.cloudfoundry.com/infrastructure/micro/installing-mcf.html
 
 * Signup for a Cloud Foundry account at
   http://cloudfoundry.com/signup
@@ -29,6 +29,7 @@ by signing in with your CloudFoundry.com credentials.
 
 * Learn more about Cloud Foundry at :
   - http://www.cloudfoundry.com
+  - http://start.cloudfoundry.com
   - http://blog.cloudfoundry.com
   - http://www.cloudfoundry.org
   - On Twitter @cloudfoundry (hashtag #cfoundry)
