@@ -10,7 +10,8 @@ module Bosh::Cli
       in_degree = { }
       graph = { }
 
-      map.each_pair do |package, dependencies|
+      map.keys.sort.each do |package|
+        dependencies = map[package]
         graph[package] ||= Set.new
         in_degree[package] = dependencies.size
 
