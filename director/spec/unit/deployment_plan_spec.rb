@@ -21,8 +21,7 @@ describe Bosh::Director::DeploymentPlan do
       "canaries" => 1,
       "canary_watch_time" => 30000,
       "update_watch_time" => 10000,
-      "max_in_flight" => 5,
-      "max_errors" => 2
+      "max_in_flight" => 5
     },
     "networks" => [
       {
@@ -300,7 +299,6 @@ describe Bosh::Director::DeploymentPlan do
       update_settings.max_in_flight.should eql(5)
       update_settings.min_update_watch_time.should == 10000
       update_settings.max_update_watch_time.should == 10000
-      update_settings.max_errors.should eql(2)
 
       update_settings = deployment_plan.job("job_a").update
       update_settings.canaries.should eql(1)
@@ -309,7 +307,6 @@ describe Bosh::Director::DeploymentPlan do
       update_settings.max_in_flight.should eql(5)
       update_settings.min_update_watch_time.should == 10000
       update_settings.max_update_watch_time.should == 10000
-      update_settings.max_errors.should eql(2)
     end
 
     it "should parse the update settings from the deployment manifest with inheritance" do
@@ -318,8 +315,7 @@ describe Bosh::Director::DeploymentPlan do
         "canaries" => 2,
         "canary_watch_time" => 1000,
         "max_in_flight" => 3,
-        "update_watch_time" => 500,
-        "max_errors" => -1
+        "update_watch_time" => 500
       }
 
       deployment_plan = make_plan(manifest)
@@ -331,7 +327,6 @@ describe Bosh::Director::DeploymentPlan do
       update_settings.max_in_flight.should eql(5)
       update_settings.min_update_watch_time.should == 10000
       update_settings.max_update_watch_time.should == 10000
-      update_settings.max_errors.should eql(2)
 
       update_settings = deployment_plan.job("job_a").update
       update_settings.canaries.should eql(2)
@@ -340,7 +335,6 @@ describe Bosh::Director::DeploymentPlan do
       update_settings.max_in_flight.should eql(3)
       update_settings.min_update_watch_time.should == 500
       update_settings.max_update_watch_time.should == 500
-      update_settings.max_errors.should eql(-1)
     end
 
     it "should parse min and max watch times from the deployment manifest (w/inheritance)" do
@@ -352,8 +346,7 @@ describe Bosh::Director::DeploymentPlan do
         "canaries" => 2,
         "canary_watch_time" => "1000 - 2400",
         "max_in_flight" => 3,
-        "update_watch_time" => 3800,
-        "max_errors" => -1
+        "update_watch_time" => 3800
       }
 
       deployment_plan = make_plan(manifest)
@@ -1346,46 +1339,11 @@ describe Bosh::Director::DeploymentPlan do
 
   describe "Updates" do
 
-    it "should track update failures" do
-      deployment_plan = make_plan
-      job = deployment_plan.job("job_a")
-      job.update_errors.should eql(0)
-      job.record_update_error("some error")
-      job.update_errors.should eql(1)
-    end
-
-    it "should keep track of the halt flag and halt exception" do
+    it "should set halt flag and halt exception on failures" do
       plan = make_plan
       job = plan.job("job_a")
-      job.update_errors.should == 0
       job.record_update_error("some error")
-      job.halt_exception.should be_nil
-
-      job.should_halt?.should be_false
-      job.record_update_error("error 2")
-      job.update_errors.should == 2
-      job.should_halt?.should be_true
-
-      job.halt_exception.should == "error 2"
-    end
-
-    it "should set halt flag when number of failures exceeds threshold" do
-      deployment_plan = make_plan
-      job = deployment_plan.job("job_a")
-
-      2.times do
-        job.should_halt?.should be_false
-        job.record_update_error("some error")
-      end
-
-      job.should_halt?.should be_true
-    end
-
-    it "should set halt flag when it happened during a canary" do
-      deployment_plan = make_plan
-      job = deployment_plan.job("job_a")
-      job.should_halt?.should be_false
-      job.record_update_error("some error", :canary => true)
+      job.halt_exception.should == "some error"
       job.should_halt?.should be_true
     end
 
