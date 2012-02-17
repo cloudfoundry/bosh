@@ -250,7 +250,7 @@ module Bosh::Cli::Command
       results = nil
       if options["index"]
         results = []
-        results << {"index" => options["index"]}
+        results << { "index" => options["index"] }
       end
       say "Cleaning up ssh artifacts from job #{job}, index #{options["index"]}"
       director.cleanup_ssh(manifest_name, job, "^#{SSH_USER_PREFIX}",

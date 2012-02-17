@@ -31,11 +31,11 @@ module Bosh::Cli
     alias :desc :description
 
     def option(name, value = "")
-      @options << [ name, value ]
+      @options << [name, value]
     end
 
     def power_option(name, value = "")
-      @power_options << [ name, value ]
+      @power_options << [name, value]
     end
 
     def route(*args, &block)

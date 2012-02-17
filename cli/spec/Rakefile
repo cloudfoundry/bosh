@@ -32,7 +32,7 @@ namespace "spec" do
 
   if RUBY_VERSION < "1.9"
     desc "Run specs for ci"
-    task "ci" => [ "ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover" ]
+    task "ci" => ["ci:setup:rspec", "spec:rcov", "convert_rcov_to_clover"]
 
     desc "Run spec with coverage"
     RSpec::Core::RakeTask.new("rcov") do |t|
@@ -54,7 +54,7 @@ namespace "spec" do
 
   else
     desc "Run specs for ci"
-    task "ci" => [ "ci:setup:rspec", "spec:rcov" ]
+    task "ci" => ["ci:setup:rspec", "spec:rcov"]
 
     desc "Run spec with coverage"
     task :rcov => :cleanup_coverage do

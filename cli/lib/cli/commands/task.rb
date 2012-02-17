@@ -162,7 +162,7 @@ module Bosh::Cli::Command
       tasks = director.list_running_tasks
       err("No running tasks") if tasks.empty?
       show_tasks_table(tasks.sort_by { |t| t["id"].to_i * -1 })
-      say("Total tasks running now: %d" % [ tasks.size ])
+      say("Total tasks running now: %d" % [tasks.size])
     end
 
     def list_recent(count = 30)
@@ -170,8 +170,8 @@ module Bosh::Cli::Command
       tasks = director.list_recent_tasks(count)
       err("No recent tasks") if tasks.empty?
       show_tasks_table(tasks)
-      say("Showing %d recent %s" % [ tasks.size,
-                                     tasks.size == 1 ? "task" : "tasks" ])
+      say("Showing %d recent %s" % [tasks.size,
+                                    tasks.size == 1 ? "task" : "tasks"])
     end
 
     def cancel(task_id)
@@ -187,8 +187,8 @@ module Bosh::Cli::Command
       tasks_table = table do |t|
         t.headings = "#", "State", "Timestamp", "Description", "Result"
         tasks.map do |task|
-          t << [ task["id"], task["state"], Time.at(task["timestamp"]).utc,
-                 task["description"].to_s, task["result"].to_s.truncate(80) ]
+          t << [task["id"], task["state"], Time.at(task["timestamp"]).utc,
+                task["description"].to_s, task["result"].to_s.truncate(80)]
         end
       end
 

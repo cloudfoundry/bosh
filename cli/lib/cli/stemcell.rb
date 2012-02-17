@@ -19,7 +19,7 @@ module Bosh::Cli
         File.exists?(@stemcell_file) && File.readable?(@stemcell_file)
       end
 
-      cache_key = "%s_%s" % [ @stemcell_file, File.mtime(@stemcell_file) ]
+      cache_key = "%s_%s" % [@stemcell_file, File.mtime(@stemcell_file)]
 
       manifest_yaml = @cache.read(cache_key)
 

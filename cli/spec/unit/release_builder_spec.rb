@@ -59,7 +59,7 @@ describe Bosh::Cli::ReleaseBuilder do
                                             [package1, package2,
                                              package3, package4],
                                             [job1, job2, job3, job4])
-    builder.affected_jobs.should =~ [job1, job2, job3 ]
+    builder.affected_jobs.should =~ [job1, job2, job3]
   end
 
 end

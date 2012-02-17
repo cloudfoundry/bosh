@@ -115,7 +115,7 @@ describe Bosh::Cli::EventLogRenderer do
     lines[0].should =~ /Done/
     lines[0].should =~ /9\/9/
     lines[1].should == ""
-    lines[2].should == "Updating %s" % [ "stuff, thing".green ]
+    lines[2].should == "Updating %s" % ["stuff, thing".green]
     lines[3].should =~ /0\/2/
 
     lines = renderer.finish(:done).split("\n")

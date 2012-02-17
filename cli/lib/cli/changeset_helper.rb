@@ -8,7 +8,7 @@ module Bosh::Cli
 
     def initialize
       @children = {}
-      @values   = {:old => nil, :new => nil}
+      @values   = { :old => nil, :new => nil }
     end
 
     def [](key)
@@ -51,11 +51,11 @@ module Bosh::Cli
 
     def summary(level = 0)
       indent = "  " * level
-      out = [ ]
+      out = []
 
       @children.each_pair do |k, v|
         if v.state == :mismatch
-          out << indent + "type mismatch in #{k}: ".red + 
+          out << indent + "type mismatch in #{k}: ".red +
               "was #{v.old.class.to_s}, now #{v.new.class.to_s}"
           out << diff(v.old, v.new, indent + "  ")
         elsif v.leaf?
@@ -70,7 +70,7 @@ module Bosh::Cli
           end
         else
           # TODO: track renames?
-          child_summary = v.summary(level+1)
+          child_summary = v.summary(level + 1)
 
           unless child_summary.empty?
             out << indent + k
@@ -82,8 +82,8 @@ module Bosh::Cli
     end
 
     def diff(old_value, new_value, indent)
-      old_value  = [ old_value ] unless old_value.kind_of?(Array)
-      new_value  = [ new_value ] unless new_value.kind_of?(Array)
+      old_value  = [old_value] unless old_value.kind_of?(Array)
+      new_value  = [new_value] unless new_value.kind_of?(Array)
 
       added   = new_value - old_value
       removed = old_value - new_value
