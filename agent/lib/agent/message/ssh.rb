@@ -103,7 +103,8 @@ module Bosh::Agent
           # list users
           File.open("/etc/passwd", "r") do |f|
             while user_entry = f.gets
-              user = /(^.*?):/.match(user_entry)[1]
+              next unless user_match = /(^.*?):/.match(user_entry)
+              user = user_match[1]
               if /#{@params["user_regex"]}/ =~ user
                 users << user
               end
