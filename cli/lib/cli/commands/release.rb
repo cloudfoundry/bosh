@@ -29,11 +29,11 @@ module Bosh::Cli::Command
       nl
 
       if tarball.valid?
-        say("'%s' is a valid release" % [ tarball_path] )
+        say("'%s' is a valid release" % [tarball_path] )
       else
-        say("'%s' is not a valid release:" % [ tarball_path] )
+        say("'%s' is not a valid release:" % [tarball_path] )
         for error in tarball.errors
-          say("- %s" % [ error ])
+          say("- %s" % [error])
         end
       end
     end
@@ -181,8 +181,8 @@ module Bosh::Cli::Command
         exit(1)
       end
 
-      packages  = []
-      jobs      = []
+      packages = []
+      jobs = []
 
       if final
         header("Building FINAL release".green)
@@ -199,7 +199,7 @@ module Bosh::Cli::Command
 
       if release_name.blank?
         confirmation = "Please enter %s release name: " % [
-            final ? "final" : "development" ]
+            final ? "final" : "development"]
         name = interactive? ? ask(confirmation).to_s : DEFAULT_RELEASE_NAME
         err("Canceled release creation, no name given") if name.blank?
         if final
@@ -230,7 +230,7 @@ module Bosh::Cli::Command
         header("Resolving dependencies")
         say("Dependencies resolved, correct build order is:")
         for package_name in sorted_packages
-          say("- %s" % [ package_name ])
+          say("- %s" % [package_name])
         end
         nl
       end
@@ -401,7 +401,7 @@ module Bosh::Cli::Command
         affected_jobs_table = table do |t|
           t.headings = %w(Name Version)
           affected_jobs.each do |job|
-            t << [ job.name, job.version ]
+            t << [job.name, job.version]
           end
         end
 
@@ -410,7 +410,7 @@ module Bosh::Cli::Command
     end
 
     def artefact_summary(artefact)
-      result = [ ]
+      result = []
       result << artefact.name
       result << artefact.version
       result << artefact.notes.join(", ")

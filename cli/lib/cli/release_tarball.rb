@@ -9,8 +9,8 @@ module Bosh::Cli
     def initialize(tarball_path)
       @tarball_path = File.expand_path(tarball_path, Dir.pwd)
       @unpack_dir   = Dir.mktmpdir
-      @jobs = [ ]
-      @packages = [ ]
+      @jobs = []
+      @packages = []
     end
 
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
@@ -124,7 +124,7 @@ module Bosh::Cli
                                           @unpack_dir + "/packages")
         package_exists = File.exists?(package_file)
 
-        step("Read package '%s' (%d of %d)" % [ name, i+1, total_packages ],
+        step("Read package '%s' (%d of %d)" % [name, i+1, total_packages],
              "Missing package '#{name}'") do
           package_exists || allow_sparse
         end
@@ -174,8 +174,8 @@ module Bosh::Cli
         job_file   = File.expand_path(name + ".tgz", @unpack_dir + "/jobs")
         job_exists = File.exists?(job_file)
 
-        step("Read job '%s' (%d of %d), version %s" % [ name, i+1, total_jobs,
-                                                        version ],
+        step("Read job '%s' (%d of %d), version %s" % [name, i+1, total_jobs,
+                                                       version],
              "Job '#{name}' not found") do
           job_exists || allow_sparse
         end

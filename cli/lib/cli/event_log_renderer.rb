@@ -54,7 +54,7 @@ module Bosh::Cli
         tags = event["tags"].is_a?(Array) ? event["tags"] : []
         stage_header = event["stage"]
         if tags.size > 0
-          stage_header += " %s" % [ tags.sort.join(", ").green ]
+          stage_header += " " + tags.sort.join(", ").green
         end
 
         unless @seen_stages.include?(stage_header)
@@ -243,7 +243,7 @@ module Bosh::Cli
         end
         @buffer.puts("  #{status} (#{format_time(task_time)})")
       when "in_progress"
-        progress = [ event["progress"].to_f / 100, 1 ].min
+        progress = [event["progress"].to_f / 100, 1].min
       end
 
       if @batches_count > 0 && @non_canary_event_start_time
@@ -321,11 +321,11 @@ module Bosh::Cli
     end
 
     def bar
-      n_fillers = @total == 0 ? 0 : [ (@bar_width *
-          (@current.to_f / @total.to_f)).floor, 0 ].max
+      n_fillers = @total == 0 ? 0 : [(@bar_width *
+          (@current.to_f / @total.to_f)).floor, 0].max
 
       fillers = "#{@filler}" * n_fillers
-      spaces = " " * [ (@bar_width - n_fillers), 0 ].max
+      spaces = " " * [(@bar_width - n_fillers), 0].max
       "|#{fillers}#{spaces}|"
     end
 
@@ -338,7 +338,7 @@ module Bosh::Cli
     def calculate_terminal_width
       if !ENV["TERM"].blank?
         width = `tput cols`
-        $?.exitstatus == 0 ? [ width.to_i, 100 ].min : 80
+        $?.exitstatus == 0 ? [width.to_i, 100].min : 80
       else
         80
       end

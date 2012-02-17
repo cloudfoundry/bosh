@@ -5,7 +5,7 @@ module Bosh::Cli::Command
     DEFAULT_STATUS_TIMEOUT = 3 # seconds
 
     def version
-      say("BOSH %s" % [ Bosh::Cli::VERSION ])
+      say("BOSH %s" % [Bosh::Cli::VERSION])
     end
 
     def status
@@ -52,17 +52,17 @@ module Bosh::Cli::Command
         final_version = Bosh::Cli::VersionsIndex.new(
             File.join(work_dir, "releases")).latest_version
 
-        say("Dev name:      %s" % [ dev_name ? dev_name.green : "not set".red ])
-        say("Dev version:   %s" % [ dev_version && dev_version > 0 ?
-                                        dev_version.to_s.green : "
-                                        no versions yet".red ])
+        say("Dev name:      %s" % [dev_name ? dev_name.green : "not set".red])
+        say("Dev version:   %s" % [dev_version && dev_version > 0 ?
+                                       dev_version.to_s.green : "
+                                       no versions yet".red])
         say("\n")
-        say("Final name:    %s" % [ final_name ?
-                                        final_name.green :
-                                        "not set".red ])
-        say("Final version: %s" % [ final_version && final_version > 0 ?
-                                        final_version.to_s.green :
-                                        "no versions yet".red ])
+        say("Final name:    %s" % [final_name ?
+                                       final_name.green :
+                                       "not set".red])
+        say("Final version: %s" % [final_version && final_version > 0 ?
+                                       final_version.to_s.green :
+                                       "no versions yet".red])
 
         say("\n")
         say("Packages")
@@ -202,7 +202,7 @@ module Bosh::Cli::Command
         say("No #{entity} specs found")
       end
 
-      t = table [ "Name", "Dev", "Final" ]
+      t = table ["Name", "Dev", "Final"]
 
       specs.each do |spec_file|
         if spec_file.is_a?(String) && File.file?(spec_file)

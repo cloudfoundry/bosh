@@ -82,10 +82,10 @@ module Bosh::Cli::Command
         err("Invalid properties format, please check your director")
       end
 
-      output = properties.sort do |a, b|
-        a["name"] <=> b["name"]
+      output = properties.sort do |p1, p2|
+        p1["name"] <=> p2["name"]
       end.map do |property|
-        [ property["name"], format_property(property["value"]) ]
+        [property["name"], format_property(property["value"])]
       end
 
       if terse
@@ -93,8 +93,8 @@ module Bosh::Cli::Command
       else
         if output.size > 0
           properties_table = table do |t|
-            t.headings = [ "Name", "Value" ]
-            output.each { |row| t << [ row[0], row[1].truncate(40) ] }
+            t.headings = ["Name", "Value"]
+            output.each { |row| t << [row[0], row[1].truncate(40)] }
           end
           say(properties_table)
         else

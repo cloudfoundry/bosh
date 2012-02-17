@@ -27,7 +27,7 @@ describe Bosh::Cli::DependencyHelper do
 
   it "whines on missing dependencies" do
     lambda {
-      tsort_packages("A" => ["B"], "C" => [ "D" ])
+      tsort_packages("A" => ["B"], "C" => ["D"])
     }.should raise_error Bosh::Cli::MissingDependency,
                          "Package 'A' depends on missing package 'B'"
   end
