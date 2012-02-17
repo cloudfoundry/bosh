@@ -98,14 +98,14 @@ module Bosh::Cli
 
       if diff[:release][:name].changed?
         say("Release name has changed: %s -> %s".red % [
-            diff[:release][:name].old, diff[:release][:name].new ])
+            diff[:release][:name].old, diff[:release][:name].new])
         unless confirmed?("This is very serious and potentially destructive " +
                               "change. ARE YOU SURE YOU WANT TO DO IT?")
           cancel_deployment
         end
       elsif diff[:release][:version].changed?
         say("Release version has changed: %s -> %s".yellow % [
-            diff[:release][:version].old, diff[:release][:version].new ])
+            diff[:release][:version].old, diff[:release][:version].new])
         unless confirmed?("Are you sure you want to deploy this version?")
           cancel_deployment
         end

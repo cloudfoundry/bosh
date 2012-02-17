@@ -12,11 +12,11 @@ module Bosh::Cli::Command
       say("\n")
 
       if stemcell.valid?
-        say("'%s' is a valid stemcell" % [ tarball_path] )
+        say("'%s' is a valid stemcell" % [tarball_path])
       else
-        say("'%s' is not a valid stemcell:" % [ tarball_path] )
+        say("'%s' is not a valid stemcell:" % [tarball_path])
         for error in stemcell.errors
-          say("- %s" % [ error ])
+          say("- %s" % [error])
         end
       end
     end
@@ -102,7 +102,7 @@ module Bosh::Cli::Command
       status, message = director.delete_stemcell(name, version)
 
       responses = {
-        :done => "Deleted stemcell %s (%s)" % [ name, version ],
+        :done => "Deleted stemcell #{name} (#{version})",
         :non_trackable => "Stemcell delete in progress but director " +
                           "at '#{target}' doesn't support task tracking",
         :track_timeout => "Timed out out while tracking " +

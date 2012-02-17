@@ -53,8 +53,8 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
   def make_builder(name, files, dependencies = [], sources_dir = nil)
     blobstore = mock("blobstore")
-    spec = {"name" => name, "files" => files,
-            "dependencies" => dependencies}
+    spec = { "name" => name, "files" => files,
+             "dependencies" => dependencies }
     Bosh::Cli::PackageBuilder.new(spec, @release_dir,
                                   false, blobstore, sources_dir)
   end
@@ -374,8 +374,8 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     blobstore = mock("blobstore")
     blobstore.should_receive(:create).and_return("object_id")
-    final_builder = Bosh::Cli::PackageBuilder.new({"name" => "bar",
-                                                   "files" => globs},
+    final_builder = Bosh::Cli::PackageBuilder.new({ "name" => "bar",
+                                                    "files" => globs },
                                                   @release_dir,
                                                   true, blobstore)
     final_builder.build

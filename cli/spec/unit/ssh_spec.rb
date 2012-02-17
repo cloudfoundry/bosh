@@ -40,7 +40,7 @@ describe Bosh::Cli::Command::Base do
       ssh.stub(:prepare_deployment_manifest).and_return("test")
       ssh.stub(:cleanup_ssh)
       ssh.setup_ssh("dea", 0, "temp_pass",
-                    {"public_key" => @public_key}) do |results, user|
+                    { "public_key" => @public_key }) do |results, user|
         results.each do |result|
           result["status"].should == "success"
           result["ip"].should == "127.0.0.1"

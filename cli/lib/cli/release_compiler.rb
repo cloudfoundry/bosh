@@ -34,8 +34,8 @@ module Bosh::Cli
           OpenStruct.new(job)
         end
       else
-        @remote_packages = [ ]
-        @remote_jobs = [ ]
+        @remote_packages = []
+        @remote_jobs = []
       end
 
       @name = @manifest["name"]

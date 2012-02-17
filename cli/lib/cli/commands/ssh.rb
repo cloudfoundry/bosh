@@ -226,7 +226,7 @@ module Bosh::Cli::Command
       results = nil
       if options["index"]
         results = []
-        results << {"index" => options["index"]}
+        results << { "index" => options["index"] }
       end
       say("Cleaning up ssh artifacts from job #{options["job"]}, " +
           "index #{options["index"]}")

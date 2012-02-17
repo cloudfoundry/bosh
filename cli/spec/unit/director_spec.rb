@@ -68,50 +68,50 @@ describe Bosh::Cli::Director do
 
     it "lists stemcells" do
       @director.should_receive(:get).with("/stemcells", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_stemcells
     end
 
     it "lists releases" do
       @director.should_receive(:get).with("/releases", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_releases
     end
 
     it "lists deployments" do
       @director.should_receive(:get).with("/deployments", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_deployments
     end
 
     it "lists currently running tasks (director version < 0.3.5)" do
       @director.should_receive(:get).with("/info", "application/json").
-          and_return([ 200, JSON.generate({ :version => "0.3.2"})])
+          and_return([200, JSON.generate({ :version => "0.3.2"})])
       @director.should_receive(:get).
           with("/tasks?state=processing", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
     end
 
     it "lists currently running tasks (director version >= 0.3.5)" do
       @director.should_receive(:get).
           with("/info", "application/json").
-          and_return([ 200, JSON.generate({ :version => "0.3.5"})])
+          and_return([200, JSON.generate({ :version => "0.3.5"})])
       @director.should_receive(:get).
           with("/tasks?state=processing,cancelling,queued", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
     end
 
     it "lists recent tasks" do
       @director.should_receive(:get).
           with("/tasks?limit=30", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks
 
       @director.should_receive(:get).
           with("/tasks?limit=100", "application/json").
-          and_return([ 200, JSON.generate([]), {}])
+          and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(100000)
     end
 
@@ -196,7 +196,7 @@ describe Bosh::Cli::Director do
     it "gets task state" do
       @director.should_receive(:get).
           with("/tasks/232").
-          and_return([200, JSON.generate({"state" => "done"})])
+          and_return([200, JSON.generate({ "state" => "done" })])
       @director.get_task_state(232).should == "done"
     end
 
@@ -264,7 +264,7 @@ describe Bosh::Cli::Director do
           and_return("polling result")
       @director.request_and_track(:get, "/stuff", "text/plain",
                                   "abc", :arg1 => 1, :arg2 => 2).
-          should == [ "polling result", "502" ]
+          should == ["polling result", "502"]
     end
 
     it "considers all reponses but 302 a failure" do
@@ -274,7 +274,7 @@ describe Bosh::Cli::Director do
             and_return([code, "body", { }])
         @director.request_and_track(:get, "/stuff", "text/plain",
                                     "abc", :arg1 => 1, :arg2 => 2).
-            should == [ :failed, nil ]
+            should == [:failed, nil]
       end
     end
 
@@ -284,7 +284,7 @@ describe Bosh::Cli::Director do
           and_return([302, "body", { :location => "/track-task/502" }])
       @director.request_and_track(:get, "/stuff", "text/plain",
                                   "abc", :arg1 => 1, :arg2 => 2).
-          should == [ :non_trackable, nil ]
+          should == [:non_trackable, nil]
     end
 
     it "suppports uploading with progress bar" do
@@ -374,7 +374,7 @@ describe Bosh::Cli::Director do
           # JSON but weird
           mock_response = mock("response", :code => code,
                                :body => '{"c":"d","a":"b"}',
-                               :headers => { })
+                               :headers => {})
           @director.should_receive(:perform_http_request).
               and_return(mock_response)
           @director.request(:get, "/stuff", "application/octet-stream",
@@ -425,8 +425,8 @@ describe Bosh::Cli::Director do
           with("/tasks/1").exactly(5).times.
           and_return {
             n_calls += 1;
-            [ 200,
-              JSON.generate("state" => n_calls == 5 ? "done" : "processing")
+            [200,
+             JSON.generate("state" => n_calls == 5 ? "done" : "processing")
             ]
           }
       @director.should_receive(:get).
@@ -442,7 +442,7 @@ describe Bosh::Cli::Director do
       @director.stub!(:get_time_difference).and_return(0)
       @director.should_receive(:get).with("/tasks/1").
           exactly(10).times.
-          and_return [ 200, JSON.generate("state" => "processing") ]
+          and_return [200, JSON.generate("state" => "processing")]
       @director.should_receive(:get).
           with("/tasks/1/output",
                nil, nil, "Range" => "bytes=0-").
@@ -453,9 +453,9 @@ describe Bosh::Cli::Director do
     end
 
     it "respects poll interval setting" do
-      @director.stub(:get).and_return [ 200, "processing" ]
+      @director.stub(:get).and_return [200, "processing"]
 
-      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [ 200, JSON.generate("state" => "processing") ]
+      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [200, JSON.generate("state" => "processing")]
       @director.should_receive(:get).
           with("/tasks/1/output", nil, nil,
                "Range" => "bytes=0-").
@@ -472,7 +472,7 @@ describe Bosh::Cli::Director do
 
       @director.should_receive(:get).
           with("/tasks/1").
-          and_return { [ 500, JSON.generate("state" => "processing") ] }
+          and_return { [500, JSON.generate("state" => "processing")] }
 
       lambda {
         @director.poll_task(1, :poll_interval => 0, :max_polls => 10)
@@ -482,7 +482,7 @@ describe Bosh::Cli::Director do
 
     it "stops polling and returns error if task state is error" do
       @director.stub(:get).and_return {
-        [ 200, JSON.generate("state" => "error") ]
+        [200, JSON.generate("state" => "error")]
       }
 
       @director.should_receive(:get).exactly(1).times

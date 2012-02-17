@@ -16,8 +16,8 @@ describe Bosh::Cli::Command::Base do
   end
 
   def make_command(options = { })
-    Bosh::Cli::Command::Base.new({:config => @config,
-                                  :cache_dir => @cache_dir}.merge(options))
+    Bosh::Cli::Command::Base.new({ :config => @config,
+                                   :cache_dir => @cache_dir }.merge(options))
   end
 
   it "can access configuration and respects options" do

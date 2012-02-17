@@ -54,10 +54,10 @@ describe Bosh::Cli::Runner do
 
     test_cmd(["delete", "deployment", "foo"], :deployment, :delete, ["foo"])
     test_cmd(["delete", "stemcell", "a", "1"], :stemcell, :delete, ["a", "1"])
-    test_cmd(["delete", "release", "a" ], :release, :delete, ["a"])
-    test_cmd(["delete", "release", "a", "--force" ],
+    test_cmd(["delete", "release", "a"], :release, :delete, ["a"])
+    test_cmd(["delete", "release", "a", "--force"],
              :release, :delete, ["a", "--force"])
-    test_cmd(["delete", "release", "a", "2.2.1", "--force" ],
+    test_cmd(["delete", "release", "a", "2.2.1", "--force"],
              :release, :delete, ["a", "2.2.1", "--force"])
 
     test_cmd(["create", "user", "admin"], :user, :create, ["admin"])
@@ -92,7 +92,7 @@ describe Bosh::Cli::Runner do
     test_cmd(["task", "500"], :task, :track, ["500"])
     test_cmd(["tasks"], :task, :list_running)
     test_cmd(["tasks", "recent"], :task, :list_recent)
-    test_cmd(["tasks", "recent", "42"], :task, :list_recent, [ "42" ])
+    test_cmd(["tasks", "recent", "42"], :task, :list_recent, ["42"])
   end
 
   it "cancels running task and quits when ctrl-c is issued " +
