@@ -5,12 +5,11 @@ Changes in version 1.2:
 --------------------------
 - added offline mode
 - added keyboard reconfiguration option
-- updated node.js to version 0.4.12
+- added node.js version 0.6.8 in addition to 0.4.12
 - updated Tomcat to 6.0.35
 - enabled debugging mode for JVM apps
 - added support for disabling services
 - added support for disabling user registration
-- added node 0.6 support
 
 Changes in version 1.1:
 --------------------------
@@ -23,6 +22,6 @@ Known issues
 ------------
 Due to lack of functionality in the bundled Erlang version, RabbitMQ will have 2 ports open (in use by the beam and epmd processes) which are bound to the external IP address instead of localhost (127.0.0.1) and are exposed to anyone who can access the Micro Cloud Foundry VM.
 
-After disabling RabbitMQ in the services menu it will still show up when running "vmc services" even though the service no longer is running, due to RabbitMQ not de-registering the service properly when shutting down. It presists across reboots as the service list is persisted in the cloud controller database.
+After disabling RabbitMQ in the services menu it will still show up when running "vmc services" even though the service no longer is running, due to RabbitMQ not de-registering the service properly when shutting down. It persists across reboots as the service list is persisted in the cloud controller database.
 
 If you push a Ruby based application with a Gemfile in offline mode, the staging will fail if there are gems which need to be fetched from rubygems.org, as there is no Internet connection.
