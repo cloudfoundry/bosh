@@ -515,7 +515,6 @@ module Bosh::Director
       attr_accessor :properties
       attr_accessor :packages
       attr_accessor :update
-      attr_accessor :update_errors
       attr_accessor :unneeded_instances
       attr_accessor :state
       attr_accessor :instance_states
@@ -552,7 +551,6 @@ module Bosh::Director
         @update = UpdateConfig.new(safe_property(job, "update", :class => Hash, :optional => true), deployment.update)
 
         @halt = false
-        @update_errors = 0
         @unneeded_instances = []
         @default_network = {}
 
@@ -667,12 +665,8 @@ module Bosh::Director
 
       def record_update_error(error, options = {})
         @error_mutex.synchronize do
-          @update_errors += 1
-
-          if options[:canary] || (@update.max_errors > 0 && @update_errors >= @update.max_errors)
-            @halt = true
-            @halt_exception = error
-          end
+          @halt = true
+          @halt_exception = error
         end
       end
 
@@ -920,8 +914,6 @@ module Bosh::Director
       attr_accessor :min_update_watch_time
       attr_accessor :max_update_watch_time
 
-      attr_accessor :max_errors
-
       def initialize(update_config, default_update_config = nil)
         optional = !default_update_config.nil?
 
@@ -929,7 +921,6 @@ module Bosh::Director
 
         @max_in_flight = safe_property(update_config, "max_in_flight", :class => Integer, :optional => optional,
                                        :min => 1, :max => 32)
-        @max_errors = safe_property(update_config, "max_errors", :class => Integer, :optional => optional)
 
         canary_watch_times = safe_property(update_config, "canary_watch_time", :class => String, :optional => optional)
         update_watch_times = safe_property(update_config, "update_watch_time", :class => String, :optional => optional)
@@ -952,7 +943,6 @@ module Bosh::Director
           @max_update_watch_time ||= default_update_config.max_update_watch_time
 
           @max_in_flight ||= default_update_config.max_in_flight
-          @max_errors ||= default_update_config.max_errors
         end
       end
 
