@@ -112,7 +112,7 @@ module Bosh::Cli::Command
       status, message = director.delete_deployment(name, :force => force)
 
       responses = {
-        :done          => "Deleted deployment '%s'" % [ name ],
+        :done          => "Deleted deployment '#{name}'",
         :non_trackable => "Deployment delete in progress but director " +
             "at '#{target}' doesn't support task tracking",
         :track_timeout => "Timed out out while tracking deployment " +

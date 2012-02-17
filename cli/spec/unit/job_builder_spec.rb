@@ -137,7 +137,8 @@ describe Bosh::Cli::JobBuilder do
     add_templates("foo", "a.conf", "b.yml")
     add_monit("foo")
     builder = new_builder("foo", ["foo", "bar", "baz"],
-                          {"a.conf" => 1, "b.yml" => 2}, ["foo", "bar", "baz"])
+                          { "a.conf" => 1, "b.yml" => 2 },
+                          ["foo", "bar", "baz"])
     builder.templates.should =~ ["a.conf", "b.yml"]
   end
 

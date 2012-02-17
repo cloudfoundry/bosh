@@ -4,7 +4,7 @@ require "rubygems"
 require "bundler"
 
 desc "Run specs"
-task "spec" => [ "bundler:install:test", "test:spec" ]
+task "spec" => ["bundler:install:test", "test:spec"]
 
 desc "Run specs for CI"
 task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
@@ -54,7 +54,7 @@ namespace "bundler" do
 end
 
 namespace "test" do
-  ["spec", "spec:rcov", "spec:ci" ].each do |task_name|
+  ["spec", "spec:rcov", "spec:ci"].each do |task_name|
     task task_name do
       sh("cd spec && bundle exec rake #{task_name}")
     end

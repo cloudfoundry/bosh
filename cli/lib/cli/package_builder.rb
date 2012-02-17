@@ -177,7 +177,7 @@ module Bosh::Cli
           file_digest = Digest::SHA1.file(path).hexdigest
         end
 
-        "%s%s%s" % [ file, file_digest, tracked_permissions(path) ]
+        "%s%s%s" % [file, file_digest, tracked_permissions(path)]
       end
       contents << signatures.join("")
 
@@ -185,7 +185,7 @@ module Bosh::Cli
         @metadata_files.each do |file|
           if File.file?(file)
             file_digest = Digest::SHA1.file(file).hexdigest
-            contents << "%s%s" % [ file, file_digest ]
+            contents << "%s%s" % [file, file_digest]
           end
         end
       end
@@ -196,7 +196,7 @@ module Bosh::Cli
     end
 
     def resolve_globs
-      glob_map = {:blob => [], :source => []}
+      glob_map = { :blob => [], :source => [] }
       blob_list = []
       source_list = []
 

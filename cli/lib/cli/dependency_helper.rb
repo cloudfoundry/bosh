@@ -21,7 +21,7 @@ module Bosh::Cli
         dependencies.each do |dependency|
           unless map.has_key?(dependency)
             raise MissingDependency, ("Package '%s' depends on " +
-                "missing package '%s'") % [ package, dependency ]
+                "missing package '%s'") % [package, dependency]
           end
 
           graph[dependency] ||= Set.new
@@ -29,7 +29,7 @@ module Bosh::Cli
         end
       end
 
-      sorted = [ ]
+      sorted = []
 
       until resolved.empty?
         p = resolved.first
@@ -50,7 +50,7 @@ module Bosh::Cli
         e = graph[v]
         unless e.empty?
           raise CircularDependency, ("Cannot resolve dependencies for '%s': " +
-              "circular dependency with '%s'") % [ v, e.first ]
+              "circular dependency with '%s'") % [v, e.first]
         end
       end
 
