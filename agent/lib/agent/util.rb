@@ -1,6 +1,8 @@
 module Bosh::Agent
   class Util
 
+    # TODO: convert to module?
+    # TODO: don't use MessageHandlerError here?
 
     class BindingHelper
       attr_reader :name
@@ -75,9 +77,9 @@ module Bosh::Agent
 
       # Provide binding for a particular variable
       def config_binding(config)
-        name = config['job']['name']
-        index = config['index']
-        properties = config['properties'].to_openstruct
+        name = config["job"] ? config["job"]["name"] : nil
+        index = config["index"]
+        properties = (config["properties"] || {}).to_openstruct
         spec = config.to_openstruct
         BindingHelper.new(name, index, properties, spec).get_binding
       end
@@ -136,6 +138,17 @@ module Bosh::Agent
           raise Bosh::Agent::MessageHandlerError, exception_message
         end
         result
+      end
+
+      def create_symlink(src, dst)
+        # FileUtils doesn have 'no-deference' for links - causing ln_sf to
+        # attempt to create target link in dst rather than to overwrite it.
+        # BROKEN: FileUtils.ln_sf(src, dst)
+        out = %x(ln -nsf #{src} #{dst} 2>&1)
+        unless $?.exitstatus == 0
+          raise Bosh::Agent::MessageHandlerError,
+                "Failed to link '#{src}' to '#{dst}': #{out}"
+        end
       end
 
     end
