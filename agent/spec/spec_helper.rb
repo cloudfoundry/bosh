@@ -20,7 +20,7 @@ ENV["TMPDIR"] = tmpdir
 FileUtils.mkdir_p(tmpdir)
 at_exit { FileUtils.rm_rf(tmpdir) }
 
-Rspec.configure do |rspec_config|
+RSpec.configure do |rspec_config|
   rspec_config.before(:each) do
     clear_configuration
     use_dummy_logger
