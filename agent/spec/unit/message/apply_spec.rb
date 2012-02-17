@@ -28,7 +28,7 @@ describe Bosh::Agent::Message::Apply do
     state = Bosh::Agent::Message::State.new
 
     job_sha1 = Digest::SHA1.hexdigest(dummy_job_data)
-    apply_data = apply_data = {
+    apply_data = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
       "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
@@ -41,7 +41,8 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     lambda {
       handler.apply
-    }.should raise_error Bosh::Agent::MessageHandlerError, /^job 'bubba' failed to process template thin.yml.erb:.* on line 6/
+    }.should raise_error Bosh::Agent::MessageHandlerError,
+    /Failed to install job 'bubba': failed to process configuration template 'thin.yml.erb': line 6, error:/
   end
 
   it 'should set deployment in agents state if blank' do
@@ -61,7 +62,7 @@ describe Bosh::Agent::Message::Apply do
     apply_data = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
-      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77" },
+      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => "deadbeef" },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
       "packages" =>
@@ -97,7 +98,7 @@ describe Bosh::Agent::Message::Apply do
     apply_data1 = {
       "configuration_hash" => "bogus",
       "deployment" => "foo",
-      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77" },
+      "job" => { "name" => "bubba", "template" => "bubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => "deadbeef" },
       "release" => { "version" => "99" },
       "networks" => { "network_a" => { "ip" => "11.0.0.1" } },
       "packages" =>
@@ -196,42 +197,8 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     handler.apply
 
-    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.monitrc')
+    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba_hubba.monitrc')
     File.exist?(monitrc).should == true
-  end
-
-
-  it "should be able to add manual modes to monit configuration file" do
-    handler = Bosh::Agent::Message::Apply.new([{"deployment" => "foo"}])
-    handler.add_modes(<<-IN).should == <<-OUT.strip
-      check process nats mode active start program "bla" stop program "bla bla"
-    IN
-      check process nats mode active start program "bla" stop program "bla bla"
-    OUT
-
-    handler.add_modes(<<-IN).should == <<-OUT.strip
-      check process nats
-            start program "bla"
-            stop program "bla bla"
-    IN
-      check process nats start program "bla" stop program "bla bla" mode manual
-    OUT
-
-    handler.add_modes(<<-IN).should == <<-OUT.strip
-      check process nats
-            start program "bla"
-            stop program "bla bla"
-
-      check process zb
-      start program "ppc"
-      mode active
-
-
-      check filesystem aaa
-      start program "mode active"
-    IN
-      check process nats start program "bla" stop program "bla bla" mode manual check process zb start program "ppc" mode active check filesystem aaa start program "mode active" mode manual
-    OUT
   end
 
   def http_200_response_mock

@@ -26,7 +26,6 @@ if defined?(RSpec)
 
     desc "Run unit tests"
     unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/unit/**/*_spec.rb"
       t.rspec_opts = SPEC_OPTS
     end
@@ -37,7 +36,6 @@ if defined?(RSpec)
 
     desc "Run functional tests"
     fn_rspec_task = RSpec::Core::RakeTask.new(:functional) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/functional/**/*_spec.rb"
       t.rspec_opts = SPEC_OPTS
     end
