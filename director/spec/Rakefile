@@ -128,7 +128,7 @@ namespace :spec do
     end
   end
 
-  desc "Run Director functional tests"
+  desc "Run Director CPI tests"
   task :cpi => %W(spec:cpi:run)
 
   namespace :cpi do
