@@ -11,6 +11,7 @@ spec.log
 *.rbc
 *.swp
 .rvmrc
+.DS_Store
 spec/assets/*.pid
 spec/assets/*.db
 spec/assets/**/*.pid
@@ -26,3 +27,4 @@ spec/assets/test_release/config/final.yml
 director/director.db
 micro/tmp
 health_monitor/spec/assets/dev*.yml
+ci_result/

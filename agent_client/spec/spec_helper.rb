@@ -1,8 +1,10 @@
-require 'rspec/core'
+# Copyright (c) 2009-2012 VMware, Inc.
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
-require 'agent_client'
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
-RSpec.configure do |c|
-  c.color_enabled = true
-end
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
+
+require "rspec"
+require "agent_client"
