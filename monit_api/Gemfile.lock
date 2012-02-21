@@ -11,11 +11,9 @@ GEM
     linecache (0.43)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
+    multi_json (1.0.4)
     rake (0.8.7)
     rcov (0.9.9)
-    rcov_analyzer (0.2)
-      builder
-      rcov
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
       rspec-expectations (~> 2.5.0)
@@ -39,6 +37,12 @@ GEM
       ruby-debug-base19 (>= 0.11.19)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
+    simplecov (0.5.4)
+      multi_json (~> 1.0.3)
+      simplecov-html (~> 0.5.3)
+    simplecov-html (0.5.3)
+    simplecov-rcov (0.2.3)
+      simplecov (>= 0.4.1)
 
 PLATFORMS
   ruby
@@ -48,7 +52,8 @@ DEPENDENCIES
   crack
   rake
   rcov
-  rcov_analyzer
   rspec
   ruby-debug
   ruby-debug19
+  simplecov
+  simplecov-rcov

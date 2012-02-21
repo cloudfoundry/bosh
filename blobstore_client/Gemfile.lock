@@ -4,6 +4,7 @@ PATH
     blobstore_client (0.3.9)
       aws-s3
       httpclient
+      json
       ruby-atmos-pure (>= 1.0.5)
       uuidtools
 
@@ -21,6 +22,7 @@ GEM
     columnize (0.3.3)
     diff-lcs (1.1.2)
     httpclient (2.2.4)
+    json (1.6.5)
     linecache (0.46)
       rbx-require-relative (> 0.0.4)
     linecache19 (0.5.12)
@@ -30,9 +32,6 @@ GEM
     rake (0.8.7)
     rbx-require-relative (0.0.5)
     rcov (0.9.9)
-    rcov_analyzer (0.2)
-      builder
-      rcov
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
       rspec-expectations (~> 2.3.0)
@@ -62,8 +61,6 @@ GEM
       archive-tar-minitar (>= 0.5.2)
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
-    simplecov-clover (0.0.1)
-      simplecov (>= 0.4.1)
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
@@ -78,10 +75,8 @@ DEPENDENCIES
   ci_reporter
   rake
   rcov
-  rcov_analyzer (>= 0.2)
   rspec
   ruby-debug
   ruby-debug19
   simplecov
-  simplecov-clover
   simplecov-rcov
