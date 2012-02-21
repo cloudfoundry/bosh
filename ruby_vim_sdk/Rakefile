@@ -1,40 +1,46 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+$:.unshift(File.expand_path("../../rake", __FILE__))
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __FILE__)
+
 require "rubygems"
 require "bundler"
-Bundler::GemHelper.install_tasks
+Bundler.setup(:default, :test)
 
-desc "Run specs"
-task :spec => [ "bundler:install:test", "test:spec" ]
+require "rake"
+require "rspec/core/rake_task"
 
-desc "Run specs for CI"
-task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
+require "bundler_task"
+require "ci_task"
 
-desc "Run specs w/coverage"
-task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
+gem_helper = Bundler::GemHelper.new(Dir.pwd)
 
-environments = %w(test development production)
-
-namespace "bundler" do
-
-  desc "Install gems"
-  task "install" do
-    sh("bundle install")
-  end
-
-  environments = %w(test development production)
-
-  environments.each do |env|
-    desc "Install gems for #{env}"
-    task "install:#{env}" do
-      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
-    end
-  end
-
+desc "Build Ruby VIM Client gem into the pkg directory"
+task "build" do
+  gem_helper.build_gem
 end
 
-namespace "test" do
-  ["spec", "spec:rcov", "spec:ci" ].each do |task_name|
-    task task_name do
-      sh("cd spec && rake #{task_name}")
-    end
+desc "Build and install Ruby VIM Client into system gems"
+task "install" do
+  sh("bundle install --local --without test development")
+  gem_helper.install_gem
+end
+
+BundlerTask.new
+
+namespace :spec do
+  desc "Run Unit Tests"
+  rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+    t.gemfile = "Gemfile"
+    t.pattern = "spec/unit/**/*_spec.rb"
+    t.rspec_opts = %w(--format progress --colour)
+  end
+
+  CiTask.new do |task|
+    task.rspec_task = rspec_task
   end
 end
+
+desc "Install dependencies and run tests"
+task :spec => %w(bundler:install:test spec:unit)

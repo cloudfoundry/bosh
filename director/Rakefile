@@ -1,113 +1,110 @@
-require 'rake'
-require 'fileutils'
+# Copyright (c) 2009-2012 VMware, Inc.
 
-desc "Run specs"
-task "spec" => %W(bundler:install:test test:spec)
+$:.unshift(File.expand_path("../../rake", __FILE__))
 
-desc "Run functional tests"
-task "spec:unit" => %W(bundler:install:test test:spec:unit)
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __FILE__)
 
-desc "Run functional tests"
-task "spec:functional" => %W(bundler:install:test test:spec:functional)
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
 
-desc "Run CPI integration tests"
-task "spec:cpi" => %W(bundler:install:test test:spec:cpi)
+require "rake"
+require "rspec/core/rake_task"
 
-namespace "migration" do
-  desc "Generate new migration"
-  task "new", :type, :name do |task, args|
-    type = args[:type]
-    if type.nil?
-      puts "Please provide migration type: rake #{task.name}[<type>, <name>]"
-      exit(1)
-    elsif !File.directory?("db/migrations/#{type}")
-      Dir.chdir("db/migrations")
-      valid_types = Dir["*"].select {|file| File.directory?(file)}
-      puts "Invalid type: '#{type}', must be one of: #{valid_types.join(", ")}"
-      exit(1)
+require "bundler_task"
+require "ci_task"
+
+BundlerTask.new
+
+import "migrations.rake"
+
+namespace "redis" do
+  REDIS_DIR = File.join(File.dirname(__FILE__), "spec/assets")
+  REDIS_CNF = File.join(REDIS_DIR, "redis_test.conf")
+  REDIS_PID = File.join(REDIS_DIR, "redis_db/redis.pid")
+
+  task :start do
+    redis_running = false
+
+    begin
+      redis_running = File.exists?(REDIS_PID) &&
+          Process.kill(0, File.read(REDIS_PID).to_i)
+    rescue Errno::ESRCH
+      FileUtils.rm REDIS_PID
+      false
     end
 
-    name = args[:name]
-    if name.nil?
-      puts "Please provide migration name: rake #{task.name}[<type>, <name>]"
-      exit(1)
-    end
-
-    timestamp = Time.new.getutc.strftime("%Y%m%d%H%M%S")
-    filename = "db/migrations/#{type}/#{timestamp}_#{name}.rb"
-
-    puts "Creating #{filename}"
-    FileUtils.touch(filename)
-  end
-
-  desc "Run migrations"
-  task "run", :config do |task, args|
-    config_file = args[:config]
-    if config_file.nil?
-      abort("Please provide a path to the config file: rake #{task.name}[<path to config file>]")
-    elsif !File.file?(config_file)
-      abort("Invalid config file '#{config_file}'")
-    end
-
-    config = YAML.load_file(config_file)
-    abort ("Director database config missing from config file") unless config["db"] && config["db"]["database"]
-
-    migrate(config["db"]["database"], nil, "db/migrations/director")
-    migrate(config["db"]["database"], "vsphere_cpi_schema", "db/migrations/vsphere_cpi")
-
-    if config["dns"] && config["dns"]["db"]
-      migrate(config["dns"]["db"]["database"], "dns_schema", "db/migrations/dns")
+    unless redis_running
+      output = `redis-server "#{REDIS_CNF}"`
+      unless $?.exitstatus == 0
+        puts("Can't start redis-server: \n#{output}")
+        exit(1)
+      end
     end
   end
 
-  task "manual", :type, :db, :schema do |task, args|
-    migrate(args[:db], args[:schema], "db/migrations/#{args[:type]}")
-  end
-
-  def migrate(database, schema_table, dir, target = nil)
-    dir = "\"#{dir}\""
-    schema_table = schema_table ? "\"#{schema_table}\"" : "nil"
-    target = target ? "\"#{target}\"" : "nil"
-
-    script=<<-EOS
-      Sequel.extension :migration
-      Sequel::TimestampMigrator.new(DB, #{dir}, :table => #{schema_table}, :target => #{target}).run
-    EOS
-
-    IO.popen("bundle exec sequel '#{database}'", :mode => "r+") do |io|
-      io.write(script)
-      io.close_write
-      puts io.read
+  task :stop do
+    if File.exists?(REDIS_PID)
+      Process.kill "INT", File.read(REDIS_PID).to_i
+      FileUtils.rm REDIS_PID
     end
-
-    exit(1) unless $?.exitstatus == 0
   end
 end
 
-namespace "bundler" do
+namespace :spec do
+  SPEC_OPTS = %w(--format progress --colour)
 
-  desc "Install gems"
-  task "install" do
-    sh("bundle install")
+  desc "Run Unit Tests"
+  unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+    t.gemfile = "Gemfile"
+    t.pattern = "spec/unit/**/*_spec.rb"
+    t.rspec_opts = SPEC_OPTS
   end
 
-  environments = %w(test development production)
-
-  environments.each do |env|
-    desc "Install gems for #{env}"
-    task "install:#{env}" do
-      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
-    end
+  CiTask.new do |task|
+    task.rspec_task = unit_rspec_task
   end
 
-end
+  desc ""
+  fn_rspec_task = RSpec::Core::RakeTask.new(:run_fn) do |t|
+    t.gemfile = "Gemfile"
+    t.pattern = "spec/functional/**/*_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
 
-namespace "test" do
+  CiTask.new do |task|
+    task.rspec_task = fn_rspec_task
+  end
 
-  %W(spec spec:unit spec:functional spec:cpi).each do |task_name|
-    task task_name do
-      sh("cd spec && rake #{task_name}")
+  desc "Run CPI Tests"
+  cpi_rspec_task = RSpec::Core::RakeTask.new(:cpi) do |t|
+    t.gemfile = "Gemfile"
+    t.pattern = "spec/cpi/**/*_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  CiTask.new do |task|
+    task.rspec_task = cpi_rspec_task
+  end
+
+  desc "Run Functional Tests"
+  task "functional" => %w(redis:start spec:run_fn redis:stop)
+
+  desc "Run Functional Tests for CI"
+  task "functional:ci" => %w(redis:start spec:run_fn:ci redis:stop)
+
+  namespace :combined do
+    task :run => %w(redis:start spec:combined:tests redis:stop)
+
+    desc ""
+    RSpec::Core::RakeTask.new(:tests) do |task|
+      task.gemfile = "Gemfile"
+      task.rspec_opts = SPEC_OPTS
+      task.pattern = "spec/{unit,functional}/**/*_spec.rb"
     end
   end
 
 end
+
+desc "Install dependencies and run tests"
+task :spec => %w(bundler:install:test spec:combined:run)
