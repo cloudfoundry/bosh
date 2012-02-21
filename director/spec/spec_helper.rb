@@ -26,7 +26,6 @@ module SpecHelper
 
     def init
       ENV["RACK_ENV"] = "test"
-      enable_simplecov if ENV["SIMPLECOV"]
       configure_logging
       configure_temp_dir
 
@@ -36,25 +35,6 @@ module SpecHelper
       init_database
 
       require "blueprints"
-    end
-
-    def enable_simplecov
-      require "simplecov"
-      require "simplecov-rcov"
-      require "simplecov-clover"
-
-      SimpleCov.formatter = Class.new do
-        def format(result)
-          SimpleCov::Formatter::CloverFormatter.new.format(result)
-          SimpleCov::Formatter::RcovFormatter.new.format(result)
-        end
-      end
-
-      SimpleCov.root(File.expand_path("../..", __FILE__))
-      SimpleCov.add_filter("spec")
-      SimpleCov.add_filter("vendor")
-      SimpleCov.coverage_dir(ENV["SIMPLECOV_DIR"] || "spec_coverage")
-      SimpleCov.start
     end
 
     def configure_logging

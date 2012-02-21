@@ -1,6 +1,4 @@
-libdir = File.expand_path("../lib", __FILE__)
-$:.unshift(libdir) unless $:.include?(libdir)
-require "cli/version"
+require File.dirname(__FILE__) + "/lib/cli/version"
 
 Gem::Specification.new do |s|
   s.name         = "bosh_cli"
@@ -8,13 +6,15 @@ Gem::Specification.new do |s|
   s.platform     = Gem::Platform::RUBY
   s.summary      = "Bosh CLI"
   s.description  = "Bosh command-line tool for release engineering and deployment"
-  s.authors      = [ "Oleg Shaldybin" ]
-  s.email        = "olegs@vmware.com"
-  s.homepage     = "http://vmware.com"
-  s.executables  = %w(bosh)
-  s.files        = %w(README Rakefile) + Dir.glob("{bin,lib}/**/*")
-  s.bindir       = "bin"
+  s.author       = "VMware"
+  s.email        = "support@vmware.com"
+  s.homepage     = "http://www.vmware.com"
+
+  s.files        = `git ls-files -- {bin,lib}/*`.split("\n") + %w(README Rakefile)
+  s.test_files   = `git ls-files -- {spec}/*`.split("\n")
   s.require_path = "lib"
+  s.bindir       = "bin"
+  s.executables  = %w(bosh)
 
   s.add_dependency "json_pure", "~>1.6.1"
   s.add_dependency "highline", "~>1.6.2"
@@ -25,6 +25,4 @@ Gem::Specification.new do |s|
   s.add_dependency "net-ssh", "~>2.2.1"
   s.add_dependency "net-ssh-gateway", "~>1.1.0"
   s.add_dependency "net-scp", "~>1.0.4"
-
-  s.add_development_dependency "rspec"
 end

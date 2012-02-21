@@ -1,15 +1,24 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    archive-tar-minitar (0.5.2)
     builder (3.0.0)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
+    columnize (0.3.6)
     daemons (1.1.5)
     diff-lcs (1.1.2)
     eventmachine (0.12.10)
+    linecache (0.46)
+      rbx-require-relative (> 0.0.4)
+    linecache19 (0.5.12)
+      ruby_core_source (>= 0.1.4)
     rack (1.4.0)
     rack-test (0.5.7)
       rack (>= 1.0)
+    rake (0.9.2.2)
+    rbx-require-relative (0.0.5)
+    rcov (1.0.0)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
       rspec-expectations (~> 2.5.0)
@@ -18,10 +27,23 @@ GEM
     rspec-expectations (2.5.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.5.0)
+    ruby-debug (0.10.4)
+      columnize (>= 0.1)
+      ruby-debug-base (~> 0.10.4.0)
+    ruby-debug-base (0.10.4)
+      linecache (>= 0.3)
+    ruby-debug-base19 (0.11.25)
+      columnize (>= 0.3.1)
+      linecache19 (>= 0.5.11)
+      ruby_core_source (>= 0.1.4)
+    ruby-debug19 (0.11.6)
+      columnize (>= 0.3.1)
+      linecache19 (>= 0.5.11)
+      ruby-debug-base19 (>= 0.11.19)
+    ruby_core_source (0.1.5)
+      archive-tar-minitar (>= 0.5.2)
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
-    simplecov-clover (0.0.1)
-      simplecov (>= 0.4.1)
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
@@ -41,9 +63,12 @@ PLATFORMS
 DEPENDENCIES
   ci_reporter
   rack-test
+  rake
+  rcov
   rspec
+  ruby-debug
+  ruby-debug19
   simplecov
-  simplecov-clover
   simplecov-rcov
   sinatra
   thin

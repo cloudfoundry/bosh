@@ -1,68 +1,46 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+$:.unshift(File.expand_path("../../rake", __FILE__))
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __FILE__)
+
 require "rubygems"
-require "rubygems/package_task"
+require "bundler"
+Bundler.setup(:default, :test)
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "lib"))
-require "monit_api/version"
+require "rake"
+require "rspec/core/rake_task"
 
-GEM = "monit_api"
-GEM_VERSION = MonitApi::VERSION
+require "bundler_task"
+require "ci_task"
 
-gemspec = Gem::Specification.new do |s|
-  s.name         = GEM
-  s.version      = GEM_VERSION
-  s.platform     = Gem::Platform::RUBY
-  s.summary      = "Monit API Client"
-  s.description  = s.summary
-  s.authors      = [ "Vadim Spivak" ]
-  s.email        = "vspivak@vmware.com"
-  s.homepage     = "http://vmware.com"
-  s.require_path = "lib"
-  s.files        = %w(README Rakefile) + Dir.glob("{lib,spec}/**/*")
+gem_helper = Bundler::GemHelper.new(Dir.pwd)
 
-  s.add_dependency "crack"
+desc "Build Monit API Client gem into the pkg directory"
+task "build" do
+  gem_helper.build_gem
 end
 
-Gem::PackageTask.new(gemspec) do |pkg|
-    pkg.gem_spec = gemspec
+desc "Build and install Monit API Client into system gems"
+task "install" do
+  sh("bundle install --local --without test development")
+  gem_helper.install_gem
 end
 
-task :install => [ :package ] do
-  sh "gem install pkg/#{GEM}-#{GEM_VERSION}"
-end
+BundlerTask.new
 
-desc "Run specs"
-task :spec => [ "bundler:install:test", "test:spec" ]
-
-desc "Run specs for CI"
-task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
-
-desc "Run specs w/coverage"
-task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
-
-environments = %w(test development production)
-
-namespace "bundler" do
-
-  desc "Install gems"
-  task "install" do
-    sh("bundle install")
+namespace :spec do
+  desc "Run Unit Tests"
+  rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+    t.gemfile = "Gemfile"
+    t.pattern = "spec/unit/**/*_spec.rb"
+    t.rspec_opts = %w(--format progress --colour)
   end
 
-  environments = %w(test development production)
-
-  environments.each do |env|
-    desc "Install gems for #{env}"
-    task "install:#{env}" do
-      sh("bundle install --local --without #{(environments - [env]).join(' ')}")
-    end
-  end
-
-end
-
-namespace "test" do
-  ["spec", "spec:rcov", "spec:ci" ].each do |task_name|
-    task task_name do
-      sh("cd spec && rake #{task_name}")
-    end
+  CiTask.new do |task|
+    task.rspec_task = rspec_task
   end
 end
+
+desc "Install dependencies and run tests"
+task :spec => %w(bundler:install:test spec:unit)
