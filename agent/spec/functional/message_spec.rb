@@ -56,7 +56,7 @@ describe "messages" do
 
     # ugly, but we need to give the agent some time to start
     # perhaps it should listen for the first heartbeat to appear?
-    sleep 2
+    sleep 5
   end
 
   # this spec works when local but not through jenkins :(

@@ -15,7 +15,7 @@ dump_file      = File.join(Dir.tmpdir, "bosh-agent.rcov")
 
 ENV["CI_REPORTS"] = reports_dir
 
-task :spec => [ "spec:all" ]
+task :spec => [ "spec:unit" ]
 
 namespace "spec" do
   gemfile   = "../Gemfile"
