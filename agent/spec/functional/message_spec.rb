@@ -1,8 +1,8 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require File.dirname(__FILE__) + "/../spec_helper"
 
-require 'posix/spawn'
-require 'nats/client'
-require 'yajl'
+require "posix/spawn"
+require "nats/client"
+require "yajl"
 
 describe "messages" do
 
@@ -36,6 +36,31 @@ describe "messages" do
     port
   end
 
+  # wait for the first heartbeat to appear or timeout after 5 seconds
+  def wait_for_nats(timeout=5)
+    count = 0
+    begin
+      catch :done do
+        NATS.start(:uri => @nats_uri) do
+          sid = NATS.subscribe('hm.agent.heartbeat.>') do |json|
+            throw :done
+          end
+          NATS.timeout(sid, timeout) do
+            raise "timeout waiting for nats to start"
+          end
+        end
+      end
+    rescue NATS::ConnectError => e
+      sleep 0.1
+      count += 1
+      if count > timeout * 10
+        raise e
+      else
+        retry
+      end
+    end
+  end
+
   before(:all) do
     @user = "nats"
     @pass = "nats"
@@ -43,35 +68,17 @@ describe "messages" do
     @nats_uri = "nats://#{@user}:#{@pass}@localhost:#{@port}"
     @agent_id = "rspec_agent"
 
-    puts "starting nats"
     command = "nats-server --port #{@port} --user #{@user} --pass #{@pass}"
     @nats_pid = POSIX::Spawn::spawn(command)
 
-    puts "starting agent"
     agent = File.expand_path("../../../bin/agent", __FILE__)
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
-    command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
+    command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1"
+    command += " -b #{@basedir} -l ERROR"
     @agent_pid = POSIX::Spawn::spawn(command)
-
-    # ugly, but we need to give the agent some time to start
-    # perhaps it should listen for the first heartbeat to appear?
-    sleep 2
+    wait_for_nats
   end
-
-  # this spec works when local but not through jenkins :(
-  # it "should send heartbeats" do
-  #   catch :done do
-  #     NATS.start(:uri => @nats_uri) do
-  #       sid = NATS.subscribe('hm.agent.heartbeat.>') do |json|
-  #         msg = Yajl::Parser.new.parse(json)
-  #         msg.should have_key('job')
-  #         throw :done
-  #       end
-  #       NATS.timeout(sid, 2) { raise "timeout error" }
-  #     end
-  #   end
-  # end
 
   it "should respond to state message" do
     nats('state') do |msg|
@@ -125,9 +132,7 @@ describe "messages" do
   end
 
   after(:all) do
-    puts "stopping agent"
     Process.kill(:TERM, @agent_pid)
-    puts "stopping nats"
     Process.kill(:TERM, @nats_pid)
     FileUtils.rm_rf(@basedir)
   end
