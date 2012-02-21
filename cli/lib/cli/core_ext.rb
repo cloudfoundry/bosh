@@ -75,6 +75,12 @@ module BoshExtensions
   rescue SystemCallError => e
     err("Cannot load YAML file at `#{path}': #{e}")
   end
+
+  def dump_yaml_to_file(obj, file)
+    yaml = YAML.dump(obj)
+    file.write(yaml.gsub(" \n", "\n"))
+    file.flush
+  end
 end
 
 module BoshStringExtensions
