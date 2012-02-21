@@ -5,9 +5,13 @@ gem "crack"
 
 group :test do
   gem "ci_reporter"
-  gem "rcov"
-  gem "rcov_analyzer"
   gem "rspec"
-  gem "ruby-debug", :platform => :ruby_18
-  gem "ruby-debug19", :platform => :ruby_19
+
+  gem "ruby-debug", :platforms => :ruby_18
+  gem "ruby-debug19", :platforms => :ruby_19
+
+  gem "rcov", :platforms => :ruby_18
+
+  gem "simplecov", :platforms => :ruby_19
+  gem "simplecov-rcov", :platforms => :ruby_19
 end

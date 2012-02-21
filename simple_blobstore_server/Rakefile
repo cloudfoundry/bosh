@@ -1,9 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-if RUBY_VERSION < "1.9"
-  puts("BOSH Director requires Ruby 1.9+")
-  exit(1)
-end
+$:.unshift(File.expand_path("../../rake", __FILE__))
 
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __FILE__)
 
@@ -13,45 +10,24 @@ Bundler.setup(:default, :test)
 
 require "rake"
 require "rspec/core/rake_task"
-require "ci/reporter/rake/rspec"
 
-coverage_dir = File.expand_path("../spec_coverage", __FILE__)
-reports_dir = File.expand_path("../spec_reports", __FILE__)
+require "bundler_task"
+require "ci_task"
 
-ENV["CI_REPORTS"] = reports_dir
+BundlerTask.new
 
 namespace :spec do
-  gemfile = "Gemfile"
-  spec_opts = %W(--format documentation --colour)
-
-  task :cleanup_cov do
-    FileUtils.rm_rf(coverage_dir)
+  desc "Run Functional Tests"
+  rspec_task = RSpec::Core::RakeTask.new(:functional) do |t|
+    t.gemfile = "Gemfile"
+    t.pattern = "spec/functional/**/*_spec.rb"
+    t.rspec_opts = %w(--format progress --colour)
   end
 
-  task :cleanup_reports do
-    FileUtils.rm_rf(reports_dir)
-  end
-
-  desc "Run Blobstore Server functional tests"
-  task :functional => %W(spec:functional:run)
-
-  namespace :functional do
-
-    desc ""
-    RSpec::Core::RakeTask.new(:run) do |task|
-      task.gemfile = gemfile
-      task.rspec_opts = spec_opts
-      task.pattern = "spec/functional/**/*_spec.rb"
-    end
-
-    desc "Run Blobstore Server functional tests with code coverage"
-    task :cov do
-      ENV["SIMPLECOV"] = "1"
-      Rake::Task["spec:cleanup_cov"].invoke
-      Rake::Task["spec:functional:run"].invoke
-    end
-
-    desc "Run Blobstore Server functional tests for CI"
-    task :ci => %W(ci:setup:rspec spec:cleanup_reports spec:functional:cov)
+  CiTask.new do |task|
+    task.rspec_task = rspec_task
   end
 end
+
+desc "Install dependencies and run tests"
+task :spec => %w(bundler:install:test spec:functional)

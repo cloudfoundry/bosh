@@ -1,28 +1,22 @@
-libdir = File.join(File.dirname(__FILE__), "lib")
-$:.unshift(libdir) unless $:.include?(libdir)
+require File.dirname(__FILE__) + "/lib/blobstore_client/version"
 
-require "blobstore_client/version"
-
-gemspec = Gem::Specification.new do |s|
+Gem::Specification.new do |s|
   s.name         = "blobstore_client"
   s.version      = Bosh::Blobstore::Client::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = "Bosh blobstore client"
   s.description  = s.summary
-  s.authors      = [ "Vadim Spivak", "Oleg Shaldybin" ]
-  s.email        = "vspivak@vmware.com"
-  s.homepage     = "http://vmware.com"
+  s.author       = "VMware"
+  s.email        = "support@vmware.com"
+  s.homepage     = "http://www.vmware.com"
+
+  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README Rakefile)
+  s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
-  s.files        = %w(README Rakefile) + Dir.glob("{lib}/**/*")
 
-  s.add_dependency "httpclient"
   s.add_dependency "aws-s3"
-  s.add_dependency "uuidtools"
+  s.add_dependency "httpclient"
+  s.add_dependency "json"
   s.add_dependency "ruby-atmos-pure", ">= 1.0.5"
-
-  if Gem::Version.new(RUBY_VERSION.dup) <= Gem::Version.new("1.8.7")
-    s.add_dependency "json"
-  end
-
-  s.add_development_dependency "rspec"
+  s.add_dependency "uuidtools"
 end

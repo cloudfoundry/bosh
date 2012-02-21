@@ -1,10 +1,10 @@
-require File.dirname(__FILE__) + "/lib/agent_client/version"
+require File.dirname(__FILE__) + "/lib/monit_api/version"
 
 Gem::Specification.new do |s|
-  s.name         = "agent_client"
-  s.version      = Bosh::Agent::Client::VERSION
+  s.name         = "monit_api"
+  s.version      = MonitApi::VERSION
   s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh agent client"
+  s.summary      = "Bosh Monit API client"
   s.description  = s.summary
   s.author       = "VMware"
   s.email        = "support@vmware.com"
@@ -14,6 +14,5 @@ Gem::Specification.new do |s|
   s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
 
-  s.add_dependency "httpclient"
-  s.add_dependency "yajl-ruby"
+  s.add_dependency "crack"
 end
