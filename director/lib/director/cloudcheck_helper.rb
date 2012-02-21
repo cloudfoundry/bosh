@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Director
   module CloudcheckHelper
     # Helper functions that come in handy for

@@ -20,5 +20,9 @@ gemspec = Gem::Specification.new do |s|
   s.add_dependency "uuidtools"
   s.add_dependency "ruby-atmos-pure", ">= 1.0.5"
 
+  if Gem::Version.new(RUBY_VERSION.dup) <= Gem::Version.new("1.8.7")
+    s.add_dependency "json"
+  end
+
   s.add_development_dependency "rspec"
 end
