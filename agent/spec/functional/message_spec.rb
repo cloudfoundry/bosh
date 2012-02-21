@@ -36,6 +36,32 @@ describe "messages" do
     port
   end
 
+  # wait for the first heartbeat to appear or timeout after 5 seconds
+  def wait_for_nats(timeout=5)
+    printf("waiting for nats: ")
+    count = 0
+    begin
+      catch :done do
+        NATS.start(:uri => @nats_uri) do
+          sid = NATS.subscribe('hm.agent.heartbeat.>') do |json|
+            throw :done
+          end
+          NATS.timeout(sid, timeout) { raise "timeout waiting for nats to start" }
+        end
+      end
+    rescue NATS::ConnectError => e
+      sleep 0.1
+      count += 1
+      printf(".")
+      if count > timeout * 10
+        raise e
+      else
+        retry
+      end
+    end
+    puts " done!"
+  end
+
   before(:all) do
     @user = "nats"
     @pass = "nats"
@@ -53,25 +79,8 @@ describe "messages" do
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
     command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
     @agent_pid = POSIX::Spawn::spawn(command)
-
-    # ugly, but we need to give the agent some time to start
-    # perhaps it should listen for the first heartbeat to appear?
-    sleep 2
+    wait_for_nats
   end
-
-  # this spec works when local but not through jenkins :(
-  # it "should send heartbeats" do
-  #   catch :done do
-  #     NATS.start(:uri => @nats_uri) do
-  #       sid = NATS.subscribe('hm.agent.heartbeat.>') do |json|
-  #         msg = Yajl::Parser.new.parse(json)
-  #         msg.should have_key('job')
-  #         throw :done
-  #       end
-  #       NATS.timeout(sid, 2) { raise "timeout error" }
-  #     end
-  #   end
-  # end
 
   it "should respond to state message" do
     nats('state') do |msg|
