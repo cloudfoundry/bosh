@@ -1,8 +1,8 @@
-require 'rspec/core'
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
-require 'blobstore_client'
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
 
-RSpec.configure do |c|
-  c.color_enabled = true
-end
+require "rspec"
+require "blobstore_client"
