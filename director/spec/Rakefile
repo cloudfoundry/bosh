@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 if RUBY_VERSION < "1.9"
   puts("BOSH Director requires Ruby 1.9+")
   exit(1)
@@ -126,7 +128,7 @@ namespace :spec do
     end
   end
 
-  desc "Run Director functional tests"
+  desc "Run Director CPI tests"
   task :cpi => %W(spec:cpi:run)
 
   namespace :cpi do

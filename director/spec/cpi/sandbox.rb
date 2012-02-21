@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Director::Cpi
   class Sandbox
     NATS_PID        = File.join("/tmp", "cpi-nats.pid")
