@@ -9,7 +9,11 @@ require "bundler"
 Bundler.setup(:default, :test)
 
 require "rake"
-require "rspec/core/rake_task"
+require "rake"
+begin
+  require "rspec/core/rake_task"
+rescue LoadError
+end
 
 require "bundler_task"
 require "ci_task"
@@ -29,18 +33,20 @@ end
 
 BundlerTask.new
 
-namespace :spec do
-  desc "Run Unit Tests"
-  rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
-    t.gemfile = "Gemfile"
-    t.pattern = "spec/unit/**/*_spec.rb"
-    t.rspec_opts = %w(--format progress --colour)
+if defined?(RSpec)
+  namespace :spec do
+    desc "Run Unit Tests"
+    rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+      t.gemfile = "Gemfile"
+      t.pattern = "spec/unit/**/*_spec.rb"
+      t.rspec_opts = %w(--format progress --colour)
+    end
+
+    CiTask.new do |task|
+      task.rspec_task = rspec_task
+    end
   end
 
-  CiTask.new do |task|
-    task.rspec_task = rspec_task
-  end
+  desc "Install dependencies and run tests"
+  task :spec => %w(bundler:install:test spec:unit)
 end
-
-desc "Install dependencies and run tests"
-task :spec => %w(bundler:install:test spec:unit)
