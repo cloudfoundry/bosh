@@ -27,7 +27,7 @@ end
 
 desc "Build and install Bosh Agent Client into system gems"
 task "install" do
-  sh("bundle install --local --without test development")
+  Rake::Task["bundler:install"].invoke
   gem_helper.install_gem
 end
 
