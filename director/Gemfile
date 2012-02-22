@@ -19,15 +19,11 @@ gem "thin"
 gem "uuidtools"
 gem "yajl-ruby"
 
-group :development do
-  gem "sqlite3"
-end
-
 group :production do
   gem "pg"
 end
 
-group :test do
+group :test, :development do
   gem "autotest"
   gem "ci_reporter"
   gem "machinist"
