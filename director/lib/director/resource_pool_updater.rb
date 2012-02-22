@@ -63,7 +63,7 @@ module Bosh::Director
           @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
             index_lock.synchronize { index += 1 }
 
-            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index}/#{count})") do
+            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index-1}/#{count})") do
               @logger.info("Deleting outdated VM: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
               vm = idle_vm.vm
@@ -114,8 +114,8 @@ module Bosh::Director
       @logger.info("Creating #{counter} missing VMs")
       vms_to_process.each_with_index do |idle_vm, index|
         thread_pool.process do
-          @event_log.track("#{@resource_pool.name}/#{index+1}") do
-            with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index + 1}/#{counter})") do
+          @event_log.track("#{@resource_pool.name}/#{index}") do
+            with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index}/#{counter})") do
               @logger.info("Creating missing VM")
               create_missing_vm(idle_vm)
             end
