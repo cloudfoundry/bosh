@@ -7,7 +7,7 @@ module Bosh::Agent
     DEFAULT_SEVERITY = 2
 
     # The main area of responsibility for this class is conversion
-    # of Monit alert format to Bosh Health Monitor alert format.
+    # of Monit alert format to BOSH Health Monitor alert format.
 
     attr_reader :id, :service, :event, :description, :action, :date, :severity
 

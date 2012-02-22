@@ -69,7 +69,7 @@ module Bosh::Cli
       end
 
       unless @name.bosh_valid_id?
-        raise InvalidJob, "`#{@name}' is not a valid Bosh identifier"
+        raise InvalidJob, "`#{@name}' is not a valid BOSH identifier"
       end
 
       unless File.exists?(File.join(job_dir, "spec"))

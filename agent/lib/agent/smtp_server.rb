@@ -30,7 +30,7 @@ module Bosh::Agent
     end
 
     def get_server_greeting
-      "Bosh Agent SMTP Server"
+      "BOSH Agent SMTP Server"
     end
 
     def get_server_domain
