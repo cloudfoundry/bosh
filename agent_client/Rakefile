@@ -20,12 +20,12 @@ require "ci_task"
 
 gem_helper = Bundler::GemHelper.new(Dir.pwd)
 
-desc "Build Bosh Agent Client gem into the pkg directory"
+desc "Build BOSH Agent Client gem into the pkg directory"
 task "build" do
   gem_helper.build_gem
 end
 
-desc "Build and install Bosh Agent Client into system gems"
+desc "Build and install BOSH Agent Client into system gems"
 task "install" do
   Rake::Task["bundler:install"].invoke
   gem_helper.install_gem

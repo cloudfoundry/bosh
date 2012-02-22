@@ -9,7 +9,7 @@ module Bosh
         @cache_dir = cache_dir || Bosh::Cli::DEFAULT_CACHE_DIR
 
         if File.exists?(@cache_dir) && !File.directory?(@cache_dir)
-          raise CacheDirectoryError, "Bosh cache directory error: '#{@cache_dir}' is a file, not directory"
+          raise CacheDirectoryError, "BOSH cache directory error: '#{@cache_dir}' is a file, not directory"
         end
 
         unless File.exists?(@cache_dir)

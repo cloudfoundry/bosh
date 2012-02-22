@@ -29,7 +29,7 @@ module Bosh::HealthMonitor
         @agent_manager.setup_events
         setup_timers
         start_http_server
-        @logger.info "Bosh HealthMonitor #{Bhm::VERSION} is running..."
+        @logger.info "BOSH HealthMonitor #{Bhm::VERSION} is running..."
       end
     end
 

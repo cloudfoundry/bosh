@@ -3,7 +3,7 @@ module Bosh::Cli::Command
     DEFAULT_STATUS_TIMEOUT = 3 # seconds
 
     def version
-      say("Bosh %s" % [ Bosh::Cli::VERSION ])
+      say("BOSH %s" % [ Bosh::Cli::VERSION ])
     end
 
     def status
