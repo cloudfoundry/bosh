@@ -55,8 +55,8 @@ module Bosh::Cli
 
       @children.each_pair do |k, v|
         if v.state == :mismatch
-          out << indent + "type mismatch in #{k}: ".red +
-              "was #{v.old.class.to_s}, now #{v.new.class.to_s}"
+          out << indent + "#{k} type changed: ".yellow +
+              "#{v.old.class.to_s} -> #{v.new.class.to_s}"
           out << diff(v.old, v.new, indent + "  ")
         elsif v.leaf?
           case v.state
