@@ -34,12 +34,7 @@ thin_server = Thin::Server.new("0.0.0.0", config["port"], :signals => false) do
   end
 end
 
-["TERM", "INT", "QUIT"].each do |signal|
-  trap(signal) do
-    thin_server.stop!
-    EM.stop
-  end
-end
+Bosh::Director::DrainManager.setup(thin_server)
 
 thin_server.start!
 event_thread.join
