@@ -31,7 +31,7 @@ module Bosh::Cli
       end
 
       unless @name.bosh_valid_id?
-        raise InvalidPackage, "Package name should be a valid Bosh identifier"
+        raise InvalidPackage, "Package name should be a valid BOSH identifier"
       end
 
       unless @globs.is_a?(Array) && @globs.size > 0

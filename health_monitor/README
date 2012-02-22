@@ -1,6 +1,6 @@
 h4. Synopsis
 
-Bosh Health Monitor (BHM) is a component that monitors health of one or multiple Bosh deployments. It processes heartbeats and alerts from Bosh agents and notifies interested parties if something goes wrong.
+BOSH Health Monitor (BHM) is a component that monitors health of one or multiple BOSH deployments. It processes heartbeats and alerts from BOSH agents and notifies interested parties if something goes wrong.
 
 h4. Heartbeats
 
@@ -73,7 +73,7 @@ HM subscribes to agent alerts on a message bus:
 | *Subject* | hm.agent.alert.<agent_id> |
 | *Payload* | JSON containing the following keys: id, service, event, action, description, timestamp, tags |
 
-Bosh Agent is responsible for mapping any underlying supervisor alert format to the expected JSON payload and send it to HM.
+BOSH Agent is responsible for mapping any underlying supervisor alert format to the expected JSON payload and send it to HM.
 
 HM is responsible for interpreting JSON payload and mapping it to a sequence of HM actions and possibly creating an HM alert compatible with Alert Processor module. HM never dedups incoming alerts outside of Alert Processor (this adds some overhead to an incoming alert parser but shouldn't be too bad). Malformed payloads are ignored.
 

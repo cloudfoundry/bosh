@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
   s.name         = "agent_client"
   s.version      = Bosh::Agent::Client::VERSION
   s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh agent client"
+  s.summary      = "BOSH agent client"
   s.description  = s.summary
   s.author       = "VMware"
   s.email        = "support@vmware.com"

@@ -12,12 +12,12 @@ task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
 gem_helper = Bundler::GemHelper.new(Dir.pwd)
 
-desc "Build Bosh CLI gem into the pkg directory"
+desc "Build BOSH CLI gem into the pkg directory"
 task "build" do
   gem_helper.build_gem
 end
 
-desc "Build and install Bosh CLI into system gems"
+desc "Build and install BOSH CLI into system gems"
 task "install_head" do
   sh("bundle install --local --without test development")
   gem_helper.install_gem

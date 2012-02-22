@@ -2,7 +2,7 @@ version          "0.0.1"
 maintainer       "VMware"
 maintainer_email "olegs@vmware.com"
 license          "TBD"
-description      "Installs/configures Bosh Health Monitor"
+description      "Installs/configures BOSH Health Monitor"
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.rdoc'))
 
 depends "env"

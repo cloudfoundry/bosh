@@ -1,7 +1,7 @@
 {
   "name": "health_monitor",
-  "description": "Installs/configures Bosh Health Monitor",
-  "long_description": "= DESCRIPTION:\n\nBosh Health Monitor configuration.\n\n",
+  "description": "Installs/configures BOSH Health Monitor",
+  "long_description": "= DESCRIPTION:\n\nBOSH Health Monitor configuration.\n\n",
   "maintainer": "VMware",
   "maintainer_email": "olegs@vmware.com",
   "license": "TBD",

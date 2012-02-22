@@ -64,7 +64,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
   it "whines on funny characters in name" do
     lambda {
       make_builder("@#!", [])
-    }.should raise_error(Bosh::Cli::InvalidPackage, "Package name should be a valid Bosh identifier")
+    }.should raise_error(Bosh::Cli::InvalidPackage, "Package name should be a valid BOSH identifier")
   end
 
   it "whines on empty files" do
