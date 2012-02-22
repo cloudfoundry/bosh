@@ -9,7 +9,10 @@ def spec_asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), "assets", filename))
 end
 
-File.umask(022)
+tmpdir = Dir.mktmpdir
+ENV["TMPDIR"] = tmpdir
+FileUtils.mkdir_p(tmpdir)
+at_exit { FileUtils.rm_rf(tmpdir) }
 
 RSpec.configure do |c|
   c.before(:each) do
