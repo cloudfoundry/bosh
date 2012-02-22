@@ -64,6 +64,7 @@ require "director/package_compiler"
 require "director/resource_pool_updater"
 require "director/sequel"
 require "director/thread_pool"
+require "director/drain_manager"
 
 require "director/cloudcheck_helper"
 require "director/problem_handlers/base"
