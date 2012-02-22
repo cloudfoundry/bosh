@@ -3,7 +3,7 @@ gemspec
 
 gem "rake"
 
-group :test do
+group :test, :development do
   gem "ci_reporter"
   gem "rspec"
 

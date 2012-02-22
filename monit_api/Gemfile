@@ -3,7 +3,7 @@ source :rubygems
 gem "rake"
 gem "crack"
 
-group :test do
+group :test, :development do
   gem "ci_reporter"
   gem "rspec"
 

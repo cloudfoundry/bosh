@@ -5,7 +5,7 @@ gem "sinatra"
 gem "thin"
 gem "uuidtools"
 
-group :test do
+group :test, :development do
   gem "rack-test"
 
   gem "ci_reporter"

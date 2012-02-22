@@ -9,7 +9,10 @@ require "bundler"
 Bundler.setup(:default, :test)
 
 require "rake"
-require "rspec/core/rake_task"
+begin
+  require "rspec/core/rake_task"
+rescue LoadError
+end
 
 require "bundler_task"
 require "ci_task"
@@ -18,93 +21,95 @@ BundlerTask.new
 
 import "migrations.rake"
 
-namespace "redis" do
-  REDIS_DIR = File.join(File.dirname(__FILE__), "spec/assets")
-  REDIS_CNF = File.join(REDIS_DIR, "redis_test.conf")
-  REDIS_PID = File.join(REDIS_DIR, "redis_db/redis.pid")
+if defined?(RSpec)
+  namespace "redis" do
+    REDIS_DIR = File.join(File.dirname(__FILE__), "spec/assets")
+    REDIS_CNF = File.join(REDIS_DIR, "redis_test.conf")
+    REDIS_PID = File.join(REDIS_DIR, "redis_db/redis.pid")
 
-  task :start do
-    redis_running = false
+    task :start do
+      redis_running = false
 
-    begin
-      redis_running = File.exists?(REDIS_PID) &&
-          Process.kill(0, File.read(REDIS_PID).to_i)
-    rescue Errno::ESRCH
-      FileUtils.rm REDIS_PID
-      false
+      begin
+        redis_running = File.exists?(REDIS_PID) &&
+            Process.kill(0, File.read(REDIS_PID).to_i)
+      rescue Errno::ESRCH
+        FileUtils.rm REDIS_PID
+        false
+      end
+
+      unless redis_running
+        output = `redis-server "#{REDIS_CNF}"`
+        unless $?.exitstatus == 0
+          puts("Can't start redis-server: \n#{output}")
+          exit(1)
+        end
+      end
     end
 
-    unless redis_running
-      output = `redis-server "#{REDIS_CNF}"`
-      unless $?.exitstatus == 0
-        puts("Can't start redis-server: \n#{output}")
-        exit(1)
+    task :stop do
+      if File.exists?(REDIS_PID)
+        Process.kill "INT", File.read(REDIS_PID).to_i
+        FileUtils.rm REDIS_PID
       end
     end
   end
 
-  task :stop do
-    if File.exists?(REDIS_PID)
-      Process.kill "INT", File.read(REDIS_PID).to_i
-      FileUtils.rm REDIS_PID
+  namespace :spec do
+    SPEC_OPTS = %w(--format progress --colour)
+
+    desc "Run Unit Tests"
+    unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+      t.gemfile = "Gemfile"
+      t.pattern = "spec/unit/**/*_spec.rb"
+      t.rspec_opts = SPEC_OPTS
     end
-  end
-end
 
-namespace :spec do
-  SPEC_OPTS = %w(--format progress --colour)
-
-  desc "Run Unit Tests"
-  unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
-    t.gemfile = "Gemfile"
-    t.pattern = "spec/unit/**/*_spec.rb"
-    t.rspec_opts = SPEC_OPTS
-  end
-
-  CiTask.new do |task|
-    task.rspec_task = unit_rspec_task
-  end
-
-  desc ""
-  fn_rspec_task = RSpec::Core::RakeTask.new(:run_fn) do |t|
-    t.gemfile = "Gemfile"
-    t.pattern = "spec/functional/**/*_spec.rb"
-    t.rspec_opts = SPEC_OPTS
-  end
-
-  CiTask.new do |task|
-    task.rspec_task = fn_rspec_task
-  end
-
-  desc "Run CPI Tests"
-  cpi_rspec_task = RSpec::Core::RakeTask.new(:cpi) do |t|
-    t.gemfile = "Gemfile"
-    t.pattern = "spec/cpi/**/*_spec.rb"
-    t.rspec_opts = SPEC_OPTS
-  end
-
-  CiTask.new do |task|
-    task.rspec_task = cpi_rspec_task
-  end
-
-  desc "Run Functional Tests"
-  task "functional" => %w(redis:start spec:run_fn redis:stop)
-
-  desc "Run Functional Tests for CI"
-  task "functional:ci" => %w(redis:start spec:run_fn:ci redis:stop)
-
-  namespace :combined do
-    task :run => %w(redis:start spec:combined:tests redis:stop)
+    CiTask.new do |task|
+      task.rspec_task = unit_rspec_task
+    end
 
     desc ""
-    RSpec::Core::RakeTask.new(:tests) do |task|
-      task.gemfile = "Gemfile"
-      task.rspec_opts = SPEC_OPTS
-      task.pattern = "spec/{unit,functional}/**/*_spec.rb"
+    fn_rspec_task = RSpec::Core::RakeTask.new(:run_fn) do |t|
+      t.gemfile = "Gemfile"
+      t.pattern = "spec/functional/**/*_spec.rb"
+      t.rspec_opts = SPEC_OPTS
     end
+
+    CiTask.new do |task|
+      task.rspec_task = fn_rspec_task
+    end
+
+    desc "Run CPI Tests"
+    cpi_rspec_task = RSpec::Core::RakeTask.new(:cpi) do |t|
+      t.gemfile = "Gemfile"
+      t.pattern = "spec/cpi/**/*_spec.rb"
+      t.rspec_opts = SPEC_OPTS
+    end
+
+    CiTask.new do |task|
+      task.rspec_task = cpi_rspec_task
+    end
+
+    desc "Run Functional Tests"
+    task "functional" => %w(redis:start spec:run_fn redis:stop)
+
+    desc "Run Functional Tests for CI"
+    task "functional:ci" => %w(redis:start spec:run_fn:ci redis:stop)
+
+    namespace :combined do
+      task :run => %w(redis:start spec:combined:tests redis:stop)
+
+      desc ""
+      RSpec::Core::RakeTask.new(:tests) do |task|
+        task.gemfile = "Gemfile"
+        task.rspec_opts = SPEC_OPTS
+        task.pattern = "spec/{unit,functional}/**/*_spec.rb"
+      end
+    end
+
   end
 
+  desc "Install dependencies and run tests"
+  task :spec => %w(bundler:install:test spec:combined:run)
 end
-
-desc "Install dependencies and run tests"
-task :spec => %w(bundler:install:test spec:combined:run)
