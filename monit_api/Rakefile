@@ -26,7 +26,7 @@ end
 
 desc "Build and install Monit API Client into system gems"
 task "install" do
-  sh("bundle install --local --without test development")
+  Rake::Task["bundler:install"].invoke
   gem_helper.install_gem
 end
 
