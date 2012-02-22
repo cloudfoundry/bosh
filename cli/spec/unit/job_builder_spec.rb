@@ -6,7 +6,6 @@ describe Bosh::Cli::JobBuilder do
 
   before(:each) do
     @release_dir = Dir.mktmpdir
-    at_exit { FileUtils.rm_rf(@release_dir) }
   end
 
   def new_builder(name, packages = [], templates = { }, built_packages = [],

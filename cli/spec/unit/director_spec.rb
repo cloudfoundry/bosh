@@ -453,9 +453,11 @@ describe Bosh::Cli::Director do
     end
 
     it "respects poll interval setting" do
-      @director.stub(:get).and_return [200, "processing"]
+      @director.stub(:get).and_return([200, "processing"])
 
-      @director.should_receive(:get).with("/tasks/1").exactly(10).times.and_return [200, JSON.generate("state" => "processing")]
+      @director.should_receive(:get).with("/tasks/1").
+        exactly(10).times.
+        and_return([200, JSON.generate("state" => "processing")])
       @director.should_receive(:get).
           with("/tasks/1/output", nil, nil,
                "Range" => "bytes=0-").
@@ -467,12 +469,11 @@ describe Bosh::Cli::Director do
     end
 
     it "stops polling and returns error if status is not HTTP 200" do
-      n_calls = 0
       @director.stub!(:get_time_difference).and_return(0)
 
       @director.should_receive(:get).
           with("/tasks/1").
-          and_return { [500, JSON.generate("state" => "processing")] }
+          and_return([500, JSON.generate("state" => "processing")])
 
       lambda {
         @director.poll_task(1, :poll_interval => 0, :max_polls => 10)
@@ -481,9 +482,16 @@ describe Bosh::Cli::Director do
     end
 
     it "stops polling and returns error if task state is error" do
-      @director.stub(:get).and_return {
-        [200, JSON.generate("state" => "error")]
-      }
+      @director.stub!(:get_time_difference).and_return(0)
+
+      @director.stub(:get).
+        with("/tasks/1/output", nil, nil,
+             "Range" => "bytes=0-").
+        and_return([200, ""])
+
+      @director.stub(:get).
+        with("/tasks/1").
+        and_return([200, JSON.generate("state" => "error")])
 
       @director.should_receive(:get).exactly(1).times
 
