@@ -52,8 +52,13 @@ module Bosh
       #
       # @return [Boolean] Whether the user wants to quit or not.
       def kill_current_task?
-        answer = ask("Are you sure you'd like to cancel running tasks? [Yn]")
-        answer.to_s.downcase == "y"
+        # Use say and stdin.gets instead of ask because of 2 bugs in Highline.
+        # The bug makes it so that if something else has called ask and was in
+        # the middle of waiting for a response then ctrl-c is issued and it
+        # calls ask again then highline will re-issue the first question again.
+        # If the input is a newline character then highline will choke.
+        say("\nAre you sure you'd like to cancel running tasks? [yN]")
+        $stdin.gets.chomp.downcase == "y"
       end
 
       def prepare
