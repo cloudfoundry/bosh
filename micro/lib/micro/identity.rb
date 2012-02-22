@@ -189,6 +189,12 @@ module VCAP
         @logger.error("DNS update forbidden for #{@name}.#{@cloud} -> #{@ip} using #{@token}")
         $stderr.puts("DNS update failed!".red)
         $stderr.puts("You need to install a new token (option 4 on the console menu)")
+      rescue SocketError => e
+        @logger.error("DNS update failed for #{@name}.#{@cloud} -> #{@ip}: #{e}")
+        $stderr.puts("DNS update failed: could not lookup #{@name}.#{@cloud}".red)
+      rescue OpenSSL::SSL::SSLError => e
+        @logger.error("DNS update failed for #{@name}.#{@cloud} -> #{@ip}: #{e}")
+        $stderr.puts("DNS update failed: could initiate SSL connection #{@name}.#{@cloud}".red)
       rescue RestClient::MethodNotAllowed
         # do nothing
       rescue RestClient::NotModified

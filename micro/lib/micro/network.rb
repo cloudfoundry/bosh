@@ -45,7 +45,7 @@ module VCAP
 
       # create a class variable?
       def self.ext_lookup(name)
-        Network.resolv_guard do
+        Network.resolv_guard(name) do
           Resolv::DNS.open(:nameserver => ['208.78.70.9']) do |dns|
             dns.getaddress(name)
           end
@@ -177,7 +177,7 @@ module VCAP
       # async
       def restart
         # warn unless it is the first time we run, i.e. no previous state
-        if starting? && @previous
+        if starting? && !@previous
           $stderr.puts("network already restarting".red)
           @logger.error("network already restarting: #{caller.join("\n")}")
           return
