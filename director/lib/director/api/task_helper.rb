@@ -4,10 +4,18 @@ module Bosh::Director
   module Api
     module TaskHelper
       def create_task(user, description)
-        user = Models::User[:username => user]
-        task = Models::Task.create(:user => user, :description => description,
-                                   :state => :queued, :timestamp => Time.now,
-                                   :checkpoint_time => Time.now)
+        task = nil
+        # Check if we are draining
+        DrainManager.lock.synchronize do
+          # No new tasks once we start draining
+          raise DrainInProgress if DrainManager.draining
+
+          user = Models::User[:username => user]
+          task = Models::Task.create(:user => user, :description => description,
+                                     :state => :queued, :timestamp => Time.now,
+                                     :checkpoint_time => Time.now)
+        end
+
         log_dir = File.join(Config.base_dir, "tasks", task.id.to_s)
         task_status_file = File.join(log_dir, "debug")
         FileUtils.mkdir_p(log_dir)

@@ -20,6 +20,7 @@ describe Bosh::Director::Controller do
         "properties" => {"blobstore_path" => @blobstore_dir}
     }
     Bosh::Director::Config.configure(test_config)
+    Bosh::Director::DrainManager.setup("dummy")
   end
 
   after(:each) do
