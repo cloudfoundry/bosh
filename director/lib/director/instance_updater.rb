@@ -110,9 +110,9 @@ module Bosh::Director
     def stop
       if @instance_spec.resource_pool_changed? || @instance_spec.persistent_disk_changed? ||
           @instance_spec.networks_changed? || @target_state == "stopped" || @target_state == "detached"
-        drain_time = agent.drain("shutdown")
+        drain_time = agent.drain("shutdown")["value"]
       else
-        drain_time = agent.drain("update", @instance_spec.spec)
+        drain_time = agent.drain("update", @instance_spec.spec)["value"]
       end
 
       if drain_time < 0
@@ -121,7 +121,7 @@ module Bosh::Director
           Config.job_cancelled?
           @logger.info("Drain - check back in #{drain_time} seconds")
           sleep(drain_time)
-          drain_time = agent.drain("status")
+          drain_time = agent.drain("status")["value"]
         rescue => e
           @logger.warn("Failed to check drain-status: #{e.inspect}")
           raise if e.kind_of?(Bosh::Director::TaskCancelled)

@@ -58,7 +58,8 @@ describe Bosh::Director::InstanceDeleter do
       agent = mock("agent")
       AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
 
-      agent.should_receive(:drain).with("shutdown").and_return(2)
+      agent.should_receive(:drain).with("shutdown").and_return(
+          AgentClient::convert_old_message_to_new(2))
       agent.should_receive(:stop)
       @deleter.should_receive(:sleep).with(2)
 
@@ -70,8 +71,10 @@ describe Bosh::Director::InstanceDeleter do
       AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
       Bosh::Director::Config.stub!(:job_cancelled?).and_return(nil)
 
-      agent.should_receive(:drain).with("shutdown").and_return(-2)
-      agent.should_receive(:drain).with("status").and_return(1, 0)
+      agent.should_receive(:drain).with("shutdown").and_return(AgentClient::convert_old_message_to_new(-2))
+      agent.should_receive(:drain).with("status").and_return(
+          AgentClient::convert_old_message_to_new(1),
+          AgentClient::convert_old_message_to_new(0))
 
       @deleter.should_receive(:sleep).with(2)
       @deleter.should_receive(:sleep).with(1)
@@ -84,7 +87,7 @@ describe Bosh::Director::InstanceDeleter do
       agent = mock("agent")
       AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
       Bosh::Director::Config.stub!(:job_cancelled?).and_raise(Bosh::Director::TaskCancelled.new(1))
-      agent.should_receive(:drain).with("shutdown").and_return(-2)
+      agent.should_receive(:drain).with("shutdown").and_return(AgentClient::convert_old_message_to_new(-2))
       lambda {@deleter.drain("some_agent_id")}.should raise_error(Bosh::Director::TaskCancelled)
     end
 
