@@ -15,7 +15,8 @@ GEM
       aws-s3
       httpclient
       uuidtools
-    bosh_common (0.4.0)
+    bosh_common (0.5.0)
+      open4 (~> 1.3.0)
     bosh_cpi (0.4.1)
       bosh_common
     builder (3.0.0)
@@ -41,6 +42,7 @@ GEM
       thin (>= 1.3.1)
     netaddr (1.5.0)
     nokogiri (1.4.4)
+    open4 (1.3.0)
     pg (0.10.1)
     rack (1.4.0)
     rack-test (0.5.7)
@@ -121,7 +123,7 @@ DEPENDENCIES
   autotest
   bcrypt-ruby
   blobstore_client (>= 0.3.4)
-  bosh_common (>= 0.4.0)
+  bosh_common (>= 0.5.0)
   bosh_cpi (>= 0.4.1)
   ci_reporter
   eventmachine

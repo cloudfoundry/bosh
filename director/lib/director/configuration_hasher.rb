@@ -2,6 +2,7 @@
 
 module Bosh::Director
   class ConfigurationHasher
+    include Bosh::Exec
 
     class BindingHelper
 
@@ -35,7 +36,7 @@ module Bosh::Director
         File.open(temp_path, "w") do |file|
           Config.blobstore.get(@job.template.blobstore_id, file)
         end
-        `tar -C #{@template_dir} -xzf #{temp_path}`
+        sh("tar -C #{@template_dir} -xzf #{temp_path}", true)
       ensure
         FileUtils.rm_f(temp_path)
       end

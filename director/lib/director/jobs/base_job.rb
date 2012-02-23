@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class BaseJob
+      include Bosh::Exec
 
       attr_accessor :task_id
 

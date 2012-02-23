@@ -36,6 +36,7 @@ require "director/ext"
 require "director/ip_util"
 require "common/thread_formatter"
 require "director/validation_helper"
+require "common/exec"
 
 require "director/version"
 require "director/config"
