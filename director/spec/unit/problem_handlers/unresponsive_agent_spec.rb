@@ -14,6 +14,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
   before(:each) do
     @cloud = mock("cloud")
     @agent = mock("agent")
+    Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
 
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
     @instance = Bosh::Director::Models::Instance.make(:job => "mysql_node", :index => 0, :vm_id => @vm.id)
@@ -151,6 +152,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
         },
         "networks" => ["A", "B", "C"]
       }
+      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-222")
 
       disk = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => @instance.id)
       stemcell = Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
@@ -207,6 +209,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
         },
         "networks" => ["A", "B", "C"]
       }
+      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-222")
 
       stemcell = Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
       @vm.update(:apply_spec => spec)
