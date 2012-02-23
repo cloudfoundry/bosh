@@ -530,9 +530,13 @@ module Bosh::Cli
         opts.on("--verbose") { @options[:verbose] = true }
         opts.on("--no-color") { @options[:colorize] = false }
         opts.on("-q", "--quiet") { @options[:quiet] = true }
-        opts.on("-s",
-                "--skip-director-checks") { @options[:director_checks] = false }
-        opts.on("-n", "--non-interactive") { @options[:non_interactive] = true }
+        opts.on("-s", "--skip-director-checks") do
+          @options[:director_checks] = false
+        end
+        opts.on("-n", "--non-interactive") do
+          @options[:non_interactive] = true
+          @options[:colorize] = false
+        end
         opts.on("-d", "--debug") { @options[:debug] = true }
         opts.on("-v", "--version") { dispatch(find_command(:version)); }
       end
