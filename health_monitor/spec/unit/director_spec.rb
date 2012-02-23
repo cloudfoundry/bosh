@@ -10,7 +10,7 @@ describe Bhm::Director do
     @director = Bhm::Director.new("endpoint" => "foo", "user" => "admin", "password" => "admin")
   end
 
-  it "can fetch deployments from Bosh director" do
+  it "can fetch deployments from BOSH director" do
     deployments_json = Yajl::Encoder.encode([{ "name" => "a" }, { "name" => "b" }])
 
     mock_response = mock(:response => deployments_json, :response_header => mock(:http_status => "200"))
@@ -28,7 +28,7 @@ describe Bhm::Director do
     }.should raise_error(Bhm::DirectorError, "Cannot get deployments from director at deployments_uri: 500 foo")
   end
 
-  it "can fetch deployment by name from Bosh director" do
+  it "can fetch deployment by name from BOSH director" do
     deployment_json = Yajl::Encoder.encode(["a" => 1, "b" => 2], ["a" => 3, "b" => 4])
     mock_response = mock(:response => deployment_json,  :response_header => mock(:http_status => "200"))
     @director.stub!(:perform_request).with(:get, "/deployments/foo/vms").and_return(mock_response)

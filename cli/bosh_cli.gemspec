@@ -4,8 +4,8 @@ Gem::Specification.new do |s|
   s.name         = "bosh_cli"
   s.version      = Bosh::Cli::VERSION
   s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh CLI"
-  s.description  = "Bosh command-line tool for release engineering and deployment"
+  s.summary      = "BOSH CLI"
+  s.description  = "BOSH command-line tool for release engineering and deployment"
   s.author       = "VMware"
   s.email        = "support@vmware.com"
   s.homepage     = "http://www.vmware.com"

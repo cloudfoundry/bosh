@@ -137,7 +137,7 @@ describe Bosh::Cli::JobBuilder do
   it "whines on funny characters in name" do
     lambda {
       new_builder("@#!", [])
-    }.should raise_error(Bosh::Cli::InvalidJob, "`@#!' is not a valid Bosh identifier")
+    }.should raise_error(Bosh::Cli::InvalidJob, "`@#!' is not a valid BOSH identifier")
   end
 
   it "whines if some templates are missing" do

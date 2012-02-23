@@ -51,12 +51,12 @@ def spec_asset(name)
 end
 
 def start_sandbox
-  puts "Starting sandboxed environment for Bosh tests..."
+  puts "Starting sandboxed environment for BOSH tests..."
   Bosh::Spec::Sandbox.start
 end
 
 def stop_sandbox
-  puts "\nStopping sandboxed environment for Bosh tests..."
+  puts "\nStopping sandboxed environment for BOSH tests..."
   Bosh::Spec::Sandbox.stop
   cleanup_bosh
 end

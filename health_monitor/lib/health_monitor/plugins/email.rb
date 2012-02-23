@@ -69,7 +69,7 @@ module Bosh::HealthMonitor
       def process_queues
         @queues.each_pair do |kind, queue|
           next if queue.empty?
-          email_subject = "%s from Bosh Health Monitor" % [ pluralize(queue_size(kind), kind) ]
+          email_subject = "%s from BOSH Health Monitor" % [ pluralize(queue_size(kind), kind) ]
           email_body = ""
 
           @lock.synchronize do

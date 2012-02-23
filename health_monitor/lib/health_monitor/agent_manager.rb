@@ -113,7 +113,7 @@ module Bosh::HealthMonitor
       end
     end
 
-    # Processes VM data from Bosh Director,
+    # Processes VM data from BOSH Director,
     # extracts relevant agent data, wraps it into Agent object
     # and adds it to a list of managed agents.
     def add_agent(deployment_name, vm_data)
