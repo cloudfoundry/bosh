@@ -60,6 +60,8 @@ describe Bosh::Director::ResourcePoolUpdater do
   end
 
   it "should create any missing vms" do
+    Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-1", "invalid agent")
+
     idle_vm = mock("idle_vm")
     agent = mock("agent")
 
@@ -94,7 +96,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
-    resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
+
     update_resource_pool(resource_pool_updater)
     Bosh::Director::Models::Vm.all.should == [created_vm]
 
@@ -104,6 +106,8 @@ describe Bosh::Director::ResourcePoolUpdater do
   end
 
   it "should set the state of the bound instance" do
+    Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-1", "invalid agent")
+
     instance_spec = mock("instance")
     idle_vm = mock("idle_vm")
     agent = mock("agent")
@@ -145,7 +149,6 @@ describe Bosh::Director::ResourcePoolUpdater do
     idle_vm.should_receive(:current_state=).with({"state" => "testing"})
 
     resource_pool_updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
-    resource_pool_updater.stub!(:generate_agent_id).and_return("agent-1", "invalid agent")
     update_resource_pool(resource_pool_updater)
     Bosh::Director::Models::Vm.all.should == [created_vm]
   end
@@ -178,6 +181,8 @@ describe Bosh::Director::ResourcePoolUpdater do
   end
 
   it "should update existing vms if needed" do
+    Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-1", "invalid agent")
+
     old_vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :cid => "vm-1")
     idle_vm = mock("idle_vm")
     agent = mock("agent")
@@ -230,6 +235,8 @@ describe Bosh::Director::ResourcePoolUpdater do
   end
 
   it "should only create bound missing vms" do
+    Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-1", "agent-3")
+
     updater = Bosh::Director::ResourcePoolUpdater.new(@resource_pool_spec)
 
     instance1 = mock("instance")
@@ -292,8 +299,6 @@ describe Bosh::Director::ResourcePoolUpdater do
       agent.should_receive(:get_state).and_return({"state" => "testing"})
       vms[i].should_receive(:current_state=).with({"state" => "testing"})
     end
-
-    updater.stub!(:generate_agent_id).and_return("agent-1", "agent-3")
 
     fake_thread_pool = mock("thread pool") # To avoid messing stubs
     fake_thread_pool.stub!(:process).and_yield
