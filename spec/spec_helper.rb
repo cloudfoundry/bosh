@@ -85,7 +85,7 @@ end
 def run_bosh(cmd, work_dir = nil)
   Dir.chdir(work_dir || BOSH_WORK_DIR) do
     ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-    `#{CLI_DIR}/bin/bosh --non-interactive --no-color --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
+    `#{CLI_DIR}/bin/bosh --non-interactive --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
   end
 end
 
