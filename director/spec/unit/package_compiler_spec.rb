@@ -69,6 +69,7 @@ describe Bosh::Director::PackageCompiler do
       @template_spec.stub!(:packages).and_return([package])
       @release_version.add_package(package)
 
+      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-1")
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
@@ -109,7 +110,6 @@ describe Bosh::Director::PackageCompiler do
       end
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
-      package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
       package_compiler.compile
 
       Bosh::Director::Models::CompiledPackage.all.should == [compiled_package]
@@ -136,6 +136,7 @@ describe Bosh::Director::PackageCompiler do
       @template_spec.stub!(:packages).and_return([package])
       @release_version.add_package(package)
 
+      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-1", "invalid")
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
@@ -147,7 +148,6 @@ describe Bosh::Director::PackageCompiler do
       @cloud.should_receive(:create_vm).and_raise("create_vm error")
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
-      package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
       lambda {
         package_compiler.compile
       }.should raise_error("create_vm error")
@@ -176,6 +176,8 @@ describe Bosh::Director::PackageCompiler do
       @release_version.add_package(dependent_package)
       @release_version.add_package(package)
 
+      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-a", "agent-b", "invalid")
+      @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:network).and_return(@network)
       @compilation_config.stub!(:workers).and_return(1)
       @compilation_config.stub!(:cloud_properties).and_return({"ram" => "2gb"})
@@ -241,7 +243,6 @@ describe Bosh::Director::PackageCompiler do
       end
 
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan)
-      package_compiler.stub!(:generate_agent_id).and_return("agent-a", "agent-b", "invalid")
       package_compiler.compile
 
       dep_compiled_package = Bosh::Director::Models::CompiledPackage[:package_id => dependent_package.id]
@@ -298,7 +299,6 @@ describe Bosh::Director::PackageCompiler do
       job = Bosh::Director::Jobs::BaseJob.new
       job.stub!(:task_cancelled?).and_return(true)
       package_compiler = Bosh::Director::PackageCompiler.new(@deployment_plan, job)
-      package_compiler.stub!(:generate_agent_id).and_return("agent-1", "invalid")
       lambda {
         package_compiler.compile
       }.should raise_error(Bosh::Director::TaskCancelled)

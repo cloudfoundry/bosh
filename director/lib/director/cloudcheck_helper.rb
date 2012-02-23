@@ -138,15 +138,8 @@ module Bosh::Director
         vm.destroy
       end
 
-      new_agent_id = generate_agent_id
-
-      new_vm = Models::Vm.new
-      new_vm.deployment = deployment
-      new_vm.agent_id = new_agent_id
-      new_vm.cid = cloud.
-        create_vm(new_agent_id, stemcell.cid,
-                  cloud_properties, network_spec,
-                  Array(disk_cid), env)
+      new_vm = VmCreator.new.create(deployment, stemcell, cloud_properties,
+                                    network_spec, Array(disk_cid), env)
       new_vm.apply_spec = spec
       new_vm.save
 

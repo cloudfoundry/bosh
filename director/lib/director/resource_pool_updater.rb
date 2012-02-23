@@ -160,15 +160,11 @@ module Bosh::Director
     end
 
     def create_missing_vm(idle_vm)
+      deployment = @resource_pool.deployment.deployment
+      stemcell = @resource_pool.stemcell.stemcell
 
-      agent_id = generate_agent_id
-      vm = Models::Vm.create(:deployment => @resource_pool.deployment.deployment, :agent_id => agent_id)
-      vm_cid = @cloud.create_vm(agent_id, @resource_pool.stemcell.stemcell.cid,
-                                @resource_pool.cloud_properties, idle_vm.network_settings, nil,
-                                @resource_pool.env)
-      # partially created vms should have an empty cid
-      vm.cid = vm_cid
-      vm.save
+      vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
+                                idle_vm.network_settings, nil, @resource_pool.env)
 
       # TODO: delete the VM if it wasn't saved
 
@@ -200,10 +196,10 @@ module Bosh::Director
     rescue Exception => e
       @logger.info("Cleaning up the created VM due to an error: #{e}")
       begin
-        @cloud.delete_vm(vm_cid) if vm_cid
+        @cloud.delete_vm(vm.cid) if vm.cid
         vm.destroy if vm && vm.id
       rescue Exception
-        @logger.info("Could not cleanup VM: #{vm_cid}")
+        @logger.info("Could not cleanup VM: #{vm.cid}")
       end
 
       raise e
