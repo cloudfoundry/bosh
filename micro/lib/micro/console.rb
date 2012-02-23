@@ -199,9 +199,11 @@ module VCAP
           email = ask("\nAdmin email: ").to_s
 
           while !tos_accepted?
-            display_file(TOS)
+            display_file(TOS, true)
             if agree("\nDo you agree to the Terms of Service? ")
               FileUtils.touch(TOS_ACCEPTED)
+            else
+              say("You have to agree to the Terms of Service to use Micro Cloud Foundry".red)
             end
           end
 
@@ -213,6 +215,8 @@ module VCAP
           @identity.nonce = token
           @network.online!
           @identity.install(ip)
+          # TOS implicitly accepted as the user has been to the cf.com web site
+          FileUtils.touch(TOS_ACCEPTED)
         end
         @identity.save
         DNS.new(ip, @identity.subdomain).generate
@@ -369,7 +373,7 @@ module VCAP
             state = @watcher.paused ? "enable" : "disable"
             menu.choice("#{state} network watcher") { toggle_watcher }
             menu.choice("reapply configuration") { reapply }
-            menu.choice("toggle cloud controller registration") { toggle_cc_registration }
+            menu.choice("toggle cloud controller user registration") { toggle_cc_registration }
             menu.choice("network trouble shooting") { network_troubleshooting }
             # nasty hack warning:
             # exec-ing causes the console program to restart when dpkg-reconfigrue exits
@@ -460,7 +464,7 @@ module VCAP
 
       # a very naïve pager
       LINES_PER_PAGE = 20
-      def display_file(file)
+      def display_file(file, quit_on_end=false)
         lines = nil
         File.open(file) do |f|
           lines = f.readlines
@@ -486,6 +490,7 @@ module VCAP
             current += LINES_PER_PAGE
             if current >= lines.size
               # last page
+              return if quit_on_end
               if lines.size > LINES_PER_PAGE
                 current = lines.size - LINES_PER_PAGE
               else
