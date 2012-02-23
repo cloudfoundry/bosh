@@ -9,6 +9,7 @@ require "bundler"
 Bundler.setup(:default, :test)
 
 require "rake"
+require "rake/dsl_definition"
 require "rspec/core/rake_task"
 
 require "bundler_task"

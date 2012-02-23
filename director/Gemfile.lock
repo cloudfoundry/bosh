@@ -21,6 +21,8 @@ GEM
     columnize (0.3.2)
     daemons (1.1.5)
     diff-lcs (1.1.2)
+    dotanuki (0.3.1)
+      posix-spawn (~> 0.3.6)
     esxmq (0.0.13)
       nats
     eventmachine (0.12.10)
@@ -41,6 +43,7 @@ GEM
     netaddr (1.5.0)
     nokogiri (1.4.4)
     pg (0.10.1)
+    posix-spawn (0.3.6)
     rack (1.4.0)
     rack-test (0.5.7)
       rack (>= 1.0)
@@ -116,6 +119,7 @@ DEPENDENCIES
   bcrypt-ruby
   blobstore_client (>= 0.3.4)
   ci_reporter
+  dotanuki (~> 0.3.1)
   esxmq (= 0.0.13)
   eventmachine
   httpclient

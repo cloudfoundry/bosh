@@ -29,6 +29,7 @@ require "sinatra/base"
 require "uuidtools"
 require "yajl"
 require "esxmq"
+require "dotanuki"
 
 require "director/deep_copy"
 require "director/dns_helper"
