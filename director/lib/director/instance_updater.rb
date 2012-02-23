@@ -163,17 +163,12 @@ module Bosh::Director
 
     def create_vm(new_disk_id)
       stemcell = @resource_pool_spec.stemcell.stemcell
-      agent_id = generate_agent_id
-
-      @vm = Models::Vm.new
-      @vm.deployment = @deployment_plan.deployment
-      @vm.agent_id = agent_id
-      @vm.save
-
       disks = [@instance.persistent_disk_cid, new_disk_id].compact
 
-      @vm.cid = @cloud.create_vm(agent_id, stemcell.cid, @resource_pool_spec.cloud_properties,
-                                 @instance_spec.network_settings, disks, @resource_pool_spec.env)
+      @vm = VmCreator.create(@deployment_plan.deployment, stemcell,
+                             @resource_pool_spec.cloud_properties,
+                             @instance_spec.network_settings, disks,
+                             @resource_pool_spec.env)
 
       @instance.db.transaction do
         @vm.save

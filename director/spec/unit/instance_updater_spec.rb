@@ -286,6 +286,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_2 = mock("agent-2")
     @agent_2.stub!(:id).and_return("agent-2")
     Bosh::Director::AgentClient.stub!(:new).with("agent-2").and_return(@agent_2)
+    Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-2")
 
     stub_object(@instance_spec,
                 :resource_pool_changed? => true,
@@ -344,6 +345,7 @@ describe Bosh::Director::InstanceUpdater do
     @agent_2 = mock("agent-2")
     @agent_2.stub!(:id).and_return("agent-2")
     Bosh::Director::AgentClient.stub!(:new).with("agent-2").and_return(@agent_2)
+    Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-2")
 
     stub_object(@instance_spec,
                 :resource_pool_changed? => true,
