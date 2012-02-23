@@ -55,6 +55,8 @@ module Bosh::Agent
           drain_for_shutdown
         when "update"
           drain_for_update
+        when "status"
+          drain_check_status
         else
           raise Bosh::Agent::MessageHandlerError, "Unknown drain type #{@drain_type}"
         end
@@ -101,6 +103,10 @@ module Bosh::Agent
         end
       end
 
+      def drain_check_status
+        run_drain_script("job_check_status", "hash_unchanged", [])
+      end
+
       def run_drain_script(job_updated, hash_updated, updated_packages)
         env = {
           'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
@@ -116,7 +122,7 @@ module Bosh::Agent
         child = POSIX::Spawn::Child.new(*args)
 
         result = child.out
-        unless result.match(/\A\d+\Z/) && child.status.exitstatus == 0
+        unless result.match(/\A-{0,1}\d+\Z/) && child.status.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError,
             "Drain script exit #{child.status.exitstatus}: #{result}"
         end
