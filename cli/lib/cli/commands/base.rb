@@ -14,6 +14,15 @@ module Bosh::Cli
         @cache       = Cache.new(@options[:cache_dir] || Bosh::Cli::DEFAULT_CACHE_DIR)
       end
 
+      class << self
+        attr_reader :commands
+
+        def command(name, &block)
+          @commands ||= {}
+          @commands[name] = block
+        end
+      end
+
       def director
         @director ||= Bosh::Cli::Director.new(target, username, password)
       end

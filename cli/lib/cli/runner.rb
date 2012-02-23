@@ -63,6 +63,7 @@ module Bosh
 
       def prepare
         define_commands
+        define_plugin_commands
         build_parse_tree
         add_shortcuts
         parse_options!
@@ -95,6 +96,7 @@ module Bosh
           @runner.send(@action.to_sym, *@args)
         elsif @args.empty? || @args == ["help"]
           say(help_message)
+          say(plugin_help_message) if @plugins
         elsif @args[0] == "help"
           cmd_args = @args[1..-1]
           suggestions = command_suggestions(cmd_args).map do |cmd|
@@ -494,6 +496,25 @@ module Bosh
 
       end
 
+      def define_plugin_commands
+        Gem.find_files("bosh/cli/commands/*.rb", true).each do |file|
+          class_name = File.basename(file, ".rb").capitalize
+
+          next if Bosh::Cli::Command.const_defined?(class_name)
+
+          load file
+
+          plugin = Bosh::Cli::Command.const_get(class_name)
+
+          plugin.commands.each do |name, block|
+            command(name, &block)
+          end
+
+          @plugins ||= {}
+          @plugins[class_name] = plugin
+        end
+      end
+
       def parse_options!
         opts_parser = OptionParser.new do |opts|
           opts.on("-c", "--config FILE") { |file| @options[:config] = file }
@@ -584,6 +605,19 @@ module Bosh
       def help_message
         template = File.join(File.dirname(__FILE__), "templates", "help_message.erb")
         ERB.new(File.read(template), 4).result(binding.taint)
+      end
+
+      def plugin_help_message
+        help = ['']
+
+        @plugins.each do |class_name, plugin|
+          help << class_name
+          plugin.commands.keys.each do |name|
+            help << command_usage(name)
+          end
+        end
+
+        help.join("\n")
       end
 
       def search_parse_tree(node)
