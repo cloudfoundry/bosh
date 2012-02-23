@@ -27,25 +27,6 @@ module Bosh::Agent
         @command, @params = args
       end
 
-      def get_salt_charset
-        charset = []
-        charset.concat(("a".."z").to_a)
-        charset.concat(("A".."Z").to_a)
-        charset.concat(("0".."9").to_a)
-        charset << "."
-        charset << "/"
-        charset
-      end
-
-      def encrypt_password(plain_text)
-        @salt_charset ||= get_salt_charset
-        salt = "$6$"
-        8.times do |_|
-          salt << @salt_charset[rand(@salt_charset.size)]
-        end
-        plain_text.crypt(salt)
-      end
-
       def shell_cmd(cmd)
         shell_output = %x[#{cmd} 2>&1]
         raise "'#{cmd}' failed, error: #{shell_output}" if $?.exitstatus != 0
@@ -60,7 +41,7 @@ module Bosh::Agent
           shell_cmd(%Q[mkdir -p #{ssh_base_dir}])
 
           if password
-            shell_cmd(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash -p '#{encrypt_password(password)}' #{user}])
+            shell_cmd(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash -p '#{password}' #{user}])
           else
             shell_cmd(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash #{user}])
           end
