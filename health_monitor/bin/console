@@ -45,7 +45,7 @@ module Bosh
           puts "=> ruby-debug not found, debugger disabled"
         end
 
-        puts "=> Welcome to Bosh Health Monitor console"
+        puts "=> Welcome to BOSH Health Monitor console"
 
         IRB.start
       end

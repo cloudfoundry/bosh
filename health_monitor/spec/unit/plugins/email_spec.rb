@@ -83,8 +83,8 @@ describe Bhm::Plugins::Email do
     alert_email_body = alerts.map{ |alert| alert.to_plain_text }.join("\n") + "\n"
     heartbeat_email_body = heartbeats.map{ |hb| hb.to_plain_text }.join("\n") + "\n"
 
-    @plugin.should_receive(:send_email_async).with("3 alerts from Bosh Health Monitor", alert_email_body).once.and_return(true)
-    @plugin.should_receive(:send_email_async).with("1 heartbeat from Bosh Health Monitor", heartbeat_email_body).once.and_return(true)
+    @plugin.should_receive(:send_email_async).with("3 alerts from BOSH Health Monitor", alert_email_body).once.and_return(true)
+    @plugin.should_receive(:send_email_async).with("1 heartbeat from BOSH Health Monitor", heartbeat_email_body).once.and_return(true)
     @plugin.process_queues
   end
 

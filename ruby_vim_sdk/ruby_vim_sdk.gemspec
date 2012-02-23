@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.name         = "ruby_vim_sdk"
   s.version      = VimSdk::VERSION
   s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh vSphere API client"
+  s.summary      = "BOSH vSphere API client"
   s.description  = s.summary
   s.author       = "VMware"
   s.email        = "support@vmware.com"

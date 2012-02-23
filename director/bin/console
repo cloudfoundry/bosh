@@ -59,7 +59,7 @@ module Bosh
           puts "=> ruby-debug not found, debugger disabled"
         end
 
-        puts "=> Welcome to Bosh Director console\n=> You can use 'app' to access REST API"
+        puts "=> Welcome to BOSH Director console\n=> You can use 'app' to access REST API"
         puts "=> You can also use 'cloud', 'blobstore', 'nats' helpers to query these services"
 
         IRB.start

@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
   s.name         = "monit_api"
   s.version      = MonitApi::VERSION
   s.platform     = Gem::Platform::RUBY
-  s.summary      = "Bosh Monit API client"
+  s.summary      = "BOSH Monit API client"
   s.description  = s.summary
   s.author       = "VMware"
   s.email        = "support@vmware.com"

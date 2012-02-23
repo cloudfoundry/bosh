@@ -5,7 +5,7 @@ module Bosh::Cli::Command
       check_if_release_dir
 
       if !name.bosh_valid_id?
-        err "`#{name}' is not a vaild Bosh id"
+        err "`#{name}' is not a vaild BOSH id"
       end
 
       job_dir = File.join("jobs", name)

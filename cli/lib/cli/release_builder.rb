@@ -98,7 +98,7 @@ module Bosh::Cli
       manifest["name"] = release_name
 
       unless manifest["name"].bosh_valid_id?
-        raise InvalidRelease, "Release name '%s' is not a valid Bosh identifier" % [ manifest["name"] ]
+        raise InvalidRelease, "Release name '%s' is not a valid BOSH identifier" % [ manifest["name"] ]
       end
 
       fingerprint = make_fingerprint(manifest)
