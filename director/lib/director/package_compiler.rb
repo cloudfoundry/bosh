@@ -152,16 +152,13 @@ module Bosh::Director
         network_settings = @networks.shift
       end
 
-      agent_id = generate_agent_id
-      vm = Models::Vm.create(:deployment => @deployment_plan.deployment, :agent_id => agent_id)
-      @logger.info("Creating compilation VM with agent id: #{agent_id}")
-      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, @compilation_resources, network_settings, nil, @compilation_env)
-      vm.cid = vm_cid
-      vm.save
+      vm = VmCreator.new.create(@deployment_plan.deployment, stemcell,
+                            @compilation_resources, network_settings,
+                            nil, @compilation_env)
 
-      @logger.info("Configuring compilation VM: #{vm_cid}")
+      @logger.info("Configuring compilation VM: #{vm.cid}")
       begin
-        agent = AgentClient.new(agent_id)
+        agent = AgentClient.new(vm.agent_id)
         agent.wait_until_ready
 
         configure_vm(vm, agent, network_settings)
@@ -170,8 +167,8 @@ module Bosh::Director
         agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name,
                                            "#{package.version}.#{build}", task.dependency_spec)
       ensure
-        @logger.info("Deleting compilation VM: #{vm_cid}")
-        @cloud.delete_vm(vm_cid)
+        @logger.info("Deleting compilation VM: #{vm.cid}")
+        @cloud.delete_vm(vm.cid)
         vm.destroy
       end
 
