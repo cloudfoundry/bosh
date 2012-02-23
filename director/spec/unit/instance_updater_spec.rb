@@ -5,6 +5,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 # TODO: CLEANUP, too much duplication
 
 describe Bosh::Director::InstanceUpdater do
+  include Bosh::Director
 
   BASIC_PLAN = {
     "deployment" => "test_deployment",
@@ -152,7 +153,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(0.01)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
@@ -178,7 +180,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return("id" => "task-1", "state" => "done")
     @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE.merge("job_state" => "running"))
@@ -207,7 +210,8 @@ describe Bosh::Director::InstanceUpdater do
     @update_spec.should_receive(:min_canary_watch_time).and_return(0.01)
     @update_spec.should_receive(:max_canary_watch_time).and_return(0.01)
 
-    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(0.01)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return({
       "id" => "task-1",
@@ -236,7 +240,8 @@ describe Bosh::Director::InstanceUpdater do
     @update_spec.should_receive(:min_canary_watch_time).and_return(1000)
     @update_spec.should_receive(:max_canary_watch_time).and_return(4999)
 
-    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(30)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(
+        AgentClient::convert_old_message_to_new(30))
     instance_updater.should_receive(:sleep).with(30).ordered
     @agent_1.should_receive(:stop).ordered
     @agent_1.should_receive(:apply).with(BASIC_PLAN).ordered.and_return({ "id" => "task-1", "state" => "done" })
@@ -269,7 +274,8 @@ describe Bosh::Director::InstanceUpdater do
     @update_spec.should_receive(:min_update_watch_time).and_return(25000)
     @update_spec.should_receive(:max_update_watch_time).and_return(30000)
 
-    @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(30)
+    @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(
+        AgentClient::convert_old_message_to_new(30))
     instance_updater.should_receive(:sleep).with(30).ordered
     @agent_1.should_receive(:stop).ordered
     @agent_1.should_receive(:apply).with(BASIC_PLAN).ordered.and_return({ "id" => "task-1", "state" => "done" })
@@ -306,7 +312,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:delete_vm).with("vm-id")
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
@@ -362,7 +368,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop).ordered
     @agent_1.should_receive(:unmount_disk).with("disk-id").ordered.and_return({"state" => "done"})
     @cloud.should_receive(:detach_disk).with("vm-id", "disk-id").ordered
@@ -418,7 +425,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:prepare_network_change).with(BASIC_PLAN["networks"])
     @cloud.should_receive(:configure_networks).with("vm-id", BASIC_PLAN["networks"])
@@ -479,7 +487,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
@@ -518,7 +526,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @cloud.should_receive(:create_disk).with(1024, "vm-id").and_return("disk-id")
     @cloud.should_receive(:attach_disk).with("vm-id", "disk-id")
@@ -571,7 +579,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(plan)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
     @agent_1.should_receive(:list_disk).and_return(["old-disk-id"])
     @agent_1.should_receive(:unmount_disk).with("old-disk-id").and_return({"state" => "done"})
@@ -621,7 +630,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+    @agent_1.should_receive(:drain).with("shutdown").and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
 
     # simulating a case where the agent failed to mount
@@ -686,7 +696,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(0.01)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
 
     # the agent already has the new disk
@@ -731,7 +742,8 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
 
-    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(0.01)
+    @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(
+        AgentClient::convert_old_message_to_new(0.01))
     @agent_1.should_receive(:stop)
 
     # the agent already has the new disk
@@ -776,7 +788,8 @@ describe Bosh::Director::InstanceUpdater do
 
       updater = make_updater(@instance_spec)
 
-      @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(0.01)
+      @agent_1.should_receive(:drain).with("update", BASIC_PLAN).ordered.and_return(
+          AgentClient::convert_old_message_to_new(0.01))
       @agent_1.should_receive(:stop).ordered
       @agent_1.should_receive(:apply).with(BASIC_PLAN).ordered.and_return(done_task)
       @agent_1.should_receive(:start).ordered
@@ -799,7 +812,8 @@ describe Bosh::Director::InstanceUpdater do
 
       updater = make_updater(@instance_spec)
 
-      @agent_1.should_receive(:drain).with("shutdown").and_return(0.01)
+      @agent_1.should_receive(:drain).with("shutdown").and_return(
+          AgentClient::convert_old_message_to_new(0.01))
       @agent_1.should_receive(:stop)
       @agent_1.should_receive(:apply).with(BASIC_PLAN).and_return(done_task)
       @agent_1.should_receive(:get_state).and_return(BASIC_INSTANCE_STATE.merge("job_state" => "stopped"))
@@ -824,7 +838,8 @@ describe Bosh::Director::InstanceUpdater do
 
       updater = make_updater(@instance_spec)
 
-      @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(0.01)
+      @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(
+          AgentClient::convert_old_message_to_new(0.01))
       @agent_1.should_receive(:stop).ordered
       @agent_1.should_receive(:unmount_disk).with("deadbeef").ordered.and_return(done_task)
       @cloud.should_receive(:detach_disk).with("vm-id", "deadbeef").ordered
