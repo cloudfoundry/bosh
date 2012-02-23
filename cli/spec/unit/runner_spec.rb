@@ -119,4 +119,21 @@ describe Bosh::Cli::Runner do
     runner.stub(:kill_current_task?).and_return(false)
     lambda { runner.handle_ctrl_c }.should_not raise_error SystemExit
   end
+
+  it "loads custom plugins" do
+    plugin_path = spec_asset("plugins")
+    $:.unshift(plugin_path)
+
+    begin
+      test_cmd(["banner", "foo"], :echo, :banner, ["foo"])
+      test_cmd(["say", "bar"], :echo, :say_color, ["bar"])
+      test_cmd(["say", "baz", "--color", "red"], :echo, :say_color, ["baz", "--color", "red"])
+
+      test_cmd(["ruby", "version"], :ruby, :ruby_version)
+      test_cmd(["ruby", "config", "arch"], :ruby, :ruby_config, ["arch"])
+    ensure
+      $:.shift.should == plugin_path
+    end
+  end
+
 end
