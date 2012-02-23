@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class BaseJob
+      include Dotanuki
 
       attr_accessor :task_id
 

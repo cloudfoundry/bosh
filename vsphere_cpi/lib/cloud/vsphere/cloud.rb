@@ -8,6 +8,7 @@ module VSphereCloud
 
   class Cloud
     include VimSdk
+    include Dotanuki
 
     class TimeoutException < StandardError; end
 
@@ -65,8 +66,10 @@ module VSphereCloud
         result = nil
         Dir.mktmpdir do |temp_dir|
           @logger.info("Extracting stemcell to: #{temp_dir}")
-          output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
-          raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
+          result = execute("tar -C #{temp_dir} -xzf #{image} 2>&1")
+          unless result.ok?
+            raise "Corrupt image, tar output: #{result.stdout.join("\n")}"
+          end
 
           ovf_file = Dir.entries(temp_dir).find { |entry| File.extname(entry) == ".ovf" }
           raise "Missing OVF" if ovf_file.nil?
@@ -804,8 +807,8 @@ module VSphereCloud
         env_path = File.join(path, "env")
         iso_path = File.join(path, "env.iso")
         File.open(env_path, "w") { |f| f.write(env) }
-        output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
-        raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
+        execute("genisoimage -o #{iso_path} #{env_path}",
+                :on_error => :exception)
         File.open(iso_path, "r") { |f| f.read }
       end
     end

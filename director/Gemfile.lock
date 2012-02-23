@@ -24,6 +24,8 @@ GEM
     columnize (0.3.2)
     daemons (1.1.5)
     diff-lcs (1.1.2)
+    dotanuki (0.3.1)
+      posix-spawn (~> 0.3.6)
     eventmachine (0.12.10)
     httpclient (2.2.0)
     json (1.4.6)
@@ -42,6 +44,7 @@ GEM
     netaddr (1.5.0)
     nokogiri (1.4.4)
     pg (0.10.1)
+    posix-spawn (0.3.6)
     rack (1.4.0)
     rack-test (0.5.7)
       rack (>= 1.0)
@@ -124,6 +127,7 @@ DEPENDENCIES
   bosh_common (>= 0.4.0)
   bosh_cpi (>= 0.4.1)
   ci_reporter
+  dotanuki (~> 0.3.1)
   eventmachine
   httpclient
   machinist
