@@ -48,7 +48,6 @@ module Bosh::Director
     # @return [void]
     def drain(agent_id)
       agent = AgentClient.new(agent_id)
-
       drain_time = agent.drain("shutdown")
       if drain_time < 0
         drain_time = drain_time.abs
