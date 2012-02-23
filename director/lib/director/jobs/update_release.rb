@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class UpdateRelease < BaseJob
+
       @queue = :normal
 
       attr_accessor :tmp_release_dir, :release
@@ -50,8 +51,10 @@ module Bosh::Director
           begin
             release_tgz = File.join(@tmp_release_dir,
                                     Api::ReleaseManager::RELEASE_TGZ)
-            tar_output = `tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1`
-            raise ReleaseInvalidArchive.new($?.exitstatus, tar_output) if $?.exitstatus != 0
+            result = sh("tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1")
+            unless result.ok?
+              raise ReleaseInvalidArchive.new(result.status, result.stdout)
+            end
           ensure
             if release_tgz && File.exists?(release_tgz)
               FileUtils.rm(release_tgz)
@@ -247,8 +250,10 @@ module Bosh::Director
         @logger.info("Creating package: #{package.name}")
 
         package_tgz = File.join(@tmp_release_dir, "packages", "#{package.name}.tgz")
-        output = `tar -tzf #{package_tgz} 2>&1`
-        raise PackageInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
+        result = sh("tar -tzf #{package_tgz} 2>&1")
+        unless result.ok?
+          raise PackageInvalidArchive.new(result.status, result.stdout)
+        end
 
         # TODO: verify sha1
         File.open(package_tgz) do |f|
@@ -274,9 +279,10 @@ module Bosh::Director
 
         FileUtils.mkdir_p(job_dir)
 
-        output = `tar -C #{job_dir} -xzf #{job_tgz} 2>&1`
-
-        raise JobInvalidArchive.new(template.name, $?.exitstatus, output) if $?.exitstatus != 0
+        result = sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1")
+        unless result.ok?
+          raise JobInvalidArchive.new(template.name, result.status, result.stdout)
+        end
 
         manifest_file = File.join(job_dir, "job.MF")
         raise JobMissingManifest.new(template.name) unless File.file?(manifest_file)

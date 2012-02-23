@@ -2,6 +2,7 @@
 
 module Bosh::Director
   class Config
+    extend Bosh::Exec
 
     class << self
 
@@ -81,7 +82,12 @@ module Bosh::Director
         end
 
         Dir.chdir(File.expand_path("..", __FILE__))
-        @revision = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip
+
+        result = sh("git show-ref --head --hash=8")
+        @revision = "00000000"
+        if result.ok? && rev = result.stdout.split("\n").first
+          @revision = rev
+        end
 
         @process_uuid = UUIDTools::UUID.random_create.to_s
         @nats_uri = config["mbus"]

@@ -2,7 +2,7 @@ source :rubygems
 
 gem "bcrypt-ruby"
 gem "blobstore_client", ">=0.3.4"
-gem "bosh_common", ">=0.4.0"
+gem "bosh_common", ">=0.5.0"
 gem "bosh_cpi", ">=0.4.1"
 gem "vsphere_cpi", ">=0.4.7"
 gem "eventmachine"
