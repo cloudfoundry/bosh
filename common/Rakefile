@@ -8,6 +8,7 @@ require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
 
+require "rake/dsl_definition"
 require "rake"
 begin
   require "rspec/core/rake_task"
