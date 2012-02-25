@@ -1,0 +1,124 @@
+---
+deployment: micro
+release:
+  name: micro
+  version: 5
+properties:
+  micro: true
+  domain: vcap.me
+  env:
+  networks:
+    apps: local
+    management: local
+  nats:
+    user: nats
+    password: nats
+    address: 127.0.0.1
+    port: 4222
+  redis:
+    address: 127.0.0.1
+    port: 25255
+    password: redis
+  postgres:
+    user: postgres
+    password: postgres
+    address: 127.0.0.1
+    port: 5432
+    database: bosh
+  blobstore:
+    address: 127.0.0.1
+    backend_port: 25251
+    port: 25250
+    director:
+      user: director
+      password: director
+    agent:
+      user: agent
+      password: agent
+  director:
+    address: 127.0.0.1
+    name: micro
+    port: 25555
+  hm:
+    http:
+      port: 25923
+      user: hm
+      password: hm
+    loglevel: info
+    director_account:
+      user: admin
+      password: admin
+    intervals:
+      poll_director: 60
+      poll_grace_period: 30
+      log_stats: 300
+      analyze_agents: 60
+      agent_timeout: 180
+      rogue_agent_alert: 180
+  vcenter:
+    address: 127.0.0.1
+    user: vcenter-user
+    password: vcenter-password
+    datacenters:
+    - name: DS
+      vm_folder: BOSH_VMs
+      template_folder: BOSH_Templates
+      disk_path: BOSH_Deployer
+      datastore_pattern: las01-.*
+      persistent_datastore_pattern: las01-.*
+      allow_mixed_datastores: true
+      clusters:
+      - CLUSTER01
+index: 0
+networks:
+  local:
+    ip: 127.0.0.1
+packages:
+  ruby:
+    name: ruby
+    version: 0.1-dev
+    sha1: 4fed42aea24fee533083c2c08ba8ce2d291d7094
+    blobstore_id: 2e563886-8b44-498c-ba6b-ac85a3ad7294
+  nats:
+    name: nats
+    version: 0.1-dev
+    sha1: c02923c236b2e15b3beea6a1ed1bf7d29ea77add
+    blobstore_id: f949dfe8-d469-45d8-8e33-af954acc99a4
+  redis:
+    name: redis
+    version: 0.1-dev
+    sha1: 88d259f8eb74efad7ae044f8485632dd2d07939f
+    blobstore_id: b95f49e5-29e7-40b6-9a01-43318f60d118
+  postgres:
+    name: postgres
+    version: 0.1-dev
+    sha1: 5277adb1618bf4754d3b25ff83c06e20ac02a890
+    blobstore_id: 1fd16130-a6d8-43d7-bc80-68ca77dae17c
+  blobstore:
+    name: blobstore
+    version: 0.1-dev
+    sha1: 1300c4af0daca06e7fa90426768ceded758dd62c
+    blobstore_id: 726efad8-41d2-4199-967f-9c391214552d
+  nginx:
+    name: nginx
+    version: 0.1-dev
+    sha1: 93ef447bd274462f8f2dbe968e9e07acb00bd254
+    blobstore_id: b22e7d90-900f-44c1-8abc-4953d844f602
+  director:
+    name: director
+    version: 0.1-dev
+    sha1: a388301b27593f2ad6f5e410a014ac14bbfac700
+    blobstore_id: 4791c0b1-a7c9-4e31-aed4-8601811e5112
+  health_monitor:
+    name: health_monitor
+    version: 0.1-dev
+    sha1: 6154dc2d7be5876dc175a452453708238b7feeb0
+    blobstore_id: e60af052-f585-42ce-876b-41240bb6353b
+configuration_hash: {}
+
+job:
+  name: micro
+  version: 0.5-dev
+  sha1: d5941f9a113489e8bc14adb61d3bb619cd9566bd
+  template: micro
+  blobstore_id: da4dea43-fa56-4a4a-bb18-dba8961d0f6f

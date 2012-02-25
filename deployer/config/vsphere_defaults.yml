@@ -1,0 +1,35 @@
+---
+name:
+
+logging:
+  level: INFO
+
+dir:
+
+network:
+  ip:
+  netmask:
+  gateway:
+  dns: []
+  cloud_properties:
+    name:
+
+resources:
+  persistent_disk: 2048
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 1
+
+cloud:
+  plugin: vsphere
+  properties:
+    agent:
+      ntp: []
+      blobstore:
+        plugin: local
+        properties:
+          blobstore_path: /var/vcap/micro_bosh/data/cache
+      mbus:
+    soap_log:
+    vcenters: []
