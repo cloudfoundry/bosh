@@ -1,0 +1,35 @@
+---
+name: bosh-bootstrap-dev33
+
+#XXX using dev33
+network:
+  ip: 172.23.194.100
+  netmask: 255.255.254.0
+  gateway: 172.23.194.1
+  dns:
+  - 172.22.22.153
+  - 172.22.22.154
+  cloud_properties:
+    name: VLAN2194
+
+cloud:
+  plugin: vsphere
+  properties:
+    agent:
+      ntp:
+       - ntp01.las01.emcatmos.com
+       - ntp02.las01.emcatmos.com
+    vcenters:
+      - host: 172.23.128.96
+        user: dev\cloudfoundry-auth
+        password: TempP@ss
+        datacenters:
+          - name: LAS01
+            vm_folder: BOSH_VMs
+            template_folder: BOSH_Templates
+            disk_path: BOSH_Deployer
+            datastore_pattern: las01-.*
+            persistent_datastore_pattern: las01-.*
+            allow_mixed_datastores: true
+            clusters:
+              - CLUSTER01
