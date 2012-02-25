@@ -1,0 +1,19 @@
+apply_spec:
+  properties:
+    vcenter:
+      address: devNN
+      user: devNN-user
+      password: devNN-password
+      datacenters:
+        - name: LAS-DEV
+          vm_folder: DEV_VMs
+          template_folder: DEV_Templates
+          disk_path: DEV_
+          datastore_pattern: lasdev01-.*
+          persistent_datastore_pattern: lasdev01-.*
+          allow_mixed_datastores: true
+          clusters:
+            - DEV-CLUSTER
+    postgres:
+      address: 127.0.1.1
+      port: 5555
