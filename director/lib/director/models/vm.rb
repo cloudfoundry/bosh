@@ -18,5 +18,14 @@ module Bosh::Director::Models
     def apply_spec=(spec)
       self.apply_spec_json = Yajl::Encoder.encode(spec)
     end
+
+    def credentials
+      return nil if credentials_json.nil?
+      Yajl::Parser.parse(credentials_json)
+    end
+
+    def credentials=(spec)
+      self.credentials_json = Yajl::Encoder.encode(spec)
+    end
   end
 end

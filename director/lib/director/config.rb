@@ -20,7 +20,8 @@ module Bosh::Director
         :revision,
         :task_checkpoint_interval,
         :uuid,
-        :current_job
+        :current_job,
+        :encryption
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -94,6 +95,8 @@ module Bosh::Director
 
         @db = configure_db(config["db"])
         @dns_db = configure_db(config["dns"]["db"]) if config["dns"] && config["dns"]["db"]
+
+        @encryption = config["encryption"]
 
         Bosh::Clouds::Config.configure(self)
 
@@ -184,6 +187,10 @@ module Bosh::Director
 
       def dns_enabled?
         !@dns_db.nil?
+      end
+
+      def encryption?
+        !@encryption.nil?
       end
 
       def threaded
