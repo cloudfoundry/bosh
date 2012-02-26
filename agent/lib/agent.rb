@@ -40,6 +40,10 @@ require "agent/file_aggregator"
 require "agent/ntp"
 require "agent/sshd_monitor"
 
+require "agent/apply_plan/job"
+require "agent/apply_plan/package"
+require "agent/apply_plan/plan"
+
 # TODO the message handlers will be loaded dynamically
 require "agent/message/base"
 require "agent/message/disk"
