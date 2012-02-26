@@ -799,12 +799,26 @@ module VSphereCloud
       create_edit_device_spec(cdrom)
     end
 
+    def which(programs)
+      ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+        programs.each do |bin|
+          exe = File.join(path, bin)
+          return exe if File.exists?(exe)
+        end
+      end
+      programs.first
+    end
+
+    def genisoimage
+      @genisoimage ||= which(%w{genisoimage mkisofs})
+    end
+
     def generate_env_iso(env)
       Dir.mktmpdir do |path|
         env_path = File.join(path, "env")
         iso_path = File.join(path, "env.iso")
         File.open(env_path, "w") { |f| f.write(env) }
-        output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
+        output = `#{genisoimage} -o #{iso_path} #{env_path} 2>&1`
         raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
         File.open(iso_path, "r") { |f| f.read }
       end
