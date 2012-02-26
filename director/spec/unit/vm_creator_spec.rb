@@ -46,4 +46,25 @@ describe Bosh::Director::VmCreator do
                                               @network_settings, Array(99), @resource_pool_spec.env)
   end
 
+  it "should create credentials when encryption is enabled" do
+    Bosh::Director::Config.encryption = true
+    @cloud.should_receive(:create_vm).with(kind_of(String), "stemcell-id",
+                                           {"ram" => "2gb"}, @network_settings, [99],
+                                           {"bosh" => { "credentials" => { "crypt_key" => kind_of(String),
+                                                                           "sign_key" => kind_of(String)}}})
+
+    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                                              @network_settings, Array(99), @resource_pool_spec.env)
+
+    Base64.strict_decode64(vm.credentials["crypt_key"]).should be_kind_of(String)
+    Base64.strict_decode64(vm.credentials["sign_key"]).should be_kind_of(String)
+
+    lambda {
+      Base64.strict_decode64(vm.credentials["crypt_key"] + "foobar")
+    }.should raise_error(ArgumentError, /invalid base64/)
+
+    lambda {
+      Base64.strict_decode64(vm.credentials["sign_key"] + "barbaz")
+    }.should raise_error(ArgumentError, /invalid base64/)
+  end
 end
