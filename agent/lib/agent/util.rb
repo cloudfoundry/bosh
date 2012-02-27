@@ -69,8 +69,10 @@ module Bosh::Agent
           logger.info("Failure unpacking blob: #{e.inspect} #{e.backtrace}")
           raise e
         ensure
-          tf.close
-          tf.unlink
+          if tf
+            tf.close
+            tf.unlink
+          end
         end
 
       end
