@@ -120,6 +120,10 @@ find / -xdev -perm +6000 -a -type f \
 # the bosh agent installs a config that rotates on size
 mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
 
+# Setup bosh specific sysctl
+cp 60-bosh-sysctl.conf /etc/sysctl.d
+chmod 0644 /etc/sysctl.d/60-bosh-sysctl.conf
+
 # Clean out src
 cd /var/tmp
 rm -fr ${bosh_app_dir}/bosh/src
