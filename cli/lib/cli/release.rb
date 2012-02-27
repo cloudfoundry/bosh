@@ -107,7 +107,7 @@ module Bosh::Cli
 
         @private_config = new_private_config
 
-        File.open(@private_config_file, "w") do
+        File.open(@private_config_file, "w") do |f|
           YAML.dump(@private_config, f)
         end
         say("Migrated dev config file format".green)
