@@ -38,7 +38,7 @@ desc "Install latest stable version into system gems"
 task "install" do
   Rake::Task["bundler:install"].invoke
   Bundler.with_clean_env do
-    system("gem install bosh_cli-current.gem")
+    sh("gem install bosh_cli-current.gem")
   end
 end
 
