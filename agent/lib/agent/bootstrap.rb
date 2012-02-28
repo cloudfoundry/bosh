@@ -229,7 +229,7 @@ module Bosh::Agent
         output = `ntpdate #{ntp_servers}`
         logger.info(output)
       else
-        logger.warning("no ntp-servers configured")
+        logger.warn("no ntp-servers configured")
       end
     end
 
