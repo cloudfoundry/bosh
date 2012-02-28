@@ -1,4 +1,0 @@
-if [ "$reason" = "BOUND" ]; then
-  echo "address=/martin.cloudfoundry.me/$new_ip_address" > /etc/dnsmasq.conf
-  service dnsmasq restart
-fi
