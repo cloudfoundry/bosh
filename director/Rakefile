@@ -111,5 +111,5 @@ if defined?(RSpec)
   end
 
   desc "Install dependencies and run tests"
-  task :spec => %w(bundler:install:test spec:combined:run)
+  task :spec => %w(spec:combined:run)
 end
