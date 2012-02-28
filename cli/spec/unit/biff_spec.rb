@@ -63,8 +63,11 @@ describe Bosh::Cli::Command::Biff do
     @biff.should_receive(:say).with("'#{template_file}' has it but " +
         "'#{config_file}' does not.").once
 
-    @biff.should_receive(:say).with("Add this to '':\n--- \njobs: \n  cc: \n " +
-        "   srv_api_uri: INSERT_DATA_HERE\n    use_nginx: true\n\n\n").once
+    # Cannot use this because 1.8.7 does not preserve Hash order, so this string
+    # can come back in any order.
+    @biff.should_receive(:say).with(/Add this to '':/).once
+
+    #@biff.should_receive(:say).once
 
     @biff.should_receive(:say).with("There were 1 errors.").once
 
