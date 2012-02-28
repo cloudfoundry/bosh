@@ -41,7 +41,9 @@ module Bosh::Cli::Command
 
     # Deletes the temporary files that were used.
     def delete_temp_diff_files
-      if @dir_name && Dir.exists?(@dir_name)
+      # File.exists works for both files and directories.  Must use for 1.8
+      # compat.
+      if @dir_name && File.exists?(@dir_name)
         FileUtils.remove_entry_secure(@dir_name)
       end
     end
@@ -148,7 +150,8 @@ module Bosh::Cli::Command
     def delete_all_except(obj, name)
       each_method = obj.is_a?(Hash) ? "each_key" : "each_index"
       obj.send(each_method) do |key|
-        if key == name || obj[key]["name"] == name
+        if key == name ||
+           (obj[key].is_a?(Hash) && obj[key]["name"] == name)
           return_obj = nil
           if (obj.is_a?(Hash))
             return_obj = {}
