@@ -1,7 +1,0 @@
-#!/bin/sh
-
-echo "Micro Cloud Foundry component licenses are available in:"
-echo "  /var/vcap/micro/LICENSES"
-echo "Micro Cloud Foundry SBTA is available in:"
-echo "  /var/vcap/micro/SBTA"
-echo ""
