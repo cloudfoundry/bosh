@@ -24,7 +24,7 @@ describe Bosh::Cli::Command::Base do
       public_key = nil
       begin
         public_key = ssh.get_public_key({})
-      rescue e => Bosh::Cli::CliExit
+      rescue Bosh::Cli::CliExit
         public_key = "SOMETHING"
       end
       public_key.should_not be_nil

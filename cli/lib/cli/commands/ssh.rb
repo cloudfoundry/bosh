@@ -16,8 +16,11 @@ module Bosh::Cli::Command
 
       # Check if index is supplied on the command line
       begin
-        options["index"] = Integer(args[0])
-        args.shift
+        # Ruby 1.8.7 treats Integer(nil) as 0, hence the if check
+        if args.size > 0
+          options["index"] = Integer(args[0])
+          args.shift
+        end
       rescue ArgumentError, TypeError
       end
 
