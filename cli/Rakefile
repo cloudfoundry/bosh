@@ -6,20 +6,41 @@ ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __FILE__)
 
 require "rubygems"
 require "bundler"
+
 Bundler.setup(:default, :test)
 
+require "rake"
+begin
+  require "rspec/core/rake_task"
+rescue LoadError
+end
+
 require "bundler_task"
+require "ci_task"
+
+if defined?(RSpec)
+  namespace :spec do
+    SPEC_OPTS = %w(--format progress --colour)
+
+    desc "Run unit tests"
+    unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+      t.pattern = "spec/unit/**/*_spec.rb"
+      t.rspec_opts = SPEC_OPTS
+    end
+
+    CiTask.new do |task|
+      task.rspec_task = unit_rspec_task
+    end
+  end
+
+  desc "Run tests"
+  task :spec => %w(spec:unit)
+
+  desc "Run tests for CIs"
+  task "spec:ci" => %w(spec:unit:ci)
+end
 
 BundlerTask.new
-
-desc "Run specs"
-task "spec" => ["bundler:install:test", "test:spec"]
-
-desc "Run specs for CI"
-task "spec:ci" => ["bundler:install:test", "test:spec:ci"]
-
-desc "Run specs w/coverage"
-task "spec:rcov" => ["bundler:install:test", "test:spec:rcov"]
 
 gem_helper = Bundler::GemHelper.new(Dir.pwd)
 
@@ -30,22 +51,14 @@ end
 
 desc "Build and install BOSH CLI into system gems"
 task "install_head" do
-  Rake::Task["bundler:install"].invoke
   gem_helper.install_gem
 end
 
 desc "Install latest stable version into system gems"
 task "install" do
-  Rake::Task["bundler:install"].invoke
   Bundler.with_clean_env do
     system("gem install bosh_cli-current.gem")
   end
 end
 
-namespace "test" do
-  ["spec", "spec:rcov", "spec:ci"].each do |task_name|
-    task task_name do
-      sh("cd spec && bundle exec rake #{task_name}")
-    end
-  end
-end
+

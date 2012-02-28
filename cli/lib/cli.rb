@@ -33,7 +33,10 @@ require "net/ssh"
 require "net/scp"
 require "net/ssh/gateway"
 
-require "cli/version"
+unless defined?(Bosh::Cli::VERSION)
+  require "cli/version"
+end
+
 require "cli/config"
 require "cli/core_ext"
 require "cli/errors"
