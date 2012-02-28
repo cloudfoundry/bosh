@@ -8,6 +8,7 @@ require 'openssl'
 
 module Bosh::Agent
   class Bootstrap
+    include Bosh::Exec
 
     # TODO: set up iptables
     def initialize
@@ -73,7 +74,9 @@ module Bosh::Agent
       result = template.result(binding)
       File.open('/etc/hosts', 'w') { |f| f.puts(result) }
 
-      `hostname #{agent_id}`
+      if sh("hostname #{agent_id}").failed?
+        logger.warn("failed to set hostname")
+      end
       File.open('/etc/hostname', 'w') { |f| f.puts(agent_id) }
     end
 
@@ -162,8 +165,11 @@ module Bosh::Agent
       @networks.each do |k, v|
         interface = v['interface']
         logger.info("Restarting #{interface}")
-        output = `service network-interface stop INTERFACE=#{interface}`
-        output += `service network-interface start INTERFACE=#{interface}`
+        cmd = "service network-interface %s INTERFACE=#{interface} 2>&1"
+        result = sh(cmd % "stop")
+        output = result.stdout # TODO deal with failure
+        result = sh(cmd % "start")
+        output += result.stdout # TODO deal with failure
         logger.info("Restarted networking: #{output}")
       end
     end
@@ -180,7 +186,8 @@ module Bosh::Agent
 
             arp_cmd = "arping -c 1 -U -I #{network['interface']} #{network['ip']}"
             logger.info(arp_cmd)
-            `#{arp_cmd}`
+            result = sh(arp_cmd)
+            logger.err("arping failed: #{result.stderr}") if result.failed?
           end
           sleep 10
         end
@@ -226,8 +233,12 @@ module Bosh::Agent
       unless ntp_servers.empty?
         logger.info("Configure ntp-servers: #{ntp_servers}")
         update_file(ntp_servers, '/var/vcap/bosh/etc/ntpserver')
-        output = `ntpdate #{ntp_servers}`
-        logger.info(output)
+        result = sh("ntpdate #{ntp_servers}")
+        if result.ok?
+          logger.info(output)
+        else
+          logger.warning("ntpdate failed: #{result.stderr}")
+        end
       else
         logger.warning("no ntp-servers configured")
       end
@@ -246,17 +257,17 @@ module Bosh::Agent
           Bosh::Agent::Util.partition_disk(DATA_DISK, data_sfdisk_input)
 
           logger.info("Create swap and data partitions")
-          %x[mkswap #{swap_partition}]
-          %x[/sbin/mke2fs -t ext4 -j #{data_partition}]
+          sh("mkswap #{swap_partition}")
+          sh("/sbin/mke2fs -t ext4 -j #{data_partition}")
         end
 
         logger.info("Swapon and mount data partition")
-        %x[swapon #{swap_partition}]
-        %x[mkdir -p #{base_dir}/data]
+        sh("swapon #{swap_partition}")"
+        FileUtils.mkdir_p("#{base_dir}/data")
 
         data_mount = "#{base_dir}/data"
         unless Pathname.new(data_mount).mountpoint?
-          %x[mount #{data_partition} #{data_mount}]
+          sh("mount #{data_partition} #{data_mount}")
         end
 
         setup_data_sys
@@ -284,11 +295,14 @@ module Bosh::Agent
     def setup_data_sys
       %w{log run}.each do |dir|
         path = "#{base_dir}/data/sys/#{dir}"
-        %x[mkdir -p #{path}]
-        %x[chown root:vcap #{path}]
-        %x[chmod 0750 #{path}]
+        FileUtils.mkdir_p(path)
+        FileUtils.chown('root', 'vcap', path)
+        FileUtils.chmod(0750, path)
       end
-      %x[ln -nsf #{base_dir}/data/sys #{base_dir}/sys]
+      # FileUtils doesn have 'no-deference' for links - causing ln_sf to
+      # attempt to create target link in dst rather than to overwrite it.
+      # BROKEN: FileUtils.ln_sf(monit_file, monit_link)
+      sh("ln -nsf #{base_dir}/data/sys #{base_dir}/sys")
     end
 
     def setup_tmp
@@ -305,11 +319,11 @@ module Bosh::Agent
         root_tmp = File.join(base_dir, 'data', 'root_tmp')
 
         # If it's not mounted on /tmp - we don't care - blow it away
-        %x[/usr/bin/truncate -s #{tmp_size}M #{root_tmp}]
-        %x[chmod 0700 #{root_tmp}]
-        %x[mke2fs -t ext4 -m 1 -F #{root_tmp}]
+        sh("/usr/bin/truncate -s #{tmp_size}M #{root_tmp}")
+        FileUtils.chmod(0700, root_tmp)
+        sh("mke2fs -t ext4 -m 1 -F #{root_tmp}")"
 
-        %x[mount -t ext4 -o loop #{root_tmp} /tmp]
+        sh("mount -t ext4 -o loop #{root_tmp} /tmp")"
 
         # 2nd time for the new /tmp mount
         tmp_permissions
@@ -317,9 +331,9 @@ module Bosh::Agent
     end
 
     def tmp_permissions
-      %x[chown root:#{BOSH_APP_USER} /tmp]
-      %x[chmod 0770 /tmp]
-      %x[chmod 0700 /var/tmp]
+      FileUtils.chown('root', BOSH_APP_USER, "/tmp")
+      FileUtils.chmod(0770, "/tmp")
+      FileUtils.chmod(0700, "/var/tmp")
     end
 
     def mount_persistent_disk
@@ -343,16 +357,16 @@ module Bosh::Agent
         /dev/sr0
       }
       root_only_rw.each do |path|
-        %x[chmod 0660 #{path}]
-        %x[chown root:root #{path}]
+        FileUtils.chmod(0660, path)
+        FileUtils.chown("root", "root", path)
       end
 
       root_app_user_rw = %w{
         /dev/log
       }
       root_app_user_rw.each do |path|
-        %x[chmod 0660 #{path}]
-        %x[chown root:#{BOSH_APP_USER} #{path}]
+        FileUtils.chmod(0660, path)
+        FileUtils.chown("root", BOSH_APP_USER, path)
       end
 
       root_app_user_rwx = %w{
@@ -360,8 +374,8 @@ module Bosh::Agent
         /var/lock
       }
       root_app_user_rwx.each do |path|
-        %x[chmod 0770 #{path}]
-        %x[chown root:#{BOSH_APP_USER} #{path}]
+        FileUtils.chmod(0770, path)
+        FileUtils.chown("root", BOSH_APP_USER, path)
       end
 
       root_rw_app_user_read = %w{
@@ -369,8 +383,8 @@ module Bosh::Agent
         /etc/at.allow
       }
       root_rw_app_user_read.each do |path|
-        %x[chmod 0640 #{path}]
-        %x[chown root:#{BOSH_APP_USER} #{path}]
+        FileUtils.chmod(0640, path)
+        FileUtils.chown("root", BOSH_APP_USER, path)
       end
 
       no_other_read = %w{
@@ -378,7 +392,7 @@ module Bosh::Agent
         /data/vcap/store
       }
       no_other_read.each do |path|
-        %[chmod o-r #{path}]
+        FileUtils.chmod("o-r", path)
       end
 
     end

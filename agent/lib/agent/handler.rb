@@ -1,6 +1,8 @@
 module Bosh::Agent
 
   class Handler
+    include Bosh::Exec
+
     attr_reader :processors
 
     def self.start
@@ -230,15 +232,15 @@ module Bosh::Agent
         udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
         if File.exist?(udev_file)
           @logger.info("deleting 70-persistent-net.rules - again")
-          `rm #{udev_file}`
+          FileUtils.rm(udev_file)
         end
         @logger.info("Removing settings.json")
         settings_file = File.join(@base_dir, 'bosh', 'settings.json')
-        `rm #{settings_file}`
+        FileUtils.rm(settings_file)
       end
 
       @logger.info("Halt after networking change")
-      `/sbin/halt`
+      sh("/sbin/halt")
     end
 
     def handle_shutdown(reply_to)
@@ -247,7 +249,7 @@ module Bosh::Agent
 
       if Bosh::Agent::Config.configure
         # We should never come back up again
-        at_exit { `sv stop agent` }
+        at_exit { sh("sv stop agent") }
       end
 
       publish(reply_to, payload) {

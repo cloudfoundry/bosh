@@ -1,6 +1,7 @@
 module Bosh::Agent
   module Message
     class Apply < Base
+      include Bosh::Exec
 
       def self.long_running?; true; end
 
@@ -138,8 +139,7 @@ module Bosh::Agent
         # FileUtils doesn have 'no-deference' for links - causing ln_sf to
         # attempt to create target link in dst rather than to overwrite it.
         # BROKEN: FileUtils.ln_sf(monit_file, monit_link)
-        `ln -nsf #{src} #{dst}`
-        unless $?.exitstatus == 0
+        unless sh("ln -nsf #{src} #{dst}").ok?
           raise Bosh::Agent::MessageHandlerError, error_msg
         end
       end
@@ -172,8 +172,8 @@ module Bosh::Agent
 
       def harden_job_permissions
         FileUtils.chown_R('root', BOSH_APP_USER, @job_install_dir)
-        %x[chmod -R o-rwx #{@job_install_dir}]
-        %x[chmod g+rx #{@job_install_dir}]
+        FileUtils.chmod_R('o-rwx', @job_install_dir)
+        FileUtils.chmod('g+rx', @job_install_dir)
       end
 
       def post_install_hook

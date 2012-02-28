@@ -2,6 +2,7 @@
 
 module Bosh::Agent
   class Platform::Ubuntu::Disk
+    include Bosh::Exec
 
     def initialize
     end
@@ -29,8 +30,7 @@ module Bosh::Agent
 
     def mount(partition, path)
       logger.info("Mount #{partition} #{path}")
-      `mount #{partition} #{path}`
-      unless $?.exitstatus == 0
+      unless sh("mount #{partition} #{path}").ok?
         raise Bosh::Agent::FatalError, "Failed to mount: #{partition} #{path}"
       end
     end

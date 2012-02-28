@@ -1,5 +1,7 @@
 module Bosh::Agent
   class SshdMonitor
+    extend Bosh::Exec
+
     class << self
       def ok_to_stop?
         Config.sshd_monitor_enabled && @start_time && (Time.now - @start_time) > @start_delay
@@ -8,8 +10,8 @@ module Bosh::Agent
       def test_service(status)
         success = false
         3.times do |_|
-          ssh_status = %x[service ssh status]
-          success = $?.exitstatus == 0 && ssh_status =~ /#{status}/
+          result = sh("service ssh start 2>&1")
+          success = result.ok? && result.stdout =~ /#{status}/
           break if success
           sleep 1
         end
@@ -18,8 +20,10 @@ module Bosh::Agent
 
       def start_sshd
         @lock.synchronize do
-          %x[service ssh start]
-          raise "Failed to start sshd #{ssh_status}" if $?.exitstatus != 0 && !test_service("running")
+          result = sh("service ssh start 2>&1")
+          if result.failed? && !test_service("running")
+            raise "Failed to start sshd #{result.stdout}"
+          end
 
           @start_time = Time.now
           @logger.info("started sshd #{@start_time}")
@@ -33,8 +37,8 @@ module Bosh::Agent
           # affected by stopping ssh
           @logger.info("stopping sshd")
 
-          %x[service ssh stop]
-          raise "Failed to stop sshd" if $?.exitstatus != 0 && !test_service("stop")
+          result = sh("service ssh stop 2>&1")
+          raise "Failed to stop sshd" if result.failed? && !test_service("stop")
           @start_time = nil
         end
       end

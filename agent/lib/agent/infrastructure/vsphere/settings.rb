@@ -1,5 +1,6 @@
 module Bosh::Agent
   class Infrastructure::Vsphere::Settings
+    include Bosh::Exec
 
     def initialize
       logger                      = Bosh::Agent::Config.logger
@@ -55,9 +56,9 @@ module Bosh::Agent
     end
 
     def mount_cdrom
-      output = `mount /dev/cdrom #{@cdrom_settings_mount_point} 2>&1`
+      result = sh("mount /dev/cdrom #{@cdrom_settings_mount_point} 2>&1")
       raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #{@cdrom_settings_mount_point}: #{output}" unless $?.exitstatus == 0
+        "Failed to mount settings on #{@cdrom_settings_mount_point}: #{result.stdout}" unless result.ok?
     end
 
     def load_settings_file(settings_file)
@@ -70,11 +71,13 @@ module Bosh::Agent
     end
 
     def umount_cdrom
-      `umount #{@cdrom_settings_mount_point} 2>&1`
+      # ignoring errors
+      sh("umount #{@cdrom_settings_mount_point} 2>&1")
     end
 
     def eject_cdrom
-      `eject /dev/cdrom`
+      # ignoring errors
+      sh("eject /dev/cdrom")
     end
 
   end

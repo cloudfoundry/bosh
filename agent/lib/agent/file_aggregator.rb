@@ -1,5 +1,6 @@
 module Bosh::Agent
   class FileAggregator
+    include Bosh::Exec
 
     class Error < StandardError; end
     class DirectoryNotFound < Error; end
@@ -23,8 +24,10 @@ module Bosh::Agent
       tarball_path = File.join(out_dir, "files.tgz")
 
       Dir.chdir(tmpdir) do
-        tar_out = `tar -czf #{tarball_path} . 2>&1`
-        raise PackagingError, "Cannot create tarball: #{tar_out}" unless $?.exitstatus == 0
+        result = sh("tar -czf #{tarball_path} . 2>&1")
+        if result.failed?
+          raise PackagingError, "Cannot create tarball: #{result.stdout}"
+        end
       end
 
       tarball_path

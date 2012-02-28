@@ -1,8 +1,9 @@
 module Bosh::Agent
   class Util
-
+    extend Bosh::Exec
 
     class BindingHelper
+
       attr_reader :name
       attr_reader :index
       attr_reader :properties
@@ -59,9 +60,9 @@ module Bosh::Agent
 
           logger.info("Installing to: #{install_path}")
           Dir.chdir(install_path) do
-            output = `tar --no-same-owner -zxvf #{blob_data_file}`
+            result = sh("tar --no-same-owner -zxvf #{blob_data_file}")
             raise Bosh::Agent::MessageHandlerError,
-              "Failed to unpack blob: #{output}" unless $?.exitstatus == 0
+              "Failed to unpack blob: #{result.stdout}" unless result.ok?
           end
         rescue Exception => e
           logger.info("Failure unpacking blob: #{e.inspect} #{e.backtrace}")
@@ -84,11 +85,11 @@ module Bosh::Agent
 
       def partition_disk(dev, sfdisk_input)
         if File.blockdev?(dev)
-          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uM #{dev}"
-          output = %x[#{sfdisk_cmd}]
-          unless $? == 0
+          sfdisk_cmd = "echo \"#{sfdisk_input}\" | sfdisk -uM #{dev} 2>&1"
+          result = sh(sfdisk_cmd)
+          unless result.ok?
             logger.info("failed to parition #{dev}")
-            logger.info(output)
+            logger.info(result.stdout)
           end
         end
       end

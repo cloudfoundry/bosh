@@ -14,6 +14,8 @@ require "posix/spawn"
 require "monit_api"
 require "fileutils"
 
+require "common/exec"
+
 require "agent/ext"
 require "agent/version"
 

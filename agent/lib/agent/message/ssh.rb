@@ -27,27 +27,22 @@ module Bosh::Agent
         @command, @params = args
       end
 
-      def shell_cmd(cmd)
-        shell_output = %x[#{cmd} 2>&1]
-        raise "'#{cmd}' failed, error: #{shell_output}" if $?.exitstatus != 0
-      end
-
       def setup
         begin
           user = @params["user"]
           password = @params["password"]
           logger.info("Setting up ssh for user #{user}")
 
-          shell_cmd(%Q[mkdir -p #{ssh_base_dir}])
+          FileUtils.mkdir_p(ssh_base_dir)
 
           if password
-            shell_cmd(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash -p '#{password}' #{user}])
+            sh(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash -p '#{password}' #{user}], true)
           else
-            shell_cmd(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash #{user}])
+            sh(%Q[useradd -m -b #{ssh_base_dir} -s /bin/bash #{user}], true)
           end
 
           # Add user to admin and vcap group
-          shell_cmd(%Q[usermod -G admin,vcap #{user}])
+          sh(%Q[usermod -G admin,vcap #{user}], true)
 
           # Add public key to authorized keys
           ssh_dir = File.join(ssh_base_dir, user, ".ssh")
@@ -96,7 +91,7 @@ module Bosh::Agent
             # cant trust the user_regex completely, so skip unexpected users
             next unless user =~ /^#{SSH_USER_PREFIX}/
             logger.info("deleting user #{user}")
-            shell_cmd(%Q[userdel -r #{user}])
+            sh(%Q[userdel -r #{user}])
           end
 
           # Stop sshd. Note, SshdMonitor handles the race between stopping sshd

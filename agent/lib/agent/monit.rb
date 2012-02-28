@@ -2,6 +2,8 @@ module Bosh::Agent
 
   # A good chunk of this code is lifted from the implementation of POSIX::Spawn::Child
   class Monit
+    include Bosh::Exec
+
     BUFSIZE = (32 * 1024)
 
     class << self
@@ -124,8 +126,11 @@ module Bosh::Agent
       def reload
         old = retry_monit_request { |client| client.monit_info }
         logger.info("Monit: old incarnation #{old[:incarnation]}")
-        `#{monit_bin} reload`
-        logger.info("Monit: reload")
+        if (result = sh("#{monit_bin} reload")).failed?
+          logger.warning("monit failed to reload: #{result.stderr}")
+        else
+          logger.info("Monit: reload")
+        end
 
         # We'll try for about a minute to get new Monit incarnation after reload
         attempts = 60

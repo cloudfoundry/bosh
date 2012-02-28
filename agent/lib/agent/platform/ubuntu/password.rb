@@ -1,5 +1,6 @@
 module Bosh::Agent
   class Platform::Ubuntu::Password
+    include Bosh::Exec
 
     def update(settings)
       if bosh_settings = settings['env']['bosh']
@@ -20,10 +21,9 @@ module Bosh::Agent
 
     # "mkpasswd -m sha-512" to mimick default LTS passwords
     def update_password(user, password)
-      output = `usermod -p '#{password}' #{user} 2>%`
-      exit_code = $?.exitstatus
-      unless exit_code == 0
-        raise Bosh::Agent::FatalError, "Failed set passsword for #{user} (#{exit_code}: #{output})"
+      result = sh("usermod -p '#{password}' #{user} 2>&1")
+      unless result.ok?
+        raise Bosh::Agent::FatalError, "Failed set passsword for #{user} (#{result.status}: #{result.stdout})"
       end
     end
 

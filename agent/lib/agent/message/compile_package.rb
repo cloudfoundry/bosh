@@ -3,6 +3,8 @@ require 'blobstore_client'
 module Bosh::Agent
   module Message
     class CompilePackage
+      include Bosh::Exec
+
       attr_accessor :blobstore_id, :package_name, :package_version, :package_sha1
       attr_accessor :compile_base, :install_base
       attr_reader :blobstore_client
@@ -86,10 +88,10 @@ module Bosh::Agent
         FileUtils.mkdir_p compile_dir
         Dir.chdir(compile_dir) do
           # TODO: error handling
-          output = `tar -zxf #{@source_file} 2>&1`
-          unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, 
-              "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus}): #{output}"
+          result = sh("tar -zxf #{@source_file} 2>&1")
+          unless result.ok?
+            raise Bosh::Agent::MessageHandlerError,
+              "Compile Package Unpack Source Failure (exit code: #{result.status}): #{result.stdout}"
           end
         end
       end
@@ -108,12 +110,12 @@ module Bosh::Agent
           ENV['BOSH_INSTALL_TARGET'] = install_dir
           if File.exist?('packaging')
             @logger.info("Compiling #{@package_name} #{@package_version}")
-            output = `bash -x packaging 2>&1`
-            unless $?.exitstatus == 0
-              raise Bosh::Agent::MessageHandlerError, 
-                "Compile Package Failure (exit code: #{$?.exitstatus}): #{output}"
+            result = sh("bash -x packaging 2>&1")
+            unless result.ok?
+              raise Bosh::Agent::MessageHandlerError,
+                "Compile Package Failure (exit code: #{result.status}): #{result.stdout}"
             end
-            @logger.info(output)
+            @logger.info(result.stdout)
           end
         end
       end
@@ -125,7 +127,8 @@ module Bosh::Agent
       def pack
         @logger.info("Packing #{@package_name} #{@package_version}")
         Dir.chdir(install_dir) do
-          `tar -zcf #{compiled_package} .`
+          result = sh("tar -zcf #{compiled_package} . 2>&1")
+          @logger.error("#pack failed: {result.stdout}") unless result.ok?
         end
       end
 

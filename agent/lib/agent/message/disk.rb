@@ -4,6 +4,8 @@ module Bosh::Agent
   module Message
 
     class MigrateDisk < Base
+      include Bosh::Exec
+
       def self.long_running?; true; end
 
       def self.process(args)
@@ -30,7 +32,7 @@ module Bosh::Agent
         # TODO: remount old store read-only
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
-          `(cd #{store_path} && tar cf - .) | (cd #{store_migration_target} && tar xpf -)`
+          sh("(cd #{store_path} && tar cf - .) | (cd #{store_migration_target} && tar xpf -)")
         end
 
         unmount_store
@@ -43,18 +45,18 @@ module Bosh::Agent
       end
 
       def unmount_store
-        `umount #{store_path}`
+        sh("umount #{store_path}")
       end
 
       def unmount_store_migration_target
-        `umount #{store_migration_target}`
+        sh("umount #{store_migration_target}")
       end
 
       def mount_new_store
         disk = DiskUtil.lookup_disk_by_cid(@new_cid)
         partition = "#{disk}1"
         logger.info("Mounting: #{partition} #{store_path}")
-        `mount #{partition} #{store_path}`
+        sh("mount #{partition} #{store_path}")
         unless $?.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path} (exit code #{$?.exitstatus})"
         end
@@ -107,9 +109,9 @@ module Bosh::Agent
       end
 
       def rescan_scsi_bus
-        `/sbin/rescan-scsi-bus.sh`
-        unless $?.exitstatus == 0
-          raise Bosh::Agent::MessageHandlerError, "Failed to run /sbin/rescan-scsi-bus.sh (exit code #{$?.exitstatus})"
+        result = sh("/sbin/rescan-scsi-bus.sh")
+        unless result.ok?
+          raise Bosh::Agent::MessageHandlerError, "Failed to run /sbin/rescan-scsi-bus.sh (exit code #{result.status})"
         end
       end
 
@@ -129,7 +131,7 @@ module Bosh::Agent
               logger.info("Found blank disk #{disk}")
             else
               logger.info("Disk has partition table")
-              logger.info(`sfdisk -Llq #{disk} 2> /dev/null`)
+              logger.info(sh("sfdisk -Llq #{disk} 2> /dev/null").stdout)
             end
             break
           rescue => e
@@ -149,9 +151,9 @@ module Bosh::Agent
 
           Bosh::Agent::Util.partition_disk(disk, full_disk)
 
-          `/sbin/mke2fs -t ext4 -j #{partition}`
-          unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
+          result = sh("/sbin/mke2fs -t ext4 -j #{partition}")
+          unless result.ok?
+            raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{result.status})"
           end
         elsif File.blockdev?(partition)
           logger.info("Found existing partition on #{disk}")
@@ -217,7 +219,7 @@ module Bosh::Agent
 
       def lsof_guard
         lsof_attempts = GUARD_RETRIES
-        until lsof_output = `lsof -t +D #{@mountpoint}`.empty?
+        until lsof_output = sh("lsof -t +D #{@mountpoint}").stdout.empty?
           sleep GUARD_SLEEP
           lsof_attempts -= 1
           if lsof_attempts == 0
@@ -230,14 +232,14 @@ module Bosh::Agent
       def umount_guard
         umount_attempts = GUARD_RETRIES
         loop {
-          umount_output = `umount #{@mountpoint}`
-          if $?.exitstatus == 0
+          result = sh("umount #{@mountpoint} 2>&1")
+          if result.ok?
             break
           else
             sleep GUARD_SLEEP
             umount_attempts -= 1
             if umount_attempts == 0
-              raise Bosh::Agent::MessageHandlerError, "Failed to umount #{@block} on #{@mountpoint}: #{umount_output}"
+              raise Bosh::Agent::MessageHandlerError, "Failed to umount #{@block} on #{@mountpoint}: #{result.stdout}"
             end
           end
         }
@@ -313,14 +315,14 @@ module Bosh::Agent
             "ephemeral" => { "percent" => nil },
           }
 
-          disk_usage = `#{disk_usage_command}`
+          disk_usage = sh("disk_usage_command")
 
-          if $?.to_i != 0
-            logger.error("Failed to get disk usage data, df exit code = #{$?.to_i}")
+          if disk_usage.failed?
+            logger.error("Failed to get disk usage data, df exit code = #{disk_usage.status}")
             return result
           end
 
-          disk_usage.split("\n")[1..-1].each do |line|
+          disk_usage.stdout.split("\n")[1..-1].each do |line|
             usage, mountpoint = line.split(/\s+/)
             usage.gsub!(/%$/, '')
 
