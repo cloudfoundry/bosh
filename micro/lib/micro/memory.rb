@@ -19,7 +19,7 @@ module VCAP
             return mem
           end
         end
-        @logger.warning("unable to load previous memory")
+        @logger.warn("unable to load previous memory")
         nil
       rescue => e
         @logger.error("previous memory failed #{file}: #{e.message}")
@@ -35,7 +35,7 @@ module VCAP
             return tokens[1].to_i
           end
         end
-        @logger.warning("unable to get current memory")
+        @logger.warn("unable to get current memory")
         nil
       rescue => e
         @logger.error("current memory failed: #{e.message}")
