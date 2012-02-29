@@ -119,33 +119,53 @@ namespace "ubuntu" do
     puts "Check #{work_dir} for build artifacts"
   end
 end
-
 namespace "stemcell" do
+  def version
+    Bosh::Agent::VERSION
+  end
 
-  # Still a hack that requires being run on ubuntu
-  # Don't do this remote as it probably will kill your sshd.
-  desc "Build Ubuntu stemcell"
-  task "build" do
-    stemcell_name = ENV["STEMCELL_NAME"] || "bosh-stemcell"
+  def bosh_protocol
+    Bosh::Agent::BOSH_PROTOCOL
+  end
 
-    version = Bosh::Agent::VERSION
-    bosh_protocol = Bosh::Agent::BOSH_PROTOCOL
+  def get_working_dir
+    "/var/tmp/bosh/agent-#{version}-#{$$}"
+  end
 
-    work_dir = "/var/tmp/bosh/agent-#{version}-#{$$}"
-    mkdir_p work_dir
+  def get_chroot_dir
+    File.join(get_working_dir, "chroot")
+  end
 
-    # fail sooner rather than later
+  def get_instance_dir
+    File.join(get_working_dir, 'instance')
+  end
+
+  def get_package_dir
+    File.join(get_working_dir, 'stemcell-package')
+  end
+
+  def get_ovftool_bin
     ovftool_bin = ENV['OVFTOOL'] ||= '/usr/lib/vmware/ovftool/ovftool'
     unless File.exist?(ovftool_bin)
       puts "stemcell builder expects #{ovftool_bin} or the OVFTOOL environment variable to be set"
       exit 1
     end
+    ovftool_bin
+  end
+
+  def build_chroot
+    stemcell_name = ENV["STEMCELL_NAME"] || "bosh-stemcell"
+
+    work_dir = get_working_dir
+    mkdir_p work_dir
+
+    ovftool_bin = get_ovftool_bin
 
     cp "misc/stemcell/build/vmbuilder.cfg", work_dir
     cp_r "misc/stemcell/build", work_dir
     cp_r "misc/stemcell/instance", work_dir
 
-    instance_dir = File.join(work_dir, 'instance')
+    instance_dir = get_instance_dir
 
     File.open(File.join(instance_dir, "version"),'w') do |f|
       f.puts(version)
@@ -158,13 +178,28 @@ namespace "stemcell" do
     cp "Gemfile.lock", instance_dir
 
     # Generate the chroot
-    chroot_dir = File.join(work_dir, 'chroot')
+    chroot_dir = get_chroot_dir
     chroot_script_dir = File.expand_path("misc/stemcell/build/chroot/stages", File.dirname(__FILE__))
 
     iso = File.exist?('/var/tmp/ubuntu.iso') ? '/var/tmp/ubuntu.iso' : ''
     sh "sudo #{chroot_script_dir}/00_base.sh #{chroot_dir} #{iso}"
     sh "sudo #{chroot_script_dir}/01_warden.sh #{chroot_dir}"
     sh "sudo #{chroot_script_dir}/20_bosh.sh #{chroot_dir} #{instance_dir}"
+  end
+
+  def build_vm_image(part_in=nil)
+    work_dir = get_working_dir
+    chroot_dir = get_chroot_dir
+    package_dir = get_package_dir
+    mkdir_p package_dir
+    stemcell_name = ENV["STEMCELL_NAME"] || "bosh-stemcell"
+    ovftool_bin = get_ovftool_bin
+
+    cp "misc/stemcell/build/vmbuilder.cfg", work_dir unless File.exist?(File.join(work_dir, "vmbuilder.cfg"))
+    cp_r "misc/stemcell/build", work_dir unless File.exists?(File.join(work_dir, "build"))
+
+    # Update root partition size
+    cp part_in, "#{work_dir}/build/part.in" if part_in && File.exist?(part_in)
 
     Dir.chdir(work_dir) do
       vmbuilder_args = "--debug --mem 512 --existing-chroot #{chroot_dir} -c #{work_dir}/vmbuilder.cfg"
@@ -183,6 +218,7 @@ namespace "stemcell" do
       end
 
       Dir.chdir(tmpdir) do
+        cp_r(Dir.glob("#{package_dir}/*"), ".")
         sh "tar zcf ../bosh-esxcloud-stemcell-#{version}.tgz *"
       end
       FileUtils.rm_rf tmpdir
@@ -201,9 +237,9 @@ namespace "stemcell" do
       sh "sudo cp #{chroot_dir}/var/vcap/bosh/stemcell_dpkg_l.out stemcell/stemcell_dpkg_l.txt"
 
       Dir.chdir("stemcell") do
+        cp_r(Dir.glob("#{package_dir}/*"), ".")
         sh "tar zcf ../bosh-stemcell-#{version}.tgz *"
       end
-
     end
     # TODO: guesthw version 7 for esx4
     # TODO: install bin wrapper
@@ -212,5 +248,105 @@ namespace "stemcell" do
     puts "Generated stemcell: #{work_dir}/bosh-stemcell-#{version}.tgz"
     puts "Generated esxcloud stemcell: #{work_dir}/bosh-esxcloud-stemcell-#{version}.tgz"
     puts "Check #{work_dir} for build artifacts"
+  end
+
+  def setup_chroot_dir(chroot=nil)
+    return build_chroot if !chroot
+
+    # put the user specified chroot directory or tgz under the working directory
+    chroot = File.expand_path(chroot)
+
+    work_dir = get_working_dir
+    FileUtils.mkdir_p(work_dir)
+
+    Dir.chdir(work_dir) do
+      if File.directory?(chroot)
+        sh "sudo ln -s #{chroot} chroot"
+      else
+        sh "sudo tar zxf #{chroot}"
+        if !File.exists?("chroot")
+          puts "Unrecognized format of the chroot tgz file: #{chroot}"
+          exit 1
+        end
+      end
+    end
+  end
+
+  def customize_chroot(component, manifest, tarball)
+    chroot_dir = get_chroot_dir
+    instance_dir = File.join(get_working_dir, 'instance')
+    package_dir = get_package_dir
+    work_dir = get_working_dir
+    FileUtils.mkdir_p(instance_dir)
+    FileUtils.mkdir_p(package_dir)
+
+    # Setup instance directory with code to build component.
+    # Some helper code like "helpers.sh" and "skeleton" is copied as well.
+    cp_r "misc/#{component}", instance_dir
+    component_dir = File.join(instance_dir, component)
+    cp_r "../package_compiler", component_dir
+    cp_r "misc/stemcell/build/chroot/skeleton", component_dir
+    cp_r "misc/stemcell/build/chroot/lib/helpers.sh", File.join(component_dir, "lib")
+
+    # Copy release artifacts
+    component_release_dir = File.join(instance_dir, "#{component}_release")
+    FileUtils.mkdir_p(component_release_dir)
+    cp manifest, "#{component_release_dir}/release.yml"
+    cp tarball, "#{component_release_dir}/release.tgz"
+
+    # Execute custom scripts
+    component_script_dir = File.join(component_dir,"stages")
+    Dir.glob(File.join(component_script_dir, '*')).sort.each do |script|
+      sh "sudo #{script} #{chroot_dir} #{instance_dir} #{package_dir}"
+    end
+  end
+
+  # Takes in an optional argument "chroot_dir"
+  desc "Build stemcell [chroot_dir|chroot_tgz] - optional argument chroot dir or chroot tgz"
+  task "basic", :chroot do |t, args|
+    # Create/Setup chroot directory
+    setup_chroot_dir(args[:chroot])
+
+    # Build stemcell
+    build_vm_image
+  end
+
+  desc "Build chroot tgz"
+  task "chroot_tgz" do
+    setup_chroot_dir
+    Dir.chdir(get_working_dir) do
+      sh "sudo tar zcf chroot.tgz chroot"
+    end
+    puts "chroot directory is #{get_chroot_dir}"
+    puts "Generated chroot tgz: #{File.join(get_working_dir, "chroot.tgz")}"
+  end
+
+  # TODO add micro cloud i.e "Build micro <cloud|bosh> ..."
+  desc "Build micro bosh <manifest_file> <tarball> [chroot_dir|chroot_tgz]"
+  task "micro", :component, :manifest, :tarball, :chroot do |t, args|
+    # Verify component
+    COMPONENTS = %w[micro_bosh]
+    component = args[:component]
+    manifest = File.expand_path(args[:manifest])
+    tarball = File.expand_path(args[:tarball])
+
+    unless COMPONENTS.include?(component)
+      puts "Please specify a component to build. Supported components are #{COMPONENTS}"
+      exit 1
+    end
+
+    unless manifest && tarball
+      puts "Please specify a manifest and tarball for building component #{component}"
+      exit 1
+    end
+
+    # Create/Setup chroot directory
+    setup_chroot_dir(args[:chroot])
+
+    # Customize chroot directory
+    customize_chroot(component, manifest, tarball)
+
+    # Create vm image
+    build_vm_image("misc/#{component}/part.in")
   end
 end
