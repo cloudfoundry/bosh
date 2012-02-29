@@ -1,7 +1,4 @@
 ---
-test:
-  root_pass: cftest123
-
 name: Test CPI
 port: 8081
 
@@ -15,7 +12,7 @@ redis:
 
 dir: /tmp/boshdir
 db:
-  database: "sqlite:///:memory:"
+  database: "sqlite:/"
   max_connections: 32
   pool_timeout: 10
 blobstore:
@@ -67,4 +64,3 @@ cloud:
             allow_mixed_datastores: true
             clusters:
               - CLUSTER01
-
