@@ -1,0 +1,6 @@
+Scripts to build micro bosh component.
+
+NOTE: The script "agent/misc/stemcell/build/chroot/lib/helpers.sh" and its
+required subdir "agent/misc/stemcell/build/chroot/skeleton" are copied by the
+stemcell.rake script in the instance directory of this component before the
+component build scripts are executed.
