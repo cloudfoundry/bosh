@@ -180,7 +180,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         problem.type.should == "mount_info_mismatch"
         problem.deployment.should == @mycloud
         problem.resource_id.should == 1
-        problem.data.should == {'owner_vms' => ["vm-cid-1", "vm-cid-2"]}
+        problem.data["owner_vms"].sort.should == ["vm-cid-1", "vm-cid-2"].sort
       end
 
       it "scan disks mounted in a different VM" do

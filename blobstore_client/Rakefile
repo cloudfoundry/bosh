@@ -26,7 +26,6 @@ end
 
 desc "Build and install Blobstore Client into system gems"
 task "install" do
-  Rake::Task["bundler:install"].invoke
   gem_helper.install_gem
 end
 
@@ -47,5 +46,5 @@ if defined?(RSpec)
   end
 
   desc "Install dependencies and run tests"
-  task :spec => %w(bundler:install:test spec:unit)
+  task :spec => %w(spec:unit)
 end
