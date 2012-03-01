@@ -6,10 +6,9 @@ require 'pty'
 require 'expect'
 require 'rack/test'
 require "ruby_vim_sdk"
-require "cloud/vsphere/client"
-require "cloud/vsphere/resources"
+require "cloud/vsphere"
 
-describe Bosh::Clouds::VSphere do
+describe Bosh::Clouds do
   include Rack::Test::Methods
   include Bosh::Director::IpUtil
   include VimSdk
@@ -33,10 +32,11 @@ describe Bosh::Clouds::VSphere do
     Dir.chdir(AGENT_SRC_PATH) do
       stemcell_tgz = ""
       PTY.spawn("rake ubuntu:stemcell:build") do |reader, writer, pid|
-        reader.expect(/.*password.*:.*/) do
-          writer.puts(pass)
+        if pass
+          reader.expect(/.*password.*:.*/) do
+            writer.puts(pass)
+          end
         end
-
         reader.expect(/.*\['mount', '-o', 'loop', '-t', 'iso.*', '.*', '.*/) do
           iso_mnt = reader.gets.split('\'')[0]
         end
@@ -50,8 +50,10 @@ describe Bosh::Clouds::VSphere do
 
     # un-mount ubuntu.iso used by vmbuilder.
     PTY.spawn("sudo umount -d #{iso_mnt}") do |reader, writer, pid|
-      reader.expect(/.*password.*:.*/)
-      writer.puts(pass)
+      if pass
+        reader.expect(/.*password.*:.*/)
+        writer.puts(pass)
+      end
     end
     stemcell_tgz
   end
@@ -103,8 +105,9 @@ describe Bosh::Clouds::VSphere do
     end
 
     Bosh::Director::Config.configure(@test_config)
+    SpecHelper.init_database
     cloud_properties = @test_config["cloud"]["properties"]
-    @cloud = Bosh::Clouds::VSphere.new(cloud_properties)
+    @cloud = Bosh::Clouds::Provider.create("vsphere", cloud_properties)
 
     vcenter = cloud_properties["vcenters"][0]
     @vsphere_client = VSphereCloud::Client.new("https://#{vcenter["host"]}/sdk/vimService", cloud_properties)
@@ -115,8 +118,8 @@ describe Bosh::Clouds::VSphere do
     valid_stemcell = false
     # try up to 3 times
     3.times do
-      stemcell_tgz = @test_config["test"]["stemcell"]
-      stemcell_tgz ||= build_stemcell(@test_config["test"]["root_pass"])
+      stemcell_tgz = @test_config["stemcell"]
+      stemcell_tgz ||= build_stemcell(@test_config["root_pass"])
 
       # un-tar stemcell
       stemcell = Dir.mktmpdir("tmp_sc")
@@ -133,12 +136,12 @@ describe Bosh::Clouds::VSphere do
       valid_stemcell = stemcell_check
       break if valid_stemcell
       @cloud.delete_stemcell(@stemcell_name)
-      break if @test_config["test"]["stemcell"]
+      break if @test_config["stemcell"]
     end
 
     unless valid_stemcell
-      if @test_config["test"]["stemcell"]
-        raise "Invalid stemcell #{@test_config["test"]["stemcell"]}"
+      if @test_config["stemcell"]
+        raise "Invalid stemcell #{@test_config["stemcell"]}"
       else
         raise "Failed to create a valid stemcell"
       end
