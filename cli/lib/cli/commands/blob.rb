@@ -23,11 +23,13 @@ module Bosh::Cli::Command
             next
           end
           # Local copy is different from the remote copy
-          confirm = ask("\nBlob #{blob_name} changed, " +
-                            "do you want to update the binary [yN]: ")
-          if confirm.empty? || !(confirm =~ /y(es)?$/i)
-            say("[#{count}/#{total}] Skipping #{blob_name}".green)
-            next
+          if interactive?
+            confirm = ask("\nBlob #{blob_name} changed, " +
+                          "do you want to update the binary [yN]: ")
+            if confirm.empty? || !(confirm =~ /y(es)?$/i)
+              say("[#{count}/#{total}] Skipping #{blob_name}".green)
+              next
+            end
           end
         end
 
@@ -65,11 +67,13 @@ module Bosh::Cli::Command
             next
           end
 
-          confirm = ask("\nLocal blob (#{name}) conflicts with " +
-                        "remote object, overwrite local copy? [yN]: ")
-          if confirm.empty? || !(confirm =~ /y(es)?$/i)
-            say("[#{count}/#{total}] Skipping blob #{name}".green)
-            next
+          if interactive?
+            confirm = ask("\nLocal blob (#{name}) conflicts with " +
+                          "remote object, overwrite local copy? [yN]: ")
+            if confirm.empty? || !(confirm =~ /y(es)?$/i)
+              say("[#{count}/#{total}] Skipping blob #{name}".green)
+              next
+            end
           end
         end
         say("[#{count}/#{total}] Updating #{blob_file}".green)
