@@ -29,6 +29,8 @@ module Bosh::Agent
       @results = []
       @long_running_agent_task = []
 
+      @nats_fail_count = 0
+
       find_message_processors
     end
 
@@ -80,7 +82,7 @@ module Bosh::Agent
     rescue NATS::ConnectError => e
       @nats_fail_count += 1
       @logger.error("NATS connection error: #{e.message}")
-      sleep NATS_RECONNECT_SLEEP
+      Kernel.sleep NATS_RECONNECT_SLEEP
       # only retry a few times and then exit which lets the agent recover if we change credentials
       retry if @nats_fail_count < MAX_NATS_RETRIES
       @logger.fatal("Unable to reconnect to NATS after #{MAX_NATS_RETRIES} retries, exiting...")

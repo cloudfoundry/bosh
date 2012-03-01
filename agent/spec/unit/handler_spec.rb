@@ -96,4 +96,12 @@ describe Bosh::Agent::Handler do
     handler.handle_message('}}}b0rked}}}json')
   end
 
+  it "should retry nats connection when it fails" do
+    retries = Bosh::Agent::Handler::MAX_NATS_RETRIES
+    Kernel.stub!(:sleep)
+    Kernel.should_receive(:sleep).exactly(retries).times
+    NATS.stub(:connect).and_raise(NATS::ConnectError)
+    handler = Bosh::Agent::Handler.new
+    handler.start
+  end
 end
