@@ -29,6 +29,8 @@ module Bosh::Agent
       @results = []
       @long_running_agent_task = []
 
+      @nats_fail_count = 0
+
       find_message_processors
     end
 
