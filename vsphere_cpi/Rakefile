@@ -36,7 +36,6 @@ if defined?(RSpec)
   namespace :spec do
     desc "Run Unit Tests"
     rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/unit/**/*_spec.rb"
       t.rspec_opts = %w(--format progress --colour)
     end
@@ -46,6 +45,6 @@ if defined?(RSpec)
     end
   end
 
-  desc "Install dependencies and run tests"
-  task :spec => %w(bundler:install:test spec:unit)
+  desc "Run tests"
+  task :spec => %w(spec:unit)
 end

@@ -7,7 +7,8 @@ require "bundler"
 Bundler.setup(:default, :test)
 
 require "rspec"
-require 'cloud'
+require "cloud"
+require "logger"
 
 class CloudSpecConfig
 
