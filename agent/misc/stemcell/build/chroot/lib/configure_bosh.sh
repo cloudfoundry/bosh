@@ -38,7 +38,7 @@ tar zxvf rubygems-1.3.7.tgz
   ${bosh_app_dir}/bosh/bin/ruby setup.rb
 )
 
-gem install bundler-1.0.10.gem
+gem install bundler-1.0.10.gem --no-ri --no-rdoc
 
 version=$(cat version)
 agent_path=${bosh_app_dir}/bosh/agent_${version}_builtin
@@ -50,7 +50,7 @@ chmod +x ${bosh_app_dir}/bosh/agent/bin/agent
 
 (
   cd ${bosh_app_dir}/bosh/agent
-  bundle install --path ${bosh_app_dir}/bosh/gems
+  bundle install --path ${bosh_app_dir}/bosh/gems --without test
 )
 
 mkdir -p ${bosh_app_dir}/bosh/log
