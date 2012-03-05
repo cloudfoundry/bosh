@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function run_in_chroot {
-  # Need to explicity override LANG and LC_ALL so that they aren't
+  # Need to explicitly override LANG and LC_ALL so that they aren't
   # inherited from the environment.
   chroot $1 env LANG='C' LC_ALL='C' sh -c "$2"
 }

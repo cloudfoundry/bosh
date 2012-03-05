@@ -44,7 +44,7 @@ add_on_exit "umount ${target}/proc $target/dev/pts $target/dev"
 
 # Custom kernel
 echo "Installing kernel: $kernel"
-run_in_chroot $target "env DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes --no-install-recommends linux-image-server-${kernel} linux-headers-server-${kernel}"
+run_in_chroot $target "env DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes --no-install-recommends linux-image-virtual-${kernel} linux-headers-virtual-${kernel}"
 
 # Set up users/groups
 run_in_chroot $target "addgroup --system admin
