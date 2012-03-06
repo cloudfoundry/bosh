@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PATH=<%= node[:ruby][:path] %>/bin:$PATH
+
+exec 2>&1
+exec chpst -u <%= node[:aws_registry][:runner] %> env RACK_ENV=production TMPDIR=<%= node[:aws_registry][:tmp] %> <%= node[:aws_registry][:path] %>/current/aws_registry/bin/aws_registry -c <%= node[:aws_registry][:path] %>/shared/config/aws_registry.yml
