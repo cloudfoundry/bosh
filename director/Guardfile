@@ -1,0 +1,9 @@
+group :unit_tests do
+  guard :rspec, :version => 2, :cli => "--color --format nested --fail-fast",
+                :spec_paths => %w(spec/unit) do
+    watch("spec/spec_helper.rb")            { "spec/unit" }
+    watch("director.rb")                    { "spec/unit" }
+    watch(%r{^spec/.+_spec\.rb})
+    watch(%r{^lib/director/(.+)\.rb})       { |m| "spec/unit/#{m[1]}_spec.rb" }
+  end
+end
