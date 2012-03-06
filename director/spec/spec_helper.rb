@@ -108,7 +108,7 @@ SpecHelper.init
 BD = Bosh::Director
 BDA = BD::Api
 
-Rspec.configure do |rspec|
+RSpec.configure do |rspec|
   rspec.before(:each) do
     SpecHelper.reset
     @event_buffer = StringIO.new
