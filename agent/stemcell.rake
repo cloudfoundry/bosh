@@ -210,7 +210,7 @@ namespace "stemcell" do
         # Check for OVFTOOL so we can fail fast when it's not found
         ovftool_bin = get_ovftool_bin if format == "ovf"
       when "xen"
-        format ||= "ec2"
+        format ||= "aws"
       else
         raise "Unknown hypervisor: #{hypervisor}"
     end
@@ -255,7 +255,7 @@ namespace "stemcell" do
 
         when "xen"
           case format
-            when "ec2"
+            when "aws"
               Dir.chdir("ubuntu-xen") do
                 files = Dir.glob("*")
                 files.delete("xen.conf")
@@ -367,8 +367,8 @@ namespace "stemcell" do
   end
 
   # Takes in an optional argument "chroot_dir"
-  desc "Build ec2 stemcell [chroot_dir|chroot_tgz] - optional argument chroot dir or chroot tgz"
-  task "ec2", :chroot do |t, args|
+  desc "Build aws stemcell [chroot_dir|chroot_tgz] - optional argument chroot dir or chroot tgz"
+  task "aws", :chroot do |t, args|
     # Create/Setup chroot directory
     setup_chroot_dir(args[:chroot])
 
@@ -378,18 +378,18 @@ namespace "stemcell" do
     end
 
     lib_dir = File.join(work_dir, "build/chroot/lib")
-    ec2_lib_dir = File.join(lib_dir, "ec2")
+    aws_lib_dir = File.join(lib_dir, "aws")
     stages_dir = File.join(work_dir, "build/chroot/stages")
     templates_dir = File.join(work_dir, "build/templates")
 
-    cp_r("misc/ec2/lib", ec2_lib_dir, :preserve => true)
-    cp_r("misc/ec2/stages/.", stages_dir, :preserve => true)
-    cp_r("misc/ec2/templates/.", templates_dir, :preserve => true)
+    cp_r("misc/aws/lib", aws_lib_dir, :preserve => true)
+    cp_r("misc/aws/stages/.", stages_dir, :preserve => true)
+    cp_r("misc/aws/templates/.", templates_dir, :preserve => true)
 
     # Generate the chroot
     chroot_dir = get_chroot_dir
 
-    sh("sudo #{stages_dir}/30_ec2.sh #{chroot_dir} #{lib_dir}")
+    sh("sudo #{stages_dir}/30_aws.sh #{chroot_dir} #{lib_dir}")
 
     # Build stemcell
     build_vm_image(:hypervisor => "xen")
