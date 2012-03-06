@@ -12,21 +12,28 @@ module Bosh
   # CPI - Cloud Provider Interface, used for interfacing with various IaaS APIs.
   #
   # Key terms:
-  # Stemcell:: template used for creating VMs (shouldn't be powered on)
-  # VM::       VM created from a stemcell with custom settings (networking and resources)
-  # Disk::     volume that can be attached and detached from the VMs,
-  #            never attached to more than a single VM at one time
+  # Stemcell: template used for creating VMs (shouldn't be powered on)
+  # VM:       VM created from a stemcell with custom settings (networking and resources)
+  # Disk:     volume that can be attached and detached from the VMs,
+  #           never attached to more than a single VM at one time
   class Cloud
+
+    ##
+    # Cloud initialization
+    #
+    # @param [Hash] options cloud options
+    def initialize(options)
+    end
 
     ##
     # Creates a stemcell
     #
-    # @param [String] image path to an opaque blob containing the stemcell image
+    # @param [String] image_path path to an opaque blob containing the stemcell image
     # @param [Hash] cloud_properties properties required for creating this template
     #               specific to a CPI
     # @return [String] opaque id later used by {#create_vm} and {#delete_stemcell}
-    def create_stemcell(image, cloud_properties)
-
+    def create_stemcell(image_path, cloud_properties)
+      not_implemented(:create_stemcell)
     end
 
     ##
@@ -34,8 +41,8 @@ module Bosh
     #
     # @param [String] stemcell stemcell id that was once returned by {#create_stemcell}
     # @return nil
-    def delete_stemcell(stemcell)
-
+    def delete_stemcell(stemcell_id)
+      not_implemented(:delete_stemcell)
     end
 
     ##
@@ -74,8 +81,9 @@ module Bosh
     # @param [optional, Hash] env environment that will be passed to this vm
     # @return [String] opaque id later used by {#configure_networks}, {#attach_disk},
     #                  {#detach_disk}, and {#delete_vm}
-    def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
-
+    def create_vm(agent_id, stemcell_id, resource_pool,
+                  networks, disk_locality = nil, env = nil)
+      not_implemented(:create_vm)
     end
 
     ##
@@ -83,8 +91,8 @@ module Bosh
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @return nil
-    def delete_vm(vm)
-
+    def delete_vm(vm_id)
+      not_implemented(:delete_vm)
     end
 
     ##
@@ -93,8 +101,8 @@ module Bosh
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [Optional, Hash] CPI specific options (e.g hard/soft reboot)
     # @return nil
-    def reboot_vm(vm)
-
+    def reboot_vm(vm_id)
+      not_implemented(:reboot_vm)
     end
 
     ##
@@ -104,8 +112,8 @@ module Bosh
     # @param [Hash] networks list of networks and their settings needed for this VM,
     #               same as the networks argument in {#create_vm}
     # @return nil
-    def configure_networks(vm, networks)
-
+    def configure_networks(vm_id, networks)
+      not_implemented(:configure_networks)
     end
 
     ##
@@ -118,7 +126,7 @@ module Bosh
     #                           be attached to
     # @return [String] opaque id later used by {#attach_disk}, {#detach_disk}, and {#delete_disk}
     def create_disk(size, vm_locality = nil)
-
+      not_implemented(:create_disk)
     end
 
     ##
@@ -127,10 +135,9 @@ module Bosh
     #
     # @param [String] disk disk id that was once returned by {#create_disk}
     # @return nil
-    def delete_disk(disk)
-
+    def delete_disk(disk_id)
+      not_implemented(:delete_disk)
     end
-
 
     ##
     # Attaches a disk
@@ -138,8 +145,8 @@ module Bosh
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [String] disk disk id that was once returned by {#create_disk}
     # @return nil
-    def attach_disk(vm, disk)
-
+    def attach_disk(vm_id, disk_id)
+      not_implemented(:attach_disk)
     end
 
     ##
@@ -148,15 +155,22 @@ module Bosh
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [String] disk disk id that was once returned by {#create_disk}
     # @return nil
-    def detach_disk(vm, disk)
-
+    def detach_disk(vm_id, disk_id)
+      not_implemented(:detach_disk)
     end
 
     ##
     # Validates the deployment
     # @api not_yet_used
     def validate_deployment(old_manifest, new_manifest)
+      not_implemented(:validate_deployment)
+    end
 
+    private
+
+    def not_implemented(method)
+      raise Bosh::Clouds::NotImplemented,
+            "`#{method}' is not implemented by #{self.class}"
     end
 
   end

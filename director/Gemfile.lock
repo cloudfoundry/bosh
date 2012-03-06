@@ -16,8 +16,14 @@ GEM
       httpclient
       uuidtools
     bosh_common (0.4.0)
-    bosh_cpi (0.4.1)
+    bosh_cpi (0.4.2)
       bosh_common
+    bosh_vsphere_cpi (0.4.8)
+      bosh_common
+      bosh_cpi (>= 0.4.2)
+      ruby_vim_sdk
+      sequel
+      uuidtools
     builder (3.0.0)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
@@ -40,7 +46,7 @@ GEM
       json_pure (>= 1.6.1)
       thin (>= 1.3.1)
     netaddr (1.5.0)
-    nokogiri (1.4.4)
+    nokogiri (1.5.0)
     pg (0.10.1)
     rack (1.4.0)
     rack-test (0.5.7)
@@ -105,11 +111,6 @@ GEM
     uuidtools (2.1.2)
     vegas (0.1.8)
       rack (>= 1.0.0)
-    vsphere_cpi (0.4.7)
-      bosh_cpi (>= 0.4.1)
-      ruby_vim_sdk
-      sequel
-      uuidtools
     xml-simple (1.0.15)
     yajl-ruby (0.8.2)
 
@@ -122,7 +123,8 @@ DEPENDENCIES
   bcrypt-ruby
   blobstore_client (>= 0.3.4)
   bosh_common (>= 0.4.0)
-  bosh_cpi (>= 0.4.1)
+  bosh_cpi (>= 0.4.2)
+  bosh_vsphere_cpi (>= 0.4.8)
   ci_reporter
   eventmachine
   httpclient
@@ -148,5 +150,4 @@ DEPENDENCIES
   sqlite3
   thin
   uuidtools
-  vsphere_cpi (>= 0.4.7)
   yajl-ruby
