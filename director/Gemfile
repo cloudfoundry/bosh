@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 source :rubygems
 
 gem "bcrypt-ruby"
@@ -25,7 +27,9 @@ group :production do
 end
 
 group :test, :development do
-  gem "autotest"
+  gem "guard"
+  gem "guard-rspec"
+  gem "ruby_gntp"
   gem "ci_reporter"
   gem "machinist"
   gem "minitar"
