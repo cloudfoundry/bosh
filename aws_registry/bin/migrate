@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+ENV["BUNDLE_GEMFILE"] = File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+require "logger"
+require "sequel"
+
+$:.unshift(File.dirname(__FILE__) + "/../lib")
+
+require "aws_registry"
+
+config_file = nil
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config FILE", "configuration file") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+if config_file.nil?
+  puts opts
+  exit 1
+end
+
+include Bosh::AwsRegistry::YamlHelper
+
+config = load_yaml_file(config_file)
+
+db = Bosh::AwsRegistry.connect_db(config["db"])
+migrations_dir = File.expand_path("../../db/migrations", __FILE__)
+
+options = {
+  :table => "aws_registry_schema"
+}
+
+Sequel.extension :migration
+Sequel::TimestampMigrator.run(db, migrations_dir, options)
+
