@@ -23,6 +23,7 @@ require "agent/version"
 
 require "agent/template"
 require "agent/errors"
+require "agent/remote_exception"
 
 require "agent/config"
 require "agent/util"

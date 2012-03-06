@@ -86,11 +86,13 @@ describe Bosh::Agent::Message::CompilePackage do
     sha1 = Digest::SHA1.hexdigest(File.read(@handler.compiled_package))
     File.open(@handler.compiled_package) do |f|
       stub_blobstore_id = "bfa8e2e1-d386-4df7-ad5e-fd21f49333d6"
+      compile_log_id = "bfa8e2e1-d386-4df7-ad5e-fd21f49333d7"
 
-      @handler.blobstore_client.stub(:create).with(instance_of(File)).and_return(stub_blobstore_id)
+      @handler.blobstore_client.stub(:create).and_return(stub_blobstore_id, compile_log_id)
+      # @handler.blobstore_client.stub(:create).with(instance_of(File)).and_return(stub_blobstore_id)
       result = @handler.upload
       result.delete('compile_log')
-      result.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id}
+      result.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id, "compile_log_id" => compile_log_id}
     end
   end
 
