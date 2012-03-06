@@ -29,15 +29,6 @@ describe "messages" do
     end
   end
 
-  def get_free_port
-    socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-    socket.bind(Addrinfo.tcp("127.0.0.1", 0))
-    port = socket.local_address.ip_port
-    socket.close
-    # race condition, but good enough for now
-    port
-  end
-
   # wait for the first heartbeat to appear or timeout after 5 seconds
   def wait_for_nats(timeout=5)
     count = 0

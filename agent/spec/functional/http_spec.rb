@@ -28,7 +28,7 @@ describe "http messages" do
   before(:all) do
     @user = "http"
     @pass = @user.reverse
-    @port = "6868"
+    @port = get_free_port
     @http_uri = "http://#{@user}:#{@pass}@localhost:#{@port}/agent"
     @agent_id = "rspec_agent"
 

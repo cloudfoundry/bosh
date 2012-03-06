@@ -73,3 +73,11 @@ def dummy_job_data
   read_asset('job.tgz')
 end
 
+def get_free_port
+  socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+  socket.bind(Addrinfo.tcp("127.0.0.1", 0))
+  port = socket.local_address.ip_port
+  socket.close
+  # race condition, but good enough for now
+  port
+end
