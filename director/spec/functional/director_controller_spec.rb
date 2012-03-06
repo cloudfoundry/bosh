@@ -466,7 +466,7 @@ describe Bosh::Director::Controller do
         FileUtils.touch(tmp_file)
         manager = mock("manager")
         Bosh::Director::Api::ResourceManager.stub!(:new).and_return(manager)
-        manager.stub!(:get_resource).with("deadbeef").and_return(tmp_file)
+        manager.stub!(:get_resource_path).with("deadbeef").and_return(tmp_file)
 
         File.exists?(tmp_file).should be_true
         get "/resources/deadbeef"
