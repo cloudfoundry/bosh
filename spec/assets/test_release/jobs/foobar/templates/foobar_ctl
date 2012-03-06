@@ -1,0 +1,20 @@
+#!/bin/bash
+
+PIDFILE=/var/vcap/sys/run/foobar.pid
+
+case $1 in
+
+  start)
+    echo $$ > $PIDFILE
+    exec /bin/sh /var/vcap/packages/bar/run.sh
+    ;;
+
+  stop)
+    tail -1 $PIDFILE | xargs kill
+    rm -rf $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: foobar_ctl {start|stop}" ;;
+esac
+exit 0

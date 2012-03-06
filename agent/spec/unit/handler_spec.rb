@@ -47,7 +47,10 @@ describe Bosh::Agent::Handler do
       end
     end
     payload = handler.process(klazz, nil)
-    payload[:exception].should match(/#<Bosh::Agent::MessageHandlerError: boo!/)
+    payload.should have_key :exception
+    exception = payload[:exception]
+    exception.should have_key :message
+    exception[:message].should == "boo!"
   end
 
   it "should process long running tasks" do
@@ -103,5 +106,18 @@ describe Bosh::Agent::Handler do
     handler.stub!(:sleep)
     handler.should_receive(:sleep).exactly(retries).times
     handler.start
+  end
+
+  it "should raise a RemoteException when message > NATS_MAX_PAYLOAD" do
+    payload = "a" * (Bosh::Agent::Handler::NATS_MAX_PAYLOAD_SIZE + 1)
+    @nats.should_receive(:publish).with("reply", "exception", nil)
+
+    mock = double(Bosh::Agent::RemoteException)
+    mock.stub(:to_hash).and_return("exception")
+    Bosh::Agent::RemoteException.should_receive(:new).and_return(mock)
+
+    handler = Bosh::Agent::Handler.new
+    handler.start
+    handler.publish("reply", payload)
   end
 end
