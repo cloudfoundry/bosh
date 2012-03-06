@@ -38,11 +38,11 @@ add_on_exit "umount ${target}/proc $target/dev/pts $target/dev"
 disable_daemon_startup $target $skeleton
 add_on_exit "enable_daemon_startup $target"
 
-# ec2 specific packages(grub is not actually installed, we just need /boot/grub/menu.lst for pv-grub)
+# aws specific packages(grub is not actually installed, we just need /boot/grub/menu.lst for pv-grub)
 export DEBIAN_FRONTEND=noninteractive
-run_in_chroot $target "apt-get install -y --force-yes --no-install-recommends grub-pc grub-legacy-ec2"
+run_in_chroot $target "apt-get install -y --force-yes --no-install-recommends grub-pc grub-legacy-aws"
 
 mkdir -p $target/var/vcap/bosh/src
-cp -r $lib_dir/ec2 $target/var/vcap/bosh/src/
+cp -r $lib_dir/aws $target/var/vcap/bosh/src/
 
-chroot $target /var/vcap/bosh/src/ec2/configure_ec2.sh
+chroot $target /var/vcap/bosh/src/aws/configure_aws.sh
