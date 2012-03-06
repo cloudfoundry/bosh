@@ -36,9 +36,30 @@ describe Bosh::Director::Api::ResourceManager do
 
   it "saves resource to a local file" do
     id = @blobstore.create("some data")
-    path = @manager.get_resource(id)
+    path = @manager.get_resource_path(id)
 
     File.exists?(path).should be_true
     File.read(path).should == "some data"
+  end
+
+  it "should return the contents of the blobstore id" do
+    contents = "some data"
+    id = @blobstore.create(contents)
+    @manager.get_resource(id).should == contents
+  end
+
+  it "should delete a resource from the blobstore" do
+    contents = "some data"
+    id = @blobstore.create(contents)
+    @manager.delete_resource(id)
+    lambda {
+      @manager.get_resource(id)
+    }.should_not raise_error ResourceError
+  end
+
+  it "should raise an error when you try to delete a missing resource" do
+    lambda {
+      @manager.delete_resource("non-existing-id")
+    }.should raise_error ResourceError
   end
 end
