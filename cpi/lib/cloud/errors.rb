@@ -1,5 +1,8 @@
 module Bosh::Clouds
 
+  class CpiError < StandardError; end
+  class NotImplemented < CpiError; end
+
   class CloudError < StandardError; end
   class VMNotFound < CloudError; end
 

@@ -6,7 +6,7 @@ require "cloud/vsphere/models/disk"
 
 module VSphereCloud
 
-  class Cloud
+  class Cloud < Bosh::Cloud
     include VimSdk
 
     class TimeoutException < StandardError; end
