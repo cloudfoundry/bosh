@@ -104,18 +104,18 @@ describe "http messages" do
 
   it "should respond to apply message" do
     task = nil
-    http('apply', []) do |msg|
+    http('apply', [{'foo' => 'bar'}]) do |msg|
       task = msg
       task['state'].should == "running"
       task['agent_task_id'].should_not be_nil
     end
 
     while task['state'] == "running"
-      sleep 0.5
+      sleep 0.1
       http('get_task', [ task['agent_task_id'] ]) do |msg|
         task = msg
         unless task['state']
-          msg.should have_key('exception')
+          msg.should have_key('foo')
           break
         end
       end

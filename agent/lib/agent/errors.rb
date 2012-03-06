@@ -5,7 +5,14 @@ module Bosh::Agent
   class FatalError < Error; end
   class StateError < Error; end
 
-  class MessageHandlerError < Error; end
+  class MessageHandlerError < Error
+    attr_reader :blob
+    def initialize(message, blob=nil)
+      super(message)
+      @blob = blob
+    end
+  end
+
   class UnknownMessage < Error; end
   class LoadSettingsError < Error; end
 
