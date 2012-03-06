@@ -29,6 +29,11 @@ def mock_cloud_options
     "aws" => {
       "access_key_id" => MOCK_AWS_ACCESS_KEY_ID,
       "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY
+    },
+    "registry" => {
+      "endpoint" => "localhost:42288",
+      "user" => "admin",
+      "password" => "admin"
     }
   }
 end

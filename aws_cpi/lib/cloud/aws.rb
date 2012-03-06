@@ -5,6 +5,7 @@ module Bosh
 end
 
 require "aws-sdk"
+require "httpclient"
 require "set"
 require "uuidtools"
 require "yajl"
@@ -15,6 +16,7 @@ require "common/thread_formatter"
 require "cloud"
 require "cloud/aws/helpers"
 require "cloud/aws/cloud"
+require "cloud/aws/registry_client"
 require "cloud/aws/version"
 
 module Bosh
