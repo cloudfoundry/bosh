@@ -107,9 +107,11 @@ module Bosh::Agent
         Dir.chdir(compile_dir) do
           # TODO: error handling
           output = `tar -zxf #{@source_file} 2>&1`
+          # stick the output in the blobstore
           unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError,
-              "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus}): #{output}"
+            raise Bosh::Agent::MessageHandlerError.new(
+              "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus})",
+              output)
           end
         end
       end
@@ -171,9 +173,10 @@ module Bosh::Agent
           if File.exist?('packaging')
             @logger.info("Compiling #{@package_name} #{@package_version}")
             output = `bash -x packaging 2>&1`
+            # stick the output in the blobstore
             unless $?.exitstatus == 0
-              raise Bosh::Agent::MessageHandlerError,
-                "Compile Package Failure (exit code: #{$?.exitstatus}): #{output}"
+              raise Bosh::Agent::MessageHandlerError.new(
+                "Compile Package Failure (exit code: #{$?.exitstatus})", output)
             end
             @logger.info(output)
           end
@@ -207,10 +210,13 @@ module Bosh::Agent
           compiled_blobstore_id = @blobstore_client.create(f)
         end
         compiled_sha1 = Digest::SHA1.hexdigest(File.read(compiled_package))
-        @logger.info("Uploaded #{@package_name} #{@package_version}
-                     (sha1: #{compiled_sha1}, blobstore_id: #{compiled_blobstore_id})")
+        compile_log_id = @blobstore_client.create(@log_file)
+        @logger.info("Uploaded #{@package_name} #{@package_version} " +
+                     "(sha1: #{compiled_sha1}, " +
+                     "blobstore_id: #{compiled_blobstore_id})")
         @logger = nil
-        { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id, "compile_log" => File.read(@log_file) }
+        { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id,
+          "compile_log_id" => compile_log_id }
       end
 
     end

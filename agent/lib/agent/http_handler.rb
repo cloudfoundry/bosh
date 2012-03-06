@@ -101,7 +101,7 @@ module Bosh::Agent
       begin
         payload = @handler.handle_message(json)
       rescue => e
-        payload = {:exception => e.inspect}
+        payload = RemoteException.from(e).to_hash
       end
 
       Yajl::Encoder.encode(payload, :terminator => "\n")

@@ -195,9 +195,34 @@ module Bosh::Agent
       elsif method == "shutdown"
         handle_shutdown(reply_to)
       else
-        payload = {:exception => "unknown message #{msg.inspect}"}
-        publish(reply_to, payload)
+        re = RemoteException.new("unknown message #{msg.inspect}")
+        publish(reply_to, re.to_hash)
       end
+    end
+
+    def process_in_thread(processor, reply_to, method, args)
+      if processor.respond_to?(:long_running?)
+        if @long_running_agent_task.empty?
+          process_long_running(reply_to, processor, args)
+        else
+          msg = "already running long running task"
+          payload = RemoteException.new(msg).to_hash
+          publish(reply_to, payload)
+        end
+      else
+        payload = process(processor, args)
+
+        if Config.configure && method == 'prepare_network_change'
+          publish(reply_to, payload) {
+            post_prepare_network_change
+          }
+        else
+          publish(reply_to, payload)
+        end
+      end
+    rescue => e
+      # be nice and log an error
+      @logger.error("#{processor.to_s}: #{e.message}\n#{e.backtrace.join("\n")}")
     end
 
     def handle_get_task(reply_to, agent_task_id)
@@ -214,14 +239,31 @@ module Bosh::Agent
       end
     end
 
+    # TODO once we upgrade to nats 0.4.22 we can use
+    # NATS.server_info[:max_payload] instead of NATS_MAX_PAYLOAD_SIZE
+    NATS_MAX_PAYLOAD_SIZE = 1024 * 1024
+
     def publish(reply_to, payload, &blk)
       @logger.info("reply_to: #{reply_to}: payload: #{payload.inspect}")
 
       if @credentials
+        unencrypted = payload
         payload = encrypt(reply_to, payload)
       end
 
-      @nats.publish(reply_to, Yajl::Encoder.encode(payload), blk)
+      json = Yajl::Encoder.encode(payload)
+
+      # TODO figure out if we want to try to scale down the message instead
+      # of generating an exception
+      if json.bytesize < NATS_MAX_PAYLOAD_SIZE
+        @nats.publish(reply_to, json, blk)
+      else
+        msg = "message > NATS_MAX_PAYLOAD, stored in blobstore"
+        original = @credentials ? payload : unencrypted
+        exception = RemoteException.new(msg, nil, original)
+        @logger.fatal(msg)
+        @nats.publish(reply_to, exception.to_hash, blk)
+      end
     end
 
     def process_long_running(reply_to, processor, args)
@@ -251,7 +293,7 @@ module Bosh::Agent
         return {:value => result}
       rescue Bosh::Agent::MessageHandlerError => e
         @logger.info("#{e.inspect}: #{e.backtrace}")
-        return {:exception => "#{e.inspect}: #{e.backtrace}"}
+        return RemoteException.from(e).to_hash
       rescue Exception => e
         kill_main_thread_in(KILL_AGENT_THREAD_TIMEOUT)
         @logger.error("#{e.inspect}: #{e.backtrace}")
