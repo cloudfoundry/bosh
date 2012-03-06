@@ -64,8 +64,8 @@ module Bosh::Agent
           logger.info("Installing to: #{install_path}")
           Dir.chdir(install_path) do
             output = `tar --no-same-owner -zxvf #{blob_data_file}`
-            raise Bosh::Agent::MessageHandlerError,
-              "Failed to unpack blob: #{output}" unless $?.exitstatus == 0
+            raise Bosh::Agent::MessageHandlerError.new(
+              "Failed to unpack blob", output) unless $?.exitstatus == 0
           end
         rescue Exception => e
           logger.info("Failure unpacking blob: #{e.inspect} #{e.backtrace}")

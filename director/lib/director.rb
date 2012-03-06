@@ -504,7 +504,7 @@ module Bosh::Director
 
     # GET /resources/deadbeef
     get "/resources/:id" do
-      tmp_file = @resource_manager.get_resource(params[:id])
+      tmp_file = @resource_manager.get_resource_path(params[:id])
       send_disposable_file(tmp_file, :type => "application/x-gzip")
     end
 
