@@ -41,6 +41,10 @@ module ConsoleHelpers
   def ec2
     cpi.ec2
   end
+
+  def registry
+    cpi.registry
+  end
 end
 
 cloud_config = OpenStruct.new(:logger => Logger.new(STDOUT))

@@ -12,9 +12,10 @@ module Bosh::AWSCloud
     # UBUNTU_10_04_32_BIT_US_EAST = "ami-809a48e9"
 
     attr_reader :ec2
+    attr_reader :registry
 
     ##
-    # Initialize BOSH AWS Cpi
+    # Initialize BOSH AWS CPI
     # @param [Hash] options CPI options
     #
     def initialize(options)
@@ -28,6 +29,7 @@ module Bosh::AWSCloud
 
       @agent_properties = @options["agent"]
       @aws_properties = @options["aws"]
+      @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
       @default_security_groups = @aws_properties["default_security_groups"]
@@ -39,7 +41,18 @@ module Bosh::AWSCloud
         :logger => @aws_logger
       }
 
+      registry_endpoint = @registry_properties["endpoint"]
+      registry_user = @registry_properties["user"]
+      registry_password = @registry_properties["password"]
+
       @ec2 = AWS::EC2.new(aws_params)
+
+      # Registry updates are not really atomic in relation to
+      # EC2 API calls, so they might get out of sync. Cloudcheck
+      # is supposed to fix that.
+      @registry = RegistryClient.new(registry_endpoint,
+                                     registry_user,
+                                     registry_password)
     end
 
     ##
@@ -65,8 +78,11 @@ module Bosh::AWSCloud
         key_name = resource_pool["key_name"]
         availability_zone = resource_pool["availability_zone"]
 
-        user_data = initial_agent_env(vm_name, agent_id)
-        user_data["env"] = environment if environment
+        user_data = {
+          "registry" => {
+            "endpoint" => @registry.endpoint
+          }
+        }
 
         @logger.info("Creating new instance...")
 
@@ -98,10 +114,15 @@ module Bosh::AWSCloud
 
         state = instance.status
 
+        settings = initial_agent_settings(vm_name, agent_id)
+        settings["env"] = environment if environment
+
         @logger.info("Creating new instance `#{instance.id}', " \
                      "state is `#{state}'")
 
         wait_resource(instance, state, :running)
+
+        @registry.update_settings(instance.private_ip_address, settings)
 
         instance.id
       end
@@ -113,8 +134,14 @@ module Bosh::AWSCloud
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
         instance = @ec2.instances[instance_id]
+        ip = instance.private_ip_address
+
         instance.terminate
         state = instance.status
+
+        # TODO: should this be done before or after deleting VM?
+        @logger.info("Deleting instance settings for `#{ip}'")
+        @registry.delete_settings(ip)
 
         @logger.info("Deleting instance `#{instance.id}', " \
                      "state is `#{state}'")
@@ -237,13 +264,16 @@ module Bosh::AWSCloud
         device_names = Set.new(instance.block_device_mappings.keys)
         new_attachment = nil
 
-        ("f".."z").each do |char|
+        ("f".."p").each do |char| # f..p is what console suggests
+          # Some kernels will remap sdX to xvdX, so agent needs
+          # to lookup both (sd, then xvd)
           dev_name = "/dev/sd#{char}"
           if device_names.include?(dev_name)
             @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
             next
           end
           new_attachment = volume.attach_to(instance, dev_name)
+          break
         end
 
         if new_attachment.nil?
@@ -262,7 +292,11 @@ module Bosh::AWSCloud
         @logger.info("Attached `#{disk_id}' to `#{instance_id}', " \
                      "device name is `#{device_name}'")
 
-        # TODO: update agent env with new disk mappings
+        update_agent_settings(instance) do |settings|
+          settings["disks"] ||= {}
+          settings["disks"]["persistent"] ||= {}
+          settings["disks"]["persistent"][disk_id] = device_name
+        end
       end
     end
 
@@ -270,8 +304,6 @@ module Bosh::AWSCloud
       with_thread_name("detach_disk(#{instance_id}, #{disk_id})") do
         instance = @ec2.instances[instance_id]
         volume = @ec2.volumes[disk_id]
-
-        # TODO: update agent env with new disk mappings
 
         mappings = instance.block_device_mappings
 
@@ -283,6 +315,12 @@ module Bosh::AWSCloud
         if device_map[disk_id].nil?
           cloud_error("Disk `#{disk_id}' is not attached " \
                       "to instance `#{instance_id}'")
+        end
+
+        update_agent_settings(instance) do |settings|
+          settings["disks"] ||= {}
+          settings["disks"]["persistent"] ||= {}
+          settings["disks"]["persistent"].delete(disk_id)
         end
 
         attachment = volume.detach_from(instance, device_map[disk_id])
@@ -306,7 +344,87 @@ module Bosh::AWSCloud
     end
 
     def create_stemcell(image_path, cloud_properties)
-      not_implemented(:create_stemcell)
+      # TODO: refactor into several smaller methods
+
+      with_thread_name("create_stemcell(#{image_path}...)") do
+        # 1. Create and mount new EBS volume (2GB)
+        volume_id = create_disk(2048, current_instance_id)
+        volume = @ec2.volumes[volume_id]
+
+        sd_name = attach_ebs_volume(current_instance_id, volume_id)
+        xvd_name = device.name.gsub(/^\/dev\/sd/, "/dev/xvd")
+        ebs_volume = nil
+
+        60.times do
+          if File.blockdev?(sd_name)
+            ebs_volume = sd_name
+            break
+          elsif File.blockdev?(xvd_name)
+            ebs_volume = xvd_name
+            break
+          end
+          sleep(1)
+        end
+
+        if ebs_volume.nil?
+          cloud_error("Cannot find EBS volume on current instance")
+        end
+
+        # 2. Copy image to new EBS volume
+        Dir.mktmpdir do |tmp_dir|
+          @logger.info("Extracting stemcell to `#{tmp_dir}'")
+          output = `tar -C #{tmp_dir} -xzf #{image_path} 2>&1`
+          if $?.exitstatus != 0
+            cloud_error("Failed to unpack stemcell image" \
+                        "tar exit status #{$?.exitstatus}: #{output}")
+          end
+
+          stemcell_image = File.join(tmp_dir, "image")
+          unless File.exists?(stemcell_image)
+            cloud_error("Image file is missing from stemcell archive")
+          end
+
+          output = `tar -C #{tmp_dir} -xzf #{stemcell_image} 2>&1`
+          if $?.exitstatus != 0
+            cloud_error("Failed to unpack stemcell root image" \
+                        "tar exit status #{$?.exitstatus}: #{output}")
+          end
+
+          root_image = File.join(tmp_dir, "root.img")
+          unless File.exists?(root_image)
+            cloud_error("Root image is missing from stemcell archive")
+          end
+
+          Dir.chdir(tmp_dir) do
+            dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
+            if $?.exitstatus != 0
+              cloud_error("Unable to copy stemcell root image, " \
+                          "dd exit status #{$?.exitstatus}: " \
+                          "#{dd_out}")
+            end
+          end
+
+          # 3. Create snapshot and then an image using this snapshot
+          snapshot = volume.create_snapshot
+          wait_resource(snapshot, snapshot.state, :completed)
+
+          image_params = {
+            :kernel_id => DEFAULT_AKI,
+            :root_device_name => "/dev/sda",
+            :block_device_mappings => {
+              "/dev/sda" => snapshot.id,
+              "/dev/sdb" => "ephemeral0"
+            }
+          }
+
+          image = @ec2.images.create(image_params)
+          wait_resource(image, image.state, :available)
+
+          image.id
+        end
+      end
+    ensure
+      # Delete EBS volume
     end
 
     def delete_stemcell(stemcell_id)
@@ -321,20 +439,20 @@ module Bosh::AWSCloud
     private
 
     ##
-    # Generates agent environment. This environment will be read by agent
-    # from EC2 user data on a target instance. Disk conventions for amazon
-    # are:
+    # Generates initial agent settings. These settings will be read by agent
+    # from AWS registry (also a BOSH component) on a target instance. Disk
+    # conventions for amazon are:
     # system disk: /dev/sda1
     # ephemeral disk: /dev/sda2
-    # EBS volumes can be configured to map to other device names later.
+    # EBS volumes can be configured to map to other device names later (sdf
+    # through sdp, also some kernels will remap sd* to xvd*).
     #
     # @param [String] vm_name VM name (mostly for debugging purposes)
     # @param [String] agent_id Agent id (will be picked up by agent to
     #        assume its identity
     # @return [Hash] Agent environment (will be pushed to agent as user-data)
     #
-    def initial_agent_env(vm_name, agent_id)
-      # TODO inject registry endpoint
+    def initial_agent_settings(vm_name, agent_id)
       env = {
         "vm" => {
           "name" => vm_name
@@ -342,23 +460,24 @@ module Bosh::AWSCloud
         "agent_id" => agent_id,
         "networks" => {},
         "disks" => {
-          # TODO: can we guarantee it's sda1/sda2
-          "system" => "sda1",
-          "ephemeral" => "sda2",
+          "system" => "/dev/sda1",
+          "ephemeral" => "/dev/sda2",
           "persistent" => {}
         }
       }
       env.merge(@agent_properties)
     end
 
-    def update_agent_env(instance)
+    def update_agent_settings(instance)
       unless block_given?
         raise ArgumentError, "block is not provided"
       end
 
-      # TODO read data from registry
-      new_env = yield current_env
-      # TODO: update data in registry
+      instance_ip = instance.private_ip_address
+
+      settings = @registry.read_settings(instance_ip)
+      yield settings
+      @registry.update_settings(instance_ip, settings)
     end
 
     def generate_unique_name
@@ -366,7 +485,7 @@ module Bosh::AWSCloud
     end
 
     ##
-    # Checks if optioned passed to CPI are valid and can actually
+    # Checks if options passed to CPI are valid and can actually
     # be used to create all required data structures etc.
     #
     def validate_options
@@ -375,6 +494,14 @@ module Bosh::AWSCloud
           @options["aws"]["access_key_id"] &&
           @options["aws"]["secret_access_key"]
         raise ArgumentError, "Invalid AWS configuration parameters"
+      end
+
+      unless @options.has_key?("registry") &&
+          @options["registry"].is_a?(Hash) &&
+          @options["registry"]["endpoint"] &&
+          @options["registry"]["user"] &&
+          @options["registry"]["password"]
+        raise ArgumentError, "Invalid registry configuration parameters"
       end
     end
 

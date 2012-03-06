@@ -1,0 +1,4 @@
+= DESCRIPTION:
+
+Bosh AWS Registry configuration.
+
