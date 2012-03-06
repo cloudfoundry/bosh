@@ -86,11 +86,22 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
 
   describe "create jobs" do
+
+    around(:each) do |example|
+      @tmp_dir = Dir.mktmpdir
+      begin
+        example.run
+      ensure
+        FileUtils.rm_rf(@tmp_dir)
+      end
+    end
+
     before :each do
       @release = Bosh::Director::Models::Release.make
-      @tmp_dir = Dir.mktmpdir
       @tarball = File.join(@tmp_dir, "jobs", "foo.tgz")
-      @job_bits = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} })
+      @job_bits = create_job(
+          "foo", "monit",
+          {"foo" => {"destination" => "foo", "contents" => "bar"}})
 
       @job_attrs = {
         "name" => "foo",
@@ -103,16 +114,16 @@ describe Bosh::Director::Jobs::UpdateRelease do
       @job = Bosh::Director::Jobs::UpdateRelease.new(@tmp_dir)
       @job.tmp_release_dir = @tmp_dir
       @job.release = @release
-
-      at_exit { FileUtils.rm_rf(@tmp_dir) }
     end
 
     it "should create a proper template and upload job bits to blobstore" do
       File.open(@tarball, "w") { |f| f.write(@job_bits) }
 
-      @blobstore.should_receive(:create).with do |f|
+      @blobstore.should_receive(:create).and_return do |f|
         f.rewind
-        Digest::SHA1.hexdigest(f.read).should == Digest::SHA1.hexdigest(@job_bits)
+        Digest::SHA1.hexdigest(f.read).should ==
+            Digest::SHA1.hexdigest(@job_bits)
+        Digest::SHA1.hexdigest(f.read)
       end
 
       Bosh::Director::Models::Template.count.should == 0
