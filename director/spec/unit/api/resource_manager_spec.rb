@@ -36,9 +36,15 @@ describe Bosh::Director::Api::ResourceManager do
 
   it "saves resource to a local file" do
     id = @blobstore.create("some data")
-    path = @manager.get_resource(id)
+    path = @manager.get_resource_path(id)
 
     File.exists?(path).should be_true
     File.read(path).should == "some data"
+  end
+
+  it "should return the contents of the blobstore id" do
+    contents = "some data"
+    id = @blobstore.create(contents)
+    @manager.get_resource(id).should == contents
   end
 end
