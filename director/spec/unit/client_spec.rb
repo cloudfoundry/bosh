@@ -30,12 +30,19 @@ describe Bosh::Director::Client do
         {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
     ).and_return { |*args|
       callback = args[2]
-      callback.call({"exception" => "test"})
+      callback.call({"exception" => {"message" => "test",
+        "backtrace" => ["backtrace"], "blobstore_id" => "bsid"}})
       "3"
     }
+    rm = double(Bosh::Director::Api::ResourceManager)
+    rm.should_receive(:get_resource).and_return("an exception")
+    rm.should_receive(:delete_resource)
+    Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
 
     @client = Bosh::Director::Client.new("test_service", "test_service_id")
-    lambda {@client.test_method("arg 1", 2, {:test =>"blah"})}.should raise_exception(RuntimeError, "test")
+    lambda {
+      @client.test_method("arg 1", 2, {:test =>"blah"})
+    }.should raise_exception(RuntimeError, "test")
   end
 
   it "should handle timeouts" do
@@ -150,6 +157,30 @@ describe Bosh::Director::Client do
     @client = Bosh::Director::Client.new("test_service", "test_service_id",
                                          {:timeout => 0.1, :credentials => credentials})
     @client.test_method("arg 1", 2, {:test => "blah"}).should eql(5)
+  end
+
+  it "should inject compile log into response" do
+    nats_rpc = mock("nats_rpc")
+
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+
+    nats_rpc.should_receive(:send).with("test_service.test_service_id",
+        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
+    ).and_return { |*args|
+      callback = args[2]
+      callback.call({"value" => {"result" => {"compile_log_id" => "foo"}}})
+      "3"
+    }
+
+    rm = double(Bosh::Director::Api::ResourceManager)
+    rm.should_receive(:get_resource).and_return("blob")
+    rm.should_receive(:delete_resource)
+    Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
+
+    @client = Bosh::Director::Client.new("test_service", "test_service_id")
+    value = @client.test_method("arg 1", 2, {:test => "blah"})
+    value["result"].should have_key "compile_log"
+    value["result"]["compile_log"].should == "blob"
   end
 
 end
