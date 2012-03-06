@@ -72,7 +72,7 @@ dpkg -i vmware-tools-vmxnet3-modules-source_1.0.36.0-2_amd64.deb
   tar zxvf vmware-tools-vmxnet3-modules.tar.gz
   cd modules/vmware-tools-vmxnet3-modules/vmxnet3-only
 
-  module_dir=`ls -d /lib/modules/2.6.*-server | tail -1`
+  module_dir=`ls -d /lib/modules/2.6.*-virtual | tail -1`
   kernel_uname_r=`basename ${module_dir}`
 
   # Work around Makefile autodetection of environment - kernel version mismatch
