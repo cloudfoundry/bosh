@@ -59,6 +59,7 @@ module Bosh::Director
       request = {:method => method_name, :arguments => args}
       request_id = @nats_rpc.send("#{@service_name}.#{@client_id}", request) do |response|
         result.synchronize do
+          inject_compile_log(response)
           result.merge!(response)
           cond.signal
         end
@@ -75,8 +76,46 @@ module Bosh::Director
         end
       end
 
-      raise result["exception"] if result.has_key?("exception")
+      if result.has_key?("exception")
+        exception = result["exception"]
+        raise format_exception(exception)
+      end
       result["value"]
+    end
+
+    def inject_compile_log(response)
+      if response["value"] && response["value"].is_a?(Hash) &&
+          response["value"]["result"] &&
+          id = response["value"]["result"]["compile_log_id"]
+        compile_log = Api::ResourceManager.new.get_resource(id)
+        response["value"]["result"]["compile_log"] = compile_log
+      end
+    end
+
+    # guard against old agents sending:
+    # :exception => "message"
+    def format_exception(exception)
+      if exception.instance_of?(Hash)
+        msg = exception["message"]
+        append(msg, exception["backtrace"]) do |backtrace|
+          backtrace.join("\n")
+        end
+        append(msg, exception["blobstore_id"]) do |id|
+          Api::ResourceManager.new.get_resource(id)
+        end
+      else
+        msg = exception
+      end
+
+      # make sure raise gets a String
+      msg.to_s
+    end
+
+    def append(msg, what)
+      if what
+        msg += "\n"
+        msg += yield what
+      end
     end
 
   end
