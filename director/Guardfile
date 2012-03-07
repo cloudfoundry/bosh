@@ -1,5 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+guard :bundler, :notify => false do
+  watch("Gemfile")
+end
+
 group :unit_tests do
   guard :rspec, :version => 2, :cli => "--color --format nested --fail-fast",
                 :spec_paths => %w(spec/unit) do
