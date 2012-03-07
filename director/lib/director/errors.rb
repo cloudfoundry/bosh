@@ -3,6 +3,8 @@
 module Bosh::Director
   include Api::Http
 
+  class ProblemHandlerError < StandardError; end
+
   class DirectorError < StandardError
     attr_reader :response_code
     attr_reader :error_code
@@ -14,17 +16,6 @@ module Bosh::Director
       super(msg)
     end
   end
-
-  class ServerError < StandardError
-    attr_reader :omit_stack
-
-    def initialize(msg, options = {})
-      super(msg)
-      @omit_stack = options[:omit_stack]
-    end
-  end
-
-  class ProblemHandlerError < StandardError; end
 
   [
    ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
