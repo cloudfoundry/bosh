@@ -479,12 +479,13 @@ module Bosh::Cli
         route :deployment, :list
       end
 
-      command :bosh_biff do
-        usage "biff [<template_file>]"
+      command :bosh_diff do
+        usage "diff [<template_file>]"
         desc  "Diffs your current BOSH deployment configuration against " +
-              "the newest BOSH deployment configuration template so that " +
-              "you can keep your deployment configuration file up to date."
-        route :biff, :biff
+              "the specified BOSH deployment configuration template so that " +
+              "you can keep your deployment configuration file up to date.  " +
+              "A dev template can be found in deployments repos."
+        route :diff, :diff
       end
 
       command :list_running_tasks do
