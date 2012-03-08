@@ -11,6 +11,7 @@ gem "monit_api"
 gem "thin"
 gem "sinatra"
 gem "rack-test"
+gem "sigar", ">=0.7.0"
 
 group :test do
   gem "ci_reporter"

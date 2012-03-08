@@ -72,6 +72,7 @@ GEM
     ruby-hmac (0.4.0)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
+    sigar (0.7.0)
     simplecov (0.4.2)
       simplecov-html (~> 0.4.4)
     simplecov-clover (0.0.1)
@@ -109,6 +110,7 @@ DEPENDENCIES
   rspec
   ruby-debug
   ruby-debug19
+  sigar (>= 0.7.0)
   simplecov
   simplecov-clover
   simplecov-rcov
