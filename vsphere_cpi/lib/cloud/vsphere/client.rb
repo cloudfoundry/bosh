@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module VSphereCloud
 
   class Client
@@ -201,7 +203,9 @@ module VSphereCloud
 
     def find_by_inventory_path(path)
       path = [path] unless path.kind_of?(Array)
-      path = path.flatten.collect { |name| name.gsub("/", "%2f") }.join("/")
+      path = path.flatten.compact.collect do |name|
+        name.gsub("/", "%2f") if name
+      end.join("/")
       @service_content.search_index.find_by_inventory_path(path)
     end
 
