@@ -6,6 +6,7 @@ Bosh::Agent::Config.infrastructure
 describe Bosh::Agent::Infrastructure::Vsphere::Settings do
 
   before(:each) do
+    Bosh::Agent::Config.settings_file = File.join(base_dir, 'bosh', 'settings.json')
     @settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
     @settings.stub!(:check_cdrom)
     @settings.stub!(:mount_cdrom)
