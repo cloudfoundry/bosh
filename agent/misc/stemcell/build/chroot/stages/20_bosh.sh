@@ -30,7 +30,7 @@ then
   exit 1
 fi
 
-debs='openssh-server scsitools tshark mg htop module-assistant debhelper rsync runit'
+debs='scsitools tshark mg htop module-assistant debhelper runit'
 
 # Disable daemon startup
 disable_daemon_startup $target $skeleton
