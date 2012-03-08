@@ -14,9 +14,9 @@ Gem::Specification.new do |s|
   s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
 
-  s.add_dependency "aws-s3"
-  s.add_dependency "httpclient"
-  s.add_dependency "json"
-  s.add_dependency "ruby-atmos-pure", ">= 1.0.5"
-  s.add_dependency "uuidtools"
+  s.add_dependency "aws-s3", "~> 0.6.2"
+  s.add_dependency "httpclient", "~> 2.2.4"
+  s.add_dependency "json", "~> 1.6.5"
+  s.add_dependency "ruby-atmos-pure", "~> 1.0.5"
+  s.add_dependency "uuidtools", "~> 2.1.2"
 end
