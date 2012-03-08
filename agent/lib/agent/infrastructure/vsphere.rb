@@ -7,5 +7,9 @@ module Bosh::Agent
       Settings.new.load_settings
     end
 
+    def get_network_settings
+      # Nothing to do
+    end
+
   end
 end

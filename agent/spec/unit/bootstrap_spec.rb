@@ -12,43 +12,13 @@ describe Bosh::Agent::Bootstrap do
 
     Bosh::Agent::Util.stub(:block_device_size).and_return(7903232)
     Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
+    Bosh::Agent::Config.platform.stub(:get_data_disk_device_name).and_return("/dev/dummy")
 
     # We just want to avoid this to accidently be invoked on dev systems
-    @processor.stub(:update_file)
-    @processor.stub(:restart_networking_service)
+    Bosh::Agent::Util.stub(:update_file)
     @processor.stub(:setup_data_disk)
     @processor.stub(:partition_disk)
     @processor.stub(:mem_total).and_return(3951616)
-    @processor.stub(:gratuitous_arp)
-  end
-
-  it 'should setup networking' do
-    @processor.load_settings
-    @processor.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-    @processor.setup_networking
-  end
-
-  # FIXME: pending network config refactoring
-  #it "should fail when network information is incomplete" do
-  #  @processor.load_settings
-  #  @processor.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-  #  lambda { @processor.setup_networking }.should raise_error(Bosh::Agent::MessageHandlerError, /contains invalid characters/)
-  #end
-
-  it "should generate ubuntu network files" do
-    @processor.load_settings
-    @processor.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-    @processor.stub!(:update_file) do |data, file|
-      # FIMXE: clean this mess up
-      case file
-      when '/etc/network/interfaces'
-        data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 172.30.40.115\n    network 172.30.40.0\n    netmask 255.255.248.0\n    broadcast 172.30.47.255\n    gateway 172.30.40.1\n\n"
-      when '/etc/resolv.conf'
-        data.should == "nameserver 172.30.22.153\nnameserver 172.30.22.154\n"
-      end
-    end
-
-    @processor.setup_networking
   end
 
   # This doesn't quite belong here
