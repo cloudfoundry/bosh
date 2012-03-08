@@ -51,7 +51,7 @@ module Bosh::Agent
       end
 
       def mount_new_store
-        disk = DiskUtil.lookup_disk_by_cid(@new_cid)
+        disk = Bosh::Agent::Config.infrastructure.lookup_disk_by_cid(@new_cid)
         partition = "#{disk}1"
         logger.info("Mounting: #{partition} #{store_path}")
         `mount #{partition} #{store_path}`
@@ -75,7 +75,8 @@ module Bosh::Agent
         end
 
         cids.each_key do |cid|
-          partition = "#{DiskUtil.lookup_disk_by_cid(cid)}1"
+          disk = Bosh::Agent::Config.infrastructure.lookup_disk_by_cid(cid)
+          partition = "#{disk}1"
           disk_info << cid unless DiskUtil.mount_entry(partition).nil?
         end
         disk_info
@@ -114,7 +115,7 @@ module Bosh::Agent
       end
 
       def setup_disk
-        disk = DiskUtil.lookup_disk_by_cid(@cid)
+        disk = Bosh::Agent::Config.infrastructure.lookup_disk_by_cid(@cid)
         partition = "#{disk}1"
 
         logger.info("setup disk settings: #{settings.inspect}")
@@ -200,7 +201,7 @@ module Bosh::Agent
 
       def unmount(args)
         cid = args.first
-        disk = DiskUtil.lookup_disk_by_cid(cid)
+        disk = Bosh::Agent::Config.infrastructure.lookup_disk_by_cid(cid)
         partition = "#{disk}1"
 
         if DiskUtil.mount_entry(partition)
@@ -253,28 +254,6 @@ module Bosh::Agent
 
         def base_dir
           Bosh::Agent::Config.base_dir
-        end
-
-        def lookup_disk_by_cid(cid)
-          settings = Bosh::Agent::Config.settings
-          disk_id = settings['disks']['persistent'][cid]
-
-          unless disk_id
-            raise Bosh::Agent::MessageHandlerError, "Unknown persistent disk: #{cid}"
-          end
-
-          sys_path = detect_block_device(disk_id)
-          blockdev = File.basename(sys_path)
-          File.join('/dev', blockdev)
-        end
-
-        def detect_block_device(disk_id)
-          dev_path = "/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"
-          while Dir[dev_path].empty?
-            logger.info("Waiting for #{dev_path}")
-            sleep 0.1
-          end
-          Dir[dev_path].first
         end
 
         def mount_entry(partition)

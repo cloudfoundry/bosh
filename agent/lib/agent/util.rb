@@ -153,6 +153,33 @@ module Bosh::Agent
         end
       end
 
+      # Poor mans idempotency
+      def update_file(data, path)
+        name = File.basename(path)
+        dir = File.dirname(path)
+
+        if_tmp_file = Tempfile.new(name, dir)
+        if_tmp_file.write(data)
+        if_tmp_file.flush
+
+        old = nil
+        begin
+          old = Digest::SHA1.file(path).hexdigest
+        rescue Errno::ENOENT
+          logger.debug("missing file: #{path}")
+        end
+        new = Digest::SHA1.file(if_tmp_file.path).hexdigest
+
+        updated = false
+        unless old == new
+          FileUtils.cp(if_tmp_file.path, path)
+          updated = true
+        end
+        if_tmp_file.close
+        FileUtils.rm_rf(if_tmp_file.path)
+        updated
+      end
+
     end
   end
 end

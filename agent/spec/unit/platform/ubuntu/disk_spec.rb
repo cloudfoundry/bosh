@@ -10,18 +10,14 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
   end
 
   it 'should mount persistent disk' do
+    infrastructure = mock(:infrastructure)
+    Bosh::Agent::Config.stub(:infrastructure).and_return(infrastructure)
+    infrastructure.stub(:lookup_disk_by_cid).and_return("/dev/sdy")
     disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
     File.stub(:blockdev?).and_return(true)
     disk_wrapper.stub(:mount_entry).and_return(nil)
     disk_wrapper.stub(:mount)
-    disk_wrapper.stub(:detect_block_device).and_return('/sys/long/bus/scsi/path/sdy')
     disk_wrapper.mount_persistent_disk(2)
-  end
-
-  it 'should look up disk by cid' do
-    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-    disk_wrapper.stub(:detect_block_device).and_return('/sys/long/bus/scsi/path/sdy')
-    disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdy'
   end
 
 end

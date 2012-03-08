@@ -1,9 +1,9 @@
 
 module Bosh::Agent
-  class Infrastructure::Vsphere
-    require 'agent/infrastructure/vsphere/settings'
-    require 'agent/infrastructure/vsphere/disk'
-    require 'agent/infrastructure/vsphere/network'
+  class Infrastructure::Aws
+    require 'agent/infrastructure/aws/settings'
+    require 'agent/infrastructure/aws/registry'
+    require 'agent/infrastructure/aws/disk'
 
     def load_settings
       Settings.new.load_settings
@@ -18,11 +18,11 @@ module Bosh::Agent
     end
 
     def get_network_settings
-      nil
+      Settings.new.get_network_settings
     end
 
     def setup_networking
-      Network.new.setup_networking
+      # Nothing to do
     end
 
   end
