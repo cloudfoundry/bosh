@@ -145,6 +145,11 @@ namespace "stemcell" do
     File.join(get_working_dir, "stemcell-package")
   end
 
+  def get_infrastructure_name
+    # VSphere is the default
+    @infrastructure_name || "vsphere"
+  end
+
   def get_ovftool_bin
     ovftool_bin = ENV["OVFTOOL"] ||= "/usr/lib/vmware/ovftool/ovftool"
     unless File.exist?(ovftool_bin)
@@ -154,6 +159,14 @@ namespace "stemcell" do
     ovftool_bin
   end
 
+  def generate_agent_run_config(infrastructure_name)
+    work_dir = get_working_dir
+    File.open(File.join(work_dir, "instance/runit/agent/run"), "w") do |f|
+      agent_run_config = ERB.new(File.read("misc/stemcell/agent_run.erb")).result(binding)
+      f.write(agent_run_config)
+    end
+  end
+
   def build_chroot
     work_dir = get_working_dir
     mkdir_p(work_dir)
@@ -161,6 +174,9 @@ namespace "stemcell" do
     cp("misc/stemcell/build/vmbuilder.cfg", work_dir, :preserve => true)
     cp_r("misc/stemcell/build", work_dir, :preserve => true)
     cp_r("misc/stemcell/instance", work_dir, :preserve => true)
+
+    # Generate agent run config for given infrastructure
+    generate_agent_run_config(get_infrastructure_name)
 
     # instance dir will be copied into /var/vcap/bosh/src in the chroot
     instance_dir = get_instance_dir
@@ -369,6 +385,8 @@ namespace "stemcell" do
   # Takes in an optional argument "chroot_dir"
   desc "Build aws stemcell [chroot_dir|chroot_tgz] - optional argument chroot dir or chroot tgz"
   task "aws", :chroot do |t, args|
+    @infrastructure_name = "aws"
+
     # Create/Setup chroot directory
     setup_chroot_dir(args[:chroot])
 
@@ -423,4 +441,5 @@ namespace "stemcell" do
     # Create vm image
     build_vm_image(:part_in => "misc/#{component}/part.in")
   end
+
 end

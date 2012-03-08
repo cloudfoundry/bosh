@@ -4,7 +4,7 @@ module Bosh::Agent
     def initialize
       logger                      = Bosh::Agent::Config.logger
       base_dir                    = Bosh::Agent::Config.base_dir
-      @settings_file              = File.join(base_dir, 'bosh', 'settings.json')
+      @settings_file              = Bosh::Agent::Config.settings_file
       @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
     end
 

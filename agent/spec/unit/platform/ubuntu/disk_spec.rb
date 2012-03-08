@@ -5,23 +5,57 @@ Bosh::Agent::Config.platform
 
 describe Bosh::Agent::Platform::Ubuntu::Disk do
 
-  before(:each) do
+  def vsphere_setup
     Bosh::Agent::Config.settings = { 'disks' => { 'persistent' => { 2 => '333'} } }
-  end
-
-  it 'should mount persistent disk' do
-    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-    File.stub(:blockdev?).and_return(true)
-    disk_wrapper.stub(:mount_entry).and_return(nil)
-    disk_wrapper.stub(:mount)
-    disk_wrapper.stub(:detect_block_device).and_return('/sys/long/bus/scsi/path/sdy')
-    disk_wrapper.mount_persistent_disk(2)
+    Bosh::Agent::Config.infrastructure_name = "vsphere"
   end
 
   it 'should look up disk by cid' do
+    vsphere_setup
     disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
     disk_wrapper.stub(:detect_block_device).and_return('/sys/long/bus/scsi/path/sdy')
     disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdy'
+  end
+
+  it 'should get data disk device name' do
+    vsphere_setup
+    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
+    disk_wrapper.get_data_disk_device_name.should == '/dev/sdb'
+  end
+
+  it "should raise exception if persistent disk cid is unknown" do
+    vsphere_setup
+    settings = { "disks" => { "persistent" => { 199 => 2 }}}
+    Bosh::Agent::Config.settings = settings
+
+    lambda {
+      disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
+      disk_wrapper.lookup_disk_by_cid(200)
+    }.should raise_error(Bosh::Agent::FatalError, /Unknown persistent disk/)
+  end
+
+  def aws_setup
+    Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
+                                                  'persistent' => { 2 => '/dev/sdf'} } }
+    Bosh::Agent::Config.infrastructure_name = "aws"
+  end
+
+  it 'should get data disk device name' do
+    aws_setup
+    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
+    disk_wrapper.stub(:dev_path_timeout).and_return(1)
+    lambda {
+      disk_wrapper.get_data_disk_device_name.should == '/dev/sdq'
+    }.should raise_error(Bosh::Agent::FatalError, /\/dev\/sdq or \/dev\/xvdq/)
+  end
+
+  it 'should look up disk by cid' do
+    aws_setup
+    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
+    disk_wrapper.stub(:dev_path_timeout).and_return(1)
+    lambda {
+      disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdf'
+    }.should raise_error(Bosh::Agent::FatalError, /\/dev\/sdf or \/dev\/xvdf/)
   end
 
 end
