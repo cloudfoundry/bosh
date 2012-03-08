@@ -15,9 +15,11 @@ module Bosh::AWSCloud
     end
 
     def wait_resource(resource, start_state,
-                      target_state, timeout = DEFAULT_TIMEOUT)
+                      target_state, state_method = :status,
+                      timeout = DEFAULT_TIMEOUT)
+
       started_at = Time.now
-      state = resource.status
+      state = resource.send(state_method)
       desc = resource.to_s
 
       while state == start_state && state != target_state
@@ -35,7 +37,7 @@ module Bosh::AWSCloud
 
         sleep(1)
 
-        state = resource.status
+        state = resource.send(state_method)
       end
 
       if state == target_state
