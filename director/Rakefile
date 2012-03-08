@@ -60,7 +60,6 @@ if defined?(RSpec)
 
     desc "Run Unit Tests"
     unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/unit/**/*_spec.rb"
       t.rspec_opts = SPEC_OPTS
     end
@@ -71,7 +70,6 @@ if defined?(RSpec)
 
     desc ""
     fn_rspec_task = RSpec::Core::RakeTask.new(:run_fn) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/functional/**/*_spec.rb"
       t.rspec_opts = SPEC_OPTS
     end
@@ -82,7 +80,6 @@ if defined?(RSpec)
 
     desc "Run CPI Tests"
     cpi_rspec_task = RSpec::Core::RakeTask.new(:cpi) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/cpi/**/*_spec.rb"
       t.rspec_opts = SPEC_OPTS
     end
@@ -102,7 +99,6 @@ if defined?(RSpec)
 
       desc ""
       RSpec::Core::RakeTask.new(:tests) do |task|
-        task.gemfile = "Gemfile"
         task.rspec_opts = SPEC_OPTS
         task.pattern = "spec/{unit,functional}/**/*_spec.rb"
       end
