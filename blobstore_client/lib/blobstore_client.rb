@@ -13,19 +13,21 @@ require "blobstore_client/atmos_blobstore_client"
 module Bosh
   module Blobstore
     class Client
-      def self.create(provider, options = { })
 
-        case provider
-        when "simple"
-          SimpleBlobstoreClient.new(options)
-        when "s3"
-          S3BlobstoreClient.new(options)
-        when "atmos"
-          AtmosBlobstoreClient.new(options)
-        when "local"
-          LocalClient.new(options)
+      PROVIDER_MAP = {
+        "simple" => SimpleBlobstoreClient,
+        "s3" => S3BlobstoreClient,
+        "atmos" => AtmosBlobstoreClient,
+        "local" => LocalClient
+      }
+
+      def self.create(provider, options = { })
+        p = PROVIDER_MAP[provider]
+        if p
+          p.new(options)
         else
-          raise "Invalid client provider, available providers are: 'simple', 's3', 'local'"
+          providers = PROVIDER_MAP.keys.sort.join(", ")
+          raise "Invalid client provider, available providers are: #{providers}"
         end
       end
     end
