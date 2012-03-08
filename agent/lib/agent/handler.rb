@@ -235,7 +235,7 @@ module Bosh::Agent
           `rm #{udev_file}`
         end
         @logger.info("Removing settings.json")
-        settings_file = File.join(@base_dir, 'bosh', 'settings.json')
+        settings_file = Bosh::Agent::Config.settings_file
         `rm #{settings_file}`
       end
 
