@@ -23,6 +23,7 @@ module Bosh::Agent
         :smtp_user,
         :smtp_password,
         :heartbeat_interval,
+        :settings_file,
         :settings,
         :state,
         :sshd_monitor_interval,
@@ -79,13 +80,14 @@ module Bosh::Agent
           @logger.info("Configuring Agent with: #{config.inspect}")
         end
 
+        @settings_file = File.join(@base_dir, 'bosh', 'settings.json')
         @settings = {}
 
         @state = State.new(File.join(@base_dir, "bosh", "state.yml"))
       end
 
       def infrastructure
-        @infrastructure||= Bosh::Agent::Infrastructure.new(@infrastructure_name).infrastructure
+        @infrastructure ||= Bosh::Agent::Infrastructure.new(@infrastructure_name).infrastructure
       end
 
       def platform
