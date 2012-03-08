@@ -23,6 +23,7 @@ blobstore_client/pkg
 common/pkg
 cpi/pkg
 vsphere_cpi/pkg
+aws_cpi/pkg
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
 spec/assets/test_release/config/dev.yml

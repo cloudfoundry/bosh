@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.add_dependency "aws-sdk", ">=1.3.5"
   s.add_dependency "bosh_common", ">=0.4.0"
   s.add_dependency "bosh_cpi", ">=0.4.2"
-  s.add_dependency "httpclient", ">=2.2.4"
+  s.add_dependency "httpclient", ">=2.2.0"
   s.add_dependency "uuidtools", ">=2.1.2"
-  s.add_dependency "yajl-ruby", ">=1.1.0"
+  s.add_dependency "yajl-ruby", ">=0.8.2"
 end
