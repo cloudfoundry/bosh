@@ -153,6 +153,9 @@ deploy_revision node[:director][:path] do
   symlinks({})
 
   before_migrate do
+    # Uncomment below for AWS test only (to avoid CPI version bumping):
+    # execute "rm -rf #{node[:director][:path]}/shared/gems"
+
     execute "#{node[:ruby][:path]}/bin/bundle install --deployment --without development test --local --path #{node[:director][:path]}/shared/gems" do
       cwd "#{release_path}/director"
     end
