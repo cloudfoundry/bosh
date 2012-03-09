@@ -46,7 +46,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       Bosh::Director::DeploymentPlanCompiler.stub!(:new).with(@deployment_plan).and_return(deployment_plan_compiler)
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
-      Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan, update_deployment_job).and_return(package_compiler)
+      Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan).and_return(package_compiler)
 
       deployment_plan_compiler.should_receive(:bind_deployment)
       deployment_plan_compiler.should_receive(:bind_existing_deployment)
@@ -80,10 +80,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       job = mock("job")
       job_updater = mock("job_updater")
 
-      resource_pool_updater.stub!(:extra_vms_count).and_return(2)
-      resource_pool_updater.stub!(:outdated_idle_vms_count).and_return(3)
-      resource_pool_updater.stub!(:bound_missing_vms_count).and_return(4)
-      resource_pool_updater.stub!(:missing_vms_count).and_return(5)
+      resource_pool_updater.stub!(:extra_vm_count).and_return(2)
+      resource_pool_updater.stub!(:outdated_idle_vm_count).and_return(3)
+      resource_pool_updater.stub!(:bound_missing_vm_count).and_return(4)
+      resource_pool_updater.stub!(:missing_vm_count).and_return(5)
 
       Bosh::Director::ResourcePoolUpdater.stub!(:new).with(resource_pool).and_return(resource_pool_updater)
       Bosh::Director::JobUpdater.stub!(:new).with(@deployment_plan, job).and_return(job_updater)
@@ -104,7 +104,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       resource_pool_updater.should_receive(:delete_outdated_idle_vms).ordered
 
       resource_pool_updater.should_receive(:create_bound_missing_vms).ordered
-      resource_pool_updater.should_receive(:allocate_dynamic_ips).ordered
+      resource_pool_updater.should_receive(:reserve_networks).ordered
       resource_pool_updater.should_receive(:create_missing_vms).ordered
 
       job_updater.should_receive(:update)

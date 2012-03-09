@@ -19,6 +19,9 @@ module Bosh::Director
       # @return [String] SHA1 hash of all of the configuration templates
       attr_accessor :configuration_hash
 
+      # @return [Hash<String, NetworkReservation>] network reservations
+      attr_accessor :network_reservations
+
       # @return [String] job state
       # @todo rename since it's confusing with current_state and is sometimes a
       #    verb
@@ -44,7 +47,7 @@ module Bosh::Director
       def initialize(job, index)
         @job = job
         @index = index
-        @networks = {}
+        @network_reservations = {}
         @state = job.instance_states[index] || job.state
 
         # Expanding virtual states
@@ -61,39 +64,39 @@ module Bosh::Director
       ##
       # Adds a new network to this instance
       # @param [String] name network name
-      def add_network(name)
-        raise "network #{name} already exists" if @networks.has_key?(name)
-        @networks[name] = InstanceNetwork.new(self, name)
+      # @param [NetworkReservation] reservation
+      def add_network_reservation(name, reservation)
+        if @network_reservations.has_key?(name)
+          raise "Network reservation: '#{name}' already exists"
+        end
+        @network_reservations[name] = reservation
       end
 
       ##
-      # @param [String] name network name
-      # @return [InstanceNetwork] instance network for the requested network
-      #   name
-      def network(name)
-        @networks[name]
-      end
-
-      ##
-      # @return [Array<InstanceNetwork>] list of networks for this instance
-      def networks
-        @networks.values
+      # Take any existing valid network reservations
+      #
+      # @param [Hash<String, NetworkReservation] reservations
+      # @return [void]
+      def take_network_reservations(reservations)
+        reservations.each do |name, provided_reservation|
+          reservation = @network_reservations[name]
+          reservation.take(provided_reservation) if reservation
+        end
       end
 
       ##
       # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings
-        default_network_properties = {}
+        default_properties = {}
         @job.default_network.each do |key, value|
-          (default_network_properties[value] ||= []) << key
+          (default_properties[value] ||= []) << key
         end
 
         network_settings = {}
-        @networks.each_value do |instance_network|
-          network = @job.deployment.network(instance_network.name)
-          network_settings[instance_network.name] = network.network_settings(
-              instance_network.ip,
-              default_network_properties[instance_network.name])
+        @network_reservations.each do |name, reservation|
+          network = @job.deployment.network(name)
+          network_settings[name] = network.network_settings(
+              reservation, default_properties[name])
         end
         network_settings
       end

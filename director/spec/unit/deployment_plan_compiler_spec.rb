@@ -3,429 +3,690 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlanCompiler do
-  include Bosh::Director
-
-  IP_10_0_0_5 = 167772165
 
   before(:each) do
-    @event_log = Bosh::Director::EventLog.new("/dev/null")
-    Bosh::Director::Config.event_log = @event_log
+    @cloud = stub(:Cloud)
+    BD::Config.stub(:cloud).and_return(@cloud)
+    @deployment_plan = stub(:DeploymentPlan)
+    @deployment_plan_compiler = BD::DeploymentPlanCompiler.new(@deployment_plan)
   end
 
-  describe "bind_existing_deployment" do
+  describe :bind_deployment do
+    it "should create the deployment if it doesn't exist" do
+      @deployment_plan.stub!(:name).and_return("deployment")
+      @deployment_plan.stub!(:canonical_name).and_return("deployment")
 
-    BASIC_STATE = {
-      "deployment" => "test_deployment",
-      "job" => {"name" => "test_job", "blobstore_id" => "job_blob"},
-      "index" => 5,
-      "configuration_hash" => "config_hash",
-      "packages" => {
-        "test_package" => {"version" => "1"}
-      },
-      "persistent_disk" => 1024,
-      "resource_pool" => {
-        "stemcell" => {
-          "name" => "ubuntu",
-          "network" => "network-a",
-          "version" => 3
-        },
-        "name" => "test_resource_pool",
-        "cloud_properties" => {
-          "ram" => "2GB",
-          "disk" => "10GB",
-          "cores" => 2
-        }
-      },
-      "networks" => {
-        "network-a" => {
-          "netmask" => "255.255.255.0",
-          "gw" => "10.0.0.1",
-          "ip" => "10.0.0.5",
-          "cloud_properties" => {"name" => "network-a"},
-          "dns" => ["1.2.3.4"]
-        }
-      },
-      "properties" => {"key" => "value"}
-    }
+      deployment = nil
+      @deployment_plan.should_receive(:deployment=).
+          and_return { |*args| deployment = args.first }
 
+      @deployment_plan_compiler.bind_deployment
+
+      BD::Models::Deployment.count.should == 1
+      BD::Models::Deployment.first.should == deployment
+      deployment.name.should == "deployment"
+    end
+
+    it "should reuse a deployment if it already exists" do
+      @deployment_plan.stub!(:name).and_return("deployment")
+      @deployment_plan.stub!(:canonical_name).and_return("deployment")
+
+      deployment = BD::Models::Deployment.make(:name => "deployment")
+      @deployment_plan.should_receive(:deployment=).with(deployment)
+
+      @deployment_plan_compiler.bind_deployment
+
+      BD::Models::Deployment.count.should == 1
+    end
+
+    it "should not allow you to create a deployment if it clashes with a canonical name" do
+      @deployment_plan.stub!(:name).and_return("dep-a")
+      @deployment_plan.stub!(:canonical_name).and_return("dep-a")
+
+      BD::Models::Deployment.make(:name => "dep_a")
+
+      lambda {
+        @deployment_plan_compiler.bind_deployment
+      }.should raise_error("Invalid deployment name: 'dep-a', canonical name already taken.")
+    end
+  end
+
+  describe :bind_release do
     before(:each) do
-      @deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-cid")
-      @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
-                                                        :vm => @vm,
-                                                        :job => "test_job",
-                                                        :index => 5)
-      @persistent_disk = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid",
-                                                                     :instance_id => @instance.id,
-                                                                     :size => 1024)
-
-      @deployment_plan = mock("deployment_plan")
-      @agent = mock("agent")
-      @job_spec = mock("job_spec")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @stemcell_spec = mock("stemcell_spec")
-      @instance_spec = mock("instance_spec")
-      @network_spec = mock("network_spec")
-      @instance_network_spec = mock("instance_network_spec")
-
-      @deployment_plan.stub!(:deployment).and_return(@deployment)
-      @deployment_plan.stub!(:job).with("test_job").and_return(@job_spec)
-      @deployment_plan.stub!(:network).with("network-a").and_return(@network_spec)
-      @deployment_plan.stub!(:resource_pool).with("test_resource_pool").and_return(@resource_pool_spec)
-
-      @job_spec.stub!(:instance).with(5).and_return(@instance_spec)
-      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:job).and_return(@job_spec)
-      @instance_spec.stub!(:networks).and_return([@instance_network_spec])
-
-      @instance_network_spec.stub!(:name).and_return("network-a")
-      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-      @resource_pool_spec.stub!(:network).and_return(@network_spec)
-      @network_spec.stub!(:name).and_return("network-a")
-
-      Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(@agent)
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+      @release_spec = stub(:ReleaseSpec)
+      @release_spec.stub(:name).and_return("my_release")
+      @release_spec.stub(:version).and_return(10)
+      @deployment_plan.stub(:release).and_return(@release_spec)
     end
 
-    describe "inconsistent VM states" do
-      it "fails when VM and instance in DB are referencing different deployments" do
-        @agent.stub!(:get_state).and_return("doesn't matter")
-        new_deployment = Bosh::Director::Models::Deployment.make(:name => "new_deployment")
-        @instance.update(:deployment => new_deployment)
-
-        lambda {
-          @deployment_plan_compiler.bind_existing_deployment
-        }.should raise_error("VM `vm-cid' is out of sync: DB record mismatch, " +
-                             "instance belongs to deployment `#{new_deployment.id}', " +
-                             "VM belongs to deployment `#{@deployment.id}'")
-      end
-
-      it "fails when VM returns invalid state" do
-        @agent.stub!(:get_state).and_return("malformed state")
-
-        lambda {
-          @deployment_plan_compiler.bind_existing_deployment
-        }.should raise_error("VM `vm-cid' returns invalid state: expected Hash, got String")
-      end
-
-      it "fails when VM reports a different deployment name" do
-        @agent.stub!(:get_state).and_return("deployment" => "foo")
-
-        lambda {
-          @deployment_plan_compiler.bind_existing_deployment
-        }.should raise_error("VM `vm-cid' is out of sync: expected to be a part of `test_deployment' " +
-                             "deployment but is actually a part of `foo' deployment")
-      end
-
-      it "fails when job in DB and job reported by agent are out of sync" do
-        @agent.stub!(:get_state).and_return("deployment" => "test_deployment", "job" => {"name" => "foo"}, "index" => 0)
-
-        lambda {
-          @deployment_plan_compiler.bind_existing_deployment
-        }.should raise_error("VM `vm-cid' is out of sync: it reports itself as `foo/0' " +
-                             "but according to DB it is `test_job/5'")
-      end
-
-      it "fails when VM has a job but isn't referenced by an instance" do
-        @agent.stub!(:get_state).and_return("deployment" => "test_deployment", "job" => {"name" => "foo"}, "index" => 0)
-        @instance.update(:vm => nil)
-
-        lambda {
-          @deployment_plan_compiler.bind_existing_deployment
-        }.should raise_error("VM `vm-cid' is out of sync: it reports itself as `foo/0' " +
-                             "but there is no instance referencing it")
-      end
+    it "should bind the release" do
+      deployment = BD::Models::Deployment.make
+      release = BD::Models::Release.make(:name => "my_release")
+      version = BD::Models::ReleaseVersion.make(
+          :release => release, :version => 10)
+      @deployment_plan.stub(:deployment).and_return(deployment)
+      @release_spec.should_receive(:release=).with(release)
+      @release_spec.should_receive(:release_version=).with(version)
+      @deployment_plan_compiler.bind_release
     end
 
-    it "should bind the valid resources" do
-      state = BASIC_STATE._deep_copy
-      @agent.stub!(:get_state).and_return(state)
+    it "should fail if the release doesn't exist" do
+      lambda {
+        @deployment_plan_compiler.bind_release
+      }.should raise_error("Can't find release")
+    end
 
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:current_state=).with(state)
-      @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
-      @resource_pool_spec.should_receive(:mark_active_vm)
+    it "should fail if the release version doesn't exist" do
+      lambda {
+        release = BD::Models::Release.make(:name => "my_release")
+        @release_spec.should_receive(:release=).with(release)
+        @deployment_plan_compiler.bind_release
+      }.should raise_error("Can't find release version")
+    end
+
+    it "should lock the release" do
+      deployment = BD::Models::Deployment.make
+      release = BD::Models::Release.make(:name => "my_release")
+      old_version = BD::Models::ReleaseVersion.make(
+          :release => release, :version => 9)
+      new_version = BD::Models::ReleaseVersion.make(
+          :release => release, :version => 10)
+      deployment.add_release_version(old_version)
+      @release_spec.as_null_object
+      @deployment_plan.stub(:deployment).and_return(deployment)
+      @deployment_plan_compiler.bind_release
+
+      deployment.release.should == release
+      deployment.release_versions.to_a.should =~ [old_version, new_version]
+    end
+  end
+
+  describe :bind_existing_deployment do
+    it "should bind existing VMs in parallel" do
+      deployment = BD::Models::Deployment.make
+      vm_1 = BD::Models::Vm.make
+      vm_2 = BD::Models::Vm.make
+      deployment.add_vm(vm_1)
+      deployment.add_vm(vm_2)
+      @deployment_plan.stub(:deployment).and_return(deployment)
+
+      thread_pool = stub(:ThreadPool)
+      thread_pool.stub(:wrap).and_yield(thread_pool)
+      BD::ThreadPool.stub(:new).and_return(thread_pool)
+
+      lock = stub(:Mutex)
+      Mutex.stub(:new).and_return(lock, nil)
+
+      thread_pool.should_receive(:process).and_yield.twice
+      @deployment_plan_compiler.should_receive(:bind_existing_vm).
+          with(lock, vm_1)
+      @deployment_plan_compiler.should_receive(:bind_existing_vm).
+          with(lock, vm_2)
 
       @deployment_plan_compiler.bind_existing_deployment
     end
+  end
 
-    it "should not bind invalid networks" do
-      state = BASIC_STATE._deep_copy
-      @agent.stub!(:get_state).and_return(state)
-
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(nil)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:current_state=).with(state)
-      @instance_network_spec.should_not_receive(:use_reservation)
-      @resource_pool_spec.should_receive(:mark_active_vm)
-
-      @deployment_plan_compiler.bind_existing_deployment
+  describe :bind_existing_vm do
+    before(:each) do
+      @lock = Mutex.new
+      @vm = BD::Models::Vm.make(:agent_id => "foo")
     end
 
-    it "should add it to the idle pool if there is no instance" do
-      state = BASIC_STATE._deep_copy
-      state.delete("job")
-      state.delete("index")
-      state.delete("configuration_hash")
-      state.delete("packages")
-      state.delete("persistent_disk")
-      state.delete("properties")
+    it "should bind an instance" do
+      instance = BD::Models::Instance.make(:vm => @vm)
+      state = {"state" => "foo"}
+      reservations = {"foo" => "reservation"}
 
-      @persistent_disk.destroy
-      @instance.destroy
-
-      @vm.update(:apply_spec => state)
-      @agent.stub!(:get_state).and_return(state)
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
-
-      idle_vm = mock("idle_vm")
-      @resource_pool_spec.should_receive(:add_idle_vm).and_return(idle_vm)
-      idle_vm.should_receive(:vm=).with(@vm)
-      idle_vm.should_receive(:current_state=).with(state)
-      idle_vm.should_receive(:ip=).with(IP_10_0_0_5)
-
-      @deployment_plan_compiler.bind_existing_deployment
+      @deployment_plan_compiler.should_receive(:get_state).with(@vm).
+          and_return(state)
+      @deployment_plan_compiler.should_receive(:get_network_reservations).
+          with(state).and_return(reservations)
+      @deployment_plan_compiler.should_receive(:bind_instance).
+          with(instance, state, reservations)
+      @deployment_plan_compiler.bind_existing_vm(@lock, @vm)
     end
 
-    it "should delete the VM if it's idle and the resource pool doesn't exist" do
-      state = BASIC_STATE._deep_copy
-      state.delete("job")
-      state.delete("index")
-      state.delete("configuration_hash")
-      state.delete("packages")
-      state.delete("persistent_disk")
-      state.delete("properties")
-      state["resource_pool"]["name"] = "unknown_resource_pool"
+    it "should bind an idle vm" do
+      state = {"resource_pool" => {"name" => "baz"}}
+      reservations = {"foo" => "reservation"}
+      resource_pool = stub(:ResourcePoolSpec)
 
-      @persistent_disk.destroy
-      @instance.destroy
+      @deployment_plan.stub(:resource_pool).with("baz").
+          and_return(resource_pool)
 
-      @vm.update(:apply_spec => state)
-      @agent.stub!(:get_state).and_return(state)
+      @deployment_plan_compiler.should_receive(:get_state).with(@vm).
+          and_return(state)
+      @deployment_plan_compiler.should_receive(:get_network_reservations).
+          with(state).and_return(reservations)
+      @deployment_plan_compiler.should_receive(:bind_idle_vm).
+          with(@vm, resource_pool, state, reservations)
+      @deployment_plan_compiler.bind_existing_vm(@lock, @vm)
+    end
 
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
-      @deployment_plan.stub!(:resource_pool).with("unknown_resource_pool").and_return(nil)
+    it "should delete no longer needed vms" do
+      state = {"resource_pool" => {"name" => "baz"}}
+      reservations = {"foo" => "reservation"}
+
+      @deployment_plan.stub(:resource_pool).with("baz").
+          and_return(nil)
+
+      @deployment_plan_compiler.should_receive(:get_state).with(@vm).
+          and_return(state)
+      @deployment_plan_compiler.should_receive(:get_network_reservations).
+          with(state).and_return(reservations)
       @deployment_plan.should_receive(:delete_vm).with(@vm)
-
-      @deployment_plan_compiler.bind_existing_deployment
+      @deployment_plan_compiler.bind_existing_vm(@lock, @vm)
     end
-
-    it "should mark the VM for deletion if it's no longer needed" do
-      @instance.update(:index => 6)
-      @job_spec.stub!(:instance).with(6).and_return(nil)
-
-      state = BASIC_STATE._deep_copy
-      state["index"] = 6
-      @agent.stub!(:get_state).and_return(state)
-
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
-      @deployment_plan.should_receive(:delete_instance).with(@instance)
-
-      @deployment_plan_compiler.bind_existing_deployment
-    end
-
-    it "should abort if the agent state and director state are out of sync (index)" do
-      state = BASIC_STATE._deep_copy
-      state["index"] = 1
-      @agent.stub!(:get_state).and_return(state)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
-
-      lambda {@deployment_plan_compiler.bind_existing_deployment}.should raise_error
-    end
-
-    it "should abort if the agent state and director state are out of sync (job)" do
-      state = BASIC_STATE._deep_copy
-      state["job"] = "unknown_job"
-      @agent.stub!(:get_state).and_return(state)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
-
-      lambda {@deployment_plan_compiler.bind_existing_deployment}.should raise_error
-    end
-
-    it "should abort if the agent state and director state are out of sync (deployment)" do
-      state = BASIC_STATE._deep_copy
-      state["deployment"] = "unknown_deployment"
-      @agent.stub!(:get_state).and_return(state)
-
-      Bosh::Director::Models::Vm.stub!(:find).with(:deployment_id => 1).and_return([@vm])
-      Bosh::Director::Models::Instance.stub!(:find).with(:vm_id => 2).and_return([@instance])
-
-      lambda {@deployment_plan_compiler.bind_existing_deployment}.should raise_error
-    end
-
   end
 
-  describe "bind_resource_pools" do
-
+  describe :bind_idle_vm do
     before(:each) do
-      @deployment_plan = mock("deployment_plan")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @stemcell_spec = mock("stemcell_spec")
-      @network_spec = mock("network_spec")
+      @network = stub(:NetworkSpec)
+      @network.stub(:name).and_return("foo")
+      @reservation = stub(:NetworkReservation)
+      @resource_pool = stub(:ResourcePoolSpec)
+      @resource_pool.stub(:name).and_return("baz")
+      @resource_pool.stub(:network).and_return(@network)
+      @idle_vm = stub(:IdleVm)
+      @vm = BD::Models::Vm.make
+    end
 
-      @deployment_plan.stub!(:network).with("network-a").and_return(@network_spec)
-      @deployment_plan.stub!(:resource_pool).with("test_resource_pool").and_return(@resource_pool_spec)
-      @deployment_plan.stub!(:resource_pools).and_return([@resource_pool_spec])
+    it "should add the existing idle VM" do
+      @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
+      @idle_vm.should_receive(:vm=).with(@vm)
+      @idle_vm.should_receive(:current_state=).with({"state" => "foo"})
 
-      @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
-      @resource_pool_spec.stub!(:network).and_return(@network_spec)
+      @deployment_plan_compiler.bind_idle_vm(
+          @vm, @resource_pool, {"state" => "foo"}, {})
+    end
 
-      @network_spec.stub!(:name).and_return("network-a")
+    it "should release a static network reservation" do
+      @reservation.stub(:static?).and_return(true)
 
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+      @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
+      @idle_vm.should_receive(:vm=).with(@vm)
+      @idle_vm.should_receive(:current_state=).with({"state" => "foo"})
+      @network.should_receive(:release).with(@reservation)
 
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+      @deployment_plan_compiler.bind_idle_vm(
+          @vm, @resource_pool, {"state" => "foo"}, {"foo" => @reservation})
+    end
+
+    it "should reuse a valid network reservation" do
+      @reservation.stub(:static?).and_return(false)
+
+      @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
+      @idle_vm.should_receive(:vm=).with(@vm)
+      @idle_vm.should_receive(:current_state=).with({"state" => "foo"})
+      @idle_vm.should_receive(:network_reservation=).with(@reservation)
+
+      @deployment_plan_compiler.bind_idle_vm(
+          @vm, @resource_pool, {"state" => "foo"}, {"foo" => @reservation})
+    end
+  end
+
+  describe :bind_instance do
+    before(:each) do
+      @model = BD::Models::Instance.make(:job => "foo", :index => 3)
+    end
+
+    it "should associate the instance to the instance spec" do
+      state = {"state" => "baz"}
+      reservations = {"net" => "reservation"}
+
+      instance = stub(:InstanceSpec)
+      resource_pool = stub(:ResourcePoolSpec)
+      job = stub(:JobSpec)
+      job.stub(:instance).with(3).and_return(instance)
+      job.stub(:resource_pool).and_return(resource_pool)
+      @deployment_plan.stub(:job).with("foo").and_return(job)
+
+      instance.should_receive(:instance=).with(@model)
+      instance.should_receive(:current_state=).with(state)
+      instance.should_receive(:take_network_reservations).with(reservations)
+      resource_pool.should_receive(:mark_active_vm)
+
+      @deployment_plan_compiler.bind_instance(@model, state, reservations)
+    end
+
+    it "should mark the instance for deletion when it's no longer valid" do
+      state = {"state" => "baz"}
+      reservations = {"net" => "reservation"}
+      @deployment_plan.stub(:job).with("foo").and_return(nil)
+      @deployment_plan.should_receive(:delete_instance).with(@model)
+
+      @deployment_plan_compiler.bind_instance(@model, state, reservations)
+    end
+  end
+
+  describe :bind_resource_pools do
+    before(:each) do
+      @network = stub(:NetworkSpec)
+      @resource_pool = stub(:ResourcePoolSpec)
+      @resource_pool.stub(:name).and_return("baz")
+      @resource_pool.stub(:network).and_return(@network)
+      @deployment_plan.stub(:resource_pools).and_return([@resource_pool])
     end
 
     it "should do nothing when all the VMs have been allocated" do
-      idle_vm = mock("idle_vm")
-      @resource_pool_spec.stub!(:size).and_return(2)
-      @resource_pool_spec.stub!(:active_vms).and_return(1)
-      @resource_pool_spec.stub!(:idle_vms).and_return([idle_vm])
+      @resource_pool.stub(:missing_vm_count).and_return(0)
+      @resource_pool.stub(:idle_vms).and_return([])
       @deployment_plan_compiler.bind_resource_pools
     end
 
     it "should preallocate idle vms that currently don't exist" do
-      idle_vm_1 = mock("idle_vm_1")
-      idle_vm_2 = mock("idle_vm_2")
+      idle_vm = stub(:IdleVm)
+      @resource_pool.stub(:missing_vm_count).and_return(1)
+      @resource_pool.stub(:idle_vms).and_return([])
+      @resource_pool.should_receive(:add_idle_vm).and_return(idle_vm)
+      @deployment_plan_compiler.bind_resource_pools
+    end
 
-      @resource_pool_spec.stub!(:size).and_return(2)
-      @resource_pool_spec.stub!(:active_vms).and_return(0)
-      @resource_pool_spec.stub!(:idle_vms).and_return([])
+    it "should make a dynamic network reservation" do
+      idle_vm = stub(:IdleVm)
+      idle_vm.stub(:network_reservation).and_return(nil)
+      @resource_pool.stub(:missing_vm_count).and_return(0)
+      @resource_pool.stub(:idle_vms).and_return([idle_vm])
 
-      @resource_pool_spec.should_receive(:add_idle_vm).and_return(idle_vm_1, idle_vm_2)
-      @network_spec.should_receive(:allocate_dynamic_ip).and_return(5,25)
-      idle_vm_1.should_receive(:ip=).with(5)
-      idle_vm_2.should_receive(:ip=).with(25)
+      @network.should_receive(:reserve).and_return do |reservation|
+        reservation.dynamic?.should == true
+        reservation.ip = 1
+        reservation.reserved = true
+        true
+      end
+
+      idle_vm.should_receive(:network_reservation=).with do |reservation|
+        reservation.dynamic?.should == true
+        reservation.ip.should == 1
+        reservation.reserved.should == true
+      end
 
       @deployment_plan_compiler.bind_resource_pools
     end
 
-  end
-
-  describe "bind_configuration" do
-
-    before(:each) do
-      @deployment_plan = mock("deployment_plan")
-      @job_spec = mock("job_spec")
-      @deployment_plan.stub!(:jobs).and_return([@job_spec])
-
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    it "should use existing network reservation" do
+      network_reservation = stub(:NetworkReservation)
+      idle_vm = stub(:IdleVm)
+      idle_vm.stub(:network_reservation).and_return(network_reservation)
+      @resource_pool.stub(:missing_vm_count).and_return(0)
+      @resource_pool.stub(:idle_vms).and_return([idle_vm])
+      @deployment_plan_compiler.bind_resource_pools
     end
 
-    it "should bind the configuration hash" do
-      configuration_hasher = mock("configuration_hasher")
-      configuration_hasher.should_receive(:hash)
-      Bosh::Director::ConfigurationHasher.stub!(:new).with(@job_spec).and_return(configuration_hasher)
-      @deployment_plan_compiler.bind_configuration
-    end
+    it "should fail when there are no more IPs left" do
+      idle_vm = stub(:IdleVm)
+      idle_vm.stub(:network_reservation).and_return(nil)
+      @resource_pool.stub(:missing_vm_count).and_return(0)
+      @resource_pool.stub(:idle_vms).and_return([idle_vm])
 
+      @network.should_receive(:reserve).and_return do |reservation|
+        reservation.error = BD::NetworkReservation::CAPACITY
+        reservation.reserved = false
+        true
+      end
+
+      lambda {
+        @deployment_plan_compiler.bind_resource_pools
+      }.should raise_error(/dynamic IP but there were no more available/)
+    end
   end
 
-  describe "bind_instance_networks" do
+  describe :get_network_reservations do
+    it "should reserve all of the networks listed in the state" do
+      foo_network = stub(:FooNetworkSpec)
+      bar_network = stub(:BarNetworkSpec)
 
+      @deployment_plan.stub(:network).with("foo").and_return(foo_network)
+      @deployment_plan.stub(:network).with("bar").and_return(bar_network)
+
+      foo_reservation = nil
+      foo_network.should_receive(:reserve).and_return do |reservation|
+        reservation.ip.should == NetAddr::CIDR.create("1.2.3.4").to_i
+        reservation.reserved = true
+        foo_reservation = reservation
+        true
+      end
+
+      bar_network.should_receive(:reserve).and_return do |reservation|
+        reservation.ip.should == NetAddr::CIDR.create("10.20.30.40").to_i
+        reservation.reserved = false
+        false
+      end
+
+      @deployment_plan_compiler.get_network_reservations({
+        "networks" => {
+            "foo" => {
+                "ip" => "1.2.3.4"
+            },
+            "bar" => {
+                "ip" => "10.20.30.40"
+            }
+        }
+      }).should == {"foo" => foo_reservation}
+    end
+  end
+
+  describe :get_state do
+    it "should return the processed agent state" do
+      state = {"state" => "baz"}
+
+      vm = BD::Models::Vm.make(:agent_id => "agent-1")
+      client = stub(:AgentClient)
+      BD::AgentClient.stub(:new).with("agent-1").and_return(client)
+
+      client.should_receive(:get_state).and_return(state)
+      @deployment_plan_compiler.should_receive(:verify_state).with(vm, state)
+      @deployment_plan_compiler.should_receive(:migrate_legacy_state).
+          with(vm, state)
+
+      @deployment_plan_compiler.get_state(vm)
+    end
+  end
+
+  describe :verify_state do
     before(:each) do
-      @deployment_plan = mock("deployment_plan")
-      @job_spec = mock("job_spec")
-      @instance_spec = mock("instance_spec")
-      @network_spec = mock("network_spec")
-      @instance_network_spec = mock("instance_network_spec")
+      @deployment = BD::Models::Deployment.make(:name => "foo")
+      @vm = BD::Models::Vm.make(:deployment => @deployment)
+      @deployment_plan.stub(:deployment).and_return(@deployment)
+    end
 
-      @deployment_plan.stub!(:jobs).and_return([@job_spec])
-      @deployment_plan.stub!(:network).with("network-a").and_return(@network_spec)
+    it "should do nothing when VM is ok" do
+      @deployment_plan_compiler.verify_state(@vm, {"deployment" => "foo"})
+    end
 
-      @job_spec.stub!(:name).and_return("job-a")
-      @job_spec.stub!(:instances).and_return([@instance_spec])
+    it "should do nothing when instance is ok" do
+      BD::Models::Instance.make(
+          :deployment => @deployment, :vm => @vm, :job => "bar", :index => 11)
+      @deployment_plan_compiler.verify_state(@vm, {
+          "deployment" => "foo",
+          "job" => {
+            "name" => "bar"
+          },
+          "index" => 11
+      })
+    end
 
-      @instance_spec.stub!(:networks).and_return([@instance_network_spec])
-      @instance_spec.stub!(:index).and_return(3)
+    it "should make sure VM and instance belong to the same deployment" do
+      other_deployment = BD::Models::Deployment.make
+      BD::Models::Instance.make(
+          :deployment => other_deployment, :vm => @vm, :job => "bar",
+          :index => 11)
+      lambda {
+        @deployment_plan_compiler.verify_state(@vm, {
+            "deployment" => "foo",
+            "job" => {
+                "name" => "bar"
+            },
+            "index" => 11
+        })
+      }.should raise_error(/model mismatch/)
+    end
 
-      @instance_network_spec.stub!(:name).and_return("network-a")
+    it "should make sure the state is a Hash" do
+      lambda {
+        @deployment_plan_compiler.verify_state(@vm, "state")
+      }.should raise_error(/expected Hash/)
+    end
 
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
+    it "should make sure the deployment name is correct" do
+      lambda {
+        @deployment_plan_compiler.verify_state(@vm, {"deployment" => "foz"})
+      }.should raise_error(/deployment but is actually a part/)
+    end
 
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+    it "should make sure the job and index exist" do
+      lambda {
+        @deployment_plan_compiler.verify_state(@vm, {
+            "deployment" => "foo",
+            "job" => {
+                "name" => "bar"
+            },
+            "index" => 11
+        })
+      }.should raise_error(/no instance referencing it/)
+    end
+
+    it "should make sure the job and index are correct" do
+      lambda {
+        BD::Models::Instance.make(
+            :deployment => @deployment, :vm => @vm, :job => "bar", :index => 11)
+        @deployment_plan_compiler.verify_state(@vm, {
+            "deployment" => "foo",
+            "job" => {
+                "name" => "bar"
+            },
+            "index" => 22
+        })
+      }.should raise_error(/according to DB it is/)
+    end
+  end
+
+  describe :migrate_legacy_state
+  describe :bind_resource_pools
+
+  describe :bind_unallocated_vms do
+    before(:each) do
+      @deployment = BD::Models::Deployment.make
+
+      @job_spec = stub(:JobSpec)
+      @instance_spec = stub(:InstanceSpec)
+
+      @deployment_plan.stub(:deployment).and_return(@deployment)
+      @deployment_plan.stub(:jobs).and_return([@job_spec])
+
+      @job_spec.stub(:instances).and_return([@instance_spec])
+      @job_spec.stub(:name).and_return("test_job")
+
+      @instance_spec.stub!(:index).and_return(5)
+    end
+
+    it "should bind the job state" do
+      instance = BD::Models::Instance.make(
+          :deployment => @deployment,
+          :job => "test_job",
+          :index => 5
+      )
+      @instance_spec.should_receive(:instance).and_return(instance)
+      @deployment_plan_compiler.should_receive(:bind_instance_job_state).
+          with(@instance_spec)
+      @deployment_plan_compiler.bind_unallocated_vms
+    end
+
+    it "should late bind instance if the instance was not attached to a VM" do
+      instance = BD::Models::Instance.make(
+          :deployment => @deployment,
+          :job => "test_job",
+          :index => 5,
+          :vm => nil
+      )
+      @instance_spec.should_receive(:instance).and_return(nil)
+      @instance_spec.should_receive(:instance=).with(instance)
+      @deployment_plan_compiler.should_receive(:bind_instance_job_state).
+          with(@instance_spec)
+      @deployment_plan_compiler.should_receive(:allocate_instance_vm).
+          with(@instance_spec)
+      @deployment_plan_compiler.bind_unallocated_vms
+    end
+
+    it "should create a new instance model when needed" do
+      @instance_spec.should_receive(:instance).and_return(nil)
+      @instance_spec.should_receive(:instance=).with do |instance|
+        instance.deployment.should == @deployment
+        instance.job.should == "test_job"
+        instance.index.should == 5
+        instance.state.should == "started"
+      end
+      @deployment_plan_compiler.should_receive(:bind_instance_job_state).
+          with(@instance_spec)
+      @deployment_plan_compiler.should_receive(:allocate_instance_vm).
+          with(@instance_spec)
+      @deployment_plan_compiler.bind_unallocated_vms
+      BD::Models::Instance.count.should == 1
+    end
+  end
+
+  describe :allocate_instance_vm do
+    before(:each) do
+      @idle_vm = stub(:IdleVm)
+      @network = stub(:NetworkSpec)
+      @network.stub(:name).and_return("foo")
+      @resource_pool = stub(:ResourcePoolSpec)
+      @resource_pool.stub(:network).and_return(@network)
+      @resource_pool.stub(:allocate_vm).and_return(@idle_vm, nil)
+      @job = stub(:JobSpec)
+      @job.stub(:resource_pool).and_return(@resource_pool)
+      @instance_spec = stub(:InstanceSpec)
+      @instance_spec.stub(:job).and_return(@job)
+    end
+
+    it "should reuse an already running idle VM" do
+      @instance_spec.should_receive(:idle_vm=).with(@idle_vm)
+
+      vm = BD::Models::Vm.make
+      @idle_vm.stub(:vm).and_return(vm)
+
+      @instance_spec.stub(:network_reservations).
+          and_return({"bar" => stub(:NetworkReservation)})
+
+      @deployment_plan_compiler.allocate_instance_vm(@instance_spec)
+    end
+
+    it "should try to use the existing VM's network reservation" do
+      @instance_spec.should_receive(:idle_vm=).with(@idle_vm)
+
+      idle_vm_reservation = stub(:IdleNetworkReservation)
+      vm = BD::Models::Vm.make
+      @idle_vm.stub(:vm).and_return(vm)
+      @idle_vm.stub(:network_reservation).and_return(idle_vm_reservation)
+
+      reservation = stub(:NetworkReservation)
+      @instance_spec.stub(:network_reservations).
+          and_return({"foo" => reservation})
+
+      reservation.should_receive(:take).with(idle_vm_reservation)
+
+      @deployment_plan_compiler.allocate_instance_vm(@instance_spec)
+    end
+
+    it "should bind itself to a soon to be created idle VM" do
+      @instance_spec.should_receive(:idle_vm=).with(@idle_vm)
+
+      idle_vm_reservation = stub(:IdleNetworkReservation)
+      @idle_vm.stub(:vm).and_return(nil)
+      @idle_vm.stub(:network_reservation).and_return(idle_vm_reservation)
+
+      @idle_vm.should_receive(:bound_instance=).with(@instance_spec)
+      @idle_vm.should_receive(:network_reservation=).with(nil)
+      @network.should_receive(:release).with(idle_vm_reservation)
+
+      @deployment_plan_compiler.allocate_instance_vm(@instance_spec)
+    end
+  end
+
+  describe :bind_instance_job_state
+
+  describe :bind_instance_networks do
+    before(:each) do
+      @job_spec = stub(:JobSpec)
+      @instance_spec = stub(:InstanceSpec)
+      @network_spec = stub(:NetworkSpec)
+
+      @deployment_plan.stub(:jobs).and_return([@job_spec])
+      @deployment_plan.stub(:network).with("network-a").
+          and_return(@network_spec)
+
+      @job_spec.stub(:name).and_return("job-a")
+      @job_spec.stub(:instances).and_return([@instance_spec])
+
+      @network_reservation = BD::NetworkReservation.new(
+          :type => BD::NetworkReservation::DYNAMIC)
+      @network_reservation.reserved = false
+
+      @instance_spec.stub(:network_reservations).
+          and_return({"network-a" => @network_reservation})
+      @instance_spec.stub(:index).and_return(3)
     end
 
     it "should do nothing if the ip is already reserved" do
-      @instance_network_spec.stub!(:reserved).and_return(true)
+      @network_reservation.reserved = true
       @deployment_plan_compiler.bind_instance_networks
     end
 
-    it "should reserve a static ip" do
-      @instance_network_spec.stub!(:reserved).and_return(false)
-      @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:static)
-      @instance_network_spec.should_receive(:use_reservation).with(IP_10_0_0_5, true)
+    it "should make a network reservation" do
+      @network_spec.should_receive(:reserve).and_return do |reservation|
+        reservation.should == @network_reservation
+        reservation.reserved = true
+        true
+      end
       @deployment_plan_compiler.bind_instance_networks
     end
 
-    it "should acquire a dynamic ip" do
-      @instance_network_spec.stub!(:reserved).and_return(false)
-      @instance_network_spec.stub!(:ip).and_return(nil)
-      @network_spec.should_receive(:allocate_dynamic_ip).and_return(1)
-      @instance_network_spec.should_receive(:use_reservation).with(1, false)
-      @deployment_plan_compiler.bind_instance_networks
+    it "should fail when there is no more capacity" do
+      @network_spec.should_receive(:reserve).and_return do |reservation|
+        reservation.should == @network_reservation
+        reservation.reserved = false
+        reservation.error = BD::NetworkReservation::CAPACITY
+        true
+      end
+      lambda {
+        @deployment_plan_compiler.bind_instance_networks
+      }.should raise_error(/there were no more available/)
     end
 
     it "should fail reserving a static ip that was not in a static range" do
-      @instance_network_spec.stub!(:reserved).and_return(false)
-      @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(:dynamic)
+      @network_reservation.type = :static
+      @network_reservation.ip = 1
+      @network_spec.should_receive(:reserve).and_return do |reservation|
+        reservation.should == @network_reservation
+        reservation.reserved = false
+        reservation.error = BD::NetworkReservation::WRONG_TYPE
+        true
+      end
       lambda {
         @deployment_plan_compiler.bind_instance_networks
-      }.should raise_error("Job: 'job-a'/'3' asked for a static IP: 10.0.0.5 but it's in the dynamic pool")
+      }.should raise_error(/but it's in the dynamic pool/)
     end
 
     it "should fail reserving a static ip that was taken" do
-      @instance_network_spec.stub!(:reserved).and_return(false)
-      @instance_network_spec.stub!(:ip).and_return(IP_10_0_0_5)
-      @network_spec.should_receive(:reserve_ip).with(IP_10_0_0_5).and_return(nil)
+      @network_reservation.type = :static
+      @network_reservation.ip = 1
+      @network_spec.should_receive(:reserve).and_return do |reservation|
+        reservation.should == @network_reservation
+        reservation.reserved = false
+        reservation.error = BD::NetworkReservation::USED
+        true
+      end
       lambda {
         @deployment_plan_compiler.bind_instance_networks
-      }.should raise_error("Job: 'job-a'/'3' asked for a static IP: 10.0.0.5 but it's already reserved/in use")
+      }.should raise_error(/but it's already reserved/)
     end
-
   end
 
-  describe "bind_templates" do
-
+  describe :bind_templates do
     before(:each) do
-      @deployment = Bosh::Director::Models::Deployment.make
-      @release = Bosh::Director::Models::Release.make
-      @release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release)
-      @template = Bosh::Director::Models::Template.make(:release => @release, :name => "test_template")
-      @template.package_names = ["test_package"]
+      @deployment = BD::Models::Deployment.make
+      @release = BD::Models::Release.make
+      @release_version = BD::Models::ReleaseVersion.make(:release => @release)
+      @template = BD::Models::Template.make(:release => @release,
+                                            :name => "test_template")
+      @template.package_names = %w(test_package)
       @template.save
       @release_version.add_template(@template)
-      @package = Bosh::Director::Models::Package.make(:release => @release, :name => "test_package")
+      @package = BD::Models::Package.make(:release => @release,
+                                          :name => "test_package")
       @release_version.add_package(@package)
 
-      @deployment_plan = mock("deployment_plan")
-      @job_spec = mock("job_spec")
-      @template_spec = mock("template_spec")
-      @release_spec = mock("release_spec")
+      @job_spec = stub(:JobSpec)
+      @template_spec = stub(:TemplateSpec)
+      @release_spec = stub(:ReleaseSpec)
 
-      @template_spec.stub!(:name).and_return("test_template")
+      @template_spec.stub(:name).and_return("test_template")
 
-      @deployment_plan.stub!(:templates).and_return([@template_spec])
-      @deployment_plan.stub!(:release).and_return(@release_spec)
+      @deployment_plan.stub(:templates).and_return([@template_spec])
+      @deployment_plan.stub(:release).and_return(@release_spec)
 
-      @release_spec.stub!(:release_version).and_return(@release_version)
-
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+      @release_spec.stub(:release_version).and_return(@release_version)
     end
 
     it "should bind the compiled packages to the job" do
@@ -435,395 +696,100 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
   end
 
-  describe "bind_deployment" do
+  describe :bind_stemcells
+
+  describe :bind_configuration do
     before(:each) do
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-      @deployment_plan = mock("deployment_plan")
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
+      @job_spec = stub(:JobSpec)
+      @deployment_plan.stub(:jobs).and_return([@job_spec])
     end
 
-    it "should create the deployment if it doesn't exist" do
-      @deployment_plan.stub!(:name).and_return("deployment")
-      @deployment_plan.stub!(:canonical_name).and_return("deployment")
-
-      deployment = nil
-      @deployment_plan.should_receive(:deployment=).and_return { |*args| deployment = args.first }
-
-      @deployment_plan_compiler.bind_deployment
-
-      Models::Deployment.count.should == 1
-      Models::Deployment.first.should == deployment
-      deployment.name.should == "deployment"
-    end
-
-    it "should reuse a deployment if it already exists" do
-      @deployment_plan.stub!(:name).and_return("deployment")
-      @deployment_plan.stub!(:canonical_name).and_return("deployment")
-
-      deployment = Models::Deployment.make(:name => "deployment")
-      @deployment_plan.should_receive(:deployment=).with(deployment)
-
-      @deployment_plan_compiler.bind_deployment
-
-      Models::Deployment.count.should == 1
-    end
-
-    it "should not allow you to create a deployment if it clashes with a canonical name" do
-      @deployment_plan.stub!(:name).and_return("dep-a")
-      @deployment_plan.stub!(:canonical_name).and_return("dep-a")
-
-      Models::Deployment.make(:name => "dep_a")
-
-      lambda { @deployment_plan_compiler.bind_deployment }.should raise_error(
-          "Invalid deployment name: 'dep-a', canonical name already taken.")
+    it "should bind the configuration hash" do
+      configuration_hasher = stub(:ConfigurationHasher)
+      configuration_hasher.should_receive(:hash)
+      BD::ConfigurationHasher.stub(:new).with(@job_spec).
+          and_return(configuration_hasher)
+      @deployment_plan_compiler.bind_configuration
     end
   end
 
-  describe "bind_dns" do
-    before(:each) do
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-      @deployment_plan = mock("deployment_plan")
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
-    end
-
+  describe :bind_dns do
     it "should create the domain if it doesn't exist" do
       domain = nil
-      @deployment_plan.should_receive(:dns_domain=).and_return { |*args| domain = args.first }
+      @deployment_plan.should_receive(:dns_domain=).
+          and_return { |*args| domain = args.first }
       @deployment_plan_compiler.bind_dns
 
-      Models::Dns::Domain.count.should == 1
-      Models::Dns::Domain.first.should == domain
+      BD::Models::Dns::Domain.count.should == 1
+      BD::Models::Dns::Domain.first.should == domain
       domain.name.should == "bosh"
       domain.type.should == "NATIVE"
     end
 
     it "should reuse the domain if it exists" do
-      domain = Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
+      domain = BD::Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
       @deployment_plan.should_receive(:dns_domain=).with(domain)
       @deployment_plan_compiler.bind_dns
 
-      Models::Dns::Domain.count.should == 1
+      BD::Models::Dns::Domain.count.should == 1
     end
 
     it "should create the SOA record if it doesn't exist" do
-      domain = Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
+      domain = BD::Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
       @deployment_plan.should_receive(:dns_domain=)
       @deployment_plan_compiler.bind_dns
 
-      Models::Dns::Record.count.should == 1
-      record = Models::Dns::Record.first
+      BD::Models::Dns::Record.count.should == 1
+      record = BD::Models::Dns::Record.first
       record.domain.should == domain
       record.name.should == "bosh"
       record.type.should == "SOA"
     end
 
     it "should reuse the SOA record if it exists" do
-      domain = Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
-      record = Models::Dns::Record.make(:domain => domain, :name => "bosh", :type => "SOA")
+      domain = BD::Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
+      record = BD::Models::Dns::Record.make(:domain => domain, :name => "bosh",
+                                            :type => "SOA")
       @deployment_plan.should_receive(:dns_domain=)
       @deployment_plan_compiler.bind_dns
 
       record.refresh
 
-      Models::Dns::Record.count.should == 1
-      Models::Dns::Record.first.should == record
+      BD::Models::Dns::Record.count.should == 1
+      BD::Models::Dns::Record.first.should == record
     end
   end
 
-  describe "bind_unallocated_vms" do
-    before(:each) do
-      @deployment = Bosh::Director::Models::Deployment.make
-      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment)
-      @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
-                                                        :vm => nil,
-                                                        :job => "test_job",
-                                                        :index => 5,
-                                                        :state => "started")
+  describe :bind_instance_vms
+  describe :bind_instance_vm
 
-      @deployment_plan = mock("deployment_plan")
-      @job_spec = mock("job_spec")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @instance_spec = mock("instance_spec")
-      @release_spec = mock("release_spec")
-      @network_spec = mock("network_spec")
+  describe :delete_unneeded_vms do
+    it "should delete unneeded VMs" do
+      vm = BD::Models::Vm.make(:cid => "vm-cid")
+      @deployment_plan.stub!(:unneeded_vms).and_return([vm])
 
-      @deployment_plan.stub!(:deployment).and_return(@deployment)
-      @deployment_plan.stub!(:jobs).and_return([@job_spec])
-      @deployment_plan.stub!(:release).and_return(@release_spec)
+      @cloud.should_receive(:delete_vm).with("vm-cid")
+      @deployment_plan_compiler.delete_unneeded_vms
 
-      @release_spec.stub!(:spec).and_return({"name" => "test_release", "version" => 23})
-
-      @network_spec.stub!(:name).and_return("network-a")
-
-      @resource_pool_spec.stub!(:network).and_return(@network_spec)
-
-      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
-      @job_spec.stub!(:instances).and_return([@instance_spec])
-      @job_spec.stub!(:name).and_return("test_job")
-      @job_spec.stub!(:spec).and_return({"name" => "test_job", "blobstore_id" => "blob"})
-
-      @instance_spec.stub!(:job).and_return(@job_spec)
-      @instance_spec.stub!(:index).and_return(5)
-
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
-    end
-
-    it "should late bind instance if the instance was not attached to a VM" do
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(@vm)
-      idle_vm.stub!(:ip).and_return(nil)
-      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:state).and_return("started")
-
-      @instance_spec.should_receive(:network).with("network-a").and_return(nil)
-      @instance_spec.should_receive(:instance).and_return(nil)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
-
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
-      @deployment_plan_compiler.bind_unallocated_vms
-    end
-
-    it "should create a new instance model when needed" do
-      @instance.destroy
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(@vm)
-      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:state).and_return("started")
-
-      @instance_spec.should_receive(:network).with("network-a").and_return(nil)
-      @instance_spec.should_receive(:instance).and_return(nil)
-      @instance_spec.should_receive(:instance=).with do |instance|
-        instance.deployment.should == @deployment
-        instance.job.should == "test_job"
-        instance.index.should == 5
-        instance.state.should == "started"
-        true
+      BD::Models::Vm[vm.id].should be_nil
+      check_event_log do |events|
+        events.size.should == 2
+        events.map { |e| e["stage"] }.uniq.should == ["Deleting unneeded VMs"]
+        events.map { |e| e["total"] }.uniq.should == [1]
+        events.map { |e| e["task"] }.uniq.should == %w(vm-cid)
       end
-      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
-
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-      @deployment_plan_compiler.bind_unallocated_vms
-    end
-
-    it "should reuse the IP of a running VM if it has the proper network" do
-      instance_network = mock("instance_network")
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(@vm)
-      idle_vm.stub!(:ip).and_return(IP_10_0_0_5)
-      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:state).and_return("started")
-
-      @instance_spec.should_receive(:network).with("network-a").and_return(instance_network)
-      @instance_spec.should_receive(:instance).and_return(nil)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
-
-      instance_network.should_receive(:use_reservation).with(IP_10_0_0_5, false)
-
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
-      idle_vm.should_not_receive(:bound_instance=)
-
-      @deployment_plan_compiler.bind_unallocated_vms
-    end
-
-    it "should not reuse the IP of a running VM if it doesn't have a valid IP reservation" do
-      instance_network = mock("instance_network")
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(@vm)
-      idle_vm.stub!(:ip).and_return(nil)
-      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:state).and_return("started")
-
-      @instance_spec.should_receive(:network).with("network-a").and_return(instance_network)
-      @instance_spec.should_receive(:instance).and_return(nil)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
-
-      instance_network.should_not_receive(:use_reservation)
-
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
-      idle_vm.should_not_receive(:bound_instance=)
-
-      @deployment_plan_compiler.bind_unallocated_vms
-    end
-
-    it "should not reuse the IP of a running VM if the network doesn't match" do
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(@vm)
-      idle_vm.stub!(:ip).and_return(nil)
-      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:state).and_return("started")
-
-      @instance_spec.should_receive(:network).with("network-a").and_return(nil)
-      @instance_spec.should_receive(:instance).and_return(nil)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
-
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
-      idle_vm.should_not_receive(:bound_instance=)
-
-      @deployment_plan_compiler.bind_unallocated_vms
-    end
-
-    it "should bind the instance to the idle VM if it's not allocated and release the existing IP reservation" do
-      idle_vm = mock("idle_vm")
-      idle_vm.stub!(:vm).and_return(nil)
-      idle_vm.stub!(:ip).and_return(IP_10_0_0_5)
-      idle_vm.stub!(:resource_pool).and_return(@resource_pool_spec)
-
-      @instance_spec.stub!(:state).and_return("started")
-
-      @instance_spec.should_receive(:instance).and_return(nil)
-      @instance_spec.should_receive(:instance=).with(@instance)
-      @instance_spec.should_receive(:idle_vm=).with(idle_vm)
-
-      idle_vm.should_receive(:bound_instance=).with(@instance_spec)
-      idle_vm.should_receive(:ip=).with(nil)
-      @network_spec.should_receive(:release_ip).with(IP_10_0_0_5)
-
-      @resource_pool_spec.should_receive(:allocate_vm).and_return(idle_vm)
-
-      @deployment_plan_compiler.bind_unallocated_vms
     end
   end
 
-  describe "bind_instance_vms" do
-
-    before(:each) do
-      @deployment = Bosh::Director::Models::Deployment.make
-      @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment)
-      @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment,
-                                                        :vm => nil,
-                                                        :job => "test_job",
-                                                        :index => 5)
-
-      @deployment_plan = mock("deployment_plan")
-      @job_spec = mock("job_spec")
-      @resource_pool_spec = mock("resource_pool_spec")
-      @instance_spec = mock("instance_spec")
-      @release_spec = mock("release_spec")
-      @idle_vm = mock("idle_vm")
-
-      @deployment_plan.stub!(:deployment).and_return(@deployment)
-      @deployment_plan.stub!(:jobs).and_return([@job_spec])
-      @deployment_plan.stub!(:release).and_return(@release_spec)
-
-      @release_spec.stub!(:spec).and_return({"name" => "test_release", "version" => 23})
-
-      @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)
-      @job_spec.stub!(:instances).and_return([@instance_spec])
-      @job_spec.stub!(:name).and_return("test_job")
-      @job_spec.stub!(:spec).and_return({"name" => "test_job", "blobstore_id" => "blob"})
-
-      @instance_spec.stub!(:instance).and_return(@instance)
-      @instance_spec.stub!(:job).and_return(@job_spec)
-      @instance_spec.stub!(:index).and_return(5)
-      @instance_spec.stub!(:state).and_return("started")
-
-      @idle_vm.stub!(:current_state).and_return({"deployment" => "test_deployment"})
-      @idle_vm.stub!(:vm).and_return(@vm)
-
-      Bosh::Director::Config.stub!(:cloud).and_return(nil)
-
-      @deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(@deployment_plan)
-    end
-
-    it "should do nothing when all the instances already have VMs" do
-      @instance.update(:vm => @vm)
-      @instance_spec.should_receive(:instance).and_return(@instance)
-      @deployment_plan_compiler.bind_instance_vms
-    end
-
-    it "should set the instance VM if it's missing" do
-      @vm.update(:agent_id => "test_id")
-
-      agent = mock("agent")
-      agent.should_receive(:apply).and_return({
-        "id" => "task-1",
-        "state" => "done"
-      })
-      Bosh::Director::AgentClient.stub!(:new).with("test_id").and_return(agent)
-
-      @instance_spec.stub!(:idle_vm).and_return(@idle_vm)
-      @instance_spec.stub!(:current_state=)
-      @deployment_plan_compiler.bind_instance_vms
-      @instance.refresh
-      @instance.vm.should == @vm
-    end
-
-    it "should assign the job/index/release to the VM if was missing" do
-      @vm.update(:agent_id => "test_id")
-
-      agent = mock("agent")
-      agent.should_receive(:apply).with({
-        "index" => 5,
-        "job" => {"name" => "test_job", "blobstore_id" => "blob"},
-        "deployment" => "test_deployment",
-        "release" => {"name" => "test_release", "version" => 23}
-      }).and_return({
-        "id" => "task-1",
-        "state" => "done"
-      })
-      Bosh::Director::AgentClient.stub!(:new).with("test_id").and_return(agent)
-
-      @instance_spec.stub!(:idle_vm).and_return(@idle_vm)
-      @instance_spec.should_receive(:current_state=).with({
-        "index" => 5,
-        "job" => {"name" => "test_job", "blobstore_id" => "blob"},
-        "deployment" => "test_deployment",
-        "release" => {"name" => "test_release", "version" => 23}
-      })
-      @deployment_plan_compiler.bind_instance_vms
-    end
-  end
-
-  describe "delete_unneeded_vms" do
-
-    it "should delete unneeded vms" do
-      deployment_plan = mock("deployment_plan")
-      cloud = mock("cloud")
-      Bosh::Director::Config.stub!(:cloud).and_return(cloud)
-
-      vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
-      deployment_plan.stub!(:unneeded_vms).and_return([vm])
-
-      cloud.should_receive(:delete_vm).with("vm-cid")
-
-      deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
-      deployment_plan_compiler.delete_unneeded_vms
-
-      Bosh::Director::Models::Vm[vm.id].should be_nil
-    end
-
-  end
-
-  describe "delete_unneeded_instances" do
+  describe :delete_unneeded_instances do
     it "should delete unneeded instances" do
-      deployment_plan = mock("deployment_plan")
-      cloud = mock("cloud")
-      Bosh::Director::Config.stub!(:cloud).and_return(cloud)
-
-      instance = mock("instance")
-      deployment_plan.stub!(:unneeded_instances).and_return([instance])
+      instance = BD::Models::Instance.make
+      @deployment_plan.stub!(:unneeded_instances).and_return([instance])
       instance_deleter = mock("instance_deleter")
-      instance_deleter.should_receive(:delete_instances).with([instance])
-      Bosh::Director::InstanceDeleter.stub!(:new).and_return(instance_deleter)
+      BD::InstanceDeleter.stub!(:new).and_return(instance_deleter)
 
-      deployment_plan_compiler = Bosh::Director::DeploymentPlanCompiler.new(deployment_plan)
-      deployment_plan_compiler.delete_unneeded_instances
+      instance_deleter.should_receive(:delete_instances).with([instance])
+      @deployment_plan_compiler.delete_unneeded_instances
     end
   end
-
 end
