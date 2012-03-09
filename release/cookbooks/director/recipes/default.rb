@@ -12,6 +12,28 @@ cookbook_file "/etc/apt/sources.list.d/01-postgres.list" do
   notifies :run, "execute[apt-get update]", :immediately
 end
 
+cookbook_file "/etc/sudoers.d/director" do
+  source "director.sudoers"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
+directory "/var/vcap/bosh/bin" do
+  owner "root"
+  group "root"
+  mode 0755
+  recursive true
+  action :create
+end
+
+cookbook_file "/var/vcap/bosh/bin/stemcell-copy" do
+  source "stemcell-copy.sh"
+  owner "root"
+  group "root"
+  mode 0755
+end
+
 ["postgresql-client-9.0", "libpq-dev"].each do |name|
   package name do
     options "--force-yes" # since it's not authenticated
