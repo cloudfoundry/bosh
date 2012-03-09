@@ -197,11 +197,8 @@ module Bosh::Director
         }
         Yajl::Encoder.encode(error_payload)
       else
-        msg = ["#{exception.class} - #{exception.message}"]
-        unless exception.kind_of?(ServerError) && exception.omit_stack
-          msg[0] = msg[0] + ":"
-          msg.concat(exception.backtrace)
-        end
+        msg = ["#{exception.class} - #{exception.message}:"]
+        msg.concat(exception.backtrace)
         @logger.error(msg.join("\n"))
         status(500)
       end
