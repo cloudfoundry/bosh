@@ -29,7 +29,7 @@ module Bosh::Director
       def initialize(deployment, compilation_config)
         @deployment = deployment
         @workers = safe_property(compilation_config, "workers",
-                                 :class => Integer)
+                                 :class => Integer, :min => 1)
         network_name = safe_property(compilation_config, "network",
                                      :class => String)
         @network = deployment.network(network_name)
