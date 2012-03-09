@@ -25,6 +25,19 @@ describe "http messages" do
     end
   end
 
+  def http_up?
+    uri = URI.parse(@http_uri)
+    req = Net::HTTP::Post.new(uri.request_uri)
+    req.basic_auth(@user, @pass)
+
+    Net::HTTP.start(uri.host, uri.port) do |http|
+      response = http.request(req)
+      return response.is_a?(Net::HTTPSuccess)
+    end
+  rescue Errno::ECONNREFUSED
+    false
+  end
+
   before(:all) do
     @user = "http"
     @pass = @user.reverse
@@ -39,9 +52,13 @@ describe "http messages" do
     command = "ruby #{agent} -n #{@http_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
     @agent_pid = POSIX::Spawn::spawn(command)
 
-    # ugly, but we need to give the agent some time to start
-    # perhaps it should listen for the first heartbeat to appear?
-    sleep 2
+    counter = 0
+    while !http_up?
+      counter += 1
+      # wait max 10 seconds for the agent to start
+      raise "unable to connect to agent" if counter > 100
+      sleep 0.1
+    end
   end
 
   it "should respond to state message" do
@@ -106,8 +123,12 @@ describe "http messages" do
   end
 
   after(:all) do
-    puts "stopping agent"
-    Process.kill(:TERM, @agent_pid)
+    if @agent_pid
+      puts "stopping agent"
+      Process.kill(:TERM, @agent_pid)
+    else
+      raise "unable to stop agent, you need to clean up by hand"
+    end
     FileUtils.rm_rf(@basedir)
   end
 end
