@@ -15,7 +15,7 @@ module Bosh::Director
       attr_accessor :size
       attr_accessor :idle_vms
       attr_accessor :allocated_vms
-      attr_accessor :active_vms
+      attr_accessor :active_vm_count
 
       def initialize(deployment, resource_pool_spec)
         @deployment = deployment
@@ -33,8 +33,12 @@ module Bosh::Director
 
         @idle_vms = []
         @allocated_vms = []
-        @active_vms = 0
-        @reserved_vms = 0
+        @active_vm_count = 0
+        @reserved_vm_count = 0
+      end
+
+      def missing_vm_count
+        @size - @active_vm_count - @idle_vms.size
       end
 
       def add_idle_vm
@@ -44,12 +48,12 @@ module Bosh::Director
       end
 
       def mark_active_vm
-        @active_vms += 1
+        @active_vm_count += 1
       end
 
       def reserve_vm
-        @reserved_vms += 1
-        raise "Resource pool '#{@name}' is not big enough to run all the requested jobs" if @reserved_vms > @size
+        @reserved_vm_count += 1
+        raise "Resource pool '#{@name}' is not big enough to run all the requested jobs" if @reserved_vm_count > @size
       end
 
       def allocate_vm
