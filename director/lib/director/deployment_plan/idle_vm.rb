@@ -22,8 +22,8 @@ module Bosh::Director
       # @todo rename to reserved_instance
       attr_accessor :bound_instance
 
-      # @return [Integer] the VM's IP represented as an int
-      attr_accessor :ip
+      # @return [NetworkReservation] the VM's network reservation
+      attr_accessor :network_reservation
 
       # @return [Bosh::Director::Models::Vm] associated model
       attr_accessor :vm
@@ -38,15 +38,17 @@ module Bosh::Director
       ##
       # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings
+        # use the instance network settings if bound, otherwise use the one
+        # provided by the resource pool
         if @bound_instance
-          # use the network settings of the bound instance
           @bound_instance.network_settings
         else
-          # if there is no instance, then use resource pool network
+          raise "Missing network reservation" unless @network_reservation
+
           network_settings = {}
           network = @resource_pool.network
           network_settings[network.name] = network.network_settings(
-              @ip, NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES_ARRAY)
+              @network_reservation)
           network_settings
         end
       end

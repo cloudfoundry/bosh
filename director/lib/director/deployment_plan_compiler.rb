@@ -12,60 +12,6 @@ module Bosh::Director
       @event_log = Config.event_log
     end
 
-    def process_ip_reservations(state)
-      # TODO CLEANUP: this should be refactored to clarify reservation logic and avoid passing this hash around
-      # (i.e. replaced with some abstraction for ip reservations)
-      ip_reservations = {}
-      state["networks"].each do |name, network_config|
-        network = @deployment_plan.network(name)
-        if network
-          ip = ip_to_i(network_config["ip"])
-          reservation = network.reserve_ip(ip)
-          if reservation
-            ip_reservations[name] = {:ip => ip, :static? => reservation == :static}
-          end
-        end
-      end
-      ip_reservations
-    end
-
-    def verify_state(vm, instance, state)
-      # TODO: consider a special kind of exception instead of generic RuntimeError
-      if instance && instance.deployment_id != vm.deployment_id
-        raise "VM `#{vm.cid}' is out of sync: DB record mismatch, " +
-          "instance belongs to deployment `#{instance.deployment_id}', " +
-          "VM belongs to deployment `#{vm.deployment_id}'"
-      end
-
-      unless state.kind_of?(Hash)
-        @logger.error("Invalid state for `#{vm.cid}': #{state.pretty_inspect}")
-        raise "VM `#{vm.cid}' returns invalid state: expected Hash, got #{state.class}"
-      end
-
-      actual_deployment_name = state["deployment"]
-      expected_deployment_name = @deployment_plan.deployment.name
-
-      if actual_deployment_name != expected_deployment_name
-        raise "VM `#{vm.cid}' is out of sync: expected to be a part of " +
-          "`#{expected_deployment_name}' deployment " +
-          "but is actually a part of `#{actual_deployment_name}' deployment"
-      end
-
-      actual_job = state["job"].is_a?(Hash) ? state["job"]["name"] : nil
-      actual_index = state["index"]
-
-      if instance.nil? && !actual_job.nil?
-        raise "VM `#{vm.cid}' is out of sync: it reports itself as " +
-          "`#{actual_job}/#{actual_index}' but there is no instance referencing it"
-      end
-
-      if instance && (instance.job != actual_job || instance.index != actual_index)
-        raise "VM `#{vm.cid}' is out of sync: it reports itself as " +
-          "`#{actual_job}/#{actual_index}' but according to DB " +
-          "it is `#{instance.job}/#{instance.index}'"
-      end
-    end
-
     def bind_deployment
       Models::Deployment.db.transaction do
         deployment = Models::Deployment.find(:name => @deployment_plan.name)
@@ -107,121 +53,191 @@ module Bosh::Director
 
     def bind_existing_deployment
       lock = Mutex.new
-      idle_vms_without_reservations = []
-
       ThreadPool.new(:max_threads => 32).wrap do |pool|
-        vms = Models::Vm.filter(:deployment_id => @deployment_plan.deployment.id)
-        vms.each do |vm|
+        @deployment_plan.deployment.vms.each do |vm|
           pool.process do
             with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
-              @logger.debug("Requesting current VM state for: #{vm.agent_id}")
-              instance = vm.instance
-              agent = AgentClient.new(vm.agent_id)
-              state = agent.get_state
-
-              # Persisting apply spec for VMs that were introduced before we started
-              # persisting it on apply itself (this is for cloudcheck purposes only)
-              if vm.apply_spec.nil?
-                # The assumption is that apply_spec <=> VM state
-                vm.update(:apply_spec => state)
-              end
-
-              @logger.debug("Received VM state: #{state.pretty_inspect}")
-
-              verify_state(vm, instance, state)
-              @logger.debug("Verified VM state")
-
-              lock.synchronize do
-                @logger.debug("Processing IP reservations")
-                ip_reservations = process_ip_reservations(state)
-                @logger.debug("Processed IP reservations")
-
-                # Does the job instance exist in the new deployment?
-                if instance
-                  disk_size = state["persistent_disk"].to_i
-                  persistent_disk = instance.persistent_disk
-
-                  # This is to support legacy deployments where we did not have
-                  # the disk_size specified.
-                  if disk_size != 0 && persistent_disk && persistent_disk.size == 0
-                    persistent_disk.update(:size => disk_size)
-                  end
-
-                  @logger.debug("Binding instance VM")
-                  if (job = @deployment_plan.job(instance.job)) && (instance_spec = job.instance(instance.index))
-                    @logger.debug("Found job and instance spec")
-                    instance_spec.instance = instance
-                    instance_spec.current_state = state
-
-                    @logger.debug("Copying network reservations")
-                    # Copy network reservations
-                    instance_spec.networks.each do |network_config|
-                      reservation = ip_reservations[network_config.name]
-                      network_config.use_reservation(reservation[:ip], reservation[:static?]) if reservation
-                    end
-
-                    @logger.debug("Copying resource pool reservation")
-                    # Copy resource pool reservation
-                    instance_spec.job.resource_pool.mark_active_vm
-                  else
-                    @logger.debug("Job/instance not found, marking for deletion")
-                    @deployment_plan.delete_instance(instance)
-                  end
-                else
-                  @logger.debug("Binding resource pool VM")
-                  resource_pool = @deployment_plan.resource_pool(state["resource_pool"]["name"])
-
-                  if resource_pool
-                    @logger.debug("Adding to resource pool")
-
-                    idle_vm = resource_pool.add_idle_vm
-                    idle_vm.vm = vm
-                    idle_vm.current_state = state
-
-                    network_reservation = ip_reservations[resource_pool.network.name]
-                    if network_reservation
-                      if network_reservation[:static?]
-                        @logger.debug("Resource pool VM `#{vm.cid}' has static reservation, releasing IP")
-                        resource_pool.network.release_ip(network_reservation[:ip])
-                        # We can't allocate dynamic IPs here, as we probably didn't process
-                        # the rest reservations yet and some of them might hold onto these IPs.
-                        # Just noticing this VM instead:
-                        idle_vms_without_reservations << idle_vm
-                      else
-                        idle_vm.ip = network_reservation[:ip]
-                      end
-                    else
-                      @logger.debug("No network reservation for VM `#{vm.cid}'")
-                    end
-                  else
-                    @logger.debug("Resource pool doesn't exist, marking for deletion")
-                    @deployment_plan.delete_vm(vm)
-                  end
-                end
-                @logger.debug("Finished binding VM")
-              end # synchronize
+              bind_existing_vm(lock, vm)
             end
           end
         end
-      end # Thread pool
+      end
+    end
 
-      idle_vms_without_reservations.each do |idle_vm|
-        # This will trigger recreating these idle VMs during resource pool update
-        # (see ResourcePoolUpdater#delete_outdated_idle_vms)
-        @logger.debug("Allocating dynamic IP for `#{idle_vm.vm.cid}'")
-        idle_vm.ip = idle_vm.resource_pool.network.allocate_dynamic_ip
+    def bind_existing_vm(lock, vm)
+      state = get_state(vm)
+      lock.synchronize do
+        @logger.debug("Processing network reservations")
+        reservations = get_network_reservations(state)
+
+        instance = vm.instance
+        if instance
+          bind_instance(instance, state, reservations)
+        else
+          @logger.debug("Binding resource pool VM")
+          # TODO: protect against malformed state
+          resource_pool = @deployment_plan.resource_pool(
+              state["resource_pool"]["name"])
+          if resource_pool
+            bind_idle_vm(vm, resource_pool, state, reservations)
+          else
+            @logger.debug("Resource pool doesn't exist, marking for deletion")
+            @deployment_plan.delete_vm(vm)
+          end
+        end
+        @logger.debug("Finished binding VM")
+      end
+    end
+
+    def bind_idle_vm(vm, resource_pool, state, reservations)
+      @logger.debug("Adding to resource pool")
+      idle_vm = resource_pool.add_idle_vm
+      idle_vm.vm = vm
+      idle_vm.current_state = state
+
+      reservation = reservations[resource_pool.network.name]
+      if reservation
+        if reservation.static?
+          @logger.debug("Releasing static network reservation for " +
+                            "resource pool VM `#{vm.cid}'")
+          resource_pool.network.release(reservation)
+        else
+          idle_vm.network_reservation = reservation
+        end
+      else
+        @logger.debug("No network reservation for VM `#{vm.cid}'")
+      end
+    end
+
+    def bind_instance(instance, state, reservations)
+      @logger.debug("Binding instance VM")
+
+      # Does the job instance exist in the new deployment?
+      if (job = @deployment_plan.job(instance.job)) &&
+          (instance_spec = job.instance(instance.index))
+        @logger.debug("Found job and instance spec")
+        instance_spec.instance = instance
+        instance_spec.current_state = state
+
+        @logger.debug("Copying network reservations")
+        instance_spec.take_network_reservations(reservations)
+
+        @logger.debug("Copying resource pool reservation")
+        job.resource_pool.mark_active_vm
+      else
+        @logger.debug("Job/instance not found, marking for deletion")
+        @deployment_plan.delete_instance(instance)
+      end
+    end
+
+    def get_network_reservations(state)
+      reservations = {}
+      state["networks"].each do |name, network_config|
+        network = @deployment_plan.network(name)
+        if network
+          reservation = NetworkReservation.new(:ip => network_config["ip"])
+          network.reserve(reservation)
+          reservations[name] = reservation if reservation.reserved?
+        end
+      end
+      reservations
+    end
+
+    def get_state(vm)
+      @logger.debug("Requesting current VM state for: #{vm.agent_id}")
+      agent = AgentClient.new(vm.agent_id)
+      state = agent.get_state
+
+      @logger.debug("Received VM state: #{state.pretty_inspect}")
+      verify_state(vm, state)
+      @logger.debug("Verified VM state")
+
+      migrate_legacy_state(vm, state)
+      state
+    end
+
+    def verify_state(vm, state)
+      instance = vm.instance
+      # TODO: cleanup exceptions
+      if instance && instance.deployment_id != vm.deployment_id
+        raise ("VM `%s' out of sync: model mismatch, instance belongs " +
+            "to deployment `%s', VM belongs to deployment `%s'") % [
+            vm.cid, instance.deployment_id, vm.deployment_id]
+      end
+
+      unless state.kind_of?(Hash)
+        @logger.error("Invalid state for `#{vm.cid}': #{state.pretty_inspect}")
+        raise "VM `%s' returns invalid state: expected Hash, got %s" % [
+            vm.cid, state.class]
+      end
+
+      actual_deployment_name = state["deployment"]
+      expected_deployment_name = @deployment_plan.deployment.name
+
+      if actual_deployment_name != expected_deployment_name
+        raise ("VM `%s' is out of sync: expected to be a part of `%s' " +
+            "deployment but is actually a part of `%s' deployment") % [
+            vm.cid, expected_deployment_name, actual_deployment_name]
+
+      end
+
+      actual_job = state["job"].is_a?(Hash) ? state["job"]["name"] : nil
+      actual_index = state["index"]
+
+      if instance.nil? && !actual_job.nil?
+        raise ("VM `%s' is out of sync: it reports itself as `%s/%d' but " +
+            "there is no instance referencing it") % [
+            vm.cid, actual_job, actual_index]
+      end
+
+      if instance && (instance.job != actual_job ||
+                      instance.index != actual_index)
+        raise ("VM `%s' is out of sync: it reports itself as `%s/%s' but " +
+            "according to DB it is `%s/%s'") % [
+            vm.cid, actual_job, actual_index, instance.job,
+            instance.index]
+      end
+    end
+
+    def migrate_legacy_state(vm, state)
+      # Persisting apply spec for VMs that were introduced before we started
+      # persisting it on apply itself (this is for cloudcheck purposes only)
+      if vm.apply_spec.nil?
+        # The assumption is that apply_spec <=> VM state
+        vm.update(:apply_spec => state)
+      end
+
+      instance = vm.instance
+      if instance
+        disk_size = state["persistent_disk"].to_i
+        persistent_disk = instance.persistent_disk
+
+        # This is to support legacy deployments where we did not have
+        # the disk_size specified.
+        if disk_size != 0 && persistent_disk && persistent_disk.size == 0
+          persistent_disk.update(:size => disk_size)
+        end
       end
     end
 
     def bind_resource_pools
       @deployment_plan.resource_pools.each do |resource_pool|
-        missing_vms = resource_pool.size - (resource_pool.active_vms + resource_pool.idle_vms.size)
+        resource_pool.missing_vm_count.times do
+          resource_pool.add_idle_vm
+        end
 
-        if missing_vms > 0
-          network = resource_pool.network
-          missing_vms.times do
-            idle_vm = resource_pool.add_idle_vm
-            idle_vm.ip = network.allocate_dynamic_ip
+        resource_pool.idle_vms.each_with_index do |idle_vm, index|
+          unless idle_vm.network_reservation
+            network = resource_pool.network
+            reservation = NetworkReservation.new(
+                :type => NetworkReservation::DYNAMIC)
+            network.reserve(reservation)
+
+            unless reservation.reserved?
+              handle_reservation_error(resource_pool.name, index, reservation)
+            end
+
+            idle_vm.network_reservation = reservation
           end
         end
       end
@@ -235,72 +251,68 @@ module Bosh::Director
 
           if instance.nil?
             # look up the instance again, in case it wasn't associated with a VM
-            instance_attrs = {
+            conditions = {
               :deployment_id => @deployment_plan.deployment.id,
               :job => job.name,
               :index => instance_spec.index
             }
-
-            instance = Models::Instance[instance_attrs] || Models::Instance.new(instance_attrs.merge(:state => "started"))
+            instance = Models::Instance.find_or_create(conditions) do |model|
+              model.state = "started"
+            end
             instance_spec.instance = instance
           end
 
-          if instance_spec.state
-            # Deployment plan already has state for this instance
-            instance.update(:state => instance_spec.state)
-          elsif instance.state
-            # Instance has its state persisted from the previous deployment
-            instance_spec.state = instance.state
-          else
-            # Target instance state should either be persisted in DB
-            # or provided via deployment plan, otherwise something is really wrong
-            raise "Instance `#{instance.job}/#{instance.index}' target state cannot be determined"
-          end
-
-          unless instance.vm
-            idle_vm = instance_spec.job.resource_pool.allocate_vm
-            instance_spec.idle_vm = idle_vm
-
-            if idle_vm.vm
-              # try to reuse the existing reservation if possible
-              instance_network = instance_spec.network(idle_vm.resource_pool.network.name)
-              if instance_network && idle_vm.ip
-                instance_network.use_reservation(idle_vm.ip, false)
-              end
-            else
-              # if the VM is about to be created, then use this instance's networking configuration
-              idle_vm.bound_instance = instance_spec
-
-              # this also means we no longer need the reserved IP for this VM
-              idle_vm.resource_pool.network.release_ip(idle_vm.ip)
-              idle_vm.ip = nil
-            end
-          end
+          bind_instance_job_state(instance_spec)
+          allocate_instance_vm(instance_spec) unless instance.vm
         end
+      end
+    end
+
+    def allocate_instance_vm(instance_spec)
+      resource_pool = instance_spec.job.resource_pool
+      network = resource_pool.network
+      idle_vm = resource_pool.allocate_vm
+      if idle_vm.vm
+        # try to reuse the existing reservation if possible
+        instance_reservation = instance_spec.network_reservations[network.name]
+        if instance_reservation
+          instance_reservation.take(idle_vm.network_reservation)
+        end
+      else
+        # if the VM is about to be created, then use this instance's networking configuration
+        idle_vm.bound_instance = instance_spec
+
+        # this also means we no longer need the VM's network reservation
+        network.release(idle_vm.network_reservation)
+        idle_vm.network_reservation = nil
+      end
+      instance_spec.idle_vm = idle_vm
+    end
+
+    def bind_instance_job_state(instance_spec)
+      instance = instance_spec.instance
+      if instance_spec.state
+        # Deployment plan already has state for this instance
+        instance.update(:state => instance_spec.state)
+      elsif instance.state
+        # Instance has its state persisted from the previous deployment
+        instance_spec.state = instance.state
+      else
+        # Target instance state should either be persisted in DB
+        # or provided via deployment plan, otherwise something is really wrong
+        raise "Instance `#{instance.job}/#{instance.index}' target state cannot be determined"
       end
     end
 
     def bind_instance_networks
       @deployment_plan.jobs.each do |job|
         job.instances.each do |instance|
-          instance.networks.each do |network_config|
-            unless network_config.reserved
-              network = @deployment_plan.network(network_config.name)
-              # static ip that wasn't reserved
-              if network_config.ip
-                reservation = network.reserve_ip(network_config.ip)
-                if reservation == :static
-                  network_config.use_reservation(network_config.ip, true)
-                elsif reservation == :dynamic
-                  raise "Job: '#{job.name}'/'#{instance.index}' asked for a static IP: " +
-                            "#{ip_to_netaddr(network_config.ip).ip} but it's in the dynamic pool"
-                else
-                  raise "Job: '#{job.name}'/'#{instance.index}' asked for a static IP: " +
-                            "#{ip_to_netaddr(network_config.ip).ip} but it's already reserved/in use"
-                end
-              else
-                ip = network.allocate_dynamic_ip
-                network_config.use_reservation(ip, false)
+          instance.network_reservations.each do |name, reservation|
+            unless reservation.reserved?
+              network = @deployment_plan.network(name)
+              network.reserve(reservation)
+              unless reservation.reserved?
+                handle_reservation_error(job.name, instance.index, reservation)
               end
             end
           end
@@ -385,29 +397,32 @@ module Bosh::Director
 
       ThreadPool.new(:max_threads => 32).wrap do |pool|
         unbound_instances.each do |instance_spec|
-          instance = instance_spec.instance
-          job      = instance_spec.job
-          idle_vm  = instance_spec.idle_vm
-
-          instance.update(:vm => idle_vm.vm)
-
           pool.process do
-            @event_log.track("#{job.name}/#{instance.index}") do
-
-              # Apply the assignment to the VM
-              state = idle_vm.current_state
-              state["job"] = job.spec
-              state["index"] = instance.index
-              state["release"] = @deployment_plan.release.spec
-
-              idle_vm.vm.update(:apply_spec => state)
-
-              agent = AgentClient.new(idle_vm.vm.agent_id)
-              agent.apply(state)
-              instance_spec.current_state = state
-            end
+            bind_instance_vm(instance_spec)
           end
         end
+      end
+    end
+
+    def bind_instance_vm(instance_spec)
+      instance = instance_spec.instance
+      job = instance_spec.job
+      idle_vm = instance_spec.idle_vm
+
+      instance.update(:vm => idle_vm.vm)
+
+      @event_log.track("#{job.name}/#{instance.index}") do
+        # Apply the assignment to the VM
+        state = idle_vm.current_state
+        state["job"] = job.spec
+        state["index"] = instance.index
+        state["release"] = @deployment_plan.release.spec
+
+        idle_vm.vm.update(:apply_spec => state)
+
+        agent = AgentClient.new(idle_vm.vm.agent_id)
+        agent.apply(state)
+        instance_spec.current_state = state
       end
     end
 
@@ -438,6 +453,38 @@ module Bosh::Director
       @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size)
       InstanceDeleter.new(@deployment_plan).delete_instances(unneeded_instances)
       @logger.info("Deleted no longer needed instances")
+    end
+
+    ##
+    # Handles the network reservation error and rethrows the proper exception
+    # @param [String] name
+    # @param [Integer] index
+    # @param [NetworkReservation] reservation
+    # @return [void]
+    def handle_reservation_error(name, index, reservation)
+      if reservation.static?
+        formatted_ip = ip_to_netaddr(reservation.ip).ip
+        case reservation.error
+          when NetworkReservation::USED
+            raise ("`%s/%d' asked for a static IP: %s but it's already " +
+                "reserved/in use") % [name, index, formatted_ip]
+          when NetworkReservation::WRONG_TYPE
+            raise ("`%s/%d' asked for a static IP: %s " +
+                "but it's in the dynamic pool") % [name, index, formatted_ip]
+          else
+            raise ("`%s/%d' failed to reserve static IP: %s " +
+                "because: %s") % [name, index, formatted_ip, reservation.error]
+        end
+      else
+        case reservation.error
+          when NetworkReservation::CAPACITY
+            raise ("`%s/%d' asked for a dynamic IP " +
+                "but there were no more available") % [name, index]
+          else
+            raise ("`%s/%d' failed to reserve dynamic IP because: %s") % [
+                name, index, reservation.error]
+        end
+      end
     end
   end
 end
