@@ -6,7 +6,7 @@ end
 
 group :unit_tests do
   guard :rspec, :version => 2, :cli => "--color --format nested --fail-fast",
-                :spec_paths => %w(spec/unit) do
+                :all_after_pass => false, :spec_paths => %w(spec/unit) do
     watch("spec/spec_helper.rb")            { "spec/unit" }
     watch("director.rb")                    { "spec/unit" }
     watch(%r{^spec/.+_spec\.rb})
