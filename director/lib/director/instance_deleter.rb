@@ -9,6 +9,7 @@ module Bosh::Director
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
       @logger = Config.logger
+      @event_log = Config.event_log
     end
 
     # Deletes a list of instances
@@ -30,16 +31,18 @@ module Bosh::Director
     # @return [void]
     def delete_instance(instance)
       vm = instance.vm
-      @logger.info("Delete unneeded instance: #{vm.cid}")
+      @event_log.track(vm.cid) do
+        @logger.info("Delete unneeded instance: #{vm.cid}")
 
-      drain(vm.agent_id)
-      @cloud.delete_vm(vm.cid)
-      delete_persistent_disks(instance.persistent_disks)
-      delete_dns_records(instance.job, instance.index)
+        drain(vm.agent_id)
+        @cloud.delete_vm(vm.cid)
+        delete_persistent_disks(instance.persistent_disks)
+        delete_dns_records(instance.job, instance.index)
 
-      vm.db.transaction do
-        instance.destroy
-        vm.destroy
+        vm.db.transaction do
+          instance.destroy
+          vm.destroy
+        end
       end
     end
 

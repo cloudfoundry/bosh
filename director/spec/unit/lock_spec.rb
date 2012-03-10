@@ -76,7 +76,7 @@ describe Bosh::Director::Lock do
     end
 
     lock_a = Bosh::Director::Lock.new("foo")
-    lock_b = Bosh::Director::Lock.new("foo")
+    lock_b = Bosh::Director::Lock.new("foo", :timeout => 0.1)
 
     ran_once = false
     lock_a.lock do
