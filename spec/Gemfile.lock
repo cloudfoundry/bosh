@@ -19,10 +19,6 @@ GEM
       eventmachine (>= 0.12.10)
       yajl-ruby (>= 0.7.8)
     rake (0.8.7)
-    rcov (0.9.9)
-    rcov_analyzer (0.2)
-      builder
-      rcov
     redis (2.1.1)
     rest-client (1.6.3)
       mime-types (>= 1.16)
@@ -59,8 +55,6 @@ DEPENDENCIES
   ci_reporter
   nats
   rake
-  rcov
-  rcov_analyzer
   redis
   rest-client
   rspec
