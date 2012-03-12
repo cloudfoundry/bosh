@@ -114,7 +114,7 @@ module Bosh::Director
           default_network = safe_property(network_spec, "default", :class => Array, :optional => true)
           if default_network
             default_network.each do |property|
-              if !NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.include?(property)
+              if !NetworkSpec::VALID_DEFAULTS.include?(property)
                 raise "Job #{@name} specified an invalid default property: #{property}"
               elsif @default_network[property].nil?
                 @default_network[property] = network_name
@@ -125,25 +125,29 @@ module Bosh::Director
           end
 
           @instances.each_with_index do |instance, index|
-            network = instance.add_network(network_name)
+            reservation = NetworkReservation.new
             if static_ips
-              network.ip = static_ips[index]
+              reservation.ip = static_ips[index]
+              reservation.type = NetworkReservation::STATIC
+            else
+              reservation.type = NetworkReservation::DYNAMIC
             end
+            instance.add_network_reservation(network_name, reservation)
           end
         end
 
         if network_specs.size > 1
-          missing_default_properties = NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.dup
+          missing_default_properties = NetworkSpec::VALID_DEFAULTS.dup
           @default_network.each_key { |key| missing_default_properties.delete(key) }
           unless missing_default_properties.empty?
             raise "Job #{@name} must specify a default network for " +
-                      "'#{missing_default_properties.to_a.sort.join(", ")}' " +
+                      "'#{missing_default_properties.sort.join(", ")}' " +
                       "since it has more than one network configured"
           end
         else
           # Set the default network to the one and only available network (if not specified already)
           network = safe_property(network_specs.first, "name", :class => String)
-          NetworkSpec::VALID_DEFAULT_NETWORK_PROPERTIES.each { |property| @default_network[property] ||= network }
+          NetworkSpec::VALID_DEFAULTS.each { |property| @default_network[property] ||= network }
         end
       end
 
