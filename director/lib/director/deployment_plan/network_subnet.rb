@@ -19,12 +19,16 @@ module Bosh::Director
         raise ArgumentError, "invalid range" unless @range.size > 1
 
         @netmask = @range.wildcard_mask
+        network_id = @range.network(:Objectify => true)
+        broadcast = @range.broadcast(:Objectify => true)
 
         gateway_property = safe_property(subnet_spec, "gateway", :class => String, :optional => true)
         if gateway_property
           @gateway = NetAddr::CIDR.create(gateway_property)
           raise ArgumentError, "gateway must be a single ip" unless @gateway.size == 1
           raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
+          raise ArgumentError, "gateway can't be the network id" if @gateway == network_id
+          raise ArgumentError, "gateway can't be the broadcast IP" if @gateway == broadcast
         end
 
         dns_property = safe_property(subnet_spec, "dns", :class => Array, :optional => true)
@@ -48,18 +52,18 @@ module Bosh::Director
         (first_ip.to_i .. last_ip.to_i).each { |ip| @available_dynamic_ips << ip }
 
         @available_dynamic_ips.delete(@gateway.to_i) if @gateway
-        @available_dynamic_ips.delete(@range.network(:Objectify => true).to_i)
-        @available_dynamic_ips.delete(@range.broadcast(:Objectify => true).to_i)
+        @available_dynamic_ips.delete(network_id.to_i)
+        @available_dynamic_ips.delete(broadcast.to_i)
 
         each_ip(safe_property(subnet_spec, "reserved", :optional => true)) do |ip|
           unless @available_dynamic_ips.delete?(ip)
-            raise ArgumentError, "reserved IP must be an available (not gateway, etc..) inside the range"
+            raise ArgumentError, "reserved IP must be available (not gateway, etc..) inside the range"
           end
         end
 
         each_ip(safe_property(subnet_spec, "static", :optional => true)) do |ip|
           unless @available_dynamic_ips.delete?(ip)
-            raise ArgumentError, "static IP must be an available (not reserved) inside the range"
+            raise ArgumentError, "static IP must be available (not reserved) inside the range"
           end
           @available_static_ips.add(ip)
         end
@@ -75,9 +79,10 @@ module Bosh::Director
       end
 
       def reserve_ip(ip)
-        if @available_static_ips.delete?(ip.to_i)
+        ip = ip.to_i
+        if @available_static_ips.delete?(ip)
           :static
-        elsif @available_dynamic_ips.delete?(ip.to_i)
+        elsif @available_dynamic_ips.delete?(ip)
           :dynamic
         else
           nil
@@ -86,7 +91,6 @@ module Bosh::Director
 
       def release_ip(ip)
         ip = ip.to_i
-
         if @dynamic_ip_pool.include?(ip)
           @available_dynamic_ips.add(ip)
         elsif @static_ip_pool.include?(ip)
