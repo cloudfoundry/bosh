@@ -1,0 +1,98 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+require File.expand_path("../../../spec_helper", __FILE__)
+
+describe Bosh::Director::DeploymentPlan::CompilationConfig do
+  describe :initialize do
+    before(:each) do
+      @deployment = mock(:DeploymentPlan)
+      @network = mock(:NetworkSpec)
+      @deployment.stub(:network).with("foo").and_return(@network)
+    end
+
+    it "should parse the basic properties" do
+      config = BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+          "workers" => 2,
+          "network" => "foo",
+          "cloud_properties" => {
+              "foo" => "bar"
+          }
+      })
+
+      config.workers.should == 2
+      config.network.should == @network
+      config.cloud_properties.should == {"foo" => "bar"}
+      config.env.should == {}
+    end
+
+    it "should require workers to be specified" do
+      lambda {
+        BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+            "network" => "foo",
+            "cloud_properties" => {
+                "foo" => "bar"
+            }
+        })
+      }.should raise_error(BD::ValidationMissingField)
+    end
+
+    it "should require there to be at least 1 worker" do
+      lambda {
+        BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+            "workers" => 0,
+            "network" => "foo",
+            "cloud_properties" => {
+                "foo" => "bar"
+            }
+        })
+      }.should raise_error(BD::ValidationViolatedMin)
+    end
+
+    it "should require a network to be specified" do
+      lambda {
+        BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+            "workers" => 1,
+            "cloud_properties" => {
+                "foo" => "bar"
+            }
+        })
+      }.should raise_error(BD::ValidationMissingField)
+    end
+
+    it "should require the specified network to exist" do
+      @deployment.stub(:network).with("bar").and_return(nil)
+      lambda {
+        BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+            "workers" => 1,
+            "network" => "bar",
+            "cloud_properties" => {
+                "foo" => "bar"
+            }
+        })
+      }.should raise_error(/Compilation workers reference an unknown network/)
+    end
+
+    it "should require resource pool cloud properties" do
+      lambda {
+        BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+            "workers" => 1,
+            "network" => "foo"
+        })
+      }.should raise_error(BD::ValidationMissingField)
+    end
+
+    it "should allow an optional environment to be set" do
+      config = BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+          "workers" => 1,
+          "network" => "foo",
+          "cloud_properties" => {
+              "foo" => "bar"
+          },
+          "env" => {
+              "password" => "password1"
+          }
+      })
+      config.env.should == {"password" => "password1"}
+    end
+  end
+end
