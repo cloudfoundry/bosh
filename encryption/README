@@ -1,0 +1,4 @@
+BOSH encryption
+
+We keep this separate from bosh_common as it pulls in native gems that we don't
+want in the cli.
