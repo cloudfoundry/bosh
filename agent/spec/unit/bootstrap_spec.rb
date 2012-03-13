@@ -21,6 +21,23 @@ describe Bosh::Agent::Bootstrap do
     @processor.stub(:mem_total).and_return(3951616)
   end
 
+  it "should updat credentials" do
+    @processor.load_settings
+    @processor.update_credentials
+    Bosh::Agent::Config.credentials.should == nil
+
+    new_settings = complete_settings
+    new_settings["env"] ||= {}
+    new_settings["env"]["bosh"] ||= {}
+    new_settings["env"]["bosh"]["credentials"] = {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
+
+    Bosh::Agent::Config.infrastructure.stub!(:load_settings).and_return(new_settings)
+
+    @processor.load_settings
+    @processor.update_credentials
+    Bosh::Agent::Config.credentials.should == {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
+  end
+
   # This doesn't quite belong here
   it "should configure mbus with nats server uri" do
     @processor.load_settings

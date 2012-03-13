@@ -5,6 +5,7 @@ source :rubygems
 gem "bcrypt-ruby"
 gem "blobstore_client", "~>0.3.11"
 gem "bosh_common", ">=0.4.0"
+gem "bosh_encryption", ">=0.0.2"
 gem "bosh_cpi", ">=0.4.2"
 gem "bosh_aws_cpi", ">=0.1"
 gem "bosh_vsphere_cpi", ">=0.4.8"

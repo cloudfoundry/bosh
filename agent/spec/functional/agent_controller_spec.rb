@@ -25,7 +25,7 @@ describe Bosh::Agent::AgentController do
   def agent_call(method, args=[])
     post "/agent", {}, {
       "CONTENT_TYPE" => "application/json",
-      :input => Yajl::Encoder.encode({ "method" => method, "arguments" => args })
+      :input => Yajl::Encoder.encode({"reply_to" => "http_client", "method" => method, "arguments" => args })
     }
   end
 
