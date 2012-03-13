@@ -14,6 +14,10 @@ module Bosh::Director
       @timeout = options[:timeout] || 30
       @logger = Config.logger
       @retry_methods = options[:retry_methods] || {}
+
+      if options[:credentials]
+        @encryption_handler = Bosh::EncryptionHandler.new(@client_id, options[:credentials])
+      end
     end
 
     def method_missing(method_name, *args)
@@ -57,7 +61,23 @@ module Bosh::Director
       timeout_time = Time.now.to_f + @timeout
 
       request = {:method => method_name, :arguments => args}
+
+      if @encryption_handler
+        @logger.info("Request: #{request}")
+        request = {"encrypted_data" => @encryption_handler.encrypt(request)}
+        request["session_id"] = @encryption_handler.session_id
+      end
+
       request_id = @nats_rpc.send("#{@service_name}.#{@client_id}", request) do |response|
+        if @encryption_handler
+          begin
+            response = @encryption_handler.decrypt(response["encrypted_data"])
+          rescue Bosh::EncryptionHandler::CryptError => e
+            response["exception"] = "CryptError: #{e.inspect} #{e.backtrace}"
+          end
+          @logger.info("Response: #{response}")
+        end
+
         result.synchronize do
           result.merge!(response)
           cond.signal
