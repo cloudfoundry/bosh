@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_encryption (0.0.1)
+    bosh_encryption (0.0.3)
       gibberish (~> 1.2.0)
       uuidtools (~> 2.1.2)
       yajl-ruby
@@ -54,7 +54,7 @@ GEM
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
     uuidtools (2.1.2)
-    yajl-ruby (0.8.3)
+    yajl-ruby (1.1.0)
 
 PLATFORMS
   ruby
