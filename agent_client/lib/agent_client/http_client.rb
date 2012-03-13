@@ -16,7 +16,10 @@ module Bosh::Agent
     protected
 
     def handle_method(method, args)
-      payload = { "method" => method, "arguments" => args }
+      payload = {
+        "method" => method, "arguments" => args,
+        "reply_to" => @options["reply_to"] || self.class.name
+      }
       result = post_json("/agent", Yajl::Encoder.encode(payload))
     end
 

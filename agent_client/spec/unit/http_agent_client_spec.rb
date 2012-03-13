@@ -37,12 +37,12 @@ describe Bosh::Agent::HTTPClient do
       end
 
       headers = { "Content-Type" => "application/json" }
-      payload = '{"method":"shh","arguments":["hunting","wabbits"]}'
+      payload = '{"method":"shh","arguments":["hunting","wabbits"],"reply_to":"elmer"}'
 
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost")
+      @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "elmer"})
 
       @client.shh("hunting", "wabbits").should == "iam"
     end
@@ -57,12 +57,12 @@ describe Bosh::Agent::HTTPClient do
       end
 
       headers = { "Content-Type" => "application/json" }
-      payload = '{"method":"ping","arguments":[]}'
+      payload = '{"method":"ping","arguments":[],"reply_to":"fudd"}'
 
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost")
+      @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "fudd"})
 
       @client.ping.should == "pong"
     end
@@ -77,7 +77,7 @@ describe Bosh::Agent::HTTPClient do
       end
 
       headers = { "Content-Type" => "application/json" }
-      payload = '{"method":"compile_package","arguments":["id","sha1"]}'
+      payload = '{"method":"compile_package","arguments":["id","sha1"],"reply_to":"bugs"}'
 
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response)
@@ -86,7 +86,7 @@ describe Bosh::Agent::HTTPClient do
       response2.stub!(:code).and_return(200)
       response2.stub!(:body).and_return('{"value": {"state": "done"}')
 
-      payload = '{"method":"get_task","arguments":["task_id_foo"]}'
+      payload = '{"method":"get_task","arguments":["task_id_foo"],"reply_to":"bugs"}'
 
       [:send_timeout=, :receive_timeout=, :connect_timeout=].each do |method|
         @httpclient.should_receive(method)
@@ -95,7 +95,7 @@ describe Bosh::Agent::HTTPClient do
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
                                                 :body => payload, :header => headers).and_return(response2)
 
-      @client = Bosh::Agent::HTTPClient.new("http://localhost")
+      @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "bugs"})
 
       @client.run_task(:compile_package, "id", "sha1").should == { "state" => "done" }
     end

@@ -2,14 +2,14 @@ PATH
   remote: .
   specs:
     package_compiler (0.1.0)
-      agent_client
+      agent_client (~> 0.1.1)
       blobstore_client
       yajl-ruby
 
 GEM
   remote: http://rubygems.org/
   specs:
-    agent_client (0.1.0)
+    agent_client (0.1.1)
       httpclient
       yajl-ruby
     archive-tar-minitar (0.5.2)
