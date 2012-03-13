@@ -89,7 +89,8 @@ module Bosh::Deployer
           uri.userinfo = nil
           @agent = Bosh::Agent::HTTPClient.new(uri.to_s,
                                                { "user" => user,
-                                                 "password" => password })
+                                                 "password" => password,
+                                                 "reply_to" => uuid })
         end
         @agent
       end
