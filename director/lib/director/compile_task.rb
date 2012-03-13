@@ -6,7 +6,7 @@ module Bosh::Director
     attr_accessor :jobs
     attr_accessor :package
     attr_accessor :stemcell
-    attr_accessor :compiled_package
+    attr_reader :compiled_package
     attr_accessor :dependency_key
     attr_accessor :dependencies
 
