@@ -68,4 +68,49 @@ describe Bosh::Director::AgentClient do
     expected = { "state" => "done", "value" => actual, "agent_task_id" => nil }
     convert_message_given_expects(actual, expected)
   end
+
+  it "should use vm credentials" do
+    cloud = mock("cloud")
+    nats_rpc = mock("nats_rpc")
+
+    Bosh::Director::Config.stub!(:cloud).and_return(cloud)
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+    Bosh::Director::Config.encryption = true
+
+    deployment = Bosh::Director::Models::Deployment.make
+    stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
+    cloud_properties = {"ram" => "2gb"}
+    env = {}
+    network_settings = {"network_a" => {"ip" => "1.2.3.4"}}
+
+
+    cloud.should_receive(:create_vm).with(kind_of(String), "stemcell-id",
+                                           {"ram" => "2gb"}, network_settings, [99],
+                                           {"bosh" =>
+                                             { "credentials" =>
+                                               { "crypt_key" => kind_of(String),
+                                                 "sign_key" => kind_of(String)}}})
+
+    vm = Bosh::Director::VmCreator.new.create(deployment, stemcell,
+                                              cloud_properties,
+                                              network_settings, Array(99),
+                                              env)
+    agent_encryption_handler = Bosh::EncryptionHandler.new(vm.agent_id, vm.credentials)
+
+    nats_rpc.should_receive(:send).with(kind_of(String),
+                                        hash_including("encrypted_data")
+    ).and_return { |*args|
+      data = args[1]["encrypted_data"]
+      callback = args[2]
+
+      # decrypt to initiate sesssion
+      agent_encryption_handler.decrypt(data)
+
+      callback.call("encrypted_data" => agent_encryption_handler.encrypt("value" => "pong"))
+    }
+
+    client = Bosh::Director::AgentClient.new(vm.agent_id)
+    client.ping.should == "pong"
+  end
+
 end
