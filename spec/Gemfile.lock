@@ -45,7 +45,7 @@ GEM
       ruby-debug-base19 (>= 0.11.19)
     ruby_core_source (0.1.4)
       archive-tar-minitar (>= 0.5.2)
-    yajl-ruby (0.7.9)
+    yajl-ruby (1.1.0)
 
 PLATFORMS
   ruby
@@ -60,3 +60,4 @@ DEPENDENCIES
   rspec
   ruby-debug
   ruby-debug19
+  yajl-ruby (>= 1.1.0)
