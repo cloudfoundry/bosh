@@ -68,10 +68,7 @@ module Bosh::Director
         @logger.info("Compiling and binding packages")
         PackageCompiler.new(@deployment_plan).compile
 
-        @event_log.begin_stage("Binding configuration", 1)
-
-        @event_log.track do
-          @logger.info("Binding configuration")
+        track_and_log("Binding configuration") do
           @deployment_plan_compiler.bind_configuration
         end
       end
