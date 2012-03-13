@@ -28,7 +28,8 @@ module Bosh::Agent
         :state,
         :sshd_monitor_interval,
         :sshd_start_delay,
-        :sshd_monitor_enabled
+        :sshd_monitor_enabled,
+        :credentials
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -81,6 +82,9 @@ module Bosh::Agent
         end
 
         @settings_file = File.join(@base_dir, 'bosh', 'settings.json')
+
+        @credentials = config["credentials"]
+
         @settings = {}
 
         @state = State.new(File.join(@base_dir, "bosh", "state.yml"))

@@ -104,4 +104,174 @@ describe Bosh::Agent::Handler do
     handler.should_receive(:sleep).exactly(retries).times
     handler.start
   end
+
+  describe "Encryption" do
+
+    before(:each) do
+      @credentials = Bosh::EncryptionHandler.generate_credentials
+      Bosh::Agent::Config.credentials = @credentials
+
+      @handler = Bosh::Agent::Handler.new
+      @handler.nats = @nats
+
+      @encryption_handler = Bosh::EncryptionHandler.new("client_id", @credentials)
+
+      @cipher = Gibberish::AES.new(@credentials["crypt_key"])
+    end
+
+    it "should decrypt message and encrypt response with credentials" do
+
+      # The expectation uses a non-existent message handler to avoid the handler
+      # to spawn a thread.
+      @nats.should_receive(:publish).with("inbox.client_id",
+                                          kind_of(String), nil
+      ) { |*args|
+        msg = @encryption_handler.decode(args[1])
+        msg["session_id"].should == @encryption_handler.session_id
+
+        decrypted_data = @encryption_handler.decrypt(msg["encrypted_data"])
+        decrypted_data["exception"].should match(/bogus_ping/)
+      }
+
+      encrypted_data = @encryption_handler.encrypt(
+        "method" => "bogus_ping", "arguments" => []
+      )
+
+      result = @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => encrypted_data
+        )
+      )
+    end
+
+    it "should handle decrypt failure" do
+      @encryption_handler.encrypt("random" => "stuff")
+
+      @handler.stub!(:log_encryption_error)
+      @handler.should_receive(:log_encryption_error) { |*args|
+        lambda {
+          raise args[0]
+        }.should raise_error(Bosh::EncryptionHandler::DecryptionError)
+      }
+
+      @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => "junk"
+        )
+      )
+    end
+
+    it "should handle session errors" do
+      encrypted_data = @encryption_handler.encrypt(
+        "method" => "bogus_message", "arguments" => []
+      )
+
+      @nats.should_receive(:publish).with("inbox.client_id",
+                                          kind_of(String), nil)
+
+      @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => encrypted_data
+        )
+      )
+
+      encrypted_data2 = @encryption_handler.encrypt(
+        "method" => "bogus_message", "arguments" => []
+      )
+
+      message = @encryption_handler.decode(
+          @cipher.decrypt(encrypted_data)
+      )
+
+      data = @encryption_handler.decode(message["json_data"])
+      data["session_id"] = "bosgus_session_id"
+
+      json_data = @encryption_handler.encode(data)
+      message["hmac"] = @encryption_handler.signature(json_data)
+      message["json_data"] = json_data
+
+      encrypted_bad_data = @cipher.encrypt(@encryption_handler.encode(message))
+
+      @handler.stub!(:log_encryption_error)
+      @handler.should_receive(:log_encryption_error) { |*args|
+        lambda {
+          raise args[0]
+        }.should raise_error(Bosh::EncryptionHandler::SessionError, /session_id mismatch/)
+      }
+
+      @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => encrypted_bad_data
+        )
+      )
+    end
+
+    it "should handle signature errors" do
+      encrypted_data = @encryption_handler.encrypt(
+        "method" => "bogus_message", "arguments" => []
+      )
+      message = @encryption_handler.decode(
+          @cipher.decrypt(encrypted_data)
+      )
+      message["hmac"] = @encryption_handler.signature("some other data")
+
+      encrypted_bad_data = @cipher.encrypt(@encryption_handler.encode(message))
+
+      @handler.stub!(:log_encryption_error)
+      @handler.should_receive(:log_encryption_error) { |*args|
+        lambda {
+          raise args[0]
+        }.should raise_error(Bosh::EncryptionHandler::SignatureError, /Expected hmac/)
+      }
+
+      @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => encrypted_bad_data
+        )
+      )
+    end
+
+    it "should handle sequence number errors" do
+      encrypted_data = @encryption_handler.encrypt(
+        "method" => "bogus_message", "arguments" => []
+      )
+
+      @nats.should_receive(:publish).with("inbox.client_id",
+                                          kind_of(String), nil)
+      @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => encrypted_data
+        )
+      )
+
+      @handler.stub!(:log_encryption_error)
+      @handler.should_receive(:log_encryption_error) { |*args|
+        lambda {
+          raise args[0]
+        }.should raise_error(Bosh::EncryptionHandler::SequenceNumberError)
+      }
+
+      # Send it again
+      @handler.handle_message(
+        @encryption_handler.encode(
+          "reply_to" => "inbox.client_id",
+          "session_id" => @encryption_handler.session_id,
+          "encrypted_data" => encrypted_data
+        )
+      )
+    end
+  end
+
 end
