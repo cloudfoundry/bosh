@@ -16,6 +16,7 @@ describe Bosh::Director::PackageCompiler do
     BD::Config.stub(:cloud).and_return(@cloud)
 
     @network = stub(:NetworkSpec)
+    @network.stub(:name).and_return("my-net")
     @compilation_config = stub(:CompilationConfig)
     @compilation_config.stub(:cloud_properties).and_return({"foo" => "bar"})
     @compilation_config.stub(:env).and_return({"env" => "baz"})
@@ -131,8 +132,8 @@ describe Bosh::Director::PackageCompiler do
 
       vm_creator = stub(:VmCreator)
       vm_creator.should_receive(:create).
-          with(@deployment, @stemcell, {"foo" => "bar"}, network_settings, nil,
-               {"env" => "baz"}).
+          with(@deployment, @stemcell, {"foo" => "bar"},
+               {"my-net" => network_settings}, nil, {"env" => "baz"}).
           and_return(vm)
       BD::VmCreator.stub(:new).and_return(vm_creator)
 
@@ -141,7 +142,7 @@ describe Bosh::Director::PackageCompiler do
       BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
 
       @package_compiler.should_receive(:configure_vm).
-          with(vm, agent, network_settings)
+          with(vm, agent, {"my-net" => network_settings})
       @cloud.should_receive(:delete_vm).with("vm-123")
 
       yielded_agent = nil

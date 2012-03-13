@@ -142,7 +142,10 @@ module Bosh::Director
         reservation = @network_reservations.shift
       end
 
-      network_settings = @network.network_settings(reservation)
+      network_settings = {
+          @network.name => @network.network_settings(reservation)
+      }
+
       vm = VmCreator.new.create(@deployment_plan.deployment, stemcell,
                                 @compilation_resources, network_settings,
                                 nil, @compilation_env)
@@ -174,7 +177,7 @@ module Bosh::Director
           dependencies.each do |blocked_task|
             if blocked_task.ready_to_compile?
               @logger.info("Marking unblocked package for compilation: " +
-                               "#{task.package.name}/#{task.stemcell.name}")
+                               "#{blocked_task.package.name}/#{blocked_task.stemcell.name}")
               @ready_tasks << blocked_task
             end
           end
@@ -224,6 +227,8 @@ module Bosh::Director
       end
 
       task_key = [package.name, stemcell.id]
+
+      # Could have been partially created during dependency scan
       compile_task = @compile_tasks[task_key]
       if compile_task.nil?
         compile_task = CompileTask.new(task_key)
@@ -231,12 +236,15 @@ module Bosh::Director
         @compile_tasks[compile_task.key] = compile_task
       end
 
-      compile_task.add_job(job)
-      compile_task.package = package
-      compile_task.dependency_key = dependency_key
-      compile_task.compiled_package = compiled_package
+      # Only do these once when the task is fully created
+      unless compile_task.package
+        compile_task.package = package
+        compile_task.dependency_key = dependency_key
+        compile_task.compiled_package = compiled_package
+        process_task_dependencies(compile_task, dependencies)
+      end
 
-      process_task_dependencies(compile_task, dependencies)
+      compile_task.add_job(job)
     end
 
     def process_task_dependencies(compile_task, dependencies)
