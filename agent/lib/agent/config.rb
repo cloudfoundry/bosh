@@ -27,7 +27,8 @@ module Bosh::Agent
         :state,
         :sshd_monitor_interval,
         :sshd_start_delay,
-        :sshd_monitor_enabled
+        :sshd_monitor_enabled,
+        :credentials
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -78,6 +79,8 @@ module Bosh::Agent
         unless @configure
           @logger.info("Configuring Agent with: #{config.inspect}")
         end
+
+        @credentials = config["credentials"]
 
         @settings = {}
 

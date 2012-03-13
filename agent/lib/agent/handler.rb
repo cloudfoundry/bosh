@@ -1,6 +1,7 @@
 module Bosh::Agent
 
   class Handler
+    attr_accessor :nats
     attr_reader :processors
 
     def self.start
@@ -30,6 +31,10 @@ module Bosh::Agent
       @long_running_agent_task = []
 
       @nats_fail_count = 0
+
+      @credentials = Config.credentials
+      @sessions = {}
+      @session_reply_map = {}
 
       find_message_processors
     end
@@ -128,7 +133,17 @@ module Bosh::Agent
         return
       end
 
+      unless msg["reply_to"]
+        @logger.info("Missing reply_to in: #{msg}")
+        return
+      end
+
       @logger.info("Message: #{msg.inspect}")
+
+      if @credentials
+        msg = decrypt(msg)
+        return if msg.nil?
+      end
 
       reply_to = msg['reply_to']
       method   = msg['method']
@@ -187,6 +202,11 @@ module Bosh::Agent
 
     def publish(reply_to, payload, &blk)
       @logger.info("reply_to: #{reply_to}: payload: #{payload.inspect}")
+
+      if @credentials
+        payload = encrypt(reply_to, payload)
+      end
+
       @nats.publish(reply_to, Yajl::Encoder.encode(payload), blk)
     end
 
@@ -255,6 +275,64 @@ module Bosh::Agent
       publish(reply_to, payload) {
         shutdown
       }
+    end
+
+    def lookup_encryption_handler(arg)
+      if arg[:session_id]
+        message_session_id = arg[:session_id]
+        @sessions[message_session_id] ||= Bosh::EncryptionHandler.new(@agent_id, @credentials)
+        encryption_handler = @sessions[message_session_id]
+        return encryption_handler
+      elsif arg[:reply_to]
+        reply_to = arg[:reply_to]
+        @session_reply_map[reply_to]
+      end
+    end
+
+    def decrypt(msg)
+      [ "session_id", "encrypted_data" ].each do |key|
+        unless msg.key?(key)
+          @logger.info("Missing #{key} in #{msg}")
+          return
+        end
+      end
+
+      message_session_id = msg["session_id"]
+      reply_to = msg["reply_to"]
+
+      encryption_handler = lookup_encryption_handler(:session_id => message_session_id)
+
+      # save message handler for the reply
+      @session_reply_map[reply_to] = encryption_handler
+
+      # Log exceptions from the EncryptionHandler, but stay quiet on the wire.
+      begin
+        msg = encryption_handler.decrypt(msg["encrypted_data"])
+      rescue Bosh::EncryptionHandler::CryptError => e
+        log_encryption_error(e)
+        return
+      end
+
+      msg["reply_to"] = reply_to
+
+      @logger.info("Decrypted Message: #{msg}")
+      msg
+    end
+
+    def log_encryption_error(e)
+      @logger.info("Encrypton Error: #{e.inspect} #{e.backtrace.join('\n')}")
+    end
+
+    def encrypt(reply_to, payload)
+      encryption_handler = lookup_encryption_handler(:reply_to => reply_to)
+      session_id = encryption_handler.session_id
+
+      payload = {
+        "session_id" => session_id,
+        "encrypted_data" => encryption_handler.encrypt(payload)
+      }
+
+      payload
     end
 
   end
