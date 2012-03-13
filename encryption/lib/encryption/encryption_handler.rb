@@ -9,10 +9,14 @@ module Bosh
   # Utility class for decrypting/encrypting Director/Agent message exchanges
   class EncryptionHandler
 
-    class SessionError < StandardError; end
-    class SequenceNumberError < StandardError; end
-    class SignatureError < StandardError; end
-    class DecryptionError < StandardError; end
+    class CryptError < StandardError; end
+
+    class SessionError < CryptError; end
+    class SequenceNumberError < CryptError; end
+    class SignatureError < CryptError; end
+    class DecryptionError < CryptError; end
+
+    attr_reader :session_id
 
     def initialize(id, credentials)
       @id = id

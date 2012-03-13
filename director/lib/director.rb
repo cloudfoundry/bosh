@@ -31,6 +31,7 @@ require "yajl"
 require "nats/client"
 require "securerandom"
 
+require "encryption/encryption_handler"
 require "director/deep_copy"
 require "director/dns_helper"
 require "director/ext"

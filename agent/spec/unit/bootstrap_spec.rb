@@ -22,6 +22,24 @@ describe Bosh::Agent::Bootstrap do
     @processor.stub(:gratuitous_arp)
   end
 
+  it "should updat credentials" do
+    @processor.load_settings
+    @processor.update_credentials
+    Bosh::Agent::Config.credentials.should == nil
+
+    new_settings = complete_settings
+    new_settings["env"] ||= {}
+    new_settings["env"]["bosh"] ||= {}
+    new_settings["env"]["bosh"]["credentials"] = {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
+
+    Bosh::Agent::Config.infrastructure.stub!(:load_settings).and_return(new_settings)
+
+    p Bosh::Agent::Config.credentials
+    @processor.load_settings
+    @processor.update_credentials
+    Bosh::Agent::Config.credentials.should == {"crypt_key"=>"crypt_key", "sign_key"=>"sign_key"}
+  end
+
   it 'should setup networking' do
     @processor.load_settings
     @processor.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
