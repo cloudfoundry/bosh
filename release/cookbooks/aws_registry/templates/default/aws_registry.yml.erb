@@ -1,0 +1,13 @@
+---
+logfile: <%= node[:aws_registry][:path] %>/shared/logs/aws_registry.debug.log
+loglevel: debug
+
+http:
+  port: <%= node[:aws_registry][:http][:port] %>
+  user: <%= node[:aws_registry][:http][:user] %>
+  password: <%= node[:aws_registry][:http][:password] %>
+
+db:
+  database: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:aws_registry][:database] %>
+  max_connections: 32
+  pool_timeout: 10

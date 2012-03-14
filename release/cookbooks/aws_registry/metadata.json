@@ -1,0 +1,33 @@
+{
+  "name": "aws_registry",
+  "description": "Installs/configures BOSH AWS Registry",
+  "long_description": "= DESCRIPTION:\n\nBOSH AWS Registry configuration.\n\n",
+  "maintainer": "VMware",
+  "maintainer_email": "olegs@vmware.com",
+  "license": "TBD",
+  "platforms": {
+  },
+  "dependencies": {
+    "env": ">= 0.0.0",
+    "ruby": ">= 0.0.0",
+    "rubygems": ">= 0.0.0",
+    "runit": ">= 0.0.0"
+  },
+  "recommendations": {
+  },
+  "suggestions": {
+  },
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "replacing": {
+  },
+  "attributes": {
+  },
+  "groupings": {
+  },
+  "recipes": {
+  },
+  "version": "0.0.1"
+}
