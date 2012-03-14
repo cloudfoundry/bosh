@@ -41,3 +41,15 @@ end
 def make_cloud(options = nil)
   Bosh::AWSCloud::Cloud.new(options || mock_cloud_options)
 end
+
+def make_mock_cloud(options = nil)
+  instances = double("instances")
+
+  ec2 = double(AWS::EC2)
+  ec2.stub(:instances).and_return(instances)
+  AWS::EC2.stub(:new).and_return(ec2)
+
+  yield ec2 if block_given?
+
+  Bosh::AWSCloud::Cloud.new(options || mock_cloud_options)
+end
