@@ -6,6 +6,7 @@ gem "bcrypt-ruby"
 gem "blobstore_client", ">=0.3.4"
 gem "bosh_common", ">=0.4.0"
 gem "bosh_cpi", ">=0.4.2"
+gem "bosh_aws_cpi", ">=0.1"
 gem "bosh_vsphere_cpi", ">=0.4.8"
 gem "eventmachine"
 gem "httpclient"
@@ -37,13 +38,10 @@ end
 
 group :development, :test do
   gem "sqlite3"
-
-  gem "machinist"
+  gem "machinist", "~>1.0"
   gem "minitar"
-
   gem "ci_reporter"
   gem "rspec"
-
   gem "rcov", :platforms => :ruby_18
   gem "simplecov", :platforms => :ruby_19
   gem "simplecov-rcov", :platforms => :ruby_19

@@ -7,6 +7,10 @@ module Bosh::AWSCloud
 
     DEFAULT_MAX_RETRIES = 2
     DEFAULT_AVAILABILITY_ZONE = "us-east-1a"
+    METADATA_TIMEOUT = 5 # seconds
+    DEVICE_POLL_TIMEOUT = 60 # seconds
+
+    DEFAULT_AKI = "aki-825ea7eb"
 
     # UBUNTU_10_04_32_BIT_US_EAST_EBS = "ami-3e9b4957"
     # UBUNTU_10_04_32_BIT_US_EAST = "ami-809a48e9"
@@ -45,6 +49,9 @@ module Bosh::AWSCloud
       registry_user = @registry_properties["user"]
       registry_password = @registry_properties["password"]
 
+      # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
+      # so we need to trigger eager autoload while constructing CPI
+      AWS.eager_autoload!
       @ec2 = AWS::EC2.new(aws_params)
 
       # Registry updates are not really atomic in relation to
@@ -53,6 +60,8 @@ module Bosh::AWSCloud
       @registry = RegistryClient.new(registry_endpoint,
                                      registry_user,
                                      registry_password)
+
+      @metadata_lock = Mutex.new
     end
 
     ##
@@ -92,8 +101,7 @@ module Bosh::AWSCloud
         end
 
         if network_spec && network_spec.kind_of?(Hash) && network_spec.size > 0
-          cloud_error("AWS CPI doesn't support resource pool " \
-                      "network configuration")
+          @logger.warn("Ignoring resource pool network configuration")
         end
 
         instance_params = {
@@ -261,36 +269,7 @@ module Bosh::AWSCloud
         instance = @ec2.instances[instance_id]
         volume = @ec2.volumes[disk_id]
 
-        device_names = Set.new(instance.block_device_mappings.keys)
-        new_attachment = nil
-
-        ("f".."p").each do |char| # f..p is what console suggests
-          # Some kernels will remap sdX to xvdX, so agent needs
-          # to lookup both (sd, then xvd)
-          dev_name = "/dev/sd#{char}"
-          if device_names.include?(dev_name)
-            @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
-            next
-          end
-          new_attachment = volume.attach_to(instance, dev_name)
-          break
-        end
-
-        if new_attachment.nil?
-          # TODO: better messaging?
-          cloud_error("Instance has too many disks attached")
-        end
-
-        state = new_attachment.status
-
-        @logger.info("Attaching `#{disk_id}' to #{instance_id}, " \
-                     "state is #{state}'")
-
-        wait_resource(new_attachment, state, :attached)
-        device_name = new_attachment.device
-
-        @logger.info("Attached `#{disk_id}' to `#{instance_id}', " \
-                     "device name is `#{device_name}'")
+        device_name = attach_ebs_volume(instance, volume)
 
         update_agent_settings(instance) do |settings|
           settings["disks"] ||= {}
@@ -305,130 +284,120 @@ module Bosh::AWSCloud
         instance = @ec2.instances[instance_id]
         volume = @ec2.volumes[disk_id]
 
-        mappings = instance.block_device_mappings
-
-        device_map = mappings.inject({}) do |hash, (device_name, attachment)|
-          hash[attachment.volume.id] = device_name
-          hash
-        end
-
-        if device_map[disk_id].nil?
-          cloud_error("Disk `#{disk_id}' is not attached " \
-                      "to instance `#{instance_id}'")
-        end
-
         update_agent_settings(instance) do |settings|
           settings["disks"] ||= {}
           settings["disks"]["persistent"] ||= {}
           settings["disks"]["persistent"].delete(disk_id)
         end
 
-        attachment = volume.detach_from(instance, device_map[disk_id])
-        state = attachment.status
-
-        @logger.info("Detaching `#{disk_id}' from `#{instance_id}', " \
-                     "state is #{state}'")
-
-        begin
-          wait_resource(attachment, state, :detached)
-        rescue AWS::Core::Resource::NotFound
-          # It's OK, just means volume is gone when we're asking for state
-        end
+        detach_ebs_volume(instance, volume)
 
         @logger.info("Detached `#{disk_id}' from `#{instance_id}'")
       end
     end
 
     def configure_networks(vm_id, networks)
-      not_implemented(:configure_networks)
+      @logger.warn("Configure networks is ignored by AWS CPI at the moment")
     end
 
+    ##
+    # Creates a new AMI using stemcell image.
+    # This method can only be run on an EC2 instance, as image creation
+    # involves creating and mounting new EBS volume as local block device.
+    # @param [String] image_path local filesystem path to a stemcell image
+    # @param [Hash] cloud_properties CPI-specific properties
     def create_stemcell(image_path, cloud_properties)
       # TODO: refactor into several smaller methods
-
       with_thread_name("create_stemcell(#{image_path}...)") do
-        # 1. Create and mount new EBS volume (2GB)
-        volume_id = create_disk(2048, current_instance_id)
-        volume = @ec2.volumes[volume_id]
+        begin
+          # These two variables are used in 'ensure' clause
+          instance = nil
+          volume = nil
+          # 1. Create and mount new EBS volume (2GB)
+          volume_id = create_disk(2048, current_instance_id)
+          volume = @ec2.volumes[volume_id]
+          instance = @ec2.instances[current_instance_id]
 
-        sd_name = attach_ebs_volume(current_instance_id, volume_id)
-        xvd_name = device.name.gsub(/^\/dev\/sd/, "/dev/xvd")
-        ebs_volume = nil
+          sd_name = attach_ebs_volume(instance, volume)
+          xvd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/xvd")
+          ebs_volume = nil
 
-        60.times do
-          if File.blockdev?(sd_name)
-            ebs_volume = sd_name
-            break
-          elsif File.blockdev?(xvd_name)
-            ebs_volume = xvd_name
-            break
-          end
-          sleep(1)
-        end
-
-        if ebs_volume.nil?
-          cloud_error("Cannot find EBS volume on current instance")
-        end
-
-        # 2. Copy image to new EBS volume
-        Dir.mktmpdir do |tmp_dir|
-          @logger.info("Extracting stemcell to `#{tmp_dir}'")
-          output = `tar -C #{tmp_dir} -xzf #{image_path} 2>&1`
-          if $?.exitstatus != 0
-            cloud_error("Failed to unpack stemcell image" \
-                        "tar exit status #{$?.exitstatus}: #{output}")
-          end
-
-          stemcell_image = File.join(tmp_dir, "image")
-          unless File.exists?(stemcell_image)
-            cloud_error("Image file is missing from stemcell archive")
-          end
-
-          output = `tar -C #{tmp_dir} -xzf #{stemcell_image} 2>&1`
-          if $?.exitstatus != 0
-            cloud_error("Failed to unpack stemcell root image" \
-                        "tar exit status #{$?.exitstatus}: #{output}")
-          end
-
-          root_image = File.join(tmp_dir, "root.img")
-          unless File.exists?(root_image)
-            cloud_error("Root image is missing from stemcell archive")
-          end
-
-          Dir.chdir(tmp_dir) do
-            dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
-            if $?.exitstatus != 0
-              cloud_error("Unable to copy stemcell root image, " \
-                          "dd exit status #{$?.exitstatus}: " \
-                          "#{dd_out}")
+          DEVICE_POLL_TIMEOUT.times do
+            if File.blockdev?(sd_name)
+              ebs_volume = sd_name
+              break
+            elsif File.blockdev?(xvd_name)
+              ebs_volume = xvd_name
+              break
             end
+            sleep(1)
           end
 
-          # 3. Create snapshot and then an image using this snapshot
-          snapshot = volume.create_snapshot
-          wait_resource(snapshot, snapshot.state, :completed)
+          if ebs_volume.nil?
+            cloud_error("Cannot find EBS volume on current instance")
+          end
 
-          image_params = {
-            :kernel_id => DEFAULT_AKI,
-            :root_device_name => "/dev/sda",
-            :block_device_mappings => {
-              "/dev/sda" => snapshot.id,
-              "/dev/sdb" => "ephemeral0"
+          # 2. Copy image to new EBS volume
+          Dir.mktmpdir do |tmp_dir|
+            @logger.info("Extracting stemcell to `#{tmp_dir}'")
+            output = `tar -C #{tmp_dir} -xzf #{image_path} 2>&1`
+            if $?.exitstatus != 0
+              cloud_error("Failed to unpack stemcell root image" \
+                          "tar exit status #{$?.exitstatus}: #{output}")
+            end
+
+            root_image = File.join(tmp_dir, "root.img")
+            unless File.exists?(root_image)
+              cloud_error("Root image is missing from stemcell archive")
+            end
+
+            Dir.chdir(tmp_dir) do
+              dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
+              if $?.exitstatus != 0
+                cloud_error("Unable to copy stemcell root image, " \
+                            "dd exit status #{$?.exitstatus}: " \
+                            "#{dd_out}")
+              end
+            end
+
+            # 3. Create snapshot and then an image using this snapshot
+            snapshot = volume.create_snapshot
+            wait_resource(snapshot, snapshot.status, :completed)
+
+            image_params = {
+              :name => "BOSH-#{generate_unique_name}",
+              :architecture => "x86_64",
+              :kernel_id => DEFAULT_AKI,
+              :root_device_name => "/dev/sda",
+              :block_device_mappings => {
+                "/dev/sda" => { :snapshot_id => snapshot.id },
+                "/dev/sdb" => "ephemeral0"
+              }
             }
-          }
 
-          image = @ec2.images.create(image_params)
-          wait_resource(image, image.state, :available)
+            image = @ec2.images.create(image_params)
+            wait_resource(image, image.state, :available, :state)
 
-          image.id
+            image.id
+          end
+        rescue => e
+          # TODO: delete snapshot?
+          @logger.error(e)
+          raise e
+        ensure
+          if instance && volume
+            detach_ebs_volume(instance, volume)
+            delete_disk(volume.id)
+          end
         end
       end
-    ensure
-      # Delete EBS volume
     end
 
     def delete_stemcell(stemcell_id)
-      not_implemented(:delete_stemcell)
+      with_thread_name("delete_stemcell(#{stemcell_id})") do
+        image = @ec2.images[stemcell_id]
+        image.deregister
+      end
     end
 
     def validate_deployment(old_manifest, new_manifest)
@@ -442,8 +411,8 @@ module Bosh::AWSCloud
     # Generates initial agent settings. These settings will be read by agent
     # from AWS registry (also a BOSH component) on a target instance. Disk
     # conventions for amazon are:
-    # system disk: /dev/sda1
-    # ephemeral disk: /dev/sda2
+    # system disk: /dev/sda
+    # ephemeral disk: /dev/sdb
     # EBS volumes can be configured to map to other device names later (sdf
     # through sdp, also some kernels will remap sd* to xvd*).
     #
@@ -460,8 +429,8 @@ module Bosh::AWSCloud
         "agent_id" => agent_id,
         "networks" => {},
         "disks" => {
-          "system" => "/dev/sda1",
-          "ephemeral" => "/dev/sda2",
+          "system" => "/dev/sda",
+          "ephemeral" => "/dev/sdb",
           "persistent" => {}
         }
       }
@@ -482,6 +451,95 @@ module Bosh::AWSCloud
 
     def generate_unique_name
       UUIDTools::UUID.random_create.to_s
+    end
+
+    ##
+    # Reads current instance id from EC2 metadata. We are assuming
+    # instance id cannot change while current process is running
+    # and thus memoizing it.
+    def current_instance_id
+      @metadata_lock.synchronize do
+        return @current_instance_id if @current_instance_id
+
+        client = HTTPClient.new
+        client.connect_timeout = METADATA_TIMEOUT
+        # Using 169.254.169.254 is an EC2 convention for getting
+        # instance metadata
+        uri = "http://169.254.169.254/1.0/meta-data/instance-id/"
+
+        response = client.get(uri)
+        unless response.status == 200
+          cloud_error("Instance metadata endpoint returned " \
+                      "HTTP #{response.status}")
+        end
+
+        @current_instance_id = response.body
+      end
+
+    rescue HTTPClient::TimeoutError
+      cloud_error("Timed out reading instance metadata, " \
+                  "please make sure CPI is running on EC2 instance")
+    end
+
+    def attach_ebs_volume(instance, volume)
+      device_names = Set.new(instance.block_device_mappings.keys)
+      new_attachment = nil
+
+      ("f".."p").each do |char| # f..p is what console suggests
+        # Some kernels will remap sdX to xvdX, so agent needs
+        # to lookup both (sd, then xvd)
+        dev_name = "/dev/sd#{char}"
+        if device_names.include?(dev_name)
+          @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
+          next
+        end
+        new_attachment = volume.attach_to(instance, dev_name)
+        break
+      end
+
+      if new_attachment.nil?
+        # TODO: better messaging?
+        cloud_error("Instance has too many disks attached")
+      end
+
+      state = new_attachment.status
+
+      @logger.info("Attaching `#{volume.id}' to #{instance.id}, " \
+                   "state is #{state}'")
+
+      wait_resource(new_attachment, state, :attached)
+      device_name = new_attachment.device
+
+      @logger.info("Attached `#{volume.id}' to `#{instance.id}', " \
+                   "device name is `#{device_name}'")
+
+      device_name
+    end
+
+    def detach_ebs_volume(instance, volume)
+      mappings = instance.block_device_mappings
+
+      device_map = mappings.inject({}) do |hash, (device_name, attachment)|
+        hash[attachment.volume.id] = device_name
+        hash
+      end
+
+      if device_map[volume.id].nil?
+        cloud_error("Disk `#{volume.id}' is not attached " \
+                    "to instance `#{instance.id}'")
+      end
+
+      attachment = volume.detach_from(instance, device_map[volume.id])
+      state = attachment.status
+
+      @logger.info("Detaching `#{volume.id}' from `#{instance.id}', " \
+                   "state is #{state}'")
+
+      begin
+        wait_resource(attachment, state, :detached)
+      rescue AWS::Core::Resource::NotFound
+        # It's OK, just means attachment is gone when we're asking for state
+      end
     end
 
     ##
