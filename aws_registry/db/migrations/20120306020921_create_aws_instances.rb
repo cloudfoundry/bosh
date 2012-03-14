@@ -2,10 +2,10 @@
 
 Sequel.migration do
   change do
-    create_table :agent_settings do
+    create_table :aws_instances do
       primary_key :id
 
-      String :ip_address, :null => false, :unique => true
+      String :instance_id, :null => false, :unique => true
       String :settings, :null => false, :text => true
     end
   end

@@ -4,16 +4,20 @@ module Bosh::AwsRegistry
 
   class << self
 
+    AWS_MAX_RETRIES = 2
+
     attr_accessor :logger
     attr_accessor :http_port
     attr_accessor :http_user
     attr_accessor :http_password
     attr_accessor :db
 
+    attr_writer :ec2
+
     def configure(config)
       validate_config(config)
 
-      @logger = Logger.new(config["logfile"] || STDOUT)
+      @logger ||= Logger.new(config["logfile"] || STDOUT)
 
       if config["loglevel"].kind_of?(String)
         @logger.level = Logger.const_get(config["loglevel"].upcase)
@@ -23,7 +27,20 @@ module Bosh::AwsRegistry
       @http_user = config["http"]["user"]
       @http_password = config["http"]["password"]
 
+      @aws = config["aws"]
+
+      @aws_options = {
+        :access_key_id => @aws["access_key_id"],
+        :secret_access_key => @aws["secret_access_key"],
+        :max_retries => @aws["max_retries"] || AWS_MAX_RETRIES,
+        :logger => @logger
+      }
+
       @db = connect_db(config["db"])
+    end
+
+    def ec2
+      @ec2 ||= AWS::EC2.new(@aws_options)
     end
 
     def connect_db(db_config)
@@ -51,6 +68,11 @@ module Bosh::AwsRegistry
 
       unless config.has_key?("db") && config["db"].is_a?(Hash)
         raise ConfigError, "Database configuration is missing from " \
+                           "config file"
+      end
+
+      unless config.has_key?("aws") && config["aws"].is_a?(Hash)
+        raise ConfigError, "AWS configuration is missing from " \
                            "config file"
       end
     end

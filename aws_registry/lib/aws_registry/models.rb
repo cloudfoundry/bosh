@@ -5,7 +5,7 @@ module Bosh::AwsRegistry
   end
 end
 
-require "aws_registry/models/agent_settings"
+require "aws_registry/models/aws_instance"
 
 
 
