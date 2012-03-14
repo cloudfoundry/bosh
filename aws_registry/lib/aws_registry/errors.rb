@@ -3,13 +3,18 @@
 module Bosh::AwsRegistry
 
   class Error < StandardError
-    def self.code(code = nil)
+    def self.code(code = 500)
       define_method(:code) { code }
     end
   end
 
-  class FatalError < Error; code(42); end
+  class FatalError < Error; end
 
-  class ConfigError < Error; code(101); end
-  class ConnectionError < Error; code(202); end
+  class ConfigError < Error; end
+  class ConnectionError < Error; end
+
+  class AwsError < Error; end
+
+  class InstanceError < Error; end
+  class InstanceNotFound < Error; code(404); end
 end
