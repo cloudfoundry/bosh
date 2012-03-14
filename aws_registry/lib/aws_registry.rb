@@ -6,6 +6,7 @@ module Bosh
   end
 end
 
+require "aws-sdk"
 require "logger"
 require "sequel"
 require "sinatra/base"
@@ -17,6 +18,7 @@ require "aws_registry/yaml_helper"
 require "aws_registry/api_controller"
 require "aws_registry/config"
 require "aws_registry/errors"
+require "aws_registry/instance_manager"
 require "aws_registry/runner"
 require "aws_registry/version"
 
