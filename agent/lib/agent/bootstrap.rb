@@ -9,7 +9,6 @@ require 'openssl'
 module Bosh::Agent
   class Bootstrap
 
-    # TODO: set up iptables
     def initialize
       FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
       @platform = Bosh::Agent::Config.platform
@@ -34,6 +33,7 @@ module Bosh::Agent
       logger.info("Loaded settings: #{@settings.inspect}")
 
       if @settings
+        update_iptables
         update_passwords
         update_agent_id
         update_hostname
@@ -56,6 +56,38 @@ module Bosh::Agent
     def load_settings
       @settings = Bosh::Agent::Config.infrastructure.load_settings
       Bosh::Agent::Config.settings = @settings
+    end
+
+    def iptables(cmd)
+      output = %x{iptables #{cmd} 2> /dev/null}
+      if $?.exitstatus != 0
+        raise Bosh::Agent::Error, "`iptables #{cmd}` failed"
+      end
+      output
+    end
+
+    def update_iptables
+      return unless rules = @settings['iptables']
+
+      if rules["drop_output"]
+        chain = "agent-filter"
+        append_chain = "-A OUTPUT -j #{chain}"
+
+        begin
+          iptables("-N #{chain}")
+        rescue
+          iptables("-F #{chain}")
+        end
+
+        unless iptables("-S").include?(append_chain)
+          iptables(append_chain)
+        end
+
+        rules["drop_output"].each do |dest|
+          rule = "-A #{chain} -d #{dest} -m owner ! --uid-owner root -j DROP"
+          iptables(rule)
+        end
+      end
     end
 
     def update_passwords
