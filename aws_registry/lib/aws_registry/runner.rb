@@ -45,17 +45,11 @@ module Bosh::AwsRegistry
     private
 
     def handle_em_error(e)
-      @shutting_down = true
-      log_exception(e, :fatal)
-      stop
-    end
-
-    def log_exception(e, level = :error)
-      level = :error unless level == :fatal
       @logger.send(level, e.to_s)
       if e.respond_to?(:backtrace) && e.backtrace.respond_to?(:join)
         @logger.send(level, e.backtrace.join("\n"))
       end
+      stop
     end
 
   end

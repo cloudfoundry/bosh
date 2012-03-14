@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
 require "rubygems"
@@ -11,6 +13,7 @@ require "logger"
 require "tmpdir"
 
 require "rspec"
+require "rack/test"
 
 module SpecHelper
   class << self
@@ -80,8 +83,31 @@ end
 
 SpecHelper.init
 
+def valid_config
+  {
+    "logfile" => nil,
+    "loglevel" => "debug",
+    "http" => {
+      "user" => "admin",
+      "password" => "admin",
+      "port" => 25777
+    },
+    "db" => {
+      "max_connections" => 433,
+      "pool_timeout" => 227,
+      "database" => "sqlite:///:memory:"
+    },
+    "aws" => {
+      "access_key_id" => "foo",
+      "secret_access_key" => "bar",
+      "max_retries" => 5
+    }
+  }
+end
+
 RSpec.configure do |rspec|
   rspec.before(:each) do
     SpecHelper.reset
+    Bosh::AwsRegistry.logger = Logger.new(StringIO.new)
   end
 end

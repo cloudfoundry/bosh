@@ -1,11 +1,17 @@
 ---
-logging:
-  level: DEBUG
+loglevel: debug
+
 http:
   port: 25695
   user: admin
   password: admin
+
 db:
-  database: "sqlite:///tmp/aws_registry.db"
+  database: "sqlite:///:memory:"
   max_connections: 32
   pool_timeout: 10
+
+aws:
+  access_key_id: foo
+  secret_access_key: bar
+  max_retries: 2
