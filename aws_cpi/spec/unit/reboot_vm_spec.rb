@@ -3,21 +3,25 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::AWSCloud::Cloud do
-  describe "#reboot_vm" do
-    it "should reboot a vm" do
-      instance_id = "foo"
-      cloud = make_mock_cloud(mock_cloud_options) do |ec2|
-        instance = double("instance")
-        instance.should_receive(:status).
-          and_return(:running, :stopped, :stopped, :running)
-        instance.stub(:id).and_return("id")
 
-        instance.should_receive(:stop)
-        instance.should_receive(:start)
+  it "reboots an EC2 instance" do
+    instance = double("instance", :id => "i-foobar")
 
-        ec2.instances.should_receive(:[]).with(instance_id).and_return(instance)
-      end
-      cloud.reboot_vm(instance_id)
+    cloud = mock_cloud(mock_cloud_options) do |ec2|
+      ec2.instances.stub(:[]).with("i-foobar").and_return(instance)
     end
+
+    instance.should_receive(:stop).ordered
+    instance.should_receive(:status).ordered.and_return(:stopping)
+    cloud.should_receive(:wait_resource).
+      with(instance, :stopping, :stopped).ordered
+
+    instance.should_receive(:start)
+    instance.should_receive(:status).and_return(:starting)
+    cloud.should_receive(:wait_resource).ordered.
+      with(instance, :starting, :running)
+
+    cloud.reboot_vm("i-foobar")
   end
+
 end

@@ -31,7 +31,7 @@ module Bosh::AWSCloud
 
       @aws_logger = @logger # TODO make configurable
 
-      @agent_properties = @options["agent"]
+      @agent_properties = @options["agent"] || {}
       @aws_properties = @options["aws"]
       @registry_properties = @options["registry"]
 
@@ -68,24 +68,22 @@ module Bosh::AWSCloud
     # Creates EC2 instance and waits until it's in running state
     # @param [String] agent_id Agent id associated with new VM
     # @param [String] stemcell_id AMI id that will be used
-    #        to power on new instance
-    # @param [Hash] resource_pool
-    # @param [Hash] network_spec
-    # @param [Array] disk_locality List of disks that are going to be attached
-    #        to this instance, might be used as hint for placement
-    # @param [Hash] environment
+    #   to power on new instance
+    # @param [Hash] resource_pool Resource pool specification
+    # @param [Hash] network_spec Network specification
+    # @param [optional, Array] disk_locality List of disks that
+    #   might be attached to this instance in the future, can be
+    #   used as a placement hint (i.e. instance will only be created
+    #   if resource pool availability zone is the same as disk
+    #   availability zone)
+    # @param [optional, Hash] environment Data to be merged into
+    #   agent settings
     #
-    # @return [String] created instance id (to be saved by CPI user for
-    #         later operations)
+    # @return [String] created instance id
     def create_vm(agent_id, stemcell_id, resource_pool,
                   network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-
-        vm_name = "vm-#{generate_unique_name}"
-        instance_type = resource_pool["instance_type"]
-
-        key_name = resource_pool["key_name"]
-        availability_zone = resource_pool["availability_zone"]
+        network_configurator = NetworkConfigurator.new(network_spec)
 
         user_data = {
           "registry" => {
@@ -93,44 +91,39 @@ module Bosh::AWSCloud
           }
         }
 
-        @logger.info("Creating new instance...")
-
         if disk_locality
           # TODO: use as hint for availability zones
           @logger.debug("Disk locality is ignored by AWS CPI")
         end
 
-        if network_spec && network_spec.kind_of?(Hash) && network_spec.size > 0
-          @logger.warn("Ignoring resource pool network configuration")
-        end
-
         instance_params = {
           :image_id => stemcell_id,
           :count => 1,
-          :key_name => key_name || @default_key_name,
-          # TODO: lookup security groups via network
-          :security_groups => @default_security_groups,
-          :instance_type => instance_type,
+          :key_name => resource_pool["key_name"] || @default_key_name,
+          # TODO: lookup security groups in network spec
+          :security_groups => @default_security_groups || [],
+          :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data)
         }
 
+        availability_zone = resource_pool["availability_zone"]
         if availability_zone
           instance_params[:availability_zone] = availability_zone
         end
 
+        @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)
-
         state = instance.status
-
-        settings = initial_agent_settings(vm_name, agent_id)
-        settings["env"] = environment if environment
 
         @logger.info("Creating new instance `#{instance.id}', " \
                      "state is `#{state}'")
 
         wait_resource(instance, state, :running)
 
-        @registry.update_settings(instance.private_ip_address, settings)
+        network_configurator.configure(@ec2, instance)
+
+        settings = initial_agent_settings(agent_id, network_spec, environment)
+        @registry.update_settings(instance.id, settings)
 
         instance.id
       end
@@ -142,14 +135,13 @@ module Bosh::AWSCloud
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
         instance = @ec2.instances[instance_id]
-        ip = instance.private_ip_address
 
         instance.terminate
         state = instance.status
 
         # TODO: should this be done before or after deleting VM?
-        @logger.info("Deleting instance settings for `#{ip}'")
-        @registry.delete_settings(ip)
+        @logger.info("Deleting instance settings for `#{instance.id}'")
+        @registry.delete_settings(instance.id)
 
         @logger.info("Deleting instance `#{instance.id}', " \
                      "state is `#{state}'")
@@ -200,15 +192,11 @@ module Bosh::AWSCloud
         end
 
         if (size < 1024)
-          cloud_error("AWS CPI minimum disk size is 1000 MiB")
+          cloud_error("AWS CPI minimum disk size is 1 GiB")
         end
 
         if (size > 1024 * 1000)
           cloud_error("AWS CPI maximum disk size is 1 TiB")
-        end
-
-        if (size % 1024 != 0)
-          cloud_error("AWS CPI disk size should be a multiple of 1024")
         end
 
         if instance_id
@@ -219,7 +207,7 @@ module Bosh::AWSCloud
         end
 
         volume_params = {
-          :size => size / 1024,
+          :size => (size / 1024.0).ceil,
           :availability_zone => availability_zone
         }
 
@@ -245,7 +233,7 @@ module Bosh::AWSCloud
         volume = @ec2.volumes[disk_id]
         state = volume.state
 
-        if volume.state != :available
+        if state != :available
           cloud_error("Cannot delete volume `#{volume.id}', state is #{state}")
         end
 
@@ -296,8 +284,20 @@ module Bosh::AWSCloud
       end
     end
 
-    def configure_networks(vm_id, networks)
-      @logger.warn("Configure networks is ignored by AWS CPI at the moment")
+    def configure_networks(instance_id, network_spec)
+      with_thread_name("configure_networks(#{instance_id}, ...)") do
+        @logger.info("Configuring `#{instance_id}' to use the following " \
+                     "network settings: #{network_spec.pretty_inspect}")
+
+        network_configurator = NetworkConfigurator.new(network_spec)
+        instance = @ec2.instances[instance_id]
+
+        network_configurator.configure(@ec2, instance)
+
+        update_agent_settings(instance) do |settings|
+          settings["networks"] = network_spec
+        end
+      end
     end
 
     ##
@@ -416,25 +416,27 @@ module Bosh::AWSCloud
     # EBS volumes can be configured to map to other device names later (sdf
     # through sdp, also some kernels will remap sd* to xvd*).
     #
-    # @param [String] vm_name VM name (mostly for debugging purposes)
     # @param [String] agent_id Agent id (will be picked up by agent to
-    #        assume its identity
-    # @return [Hash] Agent environment (will be pushed to agent as user-data)
-    #
-    def initial_agent_settings(vm_name, agent_id)
-      env = {
+    #   assume its identity
+    # @param [Hash] network_spec Agent network spec
+    # @param [Hash] environment
+    # @return [Hash]
+    def initial_agent_settings(agent_id, network_spec, environment)
+      settings = {
         "vm" => {
-          "name" => vm_name
+          "name" => "vm-#{generate_unique_name}"
         },
         "agent_id" => agent_id,
-        "networks" => {},
+        "networks" => network_spec,
         "disks" => {
           "system" => "/dev/sda",
           "ephemeral" => "/dev/sdb",
           "persistent" => {}
         }
       }
-      env.merge(@agent_properties)
+
+      settings["env"] = environment if environment
+      settings.merge(@agent_properties)
     end
 
     def update_agent_settings(instance)
@@ -442,11 +444,9 @@ module Bosh::AWSCloud
         raise ArgumentError, "block is not provided"
       end
 
-      instance_ip = instance.private_ip_address
-
-      settings = @registry.read_settings(instance_ip)
+      settings = @registry.read_settings(instance.id)
       yield settings
-      @registry.update_settings(instance_ip, settings)
+      @registry.update_settings(instance.id, settings)
     end
 
     def generate_unique_name

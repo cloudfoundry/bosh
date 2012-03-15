@@ -29,23 +29,23 @@ module Bosh::AWSCloud
     end
 
     ##
-    # Read settings for given IP from the registry
-    # @param [String] ip Agent IP address
+    # Update instance settings in the registry
+    # @param [String] instance_id EC2 instance id
     # @param [Hash] settings New agent settings
     # @return [Boolean]
-    def update_settings(ip, settings)
+    def update_settings(instance_id, settings)
       unless settings.is_a?(Hash)
         raise ArgumentError, "Invalid settings format, " \
                              "Hash expected, #{settings.class} given"
       end
 
       payload = Yajl::Encoder.encode(settings)
-      url = "#{@endpoint}/agents/#{ip}/settings"
+      url = "#{@endpoint}/instances/#{instance_id}/settings"
 
       response = @client.put(url, payload, @headers)
 
       if response.status != 200
-        cloud_error("Cannot update settings for `#{ip}' in registry, " \
+        cloud_error("Cannot update settings for `#{instance_id}', " \
                     "got HTTP #{response.status}")
       end
 
@@ -53,16 +53,16 @@ module Bosh::AWSCloud
     end
 
     ##
-    # Read settings for given IP from the registry
-    # @param [String] ip Agent IP address
+    # Read instance settings from the registry
+    # @param [String] instance_id EC2 instance id
     # @return [Hash] Agent settings
-    def read_settings(ip)
-      url = "#{@endpoint}/agents/#{ip}/settings"
+    def read_settings(instance_id)
+      url = "#{@endpoint}/agents/#{instance_id}/settings"
 
       response = @client.get(url, {}, @headers)
 
       if response.status != 200
-        cloud_error("Cannot read settings for `#{ip}' from registry, " \
+        cloud_error("Cannot read settings for `#{instance_id}', " \
                     "got HTTP #{response.status}")
       end
 
@@ -84,20 +84,20 @@ module Bosh::AWSCloud
       settings
 
     rescue Yajl::ParseError
-      cloud_error("Cannot parse settings for `#{ip} from registry")
+      cloud_error("Cannot parse settings for `#{instance_id}'")
     end
 
     ##
-    # Read settings for given IP from the registry
-    # @param [String] ip Agent IP address
+    # Delete instance settings from the registry
+    # @param [String] instance_id EC2 instance id
     # @return [Boolean]
-    def delete_settings(ip)
-      url = "#{@endpoint}/agents/#{ip}/settings"
+    def delete_settings(instance_id)
+      url = "#{@endpoint}/instances/#{instance_id}/settings"
 
       response = @client.delete(url, @headers)
 
       if response.status != 200
-        cloud_error("Cannot delete settings for `#{ip}' in registry, " \
+        cloud_error("Cannot delete settings for `#{instance_id}', " \
                     "got HTTP #{response.status}")
       end
 
