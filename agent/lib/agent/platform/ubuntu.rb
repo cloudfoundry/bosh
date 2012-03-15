@@ -4,6 +4,7 @@ module Bosh::Agent
     require 'agent/platform/ubuntu/disk'
     require 'agent/platform/ubuntu/logrotate'
     require 'agent/platform/ubuntu/password'
+    require 'agent/platform/ubuntu/network'
 
     def configure_disks(settings)
     end
@@ -19,6 +20,18 @@ module Bosh::Agent
 
     def update_passwords(settings)
       Password.new.update(settings)
+    end
+
+    def lookup_disk_by_cid(cid)
+      Disk.new.lookup_disk_by_cid(cid)
+    end
+
+    def get_data_disk_device_name
+      Disk.new.get_data_disk_device_name
+    end
+
+    def setup_networking
+      Network.new.setup_networking
     end
 
   end
