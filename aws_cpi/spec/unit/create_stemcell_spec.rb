@@ -3,4 +3,9 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::AWSCloud::Cloud do
+
+  it "creates stemcell" do
+    pending "coming soon"
+  end
+
 end

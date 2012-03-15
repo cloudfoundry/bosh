@@ -16,7 +16,7 @@ end
 
 aws_config = AWSConfig.new
 aws_config.db = nil # AWS CPI doesn't need DB
-aws_config.logger = Logger.new(STDOUT)
+aws_config.logger = Logger.new(StringIO.new)
 aws_config.logger.level = Logger::DEBUG
 
 Bosh::Clouds::Config.configure(aws_config)
@@ -34,6 +34,10 @@ def mock_cloud_options
       "endpoint" => "localhost:42288",
       "user" => "admin",
       "password" => "admin"
+    },
+    "agent" => {
+      "foo" => "bar",
+      "baz" => "zaz"
     }
   }
 end
@@ -42,14 +46,54 @@ def make_cloud(options = nil)
   Bosh::AWSCloud::Cloud.new(options || mock_cloud_options)
 end
 
-def make_mock_cloud(options = nil)
+def mock_registry(endpoint = "http://registry:3333")
+  registry = mock("registry", :endpoint => endpoint)
+  Bosh::AWSCloud::RegistryClient.stub!(:new).and_return(registry)
+  registry
+end
+
+def mock_cloud(options = nil)
   instances = double("instances")
+  volumes = double("volumes")
+  images = double("images")
 
   ec2 = double(AWS::EC2)
+
   ec2.stub(:instances).and_return(instances)
+  ec2.stub(:volumes).and_return(volumes)
+  ec2.stub(:images).and_return(images)
+
   AWS::EC2.stub(:new).and_return(ec2)
 
   yield ec2 if block_given?
 
   Bosh::AWSCloud::Cloud.new(options || mock_cloud_options)
 end
+
+def dynamic_network_spec
+  { "type" => "dynamic" }
+end
+
+def vip_network_spec
+  {
+    "type" => "vip",
+    "ip" => "10.0.0.1"
+  }
+end
+
+def combined_network_spec
+  {
+    "network_a" => dynamic_network_spec,
+    "network_b" => vip_network_spec
+  }
+end
+
+def resource_pool_spec
+  {
+    "key_name" => "test_key",
+    "availability_zone" => "foobar-1a",
+    "instance_type" => "m3.zb"
+  }
+end
+
+
