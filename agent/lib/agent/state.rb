@@ -70,6 +70,13 @@ module Bosh::Agent
         raise_format_error(new_state)
       end
 
+      # Collect network state from the infrastructure
+      infrastructure_network_settings = Bosh::Agent::Config.infrastructure.get_network_settings
+      if new_state["networks"] && infrastructure_network_settings
+        # Should we just reassign instead?
+        new_state["networks"] = new_state["networks"].merge(infrastructure_network_settings)
+      end
+
       @lock.synchronize do
         File.open(@state_file, "w") do |f|
           f.puts(YAML.dump(new_state))
