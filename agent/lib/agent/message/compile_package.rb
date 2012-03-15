@@ -30,7 +30,7 @@ module Bosh::Agent
 
       def start
         # TODO implement sha1 verification
-        # TODO propagate erros
+        # TODO propagate errors
         begin
           install_dependencies
           get_source_package
@@ -40,7 +40,7 @@ module Bosh::Agent
           result = upload
           return {"result" => result}
         rescue RuntimeError => e
-          # TODO: logging
+          @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
           raise Bosh::Agent::MessageHandlerError, e
         end
       end
@@ -88,7 +88,7 @@ module Bosh::Agent
           # TODO: error handling
           output = `tar -zxf #{@source_file} 2>&1`
           unless $?.exitstatus == 0
-            raise Bosh::Agent::MessageHandlerError, 
+            raise Bosh::Agent::MessageHandlerError,
               "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus}): #{output}"
           end
         end
@@ -110,7 +110,7 @@ module Bosh::Agent
             @logger.info("Compiling #{@package_name} #{@package_version}")
             output = `bash -x packaging 2>&1`
             unless $?.exitstatus == 0
-              raise Bosh::Agent::MessageHandlerError, 
+              raise Bosh::Agent::MessageHandlerError,
                 "Compile Package Failure (exit code: #{$?.exitstatus}): #{output}"
             end
             @logger.info(output)
@@ -135,7 +135,7 @@ module Bosh::Agent
           compiled_blobstore_id = @blobstore_client.create(f)
         end
         compiled_sha1 = Digest::SHA1.hexdigest(File.read(compiled_package))
-        @logger.info("Uploaded #{@package_name} #{@package_version} 
+        @logger.info("Uploaded #{@package_name} #{@package_version}
                      (sha1: #{compiled_sha1}, blobstore_id: #{compiled_blobstore_id})")
         @logger = nil
         { "sha1" => compiled_sha1, "blobstore_id" => compiled_blobstore_id, "compile_log" => File.read(@log_file) }
