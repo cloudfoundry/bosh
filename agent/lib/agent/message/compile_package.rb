@@ -20,6 +20,13 @@ module Bosh::Agent
 
         @base_dir = Bosh::Agent::Config.base_dir
 
+        # The maximum amount of disk percentage that can be used during
+        # compilation before an error will be thrown.  This is to prevent
+        # package compilation throwing arbitrary errors when disk space runs
+        # out.
+        # @attr [Integer] The max percentage of disk that can be used in
+        #     compilation.
+        @max_disk_usage_pct = 90
         FileUtils.mkdir_p(File.join(@base_dir, 'data', 'tmp'))
 
         @log_file = "#{@base_dir}/data/tmp/#{Bosh::Agent::Config.agent_id}"
@@ -31,17 +38,28 @@ module Bosh::Agent
       def start
         # TODO implement sha1 verification
         # TODO propagate errors
-        begin
-          install_dependencies
-          get_source_package
-          unpack_source_package
-          compile
-          pack
-          result = upload
-          return {"result" => result}
-        rescue RuntimeError => e
-          @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
-          raise Bosh::Agent::MessageHandlerError, e
+        install_dependencies
+        get_source_package
+        unpack_source_package
+        compile
+        pack
+        result = upload
+        return { "result" => result }
+      rescue RuntimeError => e
+        @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
+        raise Bosh::Agent::MessageHandlerError, e
+      ensure
+        clear_log_file(@log_file)
+        delete_tmp_files
+      end
+
+      # Delete the leftover compilation files after a compilation is done. This
+      # is done so that the reuse_compilation_vms option does not fill up a VM.
+      def delete_tmp_files
+        [@compile_base, @install_base].each do |dir|
+          if Dir.exists?(dir)
+            FileUtils.rm_rf(dir)
+          end
         end
       end
 
@@ -94,10 +112,52 @@ module Bosh::Agent
         end
       end
 
+      def disk_info_as_arr(path)
+        # "Filesystem   1024-blocks     Used Available Capacity  Mounted on\n
+        # /dev/disk0s2   195312496 92743676 102312820    48%    /\n"
+        df_out = `df -Pk #{path} 2>&1`
+        unless $?.exitstatus == 0
+          raise Bosh::Agent::MessageHandlerError, "Command 'df -Pk #{path}' " +
+              "on compilation VM failed with:\n#{df_out}\nexit code: " +
+              "#{$?.exitstatus}"
+        end
+
+        # "/dev/disk0s2   195312496 92743568 102312928    48%    /\n"
+        df_out = df_out.sub(/[^\/]*/, "")
+        # ["/dev/disk0s2", "195312496", "92743568", "102312928", "48%", "/\n"]
+        df_out.split(/[ ]+/)
+      end
+
+      # Get the amount of total disk (in KBytes).
+      # @param [String] path Path that the disk size is being requested for.
+      # @return [Integer] The total disk size (in KBytes).
+      def disk_total(path)
+        disk_info_as_arr(path)[1].to_i
+      end
+
+      # Get the amount of disk being used (in KBytes).
+      # @param [String] path Path that the disk usage is being requested for.
+      # @return [Integer] The amount being used (in KBytes).
+      def disk_used(path)
+        disk_info_as_arr(path)[2].to_i
+      end
+
+      # Get the percentage of disk that is used on the compilation VM.
+      # @param [String] path Path that the disk usage is being requested for.
+      # @return [Float] The percentage of disk in use.
+      def pct_disk_used(path)
+        100 * disk_used(path).to_f / disk_total(path).to_f
+      end
+
       def compile
         FileUtils.rm_rf install_dir if File.directory?(install_dir)
         FileUtils.mkdir_p install_dir
-
+        pct_space_used = pct_disk_used(@compile_base)
+        if pct_space_used >= @max_disk_usage_pct
+          raise Bosh::Agent::MessageHandlerError,
+              "Compile Package Failure. Greater than #{@max_disk_usage_pct}% " +
+              "is used (#{pct_space_used}%."
+        end
         Dir.chdir(compile_dir) do
 
           # Prevent these from getting inhereted from the agent
@@ -127,6 +187,16 @@ module Bosh::Agent
         Dir.chdir(install_dir) do
           `tar -zcf #{compiled_package} .`
         end
+      end
+
+      # Clears the log file after a compilation runs.  This is needed because if
+      # reuse_compilation_vms is being used then without clearing the log then
+      # the log from each subsequent compilation will include the previous
+      # compilation's output.
+      # @param [String] log_file Path to the log file.
+      def clear_log_file(log_file)
+        File.delete(log_file) if File.exists?(log_file)
+        @logger = Logger.new(log_file)
       end
 
       def upload
