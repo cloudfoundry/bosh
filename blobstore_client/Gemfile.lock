@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    blobstore_client (0.3.11)
+    blobstore_client (0.3.12)
       aws-s3 (~> 0.6.2)
       httpclient (~> 2.2.0)
       json (~> 1.4.6)
