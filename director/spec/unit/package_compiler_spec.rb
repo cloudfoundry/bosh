@@ -3,6 +3,14 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::PackageCompiler do
+
+  def create_task(ready)
+    task = stub(:CompileTask)
+    task.stub(:compiled_package).and_return(nil)
+    task.stub(:ready_to_compile?).and_return(ready)
+    task
+  end
+
   before(:each) do
     @task = stub(:CompileTask)
     @package = BD::Models::Package.make(
@@ -22,6 +30,7 @@ describe Bosh::Director::PackageCompiler do
     @compilation_config.stub(:env).and_return({"env" => "baz"})
     @compilation_config.stub(:workers).and_return(3)
     @compilation_config.stub(:network).and_return(@network)
+    @compilation_config.stub(:reuse_compilation_vms).and_return(false)
     @deployment = BD::Models::Deployment.make
     @deployment_plan = stub(:DeploymentPlan)
     @deployment_plan.stub(:compilation).and_return(@compilation_config)
@@ -56,12 +65,6 @@ describe Bosh::Director::PackageCompiler do
   end
 
   describe :compile_packages do
-    def create_task(ready)
-      task = stub(:CompileTask)
-      task.stub(:compiled_package).and_return(nil)
-      task.stub(:ready_to_compile?).and_return(ready)
-      task
-    end
 
     it "should schedule ready tasks" do
       tasks = {"a" => create_task(true), "b" => create_task(false)}
@@ -77,6 +80,22 @@ describe Bosh::Director::PackageCompiler do
       BD::ThreadPool.stub(:new).with(:max_threads => 3).and_return(thread_pool)
 
       @package_compiler.should_receive(:process_task).with(tasks["a"])
+      @package_compiler.compile_packages
+    end
+
+    it "should delete VMs after compilation is done when reuse_compilation_vms is specified" do
+      @deployment_plan.compilation.stub(:reuse_compilation_vms).and_return(true)
+      tasks = { "a" => create_task(true), "b" => create_task(false) }
+      vm_data1 = stub(:VmData)
+      vm_data2 = stub(:VmData)
+      @package_compiler.instance_eval do
+        @compile_tasks = tasks
+        @ready_tasks = [tasks["a"]]
+        @vm_reuser = BD::VmReuser.new
+        @vm_reuser.should_receive(:each).and_yield(vm_data1).and_yield(vm_data2)
+      end
+      @package_compiler.should_receive(:tear_down_vm).twice
+      @package_compiler.stub(:process_task)
       @package_compiler.compile_packages
     end
   end
@@ -99,8 +118,10 @@ describe Bosh::Director::PackageCompiler do
       @task.stub(:dependency_key).and_return("dep key")
       @task.stub(:dependency_spec).and_return(dep_spec)
 
+      vm_data = stub(:VmData)
+      vm_data.should_receive(:agent).and_return(agent)
       @package_compiler.should_receive(:prepare_vm).with(@stemcell).
-          and_yield(agent)
+          and_yield(vm_data)
       agent.should_receive(:compile_package).
           with("blob-1", "sha-1", "gcc", "1.2.1", dep_spec).
           and_return({"result" => {"sha1" => "sha-2",
@@ -146,12 +167,68 @@ describe Bosh::Director::PackageCompiler do
       @cloud.should_receive(:delete_vm).with("vm-123")
 
       yielded_agent = nil
-      @package_compiler.prepare_vm(@stemcell) do |a|
-        yielded_agent = a
+      @package_compiler.prepare_vm(@stemcell) do |vm_data|
+        yielded_agent = vm_data.agent
       end
       yielded_agent.should == agent
 
       BD::Models::Vm.count.should == 0
+    end
+
+    it "should return an existing VM if reuse_compilation_vms is specified" do
+      @deployment_plan.compilation.stub(:reuse_compilation_vms).and_return(true)
+      vm_data = stub(:VmData)
+      vm_data.should_receive(:release)
+      vm = BD::Models::Vm.make(:agent_id => "agent-1", :cid => "vm-123")
+      vm_data.should_receive(:vm).and_return(vm)
+      @package_compiler.instance_eval do
+        @vm_reuser = BD::VmReuser.new
+        @vm_reuser.should_receive(:get_vm).and_return(vm_data)
+      end
+
+      yielded_vm_d = nil
+      @package_compiler.prepare_vm(@stemcell) do |vm_d|
+        yielded_vm_d = vm_d
+      end
+      yielded_vm_d.should == vm_data
+    end
+
+    it "should not delete the new VM if reuse_compilation_vms is specified" do
+      @deployment_plan.compilation.stub(:reuse_compilation_vms).and_return(true)
+      vm_data = stub(:VmData)
+      vm_data.should_receive(:release)
+      vm = BD::Models::Vm.make(:agent_id => "agent-1", :cid => "vm-123")
+      vm_data.should_receive(:agent=)
+      @package_compiler.instance_eval do
+        @vm_reuser = BD::VmReuser.new
+        @vm_reuser.should_receive(:get_vm).and_return(nil)
+        @vm_reuser.should_receive(:add_vm).and_return(vm_data)
+      end
+
+      network_reservation = stub(:NetworkReservation)
+      @package_compiler.network_reservations = [network_reservation]
+
+      network_settings = {"net" => "ip"}
+      @network.stub(:network_settings).with(network_reservation).
+          and_return(network_settings)
+
+      vm_creator = stub(:VmCreator)
+      vm_creator.should_receive(:create).
+          with(@deployment, @stemcell, {"foo" => "bar"},
+               {"my-net" => network_settings}, nil, {"env" => "baz"}).
+          and_return(vm)
+      BD::VmCreator.stub(:new).and_return(vm_creator)
+
+      agent = stub(:AgentClient)
+      agent.should_receive(:wait_until_ready)
+      BD::AgentClient.stub(:new).with("agent-1").and_return(agent)
+
+      @package_compiler.should_receive(:configure_vm).
+          with(vm, agent, {"my-net" => network_settings})
+
+      @package_compiler.prepare_vm(@stemcell) do |vm_d|
+      end
+      @package_compiler.should_not_receive(:tear_down_vm)
     end
   end
 
