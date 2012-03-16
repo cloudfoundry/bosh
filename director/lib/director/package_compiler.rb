@@ -7,6 +7,12 @@ module Bosh::Director
     attr_accessor :ready_tasks
     attr_accessor :network_reservations
 
+    # This is used to track how many compilations are currently running. This is
+    # done so that the "reuse_compilation_vms" option will know when to delete the
+    # single compilation VM.
+    # @return [Integer] the number of compilations running.
+    attr_accessor :compilations_running
+
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
@@ -18,6 +24,7 @@ module Bosh::Director
       @network = @deployment_plan.compilation.network
       @compilation_resources = @deployment_plan.compilation.cloud_properties
       @compilation_env = @deployment_plan.compilation.env
+      @vm_reuser = VmReuser.new
     end
 
     def compile
@@ -47,21 +54,36 @@ module Bosh::Director
 
     def compile_packages
       @event_log.begin_stage("Compiling packages", compilation_count)
+      @compilations_running = 0
       ThreadPool.new(:max_threads => @deployment_plan.compilation.workers).wrap do |pool|
-        loop do
-          # process as many tasks without waiting
+        begin
           loop do
-            task = @ready_tasks.pop
+            # process as many tasks without waiting
+            loop do
+              task = @ready_tasks.pop
 
-            break if task.nil?
-            break if @job && @job.task_cancelled?
-
-            @logger.info("Enqueuing package ready for compilation: `#{task}'")
-            pool.process { process_task(task) }
+              break if task.nil?
+              break if @job && @job.task_cancelled?
+              @logger.info("Enqueuing package ready for compilation: `#{task}'")
+              pool.process {
+                begin
+                  @compilations_running += 1
+                  process_task(task)
+                ensure
+                  @compilations_running -= 1
+                end
+              }
+            end
+            break if !pool.working? && @ready_tasks.empty? &&
+                @compilations_running == 0
+            sleep(0.1)
           end
-
-          break if !pool.working? && @ready_tasks.empty?
-          sleep(0.1)
+        ensure
+          if @deployment_plan.compilation.reuse_compilation_vms
+            @vm_reuser.each do |vm_data|
+              tear_down_vm(vm_data)
+            end
+          end
         end
       end
     end
@@ -87,8 +109,17 @@ module Bosh::Director
     end
 
     def reserve_networks
+      num_workers = @deployment_plan.compilation.workers
       @network_reservations = []
-      @deployment_plan.compilation.workers.times do
+      stemcells = []
+      @ready_tasks.each do |task|
+        stemcells << task.stemcell
+      end
+      stemcells.uniq!
+      num_networks = @deployment_plan.compilation.reuse_compilation_vms ?
+          stemcells.size * num_workers : num_workers
+
+      num_networks.times do
         reservation = NetworkReservation.new(
             :type => NetworkReservation::DYNAMIC)
         @network.reserve(reservation)
@@ -108,21 +139,27 @@ module Bosh::Director
       end
     end
 
+    def stemcell_name_version(stemcell)
+      "#{stemcell.name}/#{stemcell.version}"
+    end
+
     def compile_package(task)
       package = task.package
       stemcell = task.stemcell
 
       build = generate_build_number(package, stemcell)
 
-      @logger.info("Compiling package: #{package.name}/#{package.version} on " +
-                       "stemcell: #{stemcell.name}/#{stemcell.version}")
-
       agent_task = nil
-      prepare_vm(stemcell) do |agent|
-        @logger.info("Compiling package on compilation VM")
-        agent_task = agent.compile_package(package.blobstore_id, package.sha1, package.name,
-                                           "#{package.version}.#{build}", task.dependency_spec)
+
+      @logger.info("Compiling package: #{package.name}/#{package.version} on " +
+                   "stemcell: #{stemcell_name_version(stemcell)}")
+
+      prepare_vm(stemcell) do |vm_data|
+        agent_task = vm_data.agent.compile_package(package.blobstore_id,
+            package.sha1, package.name, "#{package.version}.#{build}",
+            task.dependency_spec)
       end
+
       task_result = agent_task["result"]
 
       compiled_package = Models::CompiledPackage.create do |p|
@@ -133,10 +170,38 @@ module Bosh::Director
         p.blobstore_id = task_result["blobstore_id"]
         p.dependency_key = task.dependency_key
       end
+
       task.compiled_package = compiled_package
     end
 
+    # This method will create a VM for each stemcell in the stemcells array
+    # passed in.  The VMs are yielded and their destruction is ensured.
+    # @param [Array] stemcells An array of the stemcells that need to have
+    #     compilation VMs created.
     def prepare_vm(stemcell)
+      if @deployment_plan.compilation.reuse_compilation_vms
+        vm_data = @vm_reuser.get_vm(stemcell)
+        unless vm_data.nil?
+          @logger.info("Reusing compilation VM cid #{vm_data.vm.cid} for " +
+                           "stemcell #{stemcell_name_version(stemcell)}.")
+          begin
+            yield(vm_data)
+          ensure
+            vm_data.release
+          end
+          return
+        end
+      end
+
+      if @deployment_plan.compilation.reuse_compilation_vms &&
+          (@vm_reuser.get_num_vms(stemcell) >=
+              @deployment_plan.compilation.workers)
+        raise "There should never be more VMs for a stemcell than the number " +
+            "of workers in reuse_compilation_vms mode."
+      end
+
+      @logger.info("Creating new compilation VM for stemcell " +
+                   "#{stemcell_name_version(stemcell)}.")
       reservation = nil
       @networks_mutex.synchronize do
         reservation = @network_reservations.shift
@@ -151,19 +216,30 @@ module Bosh::Director
                                 nil, @compilation_env)
 
       @logger.info("Configuring compilation VM: #{vm.cid}")
+      vm_data = @vm_reuser.add_vm(reservation, vm, stemcell, network_settings)
+
       begin
         agent = AgentClient.new(vm.agent_id)
         agent.wait_until_ready
 
-        configure_vm(vm, agent, network_settings)
-
-        yield(agent)
+        configure_vm(vm, agent, vm_data.network_settings)
+        vm_data.agent = agent
+        yield(vm_data)
       ensure
-        @logger.info("Deleting compilation VM: #{vm.cid}")
-        @cloud.delete_vm(vm.cid)
-        vm.destroy
+        vm_data.release
+        unless @deployment_plan.compilation.reuse_compilation_vms
+          tear_down_vm(vm_data)
+        end
       end
 
+    end
+
+    def tear_down_vm(vm_data)
+      vm = vm_data.vm
+      reservation = vm_data.reservation
+      @logger.info("Deleting compilation VM: #{vm.cid}")
+      @cloud.delete_vm(vm.cid)
+      vm.destroy
       @networks_mutex.synchronize do
         @network_reservations << reservation
       end

@@ -22,7 +22,9 @@ module Bosh::Director
       # @return [Hash] environment to use when creating VMs. (optional)
       attr_accessor :env
 
-      ##
+      # @return [Bool] if a single VM should be used for compilation. (optional)
+      attr_accessor :reuse_compilation_vms
+
       # Creates compilation configuration spec from the deployment manifest.
       # @param [DeploymentPlan] deployment
       # @param [Hash] compilation_config parsed compilation config YAML section
@@ -32,6 +34,10 @@ module Bosh::Director
                                  :class => Integer, :min => 1)
         network_name = safe_property(compilation_config, "network",
                                      :class => String)
+        @reuse_compilation_vms = safe_property(compilation_config,
+                                            "reuse_compilation_vms",
+                                            :class => :boolean,
+                                            :optional => true)
         @network = deployment.network(network_name)
         if @network.nil?
           raise "Compilation workers reference an unknown " +

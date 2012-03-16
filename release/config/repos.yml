@@ -1,7 +1,8 @@
 ---
 bosh:
-  uri: git@github.com:vmware-ac/bosh.git
+  uri: /Users/lisbakke/Documents/bosh
   roles:
   - blobstore
   - director
   - health_monitor
+  scm: NONE

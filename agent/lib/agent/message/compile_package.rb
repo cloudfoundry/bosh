@@ -19,7 +19,7 @@ module Bosh::Agent
         @blobstore_id, @sha1, @package_name, @package_version, @dependencies = args
 
         @base_dir = Bosh::Agent::Config.base_dir
-
+        @max_disk_usage_pct = 90
         FileUtils.mkdir_p(File.join(@base_dir, 'data', 'tmp'))
 
         @log_file = "#{@base_dir}/data/tmp/#{Bosh::Agent::Config.agent_id}"
@@ -38,10 +38,20 @@ module Bosh::Agent
           compile
           pack
           result = upload
+          clear_log_file
+          delete_tmp_files
           return {"result" => result}
         rescue RuntimeError => e
           @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
           raise Bosh::Agent::MessageHandlerError, e
+        end
+      end
+
+      def delete_tmp_files
+        [@compile_base, @install_base].each do |dir|
+          if Dir.exists?(dir)
+            FileUtils.rm_rf(dir)
+          end
         end
       end
 
@@ -94,10 +104,26 @@ module Bosh::Agent
         end
       end
 
+      def disk_free(path)
+        `df -Pk #{path} |grep ^/ | awk '{print $4;}'`.to_i
+      end
+
+      def disk_used(path)
+        `df -Pk #{path} |grep ^/ | awk '{print $3;}'`.to_i
+      end
+
+      def pct_disk_used(path)
+        100 * disk_used(path).to_f / disk_free(path).to_f
+      end
+
       def compile
         FileUtils.rm_rf install_dir if File.directory?(install_dir)
         FileUtils.mkdir_p install_dir
-
+        pct_space_used = pct_disk_used(@compile_base)
+        if pct_space_used >= @max_disk_usage_pct
+          raise Bosh::Agent::MessageHandlerError,
+              "Compile Package Failure. Greater than #{@max_disk_usage_pct}% is used (#{pct_space_used}%)."
+        end
         Dir.chdir(compile_dir) do
 
           # Prevent these from getting inhereted from the agent
@@ -127,6 +153,13 @@ module Bosh::Agent
         Dir.chdir(install_dir) do
           `tar -zcf #{compiled_package} .`
         end
+      end
+
+      def clear_log_file
+        File.open(@log_file, "w") do |f|
+          f.write("")
+        end
+        @logger = Logger.new(@log_file)
       end
 
       def upload
