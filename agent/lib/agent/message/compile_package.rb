@@ -20,6 +20,13 @@ module Bosh::Agent
 
         @base_dir = Bosh::Agent::Config.base_dir
 
+        # The maximum amount of disk percentage that can be used during
+        # compilation before an error will be thrown.  This is to prevent
+        # package compilation throwing arbitrary errors when disk space runs
+        # out.
+        # @attr [Integer] The max percentage of disk that can be used in
+        #     compilation.
+        @max_disk_usage_pct = 90
         FileUtils.mkdir_p(File.join(@base_dir, 'data', 'tmp'))
 
         @log_file = "#{@base_dir}/data/tmp/#{Bosh::Agent::Config.agent_id}"
@@ -38,10 +45,22 @@ module Bosh::Agent
           compile
           pack
           result = upload
+          clear_log_file(@log_file)
+          delete_tmp_files
           return {"result" => result}
         rescue RuntimeError => e
           @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
           raise Bosh::Agent::MessageHandlerError, e
+        end
+      end
+
+      # Delete the leftover compilation files after a compilation is done. This
+      # is done so that the reuse_compilation_vms option does not fill up a VM.
+      def delete_tmp_files
+        [@compile_base, @install_base].each do |dir|
+          if Dir.exists?(dir)
+            FileUtils.rm_rf(dir)
+          end
         end
       end
 
@@ -94,10 +113,36 @@ module Bosh::Agent
         end
       end
 
+      # Get the amount of total disk (in KBytes).
+      # @param [String] path Path that the disk size is being requested for.
+      # @return [Integer] The total disk size (in KBytes).
+      def disk_total(path)
+        `df -Pk #{path} |grep ^/ | awk '{print $2;}'`.to_i
+      end
+
+      # Get the amount of disk being used (in KBytes).
+      # @param [String] path Path that the disk usage is being requested for.
+      # @return [Integer] The amount being used (in KBytes).
+      def disk_used(path)
+        `df -Pk #{path} |grep ^/ | awk '{print $3;}'`.to_i
+      end
+
+      # Get the percentage of disk that is used on the compilation VM.
+      # @param [String] path Path that the disk usage is being requested for.
+      # @return [Float] The percentage of disk in use.
+      def pct_disk_used(path)
+        100 * disk_used(path).to_f / disk_total(path).to_f
+      end
+
       def compile
         FileUtils.rm_rf install_dir if File.directory?(install_dir)
         FileUtils.mkdir_p install_dir
-
+        pct_space_used = pct_disk_used(@compile_base)
+        if pct_space_used >= @max_disk_usage_pct
+          raise Bosh::Agent::MessageHandlerError,
+              "Compile Package Failure. Greater than #{@max_disk_usage_pct}% " +
+              "is used (#{pct_space_used}%."
+        end
         Dir.chdir(compile_dir) do
 
           # Prevent these from getting inhereted from the agent
@@ -127,6 +172,16 @@ module Bosh::Agent
         Dir.chdir(install_dir) do
           `tar -zcf #{compiled_package} .`
         end
+      end
+
+      # Clears the log file after a compilation runs.  This is needed because if
+      # reuse_compilation_vms is being used then without clearing the log then
+      # the log from each subsequent compilation will include the previous
+      # compilation's output.
+      # @param [String] log_file Path to the log file.
+      def clear_log_file(log_file)
+        File.delete(log_file) if File.exists?(log_file)
+        @logger = Logger.new(log_file)
       end
 
       def upload
