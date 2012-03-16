@@ -24,6 +24,7 @@ common/pkg
 cpi/pkg
 vsphere_cpi/pkg
 aws_cpi/pkg
+package_compiler/pkg
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
 spec/assets/test_release/config/dev.yml
