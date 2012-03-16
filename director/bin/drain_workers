@@ -10,10 +10,15 @@ $LOAD_PATH.unshift(File.dirname(__FILE__) + "/../lib")
 require "director"
 
 config_file = nil
+report = false
+active_worker = 1
 
 opts = OptionParser.new do |opts|
   opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
     config_file = opt
+  end
+  opts.on("-r", "--report", "Report 1 if any active worker, 0 otherwise") do |opt|
+    report = true
   end
 end
 
@@ -30,9 +35,15 @@ loop do
   logger.info("Checking for any workers that are still processing..")
   worker = Resque::Worker.all.find { |worker| worker.working? }
   if worker.nil?
+    active_worker = 0
     logger.info("All workers are idle")
+    break
+  end
+  if report
     break
   end
   logger.info("Found worker: #{worker}, sleeping for 60 seconds.")
   sleep 60
 end
+
+puts "#{active_worker}" if report
