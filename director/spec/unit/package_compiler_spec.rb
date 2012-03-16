@@ -22,6 +22,7 @@ describe Bosh::Director::PackageCompiler do
     @compilation_config.stub(:env).and_return({"env" => "baz"})
     @compilation_config.stub(:workers).and_return(3)
     @compilation_config.stub(:network).and_return(@network)
+    @compilation_config.stub(:reuse_compilation_vms).and_return(false)
     @deployment = BD::Models::Deployment.make
     @deployment_plan = stub(:DeploymentPlan)
     @deployment_plan.stub(:compilation).and_return(@compilation_config)
@@ -99,8 +100,10 @@ describe Bosh::Director::PackageCompiler do
       @task.stub(:dependency_key).and_return("dep key")
       @task.stub(:dependency_spec).and_return(dep_spec)
 
+      vm_data = stub(:VmData)
+      vm_data.should_receive(:agent).and_return(agent)
       @package_compiler.should_receive(:prepare_vm).with(@stemcell).
-          and_yield(agent)
+          and_yield(vm_data)
       agent.should_receive(:compile_package).
           with("blob-1", "sha-1", "gcc", "1.2.1", dep_spec).
           and_return({"result" => {"sha1" => "sha-2",
@@ -146,8 +149,8 @@ describe Bosh::Director::PackageCompiler do
       @cloud.should_receive(:delete_vm).with("vm-123")
 
       yielded_agent = nil
-      @package_compiler.prepare_vm(@stemcell) do |a|
-        yielded_agent = a
+      @package_compiler.prepare_vm(@stemcell) do |vm_data|
+        yielded_agent = vm_data.agent
       end
       yielded_agent.should == agent
 

@@ -15,6 +15,8 @@ describe Bosh::Agent::Message::CompilePackage do
 
     @handler.compile_base = File.dirname(__FILE__) + '/../../tmp/data/compile'
     @handler.install_base = File.dirname(__FILE__) + '/../../tmp/data/packages'
+    @handler.stub(:disk_used).and_return(5)
+    @handler.stub(:disk_total).and_return(10)
   end
 
   it 'should have a blobstore client' do
@@ -44,8 +46,8 @@ describe Bosh::Agent::Message::CompilePackage do
 
     @handler.get_source_package
     @handler.unpack_source_package
-    @handler.compile
 
+    @handler.compile
     dummy_file = File.join(@handler.install_base, @handler.package_name, @handler.package_version.to_s, 'dummy.txt')
     File.exist?(dummy_file).should be_true
   end
@@ -87,6 +89,38 @@ describe Bosh::Agent::Message::CompilePackage do
       result = @handler.upload
       result.delete('compile_log')
       result.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id}
+    end
+  end
+
+  it 'should correctly calculate disk percentage used' do
+    @handler.stub(:disk_used).and_return(6)
+    @handler.stub(:disk_total).and_return(10)
+    @handler.pct_disk_used('./').should == 60
+  end
+
+  it 'should throw error when disk percentage >= 90' do
+    @handler.stub(:pct_disk_used).and_return(90)
+    dummy_compile_data
+
+    @handler.get_source_package
+    @handler.unpack_source_package
+    lambda {
+      @handler.compile
+    }.should raise_error(Bosh::Agent::MessageHandlerError)
+  end
+
+  it 'should clear the log file every time create_logger is called' do
+    dir = Dir.mktmpdir
+    begin
+      logger = @handler.create_logger("#{dir}/logger")
+      logger.info("test log data")
+      logger.close
+      File.read("#{dir}/logger")["test log data"].should_not be_nil
+      logger = @handler.create_logger("#{dir}/logger")
+      logger.close
+      File.read("#{dir}/logger")["test log data"].should be_nil
+    ensure
+      FileUtils.remove_entry_secure(dir)
     end
   end
 
