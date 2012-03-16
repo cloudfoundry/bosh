@@ -5,7 +5,9 @@ module Bosh
       CHUNK_SIZE = 1024*1024
 
       def initialize(options)
-        @blobstore_path = options['blobstore_path']
+        @blobstore_path = options[:blobstore_path]
+        raise "No blobstore path given" if @blobstore_path.nil?
+        FileUtils.mkdir_p(@blobstore_path) unless File.directory?(@blobstore_path)
       end
 
       def create_file(file)
@@ -31,6 +33,11 @@ module Bosh
         end
       rescue Errno::ENOENT
         raise NotFound, "Blobstore object '#{id}' not found"
+      end
+
+      def delete(id)
+        file = File.join(@blobstore_path, id)
+        FileUtils.rm(file)
       end
 
     end

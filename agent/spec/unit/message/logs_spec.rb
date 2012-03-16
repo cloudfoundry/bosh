@@ -14,7 +14,7 @@ describe Bosh::Agent::Message::FetchLogs do
     Bosh::Agent::Config.state = Bosh::Agent::State.new(File.join(@base_dir, "state.yml"))
 
     Bosh::Agent::Config.blobstore_provider = "local"
-    Bosh::Agent::Config.blobstore_options = { "blobstore_path" => @blobstore_dir }
+    Bosh::Agent::Config.blobstore_options = { :blobstore_path => @blobstore_dir }
   end
 
   after(:each) do

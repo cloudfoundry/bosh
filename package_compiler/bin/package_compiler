@@ -23,7 +23,7 @@ when "compile"
   options["command"] = ARGV[0]
   options["manifest"] = ARGV[1]
   options["release"] = ARGV[2]
-  options["blobstore_options"] = {"blobstore_path" => ARGV[3]}
+  options["blobstore_options"] = {:blobstore_path => ARGV[3]}
   options["agent_uri"] = ARGV[4]
 when "apply"
   usage if ARGV.size != 3

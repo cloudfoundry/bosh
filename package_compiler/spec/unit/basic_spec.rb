@@ -6,7 +6,7 @@ describe Bosh::PackageCompiler::Compiler do
     blobstore_path = File.join(@base_dir, "blob_cache")
     FileUtils.mkdir(blobstore_path)
     @options = {
-          "blobstore_options" => { "blobstore_path" => blobstore_path },
+          "blobstore_options" => { :blobstore_path => blobstore_path },
           "blobstore_provider" => "local",
           "base_dir"  => @base_dir,
           "logfile" => File.join(@base_dir, "spec.log"),
