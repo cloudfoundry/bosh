@@ -94,5 +94,32 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       })
       config.env.should == {"password" => "password1"}
     end
+
+    it "should allow reuse_compilation_vms to be set" do
+      config = BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+          "workers" => 1,
+          "network" => "foo",
+          "cloud_properties" => {
+              "foo" => "bar"
+          },
+          "reuse_compilation_vms" => true
+      })
+      config.reuse_compilation_vms.should == true
+    end
+
+    it "should throw an error when a boolean property isnt boolean" do
+      lambda {
+        config = BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+            "workers" => 1,
+            "network" => "foo",
+            "cloud_properties" => {
+                "foo" => "bar"
+            },
+            # the non-boolean boolean
+            "reuse_compilation_vms" => 1
+        })
+      }.should raise_error(Bosh::Director::ValidationInvalidType)
+    end
+
   end
 end
