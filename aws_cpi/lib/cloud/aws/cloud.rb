@@ -156,26 +156,7 @@ module Bosh::AWSCloud
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
         instance = @ec2.instances[instance_id]
-        # FIXME soft reboot doesn't seem to work with aws-sdk
-        # @instance.reboot
-
-        # The following will only work with EBS-root instances,
-        # so our assumption is that we have one.
-        instance.stop
-        state = instance.status
-
-        @logger.info("Stopping instance `#{instance.id}', " \
-                     "state is `#{state}'")
-
-        wait_resource(instance, state, :stopped)
-
-        instance.start
-        state = instance.status
-
-        @logger.info("Starting instance `#{instance.id}', " \
-                     "state is `#{state}'")
-
-        wait_resource(instance, state, :running)
+        soft_reboot(instance)
       end
     end
 
@@ -547,6 +528,39 @@ module Bosh::AWSCloud
       end
 
       cloud_error("Cannot find EBS volume on current instance")
+    end
+
+    ##
+    # Soft reboots EC2 instance
+    # @param [AWS::EC2::Instance] instance EC2 instance
+    def soft_reboot(instance)
+      # There is no trackable status change for the instance being
+      # rebooted, so it's up to CPI client to keep track of agent
+      # being ready after reboot.
+      instance.reboot
+    end
+
+    ##
+    # Hard reboots EC2 instance
+    # @param [AWS::EC2::Instance] instance EC2 instance
+    def hard_reboot(instance)
+      # N.B. This will only work with ebs-store instances,
+      # as instance-store instances don't support stop/start.
+      instance.stop
+      state = instance.status
+
+      @logger.info("Stopping instance `#{instance.id}', " \
+                   "state is `#{state}'")
+
+      wait_resource(instance, state, :stopped)
+
+      instance.start
+      state = instance.status
+
+      @logger.info("Starting instance `#{instance.id}', " \
+                   "state is `#{state}'")
+
+      wait_resource(instance, state, :running)
     end
 
     ##
