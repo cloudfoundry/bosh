@@ -2,13 +2,13 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-describe Bosh::AWSCloud::Cloud do
+describe Bosh::AwsCloud::Cloud do
 
   describe "creating via provider" do
 
     it "can be created using Bosh::Cloud::Provider" do
       cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options)
-      cloud.should be_an_instance_of(Bosh::AWSCloud::Cloud)
+      cloud.should be_an_instance_of(Bosh::AwsCloud::Cloud)
     end
 
   end
