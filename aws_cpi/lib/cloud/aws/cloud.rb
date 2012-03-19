@@ -319,46 +319,14 @@ module Bosh::AWSCloud
           instance = @ec2.instances[current_instance_id]
 
           sd_name = attach_ebs_volume(instance, volume)
-          xvd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/xvd")
-          ebs_volume = nil
-
-          DEVICE_POLL_TIMEOUT.times do
-            if File.blockdev?(sd_name)
-              ebs_volume = sd_name
-              break
-            elsif File.blockdev?(xvd_name)
-              ebs_volume = xvd_name
-              break
-            end
-            sleep(1)
-          end
-
-          if ebs_volume.nil?
-            cloud_error("Cannot find EBS volume on current instance")
-          end
+          ebs_volume = find_ebs_device(sd_name)
 
           # 2. Copy image to new EBS volume
           Dir.mktmpdir do |tmp_dir|
             @logger.info("Extracting stemcell to `#{tmp_dir}'")
-            output = `tar -C #{tmp_dir} -xzf #{image_path} 2>&1`
-            if $?.exitstatus != 0
-              cloud_error("Failed to unpack stemcell root image" \
-                          "tar exit status #{$?.exitstatus}: #{output}")
-            end
 
-            root_image = File.join(tmp_dir, "root.img")
-            unless File.exists?(root_image)
-              cloud_error("Root image is missing from stemcell archive")
-            end
-
-            Dir.chdir(tmp_dir) do
-              dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
-              if $?.exitstatus != 0
-                cloud_error("Unable to copy stemcell root image, " \
-                            "dd exit status #{$?.exitstatus}: " \
-                            "#{dd_out}")
-              end
-            end
+            unpack_image(tmp_dir, image_path)
+            copy_root_image(tmp_dir, ebs_volume)
 
             # 3. Create snapshot and then an image using this snapshot
             snapshot = volume.create_snapshot
@@ -540,6 +508,45 @@ module Bosh::AWSCloud
       rescue AWS::Core::Resource::NotFound
         # It's OK, just means attachment is gone when we're asking for state
       end
+    end
+
+    def unpack_image(tmp_dir, image_path)
+      output = `tar -C #{tmp_dir} -xzf #{image_path} 2>&1`
+      if $?.exitstatus != 0
+        cloud_error("Failed to unpack stemcell root image" \
+                    "tar exit status #{$?.exitstatus}: #{output}")
+      end
+
+      root_image = File.join(tmp_dir, "root.img")
+      unless File.exists?(root_image)
+        cloud_error("Root image is missing from stemcell archive")
+      end
+    end
+
+    def copy_root_image(dir, ebs_volume)
+      Dir.chdir(dir) do
+        dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
+        if $?.exitstatus != 0
+          cloud_error("Unable to copy stemcell root image, " \
+                      "dd exit status #{$?.exitstatus}: " \
+                      "#{dd_out}")
+        end
+      end
+    end
+
+    def find_ebs_device(sd_name)
+      xvd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/xvd")
+
+      DEVICE_POLL_TIMEOUT.times do
+        if File.blockdev?(sd_name)
+          return sd_name
+        elsif File.blockdev?(xvd_name)
+          return xvd_name
+        end
+        sleep(1)
+      end
+
+      cloud_error("Cannot find EBS volume on current instance")
     end
 
     ##

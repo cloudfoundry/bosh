@@ -4,8 +4,15 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::AWSCloud::Cloud do
 
-  it "deletes stemcell" do
-    pending "coming soon"
+  it "deregisters EC2 image" do
+    image = double("image", :id => "i-foo")
+
+    cloud = mock_cloud do |ec2|
+      ec2.images.stub(:[]).with("i-foo").and_return(image)
+    end
+
+    image.should_receive(:deregister)
+    cloud.delete_stemcell("i-foo")
   end
 
 end
