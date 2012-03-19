@@ -16,15 +16,30 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     settings.should == @settings
   end
 
-  it 'should get network settings' do
+  it 'should get network settings for dhcp network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
-    network_settings = settings_wrapper.get_network_settings
+    network_properties = {"type" => "dhcp"}
+    properties = settings_wrapper.get_network_settings("test", network_properties)
 
-    network_settings.should have_key("default")
-    network_settings["default"].should have_key("ip")
-    network_settings["default"].should have_key("netmask")
-    network_settings["default"].should have_key("dns")
-    network_settings["default"].should have_key("gateway")
+    properties.should have_key("ip")
+    properties.should have_key("netmask")
+    properties.should have_key("dns")
+    properties.should have_key("gateway")
+  end
+
+  it 'should get nothing for vip network' do
+    settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
+    network_properties = {"type" => "vip"}
+    properties = settings_wrapper.get_network_settings("test", network_properties)
+    properties.should be_nil
+  end
+
+  it 'should raise unsupported network exception for manual network' do
+    settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
+    network_properties = {}
+    lambda {
+      properties = settings_wrapper.get_network_settings("test", network_properties)
+    }.should raise_error(Bosh::Agent::StateError, /Unsupported network/)
   end
 
 end
