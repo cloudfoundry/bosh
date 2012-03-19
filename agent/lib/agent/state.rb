@@ -71,10 +71,15 @@ module Bosh::Agent
       end
 
       # Collect network state from the infrastructure
-      infrastructure_network_settings = Bosh::Agent::Config.infrastructure.get_network_settings
-      if new_state["networks"] && infrastructure_network_settings
-        # Should we just reassign instead?
-        new_state["networks"] = new_state["networks"].merge(infrastructure_network_settings)
+      # 1. Loop through each network
+      # 2.   Get network settings for each network
+      if new_state["networks"]
+        new_state["networks"].each do |network, properties|
+          infrastructure_properties = Bosh::Agent::Config.infrastructure.get_network_settings(network, properties)
+          if infrastructure_properties
+            new_state["networks"][network] = new_state["networks"][network].merge(infrastructure_properties)
+          end
+        end
       end
 
       @lock.synchronize do
