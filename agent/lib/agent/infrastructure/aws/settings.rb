@@ -1,6 +1,9 @@
 module Bosh::Agent
   class Infrastructure::Aws::Settings
 
+    VIP_NETWORK_TYPE = "vip"
+    DHCP_NETWORK_TYPE = "dynamic"
+
     def initialize
       @settings_file = Bosh::Agent::Config.settings_file
     end
@@ -16,17 +19,26 @@ module Bosh::Agent
       Bosh::Agent::Config.settings = settings
     end
 
-    def get_network_settings
+    def get_network_settings(network_name, properties)
+      unless properties["type"] && [VIP_NETWORK_TYPE, DHCP_NETWORK_TYPE].include?(properties["type"])
+        raise Bosh::Agent::StateError, "Unsupported network #{properties["type"]}"
+      end
+
+      # Nothing to do for "vip" networks
+      return nil if properties["type"] == "vip"
+
       sigar = Sigar.new
       ifconfig = sigar.net_interface_config("eth0")
       net_info = sigar.net_info
 
-      networks = {"default" => {}}
-      networks["default"]["ip"] = ifconfig.address
-      networks["default"]["netmask"] = ifconfig.netmask
-      networks["default"]["dns"] = [net_info.primary_dns, net_info.secondary_dns]
-      networks["default"]["gateway"] = net_info.default_gateway
-      networks
+      properties = {}
+      properties["ip"] = ifconfig.address
+      properties["netmask"] = ifconfig.netmask
+      properties["dns"] = []
+      properties["dns"] << net_info.primary_dns if net_info.primary_dns && !net_info.primary_dns.empty?
+      properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
+      properties["gateway"] = net_info.default_gateway
+      properties
     end
 
   end

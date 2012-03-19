@@ -22,6 +22,21 @@ module Bosh::Agent
                                "#{@new_spec.class} given"
         end
 
+        # Note: new spec needs to be updated before a plan is created which binds to
+        # this new spec
+        #
+        # Collect network state from the infrastructure
+        # 1. Loop through each network
+        # 2.   Get network settings for each network
+        if @new_spec["networks"]
+          @new_spec["networks"].each do |network, properties|
+            infrastructure_properties = Bosh::Agent::Config.infrastructure.get_network_settings(network, properties)
+            if infrastructure_properties
+              @new_spec["networks"][network] = @new_spec["networks"][network].merge(infrastructure_properties)
+            end
+          end
+        end
+
         @old_spec = Bosh::Agent::Config.state.to_hash
 
         @old_plan = Bosh::Agent::ApplyPlan::Plan.new(@old_spec)
