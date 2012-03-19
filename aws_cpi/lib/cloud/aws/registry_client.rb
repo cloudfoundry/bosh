@@ -57,7 +57,7 @@ module Bosh::AWSCloud
     # @param [String] instance_id EC2 instance id
     # @return [Hash] Agent settings
     def read_settings(instance_id)
-      url = "#{@endpoint}/agents/#{instance_id}/settings"
+      url = "#{@endpoint}/instances/#{instance_id}/settings"
 
       response = @client.get(url, {}, @headers)
 
