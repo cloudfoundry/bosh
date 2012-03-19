@@ -4,7 +4,7 @@ require File.dirname(__FILE__) + "/lib/cloud/aws/version"
 
 Gem::Specification.new do |s|
   s.name         = "bosh_aws_cpi"
-  s.version      = Bosh::AWSCloud::VERSION
+  s.version      = Bosh::AwsCloud::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH AWS CPI"
   s.description  = s.summary

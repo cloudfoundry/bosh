@@ -2,7 +2,7 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-describe Bosh::AWSCloud::Cloud, "create_vm" do
+describe Bosh::AwsCloud::Cloud, "create_vm" do
 
   before(:each) do
     @registry = mock_registry

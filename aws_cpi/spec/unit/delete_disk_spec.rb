@@ -2,7 +2,7 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-describe Bosh::AWSCloud::Cloud do
+describe Bosh::AwsCloud::Cloud do
 
   it "deletes an EC2 volume" do
     volume = double("volume", :id => "v-foo")
