@@ -8,7 +8,7 @@ describe Bosh::Director::Api::ResourceManager do
     FileUtils.mkdir(@blobstore_dir)
 
     @blobstore = Bosh::Blobstore::Client.create(
-        "local", :blobstore_path => @blobstore_dir)
+        "local", "blobstore_path" => @blobstore_dir)
     BD::Config.stub!(:blobstore).and_return(@blobstore)
 
     @manager = BDA::ResourceManager.new
