@@ -8,7 +8,7 @@ require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
 
-require "rake"
+require "rake/dsl_definition"
 require "rake"
 begin
   require "rspec/core/rake_task"
@@ -37,7 +37,6 @@ if defined?(RSpec)
   namespace :spec do
     desc "Run Unit Tests"
     rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/unit/**/*_spec.rb"
       t.rspec_opts = %w(--format progress --colour)
     end

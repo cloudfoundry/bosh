@@ -13,10 +13,10 @@ GEM
       nokogiri (<= 1.5.0)
       uuidtools (~> 2.1)
     bcrypt-ruby (2.1.4)
-    blobstore_client (0.3.11)
+    blobstore_client (0.3.13)
       aws-s3 (~> 0.6.2)
-      httpclient (= 2.2.0)
-      json (~> 1.4.6)
+      httpclient (>= 2.2)
+      multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
     bosh_aws_cpi (0.3.1)
@@ -67,7 +67,7 @@ GEM
       ruby_core_source (>= 0.1.4)
     log4r (1.1.10)
     machinist (1.0.6)
-    mime-types (1.17.2)
+    mime-types (1.18)
     minitar (0.5.3)
     multi_json (1.1.0)
     multi_xml (0.4.2)
@@ -152,7 +152,7 @@ PLATFORMS
 DEPENDENCIES
   SystemTimer
   bcrypt-ruby
-  blobstore_client (~> 0.3.11)
+  blobstore_client (~> 0.3.13)
   bosh_aws_cpi (>= 0.3.1)
   bosh_common (>= 0.4.0)
   bosh_cpi (>= 0.4.2)
