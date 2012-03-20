@@ -21,6 +21,58 @@ describe Bosh::Agent::Bootstrap do
     @processor.stub(:mem_total).and_return(3951616)
   end
 
+  it "should not setup iptables without settings" do
+    @processor.load_settings
+    @processor.stub!(:iptables).and_raise(Bosh::Agent::Error)
+    @processor.update_iptables
+  end
+
+  it "should create new iptables filter chain" do
+    new = "-N agent-filter"
+    append_chain = "-A OUTPUT -j agent-filter"
+    default_rules = ["-P INPUT ACCEPT", "-P FORWARD ACCEPT", "-P OUTPUT ACCEPT"]
+    list_rules = default_rules.join("\n")
+
+    settings = complete_settings
+    settings["iptables"] = {"drop_output" => ["n.n.n.n", "x.x.x.x"]}
+    Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
+    @processor.load_settings
+
+    @processor.should_receive(:iptables).with(new).and_return("")
+    @processor.should_receive(:iptables).with("-S").and_return(list_rules)
+    @processor.should_receive(:iptables).with(append_chain).and_return("")
+
+    settings["iptables"]["drop_output"].each do |dest|
+      rule = "-A agent-filter -d #{dest} -m owner ! --uid-owner root -j DROP"
+      @processor.should_receive(:iptables).with(rule).and_return("")
+    end
+
+    @processor.update_iptables
+  end
+
+  it "should update existing iptables filter chain" do
+    new = "-N agent-filter"
+    append_chain = "-A OUTPUT -j agent-filter "
+    default_rules = ["-P INPUT ACCEPT", "-P FORWARD ACCEPT", "-P OUTPUT ACCEPT"]
+    list_rules = default_rules.join("\n") + append_chain
+
+    settings = complete_settings
+    settings["iptables"] = {"drop_output" => ["n.n.n.n", "x.x.x.x"]}
+    Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
+    @processor.load_settings
+
+    @processor.should_receive(:iptables).with(new).and_raise(Bosh::Agent::Error)
+    @processor.should_receive(:iptables).with("-F agent-filter").and_return("")
+    @processor.should_receive(:iptables).with("-S").and_return(list_rules)
+
+    settings["iptables"]["drop_output"].each do |dest|
+      rule = "-A agent-filter -d #{dest} -m owner ! --uid-owner root -j DROP"
+      @processor.should_receive(:iptables).with(rule).and_return("")
+    end
+
+    @processor.update_iptables
+  end
+
   # This doesn't quite belong here
   it "should configure mbus with nats server uri" do
     @processor.load_settings
