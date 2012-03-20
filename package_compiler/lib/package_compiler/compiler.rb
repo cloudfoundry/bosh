@@ -3,7 +3,7 @@ module Bosh
     class Compiler
 
       OPTIONS = {
-        "blobstore_options" => { :blobstore_path => "/var/vcap/micro_bosh/data/cache" },
+        "blobstore_options" => { "blobstore_path" => "/var/vcap/micro_bosh/data/cache" },
         "blobstore_provider" => "local",
         "base_dir"  => "/var/vcap",
         "platform_name" => "ubuntu",
@@ -146,7 +146,7 @@ module Bosh
         @logger.info("result is #{result}")
 
         # remove source package from blobstore
-        cache = @options["blobstore_options"][:blobstore_path]
+        cache = @options["blobstore_options"]["blobstore_path"]
         File.unlink("#{cache}/#{id}")
 
         id = result["result"]["blobstore_id"]
