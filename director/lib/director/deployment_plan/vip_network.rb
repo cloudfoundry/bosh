@@ -60,7 +60,7 @@ module Bosh::Director
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
-        unless default_properties.empty?
+        if default_properties && !default_properties.empty?
           raise "Can't provide any defaults since this is a VIP network"
         end
 
