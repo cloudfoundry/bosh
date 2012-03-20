@@ -52,6 +52,7 @@ PLATFORMS
 
 DEPENDENCIES
   SystemTimer
+  bundler
   ci_reporter
   nats
   rake

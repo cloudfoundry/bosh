@@ -30,7 +30,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     object.should_receive(:aoid).and_return("test-key")
 
     object_id = @client.create(data)
-    object_info = JSON.load(Base64.decode64(URI::unescape(object_id)))
+    object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
     object_info["oid"].should eql("test-key")
     object_info["sig"].should_not be_nil
   end
@@ -39,7 +39,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     object = mock("object")
     @atmos.should_receive(:get).with(:id => "test-key").and_return(object)
     object.should_receive(:delete)
-    id = URI::escape(Base64.encode64(JSON.dump(:oid => "test-key", :sig => "sig")))
+    id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
     @client.delete(id)
   end
 
@@ -48,7 +48,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     response = mock("response")
     response.stub!(:status).and_return(200)
     @http_client.should_receive(:get).with(url).and_yield("some-content").and_return(response)
-    id = URI::escape(Base64.encode64(JSON.dump(:oid => "test-key", :sig => "sig")))
+    id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
     @client.get(id).should eql("some-content")
   end
 
@@ -66,7 +66,7 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     response = mock("response")
     response.stub!(:status).and_return(200)
     @http_client.should_receive(:get).with(url).and_yield("some-content").and_return(response)
-    id = URI::escape(Base64.encode64(JSON.dump(:oid => "test-key", :sig => "sig")))
+    id = URI::escape(Base64.encode64(MultiJson.encode({:oid => "test-key", :sig => "sig"})))
     no_pass_client.get(id).should eql("some-content")
   end
 end
