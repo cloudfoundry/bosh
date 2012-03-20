@@ -1,10 +1,10 @@
 PATH
   remote: .
   specs:
-    blobstore_client (0.3.11)
+    blobstore_client (0.3.13)
       aws-s3 (~> 0.6.2)
-      httpclient (~> 2.2.0)
-      json (~> 1.4.6)
+      httpclient (>= 2.2)
+      multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
 
@@ -22,13 +22,13 @@ GEM
     columnize (0.3.3)
     diff-lcs (1.1.2)
     httpclient (2.2.4)
-    json (1.4.6)
     linecache (0.46)
       rbx-require-relative (> 0.0.4)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
     log4r (1.1.10)
     mime-types (1.17.2)
+    multi_json (1.1.0)
     rake (0.8.7)
     rbx-require-relative (0.0.5)
     rcov (0.9.9)
