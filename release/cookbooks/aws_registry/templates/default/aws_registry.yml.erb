@@ -11,3 +11,8 @@ db:
   database: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:aws_registry][:database] %>
   max_connections: 32
   pool_timeout: 10
+
+aws:
+  access_key_id: <%= node[:director][:aws][:access_key_id] %>
+  secret_access_key: <%= node[:director][:aws][:secret_access_key] %>
+  max_retries: 2
