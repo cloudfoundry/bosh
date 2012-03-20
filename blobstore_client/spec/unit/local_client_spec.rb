@@ -2,6 +2,15 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Blobstore::LocalClient do
 
+  before(:each) do
+    @tmp = Dir.mktmpdir
+    @options = {"blobstore_path" => @tmp}
+  end
+
+  after(:each) do
+    FileUtils.rm_rf(@tmp)
+  end
+
   it "should require blobstore_path option" do
     lambda {
       client = Bosh::Blobstore::LocalClient.new({})
@@ -9,66 +18,59 @@ describe Bosh::Blobstore::LocalClient do
   end
 
   it "should create blobstore_path direcory if it doesn't exist'" do
-    Dir.mktmpdir do |tmp|
-      dir = File.join(tmp, "blobstore")
-      client = Bosh::Blobstore::LocalClient.new({:blobstore_path => dir})
-      File.directory?(dir).should be_true
-    end
+    dir = File.join(@tmp, "blobstore")
+    client = Bosh::Blobstore::LocalClient.new({"blobstore_path" => dir})
+    File.directory?(dir).should be_true
   end
 
   describe "operations" do
 
     describe "get" do
       it "should retrive the correct contents" do
-        Dir.mktmpdir do |tmp_dir|
-          File.open(File.join(tmp_dir, 'foo'), 'w') do |fh|
-            fh.puts("bar")
-          end
-
-          options = {:blobstore_path => tmp_dir}
-          client = Bosh::Blobstore::LocalClient.new(options)
-          client.get("foo").should == "bar\n"
+        File.open(File.join(@tmp, 'foo'), 'w') do |fh|
+          fh.puts("bar")
         end
+
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        client.get("foo").should == "bar\n"
       end
     end
 
     describe "create" do
       it "should store a file" do
         test_file = File.join(File.dirname(__FILE__), "../assets/file")
-        Dir.mktmpdir do |tmp_dir|
-          options = {:blobstore_path => tmp_dir}
-          client = Bosh::Blobstore::LocalClient.new(options)
-          fh = File.open(test_file)
-          id = client.create(fh)
-          fh.close
-          original = File.new(test_file).readlines
-          stored = File.new(File.join(tmp_dir, id)).readlines
-          stored.should == original
-        end
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        fh = File.open(test_file)
+        id = client.create(fh)
+        fh.close
+        original = File.new(test_file).readlines
+        stored = File.new(File.join(@tmp, id)).readlines
+        stored.should == original
       end
 
       it "should store a string" do
-        Dir.mktmpdir do |tmp_dir|
-          options = {:blobstore_path => tmp_dir}
-          client = Bosh::Blobstore::LocalClient.new(options)
-          string = "foobar"
-          id = client.create(string)
-          stored = File.new(File.join(tmp_dir, id)).readlines
-          stored.should == [string]
-        end
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        string = "foobar"
+        id = client.create(string)
+        stored = File.new(File.join(@tmp, id)).readlines
+        stored.should == [string]
       end
     end
 
     describe "delete" do
       it "should delete an id" do
-        Dir.mktmpdir do |tmp_dir|
-          options = {:blobstore_path => tmp_dir}
-          client = Bosh::Blobstore::LocalClient.new(options)
-          string = "foobar"
-          id = client.create(string)
-          client.delete(id)
-          File.exist?(File.join(tmp_dir, id)).should_not be_true
-        end
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        string = "foobar"
+        id = client.create(string)
+        client.delete(id)
+        File.exist?(File.join(@tmp, id)).should_not be_true
+      end
+
+      it "should raise NotFound error when trying to delete a missing id" do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        lambda {
+          client.delete("missing")
+          }.should raise_error Bosh::Blobstore::NotFound
       end
     end
 
