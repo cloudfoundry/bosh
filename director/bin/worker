@@ -2,6 +2,8 @@
 #
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
+require "erb"
+
 require "rubygems"
 require "bundler/setup"
 
@@ -10,17 +12,47 @@ $:.unshift(File.expand_path("../../lib", __FILE__))
 require "director"
 
 config_file = nil
+index = nil
+erb = false
 
 opts = OptionParser.new do |opts|
   opts.on("-c", "--config [ARG]", "Configuration File") do |opt|
     config_file = opt
+  end
+
+  opts.on("-i", "--index [ARG]", Integer, "Worker Index") do |opt|
+    index = opt
+  end
+
+  opts.on("-e", "--[no-]erb", "Treat Configuration as ERB Template") do |opt|
+    erb = opt
   end
 end
 
 opts.parse!(ARGV.dup)
 
 config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
-config = YAML.load_file(config_file)
+config = nil
+
+if erb
+  class ConfigBindingHelper
+    attr_reader :index
+
+    def initialize(index)
+      @index = index
+    end
+
+    def get_binding
+      binding
+    end
+  end
+
+  template = ERB.new(File.read(config_file), 0, "%<>-")
+  contents = template.result(ConfigBindingHelper.new(index).get_binding)
+  config = YAML.load(contents)
+else
+  config = YAML.load_file(config_file)
+end
 
 Bosh::Director::Config.configure(config)
 
