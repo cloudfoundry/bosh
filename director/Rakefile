@@ -57,7 +57,7 @@ if defined?(RSpec)
 
   namespace :spec do
     ENV["BUNDLE_GEMFILE"] = File.expand_path("../Gemfile", __FILE__)
-    SPEC_OPTS = %w(--format progress --colour)
+    SPEC_OPTS = %w(--format documentation --colour)
 
     desc "Run Unit Tests"
     unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
