@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     bosh_cli (0.15.5)
-      blobstore_client (~> 0.3.11)
+      blobstore_client (~> 0.3.13)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
       json_pure (~> 1.6.1)
@@ -21,10 +21,10 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.3.11)
+    blobstore_client (0.3.13)
       aws-s3 (~> 0.6.2)
-      httpclient (~> 2.2.0)
-      json (~> 1.4.6)
+      httpclient (>= 2.2)
+      multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
     builder (3.0.0)
@@ -40,7 +40,8 @@ GEM
     linecache19 (0.5.11)
       ruby_core_source (>= 0.1.4)
     log4r (1.1.10)
-    mime-types (1.17.2)
+    mime-types (1.18)
+    multi_json (1.1.0)
     net-scp (1.0.4)
       net-ssh (>= 1.99.1)
     net-ssh (2.2.2)

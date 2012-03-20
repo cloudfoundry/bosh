@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require "openssl"
 require "digest/sha1"
 require "base64"
@@ -14,27 +16,13 @@ module Bosh
       attr_reader :bucket_name, :encryption_key
 
       def initialize(options)
-        opts = options.dup
-        options.each_key do |key|
-          if key.is_a?(String)
-            k = key.to_sym
-            # if we already have a symbol, don't overwrite it with a different value
-            if opts.has_key?(k) && opts[k] != options[key]
-              raise ArgumentError, "duplicate option '#{key}' with different values '#{options[key]}' and '#{opts[k]}'"
-            else
-              opts[k] = options[key]
-              opts.delete(key)
-            end
-          end
-        end
-        options = opts
-
-        @bucket_name    = options[:bucket_name]
-        @encryption_key = options[:encryption_key]
+        super(options)
+        @bucket_name    = @options[:bucket_name]
+        @encryption_key = @options[:encryption_key]
 
         aws_options = {
-          :access_key_id     => options[:access_key_id],
-          :secret_access_key => options[:secret_access_key],
+          :access_key_id     => @options[:access_key_id],
+          :secret_access_key => @options[:secret_access_key],
           :use_ssl           => true,
           :port              => 443
         }
@@ -56,7 +44,8 @@ module Bosh
         end
         object_id
       rescue AWS::S3::S3Exception => e
-        raise BlobstoreError, "Failed to create object, S3 response error: #{e.message}"
+        raise BlobstoreError,
+          "Failed to create object, S3 response error: #{e.message}"
       end
 
       def get_file(object_id, file)
@@ -74,13 +63,15 @@ module Bosh
       rescue AWS::S3::NoSuchKey => e
         raise NotFound, "S3 object '#{object_id}' not found"
       rescue AWS::S3::S3Exception => e
-        raise BlobstoreError, "Failed to find object '#{object_id}', S3 response error: #{e.message}"
+        raise BlobstoreError,
+          "Failed to find object '#{object_id}', S3 response error: #{e.message}"
       end
 
       def delete(object_id)
         AWS::S3::S3Object.delete(object_id, bucket_name)
       rescue AWS::S3::S3Exception => e
-        raise BlobstoreError, "Failed to delete object '#{object_id}', S3 response error: #{e.message}"
+        raise BlobstoreError,
+          "Failed to delete object '#{object_id}', S3 response error: #{e.message}"
       end
 
       protected

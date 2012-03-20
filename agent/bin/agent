@@ -84,7 +84,7 @@ opts = OptionParser.new do |opts|
     end
     # check if endpoint seems like a local path
     if endpoint =~ /^\//
-      options["blobstore_options"][:blobstore_path] = endpoint
+      options["blobstore_options"]["blobstore_path"] = endpoint
     else
       options["blobstore_options"]["endpoint"] = endpoint
     end
