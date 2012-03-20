@@ -2,7 +2,7 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-describe Bosh::AWSCloud::Cloud do
+describe Bosh::AwsCloud::Cloud do
 
   it "deregisters EC2 image" do
     image = double("image", :id => "i-foo")
