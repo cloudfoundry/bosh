@@ -17,6 +17,6 @@ Gem::Specification.new do |s|
   s.executables  = %w(package_compiler)
 
   s.add_dependency "agent_client", "~>0.1.1"
-  s.add_dependency "blobstore_client", "~>0.3.11"
+  s.add_dependency "blobstore_client", "~>0.3.12"
   s.add_dependency "yajl-ruby"
 end

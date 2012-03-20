@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require File.dirname(__FILE__) + "/lib/blobstore_client/version"
 
 Gem::Specification.new do |s|
@@ -15,7 +17,7 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "aws-s3", "~> 0.6.2"
-  s.add_dependency "httpclient", "~>2.2.0"
+  s.add_dependency "httpclient", ">=2.2"
   s.add_dependency "json", "~> 1.4.6"
   s.add_dependency "ruby-atmos-pure", "~> 1.0.5"
   s.add_dependency "uuidtools", "~> 2.1.2"

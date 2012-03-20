@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require "atmos"
 require "uri"
 require "json"
@@ -8,19 +10,22 @@ module Bosh
       SHARE_URL_EXP = "1893484800" # expires on 2030 Jan-1
 
       def initialize(options)
+        super(options)
         @atmos_options = {
-          :url => options[:url],
-          :uid => options[:uid],
-          :secret => options[:secret]
+          :url => @options[:url],
+          :uid => @options[:uid],
+          :secret => @options[:secret]
         }
-        @tag = options[:tag]
+        @tag = @options[:tag]
         @http_client = HTTPClient.new
         # TODO: Remove this line once we get the proper certificate for atmos
         @http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
 
       def atmos_server
-        raise "Atmos password is missing (read-only mode)" if @atmos_options[:secret].nil?
+        unless @atmos_options[:secret]
+          raise "Atmos password is missing (read-only mode)"
+        end
         @atmos ||= Atmos::Store.new(@atmos_options)
       end
 
@@ -45,7 +50,8 @@ module Bosh
         end
 
         if response.status != 200
-          raise BlobstoreError, "Could not fetch object, #{response.status}/#{response.content}"
+          raise BlobstoreError, "Could not fetch object, %s/%s" %
+            [response.status, response.content]
         end
       end
 
@@ -63,10 +69,12 @@ module Bosh
         begin
           object_info = JSON.load(Base64.decode64(URI::unescape(object_id)))
         rescue JSON::ParserError => e
-          raise BlobstoreError, "Failed to parse object_id. Please try updating the release"
+          raise BlobstoreError, "Failed to parse object_id. " +
+            "Please try updating the release"
         end
 
-        if !object_info.kind_of?(Hash) || object_info["oid"].nil? || object_info["sig"].nil?
+        if !object_info.kind_of?(Hash) || object_info["oid"].nil? ||
+            object_info["sig"].nil?
           raise BlobstoreError, "Invalid object_id (#{object_id})"
         end
         object_info
@@ -75,9 +83,11 @@ module Bosh
       def encode_object_id(object_id)
         hash_string = "GET" + "\n" + "/rest/objects/" + object_id + "\n" +
                       @atmos_options[:uid] + "\n" + SHARE_URL_EXP
-        sig = HMAC::SHA1.digest(Base64.decode64(@atmos_options[:secret]), hash_string)
+        secret = Base64.decode64(@atmos_options[:secret])
+        sig = HMAC::SHA1.digest(secret, hash_string)
         signature = Base64.encode64(sig.to_s).chomp
-        URI::escape(Base64.encode64(JSON.dump(:oid => object_id, :sig => signature)))
+        json = JSON.dump(:oid => object_id, :sig => signature)
+        URI::escape(Base64.encode64(json))
       end
     end
   end

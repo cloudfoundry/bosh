@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh
   module Blobstore
@@ -5,7 +6,8 @@ module Bosh
       CHUNK_SIZE = 1024*1024
 
       def initialize(options)
-        @blobstore_path = options[:blobstore_path]
+        super(options)
+        @blobstore_path = @options[:blobstore_path]
         raise "No blobstore path given" if @blobstore_path.nil?
         FileUtils.mkdir_p(@blobstore_path) unless File.directory?(@blobstore_path)
       end
