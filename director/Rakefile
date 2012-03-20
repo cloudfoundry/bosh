@@ -9,6 +9,7 @@ require "bundler"
 Bundler.setup(:default, :test)
 
 require "rake"
+require "rake/dsl_definition"
 begin
   require "rspec/core/rake_task"
 rescue LoadError

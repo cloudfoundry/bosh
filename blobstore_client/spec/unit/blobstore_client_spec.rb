@@ -30,4 +30,5 @@ describe Bosh::Blobstore::Client do
       bs = Bosh::Blobstore::Client.create('foobar', {})
     }.should raise_error /^Invalid client provider/
   end
+
 end
