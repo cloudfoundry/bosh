@@ -111,6 +111,12 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSpec do
       lambda {
         @network.network_settings(reservation)
       }.should raise_error(/Can't provide any defaults/)
+
+      lambda {
+        @network.network_settings(reservation, nil)
+      }.should_not raise_error
     end
+
+
   end
 end
