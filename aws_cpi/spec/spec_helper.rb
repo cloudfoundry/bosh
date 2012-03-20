@@ -11,11 +11,11 @@ require "tmpdir"
 
 require "cloud/aws"
 
-class AWSConfig
+class AwsConfig
   attr_accessor :db, :logger, :uuid
 end
 
-aws_config = AWSConfig.new
+aws_config = AwsConfig.new
 aws_config.db = nil # AWS CPI doesn't need DB
 aws_config.logger = Logger.new(StringIO.new)
 aws_config.logger.level = Logger::DEBUG
@@ -44,12 +44,12 @@ def mock_cloud_options
 end
 
 def make_cloud(options = nil)
-  Bosh::AWSCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::AwsCloud::Cloud.new(options || mock_cloud_options)
 end
 
 def mock_registry(endpoint = "http://registry:3333")
   registry = mock("registry", :endpoint => endpoint)
-  Bosh::AWSCloud::RegistryClient.stub!(:new).and_return(registry)
+  Bosh::AwsCloud::RegistryClient.stub!(:new).and_return(registry)
   registry
 end
 
@@ -68,7 +68,7 @@ def mock_cloud(options = nil)
 
   yield ec2 if block_given?
 
-  Bosh::AWSCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::AwsCloud::Cloud.new(options || mock_cloud_options)
 end
 
 def dynamic_network_spec

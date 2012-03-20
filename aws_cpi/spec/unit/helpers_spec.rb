@@ -2,7 +2,7 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-describe Bosh::AWSCloud::Helpers do
+describe Bosh::AwsCloud::Helpers do
   it "should time out" do
     cloud = mock_cloud
 

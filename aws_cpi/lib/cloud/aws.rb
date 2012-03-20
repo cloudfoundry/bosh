@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh
-  module AWSCloud; end
+  module AwsCloud; end
 end
 
 require "aws-sdk"
@@ -27,6 +27,6 @@ require "cloud/aws/vip_network"
 
 module Bosh
   module Clouds
-    Aws = Bosh::AWSCloud::Cloud
+    Aws = Bosh::AwsCloud::Cloud
   end
 end
