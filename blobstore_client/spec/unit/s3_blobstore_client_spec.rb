@@ -40,23 +40,6 @@ describe Bosh::Blobstore::S3BlobstoreClient do
       @client.encryption_key.should == "bla"
       @client.bucket_name.should == "test"
     end
-
-    it "should raise an exception on duplicate option keys with different values" do
-      lambda {
-        s3_blobstore(:f => "f1", "f" => "f2")
-      }.should raise_error ArgumentError, "duplicate option 'f' with different values 'f2' and 'f1'"
-    end
-
-    it "should not raise an exception on duplicate option keys with same values" do
-      AWS::S3::Base.should_receive(:establish_connection!).with(@aws_mock_options)
-
-      lambda {
-        s3_blobstore(:f                 => "f",
-                     "f"                => "f",
-                     :access_key_id     => "KEY",
-                     :secret_access_key => "SECRET")
-      }.should_not raise_error
-    end
   end
 
   describe "operations" do

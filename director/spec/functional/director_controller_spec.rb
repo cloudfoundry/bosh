@@ -17,7 +17,7 @@ describe Bosh::Director::Controller do
     test_config["dir"] = @temp_dir
     test_config["blobstore"] = {
         "plugin" => "local",
-        "properties" => {:blobstore_path => @blobstore_dir}
+        "properties" => {"blobstore_path" => @blobstore_dir}
     }
     Bosh::Director::Config.configure(test_config)
   end

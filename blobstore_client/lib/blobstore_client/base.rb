@@ -1,8 +1,21 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require "tmpdir"
 
 module Bosh
   module Blobstore
     class BaseClient < Client
+
+      def initialize(options)
+        @options = symbolize_keys(options)
+      end
+
+      def symbolize_keys(hash)
+        hash.inject({}) do |h, (key, value)|
+          h[key.to_sym] = value
+          h
+        end
+      end
 
       def create_file(file)
 
@@ -25,7 +38,9 @@ module Bosh
             rescue BlobstoreError => e
               raise e
             rescue Exception => e
-              raise BlobstoreError, "Failed to create object, underlying error: #{e.message} #{e.backtrace.join("\n")}"
+              raise BlobstoreError,
+                "Failed to create object, underlying error: %s %s" %
+                [e.message, e.backtrace.join("\n")]
             end
           end
         end
@@ -43,7 +58,9 @@ module Bosh
             rescue BlobstoreError => e
               raise e
             rescue Exception => e
-              raise BlobstoreError, "Failed to get object: #{id}, underlying error: #{e.message} #{e.backtrace.join("\n")}"
+              raise BlobstoreError,
+                "Failed to create object, underlying error: %s %s" %
+                [e.message, e.backtrace.join("\n")]
             end
           end
           result
