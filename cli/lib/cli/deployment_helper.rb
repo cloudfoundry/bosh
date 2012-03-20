@@ -232,6 +232,10 @@ module Bosh::Cli
       end
 
       normalized["networks"].each do |network_name, network|
+        # VIP and dynamic networks do not require subnet,
+        # but if it's there we can run some sanity checks
+        next unless network.has_key?("subnets")
+
         unless network["subnets"].kind_of?(Array)
           manifest_error("network subnets is expected to be an array")
         end
