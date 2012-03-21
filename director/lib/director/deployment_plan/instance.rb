@@ -97,6 +97,17 @@ module Bosh::Director
           network = @job.deployment.network(name)
           network_settings[name] = network.network_settings(
               reservation, default_properties[name])
+
+          # Somewhat of a hack: for dynamic networks we might know IP address
+          # if it's featured in agent state, in that case we put it into
+          # network spec to satisfy ConfigurationHasher in both agent
+          # and director.
+          if @current_state.is_a?(Hash) &&
+              @current_state["networks"].is_a?(Hash) &&
+              @current_state["networks"][name].is_a?(Hash) &&
+              network_settings[name]["type"] == "dynamic"
+            network_settings[name] = @current_state["networks"][name]
+          end
         end
         network_settings
       end
