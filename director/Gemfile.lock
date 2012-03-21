@@ -19,7 +19,7 @@ GEM
       json (~> 1.4.6)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
-    bosh_aws_cpi (0.3)
+    bosh_aws_cpi (0.3.1)
       aws-sdk (>= 1.3.5)
       bosh_common (>= 0.4.0)
       bosh_cpi (>= 0.4.2)
@@ -148,7 +148,7 @@ DEPENDENCIES
   SystemTimer
   bcrypt-ruby
   blobstore_client (~> 0.3.11)
-  bosh_aws_cpi (>= 0.3)
+  bosh_aws_cpi (>= 0.3.1)
   bosh_common (>= 0.4.0)
   bosh_cpi (>= 0.4.2)
   bosh_vsphere_cpi (>= 0.4.8)

@@ -20,9 +20,6 @@ module Bosh::AwsCloud
     # @param [AWS:EC2] instance EC2 client
     # @param [AWS::EC2::Instance] EC2 instance to configure
     def configure(ec2, instance)
-      if @ip
-        cloud_error("Static IP provided for dynamic network")
-      end
     end
 
   end
