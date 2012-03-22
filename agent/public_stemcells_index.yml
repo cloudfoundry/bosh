@@ -1,0 +1,20 @@
+---
+public_stemcells_index.yml:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEyMDRlNGU4NmVlMTUxYmMwNGY2YTE5%0AY2U0NmIyMiIsInNpZyI6Ik5KdUFyOWM4ZU9pZDdkS0ZtT0VON2JtekFsST0i%0AfQ==%0A
+  url: https://172.28.3.4/rest/objects/4e4e78bca21e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI=
+  sha: c616046a1d7e7a942b9e98ecde314b789bc3e263
+bosh-stemcell-0.3.0.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIyMDRlNGU5ODYzZDA3NjMwNGY2Yjdj%0AMGYwMGFmYiIsInNpZyI6Iks1VnVVVFVqYzBEcVM0ejZhUnRxUlBzbXcxdz0i%0AfQ==%0A
+  url: https://172.28.3.4/rest/objects/4e4e78bca41e122204e4e9863d076304f6b7c0f00afb?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=K5VuUTUjc0DqS4z6aRtqRPsmw1w=
+  sha: 283be73063d30482c8a9e68f0aa80532207e172d
+  size: 304976057
+bosh-stemcell-0.4.4.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjEwMDRlNGU3ZDUxOTA2Y2QwNGY2Yjdm%0AYzgxNjFiOCIsInNpZyI6IlZMOUYybktzZ1ZsbWZYakY0blBISkg0cjE0ND0i%0AfQ==%0A
+  url: https://172.28.3.4/rest/objects/4e4e78bca51e121004e4e7d51906cd04f6b7fc8161b8?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=VL9F2nKsgVlmfXjF4nPHJH4r144=
+  sha: ef7dbe0a9dfeff52b5bab03c7c5f9e859e6ce5e8
+  size: 282851221
+bosh-stemcell-0.4.7.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjIwMDRlNGU4ZWM2NDdhNTQwNGY2Yjhh%0AZDY0ZDNjOCIsInNpZyI6Ik9oQkhLejV0OVNERlZFQkhoemVqeW5taDEyMD0i%0AfQ==%0A
+  url: https://172.28.3.4/rest/objects/4e4e78bca21e122004e4e8ec647a5404f6b8ad64d3c8?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=OhBHKz5t9SDFVEBHhzejynmh120=
+  sha: 25597777a8e82d3e95ce1890ead8973b1ceab22d
+  size: 283901280
