@@ -442,4 +442,239 @@ namespace "stemcell" do
     build_vm_image(:part_in => "misc/#{component}/part.in")
   end
 
+  namespace "public" do
+
+    # If the user is trying to upload a new file to the public repository then
+    # this function will determine if the file is already uploaded. If it is
+    # and the file to upload is an exact duplicate, the program will exit.  If
+    # it exists but the user is trying to upload a new version it will prompt
+    # the user to overwrite the existing one.
+    # @param [Hash] index_yaml The index file as a Hash.
+    # @param [String] stemcell_path The path to the stemcell the user wants to
+    #     upload.
+    # @return [Boolean] Returns whether this upload is an update operation.
+    def is_update?(index_yaml, stemcell_path)
+      if index_yaml.has_key?(File.basename(stemcell_path))
+        entry = index_yaml[File.basename(stemcell_path)]
+        if entry["sha"] == Digest::SHA1.file(stemcell_path).hexdigest
+          puts("No action taken, files are identical.")
+          exit(0)
+        end
+        if agree("Stemcell already uploaded.  Do you want to overwrite it? [yn]")
+          return true
+        else
+          exit(0)
+        end
+      end
+      return false
+    end
+
+    # Loads the public stemcell uploader configuration file.
+    # @return [Array] An array of the pertinent configuration file parameters:
+    # stemcells_index_id, atmos_url, expiration, uid, secret
+    def load_stemcell_config
+      cfg = YAML.load_file("public_stemcell_config.yml")
+      [cfg["stemcells_index_id"], cfg["atmos_url"], cfg["expiration"], cfg["uid"],
+       cfg["secret"]]
+    end
+
+    # Gets the public stemcell index file from the blobstore.
+    # @param [Atmos::Store] store The atmos store.
+    # @param [String] stemcells_index_id The object ID of the index file.
+    # @return [Array] An array of the index file and it's YAML as a Hash.
+    def get_index_file(store, stemcells_index_id)
+      index_file = store.get(:id => decode_object_id(stemcells_index_id)["oid"])
+      index_yaml = YAML.load(index_file.data)
+      index_yaml = index_yaml.is_a?(Hash) ? index_yaml : {}
+      [index_file, index_yaml]
+    end
+
+    # Changes all of the base shareable URLs in the index file.  E.x. if the
+    # index file has www.vmware.com and the configuration file has 172.168.1.1
+    # then it will all be changed to 172.168.1.1 urls.
+    # @param [Hash] yaml The index file as a hash.
+    # @param [String] url The new URL.
+    # @return [Hash] The new YAML as a Hash.
+    def change_all_urls(yaml, url)
+      yaml.each do |filename, file_info|
+        file_info["url"] = file_info["url"].sub(/(https?:\/\/[^\/]*)/, url)
+      end
+      yaml
+    end
+
+    # Updates the index file in the blobstore and locally with the most recent
+    # changes.
+    # @param [Hash] yaml The index file as a hash.
+    # @param [String] url The new URL.
+    def update_index_file(stemcell_index, yaml, url)
+      yaml = change_all_urls(yaml, url)
+      yaml_dump = YAML.dump(yaml)
+
+      File.open(INDEX_FILE_NAME, "w") do |f|
+        f.write(yaml_dump)
+      end
+
+      stemcell_index.update(yaml_dump)
+      puts("***Commit #{INDEX_FILE_NAME} to git repository immediately.***")
+    end
+
+    # A helper function to get the shareable URL for an entry in the blobstore.
+    # @param [String] oid The object ID.
+    # @param [String] sig The signature.
+    # @param [String] url The base url (e.g. www.vmware.com).
+    # @param [String] exp The expiration as an epoch time stamp.
+    # @param [String] uid The user id.
+    # @return [String] The shareable URL.
+    def get_shareable_url(oid, sig, url, exp, uid)
+      return url + "/rest/objects/#{oid}?uid=#{uid}&expires=#{exp}&signature=" +
+          "#{URI::escape(sig)}"
+    end
+
+    # Decodes the object ID.
+    # @param [String] object_id The object ID.
+    # @return [Hash] A hash with the oid and sig for the object_id.
+    def decode_object_id(object_id)
+      begin
+        object_info = JSON.load(Base64.decode64(URI::unescape(object_id)))
+      rescue JSON::ParserError => e
+        raise "Failed to parse object_id '#{object_id}'"
+      end
+
+      if !object_info.kind_of?(Hash) || object_info["oid"].nil? ||
+          object_info["sig"].nil?
+        raise "Failed to parse object_id '#{object_id}'"
+      end
+      object_info
+    end
+
+    # Encodes an object ID with an expiration, uid and secret.
+    # @param [String] object_id The object ID.
+    # @param [String] exp The expiration as an epoch time stamp.
+    # @param [String] uid The user id.
+    # @param [String] secret The secret.
+    # @return [String] The encoded object_id.
+    def encode_object_id(object_id, exp, uid, secret)
+      hash_string = "GET" + "\n" + "/rest/objects/" + object_id + "\n" + uid +
+          "\n" + exp.to_s
+      sig = HMAC::SHA1.digest(Base64.decode64(secret), hash_string)
+      signature = Base64.encode64(sig.to_s).chomp
+      URI::escape(Base64.encode64(JSON.dump(:oid => object_id, :sig => signature)))
+    end
+
+    INDEX_FILE_NAME = "public_stemcells_index.yml"
+
+    desc "Deletes <stemcell_name> from the public repository."
+    task "delete", :stemcell_name do |t, args|
+      stemcell_name = args[:stemcell_name]
+      stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+
+      store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+
+      (index_file, index_yaml) = get_index_file(store, stemcells_index_id)
+
+      unless index_yaml.has_key?(File.basename(stemcell_name))
+        names = []
+        index_yaml.each do |k, v|
+          names << k
+        end
+        puts("Stemcell '#{stemcell_name}' is not in [#{names.join(', ')}]")
+        return
+      end
+
+      if stemcell_name == INDEX_FILE_NAME
+        puts("Nice try knucklehead.  You can't delete this.'")
+        return
+      end
+
+      encoded_id = index_yaml[stemcell_name]["object_id"]
+      begin
+        output = store.get(:id => decode_object_id(encoded_id)["oid"])
+        output.delete
+      rescue => e
+
+      end
+      index_yaml.delete(stemcell_name)
+      update_index_file(index_file, index_yaml, url)
+      puts("Deleted #{stemcell_name}.")
+    end
+
+    desc "Uploads <stemcell_path> to the public repository."
+    task "upload", :stemcell_path do |t, args|
+      stemcell_path = args[:stemcell_path]
+
+      stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+
+      store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+
+      index_file, index_yaml = get_index_file(store, stemcells_index_id)
+
+      stemcell = File.open(stemcell_path, "r")
+      begin
+        if is_update?(index_yaml, stemcell_path)
+          entry = index_yaml[File.basename(stemcell_path)]
+          key = entry["object_id"]
+          output = store.get(:id => decode_object_id(key)["oid"])
+          output.update(stemcell)
+          puts("Updated #{stemcell_path}.")
+        else
+          output = store.create(:data => stemcell,
+                                :length => File.size(stemcell_path))
+          puts("Uploaded #{stemcell_path}.")
+        end
+        encoded_id = encode_object_id(output.aoid, expiration, uid, secret)
+        object_info = decode_object_id(encoded_id)
+        oid = object_info["oid"]
+        sig = object_info["sig"]
+
+        index_yaml[File.basename(stemcell_path)] = {
+            "object_id" => encoded_id,
+            "url" => get_shareable_url(oid, sig, url, expiration, uid),
+            "sha" => Digest::SHA1.file(stemcell_path).hexdigest,
+            "size" => File.size(stemcell_path)
+        }
+
+        update_index_file(index_file, index_yaml, url)
+      ensure
+        stemcell.close
+      end
+    end
+
+    desc "Updates all stemcell's base URL with whatever is in public_stemcell_config.yml."
+    task "update_urls" do
+      stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+
+      store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+
+      index_file, index_yaml = get_index_file(store, stemcells_index_id)
+
+      update_index_file(index_file, index_yaml, url)
+    end
+
+    desc "Downloads the index file for debugging."
+    task "download_index_file" do
+      stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+
+      store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+
+      index_file, index_yaml = get_index_file(store, stemcells_index_id)
+
+      File.open(INDEX_FILE_NAME, "w") do |f|
+        f.write(YAML.dump(index_yaml))
+      end
+
+      puts("Downloaded to #{INDEX_FILE_NAME}.")
+    end
+
+    desc "Uploads your local index file in case of emergency."
+    task "upload_index_file" do
+      if agree("Are you sure you want to upload your " +
+          "public_stemcell_config.yml over the existing one?")
+        yaml = YAML.load_file(INDEX_FILE_NAME)
+        stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+        store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+        index_file, index_yaml = get_index_file(store, stemcells_index_id)
+        update_index_file(index_file, yaml, url)
+      end
+    end
+  end
 end
