@@ -57,15 +57,12 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_unallocated_vms)
       deployment_plan_compiler.should_receive(:bind_instance_networks)
       package_compiler.should_receive(:compile)
-      deployment_plan_compiler.should_receive(:bind_configuration)
 
       update_deployment_job.prepare
 
       check_event_log do |events|
-        events.size.should == 18
+        events.size.should == 16
         events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 16
-        # There are no packages, hence no "package_compilation" step
-        events.select { |e| e["stage"] == "Binding configuration" }.size.should == 2
       end
     end
 
@@ -97,6 +94,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       deployment_plan_compiler.should_receive(:bind_dns).ordered
       deployment_plan_compiler.should_receive(:bind_instance_vms).ordered
+      deployment_plan_compiler.should_receive(:bind_configuration).ordered
       deployment_plan_compiler.should_receive(:delete_unneeded_vms).ordered
       deployment_plan_compiler.should_receive(:delete_unneeded_instances).ordered
 
@@ -117,6 +115,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       end
 
       update_deployment_job.update
+
+      check_event_log do |events|
+        events.select { |e| e["task"] == "Binding configuration" }.size.should == 2
+      end
     end
 
   end

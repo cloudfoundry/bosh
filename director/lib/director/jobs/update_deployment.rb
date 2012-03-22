@@ -31,7 +31,7 @@ module Bosh::Director
 
       def prepare
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        @event_log.begin_stage("Preparing deployment", 8)
+        @event_log.begin_stage("Preparing deployment", 7)
 
         track_and_log("Binding deployment") do
           @deployment_plan_compiler.bind_deployment
@@ -67,11 +67,6 @@ module Bosh::Director
 
         @logger.info("Compiling and binding packages")
         PackageCompiler.new(@deployment_plan).compile
-
-        @event_log.begin_stage("Binding configuration", 1)
-        track_and_log("Binding configuration") do
-          @deployment_plan_compiler.bind_configuration
-        end
       end
 
       def update_resource_pools
@@ -125,6 +120,11 @@ module Bosh::Director
 
         @logger.info("Binding instance VMs")
         @deployment_plan_compiler.bind_instance_vms
+
+        @event_log.begin_stage("Preparing configuration", 1)
+        track_and_log("Binding configuration") do
+          @deployment_plan_compiler.bind_configuration
+        end
 
         @logger.info("Deleting no longer needed VMs")
         @deployment_plan_compiler.delete_unneeded_vms
