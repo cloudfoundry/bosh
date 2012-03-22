@@ -34,6 +34,7 @@ GEM
       guard (>= 0.2.2)
     guard-rspec (0.6.0)
       guard (>= 0.10.0)
+    highline (1.6.11)
     httpclient (2.2.4)
     json (1.6.5)
     json_pure (1.6.4)
@@ -116,6 +117,7 @@ DEPENDENCIES
   guard
   guard-bundler
   guard-rspec
+  highline
   monit_api
   nats (= 0.4.22.beta.4)
   netaddr
@@ -124,6 +126,7 @@ DEPENDENCIES
   rake
   rcov
   rspec
+  ruby-atmos-pure
   ruby-debug
   ruby-debug19
   ruby_gntp

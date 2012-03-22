@@ -1,18 +1,20 @@
 source :rubygems
 
-gem "rake"
-gem "nats", "=0.4.22.beta.4"
-gem "yajl-ruby", :require => "yajl"
-gem "uuidtools"
-gem "netaddr"
 gem "blobstore_client", "~> 0.3.11"
-gem "posix-spawn"
+gem "highline"
 gem "monit_api"
-gem "thin"
-gem "sinatra"
+gem "nats", "=0.4.22.beta.4"
+gem "netaddr"
+gem "posix-spawn"
+gem "rake"
 gem "rack-test"
+gem "ruby-atmos-pure"
 gem "sigar", ">=0.7.2"
 gem "bosh_encryption", ">=0.0.3"
+gem "sinatra"
+gem "thin"
+gem "uuidtools"
+gem "yajl-ruby", :require => "yajl"
 
 group :development do
   gem "guard"

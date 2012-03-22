@@ -15,8 +15,12 @@ begin
 rescue LoadError
 end
 
+require "atmos"
 require "bundler_task"
 require "ci_task"
+require "highline/import"
+require "json"
+require "yaml"
 
 BundlerTask.new
 
