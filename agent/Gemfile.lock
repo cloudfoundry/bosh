@@ -20,6 +20,7 @@ GEM
     daemons (1.1.5)
     diff-lcs (1.1.3)
     eventmachine (0.12.10)
+    highline (1.6.11)
     httpclient (2.2.4)
     json (1.6.5)
     json_pure (1.6.4)
@@ -96,6 +97,7 @@ PLATFORMS
 DEPENDENCIES
   blobstore_client (~> 0.3.11)
   ci_reporter
+  highline
   monit_api
   nats (= 0.4.22.beta.4)
   netaddr
@@ -104,6 +106,7 @@ DEPENDENCIES
   rake
   rcov
   rspec
+  ruby-atmos-pure
   ruby-debug
   ruby-debug19
   sigar (>= 0.7.0)
