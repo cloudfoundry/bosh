@@ -97,8 +97,8 @@ module Bosh::Cli::Command
       results = director.setup_ssh(manifest_name, job, index, user, public_key,
                                    encrypt_password(password))
 
-      if results.nil?
-        err("Error setting up ssh")
+      if results.nil? || results.empty?
+        err("Error setting up ssh, check task logs for more details")
       end
 
       if block_given?
@@ -139,9 +139,9 @@ module Bosh::Cli::Command
 
       setup_ssh(job, index, password, options) do |results, user|
         result = results.first
-        if result["status"] != "success" || result["ip"].nil?
-          err("Failed to setup ssh on index #{result["index"]}, " +
-              "error: #{result["error"]}")
+        if result["status"].nil? || result["status"] != "success" ||
+           result["ip"].nil?
+          err("Failed to setup ssh on index #{index} #{results.inspect}")
         end
 
         say("Starting interactive shell on job #{job}, index #{index}")
@@ -207,7 +207,7 @@ module Bosh::Cli::Command
         with_gateway(options["gateway_host"],
                      options["gateway_user"]) do |gateway|
           results.each do | result|
-            if result["status"] != "success"
+            if result["status"].nil? || result["status"] != "success"
               err("Failed to setup ssh on index #{result["index"]}, " +
                   "error: #{result["error"]}")
             end
