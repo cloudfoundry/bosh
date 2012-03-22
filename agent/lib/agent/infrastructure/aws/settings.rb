@@ -18,8 +18,8 @@ module Bosh::Agent
 
     def get_network_settings
       sigar = Sigar.new
-      ifconfig = sigar.net_interface_config("eth0")
       net_info = sigar.net_info
+      ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
 
       networks = {"default" => {}}
       networks["default"]["ip"] = ifconfig.address
