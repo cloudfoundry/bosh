@@ -4,6 +4,8 @@ module Bosh::Cli::Command
   class Stemcell < Base
     include Bosh::Cli::VersionCalc
 
+    PUBLIC_STEMCELL_INDEX = "public_stemcells_index.yml"
+
     def verify(tarball_path)
       stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
 
@@ -87,6 +89,62 @@ module Bosh::Cli::Command
       say(stemcells_table)
       say("\n")
       say("Stemcells total: %d" % stemcells.size)
+    end
+
+    def get_public_stemcell_list
+      index_url = "https://172.28.3.4/rest/objects/4e4e78bca21e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI="
+      @http_client = HTTPClient.new
+      @http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      response = @http_client.get(index_url)
+      status_code = response.http_header.status_code
+      if status_code != 200
+        raise "Received HTTP #{status_code} from #{index_url}."
+      end
+      YAML.load(response.body)
+    end
+
+    def list_public
+      yaml = get_public_stemcell_list
+      stemcells_table = table do |t|
+        t.headings = "Name", "Url"
+        yaml.each do |name, value|
+          if name != PUBLIC_STEMCELL_INDEX
+            t << [name, value["url"]]
+          end
+        end
+      end
+      puts(stemcells_table)
+      puts("To download use 'bosh download public stemcell <stemcell_name>'.")
+    end
+
+    def download_public(stemcell_name)
+      yaml = get_public_stemcell_list
+      yaml.delete(PUBLIC_STEMCELL_INDEX) if yaml.has_key?(PUBLIC_STEMCELL_INDEX)
+
+      #names_to_urls = yaml.map {|k, v| {"name" => k, "url" => v["url"]}}
+      unless yaml.has_key?(stemcell_name)
+        available_stemcells = yaml.map { |k, v| k }.join(", ")
+        #available_stemcells = names_to_urls.map { |k| k["name"] }.join(",")
+        puts("'#{stemcell_name}' not found in '#{available_stemcells}'.".red)
+        return
+      end
+
+      if File.exists?(stemcell_name) &&
+          !agree("#{stemcell_name} exists locally. Overwrite it? [yn]")
+        return
+      end
+
+      url = yaml[stemcell_name]["url"]
+      size = yaml[stemcell_name]["size"]
+      pBar = ProgressBar.new(stemcell_name, 100)
+      File.open("#{stemcell_name}", "w") { |file|
+        response = @http_client.get(url) do |chunk|
+          file.write(chunk)
+          pBar.set(100 * File.size(file) / size)
+        end
+      }
+      pBar.finish
+      puts("Download complete.")
     end
 
     def delete(name, version)
