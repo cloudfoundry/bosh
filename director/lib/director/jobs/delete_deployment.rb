@@ -13,94 +13,22 @@ module Bosh::Director
         @cloud = Config.cloud
       end
 
-      def detach_delete_disk(disk, vm, force)
-        # detach the disk from the vm
-        if vm
-          begin
-            @logger.info("Detaching disk: #{disk.disk_cid} from vm (#{vm.cid})")
-            @cloud.detach_disk(vm.cid, disk.disk_cid)
-          rescue => e
-            @logger.warn("Could not detach disk from VM: #{e} - #{e.backtrace.join("")}")
-            raise unless force
-          end
-        end
-
-        #delete the disk
-        begin
-          @logger.info("Deleting found disk: #{disk.disk_cid}")
-          @cloud.delete_disk(disk.disk_cid)
-        rescue => e
-          @logger.warn("Could not delete disk: #{e} - #{e.backtrace.join("")}")
-          raise unless force
-        end
-        disk.destroy
-      end
-
-      def delete_instance(instance)
-        with_thread_name("delete_instance(#{instance.job}/#{instance.index})") do
-          @logger.info("Deleting instance: #{instance.job}/#{instance.index}")
-
-          vm = instance.vm
-          disks = instance.persistent_disks
-          disks.each { |disk| detach_delete_disk(disk, vm, @force) }
-          instance.destroy
-          if vm
-            delete_vm(vm)
-          end
-        end
-      end
-
-      def delete_vm(vm)
-        with_thread_name("delete_vm(#{vm.cid})") do
-          @logger.info("Deleting VM: #{vm.cid}")
-          begin
-            @cloud.delete_vm(vm.cid)
-          rescue => e
-            @logger.warn("Could not delete VM: #{e} - #{e.backtrace.join("")}")
-            raise unless @force
-          end
-          vm.destroy
-        end
-      end
-
       def perform
         @logger.info("Deleting: #{@deployment_name}")
 
-        deployment = Models::Deployment[:name => @deployment_name]
-        raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
+        deployment = find_deployment(@deployment_name)
 
         @logger.info("Acquiring deployment lock: #{deployment.name}")
         deployment_lock = Lock.new("lock:deployment:#{@deployment_name}")
+
         deployment_lock.lock do
           # Make sure it wasn't deleted
-          deployment = Models::Deployment[:name => @deployment_name]
-          raise DeploymentNotFound.new(@deployment_name) if deployment.nil?
+          deployment = find_deployment(@deployment_name)
 
-          instances = Models::Instance.filter(:deployment_id => deployment.id)
-
-          @event_log.begin_stage("Deleting instances", instances.count)
           ThreadPool.new(:max_threads => 32).wrap do |pool|
-            instances.each do |instance|
-              pool.process do
-                @event_log.track("#{instance.job}/#{instance.index}") do
-                  @logger.info("Deleting #{instance.job}/#{instance.index}")
-                  delete_instance(instance)
-                end
-              end
-            end
+            delete_instances(deployment, pool)
             pool.wait
-
-            vms = Models::Vm.filter(:deployment_id => deployment.id)
-
-            @event_log.begin_stage("Deleting idle VMs", vms.count)
-            vms.each do |vm|
-              pool.process do
-                @event_log.track("#{vm.cid}") do
-                  @logger.info("Deleting idle vm #{vm.cid}")
-                  delete_vm(vm)
-                end
-              end
-            end
+            delete_vms(deployment, pool)
           end
 
           @event_log.begin_stage("Removing deployment artifacts", 3)
@@ -112,7 +40,8 @@ module Bosh::Director
             deployment.remove_all_release_versions
           end
 
-          @event_log.begin_stage("Deleting properties", deployment.properties.count)
+          @event_log.begin_stage("Deleting properties",
+                                 deployment.properties.count)
           @logger.info("Deleting deployment properties")
           deployment.properties.each do |property|
             @event_log.track(property.name) do
@@ -125,6 +54,107 @@ module Bosh::Director
           end
           "/deployments/#{@deployment_name}"
         end
+      end
+
+      def find_deployment(name)
+        Models::Deployment[:name => name] || raise(DeploymentNotFound.new(name))
+      end
+
+      def delete_instances(deployment, pool)
+        instances = deployment.job_instances
+        @event_log.begin_stage("Deleting instances", instances.count)
+
+        instances.each do |instance|
+          pool.process do
+            desc = "#{instance.job}/#{instance.index}"
+            @event_log.track(desc) do
+              @logger.info("Deleting #{desc}")
+              delete_instance(instance)
+            end
+          end
+        end
+      end
+
+      def delete_vms(deployment, pool)
+        vms = deployment.vms
+        @event_log.begin_stage("Deleting idle VMs", vms.count)
+
+        vms.each do |vm|
+          pool.process do
+            @event_log.track("#{vm.cid}") do
+              @logger.info("Deleting idle vm #{vm.cid}")
+              delete_vm(vm)
+            end
+          end
+        end
+      end
+
+      def delete_instance(instance)
+        desc = "#{instance.job}/#{instance.index}"
+        with_thread_name("delete_instance(#{desc})") do
+          @logger.info("Deleting instance: #{desc}")
+
+          vm = instance.vm
+          agent = nil
+
+          if vm && vm.agent_id
+            ignoring_errors_when_forced do
+              agent = AgentClient.new(vm.agent_id)
+              agent.stop
+            end
+          end
+
+          instance.persistent_disks.each do |disk|
+            if disk.active && vm && vm.cid && disk.disk_cid
+              if agent
+                ignoring_errors_when_forced do
+                  agent.unmount_disk(disk.disk_cid)
+                end
+              end
+
+              ignoring_errors_when_forced do
+                # If persistent disk has been mounted but
+                # clean_shutdown above did not unmount it
+                # propertly (i.e. for wedged deployment),
+                # detach_disk might hang indefinitely.
+                # Right now it's up to cloudcheck handle
+                # that but 'force' might be added to CPI
+                # in the future.
+                @cloud.detach_disk(vm.cid, disk.disk_cid)
+              end
+            end
+
+            if disk.disk_cid
+              ignoring_errors_when_forced do
+                @cloud.delete_disk(disk.disk_cid)
+              end
+            end
+
+            disk.destroy
+          end
+
+          instance.destroy
+
+          delete_vm(vm) if vm
+        end
+      end
+
+      def delete_vm(vm)
+        if vm.cid
+          ignoring_errors_when_forced do
+            @cloud.delete_vm(vm.cid)
+          end
+        end
+
+        vm.destroy
+      end
+
+      def ignoring_errors_when_forced
+        yield
+      rescue => e
+        raise unless @force
+        @logger.warn(e.backtrace.join("\n"))
+        @logger.info("Force deleting is set, ignoring exception")
       end
     end
   end
