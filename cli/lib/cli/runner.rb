@@ -467,6 +467,18 @@ module Bosh::Cli
         route :stemcell, :list
       end
 
+      command :list_public_stemcells do
+        usage "public stemcells"
+        desc  "Show the list of publicly available stemcells for download."
+        route :stemcell, :list_public
+      end
+
+      command :download_public_stemcell do
+        usage "download public stemcell"
+        desc  "Downloads a stemcell from the public blobstore."
+        route :stemcell, :download_public
+      end
+
       command :list_releases do
         usage "releases"
         desc  "Show the list of available releases"
