@@ -6,9 +6,11 @@ group :development do
 end
 
 gem "redis"
-gem "nats"
+gem "yajl-ruby"
+gem "nats", "~> 0.4.22"
 gem "SystemTimer", :platforms => :ruby_18
 gem "rake"
 gem "ci_reporter"
 gem "rspec"
 gem "rest-client"
+gem "bundler"
