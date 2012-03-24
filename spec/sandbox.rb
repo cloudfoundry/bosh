@@ -55,12 +55,17 @@ module Bosh
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
           Bundler.with_clean_env do
+            ENV.delete("GEM_HOME") # Bundler sets this as well
             Dir.chdir(DIRECTOR_PATH) do
               output = `BUNDLE_GEMFILE=#{DIRECTOR_PATH}/Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
-              puts output unless $?.exitstatus == 0
+              unless $?.exitstatus == 0
+                puts "Failed to run migration:"
+                puts output
+                exit 1
+              end
             end
-
           end
+
           FileUtils.cp(TESTCASE_SQLITE_DB, @sqlite_db)
 
           blobstore_env = { "BUNDLE_GEMFILE" => "#{BLOBSTORE_PATH}/Gemfile" }
