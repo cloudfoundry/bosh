@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "chef_deployer"
-  s.version     = "0.0.9"
+  s.version     = "0.0.10"
   s.platform    = Gem::Platform::RUBY
   s.summary     = %q{Deploy chef cookbooks}
   s.description  = s.summary
