@@ -4,6 +4,46 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::AwsCloud::Cloud, "create_vm" do
 
+  def make_spec(security_groups)
+    {
+      "cloud_properties" => {
+        "security_groups" => security_groups
+      }
+    }
+  end
+
+  def agent_settings(unique_name, network_spec=dynamic_network_spec)
+    {
+      "vm" => {
+        "name" => "vm-#{unique_name}"
+      },
+      "agent_id" => "agent-id",
+      "networks" => { "network_a" => network_spec },
+      "disks" => {
+        "system" => "/dev/sda",
+        "ephemeral" => "/dev/sdb",
+        "persistent" => {}
+      },
+      "env" => {
+        "test_env" => "value"
+      },
+      "foo" => "bar", # Agent env
+      "baz" => "zaz"
+    }
+  end
+
+  def ec2_params(user_data, security_groups=[])
+    {
+      :image_id => "sc-id",
+      :count => 1,
+      :key_name => "test_key",
+      :security_groups => security_groups,
+      :instance_type => "m3.zb",
+      :user_data => Yajl::Encoder.encode(user_data),
+      :availability_zone => "foobar-1a"
+    }
+  end
+
   before(:each) do
     @registry = mock_registry
   end
@@ -17,54 +57,107 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       }
     }
 
-    ec2_params = {
-      :image_id => "sc-id",
-      :count => 1,
-      :key_name => "test_key",
-      :security_groups => [],
-      :instance_type => "m3.zb",
-      :user_data => Yajl::Encoder.encode(user_data),
-      :availability_zone => "foobar-1a"
-    }
-
-    agent_settings = {
-      "vm" => {
-        "name" => "vm-#{unique_name}"
-      },
-      "agent_id" => "agent-id",
-      "networks" => { "network_a" => dynamic_network_spec },
-      "disks" => {
-        "system" => "/dev/sda",
-        "ephemeral" => "/dev/sdb",
-        "persistent" => {}
-      },
-      "env" => {
-        "test_env" => "value"
-      },
-      "foo" => "bar", # Agent env
-      "baz" => "zaz"
-    }
-
     instance = double("instance",
                       :id => "i-test",
                       :elastic_ip => nil)
 
     cloud = mock_cloud do |ec2|
       ec2.instances.should_receive(:create).
-        with(ec2_params).
+        with(ec2_params(user_data)).
         and_return(instance)
     end
 
     instance.should_receive(:status).and_return(:pending)
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
     cloud.should_receive(:wait_resource).with(instance, :pending, :running)
-    @registry.should_receive(:update_settings).with("i-test", agent_settings)
+    @registry.should_receive(:update_settings)
+      .with("i-test", agent_settings(unique_name))
+
     vm_id = cloud.create_vm("agent-id", "sc-id",
                             resource_pool_spec,
                             { "network_a" => dynamic_network_spec },
                             nil, { "test_env" => "value" })
 
     vm_id.should == "i-test"
+  end
+
+  it "creates EC2 instance with security group" do
+    unique_name = UUIDTools::UUID.random_create.to_s
+
+    user_data = {
+      "registry" => {
+        "endpoint" => "http://registry:3333"
+      }
+    }
+
+    instance = double("instance",
+                      :id => "i-test",
+                      :elastic_ip => nil)
+
+    security_groups = %w[foo bar]
+    network_spec = dynamic_network_spec
+    network_spec["cloud_properties"] = {
+      "security_groups" => security_groups
+    }
+
+    cloud = mock_cloud do |ec2|
+      ec2.instances.should_receive(:create).
+        with(ec2_params(user_data, security_groups)).
+        and_return(instance)
+    end
+
+    instance.should_receive(:status).and_return(:pending)
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(instance, :pending, :running)
+    @registry.should_receive(:update_settings)
+      .with("i-test", agent_settings(unique_name, network_spec))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            resource_pool_spec,
+                            { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+
+    vm_id.should == "i-test"
+  end
+
+  describe "security groups" do
+    it "should be extracted from network spec" do
+      cloud = mock_cloud
+
+      spec = {}
+      spec["network_a"] = make_spec(%w[foo])
+      spec["network_b"] = make_spec(%w[bar foobar])
+      security_groups = cloud.security_groups(spec)
+      security_groups.should == %w[foo bar foobar]
+    end
+
+    it "should return the default groups if none are extracted" do
+      options = mock_cloud_options
+      options["aws"]["default_security_groups"] = %w[foo]
+      cloud = mock_cloud(options)
+
+      spec = {}
+      security_groups = cloud.security_groups(spec)
+      security_groups.should == %w[foo]
+    end
+
+    it "should return an empty list if no default group is set" do
+      cloud = mock_cloud
+
+      spec = {}
+      security_groups = cloud.security_groups(spec)
+      security_groups.should == []
+    end
+
+    it "should raise an error when it isn't an array" do
+      cloud = mock_cloud
+
+      spec = {}
+      spec["network_a"] = make_spec("foo")
+      lambda {
+        cloud.security_groups(spec)
+      }.should raise_error ArgumentError, "security groups must be an Array"
+    end
   end
 
   it "associates instance with elastic ip if vip network is provided" do
