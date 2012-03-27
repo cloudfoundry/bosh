@@ -22,7 +22,7 @@ GEM
     eventmachine (0.12.10)
     httpclient (2.2.4)
     json (1.6.5)
-    json_pure (1.6.4)
+    json_pure (1.6.5)
     linecache (0.43)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
@@ -30,7 +30,7 @@ GEM
     mime-types (1.17.2)
     monit_api (1.0.2)
       crack
-    nats (0.4.22.beta.4)
+    nats (0.4.22)
       daemons (>= 1.1.4)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.6.1)
@@ -97,7 +97,7 @@ DEPENDENCIES
   blobstore_client (~> 0.3.11)
   ci_reporter
   monit_api
-  nats (= 0.4.22.beta.4)
+  nats (~> 0.4.22)
   netaddr
   posix-spawn
   rack-test
