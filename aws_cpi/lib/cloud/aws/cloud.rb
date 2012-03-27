@@ -70,7 +70,8 @@ module Bosh::AwsCloud
     # @param [String] stemcell_id AMI id that will be used
     #   to power on new instance
     # @param [Hash] resource_pool Resource pool specification
-    # @param [Hash] network_spec Network specification
+    # @param [Hash] network_spec Network specification, if it contains
+    #  security groups they must be existing
     # @param [optional, Array] disk_locality List of disks that
     #   might be attached to this instance in the future, can be
     #   used as a placement hint (i.e. instance will only be created
@@ -96,12 +97,14 @@ module Bosh::AwsCloud
           @logger.debug("Disk locality is ignored by AWS CPI")
         end
 
+        security_groups =
+          network_configurator.security_groups(@default_security_groups)
+
         instance_params = {
           :image_id => stemcell_id,
           :count => 1,
           :key_name => resource_pool["key_name"] || @default_key_name,
-          # TODO: lookup security groups in network spec
-          :security_groups => @default_security_groups || [],
+          :security_groups => security_groups,
           :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data)
         }
