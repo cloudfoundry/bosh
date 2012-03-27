@@ -26,6 +26,7 @@ module Bosh::AwsCloud
       @logger = Bosh::Clouds::Config.logger
       @dynamic_network = nil
       @vip_network = nil
+      @security_groups = []
 
       spec.each_pair do |name, spec|
         network_type = spec["type"]
@@ -47,6 +48,8 @@ module Bosh::AwsCloud
           cloud_error("Invalid network type `#{network_type}': AWS CPI " \
                       "can only handle `dynamic' and `vip' network types")
         end
+
+        extract_security_groups(spec)
       end
 
       if @dynamic_network.nil?
@@ -68,6 +71,37 @@ module Bosh::AwsCloud
           @logger.info("Disassociating elastic IP `#{elastic_ip}' " \
                        "from instance `#{instance.id}'")
           instance.disassociate_elastic_ip
+        end
+      end
+    end
+
+    ##
+    # Returns the security groups for this network configuration, or
+    # the default security groups if the configuration does not contain
+    # security groups
+    # @param [Array] default Default security groups
+    # @return [Array] security groups
+    def security_groups(default)
+      if @security_groups.empty? && default
+        return default
+      else
+        return @security_groups
+      end
+    end
+
+    ##
+    # Extracts the security groups from the network configuration
+    # @param [Hash] network_spec Network specification
+    # @raise [ArgumentError] if the security groups in the network_spec
+    #   is not an Array
+    def extract_security_groups(spec)
+      if spec && spec["cloud_properties"]
+        cloud_properties = spec["cloud_properties"]
+        if cloud_properties && cloud_properties["security_groups"]
+          unless cloud_properties["security_groups"].is_a?(Array)
+            raise ArgumentError, "security groups must be an Array"
+          end
+          @security_groups += cloud_properties["security_groups"]
         end
       end
     end
