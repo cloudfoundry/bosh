@@ -70,7 +70,8 @@ module Bosh::AwsCloud
     # @param [String] stemcell_id AMI id that will be used
     #   to power on new instance
     # @param [Hash] resource_pool Resource pool specification
-    # @param [Hash] network_spec Network specification
+    # @param [Hash] network_spec Network specification, if it contains
+    #  security groups they must be existing
     # @param [optional, Array] disk_locality List of disks that
     #   might be attached to this instance in the future, can be
     #   used as a placement hint (i.e. instance will only be created
@@ -100,8 +101,7 @@ module Bosh::AwsCloud
           :image_id => stemcell_id,
           :count => 1,
           :key_name => resource_pool["key_name"] || @default_key_name,
-          # TODO: lookup security groups in network spec
-          :security_groups => @default_security_groups || [],
+          :security_groups => security_groups(network_spec),
           :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data)
         }
@@ -127,6 +127,32 @@ module Bosh::AwsCloud
 
         instance.id
       end
+    end
+
+    ##
+    # Extracts the security groups from a network spec
+    # @param [Hash] network_spec Network specification
+    # @raise [ArgumentError] if the security groups in the network_spec
+    #   is not an Array
+    # @return [Array] security groups
+    def security_groups(network_spec)
+      groups = []
+      network_spec.each_pair do |network, options|
+        if options && options["cloud_properties"]
+          cloud_properties = options["cloud_properties"]
+          if cloud_properties && cloud_properties["security_groups"]
+            # security_groups can be an Array or a single String
+            unless cloud_properties["security_groups"].is_a?(Array)
+              raise ArgumentError, "security groups must be an Array"
+            end
+            groups += cloud_properties["security_groups"]
+          end
+        end
+      end
+      if groups.empty? && @default_security_groups
+        groups = @default_security_groups
+      end
+      groups
     end
 
     ##
