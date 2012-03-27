@@ -56,7 +56,7 @@ GEM
       multi_xml
     httpclient (2.2.0)
     json (1.4.6)
-    json_pure (1.6.4)
+    json_pure (1.6.6)
     linecache (0.43)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
@@ -66,7 +66,7 @@ GEM
     minitar (0.5.3)
     multi_json (1.1.0)
     multi_xml (0.4.2)
-    nats (0.4.22.beta.4)
+    nats (0.4.22)
       daemons (>= 1.1.4)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.6.1)
@@ -160,7 +160,7 @@ DEPENDENCIES
   httpclient
   machinist (~> 1.0)
   minitar
-  nats (= 0.4.22.beta.4)
+  nats (~> 0.4.22)
   netaddr
   pg
   rack-test
