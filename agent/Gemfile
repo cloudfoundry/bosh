@@ -11,7 +11,7 @@ gem "monit_api"
 gem "thin"
 gem "sinatra"
 gem "rack-test"
-gem "sigar", ">=0.7.0"
+gem "sigar", ">=0.7.2"
 
 group :development do
   gem "ruby-debug", :platforms => :ruby_18
