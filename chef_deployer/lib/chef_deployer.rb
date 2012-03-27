@@ -20,7 +20,7 @@ module ChefDeployer
      BASE_PATH = Dir.pwd
      COOKBOOKS_PATH = File.join(BASE_PATH, "cookbooks")
      SSH_WRAPPER = File.join(File.expand_path("../../bin", __FILE__), "chef_deployer_ssh_wrapper")
-     ENV['GIT_SSH'] = SSH_WRAPPER
+     ENV["GIT_SSH"] = SSH_WRAPPER
 
      no_tasks do
        def mask
@@ -149,9 +149,12 @@ module ChefDeployer
          end
        end
 
-       def update_remote_repo(repo, ssh_host, ssh_user, ssh_options)
+       def update_remote_repo(repo, options, ssh_host, ssh_user, ssh_options)
          Net::SSH.start(ssh_host, ssh_user, ssh_options) do |ssh|
            # git init is safe to run on an existing repo
+           if options.local
+             ssh.exec!("rm -rf #{@remote_repo_cache}")
+           end
            ssh.exec!("mkdir -p #{@remote_repo_cache}/#{repo} && cd #{@remote_repo_cache}/#{repo} && git init --bare")
          end
 
@@ -288,6 +291,7 @@ module ChefDeployer
      desc "deploy CLOUD", "deploy CLOUD"
      method_option :roles, :type => :array
      method_option :metadata, :type => :boolean, :default => true
+     method_option :local, :type => :boolean, :default => false
      method_option :config, :type => :string, :default => "config.yml"
      def deploy(cloud)
        if File.directory?(cloud)
@@ -372,6 +376,10 @@ module ChefDeployer
        say_status :config, "reading repo configuration"
        role_repo_mapping = {}
        repo_config = YAML.load_file(File.join(BASE_PATH, "config", "repos.yml"))
+       if options.local
+         repo_config["bosh"]["uri"] = `pwd`.split("/")[0..-2].join("/")
+         repo_config["bosh"]["SCM"] = "NONE"
+       end
        repo_config.each do |name, config|
          required_repo = false
          config["roles"].each do |role|
@@ -392,7 +400,7 @@ module ChefDeployer
                repos.each do |repo|
                  say_status :repos, "uploading #{repo} to #{host}"
                  connect(uri) do |*ssh_args|
-                   update_remote_repo(repo, *ssh_args)
+                   update_remote_repo(repo, options, *ssh_args)
                  end
                end
              end
