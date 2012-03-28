@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_cli (0.15.4)
+    bosh_cli (0.15.5)
       blobstore_client (~> 0.3.11)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
