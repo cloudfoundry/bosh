@@ -49,26 +49,31 @@ module Bosh::Cli::Command
       say("create\t#{package_dir}")
       FileUtils.mkdir_p(package_dir)
 
-      packaging_file = File.join(package_dir, "packaging")
-      say("create\t#{packaging_file}")
-      FileUtils.touch(packaging_file)
+      generate_file(package_dir, "packaging") do
+        "# abort script on any command that exit with a non zero value\nset -e\n"
+      end
 
-      spec_file = File.join(package_dir, "spec")
-      say("create\t#{spec_file}")
-      FileUtils.touch(spec_file)
+      generate_file(package_dir, "pre_packaging") do
+        "# abort script on any command that exit with a non zero value\nset -e\n"
+      end
 
-      pre_packaging_file = File.join(package_dir, "pre_packaging")
-      say("create\t#{pre_packaging_file}")
-      FileUtils.touch(pre_packaging_file)
-
-      File.open(spec_file, "w") do |f|
-        f.write("---\nname: #{name}\n\ndependencies:\n\nfiles:\n")
+      generate_file(package_dir, "spec") do
+        "---\nname: #{name}\n\ndependencies:\n\nfiles:\n"
       end
 
       say("\nGenerated skeleton for `#{name}' package in `#{package_dir}'")
     end
 
     private
+
+    def generate_file(dir, file)
+      path = File.join(dir, file)
+      say("create\t#{path}")
+      FileUtils.touch(path)
+      File.open(path, "w") do |f|
+        f.write(yield)
+      end
+    end
 
     def print_spec(spec)
       say("Package name: #{spec["name"]}")
