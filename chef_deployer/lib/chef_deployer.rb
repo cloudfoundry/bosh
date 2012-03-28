@@ -176,7 +176,7 @@ module ChefDeployer
                      # empty git commit reports an error in exitstatus,
                      # so always commit atleast one file (timestamp)
                      "echo #{Time.now.to_f.to_s} > timestamp && " +
-                     "git add * && git commit -q -m 'update'"
+                     "git add * -f && git commit -q -m 'update'"
                exec("#{cmd}")
              }
              Process.wait
@@ -309,6 +309,7 @@ module ChefDeployer
 
        @roles = {}
        @deploy_order = []
+
        @cloud_config["roles"].each do |role|
          if !role.kind_of?(Hash) || role.keys.size != 1
           raise "Invalid role: #{role.pretty_inspect}, must be a Hash and contain a single key/value of role_name => hostname."
@@ -375,10 +376,11 @@ module ChefDeployer
 
        say_status :config, "reading repo configuration"
        role_repo_mapping = {}
+       repos_uploaded = {}
        repo_config = YAML.load_file(File.join(BASE_PATH, "config", "repos.yml"))
        if options.local
          repo_config["bosh"]["uri"] = `pwd`.split("/")[0..-2].join("/")
-         repo_config["bosh"]["SCM"] = "NONE"
+         repo_config["bosh"]["scm"] = "NONE"
        end
        repo_config.each do |name, config|
          required_repo = false
@@ -398,9 +400,12 @@ module ChefDeployer
            if repos && !repos.empty?
              prepare_connection_for(host) do |uri|
                repos.each do |repo|
-                 say_status :repos, "uploading #{repo} to #{host}"
-                 connect(uri) do |*ssh_args|
-                   update_remote_repo(repo, options, *ssh_args)
+                 if !repos_uploaded[repo]
+                   say_status :repos, "uploading #{repo} to #{host}"
+                   connect(uri) do |*ssh_args|
+                     update_remote_repo(repo, options, *ssh_args)
+                     repos_uploaded[repo] = true
+                   end
                  end
                end
              end
