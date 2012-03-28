@@ -362,7 +362,11 @@ module Bosh
       #
       # @return [Boolean] Whether there is a task currently running.
       def has_current?
-        !@current_running_task.nil?
+        unless @current_running_task
+          return false
+        end
+        task_state = get_task_state(@current_running_task)
+        task_state == "queued" || task_state == "processing"
       end
 
       [:post, :put, :get, :delete].each do |method_name|
