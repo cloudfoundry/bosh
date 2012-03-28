@@ -54,7 +54,9 @@ module Bosh
           @sqlite_db = File.join(ASSETS_PATH, "director.db")
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
+          bundle_path = ENV["BUNDLE_PATH"]
           Bundler.with_clean_env do
+            ENV["BUNDLE_PATH"] = bundle_path
             ENV.delete("GEM_HOME") # Bundler sets this as well
             Dir.chdir(DIRECTOR_PATH) do
               output = `BUNDLE_GEMFILE=#{DIRECTOR_PATH}/Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
