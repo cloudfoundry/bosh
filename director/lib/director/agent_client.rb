@@ -62,7 +62,7 @@ module Bosh::Director
     end
 
     [:apply, :compile_package, :drain, :fetch_logs, :migrate_disk, :mount_disk,
-     :unmount_disk].each do |method|
+     :stop, :unmount_disk].each do |method|
       define_method (method) do |*args|
         task = AgentClient.convert_old_message_to_new(super(*args))
         while task["state"] == "running"
