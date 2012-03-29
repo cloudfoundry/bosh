@@ -119,4 +119,37 @@ describe Bosh::Director::Client do
     @client.wait_until_ready
   end
 
+  it "should encrypt message" do
+    nats_rpc = mock("nats_rpc")
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+    credentials = Bosh::EncryptionHandler.generate_credentials
+
+    nats_rpc.should_receive(:send).with("test_service.test_service_id",
+        hash_including("encrypted_data")
+    ).and_return { |*args|
+
+      data = args[1]["encrypted_data"]
+      agent_encryption_handler = Bosh::EncryptionHandler.new("test_service_id", credentials)
+
+      decrypted_message = agent_encryption_handler.decrypt(data)
+      decrypted_message["method"].should == "test_method"
+      decrypted_message["arguments"].should == ["arg 1", 2, {"test"=>"blah"}]
+      decrypted_message["sequence_number"].to_i.should > Time.now.to_i
+      decrypted_message["client_id"].should == "test_service_id"
+
+      # TODO accessor for session_id
+      #decrypted_message["sesssion_id"].should == agent_encryption_handler.session_id
+
+      callback = args[2]
+
+      # Agent reply encrypted
+      callback.call("encrypted_data" => agent_encryption_handler.encrypt("value" => 5))
+      "3"
+    }
+
+    @client = Bosh::Director::Client.new("test_service", "test_service_id",
+                                         {:timeout => 0.1, :credentials => credentials})
+    @client.test_method("arg 1", 2, {:test => "blah"}).should eql(5)
+  end
+
 end

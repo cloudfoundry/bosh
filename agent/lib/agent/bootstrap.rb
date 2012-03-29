@@ -36,6 +36,7 @@ module Bosh::Agent
         update_iptables
         update_passwords
         update_agent_id
+        update_credentials
         update_hostname
         update_mbus
         update_blobstore
@@ -96,6 +97,15 @@ module Bosh::Agent
 
     def update_agent_id
       Bosh::Agent::Config.agent_id = @settings["agent_id"]
+    end
+
+    def update_credentials
+      env = @settings["env"]
+      if env && bosh_env = env["bosh"]
+        if bosh_env["credentials"]
+          Bosh::Agent::Config.credentials = bosh_env["credentials"]
+        end
+      end
     end
 
     def update_hostname

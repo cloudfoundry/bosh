@@ -14,6 +14,8 @@ require "posix/spawn"
 require "monit_api"
 require "fileutils"
 
+require "encryption/encryption_handler"
+
 require "agent/ext"
 require "agent/version"
 
