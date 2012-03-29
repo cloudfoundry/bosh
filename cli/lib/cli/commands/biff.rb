@@ -29,11 +29,11 @@ module Bosh::Cli::Command
     private
 
     # Unified is so that we get the whole file diff not just sections.
-    GIT_DIFF_COMMAND = "git diff --unified=1000"
+    DIFF_COMMAND = "diff --unified=1000"
 
     KEEP_NEW_VERSION_TEXT = "Would you like to keep the new version? [yn]"
 
-    GIT_FAILED_KEEP_NEW_TEXT =
+    DIFF_FAILED_KEEP_NEW_TEXT =
         "Would you like the new version copied to '%s'? [yn]"
 
     # Accessor for testing purposes.
@@ -48,7 +48,7 @@ module Bosh::Cli::Command
       end
     end
 
-    # Takes two strings and prints the git diff of them.
+    # Takes two strings and prints the diff of them.
     # @param [String] str1 The first string to diff.
     # @param [String] str2 The string to diff against.
     def print_string_diff(str1, str2)
@@ -59,20 +59,21 @@ module Bosh::Cli::Command
         f.write(str2)
       }
 
-      # (lisbakke) begin rescue on a command-line command does not work in
-      # 1.8.7. I think it's only a 1.9.x feature.
-      begin
-        @git_works = true
-        output = `#{GIT_DIFF_COMMAND} #{@temp_file_path_1} #{@temp_file_path_2}`
-        if output.empty?
-          output = "No differences."
-          @no_differences = true
-        end
-        say(output)
-      rescue => e
-        say("git diff did not work: '#{e}'.")
-        @git_works = false
+      @diff_works = true
+      cmd = "#{DIFF_COMMAND} #{@temp_file_path_1} #{@temp_file_path_2} 2>&1"
+      output = `#{cmd}`
+      if $?.exitstatus == 2
+        say("'#{cmd}' did not work.")
+        say("Failed, saying: '#{output}'.")
+        @diff_works = false
+        return
       end
+
+      if output.empty?
+        output = "No differences."
+        @no_differences = true
+      end
+      say(output)
     end
 
     # Alias for find.  It is used to find within a given object, not the default
@@ -270,9 +271,9 @@ module Bosh::Cli::Command
     # Asks if the user would like to keep the new template and copies it over
     # their existing template if yes.  This is its own function for testing.
     def keep_new_file
-      copy_to_file = @git_works ? @deployment_file : @deployment_file + ".new"
-      agree_text = @git_works ?
-          KEEP_NEW_VERSION_TEXT : (GIT_FAILED_KEEP_NEW_TEXT % copy_to_file)
+      copy_to_file = @diff_works ? @deployment_file : @deployment_file + ".new"
+      agree_text = @diff_works ?
+          KEEP_NEW_VERSION_TEXT : (DIFF_FAILED_KEEP_NEW_TEXT % copy_to_file)
       if agree(agree_text)
         say("New version copied to '#{copy_to_file}'")
         FileUtils.cp(@temp_file_path_2, copy_to_file)
