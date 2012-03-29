@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + '/../../../spec_helper'
 Bosh::Agent::Infrastructure.new("aws").infrastructure
 
 describe Bosh::Agent::Infrastructure::Aws::Settings do
+  TEST_AUTHORIZED_KEYS = "/tmp/aws_test_auth"
 
   before(:each) do
     Bosh::Agent::Config.settings_file = File.join(base_dir, 'settings.json')
@@ -11,7 +12,9 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
 
   it 'should load settings' do
     Bosh::Agent::Infrastructure::Aws::Registry.stub(:get_settings).and_return(@settings)
+    Bosh::Agent::Infrastructure::Aws::Registry.stub(:get_openssh_key).and_return("test_key")
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
+    settings_wrapper.stub(:authorized_keys).and_return(TEST_AUTHORIZED_KEYS)
     settings = settings_wrapper.load_settings
     settings.should == @settings
   end
@@ -40,6 +43,15 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     lambda {
       properties = settings_wrapper.get_network_settings("test", network_properties)
     }.should raise_error(Bosh::Agent::StateError, /Unsupported network/)
+  end
+
+  it 'should setup the ssh public key' do
+    Bosh::Agent::Infrastructure::Aws::Registry.stub!(:get_openssh_key).and_return("test_key")
+    settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
+    settings_wrapper.stub(:authorized_keys).and_return(TEST_AUTHORIZED_KEYS)
+    settings_wrapper.setup_openssh_key
+    File.open(TEST_AUTHORIZED_KEYS, "r") { |f| f.read.should == "test_key" }
+    FileUtils.rm(TEST_AUTHORIZED_KEYS)
   end
 
 end
