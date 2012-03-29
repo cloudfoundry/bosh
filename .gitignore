@@ -16,6 +16,7 @@ spec/assets/*.pid
 spec/assets/*.db
 spec/assets/**/*.pid
 spec/assets/bosh_config.yml
+spec/assets/test_release
 agent/spec/tmp
 cli/pkg
 monit_api/pkg
