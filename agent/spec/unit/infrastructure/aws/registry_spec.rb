@@ -16,6 +16,12 @@ describe Bosh::Agent::Infrastructure::Aws::Registry do
     settings.should == Yajl::Parser.new.parse(settings_json)
   end
 
+  it 'should get registry endpoint' do
+    endpoint = {"registry" => {"endpoint" => "blah"}}
+    Bosh::Agent::Infrastructure::Aws::Registry.stub(:get_json_from_url).and_return(endpoint)
+    Bosh::Agent::Infrastructure::Aws::Registry.get_registry_endpoint.should == "blah"
+  end
+
   it 'should get current_instance_id' do
     class TestHTTPResponse
       def status
