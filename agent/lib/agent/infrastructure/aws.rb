@@ -9,8 +9,8 @@ module Bosh::Agent
       Settings.new.load_settings
     end
 
-    def get_network_settings
-      Settings.new.get_network_settings
+    def get_network_settings(network_name, properties)
+      Settings.new.get_network_settings(network_name, properties)
     end
 
   end

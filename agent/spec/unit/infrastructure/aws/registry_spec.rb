@@ -9,10 +9,28 @@ describe Bosh::Agent::Infrastructure::Aws::Registry do
   end
 
   it 'should get settings' do
+    Bosh::Agent::Infrastructure::Aws::Registry.stub(:current_instance_id).and_return("est_instance")
     Bosh::Agent::Infrastructure::Aws::Registry.stub(:get_json_from_url).and_return(@settings)
     Bosh::Agent::Infrastructure::Aws::Registry.stub(:get_registry_endpoint).and_return("blah")
     settings = Bosh::Agent::Infrastructure::Aws::Registry.get_settings
     settings.should == Yajl::Parser.new.parse(settings_json)
+  end
+
+  it 'should get current_instance_id' do
+    class TestHTTPResponse
+      def status
+        200
+      end
+      def body
+        "test_instance"
+      end
+    end
+
+    client = HTTPClient.new
+    client.stub(:get).and_return(TestHTTPResponse.new)
+    HTTPClient.stub(:new).and_return(client)
+    instance_id = Bosh::Agent::Infrastructure::Aws::Registry.current_instance_id
+    instance_id.should == "test_instance"
   end
 
   def settings_json
