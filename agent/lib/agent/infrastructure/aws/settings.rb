@@ -3,6 +3,7 @@ module Bosh::Agent
 
     VIP_NETWORK_TYPE = "vip"
     DHCP_NETWORK_TYPE = "dynamic"
+    AUTHORIZED_KEYS = File.join("/home/", BOSH_APP_USER, ".ssh/authorized_keys")
 
     def initialize
       @settings_file = Bosh::Agent::Config.settings_file
@@ -12,10 +13,24 @@ module Bosh::Agent
       Bosh::Agent::Config.logger
     end
 
+    def authorized_keys
+      AUTHORIZED_KEYS
+    end
+
+    def setup_openssh_key
+      public_key = Infrastructure::Aws::Registry.get_openssh_key
+      if public_key.nil? || public_key.empty?
+        return
+      end
+      FileUtils.mkdir_p(File.dirname(authorized_keys))
+      File.open(authorized_keys, "w") { |f| f.write(public_key) }
+    end
+
     def load_settings
       settings = Infrastructure::Aws::Registry.get_settings
       settings_json = Yajl::Encoder.encode(@settings)
       File.open(@settings_file, 'w') { |f| f.write(settings_json) }
+      setup_openssh_key
       Bosh::Agent::Config.settings = settings
     end
 
