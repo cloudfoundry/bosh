@@ -7,6 +7,7 @@ module Bosh::AwsCloud
 
     DEFAULT_MAX_RETRIES = 2
     DEFAULT_AVAILABILITY_ZONE = "us-east-1a"
+    DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
     METADATA_TIMEOUT = 5 # seconds
     DEVICE_POLL_TIMEOUT = 60 # seconds
 
@@ -41,6 +42,7 @@ module Bosh::AwsCloud
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
         :secret_access_key => @aws_properties["secret_access_key"],
+        :ec2_endpoint => @aws_properties["ec2_endpoint"] || DEFAULT_EC2_ENDPOINT,
         :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
         :logger => @aws_logger
       }
@@ -316,7 +318,7 @@ module Bosh::AwsCloud
             image_params = {
               :name => "BOSH-#{generate_unique_name}",
               :architecture => "x86_64",
-              :kernel_id => DEFAULT_AKI,
+              :kernel_id => cloud_properties["kernel_id"] || DEFAULT_AKI,
               :root_device_name => "/dev/sda",
               :block_device_mappings => {
                 "/dev/sda" => { :snapshot_id => snapshot.id },
