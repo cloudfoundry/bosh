@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require 'blobstore_client'
 
 # TODO: progressbar - but we dont' want that cruft in the agent, so move this

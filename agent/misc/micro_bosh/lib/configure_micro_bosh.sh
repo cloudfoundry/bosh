@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# Copyright (c) 2009-2012 VMware, Inc.
 
 bosh_src_dir=/var/vcap/bosh/src/micro_bosh
 bosh_release_dir=/var/vcap/bosh/src/micro_bosh_release

@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require "thin"
 require "sinatra"
 require "monitor"

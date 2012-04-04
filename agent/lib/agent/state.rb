@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 # This is a thin abstraction on top of a state.yml file that is managed by agent.
 # It can be used for getting the whole state as a hash or for querying
 # particular keys. Flushing the state to a file only happens on write call.

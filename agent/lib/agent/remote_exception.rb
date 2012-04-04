@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Agent
   class RemoteException
     attr_reader :message, :backtrace, :blob, :blobstore_id

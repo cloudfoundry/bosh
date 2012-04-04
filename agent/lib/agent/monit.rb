@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Agent
 
   # A good chunk of this code is lifted from the implementation of POSIX::Spawn::Child

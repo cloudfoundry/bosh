@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Bosh::Agent::Monit do

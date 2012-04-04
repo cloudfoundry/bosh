@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Agent
 
   # TODO: payload max size should be enforced via underlying LineText2 protocol

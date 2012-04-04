@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module Bosh::Agent
 
   # AlertProcessor is a simple SMTP server + callback for processing alerts.
