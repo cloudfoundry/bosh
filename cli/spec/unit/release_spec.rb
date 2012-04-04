@@ -64,4 +64,20 @@ describe Bosh::Cli::Release do
     r.min_cli_version.should be_nil
   end
 
+  it "supports private config which gets merged into final config" do
+    r = new_release(@release_dir)
+    r.dev_name = "dev-release"
+    r.final_name = "prod-release"
+    r.min_cli_version = "0.5.2"
+    r.save_config
+
+    File.open(File.join(@release_dir, "config", "private.yml"), "w") do |f|
+      YAML.dump({ "final_name" => "overriden" }, f)
+    end
+
+    r = new_release(@release_dir)
+    r.final_name.should == "overriden"
+    r.min_cli_version.should == "0.5.2"
+  end
+
 end
