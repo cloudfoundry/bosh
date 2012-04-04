@@ -63,5 +63,4 @@ describe Bosh::Cli::Release do
     r.final_name.should be_nil
     r.min_cli_version.should be_nil
   end
-
 end
