@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# Copyright (c) 2009-2012 VMware, Inc.
 
 function run_in_chroot {
   # Need to explicitly override LANG and LC_ALL so that they aren't

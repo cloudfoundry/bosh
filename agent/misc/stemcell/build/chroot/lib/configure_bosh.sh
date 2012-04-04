@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# Copyright (c) 2009-2012 VMware, Inc.
 
 bosh_app_dir=/var/vcap
 

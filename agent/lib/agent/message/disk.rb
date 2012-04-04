@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 require 'fileutils'
 
 module Bosh::Agent

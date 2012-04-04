@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# Copyright (c) 2009-2012 VMware, Inc.
 
 update-rc.d -f hwclockfirst remove
 update-rc.d -f hwclock remove
