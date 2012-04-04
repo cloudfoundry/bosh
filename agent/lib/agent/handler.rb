@@ -11,6 +11,10 @@ module Bosh::Agent
     MAX_NATS_RETRIES = 10
     NATS_RECONNECT_SLEEP = 0.5
 
+    # Seconds after an unexpected error until we kill the agent so it can be
+    # restarted.
+    KILL_AGENT_THREAD_TIMEOUT = 15
+
     def initialize
       @agent_id  = Config.agent_id
       @logger    = Config.logger
@@ -29,6 +33,7 @@ module Bosh::Agent
 
       @results = []
       @long_running_agent_task = []
+      @restarting_agent = false
 
       @nats_fail_count = 0
 
@@ -146,8 +151,8 @@ module Bosh::Agent
       end
 
       reply_to = msg['reply_to']
-      method   = msg['method']
-      args     = msg['arguments']
+      method = msg['method']
+      args = msg['arguments']
 
       if method == "get_state"
         method = "state"
@@ -157,11 +162,18 @@ module Bosh::Agent
       if processor
         Thread.new {
           if processor.respond_to?(:long_running?)
-            if @long_running_agent_task.empty?
-              process_long_running(reply_to, processor, args)
-            else
-              payload = {:exception => "already running long running task"}
+            if @restarting_agent
+              payload = {:exception => "restarting agent"}
               publish(reply_to, payload)
+            else
+              @lock.synchronize do
+                if @long_running_agent_task.empty?
+                  process_long_running(reply_to, processor, args)
+                else
+                  payload = {:exception => "already running long running task"}
+                  publish(reply_to, payload)
+                end
+              end
             end
           else
             payload = process(processor, args)
@@ -213,20 +225,21 @@ module Bosh::Agent
     def process_long_running(reply_to, processor, args)
       agent_task_id = generate_agent_task_id
 
-      @lock.synchronize do
-        @long_running_agent_task = [agent_task_id]
-      end
+      @long_running_agent_task = [agent_task_id]
 
       payload = {:value => {:state => "running", :agent_task_id => agent_task_id}}
       publish(reply_to, payload)
 
-      begin
-        result = process(processor, args)
-      ensure
-        @lock.synchronize do
-          @results << [Time.now.to_i, agent_task_id, result]
-          @long_running_agent_task = []
-        end
+      result = process(processor, args)
+      @results << [Time.now.to_i, agent_task_id, result]
+      @long_running_agent_task = []
+    end
+
+    def kill_main_thread_in(seconds)
+      @restarting_agent = true
+      Thread.new do
+        sleep(seconds)
+        Thread.main.terminate
       end
     end
 
@@ -238,8 +251,9 @@ module Bosh::Agent
         @logger.info("#{e.inspect}: #{e.backtrace}")
         return {:exception => "#{e.inspect}: #{e.backtrace}"}
       rescue Exception => e
-        @logger.info("#{e.inspect}: #{e.backtrace}")
-        raise e
+        kill_main_thread_in(KILL_AGENT_THREAD_TIMEOUT)
+        @logger.error("#{e.inspect}: #{e.backtrace}")
+        return {:exception => "#{e.inspect}: #{e.backtrace}"}
       end
     end
 

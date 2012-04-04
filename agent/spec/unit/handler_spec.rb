@@ -105,6 +105,23 @@ describe Bosh::Agent::Handler do
     handler.start
   end
 
+  it "should report unexpected errors then terminate its thread in 15 seconds" do
+    handler = Bosh::Agent::Handler.new
+
+    klazz = Class.new do
+      def self.process(args)
+        raise "How unexpected of you!"
+      end
+    end
+    handler.should_receive(:kill_main_thread_in).once
+    handler.instance_eval do
+      @logger.should_receive(:error).with(
+          /#<RuntimeError: How unexpected of you!/)
+    end
+    payload = handler.process(klazz, nil)
+    payload[:exception].should match(/#<RuntimeError: How unexpected of you!/)
+  end
+
   describe "Encryption" do
 
     before(:each) do
