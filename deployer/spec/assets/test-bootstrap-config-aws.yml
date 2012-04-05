@@ -1,0 +1,20 @@
+---
+name: bosh-bootstrap-aws
+
+network:
+  type: dynamic
+
+cloud:
+  plugin: aws
+  properties:
+    aws:
+      access_key_id: foo-key
+      secret_access_key: foo-secret
+      ec2_endpoint: ec2.us-west-1.amazonaws.com
+      max_retries: 2
+      default_key_name: foo-key
+      default_security_groups: ["quick-start-1"]
+    registry:
+      endpoint: http://admin:admin@10.176.194.184:25695
+      user: admin
+      password: admin

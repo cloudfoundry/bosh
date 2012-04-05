@@ -1,18 +1,20 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require File.expand_path("../../../spec_helper", __FILE__)
 
-BOSH_STEMCELL_TGZ = "bosh-instance-1.0.tgz"
+BOSH_STEMCELL_TGZ ||= "bosh-instance-1.0.tgz"
 
 describe Bosh::Deployer::InstanceManager do
   before(:each) do
     @dir = Dir.mktmpdir("bdim_spec")
-    @config = YAML.load_file(spec_asset("test-bootstrap-config.yml"))
+    @config = YAML.load_file(spec_asset("test-bootstrap-config-aws.yml"))
     @config["dir"] = @dir
     @config["name"] = "spec-#{UUIDTools::UUID.random_create.to_s}"
     @config["logging"] = { "file" => "#{@dir}/bmim.log" }
     @deployer = Bosh::Deployer::InstanceManager.new(@config)
     @cloud = mock("cloud")
+    @ec2 = mock("ec2")
+    @cloud.stub(:ec2).and_return(@ec2)
     Bosh::Deployer::Config.stub!(:cloud).and_return(@cloud)
     @agent = mock("agent")
     Bosh::Deployer::Config.stub!(:agent).and_return(@agent)
@@ -27,63 +29,31 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.send(:load_deployments)["instances"].select { |d| d[:name] == @deployer.state.name }.first
   end
 
-  it "should update the apply spec" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
-    @deployer.update_spec(spec)
-    props = spec["properties"]
-
-    %w{blobstore postgres director redis nats}.each do |service|
-      ip = props[service]["address"]
-      ip.should_not be_nil
-      ip.should_not == "127.0.0.1"
-      ip.should == Bosh::Deployer::Config.networks["bosh"]["ip"]
-    end
-
-    cloud_options = Bosh::Deployer::Config.cloud_options
-    case cloud_options["plugin"]
-    when "vsphere"
-      props["vcenter"]["address"].should_not == "127.0.0.1"
-      props["vcenter"]["address"].should == cloud_options["properties"]["vcenters"].first["host"]
-      props["vcenter"]["user"].should_not == "vcenter-user"
-      props["vcenter"]["password"].should_not == "vcenter-password"
-    else
-    end
+  def discover_bosh_ip(ip, id)
+    instance = mock("instance")
+    instances = mock("instances")
+    @ec2.should_receive(:instances).and_return(instances)
+    instances.should_receive(:[]).with(id).and_return(instance)
+    instance.should_receive(:private_ip_address).and_return(ip)
   end
 
-  it "should override the apply spec with properties" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
-
-    properties = YAML.load_file(spec_asset("test-apply-spec-properties.yml"))
-
-    Bosh::Deployer::Config.spec_properties.merge!(properties["apply_spec"]["properties"])
-
+  it "should update the apply spec" do
+    dummy_ip = "1.2.3.4"
+    Bosh::Deployer::Config.bosh_ip = dummy_ip
+    spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     @deployer.update_spec(spec)
     props = spec["properties"]
 
-    %w{blobstore postgres director redis nats}.each do |service|
+    %w{blobstore postgres director redis nats aws_registry}.each do |service|
       ip = props[service]["address"]
       ip.should_not be_nil
       ip.should_not == "127.0.0.1"
-      if override = Bosh::Deployer::Config.spec_properties[service]
-        expected_ip = override["address"]
-      end
-      expected_ip ||= Bosh::Deployer::Config.networks["bosh"]["ip"]
-      ip.should == expected_ip
-    end
-
-    cloud_options = Bosh::Deployer::Config.cloud_options
-    case cloud_options["plugin"]
-    when "vsphere"
-      props["vcenter"]["address"].should == "devNN"
-      props["vcenter"]["address"].should_not == cloud_options["properties"]["vcenters"].first["host"]
-      props["vcenter"]["user"].should == "devNN-user"
-      props["vcenter"]["password"].should == "devNN-password"
-    else
+      ip.should == dummy_ip
     end
   end
 
   it "should apply" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
+    spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     updated_spec = @deployer.update_spec(spec.dup)
     @agent.should_receive(:run_task).with(:stop)
     @agent.should_receive(:run_task).with(:apply, updated_spec)
@@ -92,7 +62,7 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it "should create a Bosh instance" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
+    spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
@@ -112,6 +82,7 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:apply, spec)
     @agent.should_receive(:run_task).with(:start)
 
+    discover_bosh_ip("10.0.0.1", "VM-CID-CREATE")
     @deployer.create(BOSH_STEMCELL_TGZ)
 
     @deployer.state.stemcell_cid.should == "SC-CID-CREATE"
@@ -125,8 +96,9 @@ describe Bosh::Deployer::InstanceManager do
   it "should destroy a Bosh instance" do
     disk_cid = "33"
     @deployer.state.disk_cid = disk_cid
-    @deployer.state.stemcell_name = File.basename(BOSH_STEMCELL_TGZ, ".tgz")
     @deployer.state.stemcell_cid = "SC-CID-DESTROY"
+    @deployer.state.stemcell_name = @deployer.state.stemcell_cid
+
     @deployer.state.vm_cid = "VM-CID-DESTROY"
 
     @agent.should_receive(:list_disk).and_return([disk_cid])
@@ -135,11 +107,11 @@ describe Bosh::Deployer::InstanceManager do
     @cloud.should_receive(:detach_disk).with("VM-CID-DESTROY", disk_cid)
     @cloud.should_receive(:delete_disk).with(disk_cid)
     @cloud.should_receive(:delete_vm).with("VM-CID-DESTROY")
-    @cloud.should_receive(:delete_stemcell).with("SC-CID-DESTROY")
 
     @deployer.destroy
 
     @deployer.state.stemcell_cid.should be_nil
+    @deployer.state.stemcell_name.should be_nil
     @deployer.state.vm_cid.should be_nil
     @deployer.state.disk_cid.should be_nil
 
@@ -149,7 +121,7 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it "should update a Bosh instance" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
+    spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     disk_cid = "22"
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)
@@ -174,6 +146,7 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:apply, spec)
     @agent.should_receive(:run_task).with(:start)
 
+    discover_bosh_ip("10.0.0.2", "VM-CID")
     @deployer.update(BOSH_STEMCELL_TGZ)
 
     @deployer.state.stemcell_cid.should == "SC-CID"

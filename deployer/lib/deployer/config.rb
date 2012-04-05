@@ -7,7 +7,7 @@ module Bosh::Deployer
 
     class << self
 
-      attr_accessor :logger, :db, :uuid, :resources, :cloud_options, :spec_properties
+      attr_accessor :logger, :db, :uuid, :resources, :cloud_options, :spec_properties, :bosh_ip
 
       def configure(config)
         if config["cloud"].nil?
@@ -24,6 +24,7 @@ module Bosh::Deployer
 
         @cloud_options = config["cloud"]
         @net_conf = config["network"]
+        @bosh_ip = @net_conf["ip"]
         @resources = config["resources"]
 
         @logger = Logger.new(config["logging"]["file"] || STDOUT)
@@ -59,7 +60,11 @@ module Bosh::Deployer
         require "deployer/models/instance"
 
         @cloud_options["properties"]["agent"]["mbus"] ||=
-          "http://vcap:b00tstrap@#{@net_conf["ip"]}:6868"
+          "http://vcap:b00tstrap@0.0.0.0:6868"
+
+        @disk_model = nil
+        @cloud = nil
+        @networks = nil
       end
 
       def disk_model
@@ -83,16 +88,14 @@ module Bosh::Deployer
       end
 
       def agent
-        if @agent.nil?
-          uri = URI.parse(@cloud_options["properties"]["agent"]["mbus"])
-          user, password = uri.userinfo.split(":", 2)
-          uri.userinfo = nil
-          @agent = Bosh::Agent::HTTPClient.new(uri.to_s,
-                                               { "user" => user,
-                                                 "password" => password,
-                                                 "reply_to" => uuid })
-        end
-        @agent
+        uri = URI.parse(@cloud_options["properties"]["agent"]["mbus"])
+        uri.host = bosh_ip
+        user, password = uri.userinfo.split(":", 2)
+        uri.userinfo = nil
+        Bosh::Agent::HTTPClient.new(uri.to_s,
+                                    { "user" => user,
+                                      "password" => password,
+                                      "reply_to" => uuid })
       end
 
       def networks
@@ -103,6 +106,7 @@ module Bosh::Deployer
             "gateway"          => @net_conf["gateway"],
             "ip"               => @net_conf["ip"],
             "dns"              => @net_conf["dns"],
+            "type"             => @net_conf["type"],
             "default"          => ["dns", "gateway"]
           }
         }
