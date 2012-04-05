@@ -234,7 +234,7 @@ namespace "stemcell" do
     cp "misc/stemcell/build/vmbuilder.cfg", work_dir unless File.exist?(File.join(work_dir, "vmbuilder.cfg"))
     cp_r "misc/stemcell/build", work_dir unless File.exists?(File.join(work_dir, "build"))
 
-    part_in = options[:part_in]
+    part_in = options[:part_in] || @part_in
 
     # Update root partition size
     cp part_in, "#{work_dir}/build/part.in" if part_in && File.exist?(part_in)
@@ -322,7 +322,7 @@ namespace "stemcell" do
 
     Dir.chdir(work_dir) do
       if File.directory?(chroot)
-        sh "sudo ln -s #{chroot} chroot"
+        sh "sudo ln -s #{chroot} chroot" unless File.exists?("chroot")
       else
         sh "sudo tar zxf #{chroot}"
         if !File.exists?("chroot")
@@ -343,11 +343,11 @@ namespace "stemcell" do
 
     # Setup instance directory with code to build component.
     # Some helper code like "helpers.sh" and "skeleton" is copied as well.
-    cp_r "misc/#{component}", instance_dir
+    cp_r("misc/#{component}", instance_dir, :preserve => true)
     component_dir = File.join(instance_dir, component)
-    cp_r "../package_compiler", component_dir
-    cp_r "misc/stemcell/build/chroot/skeleton", component_dir
-    cp_r "misc/stemcell/build/chroot/lib/helpers.sh", File.join(component_dir, "lib")
+    cp_r("../package_compiler", component_dir, :preserve => true)
+    cp_r("misc/stemcell/build/chroot/skeleton", component_dir, :preserve => true)
+    cp_r("misc/stemcell/build/chroot/lib/helpers.sh", File.join(component_dir, "lib"), :preserve => true)
 
     # Copy release artifacts
     component_release_dir = File.join(instance_dir, "#{component}_release")
@@ -418,9 +418,10 @@ namespace "stemcell" do
   task "micro", :component, :manifest, :tarball, :chroot do |t, args|
     # Verify component
     COMPONENTS = %w[micro_bosh]
-    component = args[:component]
+    component, @infrastructure_name = args[:component].split(":", 2)
     manifest = File.expand_path(args[:manifest])
     tarball = File.expand_path(args[:tarball])
+    @part_in = "misc/#{component}/part.in"
 
     unless COMPONENTS.include?(component)
       puts "Please specify a component to build. Supported components are #{COMPONENTS}"
@@ -439,7 +440,15 @@ namespace "stemcell" do
     customize_chroot(component, manifest, tarball)
 
     # Create vm image
-    build_vm_image(:part_in => "misc/#{component}/part.in")
+    case get_infrastructure_name
+    when "vsphere"
+      build_vm_image
+    when "aws"
+      Rake::Task["stemcell:aws"].invoke(get_chroot_dir)
+    else
+      puts "Unsupported infrastructure: #{@infrastructure_name}"
+      exit 1
+    end
   end
 
   namespace "public" do
