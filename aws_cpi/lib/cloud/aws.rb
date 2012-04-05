@@ -8,6 +8,7 @@ require "aws-sdk"
 require "httpclient"
 require "pp"
 require "set"
+require "tmpdir"
 require "uuidtools"
 require "yajl"
 
