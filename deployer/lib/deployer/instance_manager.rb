@@ -73,7 +73,7 @@ module Bosh::Deployer
       if state.vm_cid
         raise ConfigError, "VM #{state.vm_cid} already exists"
       end
-      if state.stemcell_cid
+      if state.stemcell_cid and state.stemcell_cid != state.stemcell_name
         raise ConfigError, "stemcell #{state.stemcell_cid} already exists"
       end
 
@@ -128,15 +128,27 @@ module Bosh::Deployer
     end
 
     def create_stemcell(stemcell_tgz)
+      if File.directory?(stemcell_tgz)
+        step "Using existing stemcell" do
+        end
+
+        step "Loading apply spec" do
+          @apply_spec = load_apply_spec("#{stemcell_tgz}/apply_spec.yml")
+        end
+
+        return stemcell_tgz
+      end
+
       Dir.mktmpdir("sc-") do |stemcell|
         step "Unpacking stemcell" do
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
         @apply_spec = load_apply_spec("#{stemcell}/apply_spec.yml")
+        properties = Config.cloud_options["properties"]["stemcell"]
 
         step "Uploading stemcell" do
-          cloud.create_stemcell("#{stemcell}/image", {})
+          cloud.create_stemcell("#{stemcell}/image", properties)
         end
       end
     end
@@ -174,7 +186,7 @@ module Bosh::Deployer
 
     def create_disk
       step "Create disk" do
-        state.disk_cid = cloud.create_disk(Config.resources['persistent_disk'])
+        state.disk_cid = cloud.create_disk(Config.resources['persistent_disk'], state.vm_cid)
         save_state
       end
     end
@@ -256,7 +268,8 @@ module Bosh::Deployer
     def update_spec(spec)
       properties = spec["properties"]
 
-      %w{blobstore postgres director redis nats}.each do |service|
+      %w{blobstore postgres director redis nats aws_registry}.each do |service|
+        next unless properties[service]
         properties[service]["address"] = bosh_ip
 
         if override = Config.spec_properties[service]
@@ -271,6 +284,13 @@ module Bosh::Deployer
           Config.cloud_options["properties"]["vcenters"].first.dup
 
         properties["vcenter"]["address"] ||= properties["vcenter"]["host"]
+      when "aws"
+        properties["aws"] =
+          Config.spec_properties["aws"] ||
+          Config.cloud_options["properties"]["aws"].dup
+
+        properties["aws"]["registry"] = Config.cloud_options["properties"]["registry"]
+        properties["aws"]["stemcell"] = Config.cloud_options["properties"]["stemcell"]
       else
       end
 
@@ -287,10 +307,18 @@ module Bosh::Deployer
       agent_start
     end
 
+    def discover_bosh_ip
+      if exists? and cloud.respond_to?(:ec2)
+        Config.bosh_ip = cloud.ec2.instances[state.vm_cid].private_ip_address
+        logger.info("discovered bosh ip=#{Config.bosh_ip}")
+      end
+      Config.bosh_ip
+    end
+
     private
 
     def bosh_ip
-      Config.networks["bosh"]["ip"]
+      Config.bosh_ip
     end
 
     def agent_stop
@@ -340,8 +368,13 @@ module Bosh::Deployer
         raise ConfigError, "Cannot find existing stemcell"
       end
 
-      step "Delete stemcell" do
-        cloud.delete_stemcell(state.stemcell_cid)
+      if state.stemcell_cid == state.stemcell_name
+        step "Preserving stemcell" do
+        end
+      else
+        step "Delete stemcell" do
+          cloud.delete_stemcell(state.stemcell_cid)
+        end
       end
 
       state.stemcell_cid = nil
@@ -382,7 +415,7 @@ module Bosh::Deployer
     def load_state(name)
       @deployments = load_deployments
 
-      disk_model.insert_multiple(@deployments["disks"])
+      disk_model.insert_multiple(@deployments["disks"]) if disk_model
       instance_model.insert_multiple(@deployments["instances"])
 
       @state = instance_model.find(:name => name)
@@ -391,13 +424,15 @@ module Bosh::Deployer
         @state.uuid = "bm-#{generate_unique_name}"
         @state.name = name
         @state.save
+      else
+        discover_bosh_ip
       end
     end
 
     def save_state
       state.save
       @deployments["instances"] = instance_model.map { |instance| instance.values }
-      @deployments["disks"] = disk_model.map { |disk| disk.values }
+      @deployments["disks"] = disk_model.map { |disk| disk.values } if disk_model
 
       File.open(@state_yml, "w") do |file|
         file.write(YAML.dump(@deployments))

@@ -109,14 +109,16 @@ module Bosh::Cli::Command
 
       confirm_deployment("#{confirmation} micro BOSH instance #{desc}")
 
-      stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
+      unless File.directory?(tarball_path)
+        stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
 
-      say("\nVerifying stemcell...")
-      stemcell.validate
-      say("\n")
+        say("\nVerifying stemcell...")
+        stemcell.validate
+        say("\n")
 
-      if !stemcell.valid?
-        err("Stemcell is invalid, please fix, verify and upload again")
+        if !stemcell.valid?
+          err("Stemcell is invalid, please fix, verify and upload again")
+        end
       end
 
       renderer = DeployerRenderer.new
@@ -182,10 +184,7 @@ module Bosh::Cli::Command
       if manifest["network"].blank?
         err "network is not defined in deployment manifest"
       end
-      ip = manifest["network"]["ip"]
-      if ip.blank?
-        err "network.ip is not defined in deployment manifest"
-      end
+      ip = deployer.discover_bosh_ip || name
 
       if target
         old_director_ip = URI.parse(target).host
@@ -194,7 +193,7 @@ module Bosh::Cli::Command
       end
 
       if old_director_ip != ip
-        config.target = "http://#{ip}:#{MICRO_DIRECTOR_PORT}"
+        set_target(ip)
         say "#{"WARNING!".red} Your target has been changed to `#{target.red}'!"
       end
 
@@ -246,7 +245,7 @@ module Bosh::Cli::Command
     end
 
     def apply(spec)
-      deployer.apply(load_yaml_file(spec.first))
+      deployer.apply(load_yaml_file(spec))
     end
 
     private
@@ -291,8 +290,22 @@ module Bosh::Cli::Command
       File.expand_path(File.join(work_dir, "#{name}", "micro_bosh.yml"))
     end
 
+    def deployment_name
+      File.basename(File.dirname(deployment))
+    end
+
+    def set_target(ip)
+      config.target = "http://#{ip}:#{MICRO_DIRECTOR_PORT}"
+      config.save
+    end
+
     def update_target
       if deployer.exists?
+        bosh_ip = deployer.discover_bosh_ip
+        if URI.parse(target).host != bosh_ip
+          set_current(deployment_name)
+        end
+
         director = Bosh::Cli::Director.new(target)
 
         if options[:director_checks]

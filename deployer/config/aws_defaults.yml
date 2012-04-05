@@ -1,0 +1,45 @@
+---
+name:
+
+logging:
+  level: INFO
+
+dir:
+
+network:
+  type: dynamic
+  cloud_properties: {}
+
+resources:
+  persistent_disk: 4096
+  cloud_properties:
+    instance_type: m1.small
+    availability_zone:
+
+cloud:
+  plugin: aws
+  properties:
+    aws:
+      access_key_id:
+      secret_access_key:
+      ec2_endpoint:
+      max_retries: 2
+      default_key_name: dougm
+      default_security_groups: []
+    registry:
+      endpoint: http://admin:admin@localhost:25777
+      user: admin
+      password: admin
+    stemcell:
+      kernel_id:
+      disk_size: 4096
+    agent:
+      ntp: []
+      blobstore:
+        plugin: local
+        properties:
+          blobstore_path: /var/vcap/micro_bosh/data/cache
+      mbus:
+
+apply_spec:
+  properties: {}
