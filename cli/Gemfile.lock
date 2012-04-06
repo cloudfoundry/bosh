@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_cli (0.15.6)
+    bosh_cli (0.16)
       blobstore_client (~> 0.3.13)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
@@ -82,7 +82,7 @@ GEM
     simplecov-html (0.4.5)
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
-    terminal-table (1.4.4)
+    terminal-table (1.4.5)
     uuidtools (2.1.2)
     xml-simple (1.1.1)
 
