@@ -221,12 +221,12 @@ module Bosh::AwsCloud
         end
 
         volume.delete
-        state = volume.state
-
-        @logger.info("Deleting volume `#{volume.id}', " \
-                     "state is `#{state}'")
 
         begin
+          state = volume.state
+          @logger.info("Deleting volume `#{volume.id}', " \
+                       "state is `#{state}'")
+
           wait_resource(volume, state, :deleted)
         rescue AWS::EC2::Errors::InvalidVolume::NotFound
         end
