@@ -10,6 +10,8 @@ module Bosh::Director
 
     def create(deployment, stemcell, cloud_properties, network_settings, disks=nil, env={})
       env ||= {}
+      env = env._deep_copy
+
       agent_id = VmCreator.generate_agent_id
 
       if Config.encryption?

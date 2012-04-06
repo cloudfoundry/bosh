@@ -71,4 +71,29 @@ describe Bosh::Director::VmCreator do
       Base64.strict_decode64(vm.credentials["sign_key"] + "barbaz")
     }.should raise_error(ArgumentError, /invalid base64/)
   end
+
+  it "should have deep copy of environment" do
+    Bosh::Director::Config.encryption = true
+    env_id = nil
+
+    @cloud.should_receive(:create_vm) do |*args|
+      env_id = args[5].object_id
+    end
+
+    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell,
+                                              @resource_pool_spec.cloud_properties,
+                                              @network_settings, Array(99),
+                                              @resource_pool_spec.env)
+
+    @cloud.should_receive(:create_vm) do |*args|
+      args[5].object_id.should_not == env_id
+    end
+
+    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell,
+                                              @resource_pool_spec.cloud_properties,
+                                              @network_settings, Array(99),
+                                              @resource_pool_spec.env)
+
+  end
+
 end

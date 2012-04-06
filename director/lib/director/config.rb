@@ -190,7 +190,7 @@ module Bosh::Director
       end
 
       def encryption?
-        !@encryption.nil?
+        @encryption
       end
 
       def threaded
