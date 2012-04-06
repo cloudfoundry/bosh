@@ -57,7 +57,7 @@ module Bosh::Cli
     # @return [Bosh::Blobstore::Client] blobstore client
     def blobstore
       return @blobstore if @blobstore
-      blobstore_config = @final_config["blobstore"]
+      blobstore_config = Marshal.load(Marshal.dump(@final_config["blobstore"]))
 
       if blobstore_config.nil?
         err("Missing blobstore configuration, please update your release")
