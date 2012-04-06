@@ -300,8 +300,9 @@ module Bosh::AwsCloud
           # These two variables are used in 'ensure' clause
           instance = nil
           volume = nil
-          # 1. Create and mount new EBS volume (2GB)
-          volume_id = create_disk(2048, current_instance_id)
+          # 1. Create and mount new EBS volume (2GB default)
+          disk_size = cloud_properties["disk"] || 2048
+          volume_id = create_disk(disk_size, current_instance_id)
           volume = @ec2.volumes[volume_id]
           instance = @ec2.instances[current_instance_id]
 

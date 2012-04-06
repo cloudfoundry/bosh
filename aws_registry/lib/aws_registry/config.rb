@@ -5,6 +5,7 @@ module Bosh::AwsRegistry
   class << self
 
     AWS_MAX_RETRIES = 2
+    AWS_EC2_ENDPOINT = "ec2.amazonaws.com"
 
     attr_accessor :logger
     attr_accessor :http_port
@@ -33,6 +34,7 @@ module Bosh::AwsRegistry
         :access_key_id => @aws["access_key_id"],
         :secret_access_key => @aws["secret_access_key"],
         :max_retries => @aws["max_retries"] || AWS_MAX_RETRIES,
+        :ec2_endpoint => @aws["ec2_endpoint"] || AWS_EC2_ENDPOINT,
         :logger => @logger
       }
 
