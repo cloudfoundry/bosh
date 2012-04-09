@@ -52,6 +52,13 @@ module Bosh::Cli
       end
     end
 
+    # Check if the blobstore secret is provided in the private config file
+    #
+    # @return [Boolean]
+    def has_blobstore_secret?
+      @private_config.has_key?("blobstore_secret")
+    end
+
     # Picks blobstore client to use with current release.
     #
     # @return [Bosh::Blobstore::Client] blobstore client
@@ -66,7 +73,7 @@ module Bosh::Cli
       provider = blobstore_config["provider"]
       options  = blobstore_config["options"] || {}
 
-      if @private_config.has_key?("blobstore_secret")
+      if has_blobstore_secret?
         options["secret"] = @private_config["blobstore_secret"]
       end
 

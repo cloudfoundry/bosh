@@ -251,6 +251,17 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_false
   end
 
+  it "can't create a final release without the blobstore secret" do
+    assets_dir = File.dirname(spec_asset("foo"))
+
+    Dir.chdir(File.join(assets_dir, "test_release")) do
+      FileUtils.rm_rf("dev_releases")
+
+      out = run_bosh("create release --final", Dir.pwd)
+      out.should match(/Can't create final release without blobstore secret/)
+    end
+  end
+
   it "can upload a release" do
     release_filename = spec_asset("valid_release.tgz")
 

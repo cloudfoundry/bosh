@@ -162,6 +162,11 @@ module Bosh::Cli::Command
       manifest_only = !flags.delete("--with-tarball")
       dry_run       = flags.delete("--dry-run")
 
+      if final && !release.has_blobstore_secret?
+        say("Can't create final release without blobstore secret".red)
+        exit(1)
+      end
+
       if flags.size > 0
         say("Unknown flags: #{flags.keys.join(", ")}".red)
         show_usage
