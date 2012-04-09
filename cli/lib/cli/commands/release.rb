@@ -7,7 +7,10 @@ module Bosh::Cli::Command
     include Bosh::Cli::DependencyHelper
     include Bosh::Cli::VersionCalc
 
-    def init(base=nil)
+    def init(base=nil, *options)
+      flags = options.inject({}) { |h, option| h[option] = true; h }
+      git = flags.delete("--git")
+
       if base
         FileUtils.mkdir_p(base) unless Dir.exist?(base)
         Dir.chdir(base)
@@ -15,10 +18,36 @@ module Bosh::Cli::Command
 
       err("Release already initialized") if in_release_dir?
 
-      %w[jobs packages src].each do |dir|
+      git_init if git
+
+      %w[jobs packages src blobs].each do |dir|
         FileUtils.mkdir(dir)
       end
+
+      # initialize an empty blob_index file
+      blobs = {}
+      File.open("blob_index.yml", "w") do |f|
+        YAML.dump(blobs, f)
+      end
+
       say("Release directory initialized".green)
+    end
+
+    def git_init
+      out = %x{git init 2>&1}
+      if $? != 0
+        say("error running 'git init':\n#{out}")
+      else
+        File.open(".gitignore", "w") do |f|
+          f.puts("config/dev.yml\nconfig/private.yml")
+          f.puts("blobs\nreleases/*.tgz")
+          f.puts("dev_releases\n.dev_builds")
+          f.puts(".final_builds/jobs/**/*.tgz")
+          f.puts(".final_builds/packages/**/*.tgz")
+        end
+      end
+    rescue Errno::ENOENT
+      say("Unable to run 'git init'".red)
     end
 
     def verify(tarball_path, *options)

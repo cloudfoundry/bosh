@@ -379,6 +379,7 @@ module Bosh::Cli
         usage "init release [<path>]"
         desc  "Initialize release directory"
         route :release, :init
+        option "--git", "initialize git repository"
       end
 
       command :generate_package do
