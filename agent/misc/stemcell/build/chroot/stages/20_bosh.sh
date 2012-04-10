@@ -51,8 +51,8 @@ run_in_chroot $target "env DEBIAN_FRONTEND=noninteractive apt-get install -y --f
 # Set up users/groups
 run_in_chroot $target "addgroup --system admin
 adduser --disabled-password --gecos Ubuntu vcap
-echo vcap:ca\\\$hc0w | chpasswd
-echo root:ca\\\$hc0w | chpasswd
+echo vcap:c1oudc0w | chpasswd
+echo root:c1oudc0w | chpasswd
 "
 for grp in admin adm audio cdrom dialout floppy video plugdev dip
 do
