@@ -11,5 +11,5 @@ gem "yajl-ruby", ">=1.1.0"
 gem "SystemTimer", :platforms => :ruby_18
 gem "rake"
 gem "ci_reporter"
-gem "rspec"
+gem "rspec", "~>2.10"
 gem "rest-client"

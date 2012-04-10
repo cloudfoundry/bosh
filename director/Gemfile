@@ -42,7 +42,9 @@ group :development, :test do
   gem "machinist", "~>1.0"
   gem "minitar"
   gem "ci_reporter"
-  gem "rspec"
+  # can't upgrade rspec as we use .and_return with a Proc,
+  # which has been removed past version 2.8
+  gem "rspec", "=2.8"
   gem "rcov", :platforms => :ruby_18
   gem "simplecov", :platforms => :ruby_19
   gem "simplecov-rcov", :platforms => :ruby_19

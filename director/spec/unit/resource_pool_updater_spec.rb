@@ -52,6 +52,8 @@ describe Bosh::Director::ResourcePoolUpdater do
       @resource_pool_updater.should_receive(:create_missing_vms).
           and_return do |*args|
         called = true
+        # TODO when switching to rspec 2.9.0 this needs to be changed as they
+        # have changed the call to not include the proc
         filter = args[1]
         filter.call(bound_vm).should == true
         filter.call(unbound_vm).should == false
