@@ -48,6 +48,8 @@ describe Bosh::Director::NatsRpc do
     it "should fire once even if two messages were received" do
       subscribe_callback = nil
       @nats.should_receive(:subscribe).with("director.123.>").and_return do |*args|
+        # TODO when switching to rspec 2.9.0 this needs to be changed as they
+        # have changed the call to not include the proc
         subscribe_callback = args[1]
       end
       @nats.should_receive(:publish).and_return do
@@ -72,6 +74,8 @@ describe Bosh::Director::NatsRpc do
     it "should not fire after cancel was called" do
       subscribe_callback = nil
       @nats.should_receive(:subscribe).with("director.123.>").and_return do |*args|
+        # TODO when switching to rspec 2.9.0 this needs to be changed as they
+        # have changed the call to not include the proc
         subscribe_callback = args[1]
       end
       @nats.should_receive(:publish)

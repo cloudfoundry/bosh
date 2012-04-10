@@ -23,7 +23,6 @@ if defined?(RSpec)
   namespace :spec do
     desc "Run Functional Tests"
     rspec_task = RSpec::Core::RakeTask.new(:functional) do |t|
-      t.gemfile = "Gemfile"
       t.pattern = "spec/functional/**/*_spec.rb"
       t.rspec_opts = %w(--format progress --colour)
     end

@@ -38,10 +38,12 @@ class CiTask < ::Rake::TaskLib
       Rake::Task["ci:setup:rspec"].execute
 
       if RUBY_VERSION < "1.9"
+puts `ls -ltrR`
         @rspec_task.rcov = true
         @rspec_task.rcov_opts =
             %W{--exclude spec\/,vendor\/ -o "#{@coverage_dir}/rcov"}
         actual_rspec_task.invoke
+puts `ls -ltrR`
       else
         simple_cov_helper = File.expand_path("../simplecov_helper", __FILE__)
         ENV["SPEC_OPTS"] = "#{ENV['SPEC_OPTS']} --require #{simple_cov_helper}"
