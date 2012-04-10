@@ -42,7 +42,7 @@ group :development, :test do
   gem "machinist", "~>1.0"
   gem "minitar"
   gem "ci_reporter"
-  gem "rspec"
+  gem "rspec", ">=2.9.0"
   gem "rcov", :platforms => :ruby_18
   gem "simplecov", :platforms => :ruby_19
   gem "simplecov-rcov", :platforms => :ruby_19
