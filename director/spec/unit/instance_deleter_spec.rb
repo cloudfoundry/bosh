@@ -21,6 +21,8 @@ describe Bosh::Director::InstanceDeleter do
       pool = mock("pool")
       ThreadPool.stub!(:new).with(:max_threads => 2).and_return(pool)
       pool.stub!(:wrap).and_yield(pool)
+      # TODO when switching to rspec 2.9.0 this needs to be changed as they
+      # have changed the call to not include the proc
       pool.stub!(:process).and_return { |*args| args.first.call }
 
       5.times do |index|

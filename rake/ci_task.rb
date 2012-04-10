@@ -55,6 +55,9 @@ class CiTask < ::Rake::TaskLib
 
       ln_s(@test_reports_dir, legacy_spec_reports)
       ln_s(@coverage_dir, legacy_spec_coverage)
+puts `ls -ltr #{legacy_spec_reports}`
+puts `ls -ltr #{legacy_spec_coverage}`
+puts `ls -ltrR ci_result`
     end
   end
 end
