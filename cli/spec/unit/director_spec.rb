@@ -493,7 +493,7 @@ describe Bosh::Cli::Director do
         with("/tasks/1").
         and_return([200, JSON.generate("state" => "error")])
 
-      @director.should_receive(:get).exactly(1).times
+      @director.should_receive(:get).exactly(2).times
 
       @director.poll_task(1, :poll_interval => 0, :max_polls => 10).
           should == :error
