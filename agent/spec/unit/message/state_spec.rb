@@ -24,7 +24,7 @@ describe Bosh::Agent::Message::State do
       "resource_pool" => { },
       "agent_id"      => "007",
       "vm"            => "zb",
-      "job_state"     => nil,
+      "job_state"     => [ ],
       "bosh_protocol" => Bosh::Agent::BOSH_PROTOCOL,
       "ntp"           => { "message" => Bosh::Agent::NTP::FILE_MISSING }
     }

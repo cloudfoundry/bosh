@@ -10,7 +10,8 @@ end
 
 group :development, :test do
   gem "ci_reporter"
-  gem "rspec"
+  # rspec 2.4 broke ci_reporter on ruby 1.8 so we are stuck on 2.3 :(
+  gem "rspec", "~>2.3.0"
 
   gem "rcov", :platforms => :ruby_18
   gem "simplecov", :platforms => :ruby_19
