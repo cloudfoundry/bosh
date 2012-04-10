@@ -101,6 +101,8 @@ describe Bosh::Director::AgentClient do
                                         hash_including("encrypted_data")
     ).and_return { |*args|
       data = args[1]["encrypted_data"]
+      # TODO when switching to rspec 2.9.0 this needs to be changed as they
+      # have changed the call to not include the proc
       callback = args[2]
 
       # decrypt to initiate sesssion
