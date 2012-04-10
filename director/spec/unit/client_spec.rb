@@ -11,7 +11,9 @@ describe Bosh::Director::Client do
 
     nats_rpc.should_receive(:send).with("test_service.test_service_id",
         {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
-    ).and_return { |*args|
+    ) { |*args|
+      # TODO when switching to rspec 2.9.0 this needs to be changed as they
+      # have changed the call to not include the proc
       callback = args[2]
       callback.call({"value" => 5})
       "3"
@@ -29,6 +31,8 @@ describe Bosh::Director::Client do
     nats_rpc.should_receive(:send).with("test_service.test_service_id",
         {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
     ).and_return { |*args|
+      # TODO when switching to rspec 2.9.0 this needs to be changed as they
+      # have changed the call to not include the proc
       callback = args[2]
       callback.call({"exception" => "test"})
       "3"
