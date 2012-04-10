@@ -120,7 +120,6 @@ describe Bosh::Agent::ApplyPlan::Job do
 
       bin_dir = File.join(job.install_path, "bin")
       File.directory?(bin_dir).should be_true
-      File.stat(bin_dir).mode.to_s(8).should == "40755"
 
       File.read(File.join(job.install_path, "bin", "foo")).
         should == "value1"
