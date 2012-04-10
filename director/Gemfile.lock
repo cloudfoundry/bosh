@@ -174,7 +174,7 @@ DEPENDENCIES
   rcov
   redis
   resque
-  rspec
+  rspec (= 2.8)
   ruby-debug
   ruby-debug19
   ruby_gntp

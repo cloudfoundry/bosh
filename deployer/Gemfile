@@ -12,7 +12,7 @@ end
 
 group :test, :development do
   gem "ci_reporter"
-  gem "rspec"
+  gem "rspec", "~>2.9"
 
   gem "rcov", :platforms => :ruby_18
   gem "simplecov", :platforms => :ruby_19
