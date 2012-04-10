@@ -53,12 +53,3 @@ desc "Build and install BOSH CLI into system gems"
 task "install_head" do
   gem_helper.install_gem
 end
-
-desc "Install latest stable version into system gems"
-task "install" do
-  Bundler.with_clean_env do
-    system("gem install bosh_cli-current.gem")
-  end
-end
-
-
