@@ -8,7 +8,7 @@ _Cloud Foundry Open Source Platform as a Service_
 * [OSS Contributions][OSS Contributions]
 
 
-## Learn ##
+## Learn
 
 There is a Cloud Foundry documentation set for open source developers, and one for CloudFoundry.com users:
 
@@ -17,17 +17,17 @@ There is a Cloud Foundry documentation set for open source developers, and one f
 
 To make changes to our documentation, follow the [OSS Contribution][oss] steps and contribute to the oss-docs repository.
 
-## Ask Questions ##
+## Ask Questions
 
 Questions about the Cloud Foundry Open Source Project can be directed to our Google Groups: [http://groups.google.com/a/cloudfoundry.org/groups/dir](http://groups.google.com/a/cloudfoundry.org/groups/dir)
 
 Questions about CloudFoundry.com can be directed to: [http://support.cloudfoundry.com](http://support.cloudfoundry.com)
 
-## File a Bug ##
+## File a Bug
 
 To file a bug against Cloud Foundry Open Source and its components, sign up and use our bug tracking system: [http://cloudfoundry.atlassian.net](http://cloudfoundry.atlassian.net)
 
-## OSS Contributions ##
+## OSS Contributions
 
 The Cloud Foundry team uses Gerrit, a code review tool that originated in the Android Open Source Project. We also use GitHub as an official mirror, though all pull requests are accepted via Gerrit.
 
