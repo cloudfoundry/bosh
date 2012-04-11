@@ -2,11 +2,6 @@
 
 _Cloud Foundry Open Source Platform as a Service_
 
-* [Learn][learn]
-* [Ask Questions][Ask Questions]
-* [File a Bug][File a Bug]
-* [OSS Contributions][OSS Contributions]
-
 ## Learn
 
 There is a Cloud Foundry documentation set for open source developers, and one for CloudFoundry.com users:
