@@ -2,10 +2,10 @@
 
 _Cloud Foundry Open Source Platform as a Service_
 
-* [Learn][]
-* [Ask Questions][]
-* [File a Bug][]
-* [OSS Contributions][]
+* [Learn][Learn]
+* [Ask Questions][Ask Questions]
+* [File a Bug][File a Bug]
+* [OSS Contributions][OSS Contributions]
 
 
 ## Learn ##
