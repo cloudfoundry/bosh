@@ -146,8 +146,7 @@ module Bosh
         @logger.info("result is #{result}")
 
         # remove source package from blobstore
-        cache = @options["blobstore_options"]["blobstore_path"]
-        File.unlink("#{cache}/#{id}")
+        @blobstore_client.delete(id)
 
         id = result["result"]["blobstore_id"]
         @logger.debug("stored package #{name} as #{id}")
