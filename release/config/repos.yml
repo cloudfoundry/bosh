@@ -1,6 +1,6 @@
 ---
 bosh:
-  uri: git@github.com:vmware-ac/bosh.git
+  uri: git@github.com:cloudfoundry/bosh.git
   roles:
   - blobstore
   - director
