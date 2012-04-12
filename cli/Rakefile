@@ -50,6 +50,7 @@ task "build" do
 end
 
 desc "Build and install BOSH CLI into system gems"
-task "install_head" do
+task "install" do
   gem_helper.install_gem
 end
+task :install_head => :install
