@@ -3,7 +3,7 @@ source :rubygems
 gem "eventmachine", "~> 0.12.10"
 gem "logging", "~> 1.5.0"
 gem "em-http-request", "~> 0.3.0"
-gem "nats", "= 0.4.22.beta.4"
+gem "nats", "= 0.4.22"
 gem "yajl-ruby", "~> 0.8.2"
 gem "uuidtools"
 gem "thin"
