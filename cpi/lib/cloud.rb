@@ -2,6 +2,8 @@
 
 module Bosh; module Clouds; end; end
 
+require "forwardable"
+
 require "cloud/config"
 require "cloud/errors"
 require "cloud/provider"

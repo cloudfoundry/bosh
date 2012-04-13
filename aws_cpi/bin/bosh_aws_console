@@ -19,6 +19,7 @@ require "bosh_aws_cpi"
 require "irb"
 require "irb/completion"
 require "ostruct"
+require "optparse"
 
 config_file = nil
 
