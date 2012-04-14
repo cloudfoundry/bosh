@@ -293,12 +293,15 @@ module ChefDeployer
      method_option :metadata, :type => :boolean, :default => true
      method_option :local, :type => :boolean, :default => false
      method_option :config, :type => :string, :default => "config.yml"
+     method_option :"default-password", :type => :string
      def deploy(cloud)
        if File.directory?(cloud)
          @cloud_path = cloud
        else
          @cloud_path = File.join(BASE_PATH, "clouds", cloud)
        end
+
+       @default_password = options["default-password"] if options["default-password"]
 
        say_status :config, "reading cloud configuration #{options.config}"
        config_path = File.join(@cloud_path, options.config)
