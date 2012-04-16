@@ -11,7 +11,7 @@ gem "bosh_aws_cpi", ">=0.3.1"
 gem "bosh_vsphere_cpi", ">=0.4.8"
 gem "eventmachine"
 gem "httpclient"
-gem "nats", "=0.4.22"
+gem "nats", "=0.4.22.beta.4"
 gem "netaddr"
 gem "rack-test"         # needed for console
 gem "rake"
