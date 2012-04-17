@@ -77,6 +77,24 @@ module Bosh::Agent
     end
   end
 
+  module Message
+    class ReleaseApplySpec < Base
+
+      def self.process(args)
+        self.new.apply_spec
+      end
+
+      def release_apply_spec
+        #generated from bosh-release and baked into the stemcell
+        "/var/vcap/micro/apply_spec.yml"
+      end
+
+      def apply_spec
+        YAML.load_file(release_apply_spec)
+      end
+    end
+  end
+
   class AgentController < Sinatra::Base
 
     def initialize(handler)

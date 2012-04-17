@@ -63,4 +63,28 @@ describe Bosh::Agent::AgentController do
     last_response.status.should == 200
     agent_response.should have_key("exception")
   end
+
+  it "should return generated apply_spec" do
+    yml = File.expand_path("../../assets/apply_spec.yml", __FILE__)
+    message = Bosh::Agent::Message::ReleaseApplySpec
+    message.any_instance.stub(:release_apply_spec).and_return(yml)
+
+    agent_call("release_apply_spec")
+
+    last_response.status.should == 200
+    response = agent_response
+    response.should_not have_key("exception")
+    response.should have_key("value")
+    response["value"]["deployment"].should == "micro"
+  end
+
+  it "should throw exception with invalid apply_spec" do
+    message = Bosh::Agent::Message::ReleaseApplySpec
+    message.any_instance.stub(:release_apply_spec).and_return("")
+
+    agent_call("release_apply_spec")
+
+    last_response.status.should == 200
+    agent_response.should have_key("exception")
+  end
 end
