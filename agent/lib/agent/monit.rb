@@ -5,6 +5,7 @@ module Bosh::Agent
   # A good chunk of this code is lifted from the implementation of POSIX::Spawn::Child
   class Monit
     BUFSIZE = (32 * 1024)
+    NUM_RETRY_MONIT_INCARNATION = 60
 
     class << self
       attr_accessor :enabled
@@ -124,20 +125,22 @@ module Bosh::Agent
       end
 
       def reload
-        old = retry_monit_request { |client| client.monit_info }
-        logger.info("Monit: old incarnation #{old[:incarnation]}")
+        old_incarnation = incarnation
+        logger.info("Monit: old incarnation #{old_incarnation}")
         `#{monit_bin} reload`
         logger.info("Monit: reload")
 
-        # We'll try for about a minute to get new Monit incarnation after reload
-        attempts = 60
-        attempts.times do
-          check = retry_monit_request { |client| client.monit_info }
-          if old[:incarnation].to_i < check[:incarnation].to_i
-            logger.info("Monit: updated incarnation #{check[:incarnation]}")
-            break
-          end
-          sleep 1
+        check_incarnation = incarnation
+        if !old_incarnation
+          logger.info("Monit is breaking because of old!")
+        end
+
+        if !check_incarnation
+          logger.info("Monit is breaking because of check!")
+        end
+
+        if old_incarnation < check_incarnation
+          logger.info("Monit: updated incarnation #{check_incarnation}")
         end
       end
 
@@ -185,6 +188,23 @@ module Bosh::Agent
           end
           raise e
         end
+      end
+
+      def incarnation
+        NUM_RETRY_MONIT_INCARNATION.times do
+          info = monit_info
+          if info && info[:incarnation]
+            return info[:incarnation].to_i
+          end
+          sleep 1
+        end
+
+        # If we ever get here we have failed to get incarnation
+        raise StateError, "Failed to get incarnation from Monit"
+      end
+
+      def monit_info
+        retry_monit_request { |client| client.monit_info }
       end
 
       def get_status(num_retries=10)
