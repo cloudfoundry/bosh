@@ -5,7 +5,7 @@
 function run_in_chroot {
   # Need to explicitly override LANG and LC_ALL so that they aren't
   # inherited from the environment.
-  chroot $1 env LANG='C' LC_ALL='C' sh -c "$2"
+  chroot $1 env LANG='C' LC_ALL='C' http_proxy=${http_proxy} sh -c "$2"
 }
 
 # Taken from http://www.linuxjournal.com/content/use-bash-trap-statement-cleanup-temporary-files
