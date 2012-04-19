@@ -18,7 +18,7 @@ tar zxvf monit-5.2.4.tar.gz
 (
   cd monit-5.2.4
   ./configure --prefix=${bosh_app_dir}/bosh
-  make && make install
+  make -j4 && make install
 )
 
 ruby_version="1.9.2-p180"
@@ -28,7 +28,7 @@ tar jxvf ruby-${ruby_version}.tar.bz2
   ./configure \
     --prefix=${bosh_app_dir}/bosh \
     --disable-install-doc
-  make && make install
+  make -j4 && make install
 )
 rm -fr ruby-${ruby_version}
 
@@ -84,7 +84,7 @@ dpkg -i vmware-tools-vmxnet3-modules-source_1.0.36.0-2_amd64.deb
   install_dir="${module_dir}/updates/vmxnet3"
   mkdir -p $install_dir
 
-  make -f Makefile.vmxnet3_bosh
+  make -j4 -f Makefile.vmxnet3_bosh
   cp vmxnet3.ko $install_dir/
 )
 
