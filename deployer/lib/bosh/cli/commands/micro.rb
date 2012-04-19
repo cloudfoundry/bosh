@@ -184,7 +184,7 @@ module Bosh::Cli::Command
       if manifest["network"].blank?
         err "network is not defined in deployment manifest"
       end
-      ip = deployer.discover_bosh_ip || name
+      ip = deployer(manifest_filename).discover_bosh_ip || name
 
       if target
         old_director_ip = URI.parse(target).host
@@ -250,12 +250,12 @@ module Bosh::Cli::Command
 
     private
 
-    def deployer
+    def deployer(manifest_filename=nil)
       check_if_deployments_dir
-      deployment_required
+      deployment_required unless manifest_filename
 
       if @deployer.nil?
-        manifest_filename = deployment
+        manifest_filename ||= deployment
 
         if !File.exists?(manifest_filename)
           err("Cannot find deployment manifest in `#{manifest_filename}'")
