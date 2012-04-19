@@ -17,7 +17,10 @@ module Bosh::Director
 
         @disk_cid = @disk.disk_cid
         @vm_cid = @disk.instance.vm.cid if @disk.instance && @disk.instance.vm
-        handler_error("Can't find corresponding vm-cid for disk #{@disk_cid}") if @vm_cid.nil?
+        handler_error("Can't find corresponding vm-cid for disk `#{@disk_cid}'") if @vm_cid.nil?
+
+        @instance = @disk.instance
+        @vm = @instance.vm
 
         @disk_owners = @data['owner_vms']
       end
@@ -38,6 +41,16 @@ module Bosh::Director
       resolution :ignore do
         plan { "Ignore - Cannot be fixed using cloudcheck" }
         action { }
+      end
+
+      resolution :reattach_disk do
+        plan { "Reattach disk to instance" }
+        action { reattach_disk }
+      end
+
+      def reattach_disk
+        cloud.attach_disk(@vm_cid, @disk_cid)
+        agent_timeout_guard(@vm) { |agent| agent.mount_disk(@disk_cid) }
       end
     end
   end
