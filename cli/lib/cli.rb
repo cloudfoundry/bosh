@@ -64,6 +64,8 @@ require "cli/release_builder"
 require "cli/release_compiler"
 require "cli/release_tarball"
 
+require "cli/blob_manager"
+
 require "cli/command_definition"
 require "cli/runner"
 

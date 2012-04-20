@@ -213,10 +213,17 @@ module Bosh::Cli::Command
         exit(1)
       end
 
-      if !force
-        check_dirty_blobs
-        check_if_dirty_state
+      blob_manager.sync
+      if blob_manager.dirty?
+        blob_manager.print_status
+        if force
+          say("Proceeding with dirty blobs as '--force' is given".red)
+        else
+          err("Please use '--force' or upload new blobs")
+        end
       end
+
+      check_if_dirty_state unless force
 
       confirmation = "Are you sure you want to " +
                      "generate #{'final'.red} version? "

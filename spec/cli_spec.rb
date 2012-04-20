@@ -14,6 +14,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     format_output(run_bosh(cmd)).should == format_output(expected_output)
   end
 
+  it "shows help message" do
+    run_bosh("help")
+    $?.should == 0
+  end
+
   it "shows status" do
     expect_output("status", <<-OUT)
      Target         not set
