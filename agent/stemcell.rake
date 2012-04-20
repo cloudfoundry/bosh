@@ -167,6 +167,10 @@ namespace "stemcell" do
     end
   end
 
+  def sudo
+    "sudo env http_proxy=#{ENV["http_proxy"]}"
+  end
+
   def build_chroot
     work_dir = get_working_dir
     mkdir_p(work_dir)
@@ -205,9 +209,9 @@ namespace "stemcell" do
       iso = ""
     end
 
-    sh "sudo #{chroot_script_dir}/00_base.sh #{chroot_dir} #{iso}"
-    sh "sudo #{chroot_script_dir}/01_warden.sh #{chroot_dir}"
-    sh "sudo #{chroot_script_dir}/20_bosh.sh #{chroot_dir} #{instance_dir}"
+    sh "#{sudo} #{chroot_script_dir}/00_base.sh #{chroot_dir} #{iso}"
+    sh "#{sudo} #{chroot_script_dir}/01_warden.sh #{chroot_dir}"
+    sh "#{sudo} #{chroot_script_dir}/20_bosh.sh #{chroot_dir} #{instance_dir}"
   end
 
   def build_vm_image(options = {})
@@ -242,7 +246,7 @@ namespace "stemcell" do
     Dir.chdir(work_dir) do
       vmbuilder_args = "--debug --mem 512 --existing-chroot #{chroot_dir} -c #{work_dir}/vmbuilder.cfg"
       vmbuilder_args += " --templates #{work_dir}/build/templates --part #{work_dir}/build/part.in"
-      sh("sudo vmbuilder #{hypervisor} ubuntu --debug #{vmbuilder_args}")
+      sh("#{sudo} vmbuilder #{hypervisor} ubuntu --debug #{vmbuilder_args}")
 
       manifest = {
         "name" => stemcell_name,
@@ -278,7 +282,7 @@ namespace "stemcell" do
                 raise "Found more than one image: #{files}" unless files.length == 1
                 root_image = files.first
                 mv(root_image, "root.img")
-                sh("sudo e2label root.img stemcell_root")
+                sh("#{sudo} e2label root.img stemcell_root")
                 sh("tar zcf ../stemcell/image root.img")
               end
             else
@@ -292,7 +296,7 @@ namespace "stemcell" do
         f.write(YAML.dump(manifest))
       end
 
-      sh("sudo cp #{chroot_dir}/var/vcap/bosh/stemcell_dpkg_l.out " +
+      sh("#{sudo} cp #{chroot_dir}/var/vcap/bosh/stemcell_dpkg_l.out " +
              "stemcell/stemcell_dpkg_l.txt")
 
       out_filename = "bosh-stemcell-#{format}-#{version}.tgz"
@@ -322,9 +326,9 @@ namespace "stemcell" do
 
     Dir.chdir(work_dir) do
       if File.directory?(chroot)
-        sh "sudo ln -s #{chroot} chroot" unless File.exists?("chroot")
+        sh "#{sudo} ln -s #{chroot} chroot" unless File.exists?("chroot")
       else
-        sh "sudo tar zxf #{chroot}"
+        sh "#{sudo} tar zxf #{chroot}"
         if !File.exists?("chroot")
           puts "Unrecognized format of the chroot tgz file: #{chroot}"
           exit 1
@@ -358,7 +362,7 @@ namespace "stemcell" do
     # Execute custom scripts
     component_script_dir = File.join(component_dir, "stages")
     Dir.glob(File.join(component_script_dir, "*")).sort.each do |script|
-      sh "sudo #{script} #{chroot_dir} #{instance_dir} #{package_dir}"
+      sh "#{sudo} #{script} #{chroot_dir} #{instance_dir} #{package_dir}"
     end
   end
 
@@ -376,7 +380,7 @@ namespace "stemcell" do
   task "chroot_tgz" do
     setup_chroot_dir
     Dir.chdir(get_working_dir) do
-      sh "sudo tar zcf chroot.tgz chroot"
+      sh "#{sudo} tar zcf chroot.tgz chroot"
     end
     puts "chroot directory is #{get_chroot_dir}"
     puts "Generated chroot tgz: #{File.join(get_working_dir, "chroot.tgz")}"
@@ -407,7 +411,7 @@ namespace "stemcell" do
     # Generate the chroot
     chroot_dir = get_chroot_dir
 
-    sh("sudo #{stages_dir}/30_aws.sh #{chroot_dir} #{lib_dir}")
+    sh("#{sudo} #{stages_dir}/30_aws.sh #{chroot_dir} #{lib_dir}")
 
     # Build stemcell
     build_vm_image(:hypervisor => "xen")

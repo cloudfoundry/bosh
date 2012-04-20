@@ -54,6 +54,10 @@ echo "Updating apt"
 cp $skeleton/etc/apt/sources.list $target/etc/apt/sources.list
 chroot $target apt-get update
 
+# Disable interactive dpkg
+debconf="debconf debconf/frontend select noninteractive"
+run_in_chroot $target "echo ${debconf} | debconf-set-selections"
+
 # Prevent daemons from starting
 disable_daemon_startup $target $skeleton
 add_on_exit "enable_daemon_startup $target"
