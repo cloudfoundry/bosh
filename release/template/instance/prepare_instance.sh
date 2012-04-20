@@ -22,6 +22,7 @@ apt-get install -y --force-yes --no-install-recommends \
   bison libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev \
   zip unzip git-core rsync
 
+mkdir -p ${bosh_app_dir}/bosh
 dpkg -l > ${bosh_app_dir}/bosh/dpkg_l.out
 
 cd /tmp
