@@ -6,8 +6,8 @@ describe Bosh::Cli::Command::Base do
 
   before :each do
     @config = File.join(Dir.mktmpdir, "bosh_config")
-    @cache  = File.join(Dir.mktmpdir, "bosh_cache")
-    @opts   = { :config => @config, :cache_dir => @cache }
+    @cache = File.join(Dir.mktmpdir, "bosh_cache")
+    @opts = { :config => @config, :cache_dir => @cache }
   end
 
   describe Bosh::Cli::Command::Misc do
@@ -300,181 +300,48 @@ describe Bosh::Cli::Command::Base do
 
   end
 
-  describe Bosh::Cli::Command::Blob do
+  describe Bosh::Cli::Command::BlobManagement do
     before :each do
-      @cmd = Bosh::Cli::Command::Blob.new(@opts)
-      @release_dir  = Dir.mktmpdir
-      @blob_dir = File.join(@release_dir, "blobs/")
-      @cmd.stub!(:work_dir).and_return(@release_dir)
-      @blobstore = mock("blobstore")
-      @cmd.stub!(:blobstore).and_return(@blobstore)
-      FileUtils.mkdir(@blob_dir)
+      @cmd = Bosh::Cli::Command::BlobManagement.new(@opts)
+      @blob_manager = mock("blob manager")
+      @release = mock("release")
+
+      @cmd.should_receive(:check_if_release_dir)
+      Bosh::Cli::Release.stub!(:new).and_return(@release)
+      Bosh::Cli::BlobManager.stub!(:new).with(@release).
+          and_return(@blob_manager)
     end
 
-    after :each do
-      FileUtils.rm_rf(@release_dir)
+    it "prints blobs status" do
+      @blob_manager.should_receive(:print_status)
+      @cmd.status
     end
 
-    it "refuse to run outside of the release directory" do
-      lambda {
-        @cmd.upload_blob("foo")
-      }.should raise_error(Bosh::Cli::CliExit,
-                           "Sorry, your current directory doesn't " +
-                           "look like release directory".red)
-
-      lambda {
-        @cmd.sync_blobs
-      }.should raise_error(Bosh::Cli::CliExit,
-                           "Sorry, your current directory doesn't " +
-                           "look like release directory".red)
-
-      lambda {
-        @cmd.blobs_info
-      }.should raise_error(Bosh::Cli::CliExit,
-                           "Sorry, your current directory doesn't " +
-                           "look like release directory".red)
+    it "adds blob under provided directory" do
+      @blob_manager.should_receive(:add_blob).with("foo/bar.tgz", "bar/bar.tgz")
+      @cmd.add("foo/bar.tgz", "bar")
     end
 
-    it "refuse to upload blob outside of release/blobs" do
-      Dir.chdir(@release_dir) do
-        FileUtils.touch("test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        blob_path = Pathname.new(@release_dir).realpath.to_s
-        blobs_dir = Pathname.new(@blob_dir).realpath.to_s
-        lambda {
-          @cmd.upload_blob("test.tgz")
-        }.should raise_error(Bosh::Cli::CliExit,
-                             "#{File.join(blob_path, "test.tgz")} is " +
-                             "NOT under #{blobs_dir}/")
-      end
+    it "adds blob with no directory provided" do
+      @blob_manager.should_receive(:add_blob).with("foo/bar.tgz", "bar.tgz")
+      @cmd.add("foo/bar.tgz")
     end
 
-    it "upload new blob to blobstore" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        blob = FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:get_blobs_index).and_return({})
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @blobstore.should_receive(:create).and_return(2)
-        @cmd.upload_blob("./blobs/test/test.tgz")
-        YAML.load_file("blob_index.yml").should == {
-          "test/test.tgz" => {
-            "object_id" => 2,
-            "sha" => Digest::SHA1.file(blob.first).hexdigest
-          }
-        }
-      end
+    it "uploads blobs" do
+      @blob_manager.should_receive(:print_status)
+      @blob_manager.stub!(:blobs_to_upload).and_return(%w(foo bar baz))
+      @blob_manager.should_receive(:upload_blob).with("foo")
+      @blob_manager.should_receive(:upload_blob).with("bar")
+      @blob_manager.should_receive(:upload_blob).with("baz")
+
+      @cmd.should_receive(:confirmed?).exactly(3).times.and_return(true)
+      @cmd.upload
     end
 
-    it "should skip upload if blob already exists" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        blob = FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
-          "sha" => Digest::SHA1.file(blob.first).hexdigest,
-          "object_id" => 2
-        })
-        @blobstore.should_not_receive(:create)
-        @cmd.upload_blob("./blobs/test/test.tgz")
-      end
-    end
-
-    it "should ask user if blob was modified" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        blob = FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
-          "sha" => 1,
-          "object_id" => 2
-        })
-        @cmd.should_receive(:ask).and_return("no")
-        @blobstore.should_not_receive(:create)
-        @cmd.upload_blob("./blobs/test/test.tgz")
-      end
-    end
-
-    it "should sync if file is not present" do
-      Dir.chdir(@release_dir) do
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
-          "sha" => 1,
-          "object_id" => 2
-        })
-        @cmd.should_receive(:fetch_blob).
-            with(File.join(@release_dir, "blobs", "test/test.tgz"),
-                 { "sha" => 1, "object_id" => 2 })
-        @cmd.sync_blobs
-      end
-    end
-
-    it "should not sync if the same file is present" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        blob = FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
-          "sha" => Digest::SHA1.file(blob.first).hexdigest,
-          "object_id" => 2
-        })
-        @cmd.should_not_receive(:fetch_blob)
-        @cmd.sync_blobs
-      end
-    end
-
-    it "should ask user if blob sha is different" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        blob = FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return('test/test.tgz' => {
-          "sha" => 1,
-          "object_id" => 2
-        })
-        @cmd.should_receive(:ask).and_return("")
-        @cmd.should_not_receive(:fetch_blob)
-        @cmd.sync_blobs
-      end
-    end
-
-    it "reports untracked blobs" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).and_return({})
-        @cmd.should_receive(:say).
-            with("\nNew blobs ('bosh upload blob' to add): ".green)
-        @cmd.should_receive(:say).with("test/test.tgz")
-        @cmd.blobs_info
-      end
-    end
-
-    it "reports modified blobs" do
-      Dir.chdir(@release_dir) do
-        FileUtils.mkdir("./blobs/test")
-        FileUtils.touch("./blobs/test/test.tgz")
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).
-            and_return({ "test/test.tgz" => { "sha" => 1, "object_id" => 2}})
-        @cmd.should_receive(:say).
-            with("\nModified blobs ('bosh upload blob' to update): ".green)
-        @cmd.should_receive(:say).with("test/test.tgz")
-        @cmd.blobs_info
-      end
-    end
-
-    it "reports unsynced blobs" do
-      Dir.chdir(@release_dir) do
-        @cmd.should_receive(:check_if_blobs_supported).and_return(true)
-        @cmd.should_receive(:get_blobs_index).
-            and_return({ "test/test.tgz" => { "sha" => 1, "object_id" => 2}})
-        @cmd.should_receive(:say).
-            with("\nMissing blobs ('bosh sync blobs' to fetch) : ".green)
-        @cmd.should_receive(:say).with("test/test.tgz")
-        @cmd.blobs_info
-      end
+    it "syncs blobs" do
+      @blob_manager.should_receive(:sync).ordered
+      @blob_manager.should_receive(:print_status).ordered
+      @cmd.sync
     end
   end
 

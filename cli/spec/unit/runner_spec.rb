@@ -93,6 +93,11 @@ describe Bosh::Cli::Runner do
     test_cmd(["tasks"], :task, :list_running)
     test_cmd(["tasks", "recent"], :task, :list_recent)
     test_cmd(["tasks", "recent", "42"], :task, :list_recent, ["42"])
+
+    test_cmd(%w(blobs), :blob_management, :status)
+    test_cmd(%w(add blob foo bar), :blob_management, :add, %w(foo bar))
+    test_cmd(%w(upload blobs), :blob_management, :upload)
+    test_cmd(%w(sync blobs), :blob_management, :sync)
   end
 
   it "cancels running task and quits when ctrl-c is issued " +

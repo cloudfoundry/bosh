@@ -537,24 +537,28 @@ module Bosh::Cli
         route  :cloud_check, :perform
       end
 
-      command :upload_blob do
-        usage  "upload blob <blobs>"
-        desc   "Upload given blob to the blobstore"
-        option "--force", "bypass duplicate checking"
-        route  :blob, :upload_blob
+      command :add_blob do
+        usage  "add blob <local_path> [<blob_dir>]"
+        desc   "Add a local file as BOSH blob"
+        route  :blob_management, :add
+      end
+
+      command :upload_blobs do
+        usage  "upload blobs"
+        desc   "Upload new and updated blobs to the blobstore"
+        route  :blob_management, :upload
       end
 
       command :sync_blobs do
         usage "sync blobs"
         desc  "Sync blob with the blobstore"
-        option "--force", "overwrite all local copies with the remote blob"
-        route :blob, :sync_blobs
+        route :blob_management, :sync
       end
 
-      command :blobs do
+      command :blobs_status do
         usage "blobs"
-        desc  "Print blob status"
-        route :blob, :blobs_info
+        desc  "Print current blobs status"
+        route :blob_management, :status
       end
 
       def define_plugin_commands
