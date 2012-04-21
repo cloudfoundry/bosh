@@ -39,11 +39,22 @@ module Bosh::Cli::Command
         say("error running 'git init':\n#{out}")
       else
         File.open(".gitignore", "w") do |f|
-          f.puts("config/dev.yml\nconfig/private.yml")
-          f.puts("blobs\nreleases/*.tgz")
-          f.puts("dev_releases\n.dev_builds")
-          f.puts(".final_builds/jobs/**/*.tgz")
-          f.puts(".final_builds/packages/**/*.tgz")
+          f <<-EOS.gsub(/^\s{10}/, '')
+          config/dev.yml
+          config/private.yml
+          releases/*.tgz
+          dev_releases
+          blobs
+          .dev_builds
+          .idea
+          .DS_Store
+          .final_builds/jobs/**/*.tgz
+          .final_builds/packages/**/*.tgz
+          *.swp
+          *~
+          *#
+          #*
+          EOS
         end
       end
     rescue Errno::ENOENT
