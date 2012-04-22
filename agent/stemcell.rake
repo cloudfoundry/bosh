@@ -77,22 +77,6 @@ namespace "ubuntu" do
       vmbuilder_args += " --templates #{work_dir}/build/templates --part #{work_dir}/build/part.in"
       sh "sudo vmbuilder esxi ubuntu #{vmbuilder_args}"
 
-      # Generate stemcell image to be used with the esxcloud-cpi
-      tmpdir = "#{type}-esxcloud-tmp"
-      mkdir_p tmpdir
-      Dir.chdir("ubuntu-esxi") do
-        sh "tar zcf ../#{tmpdir}/image *.vmdk *.vmx"
-      end
-
-      File.open("#{tmpdir}/stemcell.MF", "w") do |f|
-        f.write("---\nname: #{stemcell_name}\nversion: #{version}\nbosh_protocol: #{bosh_protocol}\ncloud_properties: {}")
-      end
-
-      Dir.chdir(tmpdir) do
-        sh "tar zcf ../bosh-esxcloud-#{type}-#{version}.tgz *"
-      end
-      FileUtils.rm_rf tmpdir
-
       # Generate stemcell image for the vSphere
       sh "#{ovftool_bin} ubuntu-esxi/ubuntu.vmx ubuntu-esxi/image.ovf"
       mkdir_p "#{type}"
@@ -116,7 +100,6 @@ namespace "ubuntu" do
     # TODO: change location of agent install w/symlink strategy
     # TODO clean up lingering ISO mount which vmbuilder leaves behind
     puts "Generated #{type}: #{work_dir}/bosh-#{type}-#{version}.tgz"
-    puts "Generated esxcloud #{type}: #{work_dir}/bosh-esxcloud-#{type}-#{version}.tgz"
     puts "Check #{work_dir} for build artifacts"
   end
 end
