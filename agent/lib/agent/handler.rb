@@ -384,6 +384,10 @@ module Bosh::Agent
 
     # FIXME: temporary stop method
     class Stop
+      def self.long_running?
+        true
+      end
+
       def self.process(args)
 
         if Config.configure

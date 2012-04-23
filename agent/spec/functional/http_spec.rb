@@ -93,14 +93,42 @@ describe "http messages" do
   end
 
   it "should respond to drain message" do
-    http('drain', ['shutdown', 'bar']) do |msg|
-      msg.should == 0
+    task = nil
+    http('drain', ['shutdown']) do |msg|
+      task = msg
+      task['state'].should == "running"
+      task['agent_task_id'].should_not be_nil
+    end
+
+    while task.is_a?(Hash) && task['state'] == "running"
+      sleep 0.5
+      http('get_task', [ task['agent_task_id'] ]) do |msg|
+        task = msg
+        unless task.is_a?(Hash) && task['state']
+          task.should == 0
+          break
+        end
+      end
     end
   end
 
   it "should respond to stop message" do
-    http('stop') do |msg|
-      msg.should == 'stopped'
+    task = nil
+    http('stop', []) do |msg|
+      task = msg
+      task['state'].should == "running"
+      task['agent_task_id'].should_not be_nil
+    end
+
+    while task.is_a?(Hash) && task['state'] == "running"
+      sleep 0.5
+      http('get_task', [ task['agent_task_id'] ]) do |msg|
+        task = msg
+        unless task.is_a?(Hash) && task['state']
+          task.should == 'stopped'
+          break
+        end
+      end
     end
   end
 
