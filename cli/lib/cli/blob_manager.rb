@@ -313,6 +313,7 @@ module Bosh::Cli
     def progress(path, label)
       say("\r", " " * 80)
       say("\r#{path.truncate(40).yellow} #{label}", "")
+      Bosh::Cli::Config.output.flush # Ruby 1.8 compatibility
     end
 
     # @param [String] src Path to a file containing the blob

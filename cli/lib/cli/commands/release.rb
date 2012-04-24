@@ -8,8 +8,12 @@ module Bosh::Cli::Command
     include Bosh::Cli::VersionCalc
 
     def init(base=nil, *options)
-      flags = options.inject({}) { |h, option| h[option] = true; h }
-      git = flags.delete("--git")
+      if base[0..0] == "-"
+        # TODO: need to add some option parsing helpers to avoid that
+        options.unshift(base)
+        base = nil
+      end
+      git = options.include?("--git")
 
       if base
         FileUtils.mkdir_p(base) unless Dir.exist?(base)
@@ -17,17 +21,15 @@ module Bosh::Cli::Command
       end
 
       err("Release already initialized") if in_release_dir?
-
       git_init if git
 
-      %w[jobs packages src blobs].each do |dir|
+      %w[config jobs packages src blobs].each do |dir|
         FileUtils.mkdir(dir)
       end
 
-      # initialize an empty blob_index file
-      blobs = {}
-      File.open("blob_index.yml", "w") do |f|
-        YAML.dump(blobs, f)
+      # Initialize an empty blobs index
+      File.open(File.join("config", "blobs.yml"), "w") do |f|
+        YAML.dump({}, f)
       end
 
       say("Release directory initialized".green)
@@ -44,6 +46,7 @@ module Bosh::Cli::Command
           config/private.yml
           releases/*.tgz
           dev_releases
+          .blobs
           blobs
           .dev_builds
           .idea
