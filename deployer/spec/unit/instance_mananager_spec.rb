@@ -11,7 +11,7 @@ describe Bosh::Deployer::InstanceManager do
     @config["dir"] = @dir
     @config["name"] = "spec-#{UUIDTools::UUID.random_create.to_s}"
     @config["logging"] = { "file" => "#{@dir}/bmim.log" }
-    @deployer = Bosh::Deployer::InstanceManager.new(@config)
+    @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = mock("cloud")
     Bosh::Deployer::Config.stub!(:cloud).and_return(@cloud)
     @agent = mock("agent")
@@ -89,6 +89,18 @@ describe Bosh::Deployer::InstanceManager do
     @agent.should_receive(:run_task).with(:apply, updated_spec)
     @agent.should_receive(:run_task).with(:start)
     @deployer.apply(spec)
+  end
+
+  it "should populate disk model" do
+    disk_model = @deployer.disk_model
+    disk_model.should == VSphereCloud::Models::Disk
+    disk_model.columns.should include(:id)
+    disk_model.count.should == 0
+    cid = 22
+    disk_model.insert({:id => cid, :size => 1024})
+    disk_model.count.should == 1
+    disk_model[cid].destroy
+    disk_model.count.should == 0
   end
 
   it "should create a Bosh instance" do
