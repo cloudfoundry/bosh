@@ -247,7 +247,6 @@ module Bosh::Cli
         err("`#{blob_path}' is a symlink")
       end
 
-      object_id = rand(36**9).to_s(36)
       checksum = file_checksum(blob_path)
 
       progress(path, "uploading...")
