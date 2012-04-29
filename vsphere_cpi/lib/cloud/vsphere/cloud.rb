@@ -906,7 +906,7 @@ module VSphereCloud
     def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)
       raise "Can't find network: #{v_network_name}" if network.nil?
       if network.class == Vim::Dvs::DistributedVirtualPortgroup
-        portgroup_properties = client.get_properties(network, Vim::DistributedVirtualPortgroup,
+        portgroup_properties = client.get_properties(network, Vim::Dvs::DistributedVirtualPortgroup,
                                                      ["config.key", "config.distributedVirtualSwitch"],
                                                      :ensure_all => true)
 
