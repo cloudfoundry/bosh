@@ -35,6 +35,12 @@ describe VSphereCloud::Resources do
     datastore
   end
 
+  def mark_clusters_full
+    @datacenters["dc"].clusters.each do |cluster|
+      cluster.free_memory = 0
+    end
+  end
+
   def mark_datastore_full(cluster_index, datastore_index)
     datastore = @datacenters["dc"].clusters[cluster_index].datastores[datastore_index]
     datastore.free_space = 0
@@ -69,7 +75,7 @@ describe VSphereCloud::Resources do
     begin
       @resources.get_resources
     rescue => e
-      if e.message == "No available resources"
+      if e.message =~ /No available resources.*/
         got_exception = true
       end
     end
@@ -214,6 +220,20 @@ describe VSphereCloud::Resources do
     datastore.name.should match(/cluster2/)
   end
 
+  it "should raise an exception if clusters are out of memory" do
+    mark_clusters_full
+    @resources.stub!(:datacenters).and_return(@datacenters)
+    got_exception = false
+    begin
+    cluster, datastore = @resources.get_resources
+    rescue => e
+      if e.message =~ /No available resources.*/ && e.message =~ /.*Skipping.*/
+        got_exception = true
+      end
+    end
+    got_exception.should be_true
+  end
+
   it "should raise an exception if all persistent datastores are full" do
     mark_persistent_datastore_full(0, 0)
     mark_persistent_datastore_full(0, 1)
@@ -226,7 +246,7 @@ describe VSphereCloud::Resources do
     begin
     cluster, datastore = @resources.get_resources
     rescue => e
-      if e.message == "No available resources"
+      if e.message =~ /No available resources.*/ && e.message =~ /.*Skipping.*/
         got_exception = true
       end
     end
@@ -245,7 +265,7 @@ describe VSphereCloud::Resources do
     begin
     cluster, datastore = @resources.get_resources
     rescue => e
-      if e.message == "No available resources"
+      if e.message =~ /No available resources.*/ && e.message =~ /.*Skipping.*/
         got_exception = true
       end
     end
