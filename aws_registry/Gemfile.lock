@@ -1,4 +1,15 @@
+PATH
+  remote: .
+  specs:
+    bosh_aws_registry (0.2.1)
+      aws-sdk (~> 1.3.6)
+      sequel
+      sinatra
+      thin
+      yajl-ruby
+
 GEM
+  remote: http://rubygems.org/
   specs:
     archive-tar-minitar (0.5.2)
     aws-sdk (1.3.6)
@@ -80,7 +91,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  aws-sdk (>= 1.3.6)
+  bosh_aws_registry!
   ci_reporter
   pg
   rack-test
@@ -89,10 +100,6 @@ DEPENDENCIES
   rspec
   ruby-debug
   ruby-debug19
-  sequel
   simplecov
   simplecov-rcov
-  sinatra
   sqlite3
-  thin
-  yajl-ruby
