@@ -1,0 +1,4 @@
+stemcell_name=untitled
+stemcell_version=unknown
+stemcell_format=unknown
+bosh_protocol_version=unknown

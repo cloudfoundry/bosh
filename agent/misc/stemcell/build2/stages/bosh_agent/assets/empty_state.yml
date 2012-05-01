@@ -1,0 +1,9 @@
+deployment: ""
+job: ""
+index: ""
+networks: {}
+resource_pool: {}
+packages: {}
+persistent_disk: {}
+configuration_hash: {}
+properties: {}
