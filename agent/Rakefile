@@ -60,3 +60,4 @@ end
 
 # stemcell generation is now in its own file
 import "stemcell.rake"
+import "stemcell2.rake"
