@@ -1,0 +1,8 @@
+set daemon 10
+set logfile /var/vcap/monit/monit.log
+
+set httpd port 2822 and use address 127.0.0.1
+  allow cleartext /var/vcap/monit/monit.user
+
+include /var/vcap/monit/*.monitrc
+include /var/vcap/monit/job/*.monitrc
