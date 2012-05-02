@@ -43,6 +43,7 @@ module Bosh::AwsRegistry
     private
 
     def check_instance_ip(ip, instance_id)
+      return if ip == "127.0.0.1"
       actual_ip = instance_private_ip(instance_id)
       unless ip == actual_ip
         raise InstanceError, "Instance IP mismatch, expected IP is " \
