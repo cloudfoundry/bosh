@@ -21,7 +21,7 @@ GEM
       builder (>= 2.1.2)
     columnize (0.3.2)
     crack (0.1.8)
-    daemons (1.1.5)
+    daemons (1.1.8)
     diff-lcs (1.1.3)
     eventmachine (0.12.10)
     ffi (1.0.11)
@@ -36,7 +36,7 @@ GEM
       guard (>= 0.10.0)
     highline (1.6.11)
     httpclient (2.2.4)
-    json_pure (1.6.4)
+    json_pure (1.7.0)
     linecache (0.43)
     linecache19 (0.5.12)
       ruby_core_source (>= 0.1.4)
@@ -45,14 +45,14 @@ GEM
     monit_api (1.0.2)
       crack
     multi_json (1.1.0)
-    nats (0.4.22.beta.4)
+    nats (0.4.22)
       daemons (>= 1.1.4)
       eventmachine (>= 0.12.10)
       json_pure (>= 1.6.1)
       thin (>= 1.3.1)
     netaddr (1.5.0)
     posix-spawn (0.3.3)
-    rack (1.4.0)
+    rack (1.4.1)
     rack-protection (1.2.0)
       rack
     rack-test (0.6.1)
@@ -119,7 +119,7 @@ DEPENDENCIES
   guard-rspec
   highline
   monit_api
-  nats (= 0.4.22.beta.4)
+  nats (= 0.4.22)
   netaddr
   posix-spawn
   rack-test
