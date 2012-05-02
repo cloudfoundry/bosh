@@ -13,6 +13,10 @@ module Bosh::Agent
         self.new(args).drain
       end
 
+      def self.long_running?
+        true
+      end
+
       def initialize(args)
         @logger     = Bosh::Agent::Config.logger
         @base_dir   = Bosh::Agent::Config.base_dir
