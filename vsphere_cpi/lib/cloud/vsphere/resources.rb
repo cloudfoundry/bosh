@@ -218,23 +218,35 @@ module VSphereCloud
 
       return root_resource_pool if requested_resource_pool.nil?
 
-      # Get list of resource pools under this cluster
-      properties = @client.get_properties(root_resource_pool, Vim::ResourcePool, ["resourcePool"])
+      return traverse_resource_pool(requested_resource_pool, root_resource_pool)
+    end
+
+    def traverse_resource_pool(requested_resource_pool, resource_pool)
+      # Get list of resource pools under this resource pool
+      properties = @client.get_properties(resource_pool, Vim::ResourcePool, ["resourcePool"])
+
       if properties && properties["resourcePool"] && properties["resourcePool"].size != 0
 
-        # Get the name of each resource pool under this cluster
+        # Get the name of each resource pool under this resource pool
         child_properties = @client.get_properties(properties["resourcePool"], Vim::ResourcePool, ["name"])
         if child_properties
           child_properties.each_value do | resource_pool |
             if resource_pool["name"] == requested_resource_pool
-              @logger.info("Found requested resource pool #{requested_resource_pool} under cluster #{cluster_properties["name"]}")
+              @logger.info("Found requested resource pool #{requested_resource_pool}")
               return resource_pool[:obj]
             end
           end
+
+          child_properties.each_value do | resource_pool |
+            pool = traverse_resource_pool(requested_resource_pool, resource_pool[:obj])
+            return pool if pool != nil
+          end
         end
+
+        return nil
       end
-      @logger.info("Could not find requested resource pool #{requested_resource_pool} under cluster #{cluster_properties["name"]}")
-      nil
+
+      return nil
     end
 
     def fetch_datastores(datacenter, datastore_mobs, match_pattern)
