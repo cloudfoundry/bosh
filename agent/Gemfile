@@ -4,7 +4,7 @@ source :rubygems
 
 gem "highline"
 gem "monit_api"
-gem "nats", "=0.4.22.beta.4"
+gem "nats", "=0.4.22"
 gem "netaddr"
 gem "blobstore_client", "~> 0.3.13"
 gem "posix-spawn"
