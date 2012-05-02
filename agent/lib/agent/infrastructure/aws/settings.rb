@@ -29,10 +29,10 @@ module Bosh::Agent
     end
 
     def load_settings
+      setup_openssh_key
       settings = Infrastructure::Aws::Registry.get_settings
       settings_json = Yajl::Encoder.encode(settings)
       File.open(@settings_file, 'w') { |f| f.write(settings_json) }
-      setup_openssh_key
       Bosh::Agent::Config.settings = settings
     end
 
