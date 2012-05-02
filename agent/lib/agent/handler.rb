@@ -269,7 +269,7 @@ module Bosh::Agent
       begin
         result = processor.process(args)
         return {:value => result}
-      rescue Bosh::Agent::MessageHandlerError => e
+      rescue Bosh::Agent::Error => e
         @logger.info("#{e.inspect}: #{e.backtrace}")
         return RemoteException.from(e).to_hash
       rescue Exception => e
