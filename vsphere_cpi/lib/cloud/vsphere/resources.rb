@@ -326,14 +326,36 @@ module VSphereCloud
       @datacenters
     end
 
-    def filter_used_resources(memory, vm_disk_size, persistent_disks_size, cluster_affinity)
+    def filter_used_resources(memory, vm_disk_size, persistent_disks_size, cluster_affinity,
+                              report = nil)
       resources = []
       datacenters.each_value do |datacenter|
         datacenter.clusters.each do |cluster|
-          next unless cluster_affinity.nil? || cluster.mob == cluster_affinity.mob
-          next unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
-          next if pick_datastore(cluster.persistent_datastores, persistent_disks_size).nil?
-          next if (datastore = pick_datastore(cluster.datastores, vm_disk_size)).nil?
+
+          unless cluster_affinity.nil? || cluster.mob == cluster_affinity.mob
+            report << "Skipping cluster #{cluster.name} because of affinity mismatch" if report
+            next
+          end
+
+          unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
+            report << "Skipping cluster #{cluster.name} because of memory constraint. " +
+                      "Free #{cluster.real_free_memory}, requested #{memory}, " +
+                      "threshold #{MEMORY_THRESHOLD}" if report
+            next
+          end
+
+          if pick_datastore(cluster.persistent_datastores, persistent_disks_size, report).nil?
+            report << "Skipping cluster #{cluster.name} because of above persistent " +
+                      "disk constraint failure." if report
+            next
+          end
+
+          if (datastore = pick_datastore(cluster.datastores, vm_disk_size, report)).nil?
+            report << "Skipping cluster #{cluster.name} because of above " +
+                      "disk constraint failure." if report
+            next
+          end
+
           resources << [cluster, datastore]
         end
       end
@@ -375,11 +397,14 @@ module VSphereCloud
       datastore
     end
 
-    def pick_datastore(datastores, disk_space)
+    def pick_datastore(datastores, disk_space, report = nil)
       selected_datastores = {}
       datastores.each { |ds|
         if ds.real_free_space - disk_space > DISK_THRESHOLD
           selected_datastores[ds] = score_datastore(ds, disk_space)
+        else
+          report << "Skipping datastore #{ds.name}. Free space #{ds.real_free_space}, " +
+                    "requested #{disk_space}, threshold #{DISK_THRESHOLD}" if report
         end
       }
       return nil if selected_datastores.empty?
@@ -411,7 +436,7 @@ module VSphereCloud
       chosen_datastore
     end
 
-    def find_resources(memory, disk_size, persistent_disks_size, cluster_affinity)
+    def find_resources(memory, disk_size, persistent_disks_size, cluster_affinity, report = nil)
       cluster = nil
       datastore = nil
 
@@ -419,7 +444,8 @@ module VSphereCloud
       disk_size += memory
 
       @lock.synchronize do
-        resources = filter_used_resources(memory, disk_size, persistent_disks_size, cluster_affinity)
+        resources = filter_used_resources(memory, disk_size, persistent_disks_size,
+                                          cluster_affinity, report)
         break if resources.empty?
 
         scored_resources = {}
@@ -486,8 +512,10 @@ module VSphereCloud
                      "#{persistent_disks.pretty_inspect}")
       end
 
-      resources = find_resources(memory_size, non_persistent_disks_size, persistent_disks_size, nil)
-      raise "No available resources" if resources.empty?
+      report = []
+      resources = find_resources(memory_size, non_persistent_disks_size,
+                                 persistent_disks_size, nil, report)
+      raise "No available resources as #{report.join("\n")}" if resources.empty?
       resources
     end
 
