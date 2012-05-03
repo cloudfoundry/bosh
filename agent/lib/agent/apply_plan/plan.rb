@@ -5,7 +5,7 @@ module Bosh::Agent
     class Plan
 
       attr_reader :deployment
-      attr_reader :job
+      attr_reader :jobs
       attr_reader :packages
 
       def initialize(spec)
@@ -16,7 +16,7 @@ module Bosh::Agent
 
         @spec = spec
         @deployment = spec["deployment"]
-        @job = nil
+        @jobs = []
         @packages = []
         @config_binding = Bosh::Agent::Util.config_binding(spec)
 
@@ -26,7 +26,19 @@ module Bosh::Agent
         # By default stemcell VM has '' as job
         # in state.yml, handling this very special case
         if job_spec && job_spec != ""
-          @job = Job.new(job_spec, @config_binding)
+          if job_spec["template"] && !job_spec["templates"]
+            new_template = {
+              "name" => job_spec["template"],
+              "version" => job_spec["version"],
+              "sha1" => job_spec["sha1"],
+              "blobstore_id" => job_spec["blobstore_id"]
+            }
+            job_spec["templates"] = [new_template]
+          end
+          job_name = job_spec["name"]
+          job_spec["templates"].each do |template_spec|
+            @jobs.push(Job.new(job_name, template_spec, @config_binding))
+          end
         end
 
         if package_specs
@@ -42,8 +54,8 @@ module Bosh::Agent
         end
       end
 
-      def has_job?
-        !@job.nil?
+      def has_jobs?
+        !@jobs.empty?
       end
 
       def has_packages?
@@ -55,18 +67,24 @@ module Bosh::Agent
         @spec.key?("configuration_hash")
       end
 
-      def install_job
-        @job.install if has_job?
-      end
-
-      def install_packages
-        @packages.each do |package|
-          package.install_for_job(@job)
+      def install_jobs
+        @jobs.each do |job|
+          job.install
         end
       end
 
-      def configure_job
-        @job.configure if has_job?
+      def install_packages
+        @jobs.each do |job|
+          @packages.each do |package|
+            package.install_for_job(job)
+          end
+        end
+      end
+
+      def configure_jobs
+        @jobs.each do |job|
+          job.configure
+        end
       end
 
     end
