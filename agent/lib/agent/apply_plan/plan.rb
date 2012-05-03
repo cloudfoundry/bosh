@@ -5,7 +5,7 @@ module Bosh::Agent
     class Plan
 
       attr_reader :deployment
-      attr_reader :job
+      attr_reader :jobs
       attr_reader :packages
 
       def initialize(spec)
@@ -13,10 +13,9 @@ module Bosh::Agent
           raise ArgumentError, "Invalid spec format, Hash expected, " +
                                "#{spec.class} given"
         end
-
         @spec = spec
         @deployment = spec["deployment"]
-        @job = nil
+        @jobs = []
         @packages = []
         @config_binding = Bosh::Agent::Util.config_binding(spec)
 
@@ -26,7 +25,10 @@ module Bosh::Agent
         # By default stemcell VM has '' as job
         # in state.yml, handling this very special case
         if job_spec && job_spec != ""
-          @job = Job.new(job_spec, @config_binding)
+          job_name = job_spec["name"]
+          job_spec["templates"].each do |template_spec|
+            @jobs.push(Job.new(job_name, template_spec, @config_binding))
+          end
         end
 
         if package_specs
@@ -43,7 +45,7 @@ module Bosh::Agent
       end
 
       def has_job?
-        !@job.nil?
+        !@jobs.empty?
       end
 
       def has_packages?
@@ -55,18 +57,26 @@ module Bosh::Agent
         @spec.key?("configuration_hash")
       end
 
-      def install_job
-        @job.install if has_job?
+      def install_jobs
+        if has_job?
+          @jobs.each do |job|
+            job.install
+          end
+        end
       end
 
       def install_packages
-        @packages.each do |package|
-          package.install_for_job(@job)
+        @jobs.each do |job|
+          @packages.each do |package|
+            package.install_for_job(job)
+          end
         end
       end
 
       def configure_job
-        @job.configure if has_job?
+        @jobs.each do |job|
+          job.configure if has_job?
+        end
       end
 
     end
