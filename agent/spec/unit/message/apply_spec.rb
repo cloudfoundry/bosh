@@ -44,7 +44,7 @@ describe Bosh::Agent::Message::Apply do
     lambda {
       handler.apply
     }.should raise_error Bosh::Agent::MessageHandlerError,
-    /Failed to install job 'bubba': failed to process configuration template 'thin.yml.erb': line 6, error:/
+    /Failed to install job 'bubba.bubba': failed to process configuration template 'thin.yml.erb': line 6, error:/
   end
 
   it 'should set deployment in agents state if blank' do
@@ -199,7 +199,7 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     handler.apply
 
-    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba_hubba.monitrc')
+    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.hubba_hubba.monitrc')
     File.exist?(monitrc).should == true
   end
 

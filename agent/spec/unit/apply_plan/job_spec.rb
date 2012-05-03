@@ -39,10 +39,11 @@ describe Bosh::Agent::ApplyPlan::Job do
       and_return { template = MockTemplate.new(path); yield template }
   end
 
+  JOB_NAME = "ccdb"
+
   let(:valid_spec) do
     {
-      "name" => "ccdb",
-      "template" => "postgres",
+      "name" => "postgres",
       "version" => "2",
       "sha1" => "badcafe",
       "blobstore_id" => "beefdad"
@@ -52,16 +53,15 @@ describe Bosh::Agent::ApplyPlan::Job do
   describe "initialization" do
     it "expects Hash argument" do
       expect {
-        make_job("test")
-      }.to raise_error(ArgumentError, "Invalid job spec, " +
+        make_job("test", "fail")
+      }.to raise_error(ArgumentError, "Invalid job template_spec, " +
                                       "Hash expected, String given")
     end
 
-    it "requires name, template, version, " +
-       "sha1 and blobstore_id to be in spec" do
+    it "requires name version sha1 blobstore_id to be in spec" do
       valid_spec.keys.each do |key|
         expect {
-          make_job(valid_spec.merge(key => nil))
+          make_job(JOB_NAME, valid_spec.merge(key => nil))
         }.to raise_error(ArgumentError, "Invalid spec, #{key} is missing")
       end
     end
@@ -70,7 +70,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       install_path = File.join(@base_dir, "data", "jobs", "postgres", "2")
       link_path = File.join(@base_dir, "jobs", "postgres")
 
-      job = make_job(valid_spec)
+      job = make_job(JOB_NAME, valid_spec)
       job.install_path.should == install_path
       job.link_path.should == link_path
       job.template.should == "postgres"
@@ -94,7 +94,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         }
       }
       config_binding = Bosh::Agent::Util.config_binding(config)
-      job = make_job(valid_spec, config_binding)
+      job = make_job(JOB_NAME, valid_spec, config_binding)
 
       manifest = {
         "templates" => {
@@ -137,11 +137,11 @@ describe Bosh::Agent::ApplyPlan::Job do
     describe "installation errors" do
       let(:job) do
         config_binding = Bosh::Agent::Util.config_binding({})
-        make_job(valid_spec, config_binding)
+        make_job(JOB_NAME, valid_spec, config_binding)
       end
 
       let(:job_no_binding) do
-        make_job(valid_spec)
+        make_job(JOB_NAME, valid_spec)
       end
 
       def template_for(job)
@@ -158,7 +158,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job_no_binding.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "unable to bind configuration, no binding provided")
       end
 
@@ -172,7 +172,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "cannot find job manifest")
       end
 
@@ -186,7 +186,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "malformed job manifest")
       end
 
@@ -200,7 +200,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "invalid job manifest, " +
                          "Hash expected, String given")
       end
@@ -217,7 +217,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "invalid value for templates in job manifest, " +
                          "Hash expected, String given")
       end
@@ -238,7 +238,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "template 'foo.erb' doesn't exist")
       end
 
@@ -259,7 +259,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
-                         "Failed to install job 'ccdb': " +
+                         "Failed to install job 'ccdb.postgres': " +
                          "failed to process configuration template " +
                          "'foo.erb': line 1, error: undefined method " +
                          "`bar' for nil:NilClass")
@@ -277,7 +277,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       }
 
       config_binding = Bosh::Agent::Util.config_binding(config)
-      job = make_job(valid_spec, config_binding)
+      job = make_job(JOB_NAME, valid_spec, config_binding)
 
       mock_template("beefdad", "badcafe", job.install_path) do |template|
         template.add_file("job.MF", YAML.dump({}))
@@ -293,16 +293,17 @@ describe Bosh::Agent::ApplyPlan::Job do
 
       job.configure
 
-      monit_file = File.join(job.install_path, "ccdb.monitrc")
-      monit_link = File.join(@base_dir, "monit", "job", "ccdb.monitrc")
+      monit_file = File.join(job.install_path, "ccdb.postgres.monitrc")
+      monit_link = File.join(@base_dir, "monit", "job", "ccdb.postgres.monitrc")
 
       File.exists?(monit_file).should be_true
       File.exists?(monit_link).should be_true
       File.read(monit_file).should == "check process ccdb mode manual bar"
 
-      extra_monit_file = File.join(job.install_path, "ccdb_extra.monitrc")
+      extra_monit_file = File.join(job.install_path,
+                                   "ccdb.postgres_extra.monitrc")
       extra_monit_link = File.join(@base_dir, "monit",
-                                   "job", "ccdb_extra.monitrc")
+                                   "job", "ccdb.postgres_extra.monitrc")
 
       File.exists?(extra_monit_file).should be_true
       File.exists?(extra_monit_link).should be_true
@@ -316,7 +317,7 @@ describe Bosh::Agent::ApplyPlan::Job do
 
       it "fails if cannot bind monit file to configuration" do
         config_binding = Bosh::Agent::Util.config_binding({})
-        job = make_job(valid_spec, config_binding)
+        job = make_job(JOB_NAME, valid_spec, config_binding)
 
         mock_template("beefdad", "badcafe", job.install_path) do |template|
           template.add_file("job.MF", YAML.dump({}))
@@ -332,7 +333,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         expect {
           job.configure
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::ConfigurationError,
-                         "Failed to configure job 'ccdb': " +
+                         "Failed to configure job 'ccdb.postgres': " +
                          "failed to process monit template " +
                          "'monit': line 3, error: undefined method " +
                          "`bar' for nil:NilClass")
@@ -345,7 +346,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       # need to move it out into its own abstraction
 
       it "adds 'mode manual' to each 'check process' block" do
-        job = make_job(valid_spec)
+        job = make_job(JOB_NAME, valid_spec)
 
         file1 = "check process nats mode active start program " +
                 "\"bla\" stop program \"bla bla\""
@@ -390,7 +391,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       end
 
       it "doesn't alter empty monit file" do
-        make_job(valid_spec).send(:add_modes, "").should == ""
+        make_job(JOB_NAME, valid_spec).send(:add_modes, "").should == ""
       end
     end
 
