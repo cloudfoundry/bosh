@@ -6,8 +6,8 @@ chroot=$work/chroot
 
 mkdir -p $work $chroot
 
-# Source any settings shipped by the stage
-if [ -f $assets_dir/settings.bash ]
+# Source settings if present
+if [ -f $settings_file ]
 then
-  source $assets_dir/settings.bash
+  source $settings_file
 fi

@@ -1,3 +1,4 @@
+# parameters for `stemcell`
 stemcell_name=untitled
 stemcell_version=unknown
 stemcell_format=unknown
