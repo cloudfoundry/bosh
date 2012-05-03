@@ -5,7 +5,7 @@
 set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
-source $base_dir/lib/prelude_common.bash
+source $base_dir/lib/prelude_apply.bash
 
 debs="build-essential libssl-dev lsof \
 strace bind9-host dnsutils tcpdump iputils-arping \
