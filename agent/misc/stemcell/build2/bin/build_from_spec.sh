@@ -19,52 +19,6 @@ do
   fi
 done
 
-#function rollback_stage() {
-#  local stage=$1
-#  local mnt_work=$mnt/work
-#  local mnt_before=$mnt/$(basename $stage)_before
-#  local mnt_after=$mnt/$(basename $stage)_after
-#
-#  # Revert to "before" state of this stage
-#  if [ -d "$mnt_before" ]
-#  then
-#    if [ -d "$mnt_work" ]
-#    then
-#      btrfs subvolume delete $mnt_work
-#    fi
-#
-#    mv $mnt_before $mnt_work
-#  fi
-#}
-#
-#function run_stage() {
-#  local stage=$1
-#  local mnt_work=$mnt/work
-#  local mnt_before=$mnt/$(basename $stage)_before
-#  local mnt_after=$mnt/$(basename $stage)_after
-#
-#  # Create subvolume if it doesn't exist
-#  if [ ! -d "$mnt_work" ]
-#  then
-#    btrfs subvolume create $mnt_work
-#  fi
-#
-#  # Snapshot state
-#  if [ ! -d "$mnt_before" ]
-#  then
-#    btrfs subvolume snapshot $mnt_work $mnt_before
-#  fi
-#
-#  # Apply stage
-#  $stage/apply.sh $mnt/work
-#
-#  # Snapshot state
-#  if [ ! -d "$mnt_after" ]
-#  then
-#    btrfs subvolume snapshot $mnt_work $mnt_after
-#  fi
-#}
-
 function sha1() {
   (
     cd $stages_dir/$1
