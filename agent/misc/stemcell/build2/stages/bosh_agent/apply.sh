@@ -8,11 +8,10 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
-version=$(cat $dir/assets/version)
-agent_dir=$bosh_dir/agent_${version}_builtin
+agent_dir=$bosh_dir/agent_${bosh_agent_src_version}_builtin
 
 mkdir -p $chroot/$agent_dir
-cp -aL $dir/assets/{bin,lib,vendor,Gemfile*} $chroot/$agent_dir
+cp -aL $bosh_agent_src_dir/{bin,lib,vendor,Gemfile*} $chroot/$agent_dir
 
 # Link agent
 run_in_bosh_chroot $chroot "
