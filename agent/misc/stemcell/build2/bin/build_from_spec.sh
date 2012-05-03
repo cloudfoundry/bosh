@@ -7,7 +7,7 @@ base_dir=$(readlink -nf $(dirname $0)/..)
 stages_dir=$base_dir/stages
 
 spec=$1
-mnt=$2
+mnt=$(echo "$2" | sed -e 's#/*$##')
 settings_file=$3
 
 # Generate settings for every stage
@@ -26,9 +26,7 @@ function sha1() {
   )
 }
 
-previous_stage=
-
-function stage() {
+function stage_with_btrfs() {
   local stage=$1
   local trace=tmp/trace.sha1sum
   local mnt_work=$mnt/work
@@ -93,8 +91,39 @@ function stage() {
   else
     echo "$stage unchanged, skipping..."
   fi
+}
 
-  previous_stage=$stage
+function stage_direct() {
+  local stage=$1
+  local mnt_work=$mnt/work
+
+  mkdir -p $mnt_work
+
+  # Apply stage
+  $stages_dir/$stage/apply.sh $mnt_work
+}
+
+# Find out which staging function to use
+mnt_type=unknown
+if mountpoint -q $mnt
+then
+  if [ "$(grep $mnt /proc/mounts | cut -d" " -f3)" == "btrfs" ]
+  then
+   mnt_type=btrfs
+  fi
+fi
+
+previous_stage=
+
+function stage() {
+  if [ "$mnt_type" == "btrfs" ]
+  then
+    stage_with_btrfs $1
+  else
+    stage_direct $1
+  fi
+
+  previous_stage=$1
 }
 
 source $spec
