@@ -73,7 +73,19 @@ module Bosh::Cli::Command
         output = "No differences."
         @no_differences = true
       end
-      say(output)
+
+      output.each_line do |line|
+        added = line[0..0] == "+"
+        removed = line[0..0] == "-"
+
+        if added
+          say(line.chomp.green)
+        elsif removed
+          say(line.chomp.red)
+        else
+          say(line)
+        end
+      end
     end
 
     # Alias for find.  It is used to find within a given object, not the default
