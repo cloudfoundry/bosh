@@ -13,9 +13,8 @@ describe "messages" do
       NATS.start(:uri => @nats_uri) do
         sid = NATS.subscribe('rspec') do |json|
           msg = Yajl::Parser.new.parse(json)
-          msg.should have_key('value')
           if block_given?
-            yield msg['value']
+            yield msg
           end
           throw :done
         end
@@ -27,6 +26,11 @@ describe "messages" do
         NATS.publish("agent.#{@agent_id}", msg)
       end
     end
+  end
+
+  def get_value(msg)
+    msg.should have_key('value')
+    msg['value']
   end
 
   # wait for the first heartbeat to appear or timeout after 5 seconds
@@ -75,24 +79,27 @@ describe "messages" do
 
   it "should respond to state message" do
     nats('state') do |msg|
-      msg.should have_key('deployment')
-      msg.should have_key('networks')
-      msg.should have_key('resource_pool')
-      msg.should have_key('agent_id')
-      msg.should have_key('vm')
-      msg.should have_key('job_state')
+      value = get_value(msg)
+      value.should have_key('deployment')
+      value.should have_key('networks')
+      value.should have_key('resource_pool')
+      value.should have_key('agent_id')
+      value.should have_key('vm')
+      value.should have_key('job_state')
     end
   end
 
   it "should respond to ping message" do
     nats('ping') do |msg|
-      msg.should == 'pong'
+      value = get_value(msg)
+      value.should == 'pong'
     end
   end
 
-  it "should respond to fetch logs message" do
+  it "should respond to noop message" do
     nats('noop') do |msg|
-      msg.should == 'nope'
+      value = get_value(msg)
+      value.should == 'nope'
     end
   end
 
@@ -108,17 +115,14 @@ describe "messages" do
 
   it "should respond to start message" do
     nats('start') do |msg|
-      msg.should == 'started'
+      value = get_value(msg)
+      value.should == 'started'
     end
   end
 
   it "should respond to drain message" do
     task = nil
-    nats("drain", ["shutdown", "bar"]) do |msg|
-      task = msg
-      task["state"].should == "running"
-      task["agent_task_id"].should_not be_nil
-    end
+    nats("drain", ["shutdown", "bar"])
 
     while task.is_a?(Hash) && task["state"] == "running"
       sleep 0.5
@@ -134,11 +138,7 @@ describe "messages" do
 
   it "should respond to stop message" do
     task = nil
-    nats("stop") do |msg|
-      task = msg
-      task["state"].should == "running"
-      task["agent_task_id"].should_not be_nil
-    end
+    nats("stop")
 
     while task.is_a?(Hash) && task["state"] == "running"
       sleep 0.5
@@ -149,6 +149,21 @@ describe "messages" do
           break
         end
       end
+    end
+  end
+
+  it "should respond to compile message" do
+    pending "need to mock package to compile"
+    nats('compile_package') do |msg|
+      msg.should have_key('value')
+      value = msg['value']
+      value.should have_key('state')
+    end
+  end
+
+  it "should return an exception for unknow message" do
+    nats('foobar') do |msg|
+      msg.should have_key('exception')
     end
   end
 
