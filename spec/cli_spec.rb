@@ -501,7 +501,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload stemcell #{stemcell_filename}")
       run_bosh("upload release #{release_filename}")
 
-      run_bosh("deploy").should =~ regexp("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
+      out = run_bosh("deploy")
+      out.should =~ regexp("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
+
       run_bosh("cloudcheck --report").should =~ regexp("No problems found")
       $?.should == 0 # Cloudcheck shouldn't find any problems with this new deployment
       # TODO: figure out which artefacts should be created by the given manifest

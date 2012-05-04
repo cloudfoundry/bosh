@@ -51,7 +51,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment_plan_compiler.should_receive(:bind_deployment)
       deployment_plan_compiler.should_receive(:bind_existing_deployment)
       deployment_plan_compiler.should_receive(:bind_resource_pools)
-      deployment_plan_compiler.should_receive(:bind_release)
+      deployment_plan_compiler.should_receive(:bind_releases)
       deployment_plan_compiler.should_receive(:bind_stemcells)
       deployment_plan_compiler.should_receive(:bind_templates)
       deployment_plan_compiler.should_receive(:bind_unallocated_vms)
@@ -157,33 +157,63 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     # TODO: refactor to use less mocks (and a real manifest)
     it "should do a basic update" do
       deployment_lock = mock("deployment_lock")
-      release_lock    = mock("release_lock")
+      foo_release_lock = mock("release_lock")
+      bar_release_lock = mock("release_lock")
 
-      deployment      = Bosh::Director::Models::Deployment.make(:name => "test_deployment")
-      release         = Bosh::Director::Models::Release.make(:name => "test_release")
-      release_version = Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => 1)
+      deployment = Bosh::Director::Models::Deployment.
+        make(:name => "test_deployment")
 
-      release_spec = mock("release_spec")
-      release_spec.stub!(:release).and_return(release)
-      release_spec.stub!(:release_version).and_return(release_version)
-      release_spec.stub!(:name).and_return(release.name)
+      foo_release = Bosh::Director::Models::Release.make(:name => "foo_release")
+      foo_release_version = Bosh::Director::Models::ReleaseVersion.
+        make(:release => foo_release, :version => 17)
 
-      @deployment_plan.stub!(:release).and_return(release_spec)
+      bar_release = Bosh::Director::Models::Release.make(:name => "bar_release")
+      bar_release_version = Bosh::Director::Models::ReleaseVersion.
+        make(:release => bar_release, :version => 42)
+
+      foo_release_spec = mock("release_spec",
+                              :name => "foo",
+                              :release => foo_release,
+                              :release_version => foo_release_version)
+
+      bar_release_spec = mock("release_spec",
+                              :name => "bar",
+                              :release => bar_release,
+                              :release_version => bar_release_version)
+
+      release_specs = [foo_release_spec, bar_release_spec]
+
+      @deployment_plan.stub!(:releases).and_return(release_specs)
       @deployment_plan.stub!(:deployment).and_return(deployment)
 
-      Bosh::Director::Lock.stub!(:new).with("lock:deployment:test_deployment").and_return(deployment_lock)
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release").and_return(release_lock)
+      Bosh::Director::Lock.stub!(:new).
+        with("lock:deployment:test_deployment").and_return(deployment_lock)
 
-      deployment_lock.should_receive(:lock).and_yield
-      release_lock.should_receive(:lock).and_yield
+      Bosh::Director::Lock.stub!(:new).
+        with("lock:release:foo").and_return(foo_release_lock)
+      Bosh::Director::Lock.stub!(:new).
+        with("lock:release:bar").and_return(bar_release_lock)
 
-      deployment.should_receive(:add_release_version).with(release_version)
+      deployment_lock.should_receive(:lock).ordered.and_yield
+      # Note the order of release locks is alphabetical (order is important)
+      bar_release_lock.should_receive(:lock).ordered
+      foo_release_lock.should_receive(:lock).ordered
 
-      update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
-      update_deployment_job.should_receive(:prepare)
-      update_deployment_job.should_receive(:update)
-      update_deployment_job.should_receive(:update_stemcell_references)
-      update_deployment_job.perform.should eql("/deployments/test_deployment")
+      job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
+      job.should_receive(:prepare).ordered
+      job.should_receive(:update).ordered
+      job.should_receive(:update_stemcell_references).ordered
+
+      deployment.should_receive(:add_release_version).
+        with(foo_release_version).ordered
+
+      deployment.should_receive(:add_release_version).
+        with(bar_release_version).ordered
+
+      foo_release_lock.should_receive(:release).ordered
+      bar_release_lock.should_receive(:release).ordered
+
+      job.perform.should == "/deployments/test_deployment"
 
       deployment.refresh
       deployment.manifest.should == "manifest"

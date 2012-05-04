@@ -37,8 +37,8 @@ module Bosh::Director
           @deployment_plan_compiler.bind_deployment
         end
 
-        track_and_log("Binding release") do
-          @deployment_plan_compiler.bind_release
+        track_and_log("Binding releases") do
+          @deployment_plan_compiler.bind_releases
         end
 
         track_and_log("Binding existing deployment") do
@@ -159,12 +159,8 @@ module Bosh::Director
       end
 
       def perform
-        @logger.info("Acquiring deployment lock: #{@deployment_plan.name}")
-        deployment_lock = Lock.new("lock:deployment:#{@deployment_plan.name}")
-        deployment_lock.lock do
-          @logger.info("Acquiring release lock: #{@deployment_plan.release.name}")
-          release_lock = Lock.new("lock:release:#{@deployment_plan.release.name}")
-          release_lock.lock do
+        with_deployment_lock do
+          with_release_locks do
             @logger.info("Preparing deployment")
             prepare
             begin
@@ -173,12 +169,14 @@ module Bosh::Director
               @logger.info("Updating deployment")
               update
 
-              # Now we know that deployment has succeeded and can remove
-              # previous partial deployments release version references
-              # to be able to delete these release versions later.
               deployment.db.transaction do
                 deployment.remove_all_release_versions
-                deployment.add_release_version(@deployment_plan.release.release_version)
+                # Now we know that deployment has succeeded and can remove
+                # previous partial deployments release version references
+                # to be able to delete these release versions later.
+                @deployment_plan.releases.each do |release|
+                  deployment.add_release_version(release.release_version)
+                end
               end
 
               deployment.manifest = @manifest
@@ -196,8 +194,35 @@ module Bosh::Director
 
       private
 
+      def with_deployment_lock
+        name = @deployment_plan.name
+        @logger.info("Acquiring deployment lock on #{name}")
+        Lock.new("lock:deployment:#{name}").lock { yield }
+      end
+
+      def with_release_locks
+        release_names = @deployment_plan.releases.map do |release|
+          release.name
+        end
+
+        # Sorting to enforce lock order to avoid deadlocks
+        locks = release_names.sort.map do |release_name|
+          @logger.info("Acquiring release lock: #{release_name}")
+          Lock.new("lock:release:#{release_name}")
+        end
+
+        begin
+          locks.each { |lock| lock.lock }
+          yield
+        ensure
+          locks.reverse_each { |lock| lock.release }
+        end
+      end
+
       def sum_across_pools(counting_method)
-        @resource_pool_updaters.inject(0) { |sum, updater| sum + updater.send(counting_method.to_sym) }
+        @resource_pool_updaters.inject(0) do |sum, updater|
+          sum + updater.send(counting_method.to_sym)
+        end
       end
 
     end

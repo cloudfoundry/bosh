@@ -6,9 +6,11 @@ module Bosh::Director::Models
     many_to_many :release_versions
     one_to_many :compiled_packages
 
+    # @return [Set<String>] A set of package names this package depends on
     def dependency_set
-      result = self.dependency_set_json
-      ::Set.new(result ? Yajl::Parser.parse(result) : nil)
+      json = self.dependency_set_json
+
+      ::Set.new(json ? Yajl::Parser.parse(json) : nil)
     end
 
     def dependency_set=(deps)
