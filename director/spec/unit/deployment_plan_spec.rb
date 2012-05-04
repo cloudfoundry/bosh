@@ -3,7 +3,7 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan do
-  MOCKED_METHODS = [:parse_name, :parse_properties, :parse_release,
+  MOCKED_METHODS = [:parse_name, :parse_properties, :parse_releases,
                     :parse_networks, :parse_compilation, :parse_update,
                     :parse_resource_pools, :parse_jobs]
 
@@ -65,22 +65,37 @@ describe Bosh::Director::DeploymentPlan do
     end
   end
 
-  describe :parse_release do
+  describe :parse_releases do
     before(:each) do
-      (MOCKED_METHODS - [:parse_release]).each do |method_name|
+      (MOCKED_METHODS - [:parse_releases]).each do |method_name|
         BD::DeploymentPlan.any_instance.stub(method_name)
       end
     end
 
-    it "should delegate to ReleaseSpec" do
-      received_plan = nil
-      BD::DeploymentPlan::ReleaseSpec.
-          should_receive(:new).with do |deployment_plan, spec|
-        received_plan = deployment_plan
-        spec.should == {"foo" => "bar"}
-      end
-      plan = BD::DeploymentPlan.new({"release" => {"foo" => "bar"}})
-      received_plan.should == plan
+    let(:release_spec) do
+      {
+        "name" => "foo",
+        "version" => "23"
+      }
+    end
+
+    let(:releases_spec) do
+      [
+        { "name" => "foo", "version" => "27" },
+        { "name" => "bar", "version" => "42" }
+      ]
+    end
+
+    it "should create a release spec" do
+      plan = BD::DeploymentPlan.new({ "release" => release_spec })
+      plan.releases.size.should == 1
+      release = plan.releases[0]
+      release.should be_kind_of(Bosh::Director::DeploymentPlan::ReleaseSpec)
+      release.name.should == "foo"
+      release.version.should == "23"
+      release.spec.should == release_spec
+
+      plan.release("foo").should == release
     end
 
     it "should fail when the release section is omitted" do
@@ -88,6 +103,37 @@ describe Bosh::Director::DeploymentPlan do
         BD::DeploymentPlan.new({})
       }.should raise_error(BD::ValidationMissingField)
     end
+
+    it "support multiple releases per deployment" do
+      plan = BD::DeploymentPlan.new({ "releases" => releases_spec })
+      plan.releases.size.should == 2
+      plan.releases[0].spec.should == releases_spec[0]
+      plan.releases[1].spec.should == releases_spec[1]
+      plan.releases.each do |release|
+        release.should be_kind_of(Bosh::Director::DeploymentPlan::ReleaseSpec)
+      end
+
+      plan.release("foo").should == plan.releases[0]
+      plan.release("bar").should == plan.releases[1]
+    end
+
+    it "supports either 'releases' or 'release' manifest section, not both" do
+      expect {
+        BD::DeploymentPlan.new({
+                                 "releases" => releases_spec,
+                                 "release" => release_spec
+                               })
+      }.to raise_error(/use one of the two/)
+    end
+
+    it "should detect duplicate release names" do
+      expect {
+        BD::DeploymentPlan.new({
+                                 "releases" => [release_spec, release_spec]
+                               })
+      }.to raise_error(/duplicate release name/i)
+    end
+
   end
 
   describe :parse_networks do

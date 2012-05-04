@@ -5,7 +5,8 @@ module Bosh::Director::Models
     one_to_many :versions, :class => "Bosh::Director::Models::ReleaseVersion"
     one_to_many :packages
     one_to_many :templates
-    one_to_many :deployments
+
+    many_to_many :deployments
 
     def validate
       validates_presence :name
