@@ -41,6 +41,7 @@ describe Bosh::Director::PackageCompiler do
 
   describe :compile do
     it "should do nothing if everything is compiled" do
+      @package_compiler.should_receive(:generate_package_indices)
       @package_compiler.should_receive(:generate_compile_tasks)
       @package_compiler.should_receive(:generate_reverse_dependencies)
 
@@ -51,6 +52,7 @@ describe Bosh::Director::PackageCompiler do
     end
 
     it "should compile packages" do
+      @package_compiler.should_receive(:generate_package_indices)
       @package_compiler.should_receive(:generate_compile_tasks)
       @package_compiler.should_receive(:generate_reverse_dependencies)
 

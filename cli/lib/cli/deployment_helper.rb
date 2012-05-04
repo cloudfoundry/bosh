@@ -45,10 +45,14 @@ module Bosh::Cli
         manifest = YAML.load(manifest_yaml)
       end
 
-      if manifest["name"].blank? || manifest["release"].blank? ||
-          manifest["director_uuid"].blank?
+      if manifest["name"].blank? || manifest["director_uuid"].blank?
         err("Invalid manifest `#{File.basename(deployment)}': " +
-                "name, release and director UUID are all required")
+              "name and director UUID are required")
+      end
+
+      if manifest["release"].blank? && manifest["releases"].blank?
+        err("Deployment manifest doesn't have release information: '" +
+              "please add 'release' or 'releases' section")
       end
 
       options[:yaml] ? manifest_yaml : manifest
@@ -94,23 +98,20 @@ module Bosh::Cli
         return false
       end
 
-      print_summary(diff, :release)
-
-      if diff[:release][:name].changed?
-        say("Release name has changed: %s -> %s".red % [
-            diff[:release][:name].old, diff[:release][:name].new])
-        unless confirmed?("This is very serious and potentially destructive " +
-                              "change. ARE YOU SURE YOU WANT TO DO IT?")
-          cancel_deployment
-        end
-      elsif diff[:release][:version].changed?
-        say("Release version has changed: %s -> %s".yellow % [
-            diff[:release][:version].old, diff[:release][:version].new])
-        unless confirmed?("Are you sure you want to deploy this version?")
-          cancel_deployment
-        end
+      if diff[:release]
+        print_summary(diff, :release)
+        warn_about_release_changes(diff[:release])
+        nl
       end
-      nl
+
+      if diff[:releases]
+        print_summary(diff, :releases)
+        # TODO: fix this
+        diff[:releases].each do |release_diff|
+          warn_about_release_changes(release_diff)
+        end
+        nl
+      end
 
       print_summary(diff, :compilation)
       nl
@@ -125,12 +126,12 @@ module Bosh::Cli
 
       diff[:resource_pools].each do |pool|
         old_stemcells << {
-            :name => pool[:stemcell][:name].old,
-            :version => pool[:stemcell][:version].old
+          :name => pool[:stemcell][:name].old,
+          :version => pool[:stemcell][:version].old
         }
         new_stemcells << {
-            :name => pool[:stemcell][:name].new,
-            :version => pool[:stemcell][:version].new
+          :name => pool[:stemcell][:name].new,
+          :version => pool[:stemcell][:version].new
         }
       end
 
@@ -214,7 +215,9 @@ module Bosh::Cli
     def normalize_deployment_manifest(manifest)
       normalized = manifest.dup
 
-      %w(networks jobs resource_pools).each do |section|
+      %w(releases networks jobs resource_pools).each do |section|
+        normalized[section] ||= []
+
         unless normalized[section].kind_of?(Array)
           manifest_error("#{section} is expected to be an array")
         end
@@ -257,6 +260,23 @@ module Bosh::Cli
       end
 
       normalized
+    end
+
+    def warn_about_release_changes(release_diff)
+      if release_diff[:name].changed?
+        say("Release name has changed: %s -> %s".red % [
+          release_diff[:name].old, release_diff[:name].new])
+        unless confirmed?("This is very serious and potentially destructive " +
+                            "change. ARE YOU SURE YOU WANT TO DO IT?")
+          cancel_deployment
+        end
+      elsif release_diff[:version].changed?
+        say("Release version has changed: %s -> %s".yellow % [
+          release_diff[:version].old, release_diff[:version].new])
+        unless confirmed?("Are you sure you want to deploy this version?")
+          cancel_deployment
+        end
+      end
     end
 
   end

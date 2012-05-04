@@ -3,18 +3,16 @@
 module Bosh::Director
   class DeploymentPlan
     class TemplateSpec
-      attr_accessor :deployment
+      attr_reader :name
+
       attr_accessor :template
-      attr_accessor :name
       attr_accessor :packages
 
-      def initialize(deployment, name)
-        @deployment = deployment
+      # @param [String] name Template name
+      def initialize(name)
         @name = name
-      end
-
-      def method_missing(method_name, *args)
-        @template.send(method_name, *args)
+        @template = nil
+        @packages = {}
       end
     end
   end

@@ -22,7 +22,7 @@ end
 module Bosh::Director::Models
 
   Release.blueprint do
-    name     { Sham.name }
+    name { Sham.name }
   end
 
   ReleaseVersion.blueprint do
@@ -64,7 +64,6 @@ module Bosh::Director::Models
   end
 
   Deployment.blueprint do
-    release   { Release.make }
     name      { Sham.name }
     manifest  { Sham.manifest }
   end
