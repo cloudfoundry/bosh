@@ -7,29 +7,43 @@ module Bosh::Director
     attr_accessor :ready_tasks
     attr_accessor :network_reservations
 
+    # @param [Bosh::Director::DeploymentPlan] deployment_plan Deployment plan
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
+
       @cloud = Config.cloud
       @event_log = Config.event_log
       @logger = Config.logger
+      @job = Config.current_job
+
       @tasks_mutex = Mutex.new
       @networks_mutex = Mutex.new
-      @job = Config.current_job
-      @network = @deployment_plan.compilation.network
-      @compilation_resources = @deployment_plan.compilation.cloud_properties
-      @compilation_env = @deployment_plan.compilation.env
+
+      compilation_config = @deployment_plan.compilation
+
+      @network = compilation_config.network
+      @compilation_resources = compilation_config.cloud_properties
+      @compilation_env = compilation_config.env
+
       @vm_reuser = VmReuser.new
     end
 
     def compile
       @ready_tasks = []
+
+      @logger.info("Building package index for this release")
+      generate_package_indices
+
+      # TODO: probably can be made easier to read if scheduling is decoupled
+      #       from the actual compilation
+      @logger.info("Generating a list of compile tasks")
       generate_compile_tasks
       generate_reverse_dependencies
 
       @compile_tasks.each_value do |task|
         if task.ready_to_compile?
           @logger.info("Marking package ready for compilation: `%s/%s'" % [
-              task.package.name, stemcell_name_version(task.stemcell)])
+            task.package.name, stemcell_name_version(task.stemcell)])
           @ready_tasks << task
         end
       end
@@ -48,7 +62,9 @@ module Bosh::Director
 
     def compile_packages
       @event_log.begin_stage("Compiling packages", compilation_count)
-      ThreadPool.new(:max_threads => @deployment_plan.compilation.workers).wrap do |pool|
+      number_of_workers = @deployment_plan.compilation.workers
+
+      ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
         begin
           loop do
             # process as many tasks without waiting
@@ -64,7 +80,7 @@ module Bosh::Director
             sleep(0.1)
           end
         ensure
-          # Delete all of the VMs if we were reusing complation VMs.  This can't
+          # Delete all of the VMs if we were reusing compilation VMs. This can't
           # happen until everything was done compiling.
           if @deployment_plan.compilation.reuse_compilation_vms
             @vm_reuser.each do |vm_data|
@@ -84,12 +100,14 @@ module Bosh::Director
 
       with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
         if @job && @job.task_cancelled?
-          @logger.info("Cancelled compiling package #{package_desc} on stemcell #{stemcell_desc}")
+          @logger.info("Cancelled compiling package #{package_desc} " +
+                         "on stemcell #{stemcell_desc}")
         else
           @event_log.track(package_desc) do
             compile_package(task)
             enqueue_unblocked_tasks(task)
-            @logger.info("Finished compiling package: #{package_desc} on stemcell: #{stemcell_desc}")
+            @logger.info("Finished compiling package: #{package_desc} " +
+                           "on stemcell: #{stemcell_desc}")
           end
         end
       end
@@ -138,7 +156,6 @@ module Bosh::Director
       stemcell = task.stemcell
 
       build = generate_build_number(package, stemcell)
-
       agent_task = nil
 
       @logger.info("Compiling package: #{package.name}/#{package.version} on " +
@@ -186,8 +203,8 @@ module Bosh::Director
           return
         end
         # This shouldn't happen. If it does there's a bug.
-        if (@vm_reuser.get_num_vms(stemcell) >=
-            @deployment_plan.compilation.workers)
+        if @vm_reuser.get_num_vms(stemcell) >=
+          @deployment_plan.compilation.workers
           raise "There should never be more VMs for a stemcell than the " +
                 "number of workers in reuse_compilation_vms mode."
         end
@@ -201,7 +218,7 @@ module Bosh::Director
       end
 
       network_settings = {
-          @network.name => @network.network_settings(reservation)
+        @network.name => @network.network_settings(reservation)
       }
 
       vm = VmCreator.new.create(@deployment_plan.deployment, stemcell,
@@ -248,8 +265,8 @@ module Bosh::Director
           dependencies.each do |blocked_task|
             if blocked_task.ready_to_compile?
               @logger.info("Marking unblocked package for compilation: " +
-                  "#{blocked_task.package.name}/" +
-                  "#{stemcell_name_version(blocked_task.stemcell)}")
+                             "#{blocked_task.package.name}/" +
+                             stemcell_name_version(blocked_task.stemcell))
               @ready_tasks << blocked_task
             end
           end
@@ -257,50 +274,63 @@ module Bosh::Director
       end
     end
 
-    def generate_dependency_key(dependencies)
-      dependency_key = []
-      dependencies.each do |dependency|
-        package = @packages_by_name[dependency]
-        dependency_key << [package.name, package.version]
-      end
-      dependency_key.sort! { |a, b| a.first <=> b.first }
-      Yajl::Encoder.encode(dependency_key)
+    # Returns JSON-encoded stable representation of package dependencies. This
+    # representation doesn't include release name, so differentiating packages
+    # with the same name from different releases is up to the caller.
+    # @param [Array<Bosh::Director::Models::Package>] packages List of packages
+    # @return [String] JSON-encoded dependency key
+    def generate_dependency_key(packages)
+      key = packages.map { |package| [package.name, package.version] }
+      key.sort! { |a, b| a.first <=> b.first }
+
+      Yajl::Encoder.encode(key)
     end
 
+    # Generates all compilation tasks required to compile all packages
+    # in the jobs defined by deployment plan
+    # @return [void]
     def generate_compile_tasks
-      generate_package_index
-
-      @logger.info("Generating a list of compile tasks")
       @compile_tasks = {}
+
       @deployment_plan.jobs.each do |job|
-        @logger.info("Processing job: #{job.name}")
-        stemcell = job.resource_pool.stemcell.stemcell
-        @logger.info("Job will be deployed on: " +
-            "#{stemcell_name_version(job.resource_pool.stemcell)}")
-        template = job.template
-        template.packages.each do |package|
-          process_package(package, stemcell, job)
+        @logger.info("Processing job: #{job.release.name}/#{job.name}")
+        stemcell = job.resource_pool.stemcell
+
+        @logger.info("Job will be compiled for: " +
+                       stemcell_name_version(stemcell))
+
+        job.template.packages.each do |package|
+          schedule_compilation(job, package, stemcell.stemcell)
         end
       end
 
       bind_dependent_tasks
     end
 
-    def process_package(package, stemcell, job)
+    # Schedules package compilation for a given (package, stemcell) tuple
+    # @param [Bosh::Director::DeploymentPlan::JobSpec] job Job spec
+    # @param [Bosh::Director::Models::Package] package Package model
+    # @param [Bosh::Director::Models::Stemcell] stemcell Stemcell model
+    def schedule_compilation(job, package, stemcell)
       @logger.info("Processing package: #{package.name}")
-      dependencies = package.dependency_set
+
+      dependencies = get_dependencies(package)
       dependency_key = generate_dependency_key(dependencies)
-      compiled_package = Models::CompiledPackage[:package_id => package.id,
-                                                 :stemcell_id => stemcell.id,
-                                                 :dependency_key => dependency_key]
+
+      compiled_package = Models::CompiledPackage[
+        :package_id => package.id,
+        :stemcell_id => stemcell.id,
+        :dependency_key => dependency_key
+      ]
+
       if compiled_package
         @logger.info("Found compiled_package: #{compiled_package.id}")
       else
-        @logger.info("Package \"#{package.name}\" needs to be compiled on " +
-                     "\"#{stemcell_name_version(stemcell)}\"")
+        @logger.info("Package '#{package.name}' needs to be compiled on " +
+                       stemcell_name_version(stemcell))
       end
 
-      task_key = [package.name, stemcell.id]
+      task_key = [package.id, stemcell.id]
 
       # Could have been partially created during dependency scan
       compile_task = @compile_tasks[task_key]
@@ -315,17 +345,22 @@ module Bosh::Director
         compile_task.package = package
         compile_task.dependency_key = dependency_key
         compile_task.compiled_package = compiled_package
+
         process_task_dependencies(compile_task, dependencies)
       end
 
       compile_task.add_job(job)
     end
 
+    # @param [Bosh::Director::CompileTask] compile_task Compilation task
+    # @param [Array<Bosh::Director::Models::Package>] dependencies Dependencies
+    #   of the compile task package
     def process_task_dependencies(compile_task, dependencies)
       @logger.info("Processing dependencies")
+
       dependencies.each do |dependency|
-        @logger.info("Processing dependency: #{dependency}")
-        task_key = [dependency, compile_task.stemcell.id]
+        @logger.info("Processing dependency: #{dependency.name}")
+        task_key = [dependency.id, compile_task.stemcell.id]
         dependent_task = @compile_tasks[task_key]
         if dependent_task.nil?
           dependent_task = CompileTask.new(task_key)
@@ -336,34 +371,57 @@ module Bosh::Director
       end
     end
 
-    def generate_package_index
-      @logger.info("Building package index for this release")
-      release_version = @deployment_plan.release.release_version
-      packages = release_version.packages
-      @packages_by_name = {}
-      packages.each { |package| @packages_by_name[package.name] = package }
+    # Generates a number of helpful indices to look up packages.
+    # Treats packages from different releases with the same name as different
+    # packages.
+    # @return [void]
+    def generate_package_indices
+      @package_name_index = {}
+      @package_id_index = {}
+
+      @deployment_plan.releases.each do |release|
+        release_id = release.release.id
+
+        # We bucket packages by release name and package name, as packages
+        # from different releases might have the same name
+        @package_name_index[release_id] = {}
+
+        release.release_version.packages.each do |package|
+          @package_name_index[release_id][package.name] = package
+          @package_id_index[package.id] = package
+        end
+      end
     end
 
-
+    # Traverses compilation tasks, finds and generates their dependencies
     def bind_dependent_tasks
       @logger.info("Filling in compile tasks for dependencies")
       @compile_tasks.each do |key, task|
-        package_name, stemcell_id = key
+        package_id, stemcell_id = key
 
         if task.package.nil?
-          @logger.info("Filling in dependencies for package: #{package_name}")
-          package = @packages_by_name[package_name]
-          dependencies = package.dependency_set
+          package = @package_id_index[package_id]
+
+          @logger.info("Filling in dependencies for package: #{package.name}")
+
+          dependencies = get_dependencies(package)
           dependency_key = generate_dependency_key(dependencies)
-          compiled_package = Models::CompiledPackage[:package_id => package.id,
-                                                     :stemcell_id => stemcell_id,
-                                                     :dependency_key => dependency_key]
+
+          compiled_package = Models::CompiledPackage[
+            :package_id => package.id,
+            :stemcell_id => stemcell_id,
+            :dependency_key => dependency_key
+          ]
+
           task.package = package
           task.dependency_key = dependency_key
           task.compiled_package = compiled_package
           task.dependencies = []
 
-          dependencies.each { |dependency| task.dependencies << @compile_tasks[[dependency, stemcell_id]] }
+          dependencies.each do |dependency|
+            dependency_task_key = [dependency.id, stemcell_id]
+            task.dependencies << @compile_tasks[dependency_task_key]
+          end
         end
       end
     end
@@ -379,18 +437,29 @@ module Bosh::Director
 
     def configure_vm(vm, agent, network_settings)
       state = {
-          "deployment" => @deployment_plan.name,
-          "resource_pool" => "package_compiler",
-          "networks" => network_settings
+        "deployment" => @deployment_plan.name,
+        "resource_pool" => "package_compiler",
+        "networks" => network_settings
       }
 
       vm.update(:apply_spec => state)
       agent.apply(state)
     end
 
+    # Returns the list of dependencies for a given package
+    # @param [Bosh::Director::Models::Package]
+    # @return [Array<Bosh::Director::Models::Package>] List of dependencies
+    def get_dependencies(package)
+      package.dependency_set.map do |dependency_name|
+        @package_name_index[package.release_id][dependency_name]
+      end
+    end
+
     def generate_build_number(package, stemcell)
       build = Models::CompiledPackage.filter(
-          :package_id => package.id, :stemcell_id => stemcell.id).max(:build)
+        :package_id => package.id,
+        :stemcell_id => stemcell.id).max(:build)
+
       build ? build + 1 : 1
     end
 

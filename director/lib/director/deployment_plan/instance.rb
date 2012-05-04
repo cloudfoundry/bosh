@@ -250,7 +250,7 @@ module Bosh::Director
         deployment_plan = @job.deployment
         {
             "deployment" => deployment_plan.name,
-            "release" => deployment_plan.release.spec,
+            "release" => job.release.spec,
             "job" => job.spec,
             "index" => index,
             "networks" => network_settings,

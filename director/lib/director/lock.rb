@@ -12,12 +12,13 @@ module Bosh::Director
       @timeout = opts[:timeout] || 1.0
       @expiration = opts[:expiration] || 10.0
       @logger = Config.logger
+      @refresh_thread = nil
     end
 
     def lock
       acquire
 
-      refresh_lock_thread = Thread.new do
+      @refresh_thread = Thread.new do
         redis = Config.redis
         sleep_interval = [1.0, @expiration/2].max
         begin
@@ -39,11 +40,12 @@ module Bosh::Director
         end
       end
 
-      begin
-        yield
-      ensure
-        refresh_lock_thread.exit
-        delete
+      if block_given?
+        begin
+          yield
+        ensure
+          release
+        end
       end
     end
 
@@ -76,6 +78,11 @@ module Bosh::Director
 
       @lock_expiration = lock_expiration
       @logger.debug("Acquired lock: #{@name}")
+    end
+
+    def release
+      @refresh_thread.exit if @refresh_thread
+      delete
     end
 
     def delete

@@ -2,9 +2,10 @@
 
 module Bosh::Director
   class DeploymentPlanCompiler
-    include DnsHelper
-    include IpUtil
+    include Bosh::Director::DnsHelper
+    include Bosh::Director::IpUtil
 
+    # @param [Bosh::Director::DeploymentPlan] deployment_plan Deployment plan
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
@@ -18,9 +19,12 @@ module Bosh::Director
         # HACK, since canonical uniqueness is not enforced in the DB
         if deployment.nil?
           canonical_name_index = Set.new
-          Models::Deployment.each { |other_deployment| canonical_name_index << canonical(other_deployment.name) }
+          Models::Deployment.each do |other_deployment|
+            canonical_name_index << canonical(other_deployment.name)
+          end
           if canonical_name_index.include?(@deployment_plan.canonical_name)
-            raise "Invalid deployment name: '#{@deployment_plan.name}', canonical name already taken."
+            raise "Invalid deployment name: '#{@deployment_plan.name}', " +
+                    "canonical name already taken."
           end
           deployment = Models::Deployment.create(:name => @deployment_plan.name)
         end
@@ -28,26 +32,45 @@ module Bosh::Director
       end
     end
 
-    def bind_release
-      release_spec = @deployment_plan.release
-      release = Models::Release[:name => release_spec.name]
-      raise "Can't find release" if release.nil?
-      @logger.debug("Found release: #{release.pretty_inspect}")
-      release_spec.release = release
-      release_version = Models::ReleaseVersion[:release_id => release.id,
-                                               :version    => release_spec.version]
-      raise "Can't find release version" if release_version.nil?
-      @logger.debug("Found release version: #{release_version.pretty_inspect}")
-      release_spec.release_version = release_version
+    def bind_releases
+      release_specs = @deployment_plan.releases
 
-      @logger.debug("Locking the release from deletion")
-      deployment = @deployment_plan.deployment
-      deployment.release = release
-      deployment.save
+      release_specs.each do |release_spec|
+        name = release_spec.name
+        version = release_spec.version
 
-      unless deployment.release_versions.include?(release_version)
-        @logger.debug("Binding release version to deployment")
-        deployment.add_release_version(release_version)
+        release = Models::Release[:name => name]
+        if release.nil?
+          raise "Can't find release '#{name}'"
+        end
+
+        @logger.debug("Found release: #{release.pretty_inspect}")
+        release_spec.release = release
+
+        release_version = Models::ReleaseVersion[:release_id => release.id,
+                                                 :version => version]
+
+        if release_version.nil?
+          raise "Can't find release version '#{name}/#{version}'"
+        end
+
+        @logger.debug("Found release version: " +
+                      "#{release_version.pretty_inspect}")
+        release_spec.release_version = release_version
+
+        deployment = @deployment_plan.deployment
+
+        # TODO: this might not be needed anymore, as deployment is
+        #       holding onto release version, release is reachable from there
+        unless deployment.releases.include?(release)
+          @logger.debug("Locking the release from deletion")
+          deployment.add_release(release)
+        end
+
+        unless deployment.release_versions.include?(release_version)
+          @logger.debug("Binding release version to deployment")
+          deployment.add_release_version(release_version)
+        end
       end
     end
 
@@ -321,29 +344,36 @@ module Bosh::Director
     end
 
     def bind_templates
-      release_version = @deployment_plan.release.release_version
+      @deployment_plan.releases.each do |release_spec|
+        release_version = release_spec.release_version
 
-      template_name_index = {}
-      release_version.templates.each do |template|
-        template_name_index[template.name] = template
-      end
+        template_name_index = {}
+        release_version.templates.each do |template|
+          template_name_index[template.name] = template
+        end
 
-      package_name_index = {}
-      release_version.packages.each do |package|
-        package_name_index[package.name] = package
-      end
+        package_name_index = {}
+        release_version.packages.each do |package|
+          package_name_index[package.name] = package
+        end
 
-      @deployment_plan.templates.each do |template_spec|
-        @logger.info("Binding template: #{template_spec.name}")
-        template = template_name_index[template_spec.name]
-        raise "Can't find template: #{template_spec.name}" if template.nil?
-        template_spec.template = template
+        release_spec.templates.each do |template_spec|
+          @logger.info("Binding template: #{template_spec.name}")
+          template = template_name_index[template_spec.name]
+          if template.nil?
+            raise "Can't find template: #{template_spec.name}"
+          end
 
-        packages = []
-        template.package_names.each { |package_name| packages << package_name_index[package_name] }
-        template_spec.packages = packages
+          template_spec.template = template
 
-        @logger.debug("Bound template: #{template_spec.pretty_inspect}")
+          packages = []
+          template.package_names.each do |package_name|
+            packages << package_name_index[package_name]
+          end
+          template_spec.packages = packages
+
+          @logger.debug("Bound template: #{template_spec.pretty_inspect}")
+        end
       end
     end
 
@@ -416,7 +446,7 @@ module Bosh::Director
         state = idle_vm.current_state
         state["job"] = job.spec
         state["index"] = instance.index
-        state["release"] = @deployment_plan.release.spec
+        state["release"] = job.release.spec
 
         idle_vm.vm.update(:apply_spec => state)
 
