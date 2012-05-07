@@ -81,8 +81,8 @@ module Bosh::Director
           file.truncate(file.pos)
         end
 
-        Dir.chdir(File.expand_path("..", __FILE__))
-        @revision = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip
+        Dir.chdir(File.expand_path("../../..", __FILE__))
+        @revision = `(cat REVISION || git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip
 
         @process_uuid = UUIDTools::UUID.random_create.to_s
         @nats_uri = config["mbus"]
