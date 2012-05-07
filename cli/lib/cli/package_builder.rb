@@ -138,6 +138,7 @@ module Bosh::Cli
             ENV["RUBYOPT"] = ENV["RUBYOPT"].sub("-rbundler/setup", "")
           end
           ENV["BUILD_DIR"] = build_dir
+          ENV["RELEASE_DIR"] = @release_dir
           in_build_dir do
             pre_packaging_out = `bash -x pre_packaging 2>&1`
             pre_packaging_out.split("\n").each do |line|
