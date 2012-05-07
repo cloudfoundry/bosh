@@ -81,8 +81,9 @@ module Bosh::Director
           file.truncate(file.pos)
         end
 
-        Dir.chdir(File.expand_path("..", __FILE__))
-        @revision = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip
+        @revision = get_revision
+
+        @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
 
         @process_uuid = UUIDTools::UUID.random_create.to_s
         @nats_uri = config["mbus"]
@@ -101,6 +102,14 @@ module Bosh::Director
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+      end
+
+      def get_revision
+        Dir.chdir(File.expand_path("../../../..", __FILE__))
+        revision_command = "(cat REVISION || " +
+            "git show-ref --head --hash=8 2> /dev/null || " +
+            "echo 00000000) | head -n1"
+        `#{revision_command}`.strip
       end
 
       def configure_db(db_config)
