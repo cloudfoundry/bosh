@@ -6,8 +6,8 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/..)
 stages_dir=$base_dir/stages
 
-spec=$1
-mnt=$(echo "$2" | sed -e 's#/*$##')
+mnt=$(echo "$1" | sed -e 's#/*$##')
+spec=$2
 settings_file=$3
 
 # Generate settings for every stage
@@ -15,7 +15,7 @@ for stage in $stages_dir/*
 do
   if [ -x $stage/config.sh ]
   then
-    $stage/config.sh $3
+    $stage/config.sh $settings_file
   fi
 done
 
