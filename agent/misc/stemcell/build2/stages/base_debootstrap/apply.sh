@@ -26,7 +26,7 @@ fi
 # Use specified mirror
 if [ ! -z "${UBUNTU_MIRROR:-}" ]
 then
-  cache=$UBUNTU_MIRROR
+  mirror=$UBUNTU_MIRROR
 fi
 
 # Bootstrap the base system
