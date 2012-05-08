@@ -124,6 +124,12 @@ module Bosh::Director
         @blobstore
       end
 
+      def cloud_type
+        if @cloud_options
+          @cloud_options["plugin"]
+        end
+      end
+
       def cloud
         @lock.synchronize do
           if @cloud.nil?
