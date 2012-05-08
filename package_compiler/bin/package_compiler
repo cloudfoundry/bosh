@@ -1,4 +1,4 @@
-#!/bin/env ruby
+#!/usr/bin/env ruby
 #
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
@@ -7,30 +7,47 @@ require "bundler/setup"
 
 $:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
 
+require "trollop"
 require "package_compiler"
 
-def usage
-  puts "Usage: package_compiler (compile <manifest> <release_tgz> <blobstore_path> <mbus_uri>) | (apply <apply_spec> <mbus_uri>)"
-  exit 0
+CPIS = %w[aws vsphere]
+COMMANDS = %w[apply compile]
+
+def usage(msg=nil)
+  $stderr.puts "error: #{msg}" if msg
+  $stderr.puts "usage: package_compiler --cpi <cpi> <command> <arguments>"
+  $stderr.puts "  commands:"
+  $stderr.puts "    apply <apply_spec> <mbus_uri>"
+  $stderr.puts "    compile <manifest> <release_tgz> <blobstore_path> <mbus_uri>"
+  exit 1
 end
 
-usage unless ["apply", "compile"].index(ARGV[0])
+options = Trollop::options do
+  opt :cpi, "Cloud Provider Interface", :type => String, :required => true
+  stop_on COMMANDS
+end
 
-options = {}
-case ARGV[0]
-when "compile"
-  usage if ARGV.size != 5
-  options["command"] = ARGV[0]
-  options["manifest"] = ARGV[1]
-  options["release"] = ARGV[2]
-  options["blobstore_options"] = {"blobstore_path" => ARGV[3]}
-  options["agent_uri"] = ARGV[4]
+unless CPIS.include?(options[:cpi])
+  Trollop::die :cpi, "unknown CPI '#{global_options[:cpi]}'"
+end
+
+options["command"] = ARGV.shift
+
+case options["command"]
 when "apply"
-  usage if ARGV.size != 3
-  options["command"] = ARGV[0]
-  options["apply_spec"] = ARGV[1]
-  options["agent_uri"] = ARGV[2]
+  usage "apply requires 2 arguments" unless ARGV.size == 2
+  options["apply_spec"] = ARGV.shift
+  options["agent_uri"] = ARGV.shift
+when "compile"
+  usage "compile requires 4 arguments" unless ARGV.size == 4
+  options["manifest"] = ARGV.shift
+  options["release"] = ARGV.shift
+  options["blobstore_options"] = {"blobstore_path" => ARGV.shift}
+  options["agent_uri"] = ARGV.shift
+when nil
+  usage "no command given"
+else
+  usage "unknown command: #{options["command"]}"
 end
 
-options.delete_if {|k,v| v.nil?}
 Bosh::PackageCompiler::Runner.start(options)

@@ -100,9 +100,18 @@ module Bosh
         spec["release"] = deployment["release"]
         spec["properties"] = deployment["properties"]
         spec["index"] = 0
-        spec["networks"] = {"local" => {"ip" => "127.0.0.1"}}
         spec["packages"] = {}
         spec["configuration_hash"] = {}
+
+        case @options["cpi"]
+        when "vsphere"
+          spec["networks"] = {"local" => {"ip" => "127.0.0.1"}}
+        when "aws"
+          spec["networks"] = {"type" => "dynamic"}
+        else
+          puts "WARNING: no CPI specified"
+        end
+
         spec
       end
 
