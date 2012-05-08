@@ -3,7 +3,7 @@
 module Bosh::Deployer
   class InstanceManager
 
-    DEPLOYMENTS_FILE = "bosh-deployments.yml"
+    include Helpers
 
     attr_reader :state
     attr_accessor :renderer
@@ -25,6 +25,23 @@ module Bosh::Deployer
         Config.logger.info("#{@stage} - #{state} #{task}")
         @index += 1 if state == :finished
       end
+    end
+
+    class << self
+
+      include Helpers
+
+      def create(config)
+        plugin = cloud_plugin(config)
+
+        begin
+          require "deployer/instance_manager/#{plugin}"
+        rescue LoadError
+          raise Error, "Could not find Provider Plugin: #{plugin}"
+        end
+        Bosh::Deployer::InstanceManager.const_get(plugin.capitalize).new(config)
+      end
+
     end
 
     def initialize(config)
@@ -51,7 +68,7 @@ module Bosh::Deployer
     end
 
     def disk_model
-      Config.disk_model
+      nil
     end
 
     def instance_model
@@ -67,6 +84,37 @@ module Bosh::Deployer
       result = yield
       renderer.update(:finished, task)
       result
+    end
+
+    def start
+    end
+
+    def stop
+    end
+
+    def with_lifecycle
+      start
+      yield
+    ensure
+      stop
+    end
+
+    def create_deployment(stemcell_tgz)
+      with_lifecycle do
+        create(stemcell_tgz)
+      end
+    end
+
+    def update_deployment(stemcell_tgz)
+      with_lifecycle do
+        update(stemcell_tgz)
+      end
+    end
+
+    def delete_deployment
+      with_lifecycle do
+        destroy
+      end
     end
 
     def create(stemcell_tgz)
@@ -102,6 +150,12 @@ module Bosh::Deployer
         update_persistent_disk
       end
 
+      unless @apply_spec
+        step "Fetching apply spec" do
+          @apply_spec = agent.release_apply_spec
+        end
+      end
+
       apply(@apply_spec)
 
       step "Waiting for the director" do
@@ -129,12 +183,8 @@ module Bosh::Deployer
     end
 
     def create_stemcell(stemcell_tgz)
-      if File.directory?(stemcell_tgz)
+      unless is_tgz?(stemcell_tgz)
         step "Using existing stemcell" do
-        end
-
-        step "Loading apply spec" do
-          @apply_spec = load_apply_spec("#{stemcell_tgz}/apply_spec.yml")
         end
 
         return stemcell_tgz
@@ -271,28 +321,11 @@ module Bosh::Deployer
 
       %w{blobstore postgres director redis nats aws_registry}.each do |service|
         next unless properties[service]
-        properties[service]["address"] = bosh_ip
+        properties[service]["address"] = service_ip
 
         if override = Config.spec_properties[service]
           properties[service].merge!(override)
         end
-      end
-
-      case Config.cloud_options["plugin"]
-      when "vsphere"
-        properties["vcenter"] =
-          Config.spec_properties["vcenter"] ||
-          Config.cloud_options["properties"]["vcenters"].first.dup
-
-        properties["vcenter"]["address"] ||= properties["vcenter"]["host"]
-      when "aws"
-        properties["aws"] =
-          Config.spec_properties["aws"] ||
-          Config.cloud_options["properties"]["aws"].dup
-
-        properties["aws"]["registry"] = Config.cloud_options["properties"]["registry"]
-        properties["aws"]["stemcell"] = Config.cloud_options["properties"]["stemcell"]
-      else
       end
 
       spec
@@ -309,11 +342,11 @@ module Bosh::Deployer
     end
 
     def discover_bosh_ip
-      if exists? and cloud.respond_to?(:ec2)
-        Config.bosh_ip = cloud.ec2.instances[state.vm_cid].private_ip_address
-        logger.info("discovered bosh ip=#{Config.bosh_ip}")
-      end
-      Config.bosh_ip
+      bosh_ip
+    end
+
+    def service_ip
+      bosh_ip
     end
 
     private

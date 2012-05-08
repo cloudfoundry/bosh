@@ -76,12 +76,4 @@ describe Bosh::Deployer::Config do
     cloud.respond_to?(:registry).should be_true
     cloud.registry.should be_kind_of(Bosh::AwsCloud::RegistryClient)
   end
-
-  it "should not populate disk model" do
-    config = YAML.load_file(spec_asset("test-bootstrap-config-aws.yml"))
-    config["dir"] = @dir
-    Bosh::Deployer::Config.configure(config)
-    disk_model = Bosh::Deployer::Config.disk_model
-    disk_model.should == nil
-  end
 end

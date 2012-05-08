@@ -7,17 +7,14 @@ module Bosh::Deployer
 
     class << self
 
+      include Helpers
+
       attr_accessor :logger, :db, :uuid, :resources, :cloud_options, :spec_properties, :bosh_ip
 
       def configure(config)
-        if config["cloud"].nil?
-          raise ConfigError, "No cloud properties defined"
-        end
-        if config["cloud"]["plugin"].nil?
-          raise ConfigError, "No cloud plugin defined"
-        end
+        plugin = cloud_plugin(config)
 
-        config = deep_merge(load_defaults(config["cloud"]["plugin"]), config)
+        config = deep_merge(load_defaults(plugin), config)
 
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
@@ -65,18 +62,6 @@ module Bosh::Deployer
         @disk_model = nil
         @cloud = nil
         @networks = nil
-      end
-
-      def disk_model
-        if @disk_model.nil?
-          case @cloud_options["plugin"]
-          when "vsphere"
-            require "cloud/vsphere"
-            @disk_model = VSphereCloud::Models::Disk
-          else
-          end
-        end
-        @disk_model
       end
 
       def cloud

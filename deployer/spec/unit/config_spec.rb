@@ -66,19 +66,4 @@ describe Bosh::Deployer::Config do
     agent = Bosh::Deployer::Config.agent
     agent.should be_kind_of(Bosh::Agent::HTTPClient)
   end
-
-  it "should populate disk model" do
-    config = YAML.load_file(spec_asset("test-bootstrap-config.yml"))
-    config["dir"] = @dir
-    Bosh::Deployer::Config.configure(config)
-    disk_model = Bosh::Deployer::Config.disk_model
-    disk_model.should == VSphereCloud::Models::Disk
-    disk_model.columns.should include(:id)
-    disk_model.count.should == 0
-    cid = 22
-    disk_model.insert({:id => cid, :size => 1024})
-    disk_model.count.should == 1
-    disk_model[cid].destroy
-    disk_model.count.should == 0
-  end
 end

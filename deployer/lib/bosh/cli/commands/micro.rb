@@ -5,6 +5,7 @@ require "deployer"
 module Bosh::Cli::Command
   class Micro < Base
     include Bosh::Cli::DeploymentHelper
+    include Bosh::Deployer::Helpers
 
     MICRO_DIRECTOR_PORT = 25555
     DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_deployer_config")
@@ -96,7 +97,7 @@ module Bosh::Cli::Command
 
         confirmation = "Updating"
 
-        method = :update
+        method = :update_deployment
       else
         if deployer.exists?
           err "Instance exists.  Did you mean to --update?"
@@ -104,12 +105,12 @@ module Bosh::Cli::Command
 
         confirmation = "Deploying new"
 
-        method = :create
+        method = :create_deployment
       end
 
       confirm_deployment("#{confirmation} micro BOSH instance #{desc}")
 
-      unless File.directory?(tarball_path)
+      if is_tgz?(tarball_path)
         stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
 
         say("\nVerifying stemcell...")
@@ -159,7 +160,7 @@ module Bosh::Cli::Command
 
       start_time = Time.now
 
-      deployer.destroy
+      deployer.delete_deployment
 
       renderer.finish("done")
 
@@ -207,7 +208,7 @@ module Bosh::Cli::Command
     end
 
     def list
-      file = File.join(work_dir, Bosh::Deployer::InstanceManager::DEPLOYMENTS_FILE)
+      file = File.join(work_dir, DEPLOYMENTS_FILE)
       if File.exists?(file)
         deployments = load_yaml_file(file)["instances"]
       else
@@ -265,12 +266,13 @@ module Bosh::Cli::Command
 
         manifest["dir"] ||= work_dir
         manifest["logging"] ||= {}
-        if manifest["logging"]["level"] == "DEBUG"
-          log_dir = File.dirname(manifest_filename)
-          manifest["logging"]["file"] ||= File.join(log_dir, "bosh_micro_deploy.log")
+        unless manifest["logging"]["file"]
+          log_file = File.join(File.dirname(manifest_filename),
+                               "bosh_micro_deploy.log")
+          manifest["logging"]["file"] = log_file
         end
 
-        @deployer = Bosh::Deployer::InstanceManager.new(manifest)
+        @deployer = Bosh::Deployer::InstanceManager.create(manifest)
 
         $stderr.reopen("/dev/null") #silence ssl warnings
       end

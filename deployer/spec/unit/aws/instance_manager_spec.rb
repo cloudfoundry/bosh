@@ -11,7 +11,7 @@ describe Bosh::Deployer::InstanceManager do
     @config["dir"] = @dir
     @config["name"] = "spec-#{UUIDTools::UUID.random_create.to_s}"
     @config["logging"] = { "file" => "#{@dir}/bmim.log" }
-    @deployer = Bosh::Deployer::InstanceManager.new(@config)
+    @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = mock("cloud")
     @ec2 = mock("ec2")
     @cloud.stub(:ec2).and_return(@ec2)
@@ -34,12 +34,12 @@ describe Bosh::Deployer::InstanceManager do
     instances = mock("instances")
     @ec2.should_receive(:instances).and_return(instances)
     instances.should_receive(:[]).with(id).and_return(instance)
-    instance.should_receive(:private_ip_address).and_return(ip)
+    instance.should_receive(:public_ip_address).and_return(ip)
   end
 
   it "should update the apply spec" do
     dummy_ip = "1.2.3.4"
-    Bosh::Deployer::Config.bosh_ip = dummy_ip
+    @deployer.stub!(:service_ip).and_return(dummy_ip)
     spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     @deployer.update_spec(spec)
     props = spec["properties"]
@@ -53,6 +53,7 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it "should apply" do
+    @deployer.stub!(:service_ip).and_return("10.0.0.10")
     spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     updated_spec = @deployer.update_spec(spec.dup)
     @agent.should_receive(:run_task).with(:stop)
@@ -61,7 +62,13 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.apply(spec)
   end
 
+  it "should not populate disk model" do
+    disk_model = @deployer.disk_model
+    disk_model.should == nil
+  end
+
   it "should create a Bosh instance" do
+    @deployer.stub!(:service_ip).and_return("10.0.0.10")
     spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)
@@ -121,6 +128,7 @@ describe Bosh::Deployer::InstanceManager do
   end
 
   it "should update a Bosh instance" do
+    @deployer.stub!(:service_ip).and_return("10.0.0.10")
     spec = YAML.load_file(spec_asset("apply_spec_aws.yml"))
     disk_cid = "22"
     @deployer.stub!(:run_command)

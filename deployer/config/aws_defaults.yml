@@ -24,15 +24,16 @@ cloud:
       secret_access_key:
       ec2_endpoint:
       max_retries: 2
-      default_key_name: dougm
+      default_key_name:
       default_security_groups: []
+      ssh_user: vcap
     registry:
-      endpoint: http://admin:admin@localhost:25777
+      endpoint: http://admin:admin@localhost:25888
       user: admin
       password: admin
     stemcell:
       kernel_id:
-      disk_size: 4096
+      disk: 4096
     agent:
       ntp: []
       blobstore:

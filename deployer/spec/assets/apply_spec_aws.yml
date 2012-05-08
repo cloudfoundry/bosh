@@ -69,9 +69,6 @@ properties:
       agent_timeout: 180
       rogue_agent_alert: 180
 index: 0
-networks:
-  local:
-    ip: 127.0.0.1
 packages:
   ruby:
     name: ruby
