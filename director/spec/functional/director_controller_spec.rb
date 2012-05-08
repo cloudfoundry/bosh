@@ -75,7 +75,8 @@ describe Bosh::Director::Controller do
           "name" => "Test Director",
           "version" => "#{Bosh::Director::VERSION} (#{Bosh::Director::Config.revision})",
           "uuid" => Bosh::Director::Config.uuid,
-          "user" => "admin"
+          "user" => "admin",
+          "cpi"  => "dummy"
       }
 
       Yajl::Parser.parse(last_response.body).should == expected

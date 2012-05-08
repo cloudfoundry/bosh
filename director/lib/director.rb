@@ -577,7 +577,8 @@ module Bosh::Director
         "name"    => Config.name,
         "uuid"    => Config.uuid,
         "version" => "#{VERSION} (#{Config.revision})",
-        "user"    => @user
+        "user"    => @user,
+        "cpi"     => Config.cloud_type
       }
       content_type(:json)
       Yajl::Encoder.encode(status)

@@ -23,4 +23,5 @@ blobstore:
     password:
 
 cloud:
+  plugin: dummy
   # to be added
