@@ -78,11 +78,6 @@ ide0:0.startConnected = "FALSE"
 floppy0.startConnected = "false"
 floppy0.clientDevice = "true"
 
-ethernet0.present = "true"
-ethernet0.virtualDev = "vmxnet3"
-ethernet0.networkName = "VLAN-440"
-ethernet0.addressType = "generated"
-
 guestOSAltName = "$vm_guestos ($vm_arch)"
 guestOS = "$vm_guestos"
 
@@ -94,7 +89,6 @@ toolScripts.beforePowerOff = "true"
 scsi0:0.redo = ""
 
 tools.syncTime = "FALSE"
-ethernet0.generatedAddressOffset = "0"
 tools.remindInstall = "TRUE"
 
 evcCompatibilityMode = "FALSE"
