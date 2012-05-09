@@ -18,7 +18,8 @@ module Bosh::Director
 
         plan_options = {
           "recreate"   => !!options["recreate"],
-          "job_states" => options["job_states"] || { }
+          "job_states" => options["job_states"] || { },
+          "job_rename" => options["job_rename"] || { }
         }
 
         @deployment_plan = DeploymentPlan.new(YAML.load(@manifest), plan_options)
