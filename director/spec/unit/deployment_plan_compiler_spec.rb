@@ -260,6 +260,29 @@ describe Bosh::Director::DeploymentPlanCompiler do
       job.stub(:instance).with(3).and_return(instance)
       job.stub(:resource_pool).and_return(resource_pool)
       @deployment_plan.stub(:job).with("foo").and_return(job)
+      @deployment_plan.stub(:job_rename).and_return({})
+      @deployment_plan.stub(:rename_in_progress?).and_return(false)
+
+      instance.should_receive(:instance=).with(@model)
+      instance.should_receive(:current_state=).with(state)
+      instance.should_receive(:take_network_reservations).with(reservations)
+      resource_pool.should_receive(:mark_active_vm)
+
+      @deployment_plan_compiler.bind_instance(@model, state, reservations)
+    end
+
+    it "should update the instance name if it is being renamed" do
+      state = {"state" => "baz"}
+      reservations = {"net" => "reservation"}
+
+      instance = stub(:InstanceSpec)
+      resource_pool = stub(:ResourcePoolSpec)
+      job = stub(:JobSpec)
+      job.stub(:instance).with(3).and_return(instance)
+      job.stub(:resource_pool).and_return(resource_pool)
+      @deployment_plan.stub(:job).with("bar").and_return(job)
+      @deployment_plan.stub(:job_rename).and_return({"old_name" => "foo", "new_name" => "bar"})
+      @deployment_plan.stub(:rename_in_progress?).and_return(true)
 
       instance.should_receive(:instance=).with(@model)
       instance.should_receive(:current_state=).with(state)
@@ -274,6 +297,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
       reservations = {"net" => "reservation"}
       @deployment_plan.stub(:job).with("foo").and_return(nil)
       @deployment_plan.should_receive(:delete_instance).with(@model)
+      @deployment_plan.stub(:job_rename).and_return({})
+      @deployment_plan.stub(:rename_in_progress?).and_return(false)
 
       @deployment_plan_compiler.bind_instance(@model, state, reservations)
     end
@@ -468,6 +493,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
     it "should make sure the job and index are correct" do
       lambda {
+        @deployment_plan.stub(:job_rename).and_return({})
+        @deployment_plan.stub(:rename_in_progress?).and_return(false)
         BD::Models::Instance.make(
             :deployment => @deployment, :vm => @vm, :job => "bar", :index => 11)
         @deployment_plan_compiler.verify_state(@vm, {

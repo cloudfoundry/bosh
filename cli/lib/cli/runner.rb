@@ -340,6 +340,15 @@ module Bosh::Cli
         power_option "--force"
       end
 
+      command :rename_job do
+        usage "rename <old_job_name> <new_job_name>"
+        desc  "renames a job. NOTE, your deployment manifest must also be " +
+              "updated to reflect the new job name."
+        power_option "--force"
+
+        route :job_rename, :rename
+      end
+
       command :fetch_logs do
         usage  "logs <job> <index>"
         desc   "Fetch job (default) or agent (if option provided) logs"

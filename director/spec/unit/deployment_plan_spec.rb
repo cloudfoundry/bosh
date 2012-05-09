@@ -324,6 +324,12 @@ describe Bosh::Director::DeploymentPlan do
                    %q{Invalid job name: 'bar', canonical name already taken.})
     end
 
+    it "should raise exception if renamed job is being referenced in deployment" do
+      lambda {
+        BD::DeploymentPlan.new({"jobs" => [{"name" => "bar"}]}, {"job_rename" => {"old_name" => "bar", "new_name" => "foo"}})
+      }.should raise_error("Renamed job bar is being referenced in deployment manifest")
+    end
+
     it "should allow you to not have any jobs" do
       BD::DeploymentPlan.new({"jobs" => []}).jobs.should be_empty
       BD::DeploymentPlan.new({}).jobs.should be_empty
