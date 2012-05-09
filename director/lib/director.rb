@@ -306,6 +306,19 @@ module Bosh::Director
       redirect "/tasks/#{task.id}"
     end
 
+    # PUT /deployments/foo/rename_job/dea?new_name=blah
+    put "/deployments/:deployment/rename_job/:job", :consumes => :yaml do
+      options = { "job_rename" =>  { "old_name" => params[:job],
+                                     "new_name" => params["new_name"] } }
+      options["job_rename"]["force"] = true if params["force"] == "true"
+
+      deployment = Models::Deployment.find(:name => params[:deployment])
+      raise DeploymentNotFound.new(name) if deployment.nil?
+
+      task = @deployment_manager.create_deployment(@user, request.body, options)
+      redirect "/tasks/#{task.id}"
+    end
+
     # GET /deployments/foo/jobs/dea/2/logs
     get "/deployments/:deployment/jobs/:job/:index/logs" do
       deployment = params[:deployment]

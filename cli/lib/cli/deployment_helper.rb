@@ -54,6 +54,27 @@ module Bosh::Cli
       options[:yaml] ? manifest_yaml : manifest
     end
 
+    # Check if the 2 deployments are different.
+    # Print out a summary if "show" is true.
+    def deployment_changed?(current_manifest, manifest, show=true)
+      diff = Bosh::Cli::HashChangeset.new
+      diff.add_hash(normalize_deployment_manifest(manifest), :new)
+      diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
+      changed = diff.changed?
+
+      if changed && show
+        @_diff_key_visited = { }
+        diff.keys.each do |key|
+          unless @_diff_key_visited[key]
+            print_summary(diff, key)
+            nl
+          end
+        end
+      end
+
+      changed
+    end
+
     # Interactive walkthrough of deployment changes,
     # expected to bail out of CLI using 'cancel_deployment'
     # if something goes wrong, so it doesn't need to have

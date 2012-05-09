@@ -112,6 +112,14 @@ module Bosh::Director
     def bind_instance(instance, state, reservations)
       @logger.debug("Binding instance VM")
 
+      # Update instance, if we are renaming a job.
+      if instance.job == @deployment_plan.job_rename["old_name"]
+        @logger.info("Found instance with old job name #{instance.job}, " +
+                     "updating it to #{@deployment_plan.job_rename["new_name"]}")
+        instance.job = @deployment_plan.job_rename["new_name"]
+        instance.save
+      end
+
       # Does the job instance exist in the new deployment?
       if (job = @deployment_plan.job(instance.job)) &&
           (instance_spec = job.instance(instance.index))
@@ -190,12 +198,21 @@ module Bosh::Director
             vm.cid, actual_job, actual_index]
       end
 
-      if instance && (instance.job != actual_job ||
-                      instance.index != actual_index)
-        raise ("VM `%s' is out of sync: it reports itself as `%s/%s' but " +
-            "according to DB it is `%s/%s'") % [
-            vm.cid, actual_job, actual_index, instance.job,
-            instance.index]
+      if instance && (instance.job != actual_job || instance.index != actual_index)
+        # Check if we are resuming a previously unfinished rename
+        if actual_job == @deployment_plan.job_rename["old_name"] &&
+           instance.job == @deployment_plan.job_rename["new_name"] &&
+           instance.index == actual_index
+          unless @deployment_plan.job_rename["force"]
+            raise("Found a job #{actual_job} that seems to be in the middle of " +
+                  "a rename to #{instance.job}. Use --force to continue")
+          end
+        else
+          raise ("VM `%s' is out of sync: it reports itself as `%s/%s' but " +
+              "according to DB it is `%s/%s'") % [
+              vm.cid, actual_job, actual_index, instance.job,
+              instance.index]
+        end
       end
     end
 

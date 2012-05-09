@@ -39,12 +39,15 @@ module Bosh::Director
     attr_accessor :unneeded_vms
     attr_accessor :dns_domain
     attr_reader :jobs
+    attr_reader :job_rename
     attr_reader :recreate
 
     def initialize(manifest, options = {})
       @manifest = manifest
       @recreate = !!options["recreate"]
       @job_states = safe_property(options, "job_states", :class => Hash,
+                                  :default => {})
+      @job_rename = safe_property(options, "job_rename", :class => Hash,
                                   :default => {})
       @templates = {}
       @unneeded_vms = []
@@ -144,6 +147,10 @@ module Bosh::Director
 
         if state_overrides
           job.recursive_merge!(state_overrides)
+        end
+
+        if @job_rename["old_name"] && @job_rename["old_name"] == job["name"]
+          raise "Renamed job #{job["name"]} is being referenced in deployment manifest"
         end
 
         job = JobSpec.new(self, job)
