@@ -267,14 +267,26 @@ module Bosh::Director
     end
 
     # PUT /deployments/foo/jobs/dea?state={started,stopped,detached,restart,recreate}
+    #                             or
+    # PUT /deployments/foo/jobs/dea?new_name=dea_new
     put "/deployments/:deployment/jobs/:job", :consumes => :yaml do
-      options = {
-        "job_states" => {
-          params[:job] => {
-            "state" => params["state"]
+      if params["state"]
+        options = {
+          "job_states" => {
+            params[:job] => {
+              "state" => params["state"]
+            }
           }
         }
-      }
+      else
+        unless params["new_name"]
+          raise InvalidRequest.new("Missing operation on job " +
+                                   "#{params[:job]}")
+        end
+        options = { "job_rename" =>  { "old_name" => params[:job],
+                                       "new_name" => params["new_name"] } }
+        options["job_rename"]["force"] = true if params["force"] == "true"
+      end
 
       deployment = Models::Deployment.find(:name => params[:deployment])
       raise DeploymentNotFound.new(name) if deployment.nil?

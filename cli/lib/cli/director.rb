@@ -203,6 +203,18 @@ module Bosh
                           manifest_yaml, :log_type => "event")
       end
 
+      def rename_job(deployment_name, manifest_yaml, old_name, new_name,
+                     force = nil)
+        url = "/deployments/#{deployment_name}/jobs/#{old_name}"
+
+        rename_params = ["new_name=#{new_name}"]
+        rename_params << "force=true" if force
+
+        url += "?#{rename_params.join("&")}" if rename_params.size > 0
+        request_and_track(:put, url, "text/yaml",
+                          manifest_yaml, :log_type => "event")
+      end
+
       def fetch_logs(deployment_name, job_name, index, log_type, filters = nil)
         url = "/deployments/#{deployment_name}/jobs/#{job_name}" +
             "/#{index}/logs?type=#{log_type}&filters=#{filters}"
