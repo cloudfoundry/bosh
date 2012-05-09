@@ -20,43 +20,30 @@ module Bosh::Agent
         logger.info("MigrateDisk:" + args.inspect)
         @old_cid, @new_cid = args
 
-        300.times do |n|
-          break if `lsof -t +D #{store_path}`.empty? && `lsof -t +D #{store_migration_target}`.empty?
-          if n == 299
-            raise Bosh::Agent::MessageHandlerError,
-              "Failed to migrate store to new disk still processes with open files"
-          end
-          sleep 1
-        end
+        DiskUtil.umount_guard(store_path)
 
-        # TODO: remount old store read-only
+        mount_store(@old_cid, "-o ro") #read-only
+
         if check_mountpoints
           logger.info("Copy data from old to new store disk")
           `(cd #{store_path} && tar cf - .) | (cd #{store_migration_target} && tar xpf -)`
         end
 
-        unmount_store
-        unmount_store_migration_target
-        mount_new_store
+        DiskUtil.umount_guard(store_path)
+        DiskUtil.umount_guard(store_migration_target)
+
+        mount_store(@new_cid)
       end
 
       def check_mountpoints
         Pathname.new(store_path).mountpoint? && Pathname.new(store_migration_target).mountpoint?
       end
 
-      def unmount_store
-        `umount #{store_path}`
-      end
-
-      def unmount_store_migration_target
-        `umount #{store_migration_target}`
-      end
-
-      def mount_new_store
-        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(@new_cid)
+      def mount_store(cid, options="")
+        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
         partition = "#{disk}1"
         logger.info("Mounting: #{partition} #{store_path}")
-        `mount #{partition} #{store_path}`
+        `mount #{options} #{partition} #{store_path}`
         unless $?.exitstatus == 0
           raise Bosh::Agent::MessageHandlerError, "Failed to mount: #{partition} #{store_path} (exit code #{$?.exitstatus})"
         end
@@ -184,8 +171,6 @@ module Bosh::Agent
     end
 
     class UnmountDisk < Base
-      GUARD_RETRIES = 300
-      GUARD_SLEEP = 1
 
       def self.long_running?; true; end
 
@@ -200,43 +185,13 @@ module Bosh::Agent
 
         if DiskUtil.mount_entry(partition)
           @block, @mountpoint = DiskUtil.mount_entry(partition).split
-          lsof_guard
-          umount_guard
+          DiskUtil.umount_guard(@mountpoint)
           logger.info("Unmounted #{@block} on #{@mountpoint}")
           return {:message => "Unmounted #{@block} on #{@mountpoint}" }
         else
           # TODO: should we raise MessageHandlerError here?
           return {:message => "Unknown mount for partition: #{partition}"}
         end
-      end
-
-      def lsof_guard
-        lsof_attempts = GUARD_RETRIES
-        until lsof_output = `lsof -t +D #{@mountpoint}`.empty?
-          sleep GUARD_SLEEP
-          lsof_attempts -= 1
-          if lsof_attempts == 0
-            raise Bosh::Agent::MessageHandlerError, "Failed lsof guard #{@block} on #{@mountpoint}: #{lsof_output}"
-          end
-        end
-        logger.info("Unmount lsof_guard (attempts: #{GUARD_RETRIES-lsof_attempts})")
-      end
-
-      def umount_guard
-        umount_attempts = GUARD_RETRIES
-        loop {
-          umount_output = `umount #{@mountpoint}`
-          if $?.exitstatus == 0
-            break
-          else
-            sleep GUARD_SLEEP
-            umount_attempts -= 1
-            if umount_attempts == 0
-              raise Bosh::Agent::MessageHandlerError, "Failed to umount #{@block} on #{@mountpoint}: #{umount_output}"
-            end
-          end
-        }
-        logger.info("Unmount umount_guard (attempts: #{GUARD_RETRIES-umount_attempts})")
       end
     end
 
@@ -252,6 +207,32 @@ module Bosh::Agent
 
         def mount_entry(partition)
           File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+        end
+
+        GUARD_RETRIES = 600
+        GUARD_SLEEP = 1
+
+        def umount_guard(mountpoint)
+          umount_attempts = GUARD_RETRIES
+
+          loop do
+            umount_output = `umount #{mountpoint} 2>&1`
+
+            if $?.exitstatus == 0
+              break
+            elsif umount_attempts != 0 && umount_output =~ /device is busy/
+              #when umount2 syscall fails and errno == EBUSY, umount.c outputs:
+              # "umount: %s: device is busy.\n"
+              sleep GUARD_SLEEP
+              umount_attempts -= 1
+            else
+              raise Bosh::Agent::MessageHandlerError,
+                "Failed to umount #{mountpoint}: #{umount_output}"
+            end
+          end
+
+          attempts = GUARD_RETRIES - umount_attempts
+          logger.info("umount_guard #{mountpoint} succeeded (#{attempts})")
         end
 
         # Pay a penalty on this check the first time a persistent disk is added to a system
