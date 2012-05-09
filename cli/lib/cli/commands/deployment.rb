@@ -38,12 +38,16 @@ module Bosh::Cli::Command
         old_director_uuid = nil
       end
 
-      if old_director_uuid != manifest["director_uuid"]
-        new_target_url = config.resolve_alias(:target,
-                                              manifest["director_uuid"])
+      new_director_uuid = manifest["director_uuid"]
+
+      if old_director_uuid != new_director_uuid
+        new_target_url = config.resolve_alias(:target, new_director_uuid)
+
         if new_target_url.blank?
-          err("Cannot find director url for " +
-              "UUID '#{manifest["director_uuid"]}'")
+          err("This manifest references director with UUID " +
+                "#{new_director_uuid}.\n" +
+                "You've never targeted it before.\n" +
+                "Please find your director IP or hostname and target it first.")
         end
 
         new_director = Bosh::Cli::Director.new(new_target_url,
@@ -54,7 +58,7 @@ module Bosh::Cli::Command
         config.target_name = status["name"]
         config.target_version = status["version"]
         config.target_uuid = status["uuid"]
-        say("#{"WARNING!".red} Your target has been" +
+        say("#{"WARNING!".red} Your target has been " +
             "changed to `#{target.red}'!")
       end
 
