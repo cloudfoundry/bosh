@@ -29,7 +29,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     YAML.stub!(:load).with("manifest").and_return(@manifest)
 
-    Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, "recreate" => false, "job_states" => { }).and_return(@deployment_plan)
+    Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, "recreate" => false, "job_states" => { },
+                                                    "job_rename" => { }).and_return(@deployment_plan)
     Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
   end
 

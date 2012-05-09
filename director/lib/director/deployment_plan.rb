@@ -41,6 +41,7 @@ module Bosh::Director
     attr_accessor :dns_domain
 
     attr_reader :jobs
+    attr_reader :job_rename
     attr_reader :recreate
 
     # TODO: decouple initialization from manifest parsing to make testing easier
@@ -51,6 +52,8 @@ module Bosh::Director
                                   :class => Hash, :default => {})
 
       @deployment = nil
+      @job_rename = safe_property(options, "job_rename",
+                                  :class => Hash, :default => {})
       @unneeded_vms = []
       @unneeded_instances = []
       @dns_domain = nil
@@ -129,6 +132,10 @@ module Bosh::Director
       end
     end
 
+    def rename_in_progress?
+      @job_rename["old_name"] && @job_rename["new_name"]
+    end
+
     private
 
     def parse_name
@@ -195,6 +202,11 @@ module Bosh::Director
 
         if state_overrides
           job.recursive_merge!(state_overrides)
+        end
+
+        if rename_in_progress? && @job_rename["old_name"] == job["name"]
+          raise "Renamed job #{job["name"]} is being referenced in " +
+                "deployment manifest"
         end
 
         job = JobSpec.new(self, job)
