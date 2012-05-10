@@ -29,7 +29,7 @@ module Bosh::Director
         handler_class.new(resource_id, data)
       rescue ProblemHandlerError => e
         create_by_type(:invalid_problem, resource_id,
-                       { "error" => e, "original_type" => type.to_s })
+                       {"error" => e, "original_type" => type.to_s})
       end
 
       # Problem state is  described by constructor parameters.
