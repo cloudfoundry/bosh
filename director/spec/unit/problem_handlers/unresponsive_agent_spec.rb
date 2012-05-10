@@ -18,8 +18,10 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
     @instance = Bosh::Director::Models::Instance.make(:job => "mysql_node", :index => 0, :vm_id => @vm.id)
+  end
 
-    @handler = make_handler(@vm, @cloud, @agent)
+  let :handler do
+    make_handler(@vm, @cloud, @agent)
   end
 
   it "registers under unresponsive_agent type" do
@@ -27,35 +29,27 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     handler.should be_kind_of(Bosh::Director::ProblemHandlers::UnresponsiveAgent)
   end
 
-  describe "invalid states" do
-    it "is invalid if VM is gone" do
-      @instance.destroy
-      @vm.destroy
-      lambda {
-        make_handler(@vm, @cloud, @agent)
-      }.should raise_error("VM `#{@vm.id}' is no longer in the database")
-    end
-
-    it "is invalid if there is no cloud id" do
-      @vm.update(:cid => nil)
-      lambda {
-        make_handler(@vm, @cloud, @agent)
-      }.should raise_error("VM `#{@vm.id}' doesn't have a cloud id")
-    end
-  end
-
   it "has well-formed description" do
-    @handler.description.should == "mysql_node/0 (vm-cid) is not responding"
+    handler.description.should == "mysql_node/0 (vm-cid) is not responding"
   end
 
   describe "reboot_vm resolution" do
+    it "skips reboot if CID is not present" do
+      @vm.update(:cid => nil)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      lambda {
+        handler.apply_resolution(:reboot_vm)
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
+                           /doesn't have a cloud id/)
+    end
+
     it "skips reboot if agent is now alive" do
       @agent.should_receive(:ping).and_return(:pong)
 
       lambda {
-        @handler.apply_resolution(:reboot_vm)
+        handler.apply_resolution(:reboot_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Agent is responding now, skipping reboot")
+                           "Agent is responding now, skipping resolution")
     end
 
     it "reboots VM" do
@@ -63,7 +57,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       @cloud.should_receive(:reboot_vm).with("vm-cid")
       @agent.should_receive(:wait_until_ready)
 
-      @handler.apply_resolution(:reboot_vm)
+      handler.apply_resolution(:reboot_vm)
     end
 
     it "reboots VM and whines if it is still unresponsive" do
@@ -72,7 +66,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       @agent.should_receive(:wait_until_ready).and_raise(Bosh::Director::Client::TimeoutException)
 
       lambda {
-        @handler.apply_resolution(:reboot_vm)
+        handler.apply_resolution(:reboot_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Agent still unresponsive after reboot")
     end
@@ -80,20 +74,29 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
   describe "recreate_vm resolution" do
 
+    it "skips recreate if CID is not present" do
+      @vm.update(:cid => nil)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      lambda {
+        handler.apply_resolution(:recreate_vm)
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
+                           /doesn't have a cloud id/)
+    end
+
     it "doesn't recreate VM if agent is now alive" do
       @agent.should_receive(:ping).and_return(:pong)
 
       lambda {
-        @handler.apply_resolution(:recreate_vm)
+        handler.apply_resolution(:recreate_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Agent is responding now, skipping reboot")
+                           "Agent is responding now, skipping resolution")
     end
 
     it "doesn't recreate VM if apply spec is unknown" do
       @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
 
       lambda {
-        @handler.apply_resolution(:recreate_vm)
+        handler.apply_resolution(:recreate_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
                            "Unable to look up VM apply spec")
     end
@@ -239,6 +242,32 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       @instance.vm.cid.should == "new-vm-cid"
       @instance.vm.agent_id.should == "agent-222"
     end
+  end
 
+  describe "delete_vm_reference resolution" do
+    it "skips delete_vm_reference if CID is present" do
+      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      lambda {
+        handler.apply_resolution(:delete_vm_reference)
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
+                           /has a cloud id/)
+    end
+
+    it "skips deleting VM ref if agent is now alive" do
+      @vm.update(:cid => nil)
+      @agent.should_receive(:ping).and_return(:pong)
+
+      lambda {
+        handler.apply_resolution(:delete_vm_reference)
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
+                           "Agent is responding now, skipping resolution")
+    end
+
+    it "deletes VM reference" do
+      @vm.update(:cid => nil)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      handler.apply_resolution(:delete_vm_reference)
+      BD::Models::Vm[@vm.id].should be_nil
+    end
   end
 end

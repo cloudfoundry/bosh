@@ -18,10 +18,6 @@ module Bosh::Director
         if @vm.agent_id.nil?
           handler_error("VM `#{vm_id}' doesn't have an agent id")
         end
-
-        if @vm.cid.nil?
-          handler_error("VM `#{vm_id}' doesn't have a cloud id")
-        end
       end
 
       def description
@@ -35,12 +31,17 @@ module Bosh::Director
 
       resolution :reboot_vm do
         plan { "Reboot VM" }
-        action { validate; reboot_vm(@vm) }
+        action { validate; ensure_cid; reboot_vm(@vm) }
       end
 
       resolution :recreate_vm do
         plan { "Recreate VM using last known apply spec" }
-        action { validate; recreate_vm(@vm) }
+        action { validate; ensure_cid; recreate_vm(@vm) }
+      end
+
+      resolution :delete_vm_reference do
+        plan { "Delete VM reference (DANGEROUS!)" }
+        action { validate; ensure_no_cid; delete_vm_reference(@vm) }
       end
 
       def agent_alive?
@@ -50,10 +51,24 @@ module Bosh::Director
         false
       end
 
+      def ensure_cid
+        if @vm.cid.nil?
+          handler_error("VM `#{@vm.id}' doesn't have a cloud id, " +
+                            "only resolution is to delete the VM reference.")
+        end
+      end
+
+      def ensure_no_cid
+        if @vm.cid
+          handler_error("VM `#{@vm.id}' has a cloud id, " +
+                            "please use a different resolution.")
+        end
+      end
+
       def validate
         # TODO: think about flapping agent problem
         if agent_alive?
-          handler_error("Agent is responding now, skipping reboot")
+          handler_error("Agent is responding now, skipping resolution")
         end
       end
 

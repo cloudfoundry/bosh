@@ -68,6 +68,17 @@ module Bosh::Director
       end
     end
 
+    def delete_vm_reference(vm)
+      if vm.cid
+        handler_error("VM has a CID")
+      end
+
+      vm.db.transaction do
+        vm.instance.update(:vm => nil) if vm.instance
+        vm.destroy
+      end
+    end
+
     def recreate_vm(vm)
       # Best we can do without any feedback from the agent
       # is to use the spec persisted in the DB at the time
