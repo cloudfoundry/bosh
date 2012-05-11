@@ -16,8 +16,7 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     instance.should_receive(:terminate)
-    instance.should_receive(:status).and_return(:deleting)
-    cloud.should_receive(:wait_resource).with(instance, :deleting, :terminated)
+    cloud.should_receive(:wait_resource).with(instance, :terminated)
 
     @registry.should_receive(:delete_settings).with("i-foobar")
 

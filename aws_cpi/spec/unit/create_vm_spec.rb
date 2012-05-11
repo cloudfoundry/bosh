@@ -59,9 +59,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         and_return(instance)
     end
 
-    instance.should_receive(:status).and_return(:pending)
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(instance, :pending, :running)
+    cloud.should_receive(:wait_resource).with(instance, :running)
     @registry.should_receive(:update_settings)
       .with("i-test", agent_settings(unique_name))
 
@@ -98,9 +97,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         and_return(instance)
     end
 
-    instance.should_receive(:status).and_return(:pending)
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(instance, :pending, :running)
+    cloud.should_receive(:wait_resource).with(instance, :running)
     @registry.should_receive(:update_settings)
       .with("i-test", agent_settings(unique_name, network_spec))
 
@@ -121,9 +119,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       ec2.instances.should_receive(:create).and_return(instance)
     end
 
-    instance.should_receive(:status).and_return(:pending)
     instance.should_receive(:associate_elastic_ip).with("10.0.0.1")
-    cloud.should_receive(:wait_resource).with(instance, :pending, :running)
+    cloud.should_receive(:wait_resource).with(instance, :running)
     @registry.should_receive(:update_settings)
 
     vm_id = cloud.create_vm("agent-id", "sc-id",

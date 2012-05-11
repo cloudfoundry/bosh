@@ -30,8 +30,7 @@ describe Bosh::AwsCloud::Cloud do
     volume.should_receive(:detach_from).
       with(instance, "/dev/sdf").and_return(attachment)
 
-    attachment.should_receive(:status).and_return(:detaching)
-    cloud.should_receive(:wait_resource).with(attachment, :detaching, :detached)
+    cloud.should_receive(:wait_resource).with(attachment, :detached)
 
     old_settings = {
       "foo" => "bar",

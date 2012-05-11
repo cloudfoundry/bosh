@@ -11,7 +11,7 @@ describe Bosh::AwsCloud::Helpers do
     cloud.stub(:sleep)
 
     lambda {
-      cloud.wait_resource(resource, :start, :stop, :status, 0.1)
+      cloud.wait_resource(resource, :stop, :status, 0.1)
     }.should raise_error Bosh::Clouds::CloudError, /Timed out/
   end
 
@@ -19,11 +19,11 @@ describe Bosh::AwsCloud::Helpers do
     cloud = mock_cloud
 
     resource = double("resource")
-    resource.stub(:status).and_return(:start, :stop)
+    resource.stub(:status).and_return(:start, :stopping, :stopping, :stop)
     cloud.stub(:sleep)
 
     lambda {
-      cloud.wait_resource(resource, :start, :stop, :status, 0.1)
+      cloud.wait_resource(resource, :stop, :status, 0.1)
     }.should_not raise_error Bosh::Clouds::CloudError
   end
 
@@ -35,8 +35,8 @@ describe Bosh::AwsCloud::Helpers do
     cloud.stub(:sleep)
 
     lambda {
-      cloud.wait_resource(resource, :started, :stopped, :status, 0.1)
+      cloud.wait_resource(resource, :stopped, :status, 0.1)
     }.should raise_error Bosh::Clouds::CloudError,
-                         /is failed, expected to be stopped/
+                         /is failed, expected stopped/
   end
 end

@@ -18,6 +18,7 @@ module Bosh::AwsCloud
 
     attr_reader :ec2
     attr_reader :registry
+    attr_accessor :logger
 
     ##
     # Initialize BOSH AWS CPI
@@ -119,12 +120,9 @@ module Bosh::AwsCloud
 
         @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)
-        state = instance.status
 
-        @logger.info("Creating new instance `#{instance.id}', " \
-                     "state is `#{state}'")
-
-        wait_resource(instance, state, :running)
+        @logger.info("Creating new instance `#{instance.id}'")
+        wait_resource(instance, :running)
 
         network_configurator.configure(@ec2, instance)
 
@@ -137,22 +135,23 @@ module Bosh::AwsCloud
 
     ##
     # Terminates EC2 instance and waits until it reports as terminated
-    # @param [String] vm_id Running instance id
+    # @param [String] instance_id Running instance id
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
         instance = @ec2.instances[instance_id]
 
         instance.terminate
-        state = instance.status
 
-        # TODO: should this be done before or after deleting VM?
-        @logger.info("Deleting instance settings for `#{instance.id}'")
-        @registry.delete_settings(instance.id)
+        begin
+          # TODO: should this be done before or after deleting VM?
+          @logger.info("Deleting instance settings for `#{instance.id}'")
+          @registry.delete_settings(instance.id)
 
-        @logger.info("Deleting instance `#{instance.id}', " \
-                     "state is `#{state}'")
-
-        wait_resource(instance, state, :terminated)
+          @logger.info("Deleting instance `#{instance.id}'")
+          wait_resource(instance, :terminated)
+        rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
+          # It's OK, just means that instance has already been deleted
+        end
       end
     end
 
@@ -178,11 +177,11 @@ module Bosh::AwsCloud
           raise ArgumentError, "disk size needs to be an integer"
         end
 
-        if (size < 1024)
+        if size < 1024
           cloud_error("AWS CPI minimum disk size is 1 GiB")
         end
 
-        if (size > 1024 * 1000)
+        if size > 1024 * 1000
           cloud_error("AWS CPI maximum disk size is 1 TiB")
         end
 
@@ -199,12 +198,8 @@ module Bosh::AwsCloud
         }
 
         volume = @ec2.volumes.create(volume_params)
-        state = volume.state
-
-        @logger.info("Creating volume `#{volume.id}', " \
-                     "state is `#{state}'")
-
-        wait_resource(volume, state, :available)
+        @logger.info("Creating volume `#{volume.id}'")
+        wait_resource(volume, :available)
 
         volume.id
       end
@@ -227,12 +222,10 @@ module Bosh::AwsCloud
         volume.delete
 
         begin
-          state = volume.state
-          @logger.info("Deleting volume `#{volume.id}', " \
-                       "state is `#{state}'")
-
-          wait_resource(volume, state, :deleted)
+          @logger.info("Deleting volume `#{volume.id}'")
+          wait_resource(volume, :deleted)
         rescue AWS::EC2::Errors::InvalidVolume::NotFound
+          # It's OK, just means the volume has already been deleted
         end
 
         @logger.info("Volume `#{disk_id}' has been deleted")
@@ -318,7 +311,7 @@ module Bosh::AwsCloud
 
             # 3. Create snapshot and then an image using this snapshot
             snapshot = volume.create_snapshot
-            wait_resource(snapshot, snapshot.status, :completed)
+            wait_resource(snapshot, :completed)
 
             image_params = {
               :name => "BOSH-#{generate_unique_name}",
@@ -332,7 +325,7 @@ module Bosh::AwsCloud
             }
 
             image = @ec2.images.create(image_params)
-            wait_resource(image, image.state, :available, :state)
+            wait_resource(image, :available, :state)
 
             image.id
           end
@@ -458,12 +451,9 @@ module Bosh::AwsCloud
         cloud_error("Instance has too many disks attached")
       end
 
-      state = new_attachment.status
+      @logger.info("Attaching `#{volume.id}' to `#{instance.id}'")
+      wait_resource(new_attachment, :attached)
 
-      @logger.info("Attaching `#{volume.id}' to #{instance.id}, " \
-                   "state is #{state}'")
-
-      wait_resource(new_attachment, state, :attached)
       device_name = new_attachment.device
 
       @logger.info("Attached `#{volume.id}' to `#{instance.id}', " \
@@ -486,15 +476,12 @@ module Bosh::AwsCloud
       end
 
       attachment = volume.detach_from(instance, device_map[volume.id])
-      state = attachment.status
-
-      @logger.info("Detaching `#{volume.id}' from `#{instance.id}', " \
-                   "state is #{state}'")
+      @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
       begin
-        wait_resource(attachment, state, :detached)
+        wait_resource(attachment, :detached)
       rescue AWS::Core::Resource::NotFound
-        # It's OK, just means attachment is gone when we're asking for state
+        # It's OK, just means attachment is gone by now
       end
     end
 
@@ -554,20 +541,13 @@ module Bosh::AwsCloud
       # N.B. This will only work with ebs-store instances,
       # as instance-store instances don't support stop/start.
       instance.stop
-      state = instance.status
 
-      @logger.info("Stopping instance `#{instance.id}', " \
-                   "state is `#{state}'")
-
-      wait_resource(instance, state, :stopped)
+      @logger.info("Stopping instance `#{instance.id}'")
+      wait_resource(instance, :stopped)
 
       instance.start
-      state = instance.status
-
-      @logger.info("Starting instance `#{instance.id}', " \
-                   "state is `#{state}'")
-
-      wait_resource(instance, state, :running)
+      @logger.info("Starting instance `#{instance.id}'")
+      wait_resource(instance, :running)
     end
 
     ##

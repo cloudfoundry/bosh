@@ -68,9 +68,7 @@ describe Bosh::AwsCloud::Cloud do
       volume.should_receive(:attach_to).with(current_instance, "/dev/sdh").
         and_return(attachment)
 
-      attachment.should_receive(:status).and_return(:attaching)
-      cloud.should_receive(:wait_resource).
-        with(attachment, :attaching, :attached)
+      cloud.should_receive(:wait_resource).with(attachment, :attached)
 
       cloud.stub(:sleep)
 
@@ -83,20 +81,14 @@ describe Bosh::AwsCloud::Cloud do
       cloud.should_receive(:copy_root_image).with(@tmp_dir, "/dev/xvdh")
 
       volume.should_receive(:create_snapshot).and_return(snapshot)
-      snapshot.should_receive(:status).and_return(:in_progress)
-      cloud.should_receive(:wait_resource).
-        with(snapshot, :in_progress, :completed)
+      cloud.should_receive(:wait_resource).with(snapshot, :completed)
 
-      image.should_receive(:state).and_return(:creating)
-      cloud.should_receive(:wait_resource).with(image,
-                                                :creating, :available, :state)
+      cloud.should_receive(:wait_resource).with(image, :available, :state)
 
       volume.should_receive(:detach_from).with(current_instance, "/dev/sdh").
         and_return(attachment)
 
-      attachment.should_receive(:status).and_return(:detaching)
-      cloud.should_receive(:wait_resource).
-        with(attachment, :detaching, :detached)
+      cloud.should_receive(:wait_resource).with(attachment, :detached)
 
       cloud.should_receive(:delete_disk).with("v-foo")
 

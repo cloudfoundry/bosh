@@ -57,7 +57,7 @@ Bosh::Clouds::Config.configure(cloud_config)
 include ConsoleHelpers
 
 begin
-  require 'ruby-debug'
+  require "ruby-debug"
   puts "=> Debugger enabled"
 rescue LoadError
   puts "=> ruby-debug not found, debugger disabled"

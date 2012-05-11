@@ -25,14 +25,12 @@ describe Bosh::AwsCloud::Cloud do
   it "hard reboots an EC2 instance" do
     # N.B. This requires ebs-store instance
     @instance.should_receive(:stop).ordered
-    @instance.should_receive(:status).ordered.and_return(:stopping)
     @cloud.should_receive(:wait_resource).
-      with(@instance, :stopping, :stopped).ordered
+      with(@instance, :stopped).ordered
 
     @instance.should_receive(:start)
-    @instance.should_receive(:status).and_return(:starting)
     @cloud.should_receive(:wait_resource).ordered.
-      with(@instance, :starting, :running)
+      with(@instance, :running)
 
     @cloud.send(:hard_reboot, @instance)
   end

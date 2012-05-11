@@ -16,8 +16,7 @@ describe Bosh::AwsCloud::Cloud do
       ec2.volumes.should_receive(:create).with(disk_params).and_return(volume)
     end
 
-    volume.should_receive(:state).and_return(:creating)
-    cloud.should_receive(:wait_resource).with(volume, :creating, :available)
+    cloud.should_receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(2048).should == "v-foobar"
   end
@@ -34,8 +33,7 @@ describe Bosh::AwsCloud::Cloud do
       ec2.volumes.should_receive(:create).with(disk_params).and_return(volume)
     end
 
-    volume.should_receive(:state).and_return(:creating)
-    cloud.should_receive(:wait_resource).with(volume, :creating, :available)
+    cloud.should_receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(2049)
   end
@@ -67,8 +65,7 @@ describe Bosh::AwsCloud::Cloud do
       ec2.instances.stub(:[]).with("i-test").and_return(instance)
     end
 
-    volume.should_receive(:state).and_return(:creating)
-    cloud.should_receive(:wait_resource).with(volume, :creating, :available)
+    cloud.should_receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(1024, "i-test")
   end
