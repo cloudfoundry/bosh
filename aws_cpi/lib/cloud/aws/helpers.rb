@@ -52,6 +52,30 @@ module Bosh::AwsCloud
                     "expected to be #{target_state}")
       end
     end
+
+    # gets the availability zone the disk list is using
+    def get_availability_zone(disks, default)
+      availability_zone = nil
+
+      if disks
+        disks.each do |disk_cid|
+          disk = @ec2.volumes[disk_cid]
+          if availability_zone && availability_zone != disk.availability_zone
+            raise "can't use multiple availability zones"
+          end
+          availability_zone = disk.availability_zone
+        end
+      end
+
+      if availability_zone && default && availability_zone != default
+        raise "can't use multiple availability zones"
+      elsif availability_zone.nil? && default
+        availability_zone = default
+      end
+
+      availability_zone
+    end
+
   end
 
 end

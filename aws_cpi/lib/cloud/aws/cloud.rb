@@ -94,11 +94,6 @@ module Bosh::AwsCloud
           }
         }
 
-        if disk_locality
-          # TODO: use as hint for availability zones
-          @logger.debug("Disk locality is ignored by AWS CPI")
-        end
-
         security_groups =
           network_configurator.security_groups(@default_security_groups)
         @logger.debug("using security groups: #{security_groups.join(', ')}")
@@ -112,7 +107,9 @@ module Bosh::AwsCloud
           :user_data => Yajl::Encoder.encode(user_data)
         }
 
-        availability_zone = resource_pool["availability_zone"]
+        rpaz = resource_pool["availability_zone"]
+        availability_zone = get_availability_zone(disk_locality, rpaz)
+
         if availability_zone
           instance_params[:availability_zone] = availability_zone
         end
