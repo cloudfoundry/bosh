@@ -128,4 +128,56 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
                             combined_network_spec)
   end
 
+  def volume(zone)
+    vol = double("volume")
+    vol.stub(:availability_zone).and_return(zone)
+    vol
+  end
+
+  describe "#select_availability_zone" do
+
+    it "should select the default availability_zone when all values are nil" do
+      cloud = mock_cloud
+      cloud.select_availability_zone(nil, nil).should ==
+        Bosh::AwsCloud::Cloud::DEFAULT_AVAILABILITY_ZONE
+    end
+
+    it "should select the zone from a list of disks" do
+      cloud = mock_cloud do |ec2|
+        ec2.volumes.stub(:[]).and_return(volume("foo"), volume("foo"))
+      end
+      cloud.select_availability_zone(%w[cid1 cid2], nil).should == "foo"
+    end
+
+    it "should select the zone from a list of disks and a default" do
+      cloud = mock_cloud do |ec2|
+        ec2.volumes.stub(:[]).and_return(volume("foo"), volume("foo"))
+      end
+      cloud.select_availability_zone(%w[cid1 cid2], "foo").should == "foo"
+    end
+  end
+
+  describe "#ensure_same_availability_zone" do
+    it "should raise an error when the zones differ" do
+      cloud = mock_cloud
+      lambda {
+        cloud.ensure_same_availability_zone([volume("foo"), volume("bar")], nil)
+      }.should raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should raise an error when the zones differ" do
+      cloud = mock_cloud
+      lambda {
+        cloud.ensure_same_availability_zone([volume("foo"), volume("bar")], "foo")
+      }.should raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should raise an error when the zones differ" do
+      cloud = mock_cloud
+      lambda {
+        cloud.ensure_same_availability_zone([volume("foo"), volume("foo")], "bar")
+      }.should raise_error Bosh::Clouds::CloudError
+    end
+  end
+
 end

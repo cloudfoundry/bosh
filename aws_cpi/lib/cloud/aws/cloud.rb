@@ -95,11 +95,6 @@ module Bosh::AwsCloud
           }
         }
 
-        if disk_locality
-          # TODO: use as hint for availability zones
-          @logger.debug("Disk locality is ignored by AWS CPI")
-        end
-
         security_groups =
           network_configurator.security_groups(@default_security_groups)
         @logger.debug("using security groups: #{security_groups.join(', ')}")
@@ -113,10 +108,9 @@ module Bosh::AwsCloud
           :user_data => Yajl::Encoder.encode(user_data)
         }
 
-        availability_zone = resource_pool["availability_zone"]
-        if availability_zone
-          instance_params[:availability_zone] = availability_zone
-        end
+        instance_params[:availability_zone] =
+          select_availability_zone(disk_locality,
+          resource_pool["availability_zone"])
 
         @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)
@@ -352,6 +346,32 @@ module Bosh::AwsCloud
     def validate_deployment(old_manifest, new_manifest)
       # Not implemented in VSphere CPI as well
       not_implemented(:validate_deployment)
+    end
+
+    # Selects the availability zone to use from a list of disk volumes,
+    # resource pool availability zone (if any) and the default availability
+    # zone.
+    # @param [Hash] volumes volume ids to attach to the vm
+    # @param [String] resource_pool_az availability zone specified in
+    #   the resource pool (may be nil)
+    # @return [String] availability zone to use
+    def select_availability_zone(volumes, resource_pool_az)
+      if volumes && !volumes.empty?
+        disks = volumes.map { |vid| @ec2.volumes[vid] }
+        ensure_same_availability_zone(disks, resource_pool_az)
+        disks.first.availability_zone
+      else
+        resource_pool_az || DEFAULT_AVAILABILITY_ZONE
+      end
+    end
+
+    # ensure all supplied availability zones are the same
+    def ensure_same_availability_zone(disks, default)
+      zones = disks.map { |disk| disk.availability_zone }
+      zones << default if default
+      zones.uniq!
+      cloud_error "can't use multiple availability zones: %s" %
+        zones.join(", ") unless zones.size == 1 || zones.empty?
     end
 
     private
