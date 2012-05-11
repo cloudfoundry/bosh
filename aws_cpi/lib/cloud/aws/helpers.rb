@@ -53,6 +53,5 @@ module Bosh::AwsCloud
       end
     end
   end
-
 end
 
