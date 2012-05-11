@@ -39,4 +39,55 @@ describe Bosh::AwsCloud::Helpers do
     }.should raise_error Bosh::Clouds::CloudError,
                          /is failed, expected to be stopped/
   end
+
+  describe "#get_availability_zone" do
+    def volume(zone)
+      vol = double("volume")
+      vol.stub(:availability_zone).and_return(zone)
+      vol
+    end
+
+    it "should return default availability_zone when all values are nil" do
+      cloud = mock_cloud
+      cloud.get_availability_zone(nil, nil).should ==
+        Bosh::AwsCloud::Cloud::DEFAULT_AVAILABILITY_ZONE
+    end
+
+    describe "with no availability_zone configured in the resource_pool" do
+      it "should not raise an error when the zones are the same" do
+        cloud = mock_cloud do |ec2|
+          ec2.volumes.stub(:[]).and_return(volume("foo"), volume("foo"))
+        end
+        cloud.get_availability_zone(%w[cid1 cid2], nil).should == "foo"
+      end
+
+      it "should raise an error when the zones differ" do
+        cloud = mock_cloud do |ec2|
+          ec2.volumes.stub(:[]).and_return(volume("foo"), volume("bar"))
+        end
+        lambda {
+          cloud.get_availability_zone(%w[cid1 cid2], nil)
+        }.should raise_error "can't use multiple availability zones: 'foo' and 'bar'"
+      end
+    end
+
+    describe "with availability_zone configured in the resource_pool" do
+      it "should not raise an error when the zones are the same" do
+        cloud = mock_cloud do |ec2|
+          ec2.volumes.stub(:[]).and_return(volume("foo"), volume("foo"))
+        end
+        cloud.get_availability_zone(%w[cid1 cid2], "foo").should == "foo"
+      end
+
+      it "should raise an error when the zones differ" do
+        cloud = mock_cloud do |ec2|
+          ec2.volumes.stub(:[]).and_return(volume("foo"), volume("foo"))
+        end
+        lambda {
+          cloud.get_availability_zone(%w[cid1 cid2], "bar")
+        }.should raise_error "can't use multiple availability zones: 'foo' and 'bar'"
+      end
+    end
+
+  end
 end
