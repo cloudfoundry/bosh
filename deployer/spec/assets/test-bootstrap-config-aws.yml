@@ -4,6 +4,10 @@ name: bosh-bootstrap-aws
 network:
   type: dynamic
 
+env:
+  bosh:
+    password: $6$salt$password
+
 cloud:
   plugin: aws
   properties:

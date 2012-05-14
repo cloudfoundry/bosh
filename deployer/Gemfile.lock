@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_deployer (0.1.4)
+    bosh_deployer (0.2)
       agent_client (~> 0.1.1)
       bosh_aws_cpi (~> 0.3.3)
       bosh_common (~> 0.4.0)

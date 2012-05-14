@@ -43,6 +43,14 @@ describe Bosh::Deployer::Config do
     end
   end
 
+  it "should default vm env properties" do
+    env = Bosh::Deployer::Config.env
+    env.should be_kind_of(Hash)
+    env.should have_key("bosh")
+    env["bosh"].should be_kind_of(Hash)
+    env["bosh"]["password"].should be_nil
+  end
+
   it "should contain default vm resource properties" do
     Bosh::Deployer::Config.configure({"dir" => @dir, "cloud" => { "plugin" => "vsphere" }})
     resources = Bosh::Deployer::Config.resources

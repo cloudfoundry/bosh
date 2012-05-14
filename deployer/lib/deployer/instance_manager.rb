@@ -207,7 +207,8 @@ module Bosh::Deployer
     def create_vm(stemcell_cid)
       resources = Config.resources['cloud_properties']
       networks  = Config.networks
-      cloud.create_vm(state.uuid, stemcell_cid, resources, networks)
+      env = Config.env
+      cloud.create_vm(state.uuid, stemcell_cid, resources, networks, nil, env)
     end
 
     def mount_disk(disk_cid)

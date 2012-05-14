@@ -14,6 +14,10 @@ network:
   cloud_properties:
     name:
 
+env:
+  bosh:
+    password:
+
 resources:
   persistent_disk: 4096
   cloud_properties:
