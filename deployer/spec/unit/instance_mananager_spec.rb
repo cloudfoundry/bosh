@@ -2,7 +2,7 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-BOSH_STEMCELL_TGZ = "bosh-instance-1.0.tgz"
+BOSH_STEMCELL_TGZ ||= "bosh-instance-1.0.tgz"
 
 describe Bosh::Deployer::InstanceManager do
   before(:each) do
