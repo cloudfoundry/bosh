@@ -5,8 +5,10 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::ConfigurationHasher do
 
   it "should hash a simple job" do
+    template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
+
     instance_spec = mock("instance_spec")
-    template_spec = mock("template_spec")
+    template_spec = mock("template_spec", :template => template)
     job_spec = mock("job_spec")
     blobstore_client = mock("blobstore_client")
 
@@ -34,12 +36,13 @@ describe Bosh::Director::ConfigurationHasher do
   end
 
   it "should expose the job context to the templates" do
+    template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
+
     instance_spec = mock("instance_spec")
-    template_spec = mock("template_spec")
+    template_spec = mock("template_spec", :template => template)
     job_spec = mock("job_spec")
     blobstore_client = mock("blobstore_client")
 
-    template_spec.stub!(:blobstore_id).and_return("b_id")
     template_spec.stub!(:name).and_return("router")
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec])
@@ -63,12 +66,13 @@ describe Bosh::Director::ConfigurationHasher do
   end
 
   it "should give helpful error messages" do
+    template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
+
     instance_spec = mock("instance_spec")
-    template_spec = mock("template_spec")
+    template_spec = mock("template_spec", :template => template)
     job_spec = mock("job_spec")
     blobstore_client = mock("blobstore_client")
 
-    template_spec.stub!(:blobstore_id).and_return("b_id")
     template_spec.stub!(:name).and_return("router")
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec])

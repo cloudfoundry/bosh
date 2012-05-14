@@ -22,16 +22,20 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should fail if the deployments still reference this release" do
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
-      Bosh::Director::Models::Deployment.make(:name => "test_deployment", :release => release)
+      release = Bosh::Director::Models::Release.make(:name => "test")
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test")
+
+      deployment.add_release(release)
 
       lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
-          and_return(lock)
+      Bosh::Director::Lock.stub!(:new).with("lock:release:test",
+                                            :timeout => 10).and_return(lock)
       lock.should_receive(:lock).and_yield
 
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
-      lambda { job.perform }.should raise_exception(Bosh::Director::ReleaseInUse)
+      job = Bosh::Director::Jobs::DeleteRelease.new("test")
+      lambda {
+        job.perform
+      }.should raise_exception(Bosh::Director::ReleaseInUse)
     end
 
     it "should delete the release and associated jobs, packages, compiled packages and their metadata" do
@@ -83,7 +87,8 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
       manifest = YAML.dump("release" => { "name" => "test_release", "version" => "2"})
 
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :release => release, :manifest => manifest)
+      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => manifest)
+      deployment.add_release(release)
       deployment.add_release_version(rv2)
 
       lock = stub("lock")

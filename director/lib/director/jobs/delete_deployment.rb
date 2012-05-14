@@ -36,7 +36,8 @@ module Bosh::Director
             deployment.remove_all_stemcells
           end
 
-          track_and_log("Detaching release versions") do
+          track_and_log("Detaching releases") do
+            deployment.remove_all_releases
             deployment.remove_all_release_versions
           end
 
@@ -115,7 +116,7 @@ module Bosh::Director
               ignoring_errors_when_forced do
                 # If persistent disk has been mounted but
                 # clean_shutdown above did not unmount it
-                # propertly (i.e. for wedged deployment),
+                # properly (i.e. for wedged deployment),
                 # detach_disk might hang indefinitely.
                 # Right now it's up to cloudcheck handle
                 # that but 'force' might be added to CPI

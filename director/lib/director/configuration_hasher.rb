@@ -33,7 +33,7 @@ module Bosh::Director
       temp_path = File.join(Dir::tmpdir, "template-#{UUIDTools::UUID.random_create}")
       begin
         File.open(temp_path, "w") do |file|
-          Config.blobstore.get(@job.template.blobstore_id, file)
+          Config.blobstore.get(@job.template.template.blobstore_id, file)
         end
         `tar -C #{@template_dir} -xzf #{temp_path}`
       ensure
