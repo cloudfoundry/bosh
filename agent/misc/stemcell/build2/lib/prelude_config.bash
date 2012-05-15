@@ -14,19 +14,27 @@ function fail() {
   exit 1
 }
 
-function assert_not_empty() {
+function persist() {
+  value=$(eval echo -n "\${$1:-}")
+  echo "$1=$value" >> $settings_file
+}
+
+function assert_value() {
   value=$(eval echo -n "\${$1:-}")
 
   if [ -z $value ]
   then
     fail "\$$1 is empty"
   fi
+}
 
-  echo $1=$value >> $settings_file
+function persist_value() {
+  assert_value $1
+  persist $1
 }
 
 function assert_dir() {
-  assert_not_empty $1
+  assert_value $1
 
   value=$(eval echo -n "\${$1:-}")
 
@@ -34,6 +42,9 @@ function assert_dir() {
   then
     fail "\$$1 is not a directory"
   fi
+}
 
-  echo $1=$value >> $settings_file
+function persist_dir() {
+  assert_dir $1
+  persist $1
 }

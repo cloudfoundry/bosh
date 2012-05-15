@@ -16,5 +16,5 @@ fi
 ruby="ruby -I$bosh_agent_src_dir/lib"
 bosh_agent_src_version=$($ruby -r"agent/version" -e"puts Bosh::Agent::VERSION")
 
-assert_dir bosh_agent_src_dir
-assert_not_empty bosh_agent_src_version
+persist_dir bosh_agent_src_dir
+persist_value bosh_agent_src_version
