@@ -10,6 +10,6 @@ source $base_dir/lib/prelude_apply.bash
 mkdir -p $work/stemcell
 
 pushd $work/esxi
-ovftool *.vmx image.ovf
+$image_esxi_ovf_ovftool_path *.vmx image.ovf
 tar zcf ../stemcell/image image*
 popd
