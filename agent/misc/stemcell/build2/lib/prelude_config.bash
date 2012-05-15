@@ -24,3 +24,16 @@ function assert_not_empty() {
 
   echo $1=$value >> $settings_file
 }
+
+function assert_dir() {
+  assert_not_empty $1
+
+  value=$(eval echo -n "\${$1:-}")
+
+  if [ ! -d $value ]
+  then
+    fail "\$$1 is not a directory"
+  fi
+
+  echo $1=$value >> $settings_file
+}
