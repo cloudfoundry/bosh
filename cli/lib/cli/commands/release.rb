@@ -110,13 +110,17 @@ module Bosh::Cli::Command
     def upload_manifest(manifest_path)
       manifest = load_yaml_file(manifest_path)
       remote_release = get_remote_release(manifest["name"]) rescue nil
+      remote_jobs = remote_release["jobs"] if remote_release
+      remote_packages_sha1 =
+        get_existing_remote_packages(File.read(manifest_path)) rescue nil
       blobstore = release.blobstore
       tmpdir = Dir.mktmpdir
 
       at_exit { FileUtils.rm_rf(tmpdir) }
 
-      compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path,
-                                                blobstore, remote_release)
+      compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore,
+                                                remote_jobs,
+                                                remote_packages_sha1)
       need_repack = true
 
       unless compiler.exists?
@@ -141,14 +145,20 @@ module Bosh::Cli::Command
       end
 
       begin
-        remote_release = get_remote_release(tarball.release_name)
-        if remote_release["versions"].include?(tarball.version)
-          err("This release version has already been uploaded")
+        remote_release = get_remote_release(tarball.release_name) rescue nil
+        if remote_release
+          if remote_release["versions"].include?(tarball.version)
+            err("This release version has already been uploaded")
+          end
+          remote_jobs = remote_release["jobs"]
         end
 
         if repack
+          remote_packages_sha1 =
+            get_existing_remote_packages(tarball.release_manifest) rescue nil
+
           say("Checking if can repack release for faster upload...")
-          repacked_path = tarball.repack(remote_release)
+          repacked_path = tarball.repack(remote_jobs, remote_packages_sha1)
           if repacked_path.nil?
             say("Uploading the whole release".green)
           else
@@ -485,6 +495,15 @@ module Bosh::Cli::Command
       end
 
       release
+    end
+
+    def get_existing_remote_packages(manifest_yaml)
+      result = director.get_existing_packages(manifest_yaml)
+      unless result.is_a?(Array)
+        raise Bosh::Cli::DirectorError, "Cannot find existing packages info " +
+              "in the director response, maybe old director?"
+      end
+      result
     end
   end
 end
