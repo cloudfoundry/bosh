@@ -62,8 +62,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       update_deployment_job.prepare
 
       check_event_log do |events|
-        events.size.should == 16
-        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 16
+        events.size.should == 18
+        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 18
       end
     end
 

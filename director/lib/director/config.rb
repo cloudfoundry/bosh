@@ -242,6 +242,15 @@ module Bosh::Director
         end
       end
 
+      def temp_path
+        path = File.join(Dir::tmpdir, "temp-path-#{UUIDTools::UUID.random_create}")
+        begin
+          yield path
+        ensure
+          FileUtils.rm_f(path)
+        end
+      end
+
     end
 
   end

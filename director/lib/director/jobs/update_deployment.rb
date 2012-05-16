@@ -32,7 +32,7 @@ module Bosh::Director
 
       def prepare
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        @event_log.begin_stage("Preparing deployment", 7)
+        @event_log.begin_stage("Preparing deployment", 8)
 
         track_and_log("Binding deployment") do
           @deployment_plan_compiler.bind_deployment
@@ -66,8 +66,9 @@ module Bosh::Director
           @deployment_plan_compiler.bind_instance_networks
         end
 
-        @logger.info("Compiling and binding packages")
-        PackageCompiler.new(@deployment_plan).compile
+        track_and_log("Compiling and binding packages") do
+          PackageCompiler.new(@deployment_plan).compile
+        end
       end
 
       def update_resource_pools
