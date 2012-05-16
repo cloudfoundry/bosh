@@ -498,13 +498,14 @@ module Bosh::AwsCloud
       end
     end
 
+    # this method relies on being able to execute stemcell-copy as root,
+    # since it needs to write to the ebs_volume
     def copy_root_image(dir, ebs_volume)
       Dir.chdir(dir) do
-        dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
+        out = `sudo stemcell-copy #{ebs_volume} 2>&1`
         if $?.exitstatus != 0
           cloud_error("Unable to copy stemcell root image, " \
-                      "dd exit status #{$?.exitstatus}: " \
-                      "#{dd_out}")
+                      "exit status #{$?.exitstatus}: #{out}")
         end
       end
     end
