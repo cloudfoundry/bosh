@@ -294,19 +294,71 @@ module Bosh::Director
     def generate_compile_tasks
       @compile_tasks = {}
 
-      @deployment_plan.jobs.each do |job|
-        @logger.info("Processing job: #{job.release.name}/#{job.name}")
-        stemcell = job.resource_pool.stemcell
+      @event_log.begin_stage("Reusing already compiled packages", 1)
 
-        @logger.info("Job will be compiled for: " +
-                       stemcell_name_version(stemcell))
+      @event_log.track("Copying compiled packages") do
+        @deployment_plan.jobs.each do |job|
+          @logger.info("Processing job: #{job.release.name}/#{job.name}")
+          stemcell = job.resource_pool.stemcell
 
-        job.template.packages.each do |package|
-          schedule_compilation(job, package, stemcell.stemcell)
+          @logger.info("Job will be compiled for: " +
+                         stemcell_name_version(stemcell))
+
+          job.template.packages.each do |package|
+            schedule_compilation(job, package, stemcell.stemcell)
+          end
         end
       end
 
       bind_dependent_tasks
+    end
+
+
+    def find_compiled_package(package, stemcell, dependency_key)
+      # Check if this package is already compiled
+      compiled_package = Models::CompiledPackage[
+        :package_id => package.id,
+        :stemcell_id => stemcell.id,
+        :dependency_key => dependency_key
+      ]
+      if compiled_package
+        @logger.info("Found compiled_package: #{compiled_package.id}")
+        return compiled_package
+      end
+
+      # Check if packages with the same sha1 have already been compiled
+      similar_packages_dataset = Models::Package.filter(:sha1 => package.sha1)
+      similar_packages = similar_packages_dataset.exclude(:id => package.id).all
+      similar_package_ids = similar_packages.map { |package| package.id }
+
+      search_attr = {:package_id => similar_package_ids,
+                     :stemcell_id => stemcell.id,
+                     :dependency_key => dependency_key}
+      compiled_package = Models::CompiledPackage.filter(search_attr).first
+
+      if !compiled_package
+        @logger.info("Package '#{package.name}' needs to be compiled on " +
+                       stemcell_name_version(stemcell))
+        return nil
+      end
+
+      # Found a compiled package that matches the given package and stemcell
+      @logger.info("Using compiled_package: #{compiled_package.inspect} for " +
+                   "package #{package.inspect} and stemcell " +
+                   "#{stemcell_name_version(stemcell)}")
+
+      # Make a copy of this compiled package
+      blobstore_id = BlobUtil.copy_blob(compiled_package.blobstore_id)
+
+      # Add a new entry for this package
+      Models::CompiledPackage.create do |p|
+        p.package = package
+        p.stemcell = stemcell
+        p.sha1 = compiled_package.sha1
+        p.build = generate_build_number(package, stemcell)
+        p.blobstore_id = blobstore_id
+        p.dependency_key = dependency_key
+      end
     end
 
     # Schedules package compilation for a given (package, stemcell) tuple
@@ -319,18 +371,8 @@ module Bosh::Director
       dependencies = get_dependencies(package)
       dependency_key = generate_dependency_key(dependencies)
 
-      compiled_package = Models::CompiledPackage[
-        :package_id => package.id,
-        :stemcell_id => stemcell.id,
-        :dependency_key => dependency_key
-      ]
-
-      if compiled_package
-        @logger.info("Found compiled_package: #{compiled_package.id}")
-      else
-        @logger.info("Package '#{package.name}' needs to be compiled on " +
-                       stemcell_name_version(stemcell))
-      end
+      compiled_package = find_compiled_package(package, stemcell,
+                                               dependency_key)
 
       task_key = [package.id, stemcell.id]
 
@@ -409,11 +451,9 @@ module Bosh::Director
           dependencies = get_dependencies(package)
           dependency_key = generate_dependency_key(dependencies)
 
-          compiled_package = Models::CompiledPackage[
-            :package_id => package.id,
-            :stemcell_id => stemcell_id,
-            :dependency_key => dependency_key
-          ]
+          stemcell = Models::Stemcell[:id => stemcell_id]
+          compiled_package = find_compiled_package(package, stemcell,
+                                                   dependency_key)
 
           task.package = package
           task.dependency_key = dependency_key

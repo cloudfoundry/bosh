@@ -54,6 +54,29 @@ describe Bosh::Director::Jobs::UpdateRelease do
       package.blobstore_id.should == "blob_id"
     end
 
+    it "should copy package blob" do
+      Bosh::Director::BlobUtil.should_receive(:copy_blob).and_return("blob_id")
+      FileUtils.mkdir_p(File.join(@release_dir, "packages"))
+      package_path = File.join(@release_dir, "packages", "test_package.tgz")
+      File.open(package_path, "w") do |f|
+        f.write(create_package({"test" => "test contents"}))
+      end
+
+      @job.create_package({"name" => "test_package",
+                           "version" => "1.0", "sha1" => "some-sha",
+                           "dependencies" => ["foo_package", "bar_package"],
+                           "blobstore_id" => "blah"})
+
+      package = Bosh::Director::Models::Package[:name => "test_package",
+                                                :version => "1.0"]
+      package.should_not be_nil
+      package.name.should == "test_package"
+      package.version.should == "1.0"
+      package.release.should == @release
+      package.sha1.should == "some-sha"
+      package.blobstore_id.should == "blob_id"
+    end
+
   end
 
   describe "resolve_package_dependencies" do

@@ -95,6 +95,17 @@ module Bosh
         get_json("/releases/#{name}")
       end
 
+      def match_packages(manifest_yaml)
+        url = "/packages/matches"
+        status, body = post(url, "text/yaml", manifest_yaml)
+
+        if status == 200
+          JSON.parse(body)
+        else
+          err(parse_error_message(status, body))
+        end
+      end
+
       def get_deployment(name)
         status, body = get_json_with_status("/deployments/#{name}")
         if status == 404

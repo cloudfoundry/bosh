@@ -156,17 +156,33 @@ module Bosh::Director
         existing_packages = []
 
         @release_manifest["packages"].each do |package_meta|
-          package_attrs = {
-            :release_id => @release.id,
-            :name => package_meta["name"],
-            :version => package_meta["version"]
-          }
+          package_attrs = {:sha1 => package_meta["sha1"]}
 
-          package = Models::Package[package_attrs]
-          if package.nil?
+          # Search for existing packages
+          packages = Models::Package.filter(package_attrs).all
+
+          if packages.nil? || packages.empty?
             new_packages << package_meta
           else
-            existing_packages << [package, package_meta]
+            # We can reuse an existing package as long as it
+            # belongs to the same release and has the same name and version
+            package = packages.find do |package|
+              package.release_id == @release.id &&
+              package.name == package_meta["name"] &&
+              package.version == package_meta["version"]
+            end
+
+            if package
+              existing_packages << [package, package_meta]
+            else
+              # We found a package but not in the same release, so
+              # make a copy of the package blob and create a new db entry for it
+              package = packages.first
+              @logger.info("Release #{@release.id} now using package" +
+                           "#{package.inspect}")
+              package_meta["blobstore_id"] = package.blobstore_id
+              new_packages << package_meta
+            end
           end
         end
 
@@ -290,20 +306,25 @@ module Bosh::Director
         package = Models::Package.new(package_attrs)
         package.dependency_set = package_meta["dependencies"]
 
-        logger.info("Creating package: #{package.name}")
+        if package_meta["blobstore_id"]
+          @logger.info("Copying blob #{package_meta["blobstore_id"]}" +
+                       " for #{package.name}, #{package_meta["version"]}")
+          package.blobstore_id = BlobUtil.copy_blob(package_meta["blobstore_id"])
+        else
+          @logger.info("Creating package: #{package.name}")
 
-        package_tgz = File.join(@tmp_release_dir, "packages",
-                                "#{package.name}.tgz")
-        output = `tar -tzf #{package_tgz} 2>&1`
-        if $?.exitstatus != 0
-          raise PackageInvalidArchive,
-                "Invalid package archive, tar returned #{$?.exitstatus} " +
-                "tar output: #{output}"
-        end
+          package_tgz = File.join(@tmp_release_dir, "packages", "#{package.name}.tgz")
+          output = `tar -tzf #{package_tgz} 2>&1`
+          if $?.exitstatus != 0
+            raise PackageInvalidArchive,
+                  "Invalid package archive, tar returned #{$?.exitstatus} " +
+                  "tar output: #{output}"
+          end
 
-        # TODO: verify sha1
-        File.open(package_tgz) do |f|
-          package.blobstore_id = @blobstore.create(f)
+          # TODO: verify sha1
+          File.open(package_tgz) do |f|
+            package.blobstore_id = @blobstore.create(f)
+          end
         end
 
         package.save
