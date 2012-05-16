@@ -92,6 +92,15 @@ module Bosh
         get_json("/releases/#{name}")
       end
 
+      def get_existing_packages(manifest_yaml)
+        url = "/packages"
+        status, body = post(url, "text/yaml", manifest_yaml)
+
+        raise AuthError if status == 401
+        raise DirectorError, "Director HTTP #{status}" if status != 200
+        JSON.parse(body)
+      end
+
       def get_deployment(name)
         status, body = get_json_with_status("/deployments/#{name}")
         if status == 404
