@@ -498,13 +498,20 @@ module Bosh::AwsCloud
       end
     end
 
+    # This method relies on being able to execute stemcell-copy as root,
+    # since it needs to write to the ebs_volume.
+    # The stemcell-copy script must be in the PATH of the user running
+    # the director, and needs sudo privileges to execute without
+    # password.
     def copy_root_image(dir, ebs_volume)
       Dir.chdir(dir) do
-        dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
-        if $?.exitstatus != 0
+        # note that is is a potentially dangerous operation, but as the
+        # stemcell-copy script sets PATH to a sane value this is safe
+        path = ENV['PATH']
+        out = `sudo env PATH=#{path} stemcell-copy #{ebs_volume} 2>&1`
+        unless $?.exitstatus == 0
           cloud_error("Unable to copy stemcell root image, " \
-                      "dd exit status #{$?.exitstatus}: " \
-                      "#{dd_out}")
+                      "exit status #{$?.exitstatus}: #{out}")
         end
       end
     end
