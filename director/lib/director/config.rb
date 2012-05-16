@@ -242,6 +242,28 @@ module Bosh::Director
         end
       end
 
+      def temp_path
+        path = File.join(Dir::tmpdir, "temp-path-#{UUIDTools::UUID.random_create}")
+        begin
+          yield path
+        ensure
+          FileUtils.rm_f(path)
+        end
+      end
+
+      def copy_blob(blobstore_id)
+        # Create a copy of the given blob
+        temp_path do |path|
+          File.open(path, "w") do |file|
+            blobstore.get(blobstore_id, file)
+          end
+          File.open(path, "r") do |file|
+            blobstore_id = blobstore.create(file)
+          end
+        end
+        blobstore_id
+      end
+
     end
 
   end

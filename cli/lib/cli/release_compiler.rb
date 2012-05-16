@@ -10,8 +10,8 @@ module Bosh::Cli
       new(manifest_file, blobstore).compile
     end
 
-    def initialize(manifest_file, blobstore,
-        remote_release = nil, release_dir = nil)
+    def initialize(manifest_file, blobstore, remote_jobs = nil,
+                   remote_packages_sha1 = nil, release_dir = nil)
       @build_dir = Dir.mktmpdir
       @jobs_dir = File.join(@build_dir, "jobs")
       @packages_dir = File.join(@build_dir, "packages")
@@ -26,15 +26,13 @@ module Bosh::Cli
       @manifest_file = File.expand_path(manifest_file, @release_dir)
       @manifest = load_yaml_file(manifest_file)
 
-      if remote_release
-        @remote_packages = remote_release["packages"].map do |pkg|
-          OpenStruct.new(pkg)
-        end
-        @remote_jobs = remote_release["jobs"].map do |job|
+      @remote_packages_sha1 = remote_packages_sha1 || []
+
+      if remote_jobs
+        @remote_jobs = remote_jobs.map do |job|
           OpenStruct.new(job)
         end
       else
-        @remote_packages = []
         @remote_jobs = []
       end
 
@@ -56,7 +54,7 @@ module Bosh::Cli
       header("Copying packages")
       @packages.each do |package|
         say("#{package.name} (#{package.version})".ljust(30), " ")
-        if remote_object_exists?(@remote_packages, package)
+        if @remote_packages_sha1.any? { |sha1| sha1 == package.sha1 }
           say("SKIP".yellow)
           next
         end

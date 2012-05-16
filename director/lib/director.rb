@@ -434,6 +434,15 @@ module Bosh::Director
       Yajl::Encoder.encode(result)
     end
 
+    post "/packages/matches", :consumes => :yaml do
+      manifest = YAML.load(request.body)
+      sha1_list =  manifest["packages"].map { |package| package["sha1"] }
+
+      package_dataset = Models::Package.dataset
+      packages = package_dataset.select(:sha1).filter(:sha1 => sha1_list).distinct.all
+      Yajl::Encoder.encode(packages.map { |package| package.sha1 })
+    end
+
     get "/tasks" do
       dataset = Models::Task.dataset
       limit = params["limit"]
