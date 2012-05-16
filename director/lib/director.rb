@@ -43,6 +43,7 @@ require "director/version"
 require "director/config"
 require "director/event_log"
 require "director/task_result_file"
+require "director/util"
 
 require "director/api"
 require "director/client"
@@ -432,6 +433,20 @@ module Bosh::Director
 
       content_type(:json)
       Yajl::Encoder.encode(result)
+    end
+
+    post "/packages/matches", :consumes => :yaml do
+      manifest = YAML.load(request.body)
+      unless manifest.is_a?(Hash) && manifest["packages"].is_a?(Array)
+          raise InvalidRequest.new("bad manifest")
+      end
+
+      sha1_list =  manifest["packages"].map { |package| package["sha1"] }
+
+      package_dataset = Models::Package.dataset
+      packages =
+        package_dataset.select(:sha1).filter(:sha1 => sha1_list).distinct.all
+      Yajl::Encoder.encode(packages.map { |package| package.sha1 })
     end
 
     get "/tasks" do
