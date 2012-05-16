@@ -143,6 +143,9 @@ find / -xdev -perm +6000 -a -type f \
   -a -not \( -name sudo -o -name su -o -name sudoedit \) \
   -exec chmod ug-s {} \;
 
+# setup sudoers to use includedir
+echo '#includedir /etc/sudoers.d' >> /etc/sudoers
+
 # the bosh agent installs a config that rotates on size
 mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
 
