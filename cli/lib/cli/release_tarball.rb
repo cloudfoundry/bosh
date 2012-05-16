@@ -24,9 +24,15 @@ module Bosh::Cli
       File.exists?(@tarball_path) && File.readable?(@tarball_path)
     end
 
+    def manifest
+      return nil unless valid?
+      unpack
+      File.read(File.join(@unpack_dir, "release.MF"))
+    end
+
     # Repacks tarball according to the structure of remote release
     # Return path to repackaged tarball or nil if repack has failed
-    def repack(remote_release)
+    def repack(remote_jobs = [], remote_packages_sha1 = [])
       return nil unless valid?
       unpack
 
@@ -39,16 +45,13 @@ module Bosh::Cli
 
       local_packages  = manifest["packages"]
       local_jobs = manifest["jobs"]
-      remote_packages = remote_release["packages"]
-      remote_jobs = remote_release["jobs"]
 
       @skipped = 0
 
       Dir.chdir(@unpack_dir) do
         local_packages.each do |package|
           say("#{package['name']} (#{package['version']})".ljust(30), " ")
-          if remote_packages.any? { |rp| package["name"] == rp["name"] &&
-              package["version"].to_s == rp["version"].to_s }
+          if remote_packages_sha1.any? { |sha1| sha1 == package["sha1"] }
             say("SKIP".green)
             @skipped += 1
             FileUtils.rm_rf(File.join("packages", "#{package['name']}.tgz"))
