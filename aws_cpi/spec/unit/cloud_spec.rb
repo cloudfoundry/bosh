@@ -13,4 +13,8 @@ describe Bosh::AwsCloud::Cloud do
 
   end
 
+  it "should find stemcell-copy" do
+    cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options)
+    cloud.has_stemcell_copy?().should be_true
+  end
 end

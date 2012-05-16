@@ -518,15 +518,38 @@ module Bosh::AwsCloud
       end
     end
 
+    # This method ties to execute the helper script stemcell-copy
+    # as root using sudo, since it needs to write to the ebs_volume.
+    # If stemcell-copy isn't available, it falls back to writing directly
+    # to the device, which is used in the micro bosh deployer.
+    # The stemcell-copy script must be in the PATH of the user running
+    # the director, and needs sudo privileges to execute without
+    # password.
     def copy_root_image(dir, ebs_volume)
       Dir.chdir(dir) do
-        dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
-        if $?.exitstatus != 0
+        # note that is is a potentially dangerous operation, but as the
+        # stemcell-copy script sets PATH to a sane value this is safe
+        path = ENV['PATH']
+
+        if has_stemcell_copy?(path)
+          out = `sudo env PATH=#{path} stemcell-copy #{ebs_volume} 2>&1`
+        else
+          out = `dd if=root.img of=#{ebs_volume} 2>&1`
+        end
+
+        unless $?.exitstatus == 0
           cloud_error("Unable to copy stemcell root image, " \
-                      "dd exit status #{$?.exitstatus}: " \
-                      "#{dd_out}")
+                      "exit status #{$?.exitstatus}: #{out}")
         end
       end
+    end
+
+    def has_stemcell_copy?(path)
+      path.each do |dir|
+        stemcell_copy = File.join(path, "stemcell-copy")
+        return true if File.exist?(stemcell_copy)
+      end
+      false
     end
 
     def find_ebs_device(sd_name)
