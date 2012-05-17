@@ -30,7 +30,7 @@ module Bosh::Spec
         "name" => "simple",
         "release" => {
           "name"    => "bosh-release",
-          "version" => "1"
+          "version" => "0.1-dev"
         },
 
         "networks" => [{ "name" => "a",

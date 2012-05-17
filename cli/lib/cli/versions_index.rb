@@ -38,14 +38,14 @@ module Bosh::Cli
 
       return nil if builds.empty?
 
-      sorted = builds.sort { |build1, build2|
+      sorted = builds.sort do |build1, build2|
         cmp = version_cmp(build2["version"], build1["version"])
         if cmp == 0
           raise "There is a duplicate version `#{build1["version"]}' " +
-                    "in index `#{@index_file}'"
+                  "in index `#{@index_file}'"
         end
         cmp
-      }
+      end
 
       sorted[0]["version"]
     end

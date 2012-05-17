@@ -3,34 +3,47 @@
 module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
+    include Bosh::Cli::VersionCalc
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :release, :packages, :jobs, :changed_jobs
+    attr_reader :release, :packages, :jobs, :version
 
+    # @param [Bosh::Cli::Release] release Current release
+    # @param [Array<Bosh::Cli::PackageBuilder>] packages Built packages
+    # @param [Array<Bosh::Cli::JobBuilder>] jobs Built jobs
+    # @param [Hash] options Release build options
     def initialize(release, packages, jobs, options = { })
-      @release  = release
-      @final    = options.has_key?(:final) ? !!options[:final] : false
+      @release = release
+      @final = options.has_key?(:final) ? !!options[:final] : false
       @packages = packages
-      @jobs     = jobs
+      @jobs = jobs
 
-      @index = VersionsIndex.new(releases_dir, release_name)
+      @final_index = VersionsIndex.new(final_releases_dir, release_name)
+      @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
+      @index = @final ? @final_index : @dev_index
+
       create_release_build_dir
     end
 
+    # @return [String] Release name
     def release_name
       name = @final ? @release.final_name : @release.dev_name
       name.blank? ? DEFAULT_RELEASE_NAME : name
     end
 
+    # @return [String] Release version
     def version
       @version ||= assign_version
     end
 
+    # @return [Boolean] Is release final?
     def final?
       @final
     end
 
+    # @return [Array] List of jobs affected by this release compared
+    #   to the previous one.
     def affected_jobs
       result = Set.new(@jobs.select { |job| job.new_version? })
       return result if @packages.empty?
@@ -47,6 +60,8 @@ module Bosh::Cli
       result.to_a
     end
 
+    # Builds release
+    # @param [Hash] options Release build options
     def build(options = {})
       options = { :generate_tarball => true }.merge(options)
 
@@ -59,6 +74,7 @@ module Bosh::Cli
       @build_complete = true
     end
 
+    # Copies packages into release
     def copy_packages
       packages.each do |package|
         say("%-40s %s" % [package.name.green,
@@ -70,6 +86,7 @@ module Bosh::Cli
       @packages_copied = true
     end
 
+    # Copies jobs into release
     def copy_jobs
       jobs.each do |job|
         say("%-40s %s" % [job.name.green, pretty_size(job.tarball_path)])
@@ -80,24 +97,25 @@ module Bosh::Cli
       @jobs_copied = true
     end
 
+    # Generates release manifest
     def generate_manifest
       manifest = {}
       manifest["packages"] = []
 
       manifest["packages"] = packages.map do |package|
         {
-          "name"         => package.name,
-          "version"      => package.version,
-          "sha1"         => package.checksum,
+          "name" => package.name,
+          "version" => package.version,
+          "sha1" => package.checksum,
           "dependencies" => package.dependencies
         }
       end
 
       manifest["jobs"] = jobs.map do |job|
         {
-          "name"    => job.name,
+          "name" => job.name,
           "version" => job.version,
-          "sha1"    => job.checksum,
+          "sha1" => job.checksum,
         }
       end
 
@@ -161,7 +179,15 @@ module Bosh::Cli
     end
 
     def releases_dir
-       File.join(@release.dir, final? ? "releases" : "dev_releases")
+      @final ? final_releases_dir : dev_releases_dir
+    end
+
+    def final_releases_dir
+      File.join(@release.dir, "releases")
+    end
+
+    def dev_releases_dir
+      File.join(@release.dir, "dev_releases")
     end
 
     def tarball_path
@@ -191,8 +217,16 @@ module Bosh::Cli
     end
 
     def assign_version
-      current_version = @index.latest_version.to_i
-      current_version + 1
+      latest_final_version = @final_index.latest_version.to_i
+      latest_dev_version = @dev_index.latest_version(latest_final_version)
+
+      if @final
+        latest_final_version + 1
+      else
+        major = latest_final_version
+        minor = minor_version(latest_dev_version).to_i + 1
+        "#{major}.#{minor}-dev"
+      end
     end
 
     def build_dir
