@@ -4,7 +4,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
 
   def deploy
     assets_dir          = File.dirname(spec_asset("foo"))
-    release_filename    = spec_asset("test_release/dev_releases/bosh-release-1.tgz")
+    release_filename    = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.tgz")
     stemcell_filename   = spec_asset("valid_stemcell.tgz")
     deployment_manifest = yaml_file("simple", Bosh::Spec::Deployments.simple_manifest)
 

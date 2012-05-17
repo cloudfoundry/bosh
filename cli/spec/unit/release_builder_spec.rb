@@ -14,8 +14,8 @@ describe Bosh::Cli::ReleaseBuilder do
     Bosh::Cli::ReleaseBuilder.new(@release, [], [])
   end
 
-  it "uses version 1 if no previous releases have been created" do
-    new_builder.version.should == 1
+  it "uses version 0.1-dev if no previous releases have been created" do
+    new_builder.version.should == "0.1-dev"
   end
 
   it "builds a release" do
@@ -23,7 +23,8 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.build
 
     expected_tarball_path = File.join(@release_dir,
-                                      "dev_releases", "bosh_release-1.tgz")
+                                      "dev_releases",
+                                      "bosh_release-0.1-dev.tgz")
 
     builder.tarball_path.should == expected_tarball_path
     File.file?(expected_tarball_path).should be_true
@@ -34,21 +35,23 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.build
     builder.build
 
-    File.file?(File.join(@release_dir, "dev_releases", "bosh_release-1.tgz")).
+    File.file?(File.join(@release_dir, "dev_releases",
+                         "bosh_release-0.1-dev.tgz")).
         should be_true
-    File.file?(File.join(@release_dir, "dev_releases", "bosh_release-2.tgz")).
+    File.file?(File.join(@release_dir, "dev_releases",
+                         "bosh_release-0.2-dev.tgz")).
         should be_false
   end
 
   it "has a list of jobs affected by building this release" do
     job1 = mock(:job, :new_version? => true,
-                :packages => ["bar", "baz"], :name => "job1")
+                :packages => %w(bar baz), :name => "job1")
     job2 = mock(:job, :new_version? => false,
-                :packages => ["foo", "baz"], :name => "job2")
+                :packages => %w(foo baz), :name => "job2")
     job3 = mock(:job, :new_version? => false,
-                :packages => ["baz", "zb"], :name => "job3")
+                :packages => %w(baz zb), :name => "job3")
     job4 = mock(:job, :new_version? => false,
-                :packages => ["bar", "baz"], :name => "job4")
+                :packages => %w(bar baz), :name => "job4")
 
     package1 = mock(:package, :name => "foo", :new_version? => true)
     package2 = mock(:package, :name => "bar", :new_version? => false)
@@ -60,6 +63,21 @@ describe Bosh::Cli::ReleaseBuilder do
                                              package3, package4],
                                             [job1, job2, job3, job4])
     builder.affected_jobs.should =~ [job1, job2, job3]
+  end
+
+  it "bumps dev version in sync with final version" do
+    final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir,
+                                                         "releases"))
+
+    final_index.add_version("deadbeef", { "version" => 2 }, "payload")
+
+    builder = new_builder
+    builder.version.should == "2.1-dev"
+    builder.build
+
+    final_index.add_version("deadbeef", { "version" => 7 }, "payload")
+    builder = new_builder
+    builder.version.should == "7.1-dev"
   end
 
 end
