@@ -30,7 +30,7 @@ module Bosh::Cli::Command
 
       vms_table = table do |t|
         headings = ["Job/index", "State", "Resource Pool", "IPs"]
-        headings += ["Agent ID", "CID"] if show_full_stats
+        headings += ["CID", "Agent ID"] if show_full_stats
 
         t.headings = headings
 
