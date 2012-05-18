@@ -40,6 +40,8 @@ module Bosh::Director
 
     def update(options = {})
       changes = @instance_spec.changes
+      @logger.info("Updating job #{self.instance_name}, " +
+                   "changes #{changes.inspect}")
 
       # Optimization to only update DNS if nothing else changed.
       if changes.include?(:dns) && changes.size == 1

@@ -94,6 +94,16 @@ module Bosh::Agent
       def delete_job_monit_files
         dir = File.join(base_dir, "monit", "job")
         logger.info("Removing job-specific monit files: #{dir}")
+
+        # Remove all symlink targets
+        Dir.glob(File.join(dir, "*")).each do |f|
+          if File.symlink?(f)
+            logger.info("Removing monit symlink target file: " +
+                        "#{File.readlink(f)}")
+            FileUtils.rm(File.readlink(f))
+          end
+        end
+
         FileUtils.rm_rf(dir)
       end
 
