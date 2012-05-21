@@ -282,7 +282,7 @@ module Bosh::Cli::Command
       copy_to_file = @diff_works ? @deployment_file : @deployment_file + ".new"
       agree_text = @diff_works ?
           KEEP_NEW_VERSION_TEXT : (DIFF_FAILED_KEEP_NEW_TEXT % copy_to_file)
-      if agree(agree_text)
+      if non_interactive? or agree(agree_text)
         say("New version copied to '#{copy_to_file}'")
         FileUtils.cp(@temp_file_path_2, copy_to_file)
       end
