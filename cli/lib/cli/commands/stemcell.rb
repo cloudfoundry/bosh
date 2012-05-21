@@ -20,7 +20,7 @@ module Bosh::Cli::Command
       say("\n")
 
       if stemcell.valid?
-        say("'%s' is a valid stemcell" % [tarball_path])
+        say("'%s' is a valid stemcell." % [tarball_path])
       else
         say("'%s' is not a valid stemcell:" % [tarball_path])
         for error in stemcell.errors
@@ -114,9 +114,9 @@ module Bosh::Cli::Command
       yaml = get_public_stemcell_list
       stemcells_table = table do |t|
         t.headings = "Name", "Url"
-        yaml.each do |name, value|
-          if name != PUBLIC_STEMCELL_INDEX
-            t << [name, value["url"]]
+        yaml.keys.sort.each do |key|
+          if key != PUBLIC_STEMCELL_INDEX
+            t << [key, yaml[key]["url"]]
           end
         end
       end
