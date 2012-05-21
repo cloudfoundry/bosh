@@ -112,11 +112,14 @@ module Bosh::Cli::Command
     # Prints out the publicly available stemcells.
     def list_public
       yaml = get_public_stemcell_list
+      sorted_stemcells = []
+      yaml.each { |key, val| sorted_stemcells.push(key) }
+      sorted_stemcells.sort!
       stemcells_table = table do |t|
         t.headings = "Name", "Url"
-        yaml.each do |name, value|
-          if name != PUBLIC_STEMCELL_INDEX
-            t << [name, value["url"]]
+        sorted_stemcells.each do |key|
+          if key != PUBLIC_STEMCELL_INDEX
+            t << [key, yaml[key]["url"]]
           end
         end
       end
