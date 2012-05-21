@@ -110,6 +110,11 @@ describe Bosh::Cli::Command::Biff do
     @biff.find_in("path1.path2.path3", obj).should == 3
   end
 
+  it "finds the object(boolean) path" do
+    obj = { "path1" => {"path2" => {"path3" => false}} }
+    @biff.find_in("path1.path2.path3", obj).should == false
+  end
+
   it "finds the object path in an array by the name key" do
     obj = { "by_key" => 1, "arr" => [{"name" => "by_name"}]}
     @biff.find_in("arr.by_name", obj).should == {"name" => "by_name"}
