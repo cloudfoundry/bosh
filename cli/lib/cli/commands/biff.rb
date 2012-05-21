@@ -52,12 +52,8 @@ module Bosh::Cli::Command
     # @param [String] str1 The first string to diff.
     # @param [String] str2 The string to diff against.
     def print_string_diff(str1, str2)
-      File.open(@temp_file_path_1, "w") { |f|
-        f.write(str1)
-      }
-      File.open(@temp_file_path_2, "w") { |f|
-        f.write(str2)
-      }
+      File.open(@temp_file_path_1, "w") { |f| f.write(str1) }
+      File.open(@temp_file_path_2, "w") { |f| f.write(str2) }
 
       @diff_works = true
       cmd = "#{DIFF_COMMAND} #{@temp_file_path_1} #{@temp_file_path_2} 2>&1"
@@ -123,7 +119,7 @@ module Bosh::Cli::Command
               found = true
             end
           end
-        elsif obj[path_part]
+        elsif !obj[path_part].nil?
           obj = obj[path_part]
           found = true
         end
