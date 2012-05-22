@@ -359,8 +359,16 @@ namespace "stemcell" do
     build_vm_image(:hypervisor => "esxi")
   end
 
-  desc "Build chroot tgz"
-  task "chroot_tgz" do
+  desc "Build chroot tgz [infrastructure] - optional argument: vsphere (default) or aws"
+  task "chroot_tgz", :infrastructure do |t, args|
+    if args[:infrastructure]
+      INFRASTRUCTURES = %w[vsphere aws]
+      unless INFRASTRUCTURES.include?(args[:infrastructure])
+        puts "Please specify an infrastructure. Supported infrastructures are #{INFRASTRUCTURES}"
+        exit 1
+      end
+      @infrastructure_name = args[:infrastructure]
+    end
     setup_chroot_dir
     Dir.chdir(get_working_dir) do
       sh "#{sudo} tar zcf chroot.tgz chroot"
