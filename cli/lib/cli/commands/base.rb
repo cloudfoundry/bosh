@@ -13,9 +13,8 @@ module Bosh::Cli
         @options = options.dup
         @work_dir = Dir.pwd
         config_file = @options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
-        cache_dir = @options[:cache_dir] || Bosh::Cli::DEFAULT_CACHE_DIR
         @config = Config.new(config_file)
-        @cache = Cache.new(cache_dir)
+        @cache = Config.cache
       end
 
       class << self
@@ -105,22 +104,6 @@ module Bosh::Cli
         ret = (target_name.blank? || target_name == target_url ?
             target_name : "%s (%s)" % [target_name, target_url])
         ret + " %s" % target_version if ret
-      end
-
-      ##
-      # Returns whether there is currently a task running.  A wrapper for the
-      # director.rb method.
-      #
-      # @return [Boolean] Whether there is a task currently running.
-      def task_running?
-        director.has_current?
-      end
-
-      ##
-      # Cancels the task currently running.  A wrapper for the director.rb
-      # method.
-      def cancel_current_task
-        director.cancel_current
       end
 
       protected

@@ -16,7 +16,7 @@ module Bosh::Cli::Command
         name = manifest["name"]
       end
 
-      say("Deployment `#{name.green}'")
+      say("Deployment #{name.green}")
 
       vms = director.fetch_vm_state(name)
       err("No VMs") if vms.size == 0

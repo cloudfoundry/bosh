@@ -8,6 +8,7 @@ module Bosh::Cli
       attr_accessor :colorize
       attr_accessor :output
       attr_accessor :interactive
+      attr_accessor :cache
     end
 
     def initialize(filename, work_dir = Dir.pwd)

@@ -124,8 +124,12 @@ module Bosh::Cli
       end
     end
 
+    def duration_known?
+      @started_at && @finished_at
+    end
+
     def duration
-      return nil if @started_at.nil? || @finished_at.nil?
+      return unless duration_known?
       @finished_at - @started_at
     end
 

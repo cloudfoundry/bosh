@@ -6,6 +6,10 @@ module Bosh::Cli
     def self.create_for_log_type(log_type)
       if log_type == "event"
         EventLogRenderer.new
+      elsif log_type == "result"
+        # Null renderer doesn't output anything to screen, so it fits well
+        # in case we need to fetch task result log only, without rendering it
+        NullRenderer.new
       else
         TaskLogRenderer.new
       end
@@ -20,6 +24,11 @@ module Bosh::Cli
       @lock = Mutex.new
       @output = ""
       @time_adjustment = 0
+      @duration = nil
+    end
+
+    def duration_known?
+      false # TODO: make it available for basic renderer
     end
 
     def add_output(output)

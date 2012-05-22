@@ -31,6 +31,7 @@ module Bosh::Cli::Command
       status, body = director.perform_cloud_scan(deployment_name)
       scan_failed(status, body) if status != :done
 
+      nl
       say("Scan is complete, checking if any problems found...")
       @problems = director.list_problems(deployment_name)
 

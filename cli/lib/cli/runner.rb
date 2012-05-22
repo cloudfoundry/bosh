@@ -25,41 +25,12 @@ module Bosh::Cli
     end
 
     def initialize(args)
-      trap("SIGINT") {
-        handle_ctrl_c
-      }
       define_commands
       @args = args
       @options = {
-          :director_checks => true,
-          :colorize => true,
+        :director_checks => true,
+        :colorize => true,
       }
-    end
-
-    ##
-    # When user issues ctrl-c it asks if they really want to quit. If so
-    # then it will cancel the current running task if it exists.
-    def handle_ctrl_c
-      if !@runner.task_running?
-        exit(1)
-      elsif kill_current_task?
-        @runner.cancel_current_task
-        exit(1)
-      end
-    end
-
-    ##
-    # Asks user if they really want to quit and returns the boolean answer.
-    #
-    # @return [Boolean] Whether the user wants to quit or not.
-    def kill_current_task?
-      # Use say and stdin.gets instead of ask because of 2 bugs in Highline.
-      # The bug makes it so that if something else has called ask and was in
-      # the middle of waiting for a response then ctrl-c is issued and it
-      # calls ask again then highline will re-issue the first question again.
-      # If the input is a newline character then highline will choke.
-      say("\nAre you sure you'd like to cancel running tasks? [yN]")
-      $stdin.gets.chomp.downcase == "y"
     end
 
     def prepare
@@ -70,8 +41,10 @@ module Bosh::Cli
       parse_options!
 
       Config.interactive = !@options[:non_interactive]
-      Config.colorize    = @options.delete(:colorize)
-      Config.output    ||= STDOUT unless @options[:quiet]
+      Config.colorize = @options.delete(:colorize)
+      Config.output ||= STDOUT unless @options[:quiet]
+      Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir] ||
+                                            Bosh::Cli::DEFAULT_CACHE_DIR)
     end
 
     def run
@@ -81,10 +54,10 @@ module Bosh::Cli
       if @namespace && @action
         ns_class_name = @namespace.to_s.gsub(/(?:_|^)(.)/) { $1.upcase }
         klass = eval("Bosh::Cli::Command::#{ns_class_name}")
-        @runner = klass.new(@options)
-        @runner.usage = @usage
+        runner = klass.new(@options)
+        runner.usage = @usage
 
-        action_arity = @runner.method(@action.to_sym).arity
+        action_arity = runner.method(@action.to_sym).arity
         n_required_args = action_arity >= 0 ? action_arity : -action_arity - 1
 
         if n_required_args > @args.size
@@ -94,8 +67,8 @@ module Bosh::Cli
           err("Too many arguments, correct usage is: bosh #{@usage}")
         end
 
-        @runner.send(@action.to_sym, *@args)
-      elsif @args.empty? || @args == ["help"]
+        runner.send(@action.to_sym, *@args)
+      elsif @args.empty? || @args == %w(help)
         say(help_message)
         say(plugin_help_message) if @plugins
       elsif @args[0] == "help"
@@ -246,7 +219,7 @@ module Bosh::Cli
         usage "scp <job> <--upload | --download> [options] " +
                   "/path/to/source /path/to/destination"
         desc  "upload/download the source file to the given job. " +
-                  "Note: for dowload /path/to/destination is a directory"
+                  "Note: for download /path/to/destination is a directory"
         option "--index <job_index>"
         option "--public_key <file>"
         option "--gateway_host <host>"

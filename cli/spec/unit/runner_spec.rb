@@ -100,31 +100,6 @@ describe Bosh::Cli::Runner do
     test_cmd(%w(sync blobs), :blob_management, :sync)
   end
 
-  it "cancels running task and quits when ctrl-c is issued " +
-     "and user agrees to quit" do
-    runner = Bosh::Cli::Runner.new(["any", "command"])
-    runner.runner = {}
-    runner.runner.stub(:task_running?).and_return(true)
-    runner.stub(:kill_current_task?).and_return(true)
-    runner.runner.should_receive(:cancel_current_task).once
-    lambda { runner.handle_ctrl_c }.should raise_error SystemExit
-  end
-
-  it "quits when ctrl-c is issued and there is no task running" do
-    runner = Bosh::Cli::Runner.new(["any", "command"])
-    runner.runner = {}
-    runner.runner.stub(:task_running?).and_return(false)
-    lambda { runner.handle_ctrl_c }.should raise_error SystemExit
-  end
-
-  it "doesn't quit when user issues ctrl-c but does not want to quit" do
-    runner = Bosh::Cli::Runner.new(["any", "command"])
-    runner.runner = {}
-    runner.runner.stub(:task_running?).and_return(true)
-    runner.stub(:kill_current_task?).and_return(false)
-    lambda { runner.handle_ctrl_c }.should_not raise_error SystemExit
-  end
-
   it "loads custom plugins" do
     plugin_path = spec_asset("plugins")
     $:.unshift(plugin_path)

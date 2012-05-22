@@ -8,10 +8,10 @@ module Bosh
 
       def initialize(director, task_id, log_type = nil)
         @director = director
-        @task_id  = task_id
-        @offset   = 0
+        @task_id = task_id
+        @offset = 0
         @log_type = log_type
-        @buf      = ""
+        @buf = ""
       end
 
       def state
@@ -36,7 +36,7 @@ module Bosh
 
         last_nl = @buf.rindex("\n")
 
-        if !last_nl
+        if last_nl.nil?
           result = nil
         elsif last_nl != @buf.size - 1
           result = @buf[0..last_nl]
