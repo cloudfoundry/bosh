@@ -5,6 +5,7 @@ module Bosh::Director
   class Lock
 
     class TimeoutError < StandardError; end
+    class LockBusy < StandardError; end
 
     def initialize(name, opts = {})
       @name = name
@@ -15,41 +16,15 @@ module Bosh::Director
       @refresh_thread = nil
     end
 
-    def lock
-      acquire
-
-      @refresh_thread = Thread.new do
-        redis = Config.redis
-        sleep_interval = [1.0, @expiration/2].max
-        begin
-          loop do
-            @logger.debug("Renewing lock: #{@name}")
-            redis.watch(@name)
-            existing_lock = redis.get(@name)
-            lock_id = existing_lock.split(":")[1]
-            break if lock_id != @id
-            lock_expiration = Time.now.to_f + @expiration + 1
-            redis.multi do
-              redis.set(@name, "#{lock_expiration}:#{@id}")
-            end
-            sleep(sleep_interval)
-          end
-        ensure
-          @logger.debug("Lock renewal thread exiting")
-          redis.quit
-        end
-      end
-
-      if block_given?
-        begin
-          yield
-        ensure
-          release
-        end
-      end
+    def lock(&block)
+      lock_int(&block)
     end
 
-    def acquire
+    def try_lock(&block)
+      lock_int(true, &block)
+    end
+
+    def acquire(non_blocking)
       @logger.debug("Acquiring lock: #{@name}")
       redis = Config.redis
       started = Time.now
@@ -68,6 +43,8 @@ module Bosh::Director
             @logger.debug("Lock #{@name} was acquired by someone else, trying again")
           end
         end
+
+        raise LockBusy if non_blocking
 
         raise TimeoutError if Time.now - started > @timeout
 
@@ -107,6 +84,41 @@ module Bosh::Director
       lock_time_left = existing_lock_expiration - Time.now.to_f
       @logger.info("Lock: #{lock} expires in #{lock_time_left} seconds")
       lock_time_left < 0
+    end
+
+    private
+    def lock_int(non_blocking = false)
+      acquire(non_blocking)
+
+      @refresh_thread = Thread.new do
+        redis = Config.redis
+        sleep_interval = [1.0, @expiration/2].max
+        begin
+          loop do
+            @logger.debug("Renewing lock: #{@name}")
+            redis.watch(@name)
+            existing_lock = redis.get(@name)
+            lock_id = existing_lock.split(":")[1]
+            break if lock_id != @id
+            lock_expiration = Time.now.to_f + @expiration + 1
+            redis.multi do
+              redis.set(@name, "#{lock_expiration}:#{@id}")
+            end
+            sleep(sleep_interval)
+          end
+        ensure
+          @logger.debug("Lock renewal thread exiting")
+          redis.quit
+        end
+      end
+
+      if block_given?
+        begin
+          yield
+        ensure
+          release
+        end
+      end
     end
 
   end
