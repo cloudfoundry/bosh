@@ -23,6 +23,16 @@ module Bosh::Cli
       def <=>(other)
         @path <=> other.path
       end
+
+      # GlobMatch will be used as Hash key (as implied by using Set),
+      # hence we need to define both eql? and hash
+      def eql?(other)
+        @path == other.path
+      end
+
+      def hash
+        @path.hash
+      end
     end
 
     attr_reader :name, :globs, :version, :dependencies, :tarball_path
@@ -206,7 +216,7 @@ module Bosh::Cli
 
     # @return Array<GlobMatch>
     def resolve_globs
-      matches = []
+      matches = Set.new
 
       @globs.each do |glob|
         # Alternative source dir completely shadows the source dir, there can be

@@ -549,4 +549,21 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
                            "an empty file list: lib/*.rb")
   end
 
+  it "doesn't include the same path twice" do
+    add_file("src", "test/foo/README.txt", "README contents")
+    add_file("src", "test/foo/NOTICE.txt", "NOTICE contents")
+
+    fp1 = make_builder("A", %w(test/**/*)).fingerprint
+
+    remove_file("src", "test/foo/NOTICE.txt")
+    add_file("blobs", "test/foo/NOTICE.txt", "NOTICE contents")
+
+    File.directory?(File.join(@release_dir, "src", "test", "foo")).
+      should be_true
+
+    fp2 = make_builder("A", %w(test/**/*)).fingerprint
+
+    fp1.should == fp2
+  end
+
 end
