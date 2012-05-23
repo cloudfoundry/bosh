@@ -56,7 +56,6 @@ module Bosh::Director
           stemcell.save
         end
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
-
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
         FileUtils.rm_rf(@stemcell_file) if @stemcell_file
