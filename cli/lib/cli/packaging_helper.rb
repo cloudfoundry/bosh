@@ -92,7 +92,7 @@ module Bosh::Cli
       end
 
       if need_fetch
-        say("Downloading `#{name} (#{version})' (#{blobstore_id})".green)
+        say("Downloading `#{name} (#{version})'...".green)
         payload = @blobstore.get(blobstore_id)
         if Digest::SHA1.hexdigest(payload) == item["sha1"]
           @tarball_path = @final_index.add_version(fingerprint, item, payload)
