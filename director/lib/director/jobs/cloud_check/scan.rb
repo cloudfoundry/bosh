@@ -17,15 +17,20 @@ module Bosh::Director
         end
 
         def perform
-          with_deployment_lock do
-            started_at = Time.now
-            reset
-            # TODO: decide if scanning procedures should be
-            # extracted into their own classes (for clarity)
-            scan_vms
-            # always run 'scan_vms' before 'scan_disks'
-            scan_disks
-            "scan complete"
+          begin
+            with_deployment_try_lock do
+              started_at = Time.now
+              reset
+              # TODO: decide if scanning procedures should be
+              # extracted into their own classes (for clarity)
+              scan_vms
+              # always run 'scan_vms' before 'scan_disks'
+              scan_disks
+              "scan complete"
+            end
+          rescue Lock::LockBusy
+            raise "Unable to get deployment lock, maybe a deployment is " +
+                  "in progress. Try again later."
           end
         end
 
@@ -200,8 +205,8 @@ module Bosh::Director
           @agent_disks[disk_cid]
         end
 
-        def with_deployment_lock
-          Lock.new("lock:deployment:#{@deployment.name}").lock do
+        def with_deployment_try_lock
+          Lock.new("lock:deployment:#{@deployment.name}").try_lock do
             yield
           end
         end
