@@ -10,9 +10,12 @@ describe Bosh::Agent::Infrastructure::Vsphere::Settings do
   before(:each) do
     Bosh::Agent::Config.settings_file = File.join(base_dir, 'bosh', 'settings.json')
     @settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
-    @settings.stub!(:check_cdrom)
+    @settings.cdrom_retry_wait = 0.1
+
     @settings.stub!(:mount_cdrom)
     @settings.stub!(:eject_cdrom)
+    @settings.stub!(:udevadm_settle)
+    @settings.stub!(:read_cdrom_byte)
   end
 
   it 'should load settings' do
@@ -50,6 +53,20 @@ describe Bosh::Agent::Infrastructure::Vsphere::Settings do
     File.open(settings_file, 'w') { |f| f.write(settings_json) }
 
     @settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
+  end
+
+  it "should fail when there is no cdrom" do
+    @settings.stub!(:read_cdrom_byte).and_raise(Errno::ENOMEDIUM)
+    lambda {
+      @settings.check_cdrom
+    }.should raise_error(Bosh::Agent::LoadSettingsError)
+  end
+
+  it "should fail when cdrom is busy" do
+    @settings.stub!(:read_cdrom_byte).and_raise(Errno::EBUSY)
+    lambda {
+      @settings.check_cdrom
+    }.should raise_error(Bosh::Agent::LoadSettingsError)
   end
 
   it 'should return nil when asked for network settings' do
