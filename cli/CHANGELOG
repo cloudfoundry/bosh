@@ -1,0 +1,8 @@
+=== 0.19 - 10/22/2012
+
+* release composition (requires director support)
+* 'bosh rename' (requires director support)
+* alternative source directory support
+* dev release versions are now derived from final release versions
+* director task tracking enhancements
+* bugfixes
