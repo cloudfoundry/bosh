@@ -454,6 +454,7 @@ module Bosh::Cli
         usage "public stemcells"
         desc  "Show the list of publicly available stemcells for download."
         route :stemcell, :list_public
+        option "--full", "show the full download url"
       end
 
       command :download_public_stemcell do
