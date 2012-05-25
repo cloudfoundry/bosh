@@ -13,13 +13,14 @@ module Bosh::Director
         release_tgz = File.join(release_dir, RELEASE_TGZ)
 
         write_file(release_tgz, release_bundle)
-        task = create_task(user, "create release")
+        task = create_task(user, :update_release, "create release")
         Resque.enqueue(Jobs::UpdateRelease, task.id, release_dir)
         task
       end
 
       def delete_release(user, release, options = {})
-        task = create_task(user, "delete release: #{release.name}")
+        task = create_task(user, :delete_release,
+                           "delete release: #{release.name}")
         Resque.enqueue(Jobs::DeleteRelease, task.id, release.name, options)
         task
       end

@@ -13,10 +13,11 @@ Sham.define do
   blobstore_id  { |index| "blobstore-id-#{index}" }
   agent_id      { |index| "agent-id-#{index}" }
   index         { |index| index }
-  description   { |index| "description #{index}"}
+  description   { |index| "description #{index}" }
+  type          { |index| "type #{index}" }
   sha1          { |index| "sha1-#{index}" }
   ip            { |index| "#{index % 255}.#{index % 255}.#{index % 255}.#{index % 255}"}
-  build         { rand(1000) }
+  build         { |index| index }
 end
 
 module Bosh::Director::Models
@@ -84,6 +85,7 @@ module Bosh::Director::Models
 
   Task.blueprint do
     state       { "queued" }
+    type        { Sham.type }
     timestamp   { Time.now }
     description { Sham.description }
     result      { nil }

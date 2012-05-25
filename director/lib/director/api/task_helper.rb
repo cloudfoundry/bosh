@@ -3,10 +3,13 @@
 module Bosh::Director
   module Api
     module TaskHelper
-      def create_task(user, description)
+      def create_task(user, type, description)
         user = Models::User[:username => user]
-        task = Models::Task.create(:user => user, :description => description,
-                                   :state => :queued, :timestamp => Time.now,
+        task = Models::Task.create(:user => user,
+                                   :type => type,
+                                   :description => description,
+                                   :state => :queued,
+                                   :timestamp => Time.now,
                                    :checkpoint_time => Time.now)
         log_dir = File.join(Config.base_dir, "tasks", task.id.to_s)
         task_status_file = File.join(log_dir, "debug")

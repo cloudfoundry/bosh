@@ -323,7 +323,10 @@ describe Bosh::Director::Controller do
     describe "listing tasks" do
       it "has API call that returns a list of running tasks" do
         ["queued", "processing", "cancelling", "done"].each do |state|
-          (1..20).map { |i| Bosh::Director::Models::Task.make(:state => state, :timestamp => Time.now.to_i - i) }
+          (1..20).map { |i| Bosh::Director::Models::Task.make(
+              :type => :update_deployment,
+              :state => state,
+              :timestamp => Time.now.to_i - i) }
         end
         get "/tasks?state=processing"
         last_response.status.should == 200
@@ -338,7 +341,10 @@ describe Bosh::Director::Controller do
 
       it "has API call that returns a list of recent tasks" do
         ["queued", "processing"].each do |state|
-          (1..20).map { |i| Bosh::Director::Models::Task.make(:state => state, :timestamp => Time.now.to_i - i) }
+          (1..20).map { |i| Bosh::Director::Models::Task.make(
+              :type => :update_deployment,
+              :state => state,
+              :timestamp => Time.now.to_i - i) }
         end
         get "/tasks?limit=20"
         last_response.status.should == 200
@@ -426,6 +432,7 @@ describe Bosh::Director::Controller do
 
         task = Bosh::Director::Models::Task.new
         task.state = "done"
+        task.type = :update_deployment
         task.timestamp = Time.now.to_i
         task.description = "description"
         task.output = @temp_dir
