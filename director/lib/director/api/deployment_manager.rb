@@ -11,14 +11,15 @@ module Bosh::Director
         deployment_manifest_file = File.join(Dir::tmpdir, random_name)
 
         write_file(deployment_manifest_file, deployment_manifest)
-        task = create_task(user, "create deployment")
+        task = create_task(user, :update_deployment, "create deployment")
         Resque.enqueue(Jobs::UpdateDeployment, task.id,
                        deployment_manifest_file, options)
         task
       end
 
       def delete_deployment(user, deployment, options = {})
-        task = create_task(user, "delete deployment: #{deployment.name}")
+        task = create_task(user, :delete_deployment,
+                           "delete deployment: #{deployment.name}")
         Resque.enqueue(Jobs::DeleteDeployment, task.id,
                        deployment.name, options)
         task

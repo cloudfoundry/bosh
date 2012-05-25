@@ -7,7 +7,7 @@ module Bosh::Director
 
       def perform_scan(user, deployment_name)
         deployment = find_deployment(deployment_name)
-        task = create_task(user, "scan cloud")
+        task = create_task(user, :cck_scan, "scan cloud")
         Resque.enqueue(Jobs::CloudCheck::Scan, task.id, deployment.name)
         task
       end
@@ -20,7 +20,7 @@ module Bosh::Director
 
       def apply_resolutions(user, deployment_name, resolutions)
         deployment = find_deployment(deployment_name)
-        task = create_task(user, "apply resolutions")
+        task = create_task(user, :cck_apply, "apply resolutions")
         Resque.enqueue(Jobs::CloudCheck::ApplyResolutions, task.id,
                        deployment.name, resolutions)
         task

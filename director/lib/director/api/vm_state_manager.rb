@@ -13,7 +13,7 @@ module Bosh::Director
         deployment = Models::Deployment.find(:name => deployment_name)
         raise DeploymentNotFound.new(deployment_name) if deployment.nil?
 
-        task = create_task(user, "retrieve vm-stats")
+        task = create_task(user, :vms, "retrieve vm-stats")
         Resque.enqueue(Jobs::VmState, task.id, deployment.id)
         task
       end
