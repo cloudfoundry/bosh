@@ -67,7 +67,7 @@ namespace "migration" do
         :target => #{target}).run
     EOS
 
-    IO.popen("bundle exec sequel '#{database}'", :mode => "r+") do |io|
+    IO.popen("bundle exec sequel -E '#{database}'", :mode => "r+") do |io|
       io.write(script)
       io.close_write
       puts io.read
