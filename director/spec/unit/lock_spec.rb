@@ -110,10 +110,6 @@ describe Bosh::Director::Lock do
       stored_value
     end
 
-    redis.should_receive(:set).with("foo", anything()) do |_, value|
-      stored_value = value
-    end
-
     redis.should_receive(:del).with("foo").and_return do
       stored_value = nil
       nil
