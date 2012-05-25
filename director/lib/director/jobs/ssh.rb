@@ -19,7 +19,6 @@ module Bosh::Director
       def perform
         job = @target["job"]
         indexes = @target["indexes"]
-        instances = nil
 
         conditions = {:deployment_id => @deployment_id}
         conditions[:index] = indexes if indexes && indexes.size > 0
@@ -38,6 +37,9 @@ module Bosh::Director
         end
         @result_file.write(Yajl::Encoder.encode(ssh_info))
         @result_file.write("\n")
+
+        # task result
+        nil
       end
     end
   end
