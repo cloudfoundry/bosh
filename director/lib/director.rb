@@ -283,8 +283,8 @@ module Bosh::Director
           raise InvalidRequest.new("Missing operation on job " +
                                    "#{params[:job]}")
         end
-        options = { "job_rename" =>  { "old_name" => params[:job],
-                                       "new_name" => params["new_name"] } }
+        options = {"job_rename" =>  {"old_name" => params[:job],
+                                     "new_name" => params["new_name"]}}
         options["job_rename"]["force"] = true if params["force"] == "true"
       end
 
@@ -446,6 +446,13 @@ module Bosh::Director
 
       if states.size > 0
         dataset = dataset.filter(:state => states)
+      end
+
+      verbose = params["verbose"] || "1"
+      if verbose == "1"
+        dataset = dataset.filter(:type => [
+            "update_deployment", "delete_deployment", "update_release",
+            "delete_release", "update_stemcell", "delete_stemcell"])
       end
 
       tasks = dataset.order_by(:timestamp.desc).map do |task|

@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 Sequel.migration do
-
   up do
     alter_table(:instances) do
       add_column(:state, String)
@@ -19,5 +18,4 @@ Sequel.migration do
       remove_column(:state)
     end
   end
-
 end
