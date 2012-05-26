@@ -124,31 +124,4 @@ describe Bosh::Cli::TaskTracker do
     tracker.track.should == :cancelled
   end
 
-  it "prompts for task error log on error (if in interactive mode)" do
-    tracker = make_tracker("42", { :log_type => "event",
-                                   :use_cache => false })
-
-    tracker.stub!(:interactive?).and_return(true)
-
-    @director.should_receive(:get_task_state).with("42").
-      and_return("processing", "error")
-
-    @director.should_receive(:get_task_output).with("42", 0, "event").
-      and_return(["", nil])
-
-    @director.should_receive(:get_task_output).with("42", 0, "event").
-      and_return(["foo", 4])
-
-    tracker.should_receive(:ask).and_return("yes")
-
-    new_tracker = mock("tracker")
-    Bosh::Cli::TaskTracker.should_receive(:new).
-      with(@director, "42", { :log_type => "debug", :use_cache => false }).
-      and_return(new_tracker)
-
-    new_tracker.should_receive(:track).and_return(:foo)
-
-    tracker.track.should == :error
-  end
-
 end

@@ -159,13 +159,12 @@ module Bosh
           }
         }
 
-        status, task_id, output =
-          request_and_track(:post, url, "application/json",
-                            JSON.generate(payload), :log_type => "result")
+        status, task_id = request_and_track(:post, url, "application/json",
+                                            JSON.generate(payload))
 
-        return nil if status != :done || task_id.nil?
+        return nil if status != :done
 
-        JSON.parse(output)
+        JSON.parse(get_task_result_log(task_id))
       end
 
       def cleanup_ssh(deployment_name, job, user_regex, indexes)
@@ -211,19 +210,20 @@ module Bosh
         url += "/#{index}/logs?type=#{log_type}&filters=#{filters}"
 
         status, task_id = request_and_track(:get, url)
-        return nil if status != :done || task_id.nil?
+        return nil if status != :done
         get_task_result(task_id)
       end
 
       def fetch_vm_state(deployment_name)
         url = "/deployments/#{deployment_name}/vms?format=full"
 
-        status, task_id, output =
-          request_and_track(:get, url, nil, nil, :log_type => "result")
+        status, task_id = request_and_track(:get, url)
 
-        if status != :done || task_id.nil?
+        if status != :done
           raise DirectorError, "Failed to fetch VMs information from director"
         end
+
+        output = get_task_result_log(task_id)
 
         output.to_s.split("\n").map do |vm_state|
           JSON.parse(vm_state)
@@ -318,6 +318,11 @@ module Bosh
 
       def get_task_result(task_id)
         get_task(task_id)["result"]
+      end
+
+      def get_task_result_log(task_id)
+        log, _ = get_task_output(task_id, 0, "result")
+        log
       end
 
       def get_task_output(task_id, offset, log_type = nil)
@@ -429,16 +434,14 @@ module Bosh
       end
 
       def parse_error_message(status, body)
-        parsed_body = JSON.parse(body.to_s)
+        parsed_body = JSON.parse(body.to_s) rescue {}
 
         if parsed_body["code"] && parsed_body["description"]
-          "Director error %s: %s" % [parsed_body["code"],
-                                     parsed_body["description"]]
+          "Error %s: %s" % [parsed_body["code"],
+                            parsed_body["description"]]
         else
-          "Director error (HTTP %s): %s" % [status, body]
+          "HTTP %s: %s" % [status, body]
         end
-      rescue JSON::ParserError
-        "Director error (HTTP %s): %s" % [status, body]
       end
 
       private

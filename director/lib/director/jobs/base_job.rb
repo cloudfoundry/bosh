@@ -14,15 +14,21 @@ module Bosh::Director
         @logger = Config.logger
         @event_log = Config.event_log
         @result_file = Config.result
+        @task_manager = Api::TaskManager.new
+        @task_id = nil
       end
 
+      # @return [Boolean] Has task been cancelled?
       def task_cancelled?
-        task = Models::Task[@task_id]
+        return false if @task_id.nil?
+        task = @task_manager.find_task(@task_id)
         task && (task.state == "cancelling" || task.state == "timeout")
       end
 
       def task_checkpoint
-        raise TaskCancelled.new(@task_id) if task_cancelled?
+        if task_cancelled?
+          raise TaskCancelled, "Task #{task_id} cancelled"
+        end
       end
 
       def begin_stage(stage_name, n_steps)

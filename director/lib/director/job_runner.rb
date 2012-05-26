@@ -6,12 +6,15 @@ module Bosh::Director
     # @param [Class] job_class Job class to instantiate and run
     # @param [Integer] task_id Existing task id
     def initialize(job_class, task_id)
-      @job_class = job_class
-      @task = Models::Task[task_id]
-
-      if @task.nil?
-        raise TaskNotFound.new(task_id)
+      unless job_class.kind_of?(Class) &&
+        job_class <= Jobs::BaseJob
+        raise DirectorError, "Invalid director job class `#{job_class}'"
       end
+
+      task_manager = Bosh::Director::Api::TaskManager.new
+
+      @job_class = job_class
+      @task = task_manager.find_task(task_id)
 
       setup_logging
     end
@@ -34,6 +37,12 @@ module Bosh::Director
     # Sets up job logging.
     # @return [void]
     def setup_logging
+      # It's up to a caller to set up task output directory
+      unless @task.output && File.directory?(@task.output)
+        raise DirectorError,
+              "Task directory `#{@task.output}' is missing"
+      end
+
       debug_log = File.join(@task.output, "debug")
       event_log = File.join(@task.output, "event")
       result_log = File.join(@task.output, "result")
@@ -42,8 +51,8 @@ module Bosh::Director
       @debug_logger.level = Config.logger.level
       @debug_logger.formatter = ThreadFormatter.new
 
-      Config.event_log = Bosh::Director::EventLog.new(event_log)
-      Config.result = Bosh::Director::TaskResultFile.new(result_log)
+      Config.event_log = EventLog.new(event_log)
+      Config.result = TaskResultFile.new(result_log)
       Config.logger = @debug_logger
 
       Config.db.logger = @debug_logger
@@ -73,6 +82,7 @@ module Bosh::Director
 
       job.task_id = @task.id
       job.task_checkpoint # cancelled in the queue?
+
       run_checkpointing
 
       @debug_logger.info("Performing task: #{@task.id}")
@@ -85,24 +95,16 @@ module Bosh::Director
       result = job.perform
 
       @debug_logger.info("Done")
+      finish_task(:done, result)
 
-      @task.state = :done
-      @task.result = truncate(result.to_s)
-      @task.timestamp = Time.now
-      @task.save
-
-    rescue Exception => e
-      if e.kind_of?(Bosh::Director::TaskCancelled)
-        @debug_logger.info("Task #{@task.id} cancelled")
-        @task.state = :cancelled
-      else
-        @debug_logger.error("#{e} - #{e.backtrace.join("\n")}")
-        @task.state = :error
-      end
-
-      @task.result = truncate(e.to_s)
-      @task.timestamp = Time.now
-      @task.save
+    rescue Bosh::Director::TaskCancelled => e
+      log_exception(e)
+      @debug_logger.info("Task #{@task.id} cancelled")
+      finish_task(:cancelled, "task cancelled")
+    rescue => e # Only rescuing StandardError and its descendants
+      log_exception(e)
+      @debug_logger.error("#{e}\n#{e.backtrace.join("\n")}")
+      finish_task(:error, e)
     end
 
     # Spawns a thread that periodically updates task checkpoint time.
@@ -132,6 +134,26 @@ module Bosh::Director
       else
         stripped
       end
+    end
+
+    # Marks task completion
+    # @param [Symbol] state Task completion state
+    # @param [#to_s] result
+    def finish_task(state, result)
+      @task.state = state
+      @task.result = truncate(result.to_s)
+      @task.timestamp = Time.now
+      @task.save
+    end
+
+    # Logs the exception in the event log
+    # @param [Exception] exception
+    def log_exception(exception)
+      # Event log is being used here to propagate the error.
+      # It's up to event log renderer to find the error and
+      # signal it properly.
+      director_error = DirectorError.create_from_exception(exception)
+      Config.event_log.log_error(director_error)
     end
 
   end

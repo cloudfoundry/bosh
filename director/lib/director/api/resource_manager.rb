@@ -7,7 +7,7 @@ module Bosh::Director
       # Retrieves the resource `id` from the blobstore and stores it
       # locally, and returns the path to the file
       #
-      # @param [String] blobstore id
+      # @param [String] id
       # @return [String] path to the contents of the blobstore id
       def get_resource_path(id)
         blobstore_resource(id) do |blobstore|
@@ -25,7 +25,7 @@ module Bosh::Director
       # Retrieves the resource `id` from the blobstore and returns the
       # contents of it
       #
-      # @param [String] blobstore id
+      # @param [String] id
       # @return [String] contents of the blobstore id
       def get_resource(id)
         blobstore_resource(id) do |blobstore|
@@ -35,7 +35,7 @@ module Bosh::Director
 
       # Deletes the resource `id` from the blobstore
       #
-      # @param [String] blobstore id
+      # @param [String] id
       def delete_resource(id)
         blobstore_resource(id) do |blobstore|
           blobstore.delete(id)
@@ -48,9 +48,9 @@ module Bosh::Director
         blobstore = Bosh::Director::Config.blobstore
         yield blobstore
       rescue Bosh::Blobstore::NotFound
-        raise ResourceNotFound, id
+        raise ResourceNotFound, "Resource `#{id}' not found in the blobstore"
       rescue Bosh::Blobstore::BlobstoreError => e
-        raise ResourceError.new(id, e)
+        raise ResourceError, "Blobstore error accessing resource `#{id}': #{e}"
       end
     end
   end

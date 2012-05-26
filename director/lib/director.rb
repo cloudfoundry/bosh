@@ -32,8 +32,10 @@ require "nats/client"
 require "securerandom"
 
 require "encryption/encryption_handler"
+require "director/api"
 require "director/deep_copy"
 require "director/dns_helper"
+require "director/errors"
 require "director/ext"
 require "director/ip_util"
 require "common/thread_formatter"
@@ -44,7 +46,6 @@ require "director/config"
 require "director/event_log"
 require "director/task_result_file"
 
-require "director/api"
 require "director/client"
 require "director/agent_client"
 require "cloud"
@@ -58,7 +59,6 @@ require "director/vm_reuser"
 require "director/deployment_plan"
 require "director/deployment_plan_compiler"
 require "director/duration"
-require "director/errors"
 require "director/instance_deleter"
 require "director/instance_updater"
 require "director/job_runner"
@@ -194,14 +194,16 @@ module Bosh::Director
     error do
       exception = request.env["sinatra.error"]
       if exception.kind_of?(DirectorError)
-        @logger.debug("Request failed with response code: #{exception.response_code} error code: " +
-                         "#{exception.error_code} error: #{exception.message}")
+        @logger.debug("Request failed, " +
+                        "response code: #{exception.response_code}, " +
+                        "error code: #{exception.error_code}, " +
+                        "error message: #{exception.message}")
         status(exception.response_code)
         error_payload = {
           "code" => exception.error_code,
           "description" => exception.message
         }
-        Yajl::Encoder.encode(error_payload)
+        json_encode(error_payload)
       else
         msg = ["#{exception.class} - #{exception.message}:"]
         msg.concat(exception.backtrace)
@@ -219,7 +221,9 @@ module Bosh::Director
 
     put "/users/:username", :consumes => [:json] do
       user = @user_manager.get_user_from_request(request)
-      raise UserImmutableUsername unless user.username == params[:username]
+      if user.username != params[:username]
+        raise UserImmutableUsername, "The username is immutable"
+      end
       @user_manager.update_user(user)
       status(204)
       nil
@@ -244,15 +248,14 @@ module Bosh::Director
         }
       end
 
-      Yajl::Encoder.encode(releases)
+      json_encode(releases)
     end
 
     delete "/releases/:name" do
-      release = Models::Release[:name => params[:name]]
-      raise ReleaseNotFound.new(params[:name]) if release.nil?
+      release = @release_manager.find_by_name(params[:name])
 
       options = {}
-      options["force"]   = true if params["force"] == "true"
+      options["force"] = true if params["force"] == "true"
       options["version"] = params["version"]
 
       task = @release_manager.delete_release(@user, release, options)
@@ -281,16 +284,18 @@ module Bosh::Director
         }
       else
         unless params["new_name"]
-          raise InvalidRequest.new("Missing operation on job " +
-                                   "#{params[:job]}")
+          raise DirectorError, "Missing operation on job `#{params[:job]}'"
         end
-        options = {"job_rename" =>  {"old_name" => params[:job],
-                                     "new_name" => params["new_name"]}}
+        options = {
+          "job_rename" => {
+            "old_name" => params[:job],
+            "new_name" => params["new_name"]
+          }
+        }
         options["job_rename"]["force"] = true if params["force"] == "true"
       end
 
-      deployment = Models::Deployment.find(:name => params[:deployment])
-      raise DeploymentNotFound.new(name) if deployment.nil?
+      deployment = @deployment_manager.find_by_name(params[:deployment])
       task = @deployment_manager.create_deployment(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
@@ -300,7 +305,7 @@ module Bosh::Director
       begin
         index = Integer(params[:index])
       rescue ArgumentError
-        raise InstanceInvalidIndex.new(params[:index])
+        raise InstanceInvalidIndex, "Invalid instance index `#{params[:index]}'"
       end
 
       options = {
@@ -313,8 +318,7 @@ module Bosh::Director
         }
       }
 
-      deployment = Models::Deployment.find(:name => params[:deployment])
-      raise DeploymentNotFound.new(params[:deployment]) if deployment.nil?
+      deployment = @deployment_manager.find_by_name(params[:deployment])
       task = @deployment_manager.create_deployment(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
@@ -341,24 +345,20 @@ module Bosh::Director
         }
       end
 
-      Yajl::Encoder.encode(deployments)
+      json_encode(deployments)
     end
 
     get "/deployments/:name" do
-      name = params[:name].to_s.strip
-      deployment = Models::Deployment.find(:name => name)
-      raise DeploymentNotFound.new(name) if deployment.nil?
+      deployment = @deployment_manager.find_by_name(params[:name])
       @deployment_manager.deployment_to_json(deployment)
     end
 
     get "/deployments/:name/vms" do
-      name = params[:name].to_s.strip
-      deployment = Models::Deployment.find(:name => name)
-      raise DeploymentNotFound.new(name) if deployment.nil?
+      deployment = @deployment_manager.find_by_name(params[:name])
 
       format = params[:format]
       if format == "full"
-        task = @vm_state_manager.fetch_vm_state(@user, params[:name])
+        task = @vm_state_manager.fetch_vm_state(@user, deployment)
         redirect "/tasks/#{task.id}"
       else
         @deployment_manager.deployment_vms_to_json(deployment)
@@ -366,8 +366,7 @@ module Bosh::Director
     end
 
     delete "/deployments/:name" do
-      deployment = Models::Deployment[:name => params[:name]]
-      raise DeploymentNotFound.new(params[:name]) if deployment.nil?
+      deployment = @deployment_manager.find_by_name(params[:name])
 
       options = {}
       options["force"] = true if params["force"] == "true"
@@ -390,21 +389,19 @@ module Bosh::Director
           "cid"     => stemcell.cid
         }
       end
-      Yajl::Encoder.encode(stemcells)
+      json_encode(stemcells)
     end
 
     delete "/stemcells/:name/:version" do
-      stemcell = Models::Stemcell[:name => params[:name], :version => params[:version]]
-      raise StemcellNotFound.new(params[:name], params[:version]) if stemcell.nil?
+      name, version = params[:name], params[:version]
+      stemcell = @stemcell_manager.find_by_name_and_version(name, version)
       task = @stemcell_manager.delete_stemcell(@user, stemcell)
       redirect "/tasks/#{task.id}"
     end
 
     get "/releases/:name" do
       name = params[:name].to_s.strip
-
-      release = Models::Release.find(:name => name)
-      raise ReleaseNotFound.new(name) if release.nil?
+      release = @release_manager.find_by_name(name)
 
       result = { }
 
@@ -431,7 +428,7 @@ module Bosh::Director
       end
 
       content_type(:json)
-      Yajl::Encoder.encode(result)
+      json_encode(result)
     end
 
     get "/tasks" do
@@ -461,65 +458,58 @@ module Bosh::Director
           task.state = :timeout
           task.save
         end
-        @task_manager.task_to_json(task)
+        @task_manager.task_to_hash(task)
       end
 
       content_type(:json)
-      Yajl::Encoder.encode(tasks)
+      json_encode(tasks)
     end
 
     get "/tasks/:id" do
-      task = Models::Task[params[:id]]
-      raise TaskNotFound.new(params[:id]) if task.nil?
+      task = @task_manager.find_task(params[:id])
       if task_timeout?(task)
         task.state = :timeout
         task.save
       end
+
       content_type(:json)
-      task_json = @task_manager.task_to_json(task)
-      Yajl::Encoder.encode(task_json)
+      json_encode(@task_manager.task_to_hash(task))
     end
 
     get "/tasks/:id/output" do
-      task = Models::Task[params[:id]]
       log_type = params[:type] || "debug"
-
-      raise TaskNotFound.new(params[:id]) if task.nil?
+      task = @task_manager.find_task(params[:id])
 
       if task.output.nil?
-        status(NO_CONTENT)
-        return
+        halt(204)
       end
 
-      if File.file?(task.output)
-        log_file = task.output # Backward compatibility
-      else
+      if File.directory?(task.output)
         log_file = File.join(task.output, log_type)
+      else
+        log_file = task.output # Backward compatibility
       end
 
       if File.file?(log_file)
         send_file(log_file, :type => "text/plain")
       else
-        status(NO_CONTENT)
+        status(204)
       end
     end
 
     delete "/task/:id" do
-      output = ""
       task_id = params[:id]
-      task = Models::Task[task_id]
-      raise TaskNotFound.new(task_id) if task.nil?
+      task = @task_manager.find_task(task_id)
 
       if task.state != "processing" && task.state != "queued"
-        output = "Cannot cancel task #{task_id}: Invalid state(#{task.state})"
         status(400)
+        body("Cannot cancel task #{task_id}: invalid state (#{task.state})")
       else
-        output = "Cancelling task #{task_id}"
         task.state = :cancelling
         task.save
         status(204)
+        body("Cancelling task #{task_id}")
       end
-      output
     end
 
     # GET /resources/deadbeef
@@ -601,7 +591,7 @@ module Bosh::Director
         "cpi"     => Config.cloud_type
       }
       content_type(:json)
-      Yajl::Encoder.encode(status)
+      json_encode(status)
     end
   end
 end

@@ -11,6 +11,7 @@ module Bosh::Director
         super
         @stemcell_file = stemcell_file
         @cloud = Config.cloud
+        @stemcell_manager = Api::StemcellManager.new
       end
 
       def perform
@@ -21,7 +22,11 @@ module Bosh::Director
 
         track_and_log("Extracting stemcell archive") do
           output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1`
-          raise StemcellInvalidArchive.new($?.exitstatus, output) if $?.exitstatus != 0
+          if $?.exitstatus != 0
+            raise StemcellInvalidArchive,
+                  "Invalid stemcell archive, tar returned #{$?.exitstatus}, " +
+                  "output: #{output}"
+          end
         end
 
         track_and_log("Verifying stemcell manifest") do
@@ -35,12 +40,16 @@ module Bosh::Director
           @logger.info("Found: name=>#{@name}, version=>#{@version}, cloud_properties=>#{@cloud_properties}")
 
           @logger.info("Verifying stemcell image")
-          raise StemcellInvalidImage unless File.file?(@stemcell_image)
+          unless File.file?(@stemcell_image)
+            raise StemcellImageNotFound, "Stemcell image not found"
+          end
         end
 
         track_and_log("Checking if this stemcell already exists") do
-          stemcell = Models::Stemcell[:name => @name, :version => @version]
-          raise StemcellAlreadyExists.new(@name, @version) if stemcell
+          if @stemcell_manager.stemcell_exists?(@name, @version)
+            raise StemcellAlreadyExists,
+                  "Stemcell `#{@name}/#{@version}' already exists"
+          end
         end
 
         stemcell = Models::Stemcell.new

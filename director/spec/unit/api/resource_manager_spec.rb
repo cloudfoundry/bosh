@@ -21,7 +21,8 @@ describe Bosh::Director::Api::ResourceManager do
   it "raises an error when trying to get non-existing resource" do
     lambda {
       @manager.get_resource("deadbeef")
-    }.should raise_error(BD::ResourceNotFound, "Resource deadbeef not found")
+    }.should raise_error(BD::ResourceNotFound,
+                         "Resource `deadbeef' not found in the blobstore")
   end
 
   it "raises an error when something went wrong with blobstore" do
@@ -31,7 +32,8 @@ describe Bosh::Director::Api::ResourceManager do
     lambda {
       @manager.get_resource("deadbeef")
     }.should raise_error(BD::ResourceError,
-                         "Error fetching resource deadbeef: bad stuff")
+                         "Blobstore error accessing resource `deadbeef': " +
+                         "bad stuff")
   end
 
   it "saves resource to a local file" do

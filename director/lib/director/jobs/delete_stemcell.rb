@@ -12,10 +12,13 @@ module Bosh::Director
           @name, @version = args
           @cloud = Config.cloud
           @blobstore = Config.blobstore
+          @stemcell_manager = Api::StemcellManager.new
         elsif args.empty?
+          # TODO: fix this
           # used for testing only
         else
-          raise ArgumentError, "wrong number of arguments (#{args.length} for 2)"
+          raise ArgumentError,
+                "wrong number of arguments (#{args.length} for 2)"
         end
       end
 
@@ -23,17 +26,20 @@ module Bosh::Director
         @logger.info("Processing delete stemcell")
 
         lock = Lock.new("lock:stemcells:#{@name}:#{@version}", :timeout => 10)
+
         lock.lock do
-          @logger.info("Looking up stemcell: #{@name}:#{@version}")
-          @stemcell = Models::Stemcell[:name => @name, :version => @version]
-          raise StemcellNotFound.new(@name, @version) if @stemcell.nil?
+          desc = "#{@name}/#{@version}"
+          @logger.info("Looking up stemcell: #{desc}")
+          @stemcell =
+            @stemcell_manager.find_by_name_and_version(@name, @version)
           @logger.info("Found: #{@stemcell.pretty_inspect}")
 
-          @logger.info("Checking for any deployments still using the stemcell..")
-          unless @stemcell.deployments.empty?
-            deployments = []
-            @stemcell.deployments.each { |deployment| deployments << deployment.name }
-            raise StemcellInUse.new(@name, @version, deployments.join(", "))
+          @logger.info("Checking for any deployments still using the stemcell")
+          deployments = @stemcell.deployments
+          unless deployments.empty?
+            names = deployments.map { |d| d.name }.join(", ")
+            raise StemcellInUse,
+                  "Stemcell `#{desc}' is still in use by: #{names}"
           end
 
           @event_log.begin_stage("Deleting stemcell from cloud", 1)
@@ -43,17 +49,21 @@ module Bosh::Director
           end
 
           @logger.info("Looking for any compiled packages on this stemcell")
-          compiled_packages = Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
+          compiled_packages =
+            Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
 
-          @event_log.begin_stage("Deleting compiled packages", compiled_packages.count, [@name, @version])
-          @logger.info("Deleting compiled packages (#{compiled_packages.count}) for: #{@stemcell.pretty_inspect}")
+          @event_log.begin_stage("Deleting compiled packages",
+                                 compiled_packages.count, [@name, @version])
+          @logger.info("Deleting compiled packages " +
+                       "(#{compiled_packages.count}) for `#{desc}'")
 
           compiled_packages.each do |compiled_package|
             next unless compiled_package
 
             package = compiled_package.package
             track_and_log("#{package.name}/#{package.version}") do
-              @logger.info("Deleting compiled package: #{package.name}/#{package.version}")
+              @logger.info("Deleting compiled package: " +
+                           "#{package.name}/#{package.version}")
               @blobstore.delete(compiled_package.blobstore_id)
               compiled_package.destroy
             end

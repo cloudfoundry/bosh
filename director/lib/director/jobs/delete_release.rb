@@ -13,7 +13,7 @@ module Bosh::Director
         @errors = []
         @force = options["force"] || false
         @version = options["version"]
-
+        @release_manager = Api::ReleaseManager.new
       end
 
       def delete_release_version(release_version)
@@ -142,28 +142,35 @@ module Bosh::Director
 
         lock.lock do
           @logger.info("Looking up release: #{@name}")
-          release = Models::Release[:name => @name]
-          raise ReleaseNotFound.new(@name) if release.nil?
+          release = @release_manager.find_by_name(@name)
+          desc = "#{@name}/#{@version}"
           @logger.info("Found: #{release.name}")
 
           if @version
-            @logger.info("Looking up release version: #{@version}")
-            release_version = release.versions_dataset.filter(:version => @version).first
-            raise ReleaseVersionNotFound.new(@name, @version) if release_version.nil?
+            @logger.info("Looking up release version `#{desc}'")
+            release_version = @release_manager.find_version(release, @version)
+            @logger.info("Found release version `#{desc}'")
+            @logger.info("Checking for any deployments still using " +
+                         "this particular release version")
 
-            @logger.info("Found: #{release.name}/#{release_version.version}")
-            @logger.info("Checking for any deployments still using this particular release version")
+            deployments = release_version.deployments
 
-            unless release_version.deployments.empty?
-              raise ReleaseVersionInUse.new(@name, @version, release_version.deployments.map{ |d| d.name }.join(", "))
+            unless deployments.empty?
+              names = deployments.map{ |d| d.name }.join(", ")
+              raise ReleaseVersionInUse,
+                    "Release version `#{desc}' is still in use by: #{names}"
             end
 
             delete_release_version(release_version)
 
           else
             @logger.info("Checking for any deployments still using the release")
-            unless release.deployments.empty?
-              raise ReleaseInUse.new(@name, release.deployments.map { |d| d.name }.join(", "))
+            deployments = release.deployments
+
+            unless deployments.empty?
+              names = deployments.map { |d| d.name }.join(", ")
+              raise ReleaseInUse,
+                    "Release `#{@name}' is still in use by: #{names}"
             end
 
             delete_release(release)
@@ -171,7 +178,8 @@ module Bosh::Director
         end
 
         unless @errors.empty?
-          raise "Error deleting release: #{@errors.collect { |e| e.to_s }.join(",")}"
+          # TODO: use proper exception
+          raise "Error deleting release: #{@errors.map { |e| e.to_s }.join(", ")}"
         end
 
         "/release/#{@name}"

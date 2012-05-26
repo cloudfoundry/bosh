@@ -17,7 +17,7 @@ module Bosh::Director
         @logger.info("Deployment plan options: #{options.pretty_inspect}")
 
         plan_options = {
-          "recreate"   => !!options["recreate"],
+          "recreate" => !!options["recreate"],
           "job_states" => options["job_states"] || { },
           "job_rename" => options["job_rename"] || { }
         }
@@ -32,7 +32,7 @@ module Bosh::Director
 
       def prepare
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        @event_log.begin_stage("Preparing deployment", 7)
+        @event_log.begin_stage("Preparing deployment", 8)
 
         track_and_log("Binding deployment") do
           @deployment_plan_compiler.bind_deployment

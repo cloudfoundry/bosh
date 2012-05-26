@@ -4,6 +4,10 @@ module Bosh::Director
   module Api
     class PropertyManager
 
+      def initialize
+        @deployment_manager = DeploymentManager.new
+      end
+
       def create_property(deployment_name, property_name, value)
         property = Models::DeploymentProperty.new
         property.deployment = find_deployment(deployment_name)
@@ -14,7 +18,9 @@ module Bosh::Director
       rescue Sequel::ValidationFailed => e
         # TODO: this is consistent with UserManager but doesn't quite feel right
         if e.errors[[:name, :deployment_id]].include?(:unique)
-          raise PropertyAlreadyExists.new(property_name, deployment_name)
+          raise PropertyAlreadyExists,
+                "Property `#{property_name}' already exists " +
+                "for deployment `#{deployment_name}'"
         end
         invalid_property(e.errors)
       end
@@ -36,7 +42,12 @@ module Bosh::Director
         deployment = find_deployment(deployment_name)
         filters = {:deployment_id => deployment.id, :name => property_name}
         property = Models::DeploymentProperty.find(filters)
-        property || raise(PropertyNotFound.new(property_name, deployment.name))
+        if property.nil?
+          raise PropertyNotFound,
+                "Property `#{property_name}' not found " +
+                "for deployment `#{deployment_name}'"
+        end
+        property
       end
 
       def get_properties(deployment_name)
@@ -47,12 +58,12 @@ module Bosh::Director
       private
 
       def invalid_property(errors)
-        raise PropertyInvalid.new(errors.full_messages.sort.join(", "))
+        raise PropertyInvalid,
+              "Property is invalid: #{errors.full_messages.sort.join(", ")}"
       end
 
       def find_deployment(name)
-        deployment = Models::Deployment.find(:name => name)
-        deployment || raise(DeploymentNotFound.new(name))
+        @deployment_manager.find_by_name(name)
       end
     end
   end
