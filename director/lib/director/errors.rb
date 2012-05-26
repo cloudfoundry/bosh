@@ -5,84 +5,99 @@ module Bosh::Director
 
   class ProblemHandlerError < StandardError; end
 
+  # DirectorError is a generic exception for most of the errors originated
+  # in BOSH Director.
   class DirectorError < StandardError
-    attr_reader :response_code
-    attr_reader :error_code
-
-    def initialize(response_code, error_code, format, *args)
-      @response_code = response_code
-      @error_code = error_code
-      msg = sprintf(format, *args)
-      super(msg)
-    end
-  end
-
-  [
-   ["TaskNotFound", NOT_FOUND, 10000, "Task \"%s\" doesn't exist"],
-   ["TaskCancelled", OK, 10001, "Task \"%s\" cancelled"],
-
-   ["UserNotFound",          NOT_FOUND,    20000, "User \"%s\" doesn't exist"],
-   ["UserImmutableUsername", BAD_REQUEST,  20001, "The username is immutable"],
-   ["UserInvalid",           BAD_REQUEST,  20002, "The user is invalid: %s"],
-   ["UserNameTaken",         BAD_REQUEST,  20003, "The username: %s is already taken"],
-
-   ["ReleaseAlreadyExists",    BAD_REQUEST, 30000, "Release already exists"],
-   ["ReleaseExistingPackageHashMismatch", BAD_REQUEST, 30001,
-    "The existing package with the same name and version has a different hash"],
-   ["ReleaseInvalidArchive",   BAD_REQUEST, 30002, "Invalid release archive, tar exit status: %s, output: %s"],
-   ["ReleaseManifestNotFound", BAD_REQUEST, 30003, "Release manifest not found"],
-   ["ReleaseExistingJobHashMismatch", BAD_REQUEST, 30004,
-    "The existing job with the same name and version has a different hash"],
-   ["ReleaseNotFound",         NOT_FOUND,   30005, "Release \"%s\" doesn't exist"],
-   ["ReleaseVersionNotFound",  NOT_FOUND,   30006, "Release \"%s\" version \"%s\" doesn't exist"],
-   ["ReleaseInUse",            BAD_REQUEST, 50006, "Release \"%s\" is in use by these deployments: %s"],
-   ["ReleaseVersionInUse",     BAD_REQUEST, 50007, "Release \"%s\" version \"%s\" is in use by these deployments: %s"],
-
-   ["ValidationInvalidType",   BAD_REQUEST, 40000, "Field: \"%s\" did not match the required type: \"%s\" in: %s"],
-   ["ValidationMissingField",  BAD_REQUEST, 40001, "Required field: \"%s\" was not specified in: %s"],
-   ["ValidationViolatedMin",   BAD_REQUEST, 40002, "Field: \"%s\" violated min constraint: %s"],
-   ["ValidationViolatedMax",   BAD_REQUEST, 40003, "Field: \"%s\" violated max constraint: %s"],
-
-   ["StemcellInvalidArchive",  BAD_REQUEST, 50000, "Invalid stemcell archive, tar exit status: %s, output: %s"],
-   ["StemcellInvalidImage",    BAD_REQUEST, 50001, "Invalid stemcell image"],
-   ["StemcellAlreadyExists",   BAD_REQUEST, 50002,
-    "Stemcell \"%s\":\"%s\" already exists, increment the version if it has changed"],
-   ["StemcellNotFound",        NOT_FOUND,   50003, "Stemcell: \"%s\":\"%s\" doesn't exist"],
-   ["StemcellInUse",           BAD_REQUEST, 50004, "Stemcell: \"%s\":\"%s\" is in use by these deployments: %s"],
-
-   ["PackageInvalidArchive",   BAD_REQUEST, 60000, "Invalid package archive, tar exit status: %s, output: %s"],
-
-   ["DeploymentNotFound",      NOT_FOUND,   70000, "Deployment \"%s\" doesn't exist"],
-   ["InstanceNotFound",        NOT_FOUND,   70001, "Job instance \"%s\" doesn't exist"],
-
-   ["JobInvalidArchive",       BAD_REQUEST, 80000, "Job: \"%s\" invalid archive, tar exit status: %s, output: %s"],
-   ["JobMissingManifest",      BAD_REQUEST, 80001, "Job: \"%s\" missing job manifest"],
-   ["JobMissingTemplateFile",  BAD_REQUEST, 80002, "Job: \"%s\" missing template file: \"%s\""],
-   ["JobMissingPackage",       BAD_REQUEST, 80003, "Job: \"%s\" missing package: \"%s\""],
-   ["JobMissingMonit",         BAD_REQUEST, 80004, "Job: \"%s\" missing monit configuration"],
-   ["JobInvalidLogSpec",       BAD_REQUEST, 80005, "Job: \"%s\" invalid logs spec format"],
-
-   ["NotEnoughCapacity",       BAD_REQUEST, 90000, "%s"],
-   ["InstanceInvalidIndex",    BAD_REQUEST, 90001, "Invalid job index: \"%s\""],
-   ["InvalidRequest",          BAD_REQUEST, 90002, "Invalid request: \"%s\""],
-
-   ["ResourceError",           BAD_REQUEST, 100001, "Error fetching resource %s: %s"],
-   ["ResourceNotFound",        NOT_FOUND,   100002, "Resource %s not found"],
-
-   ["PropertyAlreadyExists",   BAD_REQUEST, 110001, "Property \"%s\" already exists for deployment \"%s\"" ],
-   ["PropertyInvalid",         BAD_REQUEST, 110002, "Property is invalid: %s" ],
-   ["PropertyNotFound",        NOT_FOUND,   110003, "Property \"%s\" not found for deployment \"%s\"" ]
-
-  ].each do |e|
-    class_name, response_code, error_code, format = e
-
-    klass = Class.new DirectorError do
-      define_method :initialize do |*args|
-        super(response_code, error_code, format, *args)
+    # Wraps an exception to DirectorError, so it can be assigned a generic
+    # error code and properly logged.
+    # @param [Exception] exception
+    # @return [DirectorError] Director error
+    def self.create_from_exception(exception)
+      if exception.kind_of?(DirectorError)
+        exception
+      else
+        DirectorError.new(exception.message)
       end
     end
 
-    Bosh::Director.const_set(class_name, klass)
+    # Creates a new subclass of DirectorError with
+    # given name, error code and response code
+    # @param [Fixnum] error_code Error code
+    # @param [Fixnum] response_code HTTP response code
+    # @return [Class]
+    def self.define_error(error_code, response_code)
+      Class.new(DirectorError) do
+        define_method(:initialize) do |message|
+          super(message)
+          @error_code = error_code
+          @response_code = response_code
+        end
+      end
+    end
+
+    attr_reader :response_code
+    attr_reader :error_code
+
+    def initialize(message = nil)
+      super
+      @response_code = 500
+      @error_code = 100
+      @format = "Director error: %s"
+    end
   end
 
+  def self.err(error_code, response_code)
+    DirectorError.define_error(error_code, response_code)
+  end
+
+  TaskNotFound = err(10000, NOT_FOUND)
+  TaskCancelled = err(10001, OK)
+
+  UserNotFound = err(20000, NOT_FOUND)
+  UserImmutableUsername = err(20001, BAD_REQUEST)
+  UserInvalid = err(20002, BAD_REQUEST)
+  UserNameTaken = err(20003, BAD_REQUEST)
+
+  ReleaseAlreadyExists = err(30000, BAD_REQUEST)
+  ReleaseExistingPackageHashMismatch = err(30001, BAD_REQUEST)
+  ReleaseInvalidArchive = err(30002, BAD_REQUEST)
+  ReleaseManifestNotFound = err(30003, BAD_REQUEST)
+  ReleaseExistingJobHashMismatch = err(30004, BAD_REQUEST)
+  ReleaseNotFound = err(30005, NOT_FOUND)
+  ReleaseVersionNotFound = err(30006, NOT_FOUND)
+  ReleaseInUse = err(50006, BAD_REQUEST) # TODO: why error code gap?
+  ReleaseVersionInUse = err(50007, BAD_REQUEST)
+
+  ValidationInvalidType = err(40000, BAD_REQUEST)
+  ValidationMissingField = err(40001, BAD_REQUEST)
+  ValidationViolatedMin = err(40002, BAD_REQUEST)
+  ValidationViolatedMax = err(40003, BAD_REQUEST)
+
+  StemcellInvalidArchive = err(50000, BAD_REQUEST)
+  StemcellImageNotFound = err(50001, BAD_REQUEST)
+  StemcellAlreadyExists = err(50002, BAD_REQUEST)
+  StemcellNotFound = err(50003, NOT_FOUND)
+  StemcellInUse = err(50004, BAD_REQUEST)
+
+  PackageInvalidArchive = err(60000, BAD_REQUEST)
+
+  DeploymentNotFound = err(70000, NOT_FOUND)
+  InstanceNotFound = err(70001, NOT_FOUND)
+
+  JobInvalidArchive = err(80000, BAD_REQUEST)
+  JobMissingManifest = err(80001, BAD_REQUEST)
+  JobMissingTemplateFile = err(80002, BAD_REQUEST)
+  JobMissingPackage = err(80003, BAD_REQUEST)
+  JobMissingMonit = err(80004, BAD_REQUEST)
+  JobInvalidLogSpec = err(80005, BAD_REQUEST)
+
+  NotEnoughCapacity = err(90000, BAD_REQUEST) # TODO: is this being used?
+  InstanceInvalidIndex = err(90001, BAD_REQUEST)
+
+  ResourceError = err(100001, BAD_REQUEST)
+  ResourceNotFound = err(100002, NOT_FOUND)
+
+  PropertyAlreadyExists = err(110001, BAD_REQUEST)
+  PropertyInvalid = err(110002, BAD_REQUEST)
+  PropertyNotFound = err(110003, NOT_FOUND)
 end

@@ -24,14 +24,15 @@ describe Bosh::Director::Api::PropertyManager do
     lambda {
       @manager.create_property("mycloud", "foo", "baz")
     }.should raise_error(BD::PropertyAlreadyExists,
-        "Property \"foo\" already exists for deployment \"mycloud\"")
+                         "Property `foo' already exists " +
+                         "for deployment `mycloud'")
   end
 
   it "doesn't allow invalid properties" do
     lambda {
       @manager.create_property("mycloud", "foo", "bar")
     }.should raise_error(BD::DeploymentNotFound,
-                         "Deployment \"mycloud\" doesn't exist")
+                         "Deployment `mycloud' doesn't exist")
 
     make_deployment
 
@@ -68,14 +69,14 @@ describe Bosh::Director::Api::PropertyManager do
     lambda {
       @manager.update_property("mycloud", "foo", "bar")
     }.should raise_error(BD::DeploymentNotFound,
-                         "Deployment \"mycloud\" doesn't exist")
+                         "Deployment `mycloud' doesn't exist")
 
     make_deployment
 
     lambda {
       @manager.update_property("mycloud", "foo", "baz")
     }.should raise_error(BD::PropertyNotFound,
-        "Property \"foo\" not found for deployment \"mycloud\"")
+        "Property `foo' not found for deployment `mycloud'")
 
     @manager.create_property("mycloud", "foo", "bar")
 
@@ -99,14 +100,14 @@ describe Bosh::Director::Api::PropertyManager do
     lambda {
       @manager.delete_property("mycloud", "foo")
     }.should raise_error(BD::DeploymentNotFound,
-                         "Deployment \"mycloud\" doesn't exist")
+                         "Deployment `mycloud' doesn't exist")
 
     make_deployment
 
     lambda {
       @manager.delete_property("mycloud", "foo")
     }.should raise_error(BD::PropertyNotFound,
-        "Property \"foo\" not found for deployment \"mycloud\"")
+        "Property `foo' not found for deployment `mycloud'")
   end
 
   it "lists all properties" do

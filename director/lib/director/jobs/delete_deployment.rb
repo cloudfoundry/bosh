@@ -9,8 +9,9 @@ module Bosh::Director
       def initialize(deployment_name, options = {})
         super
         @deployment_name = deployment_name
-        @force = options["force"] || false
+        @force = options["force"]
         @cloud = Config.cloud
+        @deployment_manager = Api::DeploymentManager.new
       end
 
       def perform
@@ -58,7 +59,7 @@ module Bosh::Director
       end
 
       def find_deployment(name)
-        Models::Deployment[:name => name] || raise(DeploymentNotFound.new(name))
+        @deployment_manager.find_by_name(name)
       end
 
       def delete_instances(deployment, pool)

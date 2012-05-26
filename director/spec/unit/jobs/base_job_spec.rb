@@ -5,14 +5,16 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::Jobs::BaseJob do
 
   before(:each) do
+    @task_dir = Dir.mktmpdir
     @event_log = Bosh::Director::EventLog.new(StringIO.new)
     @logger = Logger.new(StringIO.new)
 
-    # TODO: remove stubbing 'new'
-    Logger.stub!(:new).with("/some/path/debug").and_return(@logger)
-    Bosh::Director::EventLog.stub!(:new).with("/some/path/event").and_return(@event_log)
+    Logger.stub!(:new).with("#{@task_dir}/debug").and_return(@logger)
+    Bosh::Director::EventLog.stub!(:new).with("#{@task_dir}/event").
+      and_return(@event_log)
     @result_file = mock("result-file")
-    Bosh::Director::TaskResultFile.stub!(:new).with("/some/path/result").and_return(@result_file)
+    Bosh::Director::TaskResultFile.stub!(:new).with("#{@task_dir}/result").
+      and_return(@result_file)
   end
 
   it "should set up the task" do
@@ -22,7 +24,7 @@ describe Bosh::Director::Jobs::BaseJob do
       end
     end
 
-    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir)
 
     test.perform(1)
 
@@ -36,6 +38,7 @@ describe Bosh::Director::Jobs::BaseJob do
   it "should pass on the rest of the arguments to the actual job" do
     test = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method :initialize do |*args|
+        super(*args)
         @args = args
       end
 
@@ -44,7 +47,7 @@ describe Bosh::Director::Jobs::BaseJob do
       end
     end
 
-    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
+    task = Bosh::Director::Models::Task.make(:output => @task_dir)
 
     test.perform(1, "a", [:b], {:c => 5})
 
@@ -60,7 +63,7 @@ describe Bosh::Director::Jobs::BaseJob do
       end
     end
 
-    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path")
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir)
 
     test.perform(1)
 
@@ -81,7 +84,8 @@ describe Bosh::Director::Jobs::BaseJob do
 
   it "should cancel task" do
     test = Class.new(Bosh::Director::Jobs::BaseJob)
-    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path", :state => "cancelling")
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir,
+                                             :state => "cancelling")
 
     test.perform(1)
     task.refresh
@@ -91,7 +95,8 @@ describe Bosh::Director::Jobs::BaseJob do
 
   it "should cancel timeout-task" do
     test = Class.new(Bosh::Director::Jobs::BaseJob)
-    task = Bosh::Director::Models::Task.make(:id => 1, :output => "/some/path", :state => "timeout")
+    task = Bosh::Director::Models::Task.make(:id => 1, :output => @task_dir,
+                                             :state => "timeout")
 
     test.perform(1)
     task.refresh

@@ -9,10 +9,9 @@ module Bosh::Director
       attr_writer :bundle_lifetime
 
       def initialize(instance_id, options = {})
-        @logger = Config.logger
-        @blobstore = Config.blobstore
-        @event_log = Config.event_log
+        super
 
+        @blobstore = Config.blobstore
         @instance_id = instance_id
         @log_type = options["type"] || "job"
         @filters  = options["filters"]

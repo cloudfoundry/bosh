@@ -5,11 +5,12 @@ module Bosh::Director
   end
 end
 
+require "director/api/http_constants"
+
 require "director/api/api_helper"
 require "director/api/task_helper"
 
 require "director/api/deployment_manager"
-require "director/api/http_constants"
 require "director/api/instance_manager"
 require "director/api/problem_manager"
 require "director/api/property_manager"

@@ -51,11 +51,7 @@ module Bosh
           task_status = poll
         end
 
-        if task_status == :error && interactive? && @log_type != "debug"
-          prompt_for_debug_log
-        else
-          print_task_summary(task_status)
-        end
+        print_task_summary(task_status)
 
         save_task_output unless cached_output
         task_status

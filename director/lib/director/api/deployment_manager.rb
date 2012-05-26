@@ -6,6 +6,18 @@ module Bosh::Director
       include ApiHelper
       include TaskHelper
 
+      # Finds deployment by name
+      # @param [String] name
+      # @return [Models::Deployment] Deployment model
+      # @raise [DeploymentNotFound]
+      def find_by_name(name)
+        deployment = Models::Deployment[:name => name]
+        if deployment.nil?
+          raise DeploymentNotFound, "Deployment `#{name}' doesn't exist"
+        end
+        deployment
+      end
+
       def create_deployment(user, deployment_manifest, options = {})
         random_name = "deployment-#{UUIDTools::UUID.random_create}"
         deployment_manifest_file = File.join(Dir::tmpdir, random_name)
@@ -27,7 +39,7 @@ module Bosh::Director
 
       def deployment_to_json(deployment)
         result = {
-            "manifest" => deployment.manifest,
+          "manifest" => deployment.manifest,
         }
 
         Yajl::Encoder.encode(result)
@@ -40,10 +52,10 @@ module Bosh::Director
           instance = vm.instance
 
           vms << {
-              "agent_id" => vm.agent_id,
-              "cid" => vm.cid,
-              "job" => instance ? instance.job : nil,
-              "index" => instance ? instance.index : nil
+            "agent_id" => vm.agent_id,
+            "cid" => vm.cid,
+            "job" => instance ? instance.job : nil,
+            "index" => instance ? instance.index : nil
           }
         end
 

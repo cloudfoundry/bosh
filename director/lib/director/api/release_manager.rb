@@ -8,6 +8,33 @@ module Bosh::Director
 
       RELEASE_TGZ = "release.tgz"
 
+      # Finds release by name
+      # @param [String] name Release name
+      # @return [Models::Release]
+      # @raise [ReleaseNotFound]
+      def find_by_name(name)
+        release = Models::Release[:name => name]
+        if release.nil?
+          raise ReleaseNotFound, "Release `#{name}' doesn't exist"
+        end
+        release
+      end
+
+      # @param [Models::Release] release Release model
+      # @param [String] version Release version
+      # @return [Models::ReleaseVersion] Release version model
+      # @raise [ReleaseVersionNotFound]
+      def find_version(release, version)
+        dataset = release.versions_dataset
+        release_version = dataset.filter(:version => version).first
+        if release_version.nil?
+          raise ReleaseVersionNotFound,
+                "Release version `#{release.name}/#{version}' doesn't exist"
+        end
+
+        release_version
+      end
+
       def create_release(user, release_bundle)
         release_dir = Dir.mktmpdir("release")
         release_tgz = File.join(release_dir, RELEASE_TGZ)

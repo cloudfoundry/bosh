@@ -348,7 +348,7 @@ describe Bosh::Cli::Director do
           @director.request(:get, "/stuff", "application/octet-stream",
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
-                             "Director error 40422: Weird stuff happened")
+                             "Error 40422: Weird stuff happened")
 
         lambda {
           # Not JSON
@@ -360,7 +360,7 @@ describe Bosh::Cli::Director do
           @director.request(:get, "/stuff", "application/octet-stream",
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
-                             "Director error (HTTP #{code}): " +
+                             "HTTP #{code}: " +
                              "error message goes here")
 
         lambda {
@@ -373,7 +373,7 @@ describe Bosh::Cli::Director do
           @director.request(:get, "/stuff", "application/octet-stream",
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
-                             "Director error (HTTP #{code}): " +
+                             "HTTP #{code}: " +
                              %Q[{"c":"d","a":"b"}])
       end
     end

@@ -14,6 +14,8 @@ module Bosh::Cli
       def initialize(name)
         @name = name
         @progress = 0
+        @start_time = nil
+        @finish_time = nil
       end
     end
 
@@ -28,7 +30,7 @@ module Bosh::Cli
       @out = Bosh::Cli::Config.output || $stdout
       @out.sync = true
       @buffer = StringIO.new
-      @progress_bars = { }
+      @progress_bars = {}
       @pos = 0
       @time_adjustment = 0
     end
@@ -39,10 +41,17 @@ module Bosh::Cli
       end
     end
 
-    def add_event(event)
-      event = parse_event(event)
+    def add_event(event_line)
+      event = parse_event(event_line)
 
       @lock.synchronize do
+        # Handling the special "error" event
+        if event["error"]
+          done_with_stage if @current_stage
+          add_error(event)
+          return
+        end
+
         # One way to handle old stages is to prevent them
         # from appearing on screen altogether. That means
         # that we can always render the current stage only
@@ -53,6 +62,7 @@ module Bosh::Cli
 
         tags = event["tags"].is_a?(Array) ? event["tags"] : []
         stage_header = event["stage"]
+
         if tags.size > 0
           stage_header += " " + tags.sort.join(", ").green
         end
@@ -82,6 +92,7 @@ module Bosh::Cli
       @done_tasks = []
 
       @eta = nil
+      @stage_has_error = false # Error flag
       # Tracks max_in_flight best guess
       @tasks_batch_size = 0
       @batches_count = 0
@@ -100,6 +111,19 @@ module Bosh::Cli
         @pos = @buffer.tell
         output
       end
+    end
+
+    def add_error(event)
+      error = event["error"] || {}
+      code = error["code"]
+      message = error["message"]
+
+      error = "Error"
+      error += " #{code}" if code
+      error += ": #{message}" if message
+
+      # TODO: add KB article link and maybe cck reference?
+      @buffer.puts("\n" + error.red)
     end
 
     def refresh
@@ -139,11 +163,17 @@ module Bosh::Cli
       @buffer.print "\n#{@current_stage}\n"
     end
 
-    def done_with_stage(state = "done")
+    def done_with_stage(state = nil)
+      return unless @in_progress
+
       if @last_event
         completion_time = Time.at(@last_event["time"]) rescue Time.now
       else
         completion_time = Time.now
+      end
+
+      if state.nil?
+        state = @stage_has_error ? "error" : "done"
       end
 
       case state.to_s
@@ -170,6 +200,8 @@ module Bosh::Cli
     # We have to trust the first event in each stage
     # to have correct "total" and "current" fields.
     def append_event(event)
+      validate_event(event)
+
       progress = 0
       total = event["total"].to_i
 
@@ -242,6 +274,7 @@ module Bosh::Cli
         if event["state"] == "failed"
           # TODO: truncate?
           status = [task_name.red, event_data["error"]].compact.join(": ")
+          @stage_has_error = true
         else
           status = task_name.yellow
         end
@@ -259,7 +292,7 @@ module Bosh::Cli
       task.progress = progress
 
       progress_bar.total = total
-      progress_bar.title = @tasks.values.map {|t| t.name }.sort.join(", ")
+      progress_bar.title = @tasks.values.map { |t| t.name }.sort.join(", ")
 
       progress_bar.current += progress_bar_gain
       progress_bar.refresh
@@ -269,17 +302,20 @@ module Bosh::Cli
 
     def parse_event(event_line)
       event = JSON.parse(event_line)
-
-      if event["time"] && event["stage"] && event["task"] &&
-          event["index"] && event["total"] && event["state"]
-        event
-      else
-        raise InvalidEvent, "Invalid event structure: stage, time, task, " +
-            "index, total, state are all required"
+      unless event.kind_of?(Hash)
+        raise InvalidEvent, "Hash expected, #{event.class} given"
       end
-
+      event
     rescue JSON::JSONError
       raise InvalidEvent, "Cannot parse event, invalid JSON"
+    end
+
+    def validate_event(event)
+      unless event["time"] && event["stage"] && event["task"] &&
+        event["index"] && event["total"] && event["state"]
+        raise InvalidEvent, "Invalid event structure: stage, time, task, " +
+                            "index, total, state are all required"
+      end
     end
 
     # Expects time and eta to be adjusted

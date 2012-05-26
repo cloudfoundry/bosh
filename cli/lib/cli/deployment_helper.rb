@@ -163,7 +163,7 @@ module Bosh::Cli
       end
 
       if old_stemcells.size != new_stemcells.size
-        say("Stemcell update seems to be inconsistent with current " +
+        say("Stemcell update seems to be inconsistent with current ".red +
             "deployment. Please carefully review changes above.".red)
         unless confirmed?("Are you sure this configuration is correct?")
           cancel_deployment
