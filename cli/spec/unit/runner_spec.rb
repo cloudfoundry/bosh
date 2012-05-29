@@ -118,14 +118,23 @@ describe Bosh::Cli::Runner do
   end
 
   describe "command completion" do
-    let(:runner) { Bosh::Cli::Runner.new([]) }
-    # it "should foo" do
-    #   runner.complete(%w[bosh up bosh]).should == %w[upload]
-    # end
-    it "should complete" do
-      runner.prepare
-      runner.complete("cr").should == ["create"]
+    let(:runner) { r = Bosh::Cli::Runner.new([]); r.prepare; r }
+
+    it "should complete 'cr' to 'create'" do
+      runner.complete("cr").should == %w[create]
     end
+
+    it "should complete 'create' to 'package, release & user'" do
+      completion = runner.complete("create")
+      completion.should include("package")
+      completion.should include("release")
+      completion.should include("user")
+    end
+
+    it "should complete 'cr' to 'create'" do
+      runner.complete("create u").should == %w[user]
+    end
+
   end
 
 end

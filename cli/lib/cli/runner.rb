@@ -71,6 +71,7 @@ module Bosh::Cli
         say(help_message)
         say(plugin_help_message) if @plugins
       elsif @args[0] == "complete"
+        # warn if COMP_LINE isn't set'
         line = ENV['COMP_LINE'].gsub(/^\S*bosh\s*/, '')
         puts complete(line).join("\n")
         exit(0)
@@ -137,7 +138,7 @@ module Bosh::Cli
       else
         matches = []
         node.keys.each do |cmd|
-          if cmd.matches(/^#{word}/)
+          if cmd.match(/^#{word}/)
             matches << cmd
           end
         end
@@ -152,7 +153,7 @@ module Bosh::Cli
     # @return [Array]
     def complete(line)
       words = line.split(/\s+/)
-      puts @parse_tree.inspect
+      # puts @parse_tree.inspect
       return parse_tree_completion(@parse_tree, words, 0)
 
       commands = COMMANDS.values.collect { |c|

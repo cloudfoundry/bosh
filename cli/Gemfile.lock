@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_cli (0.18)
+    bosh_cli (0.19)
       blobstore_client (~> 0.3.13)
       highline (~> 1.6.2)
       httpclient (>= 2.2.4, <= 2.2.4)
@@ -41,9 +41,9 @@ GEM
       guard (>= 0.2.2)
     guard-rspec (0.7.0)
       guard (>= 0.10.0)
-    highline (1.6.11)
+    highline (1.6.12)
     httpclient (2.2.4)
-    json_pure (1.6.6)
+    json_pure (1.6.7)
     linecache (0.43)
     linecache19 (0.5.11)
       ruby_core_source (>= 0.1.4)
