@@ -25,7 +25,6 @@ module Bosh::Cli
     end
 
     def initialize(args)
-      define_commands
       @args = args
       @options = {
         :director_checks => true,
@@ -71,7 +70,14 @@ module Bosh::Cli
       elsif @args.empty? || @args == %w(help)
         say(help_message)
         say(plugin_help_message) if @plugins
+      elsif @args[0] == "complete"
+        line = ENV['COMP_LINE'].gsub(/^\S*bosh\s*/, '')
+        puts complete(line).join("\n")
+        exit(0)
       elsif @args[0] == "help"
+        if @args[1] == "--raw"
+          raw_help
+        end
         cmd_args = @args[1..-1]
         suggestions = command_suggestions(cmd_args).map do |cmd|
           command_usage(cmd, 0)
@@ -114,6 +120,74 @@ module Bosh::Cli
         save_exception(e)
         exit(1)
       end
+    end
+
+    def parse_tree_completion(node, words, index)
+      word = words[index]
+
+      # exact match and not on the last word
+      if node[word] && words.length != index
+        parse_tree_completion(node[word], words, index + 1)
+
+      # exact match at the last word
+      elsif node[word]
+        return node[word].values
+
+      # find all partial matches
+      else
+        matches = []
+        node.keys.each do |cmd|
+          if cmd.matches(/^#{word}/)
+            matches << cmd
+          end
+        end
+        return matches
+      end
+
+    end
+
+    # for use with:
+    # complete -C 'bosh complete' bosh
+    # @param [String] command line (minus "bosh"")
+    # @return [Array]
+    def complete(line)
+      words = line.split(/\s+/)
+      puts @parse_tree.inspect
+      return parse_tree_completion(@parse_tree, words, 0)
+
+      commands = COMMANDS.values.collect { |c|
+        c.usage.gsub(/\s[\[<].+$/, '')
+      }
+      # commands.find_all { |c| c.match(/^#{line}/) }
+      commands.each do |command|
+        if command.match(/^#{line}/)
+          word = command.gsub(/\s+.*$/, '')
+          $stderr.puts "#{line} / '#{word}'"
+          completions << word
+        end
+      end
+      completions
+    end
+
+    def raw_help
+      out = {}
+      COMMANDS.each_pair do |name, cmd_def|
+        str = "#{cmd_def.usage}".gsub(/\s[\[<].+$/, '').split(/\s+/, 2)
+        cmd = str.shift
+        str = str[0]
+        if str && str.match(/\s/)
+          str = "'#{str}'"
+        end
+        if out.has_key?(cmd)
+          out[cmd] << str
+        else
+          out[cmd] = [str]
+        end
+      end
+      out.keys.sort.each do |key|
+        puts "#{key}: #{out[key].join(' ')}"
+      end
+      exit(0)
     end
 
     def command(name, &block)
@@ -544,7 +618,8 @@ module Bosh::Cli
       end
 
       def define_plugin_commands
-        Gem.find_files("bosh/cli/commands/*.rb", true).each do |file|
+        #Gem.find_files("bosh/cli/commands/*.rb", true).each do |file|
+        Gem.find_files("bosh/cli/commands/*.rb").each do |file|
           class_name = File.basename(file, ".rb").capitalize
 
           next if Bosh::Cli::Command.const_defined?(class_name)

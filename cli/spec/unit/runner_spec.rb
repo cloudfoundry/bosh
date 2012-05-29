@@ -117,4 +117,15 @@ describe Bosh::Cli::Runner do
     end
   end
 
+  describe "command completion" do
+    let(:runner) { Bosh::Cli::Runner.new([]) }
+    # it "should foo" do
+    #   runner.complete(%w[bosh up bosh]).should == %w[upload]
+    # end
+    it "should complete" do
+      runner.prepare
+      runner.complete("cr").should == ["create"]
+    end
+  end
+
 end
