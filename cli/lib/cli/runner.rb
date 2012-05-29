@@ -25,7 +25,6 @@ module Bosh::Cli
     end
 
     def initialize(args)
-      define_commands
       @args = args
       @options = {
         :director_checks => true,
@@ -71,6 +70,14 @@ module Bosh::Cli
       elsif @args.empty? || @args == %w(help)
         say(help_message)
         say(plugin_help_message) if @plugins
+      elsif @args[0] == "complete"
+        unless ENV.has_key?('COMP_LINE')
+          $stderr.puts "COMP_LINE must be set when calling bosh complete"
+          exit(1)
+        end
+        line = ENV['COMP_LINE'].gsub(/^\S*bosh\s*/, '')
+        puts complete(line).join("\n")
+        exit(0)
       elsif @args[0] == "help"
         cmd_args = @args[1..-1]
         suggestions = command_suggestions(cmd_args).map do |cmd|
@@ -114,6 +121,33 @@ module Bosh::Cli
         save_exception(e)
         exit(1)
       end
+    end
+
+    # looks for command completion in the parse tree
+    def parse_tree_completion(node, words, index)
+      word = words[index]
+
+      # exact match and not on the last word
+      if node[word] && words.length != index
+        parse_tree_completion(node[word], words, index + 1)
+
+      # exact match at the last word
+      elsif node[word]
+        node[word].values
+
+      # find all partial matches
+      else
+        node.keys.grep(/^#{word}/)
+      end
+    end
+
+    # for use with:
+    # complete -C 'bosh complete' bosh
+    # @param [String] command line (minus "bosh")
+    # @return [Array]
+    def complete(line)
+      words = line.split(/\s+/)
+      parse_tree_completion(@parse_tree, words, 0)
     end
 
     def command(name, &block)
