@@ -110,18 +110,21 @@ module Bosh::Cli::Command
     end
 
     # Prints out the publicly available stemcells.
-    def list_public
+    def list_public(*args)
+      full = args.include?("--full")
       yaml = get_public_stemcell_list
       stemcells_table = table do |t|
         t.headings = "Name", "Url"
         yaml.keys.sort.each do |key|
           if key != PUBLIC_STEMCELL_INDEX
-            t << [key, yaml[key]["url"]]
+            url = full ? yaml[key]["url"] : "#{yaml[key]["url"][0..49]}..."
+            t << [key, url]
           end
         end
       end
       puts(stemcells_table)
-      puts("To download use 'bosh download public stemcell <stemcell_name>'.")
+      puts("To download use 'bosh download public stemcell <stemcell_name>'." +
+          "For full url use --full.")
     end
 
     # Downloads one of the publicly available stemcells.
