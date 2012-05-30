@@ -171,11 +171,13 @@ module Bosh::Director
               update
 
               deployment.db.transaction do
+                deployment.remove_all_releases
                 deployment.remove_all_release_versions
                 # Now we know that deployment has succeeded and can remove
                 # previous partial deployments release version references
                 # to be able to delete these release versions later.
                 @deployment_plan.releases.each do |release|
+                  deployment.add_release(release.release)
                   deployment.add_release_version(release.release_version)
                 end
               end
