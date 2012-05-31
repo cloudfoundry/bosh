@@ -21,7 +21,7 @@ module Bosh::Director
       attr_accessor :persistent_disk # TODO: rename to 'disk_size' (?)
       attr_accessor :resource_pool
       attr_accessor :default_network
-      attr_accessor :template
+      attr_accessor :templates
       attr_accessor :properties
       attr_accessor :packages
       attr_accessor :update
@@ -54,18 +54,36 @@ module Bosh::Director
 
       # @return [Hash] Hash representation
       def spec
+        # TODO(lisbakke): Remove Legacy code when the agent has been updated
+        # to accept templates as an array.
+        first_template = @templates[0]
         result = {
           "name" => @name,
           "release" => @release.name,
-          "template" => @template.template.name,
-          "version" => @template.template.version,
-          "sha1" => @template.template.sha1,
-          "blobstore_id" => @template.template.blobstore_id,
+          "templates" => [],
+          # --- Legacy ---
+          "template" => first_template.template.name,
+          "version" => first_template.template.version,
+          "sha1" => first_template.template.sha1,
+          "blobstore_id" => first_template.template.blobstore_id
         }
+        if first_template.template.logs
+          result["logs"] = template.logs
+        end
+        # --- /Legacy ---
 
-        # TODO: refactor as a part of 'spec vs model' refactoring
-        if @template.template.logs
-          result["logs"] = @template.template.logs
+        @templates.each do |template|
+          template = template.template
+          template_entry = {
+            "name" => template.name,
+            "version" => template.version,
+            "sha1" => template.sha1,
+            "blobstore_id" => template.blobstore_id
+          }
+          if template.logs
+            template_entry["logs"] = template.logs
+          end
+          result["templates"].push(template_entry)
         end
 
         result
@@ -131,8 +149,7 @@ module Bosh::Director
       end
 
       def parse_template
-        template_name = safe_property(@job_spec, "template", :class => String)
-        @template = @release.template(template_name)
+        @templates = @release.template(safe_property(@job_spec, "template"))
       end
 
       def parse_disk

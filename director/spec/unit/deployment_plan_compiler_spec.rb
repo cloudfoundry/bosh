@@ -746,6 +746,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   describe :bind_configuration do
     before(:each) do
+      @template_spec = stub(:TemplateSpec)
       @job_spec = stub(:JobSpec)
       @deployment_plan.stub(:jobs).and_return([@job_spec])
     end
