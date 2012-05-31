@@ -451,7 +451,9 @@ module Bosh::AwsCloud
     end
 
     def attach_ebs_volume(instance, volume)
-      device_names = Set.new(instance.block_device_mappings.keys)
+      # TODO once we upgrade the aws-sdk gem to > 1.3.9, we need to use:
+      # instance.block_device_mappings.to_hash.keys
+      device_names = Set.new(instance.block_device_mappings.to_hash.keys)
       new_attachment = nil
 
       ("f".."p").each do |char| # f..p is what console suggests
@@ -483,7 +485,9 @@ module Bosh::AwsCloud
     end
 
     def detach_ebs_volume(instance, volume)
-      mappings = instance.block_device_mappings
+      # TODO once we upgrade the aws-sdk gem to > 1.3.9, we need to use:
+      # instance.block_device_mappings.to_hash.keys
+      mappings = instance.block_device_mappings.to_hash
 
       device_map = mappings.inject({}) do |hash, (device_name, attachment)|
         hash[attachment.volume.id] = device_name
@@ -518,15 +522,42 @@ module Bosh::AwsCloud
       end
     end
 
+    # This method ties to execute the helper script stemcell-copy
+    # as root using sudo, since it needs to write to the ebs_volume.
+    # If stemcell-copy isn't available, it falls back to writing directly
+    # to the device, which is used in the micro bosh deployer.
+    # The stemcell-copy script must be in the PATH of the user running
+    # the director, and needs sudo privileges to execute without
+    # password.
     def copy_root_image(dir, ebs_volume)
       Dir.chdir(dir) do
-        dd_out = `dd if=root.img of=#{ebs_volume} 2>&1`
-        if $?.exitstatus != 0
+        path = ENV["PATH"]
+
+        if has_stemcell_copy?(path)
+          @logger.debug("copying stemcell using stemcell-copy script")
+          # note that is is a potentially dangerous operation, but as the
+          # stemcell-copy script sets PATH to a sane value this is safe
+          out = `sudo env PATH=#{path} stemcell-copy #{ebs_volume} 2>&1`
+        else
+          @logger.info("falling back to using dd to copy stemcell")
+          out = `dd if=root.img of=#{ebs_volume} 2>&1`
+        end
+
+        unless $?.exitstatus == 0
           cloud_error("Unable to copy stemcell root image, " \
-                      "dd exit status #{$?.exitstatus}: " \
-                      "#{dd_out}")
+                      "exit status #{$?.exitstatus}: #{out}")
         end
       end
+    end
+
+    # checks if the stemcell-copy script can be found in
+    # the current PATH
+    def has_stemcell_copy?(path)
+      path.split(":").each do |dir|
+        stemcell_copy = File.join(dir, "stemcell-copy")
+        return true if File.exist?(stemcell_copy)
+      end
+      false
     end
 
     def find_ebs_device(sd_name)
