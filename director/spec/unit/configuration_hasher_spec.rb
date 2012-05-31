@@ -31,7 +31,7 @@ describe Bosh::Director::ConfigurationHasher do
 
     instance_spec.should_receive(:configuration_hash=).with("d4b58a62d2102a315f27bf8c41b4dfef672f785b")
 
-    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
+    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec, template_spec)
     configuration_hasher.hash
   end
 
@@ -61,7 +61,7 @@ describe Bosh::Director::ConfigurationHasher do
 
     instance_spec.should_receive(:configuration_hash=).with("1ec0fb915dd041e4e121ccd1464b88a9aed1ee60")
 
-    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
+    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec, template_spec)
     configuration_hasher.hash
   end
 
@@ -77,7 +77,7 @@ describe Bosh::Director::ConfigurationHasher do
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec])
     job_spec.stub!(:properties).and_return({"foo" => "bar"})
-    job_spec.stub!(:template).and_return(template_spec)
+    job_spec.stub!(:templates).and_return([template_spec])
     instance_spec.stub!(:index).and_return(0)
     instance_spec.stub!(:spec).and_return({"test" => "spec"})
 
@@ -89,7 +89,7 @@ describe Bosh::Director::ConfigurationHasher do
       file.write(template_contents)
     end
 
-    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
+    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec, template_spec)
     lambda { configuration_hasher.hash }.should raise_error("Error filling in template router/monit:3 for " +
                                                                 "foo/0: 'undefined method `foo' for nil:NilClass'")
   end

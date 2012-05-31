@@ -23,8 +23,9 @@ module Bosh::Director
 
     end
 
-    def initialize(job)
+    def initialize(job, template)
       @job = job
+      @template = template
       @logger = Config.logger
     end
 
@@ -33,7 +34,7 @@ module Bosh::Director
       temp_path = File.join(Dir::tmpdir, "template-#{UUIDTools::UUID.random_create}")
       begin
         File.open(temp_path, "w") do |file|
-          Config.blobstore.get(@job.template.template.blobstore_id, file)
+          Config.blobstore.get(@template.template.blobstore_id, file)
         end
         `tar -C #{@template_dir} -xzf #{temp_path}`
       ensure
@@ -46,7 +47,7 @@ module Bosh::Director
         extract_template
         manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
         monit_template = ERB.new(File.new(File.join(@template_dir, "monit")).read)
-        monit_template.filename = File.join(@job.template.name, "monit")
+        monit_template.filename = File.join(@template.name, "monit")
         config_templates = {}
 
         if manifest["templates"]
@@ -63,7 +64,7 @@ module Bosh::Director
           template_names = config_templates.keys.sort
           template_names.each do |template_name|
             template = config_templates[template_name]
-            template.filename = File.join(@job.template.name, template_name)
+            template.filename = File.join(@template.name, template_name)
             digest << bind_template(template, binding_helper, template_name, instance.index)
           end
           instance.configuration_hash = digest.hexdigest
