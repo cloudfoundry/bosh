@@ -25,16 +25,17 @@ module Bosh::Director
 
     def initialize(job)
       @job = job
+      @templates = job.templates
       @logger = Config.logger
     end
 
-    def extract_template
+    def extract_template(job_template)
       @template_dir = Dir.mktmpdir("template_dir")
       temp_path = File.join(Dir.tmpdir,
                             "template-#{UUIDTools::UUID.random_create}")
       begin
         File.open(temp_path, "w") do |file|
-          Config.blobstore.get(@job.template.template.blobstore_id, file)
+          Config.blobstore.get(job_template.template.blobstore_id, file)
         end
         `tar -C #{@template_dir} -xzf #{temp_path}`
       ensure
@@ -43,40 +44,60 @@ module Bosh::Director
     end
 
     def hash
-      begin
-        extract_template
-        manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
+      digests = {}
+      @templates.sort { |x, y| x.name <=> y.name }.each do |job_template|
+        begin
+          extract_template(job_template)
+          manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
 
-        monit_template = template_erb("monit")
-        monit_template.filename = File.join(@job.template.name, "monit")
+          monit_template = template_erb("monit")
+          monit_template.filename = File.join(job_template.name, "monit")
+          templates = {}
 
-        templates = {}
-
-        if manifest["templates"]
-          manifest["templates"].each_key do |template_name|
-            template = template_erb(File.join("templates", template_name))
-            templates[template_name] = template
+          if manifest["templates"]
+            manifest["templates"].each_key do |template_name|
+              template = template_erb(File.join("templates", template_name))
+              templates[template_name] = template
+            end
           end
-        end
 
-        @job.instances.each do |instance|
-          binding_helper = BindingHelper.new(@job.name, instance.index,
-                                             @job.properties.to_openstruct,
-                                             instance.spec.to_openstruct)
-          digest = Digest::SHA1.new
-          digest << bind_template(monit_template,
-                                  binding_helper, instance.index)
-
-          templates.keys.sort.each do |template_name|
-            template = templates[template_name]
-            template.filename = File.join(@job.template.name, template_name)
-            digest << bind_template(template, binding_helper, instance.index)
+          @job.instances.each do |instance|
+            binding_helper = BindingHelper.new(@job.name, instance.index,
+                                               @job.properties.to_openstruct,
+                                               instance.spec.to_openstruct)
+            add_to_digests = bind_template(monit_template, binding_helper,
+                instance.index)
+            templates.keys.sort.each do |template_name|
+              template = templates[template_name]
+              template.filename = File.join(job_template.name, template_name)
+              add_to_digests << bind_template(template, binding_helper,
+                      instance.index)
+            end
+            digests = add_string_to_digests(digests, add_to_digests,
+                                            job_template.name, instance.index)
           end
-          instance.configuration_hash = digest.hexdigest
+        ensure
+          FileUtils.rm_rf(@template_dir) if @template_dir
         end
-      ensure
-        FileUtils.rm_rf(@template_dir) if @template_dir
       end
+      @job.instances.each do |instance|
+        inst_digest = digests[instance.index]
+        instance.configuration_hash = inst_digest["config_hash"].hexdigest
+        instance.template_hashes = inst_digest["template_hashes"]
+      end
+    end
+
+    def add_string_to_digests(digests, add_to_digests, job_template_name,
+                              instance_index)
+      digests[instance_index] ||= {}
+      conf_hash = digests[instance_index]["config_hash"] || Digest::SHA1.new
+      temp_hash = Digest::SHA1.new
+      conf_hash << add_to_digests
+      temp_hash << add_to_digests
+      digests[instance_index]["template_hashes"] ||= {}
+      digests[instance_index]["template_hashes"][job_template_name] = temp_hash.hexdigest
+      digests[instance_index]["config_hash"] = conf_hash
+      digests
     end
 
     def bind_template(template, binding_helper, index)

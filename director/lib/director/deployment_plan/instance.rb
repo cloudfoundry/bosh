@@ -19,6 +19,9 @@ module Bosh::Director
       # @return [String] SHA1 hash of all of the configuration templates
       attr_accessor :configuration_hash
 
+      # @return [Hash] A hash of template SHA1 hashes.
+      attr_accessor :template_hashes
+
       # @return [Hash<String, NetworkReservation>] network reservations
       attr_accessor :network_reservations
 
@@ -252,7 +255,7 @@ module Bosh::Director
       # @return [Hash<String, Object>] instance spec
       def spec
         deployment_plan = @job.deployment
-        {
+        spec = {
             "deployment" => deployment_plan.name,
             "release" => job.release.spec,
             "job" => job.spec,
@@ -264,6 +267,8 @@ module Bosh::Director
             "configuration_hash" => configuration_hash,
             "properties" => job.properties
         }
+        spec["template_hashes"] = template_hashes unless template_hashes.nil?
+        spec
       end
     end
   end
