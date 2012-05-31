@@ -746,14 +746,16 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   describe :bind_configuration do
     before(:each) do
+      @template_spec = stub(:TemplateSpec)
       @job_spec = stub(:JobSpec)
+      @job_spec.should_receive(:templates).and_return([@template_spec])
       @deployment_plan.stub(:jobs).and_return([@job_spec])
     end
 
     it "should bind the configuration hash" do
       configuration_hasher = stub(:ConfigurationHasher)
       configuration_hasher.should_receive(:hash)
-      BD::ConfigurationHasher.stub(:new).with(@job_spec).
+      BD::ConfigurationHasher.stub(:new).with(@job_spec, @template_spec).
           and_return(configuration_hasher)
       @deployment_plan_compiler.bind_configuration
     end
