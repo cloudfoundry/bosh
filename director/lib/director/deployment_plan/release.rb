@@ -55,9 +55,20 @@ module Bosh::Director
         }
       end
 
-      # @param [String] name Template name
-      def template(name)
-        @templates[name] ||= TemplateSpec.new(name)
+      # This method takes in a name of a template or an array of template names
+      # and will initialize TemplateSpec classes for each template.  It will
+      # then return an array of these TemplateSec classes.
+      # @param [String|Array] name_or_array Template name or names.
+      # @return [Array] Returns an array of the TemplateSepc classes
+      #     initialized to the name_or_array.
+      def template(name_or_array)
+        template_names = [name_or_array] unless name_or_array.is_a?(Array)
+        templates = []
+        template_names.each do |name|
+          @templates[name] ||= TemplateSpec.new(name)
+          templates.push(@templates[name])
+        end
+        templates
       end
 
       def templates
