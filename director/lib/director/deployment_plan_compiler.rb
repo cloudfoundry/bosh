@@ -375,22 +375,20 @@ module Bosh::Director
           package_name_index[package.name] = package
         end
 
-        release_spec.templates.each do |template_spec|
-          @logger.info("Binding template: #{template_spec.name}")
-          template = template_name_index[template_spec.name]
-          if template.nil?
-            raise "Can't find template: #{template_spec.name}"
-          end
-
-          template_spec.template = template
+        release_spec.templates.each do |template|
+          template_name = template.name
+          @logger.info("Binding template: #{template_name}")
+          actual_template = template_name_index[template_name]
+          raise "Can't find template: #{template_name}" if actual_template.nil?
+          template.template = actual_template
 
           packages = []
-          template.package_names.each do |package_name|
+          actual_template.package_names.each do |package_name|
             packages << package_name_index[package_name]
           end
-          template_spec.packages = packages
+          template.packages = packages
 
-          @logger.debug("Bound template: #{template_spec.pretty_inspect}")
+          @logger.debug("Bound template: #{actual_template.pretty_inspect}")
         end
       end
     end
@@ -411,7 +409,9 @@ module Bosh::Director
     end
 
     def bind_configuration
-      @deployment_plan.jobs.each { |job| ConfigurationHasher.new(job).hash }
+      @deployment_plan.jobs.each do |job|
+        ConfigurationHasher.new(job).hash
+      end
     end
 
     def bind_dns
