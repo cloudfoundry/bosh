@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_common", "~>0.4.0"
   s.add_dependency "bosh_cpi", "~>0.4.2"
   s.add_dependency "bosh_vsphere_cpi", "~>0.4.8"
-  s.add_dependency "bosh_aws_cpi", "~>0.3.3"
+  s.add_dependency "bosh_aws_cpi", "~>0.4.0"
   s.add_dependency "agent_client", "~>0.1.1"
   s.add_dependency "sqlite3", "~>1.3.3"
 end
