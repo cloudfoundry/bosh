@@ -36,7 +36,9 @@ module Bosh::Director
       end
       message = Yajl::Encoder.encode(request)
       @logger.debug("SENT: #{client} #{message}")
-      @nats.publish(client, message)
+      EM.next_tick do
+        @nats.publish(client, message)
+      end
       request_id
     end
 
