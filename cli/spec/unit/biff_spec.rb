@@ -121,7 +121,7 @@ describe Bosh::Cli::Command::Biff do
   end
 
   it "allows ip_range to take negative ranges" do
-    @biff.ip_helper = {
+    @biff.ip_helper_in_range = {
         "default" => NetAddr::CIDR.create("192.168.1.0/22")
     }
     @biff.ip_range(-11..-2, "default").should == "192.168.3.245 - 192.168.3.254"
@@ -137,4 +137,16 @@ describe Bosh::Cli::Command::Biff do
     @biff.delete_all_except(obj, "b").should == [ {"name" => "b"} ]
   end
 
+  it "gets a range from a static ip list correctly" do
+    @biff.ip_helper_in_static_range = {
+      "default" => [ "192.168.1.1", "192.168.1.2", "192.168.1.3" ]}
+    @biff.ip_range_in_static_range((1..2), "default").should ==
+        "192.168.1.1 - 192.168.1.2"
+  end
+
+  it "gets an IP from a static ip list correctly" do
+    @biff.ip_helper_in_static_range = {
+      "default" => [ "192.168.1.1", "192.168.1.2", "192.168.1.3" ]}
+    @biff.ip_in_static_range(3, "default").should == "192.168.1.3"
+  end
 end
