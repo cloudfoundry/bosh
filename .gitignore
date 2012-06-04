@@ -23,6 +23,7 @@ monit_api/pkg
 blobstore_client/pkg
 common/pkg
 cpi/pkg
+deployer/pkg
 vsphere_cpi/pkg
 aws_cpi/pkg
 aws_registry/pkg
