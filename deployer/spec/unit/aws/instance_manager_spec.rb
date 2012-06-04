@@ -197,4 +197,18 @@ describe Bosh::Deployer::InstanceManager do
     }.should raise_error(Bosh::Deployer::ConfigError)
   end
 
+  require 'deployer/instance_manager/aws'
+
+  internal_to Bosh::Deployer::InstanceManager::Aws do
+    it "should not find aws_registry" do
+      path = "/usr/bin:/bin"
+      @deployer.has_aws_registry?(path).should be_false
+    end
+
+    it "should find find aws_registry" do
+      path = ENV['PATH']
+      path += ":#{File.dirname(spec_asset('aws_registry'))}"
+      @deployer.has_aws_registry?(path).should be_true
+    end
+  end
 end
