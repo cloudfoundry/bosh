@@ -195,7 +195,11 @@ module Bosh::Deployer
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
-        @apply_spec = load_apply_spec("#{stemcell}/apply_spec.yml")
+        spec_file = "#{stemcell}/apply_spec.yml"
+        unless File.exist?(spec_file)
+          raise "this isn't a micro bosh stemcell - apply_spec.yml missing"
+        end
+        @apply_spec = load_apply_spec(spec_file)
         properties = Config.cloud_options["properties"]["stemcell"]
 
         step "Uploading stemcell" do
