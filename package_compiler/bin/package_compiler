@@ -28,7 +28,7 @@ options = Trollop::options do
 end
 
 unless CPIS.include?(options[:cpi])
-  Trollop::die :cpi, "unknown CPI '#{global_options[:cpi]}'"
+  Trollop::die :cpi, "unknown CPI '#{options[:cpi]}'"
 end
 
 options["command"] = ARGV.shift
