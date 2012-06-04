@@ -72,6 +72,11 @@ module Bosh::Deployer
           db[:aws_instances].insert_multiple(instances) if instances
         end
 
+        unless has_aws_registry?
+          raise "aws_registry command not found - " +
+            "run 'gem install bosh_aws_registry'"
+        end
+
         cmd = "aws_registry -c #{@registry_config.path}"
 
         @registry_pid = spawn(cmd)
@@ -124,6 +129,15 @@ module Bosh::Deployer
       end
 
       private
+
+      # TODO this code is simliar to has_stemcell_copy?
+      # move the two into bosh_common later
+      def has_aws_registry?(path=ENV['PATH'])
+        path.split(":").each do |dir|
+          return true if File.exist?(File.join(dir, "aws_registry"))
+        end
+        false
+      end
 
       def migrate(db)
         db.create_table :aws_instances do
