@@ -9,6 +9,7 @@ Bundler.setup(:default, :test)
 require "rspec"
 require "tmpdir"
 
+require "cloud"
 require "cloud/aws"
 
 class AwsConfig
