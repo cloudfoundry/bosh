@@ -1,0 +1,8 @@
+Code-Review+1: Vadim Spivak <vspivak@vmware.com>
+Code-Review+2: skaar <skaar@waste.org>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Pieter Noordhuis <pnoordhuis@rbcon.com>
+Submitted-at: Tue, 05 Jun 2012 18:53:02 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/5743
+Project: bosh
+Branch: refs/heads/stemcell-builder
