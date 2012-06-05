@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_cpi (0.4.2)
+    bosh_cpi (0.4.3)
       bosh_common
 
 GEM
