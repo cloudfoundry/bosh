@@ -37,7 +37,8 @@ module Bosh::Cli::Command
         "Would you like the new version copied to '%s'? [yn]"
 
     # Accessor for testing purposes.
-    attr_accessor :ip_helper, :template_output
+    attr_accessor :ip_helper
+    attr_accessor :template_output
 
     # Deletes the temporary files that were used.
     def delete_temp_diff_files
@@ -208,12 +209,26 @@ module Bosh::Cli::Command
     #     from.
     # @return [String] The network/mask.
     def get_network_and_mask(netw_name)
-      netw_cidr = @ip_helper[netw_name]
+      netw_cidr = get_helper(netw_name)
       "#{netw_cidr.network}#{netw_cidr.netmask}"
     end
 
+    # Helper function for getting the first and last number from a range, but
+    # also taking into account negative ranges and the network size.
+    # @param [Range] range The range.
+    # @param [String] netw_name The cidr network object.
+    # @return [Array] The first and last number.
+    def get_first_last_from_range(range, netw_cidr)
+      first = (range.first >= 0) ? range.first :
+          netw_cidr.size + range.first
+      last = (range.last >= 0) ? range.last :
+          netw_cidr.size + range.last
+      return [first, last]
+    end
+
     # Used by the template to specify IPs for jobs. It uses the CIDR tool to get
-    # them.
+    # them.  Netw_name can include .range or .static, such as default.static to
+    # choose what range the IPs are based on.
     # @param [Integer] ip_num The nth IP number to get.
     # @param [String] netw_name The name of the network to get the IP from.
     # @return [String] An IP in the network.
@@ -227,14 +242,58 @@ module Bosh::Cli::Command
     # @param [String] netw_name The name of the network to get the IPs from.
     # @return [String] An IP return in the network.
     def ip_range(range, netw_name)
-      netw_cidr = @ip_helper[netw_name]
-      first = (range.first >= 0) ? range.first :
-          netw_cidr.size + range.first
-      last = (range.last >= 0) ? range.last :
-          netw_cidr.size + range.last
+      netw_cidr = get_helper(netw_name)
+      first, last = get_first_last_from_range(range, netw_cidr)
+      unless netw_cidr[first] and netw_cidr[last]
+        raise "Ip range '#{range}' not in #{netw_name}."
+      end
+      first == last ? "#{netw_cidr[first].ip}" :
+          "#{netw_cidr[first].ip} - #{netw_cidr[last].ip}"
+    end
 
-      first == last ? "#{netw_cidr.nth(first)}" :
-          "#{netw_cidr.nth(first)} - #{netw_cidr.nth(last)}"
+    # Returns the array of IPs for a network name.
+    # @param [String] netw_name The name of the network, such as default.static.
+    # @return [Array|CIDR] An array or CIDR object that behaves like an array.
+    def get_helper(netw_name)
+      netw_name, type = netw_name.split(".")
+      type ||= "range"
+      @ip_helper[netw_name][type]
+    end
+
+    # Gets the range section out of the user's deployment config and creates a
+    # CIDR object.  This is used for calculating IPs in the .erb template that
+    # uses the ip and ip_range methods.
+    # @param [Array] subnets The subnets in a network configuration.
+    # @return [CIDR] A CIDR object.
+    def get_range(subnets)
+      NetAddr::CIDR.create(subnets.first["range"])
+    end
+
+    # Gets the static ranges out of the user's deployment config and creates an
+    # array of CIDR objects.  This is used for calculating IPs in the .erb
+    # template that uses the ip and ip_range methods.
+    # @param [Array] subnets The subnets in a network configuration.
+    # @return [Array] An array of CIDR objects.
+    def get_static_ranges(subnets)
+      static_ranges = subnets.first["static"]
+      if !static_ranges || static_ranges.empty?
+        return nil
+      end
+      static_ips = []
+      static_ranges.each do |static_range|
+        range_split = static_range.split("-")
+        if range_split.size == 1
+          static_ips.push(range_split[0])
+          next
+        end
+
+        start_range = NetAddr::CIDR.create(range_split[0].strip)
+        end_range = NetAddr::CIDR.create(range_split[1].strip)
+        (start_range..end_range).each do |ip_entry|
+          static_ips.push(ip_entry)
+        end
+      end
+      static_ips
     end
 
     # Creates the helper hash.  Keys are the network name, values are the CIDR
@@ -249,7 +308,9 @@ module Bosh::Cli::Command
       netw_arr.each do |netw|
         subnets = netw["subnets"]
         check_valid_network_config(netw, subnets)
-        helper[netw["name"]] = NetAddr::CIDR.create(subnets.first["range"])
+        helper[netw["name"]] = {}
+        helper[netw["name"]]["range"] = get_range(subnets)
+        helper[netw["name"]]["static"] = get_static_ranges(subnets)
       end
       helper
     end
