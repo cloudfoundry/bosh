@@ -9,43 +9,45 @@ module Bosh::Director
 
       def initialize(deployment_id, options)
         super
+
         @deployment_id = deployment_id
         @target = options["target"]
         @command = options["command"]
         @params = options["params"]
         @blobstore = Config.blobstore
+        @instance_manager = Api::InstanceManager.new
       end
 
       def perform
         job = @target["job"]
         indexes = @target["indexes"]
 
-        conditions = {:deployment_id => @deployment_id}
-        conditions[:index] = indexes if indexes && indexes.size > 0
-        conditions[:job] = job if job
-        instances = Models::Instance.filter(conditions).all
+        filter = {
+          :deployment_id => @deployment_id
+        }
 
-        if instances.empty?
-          desc = job.to_s
-          if indexes && indexes.is_a?(Array)
-            desc << " " + indexes.join(", ")
-          end
-
-          raise InstanceNotFound, "No instances matched `#{desc}'"
+        if indexes && indexes.size > 0
+          filter[:index] = indexes
         end
 
-        ssh_info = []
-        instances.each do |instance|
-          vm = Models::Vm[instance.vm_id]
-          agent = AgentClient.new(vm.agent_id)
-          @logger.info("ssh #{@command} job: #{instance.job}, " +
-                       "index: #{instance.index}")
+        if job
+          filter[:job] = job
+        end
+
+        instances = @instance_manager.filter_by(filter)
+
+        ssh_info = instances.map do |instance|
+          agent = @instance_manager.agent_client_for(instance)
+
+          logger.info("ssh #{@command} `#{instance.job}/#{instance.index}'")
           result = agent.ssh(@command, @params)
           result["index"] = instance.index
-          ssh_info << result
+
+          result
         end
-        @result_file.write(Yajl::Encoder.encode(ssh_info))
-        @result_file.write("\n")
+
+        result_file.write(Yajl::Encoder.encode(ssh_info))
+        result_file.write("\n")
 
         # task result
         nil

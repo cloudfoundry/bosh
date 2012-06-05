@@ -154,8 +154,9 @@ module Bosh::Director
 
       if @manifest.has_key?("release")
         if @manifest.has_key?("releases")
-          raise "Deployment manifest contains both 'release' and 'releases' " +
-                  "sections, please use one of the two."
+          raise DeploymentAmbiguousReleaseSpec,
+                "Deployment manifest contains both 'release' and 'releases' " +
+                "sections, please use one of the two."
         end
         release_specs << @manifest["release"]
       else
@@ -168,7 +169,8 @@ module Bosh::Director
       release_specs.each do |release_spec|
         release = ReleaseSpec.new(self, release_spec)
         if @releases.has_key?(release.name)
-          raise "Duplicate release name: '#{release.name}'."
+          raise DeploymentDuplicateReleaseName,
+                "Duplicate release name `#{release.name}'"
         end
         @releases[release.name] = release
       end
@@ -181,7 +183,8 @@ module Bosh::Director
       resource_pools.each do |resource_pool_spec|
         resource_pool = ResourcePoolSpec.new(self, resource_pool_spec)
         if @resource_pools[resource_pool.name]
-          raise "Duplicate resource pool name: '#{resource_pool.name}'."
+          raise DeploymentDuplicateResourcePoolName,
+                "Duplicate resource pool name `#{resource_pool.name}'"
         end
         @resource_pools[resource_pool.name] = resource_pool
       end
@@ -205,13 +208,15 @@ module Bosh::Director
         end
 
         if rename_in_progress? && @job_rename["old_name"] == job["name"]
-          raise "Renamed job #{job["name"]} is being referenced in " +
+          raise DeploymentRenamedJobNameStillUsed,
+                "Renamed job `#{job["name"]}' is still referenced in " +
                 "deployment manifest"
         end
 
         job = JobSpec.new(self, job)
         if @jobs_canonical_name_index.include?(job.canonical_name)
-          raise "Invalid job name: '#{job.name}', canonical name already taken."
+          raise DeploymentCanonicalJobNameTaken,
+                "Invalid job name `#{job.name}', canonical name already taken"
         end
 
         @jobs << job
@@ -235,18 +240,22 @@ module Bosh::Director
           when "vip"
             network = VipNetworkSpec.new(self, network_spec)
           else
-            raise "Invalid network type: '#{type}'."
+            raise DeploymentInvalidNetworkType,
+                  "Invalid network type `#{type}'"
         end
 
         if @networks_canonical_name_index.include?(network.canonical_name)
-          raise "Invalid network name: '%s', canonical name already taken." % (
-            network.name)
+          raise DeploymentCanonicalNetworkNameTaken,
+                "Invalid network name `#{network.name}', " +
+                "canonical name already taken"
         end
         @networks[network.name] = network
         @networks_canonical_name_index << network.canonical_name
       end
 
-      raise "No networks specified." if @networks.empty?
+      if @networks.empty?
+        raise DeploymentNoNetworks, "No networks specified"
+      end
     end
 
     def parse_update

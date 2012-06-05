@@ -40,8 +40,9 @@ module Bosh::Director
                                                :optional => true)
         @network = deployment.network(network_name)
         if @network.nil?
-          raise "Compilation workers reference an unknown " +
-                    "network: '#{network_name}'"
+          raise CompilationConfigUnknownNetwork,
+                "Compilation config references an unknown " +
+                "network `#{network_name}'"
         end
         @cloud_properties = safe_property(
             compilation_config, "cloud_properties", :class => Hash)

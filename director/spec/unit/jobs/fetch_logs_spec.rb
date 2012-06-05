@@ -39,7 +39,8 @@ describe Bosh::Director::Jobs::FetchLogs do
 
     lambda {
       job.perform
-    }.should raise_error(RuntimeError, "instance 'zb/42' doesn't reference an existing VM")
+    }.should raise_error(BD::InstanceVmMissing,
+                         "`zb/42' doesn't reference a VM")
   end
 
   it "keeps track of log bundles" do

@@ -16,12 +16,17 @@ module Bosh::Director
       # @param [Hash] network_spec parsed deployment manifest network section
       def initialize(deployment, network_spec)
         super
+
         @subnets = []
-        safe_property(network_spec, "subnets",:class => Array).
-            each do |subnet_spec|
+        subnets = safe_property(network_spec, "subnets", :class => Array)
+
+        subnets.each do |subnet_spec|
           new_subnet = NetworkSubnetSpec.new(self, subnet_spec)
           @subnets.each do |subnet|
-            raise "Overlapping subnets" if subnet.overlaps?(new_subnet)
+            if subnet.overlaps?(new_subnet)
+              raise NetworkSpecOverlappingSubnets,
+                    "Network `#{name}' has overlapping subnets"
+            end
           end
           @subnets << new_subnet
         end
@@ -53,7 +58,8 @@ module Bosh::Director
           end
         else
           unless reservation.dynamic?
-            raise "New reservations without IPs must be dynamic"
+            raise NetworkReservationInvalidType,
+                  "New reservations without IPs must be dynamic"
           end
           @subnets.each do |subnet|
             reservation.ip = subnet.allocate_dynamic_ip
@@ -75,7 +81,8 @@ module Bosh::Director
       # @return [void]
       def release(reservation)
         unless reservation.ip
-          raise "Can't release reservation without an IP"
+          raise NetworkReservationIpMissing,
+                "Can't release reservation without an IP"
         end
 
         find_subnet(reservation.ip) do |subnet|
@@ -91,7 +98,8 @@ module Bosh::Director
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
         unless reservation.ip
-          raise "Can't generate network settings without an IP"
+          raise NetworkReservationIpMissing,
+                "Can't generate network settings without an IP"
         end
 
         config = nil

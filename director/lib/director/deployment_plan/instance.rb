@@ -66,8 +66,12 @@ module Bosh::Director
       # @param [String] name network name
       # @param [NetworkReservation] reservation
       def add_network_reservation(name, reservation)
-        if @network_reservations.has_key?(name)
-          raise "Network reservation: '#{name}' already exists"
+        old_reservation = @network_reservations[name]
+
+        if old_reservation
+          raise NetworkReservationAlreadyExists,
+                "`#{@job}/#{@index}' already has reservation " +
+                "for network `#{name}', IP #{old_reservation.ip}"
         end
         @network_reservations[name] = reservation
       end

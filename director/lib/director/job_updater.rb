@@ -20,9 +20,12 @@ module Bosh::Director
 
       return if unneeded_instances.empty?
 
-      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size, [@job.name])
-      InstanceDeleter.new(@deployment_plan).delete_instances(unneeded_instances,
-                                                             :max_threads => @job.update.max_in_flight)
+      @event_log.begin_stage("Deleting unneeded instances",
+                             unneeded_instances.size, [@job.name])
+      InstanceDeleter.new(@deployment_plan).
+        delete_instances(unneeded_instances,
+                         :max_threads => @job.update.max_in_flight)
+
       @logger.info("Deleted no longer needed instances")
     end
 
@@ -50,14 +53,18 @@ module Bosh::Director
         # Canaries first
         num_canaries.times do
           instance = instances.shift
+
           pool.process do
-            @event_log.track("#{@job.name}/#{instance.index} (canary)") do |ticker|
-              with_thread_name("canary_update(#{@job.name}/#{instance.index})") do
+            desc = "#{@job.name}/#{instance.index}"
+            @event_log.track("#{desc} (canary)") do |ticker|
+              with_thread_name("canary_update(#{desc})") do
                 unless @job.should_halt?
                   begin
-                    InstanceUpdater.new(instance, ticker).update(:canary => true)
+                    InstanceUpdater.new(instance, ticker).
+                      update(:canary => true)
                   rescue Exception => e
-                    @logger.error("Error updating canary instance: #{e} - #{e.backtrace.join("\n")}")
+                    @logger.error("Error updating canary instance: #{e}\n" +
+                                  "#{e.backtrace.join("\n")}")
                     @job.record_update_error(e, :canary => true)
                   end
                 end
@@ -78,13 +85,15 @@ module Bosh::Director
         @logger.info("Continuing the rest of the update")
         instances.each do |instance|
           pool.process do
-            @event_log.track("#{@job.name}/#{instance.index}") do |ticker|
-              with_thread_name("instance_update(#{@job.name}/#{instance.index})") do
+            desc = "#{@job.name}/#{instance.index}"
+            @event_log.track(desc) do |ticker|
+              with_thread_name("instance_update(#{desc})") do
                 unless @job.should_halt?
                   begin
                     InstanceUpdater.new(instance, ticker).update
                   rescue Exception => e
-                    @logger.error("Error updating instance: #{e} - #{e.backtrace.join("\n")}")
+                    @logger.error("Error updating instance: #{e}\n" +
+                                  "#{e.backtrace.join("\n")}")
                     @job.record_update_error(e)
                   end
                 end
@@ -103,7 +112,9 @@ module Bosh::Director
     end
 
     def halt
-      raise @job.halt_exception || RuntimeError.new("Deployment has been halted")
+      error = @job.halt_exception ||
+        RuntimeError.new("Deployment has been halted")
+      raise error
     end
 
   end

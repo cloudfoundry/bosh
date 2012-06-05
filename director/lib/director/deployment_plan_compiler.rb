@@ -11,6 +11,7 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @event_log = Config.event_log
+      @stemcell_manager = Api::StemcellManager.new
     end
 
     def bind_deployment
@@ -23,8 +24,9 @@ module Bosh::Director
             canonical_name_index << canonical(other_deployment.name)
           end
           if canonical_name_index.include?(@deployment_plan.canonical_name)
-            raise "Invalid deployment name: '#{@deployment_plan.name}', " +
-                    "canonical name already taken."
+            raise DeploymentCanonicalNameTaken,
+                  "Invalid deployment name `#{@deployment_plan.name}', " +
+                  "canonical name already taken"
           end
           deployment = Models::Deployment.create(:name => @deployment_plan.name)
         end
@@ -41,7 +43,7 @@ module Bosh::Director
 
         release = Models::Release[:name => name]
         if release.nil?
-          raise "Can't find release '#{name}'"
+          raise DeploymentUnknownRelease, "Can't find release `#{name}'"
         end
 
         @logger.debug("Found release: #{release.pretty_inspect}")
@@ -51,7 +53,8 @@ module Bosh::Director
                                                  :version => version]
 
         if release_version.nil?
-          raise "Can't find release version '#{name}/#{version}'"
+          raise DeploymentUnknownReleaseVersion,
+                "Can't find release version `#{name}/#{version}'"
         end
 
         @logger.debug("Found release version: " +
@@ -138,9 +141,10 @@ module Bosh::Director
       # Update instance, if we are renaming a job.
       if @deployment_plan.rename_in_progress? &&
          instance.job == @deployment_plan.job_rename["old_name"]
+        new_name = @deployment_plan.job_rename["new_name"]
         @logger.info("Found instance with old job name #{instance.job}, " +
-                     "updating it to #{@deployment_plan.job_rename["new_name"]}")
-        instance.job = @deployment_plan.job_rename["new_name"]
+                     "updating it to `#{new_name}'")
+        instance.job = new_name
         instance.save
       end
 
@@ -190,52 +194,64 @@ module Bosh::Director
 
     def verify_state(vm, state)
       instance = vm.instance
-      # TODO: cleanup exceptions
+
       if instance && instance.deployment_id != vm.deployment_id
-        raise ("VM `%s' out of sync: model mismatch, instance belongs " +
-            "to deployment `%s', VM belongs to deployment `%s'") % [
-            vm.cid, instance.deployment_id, vm.deployment_id]
+        # Both VM and instance should reference same deployment
+        raise VmInstanceOutOfSync,
+              "VM `#{vm.cid}' and instance " +
+              "`#{instance.job}/#{instance.index}' " +
+              "don't belong to the same deployment"
       end
 
       unless state.kind_of?(Hash)
         @logger.error("Invalid state for `#{vm.cid}': #{state.pretty_inspect}")
-        raise "VM `%s' returns invalid state: expected Hash, got %s" % [
-            vm.cid, state.class]
+        raise AgentInvalidStateFormat,
+              "VM `#{vm.cid}' returns invalid state: " +
+              "expected Hash, got #{state.class}"
       end
 
       actual_deployment_name = state["deployment"]
       expected_deployment_name = @deployment_plan.deployment.name
 
       if actual_deployment_name != expected_deployment_name
-        raise ("VM `%s' is out of sync: expected to be a part of `%s' " +
-            "deployment but is actually a part of `%s' deployment") % [
-            vm.cid, expected_deployment_name, actual_deployment_name]
-
+        raise AgentWrongDeployment,
+              "VM `#{vm.cid}' is out of sync: " +
+              "expected to be a part of deployment " +
+              "`#{expected_deployment_name}' " +
+              "but is actually a part of deployment " +
+              "`#{actual_deployment_name}'"
       end
 
       actual_job = state["job"].is_a?(Hash) ? state["job"]["name"] : nil
       actual_index = state["index"]
 
       if instance.nil? && !actual_job.nil?
-        raise ("VM `%s' is out of sync: it reports itself as `%s/%d' but " +
-            "there is no instance referencing it") % [
-            vm.cid, actual_job, actual_index]
+        raise AgentUnexpectedJob,
+              "VM `#{vm.cid}' is out of sync: " +
+              "it reports itself as `#{actual_job}/#{actual_index}' but " +
+              "there is no instance reference in DB"
       end
 
-      if instance && (instance.job != actual_job || instance.index != actual_index)
+      if instance &&
+        (instance.job != actual_job || instance.index != actual_index)
         # Check if we are resuming a previously unfinished rename
         if actual_job == @deployment_plan.job_rename["old_name"] &&
            instance.job == @deployment_plan.job_rename["new_name"] &&
            instance.index == actual_index
+
+          # Rename already happened in the DB but then something happened
+          # and agent has never been updated.
           unless @deployment_plan.job_rename["force"]
-            raise("Found a job #{actual_job} that seems to be in the middle of " +
-                  "a rename to #{instance.job}. Use --force to continue")
+            raise AgentRenameInProgress,
+                  "Found a job `#{actual_job}' that seems to be " +
+                  "in the middle of a rename to `#{instance.job}'. " +
+                  "Run 'rename' again with '--force' to proceed."
           end
         else
-          raise ("VM `%s' is out of sync: it reports itself as `%s/%s' but " +
-              "according to DB it is `%s/%s'") % [
-              vm.cid, actual_job, actual_index, instance.job,
-              instance.index]
+          raise AgentJobMismatch,
+                "VM `#{vm.cid}' is out of sync: " +
+                "it reports itself as `#{actual_job}/#{actual_index}' but " +
+                "according to DB it is `#{instance.job}/#{instance.index}'"
         end
       end
     end
@@ -320,10 +336,11 @@ module Bosh::Director
           instance_reservation.take(idle_vm.network_reservation)
         end
       else
-        # if the VM is about to be created, then use this instance's networking configuration
+        # if the VM is about to be created, then use this
+        # instance networking configuration
         idle_vm.bound_instance = instance_spec
 
-        # this also means we no longer need the VM's network reservation
+        # this also means we no longer need the VM network reservation
         network.release(idle_vm.network_reservation)
         idle_vm.network_reservation = nil
       end
@@ -341,7 +358,9 @@ module Bosh::Director
       else
         # Target instance state should either be persisted in DB
         # or provided via deployment plan, otherwise something is really wrong
-        raise "Instance `#{instance.job}/#{instance.index}' target state cannot be determined"
+        raise InstanceTargetStateUndefined,
+              "Instance `#{instance.job}/#{instance.index}' target state " +
+              "cannot be determined"
       end
     end
 
@@ -379,7 +398,8 @@ module Bosh::Director
           @logger.info("Binding template: #{template_spec.name}")
           template = template_name_index[template_spec.name]
           if template.nil?
-            raise "Can't find template: #{template_spec.name}"
+            raise DeploymentUnknownTemplate,
+                  "Can't find template `#{template_spec.name}'"
           end
 
           template_spec.template = template
@@ -398,11 +418,17 @@ module Bosh::Director
     def bind_stemcells
       @deployment_plan.resource_pools.each do |resource_pool|
         stemcell_spec = resource_pool.stemcell
-        lock = Lock.new("lock:stemcells:#{stemcell_spec.name}:#{stemcell_spec.version}", :timeout => 10)
+        name = stemcell_spec.name
+        version = stemcell_spec.version
+
+        lock = Lock.new("lock:stemcells:#{name}:#{version}", :timeout => 10)
         lock.lock do
-          stemcell = Models::Stemcell[:name => stemcell_spec.name, :version => stemcell_spec.version]
-          raise "Can't find stemcell: #{stemcell_spec.name}/#{stemcell_spec.version}" unless stemcell
-          if stemcell.deployments_dataset.filter(:deployment_id => @deployment_plan.deployment.id).empty?
+          stemcell = @stemcell_manager.find_by_name_and_version(name, version)
+
+          deployments = stemcell.deployments_dataset.
+            filter(:deployment_id => @deployment_plan.deployment.id)
+
+          if deployments.empty?
             stemcell.add_deployment(@deployment_plan.deployment)
           end
           stemcell_spec.stemcell = stemcell
@@ -415,12 +441,16 @@ module Bosh::Director
     end
 
     def bind_dns
-      domain = Models::Dns::Domain.find_or_create(:name => "bosh", :type => "NATIVE")
+      domain = Models::Dns::Domain.find_or_create(:name => "bosh",
+                                                  :type => "NATIVE")
       @deployment_plan.dns_domain = domain
 
-      soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id, :name => "bosh", :type => "SOA")
+      soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
+                                                      :name => "bosh",
+                                                      :type => "SOA")
       # TODO: make configurable?
-      # The format of the SOA record is: primary_ns contact serial refresh retry expire minimum
+      # The format of the SOA record is:
+      # primary_ns contact serial refresh retry expire minimum
       soa_record.content = "localhost hostmaster@localhost 0 10800 604800 30"
       soa_record.ttl = 300
       soa_record.save
@@ -498,7 +528,8 @@ module Bosh::Director
       unneeded_instances = @deployment_plan.unneeded_instances
       return if unneeded_instances.empty?
 
-      @event_log.begin_stage("Deleting unneeded instances", unneeded_instances.size)
+      @event_log.begin_stage("Deleting unneeded instances",
+                             unneeded_instances.size)
       InstanceDeleter.new(@deployment_plan).delete_instances(unneeded_instances)
       @logger.info("Deleted no longer needed instances")
     end
@@ -514,23 +545,28 @@ module Bosh::Director
         formatted_ip = ip_to_netaddr(reservation.ip).ip
         case reservation.error
           when NetworkReservation::USED
-            raise ("`%s/%d' asked for a static IP: %s but it's already " +
-                "reserved/in use") % [name, index, formatted_ip]
+            raise NetworkReservationAlreadyInUse,
+                  "`#{name}/#{index}' asked for a static IP #{formatted_ip} " +
+                  "but it's already reserved/in use"
           when NetworkReservation::WRONG_TYPE
-            raise ("`%s/%d' asked for a static IP: %s " +
-                "but it's in the dynamic pool") % [name, index, formatted_ip]
+            raise NetworkReservationWrongType,
+                  "`#{name}/#{index}' asked for a static IP #{formatted_ip} " +
+                  "but it's in the dynamic pool"
           else
-            raise ("`%s/%d' failed to reserve static IP: %s " +
-                "because: %s") % [name, index, formatted_ip, reservation.error]
+            raise NetworkReservationError,
+                  "`#{name}/#{index}' failed to reserve static IP " +
+                  "#{formatted_ip}: #{reservation.error}"
         end
       else
         case reservation.error
           when NetworkReservation::CAPACITY
-            raise ("`%s/%d' asked for a dynamic IP " +
-                "but there were no more available") % [name, index]
+            raise NetworkReservationNotEnoughCapacity,
+                  "`#{name}/#{index}' asked for a dynamic IP " +
+                  "but there were no more available"
           else
-            raise ("`%s/%d' failed to reserve dynamic IP because: %s") % [
-                name, index, reservation.error]
+            raise NetworkReservationError,
+                  "`#{name}/#{index}' failed to reserve dynamic IP " +
+                  "#{formatted_ip}: #{reservation.error}"
         end
       end
     end

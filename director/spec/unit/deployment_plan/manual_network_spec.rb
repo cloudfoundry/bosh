@@ -55,7 +55,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
                 }
             ]
         })
-      }.should raise_error("Overlapping subnets")
+      }.should raise_error(Bosh::Director::NetworkSpecOverlappingSubnets)
     end
   end
 

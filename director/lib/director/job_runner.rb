@@ -101,7 +101,7 @@ module Bosh::Director
       log_exception(e)
       @debug_logger.info("Task #{@task.id} cancelled")
       finish_task(:cancelled, "task cancelled")
-    rescue => e # Only rescuing StandardError and its descendants
+    rescue Exception => e
       log_exception(e)
       @debug_logger.error("#{e}\n#{e.backtrace.join("\n")}")
       finish_task(:error, e)

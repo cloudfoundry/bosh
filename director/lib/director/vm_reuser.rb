@@ -33,15 +33,15 @@ module Bosh::Director
           end
         end
       end
-      return nil
+      nil
     end
 
     # Gets the total number of compilation VMs created with a given stemcell.
     # @param [Models::Stemcell] stemcell The stemcell the VMs are running.
     # @return [Integer] The number of VMs running a given stemcell.
     def get_num_vms(stemcell)
-      return @stemcells_to_vms[stemcell].nil? ?
-          0 : @stemcells_to_vms[stemcell].size
+      @stemcells_to_vms[stemcell].nil? ?
+        0 : @stemcells_to_vms[stemcell].size
     end
 
     # An iterator for all compilation VMs on all stemcells.

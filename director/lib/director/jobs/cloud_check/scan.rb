@@ -5,21 +5,23 @@ module Bosh::Director
     module CloudCheck
       class Scan < BaseJob
         AGENT_TIMEOUT = 10 # seconds
+
         @queue = :normal
 
-        # TODO: add event and regular logging
+        # @param [String] deployment_name Deployment name
         def initialize(deployment_name)
           super
-          @deployment = Models::Deployment.find(:name => deployment_name)
+
+          @deployment_manager = Api::DeploymentManager.new
+          @deployment = @deployment_manager.find_by_name(deployment_name)
+
           @problem_lock = Mutex.new
-          raise "Deployment `#{deployment_name}' not found" if @deployment.nil?
           @agent_disks = {}
         end
 
         def perform
           begin
             with_deployment_try_lock do
-              started_at = Time.now
               reset
               # TODO: decide if scanning procedures should be
               # extracted into their own classes (for clarity)
@@ -63,7 +65,9 @@ module Bosh::Director
         end
 
         def scan_vms
-          vms = Models::Vm.eager(:instance).filter(:deployment_id => @deployment.id).all
+          vms = Models::Vm.eager(:instance).
+            filter(:deployment_id => @deployment.id).all
+
           begin_stage("Scanning #{vms.size} VMs", 2)
           results = Hash.new(0)
           lock = Mutex.new
@@ -87,18 +91,23 @@ module Bosh::Director
 
         def scan_disk(disk)
           # inactive disks
-          if !disk.active
-            @logger.info("Found inactive disk: #{disk.id}")
+          unless disk.active
+            logger.info("Found inactive disk: #{disk.id}")
             problem_found(:inactive_disk, disk)
             return :inactive
           end
 
           disk_cid = disk.disk_cid
+          vm_cid = nil
 
-          vm_cid = disk.instance.vm.cid if disk.instance && disk.instance.vm
+          if disk.instance && disk.instance.vm
+            vm_cid = disk.instance.vm.cid
+          end
+
           if vm_cid.nil?
             # With the db dependencies this should not happen.
-            @logger.warn("Disk #{disk_cid} is not associated to any VM. Skipping scan")
+            logger.warn("Disk #{disk_cid} is not associated to any VM. " +
+                        "Skipping scan")
             return :ok
           end
 
@@ -106,7 +115,9 @@ module Bosh::Director
           # active disk is not mounted or mounted more than once -or-
           # the disk is mounted on a vm that is different form the record.
           if owner_vms.size != 1 || owner_vms.first != vm_cid
-            @logger.info("Found problem in mount info: active disk #{disk_cid} mounted on #{owner_vms.join(', ')}")
+            logger.info("Found problem in mount info: " +
+                       "active disk #{disk_cid} mounted on " +
+                       "#{owner_vms.join(', ')}")
             problem_found(:mount_info_mismatch, disk, :owner_vms => owner_vms)
             return :mount_info_mismatch
           end
@@ -137,20 +148,22 @@ module Bosh::Director
               disk_list = agent.list_disk
               mounted_disk_cid = disk_list.first
             rescue RuntimeError => e
-              @logger.info("agent.list_disk failed on agent #{vm.agent_id}")
+              logger.info("agent.list_disk failed on agent #{vm.agent_id}")
             end
             add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 
             if state["deployment"] != @deployment.name ||
                 (instance && (instance.job != job || instance.index != index))
-              problem_found(:out_of_sync_vm, vm, :deployment => state["deployment"],
+              problem_found(:out_of_sync_vm, vm,
+                            :deployment => state["deployment"],
                             :job => job, :index => index)
               return :out_of_sync
             end
 
             if job && !instance
-              @logger.info("Found unbound VM #{vm.agent_id}")
-              problem_found(:unbound_instance_vm, vm, :job => job, :index => index)
+              logger.info("Found unbound VM #{vm.agent_id}")
+              problem_found(:unbound_instance_vm, vm,
+                            :job => job, :index => index)
               return :unbound
             end
             :ok
@@ -158,7 +171,7 @@ module Bosh::Director
             # unresponsive disk, not invalid disk_info
             add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 
-            @logger.info("Found unresponsive agent #{vm.agent_id}")
+            logger.info("Found unresponsive agent #{vm.agent_id}")
             problem_found(:unresponsive_agent, vm)
             :unresponsive
           end
@@ -172,15 +185,18 @@ module Bosh::Director
                      :resource_id => resource.id, :state => "open").all
 
             if similar_open_problems.size > 1
-              raise "More than one problem of type `#{type}' exists for resource #{resource.id}"
+              raise CloudcheckTooManySimilarProblems,
+                    "More than one problem of type `#{type}' " +
+                    "exists for resource #{type} #{resource.id}"
             end
 
             if similar_open_problems.empty?
               problem = Models::DeploymentProblem.
-                create(:type => type.to_s, :resource_id => resource.id, :state => "open",
-                       :deployment_id => @deployment.id, :data => data, :counter => 1)
+                create(:type => type.to_s, :resource_id => resource.id,
+                       :state => "open", :deployment_id => @deployment.id,
+                       :data => data, :counter => 1)
 
-              @logger.info("Created problem #{problem.id} (#{problem.type})")
+              logger.info("Created problem #{problem.id} (#{problem.type})")
             else
               # This assumes we are running with deployment lock acquired,
               # so there is no possible update conflict
@@ -189,7 +205,8 @@ module Bosh::Director
               problem.last_seen_at = Time.now
               problem.counter += 1
               problem.save
-              @logger.info("Updated problem #{problem.id} (#{problem.type}), count is now #{problem.counter}")
+              logger.info("Updated problem #{problem.id} (#{problem.type}), " +
+                          "count is now #{problem.counter}")
             end
           end
         end

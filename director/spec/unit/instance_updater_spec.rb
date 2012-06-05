@@ -185,7 +185,9 @@ describe Bosh::Director::InstanceUpdater do
 
     lambda {
       instance_updater.update
-    }.should raise_error(RuntimeError, "instance is still running despite the stop command")
+    }.should raise_error(
+               BD::AgentJobNotStopped,
+               "`test_job/0' is still running despite the stop command")
   end
 
   it "should do a basic canary update" do
@@ -661,7 +663,7 @@ describe Bosh::Director::InstanceUpdater do
   end
 
   # Previous state:
-  # 1 - Create a persistentdisk with the new size (not-activated)
+  # 1 - Create a persistent disk with the new size (not-activated)
   # 2 - Agent migrate is successful
   # 3 - We fail to activate the disk created in -1-
   it "fail if director and agent are not in agreement in terms of persistent disks" do
@@ -699,10 +701,10 @@ describe Bosh::Director::InstanceUpdater do
     @cloud.should_not_receive(:delete_disk).with("new-disk-id")
 
     # We failed to activate the director's db entry. Agent and Director have
-    # different persistent disks info => raise an execption
+    # different persistent disks info => raise an exception
     lambda {
       instance_updater.update
-    }.should raise_error(RuntimeError)
+    }.should raise_error(BD::AgentDiskOutOfSync)
 
     @instance.refresh
     @instance.vm.should == @vm

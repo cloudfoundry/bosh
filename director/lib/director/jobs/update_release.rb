@@ -5,25 +5,20 @@ module Bosh::Director
     class UpdateRelease < BaseJob
       @queue = :normal
 
-      attr_accessor :tmp_release_dir, :release
+      attr_accessor :tmp_release_dir
+      attr_accessor :release
 
-      def initialize(*args)
+      def initialize(release_dir)
         super
 
-        if args.length == 1
-          release_dir = args.first
-          @tmp_release_dir = release_dir
-          @blobstore = Config.blobstore
-        elsif args.empty?
-          # used for testing only
-        else
-          raise ArgumentError, "wrong number of arguments (#{args.length} for 1)"
-        end
+        @tmp_release_dir = release_dir
+        @blobstore = Config.blobstore
+        @release = nil
       end
 
       def perform
-        @logger.info("Processing update release")
-        @event_log.begin_stage("Updating release", 3)
+        logger.info("Processing update release")
+        event_log.begin_stage("Updating release", 3)
 
         extract_release
         verify_manifest
@@ -112,16 +107,20 @@ module Bosh::Director
       end
 
       def normalize_manifest
-        ["name", "version"].each do |property|
+        %w(name version).each do |property|
           @release_manifest[property] = @release_manifest[property].to_s
         end
 
         @release_manifest["packages"].each do |package_meta|
-          ["name", "version", "sha1"].each { |property| package_meta[property] = package_meta[property].to_s }
+          %w(name version sha1).each do |property|
+            package_meta[property] = package_meta[property].to_s
+          end
         end
 
         @release_manifest["jobs"].each do |job_meta|
-          ["name", "version", "sha1"].each { |property| job_meta[property] = job_meta[property].to_s }
+          %w(name version sha1).each do |property|
+            job_meta[property] = job_meta[property].to_s
+          end
         end
       end
 
@@ -131,19 +130,27 @@ module Bosh::Director
           packages_by_name[package["name"]] = package
           package["dependencies"] ||= []
         end
-        dependency_lookup = lambda { |package_name| packages_by_name[package_name]["dependencies"] }
-        result = CycleHelper.check_for_cycle(packages_by_name.keys, :connected_vertices=> true, &dependency_lookup)
+        dependency_lookup = lambda do |package_name|
+          packages_by_name[package_name]["dependencies"]
+        end
+        result = CycleHelper.check_for_cycle(packages_by_name.keys,
+                                             :connected_vertices => true,
+                                             &dependency_lookup)
+
         packages.each do |package|
-          @logger.info("Resolving package dependencies for: #{package["name"]}, " +
-                           "found: #{package["dependencies"].pretty_inspect}")
-          package["dependencies"] = result[:connected_vertices][package["name"]]
-          @logger.info("Resolved package dependencies for: #{package["name"]}, " +
-                           "to: #{package["dependencies"].pretty_inspect}")
+          name = package["name"]
+          dependencies = package["dependencies"]
+
+          logger.info("Resolving package dependencies for `#{name}', " +
+                      "found: #{dependencies.pretty_inspect}")
+          package["dependencies"] = result[:connected_vertices][name]
+          logger.info("Resolved package dependencies for `#{name}', " +
+                      "to: #{dependencies.pretty_inspect}")
         end
       end
 
       def process_packages
-        @logger.info("Checking for new packages in release")
+        logger.info("Checking for new packages in release")
 
         new_packages = []
         existing_packages = []
@@ -159,16 +166,16 @@ module Bosh::Director
           if package.nil?
             new_packages << package_meta
           else
-            existing_packages << [ package, package_meta ]
+            existing_packages << [package, package_meta]
           end
         end
 
         if new_packages.size > 0
-          @event_log.begin_stage("Creating new packages", new_packages.size)
+          event_log.begin_stage("Creating new packages", new_packages.size)
           new_packages.each do |package_meta|
             package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
-            @event_log.track(package_desc) do
-              @logger.info("Creating new package `#{package_desc}'")
+            event_log.track(package_desc) do
+              logger.info("Creating new package `#{package_desc}'")
               package = create_package(package_meta)
               register_package(package)
             end
@@ -177,20 +184,25 @@ module Bosh::Director
 
         if existing_packages.size > 0
           n_packages = existing_packages.size
-          @event_log.begin_stage("Processing #{n_packages} existing package#{n_packages > 1 ? "s" : ""}", 1)
-          @event_log.track("Verifying checksums") do
+          event_log.begin_stage("Processing #{n_packages} existing " +
+                                "package#{n_packages > 1 ? "s" : ""}", 1)
+
+          event_log.track("Verifying checksums") do
             existing_packages.each do |package, package_meta|
               package_desc = "#{package.name}/#{package.version}"
-              @logger.info("Package `#{package_desc}' already exists, " +
+              logger.info("Package `#{package_desc}' already exists, " +
                            "verifying checksum")
 
               # TODO: make sure package dependencies have not changed
-              if package.sha1 != package_meta["sha1"]
+              expected = package.sha1
+              received = package_meta["sha1"]
+
+              if expected != received
                 raise ReleaseExistingPackageHashMismatch,
-                      "The existing package `#{package_desc}' " +
-                      "has a different checksum"
+                      "`#{package_desc}' checksum mismatch, " +
+                      "expected #{expected} but received #{received}"
               end
-              @logger.info("Package `#{package_desc}' verified")
+              logger.info("Package `#{package_desc}' verified")
               register_package(package)
             end
           end
@@ -203,7 +215,7 @@ module Bosh::Director
       end
 
       def process_jobs
-        @logger.info("Checking for new jobs in release")
+        logger.info("Checking for new jobs in release")
 
         new_jobs = []
         existing_jobs = []
@@ -219,16 +231,16 @@ module Bosh::Director
           if template.nil?
             new_jobs << job_meta
           else
-            existing_jobs << [ template, job_meta ]
+            existing_jobs << [template, job_meta]
           end
         end
 
         if new_jobs.size > 0
-          @event_log.begin_stage("Creating new jobs", new_jobs.size)
+          event_log.begin_stage("Creating new jobs", new_jobs.size)
           new_jobs.each do |job_meta|
             job_desc = "#{job_meta["name"]}/#{job_meta["version"]}"
-            @event_log.track(job_desc) do
-              @logger.info("Creating new template #{job_desc}")
+            event_log.track(job_desc) do
+              logger.info("Creating new template `#{job_desc}'")
               template = create_job(job_meta)
               register_template(template)
             end
@@ -237,19 +249,26 @@ module Bosh::Director
 
         if existing_jobs.size > 0
           n_jobs = existing_jobs.size
-          @event_log.begin_stage("Processing #{n_jobs} existing job#{n_jobs > 1 ? "s" : ""}", 1)
-          @event_log.track("Verifying checksums") do
-            existing_jobs.each do |template, job_meta|
-              job_desc = "#{template.name}/#{template.version} (#{job_meta["sha1"]})"
-              @logger.info("Job `#{job_desc}' already exists, verifying checksum")
+          event_log.begin_stage("Processing #{n_jobs} existing " +
+                                "job#{n_jobs > 1 ? "s" : ""}", 1)
 
-              if template.sha1 != job_meta["sha1"]
+          event_log.track("Verifying checksums") do
+            existing_jobs.each do |template, job_meta|
+              job_desc = "#{template.name}/#{template.version}"
+
+              logger.info("Job `#{job_desc}' already exists, " +
+                          "verifying checksum")
+
+              expected = template.sha1
+              received = job_meta["sha1"]
+
+              if expected != received
                 raise ReleaseExistingJobHashMismatch,
-                      "The existing job `#{job_desc}' " +
-                      "has a different checksum"
+                      "`#{job_desc}' checksum mismatch, " +
+                      "expected #{expected} but received #{received}"
               end
 
-              @logger.info("Job `#{job_desc}' verified")
+              logger.info("Job `#{job_desc}' verified")
               register_template(template)
             end
           end
@@ -271,9 +290,10 @@ module Bosh::Director
         package = Models::Package.new(package_attrs)
         package.dependency_set = package_meta["dependencies"]
 
-        @logger.info("Creating package: #{package.name}")
+        logger.info("Creating package: #{package.name}")
 
-        package_tgz = File.join(@tmp_release_dir, "packages", "#{package.name}.tgz")
+        package_tgz = File.join(@tmp_release_dir, "packages",
+                                "#{package.name}.tgz")
         output = `tar -tzf #{package_tgz} 2>&1`
         if $?.exitstatus != 0
           raise PackageInvalidArchive,
@@ -299,7 +319,7 @@ module Bosh::Director
 
         template = Models::Template.new(template_attrs)
 
-        @logger.info("Processing job: #{template.name}")
+        logger.info("Processing job: #{template.name}")
         job_tgz = File.join(@tmp_release_dir, "jobs", "#{template.name}.tgz")
         job_dir = File.join(@tmp_release_dir, "jobs", "#{template.name}")
 

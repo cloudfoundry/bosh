@@ -47,7 +47,9 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       lambda {
         @deployment_plan_compiler.bind_deployment
-      }.should raise_error("Invalid deployment name: 'dep-a', canonical name already taken.")
+      }.should raise_error(BD::DeploymentCanonicalNameTaken,
+                           "Invalid deployment name `dep-a', " +
+                           "canonical name already taken")
     end
   end
 
@@ -431,7 +433,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :verify_state do
     before(:each) do
       @deployment = BD::Models::Deployment.make(:name => "foo")
-      @vm = BD::Models::Vm.make(:deployment => @deployment)
+      @vm = BD::Models::Vm.make(:deployment => @deployment , :cid => "foo")
       @deployment_plan.stub(:deployment).and_return(@deployment)
     end
 
@@ -459,36 +461,39 @@ describe Bosh::Director::DeploymentPlanCompiler do
       lambda {
         @deployment_plan_compiler.verify_state(@vm, {
             "deployment" => "foo",
-            "job" => {
-                "name" => "bar"
-            },
+            "job" => {"name" => "bar"},
             "index" => 11
         })
-      }.should raise_error(/model mismatch/)
+      }.should raise_error(BD::VmInstanceOutOfSync,
+                           "VM `foo' and instance `bar/11' " +
+                           "don't belong to the same deployment")
     end
 
     it "should make sure the state is a Hash" do
       lambda {
         @deployment_plan_compiler.verify_state(@vm, "state")
-      }.should raise_error(/expected Hash/)
+      }.should raise_error(BD::AgentInvalidStateFormat, /expected Hash/)
     end
 
     it "should make sure the deployment name is correct" do
       lambda {
         @deployment_plan_compiler.verify_state(@vm, {"deployment" => "foz"})
-      }.should raise_error(/deployment but is actually a part/)
+      }.should raise_error(BD::AgentWrongDeployment,
+                           "VM `foo' is out of sync: expected to be a part " +
+                           "of deployment `foo' but is actually a part " +
+                           "of deployment `foz'")
     end
 
     it "should make sure the job and index exist" do
       lambda {
         @deployment_plan_compiler.verify_state(@vm, {
             "deployment" => "foo",
-            "job" => {
-                "name" => "bar"
-            },
+            "job" => {"name" => "bar"},
             "index" => 11
         })
-      }.should raise_error(/no instance referencing it/)
+      }.should raise_error(BD::AgentUnexpectedJob,
+                           "VM `foo' is out of sync: it reports itself as " +
+                           "`bar/11' but there is no instance reference in DB")
     end
 
     it "should make sure the job and index are correct" do
@@ -499,12 +504,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
             :deployment => @deployment, :vm => @vm, :job => "bar", :index => 11)
         @deployment_plan_compiler.verify_state(@vm, {
             "deployment" => "foo",
-            "job" => {
-                "name" => "bar"
-            },
+            "job" => {"name" => "bar"},
             "index" => 22
         })
-      }.should raise_error(/according to DB it is/)
+      }.should raise_error(BD::AgentJobMismatch,
+                           "VM `foo' is out of sync: it reports itself as " +
+                           "`bar/22' but according to DB it is `bar/11'")
     end
   end
 

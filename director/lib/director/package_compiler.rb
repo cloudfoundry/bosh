@@ -129,8 +129,9 @@ module Bosh::Director
         @network.reserve(reservation)
         unless reservation.reserved?
           # TODO: proper exception
-          raise "Could not reserve network for package compilation: %s" % (
-          reservation.error)
+          raise PackageCompilationNetworkNotReserved,
+                "Could not reserve network for package compilation: " +
+                reservation.error.to_s
         end
 
         @network_reservations << reservation
@@ -194,7 +195,7 @@ module Bosh::Director
         vm_data = @vm_reuser.get_vm(stemcell)
         unless vm_data.nil?
           @logger.info("Reusing compilation VM cid #{vm_data.vm.cid} for " +
-                       "stemcell #{stemcell_name_version(stemcell)}.")
+                       "stemcell #{stemcell_name_version(stemcell)}")
           begin
             yield vm_data
           ensure
@@ -205,8 +206,9 @@ module Bosh::Director
         # This shouldn't happen. If it does there's a bug.
         if @vm_reuser.get_num_vms(stemcell) >=
           @deployment_plan.compilation.workers
-          raise "There should never be more VMs for a stemcell than the " +
-                "number of workers in reuse_compilation_vms mode."
+          raise PackageCompilationNotEnoughWorkersForReuse,
+                "There should never be more VMs for a stemcell than the " +
+                "number of workers in reuse_compilation_vms mode"
         end
       end
 

@@ -65,7 +65,9 @@ describe Bosh::Director::Jobs::CloudCheck::ApplyResolutions do
 
     lambda {
       job.perform
-    }.should raise_error(RuntimeError, "Resolution for problem #{problem.id} (inactive_disk) is not provided")
+    }.should raise_error(
+               BD::CloudcheckResolutionNotProvided,
+               "Resolution for problem #{problem.id} (inactive_disk) is not provided")
   end
 
   it "notices and logs extra resolutions" do

@@ -12,7 +12,9 @@ module Bosh::Director
       elsif ranges.kind_of?(String)
         process_range(ranges, &block)
       elsif !ranges.nil?
-        raise ArgumentError, "Unknown range type, must be list or a string: #{ranges.class} #{ranges}"
+        raise ArgumentError,
+              "Unknown range type, must be list or a string: " +
+              "#{ranges.class} #{ranges}"
       end
     end
 
@@ -54,6 +56,12 @@ module Bosh::Director
         ip = NetAddr::CIDR.create(ip)
       end
       ip
+    end
+
+    # @param [Integer] ip Integer IP representation
+    # @return [String] Human-readable IP representation
+    def format_ip(ip)
+      ip_to_netaddr(ip).ip
     end
 
   end

@@ -37,7 +37,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [Boolean] true if the reservation was fulfilled
       def reserve(reservation)
-        raise NotImplementedError
+        raise NotImplementedError, "#reserve not implemented for #{self.class}"
       end
 
       ##
@@ -45,7 +45,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
-        raise NotImplementedError
+        raise NotImplementedError, "#release not implemented for #{self.class}"
       end
 
       ##
@@ -55,7 +55,8 @@ module Bosh::Director
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
-        raise NotImplementedError
+        raise NotImplementedError,
+              "#network_settings not implemented for #{self.class}"
       end
     end
   end

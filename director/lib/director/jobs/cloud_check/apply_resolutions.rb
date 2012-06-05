@@ -6,22 +6,27 @@ module Bosh::Director
       class ApplyResolutions < BaseJob
         @queue = :normal
 
+        # @param [String] deployment_name Deployment name
+        # @param [Hash] resolutions Problem resolutions
         def initialize(deployment_name, resolutions)
           super
 
-          @deployment = Models::Deployment.find(:name => deployment_name)
-          raise "Deployment `#{deployment_name}' not found" if @deployment.nil?
+          @deployment_manager = Api::DeploymentManager.new
+          @deployment = @deployment_manager.find_by_name(deployment_name)
 
           @resolved_count = 0
           unless resolutions.kind_of?(Hash)
-            raise "Invalid format for resolutions, Hash expected, #{resolutions.class} is given"
+            raise CloudcheckInvalidResolutionFormat,
+                  "Invalid format for resolutions, " +
+                  "Hash expected, #{resolutions.class} is given"
           end
 
           # Normalizing problem ids
-          @resolutions = resolutions.inject({}) do |hash, (problem_id, solution_name)|
-            hash[problem_id.to_s] = solution_name
-            hash
-          end
+          @resolutions =
+            resolutions.inject({}) do |hash, (problem_id, solution_name)|
+              hash[problem_id.to_s] = solution_name
+              hash
+            end
         end
 
         def perform
@@ -32,13 +37,16 @@ module Bosh::Director
         end
 
         def apply_resolutions
-          problems = Models::DeploymentProblem.filter(:deployment_id => @deployment.id, :state => "open").all
+          problems = Models::DeploymentProblem.
+            filter(:deployment_id => @deployment.id, :state => "open").all
           problem_ids = Set.new
 
           problems.each do |problem|
             problem_ids << problem.id.to_s
-            if !@resolutions.has_key?(problem.id.to_s)
-              raise "Resolution for problem #{problem.id} (#{problem.type}) is not provided"
+            unless @resolutions.has_key?(problem.id.to_s)
+              raise CloudcheckResolutionNotProvided,
+                    "Resolution for problem #{problem.id} (#{problem.type}) " +
+                    "is not provided"
             end
           end
 
@@ -47,7 +55,8 @@ module Bosh::Director
           # them in event log so end user understands what actually happened.
           missing_problem_ids = @resolutions.keys.to_set - problem_ids
 
-          begin_stage("Applying problem resolutions", problems.size + missing_problem_ids.size)
+          begin_stage("Applying problem resolutions",
+                      problems.size + missing_problem_ids.size)
           problems.each do |problem|
             apply_resolution(problem)
           end
@@ -79,7 +88,8 @@ module Bosh::Director
 
           resolution = @resolutions[problem.id.to_s] || handler.auto_resolution
           problem_summary = "#{problem.type} #{problem.resource_id}"
-          resolution_summary = handler.resolution_plan(resolution) || "no resolution"
+          resolution_summary = handler.resolution_plan(resolution)
+          resolution_summary ||= "no resolution"
 
           begin
             track_and_log("#{problem_summary}: #{resolution_summary}") do
@@ -102,8 +112,8 @@ module Bosh::Director
         private
 
         def log_resolution_error(problem, error)
-          @logger.error("Error resolving problem `#{problem.id}': #{error}")
-          @logger.error(error.backtrace.join("\n"))
+          logger.error("Error resolving problem `#{problem.id}': #{error}")
+          logger.error(error.backtrace.join("\n"))
         end
 
         def with_deployment_lock

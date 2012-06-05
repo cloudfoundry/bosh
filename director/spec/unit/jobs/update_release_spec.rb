@@ -7,6 +7,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
   before(:each) do
     @blobstore = mock("blobstore_client")
     @logger = Logger.new(StringIO.new)
+    @release_dir = Dir.mktmpdir("release_dir")
 
     Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore)
     Bosh::Director::Config.stub!(:logger).and_return(@logger)
@@ -15,17 +16,10 @@ describe Bosh::Director::Jobs::UpdateRelease do
   describe "create_package" do
 
     before(:each) do
-      @release = release = Bosh::Director::Models::Release.make
-      @release_dir = release_dir = Dir.mktmpdir("release_dir")
-      @blobstore = blobstore = mock("blobstore_client")
+      @release = Bosh::Director::Models::Release.make
 
-      @update_release_job = Bosh::Director::Jobs::UpdateRelease.new
-      @update_release_job.instance_eval do
-        @logger = Bosh::Director::Config.logger
-        @release = release
-        @tmp_release_dir = release_dir
-        @blobstore = blobstore
-      end
+      @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
+      @job.release = @release
     end
 
     after(:each) do
@@ -35,16 +29,23 @@ describe Bosh::Director::Jobs::UpdateRelease do
     it "should create simple packages" do
       FileUtils.mkdir_p(File.join(@release_dir, "packages"))
       package_path = File.join(@release_dir, "packages", "test_package.tgz")
+
       File.open(package_path, "w") do |f|
         f.write(create_package({"test" => "test contents"}))
       end
 
-      @blobstore.should_receive(:create).with(have_a_path_of(package_path)).and_return("blob_id")
+      @blobstore.should_receive(:create).with(
+        have_a_path_of(package_path)).and_return("blob_id")
 
-      @update_release_job.create_package({"name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
-                                          "dependencies" => ["foo_package", "bar_package"]})
+      @job.create_package(
+        {
+          "name" => "test_package", "version" => "1.0", "sha1" => "some-sha",
+          "dependencies" => %w(foo_package bar_package)
+        }
+      )
 
-      package = Bosh::Director::Models::Package[:name => "test_package", :version => "1.0"]
+      package = Bosh::Director::Models::Package[:name => "test_package",
+                                                :version => "1.0"]
       package.should_not be_nil
       package.name.should == "test_package"
       package.version.should == "1.0"
@@ -58,28 +59,41 @@ describe Bosh::Director::Jobs::UpdateRelease do
   describe "resolve_package_dependencies" do
 
     before(:each) do
-      @update_release_job = Bosh::Director::Jobs::UpdateRelease.new
-      @update_release_job.instance_eval do
-        @logger = Bosh::Director::Config.logger
-      end
+      @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
     end
 
     it "should normalize nil dependencies" do
       packages = [{"name" => "A"}, {"name" => "B", "dependencies" => ["A"]}]
-      @update_release_job.resolve_package_dependencies(packages)
-      packages.should eql([{"dependencies" => [], "name" => "A"}, {"dependencies" => ["A"], "name" => "B"}])
+      @job.resolve_package_dependencies(packages)
+      packages.should eql([
+                            {"dependencies" => [], "name" => "A"},
+                            {"dependencies" => ["A"], "name" => "B"}
+                          ])
     end
 
     it "should not allow cycles" do
-      packages = [{"name" => "A", "dependencies" => ["B"]}, {"name" => "B", "dependencies" => ["A"]}]
-      lambda {@update_release_job.resolve_package_dependencies(packages)}.should raise_exception
+      packages = [
+        {"name" => "A", "dependencies" => ["B"]},
+        {"name" => "B", "dependencies" => ["A"]}
+      ]
+
+      lambda {
+        @job.resolve_package_dependencies(packages)
+      }.should raise_exception
     end
 
     it "should resolve nested dependencies" do
-      packages = [{"name" => "A", "dependencies" => ["B"]}, {"name" => "B", "dependencies" => ["C"]}, {"name" => "C"}]
-      @update_release_job.resolve_package_dependencies(packages)
-      packages.should eql([{"dependencies" => ["B", "C"], "name" => "A"}, {"dependencies" => ["C"], "name" => "B"},
-                           {"dependencies" => [], "name" => "C"}])
+      packages = [
+        {"name" => "A", "dependencies" => ["B"]},
+        {"name" => "B", "dependencies" => ["C"]}, {"name" => "C"}
+      ]
+
+      @job.resolve_package_dependencies(packages)
+      packages.should eql([
+                            {"dependencies" => ["B", "C"], "name" => "A"},
+                            {"dependencies" => ["C"], "name" => "B"},
+                            {"dependencies" => [], "name" => "C"}
+                          ])
     end
 
   end
@@ -87,21 +101,13 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
   describe "create jobs" do
 
-    around(:each) do |example|
-      @tmp_dir = Dir.mktmpdir
-      begin
-        example.run
-      ensure
-        FileUtils.rm_rf(@tmp_dir)
-      end
-    end
-
     before :each do
       @release = Bosh::Director::Models::Release.make
-      @tarball = File.join(@tmp_dir, "jobs", "foo.tgz")
+      @tarball = File.join(@release_dir, "jobs", "foo.tgz")
       @job_bits = create_job(
-          "foo", "monit",
-          {"foo" => {"destination" => "foo", "contents" => "bar"}})
+        "foo", "monit",
+        {"foo" => {"destination" => "foo", "contents" => "bar"}}
+      )
 
       @job_attrs = {
         "name" => "foo",
@@ -111,8 +117,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       FileUtils.mkdir_p(File.dirname(@tarball))
 
-      @job = Bosh::Director::Jobs::UpdateRelease.new(@tmp_dir)
-      @job.tmp_release_dir = @tmp_dir
+      @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
       @job.release = @release
     end
 
@@ -122,7 +127,8 @@ describe Bosh::Director::Jobs::UpdateRelease do
       @blobstore.should_receive(:create).and_return do |f|
         f.rewind
         Digest::SHA1.hexdigest(f.read).should ==
-            Digest::SHA1.hexdigest(@job_bits)
+          Digest::SHA1.hexdigest(@job_bits)
+
         Digest::SHA1.hexdigest(f.read)
       end
 
@@ -145,7 +151,11 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "whines on missing manifest" do
-      @job_no_mf = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_manifest => true)
+      @job_no_mf = create_job("foo", "monit",
+                              {"foo" => {
+                                "destination" => "foo",
+                                "contents" => "bar"}},
+                              :skip_manifest => true)
       File.open(@tarball, "w") { |f| f.write(@job_no_mf) }
 
       lambda {
@@ -154,7 +164,11 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "whines on missing monit file" do
-      @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_monit => true)
+      @job_no_monit = create_job("foo", "monit",
+                                 {"foo" => {
+                                   "destination" => "foo",
+                                   "contents" => "bar"}},
+                                 :skip_monit => true)
       File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
 
       lambda {
@@ -163,7 +177,11 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "does not whine when it has a foo.monit file" do
-      @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :monit_file => "foo.monit")
+      @job_no_monit = create_job("foo", "monit",
+                                 {"foo" => {
+                                   "destination" => "foo",
+                                   "contents" => "bar"}},
+                                 :monit_file => "foo.monit")
       File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
 
       lambda {
@@ -172,7 +190,11 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "whines on missing template" do
-      @job_no_monit = create_job("foo", "monit", { "foo" => { "destination" => "foo", "contents" => "bar"} }, :skip_templates => ["foo"])
+      @job_no_monit = create_job("foo", "monit",
+                                 {"foo" => {
+                                   "destination" => "foo",
+                                   "contents" => "bar"}},
+                                 :skip_templates => ["foo"])
       File.open(@tarball, "w") { |f| f.write(@job_no_monit) }
 
       lambda {

@@ -9,23 +9,63 @@ module Bosh::Director
         @deployment_manager = DeploymentManager.new
       end
 
-      # @param [Models::Deployment] deployment
-      # @param [String] job
-      # @param [String] index
+      # @param [Integer] instance_id Instance id
+      # @return [Models::Instance] Instance
+      # @raise [InstanceNotFound]
+      def find_instance(instance_id)
+        instance = Models::Instance[instance_id]
+        if instance.nil?
+          raise InstanceNotFound, "Instance #{instance_id} doesn't exist"
+        end
+        instance
+      end
+
+      # @param [String] deployment_name Deployment name
+      # @param [String] job Job name
+      # @param [String] index Job index
       # @return [Models::Instance]
-      def find_instance(deployment, job, index)
-        filters = {
+      def find_by_name(deployment_name, job, index)
+        deployment = @deployment_manager.find_by_name(deployment_name)
+
+        filter = {
           :deployment_id => deployment.id,
           :job => job,
           :index => index
         }
 
-        instance = Models::Instance.find(filters)
+        instance = Models::Instance.find(filter)
         if instance.nil?
           raise InstanceNotFound,
-                "`#{deployment.name}/#{job}/#{index}' doesn't exist"
+                "`#{deployment_name}/#{job}/#{index}' doesn't exist"
         end
         instance
+      end
+
+      # @param [Hash] filter Sequel-style DB record filter
+      # @return [Array] List of instances that matched the filter
+      # @raise [InstanceNotFound]
+      def filter_by(filter)
+        instances = Models::Instance.filter(filter).all
+        if instances.empty?
+          raise InstanceNotFound, "No instances matched #{filter.inspect}"
+        end
+        instances
+      end
+
+      # @param [Models::Instance] instance Instance
+      # @return [AgentClient] Agent client to talk to instance
+      def agent_client_for(instance)
+        vm = instance.vm
+        if vm.nil?
+          raise InstanceVmMissing,
+                "`#{instance.job}/#{instance.index}' doesn't reference a VM"
+        end
+
+        if vm.agent_id.nil?
+          raise VmAgentIdMissing, "VM `#{vm.cid}' doesn't have an agent id"
+        end
+
+        AgentClient.new(vm.agent_id)
       end
 
       def fetch_logs(user, deployment_name, job, index, options = {})
@@ -34,8 +74,7 @@ module Bosh::Director
                 "deployment, job and index parameters are required"
         end
 
-        deployment = @deployment_manager.find_by_name(deployment_name)
-        instance = find_instance(deployment, job, index)
+        instance = find_by_name(deployment_name, job, index)
 
         task = create_task(user, :fetch_logs, "fetch logs")
         Resque.enqueue(Jobs::FetchLogs, task.id, instance.id, options)

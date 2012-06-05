@@ -82,7 +82,7 @@ module Bosh::Director
           end
         end
 
-        # FIXME: Curently there is no good way to know if delete_disk
+        # FIXME: Currently there is no good way to know if delete_disk
         # failed because of cloud error or because disk doesn't exist
         # in vsphere_disks.
         begin

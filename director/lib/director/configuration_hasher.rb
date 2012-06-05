@@ -30,7 +30,8 @@ module Bosh::Director
 
     def extract_template
       @template_dir = Dir.mktmpdir("template_dir")
-      temp_path = File.join(Dir::tmpdir, "template-#{UUIDTools::UUID.random_create}")
+      temp_path = File.join(Dir.tmpdir,
+                            "template-#{UUIDTools::UUID.random_create}")
       begin
         File.open(temp_path, "w") do |file|
           Config.blobstore.get(@job.template.template.blobstore_id, file)
@@ -45,26 +46,31 @@ module Bosh::Director
       begin
         extract_template
         manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
-        monit_template = ERB.new(File.new(File.join(@template_dir, "monit")).read)
+
+        monit_template = template_erb("monit")
         monit_template.filename = File.join(@job.template.name, "monit")
-        config_templates = {}
+
+        templates = {}
 
         if manifest["templates"]
-          manifest["templates"].each_key do |config_file|
-            config_templates[config_file] = ERB.new(File.new(File.join(@template_dir, "templates", config_file)).read)
+          manifest["templates"].each_key do |template_name|
+            template = template_erb(File.join("templates", template_name))
+            templates[template_name] = template
           end
         end
 
         @job.instances.each do |instance|
-          binding_helper = BindingHelper.new(@job.name, instance.index, @job.properties.to_openstruct,
+          binding_helper = BindingHelper.new(@job.name, instance.index,
+                                             @job.properties.to_openstruct,
                                              instance.spec.to_openstruct)
           digest = Digest::SHA1.new
-          digest << bind_template(monit_template, binding_helper, "monit", instance.index)
-          template_names = config_templates.keys.sort
-          template_names.each do |template_name|
-            template = config_templates[template_name]
+          digest << bind_template(monit_template,
+                                  binding_helper, instance.index)
+
+          templates.keys.sort.each do |template_name|
+            template = templates[template_name]
             template.filename = File.join(@job.template.name, template_name)
-            digest << bind_template(template, binding_helper, template_name, instance.index)
+            digest << bind_template(template, binding_helper, instance.index)
           end
           instance.configuration_hash = digest.hexdigest
         end
@@ -73,13 +79,24 @@ module Bosh::Director
       end
     end
 
-    def bind_template(template, binding_helper, template_name, index)
+    def bind_template(template, binding_helper, index)
       template.result(binding_helper.get_binding)
     rescue Exception => e
+      job_desc = "#{@job.name}/#{index}"
       line = e.backtrace.first
-      line = line[0..line.rindex(":") - 1]
-      @logger.debug("Error filling in template #{line} for #{@job.name}/#{index}: '#{e}', #{e.backtrace.pretty_inspect}")
-      raise "Error filling in template #{line} for #{@job.name}/#{index}: '#{e}'"
+      template_name, line = line[0..line.rindex(":") - 1].split(":")
+
+      message = "Error filling in template `#{File.basename(template_name)}' " +
+                "for `#{job_desc}' (line #{line}: #{e})"
+
+      @logger.debug("#{message}\n#{e.backtrace.join("\n")}")
+      raise JobTemplateBindingFailed, "#{message}"
+    end
+
+    private
+
+    def template_erb(path)
+      ERB.new(File.read(File.join(@template_dir, path)))
     end
 
   end

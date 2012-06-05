@@ -95,7 +95,9 @@ module Bosh::Director
         @blobstore = nil
 
         @db = configure_db(config["db"])
-        @dns_db = configure_db(config["dns"]["db"]) if config["dns"] && config["dns"]["db"]
+        if config["dns"] && config["dns"]["db"]
+          @dns_db = configure_db(config["dns"]["db"])
+        end
 
         @encryption = config["encryption"]
 
@@ -116,7 +118,9 @@ module Bosh::Director
         patch_sqlite if db_config["database"].index("sqlite://") == 0
 
         connection_options = {}
-        [:max_connections, :pool_timeout].each { |key| connection_options[key] = db_config[key.to_s] }
+        [:max_connections, :pool_timeout].each do |key|
+          connection_options[key] = db_config[key.to_s]
+        end
 
         db = Sequel.connect(db_config["database"], connection_options)
         db.logger = @logger
@@ -127,7 +131,9 @@ module Bosh::Director
       def blobstore
         @lock.synchronize do
           if @blobstore.nil?
-            @blobstore = Bosh::Blobstore::Client.create(@blobstore_options["plugin"], @blobstore_options["properties"])
+            plugin = @blobstore_options["plugin"]
+            properties = @blobstore_options["properties"]
+            @blobstore = Bosh::Blobstore::Client.create(plugin, properties)
           end
         end
         @blobstore
@@ -142,8 +148,9 @@ module Bosh::Director
       def cloud
         @lock.synchronize do
           if @cloud.nil?
-            @cloud = Bosh::Clouds::Provider.create(@cloud_options["plugin"],
-                                                   @cloud_options["properties"])
+            plugin = @cloud_options["plugin"]
+            properties = @cloud_options["properties"]
+            @cloud = Bosh::Clouds::Provider.create(plugin, properties)
           end
         end
         @cloud

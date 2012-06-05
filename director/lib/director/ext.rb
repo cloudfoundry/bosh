@@ -14,7 +14,7 @@ end
 
 class Array
  def to_openstruct
-   map{ |el| el.to_openstruct }
+   map { |el| el.to_openstruct }
  end
 end
 
@@ -32,7 +32,7 @@ class Hash
 
  def to_openstruct
    mapped = {}
-   each{ |key,value| mapped[key] = value.to_openstruct }
+   each { |key, value| mapped[key] = value.to_openstruct }
    OpenStruct.new(mapped)
  end
 end
@@ -45,16 +45,18 @@ class Sequel::ThreadedConnectionPool < Sequel::ConnectionPool
   alias_method :release_original, :release
 
   def acquire(thread)
+    logger = Bosh::Director::Config.logger
     result = acquire_original(thread)
-    if Bosh::Director::Config.logger
-      Bosh::Director::Config.logger.debug("Acquired connection: #{@allocated[thread].object_id}")
+    if logger
+      logger.debug("Acquired connection: #{@allocated[thread].object_id}")
     end
     result
   end
 
   def release(thread)
-    if Bosh::Director::Config.logger
-      Bosh::Director::Config.logger.debug("Released connection: #{@allocated[thread].object_id}")
+    logger = Bosh::Director::Config.logger
+    if logger
+      logger.debug("Released connection: #{@allocated[thread].object_id}")
     end
     release_original(thread)
   end

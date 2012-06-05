@@ -19,11 +19,21 @@ describe Bosh::Director::DnsHelper do
       canonical("hello^world").should == "helloworld"
     end
 
-    it "should reject strings that don't start with a letter or end with a letter/number" do
-      lambda { canonical("-helloworld") }.should raise_error(
-          "Invalid DNS canonical name: '-helloworld', must begin with a letter")
-      lambda { canonical("helloworld-") }.should raise_error(
-          "Invalid DNS canonical name: 'helloworld-', can't end with a hyphen")
+    it "should reject strings that don't start with a letter " +
+       "or end with a letter/number" do
+      lambda {
+        canonical("-helloworld")
+      }.should raise_error(
+                 BD::DnsInvalidCanonicalName,
+                 "Invalid DNS canonical name `-helloworld', " +
+                 "must begin with a letter")
+
+      lambda {
+        canonical("helloworld-")
+      }.should raise_error(
+                 BD::DnsInvalidCanonicalName,
+                 "Invalid DNS canonical name `helloworld-', " +
+                 "can't end with a hyphen")
     end
 
   end

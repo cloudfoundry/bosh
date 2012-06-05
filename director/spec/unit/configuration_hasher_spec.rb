@@ -90,8 +90,10 @@ describe Bosh::Director::ConfigurationHasher do
     end
 
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
-    lambda { configuration_hasher.hash }.should raise_error("Error filling in template router/monit:3 for " +
-                                                                "foo/0: 'undefined method `foo' for nil:NilClass'")
+    lambda {
+      configuration_hasher.hash
+    }.should raise_error("Error filling in template `monit' for `foo/0' " +
+                         "(line 3: undefined method `foo' for nil:NilClass)")
   end
 
 end

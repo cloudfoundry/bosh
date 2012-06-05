@@ -6,35 +6,32 @@ module Bosh::Director
 
       @queue = :normal
 
-      def initialize(*args)
+      # @param [String] name Stemcell name
+      # @param [String] version Stemcell version
+      def initialize(name, version)
         super
-        if args.length == 2
-          @name, @version = args
-          @cloud = Config.cloud
-          @blobstore = Config.blobstore
-          @stemcell_manager = Api::StemcellManager.new
-        elsif args.empty?
-          # TODO: fix this
-          # used for testing only
-        else
-          raise ArgumentError,
-                "wrong number of arguments (#{args.length} for 2)"
-        end
+
+        @name = name
+        @version = version
+        @cloud = Config.cloud
+        @blobstore = Config.blobstore
+        @stemcell_manager = Api::StemcellManager.new
       end
 
       def perform
-        @logger.info("Processing delete stemcell")
+        logger.info("Processing delete stemcell")
 
         lock = Lock.new("lock:stemcells:#{@name}:#{@version}", :timeout => 10)
 
         lock.lock do
           desc = "#{@name}/#{@version}"
-          @logger.info("Looking up stemcell: #{desc}")
+          logger.info("Looking up stemcell: #{desc}")
           @stemcell =
             @stemcell_manager.find_by_name_and_version(@name, @version)
-          @logger.info("Found: #{@stemcell.pretty_inspect}")
 
-          @logger.info("Checking for any deployments still using the stemcell")
+          logger.info("Found: #{@stemcell.pretty_inspect}")
+          logger.info("Checking for any deployments still using the stemcell")
+
           deployments = @stemcell.deployments
           unless deployments.empty?
             names = deployments.map { |d| d.name }.join(", ")
@@ -42,19 +39,19 @@ module Bosh::Director
                   "Stemcell `#{desc}' is still in use by: #{names}"
           end
 
-          @event_log.begin_stage("Deleting stemcell from cloud", 1)
+          event_log.begin_stage("Deleting stemcell from cloud", 1)
 
-          @event_log.track("Delete stemcell") do
+          event_log.track("Delete stemcell") do
             @cloud.delete_stemcell(@stemcell.cid)
           end
 
-          @logger.info("Looking for any compiled packages on this stemcell")
+          logger.info("Looking for any compiled packages on this stemcell")
           compiled_packages =
             Models::CompiledPackage.filter(:stemcell_id => @stemcell.id)
 
-          @event_log.begin_stage("Deleting compiled packages",
+          event_log.begin_stage("Deleting compiled packages",
                                  compiled_packages.count, [@name, @version])
-          @logger.info("Deleting compiled packages " +
+          logger.info("Deleting compiled packages " +
                        "(#{compiled_packages.count}) for `#{desc}'")
 
           compiled_packages.each do |compiled_package|
@@ -62,15 +59,15 @@ module Bosh::Director
 
             package = compiled_package.package
             track_and_log("#{package.name}/#{package.version}") do
-              @logger.info("Deleting compiled package: " +
-                           "#{package.name}/#{package.version}")
+              logger.info("Deleting compiled package: " +
+                          "#{package.name}/#{package.version}")
               @blobstore.delete(compiled_package.blobstore_id)
               compiled_package.destroy
             end
           end
 
-          @event_log.begin_stage("Deleting stemcell metadata", 1)
-          @event_log.track("Deleting stemcell metadata") do
+          event_log.begin_stage("Deleting stemcell metadata", 1)
+          event_log.track("Deleting stemcell metadata") do
             @stemcell.destroy
           end
         end

@@ -117,16 +117,18 @@ module Bosh::Director
           if @deployment.releases.size == 1
             @release = @deployment.releases.first
           else
-            raise ArgumentError, "Cannot tell what release job '#{@name}' " +
-              "supposed to use, please reference an existing release"
+            raise JobSpecMissingRelease,
+                  "Cannot tell what release job `#{@name}' " +
+                  "supposed to use, please reference an existing release"
           end
         else
           @release = @deployment.release(release_name)
         end
 
         if @release.nil?
-          raise ArgumentError, "Job '#{@name}' references " +
-            "an unknown release '#{release_name}'"
+          raise JobSpecUnknownRelease,
+                "Job `#{@name}' references " +
+                "an unknown release `#{release_name}'"
         end
       end
 
@@ -156,8 +158,9 @@ module Bosh::Director
                                            :class => String)
         @resource_pool = deployment.resource_pool(resource_pool_name)
         if @resource_pool.nil?
-          raise ArgumentError, "Job '#{@name}' references " +
-            "an unknown resource pool '#{resource_pool_name}'"
+          raise JobSpecUnknownResourcePool,
+                "Job `#{@name}' references " +
+                "an unknown resource pool `#{resource_pool_name}'"
         end
       end
 
@@ -183,24 +186,25 @@ module Bosh::Director
           begin
             index = Integer(index)
           rescue ArgumentError
-            raise "Invalid index value: #{index}, integer expected"
+            raise JobSpecInvalidJobIndex,
+                  "Invalid job index `#{index}', integer expected"
           end
           unless (0...job_size).include?(index)
-            raise ArgumentError, "Job '#{@name}' instance state '#{index}' " +
-              "is outside of (0..#{job_size-1}) range"
+            raise JobSpecInvalidInstanceIndex,
+                  "`#{@name}/#{index}' is outside of (0..#{job_size-1}) range"
           end
           unless VALID_JOB_STATES.include?(state)
-            raise ArgumentError, "Job '#{@name}' instance '#{index}' " +
-              "has an unknown state '#{state}', " +
-              "valid states are: #{VALID_JOB_STATES.join(", ")}"
+            raise JobSpecInvalidInstanceState,
+                  "Invalid state `#{state}' for `#{@name}/#{index}', " +
+                  "valid states are: #{VALID_JOB_STATES.join(", ")}"
           end
           @instance_states[index] = state
         end
 
         if @state && !VALID_JOB_STATES.include?(@state)
-          raise ArgumentError, "Job '#{@name}' " +
-            "has an unknown state '#{@state}', " +
-            "valid states are: #{VALID_JOB_STATES.join(", ")}"
+          raise JobSpecInvalidJobState,
+                "Invalid state `#{@state}' for `#{@name}', " +
+                "valid states are: #{VALID_JOB_STATES.join(", ")}"
         end
 
         job_size.times do |index|
@@ -215,16 +219,17 @@ module Bosh::Director
 
         network_specs = safe_property(@job_spec, "networks", :class => Array)
         if network_specs.empty?
-          raise ArgumentError, "Job '#{@name}' must specify " +
-            "at least one network"
+          raise JobSpecMissingNetwork,
+                "Job `#{@name}' must specify at least one network"
         end
 
         network_specs.each do |network_spec|
           network_name = safe_property(network_spec, "name", :class => String)
           network = @deployment.network(network_name)
           if network.nil?
-            raise ArgumentError, "Job '#{@name}' references " +
-              "an unknown network '#{network_name}'"
+            raise JobNetworkSpecUnknownNetwork,
+                  "Job `#{@name}' references " +
+                  "an unknown network `#{network_name}'"
           end
 
           static_ips = nil
@@ -234,8 +239,9 @@ module Bosh::Director
               static_ips << ip
             end
             if static_ips.size != @instances.size
-              raise ArgumentError, "Job '#{@name}' has #{@instances.size} " +
-                "instances but was allocated #{static_ips.size} static IPs"
+              raise JobNetworkSpecInstanceIpMismatch,
+                    "Job `#{@name}' has #{@instances.size} " +
+                    "instances but was allocated #{static_ips.size} static IPs"
             end
           end
 
@@ -244,13 +250,17 @@ module Bosh::Director
           if default_network
             default_network.each do |property|
               unless NetworkSpec::VALID_DEFAULTS.include?(property)
-                raise ArgumentError, "Job '#{@name}' specified " +
-                  "an invalid default property: #{property}"
+                raise JobNetworkSpecInvalidDefault,
+                      "Job `#{@name}' specified " +
+                      "an invalid default network property `#{property}', " +
+                      "valid properties are: " +
+                      NetworkSpec::VALID_DEFAULTS.join(", ")
               end
 
               if @default_network[property]
-                raise ArgumentError, "Job '#{@name}' must specify " +
-                  "only one default network for: #{property}"
+                raise JobNetworkSpecMultipleDefaults,
+                      "Job `#{@name}' specified more than one " +
+                      "network to contain default #{property}"
               else
                 @default_network[property] = network_name
               end
@@ -275,10 +285,10 @@ module Bosh::Director
             missing_default_properties.delete(key)
           end
           unless missing_default_properties.empty?
-            raise ArgumentError, "Job '#{@name}' must specify " +
-              "a default network for " +
-              "'#{missing_default_properties.sort.join(", ")}' " +
-              "since it has more than one network configured"
+            raise JobNetworkSpecMissingDefault,
+                  "Job `#{@name}' must specify which network is default for " +
+                  missing_default_properties.sort.join(", ") +
+                  ", since it has more than one network configured"
           end
         else
           # Set the default network to the one and only available network

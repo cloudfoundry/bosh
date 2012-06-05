@@ -29,7 +29,8 @@ module Bosh::Director
       def reserve(reservation)
         reservation.reserved = false
         if reservation.ip.nil?
-          raise "Must have IP for static reservations"
+          raise NetworkReservationIpMissing,
+                "Must have IP for static reservations"
         elsif reservation.dynamic?
           reservation.error = NetworkReservation::WRONG_TYPE
         elsif @reserved_ips.include?(reservation.ip)
@@ -48,7 +49,8 @@ module Bosh::Director
       # @return [void]
       def release(reservation)
         unless reservation.ip
-          raise "Can't release reservation without an IP"
+          raise NetworkReservationIpMissing,
+                "Can't release reservation without an IP"
         end
         @reserved_ips.delete(reservation.ip)
       end
@@ -61,13 +63,14 @@ module Bosh::Director
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
         if default_properties && !default_properties.empty?
-          raise "Can't provide any defaults since this is a VIP network"
+          raise NetworkReservationVipDefaultProvided,
+                "Can't provide any defaults since this is a VIP network"
         end
 
         {
-            "type" => "vip",
-            "ip" => ip_to_netaddr(reservation.ip).ip,
-            "cloud_properties" => @cloud_properties
+          "type" => "vip",
+          "ip" => ip_to_netaddr(reservation.ip).ip,
+          "cloud_properties" => @cloud_properties
         }
       end
     end

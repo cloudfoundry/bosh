@@ -174,14 +174,14 @@ describe Bosh::Director::DeploymentPlan do
             {"name" => "bar", "cname" => "bar"},
             {"name" => "Bar", "cname" => "bar"}
         ]})
-      }.should raise_error(
-          %q{Invalid network name: 'Bar', canonical name already taken.})
+      }.should raise_error(BD::DeploymentCanonicalNetworkNameTaken,
+          "Invalid network name `Bar', canonical name already taken")
     end
 
     it "should require at least one network" do
       lambda {
         BD::DeploymentPlan.new({"networks" => []})
-      }.should raise_error(%q{No networks specified.})
+      }.should raise_error(BD::DeploymentNoNetworks, "No networks specified")
 
       lambda {
         BD::DeploymentPlan.new({})
@@ -272,8 +272,10 @@ describe Bosh::Director::DeploymentPlan do
       end
       lambda {
         BD::DeploymentPlan.new(
-            {"resource_pools" => [{"name" => "bar"}, {"name" => "bar"}]})
-      }.should raise_error(%q{Duplicate resource pool name: 'bar'.})
+          {"resource_pools" => [{"name" => "bar"}, {"name" => "bar"}]}
+        )
+      }.should raise_error(BD::DeploymentDuplicateResourcePoolName,
+                           "Duplicate resource pool name `bar'")
     end
 
     pending "should require at least one resource pool" do
@@ -320,14 +322,20 @@ describe Bosh::Director::DeploymentPlan do
             {"name" => "Bar", "cname" => "bar"},
             {"name" => "bar", "cname" => "bar"}
         ]})
-      }.should raise_error(
-                   %q{Invalid job name: 'bar', canonical name already taken.})
+      }.should raise_error(BD::DeploymentCanonicalJobNameTaken,
+                           "Invalid job name `bar', " +
+                           "canonical name already taken")
     end
 
     it "should raise exception if renamed job is being referenced in deployment" do
       lambda {
-        BD::DeploymentPlan.new({"jobs" => [{"name" => "bar"}]}, {"job_rename" => {"old_name" => "bar", "new_name" => "foo"}})
-      }.should raise_error("Renamed job bar is being referenced in deployment manifest")
+        BD::DeploymentPlan.new(
+          {"jobs" => [{"name" => "bar"}]},
+          {"job_rename" => {"old_name" => "bar", "new_name" => "foo"}}
+        )
+      }.should raise_error(BD::DeploymentRenamedJobNameStillUsed,
+                           "Renamed job `bar' is still referenced " +
+                           "in deployment manifest")
     end
 
     it "should allow you to not have any jobs" do

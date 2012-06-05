@@ -154,11 +154,13 @@ module Bosh::Director
           unless reservation.reserved?
             case reservation.error
               when NetworkReservation::CAPACITY
-                raise ("'%s/%d' asked for a dynamic IP" +
-                    "but there were no more available") % [name, index]
+                raise NetworkReservationNotEnoughCapacity,
+                      "`#{name}/#{index}' asked for a dynamic IP " +
+                      "but there were no more available"
               else
-                raise ("'%s/%d' failed to reserve dynamic IP because: %s") % [
-                    name, index, reservation.error]
+                raise NetworkReservationError,
+                      "`#{name}/#{index}' failed to reserve " +
+                      "dynamic IP: #{reservation.error}"
             end
           end
 

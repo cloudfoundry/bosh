@@ -42,10 +42,7 @@ module Bosh::Director
       # @param [NetworkReservation] reservation
       # @return [void]
       def release(reservation)
-        unless reservation.ip == DYNAMIC_IP
-          raise "Invalid IP: `%s', did not match magic DYNAMIC IP." % [
-              reservation.ip]
-        end
+        validate_ip(reservation)
       end
 
       ##
@@ -55,10 +52,7 @@ module Bosh::Director
       # @param [Array<String>] default_properties
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = VALID_DEFAULTS)
-        unless reservation.ip == DYNAMIC_IP
-          raise "Invalid IP: `%s', did not match magic DYNAMIC IP." % [
-              reservation.ip]
-        end
+        validate_ip(reservation)
 
         config = {
             "type" => "dynamic",
@@ -70,6 +64,16 @@ module Bosh::Director
         end
 
         config
+      end
+
+      private
+
+      def validate_ip(reservation)
+        unless reservation.ip == DYNAMIC_IP
+          raise NetworkReservationInvalidIp,
+                "Invalid IP: `%s', did not match magic DYNAMIC IP" % [
+                  reservation.ip]
+        end
       end
     end
   end

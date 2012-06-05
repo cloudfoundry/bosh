@@ -3,6 +3,8 @@
 module Bosh::Director
   class DeploymentPlan
     class UpdateConfig
+      # TODO: it would be nice if update config was aware of which job
+      # it related to to properly format error messages
       include ValidationHelper
 
       attr_accessor :canaries
@@ -14,23 +16,33 @@ module Bosh::Director
       attr_accessor :min_update_watch_time
       attr_accessor :max_update_watch_time
 
+      # @param [Hash] update_config Raw update config from deployment manifest
+      # @param [optional, Hash] default_update_config Default update config
       def initialize(update_config, default_update_config = nil)
         optional = !default_update_config.nil?
 
-        @canaries = safe_property(update_config, "canaries", :class => Integer, :optional => optional)
+        @canaries = safe_property(update_config, "canaries",
+                                  :class => Integer, :optional => optional)
 
-        @max_in_flight = safe_property(update_config, "max_in_flight", :class => Integer, :optional => optional,
+        @max_in_flight = safe_property(update_config, "max_in_flight",
+                                       :class => Integer, :optional => optional,
                                        :min => 1, :max => 32)
 
-        canary_watch_times = safe_property(update_config, "canary_watch_time", :class => String, :optional => optional)
-        update_watch_times = safe_property(update_config, "update_watch_time", :class => String, :optional => optional)
+        canary_watch_times = safe_property(update_config, "canary_watch_time",
+                                           :class => String,
+                                           :optional => optional)
+        update_watch_times = safe_property(update_config, "update_watch_time",
+                                           :class => String,
+                                           :optional => optional)
 
         if canary_watch_times
-          @min_canary_watch_time, @max_canary_watch_time = parse_watch_times(canary_watch_times)
+          @min_canary_watch_time, @max_canary_watch_time =
+            parse_watch_times(canary_watch_times)
         end
 
         if update_watch_times
-          @min_update_watch_time, @max_update_watch_time = parse_watch_times(update_watch_times)
+          @min_update_watch_time, @max_update_watch_time =
+            parse_watch_times(update_watch_times)
         end
 
         if optional
@@ -54,11 +66,13 @@ module Bosh::Director
         elsif value =~ /^\s*(\d+)\s*$/
           result = [$1.to_i, $1.to_i]
         else
-          raise ArgumentError, "Watch time should be an integer or a range of two integers"
+          raise UpdateConfigInvalidWatchTime,
+                "Watch time should be an integer or a range of two integers"
         end
 
         if result[0] > result[1]
-          raise ArgumentError, "Min watch time cannot be greater than max watch time"
+          raise UpdateConfigInvalidWatchTime,
+                "Min watch time cannot be greater than max watch time"
         end
 
         result

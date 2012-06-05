@@ -69,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 "foo" => "bar"
             }
         })
-      }.should raise_error(/Compilation workers reference an unknown network/)
+      }.should raise_error(/unknown network `bar'/)
     end
 
     it "should require resource pool cloud properties" do

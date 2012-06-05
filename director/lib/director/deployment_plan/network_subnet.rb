@@ -6,6 +6,7 @@ module Bosh::Director
       include IpUtil
       include ValidationHelper
 
+      # TODO: could these be downgraded to attr_reader?
       attr_accessor :network
       attr_accessor :range
       attr_accessor :gateway
@@ -13,35 +14,58 @@ module Bosh::Director
       attr_accessor :cloud_properties
       attr_accessor :netmask
 
+      # @param [NetworkSpec] network Network spec
+      # @param [Hash] subnet_spec Raw subnet spec from deployment manifest
       def initialize(network, subnet_spec)
         @network = network
-        @range = NetAddr::CIDR.create(safe_property(subnet_spec, "range", :class => String))
-        raise ArgumentError, "invalid range" unless @range.size > 1
+
+        range_property = safe_property(subnet_spec, "range", :class => String)
+        @range = NetAddr::CIDR.create(range_property)
+
+        if @range.size <= 1
+          raise NetworkSpecInvalidRange,
+                "Invalid network range `#{range_property}', " +
+                "should include at least 2 IPs"
+        end
 
         @netmask = @range.wildcard_mask
         network_id = @range.network(:Objectify => true)
         broadcast = @range.broadcast(:Objectify => true)
 
-        gateway_property = safe_property(subnet_spec, "gateway", :class => String, :optional => true)
+        gateway_property = safe_property(subnet_spec, "gateway",
+                                         :class => String, :optional => true)
         if gateway_property
           @gateway = NetAddr::CIDR.create(gateway_property)
-          raise ArgumentError, "gateway must be a single ip" unless @gateway.size == 1
-          raise ArgumentError, "gateway must be inside the range" unless @range.contains?(@gateway)
-          raise ArgumentError, "gateway can't be the network id" if @gateway == network_id
-          raise ArgumentError, "gateway can't be the broadcast IP" if @gateway == broadcast
+          unless @gateway.size == 1
+            invalid_gateway("must be a single IP")
+          end
+          unless @range.contains?(@gateway)
+            invalid_gateway("must be inside the range")
+          end
+          if @gateway == network_id
+            invalid_gateway("can't be the network id")
+          end
+          if @gateway == broadcast
+            invalid_gateway("can't be the broadcast IP")
+          end
         end
 
-        dns_property = safe_property(subnet_spec, "dns", :class => Array, :optional => true)
+        dns_property = safe_property(subnet_spec, "dns",
+                                     :class => Array, :optional => true)
         if dns_property
           @dns = []
           dns_property.each do |dns|
             dns = NetAddr::CIDR.create(dns)
-            raise ArgumentError, "dns entry must be a single ip" unless dns.size == 1
+            unless dns.size == 1
+              invalid_dns("must be a single IP")
+            end
+
             @dns << dns.ip
           end
         end
 
-        @cloud_properties = safe_property(subnet_spec, "cloud_properties", :class => Hash)
+        @cloud_properties = safe_property(subnet_spec, "cloud_properties",
+                                          :class => Hash)
 
         @available_dynamic_ips = Set.new
         @available_static_ips = Set.new
@@ -49,21 +73,30 @@ module Bosh::Director
         first_ip = @range.first(:Objectify => true)
         last_ip = @range.last(:Objectify => true)
 
-        (first_ip.to_i .. last_ip.to_i).each { |ip| @available_dynamic_ips << ip }
+        (first_ip.to_i .. last_ip.to_i).each do |ip|
+          @available_dynamic_ips << ip
+        end
 
         @available_dynamic_ips.delete(@gateway.to_i) if @gateway
         @available_dynamic_ips.delete(network_id.to_i)
         @available_dynamic_ips.delete(broadcast.to_i)
 
-        each_ip(safe_property(subnet_spec, "reserved", :optional => true)) do |ip|
+        reserved_ips = safe_property(subnet_spec, "reserved", :optional => true)
+        static_ips = safe_property(subnet_spec, "static", :optional => true)
+
+        each_ip(reserved_ips) do |ip|
           unless @available_dynamic_ips.delete?(ip)
-            raise ArgumentError, "reserved IP must be available (not gateway, etc..) inside the range"
+            raise NetworkSpecReservedIpOutOfRange,
+                  "Reserved IP `#{format_ip(ip)}' is out of " +
+                  "network `#{@network.name}' range"
           end
         end
 
-        each_ip(safe_property(subnet_spec, "static", :optional => true)) do |ip|
+        each_ip(static_ips) do |ip|
           unless @available_dynamic_ips.delete?(ip)
-            raise ArgumentError, "static IP must be available (not reserved) inside the range"
+            raise NetworkSpecStaticIpOutOfRange,
+                  "Static IP `#{format_ip(ip)}' is out of " +
+                  "network `#{@network.name}' range"
           end
           @available_static_ips.add(ip)
         end
@@ -75,7 +108,9 @@ module Bosh::Director
       end
 
       def overlaps?(subnet)
-        @range == subnet.range || @range.contains?(subnet.range) || subnet.range.contains?(@range)
+        @range == subnet.range ||
+          @range.contains?(subnet.range) ||
+          subnet.range.contains?(@range)
       end
 
       def reserve_ip(ip)
@@ -96,7 +131,10 @@ module Bosh::Director
         elsif @static_ip_pool.include?(ip)
           @available_static_ips.add(ip)
         else
-          raise "Invalid IP to release: neither in dynamic nor in static pool"
+          raise NetworkReservationIpNotOwned,
+                "Can't release IP `#{format_ip(ip)}' " +
+                "back to `#{@network.name}' network: " +
+                "it's' neither in dynamic nor in static pool"
         end
       end
 
@@ -106,6 +144,30 @@ module Bosh::Director
           @available_dynamic_ips.delete(ip)
         end
         ip
+      end
+
+      def dynamic_ips_count
+        @available_dynamic_ips.size
+      end
+
+      def static_ips_count
+        @available_static_ips.size
+      end
+
+      private
+
+      # @param [String] reason
+      # @raise NetworkSpecInvalidGateway
+      def invalid_gateway(reason)
+        raise NetworkSpecInvalidGateway,
+              "Invalid gateway for network `#{@network.name}': #{reason}"
+      end
+
+      # @param [String] reason
+      # @raise NetworkSpecInvalidDns
+      def invalid_dns(reason)
+        raise NetworkSpecInvalidDns,
+              "Invalid DNS for network `#{@network.name}': #{reason}"
       end
     end
   end

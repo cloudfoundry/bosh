@@ -43,7 +43,10 @@ module Bosh::Director
         if @bound_instance
           @bound_instance.network_settings
         else
-          raise "Missing network reservation" unless @network_reservation
+          unless @network_reservation
+            raise NetworkReservationMissing,
+                  "Missing network reservation for resource pool VM"
+          end
 
           network_settings = {}
           network = @resource_pool.network

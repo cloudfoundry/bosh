@@ -10,6 +10,10 @@ module Bosh::Director
 
       attr_accessor :task_id
 
+      attr_reader :logger
+      attr_reader :event_log
+      attr_reader :result_file
+
       def initialize(*args)
         @logger = Config.logger
         @event_log = Config.event_log
@@ -32,13 +36,13 @@ module Bosh::Director
       end
 
       def begin_stage(stage_name, n_steps)
-        @event_log.begin_stage(stage_name, n_steps)
-        @logger.info(stage_name)
+        event_log.begin_stage(stage_name, n_steps)
+        logger.info(stage_name)
       end
 
       def track_and_log(task)
-        @event_log.track(task) do |ticker|
-          @logger.info(task)
+        event_log.track(task) do |ticker|
+          logger.info(task)
           yield ticker if block_given?
         end
       end

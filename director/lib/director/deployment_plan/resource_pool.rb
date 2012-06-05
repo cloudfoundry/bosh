@@ -17,18 +17,34 @@ module Bosh::Director
       attr_accessor :allocated_vms
       attr_accessor :active_vm_count
 
+      # @param [DeploymentPlan] deployment Deployment plan
+      # @param [Hash] resource_pool_spec Raw resource pool spec from deployment
+      #   manifest
       def initialize(deployment, resource_pool_spec)
         @deployment = deployment
+
         @name = safe_property(resource_pool_spec, "name", :class => String)
         @size = safe_property(resource_pool_spec, "size", :class => Integer)
-        @cloud_properties = safe_property(resource_pool_spec, "cloud_properties", :class => Hash)
-        @stemcell = StemcellSpec.new(self, safe_property(resource_pool_spec, "stemcell", :class => Hash))
 
-        network_name = safe_property(resource_pool_spec, "network", :class => String)
+        @cloud_properties = safe_property(resource_pool_spec,
+                                          "cloud_properties", :class => Hash)
+
+        stemcell_property = safe_property(resource_pool_spec, "stemcell",
+                                          :class => Hash)
+        @stemcell = StemcellSpec.new(self, stemcell_property)
+
+        network_name = safe_property(resource_pool_spec, "network",
+                                     :class => String)
         @network = @deployment.network(network_name)
-        raise "Resource pool '#{@name}' references an unknown network: '#{network_name}'" if @network.nil?
 
-        @env = safe_property(resource_pool_spec, "env", :class => Hash, :optional => true) || {}
+        if @network.nil?
+          raise ResourcePoolSpecUnknownNetwork,
+                "Resource pool `#{@name}' references " +
+                "an unknown network `#{network_name}'"
+        end
+
+        @env = safe_property(resource_pool_spec, "env",
+                             :class => Hash, :optional => true) || {}
         @env_hash = Digest::SHA1.hexdigest(Yajl::Encoder.encode(@env.sort))
 
         @idle_vms = []
@@ -53,7 +69,11 @@ module Bosh::Director
 
       def reserve_vm
         @reserved_vm_count += 1
-        raise "Resource pool '#{@name}' is not big enough to run all the requested jobs" if @reserved_vm_count > @size
+        if @reserved_vm_count > @size
+          raise ResourcePoolSpecNotEnoughCapacity,
+                "Resource pool `#{@name}' is not big enough: " +
+                "#{@reserved_vm_count} VMs needed, capacity is #{@size}"
+        end
       end
 
       def allocate_vm

@@ -8,7 +8,8 @@ module Bosh::Director
       @logger = Config.logger
     end
 
-    def create(deployment, stemcell, cloud_properties, network_settings, disks=nil, env={})
+    def create(deployment, stemcell, cloud_properties, network_settings,
+               disks=nil, env={})
       env ||= {}
       env.extend(DeepCopy)
       env = env._deep_copy
@@ -22,7 +23,8 @@ module Bosh::Director
       end
 
       vm = Models::Vm.create(:deployment => deployment, :agent_id => agent_id)
-      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
+      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties,
+                                network_settings, disks, env)
       vm.cid = vm_cid
 
       if Config.encryption?

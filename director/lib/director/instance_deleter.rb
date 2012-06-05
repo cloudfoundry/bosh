@@ -61,6 +61,7 @@ module Bosh::Director
           sleep(drain_time)
           drain_time = agent.drain("status")
         rescue => e
+          # TODO: refactor error handling?
           @logger.warn("Failed to check drain-status: #{e.inspect}")
           raise if e.kind_of?(Bosh::Director::TaskCancelled)
           break
@@ -76,12 +77,13 @@ module Bosh::Director
     # @return [void]
     def delete_persistent_disks(persistent_disks)
       persistent_disks.each do |disk|
-        @logger.info("Deleting disk: '#{disk.disk_cid}', #{disk.active ? "active" : "inactive"}")
+        @logger.info("Deleting disk: `#{disk.disk_cid}', " +
+                     "#{disk.active ? "active" : "inactive"}")
         begin
           @cloud.delete_disk(disk.disk_cid)
         rescue Bosh::Clouds::DiskNotFound => e
           @logger.warn("Disk not found: #{disk.disk_cid}")
-          # TODO: investigate if we really want to swallow this for inactive disks
+          # TODO: investigate if we really want to swallow the error
           raise if disk.active
         end
         disk.destroy
@@ -94,9 +96,12 @@ module Bosh::Director
     # @return [void]
     def delete_dns_records(job, index)
       if Config.dns_enabled?
-        record_pattern = [index, canonical(job), "%", @deployment_plan.canonical_name, "bosh"].join(".")
-        records = Models::Dns::Record.filter(:domain_id => @deployment_plan.dns_domain.id).
-            filter(:name.like(record_pattern))
+        record_pattern = [index, canonical(job), "%",
+                          @deployment_plan.canonical_name, "bosh"].join(".")
+        records = Models::Dns::Record.
+          filter(:domain_id => @deployment_plan.dns_domain.id).
+          filter(:name.like(record_pattern))
+
         records.each do |record|
           @logger.info("Deleting DNS record: #{record.name}")
           record.destroy

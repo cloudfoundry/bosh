@@ -3,10 +3,13 @@
 module Bosh::Director
   module Jobs
     class VmState < BaseJob
+
       @queue = :normal
 
+      # @param [Integer] deployment_id Deployment id
       def initialize(deployment_id)
         super
+
         @deployment_id = deployment_id
       end
 
@@ -16,7 +19,7 @@ module Bosh::Director
           vms.each do |vm|
             pool.process do
               vm_state = process_vm(vm)
-              @result_file.write(vm_state.to_json + "\n")
+              result_file.write(vm_state.to_json + "\n")
             end
           end
         end
@@ -27,6 +30,7 @@ module Bosh::Director
 
       def process_vm(vm)
         ips = []
+        # TODO: properly handle nil agent_id
         agent = AgentClient.new(vm.agent_id)
         job_name = nil
         job_state = nil
@@ -48,13 +52,15 @@ module Bosh::Director
           job_state = "Unresponsive Agent"
         end
 
-        {:vm_cid => vm.cid,
-         :ips => ips,
-         :agent_id => vm.agent_id,
-         :job_name => job_name,
-         :index => index,
-         :job_state => job_state,
-         :resource_pool => resource_pool}
+        {
+          :vm_cid => vm.cid,
+          :ips => ips,
+          :agent_id => vm.agent_id,
+          :job_name => job_name,
+          :index => index,
+          :job_state => job_state,
+          :resource_pool => resource_pool
+        }
       end
     end
   end
