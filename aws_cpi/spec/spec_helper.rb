@@ -8,6 +8,7 @@ Bundler.setup(:default, :test)
 
 require "rspec"
 require "tmpdir"
+require "forwardable"
 
 require "cloud/aws"
 
