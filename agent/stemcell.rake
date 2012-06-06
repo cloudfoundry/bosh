@@ -345,7 +345,7 @@ namespace "stemcell" do
     # Execute custom scripts
     component_script_dir = File.join(component_dir, "stages")
     Dir.glob(File.join(component_script_dir, "*")).sort.each do |script|
-      sh "#{sudo} #{script} #{chroot_dir} #{instance_dir} #{package_dir}"
+      sh "#{sudo} #{script} #{chroot_dir} #{instance_dir} #{package_dir} #{get_infrastructure_name}"
     end
   end
 

@@ -9,9 +9,9 @@ skeleton=$basedir/skeleton
 
 . ${libdir}/helpers.sh
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
-  echo "Usage: env `basename $0` [chroot_target] [instance_dir] [package_dir]"
+  echo "Usage: env `basename $0` [chroot_target] [instance_dir] [package_dir] [infrastructure]"
   exit 1
 fi
 
@@ -24,6 +24,7 @@ fi
 target=$1
 instance_dir=$2
 package_dir=$3
+infrastructure=$4
 
 if [ ! -d $instance_dir ]
 then
@@ -48,7 +49,7 @@ mkdir -p $target/var/vcap/bosh/src
 cp -r $instance_dir/micro_bosh $target/var/vcap/bosh/src
 cp -r $instance_dir/micro_bosh_release $target/var/vcap/bosh/src
 
-chroot $target /var/vcap/bosh/src/micro_bosh/lib/configure_micro_bosh.sh
+chroot $target /var/vcap/bosh/src/micro_bosh/lib/configure_micro_bosh.sh $infrastructure
 
 # Copy the generated apply spec to packaging directory
 cp $target/var/vcap/micro/apply_spec.yml $package_dir

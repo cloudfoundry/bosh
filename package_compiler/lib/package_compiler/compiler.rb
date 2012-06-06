@@ -103,7 +103,7 @@ module Bosh
         spec["packages"] = {}
         spec["configuration_hash"] = {}
 
-        case @options["cpi"]
+        case @options[:cpi]
         when "vsphere"
           spec["networks"] = {"local" => {"ip" => "127.0.0.1"}}
         when "aws"
