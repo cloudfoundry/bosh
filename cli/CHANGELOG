@@ -1,4 +1,10 @@
-=== 0.19 - 10/22/2012
+=== 0.19.1 - 06/05/2012
+
+* 'bosh diff' static IP helpers
+* public stemcell sorting and shorter table width
+* bugfixes
+
+=== 0.19 - 05/22/2012
 
 * release composition (requires director support)
 * 'bosh rename' (requires director support)
