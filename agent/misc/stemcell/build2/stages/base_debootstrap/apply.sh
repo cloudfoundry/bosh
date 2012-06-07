@@ -7,9 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-arch="amd64"
-release="lucid"
-
 # Define variables
 mirror=
 
@@ -31,7 +28,7 @@ fi
 
 # Bootstrap the base system
 echo "Running debootstrap"
-debootstrap --arch=$arch $release $chroot $mirror
+debootstrap --arch=$base_debootstrap_arch $base_debootstrap_suite $chroot $mirror
 
 # Shady work around vmbuilder in combination with ubuntu iso cache corrupting
 # the debian list caches. There is a discussion in:

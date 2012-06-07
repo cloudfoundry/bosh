@@ -11,3 +11,9 @@ if [ -f $settings_file ]
 then
   source $settings_file
 fi
+
+# Source /etc/lsb-release if present
+if [ -f $chroot/etc/lsb-release ]
+then
+  source $chroot/etc/lsb-release
+fi

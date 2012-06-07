@@ -1,3 +1,0 @@
-deb http://archive.ubuntu.com/ubuntu lucid main universe multiverse
-deb http://archive.ubuntu.com/ubuntu lucid-updates main universe multiverse
-deb http://security.ubuntu.com/ubuntu lucid-security main universe multiverse

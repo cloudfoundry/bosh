@@ -19,6 +19,7 @@ run_in_bosh_chroot $chroot "
 cd src
 tar jxvf $ruby_archive
 cd $ruby_basename
+sed -i 's/\\(OSSL_SSL_METHOD_ENTRY(SSLv2[^3]\\)/\\/\\/\\1/g' ./ext/openssl/ossl_ssl.c
 ./configure --prefix=$bosh_dir --disable-install-doc
 make -j4 && make install
 "
