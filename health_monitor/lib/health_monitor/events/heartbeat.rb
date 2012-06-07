@@ -4,6 +4,8 @@ module Bosh::HealthMonitor
 
       CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router stager vcap_redis))
 
+      SERVICE_AUXILIARY_JOBS = Set.new(%w(serialization_data_server backup_manager))
+
       attr_reader :metrics
 
       def initialize(attributes = {})
@@ -104,6 +106,8 @@ module Bosh::HealthMonitor
         # by applying a couple of heuristics
 
         return "core" if CORE_JOBS.include?(@job.to_s.downcase)
+
+        return "service" if SERVICE_AUXILIARY_JOBS.include?(@job.to_s.downcase)
 
         if @job.to_s =~ /(_node$|_gateway$|service)/i
           return "service"
