@@ -12,4 +12,5 @@ then
   persist_dir bosh_micro_package_compiler_path
   persist_file bosh_micro_manifest_yml_path
   persist_file bosh_micro_release_tgz_path
+  persist_value system_parameters_infrastructure
 fi
