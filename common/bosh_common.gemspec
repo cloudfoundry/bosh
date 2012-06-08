@@ -13,4 +13,6 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README Rakefile)
   s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
+
+  s.add_dependency "open4", "~>1.3.0"
 end
