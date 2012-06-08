@@ -1,0 +1,16 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+guard :bundler, :notify => false do
+  watch("Gemfile")
+end
+
+guard :yard, :stderr => "/dev/null"
+
+group :unit_tests do
+  guard :rspec, :version => 2, :cli => "--color --format nested --fail-fast",
+                :all_after_pass => false, :spec_paths => %w(spec/unit) do
+    watch("spec/spec_helper.rb")            { "spec/unit" }
+    watch(%r{^spec/.+_spec\.rb})
+    watch(%r{^lib/common/(.+)\.rb})         { |m| "spec/unit/#{m[1]}_spec.rb" }
+  end
+end
