@@ -1,0 +1,8 @@
+Code-Review+2: Oleg Shaldybin <olegs@vmware.com>
+Code-Review+1: Nicholas Kushmerick <nicholask@vmware.com>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Chunjie Zhu <czhu@vmware.com>
+Submitted-at: Fri, 08 Jun 2012 01:51:28 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/6229
+Project: bosh
+Branch: refs/heads/master
