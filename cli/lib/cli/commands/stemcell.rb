@@ -59,19 +59,9 @@ module Bosh::Cli::Command
 
       say("\nUploading stemcell...\n")
 
-      status, message = director.upload_stemcell(stemcell.stemcell_file)
+      status, _ = director.upload_stemcell(stemcell.stemcell_file)
 
-      responses = {
-        :done => "Stemcell uploaded and created",
-        :non_trackable => "Uploaded stemcell but director at '#{target}' " +
-                          "doesn't support creation tracking",
-        :track_timeout => "Uploaded stemcell but timed out out " +
-                          "while tracking status",
-        :error => "Uploaded stemcell but received an error " +
-                  "while tracking status",
-      }
-
-      say(responses[status] || "Cannot upload stemcell: #{message}")
+      task_report(status, "Stemcell uploaded and created")
     end
 
     def list
@@ -147,41 +137,31 @@ module Bosh::Cli::Command
 
       url = yaml[stemcell_name]["url"]
       size = yaml[stemcell_name]["size"]
-      pBar = ProgressBar.new(stemcell_name, size)
-      pBar.file_transfer_mode
+      progress_bar = ProgressBar.new(stemcell_name, size)
+      progress_bar.file_transfer_mode
       File.open("#{stemcell_name}", "w") { |file|
         @http_client.get(url) do |chunk|
           file.write(chunk)
-          pBar.inc(chunk.size)
+          progress_bar.inc(chunk.size)
         end
       }
-      pBar.finish
+      progress_bar.finish
       puts("Download complete.")
     end
 
     def delete(name, version)
       auth_required
 
-      say("You are going to delete stemcell `#{name} (#{version})'".red)
+      say("You are going to delete stemcell `#{name}/#{version}'".red)
 
       unless confirmed?
         say("Canceled deleting stemcell".green)
         return
       end
 
-      status, message = director.delete_stemcell(name, version)
+      status, _ = director.delete_stemcell(name, version)
 
-      responses = {
-        :done => "Deleted stemcell #{name} (#{version})",
-        :non_trackable => "Stemcell delete in progress but director " +
-                          "at '#{target}' doesn't support task tracking",
-        :track_timeout => "Timed out out while tracking " +
-                          "stemcell deletion progress",
-        :error => "Attempted to delete stemcell but received an error " +
-                  "while tracking status",
-      }
-
-      say(responses[status] || "Cannot delete stemcell: #{message}")
+      task_report(status, "Deleted stemcell `#{name}/#{version}'")
     end
   end
 end

@@ -252,7 +252,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
     out = run_bosh("delete stemcell ubuntu-stemcell 1")
-    out.should =~ /Deleted stemcell ubuntu-stemcell \(1\)/
+    out.should =~ /Deleted stemcell `ubuntu-stemcell\/1'/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_false
   end
 
@@ -274,7 +274,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("login admin admin")
     out = run_bosh("upload release #{release_filename}")
 
-    out.should =~ /Release uploaded and updated/
+    out.should =~ /Release uploaded/
 
     expect_output("releases", <<-OUT )
     +----------+----------+
@@ -342,7 +342,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ regexp("bar (0.2-dev)                 UPLOAD\n")
     out.should =~ regexp("Checking if can repack release for faster upload")
     out.should =~ regexp("Release repacked")
-    out.should =~ /Release uploaded and updated/
+    out.should =~ /Release uploaded/
 
     expect_output("releases", <<-OUT )
     +--------------+------------------+
@@ -384,7 +384,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       out.should =~ regexp("Building tarball")
       out.should_not =~ regexp("Checking if can repack release for faster upload")
       out.should_not =~ regexp("Release repacked")
-      out.should =~ /Release uploaded and updated/
+      out.should =~ /Release uploaded/
     end
 
     expect_output("releases", <<-OUT )
@@ -519,7 +519,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       run_bosh("deploy")
-      run_bosh("delete deployment minimal").should =~ regexp("Deleted deployment 'minimal'")
+      run_bosh("delete deployment minimal").should =~ regexp("Deleted deployment `minimal'")
       # TODO: test that we don't have artefacts,
       # possibly upgrade to more featured deployment,
       # possibly merge to the previous spec

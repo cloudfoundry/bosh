@@ -61,7 +61,8 @@ describe Bosh::Cli::Director do
 
     it "uploads stemcell" do
       @director.should_receive(:upload_and_track).
-        with("/stemcells", "application/x-compressed", "/path").
+        with(:post, "/stemcells", "/path",
+             {:content_type => "application/x-compressed"}).
         and_return(true)
       @director.upload_stemcell("/path")
     end
@@ -117,7 +118,8 @@ describe Bosh::Cli::Director do
 
     it "uploads release" do
       @director.should_receive(:upload_and_track).
-        with("/releases", "application/x-compressed", "/path").
+        with(:post, "/releases", "/path",
+             {:content_type => "application/x-compressed"}).
         and_return(true)
       @director.upload_release("/path")
     end
@@ -138,45 +140,49 @@ describe Bosh::Cli::Director do
 
     it "deletes stemcell" do
       @director.should_receive(:request_and_track).
-        with(:delete, "/stemcells/ubuntu/123").and_return(true)
+        with(:delete, "/stemcells/ubuntu/123", {}).and_return(true)
       @director.delete_stemcell("ubuntu", "123")
     end
 
     it "deletes deployment" do
       @director.should_receive(:request_and_track).
-        with(:delete, "/deployments/foo").and_return(true)
+        with(:delete, "/deployments/foo", {}).and_return(true)
       @director.delete_deployment("foo")
     end
 
     it "deletes release (non-force)" do
       @director.should_receive(:request_and_track).
-        with(:delete, "/releases/za").and_return(true)
+        with(:delete, "/releases/za", {}).and_return(true)
       @director.delete_release("za")
     end
 
     it "deletes release (force)" do
       @director.should_receive(:request_and_track).
-        with(:delete, "/releases/zb?force=true").and_return(true)
+        with(:delete, "/releases/zb?force=true", {}).and_return(true)
       @director.delete_release("zb", :force => true)
     end
 
     it "deploys" do
       @director.should_receive(:request_and_track).
-        with(:post, "/deployments", "text/yaml", "manifest").and_return(true)
+        with(:post, "/deployments",
+             {:content_type => "text/yaml", :payload => "manifest"}).
+        and_return(true)
       @director.deploy("manifest")
     end
 
     it "changes job state" do
       @director.should_receive(:request_and_track).
         with(:put, "/deployments/foo/jobs/dea?state=stopped",
-             "text/yaml", "manifest").and_return(true)
+             {:content_type => "text/yaml", :payload =>"manifest"}).
+        and_return(true)
       @director.change_job_state("foo", "manifest", "dea", nil, "stopped")
     end
 
     it "changes job instance state" do
       @director.should_receive(:request_and_track).
         with(:put, "/deployments/foo/jobs/dea/0?state=detached",
-             "text/yaml", "manifest").and_return(true)
+             {:content_type => "text/yaml", :payload => "manifest"}).
+        and_return(true)
       @director.change_job_state("foo", "manifest", "dea", 0, "detached")
     end
 
@@ -255,9 +261,12 @@ describe Bosh::Cli::Director do
         with(@director, "502", options).
         and_return(tracker)
 
-      @director.request_and_track(:get, "/stuff", "text/plain",
-                                  "abc", options).
-        should == ["polling result", "502", "foo"]
+      @director.request_and_track(:get, "/stuff",
+                                  {:content_type => "text/plain",
+                                   :payload => "abc",
+                                   :arg1 => 1, :arg2 => 2
+                                  }).
+        should == ["polling result", "502"]
     end
 
     it "considers all responses but 302 a failure" do
@@ -265,9 +274,12 @@ describe Bosh::Cli::Director do
         @director.should_receive(:request).
           with(:get, "/stuff", "text/plain", "abc").
           and_return([code, "body", {}])
-        @director.request_and_track(:get, "/stuff", "text/plain",
-                                    "abc", :arg1 => 1, :arg2 => 2).
-          should == [:failed, nil, nil]
+        @director.request_and_track(:get, "/stuff",
+                                    {:content_type => "text/plain",
+                                     :payload => "abc",
+                                     :arg1 => 1, :arg2 => 2
+                                    }).
+          should == [:failed, nil]
       end
     end
 
@@ -275,9 +287,12 @@ describe Bosh::Cli::Director do
       @director.should_receive(:request).
         with(:get, "/stuff", "text/plain", "abc").
         and_return([302, "body", { :location => "/track-task/502" }])
-      @director.request_and_track(:get, "/stuff", "text/plain",
-                                  "abc", :arg1 => 1, :arg2 => 2).
-        should == [:non_trackable, nil, nil]
+      @director.request_and_track(:get, "/stuff",
+                                  {:content_type => "text/plain",
+                                   :payload => "abc",
+                                   :arg1 => 1, :arg2 => 2
+                                  }).
+        should == [:non_trackable, nil]
     end
 
     it "supports uploading with progress bar" do
@@ -286,8 +301,10 @@ describe Bosh::Cli::Director do
 
       Bosh::Cli::FileWithProgressBar.stub!(:open).with(file, "r").and_return(f)
       @director.should_receive(:request_and_track).
-        with(:post, "/stuff", "application/x-compressed", f, { })
-      @director.upload_and_track("/stuff", "application/x-compressed", file)
+        with(:put, "/stuff", {:content_type => "application/x-compressed",
+                               :payload => f})
+      @director.upload_and_track(:put, "/stuff", file,
+                                 :content_type => "application/x-compressed")
       f.progress_bar.finished?.should be_true
     end
   end

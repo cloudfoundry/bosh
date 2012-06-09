@@ -22,9 +22,10 @@ module Bosh::Cli::Command
           args.shift
         end
       rescue ArgumentError, TypeError
+        # No index given
       end
 
-      ["public_key", "gateway_host", "gateway_user"].each do |option|
+      %w(public_key gateway_host gateway_user).each do |option|
         pos = args.index("--#{option}")
         if pos
           options[option] = args[pos + 1]
@@ -98,13 +99,13 @@ module Bosh::Cli::Command
                                    encrypt_password(password))
 
       unless results && results.kind_of?(Array) && !results.empty?
-        err("Error setting up ssh, #{results.inspect}, " \
+        err("Error setting up ssh, #{results.inspect}, " +
             "check task logs for more details")
       end
 
       results.each do |result|
         unless result.kind_of?(Hash)
-          err("Unexpected results #{results.inspect}, " \
+          err("Unexpected results #{results.inspect}, " +
               "check task logs for more details")
         end
       end
