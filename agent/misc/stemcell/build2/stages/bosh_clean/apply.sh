@@ -10,6 +10,3 @@ source $base_dir/lib/prelude_bosh.bash
 
 # Clear src directory
 rm -rf $chroot/$bosh_dir/src
-
-# Clear caches
-run_in_bosh_chroot $chroot "apt-get clean"

@@ -14,7 +14,7 @@ cp -rH $bosh_micro_manifest_yml_path $chroot/$bosh_dir/src/micro_bosh/release.ym
 cp -rH $bosh_micro_release_tgz_path $chroot/$bosh_dir/src/micro_bosh/release.tgz
 cp $dir/assets/configure_micro_bosh.sh $chroot/$bosh_dir/src/micro_bosh
 
-run_in_bosh_chroot $chroot "apt-get install -y --force-yes --no-install-recommends libpq-dev genisoimage"
+apt_get install libpq-dev genisoimage
 run_in_bosh_chroot $chroot "$bosh_dir/src/micro_bosh/configure_micro_bosh.sh ${system_parameters_infrastructure}"
 
 # Copy the generated apply spec to stemcell directory

@@ -16,15 +16,13 @@ cp $assets_dir/open-vm-*.deb $chroot/tmp
 
 # open-vm-tools needed to be backported to work with the 2.6.38 kernel
 # https://bugs.launchpad.net/ubuntu/+source/open-vm-tools/+bug/746152
-run_in_chroot $chroot "
-dpkg -i /tmp/open-vm-*.deb || true
+run_in_chroot $chroot "dpkg -i /tmp/open-vm-*.deb || true"
 
 # Fix missing dependencies for the open-vm debs
-apt-get -f -y --force-yes --no-install-recommends install
+apt_get install
 
 # Remove debs
-rm -f /tmp/*.deb
-"
+run_in_chroot $chroot "rm -f /tmp/*.deb"
 
 run_in_chroot $chroot "
 ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools

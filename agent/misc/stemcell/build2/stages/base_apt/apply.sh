@@ -44,16 +44,11 @@ deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME-updates main universe mul
 deb http://security.ubuntu.com/ubuntu $DISTRIB_CODENAME-security main universe multiverse
 EOS
 
-run_in_chroot $chroot "apt-get update"
-
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
-run_in_chroot $chroot "apt-get -y --force-yes install upstart"
+apt_get install upstart
 
 # Upgrade
-run_in_chroot $chroot "apt-get -y --force-yes dist-upgrade"
+apt_get dist-upgrade
 
 # Install base debs needed by both the warden and bosh
-run_in_chroot $chroot "apt-get install -y --force-yes --no-install-recommends $debs"
-
-# Woo, done. Clean up.
-run_in_chroot $chroot "apt-get clean"
+apt_get install $debs
