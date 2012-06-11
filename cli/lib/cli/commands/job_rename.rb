@@ -14,10 +14,15 @@ module Bosh::Cli::Command
       old_name = args.shift
       new_name = args.shift
 
-      sanity_check_job_rename(manifest_yaml, old_name, new_name)
+      say("You are about to rename #{old_name.green} to #{new_name.green}")
 
-      say("You are about to rename #{old_name.green} to " +
-          "#{new_name.green} #{force}")
+      unless confirmed?
+        nl
+        say("Job rename canceled".green)
+        return
+      end
+
+      sanity_check_job_rename(manifest_yaml, old_name, new_name)
 
       status, _ = director.rename_job(manifest["name"], manifest_yaml,
                                       old_name, new_name, force)
@@ -32,11 +37,11 @@ module Bosh::Cli::Command
       new_jobs = manifest["jobs"].map { |job| job["name"] }
       unless new_jobs.include?(new_name)
         err("Please update your deployment manifest to include the " +
-            "new job name #{new_name.green}")
+            "new job name `#{new_name}'")
       end
 
       if new_jobs.include?(old_name)
-        err("Old name #{old_name.green} is still being used in the " +
+        err("Old name `#{old_name}' is still being used in the " +
             "deployment file")
       end
 
@@ -44,19 +49,19 @@ module Bosh::Cli::Command
       current_deployment = director.get_deployment(manifest["name"])
       if current_deployment["manifest"].nil?
         err("Director could not find manifest for deployment " +
-            "#{manifest["name"]}")
+            "`#{manifest["name"]}'")
       end
 
       current_manifest = YAML.load(current_deployment["manifest"])
       jobs = current_manifest["jobs"].map { |job| job["name"] }
       unless jobs.include?(old_name)
-        err("Trying to rename a non existent job #{old_name}")
+        err("Trying to rename a non existent job `#{old_name}'")
       end
 
       # Technically we could allow this
       if jobs.include?(new_name)
-        err("Trying to reuse an existing job name #{new_name} " +
-            "to rename job #{old_name}")
+        err("Trying to reuse an existing job name `#{new_name}' " +
+            "to rename job `#{old_name}'")
       end
 
       # Make sure that only one job has been renamed
@@ -68,7 +73,7 @@ module Bosh::Cli::Command
       end
 
       if added_jobs.first != new_name
-        err("Manifest does not include new job #{new_name}")
+        err("Manifest does not include new job `#{new_name}'")
       end
 
       renamed_jobs = jobs - new_jobs
@@ -79,7 +84,7 @@ module Bosh::Cli::Command
       end
 
       if renamed_jobs.first != old_name
-        err("Manifest does not rename old job #{old_name}")
+        err("Manifest does not rename old job `#{old_name}'")
       end
 
 
