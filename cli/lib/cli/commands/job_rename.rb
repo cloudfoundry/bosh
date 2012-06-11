@@ -14,8 +14,7 @@ module Bosh::Cli::Command
       old_name = args.shift
       new_name = args.shift
 
-      say("You are about to rename #{old_name.green} to " +
-          "#{new_name.green}")
+      say("You are about to rename #{old_name.green} to #{new_name.green}")
 
       unless confirmed?
         nl

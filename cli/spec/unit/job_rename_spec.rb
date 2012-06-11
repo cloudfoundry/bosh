@@ -4,6 +4,9 @@ require "spec_helper"
 
 describe Bosh::Cli::Command::Base do
 
+  # TODO: this spec is not in line with the rest of them: it's testing command,
+  # not the rename behavior. Logic should probably be extracted into JobRenamer
+  # or something like that.
   describe Bosh::Cli::Command::JobRename do
     it "should rename the job" do
       mock_director = mock(Object)
@@ -11,6 +14,7 @@ describe Bosh::Cli::Command::Base do
       Bosh::Cli::Director.should_receive(:new).and_return(mock_director)
 
       job_rename = Bosh::Cli::Command::JobRename.new
+      job_rename.stub(:confirmed?).and_return(true)
       job_rename.stub(:auth_required)
       job_rename.stub(:prepare_deployment_manifest).and_return(old_manifest_yaml)
       job_rename.stub(:sanity_check_job_rename)
