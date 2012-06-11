@@ -18,7 +18,10 @@ module Bosh
         @task_id = task_id
         @options = options
 
-        @log_type = options[:log_type] || "event"
+        @quiet = !!options[:quiet]
+        default_log_type = @quiet ? "none" : "event"
+
+        @log_type = options[:log_type] || default_log_type
         @use_cache = options.key?(:use_cache) ? @options[:use_cache] : true
 
         @output = nil
@@ -128,6 +131,14 @@ module Bosh
       end
 
       private
+
+      def nl
+        super unless @quiet
+      end
+
+      def say(*args)
+        super unless @quiet
+      end
 
       # @param [String] output Output received from director task
       def output_received(output)

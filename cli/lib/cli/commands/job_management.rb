@@ -45,8 +45,11 @@ module Bosh::Cli::Command
 
       job = args.shift
       index = args.shift
-      deployment_desc = "`#{deployment.green}' to `#{target_name.green}'"
       job_desc = index ? "#{job}(#{index})" : "#{job}"
+
+      op_desc = nil
+      new_state = nil
+      completion_desc = nil
 
       case operation
       when :start
@@ -73,6 +76,8 @@ module Bosh::Cli::Command
         op_desc = "recreate #{job_desc}"
         new_state = "recreate"
         completion_desc = "#{job_desc.green} has been recreated"
+      else
+        err("Unknown operation: `#{operation}'")
       end
 
       say("You are about to #{op_desc.green}")
@@ -95,22 +100,12 @@ module Bosh::Cli::Command
 
       say("Performing `#{op_desc}'...")
 
-      status, body = director.change_job_state(manifest["name"],
-                                               manifest_yaml,
-                                               job, index, new_state)
+      status, _ =
+        director.change_job_state(manifest["name"],
+                                  manifest_yaml,
+                                  job, index, new_state)
 
-      responses = {
-        :done => completion_desc,
-        :non_trackable => "Started deployment but director at '#{target}' " +
-                          "doesn't support deployment tracking",
-        :track_timeout => "Started deployment but timed out out "+
-                          "while tracking status",
-        :error => "Started deployment but received an error " +
-                  "while tracking status",
-        :invalid => "Deployment is invalid, please fix it and deploy again"
-      }
-
-      say(responses[status] || "Cannot deploy: #{body}")
+      task_report(status, completion_desc)
     end
 
   end

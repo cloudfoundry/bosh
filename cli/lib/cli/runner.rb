@@ -67,6 +67,7 @@ module Bosh::Cli
         end
 
         runner.send(@action.to_sym, *@args)
+        exit(runner.exit_code)
       elsif @args.empty? || @args == %w(help)
         say(help_message)
         say(plugin_help_message) if @plugins

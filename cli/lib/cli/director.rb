@@ -47,12 +47,15 @@ module Bosh
 
       def create_user(username, password)
         payload = JSON.generate("username" => username, "password" => password)
-        response_code, body = post("/users", "application/json", payload)
+        response_code, _ = post("/users", "application/json", payload)
         response_code == 204
       end
 
-      def upload_stemcell(filename)
-        upload_and_track("/stemcells", "application/x-compressed", filename)
+      def upload_stemcell(filename, options = {})
+        options = options.dup
+        options[:content_type] = "application/x-compressed"
+
+        upload_and_track(:post, "/stemcells", filename, options)
       end
 
       def get_version
@@ -108,43 +111,65 @@ module Bosh
         body
       end
 
-      def upload_release(filename)
-        upload_and_track("/releases", "application/x-compressed", filename)
+      def upload_release(filename, options = {})
+        options = options.dup
+        options[:content_type] = "application/x-compressed"
+
+        upload_and_track(:post, "/releases", filename, options)
       end
 
       def delete_stemcell(name, version, options = {})
-        request_and_track(:delete, "/stemcells/#{name}/#{version}")
+        options = options.dup
+        request_and_track(:delete, "/stemcells/#{name}/#{version}", options)
       end
 
       def delete_deployment(name, options = {})
-        url = "/deployments/#{name}"
-        query_params = []
-        query_params << "force=true" if options[:force]
-        url += "?#{query_params.join("&")}" if query_params.size > 0
+        options = options.dup
+        force = options.delete(:force)
 
-        request_and_track(:delete, url)
+        url = "/deployments/#{name}"
+
+        extras = []
+        extras << "force=true" if force
+
+        request_and_track(:delete, add_query_string(url, extras), options)
       end
 
       def delete_release(name, options = {})
+        options = options.dup
+        force = options.delete(:force)
+        version = options.delete(:version)
+
         url = "/releases/#{name}"
 
-        query_params = []
-        query_params << "force=true" if options[:force]
-        query_params << "version=#{options[:version]}" if options[:version]
+        extras = []
+        extras << "force=true" if force
+        extras << "version=#{version}" if version
 
-        url += "?#{query_params.join("&")}" if query_params.size > 0
-
-        request_and_track(:delete, url)
+        request_and_track(:delete, add_query_string(url, extras), options)
       end
 
       def deploy(manifest_yaml, options = {})
+        options = options.dup
+
+        recreate = options.delete(:recreate)
+        options[:content_type] = "text/yaml"
+        options[:payload] = manifest_yaml
+
         url = "/deployments"
-        url += "?recreate=true" if options[:recreate]
-        request_and_track(:post, url, "text/yaml", manifest_yaml)
+
+        extras = []
+        extras << "recreate=true" if recreate
+
+        request_and_track(:post, add_query_string(url, extras), options)
       end
 
-      def setup_ssh(deployment_name, job, index, user, public_key, password)
+      def setup_ssh(deployment_name, job, index, user,
+                    public_key, password, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/ssh"
+
         payload = {
           "command" => "setup",
           "deployment_name" => deployment_name,
@@ -159,16 +184,19 @@ module Bosh
           }
         }
 
-        status, task_id = request_and_track(:post, url, "application/json",
-                                            JSON.generate(payload))
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = "application/json"
 
+        status, task_id = request_and_track(:post, url, options)
+
+        # TODO: this needs to be done in command handler, not in director.rb
         return nil if status != :done
-
         JSON.parse(get_task_result_log(task_id))
       end
 
-      def cleanup_ssh(deployment_name, job, user_regex, indexes)
-        indexes ||= []
+      def cleanup_ssh(deployment_name, job, user_regex, indexes, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/ssh"
 
         payload = {
@@ -176,49 +204,70 @@ module Bosh
           "deployment_name" => deployment_name,
           "target" => {
             "job" => job,
-            "indexes" => indexes.compact
+            "indexes" => (indexes || []).compact
           },
           "params" => { "user_regex" => user_regex }
         }
 
-        request_and_track(:post, url, "application/json",
-                          JSON.generate(payload))
+        options[:payload] = JSON.generate(payload)
+        options[:content_type] = "application/json"
+
+        request_and_track(:post, url, options)
       end
 
       def change_job_state(deployment_name, manifest_yaml,
-          job_name, index, new_state)
+                           job_name, index, new_state, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/jobs/#{job_name}"
         url += "/#{index}" if index
         url += "?state=#{new_state}"
-        request_and_track(:put, url, "text/yaml", manifest_yaml)
+
+        options[:payload] = manifest_yaml
+        options[:content_type] = "text/yaml"
+
+        request_and_track(:put, url, options)
       end
 
+      # TODO: should pass 'force' with options, not as a separate argument
       def rename_job(deployment_name, manifest_yaml, old_name, new_name,
-                     force = nil)
+                     force = false, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/jobs/#{old_name}"
 
-        rename_params = ["new_name=#{new_name}"]
-        rename_params << "force=true" if force
+        extras = []
+        extras << "new_name=#{new_name}"
+        extras << "force=true" if force
 
-        url += "?#{rename_params.join("&")}" if rename_params.size > 0
-        request_and_track(:put, url, "text/yaml",
-                          manifest_yaml, :log_type => "event")
+        options[:content_type] = "text/yaml"
+        options[:payload] = manifest_yaml
+
+        request_and_track(:put, add_query_string(url, extras), options)
       end
 
-      def fetch_logs(deployment_name, job_name, index, log_type, filters = nil)
+      def fetch_logs(deployment_name, job_name, index, log_type,
+                     filters = nil, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/jobs/#{job_name}"
         url += "/#{index}/logs?type=#{log_type}&filters=#{filters}"
 
-        status, task_id = request_and_track(:get, url)
+        status, task_id = request_and_track(:get, url, options)
+
+        # TODO: this should be done in command handler, not in director.rb
         return nil if status != :done
         get_task_result(task_id)
       end
 
-      def fetch_vm_state(deployment_name)
+      def fetch_vm_state(deployment_name, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/vms?format=full"
 
-        status, task_id = request_and_track(:get, url)
+        status, task_id = request_and_track(:get, url, options)
 
+        # TODO: this should be done in command handler, not in director.rb
         if status != :done
           raise DirectorError, "Failed to fetch VMs information from director"
         end
@@ -231,14 +280,14 @@ module Bosh
       end
 
       def download_resource(id)
-        status, tmp_file, headers = get("/resources/#{id}", nil,
-                                        nil, {}, :file => true)
+        status, tmp_file, _ = get("/resources/#{id}",
+                                  nil, nil, {}, :file => true)
 
         if status == 200
           tmp_file
         else
-          raise DirectorError, "Cannot download resource `#{id}': " +
-            "HTTP status #{status}"
+          raise DirectorError,
+                "Cannot download resource `#{id}': HTTP status #{status}"
         end
       end
 
@@ -269,9 +318,11 @@ module Bosh
         get_json(url)
       end
 
-      def perform_cloud_scan(deployment_name)
+      def perform_cloud_scan(deployment_name, options = {})
+        options = options.dup
         url = "/deployments/#{deployment_name}/scans"
-        request_and_track(:post, url)
+
+        request_and_track(:post, url, options)
       end
 
       def list_problems(deployment_name)
@@ -279,14 +330,18 @@ module Bosh
         get_json(url)
       end
 
-      def apply_resolutions(deployment_name, resolutions)
+      def apply_resolutions(deployment_name, resolutions, options = {})
+        options = options.dup
+
         url = "/deployments/#{deployment_name}/problems"
-        request_and_track(:put, url, "application/json",
-                          JSON.generate("resolutions" => resolutions))
+        options[:content_type] = "application/json"
+        options[:payload] = JSON.generate("resolutions" => resolutions)
+
+        request_and_track(:put, url, options)
       end
 
       def get_current_time
-        status, body, headers = get("/info")
+        _, _, headers = get("/info")
         Time.parse(headers[:date]) rescue nil
       end
 
@@ -329,7 +384,7 @@ module Bosh
         uri = "/tasks/#{task_id}/output"
         uri += "?type=#{log_type}" if log_type
 
-        headers = { "Range" => "bytes=#{offset}-" }
+        headers = {"Range" => "bytes=#{offset}-"}
         response_code, body, headers = get(uri, nil, nil, headers)
 
         if response_code == 206 &&
@@ -354,20 +409,28 @@ module Bosh
         end
       end
 
-      def request_and_track(method, uri, content_type = nil,
-                            payload = nil,options = {})
-        http_status, body, headers = request(method, uri, content_type, payload)
+      # Perform director HTTP request and track director task (if request
+      # started one).
+      # @param [Symbol] method HTTP method
+      # @param [String] uri URI
+      # @param [Hash] options Request and tracking options
+      def request_and_track(method, uri, options = {})
+        options = options.dup
+
+        content_type = options.delete(:content_type)
+        payload = options.delete(:payload)
+        track_opts = options
+
+        http_status, _, headers = request(method, uri, content_type, payload)
         location = headers[:location]
         redirected = http_status == 302
         task_id = nil
-        output = nil
 
         if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
             task_id = $1
-            tracker = Bosh::Cli::TaskTracker.new(self, task_id, options)
+            tracker = Bosh::Cli::TaskTracker.new(self, task_id, track_opts)
             status = tracker.track
-            output = tracker.output
           else
             status = :non_trackable
           end
@@ -375,13 +438,12 @@ module Bosh
           status = :failed
         end
 
-        [status, task_id, output]
+        [status, task_id]
       end
 
-      def upload_and_track(uri, content_type, filename, options = {})
+      def upload_and_track(method, uri, filename, options = {})
         file = FileWithProgressBar.open(filename, "r")
-        method = options[:method] || :post
-        request_and_track(method, uri, content_type, file, options)
+        request_and_track(method, uri, options.merge(:payload => file))
       ensure
         file.stop_progress_bar if file
       end
@@ -389,6 +451,8 @@ module Bosh
       def request(method, uri, content_type = nil, payload = nil,
                   headers = {}, options = {})
         headers = headers.dup
+        tmp_file = nil
+
         headers["Content-Type"] = content_type if content_type
 
         if options[:file]
@@ -466,7 +530,7 @@ module Bosh
 
       rescue HTTPClient::BadResponseError => e
         err("Received bad HTTP response from director: #{e}")
-      rescue URI::Error, SocketError, Errno::ECONNREFUSED, SystemCallError
+      rescue URI::Error, SocketError, SystemCallError
         raise # We handle these upstream
       rescue => e
         # httpclient (sadly) doesn't have a generic exception
@@ -481,11 +545,19 @@ module Bosh
       end
 
       def get_json_with_status(url)
-        status, body, headers = get(url, "application/json")
+        status, body, _ = get(url, "application/json")
         body = JSON.parse(body) if status == 200
         [status, body]
       rescue JSON::ParserError
         raise DirectorError, "Cannot parse director response: #{body}"
+      end
+
+      def add_query_string(url, parts)
+        if parts.size > 0
+          "#{url}?#{parts.join("&")}"
+        else
+          url
+        end
       end
 
     end

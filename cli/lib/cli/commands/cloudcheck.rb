@@ -28,8 +28,12 @@ module Bosh::Cli::Command
       manifest = prepare_deployment_manifest
       deployment_name = manifest["name"]
 
-      status, body = director.perform_cloud_scan(deployment_name)
-      scan_failed(status, body) if status != :done
+      status, _ = director.perform_cloud_scan(deployment_name)
+
+      if status != :done
+        task_report(status)
+        exit(1)
+      end
 
       nl
       say("Scan is complete, checking if any problems found...")
@@ -69,36 +73,17 @@ module Bosh::Cli::Command
         hash
       end
 
-      status, body = director.apply_resolutions(deployment_name, action_map)
-      resolution_failed(status, body) if status != :done
+      status, _ = director.apply_resolutions(deployment_name, action_map)
+
+      if status != :done
+        task_report(status)
+        exit(1)
+      end
+
       say("Cloudcheck is finished".green)
     end
 
     private
-
-    def scan_failed(status, response)
-      responses = {
-        :non_trackable => "Unable to track cloud scan progress, " +
-            "please update your director",
-        :track_timeout => "Timed out while tracking cloud scan progress",
-        :error         => "Cloud scan error",
-        :invalid       => "Invalid cloud scan request"
-      }
-
-      err(responses[status] || "Cloud scan failed: #{response}")
-    end
-
-    def resolution_failed(status, response)
-      responses = {
-        :non_trackable => "Unable to track problem resolution progress, " +
-            "please update your director",
-        :track_timeout => "Timed out while tracking problem resolution progress",
-        :error         => "Problem resolution error",
-        :invalid       => "Invalid problem resolution request"
-      }
-
-      err(responses[status] || "Problem resolution failed: #{response}")
-    end
 
     def verify_problems
       err("Invalid problem list format") unless @problems.kind_of?(Enumerable)
@@ -150,7 +135,6 @@ module Bosh::Cli::Command
       nl
 
       @problems.each_with_index do |problem, index|
-        description = problem["description"]
         plan = @resolutions[problem["id"]]["plan"]
         padding = " " * ((index+1).to_s.size + 4)
         say("  #{index+1}. #{problem["description"]}")

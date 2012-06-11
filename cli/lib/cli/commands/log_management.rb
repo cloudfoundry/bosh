@@ -11,6 +11,7 @@ module Bosh::Cli::Command
       job = args.shift
       index = args.shift
       filters = nil
+      log_type = nil
 
       for_job = args.delete("--job")
       for_agent = args.delete("--agent")

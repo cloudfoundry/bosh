@@ -120,8 +120,8 @@ module Bosh::Cli::Command
       refresh("  #{desc.yellow.ljust(40)}#{responses[status]}\n")
 
       if status == :error
-        task = director.get_task(task_id)
-        say("  #{task["result"].red}")
+        result = director.get_task_result(task_id)
+        say("  #{result.to_s.red}")
       end
 
       status == :done

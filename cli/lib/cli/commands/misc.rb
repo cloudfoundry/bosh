@@ -53,16 +53,16 @@ module Bosh::Cli::Command
             File.join(work_dir, "releases")).latest_version
 
         say("Dev name:      %s" % [dev_name ? dev_name.green : "not set".red])
-        say("Dev version:   %s" % [dev_version && dev_version > 0 ?
-                                       dev_version.to_s.green : "
-                                       no versions yet".red])
+        say("Dev version:   %s" % [dev_version ?
+                                     dev_version.to_s.green :
+                                     "no versions yet".red])
         say("\n")
         say("Final name:    %s" % [final_name ?
                                        final_name.green :
                                        "not set".red])
-        say("Final version: %s" % [final_version && final_version > 0 ?
-                                       final_version.to_s.green :
-                                       "no versions yet".red])
+        say("Final version: %s" % [final_version ?
+                                     final_version.to_s.green :
+                                     "no versions yet".red])
 
         say("\n")
         say("Packages")

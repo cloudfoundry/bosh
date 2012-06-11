@@ -24,7 +24,7 @@ describe String do
     end
   end
 
-  it "has colorization helpers" do
+  it "has colorization helpers (but only if tty)" do
     Bosh::Cli::Config.colorize = false
     "string".red.should   == "string"
     "string".green.should == "string"
@@ -32,10 +32,14 @@ describe String do
     "string".colorize(:green).should == "string"
 
     Bosh::Cli::Config.colorize = true
+    Bosh::Cli::Config.output.stub(:tty?).and_return(true)
     "string".red.should == "\e[0m\e[31mstring\e[0m"
     "string".green.should == "\e[0m\e[32mstring\e[0m"
     "string".colorize("a").should == "string"
     "string".colorize(:green).should == "\e[0m\e[32mstring\e[0m"
+
+    Bosh::Cli::Config.output.stub(:tty?).and_return(false)
+    "string".green.should == "string"
   end
 end
 

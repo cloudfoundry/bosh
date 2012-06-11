@@ -163,18 +163,9 @@ module Bosh::Cli::Command
       end
 
       say("\nUploading release...\n")
-      status, message = director.upload_release(tarball_path)
+      status, _ = director.upload_release(tarball_path)
 
-      responses = {
-        :done => "Release uploaded and updated",
-        :non_trackable => "Uploaded release but director at #{target} " +
-                           "doesn't support update tracking",
-        :track_timeout => "Uploaded release but timed out out " +
-                           "while tracking status",
-        :error => "Uploaded release but received an error while tracking status"
-      }
-
-      say(responses[status] || "Cannot upload release: #{message}")
+      task_report(status, "Release uploaded")
     end
 
     def create(*options)
@@ -200,10 +191,10 @@ module Bosh::Cli::Command
     def create_from_spec(*options)
       flags = options.inject({}) { |h, option| h[option] = true; h }
 
-      final         = flags.delete("--final")
-      force         = flags.delete("--force")
+      final = flags.delete("--final")
+      force = flags.delete("--force")
       manifest_only = !flags.delete("--with-tarball")
-      dry_run       = flags.delete("--dry-run")
+      dry_run = flags.delete("--dry-run")
 
       if final && !release.has_blobstore_secret?
         say("Can't create final release without blobstore secret".red)
@@ -405,20 +396,9 @@ module Bosh::Cli::Command
       end
 
       if confirmed?
-        status, body = director.delete_release(name, :force => force,
+        status, _ = director.delete_release(name, :force => force,
                                                :version => version)
-        responses = {
-          :done => "Deleted #{desc}",
-          :non_trackable => "Started deleting release but director " +
-                            "at '#{target}' doesn't support " +
-                            "deployment tracking",
-          :track_timeout => "Started deleting release but timed out out " +
-                            "while tracking status",
-          :error => "Started deleting release but received an error " +
-                    "while tracking status",
-        }
-
-        say(responses[status] || "Cannot delete release: #{body}")
+        task_report(status, "Deleted #{desc}")
       else
         say("Canceled deleting release".green)
       end

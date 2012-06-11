@@ -15,6 +15,7 @@ module Bosh::Cli
         config_file = @options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
         @config = Config.new(config_file)
         @cache = Config.cache
+        @exit_code = 0
       end
 
       class << self
@@ -104,6 +105,42 @@ module Bosh::Cli
         ret = (target_name.blank? || target_name == target_url ?
             target_name : "%s (%s)" % [target_name, target_url])
         ret + " %s" % target_version if ret
+      end
+
+      # Sets or returns command exit code
+      # @param [optional,Integer] code If param is given, sets exit code. If
+      #   it's nil, returns previously set exit_code
+      def exit_code(code = nil)
+        if code
+          @exit_code = code
+        else
+          @exit_code
+        end
+      end
+
+      # Prints director task completion report. Note that event log usually
+      # contains pretty detailed error report and other UI niceties, so most
+      # of the time this could just do nothing
+      # @param [Symbol] status Task status
+      def task_report(status, success_msg = nil, error_msg = nil)
+        case status
+          when :non_trackable
+            report = "Can't track director task".red
+          when :track_timeout
+            report = "Task tracking timeout".red
+          when :error
+            report = error_msg
+          when :done
+            report = success_msg
+          else
+            report = nil
+        end
+
+        if status != :done
+          exit_code(1)
+        end
+
+        say("\n#{report}") if report
       end
 
       protected

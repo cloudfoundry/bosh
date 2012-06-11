@@ -107,8 +107,8 @@ module Bosh::Cli
     #     deployment file.
     def set_deployment(deployment_file_path)
       raise MissingTarget, "Must have a target set." if target.nil?
-      @config_file["deployment"] = { } if is_old_deployment_config?
-      @config_file["deployment"] ||= { }
+      @config_file["deployment"] = {} if is_old_deployment_config?
+      @config_file["deployment"] ||= {}
       @config_file["deployment"][target] = deployment_file_path
     end
 

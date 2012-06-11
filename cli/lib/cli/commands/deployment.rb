@@ -85,20 +85,9 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      status, body = director.deploy(manifest_yaml, :recreate => recreate)
+      status, _ = director.deploy(manifest_yaml, :recreate => recreate)
 
-      responses = {
-        :done => "Deployed #{desc}",
-        :non_trackable => "Started deployment but director at `#{target}' " +
-                           "doesn't support deployment tracking",
-        :track_timeout => "Started deployment but timed out out " +
-                          "while tracking status",
-        :error => "Started deployment but received an error " +
-                  "while tracking status",
-        :invalid => "Deployment is invalid, please fix it and deploy again"
-      }
-
-      say(responses[status] || "Cannot deploy: #{body}")
+      task_report(status, "Deployed #{desc}")
     end
 
     def delete(name, *options)
@@ -113,19 +102,9 @@ module Bosh::Cli::Command
         return
       end
 
-      status, message = director.delete_deployment(name, :force => force)
+      status, _ = director.delete_deployment(name, :force => force)
 
-      responses = {
-        :done          => "Deleted deployment '#{name}'",
-        :non_trackable => "Deployment delete in progress but director " +
-            "at '#{target}' doesn't support task tracking",
-        :track_timeout => "Timed out out while tracking deployment " +
-            "deletion progress",
-        :error         => "Attempted to delete deployment but received " +
-            "an error while tracking status",
-      }
-
-      say(responses[status] || "Cannot delete deployment: #{message}")
+      task_report(status, "Deleted deployment `#{name}'")
     end
 
     def list
@@ -136,7 +115,7 @@ module Bosh::Cli::Command
       err("No deployments") if deployments.size == 0
 
       deployments_table = table do |t|
-        t.headings = ["Name"]
+        t.headings = %w(Name)
         deployments.each do |r|
           t << [r["name"]]
         end

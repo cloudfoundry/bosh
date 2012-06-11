@@ -6,7 +6,7 @@ module Bosh::Cli
     def self.create_for_log_type(log_type)
       if log_type == "event"
         EventLogRenderer.new
-      elsif log_type == "result"
+      elsif log_type == "result" || log_type == "none"
         # Null renderer doesn't output anything to screen, so it fits well
         # in case we need to fetch task result log only, without rendering it
         NullRenderer.new
