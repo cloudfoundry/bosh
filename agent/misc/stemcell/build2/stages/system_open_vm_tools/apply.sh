@@ -8,6 +8,9 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
+# Only install open-vm-tools on lucid
+[ $DISTRIB_CODENAME != "lucid" ] && exit 0
+
 mkdir -p $chroot/tmp
 cp $assets_dir/open-vm-*.deb $chroot/tmp
 
