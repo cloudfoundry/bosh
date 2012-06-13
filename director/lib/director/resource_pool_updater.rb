@@ -48,7 +48,7 @@ module Bosh::Director
     end
 
     def create_missing_vm(idle_vm)
-      deployment = @resource_pool.deployment.deployment
+      deployment = @resource_pool.deployment.model
       stemcell = @resource_pool.stemcell.stemcell
 
       vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,

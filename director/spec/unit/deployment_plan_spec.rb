@@ -13,16 +13,11 @@ describe Bosh::Director::DeploymentPlan do
         BD::DeploymentPlan.any_instance.should_receive(method_name)
       end
 
-      BD::DeploymentPlan.new({:some => :manifest})
+      plan = BD::DeploymentPlan.new({:some => :manifest})
+      plan.parse
     end
 
     describe :options do
-      before(:each) do
-        MOCKED_METHODS.each do |method_name|
-          BD::DeploymentPlan.any_instance.stub(method_name)
-        end
-      end
-
       it "should parse recreate" do
         plan = BD::DeploymentPlan.new({})
         plan.recreate.should == false
@@ -34,44 +29,29 @@ describe Bosh::Director::DeploymentPlan do
   end
 
   describe :parse_name do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_name]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should parse the raw and canonical names" do
       plan = BD::DeploymentPlan.new({"name" => "Test Deployment"})
+      plan.parse_name
       plan.name.should == "Test Deployment"
       plan.canonical_name.should == "testdeployment"
     end
   end
 
   describe :parse_properties do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_properties]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should parse basic properties" do
       plan = BD::DeploymentPlan.new({"properties" => {"foo" => "bar"}})
+      plan.parse_properties
       plan.properties.should == {"foo" => "bar"}
     end
 
     it "should allow not having any properties" do
       plan = BD::DeploymentPlan.new({"name" => "Test Deployment"})
+      plan.parse_properties
       plan.properties.should == {}
     end
   end
 
   describe :parse_releases do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_releases]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     let(:release_spec) do
       {
         "name" => "foo",
@@ -88,6 +68,7 @@ describe Bosh::Director::DeploymentPlan do
 
     it "should create a release spec" do
       plan = BD::DeploymentPlan.new({ "release" => release_spec })
+      plan.parse_releases
       plan.releases.size.should == 1
       release = plan.releases[0]
       release.should be_kind_of(Bosh::Director::DeploymentPlan::ReleaseSpec)
@@ -100,12 +81,14 @@ describe Bosh::Director::DeploymentPlan do
 
     it "should fail when the release section is omitted" do
       lambda {
-        BD::DeploymentPlan.new({})
+        plan = BD::DeploymentPlan.new({})
+        plan.parse_releases
       }.should raise_error(BD::ValidationMissingField)
     end
 
     it "support multiple releases per deployment" do
       plan = BD::DeploymentPlan.new({ "releases" => releases_spec })
+      plan.parse_releases
       plan.releases.size.should == 2
       plan.releases[0].spec.should == releases_spec[0]
       plan.releases[1].spec.should == releases_spec[1]
@@ -119,30 +102,27 @@ describe Bosh::Director::DeploymentPlan do
 
     it "supports either 'releases' or 'release' manifest section, not both" do
       expect {
-        BD::DeploymentPlan.new({
-                                 "releases" => releases_spec,
-                                 "release" => release_spec
-                               })
+        plan = BD::DeploymentPlan.new({
+                                        "releases" => releases_spec,
+                                        "release" => release_spec
+                                      })
+        plan.parse_releases
       }.to raise_error(/use one of the two/)
     end
 
     it "should detect duplicate release names" do
       expect {
-        BD::DeploymentPlan.new({
-                                 "releases" => [release_spec, release_spec]
-                               })
+        plan = BD::DeploymentPlan.new({
+                                        "releases" => [release_spec,
+                                                       release_spec]
+                                      })
+        plan.parse_releases
       }.to raise_error(/duplicate release name/i)
     end
 
   end
 
   describe :parse_networks do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_networks]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should create manual network by default" do
       network_spec = mock(:network_spec)
       network_spec.stub(:name).and_return("Bar")
@@ -157,6 +137,7 @@ describe Bosh::Director::DeploymentPlan do
         network_spec
       end
       plan = BD::DeploymentPlan.new({"networks" => [{"foo" => "bar"}]})
+      plan.parse_networks
       received_plan.should == plan
     end
 
@@ -170,21 +151,24 @@ describe Bosh::Director::DeploymentPlan do
       end
 
       lambda {
-        BD::DeploymentPlan.new({"networks" => [
-            {"name" => "bar", "cname" => "bar"},
-            {"name" => "Bar", "cname" => "bar"}
+        plan = BD::DeploymentPlan.new({"networks" => [
+          {"name" => "bar", "cname" => "bar"},
+          {"name" => "Bar", "cname" => "bar"}
         ]})
+        plan.parse_networks
       }.should raise_error(BD::DeploymentCanonicalNetworkNameTaken,
           "Invalid network name `Bar', canonical name already taken")
     end
 
     it "should require at least one network" do
       lambda {
-        BD::DeploymentPlan.new({"networks" => []})
+        plan = BD::DeploymentPlan.new({"networks" => []})
+        plan.parse_networks
       }.should raise_error(BD::DeploymentNoNetworks, "No networks specified")
 
       lambda {
-        BD::DeploymentPlan.new({})
+        plan = BD::DeploymentPlan.new({})
+        plan.parse_networks
       }.should raise_error(BD::ValidationMissingField)
     end
 
@@ -192,12 +176,6 @@ describe Bosh::Director::DeploymentPlan do
   end
 
   describe :parse_compilation do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_compilation]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should delegate to CompilationConfig" do
       received_plan = nil
       BD::DeploymentPlan::CompilationConfig.
@@ -206,45 +184,37 @@ describe Bosh::Director::DeploymentPlan do
         spec.should == {"foo" => "bar"}
       end
       plan = BD::DeploymentPlan.new({"compilation" => {"foo" => "bar"}})
+      plan.parse_compilation
       received_plan.should == plan
     end
 
     it "should fail when the compilation section is omitted" do
       lambda {
-        BD::DeploymentPlan.new({})
+        plan = BD::DeploymentPlan.new({})
+        plan.parse_compilation
       }.should raise_error(BD::ValidationMissingField)
     end
   end
 
   describe :parse_update do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_update]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should delegate to UpdateConfig" do
       BD::DeploymentPlan::UpdateConfig.should_receive(:new).with do |spec|
         spec.should == {"foo" => "bar"}
       end
-      BD::DeploymentPlan.new({"update" => {"foo" => "bar"}})
+      plan = BD::DeploymentPlan.new({"update" => {"foo" => "bar"}})
+      plan.parse_update
     end
 
     it "should fail when the update section is omitted" do
       lambda {
-        BD::DeploymentPlan.new({})
+        plan = BD::DeploymentPlan.new({})
+        plan.parse_update
       }.should raise_error(BD::ValidationMissingField)
     end
 
   end
 
   describe :parse_resource_pools do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_resource_pools]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should delegate to ResourcePoolSpec" do
       resource_pool_spec = mock(:resource_pool_spec)
       resource_pool_spec.stub(:name).and_return("foo")
@@ -258,6 +228,7 @@ describe Bosh::Director::DeploymentPlan do
       end
 
       plan = BD::DeploymentPlan.new({"resource_pools" => [{"foo" => "bar"}]})
+      plan.parse_resource_pools
       plan.resource_pools.should == [resource_pool_spec]
       plan.resource_pool("foo").should == resource_pool_spec
       received_plan.should == plan
@@ -271,27 +242,23 @@ describe Bosh::Director::DeploymentPlan do
         resource_pool_spec
       end
       lambda {
-        BD::DeploymentPlan.new(
+        plan = BD::DeploymentPlan.new(
           {"resource_pools" => [{"name" => "bar"}, {"name" => "bar"}]}
         )
+        plan.parse_resource_pools
       }.should raise_error(BD::DeploymentDuplicateResourcePoolName,
                            "Duplicate resource pool name `bar'")
     end
 
     pending "should require at least one resource pool" do
       lambda {
-        BD::DeploymentPlan.new({"resource_pools" => []})
+        plan = BD::DeploymentPlan.new({"resource_pools" => []})
+        plan.parse_resource_pools
       }.should raise_error(%q{No resource pools specified.})
     end
   end
 
   describe :parse_jobs do
-    before(:each) do
-      (MOCKED_METHODS - [:parse_jobs]).each do |method_name|
-        BD::DeploymentPlan.any_instance.stub(method_name)
-      end
-    end
-
     it "should delegate to JobSpec" do
       job_spec = mock(:job_spec)
       job_spec.stub(:name).and_return("Foo")
@@ -306,6 +273,7 @@ describe Bosh::Director::DeploymentPlan do
         job_spec
       end
       plan = BD::DeploymentPlan.new({"jobs" => [{"foo" => "bar"}]})
+      plan.parse_jobs
       received_plan.should == plan
     end
 
@@ -318,10 +286,11 @@ describe Bosh::Director::DeploymentPlan do
         job_spec
       end
       lambda {
-        BD::DeploymentPlan.new({"jobs" => [
+        plan = BD::DeploymentPlan.new({"jobs" => [
             {"name" => "Bar", "cname" => "bar"},
             {"name" => "bar", "cname" => "bar"}
         ]})
+        plan.parse_jobs
       }.should raise_error(BD::DeploymentCanonicalJobNameTaken,
                            "Invalid job name `bar', " +
                            "canonical name already taken")
@@ -329,18 +298,25 @@ describe Bosh::Director::DeploymentPlan do
 
     it "should raise exception if renamed job is being referenced in deployment" do
       lambda {
-        BD::DeploymentPlan.new(
+        plan = BD::DeploymentPlan.new(
           {"jobs" => [{"name" => "bar"}]},
           {"job_rename" => {"old_name" => "bar", "new_name" => "foo"}}
         )
+        plan.parse_jobs
       }.should raise_error(BD::DeploymentRenamedJobNameStillUsed,
                            "Renamed job `bar' is still referenced " +
                            "in deployment manifest")
     end
 
     it "should allow you to not have any jobs" do
-      BD::DeploymentPlan.new({"jobs" => []}).jobs.should be_empty
-      BD::DeploymentPlan.new({}).jobs.should be_empty
+      plan = BD::DeploymentPlan.new({"jobs" => []})
+      plan.parse_jobs
+
+      plan.jobs.should be_empty
+
+      plan = BD::DeploymentPlan.new({})
+      plan.parse_jobs
+      plan.jobs.should be_empty
     end
   end
 end
