@@ -130,7 +130,7 @@ describe Bosh::Director::InstanceUpdater do
     @release_spec.stub!(:spec).and_return({"name" => "test_release", "version" => 99})
 
     @deployment_plan.stub!(:resource_pool).with("small").and_return(@resource_pool_spec)
-    @deployment_plan.stub!(:deployment).and_return(@deployment)
+    @deployment_plan.stub!(:model).and_return(@deployment)
     @deployment_plan.stub!(:name).and_return("test_deployment")
     @deployment_plan.stub!(:release).and_return(@release_spec)
 
