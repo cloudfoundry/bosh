@@ -5,52 +5,32 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::DeploymentPlanCompiler do
 
   before(:each) do
+    @cloud = stub("CPI")
+    BD::Config.stub(:cloud).and_return(@cloud)
+  end
+
+  let(:plan) do
+    mock(BD::DeploymentPlan)
+  end
+
+  let(:compiler) do
+    BD::DeploymentPlanCompiler.new(plan)
+  end
+
+  it "should bind deployment" do
+    plan.should_receive(:bind_model)
+    compiler.bind_deployment
+  end
+
+end
+
+describe Bosh::Director::DeploymentPlanCompiler do
+
+  before(:each) do
     @cloud = stub(:Cloud)
     BD::Config.stub(:cloud).and_return(@cloud)
     @deployment_plan = stub(:DeploymentPlan)
     @deployment_plan_compiler = BD::DeploymentPlanCompiler.new(@deployment_plan)
-  end
-
-  describe :bind_deployment do
-    it "should create the deployment if it doesn't exist" do
-      @deployment_plan.stub!(:name).and_return("deployment")
-      @deployment_plan.stub!(:canonical_name).and_return("deployment")
-
-      deployment = nil
-      @deployment_plan.should_receive(:deployment=).
-          and_return { |*args| deployment = args.first }
-
-      @deployment_plan_compiler.bind_deployment
-
-      BD::Models::Deployment.count.should == 1
-      BD::Models::Deployment.first.should == deployment
-      deployment.name.should == "deployment"
-    end
-
-    it "should reuse a deployment if it already exists" do
-      @deployment_plan.stub!(:name).and_return("deployment")
-      @deployment_plan.stub!(:canonical_name).and_return("deployment")
-
-      deployment = BD::Models::Deployment.make(:name => "deployment")
-      @deployment_plan.should_receive(:deployment=).with(deployment)
-
-      @deployment_plan_compiler.bind_deployment
-
-      BD::Models::Deployment.count.should == 1
-    end
-
-    it "should not allow you to create a deployment if it clashes with a canonical name" do
-      @deployment_plan.stub!(:name).and_return("dep-a")
-      @deployment_plan.stub!(:canonical_name).and_return("dep-a")
-
-      BD::Models::Deployment.make(:name => "dep_a")
-
-      lambda {
-        @deployment_plan_compiler.bind_deployment
-      }.should raise_error(BD::DeploymentCanonicalNameTaken,
-                           "Invalid deployment name `dep-a', " +
-                           "canonical name already taken")
-    end
   end
 
   describe :bind_releases do
@@ -76,7 +56,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       bar_spec = { "name" => "bar", "version" => "42" }
       bar = BD::DeploymentPlan::ReleaseSpec.new("plan", bar_spec)
 
-      @deployment_plan.stub(:deployment).and_return(deployment)
+      @deployment_plan.stub(:model).and_return(deployment)
       @deployment_plan.stub(:releases).and_return([foo, bar])
 
       @deployment_plan_compiler.bind_releases
@@ -114,7 +94,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
           :release => release, :version => 10)
       deployment.add_release_version(old_version)
       @release_spec.as_null_object
-      @deployment_plan.stub(:deployment).and_return(deployment)
+      @deployment_plan.stub(:model).and_return(deployment)
       @deployment_plan_compiler.bind_releases
 
       deployment.releases.to_a.should == [release]
@@ -129,7 +109,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       vm_2 = BD::Models::Vm.make
       deployment.add_vm(vm_1)
       deployment.add_vm(vm_2)
-      @deployment_plan.stub(:deployment).and_return(deployment)
+      @deployment_plan.stub(:model).and_return(deployment)
 
       thread_pool = stub(:ThreadPool)
       thread_pool.stub(:wrap).and_yield(thread_pool)
@@ -434,7 +414,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
     before(:each) do
       @deployment = BD::Models::Deployment.make(:name => "foo")
       @vm = BD::Models::Vm.make(:deployment => @deployment , :cid => "foo")
-      @deployment_plan.stub(:deployment).and_return(@deployment)
+      @deployment_plan.stub(:name).and_return("foo")
+      @deployment_plan.stub(:model).and_return(@deployment)
     end
 
     it "should do nothing when VM is ok" do
@@ -523,7 +504,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @job_spec = stub(:JobSpec)
       @instance_spec = stub(:InstanceSpec)
 
-      @deployment_plan.stub(:deployment).and_return(@deployment)
+      @deployment_plan.stub(:model).and_return(@deployment)
       @deployment_plan.stub(:jobs).and_return([@job_spec])
 
       @job_spec.stub(:instances).and_return([@instance_spec])
