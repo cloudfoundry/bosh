@@ -223,7 +223,7 @@ module Bosh::Director
         @network.name => @network.network_settings(reservation)
       }
 
-      vm = VmCreator.new.create(@deployment_plan.deployment, stemcell,
+      vm = VmCreator.new.create(@deployment_plan.model, stemcell,
                                 @compilation_resources, network_settings,
                                 nil, @compilation_env)
       vm_data = @vm_reuser.add_vm(reservation, vm, stemcell, network_settings)

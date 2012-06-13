@@ -70,7 +70,7 @@ describe Bosh::Director::ResourcePoolUpdater do
       @idle_vm.stub(:network_settings).and_return(@network_settings)
       @deployment = BD::Models::Deployment.make
       @deployment_plan = stub(:DeploymentPlan)
-      @deployment_plan.stub(:deployment).and_return(@deployment)
+      @deployment_plan.stub(:model).and_return(@deployment)
       @stemcell = BD::Models::Stemcell.make
       @stemcell_spec = stub(:StemcellSpec)
       @stemcell_spec.stub(:stemcell).and_return(@stemcell)

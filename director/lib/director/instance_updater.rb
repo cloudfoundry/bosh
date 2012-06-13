@@ -183,7 +183,7 @@ module Bosh::Director
       stemcell = @resource_pool_spec.stemcell.stemcell
       disks = [@instance.persistent_disk_cid, new_disk_id].compact
 
-      @vm = VmCreator.new.create(@deployment_plan.deployment, stemcell,
+      @vm = VmCreator.new.create(@deployment_plan.model, stemcell,
                                  @resource_pool_spec.cloud_properties,
                                  @instance_spec.network_settings, disks,
                                  @resource_pool_spec.env)
