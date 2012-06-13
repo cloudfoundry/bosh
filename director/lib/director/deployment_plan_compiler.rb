@@ -1,11 +1,13 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Director
+  # DeploymentPlanCompiler is used to populate deployment plan with information
+  # about existing deployment and information form director DB
   class DeploymentPlanCompiler
-    include Bosh::Director::DnsHelper
-    include Bosh::Director::IpUtil
+    include DnsHelper
+    include IpUtil
 
-    # @param [Bosh::Director::DeploymentPlan] deployment_plan Deployment plan
+    # @param [DeploymentPlan] deployment_plan Deployment plan
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
@@ -15,23 +17,7 @@ module Bosh::Director
     end
 
     def bind_deployment
-      Models::Deployment.db.transaction do
-        deployment = Models::Deployment.find(:name => @deployment_plan.name)
-        # HACK, since canonical uniqueness is not enforced in the DB
-        if deployment.nil?
-          canonical_name_index = Set.new
-          Models::Deployment.each do |other_deployment|
-            canonical_name_index << canonical(other_deployment.name)
-          end
-          if canonical_name_index.include?(@deployment_plan.canonical_name)
-            raise DeploymentCanonicalNameTaken,
-                  "Invalid deployment name `#{@deployment_plan.name}', " +
-                  "canonical name already taken"
-          end
-          deployment = Models::Deployment.create(:name => @deployment_plan.name)
-        end
-        @deployment_plan.deployment = deployment
-      end
+      @deployment_plan.bind_model
     end
 
     def bind_releases
@@ -61,7 +47,7 @@ module Bosh::Director
                       "#{release_version.pretty_inspect}")
         release_spec.release_version = release_version
 
-        deployment = @deployment_plan.deployment
+        deployment = @deployment_plan.model
 
         # TODO: this might not be needed anymore, as deployment is
         #       holding onto release version, release is reachable from there
@@ -80,7 +66,7 @@ module Bosh::Director
     def bind_existing_deployment
       lock = Mutex.new
       ThreadPool.new(:max_threads => 32).wrap do |pool|
-        @deployment_plan.deployment.vms.each do |vm|
+        @deployment_plan.model.vms.each do |vm|
           pool.process do
             with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
               bind_existing_vm(lock, vm)
@@ -211,7 +197,7 @@ module Bosh::Director
       end
 
       actual_deployment_name = state["deployment"]
-      expected_deployment_name = @deployment_plan.deployment.name
+      expected_deployment_name = @deployment_plan.name
 
       if actual_deployment_name != expected_deployment_name
         raise AgentWrongDeployment,
@@ -309,7 +295,7 @@ module Bosh::Director
           if instance.nil?
             # look up the instance again, in case it wasn't associated with a VM
             conditions = {
-              :deployment_id => @deployment_plan.deployment.id,
+              :deployment_id => @deployment_plan.model.id,
               :job => job.name,
               :index => instance_spec.index
             }
@@ -426,10 +412,10 @@ module Bosh::Director
           stemcell = @stemcell_manager.find_by_name_and_version(name, version)
 
           deployments = stemcell.deployments_dataset.
-            filter(:deployment_id => @deployment_plan.deployment.id)
+            filter(:deployment_id => @deployment_plan.model.id)
 
           if deployments.empty?
-            stemcell.add_deployment(@deployment_plan.deployment)
+            stemcell.add_deployment(@deployment_plan.model)
           end
           stemcell_spec.stemcell = stemcell
         end

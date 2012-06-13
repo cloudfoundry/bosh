@@ -27,6 +27,7 @@ module Bosh::Director
 
         manifest_as_hash = YAML.load(@manifest)
         @deployment_plan = DeploymentPlan.new(manifest_as_hash, plan_options)
+        @deployment_plan.parse
         logger.info("Created deployment plan")
 
         resource_pools = @deployment_plan.resource_pools
@@ -170,7 +171,7 @@ module Bosh::Director
           current_stemcells << resource_pool.stemcell.stemcell
         end
 
-        deployment = @deployment_plan.deployment
+        deployment = @deployment_plan.model
         stemcells = deployment.stemcells
         stemcells.each do |stemcell|
           unless current_stemcells.include?(stemcell)
@@ -185,7 +186,7 @@ module Bosh::Director
             logger.info("Preparing deployment")
             prepare
             begin
-              deployment = @deployment_plan.deployment
+              deployment = @deployment_plan.model
               logger.info("Finished preparing deployment")
               logger.info("Updating deployment")
               update
