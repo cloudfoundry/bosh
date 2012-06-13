@@ -37,7 +37,7 @@ describe Bosh::Director::PackageCompiler do
     @deployment = BD::Models::Deployment.make
     @deployment_plan = stub(:DeploymentPlan)
     @deployment_plan.stub(:compilation).and_return(@compilation_config)
-    @deployment_plan.stub(:deployment).and_return(@deployment)
+    @deployment_plan.stub(:model).and_return(@deployment)
 
     @package_compiler = BD::PackageCompiler.new(@deployment_plan)
   end
