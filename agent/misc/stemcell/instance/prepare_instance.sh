@@ -143,6 +143,16 @@ find / -xdev -perm +6000 -a -type f \
   -a -not \( -name sudo -o -name su -o -name sudoedit \) \
   -exec chmod ug-s {} \;
 
+# setup sudoers to use includedir, and make sure we don't break anything
+cp -p /etc/sudoers /etc/sudoers.save
+echo '#includedir /etc/sudoers.d' >> /etc/sudoers
+visudo -c
+if [ $? -ne 0 ]; then
+  echo "ERROR: bad sudoers file" >2
+  cp -p /etc/sudoers.save /etc/sudoers
+fi
+rm /etc/sudoers.save
+
 # the bosh agent installs a config that rotates on size
 mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
 
