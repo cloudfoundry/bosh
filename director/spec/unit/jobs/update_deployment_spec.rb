@@ -175,13 +175,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       foo_release_spec = mock("release_spec",
                               :name => "foo",
-                              :release => foo_release,
-                              :release_version => foo_release_version)
+                              :model => foo_release_version)
 
       bar_release_spec = mock("release_spec",
                               :name => "bar",
-                              :release => bar_release,
-                              :release_version => bar_release_version)
+                              :model => bar_release_version)
 
       release_specs = [foo_release_spec, bar_release_spec]
 
