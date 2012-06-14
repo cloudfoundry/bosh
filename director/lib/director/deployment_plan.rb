@@ -138,13 +138,13 @@ module Bosh::Director
     end
 
     # Returns all releases in a deployment plan
-    # @return [Array<Bosh::Director::DeploymentPlan::ReleaseSpec>]
+    # @return [Array<Bosh::Director::DeploymentPlan::Release>]
     def releases
       @releases.values
     end
 
     # Returns a named release
-    # @return [Bosh::Director::DeploymentPlan::ReleaseSpec]
+    # @return [Bosh::Director::DeploymentPlan::Release]
     def release(name)
       @releases[name]
     end
@@ -201,7 +201,7 @@ module Bosh::Director
 
       @releases = {}
       release_specs.each do |release_spec|
-        release = ReleaseSpec.new(self, release_spec)
+        release = Release.new(self, release_spec)
         if @releases.has_key?(release.name)
           raise DeploymentDuplicateReleaseName,
                 "Duplicate release name `#{release.name}'"

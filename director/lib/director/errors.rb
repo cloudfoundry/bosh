@@ -156,8 +156,6 @@ module Bosh::Director
   DeploymentNoNetworks = err(190007)
   DeploymentCanonicalNameTaken = err(190008)
   DeploymentInvalidNetworkType = err(190009)
-  DeploymentUnknownRelease = err(190010)
-  DeploymentUnknownReleaseVersion = err(190011)
   DeploymentUnknownTemplate = err(190012)
 
   CloudDiskNotAttached = err(390001)

@@ -23,9 +23,11 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
     it "should fail if the deployments still reference this release" do
       release = Bosh::Director::Models::Release.make(:name => "test")
+      version = Bosh::Director::Models::ReleaseVersion.
+        make(:release => release, :version => "42-dev")
       deployment = Bosh::Director::Models::Deployment.make(:name => "test")
 
-      deployment.add_release(release)
+      deployment.add_release_version(version)
 
       lock = stub("lock")
       Bosh::Director::Lock.stub!(:new).with("lock:release:test",
@@ -88,7 +90,6 @@ describe Bosh::Director::Jobs::DeleteRelease do
       manifest = YAML.dump("release" => { "name" => "test_release", "version" => "2"})
 
       deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => manifest)
-      deployment.add_release(release)
       deployment.add_release_version(rv2)
 
       lock = stub("lock")

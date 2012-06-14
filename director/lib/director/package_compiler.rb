@@ -7,7 +7,7 @@ module Bosh::Director
     attr_accessor :ready_tasks
     attr_accessor :network_reservations
 
-    # @param [Bosh::Director::DeploymentPlan] deployment_plan Deployment plan
+    # @param [DeploymentPlan] deployment_plan Deployment plan
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
 
@@ -310,9 +310,9 @@ module Bosh::Director
     end
 
     # Schedules package compilation for a given (package, stemcell) tuple
-    # @param [Bosh::Director::DeploymentPlan::JobSpec] job Job spec
-    # @param [Bosh::Director::Models::Package] package Package model
-    # @param [Bosh::Director::Models::Stemcell] stemcell Stemcell model
+    # @param [DeploymentPlan::JobSpec] job Job spec
+    # @param [Models::Package] package Package model
+    # @param [Models::Stemcell] stemcell Stemcell model
     def schedule_compilation(job, package, stemcell)
       @logger.info("Processing package: #{package.name}")
 
@@ -382,13 +382,13 @@ module Bosh::Director
       @package_id_index = {}
 
       @deployment_plan.releases.each do |release|
-        release_id = release.release.id
+        release_id = release.model.release_id
 
-        # We bucket packages by release name and package name, as packages
+        # We bucket packages by release id and package name, as packages
         # from different releases might have the same name
         @package_name_index[release_id] = {}
 
-        release.release_version.packages.each do |package|
+        release.model.packages.each do |package|
           @package_name_index[release_id][package.name] = package
           @package_id_index[package.id] = package
         end
