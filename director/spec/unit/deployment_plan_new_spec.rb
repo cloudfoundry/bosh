@@ -60,7 +60,5 @@ describe Bosh::Director::DeploymentPlan do
       plan.parse_name
       lambda { plan.bind_model }.should_not raise_error
     end
-
   end
-
 end
