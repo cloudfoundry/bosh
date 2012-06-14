@@ -22,6 +22,18 @@ describe Bosh::Director::DeploymentPlanCompiler do
     compiler.bind_deployment
   end
 
+  it "should bind releases" do
+    r1 = stub(BD::DeploymentPlan::Release)
+    r2 = stub(BD::DeploymentPlan::Release)
+
+    plan.should_receive(:releases).and_return([r1, r2])
+
+    r1.should_receive(:bind_model)
+    r2.should_receive(:bind_model)
+
+    compiler.bind_releases
+  end
+
 end
 
 describe Bosh::Director::DeploymentPlanCompiler do
@@ -31,75 +43,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
     BD::Config.stub(:cloud).and_return(@cloud)
     @deployment_plan = stub(:DeploymentPlan)
     @deployment_plan_compiler = BD::DeploymentPlanCompiler.new(@deployment_plan)
-  end
-
-  describe :bind_releases do
-    before(:each) do
-      @release_spec = stub(:ReleaseSpec)
-      @release_spec.stub(:name).and_return("my_release")
-      @release_spec.stub(:version).and_return(10)
-      @deployment_plan.stub(:releases).and_return([@release_spec])
-    end
-
-    it "should bind releases" do
-      deployment = BD::Models::Deployment.make
-
-      foo_release = BD::Models::Release.make(:name => "foo")
-      foo_version = BD::Models::ReleaseVersion.make(
-        :release => foo_release, :version => 17)
-      foo_spec = { "name" => "foo", "version" => "17" }
-      foo = BD::DeploymentPlan::ReleaseSpec.new("plan", foo_spec)
-
-      bar_release = BD::Models::Release.make(:name => "bar")
-      bar_version = BD::Models::ReleaseVersion.make(
-        :release => bar_release, :version => 42)
-      bar_spec = { "name" => "bar", "version" => "42" }
-      bar = BD::DeploymentPlan::ReleaseSpec.new("plan", bar_spec)
-
-      @deployment_plan.stub(:model).and_return(deployment)
-      @deployment_plan.stub(:releases).and_return([foo, bar])
-
-      @deployment_plan_compiler.bind_releases
-
-      foo.release.should == foo_release
-      foo.release_version.should == foo_version
-
-      bar.release.should == bar_release
-      bar.release_version.should == bar_version
-
-      deployment.releases.to_a.should =~ [foo_release, bar_release]
-      deployment.release_versions.to_a.should =~ [foo_version, bar_version]
-    end
-
-    it "should fail if the release doesn't exist" do
-      lambda {
-        @deployment_plan_compiler.bind_releases
-      }.should raise_error(/can't find release/i)
-    end
-
-    it "should fail if the release version doesn't exist" do
-      lambda {
-        release = BD::Models::Release.make(:name => "my_release")
-        @release_spec.should_receive(:release=).with(release)
-        @deployment_plan_compiler.bind_releases
-      }.should raise_error(/can't find release version/i)
-    end
-
-    it "should lock the release" do
-      deployment = BD::Models::Deployment.make
-      release = BD::Models::Release.make(:name => "my_release")
-      old_version = BD::Models::ReleaseVersion.make(
-          :release => release, :version => 9)
-      new_version = BD::Models::ReleaseVersion.make(
-          :release => release, :version => 10)
-      deployment.add_release_version(old_version)
-      @release_spec.as_null_object
-      @deployment_plan.stub(:model).and_return(deployment)
-      @deployment_plan_compiler.bind_releases
-
-      deployment.releases.to_a.should == [release]
-      deployment.release_versions.to_a.should =~ [old_version, new_version]
-    end
   end
 
   describe :bind_existing_deployment do
@@ -711,14 +654,14 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       @job_spec = stub(:JobSpec)
       @template_spec = stub(:TemplateSpec)
-      @release_spec = stub(:ReleaseSpec)
+      @release_spec = stub(BD::DeploymentPlan::Release)
 
       @template_spec.stub(:name).and_return("test_template")
 
       @deployment_plan.stub(:releases).and_return([@release_spec])
 
       @release_spec.stub(:templates).and_return([@template_spec])
-      @release_spec.stub(:release_version).and_return(@release_version)
+      @release_spec.stub(:model).and_return(@release_version)
     end
 
     it "should bind the compiled packages to the job" do
