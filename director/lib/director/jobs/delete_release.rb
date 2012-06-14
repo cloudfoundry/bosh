@@ -179,7 +179,9 @@ module Bosh::Director
 
           else
             logger.info("Checking for any deployments still using the release")
-            deployments = release.deployments
+            deployments = release.versions.map { |version|
+              version.deployments
+            }.flatten.uniq
 
             unless deployments.empty?
               names = deployments.map { |d| d.name }.join(", ")
