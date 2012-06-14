@@ -20,6 +20,9 @@ describe Bosh::Director::PackageCompiler do
     @task.stub(:package).and_return(@package)
     @task.stub(:stemcell).and_return(@stemcell)
 
+    @blobstore = mock("blobstore_client")
+    Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore)
+
     @cloud = stub(:Cloud)
     BD::Config.stub(:cloud).and_return(@cloud)
 
@@ -63,6 +66,50 @@ describe Bosh::Director::PackageCompiler do
       @package_compiler.should_receive(:release_networks)
 
       @package_compiler.compile
+    end
+  end
+
+  describe :find_compiled_package do
+    it "should find existing package" do
+      compiled_package = BD::Models::CompiledPackage.make
+
+      package = OpenStruct.new("id" => compiled_package.package_id)
+      stemcell = OpenStruct.new("id" => compiled_package.stemcell_id)
+      dependency_key = compiled_package.dependency_key
+
+      found = @package_compiler.find_compiled_package(package, stemcell,
+                                                      dependency_key)
+      found.should == compiled_package
+    end
+
+    it "should return nil if no similar packages are found " do
+      package = OpenStruct.new("id" => "blah")
+      stemcell = OpenStruct.new("id" => "blah")
+      dependency_key = ""
+
+      found = @package_compiler.find_compiled_package(package, stemcell,
+                                                      dependency_key)
+      found.should be_nil
+    end
+
+    it "should find and reuse a similar compiled package" do
+      stemcell = BD::Models::Stemcell.make()
+      compiled_package =
+        BD::Models::CompiledPackage.make(:stemcell_id => stemcell.id)
+      compiled_package_src =
+        BD::Models::Package[:id => compiled_package.package_id]
+      new_package =
+        BD::Models::Package.make(:sha1 => compiled_package_src.sha1)
+
+      dependency_key = compiled_package.dependency_key
+
+      @blobstore.stub(:get).and_return(nil)
+      @blobstore.stub(:create).and_return("new_blob_id")
+
+      found = @package_compiler.find_compiled_package(new_package, stemcell,
+                                                      dependency_key)
+      found.package_id == new_package.id
+      found.blobstore_id == "new_blob_id"
     end
   end
 

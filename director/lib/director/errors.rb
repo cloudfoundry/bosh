@@ -184,4 +184,5 @@ module Bosh::Director
   PackageCompilationNetworkNotReserved = err(430001)
   PackageCompilationNotEnoughWorkersForReuse = err(430002)
 
+  BadManifest = err(440001)
 end
