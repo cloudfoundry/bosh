@@ -21,45 +21,8 @@ module Bosh::Director
     end
 
     def bind_releases
-      release_specs = @deployment_plan.releases
-
-      release_specs.each do |release_spec|
-        name = release_spec.name
-        version = release_spec.version
-
-        release = Models::Release[:name => name]
-        if release.nil?
-          raise DeploymentUnknownRelease, "Can't find release `#{name}'"
-        end
-
-        @logger.debug("Found release: #{release.pretty_inspect}")
-        release_spec.release = release
-
-        release_version = Models::ReleaseVersion[:release_id => release.id,
-                                                 :version => version]
-
-        if release_version.nil?
-          raise DeploymentUnknownReleaseVersion,
-                "Can't find release version `#{name}/#{version}'"
-        end
-
-        @logger.debug("Found release version: " +
-                      "#{release_version.pretty_inspect}")
-        release_spec.release_version = release_version
-
-        deployment = @deployment_plan.model
-
-        # TODO: this might not be needed anymore, as deployment is
-        #       holding onto release version, release is reachable from there
-        unless deployment.releases.include?(release)
-          @logger.debug("Locking the release from deletion")
-          deployment.add_release(release)
-        end
-
-        unless deployment.release_versions.include?(release_version)
-          @logger.debug("Binding release version to deployment")
-          deployment.add_release_version(release_version)
-        end
+      @deployment_plan.releases.each do |release|
+        release.bind_model
       end
     end
 
@@ -368,7 +331,7 @@ module Bosh::Director
 
     def bind_templates
       @deployment_plan.releases.each do |release_spec|
-        release_version = release_spec.release_version
+        release_version = release_spec.model
 
         template_name_index = {}
         release_version.templates.each do |template|

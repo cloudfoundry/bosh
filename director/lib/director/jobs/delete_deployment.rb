@@ -39,7 +39,6 @@ module Bosh::Director
           end
 
           track_and_log("Detaching releases") do
-            deployment.remove_all_releases
             deployment.remove_all_release_versions
           end
 
