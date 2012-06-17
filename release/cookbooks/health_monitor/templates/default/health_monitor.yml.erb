@@ -55,6 +55,7 @@ plugins:
         from: <%= node[:health_monitor][:smtp][:from] %>
         host: <%= node[:health_monitor][:smtp][:host] %>
         port: <%= node[:health_monitor][:smtp][:port] %>
+        tls: <%= node[:health_monitor][:smtp][:tls] %>
         auth: <%= node[:health_monitor][:smtp][:auth] %>
         user: <%= node[:health_monitor][:smtp][:user] %>
         password: <%= node[:health_monitor][:smtp][:password] %>
