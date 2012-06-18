@@ -107,11 +107,25 @@ module Bosh::Cli::Command
       end
     end
 
+    def get_remote_packages(manifest_yaml, remote_release)
+      remote_packages_sha1 = match_remote_packages(manifest_yaml)
+
+      # Older directors may not match packages. For such
+      # cases we select packages from the existing release.
+      if remote_packages_sha1.size == 0 && remote_release
+        remote_packages_sha1 = remote_release["packages"].map do |pkg|
+          pkg["sha1"]
+        end
+      end
+      remote_packages_sha1
+    end
+
     def upload_manifest(manifest_path)
       manifest = load_yaml_file(manifest_path)
       remote_release = get_remote_release(manifest["name"]) rescue nil
       remote_jobs = remote_release["jobs"] if remote_release
-      remote_packages_sha1 = match_remote_packages(File.read(manifest_path))
+      remote_packages_sha1 = get_remote_packages(File.read(manifest_path),
+                                                 remote_release)
       blobstore = release.blobstore
       tmpdir = Dir.mktmpdir
 
@@ -153,7 +167,8 @@ module Bosh::Cli::Command
         end
 
         if repack
-          remote_packages_sha1 = match_remote_packages(tarball.manifest)
+          remote_packages_sha1 = get_remote_packages(tarball.manifest,
+                                                     remote_release)
 
           say("Checking if can repack release for faster upload...")
           repacked_path = tarball.repack(remote_jobs, remote_packages_sha1)
