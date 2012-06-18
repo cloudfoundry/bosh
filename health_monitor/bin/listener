@@ -19,10 +19,12 @@ class Listener
   def start
     filter = nil
     nats_uri = nil
+    nats_subject = nil
 
     opts = OptionParser.new do |opt|
       opt.on("-f", "--filter ARG") { |f| filter = f }
       opt.on("-n", "--nats URI") { |n| nats_uri = n }
+      opt.on("-s", "--subject ARG") { |s| nats_subject = s }
     end
 
     opts.parse!(ARGV)
@@ -38,12 +40,18 @@ class Listener
 
     @nats = NATS.connect(nats_client_options)
 
+    if nats_subject
+      puts "> NATS subject is set to `#{nats_subject}'"
+    else
+      nats_subject = "bosh.hm.events"
+    end
+
     if filter
       puts "> Filter is set to `#{filter}'"
     end
 
     puts "> Subscribing to events"
-    @nats.subscribe("bosh.hm.events") do |msg|
+    @nats.subscribe(nats_subject) do |msg|
       if filter.nil? || msg =~ Regexp.new(Regexp.quote(filter))
         puts "#{Time.now.strftime("%Y-%m-%d %H:%M:%S")} >> " + msg
       end

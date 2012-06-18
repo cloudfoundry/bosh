@@ -34,7 +34,8 @@ module Bosh::HealthMonitor
           return false
         end
 
-        @nats.publish(SUBJECT, event.to_json)
+        nats_subject = options["subject"] || SUBJECT
+        @nats.publish(nats_subject, event.to_json)
         true
       end
     end
