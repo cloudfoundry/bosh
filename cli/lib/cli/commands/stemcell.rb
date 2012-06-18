@@ -94,7 +94,7 @@ module Bosh::Cli::Command
       response = @http_client.get(PUBLIC_STEMCELL_INDEX_URL)
       status_code = response.http_header.status_code
       if status_code != HTTP::Status::OK
-        raise "Received HTTP #{status_code} from #{index_url}."
+        err("Received HTTP #{status_code} from #{PUBLIC_STEMCELL_INDEX_URL}.")
       end
       YAML.load(response.body)
     end
