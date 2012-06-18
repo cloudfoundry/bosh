@@ -9,6 +9,7 @@ default[:health_monitor][:email_recipients]    = [ ]
 default[:health_monitor][:smtp][:from]         = nil
 default[:health_monitor][:smtp][:host]         = nil
 default[:health_monitor][:smtp][:port]         = nil
+default[:health_monitor][:smtp][:tls]          = nil
 default[:health_monitor][:smtp][:auth]         = nil
 default[:health_monitor][:smtp][:user]         = nil
 default[:health_monitor][:smtp][:password]     = nil
