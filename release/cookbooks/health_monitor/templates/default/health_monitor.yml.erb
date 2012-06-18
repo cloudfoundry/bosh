@@ -70,3 +70,12 @@ plugins:
       host: <%= node[:health_monitor][:tsdb][:host] %>
       port: <%= node[:health_monitor][:tsdb][:port] %>
   <% end %>
+
+  <% if node[:health_monitor][:pagerduty_enabled] %>
+  - name: pagerduty
+    events:
+      - alert
+    options:
+      service_key: <%= node[:health_monitor][:pagerduty][:service_key] %>
+      http_proxy: <%= node[:health_monitor][:pagerduty][:http_proxy] %>
+  <% end %>
