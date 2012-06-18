@@ -7,8 +7,9 @@ namespace :stemcell2 do
   desc "Build stemcell"
   task :basic, :infrastructure do |t, args|
     options = default_options(args)
-    options[:stemcell_name] ||= "bosh-stemcell-warden"
+    options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
+    options[:image_create_disk_size] = 1280
 
     options = options.merge(bosh_agent_options)
 
@@ -18,7 +19,7 @@ namespace :stemcell2 do
   desc "Build micro bosh stemcell"
   task :micro, :infrastructure, :manifest, :tarball do |t, args|
     options = default_options(args)
-    options[:stemcell_name] ||= "micro-bosh-stemcell-warden"
+    options[:stemcell_name] ||= "micro-bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
     options[:image_create_disk_size] = 2048
 
