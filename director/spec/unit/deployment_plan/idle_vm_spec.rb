@@ -9,10 +9,10 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
     @network.stub(:name).and_return("test_network")
     @network.stub(:network_settings).with(@reservation).and_return({"ip" => 1})
     @deployment = stub(:DeploymentPlan)
-    @resource_pool = stub(:ResourcePoolSpec)
+    @resource_pool = stub(:ResourcePool)
     @resource_pool.stub(:network).and_return(@network)
     @resource_pool.stub(:spec).and_return({"size" => "small"})
-    @resource_pool.stub(:deployment).and_return(@deployment)
+    @resource_pool.stub(:deployment_plan).and_return(@deployment)
     @vm = BD::DeploymentPlan::IdleVm.new(@resource_pool)
   end
 
@@ -24,7 +24,7 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
 
   describe :network_settings do
     it "should generate network settings when there is no bound instance" do
-      @vm.network_reservation = @reservation
+      @vm.use_reservation(@reservation)
       @vm.network_settings.should == {"test_network" => {"ip" => 1}}
     end
 
@@ -38,7 +38,7 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
 
   describe :networks_changed? do
     before(:each) do
-      @vm.network_reservation = @reservation
+      @vm.use_reservation(@reservation)
     end
 
     it "should return true when BOSH Agent provides different settings" do

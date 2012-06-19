@@ -31,6 +31,17 @@ module Bosh::Director
       end
 
       ##
+      # Reserves a network resource, raises an error if reservation failed
+      # @param [NetworkReservation] reservation Network reservation
+      # @param [String] origin Whoever is reserving
+      def reserve!(reservation, origin)
+        reserve(reservation)
+        unless reservation.reserved?
+          reservation.handle_error(origin)
+        end
+      end
+
+      ##
       # Reserves a network resource.
       #
       # Will update the passed in reservation if it can be fulfilled.
