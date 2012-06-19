@@ -48,6 +48,15 @@ describe Bosh::Director::InstanceUpdater do
   }
   IDLE_PLAN = {
     "deployment" => "test_deployment",
+    "job" => {
+        "name" => "test_job",
+        "blobstore_id" => "job_blob"
+    },
+    "release"=> {
+        "name" => "test_release",
+        "version" => 99
+    },
+    "index" => 5,
     "resource_pool" => {
       "stemcell" => {
         "name" => "ubuntu",
@@ -87,7 +96,7 @@ describe Bosh::Director::InstanceUpdater do
   before(:each) do
     @deployment = Bosh::Director::Models::Deployment.make
     @vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-id")
-    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :index => "0")
+    @instance = Bosh::Director::Models::Instance.make(:deployment => @deployment, :vm => @vm, :index => "5")
     @stemcell = Bosh::Director::Models::Stemcell.make(:cid => "stemcell-id")
 
     @cloud = mock("cloud")
@@ -187,7 +196,7 @@ describe Bosh::Director::InstanceUpdater do
       instance_updater.update
     }.should raise_error(
                BD::AgentJobNotStopped,
-               "`test_job/0' is still running despite the stop command")
+               "`test_job/5' is still running despite the stop command")
   end
 
   it "should do a basic canary update" do
