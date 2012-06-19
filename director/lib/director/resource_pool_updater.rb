@@ -48,7 +48,7 @@ module Bosh::Director
     end
 
     def create_missing_vm(idle_vm)
-      deployment = @resource_pool.deployment.model
+      deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.stemcell
 
       vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
@@ -75,7 +75,7 @@ module Bosh::Director
 
     def update_state(agent, vm, idle_vm)
       state = {
-          "deployment" => @resource_pool.deployment.name,
+          "deployment" => @resource_pool.deployment_plan.name,
           "resource_pool" => @resource_pool.spec,
           "networks" => idle_vm.network_settings
       }

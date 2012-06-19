@@ -61,4 +61,31 @@ describe Bosh::Director::DeploymentPlan do
       lambda { plan.bind_model }.should_not raise_error
     end
   end
+
+  describe "getting VM models list" do
+    it "raises an error when deployment model is unbound" do
+      plan = make_plan("name" => "my_cloud")
+      plan.parse_name
+
+      expect {
+        plan.vms
+      }.to raise_error(BD::DirectorError)
+
+      make_deployment("mycloud")
+      plan.bind_model
+      lambda { plan.vms }.should_not raise_error
+    end
+
+    it "returns a list of VMs in deployment" do
+      plan = make_plan("name" => "my_cloud")
+      plan.parse_name
+
+      deployment = make_deployment("my_cloud")
+      vm1 = BD::Models::Vm.make(:deployment => deployment)
+      vm2 = BD::Models::Vm.make(:deployment => deployment)
+
+      plan.bind_model
+      plan.vms.should =~ [vm1, vm2]
+    end
+  end
 end
