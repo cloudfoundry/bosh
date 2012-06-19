@@ -1,3 +1,6 @@
+=== 0.19.3 - 06/19/2012
+* fixed upload release regression
+
 === 0.19.2 - 06/14/2012
 * bash completion
 * fixed 'bosh status' bug
