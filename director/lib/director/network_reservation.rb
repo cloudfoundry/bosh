@@ -25,6 +25,14 @@ module Bosh::Director
     # @return [Symbol, nil] reservation error
     attr_accessor :error
 
+    def self.new_dynamic
+      new(:type => NetworkReservation::DYNAMIC)
+    end
+
+    def self.new_static
+      new(:type => NetworkReservation::STATIC)
+    end
+
     ##
     # Creates a new network reservation
     # @param [Hash] options the options to create the reservation from
@@ -34,6 +42,7 @@ module Bosh::Director
       @ip = options[:ip]
       @type = options[:type]
       @reserved = false
+      @error = nil
 
       @ip = ip_to_i(@ip) if @ip
     end
@@ -66,6 +75,45 @@ module Bosh::Director
             @ip = other.ip
             @reserved = true
           end
+        end
+      end
+    end
+
+    ##
+    # Handles network reservation error and re-raises the proper exception
+    # @param [String] origin Whoever tried to take the reservation
+    # @raise [NetworkReservationAlreadyInUse]
+    # @raise [NetworkReservationWrongType]
+    # @raise [NetworkReservationNotEnoughCapacity]
+    # @raise [NetworkReservationError]
+    # @return void
+    def handle_error(origin)
+      if static?
+        formatted_ip = ip_to_netaddr(@ip).ip
+        case @error
+          when NetworkReservation::USED
+            raise NetworkReservationAlreadyInUse,
+                  "#{origin} asked for a static IP #{formatted_ip} " +
+                  "but it's already reserved/in use"
+          when NetworkReservation::WRONG_TYPE
+            raise NetworkReservationWrongType,
+                  "#{origin} asked for a static IP #{formatted_ip} " +
+                  "but it's in the dynamic pool"
+          else
+            raise NetworkReservationError,
+                  "#{origin} failed to reserve static IP " +
+                  "#{formatted_ip}: #{@error}"
+        end
+      else
+        case @error
+          when NetworkReservation::CAPACITY
+            raise NetworkReservationNotEnoughCapacity,
+                  "#{origin} asked for a dynamic IP " +
+                  "but there were no more available"
+          else
+            raise NetworkReservationError,
+                  "#{origin} failed to reserve dynamic IP " +
+                  "#{formatted_ip}: #{@error}"
         end
       end
     end

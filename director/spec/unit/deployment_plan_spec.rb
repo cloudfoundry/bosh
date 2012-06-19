@@ -215,12 +215,12 @@ describe Bosh::Director::DeploymentPlan do
   end
 
   describe :parse_resource_pools do
-    it "should delegate to ResourcePoolSpec" do
-      resource_pool_spec = mock(:resource_pool_spec)
+    it "should delegate to ResourcePool" do
+      resource_pool_spec = mock(:resource_pool)
       resource_pool_spec.stub(:name).and_return("foo")
 
       received_plan = nil
-      BD::DeploymentPlan::ResourcePoolSpec.should_receive(:new).
+      BD::DeploymentPlan::ResourcePool.should_receive(:new).
           and_return do |deployment_plan, spec|
         received_plan = deployment_plan
         spec.should == {"foo" => "bar"}
@@ -235,7 +235,7 @@ describe Bosh::Director::DeploymentPlan do
     end
 
     it "should enforce name uniqueness" do
-      BD::DeploymentPlan::ResourcePoolSpec.stub(:new).
+      BD::DeploymentPlan::ResourcePool.stub(:new).
           and_return do |_, spec|
         resource_pool_spec = mock(:resource_pool_spec)
         resource_pool_spec.stub(:name).and_return(spec["name"])

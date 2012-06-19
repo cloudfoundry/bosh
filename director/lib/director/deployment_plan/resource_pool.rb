@@ -2,78 +2,116 @@
 
 module Bosh::Director
   class DeploymentPlan
-    class ResourcePoolSpec
+    class ResourcePool
       include ValidationHelper
 
-      attr_accessor :name
-      attr_accessor :deployment
-      attr_accessor :stemcell
-      attr_accessor :network
-      attr_accessor :cloud_properties
-      attr_accessor :env
-      attr_accessor :env_hash
-      attr_accessor :size
-      attr_accessor :idle_vms
-      attr_accessor :allocated_vms
-      attr_accessor :active_vm_count
+      # @return [String] Resource pool name
+      attr_reader :name
 
-      # @param [DeploymentPlan] deployment Deployment plan
-      # @param [Hash] resource_pool_spec Raw resource pool spec from deployment
-      #   manifest
-      def initialize(deployment, resource_pool_spec)
-        @deployment = deployment
+      # @return [Integer] Expected resource pool size (in VMs)
+      attr_reader :size
 
-        @name = safe_property(resource_pool_spec, "name", :class => String)
-        @size = safe_property(resource_pool_spec, "size", :class => Integer)
+      # @return [DeploymentPlan] Deployment plan
+      attr_reader :deployment_plan
 
-        @cloud_properties = safe_property(resource_pool_spec,
-                                          "cloud_properties", :class => Hash)
+      # @return [DeploymentPlan::StemcellSpec] Stemcell spec
+      attr_reader :stemcell
 
-        stemcell_property = safe_property(resource_pool_spec, "stemcell",
-                                          :class => Hash)
-        @stemcell = StemcellSpec.new(self, stemcell_property)
+      # @return [DeploymentPlan::NetworkSpec] Network spec
+      attr_reader :network
 
-        network_name = safe_property(resource_pool_spec, "network",
-                                     :class => String)
-        @network = @deployment.network(network_name)
+      # @return [Hash] Cloud properties
+      attr_reader :cloud_properties
+
+      # @return [Hash] Resource pool environment
+      attr_reader :env
+
+      # @return [Array<DeploymentPlan::IdleVm>] List of idle VMs
+      attr_reader :idle_vms
+
+      # @return [Array<DeploymentPlan::IdleVm] List of allocated idle VMs
+      attr_reader :allocated_vms
+
+      # @return [Integer] Number of active resource pool VMs
+      attr_reader :active_vm_count
+
+      # @param [DeploymentPlan] deployment_plan Deployment plan
+      # @param [Hash] spec Raw resource pool spec from the deployment manifest
+      def initialize(deployment_plan, spec)
+        @deployment_plan = deployment_plan
+
+        @name = safe_property(spec, "name", :class => String)
+        @size = safe_property(spec, "size", :class => Integer)
+
+        @cloud_properties =
+          safe_property(spec, "cloud_properties", :class => Hash)
+
+        stemcell_spec = safe_property(spec, "stemcell", :class => Hash)
+        @stemcell = StemcellSpec.new(self, stemcell_spec)
+
+        network_name = safe_property(spec, "network", :class => String)
+        @network = @deployment_plan.network(network_name)
 
         if @network.nil?
-          raise ResourcePoolSpecUnknownNetwork,
+          raise ResourcePoolUnknownNetwork,
                 "Resource pool `#{@name}' references " +
                 "an unknown network `#{network_name}'"
         end
 
-        @env = safe_property(resource_pool_spec, "env",
-                             :class => Hash, :optional => true) || {}
-        @env_hash = Digest::SHA1.hexdigest(Yajl::Encoder.encode(@env.sort))
+        @env = safe_property(spec, "env", :class => Hash, :default => {})
 
         @idle_vms = []
         @allocated_vms = []
         @active_vm_count = 0
-        @reserved_vm_count = 0
+        @required_capacity = 0
       end
 
+      # Returns resource pools spec as Hash (usually for agent to serialize)
+      # @return [Hash] Resource pool spec
+      def spec
+        {
+          "name" => @name,
+          "cloud_properties" => @cloud_properties,
+          "stemcell" => @stemcell.spec
+        }
+      end
+
+      # Creates IdleVm objects for any missing resource pool VMs and reserves
+      # dynamic networks for all idle VMs.
+      # @return [void]
+      def process_idle_vms
+        # First, see if we need any data structures to balance the pool size
+        missing_vm_count.times { add_idle_vm }
+
+        # Second, see if some of idle VMs still need network reservations
+        idle_vms.each do |idle_vm|
+          unless idle_vm.has_network_reservation?
+            idle_vm.use_reservation(reserve_dynamic_network)
+          end
+        end
+      end
+
+      # Tries to obtain one dynamic reservation in its own network
+      # @raise [NetworkReservationError]
+      # @return [NetworkReservation] Obtained reservation
+      def reserve_dynamic_network
+        reservation = NetworkReservation.new_dynamic
+        @network.reserve!(reservation, "Resource pool `#{@name}'")
+        reservation
+      end
+
+      # Returns a number of VMs that need to be created in order to bring
+      # this resource pool to a desired size
+      # @return [Integer]
       def missing_vm_count
         @size - @active_vm_count - @idle_vms.size
       end
 
+      # Adds a new VM to a list of managed idle VMs
       def add_idle_vm
         idle_vm = IdleVm.new(self)
         @idle_vms << idle_vm
         idle_vm
-      end
-
-      def mark_active_vm
-        @active_vm_count += 1
-      end
-
-      def reserve_vm
-        @reserved_vm_count += 1
-        if @reserved_vm_count > @size
-          raise ResourcePoolSpecNotEnoughCapacity,
-                "Resource pool `#{@name}' is not big enough: " +
-                "#{@reserved_vm_count} VMs needed, capacity is #{@size}"
-        end
       end
 
       def allocate_vm
@@ -82,12 +120,23 @@ module Bosh::Director
         allocated_vm
       end
 
-      def spec
-        {
-            "name" => @name,
-            "cloud_properties" => @cloud_properties,
-            "stemcell" => @stemcell.spec
-        }
+      # "Active" VM is a VM that is currently running a job
+      # @return [void]
+      def mark_active_vm
+        @active_vm_count += 1
+      end
+
+      # Checks if there is enough capacity to run extra N VMs,
+      # raise error if not enough capacity
+      # @raise [ResourcePoolNotEnoughCapacity]
+      # @return [void]
+      def reserve_capacity(n)
+        @required_capacity += n
+        if @required_capacity > @size
+          raise ResourcePoolNotEnoughCapacity,
+                "Resource pool `#{@name}' is not big enough: " +
+                "#{@required_capacity} VMs needed, capacity is #{@size}"
+        end
       end
     end
   end

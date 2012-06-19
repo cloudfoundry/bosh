@@ -142,8 +142,8 @@ module Bosh::Director
   NetworkSpecReservedIpOutOfRange = err(160005)
   NetworkSpecStaticIpOutOfRange = err(160006)
 
-  ResourcePoolSpecUnknownNetwork = err(170001)
-  ResourcePoolSpecNotEnoughCapacity = err(170002)
+  ResourcePoolUnknownNetwork = err(170001)
+  ResourcePoolNotEnoughCapacity = err(170002)
 
   UpdateConfigInvalidWatchTime = err(180001)
 
