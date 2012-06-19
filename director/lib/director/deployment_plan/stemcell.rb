@@ -18,8 +18,8 @@ module Bosh::Director
 
       def spec
         {
-            "name" => @name,
-            "version" => @version
+          "name" => @name,
+          "version" => @version
         }
       end
 

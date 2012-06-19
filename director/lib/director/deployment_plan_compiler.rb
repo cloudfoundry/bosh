@@ -16,36 +16,50 @@ module Bosh::Director
       @stemcell_manager = Api::StemcellManager.new
     end
 
+    # Binds deployment DB record to a plan
+    # @return [void]
     def bind_deployment
       @deployment_plan.bind_model
     end
 
+    # Binds release DB record(s) to a plan
+    # @return [void]
     def bind_releases
       @deployment_plan.releases.each do |release|
         release.bind_model
       end
     end
 
+    # TODO: extract this logic into its own class (as there is a lot of shared
+    # state being passed along)
+    # Binds information about existing deployment to a plan
+    # @return [void]
     def bind_existing_deployment
       lock = Mutex.new
       ThreadPool.new(:max_threads => 32).wrap do |pool|
-        @deployment_plan.model.vms.each do |vm|
+        @deployment_plan.vms.each do |vm|
           pool.process do
             with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
-              bind_existing_vm(lock, vm)
+              bind_existing_vm(vm, lock)
             end
           end
         end
       end
     end
 
-    def bind_existing_vm(lock, vm)
+    # Queries agent for VM state and updates deployment plan accordingly
+    # @param [Models::Vm] vm VM database model
+    # @param [Mutex] lock Lock to hold on to while updating deployment plan
+    def bind_existing_vm(vm, lock)
       state = get_state(vm)
       lock.synchronize do
         @logger.debug("Processing network reservations")
         reservations = get_network_reservations(state)
 
         instance = vm.instance
+        # TODO: what if it's a job VM but DB is broken?
+        # i.e. let's say state has mysql_node/0 but VM in DB has no instance.
+        # Should we protect against it (or are we doing it somewhere already)?
         if instance
           bind_instance(instance, state, reservations)
         else
@@ -64,6 +78,11 @@ module Bosh::Director
       end
     end
 
+    # Binds idle VM to a resource pool with a proper network reservation
+    # @param [Models::Vm] vm VM DB model
+    # @param [DeploymentPlan::ResourcePool] resource_pool Resource pool
+    # @param [Hash] state VM state according to its agent
+    # @param [Hash] reservations Network reservations
     def bind_idle_vm(vm, resource_pool, state, reservations)
       @logger.debug("Adding to resource pool")
       idle_vm = resource_pool.add_idle_vm
@@ -74,10 +93,10 @@ module Bosh::Director
       if reservation
         if reservation.static?
           @logger.debug("Releasing static network reservation for " +
-                            "resource pool VM `#{vm.cid}'")
+                        "resource pool VM `#{vm.cid}'")
           resource_pool.network.release(reservation)
         else
-          idle_vm.network_reservation = reservation
+          idle_vm.use_reservation(reservation)
         end
       else
         @logger.debug("No network reservation for VM `#{vm.cid}'")
@@ -226,26 +245,14 @@ module Bosh::Director
       end
     end
 
+    # Takes a look at the current state of all resource pools in the deployment
+    # and schedules adding any new VMs if needed. VMs are NOT created at this
+    # stage, only data structures are being allocated. {ResourcePoolUpdater}
+    # will later perform actual changes based on this data.
+    # @return [void]
     def bind_resource_pools
       @deployment_plan.resource_pools.each do |resource_pool|
-        resource_pool.missing_vm_count.times do
-          resource_pool.add_idle_vm
-        end
-
-        resource_pool.idle_vms.each_with_index do |idle_vm, index|
-          unless idle_vm.network_reservation
-            network = resource_pool.network
-            reservation = NetworkReservation.new(
-                :type => NetworkReservation::DYNAMIC)
-            network.reserve(reservation)
-
-            unless reservation.reserved?
-              handle_reservation_error(resource_pool.name, index, reservation)
-            end
-
-            idle_vm.network_reservation = reservation
-          end
-        end
+        resource_pool.process_idle_vms
       end
     end
 
@@ -319,10 +326,7 @@ module Bosh::Director
           instance.network_reservations.each do |name, reservation|
             unless reservation.reserved?
               network = @deployment_plan.network(name)
-              network.reserve(reservation)
-              unless reservation.reserved?
-                handle_reservation_error(job.name, instance.index, reservation)
-              end
+              network.reserve!(reservation, "`#{job.name}/#{instance.index}'")
             end
           end
         end
@@ -481,43 +485,6 @@ module Bosh::Director
                              unneeded_instances.size)
       InstanceDeleter.new(@deployment_plan).delete_instances(unneeded_instances)
       @logger.info("Deleted no longer needed instances")
-    end
-
-    ##
-    # Handles the network reservation error and rethrows the proper exception
-    # @param [String] name
-    # @param [Integer] index
-    # @param [NetworkReservation] reservation
-    # @return [void]
-    def handle_reservation_error(name, index, reservation)
-      if reservation.static?
-        formatted_ip = ip_to_netaddr(reservation.ip).ip
-        case reservation.error
-          when NetworkReservation::USED
-            raise NetworkReservationAlreadyInUse,
-                  "`#{name}/#{index}' asked for a static IP #{formatted_ip} " +
-                  "but it's already reserved/in use"
-          when NetworkReservation::WRONG_TYPE
-            raise NetworkReservationWrongType,
-                  "`#{name}/#{index}' asked for a static IP #{formatted_ip} " +
-                  "but it's in the dynamic pool"
-          else
-            raise NetworkReservationError,
-                  "`#{name}/#{index}' failed to reserve static IP " +
-                  "#{formatted_ip}: #{reservation.error}"
-        end
-      else
-        case reservation.error
-          when NetworkReservation::CAPACITY
-            raise NetworkReservationNotEnoughCapacity,
-                  "`#{name}/#{index}' asked for a dynamic IP " +
-                  "but there were no more available"
-          else
-            raise NetworkReservationError,
-                  "`#{name}/#{index}' failed to reserve dynamic IP " +
-                  "#{formatted_ip}: #{reservation.error}"
-        end
-      end
     end
   end
 end
