@@ -12,8 +12,14 @@ module Bosh::Director
     #
     # @todo rename class to ResourcePoolVm
     class IdleVm
-      # @return [ResourcePoolSpec] associated resource pool
-      attr_accessor :resource_pool
+      # @return [DeploymentPlan::ResourcePool] associated resource pool
+      attr_reader :resource_pool
+
+      # @return [NetworkReservation] VM network reservation
+      attr_accessor :network_reservation
+
+      # @return [Models::Vm] associated model
+      attr_accessor :vm
 
       # @return [Hash] current state as provided by the BOSH Agent
       attr_accessor :current_state
@@ -22,17 +28,28 @@ module Bosh::Director
       # @todo rename to reserved_instance
       attr_accessor :bound_instance
 
-      # @return [NetworkReservation] the VM's network reservation
-      attr_accessor :network_reservation
-
-      # @return [Bosh::Director::Models::Vm] associated model
-      attr_accessor :vm
-
       ##
       # Creates a new idle VM reference for the specific resource pool
-      # @param [ResourcePoolSpec] resource_pool resource pool
+      # @param [DeploymentPlan::ResourcePool] resource_pool Resource pool
       def initialize(resource_pool)
         @resource_pool = resource_pool
+        @current_state = nil
+        @bound_instance = nil
+        @network_reservation = nil
+        @vm = nil
+      end
+
+      #
+      # @return [Boolean] Does this VM have a network reservation?
+      def has_network_reservation?
+        !@network_reservation.nil?
+      end
+
+      #
+      # Uses provided network reservation
+      # @param [NetworkReservation] reservation Network reservation
+      def use_reservation(reservation)
+        @network_reservation = reservation
       end
 
       ##
@@ -68,7 +85,7 @@ module Bosh::Director
       #   specification differs from the one provided by the VM
       def resource_pool_changed?
         resource_pool.spec != @current_state["resource_pool"] ||
-            resource_pool.deployment.recreate
+            resource_pool.deployment_plan.recreate
       end
 
       ##

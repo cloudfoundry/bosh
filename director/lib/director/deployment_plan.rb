@@ -104,6 +104,15 @@ module Bosh::Director
       end
     end
 
+    # Returns a list of VMs in the deployment (according to DB)
+    # @return [Array<Models::Vm>]
+    def vms
+      if @model.nil?
+        raise DirectorError, "Can't get VMs list, deployment model is unbound"
+      end
+      @model.vms
+    end
+
     # Returns a named job
     # @param [String] name Job name
     # @return [Bosh::Director::DeploymentPlan::JobSpec] Job
@@ -125,14 +134,14 @@ module Bosh::Director
     end
 
     # Returns all resource pools in a deployment plan
-    # @return [Array<Bosh::Director::DeploymentPlan::ResourcePoolSpec>]
+    # @return [Array<Bosh::Director::DeploymentPlan::ResourcePool>]
     def resource_pools
       @resource_pools.values
     end
 
     # Returns a named resource pool spec
     # @param [String] name Resource pool name
-    # @return [Bosh::Director::DeploymentPlan::ResourcePoolSpec]
+    # @return [Bosh::Director::DeploymentPlan::ResourcePool]
     def resource_pool(name)
       @resource_pools[name]
     end
@@ -214,8 +223,8 @@ module Bosh::Director
       @resource_pools = {}
       resource_pools = safe_property(@manifest, "resource_pools",
                                      :class => Array)
-      resource_pools.each do |resource_pool_spec|
-        resource_pool = ResourcePoolSpec.new(self, resource_pool_spec)
+      resource_pools.each do |spec|
+        resource_pool = ResourcePool.new(self, spec)
         if @resource_pools[resource_pool.name]
           raise DeploymentDuplicateResourcePoolName,
                 "Duplicate resource pool name `#{resource_pool.name}'"
