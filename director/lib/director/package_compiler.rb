@@ -305,14 +305,13 @@ module Bosh::Director
                          stemcell_name_version(stemcell))
 
           job.template.packages.each do |package|
-            schedule_compilation(job, package, stemcell.stemcell)
+            schedule_compilation(job, package, stemcell.model)
           end
         end
       end
 
       bind_dependent_tasks
     end
-
 
     def find_compiled_package(package, stemcell, dependency_key)
       # Check if this package is already compiled
