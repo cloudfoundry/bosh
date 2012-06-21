@@ -533,11 +533,11 @@ module Bosh::AwsCloud
       Dir.chdir(dir) do
         path = ENV["PATH"]
 
-        if has_stemcell_copy?(path)
+        if stemcell_copy = has_stemcell_copy(path)
           @logger.debug("copying stemcell using stemcell-copy script")
           # note that is is a potentially dangerous operation, but as the
           # stemcell-copy script sets PATH to a sane value this is safe
-          out = `sudo env PATH=#{path} stemcell-copy #{ebs_volume} 2>&1`
+          out = `sudo #{stemcell_copy} #{ebs_volume} 2>&1`
         else
           @logger.info("falling back to using dd to copy stemcell")
           out = `dd if=root.img of=#{ebs_volume} 2>&1`
@@ -552,12 +552,12 @@ module Bosh::AwsCloud
 
     # checks if the stemcell-copy script can be found in
     # the current PATH
-    def has_stemcell_copy?(path)
+    def has_stemcell_copy(path)
       path.split(":").each do |dir|
         stemcell_copy = File.join(dir, "stemcell-copy")
-        return true if File.exist?(stemcell_copy)
+        return stemcell_copy if File.exist?(stemcell_copy)
       end
-      false
+      nil
     end
 
     def find_ebs_device(sd_name)
