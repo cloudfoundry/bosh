@@ -72,8 +72,8 @@ describe Bosh::Director::ResourcePoolUpdater do
       @deployment_plan = stub(:DeploymentPlan)
       @deployment_plan.stub(:model).and_return(@deployment)
       @stemcell = BD::Models::Stemcell.make
-      @stemcell_spec = stub(:StemcellSpec)
-      @stemcell_spec.stub(:stemcell).and_return(@stemcell)
+      @stemcell_spec = stub(:Stemcell)
+      @stemcell_spec.stub(:model).and_return(@stemcell)
       @resource_pool.stub(:deployment_plan).and_return(@deployment_plan)
       @resource_pool.stub(:stemcell).and_return(@stemcell_spec)
       @cloud_properties = {"size" => "medium"}

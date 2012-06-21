@@ -9,7 +9,7 @@ describe Bosh::Director::DeploymentPlan::Release do
   end
 
   def make_plan(deployment)
-    double(BD::DeploymentPlan, :model => deployment)
+    mock(BD::DeploymentPlan, :model => deployment)
   end
 
   def find_release(name)
@@ -89,7 +89,7 @@ describe Bosh::Director::DeploymentPlan::Release do
         release = make(plan, {"name" => "foo", "version" => "42"})
         release.bind_model
       }.to raise_error(BD::DirectorError,
-                       "Deployment not bound in deployment plan")
+                       "Deployment not bound in the deployment plan")
     end
   end
 end
