@@ -2,7 +2,7 @@ task :default => [ :spec, :build ]
 
 desc "build and install the bosh cli gem"
 task :build do
-  sh("cd cli && rake install")
+  sh("cd cli && bundle exec rake install")
 end
 
 desc "install all gem dependencies"
