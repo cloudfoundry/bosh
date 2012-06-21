@@ -144,7 +144,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       Bosh::Director::ResourcePoolUpdater.stub!(:new).with(resource_pool_spec).and_return(mock("updater"))
 
       resource_pool_spec.stub!(:stemcell).and_return(stemcell_spec)
-      stemcell_spec.stub!(:stemcell).and_return(new_stemcell)
+      stemcell_spec.stub!(:model).and_return(new_stemcell)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       update_deployment_job.update_stemcell_references

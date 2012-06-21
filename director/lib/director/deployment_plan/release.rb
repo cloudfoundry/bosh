@@ -33,7 +33,7 @@ module Bosh::Director
       def bind_model
         deployment = @deployment_plan.model
         if deployment.nil?
-          raise DirectorError, "Deployment not bound in deployment plan"
+          raise DirectorError, "Deployment not bound in the deployment plan"
         end
 
         release = @manager.find_by_name(@name)

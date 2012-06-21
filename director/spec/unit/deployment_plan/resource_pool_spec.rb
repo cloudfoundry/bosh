@@ -32,7 +32,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       rp = make(plan, valid_spec)
       rp.name.should == "small"
       rp.size.should == 22
-      rp.stemcell.should be_kind_of(BD::DeploymentPlan::StemcellSpec)
+      rp.stemcell.should be_kind_of(BD::DeploymentPlan::Stemcell)
       rp.stemcell.name.should == "bosh-stemcell"
       rp.stemcell.version.should == "0.5.2"
       rp.network.should == network

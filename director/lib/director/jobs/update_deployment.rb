@@ -168,7 +168,7 @@ module Bosh::Director
       def update_stemcell_references
         current_stemcells = Set.new
         @deployment_plan.resource_pools.each do |resource_pool|
-          current_stemcells << resource_pool.stemcell.stemcell
+          current_stemcells << resource_pool.stemcell.model
         end
 
         deployment = @deployment_plan.model

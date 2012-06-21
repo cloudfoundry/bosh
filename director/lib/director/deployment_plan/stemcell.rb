@@ -2,18 +2,45 @@
 
 module Bosh::Director
   class DeploymentPlan
-    class StemcellSpec
+    class Stemcell
       include ValidationHelper
 
-      attr_accessor :name
-      attr_accessor :resource_pool
-      attr_accessor :version
-      attr_accessor :stemcell
+      # @return [DeploymentPlan] Deployment plan
+      attr_reader :deployment_plan
 
-      def initialize(resource_pool, stemcell_spec)
-        @resource_pool = resource_pool
-        @name = safe_property(stemcell_spec, "name", :class => String)
-        @version = safe_property(stemcell_spec, "version", :class => String)
+      # @return [String] Stemcell name
+      attr_reader :name
+
+      # @return [String] Stemcell version
+      attr_reader :version
+
+      # @return [Models::Stemcell] Stemcell DB model
+      attr_reader :model
+
+      # @param [DeploymentPlan] deployment_plan Deployment plan
+      # @param [Hash] spec Raw stemcell spec according to deployment manifest
+      def initialize(deployment_plan, spec)
+        @deployment_plan = deployment_plan
+        @name = safe_property(spec, "name", :class => String)
+        @version = safe_property(spec, "version", :class => String)
+
+        @manager = Api::StemcellManager.new
+        @model = nil
+      end
+
+      # Looks up the stemcell matching provided spec
+      # @return [void]
+      def bind_model
+        deployment = @deployment_plan.model
+        if deployment.nil?
+          raise DirectorError, "Deployment not bound in the deployment plan"
+        end
+
+        @model = @manager.find_by_name_and_version(@name, @version)
+
+        unless @model.deployments.include?(deployment)
+          @model.add_deployment(deployment)
+        end
       end
 
       def spec
@@ -23,9 +50,6 @@ module Bosh::Director
         }
       end
 
-      def method_missing(method_name, *args)
-        @stemcell.send(method_name, *args)
-      end
     end
   end
 end
