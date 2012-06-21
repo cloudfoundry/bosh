@@ -31,6 +31,16 @@ export HOME=/root
 mkdir -p ${bosh_app_dir}/bosh/blob
 mkdir -p ${blobstore_path}
 
+# setup sudoers to use includedir, and make sure we don't break anything
+cp -p /etc/sudoers /etc/sudoers.save
+echo '#includedir /etc/sudoers.d' >> /etc/sudoers
+visudo -c
+if [ $? -ne 0 ]; then
+  echo "ERROR: bad sudoers file" >2
+  cp -p /etc/sudoers.save /etc/sudoers
+fi
+rm /etc/sudoers.save
+
 echo "Starting micro bosh compilation"
 
 # Start agent
