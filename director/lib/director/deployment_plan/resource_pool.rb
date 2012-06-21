@@ -14,7 +14,7 @@ module Bosh::Director
       # @return [DeploymentPlan] Deployment plan
       attr_reader :deployment_plan
 
-      # @return [DeploymentPlan::StemcellSpec] Stemcell spec
+      # @return [DeploymentPlan::Stemcell] Stemcell spec
       attr_reader :stemcell
 
       # @return [DeploymentPlan::NetworkSpec] Network spec
@@ -47,7 +47,7 @@ module Bosh::Director
           safe_property(spec, "cloud_properties", :class => Hash)
 
         stemcell_spec = safe_property(spec, "stemcell", :class => Hash)
-        @stemcell = StemcellSpec.new(self, stemcell_spec)
+        @stemcell = Stemcell.new(self, stemcell_spec)
 
         network_name = safe_property(spec, "network", :class => String)
         @network = @deployment_plan.network(network_name)

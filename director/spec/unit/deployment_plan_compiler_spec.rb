@@ -58,6 +58,21 @@ describe Bosh::Director::DeploymentPlanCompiler do
     compiler.bind_resource_pools
   end
 
+  it "should bind stemcells" do
+    sc1 = mock(BD::DeploymentPlan::Stemcell)
+    sc2 = mock(BD::DeploymentPlan::Stemcell)
+
+    rp1 = mock(BD::DeploymentPlan::ResourcePool, :stemcell => sc1)
+    rp2 = mock(BD::DeploymentPlan::ResourcePool, :stemcell => sc2)
+
+    plan.should_receive(:resource_pools).and_return([rp1, rp2])
+
+    sc1.should_receive(:bind_model)
+    sc2.should_receive(:bind_model)
+
+    compiler.bind_stemcells
+  end
+
 end
 
 describe Bosh::Director::DeploymentPlanCompiler do
@@ -554,8 +569,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan_compiler.bind_templates
     end
   end
-
-  describe :bind_stemcells
 
   describe :bind_configuration do
     before(:each) do
