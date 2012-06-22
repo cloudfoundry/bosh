@@ -17,9 +17,8 @@ describe Bosh::Cli::ReleaseTarball do
         "jobs" => [{ "name" => "cacher", "version" => "1" },
                     { "name" => "sweeper", "version" => "1" }]
       }
-      remote_packages_sha1 = ["86bd8b15562cde007f030a303fa64779af5fa4e7"]
-      repacked_tarball_path = tarball.repack(remote_release["jobs"],
-                                             remote_packages_sha1)
+      package_matches = ["86bd8b15562cde007f030a303fa64779af5fa4e7"]
+      repacked_tarball_path = tarball.repack(remote_release, package_matches)
 
       tarball.skipped.should == 2
 
