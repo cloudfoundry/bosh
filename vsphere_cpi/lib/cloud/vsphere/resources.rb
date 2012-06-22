@@ -142,12 +142,16 @@ module VSphereCloud
     def get_cluster_spec(clusters)
       cluster_spec = {}
       clusters.each do |cluster|
-        case cluster
-        when String
-          cluster_spec[cluster] = {}
-        when Hash
-          cluster_spec[cluster.keys.first] = {"resource_pool" => cluster[cluster.keys.first]["resource_pool"]}
-        else
+        begin
+          case cluster
+          when String
+            cluster_spec[cluster] = {}
+          when Hash
+            cluster_spec[cluster.keys.first] = {"resource_pool" => cluster[cluster.keys.first]["resource_pool"]}
+          else
+            raise "Bad cluster information in datacenter spec #{clusters.pretty_inspect}"
+          end
+        rescue
           raise "Bad cluster information in datacenter spec #{clusters.pretty_inspect}"
         end
       end
