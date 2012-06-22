@@ -10,28 +10,45 @@ module Bosh::Cli
       new(manifest_file, blobstore).compile
     end
 
-    def initialize(manifest_file, blobstore, remote_jobs = nil,
-                   remote_packages_sha1 = [], release_dir = nil)
+    # @param [String] manifest_file Release manifest path
+    # @param [Bosh::Blobstore::Client] blobstore Blobstore client
+    # @param [Hash] remote_release Remote release info from director
+    # @param [Array] package_matches List of package checksums that director
+    #   can match
+    # @param [String] release_dir Release directory
+    def initialize(manifest_file, blobstore, remote_release = nil,
+                   package_matches = [], release_dir = nil)
+
+      @blobstore = blobstore
+      @release_dir = release_dir || Dir.pwd
+      @manifest_file = File.expand_path(manifest_file, @release_dir)
+      @tarball_path = nil
+
       @build_dir = Dir.mktmpdir
       @jobs_dir = File.join(@build_dir, "jobs")
       @packages_dir = File.join(@build_dir, "packages")
-      @blobstore = blobstore
-      @release_dir = release_dir || Dir.pwd
-      @remote_packages_sha1 = remote_packages_sha1
+
+      @package_matches = Set.new(package_matches)
 
       at_exit { FileUtils.rm_rf(@build_dir) }
 
       FileUtils.mkdir_p(@jobs_dir)
       FileUtils.mkdir_p(@packages_dir)
 
-      @manifest_file = File.expand_path(manifest_file, @release_dir)
       @manifest = load_yaml_file(manifest_file)
 
-      if remote_jobs
-        @remote_jobs = remote_jobs.map do |job|
+      if remote_release
+        # TODO: instead of OpenStruct conversion we should probably
+        # introduce proper abstractions for things below
+        @remote_packages = remote_release["packages"].map do |pkg|
+          OpenStruct.new(pkg)
+        end
+
+        @remote_jobs = remote_release["jobs"].map do |job|
           OpenStruct.new(job)
         end
       else
+        @remote_packages = []
         @remote_jobs = []
       end
 
@@ -53,7 +70,7 @@ module Bosh::Cli
       header("Copying packages")
       @packages.each do |package|
         say("#{package.name} (#{package.version})".ljust(30), " ")
-        if @remote_packages_sha1.any? { |sha1| sha1 == package.sha1 }
+        if remote_package_exists?(package)
           say("SKIP".yellow)
           next
         end
@@ -69,7 +86,7 @@ module Bosh::Cli
       header("Copying jobs")
       @jobs.each do |job|
         say("#{job.name} (#{job.version})".ljust(30), " ")
-        if remote_object_exists?(@remote_jobs, job)
+        if remote_job_exists?(job)
           say("SKIP".yellow)
           next
         end
@@ -163,10 +180,30 @@ module Bosh::Cli
       raise BlobstoreError, "Blobstore error: #{e}"
     end
 
-    def remote_object_exists?(collection, local_object)
-      collection.any? do |remote_object|
+    # Checks if local package is already known remotely
+    # @param [#name, #version] local_package
+    # @return [Boolean]
+    def remote_package_exists?(local_package)
+      # If checksum is known to director we can always match it
+      return true if @package_matches.include?(local_package.sha1)
+
+      remote_object_exists?(@remote_packages, local_package)
+    end
+
+    # Checks if local job is already known remotely
+    # @param [#name, #version] local_job
+    # @return [Boolean]
+    def remote_job_exists?(local_job)
+      remote_object_exists?(@remote_jobs, local_job)
+    end
+
+    # @param [Enumerable] remote_objects Remote object collection
+    # @param [#name, #version] local_object
+    # @return [Boolean]
+    def remote_object_exists?(remote_objects, local_object)
+      remote_objects.any? do |remote_object|
         remote_object.name == local_object.name &&
-            remote_object.version.to_s == local_object.version.to_s
+          remote_object.version.to_s == local_object.version.to_s
       end
     end
 

@@ -32,11 +32,9 @@ module Bosh::Cli
 
     # Repacks tarball according to the structure of remote release
     # Return path to repackaged tarball or nil if repack has failed
-    def repack(remote_jobs = nil, remote_packages_sha1 = nil)
+    def repack(remote_release = nil, package_matches = [])
       return nil unless valid?
       unpack
-      remote_jobs ||= []
-      remote_packages_sha1 ||= []
 
       tmpdir = Dir.mktmpdir
       repacked_path = File.join(tmpdir, "release-repack.tgz")
@@ -45,30 +43,41 @@ module Bosh::Cli
 
       manifest = load_yaml_file(File.join(@unpack_dir, "release.MF"))
 
-      local_packages  = manifest["packages"]
+      # Remote release could be not-existent, then package matches are supposed
+      # to satisfy everything
+      remote_release ||= {"jobs" => [], "packages" => []}
+
+      local_packages = manifest["packages"]
       local_jobs = manifest["jobs"]
+      remote_packages = remote_release["packages"]
+      remote_jobs = remote_release["jobs"]
 
       @skipped = 0
 
       Dir.chdir(@unpack_dir) do
+        # TODO: this code can be dried up a little bit (as it is somewhat
+        # similar to what's going on in ReleaseCompiler)
+
         local_packages.each do |package|
-          say("#{package['name']} (#{package['version']})".ljust(30), " ")
-          if remote_packages_sha1.any? { |sha1| sha1 == package["sha1"] }
+          say("#{package["name"]} (#{package["version"]})".ljust(30), " ")
+          if package_matches.include?(package["sha1"]) ||
+            remote_packages.any? { |rp| package["name"] == rp["name"] &&
+              package["version"].to_s == rp["version"].to_s }
             say("SKIP".green)
             @skipped += 1
-            FileUtils.rm_rf(File.join("packages", "#{package['name']}.tgz"))
+            FileUtils.rm_rf(File.join("packages", "#{package["name"]}.tgz"))
           else
             say("UPLOAD".red)
           end
         end
 
         local_jobs.each do |job|
-          say("#{job['name']} (#{job['version']})".ljust(30), " ")
+          say("#{job["name"]} (#{job["version"]})".ljust(30), " ")
           if remote_jobs.any? { |rj| job["name"] == rj["name"] &&
               job["version"].to_s == rj["version"].to_s }
             say("SKIP".green)
             @skipped += 1
-            FileUtils.rm_rf(File.join("jobs", "#{job['name']}.tgz"))
+            FileUtils.rm_rf(File.join("jobs", "#{job["name"]}.tgz"))
           else
             say("UPLOAD".red)
           end
