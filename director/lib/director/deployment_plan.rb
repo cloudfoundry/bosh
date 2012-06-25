@@ -30,9 +30,13 @@ module Bosh::Director
     include DnsHelper
     include ValidationHelper
 
-    attr_accessor :name
-    attr_accessor :canonical_name
-    attr_accessor :deployment
+    # @return [String] Deployment name
+    attr_reader :name
+    # @return [String] Deployment canonical name (for DNS)
+    attr_reader :canonical_name
+    # @return [Models::Deployment] Deployment DB model
+    attr_reader :model
+
     attr_accessor :properties
     attr_accessor :compilation
     attr_accessor :update
@@ -51,13 +55,18 @@ module Bosh::Director
       @job_states = safe_property(options, "job_states",
                                   :class => Hash, :default => {})
 
-      @deployment = nil
       @job_rename = safe_property(options, "job_rename",
                                   :class => Hash, :default => {})
       @unneeded_vms = []
       @unneeded_instances = []
       @dns_domain = nil
 
+      @name = nil
+      @canonical_name = nil
+      @model = nil
+    end
+
+    def parse
       parse_name
       parse_properties
       parse_releases
@@ -66,6 +75,33 @@ module Bosh::Director
       parse_update
       parse_resource_pools
       parse_jobs
+    end
+
+    # Looks up deployment model in DB or creates one if needed
+    # @return [void]
+    def bind_model
+      if @name.nil? || @canonical_name.nil?
+        raise DirectorError,
+              "Unable to bind model, name and/or canonical name unknown"
+      end
+
+      attrs = {:name => @name}
+
+      Models::Deployment.db.transaction do
+        deployment = Models::Deployment.find(attrs)
+        # Canonical uniqueness is not enforced in the DB
+        if deployment.nil?
+          Models::Deployment.each do |other|
+            if canonical(other.name) == @canonical_name
+              raise DeploymentCanonicalNameTaken,
+                    "Invalid deployment name `#{@name}', " +
+                    "canonical name already taken"
+            end
+          end
+          deployment = Models::Deployment.create(attrs)
+        end
+        @model = deployment
+      end
     end
 
     # Returns a named job
@@ -135,8 +171,6 @@ module Bosh::Director
     def rename_in_progress?
       @job_rename["old_name"] && @job_rename["new_name"]
     end
-
-    private
 
     def parse_name
       @name = safe_property(@manifest, "name", :class => String)
