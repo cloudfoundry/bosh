@@ -51,27 +51,27 @@ module Bosh
         connect_to_agent
         @spec = prep_spec(YAML.load_file(File.expand_path(@options["manifest"])))
         @packages = {}
+        micro_job = @options[:job]
         untar(@options["release"]) do |dir|
           manifest = YAML.load_file("release.MF")
-          micro_job = File.expand_path("jobs/micro.tgz")
-
+          micro_job_path = File.expand_path("jobs/#{micro_job}.tgz")
           # add micro job to apply spec
-          file = File.new(micro_job)
+          file = File.new(micro_job_path)
           id = @blobstore_client.create(file)
           @logger.debug "stored micro job as #{id}"
-          job = manifest["jobs"].detect { |j| j["name"] == "micro" }
+          job = manifest["jobs"].detect { |j| j["name"] == micro_job }
           # make sure version is a string or apply() will fail
           job["version"] = job["version"].to_s
-          job["template"] = "micro"
+          job["template"] = micro_job
           job["blobstore_id"] = id
           @spec["job"] = job
 
           # first do the micro package from the manifest
-          micro = find_package(manifest, "micro")
+          micro = find_package(manifest, micro_job)
           compile_packages(dir, manifest, micro["dependencies"]) if micro
 
           # then do the micro job
-          untar(micro_job) do
+          untar(micro_job_path) do
             job = YAML.load_file("job.MF")
             compile_packages(dir, manifest, job["packages"])
           end

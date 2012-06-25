@@ -15,7 +15,10 @@ COMMANDS = %w[apply compile]
 
 def usage(msg=nil)
   $stderr.puts "error: #{msg}" if msg
-  $stderr.puts "usage: package_compiler --cpi <cpi> <command> <arguments>"
+  $stderr.puts "usage: package_compiler <options> <command> <arguments>"
+  $stderr.puts "  options:"
+  $stderr.puts "    --cpi <cloud provider interface> (#{CPIS.join(', ')})"
+  $stderr.puts "    --job <job to compile> (defaults to 'micro_<cpi>')"
   $stderr.puts "  commands:"
   $stderr.puts "    apply <apply_spec> <mbus_uri>"
   $stderr.puts "    compile <manifest> <release_tgz> <blobstore_path> <mbus_uri>"
@@ -24,11 +27,16 @@ end
 
 options = Trollop::options do
   opt :cpi, "Cloud Provider Interface", :type => String, :required => true
+  opt :job, "Job to compile", :type => String
   stop_on COMMANDS
 end
 
 unless CPIS.include?(options[:cpi])
   Trollop::die :cpi, "unknown CPI '#{options[:cpi]}'"
+end
+
+unless options[:job_given]
+  options[:job] = "micro_#{options[:cpi]}"
 end
 
 options["command"] = ARGV.shift
