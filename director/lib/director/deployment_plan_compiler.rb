@@ -333,38 +333,11 @@ module Bosh::Director
       end
     end
 
+    # Binds template models for each release spec in the deployment plan
+    # @return [void]
     def bind_templates
-      @deployment_plan.releases.each do |release_spec|
-        release_version = release_spec.model
-
-        template_name_index = {}
-        release_version.templates.each do |template|
-          template_name_index[template.name] = template
-        end
-
-        package_name_index = {}
-        release_version.packages.each do |package|
-          package_name_index[package.name] = package
-        end
-
-        release_spec.templates.each do |template|
-          template_name = template.name
-          @logger.info("Binding template: #{template_name}")
-          actual_template = template_name_index[template_name]
-          if actual_template.nil?
-            raise DeploymentUnknownTemplate,
-                  "Can't find template `#{template_name}'"
-          end
-          template.template = actual_template
-
-          packages = []
-          actual_template.package_names.each do |package_name|
-            packages << package_name_index[package_name]
-          end
-          template.packages = packages
-
-          @logger.debug("Bound template: #{actual_template.pretty_inspect}")
-        end
+      @deployment_plan.releases.each do |release|
+        release.bind_templates
       end
     end
 
@@ -384,6 +357,8 @@ module Bosh::Director
       end
     end
 
+    # Calculates configuration checksums for all jobs in this deployment plan
+    # @return [void]
     def bind_configuration
       @deployment_plan.jobs.each do |job|
         ConfigurationHasher.new(job).hash

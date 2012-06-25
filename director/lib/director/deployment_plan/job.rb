@@ -36,6 +36,8 @@ module Bosh::Director
         @deployment = deployment
         @job_spec = job_spec
 
+        @templates = []
+
         parse_name
         parse_release
         parse_template
@@ -62,18 +64,17 @@ module Bosh::Director
           "release" => @release.name,
           "templates" => [],
           # --- Legacy ---
-          "template" => first_template.template.name,
-          "version" => first_template.template.version,
-          "sha1" => first_template.template.sha1,
-          "blobstore_id" => first_template.template.blobstore_id
+          "template" => first_template.name,
+          "version" => first_template.version,
+          "sha1" => first_template.sha1,
+          "blobstore_id" => first_template.blobstore_id
         }
-        if first_template.template.logs
-          result["logs"] = template.logs
+        if first_template.logs
+          result["logs"] = first_template.logs
         end
         # --- /Legacy ---
 
         @templates.each do |template|
-          template = template.template
           template_entry = {
             "name" => template.name,
             "version" => template.version,
@@ -83,7 +84,7 @@ module Bosh::Director
           if template.logs
             template_entry["logs"] = template.logs
           end
-          result["templates"].push(template_entry)
+          result["templates"] << template_entry
         end
 
         result
@@ -151,7 +152,21 @@ module Bosh::Director
       end
 
       def parse_template
-        @templates = @release.template(safe_property(@job_spec, "template"))
+        # TODO support plural "templates" syntax as well
+        template_names = safe_property(@job_spec, "template")
+
+        if template_names.is_a?(String)
+          template_names = Array(template_names)
+        end
+
+        unless template_names.is_a?(Array)
+          invalid_type("template", "String or Array")
+        end
+
+        template_names.each do |template_name|
+          @release.use_template_named(template_name)
+          @templates << @release.template(template_name)
+        end
       end
 
       def parse_disk
