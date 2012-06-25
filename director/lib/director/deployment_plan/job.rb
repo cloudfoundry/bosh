@@ -36,6 +36,8 @@ module Bosh::Director
         @deployment = deployment
         @job_spec = job_spec
 
+        @template = nil
+
         parse_name
         parse_release
         parse_template
@@ -57,15 +59,14 @@ module Bosh::Director
         result = {
           "name" => @name,
           "release" => @release.name,
-          "template" => @template.template.name,
-          "version" => @template.template.version,
-          "sha1" => @template.template.sha1,
-          "blobstore_id" => @template.template.blobstore_id,
+          "template" => @template.name,
+          "version" => @template.version,
+          "sha1" => @template.checksum,
+          "blobstore_id" => @template.blobstore_id,
         }
 
-        # TODO: refactor as a part of 'spec vs model' refactoring
-        if @template.template.logs
-          result["logs"] = @template.template.logs
+        if @template.logs
+          result["logs"] = @template.logs
         end
 
         result
@@ -134,6 +135,7 @@ module Bosh::Director
 
       def parse_template
         template_name = safe_property(@job_spec, "template", :class => String)
+        @release.use_template_named(template_name)
         @template = @release.template(template_name)
       end
 

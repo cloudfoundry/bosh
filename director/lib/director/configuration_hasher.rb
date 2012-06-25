@@ -29,54 +29,53 @@ module Bosh::Director
     end
 
     def extract_template
+      temp_path = @job.template.download_blob
       @template_dir = Dir.mktmpdir("template_dir")
-      temp_path = File.join(Dir.tmpdir,
-                            "template-#{UUIDTools::UUID.random_create}")
-      begin
-        File.open(temp_path, "w") do |file|
-          Config.blobstore.get(@job.template.template.blobstore_id, file)
-        end
-        `tar -C #{@template_dir} -xzf #{temp_path}`
-      ensure
-        FileUtils.rm_f(temp_path)
+
+      output = `tar -C #{@template_dir} -xzf #{temp_path} 2>&1`
+      if $?.exitstatus != 0
+        raise JobTemplateUnpackFailed,
+              "Cannot unpack `#{@job.template.name}' job template, " +
+              "tar returned #{$?.exitstatus}, " +
+              "tar output: #{output}"
       end
+    ensure
+      FileUtils.rm_f(temp_path) if temp_path
     end
 
     def hash
-      begin
-        extract_template
-        manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
+      extract_template
+      manifest = YAML.load_file(File.join(@template_dir, "job.MF"))
 
-        monit_template = template_erb("monit")
-        monit_template.filename = File.join(@job.template.name, "monit")
+      monit_template = template_erb("monit")
+      monit_template.filename = File.join(@job.template.name, "monit")
 
-        templates = {}
+      templates = {}
 
-        if manifest["templates"]
-          manifest["templates"].each_key do |template_name|
-            template = template_erb(File.join("templates", template_name))
-            templates[template_name] = template
-          end
+      if manifest["templates"]
+        manifest["templates"].each_key do |template_name|
+          template = template_erb(File.join("templates", template_name))
+          templates[template_name] = template
         end
-
-        @job.instances.each do |instance|
-          binding_helper = BindingHelper.new(@job.name, instance.index,
-                                             @job.properties.to_openstruct,
-                                             instance.spec.to_openstruct)
-          digest = Digest::SHA1.new
-          digest << bind_template(monit_template,
-                                  binding_helper, instance.index)
-
-          templates.keys.sort.each do |template_name|
-            template = templates[template_name]
-            template.filename = File.join(@job.template.name, template_name)
-            digest << bind_template(template, binding_helper, instance.index)
-          end
-          instance.configuration_hash = digest.hexdigest
-        end
-      ensure
-        FileUtils.rm_rf(@template_dir) if @template_dir
       end
+
+      @job.instances.each do |instance|
+        binding_helper = BindingHelper.new(@job.name, instance.index,
+                                           @job.properties.to_openstruct,
+                                           instance.spec.to_openstruct)
+        digest = Digest::SHA1.new
+        digest << bind_template(monit_template,
+                                binding_helper, instance.index)
+
+        templates.keys.sort.each do |template_name|
+          template = templates[template_name]
+          template.filename = File.join(@job.template.name, template_name)
+          digest << bind_template(template, binding_helper, instance.index)
+        end
+        instance.configuration_hash = digest.hexdigest
+      end
+    ensure
+      FileUtils.rm_rf(@template_dir) if @template_dir
     end
 
     def bind_template(template, binding_helper, index)

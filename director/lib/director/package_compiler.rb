@@ -304,7 +304,7 @@ module Bosh::Director
           @logger.info("Job will be compiled for: " +
                          stemcell_name_version(stemcell))
 
-          job.template.packages.each do |package|
+          job.template.package_models.each do |package|
             schedule_compilation(job, package, stemcell.model)
           end
         end

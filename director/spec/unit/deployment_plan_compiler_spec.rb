@@ -73,6 +73,18 @@ describe Bosh::Director::DeploymentPlanCompiler do
     compiler.bind_stemcells
   end
 
+  it "should bind templates" do
+    r1 = mock(BD::DeploymentPlan::Release)
+    r2 = mock(BD::DeploymentPlan::Release)
+
+    plan.should_receive(:releases).and_return([r1, r2])
+
+    r1.should_receive(:bind_templates)
+    r2.should_receive(:bind_templates)
+
+    compiler.bind_templates
+  end
+
 end
 
 describe Bosh::Director::DeploymentPlanCompiler do
@@ -534,39 +546,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
         with(@network_reservation, "`job-a/3'")
 
       @deployment_plan_compiler.bind_instance_networks
-    end
-  end
-
-  describe :bind_templates do
-    before(:each) do
-      @deployment = BD::Models::Deployment.make
-      @release = BD::Models::Release.make
-      @release_version = BD::Models::ReleaseVersion.make(:release => @release)
-      @template = BD::Models::Template.make(:release => @release,
-                                            :name => "test_template")
-      @template.package_names = %w(test_package)
-      @template.save
-      @release_version.add_template(@template)
-      @package = BD::Models::Package.make(:release => @release,
-                                          :name => "test_package")
-      @release_version.add_package(@package)
-
-      @job_spec = stub(:JobSpec)
-      @template_spec = stub(:TemplateSpec)
-      @release_spec = stub(BD::DeploymentPlan::Release)
-
-      @template_spec.stub(:name).and_return("test_template")
-
-      @deployment_plan.stub(:releases).and_return([@release_spec])
-
-      @release_spec.stub(:templates).and_return([@template_spec])
-      @release_spec.stub(:model).and_return(@release_version)
-    end
-
-    it "should bind the compiled packages to the job" do
-      @template_spec.should_receive(:template=).with(@template)
-      @template_spec.should_receive(:packages=).with([@package])
-      @deployment_plan_compiler.bind_templates
     end
   end
 
