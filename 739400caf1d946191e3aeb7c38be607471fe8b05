@@ -1,0 +1,7 @@
+Code-Review+2: Oleg Shaldybin <olegs@vmware.com>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Ben Lisbakken <lisbakke@rbcon.com>
+Submitted-at: Mon, 25 Jun 2012 21:09:50 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/6520
+Project: bosh
+Branch: refs/heads/master
