@@ -12,7 +12,9 @@ describe Bosh::PackageCompiler::Compiler do
           "logfile" => File.join(@base_dir, "spec.log"),
           "manifest" => spec_asset("micro_bosh.yml"),
           "release" => spec_asset("micro_bosh.tgz"),
-          "apply_spec" => File.join(@base_dir, "micro/apply_spec.yml")
+          "apply_spec" => File.join(@base_dir, "micro/apply_spec.yml"),
+          :cpi => "vsphere",
+          :job => "micro"
     }
   end
 
@@ -44,4 +46,19 @@ describe Bosh::PackageCompiler::Compiler do
     test_agent.should_receive(:run_task).with(:start)
     @compiler.apply
   end
+
+  it "should compile packages for a specified job" do
+    options = @options.dup
+    options[:job] = "micro_aws"
+    @compiler = Bosh::PackageCompiler::Compiler.new(options)
+    test_agent = mock(:agent)
+    test_agent.stub(:ping)
+    result = {"result" => {"blobstore_id" => "blah", "sha1" => "blah"}}
+    test_agent.stub(:run_task).with(:compile_package, kind_of(String), "sha1",
+                                    /(ruby|nats|redis|libpq|postgres|blobstore|nginx|director|health_monitor|aws_registry)/,
+                                    kind_of(String), kind_of(Hash)).and_return(result)
+    Bosh::Agent::Client.should_receive(:create).and_return(test_agent)
+    @compiler.compile.should include("aws_registry")
+  end
+
 end
