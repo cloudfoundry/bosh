@@ -137,6 +137,7 @@ module Bosh::Cli::Command
 
       url = yaml[stemcell_name]["url"]
       size = yaml[stemcell_name]["size"]
+      sha1 = yaml[stemcell_name]["sha"]
       progress_bar = ProgressBar.new(stemcell_name, size)
       progress_bar.file_transfer_mode
       File.open("#{stemcell_name}", "w") { |file|
@@ -146,7 +147,13 @@ module Bosh::Cli::Command
         end
       }
       progress_bar.finish
-      puts("Download complete.")
+      file_sha1 = Digest::SHA1.file(stemcell_name).hexdigest
+      if file_sha1 != sha1
+        err("The downloaded file sha1 '#{file_sha1}' does not match the " +
+            "expected sha1 '#{sha1}'.")
+      else
+        puts("Download complete.")
+      end
     end
 
     def delete(name, version)
