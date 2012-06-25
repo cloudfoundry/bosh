@@ -47,6 +47,26 @@ module Bosh::Director
         end
       end
 
+      # Looks up package and template models in DB and binds them to this
+      # release spec
+      # @return [void]
+      def bind_templates
+        # Release version model needs to be known so we can look up its
+        # templates
+        if @model.nil?
+          raise DirectorError, "Release model not bound in release spec"
+        end
+
+        # By now job specs from the deployment manifest should
+        # have been parsed, so we can assume @templates contains
+        # the list of templates that need to be bound
+        @templates.each_value do |template|
+          @logger.debug("Binding template `#{template.name}'")
+          template.bind_models
+          @logger.debug("Bound template `#{template.name}'")
+        end
+      end
+
       # @return [Hash] Hash representation
       def spec
         {
@@ -55,22 +75,49 @@ module Bosh::Director
         }
       end
 
-      # This method takes in a name of a template or an array of template names
-      # and will initialize TemplateSpec classes for each template.  It will
-      # then return an array of these TemplateSec classes.
-      # @param [String|Array] name_or_array Template name or names.
-      # @return [Array] Returns an array of the TemplateSepc classes
-      #     initialized to the name_or_array.
-      def template(name_or_array)
-        template_names = [name_or_array] unless name_or_array.is_a?(Array)
-        templates = []
-        template_names.each do |name|
-          @templates[name] ||= TemplateSpec.new(name)
-          templates.push(@templates[name])
+      # Looks up up template model by template name
+      # @param [String] name Template name
+      # @return [Models::Template]
+      def get_template_model_by_name(name)
+        @all_templates ||= @model.templates.inject({}) do |hash, template|
+          hash[template.name] = template
+          hash
         end
-        templates
+
+        @all_templates[name]
       end
 
+      # Looks up up package model by package name
+      # @param [String] name Package name
+      # @return [Models::Package]
+      def get_package_model_by_name(name)
+        @all_packages ||= @model.packages.inject({}) do |hash, template|
+          hash[template.name] = template
+          hash
+        end
+
+        @all_packages[name]
+      end
+
+      # Adds template to a list of templates used by this release for the
+      # current deployment
+      # @param [String] template_name Template name
+      def use_template_named(template_name)
+        @templates[template_name] ||= Template.new(self, template_name)
+      end
+
+      # @param [String] name Template name
+      # @return [DeploymentPlan::Template] Template with given name used by this
+      #   release (if any)
+      def template(name)
+        @templates[name]
+      end
+
+      # Returns a list of job templates that need to be included into this
+      # release. Note that this is not just a list of all templates existing
+      # in the release but rather a list of templates for jobs that are included
+      # into current deployment plan.
+      # @return [Array<DeploymentPlan::Template>] List of job templates
       def templates
         @templates.values
       end

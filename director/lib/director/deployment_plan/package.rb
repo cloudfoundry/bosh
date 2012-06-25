@@ -13,10 +13,10 @@ module Bosh::Director
 
       def spec
         {
-            "name" => @package.name,
-            "version" => "#{@package.version}.#{@compiled_package.build}",
-            "sha1" => @compiled_package.sha1,
-            "blobstore_id" => @compiled_package.blobstore_id
+          "name" => @package.name,
+          "version" => "#{@package.version}.#{@compiled_package.build}",
+          "sha1" => @compiled_package.sha1,
+          "blobstore_id" => @compiled_package.blobstore_id
         }
       end
     end

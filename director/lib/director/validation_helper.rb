@@ -46,8 +46,6 @@ module Bosh::Director
       result
     end
 
-    private
-
     def invalid_type(property, klass)
       raise ValidationInvalidType,
             "Property `#{property}' did not match the required type `#{klass}'"

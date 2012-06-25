@@ -305,7 +305,7 @@ module Bosh::Director
                          stemcell_name_version(stemcell))
 
           job.templates.each do |template|
-            template.packages.each do |package|
+            template.package_models.each do |package|
               schedule_compilation(job, package, stemcell.model)
             end
           end
