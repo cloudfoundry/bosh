@@ -28,7 +28,7 @@ describe Bosh::Agent::Message::State do
       "bosh_protocol" => Bosh::Agent::BOSH_PROTOCOL,
       "ntp"           => { "message" => Bosh::Agent::NTP::FILE_MISSING }
     }
-    handler.stub!(:job_state).and_return
+    handler.stub!(:job_state).and_return([])
     handler.state.should == initial_state
   end
 

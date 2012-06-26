@@ -234,13 +234,17 @@ module Bosh::Agent
       # TODO figure out if we want to try to scale down the message instead
       # of generating an exception
       if json.bytesize < NATS_MAX_PAYLOAD_SIZE
-        @nats.publish(reply_to, json, blk)
+        EM.next_tick do
+          @nats.publish(reply_to, json, blk)
+        end
       else
         msg = "message > NATS_MAX_PAYLOAD, stored in blobstore"
         original = @credentials ? payload : unencrypted
         exception = RemoteException.new(msg, nil, original)
         @logger.fatal(msg)
-        @nats.publish(reply_to, exception.to_hash, blk)
+        EM.next_tick do
+          @nats.publish(reply_to, exception.to_hash, blk)
+        end
       end
     end
 

@@ -17,6 +17,10 @@ describe Bosh::Agent::Handler do
     Bosh::Agent::Config.smtp_port      = 55213
     Bosh::Agent::Config.smtp_user      = "user"
     Bosh::Agent::Config.smtp_password  = "pass"
+
+    EM.stub!(:next_tick).and_return do |block|
+      block.call
+    end
   end
 
   it "should result in a value payload" do

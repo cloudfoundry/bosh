@@ -29,7 +29,7 @@ end
 
 group :development, :test do
   gem "ci_reporter"
-  gem "rspec", "~>2.10"
+  gem "rspec", "=2.8"
 
   gem "rcov", :platforms => :ruby_18
   gem "simplecov", :platforms => :ruby_19
