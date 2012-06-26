@@ -75,10 +75,7 @@ describe Bosh::AwsCloud::Cloud do
       File.stub(:blockdev?).with("/dev/sdh").and_return(false, false, false)
       File.stub(:blockdev?).with("/dev/xvdh").and_return(false, false, true)
 
-      Dir.should_receive(:mktmpdir).and_yield(@tmp_dir)
-
-      cloud.should_receive(:unpack_image).with(@tmp_dir, "/tmp/foo")
-      cloud.should_receive(:copy_root_image).with(@tmp_dir, "/dev/xvdh")
+      cloud.should_receive(:copy_root_image).with("/tmp/foo", "/dev/xvdh")
 
       volume.should_receive(:create_snapshot).and_return(snapshot)
       cloud.should_receive(:wait_resource).with(snapshot, :completed)
