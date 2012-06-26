@@ -38,3 +38,8 @@ bosh-stemcell-vsphere-0.6.0.tgz:
   url: https://blob.cfblob.com/rest/objects/4e4e78bca41e122204e4e9863d076304fe0aa0f8cc72?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=m4rfejTlU5qMJYsmETwyuXRDdYU=
   sha: 8814b28787ab8a2f1946bfb414a43beab29c98b5
   size: 418373754
+bosh-stemcell-vsphere-0.6.1.tgz: 
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjEyMDRlNGU4NmVlMzk2OTIwNGZlOTJh%0AMzVkYmM5NiIsInNpZyI6IlV3Ym9wVDR2TFkyZlpYSzIzZ3dCam02MWNmQT0i%0AfQ==%0A
+  url: https://blob.cfblob.com/rest/objects/4e4e78bca31e121204e4e86ee3969204fe92a35dbc96?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=UwbopT4vLY2fZXK23gwBjm61cfA=
+  sha: 0fb57b89f9defabd153ccf7767daf36f6a01c9be
+  size: 418200215
