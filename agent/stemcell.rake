@@ -202,7 +202,6 @@ namespace "stemcell" do
     chroot_dir = get_chroot_dir
     package_dir = get_package_dir
     mkdir_p package_dir
-    stemcell_name = ENV["STEMCELL_NAME"] || "bosh-stemcell"
 
     hypervisor = options[:hypervisor] || "esxi"
     format = options[:format]
@@ -217,6 +216,8 @@ namespace "stemcell" do
       else
         raise "Unknown hypervisor: #{hypervisor}"
     end
+
+    stemcell_name = ENV["STEMCELL_NAME"] || "bosh-stemcell-#{format}"
 
     cp "misc/stemcell/build/vmbuilder.cfg", work_dir unless File.exist?(File.join(work_dir, "vmbuilder.cfg"))
     cp_r "misc/stemcell/build", work_dir unless File.exists?(File.join(work_dir, "build"))
