@@ -5,7 +5,7 @@ module Bosh
     class Director
       include Bosh::Cli::VersionCalc
 
-      DIRECTOR_HTTP_ERROR_CODES = [400, 403, 500]
+      DIRECTOR_HTTP_ERROR_CODES = [400, 403, 404, 500]
 
       API_TIMEOUT = 86400 * 3
       CONNECT_TIMEOUT = 30
