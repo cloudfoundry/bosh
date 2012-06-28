@@ -44,7 +44,7 @@ describe Bosh::Agent::Message::Apply do
     lambda {
       handler.apply
     }.should raise_error Bosh::Agent::MessageHandlerError,
-    /Failed to install job 'bubba': failed to process configuration template 'thin.yml.erb': line 6, error:/
+    /Failed to install job 'bubba.bubba': failed to process configuration template 'thin.yml.erb': line 6, error:/
   end
 
   it 'should set deployment in agents state if blank' do
@@ -199,8 +199,43 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     handler.apply
 
-    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba_hubba.monitrc')
+    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.hubba_hubba.monitrc')
     File.exist?(monitrc).should == true
+  end
+
+  it 'should install two jobs with two .monit files' do
+    response = mock("response")
+    response.stub!(:status).and_return(200)
+
+    state = Bosh::Agent::Message::State.new
+
+    job_data = read_asset('hubba.tgz')
+    job2_data = read_asset('hubba2.tgz')
+    job_sha1 = Digest::SHA1.hexdigest(job_data)
+    job2_sha1 = Digest::SHA1.hexdigest(job2_data)
+    apply_data = {
+      "configuration_hash" => "bogus",
+      "deployment" => "foo",
+      "job" => { "name" => "hubba", "templates" => [
+        {"name" => "hubba", "blobstore_id" => "some_blobstore_id", "version" => "77", "sha1" => job_sha1 },
+        {"name" => "hubba2", "blobstore_id" => "some_blobstore_id2", "version" => "77", "sha1" => job2_sha1 }] },
+      "release" => { "version" => "99" },
+      "networks" => { "network_a" => { "ip" => "11.0.0.1" } }
+    }
+    get_args = [ "/resources/some_blobstore_id", {}, {} ]
+    get_args2 = [ "/resources/some_blobstore_id2", {}, {} ]
+    @httpclient.should_receive(:get).with(*get_args).and_yield(job_data).and_return(response)
+    @httpclient.should_receive(:get).with(*get_args2).and_yield(job2_data).and_return(response)
+
+    handler = Bosh::Agent::Message::Apply.new([apply_data])
+    handler.stub!(:apply_packages)
+    handler.apply
+
+    monitrc1 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.hubba_hubba.monitrc')
+    File.exist?(monitrc1).should == true
+
+    monitrc2 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba2', '77', 'hubba.hubba2_hubba.monitrc')
+    File.exist?(monitrc2).should == true
   end
 
   def http_200_response_mock

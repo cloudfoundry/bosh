@@ -11,24 +11,24 @@ module Bosh::Agent
       attr_reader :link_path
       attr_reader :template
 
-      def initialize(spec, config_binding = nil)
-        unless spec.is_a?(Hash)
-          raise ArgumentError, "Invalid job spec, " +
-                               "Hash expected, #{spec.class} given"
+      def initialize(job_name, template_spec, config_binding = nil)
+        unless template_spec.is_a?(Hash)
+          raise ArgumentError, "Invalid job template_spec, " +
+                               "Hash expected, #{template_spec.class} given"
         end
 
-        %w(name template version sha1 blobstore_id).each do |key|
-          if spec[key].nil?
+        %w(name version sha1 blobstore_id).each do |key|
+          if template_spec[key].nil?
             raise ArgumentError, "Invalid spec, #{key} is missing"
           end
         end
 
         @base_dir = Bosh::Agent::Config.base_dir
-        @name = spec["name"]
-        @template = spec["template"]
-        @version = spec["version"]
-        @checksum = spec["sha1"]
-        @blobstore_id = spec["blobstore_id"]
+        @name = "#{job_name}.#{template_spec["name"]}"
+        @template = template_spec["name"]
+        @version = template_spec["version"]
+        @checksum = template_spec["sha1"]
+        @blobstore_id = template_spec["blobstore_id"]
         @config_binding = config_binding
 
         @install_path = File.join(@base_dir, "data", "jobs",
