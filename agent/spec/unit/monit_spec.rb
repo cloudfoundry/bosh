@@ -6,6 +6,7 @@ describe Bosh::Agent::Monit do
 
   before(:each) do
     Bosh::Agent::Config.smtp_port = 55231
+    Bosh::Agent::Monit.stub!(:monit_reload_cmd)
 
     monit_dir = File.join(base_dir, 'monit')
     FileUtils.mkdir_p(monit_dir)
@@ -60,6 +61,26 @@ describe Bosh::Agent::Monit do
           Description: $DESCRIPTION
         }
     CONFIG
+  end
+
+  it "should pass monit reload when incarnation is not changing" do
+    Bosh::Agent::Monit.stub!(:incarnation).and_return(99,99,99,99,100)
+    Bosh::Agent::Monit.reload
+  end
+
+  it "should fail when NUM_RETRY_MONIT_WAIT_INCARNATION is exceeded" do
+    old_incarnations = Array.new(Bosh::Agent::Monit::NUM_RETRY_MONIT_WAIT_INCARNATION, 99)
+    Bosh::Agent::Monit.stub!(:incarnation).and_return(*old_incarnations)
+    lambda {
+      Bosh::Agent::Monit.reload
+    }.should raise_error(Bosh::Agent::StateError)
+  end
+
+  it "should fail monit reload when incarnation is not changing" do
+    Bosh::Agent::Monit.stub!(:incarnation).and_return(99)
+    lambda {
+      Bosh::Agent::Monit.reload
+    }.should raise_error(Bosh::Agent::StateError)
   end
 
   it "should provide monit api client" do
