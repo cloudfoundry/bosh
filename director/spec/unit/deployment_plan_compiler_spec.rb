@@ -34,6 +34,30 @@ describe Bosh::Director::DeploymentPlanCompiler do
     compiler.bind_releases
   end
 
+  it "should bind existing VMs" do
+    vm1 = BD::Models::Vm.make
+    vm2 = BD::Models::Vm.make
+
+    plan.stub(:vms).and_return([vm1, vm2])
+
+    compiler.should_receive(:bind_existing_vm).with(vm1, an_instance_of(Mutex))
+    compiler.should_receive(:bind_existing_vm).with(vm2, an_instance_of(Mutex))
+
+    compiler.bind_existing_deployment
+  end
+
+  it "should bind resource pools" do
+    rp1 = mock(BD::DeploymentPlan::ResourcePool)
+    rp2 = mock(BD::DeploymentPlan::ResourcePool)
+
+    plan.should_receive(:resource_pools).and_return([rp1, rp2])
+
+    rp1.should_receive(:process_idle_vms)
+    rp2.should_receive(:process_idle_vms)
+
+    compiler.bind_resource_pools
+  end
+
 end
 
 describe Bosh::Director::DeploymentPlanCompiler do
@@ -43,32 +67,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
     BD::Config.stub(:cloud).and_return(@cloud)
     @deployment_plan = stub(:DeploymentPlan)
     @deployment_plan_compiler = BD::DeploymentPlanCompiler.new(@deployment_plan)
-  end
-
-  describe :bind_existing_deployment do
-    it "should bind existing VMs in parallel" do
-      deployment = BD::Models::Deployment.make
-      vm_1 = BD::Models::Vm.make
-      vm_2 = BD::Models::Vm.make
-      deployment.add_vm(vm_1)
-      deployment.add_vm(vm_2)
-      @deployment_plan.stub(:model).and_return(deployment)
-
-      thread_pool = stub(:ThreadPool)
-      thread_pool.stub(:wrap).and_yield(thread_pool)
-      BD::ThreadPool.stub(:new).and_return(thread_pool)
-
-      lock = stub(:Mutex)
-      Mutex.stub(:new).and_return(lock, nil)
-
-      thread_pool.should_receive(:process).and_yield.twice
-      @deployment_plan_compiler.should_receive(:bind_existing_vm).
-          with(lock, vm_1)
-      @deployment_plan_compiler.should_receive(:bind_existing_vm).
-          with(lock, vm_2)
-
-      @deployment_plan_compiler.bind_existing_deployment
-    end
   end
 
   describe :bind_existing_vm do
@@ -88,13 +86,13 @@ describe Bosh::Director::DeploymentPlanCompiler do
           with(state).and_return(reservations)
       @deployment_plan_compiler.should_receive(:bind_instance).
           with(instance, state, reservations)
-      @deployment_plan_compiler.bind_existing_vm(@lock, @vm)
+      @deployment_plan_compiler.bind_existing_vm(@vm, @lock)
     end
 
     it "should bind an idle vm" do
       state = {"resource_pool" => {"name" => "baz"}}
       reservations = {"foo" => "reservation"}
-      resource_pool = stub(:ResourcePoolSpec)
+      resource_pool = stub(:ResourcePool)
 
       @deployment_plan.stub(:resource_pool).with("baz").
           and_return(resource_pool)
@@ -105,7 +103,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
           with(state).and_return(reservations)
       @deployment_plan_compiler.should_receive(:bind_idle_vm).
           with(@vm, resource_pool, state, reservations)
-      @deployment_plan_compiler.bind_existing_vm(@lock, @vm)
+      @deployment_plan_compiler.bind_existing_vm(@vm, @lock)
     end
 
     it "should delete no longer needed vms" do
@@ -120,7 +118,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan_compiler.should_receive(:get_network_reservations).
           with(state).and_return(reservations)
       @deployment_plan.should_receive(:delete_vm).with(@vm)
-      @deployment_plan_compiler.bind_existing_vm(@lock, @vm)
+      @deployment_plan_compiler.bind_existing_vm(@vm, @lock)
     end
   end
 
@@ -129,7 +127,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @network = stub(:NetworkSpec)
       @network.stub(:name).and_return("foo")
       @reservation = stub(:NetworkReservation)
-      @resource_pool = stub(:ResourcePoolSpec)
+      @resource_pool = stub(:ResourcePool)
       @resource_pool.stub(:name).and_return("baz")
       @resource_pool.stub(:network).and_return(@network)
       @idle_vm = stub(:IdleVm)
@@ -163,7 +161,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
       @idle_vm.should_receive(:vm=).with(@vm)
       @idle_vm.should_receive(:current_state=).with({"state" => "foo"})
-      @idle_vm.should_receive(:network_reservation=).with(@reservation)
+      @idle_vm.should_receive(:use_reservation).with(@reservation)
 
       @deployment_plan_compiler.bind_idle_vm(
           @vm, @resource_pool, {"state" => "foo"}, {"foo" => @reservation})
@@ -180,7 +178,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       reservations = {"net" => "reservation"}
 
       instance = stub(:InstanceSpec)
-      resource_pool = stub(:ResourcePoolSpec)
+      resource_pool = stub(:ResourcePool)
       job = stub(:JobSpec)
       job.stub(:instance).with(3).and_return(instance)
       job.stub(:resource_pool).and_return(resource_pool)
@@ -201,7 +199,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       reservations = {"net" => "reservation"}
 
       instance = stub(:InstanceSpec)
-      resource_pool = stub(:ResourcePoolSpec)
+      resource_pool = stub(:ResourcePool)
       job = stub(:JobSpec)
       job.stub(:instance).with(3).and_return(instance)
       job.stub(:resource_pool).and_return(resource_pool)
@@ -226,78 +224,6 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan.stub(:rename_in_progress?).and_return(false)
 
       @deployment_plan_compiler.bind_instance(@model, state, reservations)
-    end
-  end
-
-  describe :bind_resource_pools do
-    before(:each) do
-      @network = stub(:NetworkSpec)
-      @resource_pool = stub(:ResourcePoolSpec)
-      @resource_pool.stub(:name).and_return("baz")
-      @resource_pool.stub(:network).and_return(@network)
-      @deployment_plan.stub(:resource_pools).and_return([@resource_pool])
-    end
-
-    it "should do nothing when all the VMs have been allocated" do
-      @resource_pool.stub(:missing_vm_count).and_return(0)
-      @resource_pool.stub(:idle_vms).and_return([])
-      @deployment_plan_compiler.bind_resource_pools
-    end
-
-    it "should preallocate idle vms that currently don't exist" do
-      idle_vm = stub(:IdleVm)
-      @resource_pool.stub(:missing_vm_count).and_return(1)
-      @resource_pool.stub(:idle_vms).and_return([])
-      @resource_pool.should_receive(:add_idle_vm).and_return(idle_vm)
-      @deployment_plan_compiler.bind_resource_pools
-    end
-
-    it "should make a dynamic network reservation" do
-      idle_vm = stub(:IdleVm)
-      idle_vm.stub(:network_reservation).and_return(nil)
-      @resource_pool.stub(:missing_vm_count).and_return(0)
-      @resource_pool.stub(:idle_vms).and_return([idle_vm])
-
-      @network.should_receive(:reserve).and_return do |reservation|
-        reservation.dynamic?.should == true
-        reservation.ip = 1
-        reservation.reserved = true
-        true
-      end
-
-      idle_vm.should_receive(:network_reservation=).with do |reservation|
-        reservation.dynamic?.should == true
-        reservation.ip.should == 1
-        reservation.reserved.should == true
-      end
-
-      @deployment_plan_compiler.bind_resource_pools
-    end
-
-    it "should use existing network reservation" do
-      network_reservation = stub(:NetworkReservation)
-      idle_vm = stub(:IdleVm)
-      idle_vm.stub(:network_reservation).and_return(network_reservation)
-      @resource_pool.stub(:missing_vm_count).and_return(0)
-      @resource_pool.stub(:idle_vms).and_return([idle_vm])
-      @deployment_plan_compiler.bind_resource_pools
-    end
-
-    it "should fail when there are no more IPs left" do
-      idle_vm = stub(:IdleVm)
-      idle_vm.stub(:network_reservation).and_return(nil)
-      @resource_pool.stub(:missing_vm_count).and_return(0)
-      @resource_pool.stub(:idle_vms).and_return([idle_vm])
-
-      @network.should_receive(:reserve).and_return do |reservation|
-        reservation.error = BD::NetworkReservation::CAPACITY
-        reservation.reserved = false
-        true
-      end
-
-      lambda {
-        @deployment_plan_compiler.bind_resource_pools
-      }.should raise_error(/dynamic IP but there were no more available/)
     end
   end
 
@@ -506,7 +432,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @idle_vm = stub(:IdleVm)
       @network = stub(:NetworkSpec)
       @network.stub(:name).and_return("foo")
-      @resource_pool = stub(:ResourcePoolSpec)
+      @resource_pool = stub(:ResourcePool)
       @resource_pool.stub(:network).and_return(@network)
       @resource_pool.stub(:allocate_vm).and_return(@idle_vm, nil)
       @job = stub(:JobSpec)
@@ -589,52 +515,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should make a network reservation" do
-      @network_spec.should_receive(:reserve).and_return do |reservation|
-        reservation.should == @network_reservation
-        reservation.reserved = true
-        true
-      end
+      @network_spec.should_receive(:reserve!).
+        with(@network_reservation, "`job-a/3'")
+
       @deployment_plan_compiler.bind_instance_networks
-    end
-
-    it "should fail when there is no more capacity" do
-      @network_spec.should_receive(:reserve).and_return do |reservation|
-        reservation.should == @network_reservation
-        reservation.reserved = false
-        reservation.error = BD::NetworkReservation::CAPACITY
-        true
-      end
-      lambda {
-        @deployment_plan_compiler.bind_instance_networks
-      }.should raise_error(/there were no more available/)
-    end
-
-    it "should fail reserving a static ip that was not in a static range" do
-      @network_reservation.type = :static
-      @network_reservation.ip = 1
-      @network_spec.should_receive(:reserve).and_return do |reservation|
-        reservation.should == @network_reservation
-        reservation.reserved = false
-        reservation.error = BD::NetworkReservation::WRONG_TYPE
-        true
-      end
-      lambda {
-        @deployment_plan_compiler.bind_instance_networks
-      }.should raise_error(/but it's in the dynamic pool/)
-    end
-
-    it "should fail reserving a static ip that was taken" do
-      @network_reservation.type = :static
-      @network_reservation.ip = 1
-      @network_spec.should_receive(:reserve).and_return do |reservation|
-        reservation.should == @network_reservation
-        reservation.reserved = false
-        reservation.error = BD::NetworkReservation::USED
-        true
-      end
-      lambda {
-        @deployment_plan_compiler.bind_instance_networks
-      }.should raise_error(/but it's already reserved/)
     end
   end
 

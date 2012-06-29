@@ -226,7 +226,7 @@ module Bosh::Director
 
         job_size.times do |index|
           @instances[index] = InstanceSpec.new(self, index)
-          @resource_pool.reserve_vm
+          @resource_pool.reserve_capacity(1)
         end
       end
 

@@ -7,7 +7,7 @@ describe Bosh::Director::ResourcePoolUpdater do
     @cloud = stub(:Cloud)
     BD::Config.stub(:cloud).and_return(@cloud)
 
-    @resource_pool = stub(:ResourcePoolSpec)
+    @resource_pool = stub(:ResourcePool)
     @resource_pool.stub(:name).and_return("large")
     @resource_pool_updater = BD::ResourcePoolUpdater.new(@resource_pool)
   end
@@ -74,7 +74,7 @@ describe Bosh::Director::ResourcePoolUpdater do
       @stemcell = BD::Models::Stemcell.make
       @stemcell_spec = stub(:StemcellSpec)
       @stemcell_spec.stub(:stemcell).and_return(@stemcell)
-      @resource_pool.stub(:deployment).and_return(@deployment_plan)
+      @resource_pool.stub(:deployment_plan).and_return(@deployment_plan)
       @resource_pool.stub(:stemcell).and_return(@stemcell_spec)
       @cloud_properties = {"size" => "medium"}
       @resource_pool.stub(:cloud_properties).and_return(@cloud_properties)
