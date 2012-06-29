@@ -95,21 +95,14 @@ describe Bosh::Director::AgentClient do
                                               cloud_properties,
                                               network_settings, Array(99),
                                               env)
-    agent_encryption_handler = Bosh::EncryptionHandler.new(vm.agent_id, vm.credentials)
+    handler = Bosh::EncryptionHandler.new(vm.agent_id, vm.credentials)
 
-    nats_rpc.should_receive(:send).with(kind_of(String),
-                                        hash_including("encrypted_data")
-    ).and_return { |*args|
+    nats_rpc.should_receive(:send_request) do |*args, &blk|
       data = args[1]["encrypted_data"]
-      # TODO when switching to rspec 2.9.0 this needs to be changed as they
-      # have changed the call to not include the proc
-      callback = args[2]
-
-      # decrypt to initiate sesssion
-      agent_encryption_handler.decrypt(data)
-
-      callback.call("encrypted_data" => agent_encryption_handler.encrypt("value" => "pong"))
-    }
+      # decrypt to initiate session
+      handler.decrypt(data)
+      blk.call("encrypted_data" => handler.encrypt("value" => "pong"))
+    end
 
     client = Bosh::Director::AgentClient.new(vm.agent_id)
     client.ping.should == "pong"

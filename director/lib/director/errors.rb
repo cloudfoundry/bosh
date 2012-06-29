@@ -27,7 +27,8 @@ module Bosh::Director
     # @return [Class]
     def self.define_error(error_code, response_code)
       Class.new(DirectorError) do
-        define_method(:initialize) do |message|
+        define_method(:initialize) do |*args|
+          message = args[0]
           super(message)
           @error_code = error_code
           @response_code = response_code
@@ -183,4 +184,7 @@ module Bosh::Director
   PackageCompilationNotEnoughWorkersForReuse = err(430002)
 
   BadManifest = err(440001)
+
+  RpcRemoteException = err(450001)
+  RpcTimeout = err(450002)
 end

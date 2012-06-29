@@ -167,7 +167,7 @@ module Bosh::Director
               return :unbound
             end
             :ok
-          rescue Bosh::Director::Client::TimeoutException
+          rescue Bosh::Director::RpcTimeout
             # unresponsive disk, not invalid disk_info
             add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 

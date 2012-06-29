@@ -13,7 +13,7 @@ describe Bosh::Director::NatsRpc do
     end
   end
 
-  describe "send" do
+  describe "send_request" do
 
     it "should publish a message to the client" do
       @nats.should_receive(:subscribe).with("director.123.>")
@@ -26,7 +26,8 @@ describe Bosh::Director::NatsRpc do
 
       nats_rpc = Bosh::Director::NatsRpc.new
       nats_rpc.stub!(:generate_request_id).and_return("req1")
-      nats_rpc.send("test_client", {"method" => "a", "arguments" => [5]}).
+      nats_rpc.send_request("test_client",
+                            {"method" => "a", "arguments" => [5]}).
           should eql("req1")
     end
 
@@ -44,7 +45,8 @@ describe Bosh::Director::NatsRpc do
       nats_rpc.stub!(:generate_request_id).and_return("req1")
 
       called = false
-      nats_rpc.send("test_client", {"method" => "a", "arguments" => [5]}) do
+      nats_rpc.send_request("test_client",
+                            {"method" => "a", "arguments" => [5]}) do
         called = true
       end
 
@@ -68,7 +70,8 @@ describe Bosh::Director::NatsRpc do
       nats_rpc.stub!(:generate_request_id).and_return("req1")
 
       called_times = 0
-      nats_rpc.send("test_client", {"method" => "a", "arguments" => [5]}) do
+      nats_rpc.send_request("test_client",
+                            {"method" => "a", "arguments" => [5]}) do
         called_times += 1
       end
       called_times.should eql(1)
@@ -76,7 +79,7 @@ describe Bosh::Director::NatsRpc do
 
   end
 
-  describe "cancel" do
+  describe "cancel_request" do
 
     it "should not fire after cancel was called" do
       subscribe_callback = nil
@@ -92,13 +95,14 @@ describe Bosh::Director::NatsRpc do
       nats_rpc.stub!(:generate_request_id).and_return("req1")
 
       called = false
-      request_id = nats_rpc.send("test_client",
-                                 {"method" => "a", "arguments" => [5]}) do
+      request_id = nats_rpc.send_request("test_client",
+                                         {"method" => "a",
+                                          "arguments" => [5]}) do
         called = true
       end
 
       request_id.should eql("req1")
-      nats_rpc.cancel("req1")
+      nats_rpc.cancel_request("req1")
       subscribe_callback.call("", nil, "director.123.req1")
       called.should be_false
     end

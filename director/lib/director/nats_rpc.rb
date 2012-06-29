@@ -28,7 +28,7 @@ module Bosh::Director
       end
     end
 
-    def send(client, request, &block)
+    def send_request(client, request, &block)
       request_id = generate_request_id
       request["reply_to"] = "#{@inbox_name}.#{request_id}"
       @lock.synchronize do
@@ -42,7 +42,7 @@ module Bosh::Director
       request_id
     end
 
-    def cancel(request_id)
+    def cancel_request(request_id)
       @lock.synchronize { @requests.delete(request_id) }
     end
 

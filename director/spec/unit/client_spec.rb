@@ -4,187 +4,216 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::Client do
 
+  before(:each) do
+    @nats_rpc = mock(BD::NatsRpc)
+    Bosh::Director::Config.stub!(:nats_rpc).and_return(@nats_rpc)
+  end
+
+  let(:test_args) do
+    ["arg 1", 2, {:test => "blah"}]
+  end
+
+  let(:test_rpc_args) do
+    @test_rpc_args = {:arguments => test_args, :method => :baz}
+  end
+
+  def make(*args)
+    BD::Client.new(*args)
+  end
+
   it "should send messages and return values" do
-    nats_rpc = mock("nats_rpc")
+    response = {"value" => 5}
 
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+    @nats_rpc.should_receive(:send_request).
+      with("foo.bar", test_rpc_args).and_yield(response)
 
-    nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
-    ) { |*args|
-      # TODO when switching to rspec 2.9.0 this needs to be changed as they
-      # have changed the call to not include the proc
-      callback = args[2]
-      callback.call({"value" => 5})
-      "3"
-    }
-
-    @client = Bosh::Director::Client.new("test_service", "test_service_id")
-    @client.test_method("arg 1", 2, {:test => "blah"}).should eql(5)
+    client = Bosh::Director::Client.new("foo", "bar")
+    client.baz(*test_args).should == 5
   end
 
   it "should handle exceptions" do
-    nats_rpc = mock("nats_rpc")
-
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
-
-    nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
-    ).and_return { |*args|
-      # TODO when switching to rspec 2.9.0 this needs to be changed as they
-      # have changed the call to not include the proc
-      callback = args[2]
-      callback.call({"exception" => {"message" => "test",
-        "backtrace" => ["backtrace"], "blobstore_id" => "bsid"}})
-      "3"
+    response = {
+      "exception" => {
+        "message" => "test",
+        "backtrace" => %w(a b c),
+        "blobstore_id" => "deadbeef"
+      }
     }
-    rm = double(Bosh::Director::Api::ResourceManager)
-    rm.should_receive(:get_resource).and_return("an exception")
-    rm.should_receive(:delete_resource)
+
+    @nats_rpc.should_receive(:send_request).
+      with("foo.bar", test_rpc_args).and_yield(response)
+
+    rm = mock(Bosh::Director::Api::ResourceManager)
+    rm.should_receive(:get_resource).with("deadbeef").and_return("an exception")
+    rm.should_receive(:delete_resource).with("deadbeef")
     Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
 
-    @client = Bosh::Director::Client.new("test_service", "test_service_id")
+    client = make("foo", "bar")
+    expected_error_message = "test\na\nb\nc\nan exception"
+
     lambda {
-      @client.test_method("arg 1", 2, {:test =>"blah"})
-    }.should raise_exception(RuntimeError, "test")
+      client.baz(*test_args)
+    }.should raise_exception(BD::RpcRemoteException, expected_error_message)
   end
 
-  it "should handle timeouts" do
-    nats_rpc = mock("nats_rpc")
+  describe "timeouts/retries" do
+    it "should handle timeouts" do
+      @nats_rpc.should_receive(:send_request).
+        with("foo.bar", test_rpc_args).and_return("req_id")
+      @nats_rpc.should_receive(:cancel_request).with("req_id")
 
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+      client = make("foo", "bar", :timeout => 0.1)
 
-    nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
-    ).and_return("4")
+      lambda {
+        client.baz(*test_args)
+      }.should raise_exception(BD::RpcTimeout)
+    end
 
-    nats_rpc.should_receive(:cancel).with("4")
+    it "should retry only methods in the options list" do
+      client_opts = {
+        :timeout => 0.1,
+        :retry_methods => {:foo => 10}
+      }
 
-    @client = Bosh::Director::Client.new("test_service", "test_service_id", :timeout => 0.1)
-    lambda {
-      @client.test_method("arg 1", 2, {:test =>"blah"})
-    }.should raise_exception(Bosh::Director::Client::TimeoutException)
+      args = {:method => :baz, :arguments => []}
+
+      @nats_rpc.should_receive(:send_request).
+        with("foo.bar", args).once.and_raise(BD::RpcTimeout)
+
+      client = make("foo", "bar", client_opts)
+
+      lambda {
+        client.baz
+      }.should raise_exception(BD::RpcTimeout)
+    end
+
+    it "should retry methods" do
+      args = {:method => :baz, :arguments => []}
+
+      @nats_rpc.should_receive(:send_request).
+        with("foo.bar", args).exactly(2).times.and_raise(BD::RpcTimeout)
+
+      client_opts = {
+        :timeout => 0.1,
+        :retry_methods => {:baz => 1}
+      }
+
+      client = make("foo", "bar", client_opts)
+
+      lambda {
+        client.baz
+      }.should raise_exception(BD::RpcTimeout)
+    end
+
+    it "should retry only timeout errors" do
+      args = {:method => :baz, :arguments => []}
+
+      @nats_rpc.should_receive(:send_request).
+        with("foo.bar", args).once.and_raise(RuntimeError.new("foo"))
+
+      client_opts = {
+        :timeout => 0.1,
+        :retry_methods => {:retry_method => 10}
+      }
+
+      client = make("foo", "bar", client_opts)
+
+      lambda {
+        client.baz
+      }.should raise_exception(RuntimeError, "foo")
+    end
+
+    it "should let you wait for the server to be ready" do
+      @client = make("foo", "bar", :timeout => 0.1)
+
+      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
+      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
+      @client.should_receive(:ping).and_raise(BD::RpcTimeout)
+      @client.should_receive(:ping).and_return(true)
+
+      @client.wait_until_ready
+    end
   end
 
-  it "should retry only methods in the option-list" do
-    nats_rpc = mock("nats_rpc")
 
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+  describe "encryption" do
+    it "should encrypt message" do
+      credentials = Bosh::EncryptionHandler.generate_credentials
+      client_opts = {:timeout => 0.1, :credentials => credentials}
+      response = {"value" => 5}
 
-    nats_rpc.should_receive(:send).with("test_service.retry_service_id",
-        {:method => :retry_method, :arguments => []}
-    ).exactly(1).times.and_raise(Bosh::Director::Client::TimeoutException)
+      @nats_rpc.should_receive(:send_request) { |*args, &blk|
+        args[0].should == "foo.bar"
+        request = args[1]
+        data = request["encrypted_data"]
 
-    options = {:timeout => 0.1,
-               :retry_methods => { :foo => 10 }}
-    @client = Bosh::Director::Client.new("test_service", "retry_service_id", options)
-    lambda {
-      @client.retry_method
-    }.should raise_exception(Bosh::Director::Client::TimeoutException)
+        handler = Bosh::EncryptionHandler.new("bar", credentials)
+
+        message = handler.decrypt(data)
+        message["method"].should == "baz"
+        message["arguments"].should == [1, 2, 3]
+        message["sequence_number"].to_i.should > Time.now.to_i
+        message["client_id"].should == "bar"
+
+        # TODO accessor for session_id
+        # message["session_id"].should == handler.session_id
+        blk.call("encrypted_data" => handler.encrypt(response))
+      }
+
+      client = make("foo", "bar", client_opts)
+      client.baz(1, 2, 3).should == 5
+    end
   end
 
-  it "should retry methods" do
-    nats_rpc = mock("nats_rpc")
+  describe "handling compilation log" do
+    it "should inject compile log into response" do
+      response = {
+        "value" => {
+          "result" => {
+            "compile_log_id" => "cafe"
+          }
+        }
+      }
 
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+      @nats_rpc.should_receive(:send_request).
+        with("foo.bar", test_rpc_args).and_yield(response)
 
-    nats_rpc.should_receive(:send).with("test_service.retry_service_id",
-        {:method => :retry_method, :arguments => []}
-    ).exactly(2).times.and_raise(Bosh::Director::Client::TimeoutException)
+      rm = double(Bosh::Director::Api::ResourceManager)
+      rm.should_receive(:get_resource).with("cafe").and_return("blob")
+      rm.should_receive(:delete_resource).with("cafe")
+      Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
 
-    options = {:timeout => 0.1,
-               :retry_methods => { :retry_method => 1 }}
-    @client = Bosh::Director::Client.new("test_service", "retry_service_id", options)
-    lambda {
-      @client.retry_method
-    }.should raise_exception(Bosh::Director::Client::TimeoutException)
+      client = make("foo", "bar")
+      value = client.baz(*test_args)
+      value["result"]["compile_log"].should == "blob"
+    end
   end
 
-  it "should retry only timeout errors" do
-    nats_rpc = mock("nats_rpc")
+  describe "formatting RPC remote exceptions" do
+    it "supports old style (String)" do
+      client = make("foo", "bar")
+      client.format_exception("message string").should == "message string"
+    end
 
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
+    it "supports new style (Hash)" do
+      exception = {
+        "message" => "something happened",
+        "backtrace" => ["in zbb.rb:35", "in zbb.rb:26"],
+        "blobstore_id" => "deadbeef"
+      }
 
-    nats_rpc.should_receive(:send).with("test_service.retry_service_id",
-        {:method => :retry_method, :arguments => []}
-    ).exactly(1).times.and_raise(RuntimeError)
+      rm = mock(BD::Api::ResourceManager)
+      BD::Api::ResourceManager.stub(:new).and_return(rm)
+      rm.should_receive(:get_resource).with("deadbeef").
+        and_return("Failed to compile: no such file 'zbb'")
+      rm.should_receive(:delete_resource).with("deadbeef")
 
-    options = {:timeout => 0.1,
-               :retry_methods => { :retry_method => 10 }}
-    @client = Bosh::Director::Client.new("test_service", "retry_service_id", options)
-    lambda {
-      @client.retry_method
-    }.should raise_exception(RuntimeError)
+      expected_error =
+        "something happened\nin zbb.rb:35\nin zbb.rb:26\n" +
+        "Failed to compile: no such file 'zbb'"
+
+      client = make("foo", "bar")
+      client.format_exception(exception).should == expected_error
+    end
   end
-
-  it "should let you wait for the server to be ready" do
-    nats_rpc = mock("nats_rpc")
-
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
-
-    @client = Bosh::Director::Client.new("test_service", "test_service_id", :timeout => 0.1)
-    @client.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
-    @client.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
-    @client.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
-    @client.should_receive(:ping).and_return(true)
-    @client.wait_until_ready
-  end
-
-  it "should encrypt message" do
-    nats_rpc = mock("nats_rpc")
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
-    credentials = Bosh::EncryptionHandler.generate_credentials
-
-    nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        hash_including("encrypted_data")
-    ).and_return { |*args|
-
-      data = args[1]["encrypted_data"]
-      agent_encryption_handler = Bosh::EncryptionHandler.new("test_service_id", credentials)
-
-      decrypted_message = agent_encryption_handler.decrypt(data)
-      decrypted_message["method"].should == "test_method"
-      decrypted_message["arguments"].should == ["arg 1", 2, {"test"=>"blah"}]
-      decrypted_message["sequence_number"].to_i.should > Time.now.to_i
-      decrypted_message["client_id"].should == "test_service_id"
-
-      # TODO accessor for session_id
-      #decrypted_message["sesssion_id"].should == agent_encryption_handler.session_id
-
-      callback = args[2]
-
-      # Agent reply encrypted
-      callback.call("encrypted_data" => agent_encryption_handler.encrypt("value" => 5))
-      "3"
-    }
-
-    @client = Bosh::Director::Client.new("test_service", "test_service_id",
-                                         {:timeout => 0.1, :credentials => credentials})
-    @client.test_method("arg 1", 2, {:test => "blah"}).should eql(5)
-  end
-
-  it "should inject compile log into response" do
-    nats_rpc = mock("nats_rpc")
-
-    Bosh::Director::Config.stub!(:nats_rpc).and_return(nats_rpc)
-
-    nats_rpc.should_receive(:send).with("test_service.test_service_id",
-        {:arguments => ["arg 1", 2, {:test => "blah"}], :method => :test_method}
-    ).and_return { |*args|
-      callback = args[2]
-      callback.call({"value" => {"result" => {"compile_log_id" => "foo"}}})
-      "3"
-    }
-
-    rm = double(Bosh::Director::Api::ResourceManager)
-    rm.should_receive(:get_resource).and_return("blob")
-    rm.should_receive(:delete_resource)
-    Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
-
-    @client = Bosh::Director::Client.new("test_service", "test_service_id")
-    value = @client.test_method("arg 1", 2, {:test => "blah"})
-    value["result"].should have_key "compile_log"
-    value["result"]["compile_log"].should == "blob"
-  end
-
 end

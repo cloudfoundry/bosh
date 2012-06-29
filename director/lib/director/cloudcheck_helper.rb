@@ -41,7 +41,7 @@ module Bosh::Director
 
     def agent_timeout_guard(vm, &block)
       yield agent_client(vm)
-    rescue Bosh::Director::Client::TimeoutException
+    rescue Bosh::Director::RpcTimeout
       handler_error("VM `#{vm.cid}' is not responding")
     end
 
@@ -49,7 +49,7 @@ module Bosh::Director
       cloud.reboot_vm(vm.cid)
       begin
         agent_client(vm).wait_until_ready
-      rescue Bosh::Director::Client::TimeoutException
+      rescue Bosh::Director::RpcTimeout
         handler_error("Agent still unresponsive after reboot")
       end
     end

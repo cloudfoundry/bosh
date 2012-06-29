@@ -48,8 +48,8 @@ module Bosh::Director
           if agent_state["resource_pool"]
             resource_pool = agent_state["resource_pool"]["name"]
           end
-        rescue Bosh::Director::Client::TimeoutException
-          job_state = "Unresponsive Agent"
+        rescue Bosh::Director::RpcTimeout
+          job_state = "unresponsive agent"
         end
 
         {
