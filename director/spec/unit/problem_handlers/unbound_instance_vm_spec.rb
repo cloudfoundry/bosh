@@ -65,7 +65,7 @@ describe Bosh::Director::ProblemHandlers::UnboundInstanceVm do
       end
 
       it "fails if VM is not responding" do
-        @agent.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
+        @agent.should_receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
 
         lambda {
           @handler.apply_resolution(:delete_vm)

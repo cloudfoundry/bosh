@@ -17,7 +17,9 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
 
     @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
-    @instance = Bosh::Director::Models::Instance.make(:job => "mysql_node", :index => 0, :vm_id => @vm.id)
+    @instance =
+      Bosh::Director::Models::Instance.make(:job => "mysql_node",
+                                            :index => 0, :vm_id => @vm.id)
   end
 
   let :handler do
@@ -25,7 +27,9 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
   end
 
   it "registers under unresponsive_agent type" do
-    handler = Bosh::Director::ProblemHandlers::Base.create_by_type(:unresponsive_agent, @vm.id, {})
+    handler =
+      Bosh::Director::ProblemHandlers::Base.create_by_type(:unresponsive_agent,
+                                                           @vm.id, {})
     handler.should be_kind_of(Bosh::Director::ProblemHandlers::UnresponsiveAgent)
   end
 
@@ -36,7 +40,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
   describe "reboot_vm resolution" do
     it "skips reboot if CID is not present" do
       @vm.update(:cid => nil)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       lambda {
         handler.apply_resolution(:reboot_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
@@ -53,7 +57,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     end
 
     it "reboots VM" do
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       @cloud.should_receive(:reboot_vm).with("vm-cid")
       @agent.should_receive(:wait_until_ready)
 
@@ -61,9 +65,10 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     end
 
     it "reboots VM and whines if it is still unresponsive" do
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       @cloud.should_receive(:reboot_vm).with("vm-cid")
-      @agent.should_receive(:wait_until_ready).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:wait_until_ready).
+        and_raise(Bosh::Director::RpcTimeout)
 
       lambda {
         handler.apply_resolution(:reboot_vm)
@@ -76,7 +81,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
     it "skips recreate if CID is not present" do
       @vm.update(:cid => nil)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       lambda {
         handler.apply_resolution(:recreate_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
@@ -93,8 +98,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     end
 
     it "doesn't recreate VM if apply spec is unknown" do
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
-
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       lambda {
         handler.apply_resolution(:recreate_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
@@ -104,7 +108,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     it "whines on invalid spec format" do
       @vm.update(:apply_spec => "foobar")
       handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
       lambda {
         handler.apply_resolution(:recreate_vm)
@@ -115,7 +119,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     it "whines when stemcell is not in apply spec" do
       @vm.update(:apply_spec => { "resource_pool" => { "stemcell" => { "name" => "foo" } }}) # no version
       handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
       lambda {
         handler.apply_resolution(:recreate_vm)
@@ -135,7 +139,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       @vm.update(:apply_spec => spec)
       handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
       lambda {
         handler.apply_resolution(:recreate_vm)
@@ -169,7 +173,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       handler = make_handler(@vm, @cloud, @agent)
       handler.stub!(:generate_agent_id).and_return("agent-222")
 
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
       new_agent = mock("agent")
 
@@ -220,7 +224,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       handler = make_handler(@vm, @cloud, @agent)
       handler.stub!(:generate_agent_id).and_return("agent-222")
 
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
       new_agent = mock("agent")
 
@@ -246,7 +250,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
   describe "delete_vm_reference resolution" do
     it "skips delete_vm_reference if CID is present" do
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       lambda {
         handler.apply_resolution(:delete_vm_reference)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
@@ -265,7 +269,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
     it "deletes VM reference" do
       @vm.update(:cid => nil)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::Client::TimeoutException)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
       handler.apply_resolution(:delete_vm_reference)
       BD::Models::Vm[@vm.id].should be_nil
     end
