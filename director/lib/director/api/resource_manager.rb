@@ -4,6 +4,10 @@ module Bosh::Director
   module Api
     class ResourceManager
 
+      def initialize
+        @logger = Config.logger
+      end
+
       # Retrieves the resource `id` from the blobstore and stores it
       # locally, and returns the path to the file
       #
@@ -23,23 +27,31 @@ module Bosh::Director
       end
 
       # Retrieves the resource `id` from the blobstore and returns the
-      # contents of it
-      #
+      # contents of it.
       # @param [String] id
       # @return [String] contents of the blobstore id
       def get_resource(id)
+        @logger.debug("Downloading #{id} from blobstore...")
+
+        blob = nil
         blobstore_resource(id) do |blobstore|
-          blobstore.get(id)
+          blob = blobstore.get(id)
         end
+
+        @logger.debug("Downloaded #{id} from blobstore")
+        blob
       end
 
       # Deletes the resource `id` from the blobstore
-      #
       # @param [String] id
       def delete_resource(id)
+        @logger.debug("Deleting #{id} from blobstore...")
+
         blobstore_resource(id) do |blobstore|
           blobstore.delete(id)
         end
+
+        @logger.debug("Deleted #{id} from blobstore")
       end
 
       private
