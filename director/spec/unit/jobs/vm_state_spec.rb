@@ -38,13 +38,13 @@ describe Bosh::Director::Jobs::VmState do
     vm = Bosh::Director::Models::Vm.make(:deployment => @deployment, :agent_id => "agent-1", :cid => "vm-1")
     agent = mock("agent")
     Bosh::Director::AgentClient.stub!(:new).with("agent-1").and_return(agent)
-    agent.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
+    agent.should_receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
 
     @result_file.should_receive(:write).with do |agent_status|
       status = JSON.parse(agent_status)
       status["vm_cid"].should == "vm-1"
       status["agent_id"].should == "agent-1"
-      status["job_state"].should == "Unresponsive Agent"
+      status["job_state"].should == "unresponsive agent"
     end
 
     job = Bosh::Director::Jobs::VmState.new(@deployment.id)

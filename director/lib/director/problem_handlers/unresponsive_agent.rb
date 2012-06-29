@@ -47,7 +47,7 @@ module Bosh::Director
       def agent_alive?
         agent_client(@vm).ping
         true
-      rescue Bosh::Director::Client::TimeoutException
+      rescue Bosh::Director::RpcTimeout
         false
       end
 

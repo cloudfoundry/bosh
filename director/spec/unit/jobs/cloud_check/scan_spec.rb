@@ -62,12 +62,12 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
         instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
                                                          :job => "job", :index => 0)
-        disk = Bosh::Director::Models::PersistentDisk.make(:instance_id => instance.id, :active => true)
+        Bosh::Director::Models::PersistentDisk.make(:instance_id => instance.id, :active => true)
 
         agent = mock("agent")
         Bosh::Director::AgentClient.stub!(:new).with("agent", anything).and_return(agent)
-        agent.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
-        # for un-responsive agents pick up the vm-id from the DB
+        agent.should_receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
+        # for unresponsive agents pick up VM id from the DB
         @job.perform == "scan complete"
 
         Bosh::Director::Models::DeploymentProblem.count.should == 1
@@ -257,7 +257,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         Bosh::Director::AgentClient.stub!(:new).with("agent-1", anything).and_return(agent_2)
 
         # Unresponsive agent
-        agent_1.should_receive(:get_state).and_raise(Bosh::Director::Client::TimeoutException)
+        agent_1.should_receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
         # Working agent
         good_state = {
           "deployment" => "mycloud",
