@@ -98,6 +98,13 @@ module Bosh::Director
         @instances[index]
       end
 
+      # Returns the state state of job instance by its index
+      # @param [Integer] index Instance index
+      # @return [String, nil] Instance state (nil if not specified)
+      def instance_state(index)
+        @instance_states[index] || @state
+      end
+
       def add_package(package, compiled_package)
         @packages[package.name] = PackageSpec.new(package, compiled_package)
       end
@@ -218,7 +225,7 @@ module Bosh::Director
           begin
             index = Integer(index)
           rescue ArgumentError
-            raise JobSpecInvalidJobIndex,
+            raise JobSpecInvalidInstanceIndex,
                   "Invalid job index `#{index}', integer expected"
           end
           unless (0...job_size).include?(index)
@@ -240,7 +247,7 @@ module Bosh::Director
         end
 
         job_size.times do |index|
-          @instances[index] = InstanceSpec.new(self, index)
+          @instances[index] = Instance.new(self, index)
           @resource_pool.reserve_capacity(1)
         end
       end

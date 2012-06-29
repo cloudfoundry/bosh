@@ -6,27 +6,26 @@ module Bosh::Director
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
 
-    # @params instance_spec Bosh::DeploymentPlan::InstanceSpec
-    def initialize(instance_spec, event_ticker = nil)
+    # @params [DeploymentPlan::Instance] instance
+    def initialize(instance, event_ticker = nil)
       @cloud = Config.cloud
       @logger = Config.logger
       @ticker = event_ticker
 
-      @instance_spec = instance_spec
-      @job_spec = instance_spec.job
+      @instance = instance
+      @job = instance.job
 
-      @instance = @instance_spec.instance
-      @target_state = @instance_spec.state
+      @target_state = @instance.state
 
-      @deployment_plan = @job_spec.deployment
-      @resource_pool_spec = @job_spec.resource_pool
-      @update_config = @job_spec.update
+      @deployment_plan = @job.deployment
+      @resource_pool_spec = @job.resource_pool
+      @update_config = @job.update # TODO: rename
 
-      @vm = @instance.vm
+      @vm = @instance.model.vm
     end
 
     def instance_name
-      "#{@job_spec.name}/#{@instance_spec.index}"
+      "#{@job.name}/#{@instance.index}"
     end
 
     def step
@@ -39,8 +38,8 @@ module Bosh::Director
     end
 
     def update(options = {})
-      changes = @instance_spec.changes
-      @logger.info("Updating job #{self.instance_name}, " +
+      changes = @instance.changes
+      @logger.info("Updating instance #{@instance}, " +
                    "changes #{changes.inspect}")
 
       # Optimization to only update DNS if nothing else changed.
@@ -62,7 +61,7 @@ module Bosh::Director
       step { update_persistent_disk }
       step { update_networks }
       step { update_dns }
-      step { apply_state(@instance_spec.spec) }
+      step { apply_state(@instance.spec) }
 
       if @target_state == "started"
         begin
@@ -93,9 +92,9 @@ module Bosh::Director
         watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
           sleep_time = watch_time.to_f / 1000
           @logger.info("Waiting for #{sleep_time} seconds to " +
-                       "check #{self.instance_name} status")
+                       "check #{instance_name} status")
           sleep(sleep_time)
-          @logger.info("Checking if #{self.instance_name} has been updated " +
+          @logger.info("Checking if #{instance_name} has been updated " +
                        "after #{sleep_time} seconds")
 
           current_state = agent.get_state
@@ -120,14 +119,14 @@ module Bosh::Director
     end
 
     def stop
-      if @instance_spec.resource_pool_changed? ||
-         @instance_spec.persistent_disk_changed? ||
-         @instance_spec.networks_changed? ||
+      if @instance.resource_pool_changed? ||
+         @instance.persistent_disk_changed? ||
+         @instance.networks_changed? ||
          @target_state == "stopped" ||
          @target_state == "detached"
         drain_time = agent.drain("shutdown")
       else
-        drain_time = agent.drain("update", @instance_spec.spec)
+        drain_time = agent.drain("update", @instance.spec)
       end
 
       if drain_time < 0
@@ -150,45 +149,45 @@ module Bosh::Director
     end
 
     def detach_disk
-      return unless @instance_spec.disk_currently_attached?
+      return unless @instance.disk_currently_attached?
 
-      if @instance.persistent_disk_cid.nil?
+      if @instance.model.persistent_disk_cid.nil?
         raise AgentUnexpectedDisk,
               "`#{instance_name}' VM has disk attached " +
               "but it's not reflected in director DB"
       end
 
-      agent.unmount_disk(@instance.persistent_disk_cid)
-      @cloud.detach_disk(@vm.cid, @instance.persistent_disk_cid)
+      agent.unmount_disk(@instance.model.persistent_disk_cid)
+      @cloud.detach_disk(@vm.cid, @instance.model.persistent_disk_cid)
     end
 
     def attach_disk
-      return if @instance.persistent_disk_cid.nil?
+      return if @instance.model.persistent_disk_cid.nil?
 
-      @cloud.attach_disk(@vm.cid, @instance.persistent_disk_cid)
-      agent.mount_disk(@instance.persistent_disk_cid)
+      @cloud.attach_disk(@vm.cid, @instance.model.persistent_disk_cid)
+      agent.mount_disk(@instance.model.persistent_disk_cid)
     end
 
     def delete_vm
       @cloud.delete_vm(@vm.cid)
 
-      @instance.db.transaction do
-        @instance.vm = nil
-        @instance.save
+      @instance.model.db.transaction do
+        @instance.model.vm = nil
+        @instance.model.save
         @vm.destroy
       end
     end
 
     def create_vm(new_disk_id)
       stemcell = @resource_pool_spec.stemcell
-      disks = [@instance.persistent_disk_cid, new_disk_id].compact
+      disks = [@instance.model.persistent_disk_cid, new_disk_id].compact
 
       @vm = VmCreator.new.create(@deployment_plan.model, stemcell.model,
                                  @resource_pool_spec.cloud_properties,
-                                 @instance_spec.network_settings, disks,
+                                 @instance.network_settings, disks,
                                  @resource_pool_spec.env)
-      @instance.vm = @vm
-      @instance.save
+      @instance.model.vm = @vm
+      @instance.model.save
 
       # TODO: delete the VM if it wasn't saved
       agent.wait_until_ready
@@ -242,10 +241,10 @@ module Bosh::Director
     end
 
     def update_dns
-      return unless @instance_spec.dns_changed?
+      return unless @instance.dns_changed?
 
       domain = @deployment_plan.dns_domain
-      @instance_spec.dns_records.each do |record_name, content|
+      @instance.dns_records.each do |record_name, content|
         @logger.info("Updating DNS for: #{record_name} to #{content}")
         record = Models::Dns::Record.find(:domain_id => domain.id,
                                           :name => record_name)
@@ -261,7 +260,7 @@ module Bosh::Director
     end
 
     def update_resource_pool(new_disk_cid = nil)
-      return unless @instance_spec.resource_pool_changed? || new_disk_cid
+      return unless @instance.resource_pool_changed? || new_disk_cid
 
       detach_disk
       num_retries = 0
@@ -283,28 +282,28 @@ module Bosh::Director
 
       state = {
         "deployment" => @deployment_plan.name,
-        "networks" => @instance_spec.network_settings,
-        "resource_pool" => @job_spec.resource_pool.spec,
-        "job" => @job_spec.spec,
-        "index" => @instance_spec.index,
-        "release" => @job_spec.release.spec
+        "networks" => @instance.network_settings,
+        "resource_pool" => @job.resource_pool.spec,
+        "job" => @job.spec,
+        "index" => @instance.index,
+        "release" => @job.release.spec
       }
 
-      if @instance_spec.disk_size > 0
-        state["persistent_disk"] = @instance_spec.disk_size
+      if @instance.disk_size > 0
+        state["persistent_disk"] = @instance.disk_size
       end
 
       apply_state(state)
-      @instance_spec.current_state = agent.get_state
+      @instance.current_state = agent.get_state
     end
 
     def attach_missing_disk
-      if @instance.persistent_disk_cid &&
-         !@instance_spec.disk_currently_attached?
+      if @instance.model.persistent_disk_cid &&
+         !@instance.disk_currently_attached?
         attach_disk
       end
     rescue Bosh::Clouds::NoDiskSpace => e
-      update_resource_pool(@instance.persistent_disk_cid)
+      update_resource_pool(@instance.model.persistent_disk_cid)
     end
 
     # Synchronizes persistent_disks with the agent.
@@ -312,17 +311,17 @@ module Bosh::Director
     # NOTE: Currently assumes that we only have 1 persistent disk.
     # @return [void]
     def check_persistent_disk
-      return if @instance.persistent_disks.empty?
+      return if @instance.model.persistent_disks.empty?
       agent_disk_cid = disk_info.first
 
-      if agent_disk_cid != @instance.persistent_disk_cid
+      if agent_disk_cid != @instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
               "`#{instance_name}' has invalid disks: agent reports " +
               "`#{agent_disk_cid}' while director record shows " +
-              "`#{@instance.persistent_disk_cid}'"
+              "`#{@instance.model.persistent_disk_cid}'"
       end
 
-      @instance.persistent_disks.each do |disk|
+      @instance.model.persistent_disks.each do |disk|
         unless disk.active
           @logger.warn("`#{instance_name}' has inactive disk #{disk.disk_cid}")
         end
@@ -338,18 +337,18 @@ module Bosh::Director
 
       disk_cid = nil
       disk = nil
-      return unless @instance_spec.persistent_disk_changed?
+      return unless @instance.persistent_disk_changed?
 
-      old_disk = @instance.persistent_disk
+      old_disk = @instance.model.persistent_disk
 
-      if @job_spec.persistent_disk > 0
-        @instance.db.transaction do
-          disk_cid = @cloud.create_disk(@job_spec.persistent_disk, @vm.cid)
+      if @job.persistent_disk > 0
+        @instance.model.db.transaction do
+          disk_cid = @cloud.create_disk(@job.persistent_disk, @vm.cid)
           disk =
             Models::PersistentDisk.create(:disk_cid => disk_cid,
                                           :active => false,
-                                          :instance_id => @instance.id,
-                                          :size => @job_spec.persistent_disk)
+                                          :instance_id => @instance.model.id,
+                                          :size => @job.persistent_disk)
         end
 
         begin
@@ -383,7 +382,7 @@ module Bosh::Director
         end
       end
 
-      @instance.db.transaction do
+      @instance.model.db.transaction do
         old_disk.update(:active => false) if old_disk
         disk.update(:active => true) if disk
       end
@@ -392,9 +391,9 @@ module Bosh::Director
     end
 
     def update_networks
-      return unless @instance_spec.networks_changed?
+      return unless @instance.networks_changed?
 
-      network_settings = @instance_spec.network_settings
+      network_settings = @instance.network_settings
       agent.prepare_network_change(network_settings)
       @cloud.configure_networks(@vm.cid, network_settings)
       agent.wait_until_ready

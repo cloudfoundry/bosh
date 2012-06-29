@@ -29,7 +29,7 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
     end
 
     it "should delegate to the bound instance when present" do
-      bound_instance = stub(:InstanceSpec)
+      bound_instance = stub(BD::DeploymentPlan::Instance)
       bound_instance.stub(:network_settings).and_return({"dhcp" => "true"})
       @vm.bound_instance = bound_instance
       @vm.network_settings.should == {"dhcp" => "true"}
