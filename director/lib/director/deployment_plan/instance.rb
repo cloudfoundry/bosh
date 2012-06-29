@@ -4,19 +4,19 @@ module Bosh::Director
   class DeploymentPlan
     ##
     # Represents a single job instance.
-    class InstanceSpec
+    class Instance
       include DnsHelper
 
-      # @return [JobSpec] associated job
-      attr_accessor :job
+      # @return [DeploymentPlan::JobSpec] Associated job
+      attr_reader :job
 
-      # @return [Integer] associated deployment
-      attr_accessor :index
+      # @return [Integer] Instance index
+      attr_reader :index
 
-      # @return [Bosh::Director::Models::Instance] associated model
-      attr_accessor :instance
+      # @return [Models::Instance] Instance model
+      attr_reader :model
 
-      # @return [String] SHA1 hash of all of the configuration templates
+      # @return [String] Checksum all of the configuration templates
       attr_accessor :configuration_hash
 
       # @return [Hash] A hash of template SHA1 hashes.
@@ -26,15 +26,14 @@ module Bosh::Director
       attr_accessor :network_reservations
 
       # @return [String] job state
-      # @todo rename since it's confusing with current_state and is sometimes a
-      #    verb
+      # @todo rename since it's confusing with current_state and can be a verb
       attr_accessor :state
 
       # @return [Hash] current state as provided by the BOSH Agent
       attr_accessor :current_state
 
-      # @return [IdleVm] associated resource pool VM if it hasn't been bound yet
-      attr_accessor :idle_vm
+      # @return [DeploymentPlan::IdleVm] Associated resource pool VM
+      attr_reader :idle_vm
 
       # @return [Boolean] true if this instance needs to be recreated
       attr_accessor :recreate
@@ -45,13 +44,19 @@ module Bosh::Director
       ##
       # Creates a new instance specification based on the job and index.
       #
-      # @param [JobSpec] job associated job
+      # @param [DeploymentPlan::JobSpec] job associated job
       # @param [Integer] index index for this instance
       def initialize(job, index)
         @job = job
         @index = index
+        @model = nil
+        @configuration_hash = nil
+        @template_hashes = nil
+        @idle_vm = nil
+        @current_state = nil
+
         @network_reservations = {}
-        @state = job.instance_states[index] || job.state
+        @state = job.instance_state(@index)
 
         # Expanding virtual states
         case @state
@@ -64,6 +69,66 @@ module Bosh::Director
         end
       end
 
+      def to_s
+        "#{@job.name}/#{@index}"
+      end
+
+      # TODO: this method will probably go away after some further
+      # DeploymentPlanCompiler refactoring, as it's not 100% consistent
+      # with other deployment plan parts. Ideally most of the model lookup
+      # logic should be in this class, but this particular method allows caller
+      # to explicitly set which model to use.
+      # @param [Models::Instance] model Instance DB model
+      # @return [void]
+      def use_model(model)
+        if @model
+          raise DirectorError, "Instance model is already bound"
+        end
+        @model = model
+      end
+
+      # Looks up a DB model for this instance, creates one if doesn't exist
+      # yet.
+      # @return [void]
+      def bind_model
+        @model ||= find_or_create_model
+      end
+
+      # Looks up instance model in DB and binds it to this instance spec.
+      # Instance model is created if it's not found in DB. New idle VM is
+      # allocated if instance DB record doesn't reference one.
+      # @return [void]
+      def bind_unallocated_vm
+        bind_model
+        if @model.vm.nil?
+          allocate_idle_vm
+        end
+      end
+
+      # Syncs instance state with instance model in DB. This is needed because
+      # not all instance states are available in the deployment manifest and we
+      # we cannot really persist this data in the agent state (as VM might be
+      # stopped or detached).
+      # @return [void]
+      def sync_state_with_db
+        if @model.nil?
+          raise DirectorError, "Instance `#{self}' model is not bound"
+        end
+
+        if @state
+          # Deployment plan explicitly sets state for this instance
+          @model.update(:state => @state)
+        elsif @model.state
+          # Instance has its state persisted from the previous deployment
+          @state = @model.state
+        else
+          # Target instance state should either be persisted in DB or provided
+          # via deployment plan, otherwise something is really wrong
+          raise InstanceTargetStateUndefined,
+                "Instance `#{self}' target state cannot be determined"
+        end
+      end
+
       ##
       # Adds a new network to this instance
       # @param [String] name network name
@@ -73,7 +138,7 @@ module Bosh::Director
 
         if old_reservation
           raise NetworkReservationAlreadyExists,
-                "`#{@job}/#{@index}' already has reservation " +
+                "`#{self}' already has reservation " +
                 "for network `#{name}', IP #{old_reservation.ip}"
         end
         @network_reservations[name] = reservation
@@ -122,10 +187,10 @@ module Bosh::Director
       ##
       # @return [Integer] persistent disk size
       def disk_size
-        if @instance.nil?
+        if @model.nil?
           current_state["persistent_disk"].to_i
-        elsif @instance.persistent_disk
-          @instance.persistent_disk.size
+        elsif @model.persistent_disk
+          @model.persistent_disk.size
         else
           0
         end
@@ -162,8 +227,8 @@ module Bosh::Director
       #   from the one provided by the VM
       def resource_pool_changed?
         @recreate ||
-            @job.deployment.recreate ||
-            @job.resource_pool.spec != @current_state["resource_pool"]
+          @job.deployment.recreate ||
+          @job.resource_pool.spec != @current_state["resource_pool"]
       end
 
       ##
@@ -218,8 +283,8 @@ module Bosh::Director
       #   the one provided by the VM
       def state_changed?
         @state == "detached" ||
-            @state == "started" && @current_state["job_state"] != "running" ||
-            @state == "stopped" && @current_state["job_state"] == "running"
+          @state == "started" && @current_state["job_state"] != "running" ||
+          @state == "stopped" && @current_state["job_state"] == "running"
       end
 
       ##
@@ -254,21 +319,70 @@ module Bosh::Director
       #
       # @return [Hash<String, Object>] instance spec
       def spec
-        deployment_plan = @job.deployment
         spec = {
-            "deployment" => deployment_plan.name,
-            "release" => job.release.spec,
-            "job" => job.spec,
-            "index" => index,
-            "networks" => network_settings,
-            "resource_pool" => job.resource_pool.spec,
-            "packages" => job.package_spec,
-            "persistent_disk" => job.persistent_disk,
-            "configuration_hash" => configuration_hash,
-            "properties" => job.properties
+          "deployment" => @job.deployment.name,
+          "release" => job.release.spec,
+          "job" => job.spec,
+          "index" => index,
+          "networks" => network_settings,
+          "resource_pool" => job.resource_pool.spec,
+          "packages" => job.package_spec,
+          "persistent_disk" => job.persistent_disk,
+          "configuration_hash" => configuration_hash,
+          "properties" => job.properties
         }
-        spec["template_hashes"] = template_hashes unless template_hashes.nil?
+
+        if template_hashes
+          spec["template_hashes"] = template_hashes
+        end
+
         spec
+      end
+
+      # Looks up instance model in DB
+      # @return [Models::Instance]
+      def find_or_create_model
+        if @job.deployment.model.nil?
+          raise DirectorError, "Deployment model is not bound"
+        end
+
+        conditions = {
+          :deployment_id => @job.deployment.model.id,
+          :job => @job.name,
+          :index => @index
+        }
+
+        Models::Instance.find_or_create(conditions) do |model|
+          model.state = "started"
+        end
+      end
+
+      # Allocates an idle VM in this job resource pool and binds current
+      # instance to that idle VM.
+      # @return [void]
+      def allocate_idle_vm
+        resource_pool = @job.resource_pool
+        idle_vm = resource_pool.allocate_vm
+        network = resource_pool.network
+
+        if idle_vm.vm
+          # There's already a resource pool VM that can become our instance,
+          # so we can try to reuse its reservation
+          instance_reservation = @network_reservations[network.name]
+          if instance_reservation
+            instance_reservation.take(idle_vm.network_reservation)
+          end
+        else
+          # VM is not created yet: let's just make it reference this instance
+          # so later it knows what it needs to become
+          idle_vm.bound_instance = self
+          # this also means we no longer need previous VM network reservation
+          # (instance has its own)
+          # TODO: should we check that instance has its own reservation?
+          idle_vm.release_reservation
+        end
+
+        @idle_vm = idle_vm
       end
     end
   end
