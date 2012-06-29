@@ -44,7 +44,8 @@ describe Bosh::Director::ResourcePoolUpdater do
       pool = stub(:ThreadPool)
 
       bound_vm = stub(:IdleVm)
-      bound_vm.stub(:bound_instance).and_return(stub(:InstanceSpec))
+      bound_vm.stub(:bound_instance).
+        and_return(stub(BD::DeploymentPlan::Instance))
       unbound_vm = stub(:IdleVm)
       unbound_vm.stub(:bound_instance).and_return(nil)
 

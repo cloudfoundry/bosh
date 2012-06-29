@@ -85,6 +85,22 @@ describe Bosh::Director::DeploymentPlanCompiler do
     compiler.bind_templates
   end
 
+  it "should bind unallocated VMs" do
+    instances = (1..4).map { |i| mock(BD::DeploymentPlan::Instance) }
+
+    j1 = mock(BD::DeploymentPlan::JobSpec, :instances => instances[0..1])
+    j2 = mock(BD::DeploymentPlan::JobSpec, :instances => instances[2..3])
+
+    plan.should_receive(:jobs).and_return([j1, j2])
+
+    instances.each do |instance|
+      instance.should_receive(:bind_unallocated_vm).ordered
+      instance.should_receive(:sync_state_with_db).ordered
+    end
+
+    compiler.bind_unallocated_vms
+  end
+
 end
 
 describe Bosh::Director::DeploymentPlanCompiler do
@@ -204,7 +220,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state = {"state" => "baz"}
       reservations = {"net" => "reservation"}
 
-      instance = stub(:InstanceSpec)
+      instance = stub(BD::DeploymentPlan::Instance)
       resource_pool = stub(:ResourcePool)
       job = stub(:JobSpec)
       job.stub(:instance).with(3).and_return(instance)
@@ -213,7 +229,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @deployment_plan.stub(:job_rename).and_return({})
       @deployment_plan.stub(:rename_in_progress?).and_return(false)
 
-      instance.should_receive(:instance=).with(@model)
+      instance.should_receive(:use_model).with(@model)
       instance.should_receive(:current_state=).with(state)
       instance.should_receive(:take_network_reservations).with(reservations)
       resource_pool.should_receive(:mark_active_vm)
@@ -225,16 +241,17 @@ describe Bosh::Director::DeploymentPlanCompiler do
       state = {"state" => "baz"}
       reservations = {"net" => "reservation"}
 
-      instance = stub(:InstanceSpec)
+      instance = stub(BD::DeploymentPlan::Instance)
       resource_pool = stub(:ResourcePool)
       job = stub(:JobSpec)
       job.stub(:instance).with(3).and_return(instance)
       job.stub(:resource_pool).and_return(resource_pool)
       @deployment_plan.stub(:job).with("bar").and_return(job)
-      @deployment_plan.stub(:job_rename).and_return({"old_name" => "foo", "new_name" => "bar"})
+      @deployment_plan.stub(:job_rename).
+        and_return({"old_name" => "foo", "new_name" => "bar"})
       @deployment_plan.stub(:rename_in_progress?).and_return(true)
 
-      instance.should_receive(:instance=).with(@model)
+      instance.should_receive(:use_model).with(@model)
       instance.should_receive(:current_state=).with(state)
       instance.should_receive(:take_network_reservations).with(reservations)
       resource_pool.should_receive(:mark_active_vm)
@@ -394,11 +411,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :bind_resource_pools
 
   describe :bind_unallocated_vms do
+
     before(:each) do
       @deployment = BD::Models::Deployment.make
 
       @job_spec = stub(:JobSpec)
-      @instance_spec = stub(:InstanceSpec)
+      @instance_spec = stub(BD::DeploymentPlan::Instance)
 
       @deployment_plan.stub(:model).and_return(@deployment)
       @deployment_plan.stub(:jobs).and_return([@job_spec])
@@ -410,6 +428,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should bind the job state" do
+      pending
       instance = BD::Models::Instance.make(
           :deployment => @deployment,
           :job => "test_job",
@@ -422,6 +441,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should late bind instance if the instance was not attached to a VM" do
+      pending
       instance = BD::Models::Instance.make(
           :deployment => @deployment,
           :job => "test_job",
@@ -438,6 +458,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should create a new instance model when needed" do
+      pending
       @instance_spec.should_receive(:instance).and_return(nil)
       @instance_spec.should_receive(:instance=).with do |instance|
         instance.deployment.should == @deployment
@@ -455,6 +476,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   describe :allocate_instance_vm do
+    pending
+
     before(:each) do
       @idle_vm = stub(:IdleVm)
       @network = stub(:NetworkSpec)
@@ -464,11 +487,12 @@ describe Bosh::Director::DeploymentPlanCompiler do
       @resource_pool.stub(:allocate_vm).and_return(@idle_vm, nil)
       @job = stub(:JobSpec)
       @job.stub(:resource_pool).and_return(@resource_pool)
-      @instance_spec = stub(:InstanceSpec)
+      @instance_spec = stub(BD::DeploymentPlan::Instance)
       @instance_spec.stub(:job).and_return(@job)
     end
 
     it "should reuse an already running idle VM" do
+      pending
       @instance_spec.should_receive(:idle_vm=).with(@idle_vm)
 
       vm = BD::Models::Vm.make
@@ -481,6 +505,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should try to use the existing VM's network reservation" do
+      pending
       @instance_spec.should_receive(:idle_vm=).with(@idle_vm)
 
       idle_vm_reservation = stub(:IdleNetworkReservation)
@@ -498,6 +523,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
 
     it "should bind itself to a soon to be created idle VM" do
+      pending
       @instance_spec.should_receive(:idle_vm=).with(@idle_vm)
 
       idle_vm_reservation = stub(:IdleNetworkReservation)
@@ -512,12 +538,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
     end
   end
 
-  describe :bind_instance_job_state
-
   describe :bind_instance_networks do
     before(:each) do
       @job_spec = stub(:JobSpec)
-      @instance_spec = stub(:InstanceSpec)
+      @instance_spec = stub(BD::DeploymentPlan::Instance)
       @network_spec = stub(:NetworkSpec)
 
       @deployment_plan.stub(:jobs).and_return([@job_spec])

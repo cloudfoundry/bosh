@@ -111,7 +111,7 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:job).and_return(@job_spec)
     @instance_spec.stub!(:index).and_return(@instance.index)
-    @instance_spec.stub!(:instance).and_return(@instance)
+    @instance_spec.stub!(:model).and_return(@instance)
 
     @job_spec.stub!(:deployment).and_return(@deployment_plan)
     @job_spec.stub!(:resource_pool).and_return(@resource_pool_spec)

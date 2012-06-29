@@ -12,19 +12,19 @@ module Bosh::Director
     #
     # @todo rename class to ResourcePoolVm
     class IdleVm
-      # @return [DeploymentPlan::ResourcePool] associated resource pool
+      # @return [DeploymentPlan::ResourcePool] Associated resource pool
       attr_reader :resource_pool
 
       # @return [NetworkReservation] VM network reservation
       attr_accessor :network_reservation
 
-      # @return [Models::Vm] associated model
+      # @return [Models::Vm] Associated model
       attr_accessor :vm
 
-      # @return [Hash] current state as provided by the BOSH Agent
+      # @return [Hash] Current state as provided by the BOSH Agent
       attr_accessor :current_state
 
-      # @return [InstanceSpec, nil] instance that reserved this VM
+      # @return [DeploymentPlan::Instance, nil] Instance that reserved this VM
       # @todo rename to reserved_instance
       attr_accessor :bound_instance
 
@@ -50,6 +50,16 @@ module Bosh::Director
       # @param [NetworkReservation] reservation Network reservation
       def use_reservation(reservation)
         @network_reservation = reservation
+      end
+
+      #
+      # Releases current network reservation (if any)
+      # @return [void]
+      def release_reservation
+        if has_network_reservation?
+          @resource_pool.network.release(@network_reservation)
+          @network_reservation = nil
+        end
       end
 
       ##
