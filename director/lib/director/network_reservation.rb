@@ -25,12 +25,12 @@ module Bosh::Director
     # @return [Symbol, nil] reservation error
     attr_accessor :error
 
-    def self.new_dynamic
-      new(:type => NetworkReservation::DYNAMIC)
+    def self.new_dynamic(ip = nil)
+      new(:type => NetworkReservation::DYNAMIC, :ip => ip)
     end
 
-    def self.new_static
-      new(:type => NetworkReservation::STATIC)
+    def self.new_static(ip = nil)
+      new(:type => NetworkReservation::STATIC, :ip => ip)
     end
 
     ##

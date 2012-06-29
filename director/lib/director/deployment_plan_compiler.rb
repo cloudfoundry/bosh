@@ -103,34 +103,39 @@ module Bosh::Director
       end
     end
 
-    def bind_instance(instance, state, reservations)
+    # @param [Models::Instance] instance_model Instance model
+    # @param [Hash] state Instance state according to agent
+    # @param [Hash] reservations Instance network reservations
+    def bind_instance(instance_model, state, reservations)
       @logger.debug("Binding instance VM")
 
       # Update instance, if we are renaming a job.
-      if @deployment_plan.rename_in_progress? &&
-         instance.job == @deployment_plan.job_rename["old_name"]
+      if @deployment_plan.rename_in_progress?
+        old_name = @deployment_plan.job_rename["old_name"]
         new_name = @deployment_plan.job_rename["new_name"]
-        @logger.info("Found instance with old job name #{instance.job}, " +
-                     "updating it to `#{new_name}'")
-        instance.job = new_name
-        instance.save
+
+        if instance_model.job == old_name
+          @logger.info("Renaming `#{old_name}' to `#{new_name}'")
+          instance_model.update(:job => new_name)
+        end
       end
 
       # Does the job instance exist in the new deployment?
-      if (job = @deployment_plan.job(instance.job)) &&
-          (instance_spec = job.instance(instance.index))
+      if (job = @deployment_plan.job(instance_model.job)) &&
+         (instance = job.instance(instance_model.index))
+
         @logger.debug("Found job and instance spec")
-        instance_spec.instance = instance
-        instance_spec.current_state = state
+        instance.use_model(instance_model)
+        instance.current_state = state
 
         @logger.debug("Copying network reservations")
-        instance_spec.take_network_reservations(reservations)
+        instance.take_network_reservations(reservations)
 
         @logger.debug("Copying resource pool reservation")
         job.resource_pool.mark_active_vm
       else
         @logger.debug("Job/instance not found, marking for deletion")
-        @deployment_plan.delete_instance(instance)
+        @deployment_plan.delete_instance(instance_model)
       end
     end
 
@@ -256,67 +261,18 @@ module Bosh::Director
       end
     end
 
+    # Looks at every job instance in the deployment plan and binds it to the
+    # instance database model (idle VM is also created in the appropriate
+    # resource pool if necessary)
+    # @return [void]
     def bind_unallocated_vms
       @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance_spec|
-          # create the instance model if this is a new instance
-          instance = instance_spec.instance
-
-          if instance.nil?
-            # look up the instance again, in case it wasn't associated with a VM
-            conditions = {
-              :deployment_id => @deployment_plan.model.id,
-              :job => job.name,
-              :index => instance_spec.index
-            }
-            instance = Models::Instance.find_or_create(conditions) do |model|
-              model.state = "started"
-            end
-            instance_spec.instance = instance
-          end
-
-          bind_instance_job_state(instance_spec)
-          allocate_instance_vm(instance_spec) unless instance.vm
+        job.instances.each do |instance|
+          instance.bind_unallocated_vm
+          # Now that we know every VM has been allocated and instance models are
+          # bound, we can sync the state.
+          instance.sync_state_with_db
         end
-      end
-    end
-
-    def allocate_instance_vm(instance_spec)
-      resource_pool = instance_spec.job.resource_pool
-      network = resource_pool.network
-      idle_vm = resource_pool.allocate_vm
-      if idle_vm.vm
-        # try to reuse the existing reservation if possible
-        instance_reservation = instance_spec.network_reservations[network.name]
-        if instance_reservation
-          instance_reservation.take(idle_vm.network_reservation)
-        end
-      else
-        # if the VM is about to be created, then use this
-        # instance networking configuration
-        idle_vm.bound_instance = instance_spec
-
-        # this also means we no longer need the VM network reservation
-        network.release(idle_vm.network_reservation)
-        idle_vm.network_reservation = nil
-      end
-      instance_spec.idle_vm = idle_vm
-    end
-
-    def bind_instance_job_state(instance_spec)
-      instance = instance_spec.instance
-      if instance_spec.state
-        # Deployment plan already has state for this instance
-        instance.update(:state => instance_spec.state)
-      elsif instance.state
-        # Instance has its state persisted from the previous deployment
-        instance_spec.state = instance.state
-      else
-        # Target instance state should either be persisted in DB
-        # or provided via deployment plan, otherwise something is really wrong
-        raise InstanceTargetStateUndefined,
-              "Instance `#{instance.job}/#{instance.index}' target state " +
-              "cannot be determined"
       end
     end
 
@@ -385,12 +341,12 @@ module Bosh::Director
       unbound_instances = []
 
       @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance_spec|
+        job.instances.each do |instance|
           # Don't allocate resource pool VMs to instances in detached state
-          next if instance_spec.state == "detached"
+          next if instance.state == "detached"
           # Skip bound instances
-          next if instance_spec.instance.vm
-          unbound_instances << instance_spec
+          next if instance.model.vm
+          unbound_instances << instance
         end
       end
 
@@ -399,20 +355,20 @@ module Bosh::Director
       @event_log.begin_stage("Binding instance VMs", unbound_instances.size)
 
       ThreadPool.new(:max_threads => 32).wrap do |pool|
-        unbound_instances.each do |instance_spec|
+        unbound_instances.each do |instance|
           pool.process do
-            bind_instance_vm(instance_spec)
+            bind_instance_vm(instance)
           end
         end
       end
     end
 
-    def bind_instance_vm(instance_spec)
-      instance = instance_spec.instance
-      job = instance_spec.job
-      idle_vm = instance_spec.idle_vm
+    # @param [DeploymentPlan::Instance]
+    def bind_instance_vm(instance)
+      job = instance.job
+      idle_vm = instance.idle_vm
 
-      instance.update(:vm => idle_vm.vm)
+      instance.model.update(:vm => idle_vm.vm)
 
       @event_log.track("#{job.name}/#{instance.index}") do
         # Apply the assignment to the VM
@@ -425,7 +381,7 @@ module Bosh::Director
 
         agent = AgentClient.new(idle_vm.vm.agent_id)
         agent.apply(state)
-        instance_spec.current_state = state
+        instance.current_state = state
       end
     end
 
