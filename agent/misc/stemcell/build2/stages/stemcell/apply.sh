@@ -9,7 +9,7 @@ source $base_dir/lib/prelude_apply.bash
 
 pushd $work/stemcell
 
-ruby <<EOS
+$ruby_bin <<EOS
 require "yaml"
 
 stemcell_name = "$stemcell_name"

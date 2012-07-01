@@ -13,7 +13,12 @@ then
   bosh_agent_src_dir=$(readlink -nf $base_dir/../../..)
 fi
 
-ruby="ruby -I$bosh_agent_src_dir/lib"
+if [ -z "${ruby_bin:-}" ]
+then
+  ruby_bin="ruby"
+fi
+
+ruby="$ruby_bin -I$bosh_agent_src_dir/lib"
 bosh_agent_src_version=$($ruby -r"agent/version" -e"puts Bosh::Agent::VERSION")
 
 persist_dir bosh_agent_src_dir
