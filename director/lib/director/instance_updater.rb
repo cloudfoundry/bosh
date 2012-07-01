@@ -287,7 +287,7 @@ module Bosh::Director
         "resource_pool" => @job_spec.resource_pool.spec,
         "job" => @job_spec.spec,
         "index" => @instance_spec.index,
-        "release" => @deployment_plan.release.spec
+        "release" => @job_spec.release.spec
       }
 
       if @instance_spec.disk_size > 0

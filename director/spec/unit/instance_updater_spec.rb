@@ -121,6 +121,7 @@ describe Bosh::Director::InstanceUpdater do
     @job_spec.stub!(:persistent_disk).and_return(BASIC_PLAN["persistent_disk"])
     @job_spec.stub!(:properties).and_return(BASIC_PLAN["properties"])
     @job_spec.stub!(:spec).and_return(BASIC_PLAN["job"])
+    @job_spec.stub!(:release).and_return(@release_spec)
 
     @update_spec.stub!(:min_update_watch_time).and_return(0.01)
     @update_spec.stub!(:max_update_watch_time).and_return(0.01)
@@ -132,7 +133,6 @@ describe Bosh::Director::InstanceUpdater do
     @deployment_plan.stub!(:resource_pool).with("small").and_return(@resource_pool_spec)
     @deployment_plan.stub!(:model).and_return(@deployment)
     @deployment_plan.stub!(:name).and_return("test_deployment")
-    @deployment_plan.stub!(:release).and_return(@release_spec)
 
     @resource_pool_spec.stub!(:stemcell).and_return(@stemcell_spec)
     @resource_pool_spec.stub!(:spec).and_return(BASIC_PLAN["resource_pool"])
