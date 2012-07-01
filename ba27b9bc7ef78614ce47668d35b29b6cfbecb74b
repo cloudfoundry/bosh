@@ -1,0 +1,7 @@
+Code-Review+2: Vadim Spivak <vspivak@vmware.com>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Oleg Shaldybin <olegs@vmware.com>
+Submitted-at: Sun, 01 Jul 2012 18:26:37 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/6812
+Project: bosh
+Branch: refs/heads/master
