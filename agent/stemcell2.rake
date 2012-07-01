@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require File.join(File.dirname(__FILE__), "/lib/agent/version.rb")
+require "rbconfig"
 
 namespace :stemcell2 do
 
@@ -44,6 +45,7 @@ namespace :stemcell2 do
       :bosh_protocol_version => Bosh::Agent::BOSH_PROTOCOL,
       :UBUNTU_ISO => ENV["UBUNTU_ISO"],
       :UBUNTU_MIRROR => ENV["UBUNTU_MIRROR"],
+      :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
     }
 
     # Pass OVFTOOL environment variable when targeting vsphere
