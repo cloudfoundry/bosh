@@ -4,6 +4,8 @@ module Bosh::HealthMonitor
 
       CORE_JOBS = Set.new(%w(cloud_controller dea health_manager nats router stager vcap_redis))
 
+      SERVICE_JOBS_PREFIX = Set.new(%w(mysql mongodb redis rabbit postgresql vblob))
+
       SERVICE_AUXILIARY_JOBS = Set.new(%w(serialization_data_server backup_manager))
 
       attr_reader :metrics
@@ -109,7 +111,18 @@ module Bosh::HealthMonitor
 
         return "service" if SERVICE_AUXILIARY_JOBS.include?(@job.to_s.downcase)
 
-        if @job.to_s =~ /(_node$|_gateway$|service)/i
+        # job name prefixed by "service"
+        if @job.to_s.downcase =~ /^service/i
+          return "service"
+        end
+
+        # job name suffixed by "_gateway"
+        if @job.to_s.downcase =~ /(#{SERVICE_JOBS_PREFIX.to_a.join('|')})_gateway$/i
+          return "service"
+        end
+
+        # job name contains "_node"
+        if @job.to_s.downcase =~ /(#{SERVICE_JOBS_PREFIX.to_a.join('|')})_node(.*)/i
           return "service"
         end
 
