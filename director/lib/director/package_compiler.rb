@@ -303,10 +303,10 @@ module Bosh::Director
 
           @logger.info("Job will be compiled for: " +
                          stemcell_name_version(stemcell))
-          templates = job.templates
-          templates.each do |template|
+
+          job.templates.each do |template|
             template.packages.each do |package|
-              schedule_compilation(job, package, stemcell.stemcell)
+              schedule_compilation(job, package, stemcell.model)
             end
           end
         end
@@ -314,7 +314,6 @@ module Bosh::Director
 
       bind_dependent_tasks
     end
-
 
     def find_compiled_package(package, stemcell, dependency_key)
       # Check if this package is already compiled

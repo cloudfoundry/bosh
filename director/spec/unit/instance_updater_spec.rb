@@ -139,7 +139,7 @@ describe Bosh::Director::InstanceUpdater do
     @resource_pool_spec.stub!(:cloud_properties).and_return(BASIC_PLAN["resource_pool"]["cloud_properties"])
     @resource_pool_spec.stub!(:env).and_return({})
 
-    @stemcell_spec.stub!(:stemcell).and_return(@stemcell)
+    @stemcell_spec.stub!(:model).and_return(@stemcell)
 
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
 
