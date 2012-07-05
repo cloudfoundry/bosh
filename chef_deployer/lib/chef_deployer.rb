@@ -133,12 +133,13 @@ module ChefDeployer
          say("==> EXECUTING SSH LOGIN #{command}", :yellow)
          begin
            PTY.spawn(command) do |read_pipe, write_pipe, pid|
-             result = read_pipe.expect(/password: /)
-             if result
-               write_pipe.puts(password)
-               read_pipe.expect("\n")
+             if password
+               result = read_pipe.expect(/password: /)
+               if result
+                 write_pipe.puts(password)
+                 read_pipe.expect("\n")
+               end
              end
-
              Process.wait(pid)
              if $? && $?.exitstatus != 0
                raise "Failed command #{command} with exit code: #{$?.exitstatus}"
