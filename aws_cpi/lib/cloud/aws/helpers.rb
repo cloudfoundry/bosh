@@ -48,6 +48,16 @@ module Bosh::AwsCloud
           sleep(1)
           next
         end
+        rescue EC2::Errors::InvalidInstanceID::NotFound => e
+          # ugly workaround for an AWS issue:
+          # sometimes when we create an instance AWS reports that the instance is missing,
+          # but checking the console it is there, so by retrying we catch that race condition
+          raise e if failures > 3
+          failures =+ 1
+          @logger.error("Instance not yet? found: #{desc}")
+          sleep(1)
+          next
+        end
 
         # This is not a very strong convention, but some resources
         # have 'error' and 'failed' states, we probably don't want to keep
