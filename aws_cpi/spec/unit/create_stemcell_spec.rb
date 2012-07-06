@@ -27,8 +27,8 @@ describe Bosh::AwsCloud::Cloud do
       image_params = {
         :name => "BOSH-#{unique_name}",
         :architecture => "x86_64",
-        :kernel_id => "aki-825ea7eb",
-        :root_device_name => "/dev/sda",
+        :kernel_id => "aki-b4aa75dd",
+        :root_device_name => "/dev/sda1",
         :block_device_mappings => {
           "/dev/sda" => { :snapshot_id => "s-baz" },
           "/dev/sdb" => "ephemeral0"
