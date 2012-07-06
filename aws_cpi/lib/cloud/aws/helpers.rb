@@ -37,14 +37,17 @@ module Bosh::AwsCloud
 
         begin
           state = resource.send(state_method)
-        rescue AWS::EC2::Errors::InvalidAMIID::NotFound => e
-          # ugly workaround for an AWS issue:
-          # sometimes when we upload a stemcell and proceed to create a VM from
-          # it, AWS reports that the AMI is missing, but checking the console
-          # it is there, so by retrying we catch that race condition
+        rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
+               AWS::EC2::Errors::InvalidInstanceID::NotFound => e
+          # ugly workaround for AWS race conditions:
+          # 1) sometimes when we upload a stemcell and proceed to create a VM
+          #    from it, AWS reports that the AMI is missing
+          # 2) sometimes when we create a new EC2 instance, AWS reports that
+          #    the instance it returns is missing
+          # in both cases we just wait a little and retry...
           raise e if failures > 3
-          failures =+ 1
-          @logger.error("AMI not found: #{desc}")
+          failures += 1
+          @logger.error("#{e.message}: #{desc}")
           sleep(1)
           next
         end
