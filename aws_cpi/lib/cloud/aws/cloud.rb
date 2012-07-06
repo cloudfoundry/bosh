@@ -12,6 +12,7 @@ module Bosh::AwsCloud
     DEVICE_POLL_TIMEOUT = 60 # seconds
 
     DEFAULT_AKI = "aki-825ea7eb"
+    DEFAULT_ROOT_DEVICE_NAME = "/dev/sda"
 
     # UBUNTU_10_04_32_BIT_US_EAST_EBS = "ami-3e9b4957"
     # UBUNTU_10_04_32_BIT_US_EAST = "ami-809a48e9"
@@ -121,6 +122,9 @@ module Bosh::AwsCloud
         network_configurator.configure(@ec2, instance)
 
         settings = initial_agent_settings(agent_id, network_spec, environment)
+        if resource_pool["root_device_name"]
+          settings["root_device_name"] = resource_pool["root_device_name"]
+        end
         @registry.update_settings(instance.id, settings)
 
         instance.id
@@ -304,11 +308,14 @@ module Bosh::AwsCloud
           snapshot = volume.create_snapshot
           wait_resource(snapshot, :completed)
 
+          root_device_name = cloud_properties["root_device_name"] ||
+                             DEFAULT_ROOT_DEVICE_NAME
+
           image_params = {
             :name => "BOSH-#{generate_unique_name}",
-            :architecture => "x86_64",
+            :architecture => "x86_64", # TODO should this be configurable?
             :kernel_id => cloud_properties["kernel_id"] || DEFAULT_AKI,
-            :root_device_name => "/dev/sda",
+            :root_device_name =>  root_device_name,
             :block_device_mappings => {
               "/dev/sda" => { :snapshot_id => snapshot.id },
               "/dev/sdb" => "ephemeral0"
@@ -394,7 +401,8 @@ module Bosh::AwsCloud
         "agent_id" => agent_id,
         "networks" => network_spec,
         "disks" => {
-          "system" => "/dev/sda",
+          # this actually depends on the root_device_name in the stemcell
+          "system" => DEFAULT_ROOT_DEVICE_NAME,
           "ephemeral" => "/dev/sdb",
           "persistent" => {}
         }
@@ -529,6 +537,8 @@ module Bosh::AwsCloud
         cloud_error("Unable to copy stemcell root image, " \
                     "exit status #{$?.exitstatus}: #{out}")
       end
+
+      @logger.debug("stemcell copy output:\n#{out}")
     end
 
     # checks if the stemcell-copy script can be found in
