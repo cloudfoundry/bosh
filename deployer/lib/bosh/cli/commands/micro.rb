@@ -86,6 +86,8 @@ module Bosh::Cli::Command
         err "No stemcell provided"
       end
 
+      err "No deployment set" unless deployment
+
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
       desc = "`#{rel_path.green}' to `#{target_name.green}'"
