@@ -7,7 +7,7 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-disk_image_name=raw.img
+disk_image_name=root.img
 disk_size=$image_create_disk_size
 
 # Reserve the first 63 sectors for grub

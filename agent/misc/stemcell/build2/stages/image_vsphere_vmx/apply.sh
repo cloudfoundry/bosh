@@ -11,7 +11,7 @@ vsphere=$work/vsphere
 
 mkdir -p $vsphere
 
-disk_image_name=raw.img
+disk_image_name=root.img
 disk_size=$(($(stat --printf="%s" $work/$disk_image_name) / (1024*1024)))
 
 # 512 bytes per sector
@@ -21,7 +21,7 @@ disk_sectors=$(($disk_size * 2048))
 disk_cylinders=$(($disk_sectors / 16065))
 
 # Output disk description
-cat > $vsphere/raw.vmdk <<EOS
+cat > $vsphere/root.vmdk <<EOS
 version=1
 CID=ffffffff
 parentCID=ffffffff
@@ -68,7 +68,7 @@ scsi0.virtualDev = "lsilogic"
 memsize = "$vm_mem"
 
 scsi0:0.present = "true"
-scsi0:0.fileName = "raw.vmdk"
+scsi0:0.fileName = "root.vmdk"
 scsi0:0.deviceType = "scsi-hardDisk"
 
 ide0:0.present = "true"
