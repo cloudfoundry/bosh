@@ -48,7 +48,13 @@ function wait_agent {
 wait_agent ${agent_host} ${agent_port}
 
 # Start compiler
-/var/vcap/bosh/bin/ruby ${bosh_src_dir}/package_compiler/bin/package_compiler --cpi ${infrastructure} compile ${bosh_src_dir}/release.yml ${bosh_src_dir}/release.tgz ${blobstore_path} ${agent_uri}
+/var/vcap/bosh/bin/ruby ${bosh_src_dir}/package_compiler/bin/package_compiler \
+  --cpi ${infrastructure} \
+  compile \
+    ${bosh_src_dir}/release.yml \
+    ${bosh_src_dir}/release.tgz \
+    ${blobstore_path} \
+    ${agent_uri}
 
 function kill_agent {
   signal=$1

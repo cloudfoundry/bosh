@@ -7,7 +7,7 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-disk_image_name=raw.img
+disk_image_name=root.img
 
 # Map partition in image to loopback
 dev=$(kpartx -av $work/$disk_image_name | grep "^add" | cut -d" " -f3)
