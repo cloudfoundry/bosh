@@ -87,6 +87,20 @@ module Bosh::Deployer
             raise Error, "`#{cmd}` failed, exit status=#{$?.exitstatus}"
           end
         end
+
+        timeout_time = Time.now.to_f + (60 * 5)
+        http_client = HTTPClient.new()
+        begin
+          http_client.head("http://127.0.0.1:#{@registry_port}")
+          sleep 0.5
+        rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
+          if timeout_time - Time.now.to_f > 0
+            retry
+          else
+            raise "Cannot access aws_registry: #{e.message}"
+          end
+        end
+        logger.info("aws_registry is ready on port #{@registry_port}")
       ensure
         @registry_config.unlink if @registry_config
       end
