@@ -11,7 +11,7 @@ require "director/deployment_plan/instance"
 require "director/deployment_plan/job"
 require "director/deployment_plan/network"
 require "director/deployment_plan/network_subnet"
-require "director/deployment_plan/package"
+require "director/deployment_plan/compiled_package"
 require "director/deployment_plan/release"
 require "director/deployment_plan/resource_pool"
 require "director/deployment_plan/stemcell"
@@ -115,7 +115,7 @@ module Bosh::Director
 
     # Returns a named job
     # @param [String] name Job name
-    # @return [Bosh::Director::DeploymentPlan::JobSpec] Job
+    # @return [Bosh::Director::DeploymentPlan::Job] Job
     def job(name)
       @jobs_name_index[name]
     end
@@ -256,7 +256,7 @@ module Bosh::Director
                 "deployment manifest"
         end
 
-        job = JobSpec.new(self, job)
+        job = Job.new(self, job)
         if @jobs_canonical_name_index.include?(job.canonical_name)
           raise DeploymentCanonicalJobNameTaken,
                 "Invalid job name `#{job.name}', canonical name already taken"
