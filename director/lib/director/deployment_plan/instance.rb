@@ -7,7 +7,7 @@ module Bosh::Director
     class Instance
       include DnsHelper
 
-      # @return [DeploymentPlan::JobSpec] Associated job
+      # @return [DeploymentPlan::Job] Associated job
       attr_reader :job
 
       # @return [Integer] Instance index
@@ -44,7 +44,7 @@ module Bosh::Director
       ##
       # Creates a new instance specification based on the job and index.
       #
-      # @param [DeploymentPlan::JobSpec] job associated job
+      # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
       def initialize(job, index)
         @job = job

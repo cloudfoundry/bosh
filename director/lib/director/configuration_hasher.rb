@@ -21,7 +21,7 @@ module Bosh::Director
       end
     end
 
-    # @param [DeploymentPlan::JobSpec]
+    # @param [DeploymentPlan::Job]
     def initialize(job)
       @job = job
       @logger = Config.logger
