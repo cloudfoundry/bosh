@@ -64,11 +64,17 @@ module SpecHelper
 
       Sequel.extension :migration
 
-      @db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
+      # Sequel with in-memory sqlite database is not thread-safe, using
+      # file seems to fix that
+      db = "sqlite://#{File.join(@temp_dir, "director.db")}"
+      dns_db = "sqlite://#{File.join(@temp_dir, "dns.db")}"
+      db_opts = {:max_connections => 32, :pool_timeout => 10}
+
+      @db = Sequel.connect(db, db_opts)
       @db.loggers << @logger
       Bosh::Director::Config.db = @db
 
-      @dns_db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
+      @dns_db = Sequel.connect(dns_db, db_opts)
       @dns_db.loggers << @logger
       Bosh::Director::Config.dns_db = @dns_db
 

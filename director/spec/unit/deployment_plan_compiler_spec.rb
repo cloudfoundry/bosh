@@ -88,8 +88,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
   it "should bind unallocated VMs" do
     instances = (1..4).map { |i| mock(BD::DeploymentPlan::Instance) }
 
-    j1 = mock(BD::DeploymentPlan::JobSpec, :instances => instances[0..1])
-    j2 = mock(BD::DeploymentPlan::JobSpec, :instances => instances[2..3])
+    j1 = mock(BD::DeploymentPlan::Job, :instances => instances[0..1])
+    j2 = mock(BD::DeploymentPlan::Job, :instances => instances[2..3])
 
     plan.should_receive(:jobs).and_return([j1, j2])
 
@@ -222,7 +222,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       instance = stub(BD::DeploymentPlan::Instance)
       resource_pool = stub(:ResourcePool)
-      job = stub(:JobSpec)
+      job = stub(BD::DeploymentPlan::Job)
       job.stub(:instance).with(3).and_return(instance)
       job.stub(:resource_pool).and_return(resource_pool)
       @deployment_plan.stub(:job).with("foo").and_return(job)
@@ -243,7 +243,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
       instance = stub(BD::DeploymentPlan::Instance)
       resource_pool = stub(:ResourcePool)
-      job = stub(:JobSpec)
+      job = stub(BD::DeploymentPlan::Job)
       job.stub(:instance).with(3).and_return(instance)
       job.stub(:resource_pool).and_return(resource_pool)
       @deployment_plan.stub(:job).with("bar").and_return(job)
@@ -412,7 +412,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   describe :bind_instance_networks do
     before(:each) do
-      @job_spec = stub(:JobSpec)
+      @job_spec = stub(BD::DeploymentPlan::Job)
       @instance_spec = stub(BD::DeploymentPlan::Instance)
       @network_spec = stub(:NetworkSpec)
 
@@ -448,7 +448,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :bind_configuration do
     before(:each) do
       @template_spec = stub(:TemplateSpec)
-      @job_spec = stub(:JobSpec)
+      @job_spec = stub(BD::DeploymentPlan::Job)
       @deployment_plan.stub(:jobs).and_return([@job_spec])
     end
 

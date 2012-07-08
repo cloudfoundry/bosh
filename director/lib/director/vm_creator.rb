@@ -3,6 +3,10 @@ module Bosh::Director
   class VmCreator
     include EncryptionHelper
 
+    def self.create(*args)
+      new.create(*args)
+    end
+
     def initialize
       @cloud = Config.cloud
       @logger = Config.logger
@@ -14,7 +18,7 @@ module Bosh::Director
       env.extend(DeepCopy)
       env = env._deep_copy
 
-      agent_id = VmCreator.generate_agent_id
+      agent_id = self.class.generate_agent_id
 
       if Config.encryption?
         credentials = generate_agent_credentials
