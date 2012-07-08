@@ -22,7 +22,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
 
     plan.stub!(:network).with("net_a").and_return(network)
 
-    job = mock(BD::DeploymentPlan::JobSpec, :deployment => plan)
+    job = mock(BD::DeploymentPlan::Job, :deployment => plan)
 
     job.stub(:instance_state).with(0).and_return("started")
     job.stub(:default_network).and_return({})
@@ -59,7 +59,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     before(:each) do
       @deployment = make_deployment("mycloud")
       @plan = mock(BD::DeploymentPlan, :model => @deployment)
-      @job = mock(BD::DeploymentPlan::JobSpec, :deployment => @plan)
+      @job = mock(BD::DeploymentPlan::Job, :deployment => @plan)
       @job.stub!(:name).and_return("dea")
       @job.stub!(:instance_state).with(2).and_return("started")
       @instance = make(@job, 2)
@@ -123,7 +123,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     before(:each) do
       @deployment = make_deployment("mycloud")
       @plan = mock(BD::DeploymentPlan, :model => @deployment)
-      @job = mock(BD::DeploymentPlan::JobSpec, :deployment => @plan)
+      @job = mock(BD::DeploymentPlan::Job, :deployment => @plan)
       @job.stub!(:name).and_return("dea")
     end
 
