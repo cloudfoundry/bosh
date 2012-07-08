@@ -10,5 +10,9 @@ module Bosh::Director::Models
       validates_unique [:name, :version]
       validates_format VALID_ID, [:name, :version]
     end
+
+    def desc
+      "#{name}/#{version}"
+    end
   end
 end
