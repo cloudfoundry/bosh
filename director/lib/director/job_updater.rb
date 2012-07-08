@@ -5,7 +5,7 @@ module Bosh::Director
   class JobUpdater
 
     # @param [Bosh::Director::DeploymentPlan] deployment_plan
-    # @param [DeploymentPlan::JobSpec] job
+    # @param [DeploymentPlan::Job] job
     def initialize(deployment_plan, job)
       @deployment_plan = deployment_plan
       @job = job

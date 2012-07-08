@@ -55,8 +55,8 @@ module Bosh::Director
         validate_ip(reservation)
 
         config = {
-            "type" => "dynamic",
-            "cloud_properties" => @cloud_properties
+          "type" => "dynamic",
+          "cloud_properties" => @cloud_properties
         }
 
         if default_properties
