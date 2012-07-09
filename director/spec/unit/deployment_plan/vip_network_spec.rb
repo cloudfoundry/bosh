@@ -2,7 +2,7 @@
 
 require File.expand_path("../../../spec_helper", __FILE__)
 
-describe Bosh::Director::DeploymentPlan::VipNetworkSpec do
+describe Bosh::Director::DeploymentPlan::VipNetwork do
   before(:each) do
     @deployment_plan = stub(:DeploymentPlan)
   end
@@ -10,7 +10,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSpec do
   describe :initialize do
     it "should require cloud properties" do
       lambda {
-        BD::DeploymentPlan::VipNetworkSpec.new(@deployment_plan, {
+        BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
             "name" => "foo"
         })
       }.should raise_error(BD::ValidationMissingField)
@@ -19,7 +19,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSpec do
 
   describe :reserve do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSpec do
 
   describe :release do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -83,7 +83,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSpec do
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"

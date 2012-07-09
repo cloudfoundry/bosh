@@ -4,7 +4,7 @@ module Bosh::Director
   class DeploymentPlan
     ##
     # Represents a explicitly configured network.
-    class ManualNetworkSpec < NetworkSpec
+    class ManualNetwork < Network
       include IpUtil
       include DnsHelper
       include ValidationHelper
@@ -21,10 +21,10 @@ module Bosh::Director
         subnets = safe_property(network_spec, "subnets", :class => Array)
 
         subnets.each do |subnet_spec|
-          new_subnet = NetworkSubnetSpec.new(self, subnet_spec)
+          new_subnet = NetworkSubnet.new(self, subnet_spec)
           @subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
-              raise NetworkSpecOverlappingSubnets,
+              raise NetworkOverlappingSubnets,
                     "Network `#{name}' has overlapping subnets"
             end
           end

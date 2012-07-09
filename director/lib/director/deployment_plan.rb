@@ -121,14 +121,14 @@ module Bosh::Director
     end
 
     # Returns all networks in a deployment plan
-    # @return [Array<Bosh::Director::DeploymentPlan::NetworkSpec>]
+    # @return [Array<Bosh::Director::DeploymentPlan::Network>]
     def networks
       @networks.values
     end
 
     # Returns a named network
     # @param [String] name
-    # @return [Bosh::Director::DeploymentPlan::NetworkSpec]
+    # @return [Bosh::Director::DeploymentPlan::Network]
     def network(name)
       @networks[name]
     end
@@ -277,11 +277,11 @@ module Bosh::Director
                              :default => "manual")
         case type
           when "manual"
-            network = ManualNetworkSpec.new(self, network_spec)
+            network = ManualNetwork.new(self, network_spec)
           when "dynamic"
-            network = DynamicNetworkSpec.new(self, network_spec)
+            network = DynamicNetwork.new(self, network_spec)
           when "vip"
-            network = VipNetworkSpec.new(self, network_spec)
+            network = VipNetwork.new(self, network_spec)
           else
             raise DeploymentInvalidNetworkType,
                   "Invalid network type `#{type}'"

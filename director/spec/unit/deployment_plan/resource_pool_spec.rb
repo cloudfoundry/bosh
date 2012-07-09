@@ -24,7 +24,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
   describe "creating" do
     it "parses name, size, stemcell spec, cloud properties, env" do
-      network = mock(BD::DeploymentPlan::NetworkSpec)
+      network = mock(BD::DeploymentPlan::Network)
 
       plan = mock(BD::DeploymentPlan)
       plan.stub!(:network).with("test").and_return(network)
@@ -65,7 +65,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     it "has default env" do
       spec = valid_spec.dup
       spec.delete("env")
-      network = mock(BD::DeploymentPlan::NetworkSpec)
+      network = mock(BD::DeploymentPlan::Network)
       plan = mock(BD::DeploymentPlan)
       plan.stub!(:network).with("test").and_return(network)
 
@@ -75,7 +75,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   it "returns resource pool spec as Hash" do
-    network = mock(BD::DeploymentPlan::NetworkSpec)
+    network = mock(BD::DeploymentPlan::Network)
     plan = mock(BD::DeploymentPlan)
     plan.stub!(:network).with("test").and_return(network)
 
@@ -88,7 +88,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   it "reserves capacity up to size" do
-    network = mock(BD::DeploymentPlan::NetworkSpec)
+    network = mock(BD::DeploymentPlan::Network)
     plan = mock(BD::DeploymentPlan)
     plan.stub!(:network).with("test").and_return(network)
 
@@ -103,7 +103,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
   describe "processing idle VMs" do
     it "creates idle vm objects for missing idle VMs" do
-      network = mock(BD::DeploymentPlan::NetworkSpec)
+      network = mock(BD::DeploymentPlan::Network)
       network.stub!(:reserve!)
 
       plan = mock(BD::DeploymentPlan)
@@ -120,7 +120,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     end
 
     it "reserves dynamic networks for idle VMs that don't have reservations" do
-      network = mock(BD::DeploymentPlan::NetworkSpec)
+      network = mock(BD::DeploymentPlan::Network)
       plan = mock(BD::DeploymentPlan)
       plan.stub!(:network).with("test").and_return(network)
 

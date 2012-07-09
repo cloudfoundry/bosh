@@ -2,9 +2,10 @@
 
 module Bosh::Director
   class DeploymentPlan
-    class DynamicNetworkSpec < NetworkSpec
+    class DynamicNetwork < Network
       DYNAMIC_IP = NetAddr::CIDR.create("255.255.255.255").to_i
 
+      # @return [Hash] Network cloud properties
       attr_accessor :cloud_properties
 
       ##
@@ -14,8 +15,8 @@ module Bosh::Director
       # @param [Hash] network_spec parsed deployment manifest network section
       def initialize(deployment, network_spec)
         super
-        @cloud_properties = safe_property(network_spec, "cloud_properties",
-                                          :class => Hash)
+        @cloud_properties =
+          safe_property(network_spec, "cloud_properties", :class => Hash)
       end
 
       ##

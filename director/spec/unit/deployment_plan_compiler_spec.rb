@@ -167,7 +167,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   describe :bind_idle_vm do
     before(:each) do
-      @network = stub(:NetworkSpec)
+      @network = stub(BD::DeploymentPlan::Network)
       @network.stub(:name).and_return("foo")
       @reservation = stub(:NetworkReservation)
       @resource_pool = stub(:ResourcePool)
@@ -273,8 +273,8 @@ describe Bosh::Director::DeploymentPlanCompiler do
 
   describe :get_network_reservations do
     it "should reserve all of the networks listed in the state" do
-      foo_network = stub(:FooNetworkSpec)
-      bar_network = stub(:BarNetworkSpec)
+      foo_network = stub(BD::DeploymentPlan::Network)
+      bar_network = stub(BD::DeploymentPlan::Network)
 
       @deployment_plan.stub(:network).with("foo").and_return(foo_network)
       @deployment_plan.stub(:network).with("bar").and_return(bar_network)
@@ -414,7 +414,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     before(:each) do
       @job_spec = stub(BD::DeploymentPlan::Job)
       @instance_spec = stub(BD::DeploymentPlan::Instance)
-      @network_spec = stub(:NetworkSpec)
+      @network_spec = stub(BD::DeploymentPlan::Network)
 
       @deployment_plan.stub(:jobs).and_return([@job_spec])
       @deployment_plan.stub(:network).with("network-a").

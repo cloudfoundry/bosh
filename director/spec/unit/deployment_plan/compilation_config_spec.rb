@@ -6,7 +6,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
   describe :initialize do
     before(:each) do
       @deployment = mock(:DeploymentPlan)
-      @network = mock(:NetworkSpec)
+      @network = mock(BD::DeploymentPlan::Network)
       @deployment.stub(:network).with("foo").and_return(@network)
     end
 

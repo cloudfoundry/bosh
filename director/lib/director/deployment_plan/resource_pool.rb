@@ -17,7 +17,7 @@ module Bosh::Director
       # @return [DeploymentPlan::Stemcell] Stemcell spec
       attr_reader :stemcell
 
-      # @return [DeploymentPlan::NetworkSpec] Network spec
+      # @return [DeploymentPlan::Network] Network spec
       attr_reader :network
 
       # @return [Hash] Cloud properties

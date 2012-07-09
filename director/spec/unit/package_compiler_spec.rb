@@ -21,7 +21,7 @@ describe Bosh::Director::PackageCompiler do
     @config = mock(BD::DeploymentPlan::CompilationConfig)
     @plan = mock(BD::DeploymentPlan, :compilation => @config,
                  :model => @deployment, :name => "mycloud")
-    @network = mock(BD::DeploymentPlan::NetworkSpec, :name => "default")
+    @network = mock(BD::DeploymentPlan::Network, :name => "default")
 
     @n_workers = 3
     @config.stub!(:deployment => @plan, :network => @network,
