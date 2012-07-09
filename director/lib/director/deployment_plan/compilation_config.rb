@@ -13,7 +13,7 @@ module Bosh::Director
       # @return [Integer] number of worker VMs to use
       attr_accessor :workers
 
-      # @return [NetworkSpec] network to use for compilation workers
+      # @return [DeploymentPlan::Network] network used by compilation workers
       attr_accessor :network
 
       # @return [Hash] cloud properties to use when creating VMs. (optional)

@@ -2,7 +2,7 @@
 
 require File.expand_path("../../../spec_helper", __FILE__)
 
-describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
+describe Bosh::Director::DeploymentPlan::ManualNetwork do
   before(:each) do
     @deployment_plan = stub(:DeploymentPlan)
   end
@@ -10,12 +10,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
   describe :initialize do
     it "should parse subnets" do
       received_network = nil
-      BD::DeploymentPlan::NetworkSubnetSpec.stub(:new).with do |network, spec|
+      BD::DeploymentPlan::NetworkSubnet.stub(:new).with do |network, spec|
         received_network = network
         spec.should == {"foz" => "baz"}
       end
 
-      network = BD::DeploymentPlan::ManualNetworkSpec.new(@deployment_plan, {
+      network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           "name" => "foo",
           "subnets" => [
             {
@@ -28,7 +28,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
 
     pending "should require at least one subnet" do
       lambda {
-        BD::DeploymentPlan::ManualNetworkSpec.new(@deployment_plan, {
+        BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
             "name" => "foo",
             "subnets" => []
         })
@@ -36,15 +36,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
     end
 
     it "should not allow overlapping subnets" do
-      subnet_a = stub(:NetworkSubnetSpecA)
-      subnet_b = stub(:NetworkSubnetSpecB)
-      BD::DeploymentPlan::NetworkSubnetSpec.stub(:new).
+      subnet_a = stub(BD::DeploymentPlan::NetworkSubnet)
+      subnet_b = stub(BD::DeploymentPlan::NetworkSubnet)
+      BD::DeploymentPlan::NetworkSubnet.stub(:new).
           and_return(subnet_a, subnet_b)
 
       subnet_a.should_receive(:overlaps?).with(subnet_b).and_return(true)
 
       lambda {
-        BD::DeploymentPlan::ManualNetworkSpec.new(@deployment_plan, {
+        BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
             "name" => "foo",
             "subnets" => [
                 {
@@ -55,17 +55,17 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
                 }
             ]
         })
-      }.should raise_error(Bosh::Director::NetworkSpecOverlappingSubnets)
+      }.should raise_error(Bosh::Director::NetworkOverlappingSubnets)
     end
   end
 
   describe :reserve do
     before(:each) do
-      @subnet = stub(:NetworkSubnetSpec)
+      @subnet = stub(BD::DeploymentPlan::NetworkSubnet)
       @subnet.stub(:range).and_return(NetAddr::CIDR.create("0.0.0.1/24"))
-      BD::DeploymentPlan::NetworkSubnetSpec.stub(:new).and_return(@subnet)
+      BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
-      @network = BD::DeploymentPlan::ManualNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           "name" => "foo",
           "subnets" => [
               {
@@ -135,11 +135,11 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
 
   describe :release do
     before(:each) do
-      @subnet = stub(:NetworkSubnetSpec)
+      @subnet = stub(BD::DeploymentPlan::NetworkSubnet)
       @subnet.stub(:range).and_return(NetAddr::CIDR.create("0.0.0.1/24"))
-      BD::DeploymentPlan::NetworkSubnetSpec.stub(:new).and_return(@subnet)
+      BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
-      @network = BD::DeploymentPlan::ManualNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           "name" => "foo",
           "subnets" => [
               {
@@ -169,15 +169,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSpec do
 
   describe :network_settings do
     before(:each) do
-      @subnet = stub(:NetworkSubnetSpec)
+      @subnet = stub(BD::DeploymentPlan::NetworkSubnet)
       @subnet.stub(:range).and_return(NetAddr::CIDR.create("0.0.0.1/24"))
       @subnet.stub(:netmask).and_return("255.255.255.0")
       @subnet.stub(:cloud_properties).and_return({"VLAN" => "a"})
       @subnet.stub(:dns).and_return(nil)
       @subnet.stub(:gateway).and_return(nil)
-      BD::DeploymentPlan::NetworkSubnetSpec.stub(:new).and_return(@subnet)
+      BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
 
-      @network = BD::DeploymentPlan::ManualNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           "name" => "foo",
           "subnets" => [
               {

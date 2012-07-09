@@ -33,7 +33,7 @@ module Bosh::Director
       #   be run in
       attr_accessor :resource_pool
 
-      # @return [DeploymentPlan::NetworkSpec] Job default network
+      # @return [DeploymentPlan::Network Job default network
       attr_accessor :default_network
 
       # @return [Array<DeploymentPlan::Template] Templates included into the job
@@ -335,12 +335,12 @@ module Bosh::Director
                                           :class => Array, :optional => true)
           if default_network
             default_network.each do |property|
-              unless NetworkSpec::VALID_DEFAULTS.include?(property)
+              unless Network::VALID_DEFAULTS.include?(property)
                 raise JobNetworkInvalidDefault,
                       "Job `#{@name}' specified " +
                       "an invalid default network property `#{property}', " +
                       "valid properties are: " +
-                      NetworkSpec::VALID_DEFAULTS.join(", ")
+                      Network::VALID_DEFAULTS.join(", ")
               end
 
               if @default_network[property]
@@ -366,7 +366,7 @@ module Bosh::Director
         end
 
         if network_specs.size > 1
-          missing_default_properties = NetworkSpec::VALID_DEFAULTS.dup
+          missing_default_properties = Network::VALID_DEFAULTS.dup
           @default_network.each_key do |key|
             missing_default_properties.delete(key)
           end
@@ -380,7 +380,7 @@ module Bosh::Director
           # Set the default network to the one and only available network
           # (if not specified already)
           network = safe_property(network_specs[0], "name", :class => String)
-          NetworkSpec::VALID_DEFAULTS.each do |property|
+          Network::VALID_DEFAULTS.each do |property|
             @default_network[property] ||= network
           end
         end

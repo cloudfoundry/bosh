@@ -2,19 +2,29 @@
 
 module Bosh::Director
   class DeploymentPlan
-    class NetworkSubnetSpec
+    class NetworkSubnet
       include IpUtil
       include ValidationHelper
 
-      # TODO: could these be downgraded to attr_reader?
-      attr_accessor :network
-      attr_accessor :range
-      attr_accessor :gateway
-      attr_accessor :dns
-      attr_accessor :cloud_properties
-      attr_accessor :netmask
+      # @return [DeploymentPlan::Network] Network this subnet belongs to
+      attr_reader :network
 
-      # @param [NetworkSpec] network Network spec
+      # @return [NetAddr::CIDR] Subnet range
+      attr_reader :range
+
+      # @return [NetAddr::CIDR] Subnet gateway IP address
+      attr_reader :gateway
+
+      # @return [Array<String>] Subnet DNS IP addresses
+      attr_reader :dns
+
+      # @return [Hash] Subnet cloud properties (VLAN etc.)
+      attr_reader :cloud_properties
+
+      # @return [String] Subnet netmask
+      attr_reader :netmask
+
+      # @param [DeploymentPlan::Network] network Network
       # @param [Hash] subnet_spec Raw subnet spec from deployment manifest
       def initialize(network, subnet_spec)
         @network = network
@@ -23,7 +33,7 @@ module Bosh::Director
         @range = NetAddr::CIDR.create(range_property)
 
         if @range.size <= 1
-          raise NetworkSpecInvalidRange,
+          raise NetworkInvalidRange,
                 "Invalid network range `#{range_property}', " +
                 "should include at least 2 IPs"
         end
@@ -86,7 +96,7 @@ module Bosh::Director
 
         each_ip(reserved_ips) do |ip|
           unless @available_dynamic_ips.delete?(ip)
-            raise NetworkSpecReservedIpOutOfRange,
+            raise NetworkReservedIpOutOfRange,
                   "Reserved IP `#{format_ip(ip)}' is out of " +
                   "network `#{@network.name}' range"
           end
@@ -94,7 +104,7 @@ module Bosh::Director
 
         each_ip(static_ips) do |ip|
           unless @available_dynamic_ips.delete?(ip)
-            raise NetworkSpecStaticIpOutOfRange,
+            raise NetworkStaticIpOutOfRange,
                   "Static IP `#{format_ip(ip)}' is out of " +
                   "network `#{@network.name}' range"
           end
@@ -157,16 +167,16 @@ module Bosh::Director
       private
 
       # @param [String] reason
-      # @raise NetworkSpecInvalidGateway
+      # @raise NetworkInvalidGateway
       def invalid_gateway(reason)
-        raise NetworkSpecInvalidGateway,
+        raise NetworkInvalidGateway,
               "Invalid gateway for network `#{@network.name}': #{reason}"
       end
 
       # @param [String] reason
-      # @raise NetworkSpecInvalidDns
+      # @raise NetworkInvalidDns
       def invalid_dns(reason)
-        raise NetworkSpecInvalidDns,
+        raise NetworkInvalidDns,
               "Invalid DNS for network `#{@network.name}': #{reason}"
       end
     end

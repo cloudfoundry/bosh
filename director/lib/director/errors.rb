@@ -137,12 +137,12 @@ module Bosh::Director
   JobNetworkMultipleDefaults = err(150004)
   JobNetworkMissingDefault = err(150005)
 
-  NetworkSpecOverlappingSubnets = err(160001)
-  NetworkSpecInvalidRange = err(160002)
-  NetworkSpecInvalidGateway = err(160003)
-  NetworkSpecInvalidDns = err(160004)
-  NetworkSpecReservedIpOutOfRange = err(160005)
-  NetworkSpecStaticIpOutOfRange = err(160006)
+  NetworkOverlappingSubnets = err(160001)
+  NetworkInvalidRange = err(160002)
+  NetworkInvalidGateway = err(160003)
+  NetworkInvalidDns = err(160004)
+  NetworkReservedIpOutOfRange = err(160005)
+  NetworkStaticIpOutOfRange = err(160006)
 
   ResourcePoolUnknownNetwork = err(170001)
   ResourcePoolNotEnoughCapacity = err(170002)

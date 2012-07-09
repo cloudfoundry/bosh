@@ -2,14 +2,14 @@
 
 require File.expand_path("../../../spec_helper", __FILE__)
 
-describe Bosh::Director::DeploymentPlan::DynamicNetworkSpec do
+describe Bosh::Director::DeploymentPlan::DynamicNetwork do
   before(:each) do
     @deployment_plan = stub(:DeploymentPlan)
   end
 
   describe :initialize do
     it "should parse spec" do
-      network = BD::DeploymentPlan::DynamicNetworkSpec.new(@deployment_plan, {
+      network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -20,7 +20,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetworkSpec do
 
     it "should require cloud properties" do
       lambda {
-        BD::DeploymentPlan::DynamicNetworkSpec.new(@deployment_plan, {
+        BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
             "name" => "foo"
         })
       }.should raise_error(BD::ValidationMissingField)
@@ -29,7 +29,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetworkSpec do
 
   describe :reserve do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetworkSpec do
 
   describe :release do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
@@ -83,7 +83,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetworkSpec do
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetworkSpec.new(@deployment_plan, {
+      @network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"

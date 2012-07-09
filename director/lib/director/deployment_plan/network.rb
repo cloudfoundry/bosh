@@ -4,7 +4,7 @@ module Bosh::Director
   class DeploymentPlan
     ##
     # Represents a logical deployment network.
-    class NetworkSpec
+    class Network
       include DnsHelper
       include ValidationHelper
 

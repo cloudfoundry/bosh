@@ -2,10 +2,11 @@
 
 module Bosh::Director
   class DeploymentPlan
-    class VipNetworkSpec < NetworkSpec
+    class VipNetwork < Network
       include IpUtil
 
-      attr_accessor :cloud_properties
+      # @return [Hash] Network cloud properties
+      attr_reader :cloud_properties
 
       ##
       # Creates a new network.

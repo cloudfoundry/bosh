@@ -130,7 +130,7 @@ describe Bosh::Director::DeploymentPlan do
       network_spec
 
       received_plan = nil
-      BD::DeploymentPlan::ManualNetworkSpec.should_receive(:new).
+      BD::DeploymentPlan::ManualNetwork.should_receive(:new).
           and_return do |deployment_plan, spec|
         received_plan = deployment_plan
         spec.should == {"foo" => "bar"}
@@ -142,7 +142,7 @@ describe Bosh::Director::DeploymentPlan do
     end
 
     it "should enforce canonical name uniqueness" do
-      BD::DeploymentPlan::ManualNetworkSpec.stub(:new).
+      BD::DeploymentPlan::ManualNetwork.stub(:new).
           and_return do |deployment_plan, spec|
         network_spec = mock(:network_spec)
         network_spec.stub(:name).and_return(spec["name"])

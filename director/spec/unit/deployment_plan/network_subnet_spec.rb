@@ -2,14 +2,14 @@
 
 require File.expand_path("../../../spec_helper", __FILE__)
 
-describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
+describe Bosh::Director::DeploymentPlan::NetworkSubnet do
 
   before(:each) do
-    @network = stub(:NetworkSpec, :name => "net_a")
+    @network = stub(BD::DeploymentPlan::Network, :name => "net_a")
   end
 
   def subnet_spec(properties)
-    BD::DeploymentPlan::NetworkSubnetSpec.new(@network, properties)
+    BD::DeploymentPlan::NetworkSubnet.new(@network, properties)
   end
 
   describe :initialize do
@@ -55,7 +55,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
           "gateway" => "192.168.0.254/30",
           "cloud_properties" => {"foo" => "bar"}
         )
-      }.should raise_error(BD::NetworkSpecInvalidGateway,
+      }.should raise_error(BD::NetworkInvalidGateway,
                            /must be a single IP/)
     end
 
@@ -66,7 +66,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
           "gateway" => "190.168.0.254",
           "cloud_properties" => {"foo" => "bar"}
         )
-      }.should raise_error(BD::NetworkSpecInvalidGateway,
+      }.should raise_error(BD::NetworkInvalidGateway,
                            /must be inside the range/)
     end
 
@@ -77,7 +77,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
           "gateway" => "192.168.0.0",
           "cloud_properties" => {"foo" => "bar"}
         )
-      }.should raise_error(Bosh::Director::NetworkSpecInvalidGateway,
+      }.should raise_error(Bosh::Director::NetworkInvalidGateway,
                            /can't be the network id/)
     end
 
@@ -88,7 +88,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
           "gateway" => "192.168.0.255",
           "cloud_properties" => {"foo" => "bar"}
         )
-      }.should raise_error(Bosh::Director::NetworkSpecInvalidGateway,
+      }.should raise_error(Bosh::Director::NetworkInvalidGateway,
                            /can't be the broadcast IP/)
     end
 
@@ -120,7 +120,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
           "reserved" => "192.167.0.5 - 192.168.0.10",
           "cloud_properties" => {"foo" => "bar"}
         )
-      }.should raise_error(Bosh::Director::NetworkSpecReservedIpOutOfRange,
+      }.should raise_error(Bosh::Director::NetworkReservedIpOutOfRange,
                            "Reserved IP `192.167.0.5' is out of " +
                            "network `net_a' range")
     end
@@ -143,7 +143,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnetSpec do
           "static" => "192.167.0.5 - 192.168.0.10",
           "cloud_properties" => {"foo" => "bar"}
         )
-      }.should raise_error(Bosh::Director::NetworkSpecStaticIpOutOfRange,
+      }.should raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
                            "Static IP `192.167.0.5' is out of " +
                            "network `net_a' range")
     end

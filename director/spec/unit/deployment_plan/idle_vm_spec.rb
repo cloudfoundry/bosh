@@ -5,7 +5,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::DeploymentPlan::IdleVm do
   before(:each) do
     @reservation = stub(:NetworkReservation)
-    @network = stub(:NetworkSpec)
+    @network = stub(BD::DeploymentPlan::Network)
     @network.stub(:name).and_return("test_network")
     @network.stub(:network_settings).with(@reservation).and_return({"ip" => 1})
     @deployment = stub(:DeploymentPlan)

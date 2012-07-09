@@ -15,7 +15,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
   it "trusts current state to have current IP for dynamic network" do
     plan = mock(BD::DeploymentPlan)
 
-    network = BD::DeploymentPlan::DynamicNetworkSpec.new(plan, {
+    network = BD::DeploymentPlan::DynamicNetwork.new(plan, {
       "name" => "net_a",
       "cloud_properties" => {"foo" => "bar"}
     })
@@ -66,7 +66,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
 
     it "binds a VM from job resource pool (real VM exists)" do
-      net = mock(BD::DeploymentPlan::NetworkSpec, :name => "net_a")
+      net = mock(BD::DeploymentPlan::Network, :name => "net_a")
       rp = mock(BD::DeploymentPlan::ResourcePool, :network => net)
       @job.stub!(:resource_pool).and_return(rp)
 
@@ -92,7 +92,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
     end
 
     it "binds a VM from job resource pool (real VM doesn't exist)" do
-      net = mock(BD::DeploymentPlan::NetworkSpec, :name => "net_a")
+      net = mock(BD::DeploymentPlan::Network, :name => "net_a")
       rp = mock(BD::DeploymentPlan::ResourcePool, :network => net)
       @job.stub!(:resource_pool).and_return(rp)
 
