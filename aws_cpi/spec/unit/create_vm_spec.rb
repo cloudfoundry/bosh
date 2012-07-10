@@ -12,7 +12,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       "agent_id" => "agent-id",
       "networks" => { "network_a" => network_spec },
       "disks" => {
-        "system" => "/dev/sda",
+        "system" => "/dev/sda1",
         "ephemeral" => "/dev/sdb",
         "persistent" => {}
       },
@@ -22,6 +22,11 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       "foo" => "bar", # Agent env
       "baz" => "zaz"
     }
+  end
+
+  def fake_image_set
+    image = double("image", :root_device_name => "/dev/sda1")
+    double("images_set", :images_set => [image])
   end
 
   def ec2_params(user_data, security_groups=[])
@@ -52,11 +57,13 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     instance = double("instance",
                       :id => "i-test",
                       :elastic_ip => nil)
+    client = double("client", :describe_images => fake_image_set)
 
     cloud = mock_cloud do |ec2|
       ec2.instances.should_receive(:create).
         with(ec2_params(user_data)).
         and_return(instance)
+      ec2.should_receive(:client).and_return(client)
     end
 
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
@@ -84,6 +91,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     instance = double("instance",
                       :id => "i-test",
                       :elastic_ip => nil)
+    client = double("client", :describe_images => fake_image_set)
 
     security_groups = %w[foo bar]
     network_spec = dynamic_network_spec
@@ -95,6 +103,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       ec2.instances.should_receive(:create).
         with(ec2_params(user_data, security_groups)).
         and_return(instance)
+      ec2.should_receive(:client).and_return(client)
     end
 
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
@@ -114,9 +123,11 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     instance = double("instance",
                       :id => "i-test",
                       :elastic_ip => nil)
+    client = double("client", :describe_images => fake_image_set)
 
     cloud = mock_cloud do |ec2|
       ec2.instances.should_receive(:create).and_return(instance)
+      ec2.should_receive(:client).and_return(client)
     end
 
     instance.should_receive(:associate_elastic_ip).with("10.0.0.1")

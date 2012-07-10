@@ -11,7 +11,8 @@ module Bosh::AwsCloud
     METADATA_TIMEOUT = 5 # seconds
     DEVICE_POLL_TIMEOUT = 60 # seconds
 
-    DEFAULT_AKI = "aki-825ea7eb"
+    DEFAULT_AKI = "aki-b4aa75dd"
+    DEFAULT_ROOT_DEVICE_NAME = "/dev/sda1"
 
     # UBUNTU_10_04_32_BIT_US_EAST_EBS = "ami-3e9b4957"
     # UBUNTU_10_04_32_BIT_US_EAST = "ami-809a48e9"
@@ -99,6 +100,9 @@ module Bosh::AwsCloud
           network_configurator.security_groups(@default_security_groups)
         @logger.debug("using security groups: #{security_groups.join(', ')}")
 
+        response = @ec2.client.describe_images(:image_ids => [stemcell_id])
+        root_device_name = response.images_set.first.root_device_name
+
         instance_params = {
           :image_id => stemcell_id,
           :count => 1,
@@ -120,7 +124,8 @@ module Bosh::AwsCloud
 
         network_configurator.configure(@ec2, instance)
 
-        settings = initial_agent_settings(agent_id, network_spec, environment)
+        settings = initial_agent_settings(agent_id, network_spec, environment,
+                                          root_device_name)
         @registry.update_settings(instance.id, settings)
 
         instance.id
@@ -304,11 +309,14 @@ module Bosh::AwsCloud
           snapshot = volume.create_snapshot
           wait_resource(snapshot, :completed)
 
+          root_device_name = cloud_properties["root_device_name"] ||
+                             DEFAULT_ROOT_DEVICE_NAME
+
           image_params = {
             :name => "BOSH-#{generate_unique_name}",
-            :architecture => "x86_64",
+            :architecture => "x86_64", # TODO should this be configurable?
             :kernel_id => cloud_properties["kernel_id"] || DEFAULT_AKI,
-            :root_device_name => "/dev/sda",
+            :root_device_name =>  root_device_name,
             :block_device_mappings => {
               "/dev/sda" => { :snapshot_id => snapshot.id },
               "/dev/sdb" => "ephemeral0"
@@ -386,7 +394,8 @@ module Bosh::AwsCloud
     # @param [Hash] network_spec Agent network spec
     # @param [Hash] environment
     # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment)
+    def initial_agent_settings(agent_id, network_spec, environment,
+                               root_device_name)
       settings = {
         "vm" => {
           "name" => "vm-#{generate_unique_name}"
@@ -394,7 +403,7 @@ module Bosh::AwsCloud
         "agent_id" => agent_id,
         "networks" => network_spec,
         "disks" => {
-          "system" => "/dev/sda",
+          "system" => root_device_name,
           "ephemeral" => "/dev/sdb",
           "persistent" => {}
         }
@@ -529,6 +538,8 @@ module Bosh::AwsCloud
         cloud_error("Unable to copy stemcell root image, " \
                     "exit status #{$?.exitstatus}: #{out}")
       end
+
+      @logger.debug("stemcell copy output:\n#{out}")
     end
 
     # checks if the stemcell-copy script can be found in
