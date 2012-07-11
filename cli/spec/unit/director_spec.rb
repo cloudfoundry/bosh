@@ -266,11 +266,11 @@ describe Bosh::Cli::Director do
                                    :payload => "abc",
                                    :arg1 => 1, :arg2 => 2
                                   }).
-        should == ["polling result", "502"]
+        should == ["polling result", "502", nil]
     end
 
-    it "considers all responses but 302 a failure" do
-      [200, 404, 403].each do |code|
+    it "considers all responses but 302 and 404 a failure" do
+      [200, 403].each do |code|
         @director.should_receive(:request).
           with(:get, "/stuff", "text/plain", "abc").
           and_return([code, "body", {}])
@@ -279,8 +279,20 @@ describe Bosh::Cli::Director do
                                      :payload => "abc",
                                      :arg1 => 1, :arg2 => 2
                                     }).
-          should == [:failed, nil]
+          should == [:failed, nil, "HTTP #{code}: body"]
       end
+    end
+
+    it "considers a 404 response a not found" do
+      @director.should_receive(:request).
+        with(:get, "/stuff", "text/plain", "abc").
+        and_return([404, "body", {}])
+      @director.request_and_track(:get, "/stuff",
+                                  {:content_type => "text/plain",
+                                   :payload => "abc",
+                                   :arg1 => 1, :arg2 => 2
+                                  }).
+        should == [:notfound, nil, "HTTP 404: body"]
     end
 
     it "reports task as non-trackable if its URL is unfamiliar" do
@@ -292,7 +304,7 @@ describe Bosh::Cli::Director do
                                    :payload => "abc",
                                    :arg1 => 1, :arg2 => 2
                                   }).
-        should == [:non_trackable, nil]
+        should == [:non_trackable, nil, nil]
     end
 
     it "supports uploading with progress bar" do

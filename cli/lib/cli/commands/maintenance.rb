@@ -109,12 +109,14 @@ module Bosh::Cli::Command
       say("  #{desc.yellow.ljust(40)}", "")
       say("IN PROGRESS...".yellow, "")
 
-      status, task_id = yield
+      status, task_id, director_msg = yield
       responses = {
         :done => "DELETED".green,
         :non_trackable => "CANNOT TRACK".red,
         :track_timeout => "TIMED OUT".red,
         :error => "ERROR".red,
+        :failed => "FAILED".red,
+        :notfound => "NOT FOUND".red,
       }
 
       refresh("  #{desc.yellow.ljust(40)}#{responses[status]}\n")

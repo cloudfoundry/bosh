@@ -8,12 +8,8 @@ module Bosh::Cli::Command
       prepare
       show_header
 
-      begin
-        status, body = director.get_property(@deployment_name, name)
-        existing_property = status == 200
-      rescue Bosh::Cli::DirectorError
-        existing_property = false
-      end
+      status, body = director.get_property(@deployment_name, name)
+      existing_property = status == 200
 
       if existing_property
         say("Current `#{name.green}' value is " +

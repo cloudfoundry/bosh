@@ -24,10 +24,10 @@ module Bosh::Cli::Command
 
       sanity_check_job_rename(manifest_yaml, old_name, new_name)
 
-      status, _ = director.rename_job(manifest["name"], manifest_yaml,
+      status, _, director_msg = director.rename_job(manifest["name"], manifest_yaml,
                                       old_name, new_name, force)
 
-      task_report(status, "Rename successful")
+      task_report(status, "Rename successful", director_msg)
     end
 
     def sanity_check_job_rename(manifest_yaml, old_name, new_name)

@@ -59,9 +59,9 @@ module Bosh::Cli::Command
 
       say("\nUploading stemcell...\n")
 
-      status, _ = director.upload_stemcell(stemcell.stemcell_file)
+      status, _, director_msg = director.upload_stemcell(stemcell.stemcell_file)
 
-      task_report(status, "Stemcell uploaded and created")
+      task_report(status, "Stemcell uploaded and created", director_msg)
     end
 
     def list
@@ -166,9 +166,9 @@ module Bosh::Cli::Command
         return
       end
 
-      status, _ = director.delete_stemcell(name, version)
+      status, _, director_msg = director.delete_stemcell(name, version)
 
-      task_report(status, "Deleted stemcell `#{name}/#{version}'")
+      task_report(status, "Deleted stemcell `#{name}/#{version}'", director_msg)
     end
   end
 end

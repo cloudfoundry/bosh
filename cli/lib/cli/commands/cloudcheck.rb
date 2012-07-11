@@ -28,10 +28,10 @@ module Bosh::Cli::Command
       manifest = prepare_deployment_manifest
       deployment_name = manifest["name"]
 
-      status, _ = director.perform_cloud_scan(deployment_name)
+      status, _, director_msg = director.perform_cloud_scan(deployment_name)
 
       if status != :done
-        task_report(status)
+        task_report(status, nil, director_msg)
         exit(1)
       end
 
@@ -73,10 +73,10 @@ module Bosh::Cli::Command
         hash
       end
 
-      status, _ = director.apply_resolutions(deployment_name, action_map)
+      status, _, director_msg = director.apply_resolutions(deployment_name, action_map)
 
       if status != :done
-        task_report(status)
+        task_report(status, nil, director_msg)
         exit(1)
       end
 
