@@ -9,6 +9,11 @@ source $base_dir/lib/prelude_apply.bash
 
 pushd $work/stemcell
 
+# NOTE: architecture and root_device_name aren't dynamically detected
+# as we don't have a way to persist values across stages, and until we
+# build for multiple architectures or multiple root devices, hardcoding
+# the values is fine.
+# The values are only used in AWS
 $ruby_bin <<EOS
 require "yaml"
 
@@ -20,7 +25,10 @@ manifest = {
     "name" => stemcell_name,
     "version" => version,
     "bosh_protocol" => bosh_protocol,
-    "cloud_properties" => {}
+    "cloud_properties" => {
+        "architecture" => "x86_64",
+        "root_device_name" => "/dev/sda1"
+    }
 }
 
 File.open("stemcell.MF", "w") do |f|
