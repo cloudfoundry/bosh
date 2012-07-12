@@ -10,15 +10,6 @@ mnt=$(echo "$1" | sed -e 's#/*$##')
 spec=$2
 settings_file=$3
 
-# Generate settings for every stage
-for stage in $stages_dir/*
-do
-  if [ -x $stage/config.sh ]
-  then
-    $stage/config.sh $settings_file
-  fi
-done
-
 function sha1() {
   (
     cd $stages_dir/$1
@@ -112,6 +103,17 @@ then
    mnt_type=btrfs
   fi
 fi
+
+# Generate settings for every stage in the spec
+function stage() {
+  if [ -x $stages_dir/$1/config.sh ]
+  then
+    $stages_dir/$1/config.sh $settings_file
+  fi
+}
+
+source $settings_file
+source $spec
 
 previous_stage=
 
