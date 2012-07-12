@@ -100,7 +100,7 @@ module Bosh::Agent
           if File.symlink?(f)
             logger.info("Removing monit symlink target file: " +
                         "#{File.readlink(f)}")
-            FileUtils.rm(File.readlink(f))
+            FileUtils.rm_rf(File.readlink(f))
           end
         end
 
