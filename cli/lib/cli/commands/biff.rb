@@ -244,8 +244,17 @@ module Bosh::Cli::Command
     def ip_range(range, netw_name)
       netw_cidr = get_helper(netw_name)
       first, last = get_first_last_from_range(range, netw_cidr)
-      unless netw_cidr[first] and netw_cidr[last]
-        raise "Ip range '#{range}' not in #{netw_name}."
+      raise_range_err = false
+      begin
+        unless netw_cidr[first] and netw_cidr[last]
+          raise_range_err = true
+        end
+      rescue NetAddr::BoundaryError => e
+        raise_range_err = true
+      end
+      if raise_range_err
+        err("IP range '#{range}' is not within the bounds of network " +
+            "'#{netw_name}', which only has #{netw_cidr.size} IPs.")
       end
       first == last ? "#{netw_cidr[first].ip}" :
           "#{netw_cidr[first].ip} - #{netw_cidr[last].ip}"
@@ -303,7 +312,7 @@ module Bosh::Cli::Command
       helper = {}
       netw_arr = find("networks")
       if netw_arr.nil?
-        raise "Must have a network section."
+        err("Must have a network section.")
       end
       netw_arr.each do |netw|
         subnets = netw["subnets"]
@@ -322,18 +331,18 @@ module Bosh::Cli::Command
     # @param [Array] subnets The subnets in the network.
     def check_valid_network_config(netw, subnets)
       if subnets.nil?
-        raise "You must have subnets in #{netw["name"]}"
+        err("You must have subnets in #{netw["name"]}")
       end
       unless subnets.length == 1
-        raise "Biff doesn't know how to deal with anything other than one " +
-              "subnet in #{netw["name"]}"
+        err("Biff doesn't know how to deal with anything other than one " +
+            "subnet in #{netw["name"]}")
       end
       if subnets.first["range"].nil? || subnets.first["dns"].nil?
-        raise "Biff requires each network to have range and dns entries."
+        err("Biff requires each network to have range and dns entries.")
       end
       if subnets.first["gateway"] && subnets.first["gateway"].match(/.*\.1$/).nil?
-        raise "Biff only supports configurations where the gateway is the " +
-              "first IP (e.g. 172.31.196.1)."
+        err("Biff only supports configurations where the gateway is the " +
+            "first IP (e.g. 172.31.196.1).")
       end
     end
 
@@ -355,7 +364,7 @@ module Bosh::Cli::Command
     def setup(template)
       @template_file = template
       @deployment_file = deployment
-      raise "Deployment not set." if @deployment_file.nil?
+      err("Deployment not set.") if @deployment_file.nil?
       @deployment_obj = load_yaml_file(@deployment_file)
       @template_obj = load_template_as_yaml
       @ip_helper = create_ip_helper
