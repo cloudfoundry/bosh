@@ -1,49 +1,44 @@
---- 
-bosh-stemcell-0.4.7.tgz: 
+---
+bosh-stemcell-0.4.7.tgz:
   size: 283901280
   sha: 25597777a8e82d3e95ce1890ead8973b1ceab22d
   url: https://blob.cfblob.com/rest/objects/4e4e78bca21e122004e4e8ec647a5404f6b8ad64d3c8?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=OhBHKz5t9SDFVEBHhzejynmh120=
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjIwMDRlNGU4ZWM2NDdhNTQwNGY2Yjhh%0AZDY0ZDNjOCIsInNpZyI6Ik9oQkhLejV0OVNERlZFQkhoemVqeW5taDEyMD0i%0AfQ==%0A
-public_stemcells_index.yml: 
+public_stemcells_index.yml:
   sha: c616046a1d7e7a942b9e98ecde314b789bc3e263
   url: https://blob.cfblob.com/rest/objects/4e4e78bca21e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI=
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEyMDRlNGU4NmVlMTUxYmMwNGY2YTE5%0AY2U0NmIyMiIsInNpZyI6Ik5KdUFyOWM4ZU9pZDdkS0ZtT0VON2JtekFsST0i%0AfQ==%0A
-micro-bosh-stemcell-0.1.0.tgz: 
+micro-bosh-stemcell-0.1.0.tgz:
   size: 522749400
   sha: 9ed4349a917655fcfcc750ee3383c2c77c730ea2
   url: https://blob.cfblob.com/rest/objects/4e4e78bca51e122004e4e8ec68407704f7f6981dd8cf?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=qBNHS+y3k2n8hhcVGTA6yFh5Mms=
   object_id: eyJzaWciOiJxQk5IUyt5M2sybjhoaGNWR1RBNnlGaDVNbXM9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMDA0ZTRlOGVjNjg0MDc3MDRmN2Y2OTgxZGQ4Y2Yi%0AfQ==%0A
-bosh-stemcell-0.3.0.tgz: 
+bosh-stemcell-0.3.0.tgz:
   size: 304976057
   sha: 283be73063d30482c8a9e68f0aa80532207e172d
   url: https://blob.cfblob.com/rest/objects/4e4e78bca41e122204e4e9863d076304f6b7c0f00afb?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=K5VuUTUjc0DqS4z6aRtqRPsmw1w=
   object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIyMDRlNGU5ODYzZDA3NjMwNGY2Yjdj%0AMGYwMGFmYiIsInNpZyI6Iks1VnVVVFVqYzBEcVM0ejZhUnRxUlBzbXcxdz0i%0AfQ==%0A
-bosh-stemcell-0.4.4.tgz: 
+bosh-stemcell-0.4.4.tgz:
   size: 282851221
   sha: ef7dbe0a9dfeff52b5bab03c7c5f9e859e6ce5e8
   url: https://blob.cfblob.com/rest/objects/4e4e78bca51e121004e4e7d51906cd04f6b7fc8161b8?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=VL9F2nKsgVlmfXjF4nPHJH4r144=
   object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjEwMDRlNGU3ZDUxOTA2Y2QwNGY2Yjdm%0AYzgxNjFiOCIsInNpZyI6IlZMOUYybktzZ1ZsbWZYakY0blBISkg0cjE0ND0i%0AfQ==%0A
-bosh-stemcell-aws-0.5.1.tgz: 
+bosh-stemcell-aws-0.5.1.tgz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjIyMDRlNGU5ODYzOTI2YjEwNGY4OGI3%0AYTRkZDEzMCIsInNpZyI6IlBKTStxMzE3aFU4QUtGa2VDazVSN294aUdZWT0i%0AfQ==%0A
   url: https://blob.cfblob.com/rest/objects/4e4e78bca21e122204e4e9863926b104f88b7a4dd130?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=PJM+q317hU8AKFkeCk5R7oxiGYY=
   sha: 4a29b20175aec1175b0092adf52eb6c9c2fe670b
   size: 408289727
-bosh-stemcell-0.5.2.tgz: 
+bosh-stemcell-0.5.2.tgz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjIwMDRlNGU4ZWM2NDZlMjEwNGY4Yzhh%0ANWMwNjEzOCIsInNpZyI6InpNV29UcFRSYTBjdWdzdi9nUlpwNG5McGl1bz0i%0AfQ==%0A
   url: https://blob.cfblob.com/rest/objects/4e4e78bca31e122004e4e8ec646e2104f8c8a5c06138?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=zMWoTpTRa0cugsv/gRZp4nLpiuo=
   sha: c973169c7b7382943f3576e9c5a368fa10317126
   size: 290568943
-bosh-stemcell-vsphere-0.6.0.tgz: 
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIyMDRlNGU5ODYzZDA3NjMwNGZlMGFh%0AMGY4Y2M3MiIsInNpZyI6Im00cmZlalRsVTVxTUpZc21FVHd5dVhSRGRZVT0i%0AfQ==%0A
-  url: https://blob.cfblob.com/rest/objects/4e4e78bca41e122204e4e9863d076304fe0aa0f8cc72?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=m4rfejTlU5qMJYsmETwyuXRDdYU=
-  sha: 8814b28787ab8a2f1946bfb414a43beab29c98b5
-  size: 418373754
-bosh-stemcell-vsphere-0.6.1.tgz: 
+bosh-stemcell-vsphere-0.6.1.tgz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjEyMDRlNGU4NmVlMzk2OTIwNGZlOTJh%0AMzVkYmM5NiIsInNpZyI6IlV3Ym9wVDR2TFkyZlpYSzIzZ3dCam02MWNmQT0i%0AfQ==%0A
   url: https://blob.cfblob.com/rest/objects/4e4e78bca31e121204e4e86ee3969204fe92a35dbc96?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=UwbopT4vLY2fZXK23gwBjm61cfA=
   sha: 0fb57b89f9defabd153ccf7767daf36f6a01c9be
   size: 418200215
-bosh-stemcell-vsphere-0.6.2.tgz: 
+bosh-stemcell-vsphere-0.6.2.tgz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EzMWUxMjIwMDRlNGU4ZWM2NDZlMjEwNGZmZDg0%0AMjg1YjdlOSIsInNpZyI6IjBKS25pdURQMEk2eG44S1dnbDJ3Nmc4U1gwYz0i%0AfQ==%0A
   url: https://blob.cfblob.com/rest/objects/4e4e78bca31e122004e4e8ec646e2104ffd84285b7e9?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=0JKniuDP0I6xn8KWgl2w6g8SX0c=
   sha: 276e23f737124e1268717f215bc52c98cc03ddfd
