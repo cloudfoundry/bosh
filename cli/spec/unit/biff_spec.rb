@@ -13,14 +13,23 @@ describe Bosh::Cli::Command::Biff do
     @biff.delete_temp_diff_files
   end
 
+  it "throws an error when there is an IP out of range" do
+    config_file = spec_asset("biff/ip_out_of_range.yml")
+    template_file = spec_asset("biff/good_simple_template.erb")
+    @biff.stub!(:deployment).and_return(config_file)
+    lambda {
+      @biff.biff(template_file)
+    }.should raise_error(Bosh::Cli::CliExit, "IP range '2..9' is not within the bounds of network 'default', which only has 1 IPs.")
+  end
+
   it "throws an error when there is more than one subnet for default" do
     config_file = spec_asset("biff/multiple_subnets_config.yml")
     template_file = spec_asset("biff/network_only_template.erb")
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(RuntimeError, "Biff doesn't know how to deal with " +
-        "anything other than one subnet in default")
+    }.should raise_error(Bosh::Cli::CliExit, "Biff doesn't know how to deal " +
+        "with anything other than one subnet in default")
   end
 
   it "throws an error when the gateway is anything other than the first ip" do
@@ -29,8 +38,8 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(RuntimeError, "Biff only supports configurations " +
-        "where the gateway is the first IP (e.g. 172.31.196.1).")
+    }.should raise_error(Bosh::Cli::CliExit, "Biff only supports " +
+        "configurations where the gateway is the first IP (e.g. 172.31.196.1).")
   end
 
   it "throws an error when the range is not specified in the config" do
@@ -39,8 +48,8 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(RuntimeError, "Biff requires each network to have " +
-        "range and dns entries.")
+    }.should raise_error(Bosh::Cli::CliExit, "Biff requires each network to " +
+        "have range and dns entries.")
   end
 
   it "throws an error if there are no subnets" do
@@ -49,7 +58,7 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(RuntimeError, "You must have subnets in default")
+    }.should raise_error(Bosh::Cli::CliExit, "You must have subnets in default")
   end
 
   it "outputs the required yaml when the input does not contain it" do
