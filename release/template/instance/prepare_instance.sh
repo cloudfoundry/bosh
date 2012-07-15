@@ -25,29 +25,42 @@ apt-get install -y --force-yes --no-install-recommends \
 mkdir -p ${bosh_app_dir}/bosh
 dpkg -l > ${bosh_app_dir}/bosh/dpkg_l.out
 
-cd /tmp
-wget http://ftp.ruby-lang.org/pub/ruby/1.8/ruby-$RUBY_VERSION.tar.gz
-tar zxvf ruby-$RUBY_VERSION.tar.gz
-(
-  cd ruby-$RUBY_VERSION
-  ./configure \
-    --disable-pthread \
-    --prefix=${bosh_app_dir}/bosh
-  make && make install
-)
+if [[ ! -e ${bosh_app_dir}/bosh/bin/ruby ]]
+then
+  cd /tmp
+  wget http://ftp.ruby-lang.org/pub/ruby/1.8/ruby-$RUBY_VERSION.tar.gz
+  tar zxvf ruby-$RUBY_VERSION.tar.gz
+  (
+    cd ruby-$RUBY_VERSION
+    ./configure \
+      --disable-pthread \
+      --prefix=${bosh_app_dir}/bosh
+    make && make install
+  )
+else
+  echo Ruby $RUBY_VERSION already installed, skipping installation.
+fi
 
-echo "gem: --no-ri --no-rdoc" > /etc/gemrc
+if [[ ! -e ${bosh_app_dir}/bosh/bin/gem ]]
+then
+  echo "gem: --no-ri --no-rdoc" > /etc/gemrc
 
-wget http://production.cf.rubygems.org/rubygems/rubygems-$RUBYGEMS_VERSION.tgz
-tar zxvf rubygems-$RUBYGEMS_VERSION.tgz
-(
-  cd rubygems-$RUBYGEMS_VERSION
-  ${bosh_app_dir}/bosh/bin/ruby setup.rb
-)
+  wget http://production.cf.rubygems.org/rubygems/rubygems-$RUBYGEMS_VERSION.tgz
+  tar zxvf rubygems-$RUBYGEMS_VERSION.tgz
+  (
+    cd rubygems-$RUBYGEMS_VERSION
+    ${bosh_app_dir}/bosh/bin/ruby setup.rb
+  )
+else
+  echo RubyGems $RUBYGEMS_VERSION already installed, skipping installation.
+fi
 
 gem install chef --version $CHEF_VERSION
 
-ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
+if [[ ! -e /etc/rc2.d/S88open-vm-tools ]]
+then
+  ln -s /etc/init.d/open-vm-tools /etc/rc2.d/S88open-vm-tools
+fi
 
 # vmbuilder will default to dhcp when no IP is specified - wipe
 echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
