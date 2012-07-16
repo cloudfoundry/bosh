@@ -108,7 +108,10 @@ module Bosh::Director
       task_key = [package.id, stemcell.id]
       task = @compile_tasks[task_key]
 
-      return task if task # We already visited this task and its dependencies
+      if task # We already visited this task and its dependencies
+        task.add_job(job) # But we still need to register this job with task
+        return task
+      end
 
       dependencies = package.dependency_set.map do |name|
         job.release.get_package_model_by_name(name)
