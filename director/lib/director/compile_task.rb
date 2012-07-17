@@ -69,6 +69,7 @@ module Bosh::Director
     # @param [DeploymentPlan::Job] job Job to be added
     # @return [void]
     def add_job(job)
+      return if @jobs.include?(job)
       @jobs << job
       if @compiled_package
         # If package is already compiled we can make it available to job
