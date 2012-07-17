@@ -108,17 +108,11 @@ module Bosh
 
       def get_deployment(name)
         status, body = get_json_with_status("/deployments/#{name}")
-        if status == 404
-          raise DeploymentNotFound, "Deployment `#{name}' not found"
-        end
         body
       end
 
       def list_vms(name)
         status, body = get_json_with_status("/deployments/#{name}/vms")
-        if status == 404
-          raise DeploymentNotFound, "Deployment `#{name}' not found"
-        end
         body
       end
 
@@ -488,7 +482,11 @@ module Bosh
         end
 
         if DIRECTOR_HTTP_ERROR_CODES.include?(response.code)
-          raise DirectorError, parse_error_message(response.code, body)
+          if response.code == 404
+            raise ResourceNotFound, parse_error_message(response.code, body)
+          else
+            raise DirectorError, parse_error_message(response.code, body)
+          end
         end
 
         headers = response.headers.inject({}) do |hash, (k, v)|

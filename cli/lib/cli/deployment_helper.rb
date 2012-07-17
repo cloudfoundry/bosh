@@ -186,7 +186,7 @@ module Bosh::Cli
       end
 
       diff.changed?
-    rescue Bosh::Cli::DeploymentNotFound
+    rescue Bosh::Cli::ResourceNotFound
       say("Cannot get current deployment information from director, " +
           "possibly a new deployment".red)
       true

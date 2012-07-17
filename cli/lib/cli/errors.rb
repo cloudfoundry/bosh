@@ -27,7 +27,7 @@ module Bosh::Cli
   class AuthError            < DirectorError; error_code(202); end
   class MissingTask          < DirectorError; error_code(203); end
   class TaskTrackError       < DirectorError; error_code(204); end
-  class DeploymentNotFound   < DirectorError; error_code(205); end
+  class ResourceNotFound     < DirectorError; error_code(205); end
 
   class CliExit              < CliError; error_code(400); end
   class GracefulExit         < CliExit;  error_code(401); end
