@@ -26,6 +26,8 @@ stage system_kernel
 
 # Misc
 stage system_aws_network
+stage system_aws_clock
+stage system_aws_modules
 stage system_parameters
 
 # Finalisation
