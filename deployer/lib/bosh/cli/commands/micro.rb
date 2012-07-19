@@ -29,7 +29,7 @@ module Bosh::Cli::Command
     end
 
     command :micro_deploy do
-      usage  "micro deploy <stemcell>"
+      usage  "micro deploy [<stemcell>]"
       desc   "Deploy a micro BOSH instance to the currently selected deployment"
       option "--update", "update existing instance"
       route  :micro, :perform
@@ -82,11 +82,27 @@ module Bosh::Cli::Command
       update = options.delete("--update")
       tarball_path = options.shift
 
-      if tarball_path.nil?
-        err "No stemcell provided"
-      end
-
       err "No deployment set" unless deployment
+
+      if tarball_path.nil?
+        manifest = load_yaml_file(deployment)
+        unless manifest.is_a?(Hash)
+          err("Invalid manifest format")
+        end
+
+        if manifest.has_key?("cloud") &&
+            manifest["cloud"].is_a?(Hash) &&
+            manifest["cloud"].has_key?("properties") &&
+            manifest["cloud"]["properties"].is_a?(Hash) &&
+            manifest["cloud"]["properties"].has_key?("stemcell") &&
+            manifest["cloud"]["properties"]["stemcell"].is_a?(Hash) &&
+            manifest["cloud"]["properties"]["stemcell"].has_key?("image_id") &&
+            !manifest["cloud"]["properties"]["stemcell"]["image_id"].blank?
+          tarball_path = manifest["cloud"]["properties"]["stemcell"]["image_id"]
+        else
+          err "No stemcell provided"
+        end
+      end
 
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
