@@ -8,6 +8,8 @@ Bundler.setup(:default, :test)
 
 require "rspec"
 require "deployer"
+require "cli"
+require "bosh/cli/commands/micro"
 
 def spec_asset(filename)
   File.expand_path("../assets/#{filename}", __FILE__)

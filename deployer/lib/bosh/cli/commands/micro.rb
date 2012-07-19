@@ -29,7 +29,7 @@ module Bosh::Cli::Command
     end
 
     command :micro_deploy do
-      usage  "micro deploy <stemcell>"
+      usage  "micro deploy [<stemcell>]"
       desc   "Deploy a micro BOSH instance to the currently selected deployment"
       option "--update", "update existing instance"
       route  :micro, :perform
@@ -82,11 +82,19 @@ module Bosh::Cli::Command
       update = options.delete("--update")
       tarball_path = options.shift
 
-      if tarball_path.nil?
-        err "No stemcell provided"
-      end
-
       err "No deployment set" unless deployment
+
+      if tarball_path.nil?
+        manifest = load_yaml_file(deployment)
+        unless manifest.is_a?(Hash)
+          err("Invalid manifest format")
+        end
+        tarball_path = dig_hash(manifest, "cloud", "properties", "stemcell", "image_id")
+
+        if tarball_path.nil?
+          err "No stemcell provided"
+        end
+      end
 
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
