@@ -29,7 +29,7 @@ module Bosh::Cli::Command
     end
 
     command :micro_deploy do
-      usage  "micro deploy <stemcell>"
+      usage  "micro deploy [<stemcell>]"
       desc   "Deploy a micro BOSH instance to the currently selected deployment"
       option "--update", "update existing instance"
       route  :micro, :perform
@@ -80,13 +80,22 @@ module Bosh::Cli::Command
 
     def perform(*options)
       update = options.delete("--update")
-      tarball_path = options.shift
-
-      if tarball_path.nil?
-        err "No stemcell provided"
-      end
+      stemcell = options.shift
 
       err "No deployment set" unless deployment
+
+      if stemcell.nil?
+        manifest = load_yaml_file(deployment)
+        unless manifest.is_a?(Hash)
+          err("Invalid manifest format")
+        end
+
+        stemcell = dig_hash(manifest, "cloud", "properties", "stemcell", "image_id")
+
+        if stemcell.nil?
+          err "No stemcell provided"
+        end
+      end
 
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
@@ -112,14 +121,14 @@ module Bosh::Cli::Command
 
       confirm_deployment("#{confirmation} micro BOSH instance #{desc}")
 
-      if is_tgz?(tarball_path)
-        stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
+      if is_tgz?(stemcell)
+        stemcell_file = Bosh::Cli::Stemcell.new(stemcell, cache)
 
         say("\nVerifying stemcell...")
-        stemcell.validate
+        stemcell_file.validate
         say("\n")
 
-        unless stemcell.valid?
+        unless stemcell_file.valid?
           err("Stemcell is invalid, please fix, verify and upload again")
         end
       end
@@ -130,7 +139,7 @@ module Bosh::Cli::Command
 
       start_time = Time.now
 
-      deployer.send(method, tarball_path)
+      deployer.send(method, stemcell)
 
       renderer.finish("done")
 
