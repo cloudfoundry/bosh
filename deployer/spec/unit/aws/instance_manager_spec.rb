@@ -74,6 +74,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
     @deployer.stub!(:load_apply_spec).and_return(spec)
+    @deployer.stub!(:load_stemcell_manifest).and_return({"cloud_properties" => {}})
 
     @deployer.state.uuid.should_not be_nil
 
@@ -135,6 +136,8 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
     @deployer.stub!(:load_apply_spec).and_return(spec)
+    @deployer.stub!(:load_stemcell_manifest).and_return({"cloud_properties" => {}})
+    @deployer.stub!(:persistent_disk_changed?).and_return(false)
 
     @deployer.state.stemcell_cid = "SC-CID-UPDATE"
     @deployer.state.vm_cid = "VM-CID-UPDATE"
