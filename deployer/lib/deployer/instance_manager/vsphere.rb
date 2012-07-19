@@ -27,5 +27,13 @@ module Bosh::Deployer
       end
     end
 
+    # @return [Integer] size in kB
+    def disk_size(cid)
+      disk_model[cid].size
+    end
+
+    def persistent_disk_changed?
+      Config.resources['persistent_disk'] != disk_size(state.disk_cid)
+    end
   end
 end

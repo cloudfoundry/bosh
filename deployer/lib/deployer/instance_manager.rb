@@ -168,6 +168,8 @@ module Bosh::Deployer
       agent_stop
       if state.disk_cid
         delete_disk(state.disk_cid, state.vm_cid)
+        state.disk_cid = nil
+        save_state
       end
       delete_vm
       delete_stemcell
@@ -176,8 +178,12 @@ module Bosh::Deployer
     def update(stemcell_tgz)
       renderer.enter_stage("Prepare for update", 5)
       agent_stop
-      detach_disk
+      detach_disk(state.disk_cid)
       delete_vm
+      # Do we always want to delete the stemcell?
+      # What if we are redeploying to the same stemcell version just so
+      # we can upgrade to a bigger persistent disk.
+      # Perhaps use "--preserve" to skip the delete?
       delete_stemcell
       create(stemcell_tgz)
     end
@@ -195,15 +201,17 @@ module Bosh::Deployer
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
-        spec_file = "#{stemcell}/apply_spec.yml"
-        unless File.exist?(spec_file)
-          raise "this isn't a micro bosh stemcell - apply_spec.yml missing"
-        end
-        @apply_spec = load_apply_spec(spec_file)
-        properties = Config.cloud_options["properties"]["stemcell"]
+        @apply_spec = load_apply_spec(stemcell)
+
+        # load properties from stemcell manifest
+        properties = load_stemcell_manifest(stemcell)
+
+        # override with values from the deployment manifest
+        override = Config.cloud_options["properties"]["stemcell"]
+        properties["cloud_properties"].merge!(override) if override
 
         step "Uploading stemcell" do
-          cloud.create_stemcell("#{stemcell}/image", properties)
+          cloud.create_stemcell("#{stemcell}/image", properties["cloud_properties"])
         end
       end
     end
@@ -225,6 +233,9 @@ module Bosh::Deployer
       step "Unmount disk" do
         if disk_info.include?(disk_cid)
           agent.run_task(:unmount_disk, disk_cid.to_s)
+        else
+          logger.error("not unmounting %s as it doesn't belong to me: %s" %
+            [disk_cid, disk_info])
         end
       end
     end
@@ -242,11 +253,13 @@ module Bosh::Deployer
 
     def create_disk
       step "Create disk" do
-        state.disk_cid = cloud.create_disk(Config.resources['persistent_disk'], state.vm_cid)
+        size = Config.resources['persistent_disk']
+        state.disk_cid = cloud.create_disk(size, state.vm_cid)
         save_state
       end
     end
 
+    # it is up to the caller to save/update disk state info
     def delete_disk(disk_cid, vm_cid)
       unmount_disk(disk_cid)
 
@@ -261,44 +274,33 @@ module Bosh::Deployer
         step "Delete disk" do
           cloud.delete_disk(disk_cid)
         end
-        state.disk_cid = nil
-        save_state
       rescue Bosh::Clouds::DiskNotFound
       end
     end
 
-    def attach_disk(is_create=false)
-      return if state.disk_cid.nil?
+    # it is up to the caller to save/update disk state info
+    def attach_disk(disk_cid, is_create=false)
+      return unless disk_cid
 
-      cloud.attach_disk(state.vm_cid, state.disk_cid)
-      save_state
-
-      begin
-        mount_disk(state.disk_cid)
-      rescue
-        if is_create
-          logger.warn("!!! mount_disk(#{state.disk_cid}) failed !!! retrying...")
-          mount_disk(state.disk_cid)
-        else
-          raise
-        end
-      end
+      cloud.attach_disk(state.vm_cid, disk_cid)
+      mount_disk(disk_cid)
     end
 
-    def detach_disk
-      if state.disk_cid.nil?
+    def detach_disk(disk_cid)
+      unless disk_cid
         raise "Error while detaching disk: unknown disk attached to instance"
       end
 
-      unmount_disk(state.disk_cid)
+      unmount_disk(disk_cid)
       step "Detach disk" do
-        cloud.detach_disk(state.vm_cid, state.disk_cid)
+        cloud.detach_disk(state.vm_cid, disk_cid)
       end
     end
 
     def attach_missing_disk
       if state.disk_cid
-        attach_disk(true)
+        attach_disk(state.disk_cid, true)
+        save_state
       end
     end
 
@@ -314,15 +316,39 @@ module Bosh::Deployer
       attach_missing_disk
       check_persistent_disk
 
-      #XXX handle disk size change
       if state.disk_cid.nil?
         create_disk
-        attach_disk(true)
+        attach_disk(state.disk_cid, true)
+      elsif persistent_disk_changed?
+        size = Config.resources['persistent_disk']
+
+        # save a reference to the old disk
+        old_disk_cid = state.disk_cid
+
+        # create a new disk and attach it
+        new_disk_cid = cloud.create_disk(size, state.vm_cid)
+        attach_disk(new_disk_cid, true)
+
+        # migrate data (which mounts the disks)
+        migrate_disk(old_disk_cid, new_disk_cid)
+
+        # replace the old with the new in the state file
+        state.disk_cid = new_disk_cid
+        save_state
+
+        # delete the old disk
+        delete_disk(old_disk_cid, state.vm_cid)
       end
     end
 
     def update_spec(spec)
       properties = spec["properties"]
+
+      # set the director name to what is specified in the micro_bosh.yml
+      if Config.name
+        properties["director"] = {} unless properties["director"]
+        properties["director"]["name"] = Config.name
+      end
 
       %w{blobstore postgres director redis nats aws_registry}.each do |service|
         next unless properties[service]
@@ -442,8 +468,21 @@ module Bosh::Deployer
       end
     end
 
-    def load_apply_spec(file)
-      logger.info("Loading apply spec from #{file}")
+    def load_apply_spec(dir)
+      load_spec("#{dir}/apply_spec.yml") do
+        raise "this isn't a micro bosh stemcell - apply_spec.yml missing"
+      end
+    end
+
+    def load_stemcell_manifest(dir)
+      load_spec("#{dir}/stemcell.MF") do
+        raise "this isn't a stemcell - stemcell.MF missing"
+      end
+    end
+
+    def load_spec(file)
+      yield unless File.exist?(file)
+      logger.info("Loading yaml from #{file}")
       YAML.load_file(file)
     end
 

@@ -10,7 +10,7 @@ module Bosh::Deployer
       include Helpers
 
       attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
-        :spec_properties, :bosh_ip, :env
+        :spec_properties, :bosh_ip, :env, :name
 
       def configure(config)
         plugin = cloud_plugin(config)
@@ -20,6 +20,7 @@ module Bosh::Deployer
         @base_dir = config["dir"]
         FileUtils.mkdir_p(@base_dir)
 
+        @name = config["name"]
         @cloud_options = config["cloud"]
         @net_conf = config["network"]
         @bosh_ip = @net_conf["ip"]

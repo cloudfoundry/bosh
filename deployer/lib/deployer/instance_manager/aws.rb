@@ -142,9 +142,24 @@ module Bosh::Deployer
         cloud.ec2.instances[state.vm_cid].private_ip_address
       end
 
+      # @return [Integer] size in kB
+      def disk_size(cid)
+        # AWS stores disk size in MiB but we work with kB
+        cloud.ec2.volumes[cid].size * 1024
+      end
+
+      def persistent_disk_changed?
+        # since AWS stores disk size in MiB and we use kB there
+        # is a risk of conversion errors which lead to an unnecessary
+        # disk migration, so we need to do a double conversion
+        # here to avoid that
+        requested = (Config.resources['persistent_disk'] / 1024.0).ceil * 1024
+        requested != disk_size(state.disk_cid)
+      end
+
       private
 
-      # TODO this code is simliar to has_stemcell_copy?
+      # TODO this code is similar to has_stemcell_copy?
       # move the two into bosh_common later
       def has_aws_registry?(path=ENV['PATH'])
         path.split(":").each do |dir|

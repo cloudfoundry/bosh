@@ -99,6 +99,7 @@ describe Bosh::Deployer::InstanceManager do
     cid = 22
     disk_model.insert({:id => cid, :size => 1024})
     disk_model.count.should == 1
+    disk_model[cid].size.should == 1024
     disk_model[cid].destroy
     disk_model.count.should == 0
   end
@@ -109,6 +110,7 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
     @deployer.stub!(:load_apply_spec).and_return(spec)
+    @deployer.stub!(:load_stemcell_manifest).and_return({})
 
     @deployer.state.uuid.should_not be_nil
 
@@ -167,10 +169,12 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
     @deployer.stub!(:load_apply_spec).and_return(spec)
+    @deployer.stub!(:load_stemcell_manifest).and_return({})
 
     @deployer.state.stemcell_cid = "SC-CID-UPDATE"
     @deployer.state.vm_cid = "VM-CID-UPDATE"
     @deployer.state.disk_cid = disk_cid
+    @deployer.disk_model.insert({:id => disk_cid, :size => 4096})
 
     @agent.should_receive(:run_task).with(:stop)
     @agent.should_receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
