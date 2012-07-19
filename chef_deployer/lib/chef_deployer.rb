@@ -133,7 +133,11 @@ module ChefDeployer
          say("==> EXECUTING SSH LOGIN #{command}", :yellow)
          begin
            PTY.spawn(command) do |read_pipe, write_pipe, pid|
-             result = read_pipe.expect(/password: /)
+             begin
+               result = read_pipe.expect(/password: /)
+             rescue Errno::EIO => e
+               raise e if password
+             end
              if result
                write_pipe.puts(password)
                read_pipe.expect("\n")
