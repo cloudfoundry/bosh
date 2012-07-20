@@ -11,12 +11,6 @@ module Bosh::AwsCloud
     METADATA_TIMEOUT = 5 # seconds
     DEVICE_POLL_TIMEOUT = 60 # seconds
 
-    DEFAULT_AKI = "aki-b4aa75dd"
-    DEFAULT_ROOT_DEVICE_NAME = "/dev/sda1"
-
-    # UBUNTU_10_04_32_BIT_US_EAST_EBS = "ami-3e9b4957"
-    # UBUNTU_10_04_32_BIT_US_EAST = "ami-809a48e9"
-
     attr_reader :ec2
     attr_reader :registry
     attr_accessor :logger
@@ -101,7 +95,11 @@ module Bosh::AwsCloud
         @logger.debug("using security groups: #{security_groups.join(', ')}")
 
         response = @ec2.client.describe_images(:image_ids => [stemcell_id])
-        root_device_name = response.images_set.first.root_device_name
+        images_set = response.images_set
+        if images_set.empty?
+          cloud_error("no stemcell info for #{stemcell_id}")
+        end
+        root_device_name = images_set.first.root_device_name
 
         instance_params = {
           :image_id => stemcell_id,
@@ -285,6 +283,14 @@ module Bosh::AwsCloud
     # involves creating and mounting new EBS volume as local block device.
     # @param [String] image_path local filesystem path to a stemcell image
     # @param [Hash] cloud_properties CPI-specific properties
+    # @option cloud_properties [String] kernel_id
+    #   AKI, auto-selected based on the region
+    # @option cloud_properties [String] root_device_name
+    #   provided by the stemcell manifest
+    # @option cloud_properties [String] architecture
+    #   provided by the stemcell manifest
+    # @option cloud_properties [String] disk (2048)
+    #   root disk size
     def create_stemcell(image_path, cloud_properties)
       # TODO: refactor into several smaller methods
       with_thread_name("create_stemcell(#{image_path}...)") do
@@ -309,13 +315,18 @@ module Bosh::AwsCloud
           snapshot = volume.create_snapshot
           wait_resource(snapshot, :completed)
 
-          root_device_name = cloud_properties["root_device_name"] ||
-                             DEFAULT_ROOT_DEVICE_NAME
+          root_device_name = cloud_properties["root_device_name"]
+          architecture = cloud_properties["architecture"]
 
+          aki = find_aki(architecture, root_device_name)
+
+          # we could set :description here, but since we don't have a
+          # handle to the stemcell name and version, we can't set it
+          # to something useful :(
           image_params = {
             :name => "BOSH-#{generate_unique_name}",
-            :architecture => "x86_64", # TODO should this be configurable?
-            :kernel_id => cloud_properties["kernel_id"] || DEFAULT_AKI,
+            :architecture => architecture,
+            :kernel_id => aki,
             :root_device_name =>  root_device_name,
             :block_device_mappings => {
               "/dev/sda" => { :snapshot_id => snapshot.id },
@@ -338,6 +349,42 @@ module Bosh::AwsCloud
           end
         end
       end
+    end
+
+    # finds the correct aki for the current region
+    def find_aki(arch, root_device_name)
+
+      filters = []
+      filters << {:name => "architecture", :values => [arch]}
+      filters << {:name => "image-type", :values => %w[kernel]}
+      filters << {:name => "owner-alias", :values => %w[amazon]}
+
+      response = @ec2.client.describe_images(:filters => filters)
+
+      # do nasty hackery to select boot device and version from
+      # the image_location string e.g. pv-grub-hd00_1.03-x86_64.gz
+      if root_device_name == "/dev/sda1"
+        regexp = /-hd00[-_](\d+)\.(\d+)/
+      else
+        regexp = /-hd0[-_](\d+)\.(\d+)/
+      end
+
+      candidate = nil
+      major = 0
+      minor = 0
+      response.images_set.each do |image|
+        match = image.image_location.match(regexp)
+        if match && match[1].to_i > major && match[2].to_i > minor
+          candidate = image
+          major = match[1].to_i
+          minor = match[2].to_i
+        end
+      end
+
+      cloud_error("unable to find AKI") unless candidate
+      @logger.info("auto-selected AKI: #{candidate.image_id}")
+
+      candidate.image_id
     end
 
     def delete_stemcell(stemcell_id)
@@ -393,6 +440,7 @@ module Bosh::AwsCloud
     #   assume its identity
     # @param [Hash] network_spec Agent network spec
     # @param [Hash] environment
+    # @param [String] root_device_name root device, e.g. /dev/sda1
     # @return [Hash]
     def initial_agent_settings(agent_id, network_spec, environment,
                                root_device_name)
