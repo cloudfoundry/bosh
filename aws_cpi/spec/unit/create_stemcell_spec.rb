@@ -39,6 +39,17 @@ describe Bosh::AwsCloud::Cloud do
         ec2.volumes.stub(:[]).with("v-foo").and_return(volume)
         ec2.instances.stub(:[]).with("i-current").and_return(current_instance)
         ec2.images.should_receive(:create).with(image_params).and_return(image)
+
+        i1 = double("image-1", :root_device_name => "/dev/sda1",
+                       :image_location => "pv-grub-hd00_1.03-x86_64.gz",
+                       :image_id => "aki-b4aa75dd")
+        i2 = double("image-2", :root_device_name => "/dev/sda1",
+                    :image_location => "pv-grub-hd00_1.02-x86_64.gz",
+                    :image_id => "aki-b4aa75d0")
+
+        result = double("images_set", :images_set => [i1, i2])
+        client = double("client", :describe_images => result)
+        ec2.should_receive(:client).and_return(client)
       end
 
       cloud.stub(:generate_unique_name).and_return(unique_name)
@@ -89,7 +100,11 @@ describe Bosh::AwsCloud::Cloud do
 
       cloud.should_receive(:delete_disk).with("v-foo")
 
-      cloud.create_stemcell("/tmp/foo", {}).should == "i-bar"
+      cloud_properties = {
+          "root_device_name" => "/dev/sda1",
+          "architecture" => "x86_64"
+      }
+      cloud.create_stemcell("/tmp/foo", cloud_properties).should == "i-bar"
     end
 
   end

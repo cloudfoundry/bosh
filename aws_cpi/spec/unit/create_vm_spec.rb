@@ -127,6 +127,16 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
     cloud = mock_cloud do |ec2|
       ec2.instances.should_receive(:create).and_return(instance)
+      image = double("image")
+      image.should_receive(:root_device_name).and_return("/dev/sda1")
+
+      result = double("result")
+      result.should_receive(:images_set).and_return([image])
+
+      client = double("client")
+      client.should_receive(:describe_images).with({:image_ids=>["sc-id"]}).
+          and_return(result)
+
       ec2.should_receive(:client).and_return(client)
     end
 
