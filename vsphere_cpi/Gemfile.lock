@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_vsphere_cpi (0.4.8)
+    bosh_vsphere_cpi (0.4.9)
       bosh_common
       bosh_cpi (>= 0.4.2)
       ruby_vim_sdk
