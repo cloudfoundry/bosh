@@ -187,10 +187,45 @@ module Bosh::Cli::Command
       end
     end
 
+    def list_targets
+      # TODO: Bonus point will be checking each director status
+      # (maybe an --status option?)
+      targets = config.aliases(:target) || {}
+
+      err("No targets found") if targets.size == 0
+
+      targets_table = table do |t|
+        t.headings = [ "Name", "Director URL" ]
+        targets.each { |row| t << [row[0], row[1]] }
+      end
+
+      say("\n")
+      say(targets_table)
+      say("\n")
+      say("Targets total: %d" % targets.size)
+    end
+
     def set_alias(name, value)
       config.set_alias(:cli, name, value.to_s.strip)
       config.save
       say("Alias `#{name.green}' created for command `#{value.green}'")
+    end
+
+    def list_aliases
+      aliases = config.aliases(:cli) || {}
+
+      err("No aliases found") if aliases.size == 0
+
+      sorted = aliases.sort_by { |name, value| name }
+      aliases_table = table do |t|
+        t.headings = [ "Alias", "Command" ]
+        sorted.each { |row| t << [row[0], row[1]] }
+      end
+
+      say("\n")
+      say(aliases_table)
+      say("\n")
+      say("Aliases total: %d" % aliases.size)
     end
 
     private
