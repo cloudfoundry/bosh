@@ -50,15 +50,20 @@ module Bosh::Cli
       @config_file["aliases"][category.to_s][alias_name] = value
     end
 
-    def resolve_alias(category, alias_name)
+    def resolve_alias(category, alias_name = nil)
       category = category.to_s
 
       if @config_file.has_key?("aliases") &&
           @config_file["aliases"].is_a?(Hash) &&
           @config_file["aliases"].has_key?(category) &&
-          @config_file["aliases"][category].is_a?(Hash) &&
-          !@config_file["aliases"][category][alias_name].blank?
-        @config_file["aliases"][category][alias_name].to_s
+          @config_file["aliases"][category].is_a?(Hash)
+        if alias_name.nil?
+          @config_file["aliases"][category]
+        elsif !@config_file["aliases"][category][alias_name].blank?
+          @config_file["aliases"][category][alias_name].to_s
+        else
+          nil
+        end
       else
         nil
       end
