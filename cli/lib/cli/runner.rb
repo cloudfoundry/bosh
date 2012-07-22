@@ -192,6 +192,12 @@ module Bosh::Cli
         route :misc, :set_alias
       end
 
+      command :list_aliases do
+        usage "aliases"
+        desc  "Show the list of available command aliases"
+        route :misc, :list_aliases
+      end
+
       command :target do
         usage "target [<name>] [<alias>]"
         desc  "Choose director to talk to (optionally creating an alias). " +
@@ -199,6 +205,12 @@ module Bosh::Cli
         route do |args|
           (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
         end
+      end
+
+      command :list_targets do
+        usage "targets"
+        desc  "Show the list of available targets"
+        route :misc, :list_targets
       end
 
       command :deployment do
