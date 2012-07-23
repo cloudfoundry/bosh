@@ -1,0 +1,63 @@
+---
+name: ben-cloud
+director_uuid: a8f335a4-30f0-4a92-ab88-5c3feb55577a
+
+networks:
+
+- name: default
+  subnets:
+  - reserved:
+    - 172.31.4.2 - 172.31.4.9
+    - 172.31.7.245 - 172.31.7.254
+    static:
+    - 172.31.4.10 - 172.31.4.11
+    range: 172.31.4.0/32
+    gateway: 172.31.4.1
+    dns:
+    - 172.30.22.153
+    - 172.30.22.154
+    cloud_properties:
+      name: VLAN2004
+- name: lb
+  subnets:
+  - static:
+    - 172.28.6.241 - 172.28.6.242
+    range: 172.28.6.240/28
+    dns:
+    - 172.30.22.153
+    - 172.30.22.154
+    cloud_properties:
+      name: VLAN3121
+
+jobs:
+
+- name: debian_nfs_server
+  template: debian_nfs_server
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 8192
+  networks:
+  - name: default
+    static_ips:
+    - 172.31.4.10
+
+- name: syslog_aggregator
+  template: syslog_aggregator
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 600
+  networks:
+  - name: default
+    static_ips:
+    - 172.31.4.13
+
+properties:
+  domain: appcloud23.dev.mozycloud.com
+
+  nfs_server:
+    address: 172.31.4.10
+    network: 172.31.4.0/22
+
+  syslog_aggregator:
+    address: 172.31.4.13
+    port: 54321
