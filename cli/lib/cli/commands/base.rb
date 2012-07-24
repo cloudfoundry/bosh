@@ -6,6 +6,8 @@ module Bosh::Cli
       attr_reader :cache, :config, :options, :work_dir
       attr_accessor :out, :usage
 
+      DEFAULT_DIRECTOR_PORT = 25555
+
       def initialize(options = {})
         @options = options.dup
         @work_dir = Dir.pwd
@@ -199,8 +201,11 @@ module Bosh::Cli
       end
 
       def normalize_url(url)
+        had_port = url.to_s =~ /:\d+$/
         url = "http://#{url}" unless url.match(/^https?/)
-        URI.parse(url).to_s
+        uri = URI.parse(url)
+        uri.port = DEFAULT_DIRECTOR_PORT unless had_port
+        uri.to_s.strip.gsub(/\/$/, "")
       end
 
     end
