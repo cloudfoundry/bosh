@@ -32,7 +32,7 @@ module Bosh::Cli
           properties = director.list_properties(manifest["name"])
         rescue Bosh::Cli::DirectorError
           say("Unable to get properties list from director, " +
-                  "trying without it...")
+              "trying without it...")
         end
 
         say("Compiling deployment manifest...")
@@ -47,12 +47,16 @@ module Bosh::Cli
 
       if manifest["name"].blank? || manifest["director_uuid"].blank?
         err("Invalid manifest `#{File.basename(deployment)}': " +
-              "name and director UUID are required")
+            "name and director UUID are required")
+      end
+
+      if director.uuid != manifest["director_uuid"]
+        err("Target director UUID doesn't match UUID from deployment manifest")
       end
 
       if manifest["release"].blank? && manifest["releases"].blank?
         err("Deployment manifest doesn't have release information: '" +
-              "please add 'release' or 'releases' section")
+            "please add 'release' or 'releases' section")
       end
 
       options[:yaml] ? manifest_yaml : manifest
@@ -60,14 +64,14 @@ module Bosh::Cli
 
     # Check if the 2 deployments are different.
     # Print out a summary if "show" is true.
-    def deployment_changed?(current_manifest, manifest, show=true)
+    def deployment_changed?(current_manifest, manifest, show = true)
       diff = Bosh::Cli::HashChangeset.new
       diff.add_hash(normalize_deployment_manifest(manifest), :new)
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
       changed = diff.changed?
 
       if changed && show
-        @_diff_key_visited = { }
+        @_diff_key_visited = {}
         diff.keys.each do |key|
           unless @_diff_key_visited[key]
             print_summary(diff, key)

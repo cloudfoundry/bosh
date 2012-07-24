@@ -96,10 +96,10 @@ module Bosh::Cli::Command
         director = Bosh::Cli::Director.new(target, username, password)
 
         if director.authenticated?
-          say("Logged in as '#{username}'")
+          say("Logged in as `#{username}'")
           logged_in = true
         else
-          say("Cannot log in as '#{username}', please try again")
+          say("Cannot log in as `#{username}', please try again")
           unless options[:non_interactive]
             redirect(:misc, :login, username, nil)
           end
@@ -121,7 +121,7 @@ module Bosh::Cli::Command
 
     def purge_cache
       if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
-        say("Cache directory '#{@cache.cache_dir}' differs from default, " +
+        say("Cache directory `#{@cache.cache_dir}' differs from default, " +
             "please remove manually")
       else
         FileUtils.rm_rf(cache.cache_dir)
@@ -131,14 +131,14 @@ module Bosh::Cli::Command
 
     def show_target
       say(target ?
-              "Current target is '#{full_target_name.green}'" :
-              "Target not set")
+              "Current target is `#{full_target_name.green}'" :
+              "Target not set".red)
     end
 
     def set_target(director_url, name = nil)
       if name.nil?
-        director_url = config.resolve_alias(:target, director_url) ||
-            director_url
+        director_url =
+          config.resolve_alias(:target, director_url) || director_url
       end
 
       if director_url.blank?
@@ -147,7 +147,7 @@ module Bosh::Cli::Command
 
       director_url = normalize_url(director_url)
       if director_url == target
-        say("Target already set to '#{full_target_name.green}'")
+        say("Target already set to `#{full_target_name.green}'")
         return
       end
 
@@ -159,11 +159,11 @@ module Bosh::Cli::Command
         rescue Bosh::Cli::AuthError
           status = {}
         rescue Bosh::Cli::DirectorError
-          err("Cannot talk to director at '#{director_url}', " +
+          err("Cannot talk to director at `#{director_url}', " +
               "please set correct target")
         end
       else
-        status = { "name" => "Unknown Director", "version" => "n/a" }
+        status = {"name" => "Unknown Director", "version" => "n/a"}
       end
 
       config.target = director_url
@@ -180,9 +180,9 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to '#{full_target_name.green}'")
+      say("Target set to `#{full_target_name.green}'")
 
-      if interactive? && (config.username.blank? || config.password.blank?)
+      if interactive? && !logged_in?
         redirect(:misc, :login)
       end
     end

@@ -5,7 +5,7 @@ require "spec_helper"
 describe Bosh::Cli::Command::Base do
 
   before :each do
-    @config    = File.join(Dir.mktmpdir, "bosh_config")
+    @config = File.join(Dir.mktmpdir, "bosh_config")
     @cache_dir = Dir.mktmpdir
   end
 
@@ -15,9 +15,9 @@ describe Bosh::Cli::Command::Base do
     end
   end
 
-  def make_command(options = { })
-    Bosh::Cli::Command::Base.new({ :config => @config,
-                                   :cache_dir => @cache_dir }.merge(options))
+  def make_command(options = {})
+    Bosh::Cli::Command::Base.new({:config => @config,
+                                  :cache_dir => @cache_dir}.merge(options))
   end
 
   it "can access configuration and respects options" do
@@ -32,10 +32,36 @@ describe Bosh::Cli::Command::Base do
     cmd.password.should == nil
   end
 
+  it "looks up target, deployment and credentials in a right order" do
+    cmd = make_command
+    cmd.username.should be_nil
+    cmd.password.should be_nil
+    old_user = ENV["BOSH_USER"]
+    old_password = ENV["BOSH_PASSWORD"]
+
+    begin
+      ENV["BOSH_USER"] = "foo"
+      ENV["BOSH_PASSWORD"] = "bar"
+      cmd.username.should == "foo"
+      cmd.password.should == "bar"
+      other_cmd = make_command(:username => "new", :password => "baz")
+      other_cmd.username.should == "new"
+      other_cmd.password.should == "baz"
+    ensure
+      ENV["BOSH_USER"] = old_user
+      ENV["BOSH_PASSWORD"] = old_password
+    end
+
+    add_config("target" => "localhost:8080", "deployment" => "test")
+    cmd2 = make_command(:target => "foo", :deployment => "bar")
+    cmd2.target.should == "foo"
+    cmd2.deployment.should == "bar"
+  end
+
   it "instantiates director when needed" do
     add_config("target" => "localhost:8080", "deployment" => "test")
 
-    cmd = make_command()
+    cmd = make_command
     cmd.director.director_uri.should == "localhost:8080"
   end
 
@@ -51,7 +77,7 @@ describe Bosh::Cli::Command::Base do
 
   it "can redirect to other commands " +
      "(effectively exiting after running them)" do
-    cmd     = make_command
+    cmd = make_command
     new_cmd = mock(Object)
 
     Bosh::Cli::Command::Misc.should_receive(:new).and_return(new_cmd)

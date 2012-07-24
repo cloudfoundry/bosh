@@ -39,12 +39,12 @@ describe Bosh::Cli::Command::Base do
             with("http://test").and_return(mock_director)
         @cmd.set_target("test")
       }.should raise_error(Bosh::Cli::CliExit,
-                           "Cannot talk to director at 'http://test', " +
+                           "Cannot talk to director at `http://test', " +
                            "please set correct target")
 
       @cmd.target.should == nil
 
-      mock_director = mock(Object)
+      mock_director = mock(Bosh::Cli::Director)
       mock_director.stub!(:get_status).and_return("name" => "ZB")
       Bosh::Cli::Director.should_receive(:new).
           with("http://test").and_return(mock_director)

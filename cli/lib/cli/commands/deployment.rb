@@ -6,15 +6,15 @@ module Bosh::Cli::Command
 
     def show_current
       say(deployment ?
-              "Current deployment is '#{deployment.green}'" :
-              "Deployment not set")
+            "Current deployment is `#{deployment.green}'" :
+            "Deployment not set".red)
     end
 
     def set_current(name)
       manifest_filename = find_deployment(name)
 
       unless File.exists?(manifest_filename)
-        err("Missing manifest for #{name} (tried '#{manifest_filename}')")
+        err("Missing manifest for #{name} (tried `#{manifest_filename}')")
       end
 
       manifest = load_yaml_file(manifest_filename)
@@ -62,7 +62,7 @@ module Bosh::Cli::Command
             "changed to `#{target.red}'!")
       end
 
-      say("Deployment set to '#{manifest_filename.green}'")
+      say("Deployment set to `#{manifest_filename.green}'")
       config.set_deployment(manifest_filename)
       config.save
     end
@@ -71,8 +71,8 @@ module Bosh::Cli::Command
       auth_required
       recreate = options.include?("--recreate")
 
-      manifest_yaml = prepare_deployment_manifest(:yaml => true,
-                                                  :resolve_properties => true)
+      manifest_yaml =
+        prepare_deployment_manifest(:yaml => true, :resolve_properties => true)
 
       if interactive?
         inspect_deployment_changes(YAML.load(manifest_yaml))
