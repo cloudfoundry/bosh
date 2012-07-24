@@ -27,7 +27,7 @@ module Bosh::Deployer
       end
     end
 
-    # @return [Integer] size in kB
+    # @return [Integer] size in MiB
     def disk_size(cid)
       disk_model[cid].size
     end
