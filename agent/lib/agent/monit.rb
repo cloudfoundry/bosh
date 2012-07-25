@@ -6,7 +6,7 @@ module Bosh::Agent
   class Monit
     BUFSIZE = (32 * 1024)
     NUM_RETRY_MONIT_INCARNATION = 60
-    NUM_RETRY_MONIT_WAIT_INCARNATION = 10
+    NUM_RETRY_MONIT_WAIT_INCARNATION = 15
 
     class << self
       attr_accessor :enabled
@@ -132,13 +132,15 @@ module Bosh::Agent
         monit_reload_cmd
         logger.info("Monit: reload")
 
-        NUM_RETRY_MONIT_WAIT_INCARNATION.times do
+        monit_reload_incarnation_retry.times do |n|
           check_incarnation = incarnation
           if old_incarnation < check_incarnation
             logger.info("Monit: updated incarnation #{check_incarnation}")
             return
           end
-          sleep 0.1
+
+          # Backoff a bit on the retry
+          sleep n * monit_reload_incarnation_base_sleep
         end
 
         # If we ever get here we have failed to get the new incarnation
@@ -148,6 +150,14 @@ module Bosh::Agent
       def monit_reload_cmd
         # Exit code and output has no usable output
         `#{monit_bin} reload`
+      end
+
+      def monit_reload_incarnation_retry
+        NUM_RETRY_MONIT_WAIT_INCARNATION
+      end
+
+      def monit_reload_incarnation_base_sleep
+        0.1
       end
 
       def unmonitor_services(attempts=10)
