@@ -6,6 +6,8 @@ module Bosh::Cli::Command
 
     def perform(*options)
       auth_required
+      # TODO: introduce option helpers
+      deployment_name = options.shift unless options[0] =~ /^--/
 
       @auto_mode = options.delete("--auto")
       @report_mode = options.delete("--report")
@@ -24,9 +26,7 @@ module Bosh::Cli::Command
       end
 
       say("Performing cloud check...")
-
-      manifest = prepare_deployment_manifest
-      deployment_name = manifest["name"]
+      deployment_name ||= prepare_deployment_manifest["name"]
 
       status, _ = director.perform_cloud_scan(deployment_name)
 
