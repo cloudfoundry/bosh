@@ -558,7 +558,7 @@ module Bosh::Cli
       end
 
       command :cloudcheck do
-        usage  "cloudcheck"
+        usage  "cloudcheck [<deployment>]"
         desc   "Cloud consistency check and interactive repair"
         option "--auto", "resolve problems automatically " +
             "(not recommended for production)"
