@@ -23,30 +23,36 @@ module Bosh::Cli
       @config_file = load_yaml_file(@filename, nil)
 
       unless @config_file.is_a?(Hash)
-        @config_file = { } # Just ignore it if it's malformed
+        @config_file = {} # Just ignore it if it's malformed
       end
 
     rescue SystemCallError => e
       raise ConfigError, "Cannot read config file: #{e.message}"
     end
 
-    def auth
-      if @config_file.has_key?("auth") && @config_file["auth"].is_a?(Hash)
+    # @return [Hash] Director credentials
+    def credentials_for(target)
+      if @config_file["auth"].is_a?(Hash) && @config_file["auth"][target]
         @config_file["auth"][target]
       else
-        nil
+        {
+          "username" => nil,
+          "password" => nil
+        }
       end
     end
 
     def set_credentials(target, username, password)
-      @config_file["auth"] ||= { }
-      @config_file["auth"][target] = { "username" => username,
-                                       "password" => password }
+      @config_file["auth"] ||= {}
+      @config_file["auth"][target] = {
+        "username" => username,
+        "password" => password
+      }
     end
 
     def set_alias(category, alias_name, value)
-      @config_file["aliases"] ||= { }
-      @config_file["aliases"][category.to_s] ||= { }
+      @config_file["aliases"] ||= {}
+      @config_file["aliases"][category.to_s] ||= {}
       @config_file["aliases"][category.to_s][alias_name] = value
     end
 
@@ -72,16 +78,20 @@ module Bosh::Cli
       end
     end
 
-    def username
-      auth ? auth["username"] : nil
+    # @param [String] target Target director url
+    # @return [String] Username associated with target
+    def username(target)
+      credentials_for(target)["username"]
     end
 
-    def password
-      auth ? auth["password"] : nil
+    # @param [String] target Target director url
+    # @return [String] Password associated with target
+    def password(target)
+      credentials_for(target)["password"]
     end
 
     # Deployment used to be a string that was only stored for your
-    # current target.  As soon as you switched targets, the deployment
+    # current target. As soon as you switched targets, the deployment
     # was erased. If the user has the old config we convert it to the
     # new config.
     #
@@ -114,7 +124,7 @@ module Bosh::Cli
     # @param [String] deployment_file_path The string path to the
     #     deployment file.
     def set_deployment(deployment_file_path)
-      raise MissingTarget, "Must have a target set." if target.nil?
+      raise MissingTarget, "Must have a target set" if target.nil?
       @config_file["deployment"] = {} if is_old_deployment_config?
       @config_file["deployment"] ||= {}
       @config_file["deployment"][target] = deployment_file_path

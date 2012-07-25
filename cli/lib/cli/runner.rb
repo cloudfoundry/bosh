@@ -627,7 +627,11 @@ module Bosh::Cli
           @options[:colorize] = false
         end
         opts.on("-d", "--debug") { @options[:debug] = true }
-        opts.on("-v", "--version") { dispatch(find_command(:version)); }
+        opts.on("--target URL") { |target| @options[:target] = target }
+        opts.on("--user USER") { |user| @options[:username] = user }
+        opts.on("--password PASSWORD") { |pass| @options[:password] = pass }
+        opts.on("--deployment FILE") { |file| @options[:deployment] = file }
+        opts.on("-v", "--version") { dispatch(find_command(:version)) }
       end
 
       @args = opts_parser.order!(@args)

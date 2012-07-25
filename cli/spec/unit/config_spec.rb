@@ -18,10 +18,6 @@ describe Bosh::Cli::Config do
     Bosh::Cli::Config.new(@config)
   end
 
-  def logged_in?(cfg)
-    cfg.username && cfg.password
-  end
-
   it "should convert old deployment configs to the new config " +
      "when set_deployment is called" do
     add_config("target" => "localhost:8080", "deployment" => "test")
@@ -116,24 +112,14 @@ describe Bosh::Cli::Config do
     add_config(config)
     cfg = create_config
 
-    logged_in?(cfg).should be_true
-    cfg.username.should == "a"
-    cfg.password.should == "b"
+    cfg.username("localhost:8080").should == "a"
+    cfg.password("localhost:8080").should == "b"
 
-    config["target"] = "localhost:8081"
-    add_config(config)
+    cfg.username("localhost:8081").should == "c"
+    cfg.password("localhost:8081").should == "d"
 
-    cfg = create_config
-    logged_in?(cfg).should be_true
-    cfg.username.should == "c"
-    cfg.password.should == "d"
-
-    config["target"] = "localhost:8082"
-    add_config(config)
-    cfg = create_config
-    logged_in?(cfg).should be_false
-    cfg.username.should be_nil
-    cfg.password.should be_nil
+    cfg.username("localhost:8083").should be_nil
+    cfg.password("localhost:8083").should be_nil
   end
 
 end

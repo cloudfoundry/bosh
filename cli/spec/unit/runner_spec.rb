@@ -42,6 +42,20 @@ describe Bosh::Cli::Runner do
     runner.options[:non_interactive].should == true
   end
 
+  it "allows specifying target, deployment and credentials via command line" do
+    runner = Bosh::Cli::Runner.new([
+                                     "--target", "foo",
+                                     "--deployment", "bar",
+                                     "--user", "baz",
+                                     "--password", "deadbeef"
+                                   ])
+    runner.parse_options!
+    runner.options[:target].should == "foo"
+    runner.options[:deployment].should == "bar"
+    runner.options[:username].should == "baz"
+    runner.options[:password].should == "deadbeef"
+  end
+
   it "dispatches commands to appropriate methods (nu school)" do
     test_cmd(["version"], :misc, :version)
     test_cmd(["status"], :misc, :status)

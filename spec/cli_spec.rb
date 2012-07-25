@@ -40,29 +40,27 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   it "sets correct target" do
     ver = director_version
     expect_output("target http://localhost:57523", <<-OUT)
-      Target set to 'Test Director (http://localhost:57523) #{ver}'
+      Target set to `Test Director (http://localhost:57523) #{ver}'
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is 'Test Director (http://localhost:57523) #{ver}'
+      Current target is `Test Director (http://localhost:57523) #{ver}'
     OUT
 
     Dir.chdir("/tmp") do
       expect_output("target", <<-OUT)
-        Current target is 'Test Director (http://localhost:57523) #{ver}'
+        Current target is `Test Director (http://localhost:57523) #{ver}'
       OUT
     end
   end
 
   it "allows omitting http" do
     expect_output("target localhost:57523", <<-OUT)
-      Target set to 'Test Director (http://localhost:57523) #{director_version}'
+      Target set to `Test Director (http://localhost:57523) #{director_version}'
     OUT
   end
 
   it "doesn't let user use deployment with target anymore (needs uuid)" do
-    deployment_manifest_path = spec_asset("bosh_work_dir/deployments/vmforce.yml")
-
     out = run_bosh("deployment vmforce")
     out.should =~ regexp("Please upgrade your deployment manifest")
   end
@@ -72,11 +70,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("deployment test2")
 
     expect_output("target http://localhost:57523", <<-OUT)
-      Target already set to 'Test Director (http://localhost:57523) #{director_version}'
+      Target already set to `Test Director (http://localhost:57523) #{director_version}'
     OUT
 
     expect_output("--skip-director-checks target http://local", <<-OUT)
-      Target set to 'Unknown Director (http://local) Ver: n/a'
+      Target set to `Unknown Director (http://local) Ver: n/a'
     OUT
 
     expect_output("deployment", "Deployment not set")
@@ -163,7 +161,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "doesn't allow purging when using non-default directory" do
-    run_bosh("purge").should =~ Regexp.new(Regexp.escape("Cache directory '#{BOSH_CACHE_DIR}' differs from default, please remove manually"))
+    run_bosh("purge").should =~ Regexp.new(Regexp.escape("Cache directory `#{BOSH_CACHE_DIR}' differs from default, please remove manually"))
   end
 
   it "verifies a sample valid release" do
@@ -215,7 +213,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("create user jane pass")
     run_bosh("logout")
     expect_output("login jane foo", <<-OUT)
-      Cannot log in as 'jane', please try again
+      Cannot log in as `jane', please try again
     OUT
   end
 
