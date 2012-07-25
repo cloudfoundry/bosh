@@ -268,6 +268,16 @@ namespace "stemcell" do
                 sh("#{sudo} e2label root.img stemcell_root")
                 sh("tar zcf ../stemcell/image root.img")
               end
+            when "openstack"
+              Dir.chdir("ubuntu-xen") do
+                files = Dir.glob("*")
+                files.delete("xen.conf")
+                raise "Found more than one image: #{files}" unless files.length == 1
+                root_image = files.first
+                mv(root_image, "root.img")
+                sh("#{sudo} e2label root.img stemcell_root")
+                sh("tar zcf ../stemcell/image root.img")
+              end
             else
               fail("Unknown format: #{format}")
           end
@@ -359,10 +369,10 @@ namespace "stemcell" do
     build_vm_image(:hypervisor => "esxi")
   end
 
-  desc "Build chroot tgz [infrastructure] - optional argument: vsphere (default) or aws"
+  desc "Build chroot tgz [infrastructure] - optional argument: vsphere (default), aws or openstack"
   task "chroot_tgz", :infrastructure do |t, args|
     if args[:infrastructure]
-      INFRASTRUCTURES = %w[vsphere aws]
+      INFRASTRUCTURES = %w[vsphere aws openstack]
       unless INFRASTRUCTURES.include?(args[:infrastructure])
         puts "Please specify an infrastructure. Supported infrastructures are #{INFRASTRUCTURES}"
         exit 1
@@ -408,7 +418,38 @@ namespace "stemcell" do
     sh("#{sudo} #{stages_dir}/30_aws.sh #{chroot_dir} #{lib_dir}")
 
     # Build stemcell
-    build_vm_image(:hypervisor => "xen")
+    build_vm_image(:hypervisor => "xen", :format => "aws")
+  end
+
+  # Takes in an optional argument "chroot_dir"
+  desc "Build openstack stemcell [chroot_dir|chroot_tgz] - optional argument chroot dir or chroot tgz"
+  task "openstack", :chroot do |t, args|
+    @infrastructure_name = "openstack"
+
+    # Create/Setup chroot directory
+    setup_chroot_dir(args[:chroot])
+
+    work_dir = get_working_dir
+    unless File.exists?(File.join(work_dir, "build"))
+      cp_r("misc/stemcell/build", work_dir, :preserve => true)
+    end
+
+    lib_dir = File.join(work_dir, "build/chroot/lib")
+    openstack_lib_dir = File.join(lib_dir, "openstack")
+    stages_dir = File.join(work_dir, "build/chroot/stages")
+    templates_dir = File.join(work_dir, "build/templates")
+
+    cp_r("misc/openstack/lib", openstack_lib_dir, :preserve => true)
+    cp_r("misc/openstack/stages/.", stages_dir, :preserve => true)
+    cp_r("misc/openstack/templates/.", templates_dir, :preserve => true)
+
+    # Generate the chroot
+    chroot_dir = get_chroot_dir
+
+    sh("#{sudo} #{stages_dir}/30_openstack.sh #{chroot_dir} #{lib_dir}")
+
+    # Build stemcell
+    build_vm_image(:hypervisor => "xen", :format => "openstack")
   end
 
   # TODO add micro cloud i.e "Build micro <cloud|bosh> ..."
@@ -443,6 +484,8 @@ namespace "stemcell" do
       build_vm_image
     when "aws"
       Rake::Task["stemcell:aws"].invoke(get_chroot_dir)
+    when "openstack"
+      Rake::Task["stemcell:openstack"].invoke(get_chroot_dir)
     else
       puts "Unsupported infrastructure: #{@infrastructure_name}"
       exit 1

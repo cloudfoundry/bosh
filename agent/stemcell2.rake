@@ -33,7 +33,7 @@ namespace :stemcell2 do
   def default_options(args)
     infrastructure = args[:infrastructure]
     unless infrastructure
-      STDERR.puts "Please specify target infrastructure (vsphere, aws)"
+      STDERR.puts "Please specify target infrastructure (vsphere, aws, openstack)"
       exit 1
     end
 

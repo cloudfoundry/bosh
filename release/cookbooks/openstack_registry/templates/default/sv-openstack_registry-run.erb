@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PATH=<%= node[:ruby][:path] %>/bin:$PATH
+
+exec 2>&1
+exec chpst -u <%= node[:openstack_registry][:runner] %> env RACK_ENV=production TMPDIR=<%= node[:openstack_registry][:tmp] %> <%= node[:openstack_registry][:path] %>/current/openstack_registry/bin/openstack_registry -c <%= node[:openstack_registry][:path] %>/shared/config/openstack_registry.yml

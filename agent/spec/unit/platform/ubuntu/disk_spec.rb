@@ -60,4 +60,28 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
     }.should raise_error(Bosh::Agent::FatalError, /\/dev\/sdf or \/dev\/xvdf/)
   end
 
+  def openstack_setup
+    Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
+                                                  'persistent' => { 2 => '/dev/sdf'} } }
+    Bosh::Agent::Config.infrastructure_name = "openstack"
+  end
+
+  it 'should get data disk device name' do
+    openstack_setup
+    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
+    disk_wrapper.stub(:dev_path_timeout).and_return(1)
+    lambda {
+      disk_wrapper.get_data_disk_device_name.should == '/dev/vdq'
+    }.should raise_error(Bosh::Agent::FatalError, /\/dev\/sdq or \/dev\/vdq/)
+  end
+
+  it 'should look up disk by cid' do
+    openstack_setup
+    disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
+    disk_wrapper.stub(:dev_path_timeout).and_return(1)
+    lambda {
+      disk_wrapper.lookup_disk_by_cid(2).should == '/dev/vdf'
+    }.should raise_error(Bosh::Agent::FatalError, /\/dev\/sdf or \/dev\/vdf/)
+  end
+
 end

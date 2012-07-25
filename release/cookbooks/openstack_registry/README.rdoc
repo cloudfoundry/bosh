@@ -1,0 +1,3 @@
+= DESCRIPTION:
+
+Bosh OpenStack Registry configuration.

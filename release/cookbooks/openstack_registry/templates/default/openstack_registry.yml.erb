@@ -1,0 +1,19 @@
+---
+logfile: <%= node[:openstack_registry][:path] %>/shared/logs/openstack_registry.debug.log
+loglevel: debug
+
+http:
+  port: <%= node[:openstack_registry][:http][:port] %>
+  user: <%= node[:openstack_registry][:http][:user] %>
+  password: <%= node[:openstack_registry][:http][:password] %>
+
+db:
+  database: postgres://<%= node[:postgresql][:user] %>:<%= node[:postgresql][:password] %>@<%= node[:hosts][:postgresql] %>/<%= node[:openstack_registry][:database] %>
+  max_connections: 32
+  pool_timeout: 10
+
+openstack:
+  auth_url: <%= node[:director][:openstack][:auth_url] %>
+  username: <%= node[:director][:openstack][:username] %>
+  api_key: <%= node[:director][:openstack][:api_key] %>
+  tenant: <%= node[:director][:openstack][:tenant] %>

@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+gemfile = File.expand_path("../../Gemfile", __FILE__)
+
+if File.exists?(gemfile)
+  ENV["BUNDLE_GEMFILE"] = gemfile
+  require "rubygems"
+  require "bundler/setup"
+end
+
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
+require "openstack_registry"
+require "optparse"
+
+config_file = nil
+
+opts = OptionParser.new do |opts|
+  opts.on("-c", "--config FILE", "configuration file") do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+if config_file.nil?
+  puts opts
+  exit 1
+end
+
+runner = Bosh::OpenstackRegistry::Runner.new(config_file)
+
+Signal.trap("INT") do
+  runner.stop
+  exit(1)
+end
+
+runner.run

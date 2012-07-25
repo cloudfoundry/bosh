@@ -1,0 +1,33 @@
+{
+  "name": "openstack_registry",
+  "description": "Installs/configures BOSH OpenStack Registry",
+  "long_description": "= DESCRIPTION:\n\nBOSH OpenStack Registry configuration.\n\n",
+  "maintainer": "VMware",
+  "maintainer_email": "support@vmware.com",
+  "license": "TBD",
+  "platforms": {
+  },
+  "dependencies": {
+    "env": ">= 0.0.0",
+    "ruby": ">= 0.0.0",
+    "rubygems": ">= 0.0.0",
+    "runit": ">= 0.0.0"
+  },
+  "recommendations": {
+  },
+  "suggestions": {
+  },
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "replacing": {
+  },
+  "attributes": {
+  },
+  "groupings": {
+  },
+  "recipes": {
+  },
+  "version": "0.0.1"
+}
