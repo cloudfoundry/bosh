@@ -74,7 +74,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     OUT
 
     expect_output("--skip-director-checks target http://local", <<-OUT)
-      Target set to `Unknown Director (http://local) Ver: n/a'
+      Target set to `Unknown Director (http://local:25555) Ver: n/a'
     OUT
 
     expect_output("deployment", "Deployment not set")
@@ -91,7 +91,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     run_bosh("--skip-director-checks login jane pass")
     expect_output("--skip-director-checks status", <<-OUT)
-        Target         Unknown Director (http://bar) Ver: n/a
+        Target         Unknown Director (http://bar:25555) Ver: n/a
         UUID           n/a
         User           jane
         Deployment     not set
@@ -99,7 +99,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     run_bosh("--skip-director-checks target foo")
     expect_output("--skip-director-checks status", <<-OUT)
-        Target         Unknown Director (http://foo) Ver: n/a
+        Target         Unknown Director (http://foo:25555) Ver: n/a
         UUID           n/a
         User           john
         Deployment     not set

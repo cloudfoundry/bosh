@@ -146,7 +146,7 @@ module Bosh::Cli::Command
       end
 
       director_url = normalize_url(director_url)
-      if director_url == target
+      if target && director_url == normalize_url(target)
         say("Target already set to `#{full_target_name.green}'")
         return
       end
