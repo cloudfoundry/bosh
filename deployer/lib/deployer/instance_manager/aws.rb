@@ -142,14 +142,14 @@ module Bosh::Deployer
         cloud.ec2.instances[state.vm_cid].private_ip_address
       end
 
-      # @return [Integer] size in kB
+      # @return [Integer] size in MiB
       def disk_size(cid)
-        # AWS stores disk size in MiB but we work with kB
+        # AWS stores disk size in GiB but the CPI uses MiB
         cloud.ec2.volumes[cid].size * 1024
       end
 
       def persistent_disk_changed?
-        # since AWS stores disk size in MiB and we use kB there
+        # since AWS stores disk size in GiB and the CPI uses MiB there
         # is a risk of conversion errors which lead to an unnecessary
         # disk migration, so we need to do a double conversion
         # here to avoid that
