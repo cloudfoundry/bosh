@@ -1,0 +1,18 @@
+---
+loglevel: debug
+
+http:
+  port: 25695
+  user: admin
+  password: admin
+
+db:
+  database: "sqlite:///:memory:"
+  max_connections: 32
+  pool_timeout: 10
+
+openstack:
+  auth_url: "http://127.0.0.1:5000/v2.0/tokens"
+  username: foo
+  api_key: bar
+  tenant: foo
