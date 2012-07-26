@@ -132,19 +132,23 @@ module Bosh::Agent
         monit_reload_cmd
         logger.info("Monit: reload")
 
-        monit_reload_incarnation_retry.times do |n|
+        reload_start = Time.now.to_i
+        loop do
           check_incarnation = incarnation
           if old_incarnation < check_incarnation
             logger.info("Monit: updated incarnation #{check_incarnation}")
             return
           end
-
-          # Backoff a bit on the retry
-          sleep n * monit_reload_incarnation_base_sleep
+          sleep reload_incarnation_sleep
+          break if Time.now.to_i > (reload_start + reload_timeout)
         end
 
         # If we ever get here we have failed to get the new incarnation
         raise StateError, "Failed to get updated incarnation from Monit"
+      end
+
+      def reload_timeout
+        300
       end
 
       def monit_reload_cmd
@@ -152,12 +156,8 @@ module Bosh::Agent
         `#{monit_bin} reload`
       end
 
-      def monit_reload_incarnation_retry
-        NUM_RETRY_MONIT_WAIT_INCARNATION
-      end
-
-      def monit_reload_incarnation_base_sleep
-        0.1
+      def reload_incarnation_sleep
+        5
       end
 
       def unmonitor_services(attempts=10)
