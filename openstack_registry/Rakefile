@@ -1,0 +1,50 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+$:.unshift(File.expand_path("../../rake", __FILE__))
+
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
+
+require "rake"
+begin
+  require "rspec/core/rake_task"
+rescue LoadError
+end
+
+require "bundler_task"
+require "ci_task"
+
+gem_helper = Bundler::GemHelper.new(Dir.pwd)
+
+desc "Build OpenStack Registry gem into the pkg directory"
+task "build" do
+  gem_helper.build_gem
+end
+
+desc "Build and install OpenStack Registry into system gems"
+task "install" do
+  Rake::Task["bundler:install"].invoke
+  gem_helper.install_gem
+end
+
+BundlerTask.new
+
+if defined?(RSpec)
+  namespace :spec do
+    desc "Run Unit Tests"
+    rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+      t.pattern = "spec/unit/**/*_spec.rb"
+      t.rspec_opts = %w(--format progress --colour)
+    end
+
+    CiTask.new do |task|
+      task.rspec_task = rspec_task
+    end
+  end
+
+  desc "Run tests"
+  task :spec => %w(spec:unit)
+end
