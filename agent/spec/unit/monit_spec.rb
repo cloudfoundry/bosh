@@ -64,13 +64,15 @@ describe Bosh::Agent::Monit do
   end
 
   it "should pass monit reload when incarnation is not changing" do
-    Bosh::Agent::Monit.stub!(:monit_reload_incarnation_retry).and_return(3)
+    Bosh::Agent::Monit.stub!(:reload_incarnation_sleep).and_return(0.1)
     Bosh::Agent::Monit.stub!(:incarnation).and_return(99,99,100)
     Bosh::Agent::Monit.reload
   end
 
   it "should fail when NUM_RETRY_MONIT_WAIT_INCARNATION is exceeded" do
-    Bosh::Agent::Monit.stub!(:monit_reload_incarnation_base_sleep).and_return(0.01)
+    Bosh::Agent::Monit.stub!(:reload_incarnation_sleep).and_return(0.1)
+    Bosh::Agent::Monit.stub!(:reload_timeout).and_return(1)
+
     old_incarnations = Array.new(Bosh::Agent::Monit::NUM_RETRY_MONIT_WAIT_INCARNATION, 99)
     Bosh::Agent::Monit.stub!(:incarnation).and_return(*old_incarnations)
     lambda {
@@ -79,7 +81,9 @@ describe Bosh::Agent::Monit do
   end
 
   it "should fail monit reload when incarnation is not changing" do
-    Bosh::Agent::Monit.stub!(:monit_reload_incarnation_retry).and_return(2)
+    Bosh::Agent::Monit.stub!(:monit_reload_sleep).and_return(0.1)
+    Bosh::Agent::Monit.stub!(:reload_timeout).and_return(1)
+
     Bosh::Agent::Monit.stub!(:incarnation).and_return(99)
     lambda {
       Bosh::Agent::Monit.reload
