@@ -10,7 +10,7 @@ $:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
 require "trollop"
 require "package_compiler"
 
-CPIS = %w[aws vsphere]
+CPIS = %w[aws openstack vsphere]
 COMMANDS = %w[apply compile]
 
 def usage(msg=nil)
