@@ -62,6 +62,10 @@ module Bosh::Agent
         # AWS passes in the device name
         xvd_dev_path = get_xvd_path(disk_id)
         get_available_path(disk_id, xvd_dev_path)
+      when "openstack"
+        # OpenStack passes in the device name
+        vd_dev_path = get_vd_path(disk_id)
+        get_available_path(disk_id, vd_dev_path)
       else
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
@@ -88,6 +92,11 @@ module Bosh::Agent
     def get_xvd_path(dev_path)
       dev_path_suffix = dev_path.match("/dev/sd(.*)")[1]
       "/dev/xvd#{dev_path_suffix}"
+    end
+
+    def get_vd_path(dev_path)
+      dev_path_suffix = dev_path.match("/dev/sd(.*)")
+      dev_path_suffix.nil? ? dev_path : "/dev/vd#{dev_path_suffix[1]}"
     end
 
     def get_available_path(dev_path, xvd_dev_path)
@@ -118,6 +127,15 @@ module Bosh::Agent
 
         xvd_dev_path = get_xvd_path(dev_path)
         get_available_path(dev_path, xvd_dev_path)
+      when "openstack"
+        settings = Bosh::Agent::Config.settings
+        dev_path = settings['disks']['ephemeral']
+        unless dev_path
+          raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+        end
+
+        vd_dev_path = get_vd_path(dev_path)
+        get_available_path(dev_path, vd_dev_path)
       else
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
