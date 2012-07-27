@@ -216,28 +216,46 @@ module Bosh::Cli
 
     # @return Array<GlobMatch>
     def resolve_globs
-      matches = Set.new
+      all_matches = Set.new
 
       @globs.each do |glob|
+        # Glob like core/dea/**/* might not yield anything in alt source even
+        # when `src_alt/core' exists. That's error prone, so we don't lookup
+        # in `src' if `src_alt' contains any part of the glob hierarchy.
+        top_dir = glob.split(File::SEPARATOR)[0]
+        alt_only = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
+
+        matches = Set.new
         # Alternative source dir completely shadows the source dir, there can be
         # no partial match of a particular glob in both.
-        found = false
-
-        [@alt_sources_dir, @sources_dir].each do |dir|
-          next unless File.directory?(dir)
-
-          Dir.chdir(dir) do
-            dir_matches = resolve_glob_in_cwd(glob)
-
-            unless dir_matches.empty?
-              matches += dir_matches.map do |path|
-                GlobMatch.new(dir, path)
-              end
-              found = true
-            end
+        if File.directory?(@alt_sources_dir)
+          alt_matches = Dir.chdir(@alt_sources_dir) do
+            resolve_glob_in_cwd(glob)
           end
+        else
+          alt_matches = []
+        end
 
-          break if found
+        if alt_matches.size > 0
+          matches += alt_matches.map do |path|
+            GlobMatch.new(@alt_sources_dir, path)
+          end
+        end
+
+        normal_matches = Dir.chdir(@sources_dir) do
+          resolve_glob_in_cwd(glob)
+        end
+
+        if alt_only && alt_matches.empty? && !normal_matches.empty?
+          raise InvalidPackage, "Package `#{name}' has a glob that " +
+            "doesn't match in `#{File.basename(@alt_sources_dir)}' " +
+            "but matches in `#{File.basename(@sources_dir)}'. " +
+            "However `#{File.basename(@alt_sources_dir)}/#{top_dir}' " +
+            "exists, so this might be an error."
+        end
+
+        matches += normal_matches.map do |path|
+          GlobMatch.new(@sources_dir, path)
         end
 
         # Blobs directory is a little bit different: whatever matches a blob
@@ -251,19 +269,19 @@ module Bosh::Cli
               blob_matches.each do |path|
                 matches << GlobMatch.new(@blobs_dir, path)
               end
-
-              found = true
             end
           end
         end
 
-        unless found
-          raise InvalidPackage, "`#{name}' has a glob that " +
+        if matches.empty?
+          raise InvalidPackage, "Package `#{name}' has a glob that " +
             "resolves to an empty file list: #{glob}"
         end
+
+        all_matches += matches
       end
 
-      matches.sort
+      all_matches.sort
     end
 
     def resolve_glob_in_cwd(glob)

@@ -276,7 +276,8 @@ module Bosh::Cli::Command
 
         package = Bosh::Cli::PackageBuilder.new(package_spec, work_dir,
                                                 final, release.blobstore)
-        package.dry_run = dry_run
+        package.dry_run = true if dry_run
+
         say("Building #{package.name.green}...")
         package.build
         packages << package
