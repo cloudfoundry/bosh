@@ -60,8 +60,10 @@ module Bosh::Agent
         File.join('/dev', blockdev)
       when "aws"
         # AWS passes in the device name
-        xvd_dev_path = get_xvd_path(disk_id)
-        get_available_path(disk_id, xvd_dev_path)
+        get_available_path(disk_id)
+      when "openstack"
+        # OpenStack passes in the device name
+        get_available_path(disk_id)
       else
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
@@ -85,23 +87,28 @@ module Bosh::Agent
       Dir[dev_path].first
     end
 
-    def get_xvd_path(dev_path)
-      dev_path_suffix = dev_path.match("/dev/sd(.*)")[1]
-      "/dev/xvd#{dev_path_suffix}"
+    def get_dev_paths(dev_path)
+      dev_paths = [] << dev_path
+      dev_path_suffix = dev_path.match("/dev/sd(.*)")
+      unless dev_path_suffix.nil?
+        dev_paths << "/dev/vd#{dev_path_suffix[1]}"  # KVM
+        dev_paths << "/dev/xvd#{dev_path_suffix[1]}" # Xen
+      end
+      dev_paths
     end
 
-    def get_available_path(dev_path, xvd_dev_path)
+    def get_available_path(dev_path)
       start = Time.now
-      while Dir[dev_path, xvd_dev_path].empty?
-        logger.info("Waiting for #{dev_path} or #{xvd_dev_path}")
+      dev_paths = get_dev_paths(dev_path)
+      while Dir.glob(dev_paths).empty?
+        logger.info("Waiting for #{dev_paths}")
         sleep 0.1
         if (Time.now - start) > dev_path_timeout
-          raise Bosh::Agent::FatalError, "Timed out waiting for #{dev_path} or #{xvd_dev_path}"
+          raise Bosh::Agent::FatalError, "Timed out waiting for #{dev_paths}"
         end
       end
 
-      return xvd_dev_path unless Dir[xvd_dev_path].empty?
-      dev_path
+      Dir.glob(dev_paths).last
     end
 
     VSPHERE_DATA_DISK = "/dev/sdb"
@@ -116,8 +123,15 @@ module Bosh::Agent
           raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
         end
 
-        xvd_dev_path = get_xvd_path(dev_path)
-        get_available_path(dev_path, xvd_dev_path)
+        get_available_path(dev_path)
+      when "openstack"
+        settings = Bosh::Agent::Config.settings
+        dev_path = settings['disks']['ephemeral']
+        unless dev_path
+          raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+        end
+
+        get_available_path(dev_path)
       else
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
