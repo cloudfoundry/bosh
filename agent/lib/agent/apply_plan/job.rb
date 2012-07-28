@@ -11,33 +11,24 @@ module Bosh::Agent
       attr_reader :link_path
       attr_reader :template
 
-      # Initializes a job.
-      # @param [String] job_name The name of the job being set up, such as
-      #     "nats".
-      # @param [Hash] template_spec A hash that came from the apply spec
-      #     message.  This hash contains information about the template that is
-      #     to be setup in this job.  It has keys such as:
-      #     "name", "version", "sha1", "blobstore_id"
-      # @param [Bosh::Agent::Util::BindingHelper] config_binding A binding
-      #     helper instance.
-      def initialize(job_name, template_spec, config_binding = nil)
-        unless template_spec.is_a?(Hash)
-          raise ArgumentError, "Invalid job template_spec, " +
-                               "Hash expected, #{template_spec.class} given"
+      def initialize(spec, config_binding = nil)
+        unless spec.is_a?(Hash)
+          raise ArgumentError, "Invalid job spec, " +
+                               "Hash expected, #{spec.class} given"
         end
 
-        %w(name version sha1 blobstore_id).each do |key|
-          if template_spec[key].nil?
+        %w(name template version sha1 blobstore_id).each do |key|
+          if spec[key].nil?
             raise ArgumentError, "Invalid spec, #{key} is missing"
           end
         end
 
         @base_dir = Bosh::Agent::Config.base_dir
-        @name = "#{job_name}.#{template_spec["name"]}"
-        @template = template_spec["name"]
-        @version = template_spec["version"]
-        @checksum = template_spec["sha1"]
-        @blobstore_id = template_spec["blobstore_id"]
+        @name = spec["name"]
+        @template = spec["template"]
+        @version = spec["version"]
+        @checksum = spec["sha1"]
+        @blobstore_id = spec["blobstore_id"]
         @config_binding = config_binding
 
         @install_path = File.join(@base_dir, "data", "jobs",

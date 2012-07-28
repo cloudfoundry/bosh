@@ -53,14 +53,13 @@ describe Bosh::Agent::ApplyPlan::Plan do
       plan = make_plan(valid_spec)
 
       plan.deployment.should == "mycloud"
-      plan.jobs.length.should == 1
-      plan.jobs[0].should be_kind_of Bosh::Agent::ApplyPlan::Job
+      plan.job.should be_kind_of Bosh::Agent::ApplyPlan::Job
       plan.packages.size.should == 2
       plan.packages.each do |package|
         package.should be_kind_of Bosh::Agent::ApplyPlan::Package
       end
 
-      plan.has_jobs?.should be_true
+      plan.has_job?.should be_true
       plan.has_packages?.should be_true
       plan.configured?.should be_true
     end
@@ -73,24 +72,21 @@ describe Bosh::Agent::ApplyPlan::Plan do
     end
 
     it "installs job" do
-      plan.jobs.length.should == 1
-      plan.jobs[0].should_receive(:install)
-      plan.install_jobs
+      plan.job.should_receive(:install)
+      plan.install_job
     end
 
     it "installs packages" do
       plan.packages.each do |package|
-        plan.jobs.length.should == 1
-        package.should_receive(:install_for_job).with(plan.jobs[0])
+        package.should_receive(:install_for_job).with(plan.job)
       end
 
       plan.install_packages
     end
 
     it "configures job" do
-      plan.jobs.length.should == 1
-      plan.jobs[0].should_receive(:configure)
-      plan.configure_jobs
+      plan.job.should_receive(:configure)
+      plan.configure_job
     end
 
   end

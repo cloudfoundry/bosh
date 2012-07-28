@@ -108,8 +108,8 @@ module Bosh::Agent
       end
 
       def apply_job
-        if @new_plan.has_jobs?
-          @new_plan.install_jobs
+        if @new_plan.has_job?
+          @new_plan.install_job
         else
           logger.info("No job")
         end
@@ -126,8 +126,8 @@ module Bosh::Agent
       end
 
       def configure_job
-        if @new_plan.has_jobs?
-          @new_plan.configure_jobs
+        if @new_plan.has_job?
+          @new_plan.configure_job
         end
       end
 

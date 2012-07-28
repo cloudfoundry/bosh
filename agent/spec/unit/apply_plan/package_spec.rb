@@ -26,19 +26,13 @@ describe Bosh::Agent::ApplyPlan::Package do
     }
   end
 
-  let(:template_spec) do
-    {
-      "name" => "postgres",
-      "version" => "2",
-      "sha1" => "badcafe",
-      "blobstore_id" => "beefdad"
-    }
-  end
-
   let(:job_spec) do
     {
       "name" => "ccdb",
-      "templates" => [ template_spec ]
+      "template" => "postgres",
+      "version" => "2",
+      "sha1" => "badcafe",
+      "blobstore_id" => "beefdad"
     }
   end
 
@@ -74,7 +68,7 @@ describe Bosh::Agent::ApplyPlan::Package do
   describe "installation" do
     it "fetches package and creates symlink in packages and jobs" do
       package = make_package(valid_spec)
-      job = make_job(job_spec, template_spec)
+      job = make_job(job_spec)
 
       # TODO: make sure unpack_blob is tested elsewhere
       Bosh::Agent::Util.should_receive(:unpack_blob).
