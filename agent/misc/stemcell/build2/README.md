@@ -104,6 +104,10 @@ To get started, install the `btrfs-tools` package from apt. This package
 is available on 12.04. On 10.04, you can download the `btrfs-tools` deb
 for 12.04 from [Launchpad][btrfs-deb] and install it.
 
+Using this package on 10.04 has only been tested with a kernel
+backported from Ubuntu 11.04. Switch to this kernel by installing
+`linux-image-generic-lts-backport-natty`, and rebooting your system.
+
 [btrfs-deb]: https://launchpad.net/ubuntu/precise/+package/btrfs-tools
 
 #### Creating a btrfs filesystem
