@@ -303,17 +303,17 @@ module Bosh::Cli::Command
       Dir[File.join(work_dir, "jobs", "*")].each do |job_dir|
         next unless File.directory?(job_dir)
         job_dirname = File.basename(job_dir)
-        job_spec = load_yaml_file(File.join(job_dir, "spec"))
-
-        if job_spec["name"] != job_dirname
-          err("Found `#{job_spec["name"]}' job in " +
-              "`#{job_dirname}' directory, please fix it")
-        end
 
         prepare_script = File.join(job_dir, "prepare")
         if File.exists?(prepare_script)
           say("Found prepare script in `#{File.basename(job_dir)}'")
           Bosh::Cli::JobBuilder.run_prepare_script(prepare_script)
+        end
+
+        job_spec = load_yaml_file(File.join(job_dir, "spec"))
+        if job_spec["name"] != job_dirname
+          err("Found `#{job_spec["name"]}' job in " +
+              "`#{job_dirname}' directory, please fix it")
         end
 
         job = Bosh::Cli::JobBuilder.new(job_spec, work_dir, final,
