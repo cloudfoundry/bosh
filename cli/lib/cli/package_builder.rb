@@ -74,7 +74,7 @@ module Bosh::Cli
         raise InvalidPackage, "Package name should be a valid BOSH identifier"
       end
 
-      unless @globs.is_a?(Array) && @globs.size > 0
+      if @globs.is_a?(Array) && @globs.empty?
         raise InvalidPackage, "Package '#{@name}' doesn't include any files"
       end
 
@@ -104,7 +104,13 @@ module Bosh::Cli
     end
 
     def glob_matches
-      @resolved_globs ||= resolve_globs
+      @resolved_globs ||= begin
+                            if @globs
+                              resolve_globs
+                            else
+                              resolve_files
+                            end
+                          end
     end
 
     def build_dir
@@ -270,6 +276,26 @@ module Bosh::Cli
       Dir.glob(glob, File::FNM_DOTMATCH).reject do |fn|
         %w(. ..).include?(File.basename(fn))
       end
+    end
+
+    # @return Array<GlobMatch>
+    def resolve_files
+      matches = Set.new
+
+      files_script = File.join(package_dir, "files")
+
+      Dir.chdir(@release_dir) do
+        files_script_out = `#{files_script} 2>/dev/null`
+        files_script_out.split("\n").each do |line|
+          matches << GlobMatch.new(@release_dir, line)
+        end
+
+        unless $?.exitstatus == 0
+          raise InvalidPackage, "`#{name}' files script failed"
+        end
+      end
+
+      matches.sort
     end
 
     def in_build_dir(&block)
