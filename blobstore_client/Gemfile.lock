@@ -1,8 +1,9 @@
 PATH
   remote: .
   specs:
-    blobstore_client (0.3.13)
+    blobstore_client (0.4.0)
       aws-s3 (~> 0.6.2)
+      bosh_common (~> 0.5)
       httpclient (>= 2.2)
       multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
@@ -16,6 +17,7 @@ GEM
       builder
       mime-types
       xml-simple
+    bosh_common (0.5.0)
     builder (3.0.0)
     ci_reporter (1.7.0)
       builder (>= 2.1.2)
@@ -29,7 +31,7 @@ GEM
     log4r (1.1.10)
     mime-types (1.17.2)
     multi_json (1.1.0)
-    rake (0.8.7)
+    rake (0.9.2.2)
     rbx-require-relative (0.0.5)
     rcov (0.9.9)
     rspec (2.3.0)
