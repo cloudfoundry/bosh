@@ -73,6 +73,17 @@ describe Bosh::Blobstore::S3BlobstoreClient do
         @client.create("some content").should eql("object_id")
       end
 
+      it "should not encrypt when encryption key is missing" do
+        client = s3_blobstore(:bucket_name       => "test",
+                              :access_key_id     => "KEY",
+                              :secret_access_key => "SECRET")
+        client.should_receive(:generate_object_id).and_return("object_id")
+        client.should_not_receive(:encrypt_stream)
+
+        AWS::S3::S3Object.should_receive(:store)
+        client.create("some content").should eql("object_id")
+      end
+
       it "should raise an exception when there is an error creating an object" do
         encrypted_file = nil
         @client.should_receive(:generate_object_id).and_return("object_id")
@@ -112,6 +123,19 @@ describe Bosh::Blobstore::S3BlobstoreClient do
           to.write("stuff")
         }
         @client.get("object_id").should == "stuff"
+      end
+
+      it "should not decrypt when encryption key is missing" do
+        client = s3_blobstore(:bucket_name       => "test",
+                              :access_key_id     => "KEY",
+                              :secret_access_key => "SECRET")
+
+        mock_s3_object = mock("s3_object")
+        mock_s3_object.stub!(:value).and_yield("stuff")
+        AWS::S3::S3Object.should_receive(:find).with("object_id", "test").and_return(mock_s3_object)
+        client.should_not_receive(:decrypt_stream)
+
+        client.get("object_id").should == "stuff"
       end
 
       it "should raise an exception when there is an error fetching an object" do
