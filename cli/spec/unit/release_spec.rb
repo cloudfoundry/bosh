@@ -63,4 +63,39 @@ describe Bosh::Cli::Release do
     r.final_name.should be_nil
     r.min_cli_version.should be_nil
   end
+
+  describe "merging final.yml with private.yml" do
+    it "should print a warning when it contains blobstore_secret" do
+      r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
+      opts = {
+          :uid => "bosh",
+          :secret => "bar"
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("atmos", opts)
+      r.should_receive(:say)
+
+      r.blobstore
+    end
+
+    it "should merge s3 secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/s3"))
+      opts = {
+          :bucket_name => "test",
+          :secret_access_key => "foo",
+          :access_key_id => "bar"
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("s3", opts)
+      r.blobstore
+    end
+
+    it "should merge atmos secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
+      opts = {
+          :uid => "bosh",
+          :secret => "bar"
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("atmos", opts)
+      r.blobstore
+    end
+  end
 end
