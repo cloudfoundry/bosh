@@ -242,7 +242,14 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected job configuration differs
       #   from the one provided by the VM
       def job_changed?
-        @job.spec != @current_state["job"]
+        job_spec = @job.spec
+        if job_spec != @current_state["job"]
+          # The agent job spec could be in legacy form.  job_spec cannot be,
+          # though, because we got it from the spec function in job.rb which
+          # automatically makes it non-legacy.
+          return job_spec == Job.convert_from_legacy_spec(@current_state["job"])
+        end
+        return false
       end
 
       ##

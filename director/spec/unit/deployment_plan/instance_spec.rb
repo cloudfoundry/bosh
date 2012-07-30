@@ -166,4 +166,43 @@ describe Bosh::Director::DeploymentPlan::Instance do
       }.to raise_error(BD::InstanceTargetStateUndefined)
     end
   end
+  describe "updating deployment" do
+    it "needs to smartly compare specs before deciding to update a job" do
+      @deployment = make_deployment("mycloud")
+      BD::DeploymentPlan::Job.any_instance.stub(:initialize)
+      @plan = mock(BD::DeploymentPlan, :model => @deployment)
+      @job = BD::DeploymentPlan::Job.new(@plan)
+
+      @job.release = mock(BD::DeploymentPlan::Release)
+      @job.release.should_receive(:name).twice.and_return("hbase-release")
+
+      mock_template = mock(BD::DeploymentPlan::Template)
+      mock_template.should_receive(:name).exactly(4).times.and_return(
+        "hbase_slave")
+      mock_template.should_receive(:version).exactly(4).times.and_return("2")
+      mock_template.should_receive(:sha1).exactly(4).times.and_return(
+        "24aeaf29768a100d500615dc02ae6126e019f99f")
+      mock_template.should_receive(:blobstore_id).exactly(4).times.and_return(
+        "4ec237cb-5f07-4658-aabe-787c82f39c76")
+      mock_template.should_receive(:logs).exactly(4).times
+
+      @job.templates = [mock_template]
+      @job.should_receive(:instance_state).and_return("some_state")
+      instance = make(@job, 0)
+      @job.stub!(:name).and_return("dea")
+      instance.current_state = {
+        "job" => {
+          "name" => "hbase_slave",
+          "release" => "hbase-release",
+          "template" => "hbase_slave",
+          "version" => "0.9-dev",
+          "sha1" => "a8ab636b7c340f98891178096a44c09487194f03",
+          "blobstore_id" => "e2e4e58e-a40e-43ec-bac5-fc50457d5563"
+        }
+      }
+      instance.job_changed?.should == false
+      # Check that the old way of comparing would say that the job has changed.
+      (@job.spec == instance.current_state).should == false
+    end
+  end
 end

@@ -87,6 +87,28 @@ module Bosh::Director
         @unneeded_instances = []
       end
 
+      def self.is_legacy_spec?(job_spec)
+        !job_spec.has_key?("templates")
+      end
+
+      # Takes in a job spec and returns a job spec in the new format, if it
+      # needs to be modified.  The new format has "templates" key, which is an
+      # array with each template's data.  This is used for job collocation,
+      # specifically for the agent's current job spec when compared to the
+      # director's.  We only convert their template to a single array entry
+      # because it should be impossible for the agent to have a job spec with
+      # multiple templates in legacy form.
+      def self.convert_from_legacy_spec(job_spec)
+        return job_spec if !self.is_legacy_spec?(job_spec)
+        template = {
+          "name" => job_spec["template"],
+          "version" => job_spec["version"],
+          "sha1" => job_spec["sha1"],
+          "blobstore_id" => job_spec["blobstore_id"]
+        }
+        job_spec["templates"] = [template]
+      end
+
       # Returns job spec as a Hash. To be used by all instances of the job to
       # populate agent state.
       # @return [Hash] Hash representation
