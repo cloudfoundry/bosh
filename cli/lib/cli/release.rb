@@ -52,12 +52,35 @@ module Bosh::Cli
       end
     end
 
-    # Check if the blobstore secret is provided in the private config file
-    #
+    # Check if the deprecated blobstore secret is provided in the private
+    # config file
     # @return [Boolean]
     def has_blobstore_secret?
+      bs = @private_config["blobstore"]
+      has_blobstore_secrets?(bs, "atmos", "secret") ||
+        has_blobstore_secrets?(bs, "simple", "user", "password") ||
+        has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key")
+    end
+
+    def has_legacy_secret?
       @private_config.has_key?("blobstore_secret")
     end
+
+    # final.yml
+    # ---
+    # blobstore:
+    #   provider: ...
+    #   options:
+    #     ...: ...
+
+    # private.yml
+    # ---
+    # blobstore:
+    #   s3:
+    #     secret_access_key: ...
+    #     access_key_id: ...
+    #   atmos:
+    #     secret: ...
 
     # Picks blobstore client to use with current release.
     #
@@ -73,12 +96,12 @@ module Bosh::Cli
       provider = blobstore_config["provider"]
       options  = blobstore_config["options"] || {}
 
-      if has_blobstore_secret?
-        options["secret"] = @private_config["blobstore_secret"]
-      end
+      deprecate_blobstore_secret if has_legacy_secret?
 
-      @blobstore = Bosh::Blobstore::Client.create(provider,
-                                                  symbolize_keys(options))
+      options = merge_private_data(provider, options)
+
+      opts = Bosh::Common.symbolize_keys(options)
+      @blobstore = Bosh::Blobstore::Client.create(provider, opts)
 
     rescue Bosh::Blobstore::BlobstoreError => e
       err("Cannot initialize blobstore: #{e}")
@@ -96,6 +119,34 @@ module Bosh::Cli
     end
 
     private
+
+    def has_blobstore_secrets?(blobstore, name, *keys)
+      return false unless blobstore
+      return false unless blobstore[name]
+      keys.each {|key| return false unless blobstore[name][key]}
+      true
+    end
+
+
+    # Extracts private blobstore data from final.yml (i.e. secrets)
+    # and merges it into the blobstore options.
+    def merge_private_data(provider, options)
+      bs = @private_config["blobstore"]
+      options.merge(bs ? bs[provider] : {})
+    end
+
+    # stores blobstore_secret as blobstore.atmos.secret
+    def deprecate_blobstore_secret
+      say("WARNING:".red + " use of blobstore_secret is deprecated")
+
+      @private_config["blobstore"] ||= {}
+      bs = @private_config["blobstore"]
+
+      bs["atmos"] ||= {}
+      atmos = bs["atmos"]
+
+      atmos["secret"] = @private_config["blobstore_secret"]
+    end
 
     # Upgrade path for legacy clients that kept release metadata
     # in config/dev.yml and config/final.yml
@@ -153,13 +204,6 @@ module Bosh::Cli
 
         File.open(@final_config_file, "w") { |f| YAML.dump(@final_config, f) }
         say("Migrated final config file format".green)
-      end
-    end
-
-    def symbolize_keys(hash)
-      hash.inject({}) do |h, (key, value)|
-        h[key.to_sym] = value
-        h
       end
     end
 

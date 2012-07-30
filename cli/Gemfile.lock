@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     bosh_cli (0.19.5)
-      blobstore_client (~> 0.3.13)
+      blobstore_client (~> 0.4.0)
       highline (~> 1.6.2)
       httpclient (>= 2.2.4, <= 2.2.4)
       json_pure (~> 1.6.1)
@@ -21,12 +21,14 @@ GEM
       builder
       mime-types
       xml-simple
-    blobstore_client (0.3.13)
+    blobstore_client (0.4.0)
       aws-s3 (~> 0.6.2)
+      bosh_common (~> 0.5)
       httpclient (>= 2.2)
       multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
+    bosh_common (0.5.0)
     builder (3.0.0)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
