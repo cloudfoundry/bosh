@@ -7,7 +7,7 @@ module Bosh
     class BaseClient < Client
 
       def initialize(options)
-        @options = symbolize_keys(options)
+        @options = Bosh::Common.symbolize_keys(options)
       end
 
       def symbolize_keys(hash)
@@ -34,7 +34,7 @@ module Bosh
               File.open(path, "w") do |file|
                 file.write(contents)
               end
-              create_file(File.open(path, "r"))
+              return create_file(File.open(path, "r"))
             rescue BlobstoreError => e
               raise e
             rescue Exception => e
@@ -72,9 +72,10 @@ module Bosh
       def temp_path
         path = File.join(Dir::tmpdir, "temp-path-#{UUIDTools::UUID.random_create}")
         begin
-          yield path
+          yield path if block_given?
+          path
         ensure
-          FileUtils.rm_f(path)
+          FileUtils.rm_f(path) if block_given?
         end
       end
 
