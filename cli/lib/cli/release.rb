@@ -52,12 +52,28 @@ module Bosh::Cli
       end
     end
 
-    # Check if the blobstore secret is provided in the private config file
-    #
+    # Check if the deprecated blobstore secret is provided in the private
+    # config file
     # @return [Boolean]
     def has_blobstore_secret?
       @private_config.has_key?("blobstore_secret")
     end
+
+    # final.yml
+    # ---
+    # blobstore:
+    #   provider: ...
+    #   options:
+    #     ...: ...
+
+    # private.yml
+    # ---
+    # blobstore:
+    #   s3:
+    #     secret_access_key: ...
+    #     access_key_id: ...
+    #   atmos:
+    #     secret: ...
 
     # Picks blobstore client to use with current release.
     #
@@ -73,12 +89,12 @@ module Bosh::Cli
       provider = blobstore_config["provider"]
       options  = blobstore_config["options"] || {}
 
-      if has_blobstore_secret?
-        options["secret"] = @private_config["blobstore_secret"]
-      end
+      deprecate_blobstore_secret if has_blobstore_secret?
 
-      @blobstore = Bosh::Blobstore::Client.create(provider,
-                                                  symbolize_keys(options))
+      options = merge_private_data(provider, options)
+
+      opts = Bosh::Common.symbolize_keys(options)
+      @blobstore = Bosh::Blobstore::Client.create(provider, opts)
 
     rescue Bosh::Blobstore::BlobstoreError => e
       err("Cannot initialize blobstore: #{e}")
@@ -96,6 +112,30 @@ module Bosh::Cli
     end
 
     private
+
+    # Extracts private blobstore data from final.yml (i.e. secrets)
+    # and merges it into the blobstore options.
+    def merge_private_data(provider, options)
+      bs = @private_config["blobstore"]
+      options.merge(bs ? bs[provider] : {})
+    end
+
+    # stores blobstore_secret as blobstore.atmos.secret
+    def deprecate_blobstore_secret
+      say("WARNING:".red + " use of blobstore_secret is deprecated")
+
+      unless @private_config["blobstore"]
+        @private_config["blobstore"] = {}
+      end
+      bs = @private_config["blobstore"]
+
+      unless bs["atmos"]
+        bs["atmos"] = {}
+      end
+      atmos = bs["atmos"]
+
+      atmos["secret"] = @private_config["blobstore_secret"]
+    end
 
     # Upgrade path for legacy clients that kept release metadata
     # in config/dev.yml and config/final.yml
