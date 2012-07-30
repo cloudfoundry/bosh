@@ -15,6 +15,16 @@ module Bosh
 
       attr_reader :bucket_name, :encryption_key
 
+      # Blobstore client for S3 with optional object encryption
+      # @param [Hash] options S3connection options
+      # @option options [Symbol] bucket_name
+      # @option options [Symbol, optional] encryption_key optional encryption
+      #   key that is applied before the object is sent to S3
+      # @option options [Symbol, optional] access_key_id
+      # @option options [Symbol, optional] secret_access_key
+      # @note If access_key_id and secret_access_key are not present, the
+      #   blobstore client operates in read only mode as a
+      #   simple_blobstore_client
       def initialize(options)
         super(options)
         @bucket_name    = @options[:bucket_name]
@@ -34,18 +44,26 @@ module Bosh
 
       def create_file(file)
         object_id = generate_object_id
-        temp_path do |path|
+
+        path = nil
+        if @encryption_key
+          path = temp_path
           File.open(path, "w") do |temp_file|
             encrypt_stream(file, temp_file)
-          end
-          File.open(path, "r") do |temp_file|
-            AWS::S3::S3Object.store(object_id, temp_file, bucket_name)
+            file = path
           end
         end
+
+        File.open(file, "r") do |temp_file|
+          AWS::S3::S3Object.store(object_id, temp_file, bucket_name)
+        end
+
         object_id
       rescue AWS::S3::S3Exception => e
         raise BlobstoreError,
           "Failed to create object, S3 response error: #{e.message}"
+      ensure
+        FileUtils.rm_rf(path) if path
       end
 
       def get_file(object_id, file)
@@ -59,7 +77,13 @@ module Bosh
             end
           }
         }
-        decrypt_stream(from, file)
+        if @encryption_key
+          decrypt_stream(from, file)
+        else
+          File.open(file, "w") do |f|
+            read_stream(from) { |segment| f.write(segment) }
+          end
+        end
       rescue AWS::S3::NoSuchKey => e
         raise NotFound, "S3 object '#{object_id}' not found"
       rescue AWS::S3::S3Exception => e

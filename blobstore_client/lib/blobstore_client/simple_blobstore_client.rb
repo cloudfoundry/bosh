@@ -10,6 +10,7 @@ module Bosh
         super(options)
         @client = HTTPClient.new
         @endpoint = @options[:endpoint]
+        @bucket = @options[:bucket] || "resources"
         @headers = {}
         user = @options[:user]
         password = @options[:password]
@@ -20,7 +21,7 @@ module Bosh
       end
 
       def url(id=nil)
-        ["#{@endpoint}/resources", id].compact.join("/")
+        ["#{@endpoint}/#{@bucket}", id].compact.join("/")
       end
 
       def create_file(file)
