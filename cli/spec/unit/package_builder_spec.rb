@@ -87,7 +87,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     lambda {
       builder.build
     }.should raise_error(Bosh::Cli::InvalidPackage,
-                         "`foo' has a glob that resolves " +
+                         "Package `foo' has a glob that resolves " +
                          "to an empty file list: bar")
   end
 
@@ -520,15 +520,33 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
   it "supports alternative src directory" do
     add_file("src", "README.txt", "README contents")
     add_file("src", "lib/1.rb", "puts 'Hello world'")
+    add_file("src", "lib/2.rb", "puts 'Goodbye world'")
 
     builder = make_builder("A", %w(lib/*.rb README.*))
     s1 = builder.fingerprint
 
     add_file("src_alt", "README.txt", "README contents")
     add_file("src_alt", "lib/1.rb", "puts 'Hello world'")
+    add_file("src_alt", "lib/2.rb", "puts 'Goodbye world'")
 
-    remove_files("src", %w(README.txt lib/1.rb))
+    remove_files("src", %w(lib/1.rb))
     builder.reload.fingerprint.should == s1
+  end
+
+  it "checks if glob top level dir is present in src_alt but doesn't match" do
+    add_file("src", "README.txt", "README contents")
+    add_file("src", "lib/1.rb", "puts 'Hello world'")
+    add_file("src", "lib/2.rb", "puts 'Goodbye world'")
+
+    builder = make_builder("A", %w(lib/*.rb README.*))
+
+    FileUtils.mkdir(File.join(@release_dir, "src_alt", "lib"))
+
+    lambda {
+      builder.fingerprint
+    }.should raise_error("Package `A' has a glob that doesn't match " +
+                         "in `src_alt' but matches in `src'. However " +
+                         "`src_alt/lib' exists, so this might be an error.")
   end
 
   it "doesn't allow glob to match files under more than one source directory" do
@@ -545,8 +563,8 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     lambda {
       builder.reload.fingerprint
-    }.should raise_error("`A' has a glob that resolves to " +
-                           "an empty file list: lib/*.rb")
+    }.should raise_error("Package `A' has a glob that resolves to " +
+                         "an empty file list: lib/*.rb")
   end
 
   it "doesn't include the same path twice" do
