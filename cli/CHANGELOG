@@ -1,10 +1,20 @@
-=== 0.19.4 - 06/21/2012
+== 0.19.5 - 07/31/12
+* extra check for src_alt override
+* support 'cloudcheck <deployment_name>'
+* 'latest' release alias
+* incosistent job/package naming detection
+* use default director port 25555 when no port given
+* SRE-friendly changes (--target etc.)
+* 'bosh targets', 'bosh aliases'
+* verify SHA1 for public stemcell downloads
+
+=== 0.19.4 - 06/21/12
 * fixed another upload release regression
 
-=== 0.19.3 - 06/19/2012
+=== 0.19.3 - 06/19/12
 * fixed upload release regression
 
-=== 0.19.2 - 06/14/2012
+=== 0.19.2 - 06/14/12
 * bash completion
 * fixed 'bosh status' bug
 * non-zero exit code for failed tasks
@@ -12,13 +22,13 @@
 * no color when stdout is not a TTY
 * minor messaging changes
 
-=== 0.19.1 - 06/05/2012
+=== 0.19.1 - 06/05/12
 
 * 'bosh diff' static IP helpers
 * public stemcell sorting and shorter table width
 * bugfixes
 
-=== 0.19 - 05/22/2012
+=== 0.19 - 05/22/12
 
 * release composition (requires director support)
 * 'bosh rename' (requires director support)
