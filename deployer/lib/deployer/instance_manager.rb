@@ -350,7 +350,7 @@ module Bosh::Deployer
         properties["director"]["name"] = Config.name
       end
 
-      %w{blobstore postgres director redis nats aws_registry}.each do |service|
+      %w{blobstore postgres director redis nats aws_registry openstack_registry}.each do |service|
         next unless properties[service]
         properties[service]["address"] = service_ip
 
