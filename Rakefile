@@ -7,7 +7,7 @@ end
 
 desc "install all gem dependencies"
 task :bundle_install do
-  bundle_cmd = "cd spec && bundle --local install --without development production"
+  bundle_cmd = "cd spec && bundle install --local --without development production"
   sh(bundle_cmd)
 
   %w(director cli simple_blobstore_server agent health_monitor).each do |component|
