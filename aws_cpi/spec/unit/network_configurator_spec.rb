@@ -30,7 +30,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
 
     it "should return the default groups if none are extracted" do
       spec = {}
-      spec["network_a"] = dynamic_network_spec
+      spec["network_a"] = {"type" => "dynamic"}
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
       nc.security_groups(%w[foo]).should == %w[foo]
@@ -38,7 +38,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
 
     it "should return an empty list if no default group is set" do
       spec = {}
-      spec["network_a"] = dynamic_network_spec
+      spec["network_a"] = {"type" => "dynamic"}
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
       nc.security_groups(nil).should == []
