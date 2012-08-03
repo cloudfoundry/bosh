@@ -95,9 +95,9 @@ module Bosh::AwsCloud
     # @param [Hash] network_spec Network specification
     # @raise [ArgumentError] if the security groups in the network_spec
     #   is not an Array
-    def extract_security_groups(spec)
-      if spec && spec["cloud_properties"]
-        cloud_properties = spec["cloud_properties"]
+    def extract_security_groups(network_spec)
+      if network_spec && network_spec["cloud_properties"]
+        cloud_properties = network_spec["cloud_properties"]
         if cloud_properties && cloud_properties["security_groups"]
           unless cloud_properties["security_groups"].is_a?(Array)
             raise ArgumentError, "security groups must be an Array"
