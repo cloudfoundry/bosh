@@ -397,6 +397,14 @@ module Bosh::Director
       agent.prepare_network_change(network_settings)
       @cloud.configure_networks(@vm.cid, network_settings)
       agent.wait_until_ready
+    rescue Bosh::Clouds::NotSupported => e
+      # Here is another AWS hack:
+      # If the security groups change, we need to recreate the vm
+      # as you can't change the security groups of an existing vm.
+      # configure_networks() will raise an exception
+      @logger.info("Instance recreate requested: #{e.message}")
+      @instance.recreate = true
+      update_resource_pool
     end
 
     def agent
