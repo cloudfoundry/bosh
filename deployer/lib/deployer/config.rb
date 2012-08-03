@@ -10,7 +10,7 @@ module Bosh::Deployer
       include Helpers
 
       attr_accessor :logger, :db, :uuid, :resources, :cloud_options,
-        :spec_properties, :bosh_ip, :env, :name
+        :spec_properties, :agent_properties, :bosh_ip, :env, :name
 
       def configure(config)
         plugin = cloud_plugin(config)
@@ -31,7 +31,9 @@ module Bosh::Deployer
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @logger.formatter = ThreadFormatter.new
 
-        @spec_properties = config["apply_spec"]["properties"]
+        apply_spec = config["apply_spec"]
+        @spec_properties = apply_spec["properties"]
+        @agent_properties = apply_spec["agent"]
 
         @db = Sequel.sqlite
 
@@ -87,7 +89,9 @@ module Bosh::Deployer
       end
 
       def networks
-        @networks ||= {
+        return @networks if @networks
+
+        @networks = {
           "bosh" => {
             "cloud_properties" => @net_conf["cloud_properties"],
             "netmask"          => @net_conf["netmask"],
@@ -98,6 +102,14 @@ module Bosh::Deployer
             "default"          => ["dns", "gateway"]
           }
         }
+        if @net_conf["vip"]
+          @networks["vip"] = {
+              "ip" => @net_conf["vip"],
+              "type" => "vip"
+          }
+        end
+
+        @networks
       end
 
       private

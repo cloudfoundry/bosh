@@ -350,13 +350,17 @@ module Bosh::Deployer
         properties["director"]["name"] = Config.name
       end
 
-      %w{blobstore postgres director redis nats aws_registry openstack_registry}.each do |service|
-        next unless properties[service]
-        properties[service]["address"] = service_ip
+      # blobstore and nats need to use an elastic IP (if available),
+      # as when the micro bosh instance is re-created during a
+      # deployment, it might get a new private IP
+      %w{blobstore nats}.each do |service|
+        update_agent_service_address(properties, service, bosh_ip)
+      end
 
-        if override = Config.spec_properties[service]
-          properties[service].merge!(override)
-        end
+      services = %w{postgres director redis blobstore nats aws_registry
+                    openstack_registry}
+      services.each do |service|
+        update_service_address(properties, service, service_ip)
       end
 
       spec
@@ -381,6 +385,28 @@ module Bosh::Deployer
     end
 
     private
+
+    # update the agent service section from the contents of the apply_spec
+    def update_agent_service_address(properties, service, address)
+      if Config.agent_properties
+        agent = properties["agent"] ||= {}
+        svc = agent[service] ||= {}
+        svc["address"] = address
+
+        if override = Config.agent_properties[service]
+          svc.merge!(override)
+        end
+      end
+    end
+
+    def update_service_address(properties, service, address)
+      return unless properties[service]
+      properties[service]["address"] = address
+
+      if override = Config.spec_properties[service]
+        properties[service].merge!(override)
+      end
+    end
 
     def bosh_ip
       Config.bosh_ip
