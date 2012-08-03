@@ -17,7 +17,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
   end
 
   describe "security groups" do
-    it "should only be extracted from dynamic network" do
+    it "should be extracted from both dynamic and vip network" do
       spec = {}
       spec["network_a"] = dynamic_network_spec
       set_security_groups(spec["network_a"], %w[foo])
@@ -25,12 +25,12 @@ describe Bosh::AwsCloud::NetworkConfigurator do
       set_security_groups(spec["network_b"], %w[bar])
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(nil).should == %w[foo]
+      nc.security_groups(nil).should == %w[bar foo]
     end
 
     it "should return the default groups if none are extracted" do
       spec = {}
-      spec["network_a"] = dynamic_network_spec
+      spec["network_a"] = {"type" => "dynamic"}
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
       nc.security_groups(%w[foo]).should == %w[foo]
@@ -38,7 +38,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
 
     it "should return an empty list if no default group is set" do
       spec = {}
-      spec["network_a"] = dynamic_network_spec
+      spec["network_a"] = {"type" => "dynamic"}
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
       nc.security_groups(nil).should == []

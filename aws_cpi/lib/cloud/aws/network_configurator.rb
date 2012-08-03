@@ -37,14 +37,14 @@ module Bosh::AwsCloud
             cloud_error("More than one dynamic network for `#{name}'")
           else
             @dynamic_network = DynamicNetwork.new(name, spec)
-            # only extract security groups for dynamic networks
-            extract_security_groups(spec)
+            @security_groups += extract_security_groups(spec)
           end
         when "vip"
           if @vip_network
             cloud_error("More than one vip network for `#{name}'")
           else
             @vip_network = VipNetwork.new(name, spec)
+            @security_groups += extract_security_groups(spec)
           end
         else
           cloud_error("Invalid network type `#{network_type}': AWS CPI " \
@@ -58,6 +58,9 @@ module Bosh::AwsCloud
       end
     end
 
+    # Applies network configuration to the vm
+    # @param [AWS:EC2] ec2 instance EC2 client
+    # @param [AWS::EC2::Instance] instance EC2 instance to configure
     def configure(ec2, instance)
       @dynamic_network.configure(ec2, instance)
 
@@ -84,27 +87,30 @@ module Bosh::AwsCloud
     # @return [Array] security groups
     def security_groups(default)
       if @security_groups.empty? && default
-        return default
+        default
       else
-        return @security_groups
+        @security_groups.sort
       end
     end
+
+    private
 
     ##
     # Extracts the security groups from the network configuration
     # @param [Hash] network_spec Network specification
     # @raise [ArgumentError] if the security groups in the network_spec
     #   is not an Array
-    def extract_security_groups(spec)
-      if spec && spec["cloud_properties"]
-        cloud_properties = spec["cloud_properties"]
+    def extract_security_groups(network_spec)
+      if network_spec && network_spec["cloud_properties"]
+        cloud_properties = network_spec["cloud_properties"]
         if cloud_properties && cloud_properties["security_groups"]
           unless cloud_properties["security_groups"].is_a?(Array)
             raise ArgumentError, "security groups must be an Array"
           end
-          @security_groups += cloud_properties["security_groups"]
+          return cloud_properties["security_groups"]
         end
       end
+      []
     end
 
   end
