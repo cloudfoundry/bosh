@@ -269,6 +269,18 @@ module Bosh::AwsCloud
         network_configurator = NetworkConfigurator.new(network_spec)
         instance = @ec2.instances[instance_id]
 
+        actual = instance.security_groups.collect {|sg| sg.name }.sort
+        new = network_configurator.security_groups(@default_security_groups)
+
+        # If the security groups change, we need to recreate the VM
+        # as you can't change the security group of a running instance,
+        # and there isn't a clean way to propagate that all the way
+        # back to the InstanceUpdater - the least ugly way is
+        # throw/catch.
+        unless actual == new
+          throw :recreate, true
+        end
+
         network_configurator.configure(@ec2, instance)
 
         update_agent_settings(instance) do |settings|
