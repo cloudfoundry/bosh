@@ -54,14 +54,16 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       }
     }
 
+    sec_grp = double("security_group", :name => "default")
     instance = double("instance",
                       :id => "i-test",
-                      :elastic_ip => nil)
+                      :elastic_ip => nil,
+                      :security_groups => [sec_grp])
     client = double("client", :describe_images => fake_image_set)
 
     cloud = mock_cloud do |ec2|
       ec2.instances.should_receive(:create).
-        with(ec2_params(user_data)).
+        with(ec2_params(user_data, %w[default])).
         and_return(instance)
       ec2.should_receive(:client).and_return(client)
     end
@@ -90,10 +92,11 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
     instance = double("instance",
                       :id => "i-test",
-                      :elastic_ip => nil)
+                      :elastic_ip => nil,
+                      :security_groups => [])
     client = double("client", :describe_images => fake_image_set)
 
-    security_groups = %w[foo bar]
+    security_groups = %w[bar foo]
     network_spec = dynamic_network_spec
     network_spec["cloud_properties"] = {
       "security_groups" => security_groups
@@ -120,9 +123,11 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   end
 
   it "associates instance with elastic ip if vip network is provided" do
+    sec_grp = double("security_group", :name => "default")
     instance = double("instance",
                       :id => "i-test",
-                      :elastic_ip => nil)
+                      :elastic_ip => nil,
+                      :security_groups => [sec_grp])
     client = double("client", :describe_images => fake_image_set)
 
     cloud = mock_cloud do |ec2|
