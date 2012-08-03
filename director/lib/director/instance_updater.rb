@@ -57,9 +57,18 @@ module Bosh::Director
         return
       end
 
+      # Here is another AWS hack:
+      # If the security groups change, we need to recreate the vm
+      # as you can't change the security groups of an existing vm.
+      # Using throw/catch is the least ugly way of doing this...
+      if catch(:recreate) do
+          step { update_networks }
+        end
+        @instance.recreate = true
+      end
+
       step { update_resource_pool }
       step { update_persistent_disk }
-      step { update_networks }
       step { update_dns }
       step { apply_state(@instance.spec) }
 
