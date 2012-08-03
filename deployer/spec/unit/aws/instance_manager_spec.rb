@@ -32,9 +32,10 @@ describe Bosh::Deployer::InstanceManager do
   def discover_bosh_ip(ip, id)
     instance = mock("instance")
     instances = mock("instances")
-    @ec2.should_receive(:instances).and_return(instances)
-    instances.should_receive(:[]).with(id).and_return(instance)
+    @ec2.should_receive(:instances).twice.and_return(instances)
+    instances.should_receive(:[]).twice.with(id).and_return(instance)
     instance.should_receive(:public_ip_address).and_return(ip)
+    instance.should_receive(:has_elastic_ip?).and_return(false)
   end
 
   it "should update the apply spec" do
