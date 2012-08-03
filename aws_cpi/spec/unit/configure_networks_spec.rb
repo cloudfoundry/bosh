@@ -8,9 +8,27 @@ describe Bosh::AwsCloud::Cloud do
     @registry = mock_registry
   end
 
+  it "forces recreation when security groups differ" do
+    instance = double("instance",
+                      :id => "i-foobar",
+                      :security_groups => %w[newgroup])
+
+    cloud = mock_cloud do |ec2|
+      ec2.instances.stub(:[]).
+          with("i-foobar").
+          and_return(instance)
+    end
+
+    catch(:recreate) do
+      cloud.configure_networks("i-foobar", combined_network_spec)
+      fail "should throw :recreate"
+    end
+  end
+
   it "adds elastic ip from to the instance for vip network" do
     instance = double("instance",
-                      :id => "i-foobar")
+                      :id => "i-foobar",
+                      :security_groups => %w[default])
 
     cloud = mock_cloud do |ec2|
       ec2.instances.stub(:[]).
@@ -34,7 +52,8 @@ describe Bosh::AwsCloud::Cloud do
 
   it "removes elastic ip from the instance if vip network is gone" do
     instance = double("instance",
-                      :id => "i-foobar")
+                      :id => "i-foobar",
+                      :security_groups => %w[default])
 
     cloud = mock_cloud do |ec2|
       ec2.instances.stub(:[]).
