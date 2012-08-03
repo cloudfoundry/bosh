@@ -128,7 +128,15 @@ module Bosh::Deployer
 
       def discover_bosh_ip
         if exists?
-          ip = cloud.ec2.instances[state.vm_cid].public_ip_address
+          # choose elastic IP over public, as any agent connecting to the
+          # deployed micro bosh will be cut off from the public IP when
+          # we re-deploy micro bosh
+          if cloud.ec2.instances[state.vm_cid].has_elastic_ip?
+            ip = cloud.ec2.instances[state.vm_cid].elastic_ip.public_ip
+          else
+            ip = cloud.ec2.instances[state.vm_cid].public_ip_address
+          end
+
           if ip != Config.bosh_ip
             Config.bosh_ip = ip
             logger.info("discovered bosh ip=#{Config.bosh_ip}")
