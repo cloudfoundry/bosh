@@ -22,5 +22,5 @@ Gem::Specification.new do |s|
   s.add_dependency "sinatra"
   s.add_dependency "thin"
   s.add_dependency "yajl-ruby"
-  s.add_dependency "fog", "~>1.4.0"
+  s.add_dependency "fog", "~>1.5.0"
 end
