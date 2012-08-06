@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_aws_registry (0.2.1)
+    bosh_aws_registry (0.2.2)
       aws-sdk (~> 1.3.6)
       sequel
       sinatra

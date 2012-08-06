@@ -17,9 +17,16 @@ describe Bosh::AwsRegistry::InstanceManager do
     Bosh::AwsRegistry::Models::AwsInstance.create(params)
   end
 
-  def actual_ip_is(ip)
+  def actual_ip_is(ip, eip=nil)
     instances = mock("instances")
     instance = mock("instance")
+    if eip
+      elastic_ip = mock("elastic_ip", :public_ip => eip)
+      instance.should_receive(:has_elastic_ip?).and_return(true)
+      instance.should_receive(:elastic_ip).and_return(elastic_ip)
+    else
+      instance.should_receive(:has_elastic_ip?).and_return(false)
+    end
     @ec2.should_receive(:instances).and_return(instances)
     instances.should_receive(:[]).with("foo").and_return(instance)
     instance.should_receive(:private_ip_address).and_return(ip)
@@ -32,6 +39,12 @@ describe Bosh::AwsRegistry::InstanceManager do
       manager.read_settings("foo", "10.0.0.1").should == "bar"
     end
 
+    it "returns settings after verifying elastic IP address" do
+      create_instance(:instance_id => "foo", :settings => "bar")
+      actual_ip_is("10.0.0.1", "10.0.0.2")
+      manager.read_settings("foo", "10.0.0.2").should == "bar"
+    end
+
     it "raises an error if IP cannot be verified" do
       create_instance(:instance_id => "foo", :settings => "bar")
       actual_ip_is("10.0.0.2")
@@ -40,7 +53,7 @@ describe Bosh::AwsRegistry::InstanceManager do
         manager.read_settings("foo", "10.0.0.1")
       }.to raise_error(Bosh::AwsRegistry::InstanceError,
                        "Instance IP mismatch, expected IP is `10.0.0.1', " \
-                       "actual IP is `10.0.0.2'")
+                       "actual IP(s): `10.0.0.2'")
     end
 
     it "doesn't check remote IP if it's not provided" do
