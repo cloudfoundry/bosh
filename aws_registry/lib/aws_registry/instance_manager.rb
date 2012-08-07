@@ -31,7 +31,7 @@ module Bosh::AwsRegistry
     #        check will be performed to see if it instance id
     #        actually has this IP address according to EC2.
     def read_settings(instance_id, remote_ip = nil)
-      check_instance_ip(remote_ip, instance_id) if remote_ip
+      check_instance_ips(remote_ip, instance_id) if remote_ip
 
       get_instance(instance_id).settings
     end
@@ -42,12 +42,13 @@ module Bosh::AwsRegistry
 
     private
 
-    def check_instance_ip(ip, instance_id)
+    def check_instance_ips(ip, instance_id)
       return if ip == "127.0.0.1"
-      actual_ip = instance_private_ip(instance_id)
-      unless ip == actual_ip
+      actual_ips = instance_ips(instance_id)
+      unless actual_ips.include?(ip)
         raise InstanceError, "Instance IP mismatch, expected IP is " \
-                             "`%s', actual IP is `%s'" % [ ip, actual_ip ]
+                             "`%s', actual IP(s): `%s'" %
+                             [ ip, actual_ips.join(", ") ]
       end
     end
 
@@ -61,8 +62,14 @@ module Bosh::AwsRegistry
       instance
     end
 
-    def instance_private_ip(instance_id)
-      @ec2.instances[instance_id].private_ip_address
+    # Get the list of IPs belonging to this instance
+    def instance_ips(instance_id)
+      instance = @ec2.instances[instance_id]
+      ips = [instance.private_ip_address, instance.public_ip_address]
+      if instance.has_elastic_ip?
+        ips << instance.elastic_ip.public_ip
+      end
+      ips
     rescue AWS::Errors::Base => e
       raise Bosh::AwsRegistry::AwsError, "AWS error: #{e}"
     end
