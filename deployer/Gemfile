@@ -18,5 +18,5 @@ group :test, :development do
   gem "simplecov", :platforms => :ruby_19
   gem "simplecov-rcov", :platforms => :ruby_19
 
-  gem "bosh_cli", ">=0.15.4"
+  gem "bosh_cli", ">=0.19.4"
 end
