@@ -33,17 +33,18 @@ module Bosh::Cli
     end
 
     def prepare
+      parse_options!
+      Config.output ||= STDOUT unless @options[:quiet]
+      Config.interactive = !@options[:non_interactive]
+      Config.colorize = @options.delete(:colorize)
+      Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir] ||
+                                            Bosh::Cli::DEFAULT_CACHE_DIR)
+
       define_commands
       define_plugin_commands
       build_parse_tree
       add_shortcuts
-      parse_options!
 
-      Config.interactive = !@options[:non_interactive]
-      Config.colorize = @options.delete(:colorize)
-      Config.output ||= STDOUT unless @options[:quiet]
-      Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir] ||
-                                            Bosh::Cli::DEFAULT_CACHE_DIR)
     end
 
     def run
@@ -592,7 +593,23 @@ module Bosh::Cli
       end
 
       def define_plugin_commands
-        Gem.find_files("bosh/cli/commands/*.rb", true).each do |file|
+        plugins_glob = "bosh/cli/commands/*.rb"
+
+        unless Gem.respond_to?(:find_files)
+          say("Cannot load plugins, ".yellow +
+              "please run `gem update --system' to ".yellow +
+              "update your RubyGems".yellow)
+          return
+        end
+
+        plugins = begin
+          Gem.find_files(plugins_glob, true)
+        rescue ArgumentError
+          # Handling rubygems compatibility issue
+          Gem.find_files(plugins_glob)
+        end
+
+        plugins.each do |file|
           class_name = File.basename(file, ".rb").capitalize
 
           next if Bosh::Cli::Command.const_defined?(class_name)

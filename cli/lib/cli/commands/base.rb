@@ -87,8 +87,9 @@ module Bosh::Cli
 
       # @return [String] Target director URL
       def target
-        url = options[:target] || config.target
-        config.resolve_alias(:target, url) || url
+        raw_url = options[:target] || config.target
+        url = config.resolve_alias(:target, raw_url) || raw_url
+        url ? normalize_url(url) : nil
       end
       alias_method :target_url, :target
 
