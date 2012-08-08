@@ -1,0 +1,2 @@
+=== 0.6.2 - 2012-08-08
+* recreate AWS VMs when security group changes
