@@ -108,7 +108,8 @@ module BoshStringExtensions
   end
 
   def colorize(color_code)
-    if Bosh::Cli::Config.output.tty? &&
+    if Bosh::Cli::Config.output &&
+       Bosh::Cli::Config.output.tty? &&
        Bosh::Cli::Config.colorize &&
        COLOR_CODES[color_code]
 

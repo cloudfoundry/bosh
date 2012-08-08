@@ -26,7 +26,7 @@ describe Bosh::Cli::Command::Base do
     cmd = make_command(:verbose => true, :dry_run => true)
     cmd.verbose?.should be_true
     cmd.dry_run?.should be_true
-    cmd.target.should == "localhost:8080"
+    cmd.target.should == "http://localhost:8080"
     cmd.deployment.should == "test"
     cmd.username.should == nil
     cmd.password.should == nil
@@ -54,7 +54,7 @@ describe Bosh::Cli::Command::Base do
 
     add_config("target" => "localhost:8080", "deployment" => "test")
     cmd2 = make_command(:target => "foo", :deployment => "bar")
-    cmd2.target.should == "foo"
+    cmd2.target.should == "http://foo:25555"
     cmd2.deployment.should == "bar"
   end
 
@@ -62,7 +62,7 @@ describe Bosh::Cli::Command::Base do
     add_config("target" => "localhost:8080", "deployment" => "test")
 
     cmd = make_command
-    cmd.director.director_uri.should == "localhost:8080"
+    cmd.director.director_uri.should == "http://localhost:8080"
   end
 
   it "can evaluate other commands" do
