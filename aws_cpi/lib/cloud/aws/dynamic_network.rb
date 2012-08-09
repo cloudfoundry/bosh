@@ -17,8 +17,8 @@ module Bosh::AwsCloud
     ##
     # Configures EC2 dynamic network. Right now it's a no-op,
     # as dynamic networks are completely managed by EC2
-    # @param [AWS:EC2] instance EC2 client
-    # @param [AWS::EC2::Instance] EC2 instance to configure
+    # @param [AWS:EC2] ec2 instance EC2 client
+    # @param [AWS::EC2::Instance] instance EC2 instance to configure
     def configure(ec2, instance)
     end
 
