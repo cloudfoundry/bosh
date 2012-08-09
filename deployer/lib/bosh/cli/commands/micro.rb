@@ -80,12 +80,14 @@ module Bosh::Cli::Command
 
     def perform(*options)
       update = options.delete("--update")
+      force = options.delete("--force")
       stemcell = options.shift
 
       err "No deployment set" unless deployment
 
+      manifest = load_yaml_file(deployment)
+
       if stemcell.nil?
-        manifest = load_yaml_file(deployment)
         unless manifest.is_a?(Hash)
           err("Invalid manifest format")
         end
@@ -112,6 +114,15 @@ module Bosh::Cli::Command
       else
         if deployer.exists?
           err "Instance exists.  Did you mean to --update?"
+        end
+
+        # make sure the user knows a persistent disk is a really good idea
+        unless dig_hash(manifest, "resources", "persistent_disk")
+          unless force
+            msg = "No persistent disk configured, use --force to deploy anyway"
+            quit(msg.red)
+          end
+          say("WARNING! The micro bosh data won't be persisted".red)
         end
 
         confirmation = "Deploying new"
