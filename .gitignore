@@ -4,6 +4,7 @@ TAGS
 \#*\#
 .\#*
 .bundle
+.pt
 .yardoc
 doc
 cov
