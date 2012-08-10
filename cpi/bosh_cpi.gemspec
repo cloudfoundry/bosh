@@ -14,5 +14,5 @@ Gem::Specification.new do |s|
   s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
 
-  s.add_dependency "bosh_common"
+  s.add_dependency "bosh_common", "~>0.5"
 end
