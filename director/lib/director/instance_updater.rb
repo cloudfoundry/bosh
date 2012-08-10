@@ -395,7 +395,19 @@ module Bosh::Director
 
       network_settings = @instance.network_settings
       agent.prepare_network_change(network_settings)
-      @cloud.configure_networks(@vm.cid, network_settings)
+
+      begin
+        # If configure_networks can't configure the network as
+        # requested, e.g. when the security groups change on AWS,
+        # configure_networks() will raise an exception and we'll
+        # recreate the VM to work around it
+        @cloud.configure_networks(@vm.cid, network_settings)
+      rescue Bosh::Clouds::NotSupported => e
+        @logger.info("configure_networks not supported: #{e.message}")
+        @instance.recreate = true
+        update_resource_pool
+        return
+      end
       agent.wait_until_ready
     end
 
