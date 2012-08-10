@@ -87,7 +87,7 @@ module Bosh::AwsCloud
     # @return [Array] security groups
     def security_groups(default)
       if @security_groups.empty? && default
-        default
+        default.sort
       else
         @security_groups.sort
       end
