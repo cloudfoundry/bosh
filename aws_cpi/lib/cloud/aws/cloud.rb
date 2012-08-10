@@ -261,6 +261,10 @@ module Bosh::AwsCloud
       end
     end
 
+    # Configures network for a running instance
+    # @param [String] instance_id instance identifier
+    # @param [Hash] network_spec network properties
+    # @raises [Bosh::Clouds:NotSupported] if the security groups change
     def configure_networks(instance_id, network_spec)
       with_thread_name("configure_networks(#{instance_id}, ...)") do
         @logger.info("Configuring `#{instance_id}' to use the following " \
@@ -274,11 +278,11 @@ module Bosh::AwsCloud
 
         # If the security groups change, we need to recreate the VM
         # as you can't change the security group of a running instance,
-        # and there isn't a clean way to propagate that all the way
-        # back to the InstanceUpdater - the least ugly way is
-        # throw/catch.
+        # we need to send the InstanceUpdater a request to do it for us
         unless actual == new
-          throw :recreate, true
+          raise Bosh::Clouds::NotSupported,
+                "security groups change requires VM recreation: %s to %s" %
+                [actual.join(", "), new.join(", ")]
         end
 
         network_configurator.configure(@ec2, instance)

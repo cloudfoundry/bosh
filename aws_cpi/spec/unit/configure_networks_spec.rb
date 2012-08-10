@@ -20,10 +20,9 @@ describe Bosh::AwsCloud::Cloud do
           and_return(instance)
     end
 
-    catch(:recreate) do
+    lambda {
       cloud.configure_networks("i-foobar", combined_network_spec)
-      fail "should throw :recreate"
-    end
+    }.should raise_error Bosh::Clouds::NotSupported
   end
 
   it "adds elastic ip from to the instance for vip network" do
