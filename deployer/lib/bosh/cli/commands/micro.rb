@@ -84,8 +84,9 @@ module Bosh::Cli::Command
 
       err "No deployment set" unless deployment
 
+      manifest = load_yaml_file(deployment)
+
       if stemcell.nil?
-        manifest = load_yaml_file(deployment)
         unless manifest.is_a?(Hash)
           err("Invalid manifest format")
         end
@@ -112,6 +113,11 @@ module Bosh::Cli::Command
       else
         if deployer.exists?
           err "Instance exists.  Did you mean to --update?"
+        end
+
+        # make sure the user knows a persistent disk is required
+        unless dig_hash(manifest, "resources", "persistent_disk")
+          quit("No persistent disk configured!".red)
         end
 
         confirmation = "Deploying new"
