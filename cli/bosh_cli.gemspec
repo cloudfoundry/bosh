@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "progressbar", "~>0.9.0"
   s.add_dependency "httpclient", ">=2.2.4", "<=2.2.4"
   s.add_dependency "terminal-table", "~>1.4.2"
-  s.add_dependency "blobstore_client", "~>0.3.13"
+  s.add_dependency "blobstore_client", "~>0.4.0"
   s.add_dependency "net-ssh", "~>2.2.1"
   s.add_dependency "net-ssh-gateway", "~>1.1.0"
   s.add_dependency "net-scp", "~>1.0.4"
