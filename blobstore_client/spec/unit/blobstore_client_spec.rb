@@ -25,6 +25,11 @@ describe Bosh::Blobstore::Client do
     bs.should be_instance_of Bosh::Blobstore::S3BlobstoreClient
   end
 
+  it "should pick S3 provider when S3 is used without credentials" do
+    bs = Bosh::Blobstore::Client.create('s3', {:bucket_name => "foo"})
+    bs.should be_instance_of Bosh::Blobstore::S3BlobstoreClient
+  end
+
   it "should raise an exception on an unknown client" do
     lambda {
       bs = Bosh::Blobstore::Client.create('foobar', {})

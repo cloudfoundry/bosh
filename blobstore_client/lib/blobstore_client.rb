@@ -2,6 +2,7 @@
 
 module Bosh; module Blobstore; end; end
 
+require "common/common"
 require "blobstore_client/version"
 require "blobstore_client/errors"
 
@@ -23,15 +24,18 @@ module Bosh
         "local" => LocalClient
       }
 
-      def self.create(provider, options = {})
-        p = PROVIDER_MAP[provider]
-        if p
-          p.new(options)
-        else
+      def self.create(blobstore_provider, options = {})
+        provider = PROVIDER_MAP[blobstore_provider]
+
+        unless provider
           providers = PROVIDER_MAP.keys.sort.join(", ")
-          raise "Invalid client provider, available providers are: #{providers}"
+          raise BlobstoreError,
+            "Invalid client provider, available providers are: #{providers}"
         end
+
+        provider.new(options)
       end
+
     end
   end
 end
