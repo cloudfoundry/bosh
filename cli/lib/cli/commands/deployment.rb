@@ -4,12 +4,32 @@ module Bosh::Cli::Command
   class Deployment < Base
     include Bosh::Cli::DeploymentHelper
 
+    # usage "deployment [<name>]"
+    # desc  "Choose deployment to work with " +
+    #           "(it also updates current target)"
+    # route do |args|
+    #   if args.size > 0
+    #     [:deployment, :set_current]
+    #   else
+    #     [:deployment, :show_current]
+    #   end
+    # end
     def show_current
       say(deployment ?
             "Current deployment is `#{deployment.green}'" :
             "Deployment not set".red)
     end
 
+    # usage "deployment [<name>]"
+    # desc  "Choose deployment to work with " +
+    #           "(it also updates current target)"
+    # route do |args|
+    #   if args.size > 0
+    #     [:deployment, :set_current]
+    #   else
+    #     [:deployment, :show_current]
+    #   end
+    # end
     def set_current(name)
       manifest_filename = find_deployment(name)
 
@@ -67,6 +87,9 @@ module Bosh::Cli::Command
       config.save
     end
 
+    # usage  "edit deployment"
+    # desc   "Edit current deployment manifest"
+    # route  :deployment, :edit
     def edit
       unless deployment
         quit("Deployment not set".red)
@@ -76,6 +99,11 @@ module Bosh::Cli::Command
       system("#{editor} #{deployment}")
     end
 
+    # usage  "deploy"
+    # desc   "Deploy according to the currently selected " +
+    #            "deployment manifest"
+    # option "--recreate", "recreate all VMs in deployment"
+    # route  :deployment, :perform
     def perform(*options)
       auth_required
       recreate = options.include?("--recreate")
@@ -99,6 +127,11 @@ module Bosh::Cli::Command
       task_report(status, "Deployed #{desc}")
     end
 
+    # usage "delete deployment <name>"
+    # desc  "Delete deployment"
+    # route :deployment, :delete
+    # option "--force", "ignore all errors while deleting parts " +
+    #     "of the deployment"
     def delete(name, *options)
       auth_required
       force = options.include?("--force")
@@ -116,6 +149,9 @@ module Bosh::Cli::Command
       task_report(status, "Deleted deployment `#{name}'")
     end
 
+    # usage "deployments"
+    # desc  "Show the list of available deployments"
+    # route :deployment, :list
     def list
       auth_required
 

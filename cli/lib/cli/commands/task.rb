@@ -8,6 +8,13 @@ module Bosh::Cli::Command
     # used with this.
     #
     # @param [Array] args The arguments from the command line command.
+    #
+    # usage  "task [<task_id>|last]"
+    # desc   "Show task status and start tracking its output"
+    # route  :task, :track
+    # option "--no-cache", "don't cache output locally"
+    # option "--event|--soap|--debug", "different log types to track"
+    # option "--raw", "don't beautify log"
     def track(*args)
       auth_required
 
@@ -27,6 +34,9 @@ module Bosh::Cli::Command
       tracker.track
     end
 
+    # usage "tasks"
+    # desc  "Show the list of running tasks"
+    # route :task, :list_running
     def list_running
       auth_required
       tasks = director.list_running_tasks
@@ -35,6 +45,9 @@ module Bosh::Cli::Command
       say("Total tasks running now: %d" % [tasks.size])
     end
 
+    # usage "tasks recent [<number>]"
+    # desc  "Show <number> recent tasks"
+    # route :task, :list_recent
     def list_recent(count = 30)
       auth_required
       tasks = director.list_recent_tasks(count)
@@ -44,6 +57,9 @@ module Bosh::Cli::Command
                                     tasks.size == 1 ? "task" : "tasks"])
     end
 
+    # usage "cancel task <id>"
+    # desc  "Cancel task once it reaches the next cancel checkpoint"
+    # route :task, :cancel
     def cancel(task_id)
       auth_required
       task = Bosh::Cli::DirectorTask.new(director, task_id)

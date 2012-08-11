@@ -178,6 +178,14 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "ssh <job> [index] [<options>] [command]"
+    # desc  "Given a job, execute the given command or " +
+    #       "start an interactive session"
+    # option "--public_key <file>"
+    # option "--gateway_host <host>"
+    # option "--gateway_user <user>"
+    # option "--default_password", "Use default ssh password. Not recommended."
+    # route :ssh, :shell
     def shell(*args)
       job = args.shift
       password = args.delete("--default_password") && SSH_DEFAULT_PASSWORD
@@ -239,6 +247,14 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "scp <job> [index] (--upload|--download) [options]" +
+    #   "/path/to/source /path/to/destination"
+    # desc  "upload/download the source file to the given job. " +
+    #   "Note: for dowload /path/to/destination is a directory"
+    # option "--public_key <file>"
+    # option "--gateway_host <host>"
+    # option "--gateway_user <user>"
+    # route :ssh, :scp
     def scp(*args)
       job = args.shift
       options = parse_options(args)
@@ -255,6 +271,9 @@ module Bosh::Cli::Command
       execute_command(upload ? CMD_UPLOAD : CMD_DOWNLOAD, job, options, args)
     end
 
+    # usage "ssh_cleanup <job> [index]"
+    # desc  "Cleanup SSH artifacts"
+    # route :ssh, :cleanup
     def cleanup(*args)
       job = args.shift
       options = parse_options(args)

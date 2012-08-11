@@ -3,6 +3,9 @@
 module Bosh::Cli::Command
   class User < Base
 
+    # usage "create user [<name>] [<password>]"
+    # desc  "Create user"
+    # route :user, :create
     def create(username = nil, password = nil)
       auth_required
 

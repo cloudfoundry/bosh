@@ -4,6 +4,13 @@ module Bosh::Cli::Command
   class CloudCheck < Base
     include Bosh::Cli::DeploymentHelper
 
+    # usage  "cloudcheck [<deployment>]"
+    # desc   "Cloud consistency check and interactive repair"
+    # option "--auto", "resolve problems automatically " +
+    #     "(not recommended for production)"
+    # option "--report", "generate report only, " +
+    #     "don't attempt to resolve problems"
+    # route  :cloud_check, :perform
     def perform(*options)
       auth_required
       # TODO: introduce option helpers
