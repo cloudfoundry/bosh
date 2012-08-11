@@ -12,6 +12,9 @@ module Bosh::Cli::Command
         "1e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e2538" +
         "5d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI="
 
+    # usage "verify stemcell <path>"
+    # desc  "Verify stemcell"
+    # route :stemcell, :verify
     def verify(tarball_path)
       stemcell = Bosh::Cli::Stemcell.new(tarball_path, cache)
 
@@ -29,6 +32,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "upload stemcell <path>"
+    # desc  "Upload the stemcell"
+    # route :stemcell, :upload
     def upload(tarball_path)
       auth_required
 
@@ -64,6 +70,9 @@ module Bosh::Cli::Command
       task_report(status, "Stemcell uploaded and created")
     end
 
+    # usage "stemcells"
+    # desc  "Show the list of available stemcells"
+    # route :stemcell, :list
     def list
       auth_required
       stemcells = director.list_stemcells.sort do |sc1, sc2|
@@ -100,6 +109,11 @@ module Bosh::Cli::Command
     end
 
     # Prints out the publicly available stemcells.
+    #
+    # usage "public stemcells"
+    # desc  "Show the list of publicly available stemcells for download."
+    # route :stemcell, :list_public
+    # option "--full", "show the full download url"
     def list_public(*args)
       full = args.include?("--full")
       yaml = get_public_stemcell_list
@@ -120,6 +134,10 @@ module Bosh::Cli::Command
     # Downloads one of the publicly available stemcells.
     # @param [String] stemcell_name The name of the stemcell, as seen in the
     #     public stemcell index file.
+    #
+    # usage "download public stemcell <stemcell_name>"
+    # desc  "Downloads a stemcell from the public blobstore."
+    # route :stemcell, :download_public
     def download_public(stemcell_name)
       yaml = get_public_stemcell_list
       yaml.delete(PUBLIC_STEMCELL_INDEX) if yaml.has_key?(PUBLIC_STEMCELL_INDEX)
@@ -156,6 +174,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "delete stemcell <name> <version>"
+    # desc  "Delete the stemcell"
+    # route :stemcell, :delete
     def delete(name, version)
       auth_required
 

@@ -4,6 +4,13 @@ module Bosh::Cli::Command
   class LogManagement < Base
     include Bosh::Cli::DeploymentHelper
 
+    # usage  "logs <job> <index>"
+    # desc   "Fetch job (default) or agent (if option provided) logs"
+    # route  :log_management, :fetch_logs
+    # option "--agent", "fetch agent logs"
+    # option "--only <filter1>[...]", "only fetch logs that satisfy " +
+    #     "given filters (defined in job spec)"
+    # option "--all", "fetch all files in the job or agent log directory"
     def fetch_logs(*args)
       auth_required
       target_required

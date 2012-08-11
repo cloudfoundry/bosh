@@ -4,6 +4,9 @@ module Bosh::Cli::Command
   class Vms < Base
     include Bosh::Cli::DeploymentHelper
 
+    # usage "vms [<deployment>]"
+    # desc  "List all VMs that supposed to be in a deployment"
+    # route :vms, :list
     def list(*args)
       auth_required
 

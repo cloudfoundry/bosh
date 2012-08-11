@@ -4,10 +4,17 @@ module Bosh::Cli::Command
   class Misc < Base
     DEFAULT_STATUS_TIMEOUT = 3 # seconds
 
+    # usage "version"
+    # desc  "Show version"
+    # route :misc, :version
     def version
       say("BOSH %s" % [Bosh::Cli::VERSION])
     end
 
+    # usage "status"
+    # desc  "Show current status (current target, " +
+    #           "user, deployment info etc.)"
+    # route :misc, :status
     def status
       if config.target && options[:director_checks]
         say("Updating director data...", " ")
@@ -74,6 +81,10 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "login [<name>] [<password>]"
+    # desc  "Provide credentials for the subsequent interactions " +
+    #           "with targeted director"
+    # route :misc, :login
     def login(username = nil, password = nil)
       target_required
 
@@ -112,6 +123,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "logout"
+    # desc  "Forget saved credentials for targeted director"
+    # route :misc, :logout
     def logout
       target_required
       config.set_credentials(target, nil, nil)
@@ -119,6 +133,9 @@ module Bosh::Cli::Command
       say("You are no longer logged in to '#{target}'")
     end
 
+    # usage "purge"
+    # desc  "Purge local manifest cache"
+    # route :misc, :purge_cache
     def purge_cache
       if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
         say("Cache directory `#{@cache.cache_dir}' differs from default, " +
@@ -129,12 +146,24 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "target [<name>] [<alias>]"
+    # desc  "Choose director to talk to (optionally creating an alias). " +
+    #           "If no arguments given, show currently targeted director"
+    # route do |args|
+    #   (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
+    # end
     def show_target
       say(target ?
               "Current target is `#{full_target_name.green}'" :
               "Target not set".red)
     end
 
+    # usage "target [<name>] [<alias>]"
+    # desc  "Choose director to talk to (optionally creating an alias). " +
+    #           "If no arguments given, show currently targeted director"
+    # route do |args|
+    #   (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
+    # end
     def set_target(director_url, name = nil)
       if name.nil?
         director_url =
@@ -187,6 +216,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "targets"
+    # desc  "Show the list of available targets"
+    # route :misc, :list_targets
     def list_targets
       # TODO: Bonus point will be checking each director status
       # (maybe an --status option?)
@@ -205,12 +237,18 @@ module Bosh::Cli::Command
       say("Targets total: %d" % targets.size)
     end
 
+    # usage "alias <name> <command>"
+    # desc  "Create an alias <name> for command <command>"
+    # route :misc, :set_alias
     def set_alias(name, value)
       config.set_alias(:cli, name, value.to_s.strip)
       config.save
       say("Alias `#{name.green}' created for command `#{value.green}'")
     end
 
+    # usage "aliases"
+    # desc  "Show the list of available command aliases"
+    # route :misc, :list_aliases
     def list_aliases
       aliases = config.aliases(:cli) || {}
 

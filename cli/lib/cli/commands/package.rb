@@ -11,6 +11,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "create package <name>|<path>"
+    # desc  "Build a single package"
+    # route :package, :create
     def create(name_or_path)
       if name_or_path == "--all"
         redirect(:package, :create_all)
@@ -33,6 +36,9 @@ module Bosh::Cli::Command
       builder
     end
 
+    # usage "generate package <name>"
+    # desc  "Generate package template"
+    # route :package, :generate
     def generate(name)
       check_if_release_dir
 

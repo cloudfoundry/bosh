@@ -8,6 +8,13 @@ module Bosh::Cli::Command
     # are diff'd and the user can choose to keep the new config.
     # @param [String] template The string path to the template that should be
     #     used.
+    #
+    # usage "diff [<template_file>]"
+    # desc  "Diffs your current BOSH deployment configuration against " +
+    #       "the specified BOSH deployment configuration template so that " +
+    #       "you can keep your deployment configuration file up to date.  " +
+    #       "A dev template can be found in deployments repos."
+    # route :biff, :biff
     def biff(template)
       begin
         setup(template)

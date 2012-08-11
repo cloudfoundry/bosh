@@ -7,6 +7,11 @@ module Bosh::Cli::Command
     RELEASES_TO_KEEP = 2
     STEMCELLS_TO_KEEP = 2
 
+    # usage "cleanup"
+    # desc  "Remove all but several recent stemcells and releases " +
+    #           "from current director " +
+    #           "(stemcells and releases currently in use are NOT deleted)"
+    # route :maintenance, :cleanup
     def cleanup
       target_required
       auth_required

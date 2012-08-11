@@ -4,6 +4,9 @@ module Bosh::Cli::Command
   class PropertyManagement < Base
     include Bosh::Cli::DeploymentHelper
 
+    # usage "set property <name> <value>"
+    # desc  "Set deployment property"
+    # route :property_management, :set
     def set(name, value)
       prepare
       show_header
@@ -43,6 +46,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "unset property <name>"
+    # desc  "Unset deployment property"
+    # route :property_management, :unset
     def unset(name)
       prepare
       show_header
@@ -63,6 +69,9 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage "get property <name>"
+    # desc  "Get deployment property"
+    # route :property_management, :get
     def get(name)
       prepare
       show_header
@@ -76,6 +85,10 @@ module Bosh::Cli::Command
       end
     end
 
+    # usage  "properties"
+    # desc   "List current deployment properties"
+    # route  :property_management, :list
+    # option "--terse", "easy to parse output"
     def list(*args)
       prepare
       terse = args.include?("--terse")
