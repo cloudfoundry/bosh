@@ -2,3 +2,6 @@
 * added OpenStack support
 * added AWS elastic IP support
 * updated AWS CPI gem to 0.6.2
+
+=== 0.5.1 - 2012-08-13
+* include bosh cli as dependency
