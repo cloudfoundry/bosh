@@ -33,7 +33,7 @@ namespace :stemcell2 do
   def default_options(args)
     infrastructure = args[:infrastructure]
     unless infrastructure
-      STDERR.puts "Please specify target infrastructure (vsphere, aws)"
+      STDERR.puts "Please specify target infrastructure (vsphere, aws, openstack)"
       exit 1
     end
 
@@ -42,6 +42,7 @@ namespace :stemcell2 do
       :stemcell_name => ENV["STEMCELL_NAME"],
       :stemcell_version => ENV["STEMCELL_VERSION"],
       :stemcell_infrastructure => infrastructure,
+      :stemcell_hypervisor => get_hypervisor(infrastructure),
       :bosh_protocol_version => Bosh::Agent::BOSH_PROTOCOL,
       :UBUNTU_ISO => ENV["UBUNTU_ISO"],
       :UBUNTU_MIRROR => ENV["UBUNTU_MIRROR"],
@@ -73,6 +74,22 @@ namespace :stemcell2 do
 
   def get_working_dir
     "/var/tmp/bosh/agent-#{version}-#{$$}"
+  end
+
+  def get_hypervisor(infrastructure)
+    return ENV["STEMCELL_HYPERVISOR"] if ENV["STEMCELL_HYPERVISOR"]
+
+    case infrastructure
+      when "vsphere"
+        hypervisor = "esxi"
+      when "aws"
+        hypervisor = "xen"
+      when "openstack"
+        hypervisor = "kvm"
+      else
+        raise "Unknown infrastructure: #{infrastructure}"
+    end
+    hypervisor
   end
 
   def env
