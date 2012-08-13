@@ -5,10 +5,11 @@ PATH
       agent_client (~> 0.1.1)
       bosh_aws_cpi (~> 0.6.2)
       bosh_aws_registry (~> 0.2.2)
+      bosh_cli (>= 0.19.5)
       bosh_common (~> 0.5.0)
       bosh_cpi (~> 0.4.4)
       bosh_openstack_cpi (~> 0.0.2)
-      bosh_openstack_registry (~> 0.0.1)
+      bosh_openstack_registry (~> 0.0.2)
       bosh_vsphere_cpi (~> 0.4.9)
       sqlite3 (~> 1.3.3)
 
@@ -36,8 +37,8 @@ GEM
       uuidtools (~> 2.1.2)
     bosh_aws_cpi (0.6.2)
       aws-sdk (>= 1.3.5)
-      bosh_common (>= 0.4.0)
-      bosh_cpi (>= 0.4.3)
+      bosh_common (>= 0.5.0)
+      bosh_cpi (>= 0.4.4)
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
@@ -47,7 +48,7 @@ GEM
       sinatra
       thin
       yajl-ruby
-    bosh_cli (0.19.4)
+    bosh_cli (0.19.5)
       blobstore_client (~> 0.3.13)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
@@ -60,16 +61,16 @@ GEM
       terminal-table (~> 1.4.2)
     bosh_common (0.5.0)
     bosh_cpi (0.4.4)
-      bosh_common
+      bosh_common (~> 0.5)
     bosh_openstack_cpi (0.0.2)
       bosh_common (>= 0.4.0)
       bosh_cpi (>= 0.4.3)
-      fog (>= 1.5.0)
+      fog (>= 1.4.0)
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
-    bosh_openstack_registry (0.0.1)
-      fog (~> 1.4.0)
+    bosh_openstack_registry (0.0.2)
+      fog (~> 1.5.0)
       sequel
       sinatra
       thin
