@@ -16,6 +16,8 @@ describe Bosh::Cli::Command::Base do
       @cmd = Bosh::Cli::Command::Micro.new(@opts)
       @cmd.stub!(:interactive?).and_return(false)
       @manifest_path = spec_asset("deployment.MF")
+      @manifest_yaml = { "name" => "foo", "cloud" => {} }
+      @manifest_yaml["resources"] = { "persistent_disk" => 16384 }
     end
 
     it "allows deploying a micro BOSH instance passing stemcell as argument" do
@@ -28,6 +30,8 @@ describe Bosh::Cli::Command::Base do
       mock_stemcell.should_receive(:valid?).and_return(true)
 
       @cmd.stub!(:deployment).and_return(@manifest_path)
+      @manifest_yaml["cloud"] = { "properties" => { "stemcell" => {"image_id" => "sc-id" } } }
+      @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
       @cmd.stub!(:target_name).and_return("micro-test")
       Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
       @cmd.stub!(:deployer).and_return(mock_deployer)
@@ -42,8 +46,8 @@ describe Bosh::Cli::Command::Base do
 
       @cmd.stub!(:deployment).and_return(@manifest_path)
       @cmd.stub!(:target_name).and_return("micro-test")
-      @manifest_yaml = { "name" => "foo", "cloud" => { "properties" => { "stemcell" => {"image_id" => "sc-id" } } } }
       @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
+      @manifest_yaml["cloud"] = { "properties" => { "stemcell" => {"image_id" => "sc-id" } } }
       @cmd.stub!(:deployer).and_return(mock_deployer)
       @cmd.perform()
     end
@@ -55,6 +59,21 @@ describe Bosh::Cli::Command::Base do
         @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
         @cmd.perform()
       }.should raise_error(Bosh::Cli::CliExit, "No stemcell provided")
+    end
+
+    it "should require a persistent disk" do
+      lambda {
+        mock_deployer = mock(Bosh::Deployer::InstanceManager)
+        mock_deployer.should_receive(:exists?).exactly(1).times
+
+        @cmd.stub!(:deployment).and_return(@manifest_path)
+        @cmd.stub!(:target_name).and_return("micro-test")
+        @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
+        @manifest_yaml["cloud"] = { "properties" => { "stemcell" => {"image_id" => "sc-id" } } }
+        @manifest_yaml["resources"] = {}
+        @cmd.stub!(:deployer).and_return(mock_deployer)
+        @cmd.perform()
+      }.should raise_error(Bosh::Cli::CliExit, "No persistent disk configured!")
     end
 
   end
