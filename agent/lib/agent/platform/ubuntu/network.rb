@@ -16,6 +16,8 @@ module Bosh::Agent
         setup_networking_from_settings
       when "aws"
         # Nothing to do
+      when "openstack"
+        # Nothing to do
       else
         raise Bosh::Agent::FatalError, "Setup networking failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
