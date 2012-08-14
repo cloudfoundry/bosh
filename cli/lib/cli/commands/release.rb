@@ -112,6 +112,8 @@ module Bosh::Cli::Command
       remote_release = get_remote_release(manifest["name"]) rescue nil
       package_matches = match_remote_packages(File.read(manifest_path))
 
+      find_release_dir(manifest_path)
+
       blobstore = release.blobstore
       tmpdir = Dir.mktmpdir
 
@@ -428,6 +430,19 @@ module Bosh::Cli::Command
     end
 
     private
+
+    # if we aren't already in a release directory, try going up two levels
+    # to see if that is a release directory, and then use that as the base
+    def find_release_dir(manifest_path)
+      unless in_release_dir?
+        dir = File.expand_path("../..", manifest_path)
+        Dir.chdir(dir)
+        if in_release_dir?
+          @release = Bosh::Cli::Release.new(dir)
+        end
+      end
+
+    end
 
     def show_summary(builder)
       packages_table = table do |t|
