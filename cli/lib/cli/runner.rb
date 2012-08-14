@@ -235,6 +235,12 @@ module Bosh::Cli
         route  :deployment, :perform
       end
 
+      command :edit_deployment do
+        usage  "edit deployment"
+        desc   "Edit current deployment manifest"
+        route  :deployment, :edit
+      end
+
       command :ssh do
         usage "ssh <job> [index] [<options>] [command]"
         desc  "Given a job, execute the given command or " +
