@@ -300,7 +300,6 @@ module Bosh::Deployer
     def attach_missing_disk
       if state.disk_cid
         attach_disk(state.disk_cid, true)
-        save_state
       end
     end
 
@@ -334,11 +333,12 @@ module Bosh::Deployer
 
         # replace the old with the new in the state file
         state.disk_cid = new_disk_cid
-        save_state
 
         # delete the old disk
         delete_disk(old_disk_cid, state.vm_cid)
       end
+    ensure
+      save_state
     end
 
     def update_spec(spec)
