@@ -151,6 +151,11 @@ module VSphereCloud
         disk = resource_pool["disk"]
         cpu = resource_pool["cpu"]
 
+        # Make sure number of cores is a power of 2. kb.vmware.com/kb/2003484
+        if cpu & cpu - 1 != 0
+          raise "Number of vCPUs: #{cpu} is not a power of 2."
+        end
+
         disks = disk_spec(disk, disk_locality)
         cluster, datastore = @resources.get_resources(memory, disks)
 
