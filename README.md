@@ -62,3 +62,23 @@ Make your changes, commit, and push to gerrit:
 		gerrit push
 
 Once your commits are approved by our Continuous Integration Bot (CI Bot) as well as our engineering staff, return to the Gerrit interface and MERGE your changes. The merge will be replicated to GitHub automatically at [http://github.com/cloudfoundry/](https://github.com/cloudfoundry/). If you get feedback on your submission, we recommend squashing your commit with the original change-id. See the squashing section here for more details: [http://help.github.com/rebase/](http://help.github.com/rebase/).
+
+After the CI Bot successfully tests your change, you need to ask some Reviewers to accept your commit.
+
+Within each sub-project of BOSH are the authorized "+2" reviewers:
+
+* agent - Skaar
+* cli - Oleg
+* director - Oleg, Vadim
+* deployer - Doug, Martin
+* blobstore_client - Martin
+* vsphere_cpi - Vadim
+* aws_cpi - Oleg, Martin
+* aws_registry - Oleg, Martin
+* health_monitor - Oleg
+* package_compiler - Martin
+* openstack - Ferran, Vadim
+
+Once your commit has been given a "+2" by one of the reviewers above, you can then merge your commit in via Gerrit dashboard.
+
+Finally, your contribution will be available via the gerrit and github git repositories.
