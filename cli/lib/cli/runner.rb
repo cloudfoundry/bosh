@@ -240,6 +240,13 @@ module Bosh::Cli
         route  :deployment, :edit
       end
 
+      command :validate_jobs do
+        usage "validate jobs"
+        desc  "Validates all jobs in the current release using current" +
+              "deployment manifest as the source of properties"
+        route :deployment, :validate_jobs
+      end
+
       command :ssh do
         usage "ssh <job> [index] [<options>] [command]"
         desc  "Given a job, execute the given command or " +
