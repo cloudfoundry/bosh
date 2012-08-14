@@ -30,6 +30,7 @@ deployer/pkg
 vsphere_cpi/pkg
 aws_cpi/pkg
 aws_registry/pkg
+openstack_registry/pkg
 package_compiler/pkg
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
