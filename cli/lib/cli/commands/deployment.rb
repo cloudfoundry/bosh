@@ -67,6 +67,15 @@ module Bosh::Cli::Command
       config.save
     end
 
+    def edit
+      unless deployment
+        quit("Deployment not set".red)
+      end
+
+      editor = ENV['EDITOR'] || "vi"
+      system("#{editor} #{deployment}")
+    end
+
     def perform(*options)
       auth_required
       recreate = options.include?("--recreate")
