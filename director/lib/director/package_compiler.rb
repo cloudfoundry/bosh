@@ -355,41 +355,10 @@ module Bosh::Director
         @logger.info("Found compiled version of package `#{package.desc}' " +
                      "for stemcell `#{stemcell.desc}'")
         return compiled_package
-      end
-
-      # Check if packages with the same sha1 have already been compiled
-      similar_packages_dataset = Models::Package.filter(:sha1 => package.sha1)
-      similar_packages = similar_packages_dataset.exclude(:id => package.id).all
-      similar_package_ids = similar_packages.map { |package| package.id }
-
-      search_attr = {
-        :package_id => similar_package_ids,
-        :stemcell_id => stemcell.id,
-        :dependency_key => dependency_key
-      }
-      compiled_package = Models::CompiledPackage.filter(search_attr).first
-
-      unless compiled_package
+      else
         @logger.info("Package `#{package.desc}' " +
-                     "needs to be compiled on `#{stemcell.desc}'")
+                         "needs to be compiled on `#{stemcell.desc}'")
         return nil
-      end
-
-      # Found a compiled package that matches the given package and stemcell
-      @logger.info("Found compiled version of package `#{package.desc}' " +
-                   "for stemcell `#{stemcell.desc}'")
-
-      # Make a copy of this compiled package
-      blobstore_id = BlobUtil.copy_blob(compiled_package.blobstore_id)
-
-      # Add a new entry for this package
-      Models::CompiledPackage.create do |p|
-        p.package = package
-        p.stemcell = stemcell
-        p.sha1 = compiled_package.sha1
-        p.build = generate_build_number(package, stemcell)
-        p.blobstore_id = blobstore_id
-        p.dependency_key = dependency_key
       end
     end
 
