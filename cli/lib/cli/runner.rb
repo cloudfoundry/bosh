@@ -33,6 +33,7 @@ module Bosh::Cli
     end
 
     def prepare
+      define_commands
       parse_options!
       Config.output ||= STDOUT unless @options[:quiet]
       Config.interactive = !@options[:non_interactive]
@@ -40,11 +41,9 @@ module Bosh::Cli
       Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir] ||
                                             Bosh::Cli::DEFAULT_CACHE_DIR)
 
-      define_commands
       define_plugin_commands
       build_parse_tree
       add_shortcuts
-
     end
 
     def run
@@ -145,7 +144,7 @@ module Bosh::Cli
 
     # for use with:
     # complete -C 'bosh complete' bosh
-    # @param [String] command line (minus "bosh")
+    # @param [String] line command line (minus "bosh")
     # @return [Array]
     def complete(line)
       words = line.split(/\s+/)
