@@ -55,15 +55,16 @@ module Bosh::Cli
     # Check if the deprecated blobstore secret is provided in the private
     # config file
     # @return [Boolean]
-    def has_blobstore_secret?
-      bs = @private_config["blobstore"]
-      has_blobstore_secrets?(bs, "atmos", "secret") ||
-        has_blobstore_secrets?(bs, "simple", "user", "password") ||
-        has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key")
-    end
-
     def has_legacy_secret?
       @private_config.has_key?("blobstore_secret")
+    end
+
+    def has_blobstore_secret?
+      bs = @private_config["blobstore"]
+      has_legacy_secret? ||
+        has_blobstore_secrets?(bs, "atmos", "secret") ||
+        has_blobstore_secrets?(bs, "simple", "user", "password") ||
+        has_blobstore_secrets?(bs, "s3", "access_key_id", "secret_access_key")
     end
 
     # final.yml
