@@ -1,3 +1,10 @@
+== 0.19.6 - 08/15/12
+* common blobstore credentials handling
+* 'bosh edit deployment'
+* upload release now works from any directory
+* improved Ruby Gems compatibility for plugin loading
+* fixed 'bosh target' URL normalization regression
+
 == 0.19.5 - 07/31/12
 * extra check for src_alt override
 * support 'cloudcheck <deployment_name>'
