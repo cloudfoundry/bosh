@@ -268,18 +268,6 @@ module Bosh::Cli
         route :ssh, :scp
       end
 
-      command :scp do
-        usage "scp <job> <--upload | --download> [options] " +
-                  "/path/to/source /path/to/destination"
-        desc  "upload/download the source file to the given job. " +
-                  "Note: for download /path/to/destination is a directory"
-        option "--index <job_index>"
-        option "--public_key <file>"
-        option "--gateway_host <host>"
-        option "--gateway_user <user>"
-        route :ssh, :scp
-      end
-
       command :status do
         usage "status"
         desc  "Show current status (current target, " +
