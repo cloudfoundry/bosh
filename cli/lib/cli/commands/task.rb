@@ -15,6 +15,8 @@ module Bosh::Cli::Command
     # option "--no-cache", "don't cache output locally"
     # option "--event|--soap|--debug", "different log types to track"
     # option "--raw", "don't beautify log"
+    # option "--no-filter", "last task will include all types " +
+    #        "(ssh, logs, vms, etc)"
     def track(*args)
       auth_required
 
@@ -36,10 +38,12 @@ module Bosh::Cli::Command
 
     # usage "tasks"
     # desc  "Show the list of running tasks"
+    # option "--no-filter", "include all task types (ssh, logs, vms, etc)"
     # route :task, :list_running
-    def list_running
+    def list_running(*options)
       auth_required
-      tasks = director.list_running_tasks
+      no_filter = options.delete("--no-filter")
+      tasks = director.list_running_tasks(get_verbose_level(no_filter))
       err("No running tasks") if tasks.empty?
       show_tasks_table(tasks.sort_by { |t| t["id"].to_i * -1 })
       say("Total tasks running now: %d" % [tasks.size])
@@ -47,10 +51,13 @@ module Bosh::Cli::Command
 
     # usage "tasks recent [<number>]"
     # desc  "Show <number> recent tasks"
+    # option "--no-filter", "include all task types (ssh, logs, vms, etc)"
     # route :task, :list_recent
-    def list_recent(count = 30)
+    def list_recent(*options)
       auth_required
-      tasks = director.list_recent_tasks(count)
+      no_filter = options.delete("--no-filter")
+      count = options.first || 30
+      tasks = director.list_recent_tasks(count, get_verbose_level(no_filter))
       err("No recent tasks") if tasks.empty?
       show_tasks_table(tasks)
       say("Showing %d recent %s" % [tasks.size,
@@ -75,8 +82,11 @@ module Bosh::Cli::Command
     # @return [String, String, Boolean, Boolean] The task id, the type of log
     #     output, whether to use cache or not, whether to output the raw log.
     def parse_flags(flags)
+      no_filter = flags.delete("--no-filter")
       task_id = flags.shift
-      task_id = get_last_task_id if asking_for_last_task?(task_id)
+      if asking_for_last_task?(task_id)
+        task_id = get_last_task_id(get_verbose_level(no_filter))
+      end
 
       log_type = get_log_type(flags)
       no_cache = flags.include?("--no-cache")
@@ -97,8 +107,8 @@ module Bosh::Cli::Command
     # Returns the task id of the most recently run task.
     #
     # @return [String] The task id of the most recently run task.
-    def get_last_task_id
-      last = director.list_recent_tasks(1)
+    def get_last_task_id(verbose = 1)
+      last = director.list_recent_tasks(1, verbose)
       if last.size == 0
         err("No tasks found")
       end
@@ -133,6 +143,14 @@ module Bosh::Cli::Command
       say("\n")
       say(tasks_table)
       say("\n")
+    end
+
+    # Returns the verbose level for the given no_filter flag
+    #
+    # @param [Boolean] no_filter no_filter flag from the command line
+    # @return [Number] director verbose level
+    def get_verbose_level(no_filter)
+      no_filter ? 2 : 1
     end
   end
 end
