@@ -483,6 +483,8 @@ module Bosh::Cli
         option "--no-cache", "don't cache output locally"
         option "--event|--soap|--debug", "different log types to track"
         option "--raw", "don't beautify log"
+        option "--no-filter", "last task will include all types " +
+               "(ssh, logs, vms, etc)"
       end
 
       command :list_stemcells do
@@ -528,12 +530,14 @@ module Bosh::Cli
       command :list_running_tasks do
         usage "tasks"
         desc  "Show the list of running tasks"
+        option "--no-filter", "include all task types (ssh, logs, vms, etc)"
         route :task, :list_running
       end
 
       command :list_recent_tasks do
         usage "tasks recent [<number>]"
         desc  "Show <number> recent tasks"
+        option "--no-filter", "include all task types (ssh, logs, vms, etc)"
         route :task, :list_recent
       end
 
