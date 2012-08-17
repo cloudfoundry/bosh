@@ -129,9 +129,9 @@ module Bosh::Cli::Command
 
     # usage "delete deployment <name>"
     # desc  "Delete deployment"
-    # route :deployment, :delete
     # option "--force", "ignore all errors while deleting parts " +
     #     "of the deployment"
+    # route :deployment, :delete
     def delete(name, *options)
       auth_required
       force = options.include?("--force")

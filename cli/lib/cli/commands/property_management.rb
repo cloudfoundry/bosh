@@ -87,8 +87,8 @@ module Bosh::Cli::Command
 
     # usage  "properties"
     # desc   "List current deployment properties"
-    # route  :property_management, :list
     # option "--terse", "easy to parse output"
+    # route  :property_management, :list
     def list(*args)
       prepare
       terse = args.include?("--terse")
