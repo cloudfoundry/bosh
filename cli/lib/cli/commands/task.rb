@@ -11,12 +11,12 @@ module Bosh::Cli::Command
     #
     # usage  "task [<task_id>|last]"
     # desc   "Show task status and start tracking its output"
-    # route  :task, :track
     # option "--no-cache", "don't cache output locally"
     # option "--event|--soap|--debug", "different log types to track"
     # option "--raw", "don't beautify log"
     # option "--no-filter", "last task will include all types " +
     #        "(ssh, logs, vms, etc)"
+    # route  :task, :track
     def track(*args)
       auth_required
 

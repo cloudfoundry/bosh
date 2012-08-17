@@ -112,8 +112,8 @@ module Bosh::Cli::Command
     #
     # usage "public stemcells"
     # desc  "Show the list of publicly available stemcells for download."
-    # route :stemcell, :list_public
     # option "--full", "show the full download url"
+    # route :stemcell, :list_public
     def list_public(*args)
       full = args.include?("--full")
       yaml = get_public_stemcell_list

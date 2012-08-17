@@ -9,8 +9,8 @@ module Bosh::Cli::Command
 
     # usage "init release [<path>]"
     # desc  "Initialize release directory"
-    # route :release, :init
     # option "--git", "initialize git repository"
+    # route :release, :init
     def init(base=nil, *options)
       if base[0..0] == "-"
         # TODO: need to add some option parsing helpers to avoid that
@@ -191,7 +191,6 @@ module Bosh::Cli::Command
     # usage  "create release"
     # desc   "Create release (assumes current directory " +
     #            "to be a release repository)"
-    # route  :release, :create
     # option "--force", "bypass git dirty state check"
     # option "--final", "create production-ready release " +
     #     "(stores artefacts in blobstore, bumps final version)"
@@ -199,6 +198,7 @@ module Bosh::Cli::Command
     #     "(by default only manifest is created)"
     # option "--dry-run", "stop before writing release " +
     #     "manifest (for diagnostics)"
+    # route  :release, :create
     def create(*options)
       check_if_release_dir
       if options.size == 1 && File.file?(options[0])
@@ -434,8 +434,8 @@ module Bosh::Cli::Command
 
     # usage  "delete release <name> [<version>]"
     # desc   "Delete release (or a particular release version)"
-    # route  :release, :delete
     # option "--force", "ignore errors during deletion"
+    # route  :release, :delete
     def delete(name, *options)
       auth_required
       force = options.include?("--force")
