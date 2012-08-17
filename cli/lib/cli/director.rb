@@ -124,6 +124,12 @@ module Bosh
         upload_and_track(:post, "/releases", filename, options)
       end
 
+      def rebase_release(filename, options = {})
+        options = options.dup
+        options[:content_type] = "application/x-compressed"
+        upload_and_track(:post, "/releases?rebase=true", filename, options)
+      end
+
       def delete_stemcell(name, version, options = {})
         options = options.dup
         request_and_track(:delete, "/stemcells/#{name}/#{version}", options)
