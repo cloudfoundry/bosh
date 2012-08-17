@@ -5,12 +5,160 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::Jobs::UpdateRelease do
 
   before(:each) do
-    @blobstore = mock("blobstore_client")
-    @logger = Logger.new(StringIO.new)
-    @release_dir = Dir.mktmpdir("release_dir")
-
+    @blobstore = mock(Bosh::Blobstore::Client)
     Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore)
-    Bosh::Director::Config.stub!(:logger).and_return(@logger)
+
+    @release_dir = Dir.mktmpdir("release_dir")
+  end
+
+  describe "rebasing release" do
+    before(:each) do
+      @manifest = {
+        "name" => "appcloud",
+        "version" => "42.6-dev",
+        "jobs" => [
+          {
+            "name" => "baz",
+            "version" => "33",
+            "templates" => {
+              "bin/test.erb" => "bin/test",
+              "config/zb.yml.erb" => "config/zb.yml"
+            },
+            "packages" => %w(foo bar)
+          },
+          {
+            "name" => "zaz",
+            "version" => "0.2-dev",
+            "templates" => {},
+            "packages" => %w(bar)
+          }
+        ],
+        "packages" => [
+          {
+            "name" => "foo",
+            "version" => "2.33-dev",
+            "dependencies" => %w(bar)
+          },
+          {
+            "name" => "bar",
+            "version" => "3.14-dev",
+            "dependencies" => []
+          }
+        ]
+      }
+
+      @release_dir = ReleaseHelper.create_release_tarball(@manifest)
+
+      @job = BD::Jobs::UpdateRelease.new(@release_dir, "rebase" => true)
+
+      @release = BD::Models::Release.make(:name => "appcloud")
+      @rv = BD::Models::ReleaseVersion.make(
+        :release => @release, :version => "37")
+
+      BD::Models::Package.make(
+        :release => @release, :name => "foo", :version => "2.7-dev")
+      BD::Models::Package.make(
+        :release => @release, :name => "bar", :version => "42")
+
+      BD::Models::Template.make(
+        :release => @release, :name => "baz", :version => "2.1-dev")
+      BD::Models::Template.make(
+        :release => @release, :name => "zaz", :version => "17")
+
+      @lock = mock(Bosh::Director::Lock)
+      Bosh::Director::Lock.stub(:new).
+        with("lock:release:appcloud").
+        and_return(@lock)
+    end
+
+    it "ignores package/job/release versions in the original tarball" do
+      @lock.should_receive(:lock).and_yield
+
+      @blobstore.should_receive(:create).
+        exactly(4).times.and_return("b1", "b2", "b3", "b4")
+
+      @job.perform
+
+      foos = BD::Models::Package.filter(
+        :release_id => @release.id, :name => "foo").all
+      bars = BD::Models::Package.filter(
+        :release_id => @release.id, :name => "bar").all
+
+      foos.map { |foo| foo.version }.should =~ %w(2.7-dev 2.8-dev)
+      bars.map { |bar| bar.version }.should =~ %w(42 42.1-dev)
+
+      bazs = BD::Models::Template.filter(
+        :release_id => @release.id, :name => "baz").all
+      zazs = BD::Models::Template.filter(
+        :release_id => @release.id, :name => "zaz").all
+
+      bazs.map { |baz| baz.version }.should =~ %w(2.1-dev 2.2-dev)
+      zazs.map { |zaz| zaz.version }.should =~ %w(17 17.1-dev)
+
+      rv = BD::Models::ReleaseVersion.filter(
+        :release_id => @release.id, :version => "37.1-dev").first
+
+      rv.should_not be_nil
+
+      rv.packages.map { |package|
+        package.version
+      }.should =~ %w(2.8-dev 42.1-dev)
+
+      rv.templates.map { |template|
+        template.version
+      }.should =~ %w(2.2-dev 17.1-dev)
+    end
+
+    it "uses 0.1-dev version for initial rebase if no release exists" do
+      @lock.should_receive(:lock).and_yield
+
+      @blobstore.should_receive(:create).
+        exactly(4).times.and_return("b1", "b2", "b3", "b4")
+
+      @rv.destroy
+      BD::Models::Package.each { |p| p.destroy }
+      BD::Models::Template.each { |t| t.destroy }
+
+      @job.perform
+
+      foos = BD::Models::Package.filter(
+        :release_id => @release.id, :name => "foo").all
+      bars = BD::Models::Package.filter(
+        :release_id => @release.id, :name => "bar").all
+
+      foos.map { |foo| foo.version }.should =~ %w(0.1-dev)
+      bars.map { |bar| bar.version }.should =~ %w(0.1-dev)
+
+      bazs = BD::Models::Template.filter(
+        :release_id => @release.id, :name => "baz").all
+      zazs = BD::Models::Template.filter(
+        :release_id => @release.id, :name => "zaz").all
+
+      bazs.map { |baz| baz.version }.should =~ %w(0.1-dev)
+      zazs.map { |zaz| zaz.version }.should =~ %w(0.1-dev)
+
+      rv = BD::Models::ReleaseVersion.filter(
+        :release_id => @release.id, :version => "0.1-dev").first
+
+      rv.packages.map { |p| p.version }.should =~ %w(0.1-dev 0.1-dev)
+      rv.templates.map { |t| t.version }.should =~ %w(0.1-dev 0.1-dev)
+    end
+
+    it "performs no rebase if same release is being rebased twice" do
+      dup_release_dir = Dir.mktmpdir
+      FileUtils.cp(File.join(@release_dir, "release.tgz"), dup_release_dir)
+
+      @lock.should_receive(:lock).twice.and_yield
+      @blobstore.should_receive(:create).
+        exactly(4).times.and_return("b1", "b2", "b3", "b4")
+      @job.perform
+
+      job = BD::Jobs::UpdateRelease.new(dup_release_dir, "rebase" => true)
+
+      expect {
+        job.perform
+      }.to raise_error(/Rebase is attempted without any job or package change/)
+    end
   end
 
   describe "create_package" do

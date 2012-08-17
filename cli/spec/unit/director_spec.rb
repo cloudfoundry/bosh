@@ -130,6 +130,14 @@ describe Bosh::Cli::Director do
       @director.upload_release("/path")
     end
 
+    it "uploads release (with rebase)" do
+      @director.should_receive(:upload_and_track).
+        with(:post, "/releases?rebase=true", "/path",
+             {:content_type => "application/x-compressed"}).
+        and_return(true)
+      @director.rebase_release("/path")
+    end
+
     it "gets release info" do
       @director.should_receive(:get).
         with("/releases/foo", "application/json").

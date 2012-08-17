@@ -419,9 +419,12 @@ module Bosh::Cli
       end
 
       command :upload_release do
-        usage "upload release [<path>]"
-        desc  "Upload release (<path> can point to tarball or manifest, " +
+        usage  "upload release [<path>]"
+        desc   "Upload release (<path> can point to tarball or manifest, " +
                   "defaults to the most recently created release)"
+        option "--rebase", "Rebases this release onto the latest version " +
+                  "known by director (discards local job/package versions in " +
+                  "favor of versions assigned by director)"
         route :release, :upload
       end
 
