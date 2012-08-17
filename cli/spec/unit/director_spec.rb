@@ -99,21 +99,27 @@ describe Bosh::Cli::Director do
         with("/info", "application/json").
         and_return([200, JSON.generate({ :version => "0.3.5"})])
       @director.should_receive(:get).
-        with("/tasks?state=processing,cancelling,queued", "application/json").
+        with("/tasks?state=processing,cancelling,queued&verbose=1",
+             "application/json").
         and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
     end
 
     it "lists recent tasks" do
       @director.should_receive(:get).
-        with("/tasks?limit=30", "application/json").
+        with("/tasks?limit=30&verbose=1", "application/json").
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks
 
       @director.should_receive(:get).
-        with("/tasks?limit=100", "application/json").
+        with("/tasks?limit=100&verbose=1", "application/json").
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(100000)
+
+      @director.should_receive(:get).
+          with("/tasks?limit=50&verbose=2", "application/json").
+          and_return([200, JSON.generate([]), {}])
+      @director.list_recent_tasks(50, 2)
     end
 
     it "uploads release" do
