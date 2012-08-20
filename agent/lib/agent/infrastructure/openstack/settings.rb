@@ -24,9 +24,10 @@ module Bosh::Agent
       if public_key.nil? || public_key.empty?
         return
       end
-      FileUtils.mkdir_p(File.dirname(authorized_keys))
+      FileUtils.mkdir_p(File.dirname(authorized_keys), :mode => 0700)
       File.open(authorized_keys, "w") { |f| f.write(public_key) }
-      FileUtils.chown(Bosh::Agent::BOSH_APP_USER, Bosh::Agent::BOSH_APP_GROUP, authorized_keys)
+      FileUtils.chown(Bosh::Agent::BOSH_APP_USER, Bosh::Agent::BOSH_APP_GROUP,
+                      authorized_keys)
       FileUtils.chmod(0644, authorized_keys)
     end
 
