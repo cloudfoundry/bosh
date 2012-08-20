@@ -275,6 +275,31 @@ describe Bosh::Cli::Director do
         should == ["polling result", "502"]
     end
 
+    describe "not tracking trackable requests" do
+      it "returns without tracking/polling task if request responded with a redirect to task URL" do
+        options = { :arg1 => 1, :arg2 => 2 }
+
+        @director = Bosh::Cli::Director.new(DUMMY_TARGET, "user", "pass", :no_track => true)
+
+        @director.should_receive(:request).
+          with(:get, "/stuff", "text/plain", "abc").
+          and_return([302, "body", { :location => "/tasks/502" }])
+
+        tracker = mock("tracker", :track => "polling result", :output => "foo")
+
+        Bosh::Cli::TaskTracker.should_receive(:new).
+          with(@director, "502", options).
+          never
+
+        @director.request_and_track(:get, "/stuff",
+                                    {:content_type => "text/plain",
+                                     :payload => "abc",
+                                     :arg1 => 1, :arg2 => 2
+                                    }).
+          should == [:running, "502"]
+      end
+    end
+
     it "considers all responses but 302 a failure" do
       [200, 404, 403].each do |code|
         @director.should_receive(:request).

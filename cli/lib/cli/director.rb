@@ -12,7 +12,9 @@ module Bosh
 
       attr_reader :director_uri
 
-      def initialize(director_uri, user = nil, password = nil)
+      # Options can include:
+      # * :no_track => true - do not use +TaskTracker+ for long-running +request_and_track+ calls
+      def initialize(director_uri, user = nil, password = nil, options = {})
         if director_uri.nil? || director_uri =~ /^\s*$/
           raise DirectorMissing, "no director URI given"
         end
@@ -20,6 +22,7 @@ module Bosh
         @director_uri = director_uri
         @user = user
         @password = password
+        @do_not_track_request_and_track = options.delete(:no_track)
       end
 
       def uuid
@@ -435,8 +438,12 @@ module Bosh
         if redirected
           if location =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
             task_id = $1
-            tracker = Bosh::Cli::TaskTracker.new(self, task_id, track_opts)
-            status = tracker.track
+            unless @do_not_track_request_and_track
+              tracker = Bosh::Cli::TaskTracker.new(self, task_id, track_opts)
+              status = tracker.track
+            else
+              status = :running
+            end
           else
             status = :non_trackable
           end
