@@ -19,7 +19,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
       @release = Bosh::Director::Models::Release.make
 
       @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
-      @job.release = @release
+      @job.release_model = @release
     end
 
     after(:each) do
@@ -141,7 +141,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
       FileUtils.mkdir_p(File.dirname(@tarball))
 
       @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
-      @job.release = @release
+      @job.release_model = @release
     end
 
     it "should create a proper template and upload job bits to blobstore" do

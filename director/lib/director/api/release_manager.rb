@@ -35,13 +35,13 @@ module Bosh::Director
         release_version
       end
 
-      def create_release(user, release_bundle)
+      def create_release(user, release_bundle, options = {})
         release_dir = Dir.mktmpdir("release")
         release_tgz = File.join(release_dir, RELEASE_TGZ)
 
         write_file(release_tgz, release_bundle)
         task = create_task(user, :update_release, "create release")
-        Resque.enqueue(Jobs::UpdateRelease, task.id, release_dir)
+        Resque.enqueue(Jobs::UpdateRelease, task.id, release_dir, options)
         task
       end
 
