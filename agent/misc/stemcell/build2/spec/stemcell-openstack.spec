@@ -43,6 +43,7 @@ then
   stage image_openstack_update_grub
 else
   stage image_openstack_extract_partition
+  stage image_openstack_extract_kernel_ramdisk
 fi
 stage image_openstack_prepare_stemcell
 
