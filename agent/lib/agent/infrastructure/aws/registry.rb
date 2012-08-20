@@ -100,7 +100,7 @@ module Bosh::Agent
         settings
 
       rescue Yajl::ParseError
-        raise("Cannot parse settings for from registry #{@registry_endpoint}")
+        raise("Cannot parse settings from registry #{@registry_endpoint}")
       end
 
     end
