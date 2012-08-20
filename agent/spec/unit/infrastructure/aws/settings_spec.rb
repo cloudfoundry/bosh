@@ -20,6 +20,7 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     Bosh::Agent::Infrastructure::Aws::Registry.stub(:get_openssh_key).and_return("test_key")
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     settings_wrapper.stub(:authorized_keys).and_return(@test_authorized_keys)
+    FileUtils.stub(:chown).and_return(true)
     settings = settings_wrapper.load_settings
     settings.should == @settings
   end
@@ -54,6 +55,7 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     Bosh::Agent::Infrastructure::Aws::Registry.stub!(:get_openssh_key).and_return("test_key")
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     settings_wrapper.stub(:authorized_keys).and_return(@test_authorized_keys)
+    FileUtils.stub(:chown).and_return(true)
     settings_wrapper.setup_openssh_key
     File.open(@test_authorized_keys, "r") { |f| f.read.should == "test_key" }
   end
