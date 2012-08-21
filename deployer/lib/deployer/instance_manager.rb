@@ -384,6 +384,10 @@ module Bosh::Deployer
       bosh_ip
     end
 
+    def check_dependencies
+      # nothing to check, move on...
+    end
+
     private
 
     # update the agent service section from the contents of the apply_spec

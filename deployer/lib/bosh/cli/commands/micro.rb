@@ -102,6 +102,8 @@ module Bosh::Cli::Command
 
       desc = "`#{rel_path.green}' to `#{target_name.green}'"
 
+      deployer.check_dependencies
+
       if update
         unless deployer.exists?
           err "No existing instance to update"

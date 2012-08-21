@@ -27,6 +27,7 @@ describe Bosh::Cli::Command::Base do
       mock_deployer = mock(Bosh::Deployer::InstanceManager)
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
+      mock_deployer.should_receive(:check_dependencies)
       mock_deployer.should_receive(:create_deployment).with("stemcell.tgz")
       mock_stemcell = mock(Bosh::Cli::Stemcell)
       mock_stemcell.should_receive(:validate)
@@ -44,6 +45,7 @@ describe Bosh::Cli::Command::Base do
       mock_deployer = mock(Bosh::Deployer::InstanceManager)
       mock_deployer.should_receive(:exists?).exactly(2).times
       mock_deployer.should_receive(:renderer=)
+      mock_deployer.should_receive(:check_dependencies)
       mock_deployer.should_receive(:create_deployment).with("sc-id")
 
       @cmd.stub!(:deployment).and_return(@manifest_path)
@@ -66,6 +68,7 @@ describe Bosh::Cli::Command::Base do
     it "should require a persistent disk" do
       lambda {
         mock_deployer = mock(Bosh::Deployer::InstanceManager)
+        mock_deployer.should_receive(:check_dependencies)
         mock_deployer.should_receive(:exists?).exactly(1).times
 
         @cmd.stub!(:deployment).and_return(@manifest_path)
