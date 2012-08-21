@@ -98,6 +98,12 @@ module Bosh::Cli::Command
         end
       end
 
+      # check if genisoimage exist when using vsphere
+      plugin = dig_hash(manifest, "cloud", "plugin")
+      if plugin == "vsphere" && Bosh::Common.which("genisoimage").nil?
+        err("'genisoimage' command missing")
+      end
+
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
       desc = "`#{rel_path.green}' to `#{target_name.green}'"
