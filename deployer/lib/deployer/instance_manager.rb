@@ -363,6 +363,11 @@ module Bosh::Deployer
         update_service_address(properties, service, service_ip)
       end
 
+      # merge apply_spec for health monitor
+      if override = Config.spec_properties["hm"]
+        properties["hm"].merge!(override)
+      end
+
       spec
     end
 
