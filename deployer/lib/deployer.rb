@@ -13,6 +13,7 @@ require "tmpdir"
 require "uuidtools"
 require "yaml"
 require "yajl"
+require "common/common"
 require "common/thread_formatter"
 
 require "deployer/version"
