@@ -17,7 +17,10 @@ describe Bosh::Cli::Command::Base do
       @cmd.stub!(:interactive?).and_return(false)
       @manifest_path = spec_asset("deployment.MF")
       @manifest_yaml = { "name" => "foo", "cloud" => {} }
-      @manifest_yaml["resources"] = { "persistent_disk" => 16384 }
+      @manifest_yaml["resources"] = {
+        "persistent_disk" => 16384,
+        "cloud_properties" => {}
+      }
     end
 
     it "allows deploying a micro BOSH instance passing stemcell as argument" do
@@ -30,7 +33,6 @@ describe Bosh::Cli::Command::Base do
       mock_stemcell.should_receive(:valid?).and_return(true)
 
       @cmd.stub!(:deployment).and_return(@manifest_path)
-      @manifest_yaml["cloud"] = { "properties" => { "stemcell" => {"image_id" => "sc-id" } } }
       @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
       @cmd.stub!(:target_name).and_return("micro-test")
       Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
@@ -47,7 +49,7 @@ describe Bosh::Cli::Command::Base do
       @cmd.stub!(:deployment).and_return(@manifest_path)
       @cmd.stub!(:target_name).and_return("micro-test")
       @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
-      @manifest_yaml["cloud"] = { "properties" => { "stemcell" => {"image_id" => "sc-id" } } }
+      @manifest_yaml["resources"]["cloud_properties"]["image_id"] = "sc-id"
       @cmd.stub!(:deployer).and_return(mock_deployer)
       @cmd.perform()
     end
@@ -69,8 +71,8 @@ describe Bosh::Cli::Command::Base do
         @cmd.stub!(:deployment).and_return(@manifest_path)
         @cmd.stub!(:target_name).and_return("micro-test")
         @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
-        @manifest_yaml["cloud"] = { "properties" => { "stemcell" => {"image_id" => "sc-id" } } }
-        @manifest_yaml["resources"] = {}
+        @manifest_yaml["resources"]["cloud_properties"]["image_id"] = "sc-id"
+        @manifest_yaml["resources"]["persistent_disk"] = nil
         @cmd.stub!(:deployer).and_return(mock_deployer)
         @cmd.perform()
       }.should raise_error(Bosh::Cli::CliExit, "No persistent disk configured!")

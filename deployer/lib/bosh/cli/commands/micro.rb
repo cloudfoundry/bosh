@@ -91,7 +91,7 @@ module Bosh::Cli::Command
           err("Invalid manifest format")
         end
 
-        stemcell = dig_hash(manifest, "cloud", "properties", "stemcell", "image_id")
+        stemcell = dig_hash(manifest, "resources", "cloud_properties", "image_id")
 
         if stemcell.nil?
           err "No stemcell provided"
