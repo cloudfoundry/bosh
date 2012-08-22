@@ -12,15 +12,10 @@ describe Bosh::Cli::ReleaseTarball do
 
     it "verifies repacked release if appropriate option is set" do
       tarball = Bosh::Cli::ReleaseTarball.new(spec_asset("valid_release.tgz"))
-      remote_release = {
-        "packages" => [{ "name" => "mutator", "version" => "2.99.7" }],
-        "jobs" => [{ "name" => "cacher", "version" => "1" },
-                    { "name" => "sweeper", "version" => "1" }]
-      }
       package_matches = ["86bd8b15562cde007f030a303fa64779af5fa4e7"]
-      repacked_tarball_path = tarball.repack(remote_release, package_matches)
+      repacked_tarball_path = tarball.repack(package_matches)
 
-      tarball.skipped.should == 2
+      tarball.skipped.should == 1
 
       repacked_tarball = Bosh::Cli::ReleaseTarball.new(repacked_tarball_path)
       repacked_tarball.valid?.should be_false

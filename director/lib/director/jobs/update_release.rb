@@ -191,10 +191,14 @@ module Bosh::Director
         existing_packages = []
 
         @manifest["packages"].each do |package_meta|
-          package_attrs = {:sha1 => package_meta["sha1"]}
+          filter = {:sha1 => package_meta["sha1"]}
+          if package_meta["fingerprint"]
+            filter[:fingerprint] = package_meta["fingerprint"]
+            filter = filter.sql_or
+          end
 
           # Checking whether we might have the same bits somewhere
-          packages = Models::Package.filter(package_attrs).all
+          packages = Models::Package.where(filter).all
 
           if packages.empty?
             new_packages << package_meta
@@ -214,6 +218,7 @@ module Bosh::Director
 
             if substitute
               package_meta["version"] = substitute.version
+              package_meta["sha1"] = substitute.sha1
               existing_packages << [substitute, package_meta]
               next
             end
@@ -305,7 +310,8 @@ module Bosh::Director
         package_attrs = {
           :release => @release_model,
           :name => name,
-          :sha1 => package_meta["sha1"]
+          :sha1 => package_meta["sha1"],
+          :fingerprint => package_meta["fingerprint"]
         }
 
         if @rebase
@@ -365,10 +371,14 @@ module Bosh::Director
         existing_jobs = []
 
         @manifest["jobs"].each do |job_meta|
-          job_attrs = {:sha1 => job_meta["sha1"]}
+          filter = {:sha1 => job_meta["sha1"]}
+          if job_meta["fingerprint"]
+            filter[:fingerprint] = job_meta["fingerprint"]
+            filter = filter.sql_or
+          end
 
           # Checking whether we might have the same bits somewhere
-          jobs = Models::Template.filter(job_attrs).all
+          jobs = Models::Template.where(filter).all
 
           if @rebase
             substitute = jobs.find do |job|
@@ -378,9 +388,13 @@ module Bosh::Director
 
             if substitute
               job_meta["version"] = substitute.version
+              job_meta["sha1"] = substitute.sha1
               existing_jobs << [substitute, job_meta]
-              next
+            else
+              new_jobs << job_meta
             end
+
+            next
           end
 
           template = jobs.find do |job|
@@ -423,7 +437,8 @@ module Bosh::Director
         template_attrs = {
           :release => @release_model,
           :name => name,
-          :sha1 => job_meta["sha1"]
+          :sha1 => job_meta["sha1"],
+          :fingerprint => job_meta["fingerprint"]
         }
 
         if @rebase
@@ -514,7 +529,7 @@ module Bosh::Director
 
         n_jobs = jobs.size
         event_log.begin_stage("Processing #{n_jobs} existing " +
-                                "job#{n_jobs > 1 ? "s" : ""}", 1)
+                              "job#{n_jobs > 1 ? "s" : ""}", 1)
 
         event_log.track("Verifying checksums") do
           jobs.each do |template, job_meta|
