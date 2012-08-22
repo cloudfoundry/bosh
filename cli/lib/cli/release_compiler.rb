@@ -12,11 +12,10 @@ module Bosh::Cli
 
     # @param [String] manifest_file Release manifest path
     # @param [Bosh::Blobstore::Client] blobstore Blobstore client
-    # @param [Hash] remote_release Remote release info from director
     # @param [Array] package_matches List of package checksums that director
     #   can match
     # @param [String] release_dir Release directory
-    def initialize(manifest_file, blobstore, remote_release = nil,
+    def initialize(manifest_file, blobstore,
                    package_matches = [], release_dir = nil)
 
       @blobstore = blobstore
@@ -36,21 +35,6 @@ module Bosh::Cli
       FileUtils.mkdir_p(@packages_dir)
 
       @manifest = load_yaml_file(manifest_file)
-
-      if remote_release
-        # TODO: instead of OpenStruct conversion we should probably
-        # introduce proper abstractions for things below
-        @remote_packages = remote_release["packages"].map do |pkg|
-          OpenStruct.new(pkg)
-        end
-
-        @remote_jobs = remote_release["jobs"].map do |job|
-          OpenStruct.new(job)
-        end
-      else
-        @remote_packages = []
-        @remote_jobs = []
-      end
 
       @name = @manifest["name"]
       @version = @manifest["version"]
@@ -185,28 +169,17 @@ module Bosh::Cli
     # @return [Boolean]
     def remote_package_exists?(local_package)
       # If checksum is known to director we can always match it
-      return true if @package_matches.include?(local_package.sha1)
-
-      remote_object_exists?(@remote_packages, local_package)
+      @package_matches.include?(local_package.sha1) ||
+        (local_package.fingerprint &&
+         @package_matches.include?(local_package.fingerprint))
     end
 
     # Checks if local job is already known remotely
     # @param [#name, #version] local_job
     # @return [Boolean]
     def remote_job_exists?(local_job)
-      remote_object_exists?(@remote_jobs, local_job)
+      false
     end
-
-    # @param [Enumerable] remote_objects Remote object collection
-    # @param [#name, #version] local_object
-    # @return [Boolean]
-    def remote_object_exists?(remote_objects, local_object)
-      remote_objects.any? do |remote_object|
-        remote_object.name == local_object.name &&
-          remote_object.version.to_s == local_object.version.to_s
-      end
-    end
-
   end
 
 end

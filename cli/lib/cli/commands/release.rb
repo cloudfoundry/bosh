@@ -134,8 +134,6 @@ module Bosh::Cli::Command
     end
 
     def upload_manifest(manifest_path, upload_options = {})
-      manifest = load_yaml_file(manifest_path)
-      remote_release = get_remote_release(manifest["name"]) rescue nil
       package_matches = match_remote_packages(File.read(manifest_path))
 
       find_release_dir(manifest_path)
@@ -145,9 +143,8 @@ module Bosh::Cli::Command
 
       at_exit { FileUtils.rm_rf(tmpdir) }
 
-      compiler =
-        Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore,
-                                       remote_release, package_matches)
+      compiler = Bosh::Cli::ReleaseCompiler.new(
+        manifest_path, blobstore, package_matches)
       need_repack = true
 
       unless compiler.exists?
@@ -186,7 +183,7 @@ module Bosh::Cli::Command
           package_matches = match_remote_packages(tarball.manifest)
 
           say("Checking if can repack release for faster upload...")
-          repacked_path = tarball.repack(remote_release, package_matches)
+          repacked_path = tarball.repack(package_matches)
           if repacked_path.nil?
             say("Uploading the whole release".green)
           else

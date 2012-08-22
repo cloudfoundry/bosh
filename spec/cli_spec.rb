@@ -336,7 +336,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     out = run_bosh("upload release #{release_2}")
     out.should =~ regexp("foo (0.1-dev)                 SKIP\n")
-    out.should =~ regexp("foobar (0.1-dev)              SKIP\n")
+    # No job skipping for the moment (because of rebase),
+    # will be added back once job matching is implemented
+    out.should =~ regexp("foobar (0.1-dev)              UPLOAD\n")
     out.should =~ regexp("bar (0.2-dev)                 UPLOAD\n")
     out.should =~ regexp("Checking if can repack release for faster upload")
     out.should =~ regexp("Release repacked")
