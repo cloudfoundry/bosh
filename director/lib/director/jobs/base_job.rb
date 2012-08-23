@@ -40,13 +40,17 @@ module Bosh::Director
         logger.info(stage_name)
       end
 
-      def track_and_log(task)
+      def track_and_log(task, log = true)
         event_log.track(task) do |ticker|
-          logger.info(task)
+          logger.info(task) if log
           yield ticker if block_given?
         end
       end
 
+      def single_step_stage(stage_name)
+        begin_stage(stage_name, 1)
+        track_and_log(stage_name, false) { yield }
+      end
     end
   end
 end
