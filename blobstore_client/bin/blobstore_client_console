@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+#
+# Copyright (c) 2009-2012 VMware, Inc.
+#
+# Usage example:
+#
+# => Debugger enabled
+# => Welcome to BOSH blobstore client console
+# You can use 'bsc' to access blobstore client methods
+# irb(main):001:0> oid = bsc.create("test data content")
+# => "eyJvaWQiOiJlNGQ5MTUzMy1iOTZiLVlYjc1YzQ1NTAi%0ALCJwdXJsIjpudWxsfQ==%0A"
+# irb(main):002:0> bsc.get(oid)
+# => "test data content"
+# irb(main):003:0> bsc.delete(oid)
+# => true
+
+gemfile = File.expand_path("../../Gemfile", __FILE__)
+
+if File.exists?(gemfile)
+  ENV["BUNDLE_GEMFILE"] = gemfile
+  require "rubygems"
+  require "bundler/setup"
+end
+
+$:.unshift(File.expand_path("../../lib", __FILE__))
+require "blobstore_client"
+require "irb"
+require "irb/completion"
+require "ostruct"
+require "optparse"
+
+@provider = nil
+config_file = nil
+
+opts_parser = OptionParser.new do |opts|
+  opts.on("-p", "--provider PROVIDER") { |p| @provider = p }
+  opts.on("-c", "--config FILE") { |file| config_file = file }
+end
+opts_parser.parse!
+
+unless @provider && config_file
+  puts opts_parser
+  exit(1)
+end
+
+@config = YAML.load_file(config_file)
+
+module ConsoleHelpers
+  def bsc
+    @bsc ||= Bosh::Blobstore::Client.create(@provider, @config)
+  end
+end
+
+include ConsoleHelpers
+
+begin
+  require 'ruby-debug'
+  puts "=> Debugger enabled"
+rescue LoadError
+  puts "=> ruby-debug not found, debugger disabled"
+end
+
+puts "=> Welcome to BOSH blobstore client console"
+puts "You can use 'bsc' to access blobstore client methods"
+
+IRB.start
