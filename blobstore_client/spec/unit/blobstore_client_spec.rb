@@ -30,6 +30,11 @@ describe Bosh::Blobstore::Client do
     bs.should be_instance_of Bosh::Blobstore::S3BlobstoreClient
   end
 
+  it "should have an swift provider" do
+    bs = Bosh::Blobstore::Client.create('swift', {})
+    bs.should be_instance_of Bosh::Blobstore::SwiftBlobstoreClient
+  end
+
   it "should raise an exception on an unknown client" do
     lambda {
       bs = Bosh::Blobstore::Client.create('foobar', {})

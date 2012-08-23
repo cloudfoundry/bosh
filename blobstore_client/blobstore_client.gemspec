@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "aws-s3", "~> 0.6.2"
+  s.add_dependency "fog", "~>1.5.0"
   s.add_dependency "httpclient", ">=2.2"
   s.add_dependency "multi_json", "~> 1.1.0"
   s.add_dependency "ruby-atmos-pure", "~> 1.0.5"
