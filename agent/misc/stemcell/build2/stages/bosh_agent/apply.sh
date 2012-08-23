@@ -22,7 +22,7 @@ chmod +x agent/bin/agent
 # Install gems
 run_in_bosh_chroot $chroot "
 cd agent
-bundle install --path $bosh_dir/gems --without test
+bundle install --path $bosh_dir/gems --without development test
 "
 
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent
