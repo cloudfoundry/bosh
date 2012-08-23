@@ -10,6 +10,7 @@ require "blobstore_client/client"
 require "blobstore_client/base"
 require "blobstore_client/simple_blobstore_client"
 require "blobstore_client/s3_blobstore_client"
+require "blobstore_client/swift_blobstore_client"
 require "blobstore_client/local_client"
 require "blobstore_client/atmos_blobstore_client"
 
@@ -20,6 +21,7 @@ module Bosh
       PROVIDER_MAP = {
         "simple" => SimpleBlobstoreClient,
         "s3" => S3BlobstoreClient,
+        "swift" => SwiftBlobstoreClient,
         "atmos" => AtmosBlobstoreClient,
         "local" => LocalClient
       }
