@@ -208,7 +208,7 @@ module Bosh::Deployer
 
         # override with values from the deployment manifest
         override = Config.cloud_options["properties"]["stemcell"]
-        properties["cloud_properties"].merge!(override) if override
+        override_property(properties, "cloud_properties", override)
 
         step "Uploading stemcell" do
           cloud.create_stemcell("#{stemcell}/image", properties["cloud_properties"])
@@ -363,6 +363,11 @@ module Bosh::Deployer
         update_service_address(properties, service, service_ip)
       end
 
+      # health monitor does not listen to any ports, so there is no
+      # need to update the service address, but we still want to
+      # be able to override values in the apply_spec
+      override_property(properties, "hm", Config.spec_properties["hm"])
+
       spec
     end
 
@@ -397,9 +402,7 @@ module Bosh::Deployer
         svc = agent[service] ||= {}
         svc["address"] = address
 
-        if override = Config.agent_properties[service]
-          svc.merge!(override)
-        end
+        override_property(agent, service, Config.agent_properties[service])
       end
     end
 
@@ -407,9 +410,11 @@ module Bosh::Deployer
       return unless properties[service]
       properties[service]["address"] = address
 
-      if override = Config.spec_properties[service]
-        properties[service].merge!(override)
-      end
+      override_property(properties, service, Config.spec_properties[service])
+    end
+
+    def override_property(properties, service, override)
+      properties[service].merge!(override) if override
     end
 
     def bosh_ip
