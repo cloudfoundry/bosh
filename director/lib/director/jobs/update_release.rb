@@ -146,6 +146,9 @@ module Bosh::Director
             event_log.track("#{name}: #{transition}") {}
           end
         end
+
+        event_log.begin_stage("Release has been created", 1)
+        event_log.track("#{@name}/#{@version}") {}
       end
 
       # Normalizes release manifest, so all names, versions, and checksums
