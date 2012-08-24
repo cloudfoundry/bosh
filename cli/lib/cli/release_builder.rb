@@ -107,6 +107,7 @@ module Bosh::Cli
           "name" => package.name,
           "version" => package.version,
           "sha1" => package.checksum,
+          "fingerprint" => package.fingerprint,
           "dependencies" => package.dependencies
         }
       end
@@ -115,6 +116,7 @@ module Bosh::Cli
         {
           "name" => job.name,
           "version" => job.version,
+          "fingerprint" => job.fingerprint,
           "sha1" => job.checksum,
         }
       end

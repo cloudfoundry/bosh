@@ -80,4 +80,37 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.version.should == "7.1-dev"
   end
 
+  it "has packages and jobs fingerprints in spec" do
+    job = mock(
+      Bosh::Cli::JobBuilder,
+      :name => "job1",
+      :version => "1.1",
+      :new_version? => true,
+      :packages => %w(foo),
+      :fingerprint => "deadbeef",
+      :checksum => "cafebad"
+    )
+
+    package = mock(
+      Bosh::Cli::PackageBuilder,
+      :name => "foo",
+      :version => "42",
+      :new_version? => true,
+      :fingerprint => "deadcafe",
+      :checksum => "baddeed",
+      :dependencies => []
+    )
+
+    builder = Bosh::Cli::ReleaseBuilder.new(@release, [package], [job])
+    builder.should_receive(:copy_jobs)
+    builder.should_receive(:copy_packages)
+
+    builder.build
+
+    manifest = YAML.load_file(builder.manifest_path)
+
+    manifest["jobs"][0]["fingerprint"].should == "deadbeef"
+    manifest["packages"][0]["fingerprint"].should == "deadcafe"
+  end
+
 end
