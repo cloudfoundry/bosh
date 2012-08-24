@@ -36,16 +36,26 @@ BundlerTask.new
 if defined?(RSpec)
   namespace :spec do
     desc "Run Unit Tests"
-    rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
+    unit_rspec_task = RSpec::Core::RakeTask.new(:unit) do |t|
       t.pattern = "spec/unit/**/*_spec.rb"
-      t.rspec_opts = %w(--format progress --colour)
+      t.rspec_opts = %w(--format progress --color)
     end
 
     CiTask.new do |task|
-      task.rspec_task = rspec_task
+      task.rspec_task = unit_rspec_task
+    end
+
+    desc "Run Integration Tests"
+    functional_rspec_task = RSpec::Core::RakeTask.new(:functional) do |t|
+      t.pattern = "spec/functional/**/*_spec.rb"
+      t.rspec_opts = %w(--format progress --color)
+    end
+
+    CiTask.new do |task|
+      task.rspec_task = functional_rspec_task
     end
   end
 
   desc "Install dependencies and run tests"
-  task :spec => %w(bundler:install:test spec:unit)
+  task :spec => %w(bundler:install:test spec:unit spec:functional)
 end
