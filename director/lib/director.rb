@@ -237,7 +237,10 @@ module Bosh::Director
     end
 
     post "/releases", :consumes => :tgz do
-      task = @release_manager.create_release(@user, request.body)
+      options = {}
+      options[:rebase] = true if params[:rebase]
+
+      task = @release_manager.create_release(@user, request.body, options)
       redirect "/tasks/#{task.id}"
     end
 
