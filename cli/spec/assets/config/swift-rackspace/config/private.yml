@@ -1,0 +1,6 @@
+---
+blobstore:
+  swift:
+    rackspace:
+      rackspace_username: foo
+      rackspace_api_key: bar

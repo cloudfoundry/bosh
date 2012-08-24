@@ -1,0 +1,6 @@
+---
+blobstore:
+  provider: swift
+  options:
+    container_name: test
+    swift_provider: hp

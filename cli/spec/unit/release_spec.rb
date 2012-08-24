@@ -77,6 +77,11 @@ describe Bosh::Cli::Release do
       r.blobstore
     end
 
+    it "should detect blobstore secrets for deprecated options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
+      r.has_blobstore_secret?.should be_true
+    end
+
     it "should merge s3 secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/s3"))
       opts = {
@@ -88,6 +93,11 @@ describe Bosh::Cli::Release do
       r.blobstore
     end
 
+    it "should detect blobstore secrets for s3 options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/s3"))
+      r.has_blobstore_secret?.should be_true
+    end
+
     it "should merge atmos secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
       opts = {
@@ -96,6 +106,50 @@ describe Bosh::Cli::Release do
       }
       Bosh::Blobstore::Client.should_receive(:create).with("atmos", opts)
       r.blobstore
+    end
+
+    it "should detect blobstore secrets for atmos options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
+      r.has_blobstore_secret?.should be_true
+    end
+
+    it "should merge swift (HP) secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/swift-hp"))
+      opts = {
+          :container_name => "test",
+          :swift_provider => "hp",
+          :hp => {
+            :hp_account_id => "foo",
+            :hp_secret_key => "bar",
+            :hp_tenant_id => "foo"
+          }
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
+      r.blobstore
+    end
+
+    it "should detect blobstore secrets for swift (HP) options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/swift-hp"))
+      r.has_blobstore_secret?.should be_true
+    end
+
+    it "should merge swift (Rackspace) secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
+      opts = {
+          :container_name => "test",
+          :swift_provider => "rackspace",
+          :rackspace => {
+            :rackspace_username => "foo",
+            :rackspace_api_key => "bar"
+          }
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("swift", opts)
+      r.blobstore
+    end
+
+    it "should detect blobstore secrets for swift (Rackspace) options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
+      r.has_blobstore_secret?.should be_true
     end
   end
 end
