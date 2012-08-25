@@ -1,0 +1,34 @@
+The ami script takes a config file as only argument, and config.yml need
+to contain the aws credentials, path to ssh keys and hash called regions,
+either empty or a hash with region names, containing a hash of instance
+id, instance name & ami, e.g.
+
+:aws:
+  :access_key_id: ...
+  :secret_access_key: ...
+:ssh:
+  :private: ~/.ssh/key
+  :public: ~/.ssh/key.pub
+:regions:
+  us-east-1:
+    :id: i-933c65e8
+    :name: ec2-184-72-73-15.compute-1.amazonaws.com
+    :ami: ami-69dd6900
+
+To publish a new stemcell as an AMI in all AWS EC2 regions, do the following:
+
+- First edit scripts.stemcell.sh and update STEMCELL to the latest published
+  version, which later will be downloaded to each instance.
+
+- Then run:
+  bin/ami config.yml
+
+  If starting from scratch, it will create a new instance in each region,
+  and if there are existing instances in config.yml, it will reuse them.
+
+  Then it will upload everything in the scripts directory to each instance,
+  and finally run each of them.
+
+  This will create an AMI and store the reference in config.yml
+
+- Once the script is done, the instances can be removed.
