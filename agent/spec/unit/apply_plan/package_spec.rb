@@ -26,13 +26,26 @@ describe Bosh::Agent::ApplyPlan::Package do
     }
   end
 
-  let(:job_spec) do
+  let(:template_spec) do
     {
-      "name" => "ccdb",
-      "template" => "postgres",
+      "name" => "postgres",
       "version" => "2",
       "sha1" => "badcafe",
       "blobstore_id" => "beefdad"
+    }
+  end
+
+  let(:job_spec) do
+    {
+      "name" => "ccdb",
+      "templates" => [ template_spec ]
+    }
+  end
+
+  let(:job_spec2) do
+    {
+      "name" => "dashboard",
+      "templates" => [ template_spec ]
     }
   end
 
@@ -68,7 +81,7 @@ describe Bosh::Agent::ApplyPlan::Package do
   describe "installation" do
     it "fetches package and creates symlink in packages and jobs" do
       package = make_package(valid_spec)
-      job = make_job(job_spec)
+      job = make_job(job_spec, template_spec["name"], template_spec)
 
       # TODO: make sure unpack_blob is tested elsewhere
       Bosh::Agent::Util.should_receive(:unpack_blob).
@@ -89,6 +102,25 @@ describe Bosh::Agent::ApplyPlan::Package do
         should == File.realpath(package.install_path)
     end
 
+    it "doesn't fetch a package more than once" do
+      package = make_package(valid_spec)
+      job = make_job(job_spec, template_spec["name"], template_spec)
+      job2 = make_job(job_spec2, template_spec["name"], template_spec)
+
+      Bosh::Agent::Util.should_receive(:unpack_blob).once.
+        and_return { FileUtils.mkdir_p(package.install_path) }
+
+      package.install_for_job(job)
+      package.install_for_job(job2)
+
+      job_link_path = File.join(job.install_path, "packages", "postgres")
+      job_link_path2 = File.join(job2.install_path, "packages", "postgres")
+
+      File.realpath(job_link_path).
+        should == File.realpath(package.install_path)
+      File.realpath(job_link_path2).
+        should == File.realpath(package.install_path)
+    end
   end
 
 end
