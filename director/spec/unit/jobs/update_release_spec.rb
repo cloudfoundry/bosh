@@ -81,7 +81,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         :version => "25", :fingerprint => "deadbad")
 
       BD::Models::Template.make(
-        :release => @release, :name => "baz", :version => "2.1-dev")
+        :release => @release, :name => "baz", :version => "33.7-dev")
       BD::Models::Template.make(
         :release => @release, :name => "zaz", :version => "17")
       BD::Models::Template.make(
@@ -94,7 +94,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         and_return(@lock)
     end
 
-    it "ignores package/job/release versions in the original tarball" do
+    it "rebases original versions saving the major version" do
       @lock.should_receive(:lock).and_yield
 
       @blobstore.should_receive(:create).
@@ -110,8 +110,8 @@ describe Bosh::Director::Jobs::UpdateRelease do
         :release_id => @release.id, :name => "zbb").all
 
       foos.map { |foo| foo.version }.should =~ %w(2.7-dev 2.8-dev)
-      bars.map { |bar| bar.version }.should =~ %w(42 42.1-dev)
-      zbbs.map { |zbb| zbb.version }.should =~ %w(25)
+      bars.map { |bar| bar.version }.should =~ %w(42 3.1-dev)
+      zbbs.map { |zbb| zbb.version }.should =~ %w(25) # fingerprint match
 
       bazs = BD::Models::Template.filter(
         :release_id => @release.id, :name => "baz").all
@@ -120,25 +120,25 @@ describe Bosh::Director::Jobs::UpdateRelease do
       zbzs = BD::Models::Template.filter(
         :release_id => @release.id, :name => "zbz").all
 
-      bazs.map { |baz| baz.version }.should =~ %w(2.1-dev 2.2-dev)
-      zazs.map { |zaz| zaz.version }.should =~ %w(17 17.1-dev)
-      zbzs.map { |zbz| zbz.version }.should =~ %w(28)
+      bazs.map { |baz| baz.version }.should =~ %w(33.7-dev 33.8-dev)
+      zazs.map { |zaz| zaz.version }.should =~ %w(17 0.1-dev)
+      zbzs.map { |zbz| zbz.version }.should =~ %w(28) # fingerprint match
 
       rv = BD::Models::ReleaseVersion.filter(
-        :release_id => @release.id, :version => "37.1-dev").first
+        :release_id => @release.id, :version => "42.1-dev").first
 
       rv.should_not be_nil
 
       rv.packages.map { |package|
         package.version
-      }.should =~ %w(2.8-dev 42.1-dev 25)
+      }.should =~ %w(2.8-dev 3.1-dev 25)
 
       rv.templates.map { |template|
         template.version
-      }.should =~ %w(2.2-dev 17.1-dev 28)
+      }.should =~ %w(33.8-dev 0.1-dev 28)
     end
 
-    it "uses 0.1-dev version for initial rebase if no release exists" do
+    it "uses major.1-dev version for initial rebase if no version exists" do
       @lock.should_receive(:lock).and_yield
 
       @blobstore.should_receive(:create).
@@ -155,22 +155,24 @@ describe Bosh::Director::Jobs::UpdateRelease do
       bars = BD::Models::Package.filter(
         :release_id => @release.id, :name => "bar").all
 
-      foos.map { |foo| foo.version }.should =~ %w(0.1-dev)
-      bars.map { |bar| bar.version }.should =~ %w(0.1-dev)
+      foos.map { |foo| foo.version }.should =~ %w(2.1-dev)
+      bars.map { |bar| bar.version }.should =~ %w(3.1-dev)
 
       bazs = BD::Models::Template.filter(
         :release_id => @release.id, :name => "baz").all
       zazs = BD::Models::Template.filter(
         :release_id => @release.id, :name => "zaz").all
 
-      bazs.map { |baz| baz.version }.should =~ %w(0.1-dev)
+      bazs.map { |baz| baz.version }.should =~ %w(33.1-dev)
       zazs.map { |zaz| zaz.version }.should =~ %w(0.1-dev)
 
       rv = BD::Models::ReleaseVersion.filter(
-        :release_id => @release.id, :version => "0.1-dev").first
+        :release_id => @release.id, :version => "42.1-dev").first
 
-      rv.packages.map { |p| p.version }.should =~ %w(0.1-dev 0.1-dev 0.1-dev)
-      rv.templates.map { |t| t.version }.should =~ %w(0.1-dev 0.1-dev 0.1-dev)
+      rv.packages.map { |p| p.version }.should =~ %w(2.1-dev 3.1-dev 333.1-dev)
+      rv.templates.map {
+        |t| t.version
+      }.should =~ %w(33.1-dev 0.1-dev 666.1-dev)
     end
 
     it "performs no rebase if same release is being rebased twice" do
