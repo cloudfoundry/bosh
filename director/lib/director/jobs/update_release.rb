@@ -21,6 +21,8 @@ module Bosh::Director
         @release_version_model = nil
 
         @rebase = !!options["rebase"]
+        @package_rebase_mapping = {}
+        @job_rebase_mapping = {}
 
         @manifest = nil
         @name = nil
@@ -39,13 +41,11 @@ module Bosh::Director
           logger.info("Release rebase will be performed")
         end
 
-        event_log.begin_stage("Updating release", 3)
-        track_and_log("Extracting release") { extract_release }
-        track_and_log("Verifying manifest") { verify_manifest }
-        track_and_log("Save release version") do
-          release_lock = Lock.new("lock:release:#{@name}")
-          release_lock.lock { process_release }
-        end
+        single_step_stage("Extracting release") { extract_release }
+        single_step_stage("Verifying manifest") { verify_manifest }
+
+        release_lock = Lock.new("lock:release:#{@name}")
+        release_lock.lock { process_release }
 
         if @rebase && @packages_unchanged && @jobs_unchanged
           raise DirectorError,
@@ -123,11 +123,29 @@ module Bosh::Director
 
         @release_version_model.save
 
-        resolve_package_dependencies(@manifest["packages"])
+        single_step_stage("Resolving package dependencies") do
+          resolve_package_dependencies(@manifest["packages"])
+        end
 
         @packages = {}
         process_packages
         process_jobs
+
+        unless @package_rebase_mapping.empty?
+          event_log.begin_stage(
+            "Rebased packages", @package_rebase_mapping.size)
+          @package_rebase_mapping.each_pair do |name, transition|
+            event_log.track("#{name}: #{transition}") {}
+          end
+        end
+
+        unless @job_rebase_mapping.empty?
+          event_log.begin_stage(
+            "Rebased jobs", @job_rebase_mapping.size)
+          @job_rebase_mapping.each_pair do |name, transition|
+            event_log.track("#{name}: #{transition}") {}
+          end
+        end
       end
 
       # Normalizes release manifest, so all names, versions, and checksums
@@ -316,10 +334,11 @@ module Bosh::Director
 
         if @rebase
           new_version = next_package_version(name)
-          logger.info("Package `#{name}/#{version}' " +
-                      "rebased to `#{name}/#{new_version}'")
+          transition = "#{version} -> #{new_version}"
+          logger.info("Package `#{name}' rebased: #{transition}")
           package_attrs[:version] = new_version
           version = new_version
+          @package_rebase_mapping[name] = transition
         else
           package_attrs[:version] = version
         end
@@ -443,10 +462,11 @@ module Bosh::Director
 
         if @rebase
           new_version = next_template_version(name)
-          logger.info("Job template `#{name}/#{version}' " +
-                      "rebased to `#{name}/#{new_version}'")
+          transition = "#{version} -> #{new_version}"
+          logger.info("Job `#{name}' rebased: #{transition}")
           template_attrs[:version] = new_version
           version = new_version
+          @job_rebase_mapping[name] = transition
         else
           template_attrs[:version] = version
         end
