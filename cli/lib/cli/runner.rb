@@ -300,7 +300,7 @@ module Bosh::Cli
                    "to be a release repository)"
         option "--force", "bypass git dirty state check"
         option "--final", "create production-ready release " +
-            "(stores artefacts in blobstore, bumps final version)"
+            "(stores artifacts in blobstore, bumps final version)"
         option "--with-tarball", "create full release tarball" +
             "(by default only manifest is created)"
         option "--dry-run", "stop before writing release " +
