@@ -336,7 +336,7 @@ module Bosh::Director
         }
 
         if @rebase
-          new_version = next_package_version(name)
+          new_version = next_package_version(name, version)
           transition = "#{version} -> #{new_version}"
           logger.info("Package `#{name}' rebased: #{transition}")
           package_attrs[:version] = new_version
@@ -464,7 +464,7 @@ module Bosh::Director
         }
 
         if @rebase
-          new_version = next_template_version(name)
+          new_version = next_template_version(name, version)
           transition = "#{version} -> #{new_version}"
           logger.info("Job `#{name}' rebased: #{transition}")
           template_attrs[:version] = new_version
@@ -593,39 +593,47 @@ module Bosh::Director
         attrs = {
           :release_id => @release_model.id
         }
-
-        next_version(Models::ReleaseVersion.filter(attrs))
+        next_version(Models::ReleaseVersion.filter(attrs).all, @version)
       end
 
       # Returns the next package version (to be used for rebased package)
+      # @param [String] name Package name
+      # @param [String] version Package version
       # @return [String]
-      def next_package_version(package_name)
+      def next_package_version(name, version)
         attrs = {
           :release_id => @release_model.id,
-          :name => package_name
+          :name => name
         }
 
-        next_version(Models::Package.filter(attrs))
+        next_version(Models::Package.filter(attrs).all, version)
       end
 
       # Returns the next job template version (to be used for rebased template)
+      # @param [String] name Template name
+      # @param [Fixnum] version Template version
       # @return [String]
-      def next_template_version(template_name)
+      def next_template_version(name, version)
         attrs = {
           :release_id => @release_model.id,
-          :name => template_name
+          :name => name
         }
 
-        next_version(Models::Template.filter(attrs))
+        next_version(Models::Template.filter(attrs).all, version)
       end
 
       # Takes collection of versioned items and returns the version
       # that new item should be promoted to if auto-versioning is used
       # @param [Array<#version>] Collection of items
+      # @param [String] version Current version of item
       # @return [String] Next version to be used
-      def next_version(collection)
-        latest = collection.sort { |rv1, rv2|
-          version_cmp(rv2.version, rv1.version)
+      def next_version(collection, version)
+        major = major_version(version)
+
+        latest = collection.select { |item|
+          major_version(item.version) == major
+        }.sort { |a, b|
+          version_cmp(b.version, a.version)
         }.first
 
         if latest
@@ -636,8 +644,8 @@ module Bosh::Director
           version
         else
           # The very initial rebase would still discard original versions and
-          # start versioning at '0.1-dev' (for consistency)
-          "0.1-dev"
+          # start versioning at '#{major}.1-dev' (for consistency)
+          "#{major}.1-dev"
         end
       end
 
