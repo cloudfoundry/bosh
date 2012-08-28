@@ -41,7 +41,8 @@ $bosh_dir/bin/ruby setup.rb || true
 "
 
 # Skip gem docs
-echo "gem: --no-rdoc --no-ri" >> $chroot/etc/gemrc
+mkdir -p $chroot/root/.gemrc
+echo "gem: --no-rdoc --no-ri" >> $chroot/root/.gemrc
 
 # Bundler
 bundler_gem=bundler-1.0.10.gem
