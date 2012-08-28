@@ -46,6 +46,7 @@ require "director/config"
 require "director/event_log"
 require "director/task_result_file"
 require "director/blob_util"
+require "director/version_calc"
 
 require "director/client"
 require "director/agent_client"
@@ -238,7 +239,7 @@ module Bosh::Director
 
     post "/releases", :consumes => :tgz do
       options = {}
-      options[:rebase] = true if params[:rebase]
+      options["rebase"] = true if params["rebase"] == "true"
 
       task = @release_manager.create_release(@user, request.body, options)
       redirect "/tasks/#{task.id}"

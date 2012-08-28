@@ -3,6 +3,8 @@
 module Bosh::Director
   module Jobs
     class UpdateRelease < BaseJob
+      include Bosh::Director::VersionCalc
+
       @queue = :normal
 
       # TODO: remove these, only being used in tests, better to refactor tests
@@ -18,11 +20,14 @@ module Bosh::Director
         @release_model = nil
         @release_version_model = nil
 
-        @rebase = !!options[:rebase]
+        @rebase = !!options["rebase"]
 
         @manifest = nil
         @name = nil
         @version = nil
+
+        @packages_unchanged = false
+        @jobs_unchanged = false
       end
 
       # Extracts release tarball, verifies release manifest and saves release
@@ -30,6 +35,9 @@ module Bosh::Director
       # @return [void]
       def perform
         logger.info("Processing update release")
+        if @rebase
+          logger.info("Release rebase will be performed")
+        end
 
         event_log.begin_stage("Updating release", 3)
         track_and_log("Extracting release") { extract_release }
@@ -37,6 +45,11 @@ module Bosh::Director
         track_and_log("Save release version") do
           release_lock = Lock.new("lock:release:#{@name}")
           release_lock.lock { process_release }
+        end
+
+        if @rebase && @packages_unchanged && @jobs_unchanged
+          raise DirectorError,
+                "Rebase is attempted without any job or package changes"
         end
 
         "Created release `#{@name}/#{@version}'"
@@ -93,6 +106,9 @@ module Bosh::Director
       # @return [void]
       def process_release
         @release_model = Models::Release.find_or_create(:name => @name)
+        if @rebase
+          @version = next_release_version
+        end
 
         version_attrs = {
           :release => @release_model,
@@ -177,31 +193,51 @@ module Bosh::Director
         @manifest["packages"].each do |package_meta|
           package_attrs = {:sha1 => package_meta["sha1"]}
 
-          # Search for existing packages
+          # Checking whether we might have the same bits somewhere
           packages = Models::Package.filter(package_attrs).all
 
-          if packages.nil? || packages.empty?
+          if packages.empty?
             new_packages << package_meta
-          else
-            # We can reuse an existing package as long as it
-            # belongs to the same release and has the same name and version
-            package = packages.find do |package|
+            next
+          end
+
+          # Rebase is an interesting use case: we don't really care about
+          # preserving the original package/job versions, so if we have a
+          # checksum/fingerprint match, we can just substitute the original
+          # package/job version with an existing one.
+          if @rebase
+            substitute = packages.find do |package|
               package.release_id == @release_model.id &&
               package.name == package_meta["name"] &&
-              package.version == package_meta["version"]
+              package.dependency_set == Set.new(package_meta["dependencies"])
             end
 
-            if package
-              existing_packages << [package, package_meta]
-            else
-              # We found a package but not in the same release, so
-              # make a copy of the package blob and create a new db entry for it
-              package = packages.first
-              logger.info("Release #{@release_model.id} now using package" +
-                          "#{package.inspect}")
-              package_meta["blobstore_id"] = package.blobstore_id
-              new_packages << package_meta
+            if substitute
+              package_meta["version"] = substitute.version
+              existing_packages << [substitute, package_meta]
+              next
             end
+          end
+
+          # We can reuse an existing package as long as it
+          # belongs to the same release and has the same name and version.
+          existing_package = packages.find do |package|
+            package.release_id == @release_model.id &&
+            package.name == package_meta["name"] &&
+            package.version == package_meta["version"]
+            # NOT checking dependencies here b/c dependency change would
+            # bump the package version anyway.
+          end
+
+          if existing_package
+            existing_packages << [existing_package, package_meta]
+          else
+            # We found a package with the same checksum but different
+            # (release, name, version) tuple, so we need to make a copy
+            # of the package blob and create a new db entry for it
+            package = packages.first
+            package_meta["blobstore_id"] = package.blobstore_id
+            new_packages << package_meta
           end
         end
 
@@ -213,10 +249,14 @@ module Bosh::Director
       # @param [Array<Hash>] packages Packages metadata
       # @return [void]
       def create_packages(packages)
-        return if packages.empty?
+        if packages.empty?
+          @packages_unchanged = true
+          return
+        end
 
         event_log.begin_stage("Creating new packages", packages.size)
         packages.each do |package_meta|
+          # TODO: don't expose version to event log if rebase?
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           event_log.track(package_desc) do
             logger.info("Creating new package `#{package_desc}'")
@@ -260,28 +300,37 @@ module Bosh::Director
       # @param [Hash] package_meta Package metadata
       # @return [void]
       def create_package(package_meta)
+        name, version = package_meta["name"], package_meta["version"]
+
         package_attrs = {
           :release => @release_model,
-          :name => package_meta["name"],
-          :version => package_meta["version"],
+          :name => name,
           :sha1 => package_meta["sha1"]
         }
+
+        if @rebase
+          new_version = next_package_version(name)
+          logger.info("Package `#{name}/#{version}' " +
+                      "rebased to `#{name}/#{new_version}'")
+          package_attrs[:version] = new_version
+          version = new_version
+        else
+          package_attrs[:version] = version
+        end
 
         package = Models::Package.new(package_attrs)
         package.dependency_set = package_meta["dependencies"]
 
         existing_blob = package_meta["blobstore_id"]
+        desc = "package `#{name}/#{version}'"
 
         if existing_blob
-          logger.info("Copying blob #{existing_blob} " +
-                      "for #{package.name}/#{package_meta["version"]}")
+          logger.info("Creating #{desc} from existing blob #{existing_blob}")
           package.blobstore_id = BlobUtil.copy_blob(existing_blob)
         else
-          logger.info("Creating package: #{package.name}")
+          logger.info("Creating #{desc} from provided bits")
 
-          package_tgz = File.join(@tmp_release_dir, "packages",
-                                  "#{package.name}.tgz")
-
+          package_tgz = File.join(@tmp_release_dir, "packages", "#{name}.tgz")
           output = `tar -tzf #{package_tgz} 2>&1`
           if $?.exitstatus != 0
             raise PackageInvalidArchive,
@@ -316,13 +365,30 @@ module Bosh::Director
         existing_jobs = []
 
         @manifest["jobs"].each do |job_meta|
-          template_attrs = {
-            :release_id => @release_model.id,
-            :name => job_meta["name"],
-            :version => job_meta["version"]
-          }
+          job_attrs = {:sha1 => job_meta["sha1"]}
 
-          template = Models::Template[template_attrs]
+          # Checking whether we might have the same bits somewhere
+          jobs = Models::Template.filter(job_attrs).all
+
+          if @rebase
+            substitute = jobs.find do |job|
+              job.release_id == @release_model.id &&
+              job.name == job_meta["name"]
+            end
+
+            if substitute
+              job_meta["version"] = substitute.version
+              existing_jobs << [substitute, job_meta]
+              next
+            end
+          end
+
+          template = jobs.find do |job|
+            job.release_id == @release_model.id &&
+            job.name == job_meta["name"] &&
+            job.version == job_meta["version"]
+          end
+
           if template.nil?
             new_jobs << job_meta
           else
@@ -335,7 +401,10 @@ module Bosh::Director
       end
 
       def create_jobs(jobs)
-        return if jobs.empty?
+        if jobs.empty?
+          @jobs_unchanged = true
+          return
+        end
 
         event_log.begin_stage("Creating new jobs", jobs.size)
         jobs.each do |job_meta|
@@ -349,18 +418,30 @@ module Bosh::Director
       end
 
       def create_job(job_meta)
+        name, version = job_meta["name"], job_meta["version"]
+
         template_attrs = {
           :release => @release_model,
-          :name => job_meta["name"],
-          :version => job_meta["version"],
+          :name => name,
           :sha1 => job_meta["sha1"]
         }
 
+        if @rebase
+          new_version = next_template_version(name)
+          logger.info("Job template `#{name}/#{version}' " +
+                      "rebased to `#{name}/#{new_version}'")
+          template_attrs[:version] = new_version
+          version = new_version
+        else
+          template_attrs[:version] = version
+        end
+
+        logger.info("Creating job template `#{name}/#{version}' " +
+                    "from provided bits")
         template = Models::Template.new(template_attrs)
 
-        logger.info("Processing job: #{template.name}")
-        job_tgz = File.join(@tmp_release_dir, "jobs", "#{template.name}.tgz")
-        job_dir = File.join(@tmp_release_dir, "jobs", "#{template.name}")
+        job_tgz = File.join(@tmp_release_dir, "jobs", "#{name}.tgz")
+        job_dir = File.join(@tmp_release_dir, "jobs", "#{name}")
 
         FileUtils.mkdir_p(job_dir)
 
@@ -467,6 +548,60 @@ module Bosh::Director
       private
       # TODO: can make most of other methods private as well but first need to
       # refactor tests for that
+
+      # Returns the next release version (to be used for rebased release)
+      # @return [String]
+      def next_release_version
+        attrs = {
+          :release_id => @release_model.id
+        }
+
+        next_version(Models::ReleaseVersion.filter(attrs))
+      end
+
+      # Returns the next package version (to be used for rebased package)
+      # @return [String]
+      def next_package_version(package_name)
+        attrs = {
+          :release_id => @release_model.id,
+          :name => package_name
+        }
+
+        next_version(Models::Package.filter(attrs))
+      end
+
+      # Returns the next job template version (to be used for rebased template)
+      # @return [String]
+      def next_template_version(template_name)
+        attrs = {
+          :release_id => @release_model.id,
+          :name => template_name
+        }
+
+        next_version(Models::Template.filter(attrs))
+      end
+
+      # Takes collection of versioned items and returns the version
+      # that new item should be promoted to if auto-versioning is used
+      # @param [Array<#version>] Collection of items
+      # @return [String] Next version to be used
+      def next_version(collection)
+        latest = collection.sort { |rv1, rv2|
+          version_cmp(rv2.version, rv1.version)
+        }.first
+
+        if latest
+          version = bump_minor_version(latest.version)
+          # Keeping '-dev' suffix for rebased versions is not a requirement
+          # and mostly done for versioning consistency
+          version += "-dev" unless version =~ /-dev$/
+          version
+        else
+          # The very initial rebase would still discard original versions and
+          # start versioning at '0.1-dev' (for consistency)
+          "0.1-dev"
+        end
+      end
 
       # Removes release version model, along with all packages and templates.
       # @return [void]
