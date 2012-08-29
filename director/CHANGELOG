@@ -1,0 +1,5 @@
+== 0.6 - 08/29/12
+* release rebase support
+* fingerprint matching
+* updated VSphere CPI to 0.4.10 (vCPU fix)
+* removed compiled package sharing
