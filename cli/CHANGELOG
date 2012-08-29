@@ -1,3 +1,12 @@
+== 0.20 - 08/29/12
+* release rebase support
+* --no-filter option for 'bosh tasks'
+* fingerprint match support
+* NOTE: this version of CLI will upload ALL
+  packages if director doesn't support package matching,
+  please use 0.19.6 if your director is out of date.
+* dependencies bump
+
 == 0.19.6 - 08/15/12
 * common blobstore credentials handling
 * 'bosh edit deployment'
