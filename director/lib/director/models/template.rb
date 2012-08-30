@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Director::Models
+  # TODO: rename to JobTemplate/Role?
   class Template < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :release
     many_to_many :release_versions
@@ -20,6 +21,18 @@ module Bosh::Director::Models
 
     def logs
       result = self.logs_json
+      result ? Yajl::Parser.parse(result) : nil
+    end
+
+    # @param [Object] property_spec Property spec from job spec
+    def properties=(property_spec)
+      self.properties_json = Yajl::Encoder.encode(property_spec)
+    end
+
+    # @return [Hash] Template properties (as provided in job spec)
+    # @return [nil] if no properties have been defined in job spec
+    def properties
+      result = self.properties_json
       result ? Yajl::Parser.parse(result) : nil
     end
 
