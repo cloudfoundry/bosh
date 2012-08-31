@@ -124,4 +124,8 @@ describe Bosh::Cli::TaskTracker do
     tracker.track.should == :cancelled
   end
 
+  it "accepts alternate :renderer option" do
+    tracker = make_tracker("42", {:renderer => "I'm a renderer"})
+    tracker.instance_variable_get("@renderer").should == "I'm a renderer"
+  end
 end
