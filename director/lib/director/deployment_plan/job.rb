@@ -65,12 +65,31 @@ module Bosh::Director
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
+      # @return [Bosh::Director::DeploymentPlan::Job]
+      def self.parse(deployment, job_spec)
+        job = new(deployment, job_spec)
+        job.parse
+        job
+      end
+
+      # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
+      # @param [Hash] job_spec Raw job spec from the deployment manifest
       def initialize(deployment, job_spec)
         @deployment = deployment
         @job_spec = job_spec
 
+        @release = nil
         @templates = []
+        @all_properties = nil # All properties available to job
+        @properties = nil # Actual job properties
 
+        @error_mutex = Mutex.new
+        @packages = {}
+        @halt = false
+        @unneeded_instances = []
+      end
+
+      def parse
         parse_name
         parse_release
         parse_template
@@ -80,11 +99,6 @@ module Bosh::Director
         parse_update_config
         parse_instances
         parse_networks
-
-        @error_mutex = Mutex.new
-        @packages = {}
-        @halt = false
-        @unneeded_instances = []
       end
 
       def self.is_legacy_spec?(job_spec)
@@ -197,8 +211,6 @@ module Bosh::Director
         end
       end
 
-      private
-
       def parse_name
         @name = safe_property(@job_spec, "name", :class => String)
         @canonical_name = canonical(@name)
@@ -228,6 +240,10 @@ module Bosh::Director
       end
 
       def parse_template
+        if @release.nil?
+          raise DirectorError, "Cannot parse template before parsing release"
+        end
+
         # TODO support plural "templates" syntax as well
         template_names = safe_property(@job_spec, "template")
 
@@ -251,13 +267,29 @@ module Bosh::Director
       end
 
       def parse_properties
-        job_properties = safe_property(@job_spec, "properties", :class => Hash,
-                                       :optional => true)
-        if job_properties.nil?
-          @properties = deployment.properties
-        else
-          @properties = deployment.properties._deep_copy
-          @properties.recursive_merge!(job_properties)
+        # Manifest can contain global and per-job properties section
+        job_properties = safe_property(
+          @job_spec, "properties", :class => Hash, :optional => true)
+
+        @all_properties = deployment.properties._deep_copy
+
+        if job_properties
+          @all_properties.recursive_merge!(job_properties)
+        end
+
+        mappings = safe_property(
+          @job_spec, "property_mappings", :class => Hash, :default => {})
+
+        mappings.each_pair do |to, from|
+          resolved = lookup_property(@all_properties, from)
+
+          if resolved.nil?
+            raise JobInvalidPropertyMapping,
+                  "Cannot satisfy property mapping `#{to}: #{from}', " +
+                  "as `#{from}' is not in deployment properties"
+          end
+
+          @all_properties[to] = resolved
         end
       end
 
@@ -407,6 +439,81 @@ module Bosh::Director
           end
         end
       end
+
+      # Extracts only the properties needed by this job. This is decoupled from
+      # parsing properties because templates need to be bound to their models
+      # before 'bind_properties' is being called (as we persist job template
+      # property definitions in DB).
+      def bind_properties
+        @properties = filter_properties(@all_properties)
+      end
+
+      private
+
+      # @param [Hash] collection All properties collection
+      # @return [Hash] Properties required by templates included in this job
+      def filter_properties(collection)
+        if @templates.empty?
+          raise DirectorError,
+                "Can't extract job properties before " +
+                "parsing job templates"
+        end
+
+        @templates.each do |template|
+          # If at least one template doesn't have properties defined, we
+          # need all properties to be available to job (backward-compatibility)
+          return collection if template.properties.nil?
+        end
+
+        result = {}
+
+        @templates.each do |template|
+          template.properties.each_pair do |name, definition|
+            copy_property(result, collection, name, definition["default"])
+          end
+        end
+
+        result
+      end
+
+      # Copies property with a given name from src to dst.
+      # @param [Hash] dst Property destination
+      # @param [Hash] src Property source
+      # @param [String] name Property name (dot-separated)
+      # @param [Object] default Default value (if property is not in src)
+      def copy_property(dst, src, name, default)
+        keys = name.split(".")
+        src_ref = src
+        dst_ref = dst
+
+        keys.each do |key|
+          src_ref = src_ref[key]
+          break if src_ref.nil? # no property with this name is src
+        end
+
+        keys[0..-2].each do |key|
+          dst_ref[key] ||= {}
+          dst_ref = dst_ref[key]
+        end
+
+        dst_ref[keys[-1]] ||= {}
+        dst_ref[keys[-1]] = src_ref || default
+      end
+
+      # @param [Hash] collection Property collection
+      # @param [String] name Dot-separated property name
+      def lookup_property(collection, name)
+        keys = name.split(".")
+        ref = collection
+
+        keys.each do |key|
+          ref = ref[key]
+          return nil if ref.nil?
+        end
+
+        ref
+      end
+
     end
   end
 end

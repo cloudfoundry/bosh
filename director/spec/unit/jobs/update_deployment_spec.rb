@@ -50,21 +50,22 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       Bosh::Director::PackageCompiler.stub!(:new).with(@deployment_plan).and_return(package_compiler)
 
-      deployment_plan_compiler.should_receive(:bind_deployment)
-      deployment_plan_compiler.should_receive(:bind_existing_deployment)
-      deployment_plan_compiler.should_receive(:bind_resource_pools)
-      deployment_plan_compiler.should_receive(:bind_releases)
-      deployment_plan_compiler.should_receive(:bind_stemcells)
-      deployment_plan_compiler.should_receive(:bind_templates)
-      deployment_plan_compiler.should_receive(:bind_unallocated_vms)
-      deployment_plan_compiler.should_receive(:bind_instance_networks)
+      deployment_plan_compiler.should_receive(:bind_deployment).ordered
+      deployment_plan_compiler.should_receive(:bind_releases).ordered
+      deployment_plan_compiler.should_receive(:bind_existing_deployment).ordered
+      deployment_plan_compiler.should_receive(:bind_resource_pools).ordered
+      deployment_plan_compiler.should_receive(:bind_stemcells).ordered
+      deployment_plan_compiler.should_receive(:bind_templates).ordered
+      deployment_plan_compiler.should_receive(:bind_properties).ordered
+      deployment_plan_compiler.should_receive(:bind_unallocated_vms).ordered
+      deployment_plan_compiler.should_receive(:bind_instance_networks).ordered
       package_compiler.should_receive(:compile)
 
       update_deployment_job.prepare
 
       check_event_log do |events|
-        events.size.should == 16
-        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 16
+        events.size.should == 18
+        events.select { |e| e["stage"] == "Preparing deployment" }.size.should == 18
       end
     end
 

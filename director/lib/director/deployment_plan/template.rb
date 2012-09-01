@@ -77,6 +77,11 @@ module Bosh::Director
         present_model.logs
       end
 
+      # @return [Hash]
+      def properties
+        present_model.properties
+      end
+
       private
 
       # Returns model only if it's present, fails otherwise
