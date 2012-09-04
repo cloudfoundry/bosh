@@ -30,6 +30,19 @@ namespace :stemcell2 do
     build("stemcell-#{args[:infrastructure]}", options)
   end
 
+  desc "Build Micro Cloud Foundry"
+  task :mcf, :infrastructure, :manifest, :tarball do |t, args|
+    options = default_options(args)
+    options[:stemcell_name] ||= "mcf-stemcell"
+    options[:stemcell_version] ||= Bosh::Agent::VERSION
+    options[:image_create_disk_size] = 16384
+
+    options = options.merge(bosh_agent_options)
+    options = options.merge(bosh_micro_options(args))
+
+    build("stemcell-mcf", options)
+  end
+
   def default_options(args)
     infrastructure = args[:infrastructure]
     unless infrastructure
