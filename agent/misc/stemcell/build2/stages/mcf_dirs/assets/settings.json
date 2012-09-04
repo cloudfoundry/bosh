@@ -1,0 +1,15 @@
+{
+    "agent_id": "micro",
+    "blobstore": {
+        "plugin": "local",
+        "properties": {
+            "blobstore_path": "/var/vcap/micro_bosh/data/cache"
+        }
+    },
+    "disks": {
+        "persistent": {}
+    },
+    "mbus": "http://vcap:vcap@localhost:6969",
+    "networks": [],
+    "ntp": []
+}
