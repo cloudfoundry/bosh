@@ -30,6 +30,7 @@ module Bosh::AwsCloud
 
       @agent_properties = @options["agent"] || {}
       @aws_properties = @options["aws"]
+      @aws_region = @aws_properties.delete("region")
       @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
@@ -38,7 +39,7 @@ module Bosh::AwsCloud
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
         :secret_access_key => @aws_properties["secret_access_key"],
-        :ec2_endpoint => @aws_properties["ec2_endpoint"] || DEFAULT_EC2_ENDPOINT,
+        :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
         :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
         :logger => @aws_logger
       }
@@ -182,11 +183,13 @@ module Bosh::AwsCloud
           cloud_error("AWS CPI maximum disk size is 1 TiB")
         end
 
+        # if the disk is created for an instance, use the same availability
+        # zone as they must match
         if instance_id
           instance = @ec2.instances[instance_id]
           availability_zone = instance.availability_zone
         else
-          availability_zone = DEFAULT_AVAILABILITY_ZONE
+          availability_zone = default_availability_zone
         end
 
         volume_params = {
@@ -307,6 +310,7 @@ module Bosh::AwsCloud
     #   provided by the stemcell manifest
     # @option cloud_properties [String] disk (2048)
     #   root disk size
+    # @return [String] EC2 AMI name of the stemcell
     def create_stemcell(image_path, cloud_properties)
       # TODO: refactor into several smaller methods
       with_thread_name("create_stemcell(#{image_path}...)") do
@@ -428,7 +432,7 @@ module Bosh::AwsCloud
         ensure_same_availability_zone(disks, resource_pool_az)
         disks.first.availability_zone
       else
-        resource_pool_az || DEFAULT_AVAILABILITY_ZONE
+        resource_pool_az || default_availability_zone
       end
     end
 
@@ -678,6 +682,21 @@ module Bosh::AwsCloud
       end
     end
 
+    def default_ec2_endpoint
+      if @aws_region
+        "ec2.#{@aws_region}.amazonaws.com"
+      else
+        DEFAULT_EC2_ENDPOINT
+      end
+    end
+
+    def default_availability_zone
+      if @aws_region
+        "#{@aws_region}b"
+      else
+        DEFAULT_AVAILABILITY_ZONE
+      end
+    end
   end
 
 end
