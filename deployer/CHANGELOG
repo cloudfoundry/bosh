@@ -1,7 +1,13 @@
+=== 0.6.0 - 2012-09-04
+* include health manager in deployer apply_spec
+* allow stemcell id to be specified by in micro_bosh.yml using
+  resources.cloud_properties.image_id
+* gems updates
+
+=== 0.5.1 - 2012-08-13
+* include bosh cli as dependency
+
 === 0.5.0 - 2012-08-08
 * added OpenStack support
 * added AWS elastic IP support
 * updated AWS CPI gem to 0.6.2
-
-=== 0.5.1 - 2012-08-13
-* include bosh cli as dependency
