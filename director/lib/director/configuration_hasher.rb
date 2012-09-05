@@ -2,25 +2,6 @@
 
 module Bosh::Director
   class ConfigurationHasher
-
-    class BindingHelper
-      attr_reader :name
-      attr_reader :index
-      attr_reader :properties
-      attr_reader :spec
-
-      def initialize(name, index, properties, spec)
-        @name = name
-        @index = index
-        @properties = properties
-        @spec = spec
-      end
-
-      def get_binding
-        binding
-      end
-    end
-
     # @param [DeploymentPlan::Job]
     def initialize(job)
       @job = job
@@ -85,11 +66,12 @@ module Bosh::Director
           monit_template =
               @cached_templates[job_template.name]["monit_template"]
 
-          binding_helper = BindingHelper.new(@job.name, instance.index,
-                                             @job.properties.to_openstruct,
-                                             instance.spec.to_openstruct)
+          binding_helper = Bosh::Common::TemplateEvaluationContext.new(
+            instance.spec)
+
           bound_templates = bind_template(monit_template, binding_helper,
                                           instance.index)
+
           templates.keys.sort.each do |template_name|
             template = templates[template_name]
             template.filename = File.join(job_template.name, template_name)

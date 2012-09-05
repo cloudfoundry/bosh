@@ -3,6 +3,7 @@ PATH
   specs:
     bosh_cli (0.20)
       blobstore_client (~> 0.4.0)
+      bosh_common (>= 0.5.1)
       highline (~> 1.6.2)
       httpclient (>= 2.2.4, <= 2.2.4)
       json_pure (~> 1.6.1)
@@ -28,7 +29,7 @@ GEM
       multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
-    bosh_common (0.5.0)
+    bosh_common (0.5.1)
     builder (3.0.0)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)

@@ -3,6 +3,7 @@
 module Bosh::Cli
   class JobPropertyCollection
     include Enumerable
+    include Bosh::Common::PropertyHelper
 
     # @param [JobBuilder] job_builder Which job this property collection is for
     # @param [Hash] global_properties Globally defined properties
@@ -61,49 +62,6 @@ module Bosh::Cli
         copy_property(
           @properties, @job_properties, name, definition["default"])
       end
-    end
-
-    private
-
-    # TODO: CLI shares these helpers with director, so we should probably
-    #       extract them to 'bosh-common'
-
-    # Copies property with a given name from src to dst.
-    # @param [Hash] dst Property destination
-    # @param [Hash] src Property source
-    # @param [String] name Property name (dot-separated)
-    # @param [Object] default Default value (if property is not in src)
-    def copy_property(dst, src, name, default)
-      keys = name.split(".")
-      src_ref = src
-      dst_ref = dst
-
-      keys.each do |key|
-        src_ref = src_ref[key]
-        break if src_ref.nil? # no property with this name is src
-      end
-
-      keys[0..-2].each do |key|
-        dst_ref[key] ||= {}
-        dst_ref = dst_ref[key]
-      end
-
-      dst_ref[keys[-1]] ||= {}
-      dst_ref[keys[-1]] = src_ref || default
-    end
-
-    # @param [Hash] collection Property collection
-    # @param [String] name Dot-separated property name
-    def lookup_property(collection, name)
-      keys = name.split(".")
-      ref = collection
-
-      keys.each do |key|
-        ref = ref[key]
-        return nil if ref.nil?
-      end
-
-      ref
     end
 
     # @param [Object] object Serializable object

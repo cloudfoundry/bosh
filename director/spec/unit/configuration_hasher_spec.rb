@@ -16,10 +16,15 @@ describe Bosh::Director::ConfigurationHasher do
     template_spec.stub!(:name).and_return("router")
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec])
-    job_spec.stub!(:properties).and_return({"foo" => "bar"})
     job_spec.stub!(:templates).and_return([template_spec])
     instance_spec.stub!(:index).and_return(0)
-    instance_spec.stub!(:spec).and_return({"test" => "spec"})
+    instance_spec.stub!(:spec).and_return(
+      {
+        "job" => {"name" => "foo"},
+        "test" => "spec",
+        "properties" => {"foo" => "bar"},
+        "index" => 0
+      })
 
     template_contents =
       create_job("foo", "monit file",
@@ -45,24 +50,36 @@ describe Bosh::Director::ConfigurationHasher do
     template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
     template2 = Bosh::Director::Models::Template.make(:blobstore_id => "b_id2")
 
-    instance_spec = mock("instance_spec")
-    instance_spec2 = mock("instance_spec")
-    template_spec = mock("template_spec", :template => template)
-    template_spec2 = mock("template_spec", :template => template2)
-    job_spec = mock("job_spec")
+    instance_spec = mock("instance_spec", :index => 0)
+    instance_spec.stub!(:spec).and_return(
+      {
+        "job" => {"name" => "foo"},
+        "test" => "spec",
+        "properties" => {"foo" => "bar"},
+        "index" => 0
+      })
 
+    template_spec = mock("template_spec", :template => template)
     template_spec.stub!(:blobstore_id).and_return("b_id")
     template_spec.stub!(:name).and_return("router")
+
+    instance_spec2 = mock("instance_spec", :index => 1)
+    instance_spec2.stub!(:spec).and_return(
+      {
+        "job" => {"name" => "foo"},
+        "test" => "spec",
+        "properties" => {"foo" => "bar"},
+        "index" => 1
+      })
+
+    template_spec2 = mock("template_spec", :template => template2)
     template_spec2.stub!(:blobstore_id).and_return("b_id2")
     template_spec2.stub!(:name).and_return("dashboard")
+
+    job_spec = mock("job_spec")
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec, instance_spec2])
-    job_spec.stub!(:properties).and_return({"foo" => "bar"})
     job_spec.stub!(:templates).and_return([template_spec, template_spec2])
-    instance_spec.stub!(:index).and_return(0)
-    instance_spec.stub!(:spec).and_return({"test" => "spec"})
-    instance_spec2.stub!(:index).and_return(1)
-    instance_spec2.stub!(:spec).and_return({"test" => "spec"})
 
     template_contents = create_job("foo", "monit file",
         {"test" => {"destination" => "test_dst",
@@ -73,8 +90,9 @@ describe Bosh::Director::ConfigurationHasher do
             "contents" => "test contents2 <%= index %>"}})
 
     tmp_file = Tempfile.new("blob")
-    tmp_file2 = Tempfile.new("blob2")
     File.open(tmp_file.path, "w") { |f| f.write(template_contents) }
+
+    tmp_file2 = Tempfile.new("blob2")
     File.open(tmp_file2.path, "w") { |f| f.write(template_contents2) }
 
     template_spec.should_receive(:download_blob).and_return(tmp_file.path)
@@ -82,33 +100,42 @@ describe Bosh::Director::ConfigurationHasher do
 
     instance_spec.should_receive(:configuration_hash=).with(
         "9a01d5eaef2466439cf5f47c817917869bf7382b")
-    instance_spec2.should_receive(:configuration_hash=).with(
-        "1ac87f1ff406553944d7bf1e3dc2ad224d50cc80")
     instance_spec.should_receive(:template_hashes=).with(
-        {"dashboard"=>"b22dc37828aa4596f715a4d1d9a77bc999fb0f68",
-         "router"=>"cdb03dd7e933d087030dc734d7515c8715dfadc0"})
-    instance_spec2.should_receive(:template_hashes=).with(
-        {"dashboard"=>"a06db619abd6eaa32a5ec848894486f162ede0ad",
-         "router"=>"924386b29900dccb55b7a559ce24b9c3c1c9eff0"})
+      {"dashboard"=>"b22dc37828aa4596f715a4d1d9a77bc999fb0f68",
+       "router"=>"cdb03dd7e933d087030dc734d7515c8715dfadc0"})
 
+    instance_spec2.should_receive(:configuration_hash=).with(
+      "1ac87f1ff406553944d7bf1e3dc2ad224d50cc80")
+    instance_spec2.should_receive(:template_hashes=).with(
+      {"dashboard"=>"a06db619abd6eaa32a5ec848894486f162ede0ad",
+       "router"=>"924386b29900dccb55b7a559ce24b9c3c1c9eff0"})
+
+    $A=1
     configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
     configuration_hasher.hash
+    $A=0
   end
 
   it "should expose the job context to the templates" do
     template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
 
     instance_spec = mock("instance_spec")
-    template_spec = mock("template_spec", :template => template)
-    job_spec = mock("job_spec")
+    instance_spec.stub!(:index).and_return(0)
+    instance_spec.stub!(:spec).and_return(
+      {
+        "job" => {"name" => "foo"},
+        "test" => "spec",
+        "properties" => {"foo" => "bar"},
+        "index" => 0
+      })
 
+    template_spec = mock("template_spec", :template => template)
     template_spec.stub!(:name).and_return("router")
+
+    job_spec = mock("job_spec")
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec])
-    job_spec.stub!(:properties).and_return({"foo" => "bar"})
     job_spec.stub!(:templates).and_return([template_spec])
-    instance_spec.stub!(:index).and_return(0)
-    instance_spec.stub!(:spec).and_return({"test" => "spec"})
 
     text = "<%= name %> <%= index %> <%= properties.foo %> <%= spec.test %>"
 
@@ -135,16 +162,22 @@ describe Bosh::Director::ConfigurationHasher do
     template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
 
     instance_spec = mock("instance_spec")
+    instance_spec.stub!(:index).and_return(0)
+    instance_spec.stub!(:spec).and_return(
+      {
+        "job" => {"name" => "foo"},
+        "test" => "spec",
+        "properties" => {"foo" => "bar"},
+        "index" => 0
+      })
+
     template_spec = mock("template_spec", :template => template)
     job_spec = mock("job_spec")
 
     template_spec.stub!(:name).and_return("router")
     job_spec.stub!(:name).and_return("foo")
     job_spec.stub!(:instances).and_return([instance_spec])
-    job_spec.stub!(:properties).and_return({"foo" => "bar"})
     job_spec.stub!(:templates).and_return([template_spec])
-    instance_spec.stub!(:index).and_return(0)
-    instance_spec.stub!(:spec).and_return({"test" => "spec"})
 
     text = "<%= name %>\n <%= index %>\n " +
            "<%= properties.testing.foo %> <%= spec.test %>"

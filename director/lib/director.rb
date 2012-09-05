@@ -19,6 +19,8 @@ require "tmpdir"
 require "yaml"
 require "time"
 
+require "common/properties"
+
 require "bcrypt"
 require "blobstore_client"
 require "eventmachine"

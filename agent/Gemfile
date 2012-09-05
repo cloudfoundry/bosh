@@ -2,11 +2,12 @@
 
 source :rubygems
 
+gem "bosh_common", ">=0.5.1"
 gem "highline"
 gem "monit_api"
 gem "nats", "=0.4.22"
 gem "netaddr"
-gem "blobstore_client", "~> 0.3.13"
+gem "blobstore_client", "~>0.3.13"
 gem "posix-spawn"
 gem "rake"
 gem "rack-test"
