@@ -38,7 +38,7 @@ module Bosh::Director
 
       def prepare
         @deployment_plan_compiler = DeploymentPlanCompiler.new(@deployment_plan)
-        event_log.begin_stage("Preparing deployment", 8)
+        event_log.begin_stage("Preparing deployment", 9)
 
         track_and_log("Binding deployment") do
           @deployment_plan_compiler.bind_deployment
@@ -62,6 +62,10 @@ module Bosh::Director
 
         track_and_log("Binding templates") do
           @deployment_plan_compiler.bind_templates
+        end
+
+        track_and_log("Binding properties") do
+          @deployment_plan_compiler.bind_properties
         end
 
         track_and_log("Binding unallocated VMs") do

@@ -297,6 +297,14 @@ module Bosh::Director
       end
     end
 
+    # Binds properties for all templates in the deployment
+    # @return [void]
+    def bind_properties
+      @deployment_plan.jobs.each do |job|
+        job.bind_properties
+      end
+    end
+
     # Binds stemcell model for each stemcell spec in each resource pool in
     # the deployment plan
     # @return [void]
