@@ -141,8 +141,6 @@ module Bosh::Cli::Command
       blobstore = release.blobstore
       tmpdir = Dir.mktmpdir
 
-      at_exit { FileUtils.rm_rf(tmpdir) }
-
       compiler = Bosh::Cli::ReleaseCompiler.new(
         manifest_path, blobstore, package_matches)
       need_repack = true

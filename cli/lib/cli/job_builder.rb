@@ -109,8 +109,6 @@ module Bosh::Cli
       FileUtils.mkdir_p(@dev_builds_dir)
       FileUtils.mkdir_p(@final_builds_dir)
 
-      at_exit { FileUtils.rm_rf(build_dir) }
-
       init_indices
     end
 

@@ -7,7 +7,7 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :release, :packages, :jobs, :version
+    attr_reader :release, :packages, :jobs, :version, :build_dir
 
     # @param [Bosh::Cli::Release] release Current release
     # @param [Array<Bosh::Cli::PackageBuilder>] packages Built packages
@@ -23,7 +23,12 @@ module Bosh::Cli
       @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
       @index = @final ? @final_index : @dev_index
 
-      create_release_build_dir
+      @build_dir = Dir.mktmpdir
+
+      in_build_dir do
+        FileUtils.mkdir("packages")
+        FileUtils.mkdir("jobs")
+      end
     end
 
     # @return [String] Release name
@@ -228,17 +233,6 @@ module Bosh::Cli
         major = latest_final_version
         minor = minor_version(latest_dev_version).to_i + 1
         "#{major}.#{minor}-dev"
-      end
-    end
-
-    def build_dir
-      @build_dir ||= Dir.mktmpdir
-    end
-
-    def create_release_build_dir
-      in_build_dir do
-        FileUtils.mkdir("packages")
-        FileUtils.mkdir("jobs")
       end
     end
 
