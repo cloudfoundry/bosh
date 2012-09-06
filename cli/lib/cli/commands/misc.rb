@@ -153,9 +153,13 @@ module Bosh::Cli::Command
     #   (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
     # end
     def show_target
-      say(target ?
-              "Current target is `#{full_target_name.green}'" :
-              "Target not set".red)
+      if interactive?
+        say(target ?
+                "Current target is `#{full_target_name.green}'" :
+                "Target not set".red)
+      else
+        say(target ? full_target_name : "target not set")
+      end
     end
 
     # usage "target [<name>] [<alias>]"
