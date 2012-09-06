@@ -542,6 +542,15 @@ module Bosh::Director
           template.logs = job_manifest["logs"]
         end
 
+        if job_manifest["properties"]
+          unless job_manifest["properties"].is_a?(Hash)
+            raise JobInvalidPropertySpec,
+                  "Job `#{template.name}' has invalid properties spec format"
+          end
+
+          template.properties = job_manifest["properties"]
+        end
+
         template.save
       end
 

@@ -101,6 +101,7 @@ module Bosh::Director
   JobInvalidLogSpec = err(80005)
   JobTemplateBindingFailed = err(80006)
   JobTemplateUnpackFailed = err(80007)
+  JobInvalidPropertySpec = err(80008)
 
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)
