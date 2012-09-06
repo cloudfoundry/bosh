@@ -178,7 +178,7 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage "ssh <job> [index] [<options>] [command]"
+    # usage "ssh <job>[/<index>] [index] [<options>] [command]"
     # desc  "Given a job, execute the given command or " +
     #       "start an interactive session"
     # option "--public_key <file>"
@@ -190,6 +190,15 @@ module Bosh::Cli::Command
       job = args.shift
       password = args.delete("--default_password") && SSH_DEFAULT_PASSWORD
       options = parse_options(args)
+
+      # check if the job was specified as job/index
+      if (match = job.match(%r{/(\d+)}))
+        if (index = options["index"])
+          err("multiple jobs indices specified: #{index} and #{match[1]}")
+        else
+          options["index"] = match[1]
+        end
+      end
 
       if args.size == 0
         setup_interactive_shell(job, password, options)
