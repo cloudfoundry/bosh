@@ -44,12 +44,12 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is `Test Director (http://localhost:57523) #{ver}'
+      Test Director (http://localhost:57523) #{ver}
     OUT
 
     Dir.chdir("/tmp") do
       expect_output("target", <<-OUT)
-        Current target is `Test Director (http://localhost:57523) #{ver}'
+        Test Director (http://localhost:57523) #{ver}
       OUT
     end
   end
@@ -144,8 +144,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       Name:    ubuntu-stemcell
       Version: missing
 
-      '#{stemcell_filename}' is not a valid stemcell:
+      Validation errors:
       - Manifest should contain valid name, version and cloud properties
+      '#{stemcell_filename}' is not a valid stemcell
     OUT
   end
 
@@ -213,7 +214,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("create user jane pass")
     run_bosh("logout")
     expect_output("login jane foo", <<-OUT)
-      Cannot log in as `jane', please try again
+      Cannot log in as `jane'
     OUT
   end
 

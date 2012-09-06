@@ -26,7 +26,7 @@ module Bosh::Cli::Command
           print_string_diff(File.read(@deployment_file), @template_output)
           keep_new_file unless @no_differences
         else
-          say("There were " + "#{@errors} errors.".red)
+          err("There were #{@errors} errors.")
         end
       ensure
         delete_temp_diff_files

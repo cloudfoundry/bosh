@@ -10,7 +10,7 @@ module Bosh::Cli::Command
       check_if_release_dir
 
       unless name.bosh_valid_id?
-        err("`#{name}' is not a vaild BOSH id")
+        err("`#{name}' is not a valid BOSH id")
       end
 
       job_dir = File.join("jobs", name)

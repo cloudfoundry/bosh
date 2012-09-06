@@ -31,9 +31,9 @@ module Bosh::Cli::Command
             say("done".green)
           end
         rescue TimeoutError
-          say("timed out".red)
+          err("timed out")
         rescue => e
-          say("error".red)
+          err("error: #{e.message}")
         end
         nl
       end
@@ -109,11 +109,11 @@ module Bosh::Cli::Command
         if director.authenticated?
           say("Logged in as `#{username}'")
           logged_in = true
+        elsif options[:non_interactive]
+          err("Cannot log in as `#{username}'")
         else
           say("Cannot log in as `#{username}', please try again")
-          unless options[:non_interactive]
-            redirect(:misc, :login, username, nil)
-          end
+          redirect(:misc, :login, username, nil)
         end
       end
 
@@ -138,6 +138,7 @@ module Bosh::Cli::Command
     # route :misc, :purge_cache
     def purge_cache
       if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
+        # TODO use different exit code?
         say("Cache directory `#{@cache.cache_dir}' differs from default, " +
             "please remove manually")
       else
@@ -153,9 +154,15 @@ module Bosh::Cli::Command
     #   (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
     # end
     def show_target
-      say(target ?
-              "Current target is `#{full_target_name.green}'" :
-              "Target not set".red)
+      if target
+        if interactive?
+          say("Current target is `#{full_target_name.green}'")
+        else
+          say(full_target_name)
+        end
+      else
+        err("Target not set")
+      end
     end
 
     # usage "target [<name>] [<alias>]"

@@ -25,10 +25,11 @@ module Bosh::Cli::Command
       if stemcell.valid?
         say("'%s' is a valid stemcell" % [tarball_path])
       else
-        say("'%s' is not a valid stemcell:" % [tarball_path])
+        say("Validation errors:".red)
         for error in stemcell.errors
           say("- %s" % [error])
         end
+        err("'%s' is not a valid stemcell" % [tarball_path])
       end
     end
 
@@ -144,8 +145,7 @@ module Bosh::Cli::Command
 
       unless yaml.has_key?(stemcell_name)
         available_stemcells = yaml.map { |k| k }.join(", ")
-        puts("'#{stemcell_name}' not found in '#{available_stemcells}'.".red)
-        return
+        err("'#{stemcell_name}' not found in '#{available_stemcells}'.")
       end
 
       if File.exists?(stemcell_name) &&

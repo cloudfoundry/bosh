@@ -115,6 +115,7 @@ module Bosh::Cli::Command
           end
           say(properties_table)
         else
+          # TODO normalize? we use err() in other places
           say("No properties found")
         end
       end
