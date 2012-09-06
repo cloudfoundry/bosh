@@ -124,6 +124,10 @@ module Bosh::Cli::Command
         end
       end
 
+      unless File.exist?(release_file)
+        err("Release file doesn't exist")
+      end
+
       file_type = `file --mime-type -b '#{release_file}'`
 
       if file_type =~ /text\/(plain|yaml)/
