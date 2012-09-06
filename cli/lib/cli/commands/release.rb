@@ -81,10 +81,11 @@ module Bosh::Cli::Command
       if tarball.valid?
         say("'%s' is a valid release" % [tarball_path] )
       else
-        say("'%s' is not a valid release:" % [tarball_path] )
+        say("Validation errors:".red)
         for error in tarball.errors
           say("- %s" % [error])
         end
+        err("'%s' is not a valid release:" % [tarball_path] )
       end
     end
 
@@ -248,8 +249,7 @@ module Bosh::Cli::Command
       dry_run = flags.delete("--dry-run")
 
       if final && !release.has_blobstore_secret?
-        say("Can't create final release without blobstore secret".red)
-        exit(1)
+        err("Can't create final release without blobstore secret")
       end
 
       if flags.size > 0

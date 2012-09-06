@@ -23,7 +23,7 @@ module Bosh::Cli::Command
       if director.create_user(username, password)
         say("User #{username} has been created")
       else
-        say("Error creating user")
+        err("Error creating user")
       end
     end
 

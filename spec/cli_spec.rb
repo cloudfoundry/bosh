@@ -44,12 +44,12 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     OUT
 
     expect_output("target", <<-OUT)
-      Current target is `Test Director (http://localhost:57523) #{ver}'
+      Test Director (http://localhost:57523) #{ver}
     OUT
 
     Dir.chdir("/tmp") do
       expect_output("target", <<-OUT)
-        Current target is `Test Director (http://localhost:57523) #{ver}'
+        Test Director (http://localhost:57523) #{ver}
       OUT
     end
   end

@@ -76,11 +76,9 @@ describe Bosh::Cli::Command::Biff do
     # can come back in any order.
     @biff.should_receive(:say).with(/Add this to '':/).once
 
-    #@biff.should_receive(:say).once
-
-    @biff.should_receive(:say).with("There were 1 errors.").once
-
-    @biff.biff(template_file)
+    lambda {
+      @biff.biff(template_file)
+    }.should raise_error Bosh::Cli::CliExit, "There were 1 errors."
   end
 
   it "correctly generates a file and reports when there are no differences" do
