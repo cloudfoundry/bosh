@@ -126,7 +126,9 @@ module Bosh::Cli::Command
 
       file_type = `file --mime-type -b '#{release_file}'`
 
-      if file_type =~ /text\/(plain|yaml)/
+      if file_type =~ /cannot open/
+        err("Release file can't be opened!")
+      elsif file_type =~ /text\/(plain|yaml)/
         upload_manifest(release_file, upload_options)
       else # Just assume tarball
         upload_tarball(release_file, upload_options)
