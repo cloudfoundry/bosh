@@ -29,8 +29,6 @@ module Bosh::Cli
 
       @package_matches = Set.new(package_matches)
 
-      at_exit { FileUtils.rm_rf(@build_dir) }
-
       FileUtils.mkdir_p(@jobs_dir)
       FileUtils.mkdir_p(@packages_dir)
 

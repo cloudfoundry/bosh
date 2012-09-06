@@ -75,6 +75,10 @@ require "cli/runner"
 
 YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
 
+tmpdir = Dir.mktmpdir
+at_exit { FileUtils.rm_rf(tmpdir) }
+ENV["TMPDIR"] = tmpdir
+
 require File.expand_path(File.dirname(__FILE__) + "/cli/commands/base")
 
 Dir[File.dirname(__FILE__) + "/cli/commands/*.rb"].each do |file|

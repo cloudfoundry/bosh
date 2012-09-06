@@ -39,8 +39,6 @@ module Bosh::Cli
       tmpdir = Dir.mktmpdir
       repacked_path = File.join(tmpdir, "release-repack.tgz")
 
-      at_exit { FileUtils.rm_rf(tmpdir) }
-
       manifest = load_yaml_file(File.join(@unpack_dir, "release.MF"))
 
       local_packages = manifest["packages"]
