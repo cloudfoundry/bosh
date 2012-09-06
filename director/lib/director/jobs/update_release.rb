@@ -332,18 +332,19 @@ module Bosh::Director
           :release => @release_model,
           :name => name,
           :sha1 => package_meta["sha1"],
-          :fingerprint => package_meta["fingerprint"]
+          :fingerprint => package_meta["fingerprint"],
+          :version => version
         }
 
         if @rebase
           new_version = next_package_version(name, version)
-          transition = "#{version} -> #{new_version}"
-          logger.info("Package `#{name}' rebased: #{transition}")
-          package_attrs[:version] = new_version
-          version = new_version
-          @package_rebase_mapping[name] = transition
-        else
-          package_attrs[:version] = version
+          if new_version != version
+            transition = "#{version} -> #{new_version}"
+            logger.info("Package `#{name}' rebased: #{transition}")
+            package_attrs[:version] = new_version
+            version = new_version
+            @package_rebase_mapping[name] = transition
+          end
         end
 
         package = Models::Package.new(package_attrs)
@@ -460,18 +461,19 @@ module Bosh::Director
           :release => @release_model,
           :name => name,
           :sha1 => job_meta["sha1"],
-          :fingerprint => job_meta["fingerprint"]
+          :fingerprint => job_meta["fingerprint"],
+          :version => version
         }
 
         if @rebase
           new_version = next_template_version(name, version)
-          transition = "#{version} -> #{new_version}"
-          logger.info("Job `#{name}' rebased: #{transition}")
-          template_attrs[:version] = new_version
-          version = new_version
-          @job_rebase_mapping[name] = transition
-        else
-          template_attrs[:version] = version
+          if new_version != version
+            transition = "#{version} -> #{new_version}"
+            logger.info("Job `#{name}' rebased: #{transition}")
+            template_attrs[:version] = new_version
+            version = new_version
+            @job_rebase_mapping[name] = transition
+          end
         end
 
         logger.info("Creating job template `#{name}/#{version}' " +
