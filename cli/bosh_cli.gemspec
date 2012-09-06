@@ -18,6 +18,7 @@ Gem::Specification.new do |s|
   s.bindir       = "bin"
   s.executables  = %w(bosh)
 
+  s.add_dependency "bosh_common", ">=0.5.1"
   s.add_dependency "json_pure", "~>1.6.1"
   s.add_dependency "highline", "~>1.6.2"
   s.add_dependency "progressbar", "~>0.9.0"

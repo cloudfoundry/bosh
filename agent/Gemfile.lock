@@ -12,6 +12,7 @@ GEM
       multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
+    bosh_common (0.5.1)
     bosh_encryption (0.0.3)
       gibberish (~> 1.2.0)
       uuidtools (~> 2.1.2)
@@ -112,6 +113,7 @@ PLATFORMS
 
 DEPENDENCIES
   blobstore_client (~> 0.3.13)
+  bosh_common (>= 0.5.1)
   bosh_encryption (>= 0.0.3)
   ci_reporter
   guard

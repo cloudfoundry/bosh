@@ -2,7 +2,6 @@
 
 module Bosh::Cli
   class JobPropertyValidator
-
     # TODO: tests
 
     attr_reader :template_errors
@@ -76,6 +75,9 @@ module Bosh::Cli
       # networks and properties.
       # TODO: provide all keys in the spec?
       spec = {
+        "job" => {
+          "name" => job_spec["name"]
+        },
         "networks" => {
           "default" => {"ip" => "10.0.0.1"}
         },
@@ -96,7 +98,7 @@ module Bosh::Cli
     # @param [Hash] spec Fake instance spec
     def evaluate_template(job, template_path, spec)
       erb = ERB.new(File.read(template_path))
-      context = TemplateEvaluationContext.new(job, spec)
+      context = Bosh::Common::TemplateEvaluationContext.new(spec)
       begin
         erb.result(context.get_binding)
       rescue Exception => e
@@ -124,42 +126,5 @@ module Bosh::Cli
         @line = exception.backtrace.first.split(":")[1]
       end
     end
-
-    # Helper class to evaluate templates. This closely mimics the template
-    # evaluator in BOSH Director and Agent
-    # TODO: dry it up?
-    class TemplateEvaluationContext
-      attr_reader :name
-      attr_reader :index
-      attr_reader :properties
-      attr_reader :spec
-
-      def initialize(job, spec)
-        @name = job.name
-        @index = 0
-        @spec = openstruct(spec)
-        @properties = openstruct(spec["properties"])
-      end
-
-      def get_binding
-        binding.taint
-      end
-
-      # @return [Object] Object representation where all hashes are unrolled
-      #   into OpenStruct objects. This exists mostly for backward
-      #   compatibility, as it doesn't provide good error reporting.
-      def openstruct(object)
-        case object
-          when Hash
-            mapped = object.inject({}) { |h, (k,v)| h[k] = openstruct(v); h }
-            OpenStruct.new(mapped)
-          when Array
-            object.map { |item| openstruct(item) }
-          else
-            object
-        end
-      end
-    end
-
   end
 end

@@ -5,25 +5,6 @@ module Bosh::Agent
 
     # TODO: convert to module?
     # TODO: don't use MessageHandlerError here?
-
-    class BindingHelper
-      attr_reader :name
-      attr_reader :index
-      attr_reader :properties
-      attr_reader :spec
-
-      def initialize(name, index, properties, spec)
-        @name = name
-        @index = index
-        @properties = properties
-        @spec = spec
-      end
-
-      def get_binding
-        binding
-      end
-    end
-
     class << self
       def base_dir
         Bosh::Agent::Config.base_dir
@@ -79,13 +60,10 @@ module Bosh::Agent
 
       end
 
-      # Provide binding for a particular variable
-      def config_binding(config)
-        name = config["job"] ? config["job"]["name"] : nil
-        index = config["index"]
-        properties = (config["properties"] || {}).to_openstruct
-        spec = config.to_openstruct
-        BindingHelper.new(name, index, properties, spec).get_binding
+      # @param [Hash] Instance spec
+      # @return [Binding] Template evaluation binding
+      def config_binding(spec)
+        Bosh::Common::TemplateEvaluationContext.new(spec).get_binding
       end
 
       def partition_disk(dev, sfdisk_input)
