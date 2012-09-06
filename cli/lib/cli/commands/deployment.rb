@@ -15,9 +15,13 @@ module Bosh::Cli::Command
     #   end
     # end
     def show_current
-      say(deployment ?
-            "Current deployment is `#{deployment.green}'" :
-            "Deployment not set".red)
+      if interactive?
+        say(deployment ?
+                "Current deployment is `#{deployment.green}'" :
+                "Deployment not set".red)
+      else
+        say(deployment ? deployment : "Deployment not set")
+      end
     end
 
     # usage "deployment [<name>]"
