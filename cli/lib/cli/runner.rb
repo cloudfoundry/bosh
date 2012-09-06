@@ -241,7 +241,7 @@ module Bosh::Cli
       end
 
       command :ssh do
-        usage "ssh <job> [index] [<options>] [command]"
+        usage "ssh <job>[/<index>] [index] [<options>] [command]"
         desc  "Given a job, execute the given command or " +
               "start an interactive session"
         option "--public_key <file>"
