@@ -166,10 +166,10 @@ module Bosh::Cli
           ENV["RELEASE_DIR"] = @release_dir
           in_build_dir do
             pre_packaging_out = `bash -x pre_packaging 2>&1`
-            pre_packaging_out.split("\n").each do |line|
-              say("> #{line}")
-            end
             unless $?.exitstatus == 0
+              pre_packaging_out.split("\n").each do |line|
+                say("> #{line}")
+              end
               raise InvalidPackage, "`#{name}' pre-packaging failed"
             end
           end
