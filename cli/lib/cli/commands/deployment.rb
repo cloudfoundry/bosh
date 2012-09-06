@@ -149,6 +149,63 @@ module Bosh::Cli::Command
       task_report(status, "Deleted deployment `#{name}'")
     end
 
+    # usage "validate jobs"
+    # desc  "Validates all jobs in the current release using current" +
+    #       "deployment manifest as the source of properties"
+    # route :deployment, :validate_jobs
+    def validate_jobs
+      check_if_release_dir
+      manifest = prepare_deployment_manifest(:resolve_properties => true)
+
+      nl
+      say("Analyzing release directory...".yellow)
+
+      say(" - discovering packages")
+      packages = Bosh::Cli::PackageBuilder.discover(
+        work_dir,
+        :dry_run => true,
+        :final => false
+      )
+
+      say(" - discovering jobs")
+      jobs = Bosh::Cli::JobBuilder.discover(
+        work_dir,
+        :dry_run => true,
+        :final => false,
+        :package_names => packages.map {|package| package.name}
+      )
+
+      say(" - validating properties")
+      validator = Bosh::Cli::JobPropertyValidator.new(jobs, manifest)
+      validator.validate
+
+      unless validator.jobs_without_properties.empty?
+        nl
+        say("Legacy jobs (no properties defined): ".yellow)
+        validator.jobs_without_properties.sort { |a, b|
+          a.name <=> b.name
+        }.each do |job|
+          say(" - #{job.name}")
+        end
+      end
+
+      if validator.template_errors.empty?
+        nl
+        say("No template errors found".green)
+      else
+        nl
+        say("Template errors: ".yellow)
+        validator.template_errors.each do |error|
+          nl
+          path = Pathname.new(error.template_path)
+          rel_path = path.relative_path_from(Pathname.new(release.dir))
+
+          say(" - #{rel_path}:")
+          say("     line #{error.line}:".yellow + " #{error.exception.to_s}")
+        end
+      end
+    end
+
     # usage "deployments"
     # desc  "Show the list of available deployments"
     # route :deployment, :list

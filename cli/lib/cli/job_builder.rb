@@ -7,6 +7,9 @@ module Bosh::Cli
     attr_reader :name, :version, :packages, :templates,
                 :release_dir, :built_packages, :tarball_path
 
+    # @return [Hash] Properties defined in this job
+    attr_reader :properties
+
     def self.run_prepare_script(script_path)
       unless File.exists?(script_path)
         raise InvalidJob, "Prepare script at `#{script_path}' doesn't exist"
@@ -27,42 +30,88 @@ module Bosh::Cli
         # with CLI itself
         %w{ BUNDLE_GEMFILE RUBYOPT }.each { |key| ENV.delete(key) }
 
+        output = nil
         Dir.chdir(script_dir) do
           cmd = "./#{script_name} 2>&1"
-          say("Running #{cmd}...")
-          script_output = `#{cmd}`
-          script_output.split("\n").each do |line|
-            say("> #{line}")
-          end
+          output = `#{cmd}`
         end
 
         unless $?.exitstatus == 0
           raise InvalidJob, "`#{script_path}' script failed"
         end
+
+        output
       ensure
         ENV.each_pair { |k, v| ENV[k] = old_env[k] }
       end
     end
 
+    # @param [String] directory Release directory
+    # @param [Hash] options Build options
+    def self.discover(directory, options = {})
+      builders = []
+
+      Dir[File.join(directory, "jobs", "*")].each do |job_dir|
+        next unless File.directory?(job_dir)
+        job_dirname = File.basename(job_dir)
+
+        prepare_script = File.join(job_dir, "prepare")
+        if File.exists?(prepare_script)
+          run_prepare_script(prepare_script)
+        end
+
+        job_spec = load_yaml_file(File.join(job_dir, "spec"))
+        if job_spec["name"] != job_dirname
+          raise InvalidJob,
+                "Found `#{job_spec["name"]}' job in " +
+                "`#{job_dirname}' directory, please fix it"
+        end
+
+        final = options[:final]
+        dry_run = options[:dry_run]
+        blobstore = options[:blobstore]
+        package_names = options[:package_names]
+
+        builder = new(job_spec, directory, final, blobstore, package_names)
+        builder.dry_run = true if dry_run
+        builders << builder
+      end
+
+      builders
+    end
+
     def initialize(spec, release_dir, final, blobstore, built_packages = [])
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
-      @name           = spec["name"]
-      @packages       = spec["packages"].to_a
+      @name = spec["name"]
+      @version = nil
+      @tarball_path = nil
+      @packages = spec["packages"].to_a
       @built_packages = built_packages.to_a
-      @release_dir    = release_dir
-      @templates_dir  = File.join(job_dir, "templates")
-      @tarballs_dir   = File.join(release_dir, "tmp", "jobs")
-      @final          = final
-      @blobstore      = blobstore
-      @artefact_type  = "job"
+      @release_dir = release_dir
+      @templates_dir = File.join(job_dir, "templates")
+      @tarballs_dir = File.join(release_dir, "tmp", "jobs")
+      @final = final
+      @blobstore = blobstore
+      @artefact_type = "job"
 
       case spec["templates"]
       when Hash
         @templates = spec["templates"].keys
       else
         raise InvalidJob, "Incorrect templates section in `#{@name}' " +
-            "job spec (should resolve to a hash)"
+          "job spec (Hash expected, #{spec["properties"].class} given)"
+      end
+
+      if spec.has_key?("properties")
+        if spec["properties"].is_a?(Hash)
+          @properties = spec["properties"]
+        else
+          raise InvalidJob, "Incorrect properties section in `#{@name}' " +
+            "job spec (Hash expected, #{spec["properties"].class} given)"
+        end
+      else
+        @properties = {}
       end
 
       if @name.blank?
@@ -137,7 +186,7 @@ module Bosh::Cli
     end
 
     def prepare_files
-      preparation_script = File.join(job_dir, "prepare")
+      File.join(job_dir, "prepare")
     end
 
     def build_dir
@@ -174,17 +223,22 @@ module Bosh::Cli
       self
     end
 
+    # @return [Array<String>] Returns full paths of all templates in the job
+    #   (regular job templates and monit)
+    def all_templates
+      regular_templates = @templates.map do |template|
+        File.join(@templates_dir, template)
+      end
+
+      regular_templates.sort + monit_files
+    end
+
     private
 
     def make_fingerprint
       contents = ""
 
-      # templates, monit, spec
-      files = templates.map do |template|
-        File.join(@templates_dir, template)
-      end.sort
-
-      files += monit_files
+      files = all_templates
       files << File.join(job_dir, "spec")
 
       files.each do |filename|

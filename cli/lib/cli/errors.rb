@@ -16,6 +16,8 @@ module Bosh::Cli
     def self.exit_code(code = nil)
       define_method(:exit_code) { code }
     end
+
+    error_code(42)
   end
 
   class UnknownCommand       < CliError; error_code(100); end
@@ -45,4 +47,8 @@ module Bosh::Cli
   class UndefinedProperty    < CliError; error_code(509); end
   class MalformedManifest    < CliError; error_code(511); end
   class MissingTarget        < CliError; error_code(512); end
+  class InvalidProperty      < CliError; error_code(513); end
+  class InvalidManifest      < CliError; error_code(514); end
+  class PropertyMismatch     < CliError; error_code(515); end
+  class InvalidPropertyMapping < CliError; error_code(516); end
 end

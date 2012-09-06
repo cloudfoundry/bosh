@@ -70,6 +70,9 @@ require "cli/release_tarball"
 
 require "cli/blob_manager"
 
+require "cli/job_property_collection"
+require "cli/job_property_validator"
+
 require "cli/command_definition"
 require "cli/runner"
 
