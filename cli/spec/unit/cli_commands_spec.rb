@@ -104,31 +104,39 @@ describe Bosh::Cli::Command::Base do
 
   describe Bosh::Cli::Command::Stemcell do
     before :each do
+      @director = mock(Bosh::Cli::Director)
+      @director.stub(:list_stemcells).
+          and_return([{ "name" => "foo", "version" => "123" }])
+      @director.should_receive(:list_stemcells)
+
       @cmd = Bosh::Cli::Command::Stemcell.new(@opts)
-    end
-
-    it "allows deleting the stemcell" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_stemcell).with("foo", "123")
-
-      @cmd.stub!(:interactive?).and_return(false)
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
-      @cmd.stub!(:director).and_return(mock_director)
+      @cmd.stub!(:director).and_return(@director)
+    end
+
+    it "allows deleting the stemcell" do
+      @director.should_receive(:delete_stemcell).with("foo", "123")
+
+      @cmd.stub!(:interactive?).and_return(false)
       @cmd.delete("foo", "123")
     end
 
     it "needs confirmation to delete stemcell" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_not_receive(:delete_stemcell)
+      @director.should_not_receive(:delete_stemcell)
 
-      @cmd.stub!(:target).and_return("test")
-      @cmd.stub!(:username).and_return("user")
-      @cmd.stub!(:password).and_return("pass")
-      @cmd.stub!(:director).and_return(mock_director)
       @cmd.stub!(:ask).and_return("")
       @cmd.delete("foo", "123")
+    end
+
+    it "raises error when deleting if stemcell does not exist" do
+      @director.should_not_receive(:delete_stemcell)
+
+      @cmd.stub!(:interactive?).and_return(false)
+      lambda {
+        @cmd.delete("foo", "111")
+      }.should raise_error(Bosh::Cli::CliExit, "Stemcell `foo/111' does not exist")
     end
   end
 
@@ -165,56 +173,48 @@ describe Bosh::Cli::Command::Base do
 
   describe Bosh::Cli::Command::Release do
     before :each do
+      @director = mock(Bosh::Cli::Director)
+
       @cmd = Bosh::Cli::Command::Release.new(@opts)
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(@director)
+      @cmd.stub!(:ask).and_return("yes")
     end
 
     it "allows deleting the release (non-force)" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).
+      @director.should_receive(:delete_release).
           with("foo", :force => false, :version => nil)
 
       @cmd.stub!(:interactive?).and_return(false)
-      @cmd.stub!(:director).and_return(mock_director)
       @cmd.delete("foo")
     end
 
     it "allows deleting the release (non-force)" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).
+      @director.should_receive(:delete_release).
           with("foo", :force => true, :version => nil)
 
-      @cmd.stub!(:ask).and_return("yes")
-      @cmd.stub!(:director).and_return(mock_director)
       @cmd.delete("foo", "--force")
     end
 
     it "allows deleting a particular release version (non-force)" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).
+      @director.should_receive(:delete_release).
           with("foo", :force => false, :version => "42")
 
-      @cmd.stub!(:ask).and_return("yes")
-      @cmd.stub!(:director).and_return(mock_director)
       @cmd.delete("foo", "42")
     end
 
     it "allows deleting a particular release version (non-force)" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_receive(:delete_release).
+      @director.should_receive(:delete_release).
           with("foo", :force => true, :version => "42")
 
-      @cmd.stub!(:ask).and_return("yes")
-      @cmd.stub!(:director).and_return(mock_director)
       @cmd.delete("foo", "42", "--force")
     end
 
     it "requires confirmation on deleting release" do
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.should_not_receive(:delete_release)
-      @cmd.stub!(:director).and_return(mock_director)
+      @director.should_not_receive(:delete_release)
+
       @cmd.stub!(:ask).and_return("")
       @cmd.delete("foo")
     end

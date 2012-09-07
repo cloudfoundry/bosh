@@ -52,14 +52,10 @@ module Bosh::Cli::Command
       name = stemcell.manifest["name"]
       version = stemcell.manifest["version"]
 
-      existing = director.list_stemcells.select do |sc|
-        sc["name"] == name and sc["version"] == version
-      end
-
-      if existing.empty?
+      unless exists?(name, version)
         say("No")
       else
-        err("Stemcell \"#{name}\":\"#{version}\" already exists, " +
+        err("Stemcell `#{name}/#{version}' already exists, " +
             "increment the version if it has changed")
       end
 
@@ -180,6 +176,14 @@ module Bosh::Cli::Command
     def delete(name, version)
       auth_required
 
+      say("Checking if stemcell exists...")
+
+      if exists?(name, version)
+        say("Yes")
+      else
+        err("Stemcell `#{name}/#{version}' does not exist")
+      end
+
       say("You are going to delete stemcell `#{name}/#{version}'".red)
 
       unless confirmed?
@@ -190,6 +194,14 @@ module Bosh::Cli::Command
       status, _ = director.delete_stemcell(name, version)
 
       task_report(status, "Deleted stemcell `#{name}/#{version}'")
+    end
+
+    def exists?(name, version)
+      existing = director.list_stemcells.select do |sc|
+        sc["name"] == name && sc["version"] == version
+      end
+
+      !existing.empty?
     end
   end
 end
