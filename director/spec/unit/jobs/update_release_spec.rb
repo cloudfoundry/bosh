@@ -190,6 +190,59 @@ describe Bosh::Director::Jobs::UpdateRelease do
         job.perform
       }.to raise_error(/Rebase is attempted without any job or package change/)
     end
+
+    it "prefers the same name/version, then final version, " +
+       "then version with most compiled packages" +
+       "when there's more than one match" do
+      BD::Models::Package.each { |p| p.destroy }
+      BD::Models::Template.each { |t| t.destroy }
+
+      BD::Models::Package.make(
+        :release => @release, :name => "bar",
+        :version => "3.14-dev", :fingerprint => "badcafe")
+
+      BD::Models::Package.make(
+        :release => @release, :name => "bar",
+        :version => "52", :fingerprint => "badcafe")
+
+      zbb1 = BD::Models::Package.make(
+        :release => @release, :name => "zbb",
+        :version => "22.1-dev", :fingerprint => "deadbad")
+
+      zbb2 = BD::Models::Package.make(
+        :release => @release, :name => "zbb",
+        :version => "22.2-dev", :fingerprint => "deadbad")
+
+      BD::Models::CompiledPackage.make(:package => zbb1)
+      2.times do
+        BD::Models::CompiledPackage.make(:package => zbb2)
+      end
+
+      BD::Models::Template.make(
+        :release => @release, :name => "baz",
+        :version => "332.1-dev", :fingerprint => "deadbeef")
+
+      BD::Models::Template.make(
+        :release => @release, :name => "baz",
+        :version => "333", :fingerprint => "deadbeef")
+
+      @lock.stub(:lock).and_yield
+      @blobstore.should_receive(:create).
+        exactly(3).times.and_return("b1", "b2", "b3")
+      @job.perform
+
+      rv = BD::Models::ReleaseVersion.filter(
+        :release_id => @release.id, :version => "42.1-dev").first
+
+      rv.packages.select { |p| p.name == "bar" }.
+        map { |p| p.version }.should =~ %w(3.14-dev)
+
+      rv.packages.select { |p| p.name == "zbb" }.
+        map { |p| p.version }.should =~ %w(22.2-dev)
+
+      rv.templates.select { |t| t.name == "baz" }.
+        map { |t| t.version }.should =~ %w(333)
+    end
   end
 
   describe "create_package" do
