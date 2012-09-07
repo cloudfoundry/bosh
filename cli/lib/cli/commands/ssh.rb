@@ -256,7 +256,7 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage "scp <job> [index] (--upload|--download) [options]" +
+    # usage "scp <job> [index] (--upload|--download) [options] " +
     #   "/path/to/source /path/to/destination"
     # desc  "upload/download the source file to the given job. " +
     #   "Note: for dowload /path/to/destination is a directory"

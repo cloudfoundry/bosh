@@ -242,7 +242,7 @@ module Bosh::Cli
 
       command :validate_jobs do
         usage "validate jobs"
-        desc  "Validates all jobs in the current release using current" +
+        desc  "Validates all jobs in the current release using current " +
               "deployment manifest as the source of properties"
         route :deployment, :validate_jobs
       end
@@ -265,7 +265,7 @@ module Bosh::Cli
       end
 
       command :scp do
-        usage "scp <job> [index] (--upload|--download) [options]" +
+        usage "scp <job> [index] (--upload|--download) [options] " +
           "/path/to/source /path/to/destination"
         desc  "upload/download the source file to the given job. " +
           "Note: for dowload /path/to/destination is a directory"
@@ -359,7 +359,7 @@ module Bosh::Cli
 
       command :rename_job do
         usage "rename <old_job_name> <new_job_name>"
-        desc  "renames a job. NOTE, your deployment manifest must also be " +
+        desc  "Renames a job. NOTE, your deployment manifest must also be " +
               "updated to reflect the new job name."
         power_option "--force"
         route :job_rename, :rename

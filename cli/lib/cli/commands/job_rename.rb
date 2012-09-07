@@ -5,7 +5,7 @@ module Bosh::Cli::Command
     include Bosh::Cli::DeploymentHelper
 
     # usage "rename <old_job_name> <new_job_name>"
-    # desc  "renames a job. NOTE, your deployment manifest must also be " +
+    # desc  "Renames a job. NOTE, your deployment manifest must also be " +
     #       "updated to reflect the new job name."
     # power_option "--force"
     # route :job_rename, :rename

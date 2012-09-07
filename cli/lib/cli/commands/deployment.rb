@@ -150,7 +150,7 @@ module Bosh::Cli::Command
     end
 
     # usage "validate jobs"
-    # desc  "Validates all jobs in the current release using current" +
+    # desc  "Validates all jobs in the current release using current " +
     #       "deployment manifest as the source of properties"
     # route :deployment, :validate_jobs
     def validate_jobs
