@@ -544,14 +544,15 @@ module Bosh::Cli::Command
     end
 
     def match_remote_packages(manifest_yaml)
-      # Catch exceptions to be friendly to old directors
-      result = director.match_packages(manifest_yaml) rescue []
+      director.match_packages(manifest_yaml)
+    rescue Bosh::Cli::DirectorError
+      msg = "You are using CLI >= 0.20 with director that doesn't support " +
+        "package matches.\nThis will result in uploading all packages " +
+        "and jobs to your director.\nIt is recommended to update your " +
+        "director or downgrade your CLI to 0.19.6"
 
-      unless result.is_a?(Array)
-        say("Cannot find existing packages info " +
-            "in the director response, maybe old director?")
-      end
-      result
+      say(msg.yellow)
+      exit(1) unless confirmed?
     end
   end
 end
