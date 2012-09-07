@@ -13,7 +13,12 @@ archive_dir_name=micro
 archive_dir=${dest_dir}/${archive_dir_name}
 mkdir --parents ${archive_dir}
 
-${image_vsphere_ovf_ovftool_path} ${work}/vsphere/image.ovf ${archive_dir}/micro
+mcf_version=1.3.0rc1
+
+${image_vsphere_ovf_ovftool_path} \
+    --extraConfig:displayname="Micro Cloud Foundry v${mcf_version}" \
+    ${work}/vsphere/image.ovf \
+    ${archive_dir}/micro
 
 cp ${micro_src}/micro/README ${archive_dir}
 cp ${micro_src}/micro/RELEASE_NOTES ${archive_dir}
