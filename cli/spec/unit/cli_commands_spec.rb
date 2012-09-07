@@ -109,6 +109,9 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the stemcell" do
       mock_director = mock(Bosh::Cli::Director)
+      mock_director.stub(:list_stemcells).
+          and_return([{ "name" => "foo", "version" => "123" }])
+      mock_director.should_receive(:list_stemcells)
       mock_director.should_receive(:delete_stemcell).with("foo", "123")
 
       @cmd.stub!(:interactive?).and_return(false)
@@ -121,6 +124,9 @@ describe Bosh::Cli::Command::Base do
 
     it "needs confirmation to delete stemcell" do
       mock_director = mock(Bosh::Cli::Director)
+      mock_director.stub(:list_stemcells).
+          and_return([{ "name" => "foo", "version" => "123" }])
+      mock_director.should_receive(:list_stemcells)
       mock_director.should_not_receive(:delete_stemcell)
 
       @cmd.stub!(:target).and_return("test")
@@ -129,6 +135,23 @@ describe Bosh::Cli::Command::Base do
       @cmd.stub!(:director).and_return(mock_director)
       @cmd.stub!(:ask).and_return("")
       @cmd.delete("foo", "123")
+    end
+
+    it "checks if stemcell exists" do
+      mock_director = mock(Bosh::Cli::Director)
+      mock_director.stub(:list_stemcells).
+          and_return([{ "name" => "foo", "version" => "123" }])
+      mock_director.should_receive(:list_stemcells)
+      mock_director.should_not_receive(:delete_stemcell)
+
+      @cmd.stub!(:interactive?).and_return(false)
+      @cmd.stub!(:target).and_return("test")
+      @cmd.stub!(:username).and_return("user")
+      @cmd.stub!(:password).and_return("pass")
+      @cmd.stub!(:director).and_return(mock_director)
+      lambda {
+        @cmd.delete("foo", "111")
+      }.should raise_error(Bosh::Cli::CliExit, "Stemcell does not exist")
     end
   end
 

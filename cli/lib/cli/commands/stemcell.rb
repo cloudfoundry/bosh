@@ -180,6 +180,18 @@ module Bosh::Cli::Command
     def delete(name, version)
       auth_required
 
+      say("Checking if stemcell exists...")
+
+      existing = director.list_stemcells.select do |sc|
+        sc["name"] == name and sc["version"] == version
+      end
+
+      unless existing.empty?
+        say("Yes")
+      else
+        err("Stemcell does not exist")
+      end
+
       say("You are going to delete stemcell `#{name}/#{version}'".red)
 
       unless confirmed?
