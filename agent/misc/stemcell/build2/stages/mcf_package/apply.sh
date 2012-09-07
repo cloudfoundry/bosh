@@ -8,12 +8,21 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source ${base_dir}/lib/prelude_apply.bash
 
 micro_src=${HOME}/micro
-dest_dir=mcf/`date +%Y%m%d-%H%M%S`
+now=`date +%Y%m%d-%H%M%S`
+dest_dir=mcf/$now
 archive_dir_name=micro
 archive_dir=${dest_dir}/${archive_dir_name}
 mkdir --parents ${archive_dir}
 
-${image_vsphere_ovf_ovftool_path} ${work}/vsphere/image.ovf ${archive_dir}/micro
+if [[ -z "$MCF_VERSION" ]]; then
+    MCF_VERSION="dev build $now"
+    echo 'To build a release version, set the MCF_VERSION environment variable.'
+fi
+
+${image_vsphere_ovf_ovftool_path} \
+    --extraConfig:displayname="Micro Cloud Foundry v${MCF_VERSION}" \
+    ${work}/vsphere/image.ovf \
+    ${archive_dir}/micro
 
 cp ${micro_src}/micro/README ${archive_dir}
 cp ${micro_src}/micro/RELEASE_NOTES ${archive_dir}

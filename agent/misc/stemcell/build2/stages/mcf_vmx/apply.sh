@@ -45,7 +45,6 @@ vm_cpus=2
 vm_hostname=ubuntu
 vm_arch=amd64
 vm_guestos=ubuntu-64
-mcf_version=1.3.0
 
 cat > $vsphere/$vm_hostname.vmx <<EOS
 config.version = "8"
@@ -60,7 +59,7 @@ powerType.powerOn = "default"
 powerType.suspend = "default"
 powerType.reset = "default"
 
-displayName = "Micro Cloud Foundry v${mcf_version}"
+displayName = "Micro Cloud Foundry"
 
 numvcpus = "$vm_cpus"
 scsi0.present = "true"
