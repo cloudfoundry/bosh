@@ -60,6 +60,7 @@ module Bosh::Cli
       end
 
       resolve_release_aliases(manifest)
+      resolve_stemcell_aliases(manifest)
 
       options[:yaml] ? YAML.dump(manifest) : manifest
     end
@@ -336,6 +337,52 @@ module Bosh::Cli
       end
     end
 
+    # @param [Hash] manifest Deployment manifest (will be modified)
+    # @return [void]
+    def resolve_stemcell_aliases(manifest)
+      return if manifest["resource_pools"].nil?
+
+      manifest["resource_pools"].each do |rp|
+        stemcell = rp["stemcell"]
+        unless stemcell.is_a?(Hash)
+          err("Invalid stemcell spec in the deployment manifest")
+        end
+        if stemcell["version"] == "latest"
+          latest_version = latest_stemcells[stemcell["name"]]
+          if latest_version.nil?
+            err("Latest version for stemcell `#{stemcell["name"]}' is unknown")
+          end
+          # Avoiding {Float,Fixnum} -> String noise in diff
+          if latest_version.to_s == latest_version.to_f.to_s
+            latest_version = latest_version.to_f
+          elsif latest_version.to_s == latest_version.to_i.to_s
+            latest_version = latest_version.to_i
+          end
+          stemcell["version"] = latest_version
+        end
+      end
+    end
+
+    # @return [Array]
+    def latest_stemcells
+      @_latest_stemcells ||= begin
+        stemcells = director.list_stemcells.inject({}) do |hash, stemcell|
+          unless stemcell.is_a?(Hash) && stemcell["name"] && stemcell["version"]
+            err("Invalid director stemcell list format")
+          end
+          hash[stemcell["name"]] ||= []
+          hash[stemcell["name"]] << stemcell["version"]
+          hash
+        end
+
+        stemcells.inject({}) do |hash, (name, versions)|
+          hash[name] = versions.sort { |v1, v2| version_cmp(v2, v1) }.first
+          hash
+        end
+      end
+    end
+
+    # @return [Array]
     def latest_releases
       @_latest_releases ||= begin
         director.list_releases.inject({}) do |hash, release|

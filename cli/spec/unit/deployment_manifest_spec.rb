@@ -114,4 +114,40 @@ describe Bosh::Cli::DeploymentHelper do
     }.to raise_error(/manifest has both `release' and `releases'/i)
   end
 
+  it "resolves 'latest' release alias for multiple stemcells" do
+    cmd = make_cmd
+    manifest = {
+      "name" => "mycloud",
+      "director_uuid" => "deadbeef",
+      "release" => {"name" => "appcloud", "version" => 42},
+      "resource_pools" => [
+        {"stemcell" => {"name" => "foo", "version" => "latest"}},
+        {"stemcell" => {"name" => "foo", "version" => 22}},
+        {"stemcell" => {"name" => "bar", "version" => "latest"}},
+      ]
+    }
+
+    manifest_file = Tempfile.new("manifest")
+    YAML.dump(manifest, manifest_file)
+    manifest_file.close
+    director = mock(Bosh::Cli::Director, :uuid => "deadbeef")
+
+    cmd.stub!(:deployment).and_return(manifest_file.path)
+    cmd.stub!(:director).and_return(director)
+
+    stemcells = [
+      {"name" => "foo", "version" => "22.6.4"},
+      {"name" => "foo", "version" => "22"},
+      {"name" => "bar", "version" => "4.0.8"},
+      {"name" => "bar", "version" => "4.1"}
+    ]
+
+    director.should_receive(:list_stemcells).and_return(stemcells)
+
+    manifest = cmd.prepare_deployment_manifest
+    manifest["resource_pools"][0]["stemcell"]["version"].should == "22.6.4"
+    manifest["resource_pools"][1]["stemcell"]["version"].should == 22
+    manifest["resource_pools"][2]["stemcell"]["version"].should == 4.1
+  end
+
 end
