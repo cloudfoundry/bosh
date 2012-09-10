@@ -8,9 +8,16 @@ module Bosh::Cli::Command
     PUBLIC_STEMCELL_INDEX = "public_stemcells_index.yml"
 
     # The URL of the public stemcell index.
-    PUBLIC_STEMCELL_INDEX_URL = "https://blob.cfblob.com/rest/objects/4e4e78bca2" +
-        "1e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e2538" +
-        "5d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI="
+    # PUBLIC_STEMCELL_INDEX_URL = "https://blob.cfblob.com/rest/objects/4e4e78bca2" +
+    #     "1e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e2538" +
+    #     "5d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI="
+    PUBLIC_STEMCELL_INDEX_URL = "https://blob.cfblob.com/rest/objects/4e4e78b" +
+        "ca31e122004e4e8ec646e210504e5a4f19e41?uid=bb6a0c89ef4048a8a0f814e253" +
+        "85d1c5/user1&expires=1893484800&signature=6xXeHkeNs7r4uSMQyQyEnCt/Ohk="
+
+    DEFAULT_PUB_STEMCELL_TAG = "stable"
+
+    ALL_STEMCELLS_TAG = "all"
 
     # usage "verify stemcell <path>"
     # desc  "Verify stemcell"
@@ -104,6 +111,21 @@ module Bosh::Cli::Command
       YAML.load(response.body)
     end
 
+    def skip_this_tag(yaml_tags, requested_tags)
+      if requested_tags == [ALL_STEMCELLS_TAG]
+        return false
+      end
+      unless yaml_tags
+        return true
+      end
+      requested_tags.each do |tag|
+        unless yaml_tags.include?(tag)
+          return true
+        end
+      end
+      return false
+    end
+
     # Prints out the publicly available stemcells.
     #
     # usage "public stemcells"
@@ -112,19 +134,28 @@ module Bosh::Cli::Command
     # route :stemcell, :list_public
     def list_public(*args)
       full = args.include?("--full")
+      tags_index = args.index("--tags")
+      tags = (tags_index ? args[tags_index + 1] : DEFAULT_PUB_STEMCELL_TAG)
+      tags = tags.sub(" ", "").split(",")
       yaml = get_public_stemcell_list
       stemcells_table = table do |t|
-        t.headings = "Name", "Url"
+        t.headings = "Name", "Url", "Tags"
         yaml.keys.sort.each do |key|
           if key != PUBLIC_STEMCELL_INDEX
             url = full ? yaml[key]["url"] : "#{yaml[key]["url"][0..49]}..."
-            t << [key, url]
+            yaml_tags = yaml[key]["tags"]
+            if skip_this_tag(yaml_tags, tags)
+              next
+            end
+
+            yaml_tags = yaml_tags ? yaml_tags.join(", ") : ""
+            t << [key, url, yaml_tags]
           end
         end
       end
       puts(stemcells_table)
       puts("To download use 'bosh download public stemcell <stemcell_name>'." +
-          "For full url use --full.")
+          "  For full url use --full.")
     end
 
     # Downloads one of the publicly available stemcells.

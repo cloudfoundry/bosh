@@ -502,6 +502,8 @@ module Bosh::Cli
         usage "public stemcells"
         desc  "Show the list of publicly available stemcells for download."
         option "--full", "show the full download url"
+        option "--tags \"tag1,tag2\"", "show only stemcells with these " +
+            "comma-separated tags.  Use 'all' to see all stemcells."
         route :stemcell, :list_public
       end
 
