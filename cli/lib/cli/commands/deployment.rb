@@ -228,5 +228,42 @@ module Bosh::Cli::Command
       say("\n")
       say("Deployments total: %d" % deployments.size)
     end
+
+    def download_manifest(deployment_name, given_path = "")
+      auth_required
+
+      existing = director.list_deployments.select do |dp|
+        dp["name"] == deployment_name
+      end
+
+      if existing.empty?
+        err("Deployment `#{deployment_name}' not found on director")
+      end
+
+      download_path = ""
+
+      if given_path =~ /\.yml$/
+        download_path = given_path
+      elsif File.directory?(given_path)
+        download_path = File.join(given_path, deployment_name + ".yml")
+      end
+
+      if File.exists?(download_path) &&
+          !agree("Local file `#{download_path}' already exists. Overwrite it? [yn]")
+        return
+      end
+
+      deployment = director.get_deployment(deployment_name)
+      downloaded_deployment = YAML.load(deployment["manifest"])
+
+      if (!download_path.blank?)
+        File.open(download_path, "w") do |f|
+          dump_yaml_to_file(downloaded_deployment, f)
+        end
+        say("Downloaded deployment manifest from director to `#{download_path}'")
+      else
+        say(YAML.dump(downloaded_deployment))
+      end
+    end
   end
 end
