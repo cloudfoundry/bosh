@@ -120,7 +120,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
       zbzs = BD::Models::Template.filter(
         :release_id => @release.id, :name => "zbz").all
 
-      bazs.map { |baz| baz.version }.should =~ %w(33.7-dev 33.8-dev)
+      bazs.map { |baz| baz.version }.should =~ %w(33 33.7-dev)
       zazs.map { |zaz| zaz.version }.should =~ %w(17 0.1-dev)
       zbzs.map { |zbz| zbz.version }.should =~ %w(28) # fingerprint match
 
@@ -135,7 +135,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       rv.templates.map { |template|
         template.version
-      }.should =~ %w(33.8-dev 0.1-dev 28)
+      }.should =~ %w(33 0.1-dev 28)
     end
 
     it "uses major.1-dev version for initial rebase if no version exists" do
@@ -163,16 +163,16 @@ describe Bosh::Director::Jobs::UpdateRelease do
       zazs = BD::Models::Template.filter(
         :release_id => @release.id, :name => "zaz").all
 
-      bazs.map { |baz| baz.version }.should =~ %w(33.1-dev)
+      bazs.map { |baz| baz.version }.should =~ %w(33)
       zazs.map { |zaz| zaz.version }.should =~ %w(0.1-dev)
 
       rv = BD::Models::ReleaseVersion.filter(
         :release_id => @release.id, :version => "42.1-dev").first
 
-      rv.packages.map { |p| p.version }.should =~ %w(2.1-dev 3.1-dev 333.1-dev)
+      rv.packages.map { |p| p.version }.should =~ %w(2.1-dev 3.1-dev 333)
       rv.templates.map {
         |t| t.version
-      }.should =~ %w(33.1-dev 0.1-dev 666.1-dev)
+      }.should =~ %w(33 0.1-dev 666)
     end
 
     it "performs no rebase if same release is being rebased twice" do

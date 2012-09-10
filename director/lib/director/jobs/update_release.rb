@@ -643,6 +643,7 @@ module Bosh::Director
       # @param [String] version Current version of item
       # @return [String] Next version to be used
       def next_version(collection, version)
+        return version if final_version?(version)
         major = major_version(version)
 
         latest = collection.select { |item|
@@ -684,7 +685,7 @@ module Bosh::Director
         collection.sort_by { |item|
           if item.version == original_version
             1
-          elsif item.version !~ /-dev$/
+          elsif final_version?(item.version)
             2
           elsif item.is_a?(Bosh::Director::Models::Package)
             3000 - [item.compiled_packages.size, 900].min
@@ -692,6 +693,10 @@ module Bosh::Director
             3000
           end
         }.first
+      end
+
+      def final_version?(version)
+        version !~ /-dev$/
       end
     end
   end
