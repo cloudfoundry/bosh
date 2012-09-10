@@ -12,6 +12,10 @@ module Bosh::Cli::Command
         "1e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e2538" +
         "5d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI="
 
+    DEFAULT_PUB_STEMCELL_TAG = "stable"
+
+    ALL_STEMCELLS_TAG = "all"
+
     # usage "verify stemcell <path>"
     # desc  "Verify stemcell"
     # route :stemcell, :verify
@@ -104,6 +108,21 @@ module Bosh::Cli::Command
       YAML.load(response.body)
     end
 
+    def skip_this_tag?(yaml_tags, requested_tags)
+      if requested_tags == [ALL_STEMCELLS_TAG]
+        return false
+      end
+      unless yaml_tags
+        return true
+      end
+      requested_tags.each do |tag|
+        unless yaml_tags.include?(tag)
+          return true
+        end
+      end
+      return false
+    end
+
     # Prints out the publicly available stemcells.
     #
     # usage "public stemcells"
@@ -112,19 +131,30 @@ module Bosh::Cli::Command
     # route :stemcell, :list_public
     def list_public(*args)
       full = args.include?("--full")
+      tags_index = args.index("--tags")
+      tags = [DEFAULT_PUB_STEMCELL_TAG]
+      if tags_index
+        tags_index += 1
+        raise "Must include tags." if args.length - 1 < tags_index
+        tags = args[tags_index].sub(" ", "").split(",")
+      end
       yaml = get_public_stemcell_list
       stemcells_table = table do |t|
-        t.headings = "Name", "Url"
+        t.headings = "Name", "Url", "Tags"
         yaml.keys.sort.each do |key|
           if key != PUBLIC_STEMCELL_INDEX
             url = full ? yaml[key]["url"] : "#{yaml[key]["url"][0..49]}..."
-            t << [key, url]
+            yaml_tags = yaml[key]["tags"]
+            next if skip_this_tag?(yaml_tags, tags)
+
+            yaml_tags = yaml_tags ? yaml_tags.join(", ") : ""
+            t << [key, url, yaml_tags]
           end
         end
       end
       puts(stemcells_table)
       puts("To download use 'bosh download public stemcell <stemcell_name>'." +
-          "For full url use --full.")
+          "  For full url use --full.")
     end
 
     # Downloads one of the publicly available stemcells.
