@@ -231,11 +231,13 @@ module Bosh::Director
           # checksum/fingerprint match, we can just substitute the original
           # package/job version with an existing one.
           if @rebase
-            substitute = packages.find do |package|
+            substitutes = packages.select do |package|
               package.release_id == @release_model.id &&
               package.name == package_meta["name"] &&
               package.dependency_set == Set.new(package_meta["dependencies"])
             end
+
+            substitute = pick_best(substitutes, package_meta["version"])
 
             if substitute
               package_meta["version"] = substitute.version
@@ -404,10 +406,12 @@ module Bosh::Director
           jobs = Models::Template.where(filter).all
 
           if @rebase
-            substitute = jobs.find do |job|
+            substitutes = jobs.select do |job|
               job.release_id == @release_model.id &&
               job.name == job_meta["name"]
             end
+
+            substitute = pick_best(substitutes, job_meta["version"])
 
             if substitute
               job_meta["version"] = substitute.version
@@ -668,6 +672,26 @@ module Bosh::Director
         @release_version_model.remove_all_packages
         @release_version_model.remove_all_templates
         @release_version_model.destroy
+      end
+
+      # Picks the best matching package/job from collection based on a simple
+      # heuristics: items with same version are preferred, then items
+      # with non-dev versions, then items with most compiled packages,
+      # then everything else.
+      # @param [Array<#name,#version>] collection
+      # @param [String] original_version
+      def pick_best(collection, original_version)
+        collection.sort_by { |item|
+          if item.version == original_version
+            1
+          elsif item.version !~ /-dev$/
+            2
+          elsif item.is_a?(Bosh::Director::Models::Package)
+            3000 - [item.compiled_packages.size, 900].min
+          else
+            3000
+          end
+        }.first
       end
     end
   end
