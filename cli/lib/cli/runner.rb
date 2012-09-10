@@ -110,7 +110,7 @@ module Bosh::Cli
       # Redirected bosh commands end up
       # generating this exception (kind of goto)
     rescue Bosh::Cli::CliExit, Bosh::Cli::DirectorError => e
-      say(e.message.red)
+      say(runner.interactive? ? e.message.red : e.message)
       exit(e.exit_code)
     rescue Bosh::Cli::CliError => e
       say("Error #{e.error_code}: #{e.message}".red)
