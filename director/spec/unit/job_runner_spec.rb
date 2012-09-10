@@ -79,6 +79,19 @@ describe Bosh::Director::JobRunner do
     @task.state.should == "cancelled"
   end
 
+  it "doesn't update task state when checkpointing" do
+    task = Bosh::Director::Models::Task[42]
+    task.update(:state => "processing")
+
+    runner = make_runner(@sample_job, 42)
+
+    task.update(:state => "cancelling")
+    runner.checkpoint
+
+    @task.reload
+    @task.state.should == "cancelling"
+  end
+
   it "handles task error" do
     job = Class.new(Bosh::Director::Jobs::BaseJob) do
       define_method(:perform) { |*args| raise "Oops" }

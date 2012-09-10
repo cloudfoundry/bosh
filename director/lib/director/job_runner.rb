@@ -32,6 +32,13 @@ module Bosh::Director
       @debug_logger.info("Task took #{duration} to process.")
     end
 
+    # Task checkpoint: updates timestamp so running task isn't marked as
+    # timed out.
+    # @return [void]
+    def checkpoint
+      @task.update(:checkpoint_time => Time.now)
+    end
+
     private
 
     # Sets up job logging.
@@ -116,8 +123,7 @@ module Bosh::Director
         with_thread_name("task:#{@task.id}-checkpoint") do
           while true
             sleep(Config.task_checkpoint_interval)
-            @task.checkpoint_time = Time.now
-            @task.save
+            checkpoint
           end
         end
       end
