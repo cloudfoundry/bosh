@@ -223,18 +223,44 @@ module Bosh::Cli::Command
       err("No deployments") if deployments.size == 0
 
       deployments_table = table do |t|
-        t.headings = %w(Name)
-        deployments.each do |r|
-          t << [r["name"]]
+        t.headings = %w(Name Release(s) Stemcell(s))
+        deployments.each do |d|
+          deployment = director.get_deployment(d["name"])
+
+          row = if (deployment["manifest"])
+            manifest = YAML.load(deployment["manifest"])
+
+            stemcells = manifest["resource_pools"].map do |rp|
+              name_version_str(rp["stemcell"])
+            end.sort.uniq
+
+            releases = if (manifest["releases"])
+              manifest["releases"].map { |rl| name_version_str(rl) }
+            else
+              [name_version_str(manifest["release"])]
+            end.sort
+
+            [manifest["name"], releases.join("\n"), stemcells.join("\n")]
+          else
+            [d["name"], "n/a", "n/a"]
+          end
+
+          t.add_row(row)
+          t.add_separator unless d == deployments.last
         end
       end
 
-      say("\n")
+      nl
       say(deployments_table)
-      say("\n")
+      nl
       say("Deployments total: %d" % deployments.size)
     end
 
+
+
+    # usage "download manifest <name> [<path>]"
+    # desc  "Downloads manifest of named deployment from director to path"
+    # route :deployment, :download_manifest
     def download_manifest(deployment_name, given_path = "")
       auth_required
 
@@ -268,6 +294,12 @@ module Bosh::Cli::Command
       else
         say(YAML.dump(downloaded_deployment))
       end
+    end
+
+    private
+
+    def name_version_str(hash)
+      hash.values_at("name", "version").join("/")
     end
   end
 end
