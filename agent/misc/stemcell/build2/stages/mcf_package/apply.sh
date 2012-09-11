@@ -14,7 +14,7 @@ archive_dir_name=micro
 archive_dir=${dest_dir}/${archive_dir_name}
 mkdir --parents ${archive_dir}
 
-if [[ -z "$MCF_VERSION" ]]; then
+if [ -z "${MCF_VERSION:-}" ]; then
     MCF_VERSION="dev build $now"
     echo 'To build a release version, set the MCF_VERSION environment variable.'
 fi
