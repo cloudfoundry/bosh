@@ -195,9 +195,27 @@ module Bosh::Cli::Command
       err("No deployments") if deployments.empty?
 
       deployments_table = table do |t|
-        t.headings = %w(Name)
-        deployments.each do |r|
-          t << [r["name"]]
+        t.headings = %w(Name Release(s) Stemcell(s))
+        deployments.each do |d|
+          deployment = director.get_deployment(d["name"])
+
+          row = if (deployment["manifest"])
+            manifest = YAML.load(deployment["manifest"])
+
+            stemcells = manifest["resource_pools"].map do |rp|
+              name_version_str(rp["stemcell"])
+            end.sort.uniq.join("\n")
+
+            releases = (manifest["releases"] || [manifest["release"]])
+                       .map { |rl| name_version_str(rl) }.sort.join("\n")
+
+            [manifest["name"], releases, stemcells]
+          else
+            [d["name"], "n/a", "n/a"]
+          end
+
+          t.add_row(row)
+          t.add_separator unless d == deployments.last
         end
       end
 
@@ -244,5 +262,10 @@ module Bosh::Cli::Command
       end
     end
 
+    private
+
+    def name_version_str(hash)
+      hash.values_at("name", "version").join("/")
+    end
   end
 end
