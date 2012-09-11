@@ -240,6 +240,12 @@ module Bosh::Cli
         route  :deployment, :edit
       end
 
+      command :download_manifest do
+        usage "download manifest <name> [<path>]"
+        desc  "Downloads manifest of named deployment from director to path"
+        route :deployment, :download_manifest
+      end
+
       command :validate_jobs do
         usage "validate jobs"
         desc  "Validates all jobs in the current release using current " +
