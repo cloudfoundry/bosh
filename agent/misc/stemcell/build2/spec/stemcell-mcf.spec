@@ -20,6 +20,7 @@ then
   stage mcf_micro_bosh
 fi
 
+stage mcf_version
 stage mcf_dirs
 
 # Install GRUB/kernel/etc

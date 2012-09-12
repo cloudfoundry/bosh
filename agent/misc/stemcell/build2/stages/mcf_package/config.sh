@@ -39,4 +39,6 @@ then
   exit 1
 fi
 
+persist_value build_time
 persist_value image_vsphere_ovf_ovftool_path
+persist_value version

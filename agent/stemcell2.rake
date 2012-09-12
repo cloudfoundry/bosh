@@ -36,6 +36,9 @@ namespace :stemcell2 do
     options[:stemcell_name] ||= "mcf-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
     options[:image_create_disk_size] = 16384
+    options[:build_time] = ENV['BUILD_TIME'] ||
+      Time.now.strftime('%Y%m%d.%H%M%S')
+    options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
 
     options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(args))
