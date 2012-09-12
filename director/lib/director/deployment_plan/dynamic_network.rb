@@ -3,10 +3,17 @@
 module Bosh::Director
   class DeploymentPlan
     class DynamicNetwork < Network
+      include DnsHelper
+
       DYNAMIC_IP = NetAddr::CIDR.create("255.255.255.255").to_i
 
-      # @return [Hash] Network cloud properties
+      # @!attribute [rw] cloud_properties
+      #   @return [Hash] Network cloud properties
       attr_accessor :cloud_properties
+
+      # @!attribute [rw] dns
+      #   @return [Array] an array of DNS servers
+      attr_accessor :dns
 
       ##
       # Creates a new network.
@@ -17,6 +24,8 @@ module Bosh::Director
         super
         @cloud_properties =
           safe_property(network_spec, "cloud_properties", :class => Hash)
+
+        @dns = dns_servers(network_spec["name"], network_spec)
       end
 
       ##
@@ -59,6 +68,7 @@ module Bosh::Director
           "type" => "dynamic",
           "cloud_properties" => @cloud_properties
         }
+        config["dns"] = @dns if @dns
 
         if default_properties
           config["default"] = default_properties.sort

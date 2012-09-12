@@ -3,6 +3,7 @@
 require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::DnsHelper do
+  include Bosh::Director::ValidationHelper
   include Bosh::Director::DnsHelper
 
   describe :canonical do
@@ -38,4 +39,20 @@ describe Bosh::Director::DnsHelper do
 
   end
 
+  describe :dns_servers do
+    it "should return nil when there are no DNS servers" do
+      dns_servers('network', {}).should be_nil
+    end
+
+    it "should return an array of DNS servers" do
+      dns_servers('network', {"dns" => %w[1.2.3.4 5.6.7.8]}).should ==
+          %w[1.2.3.4 5.6.7.8]
+    end
+
+    it "should raise an error if a DNS server isn't specified with as an IP" do
+      lambda {
+        dns_servers('network', {"dns" => %w[1.2.3.4 foo.bar]})
+      }.should raise_error
+    end
+  end
 end
