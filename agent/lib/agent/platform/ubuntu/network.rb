@@ -15,9 +15,9 @@ module Bosh::Agent
       when "vsphere"
         setup_networking_from_settings
       when "aws"
-        # Nothing to do
+        setup_dhcp_from_settings
       when "openstack"
-        # Nothing to do
+        setup_dhcp_from_settings
       else
         raise Bosh::Agent::FatalError, "Setup networking failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
       end
@@ -40,9 +40,7 @@ module Bosh::Agent
             v["network"] = net_cidr.network
             v["broadcast"] = net_cidr.broadcast
 
-            if v.key?('default') && v['default'].include?('dns')
-              @dns = v["dns"]
-            end
+            parse_dns(v)
           rescue NetAddr::ValidationError => e
             raise Bosh::Agent::FatalError, e.to_s
           end
@@ -55,7 +53,24 @@ module Bosh::Agent
       write_ubuntu_network_interfaces
       write_resolv_conf
       gratuitous_arp
+    end
 
+    def setup_dhcp_from_settings
+      @dns = []
+      @networks = Bosh::Agent::Config.settings["networks"]
+      @networks.each do |_, settings|
+        parse_dns(settings)
+      end
+
+      unless @dns.empty?
+        write_dhcp_conf
+      end
+    end
+
+    def parse_dns(settings)
+      if settings.key?('default') && settings['default'].include?('dns')
+        @dns = settings["dns"] if settings["dns"]
+      end
     end
 
     def detect_mac_addresses
@@ -95,7 +110,7 @@ module Bosh::Agent
     end
 
     def write_ubuntu_network_interfaces
-      template = ERB.new(INTERFACE_TEMPLATE, 0, '%<>-')
+      template = ERB.new(load_erb("interfaces.erb"), 0, '%<>-')
       result = template.result(binding)
       network_updated = Bosh::Agent::Util::update_file(result, '/etc/network/interfaces')
       if network_updated
@@ -126,22 +141,26 @@ module Bosh::Agent
       end
     end
 
-    INTERFACE_TEMPLATE = <<TEMPLATE
-auto lo
-iface lo inet loopback
+    def write_dhcp_conf
+      template = ERB.new(load_erb("dhclient_conf.erb"), 0, '%<>-')
+      result = template.result(binding)
+      updated = Bosh::Agent::Util::update_file(result, '/etc/dhcp3/dhclient.conf')
+      if updated
+        logger.info("Updated dhclient.conf")
+        renew_dhcp_lease
+      end
+    end
 
-<% @networks.each do |name, n| -%>
-auto <%= n["interface"] %>
-iface <%= n["interface"] %> inet static
-    address <%= n["ip"]%>
-    network <%= n["network"] %>
-    netmask <%= n["netmask"]%>
-    broadcast <%= n["broadcast"] %>
-<% if n.key?('default') && n['default'].include?('gateway') -%>
-    gateway <%= n["gateway"] %>
-<% end %>
-<% end -%>
-TEMPLATE
+    def renew_dhcp_lease
+      %x{/sbin/dhclient}
+    end
 
+    def load_erb(file)
+      dir = File.dirname(__FILE__)
+      path = File.expand_path("templates/#{file}", dir)
+      File.open(path) do |f|
+        f.read
+      end
+    end
   end
 end
