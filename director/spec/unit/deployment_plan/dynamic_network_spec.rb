@@ -25,6 +25,17 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         })
       }.should raise_error(BD::ValidationMissingField)
     end
+
+    it "should parse dns servers" do
+      network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+          "name" => "foo",
+          "dns" => %w[1.2.3.4 5.6.7.8],
+          "cloud_properties" => {
+              "foz" => "baz"
+          }
+      })
+      network.dns.should == %w[1.2.3.4 5.6.7.8]
+    end
   end
 
   describe :reserve do

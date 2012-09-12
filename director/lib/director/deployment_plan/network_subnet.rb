@@ -3,6 +3,7 @@
 module Bosh::Director
   class DeploymentPlan
     class NetworkSubnet
+      include DnsHelper
       include IpUtil
       include ValidationHelper
 
@@ -60,19 +61,7 @@ module Bosh::Director
           end
         end
 
-        dns_property = safe_property(subnet_spec, "dns",
-                                     :class => Array, :optional => true)
-        if dns_property
-          @dns = []
-          dns_property.each do |dns|
-            dns = NetAddr::CIDR.create(dns)
-            unless dns.size == 1
-              invalid_dns("must be a single IP")
-            end
-
-            @dns << dns.ip
-          end
-        end
+        @dns = dns_servers(@network.name, subnet_spec)
 
         @cloud_properties = safe_property(subnet_spec, "cloud_properties",
                                           :class => Hash)
@@ -173,12 +162,6 @@ module Bosh::Director
               "Invalid gateway for network `#{@network.name}': #{reason}"
       end
 
-      # @param [String] reason
-      # @raise NetworkInvalidDns
-      def invalid_dns(reason)
-        raise NetworkInvalidDns,
-              "Invalid DNS for network `#{@network.name}': #{reason}"
-      end
     end
   end
 end

@@ -16,5 +16,32 @@ module Bosh::Director
       end
       string
     end
+
+    def dns_servers(network, spec)
+      servers = nil
+      dns_property = safe_property(spec, "dns",
+                                   :class => Array, :optional => true)
+      if dns_property
+        servers = []
+        dns_property.each do |dns|
+          dns = NetAddr::CIDR.create(dns)
+          unless dns.size == 1
+            invalid_dns(network, "must be a single IP")
+          end
+
+          servers << dns.ip
+        end
+      end
+
+      servers
+    end
+
+    # @param [String] network name
+    # @param [String] reason
+    # @raise NetworkInvalidDns
+    def invalid_dns(network, reason)
+      raise NetworkInvalidDns,
+            "Invalid DNS for network `#{network}': #{reason}"
+    end
   end
 end
