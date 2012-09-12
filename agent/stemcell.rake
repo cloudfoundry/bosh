@@ -611,10 +611,12 @@ namespace "stemcell" do
       puts("Deleted #{stemcell_name}.")
     end
 
-    desc "Uploads <stemcell_path> to the public repository."
-    task "upload", :stemcell_path do |t, args|
+    desc "Uploads <stemcell_path> to the public repository with optional "+
+         "space-separated tags."
+    task "upload", :stemcell_path, :tags do |t, args|
       stemcell_path = args[:stemcell_path]
-
+      tags = args[:tags]
+      tags = tags ? tags.downcase.split(" ") : []
       stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
 
       store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
@@ -643,13 +645,51 @@ namespace "stemcell" do
             "object_id" => encoded_id,
             "url" => get_shareable_url(oid, sig, url, expiration, uid),
             "sha" => Digest::SHA1.file(stemcell_path).hexdigest,
-            "size" => File.size(stemcell_path)
+            "size" => File.size(stemcell_path),
+            "tags" => tags
         }
-
         update_index_file(index_file, index_yaml, url)
       ensure
         stemcell.close
       end
+    end
+
+    desc "Sets the tags (space-separated) for a stemcell."
+    task "set_stemcell_tags", :stemcell_name, :tags do |t, args|
+      stemcell_name = args[:stemcell_name]
+      tags = args[:tags]
+      tags = tags ? tags.downcase.split(" ") : []
+      stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+
+      store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+
+      index_file, index_yaml = get_index_file(store, stemcells_index_id)
+      index_yaml[stemcell_name]["tags"] = tags
+      update_index_file(index_file, index_yaml, url)
+    end
+
+    desc "Uploads a new index file so dev can be done without modifying the " +
+          "public stemcell index file."
+    task "upload_dev_index", :index_path do |t, args|
+      index_path = args[:index_path]
+      unless File.exists?(index_path)
+        raise "Index file at '#{index_path}' not found."
+      end
+      stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
+      index_file = File.open(index_path, "r")
+      store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
+      output = store.create(:data => index_file,
+                            :length => File.size(index_path))
+      puts("Uploaded #{index_path}.")
+      encoded_id = encode_object_id(output.aoid, expiration, uid, secret)
+      object_info = decode_object_id(encoded_id)
+      puts("Put '#{encoded_id}' in '#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}' as " +
+           "stemcells_index_id.")
+
+      oid = object_info["oid"]
+      sig = object_info["sig"]
+      share_url = get_shareable_url(oid, sig, url, expiration, uid)
+      puts("The public URL for use in BOSH CLI is '#{share_url}'.")
     end
 
     desc "Updates all stemcell's base URL with whatever is in " +
