@@ -197,16 +197,16 @@ module Bosh::Director
       end
 
       ##
-      # @return [Hash<String, String>] dns record hash
-      def dns_records
-        return @dns_records if @dns_records
-        @dns_records = {}
+      # @return [Hash<String, String>] dns record hash of dns name and IP
+      def dns_record_info
+        return @dns_record_info if @dns_record_info
+        @dns_record_info = {}
         network_settings.each do |network_name, network|
           name = [index, job.canonical_name, canonical(network_name),
                   job.deployment.canonical_name, :bosh].join(".")
-          @dns_records[name] = network["ip"]
+          @dns_record_info[name] = network["ip"]
         end
-        @dns_records
+        @dns_record_info
       end
 
       ##
@@ -271,7 +271,7 @@ module Bosh::Director
       #   instance differ from the ones configured on the DNS server
       def dns_changed?
         if Config.dns_enabled?
-          dns_records.any? do |name, ip|
+          dns_record_info.any? do |name, ip|
             Models::Dns::Record.find(:name => name, :type => "A",
                                      :content => ip).nil?
           end

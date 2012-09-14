@@ -446,6 +446,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater.update
   end
 
+  # TODO move to dns_helper_spec instead ?
   it "should update the dns when needed" do
     stub_object(@instance_spec,
                 :resource_pool_changed? => false,
@@ -465,15 +466,17 @@ describe Bosh::Director::InstanceUpdater do
 
     @instance_spec.stub!(:spec).and_return(BASIC_PLAN)
     dns_records = {"0.some.record" => "1.2.3.4", "0.some.other.record" => "5.6.7.8"}
-    @instance_spec.stub!(:dns_records).and_return(dns_records)
+    @instance_spec.stub!(:dns_record_info).and_return(dns_records)
     @deployment_plan.stub!(:dns_domain).and_return(dns_domain)
 
     instance_updater.update
 
     map = {}
     records = Bosh::Director::Models::Dns::Record.all
-    records.size.should == 2
+    records.size.should == 8
     records.each { |record| map[record.name] = record.content }
+    dns_records["4.3.2.in-addr.arpa"] = "0.some.record"
+    dns_records["8.7.6.in-addr.arpa"] = "0.some.other.record"
     map.should == dns_records
   end
 
