@@ -9,6 +9,7 @@ module Bosh::Director
         :base_dir,
         :cloud_options,
         :db,
+        :dns,
         :dns_db,
         :event_log,
         :logger,
@@ -95,8 +96,9 @@ module Bosh::Director
         @blobstore = nil
 
         @db = configure_db(config["db"])
-        if config["dns"] && config["dns"]["db"]
-          @dns_db = configure_db(config["dns"]["db"])
+        @dns = config["dns"]
+        if @dns && @dns["db"]
+          @dns_db = configure_db(@dns["db"])
         end
 
         @encryption = config["encryption"]
