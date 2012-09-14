@@ -330,19 +330,7 @@ module Bosh::Director
     end
 
     def bind_dns
-      domain = Models::Dns::Domain.find_or_create(:name => "bosh",
-                                                  :type => "NATIVE")
-      @deployment_plan.dns_domain = domain
-
-      soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                                      :name => "bosh",
-                                                      :type => "SOA")
-      # TODO: make configurable?
-      # The format of the SOA record is:
-      # primary_ns contact serial refresh retry expire minimum
-      soa_record.content = "localhost hostmaster@localhost 0 10800 604800 30"
-      soa_record.ttl = 300
-      soa_record.save
+      @deployment_plan.dns_domain = update_dns_domain
     end
 
     def bind_instance_vms

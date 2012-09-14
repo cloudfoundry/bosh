@@ -55,4 +55,52 @@ describe Bosh::Director::DnsHelper do
       }.should raise_error
     end
   end
+
+  describe :delete_dns_records do
+
+    BDM = Bosh::Director::Models
+    it "should only delete records that match the deployment, job, and index" do
+      @logger = Logger.new("/dev/null")
+      domain = BDM::Dns::Domain.make
+
+      # create A records
+      # create PTR records
+
+      {
+        "0.job-a.network-a.dep.bosh" => "1.1.1.1",
+        "1.job-a.network-a.dep.bosh" => "1.1.1.2",
+        "0.job-b.network-b.dep.bosh" => "1.1.2.1",
+        "0.job-a.network-a.dep-b.bosh" => "1.2.1.1"
+      }.each do |key, value|
+        BDM::Dns::Record.make(:domain => domain, :name => key,
+                              :content => value)
+      end
+
+      {
+        "1.1.1.1.in-addr.arpa" => "0.job-a.network-a.dep.bosh",
+        "2.1.1.1.in-addr.arpa" => "1.job-a.network-a.dep.bosh",
+        "1.2.1.1.in-addr.arpa" => "0.job-b.network-b.dep.bosh",
+        "1.1.2.1.in-addr.arpa" => "0.job-a.network-a.dep-b.bosh"
+      }.each do |key, value|
+        BDM::Dns::Record.make(:PTR, :domain => domain, :name => key,
+                              :content => value)
+      end
+
+      pattern = "0.job-a.%.dep.bosh"
+      delete_dns_records(pattern, domain.id)
+
+      expected = Set.new(%w[
+        1.job-a.network-a.dep.bosh
+        0.job-b.network-b.dep.bosh
+        0.job-a.network-a.dep-b.bosh
+        2.1.1.1.in-addr.arpa
+        1.2.1.1.in-addr.arpa
+        1.1.2.1.in-addr.arpa
+      ])
+      actual = Set.new
+      BDM::Dns::Record.each { |record| actual << record.name }
+      actual.should == expected
+    end
+
+  end
 end
