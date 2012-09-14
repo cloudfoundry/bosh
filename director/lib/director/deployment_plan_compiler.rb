@@ -337,12 +337,24 @@ module Bosh::Director
       soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
                                                       :name => "bosh",
                                                       :type => "SOA")
+      # TODO increment SOA serial
       # TODO: make configurable?
       # The format of the SOA record is:
       # primary_ns contact serial refresh retry expire minimum
-      soa_record.content = "localhost hostmaster@localhost 0 10800 604800 30"
+      soa_record.content = SOA
       soa_record.ttl = 300
       soa_record.save
+
+      # add NS record
+      Models::Dns::Record.find_or_create(:domain_id => domain.id,
+                                         :name => "bosh",
+                                         :type =>'NS', :ttl => TTL_4H,
+                                         :content => "ns.bosh")
+      # add A record for name server
+      Models::Dns::Record.find_or_create(:domain_id => domain.id,
+                                         :name => "ns.bosh",
+                                         :type =>'A', :ttl => TTL_4H,
+                                         :content => Config.dns["address"])
     end
 
     def bind_instance_vms

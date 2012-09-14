@@ -197,7 +197,7 @@ module Bosh::Director
       end
 
       ##
-      # @return [Hash<String, String>] dns record hash
+      # @return [Hash<String, String>] dns record hash of dns name and IP
       def dns_records
         return @dns_records if @dns_records
         @dns_records = {}

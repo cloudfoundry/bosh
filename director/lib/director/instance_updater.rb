@@ -2,6 +2,7 @@
 
 module Bosh::Director
   class InstanceUpdater
+    include DnsHelper
     MAX_ATTACH_DISK_TRIES = 3
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
@@ -244,16 +245,41 @@ module Bosh::Director
       return unless @instance.dns_changed?
 
       domain = @deployment_plan.dns_domain
-      @instance.dns_records.each do |record_name, content|
-        @logger.info("Updating DNS for: #{record_name} to #{content}")
+      @instance.dns_records.each do |record_name, ip_address|
+        @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
         record = Models::Dns::Record.find(:domain_id => domain.id,
                                           :name => record_name)
         if record.nil?
           record = Models::Dns::Record.new(:domain_id => domain.id,
-                                           :name => record_name)
+                                           :name => record_name, :type => "A")
         end
-        record.type = "A"
-        record.content = content
+        record.content = ip_address
+        record.change_date = Time.now.to_i
+        record.save
+
+        # create/update records needed for reverse lookups
+        reverse = reverse_domain(ip_address)
+        rdomain = Models::Dns::Domain.find_or_create(:name => reverse,
+                                                    :type => "NATIVE")
+        Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
+                                           :name => reverse,
+                                           :type =>'SOA', :content => SOA,
+                                           :ttl => TTL_4H)
+
+        Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
+                                           :name => reverse,
+                                           :type =>'NS', :ttl => TTL_4H,
+                                           :content => "ns.bosh")
+
+        record = Models::Dns::Record.find(:domain_id => rdomain.id,
+                                          :name => reverse,
+                                          :type =>'PTR', :ttl => TTL_5M)
+        unless record
+          record = Models::Dns::Record.new(:domain_id => rdomain.id,
+                                           :name => reverse,
+                                           :type =>'PTR')
+        end
+        record.content = record_name
         record.change_date = Time.now.to_i
         record.save
       end
