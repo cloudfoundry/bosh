@@ -2,6 +2,7 @@
 
 module Bosh::Director
   class InstanceUpdater
+    include DnsHelper
     MAX_ATTACH_DISK_TRIES = 3
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
@@ -244,18 +245,10 @@ module Bosh::Director
       return unless @instance.dns_changed?
 
       domain = @deployment_plan.dns_domain
-      @instance.dns_records.each do |record_name, content|
-        @logger.info("Updating DNS for: #{record_name} to #{content}")
-        record = Models::Dns::Record.find(:domain_id => domain.id,
-                                          :name => record_name)
-        if record.nil?
-          record = Models::Dns::Record.new(:domain_id => domain.id,
-                                           :name => record_name)
-        end
-        record.type = "A"
-        record.content = content
-        record.change_date = Time.now.to_i
-        record.save
+      @instance.dns_record_info.each do |record_name, ip_address|
+        @logger.info("Updating DNS for: #{record_name} to #{ip_address}")
+        update_dns_a_record(domain, record_name, ip_address)
+        update_dns_ptr_record(record_name, ip_address)
       end
     end
 

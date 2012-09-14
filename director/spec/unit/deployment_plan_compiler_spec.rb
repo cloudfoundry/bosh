@@ -462,6 +462,10 @@ describe Bosh::Director::DeploymentPlanCompiler do
   end
 
   describe :bind_dns do
+    before(:each) do
+      BD::Config.stub(:dns).and_return({"address" => '1.2.3.4'})
+    end
+
     it "should create the domain if it doesn't exist" do
       domain = nil
       @deployment_plan.should_receive(:dns_domain=).
@@ -482,29 +486,36 @@ describe Bosh::Director::DeploymentPlanCompiler do
       BD::Models::Dns::Domain.count.should == 1
     end
 
-    it "should create the SOA record if it doesn't exist" do
+    it "should create the SOA, NS & A record if they doesn't exist" do
       domain = BD::Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
       @deployment_plan.should_receive(:dns_domain=)
       @deployment_plan_compiler.bind_dns
 
-      BD::Models::Dns::Record.count.should == 1
-      record = BD::Models::Dns::Record.first
-      record.domain.should == domain
-      record.name.should == "bosh"
-      record.type.should == "SOA"
+      BD::Models::Dns::Record.count.should == 3
+      records = BD::Models::Dns::Record
+      types = records.map {|r| r.type}
+      types.should == %w[SOA NS A]
     end
 
     it "should reuse the SOA record if it exists" do
       domain = BD::Models::Dns::Domain.make(:name => "bosh", :type => "NATIVE")
-      record = BD::Models::Dns::Record.make(:domain => domain, :name => "bosh",
-                                            :type => "SOA")
+      soa = BD::Models::Dns::Record.make(:domain => domain, :name => "bosh",
+                                         :type => "SOA")
+      ns = BD::Models::Dns::Record.make(:domain => domain, :name => "bosh",
+                                        :type => "NS", :content => "ns.bosh",
+                                        :ttl => 14400) # 4h
+      a = BD::Models::Dns::Record.make(:domain => domain, :name => "ns.bosh",
+                                       :type => "A", :content => "1.2.3.4",
+                                       :ttl => 14400) # 4h
       @deployment_plan.should_receive(:dns_domain=)
       @deployment_plan_compiler.bind_dns
 
-      record.refresh
+      soa.refresh
+      ns.refresh
+      a.refresh
 
-      BD::Models::Dns::Record.count.should == 1
-      BD::Models::Dns::Record.first.should == record
+      BD::Models::Dns::Record.count.should == 3
+      BD::Models::Dns::Record.all.should == [soa, ns, a]
     end
   end
 
