@@ -129,15 +129,20 @@ module Bosh::Deployer
       def discover_bosh_ip
         if exists?
           server = cloud.openstack.servers.get(state.vm_cid)
-          ip = server.public_ip_address
-          ip = server.private_ip_address if ip.nil? || ip.empty?
-          if ip.nil? || ip.empty?
-            raise "Unable to discover bosh ip"
-          else
-            if ip["addr"] != Config.bosh_ip
-              Config.bosh_ip = ip["addr"]
-              logger.info("discovered bosh ip=#{Config.bosh_ip}")
-            end
+          # LP OpenStack Nova 185110:
+          # Since OS API 1.1, server addresses exposes the network names
+          # instead of the network types. so we need to fetch the
+          # os-floating-ips and find if any of them is associated to the
+          # server in order to get its public address.
+          floating_ip = cloud.openstack.addresses.find {
+                          |addr| addr.instance_id == server.id
+                        }
+          ip = floating_ip.nil? ? service_ip : floating_ip.ip
+          raise "Unable to discover bosh ip" if ip.nil?
+
+          if ip != Config.bosh_ip
+            Config.bosh_ip = ip
+            logger.info("discovered bosh ip=#{Config.bosh_ip}")
           end
         end
 

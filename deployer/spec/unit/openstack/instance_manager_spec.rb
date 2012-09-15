@@ -32,9 +32,11 @@ describe Bosh::Deployer::InstanceManager do
   def discover_bosh_ip(ip, id)
     server = mock("server")
     servers = mock("servers")
+    floating_ip = mock("floating_ip", :ip => ip)
+    addresses = mock("addresses", :find => floating_ip)
     @openstack.should_receive(:servers).and_return(servers)
     servers.should_receive(:get).with(id).and_return(server)
-    server.should_receive(:public_ip_address).and_return(ip)
+    @openstack.should_receive(:addresses).and_return(addresses)
   end
 
   it "should update the apply spec" do
