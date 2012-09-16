@@ -6,7 +6,7 @@ module Bosh::Agent
 
       API_TIMEOUT     = 86400 * 3
       CONNECT_TIMEOUT = 30
-      SERVER_DATA_URI = "http://169.254.169.254/1.0"
+      SERVER_DATA_URI = "http://169.254.169.254/latest"
 
       def get_uri(uri)
         client = HTTPClient.new
