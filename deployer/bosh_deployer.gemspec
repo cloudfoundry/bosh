@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency "bosh_cli", ">=0.19.5"
   s.add_dependency "bosh_cpi", "~>0.4.4"
+  s.add_dependency "bosh_vcloud_cpi", "~>0.4.8"
   s.add_dependency "bosh_vsphere_cpi", "~>0.4.9"
   s.add_dependency "bosh_aws_cpi", "~>0.6.2"
   s.add_dependency "bosh_aws_registry", "~>0.2.2"
