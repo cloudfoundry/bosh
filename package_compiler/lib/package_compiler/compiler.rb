@@ -104,7 +104,7 @@ module Bosh
         spec["configuration_hash"] = {}
 
         case @options[:cpi]
-        when "vsphere"
+        when "vsphere", "vcloud"
           spec["networks"] = {"local" => {"ip" => "127.0.0.1"}}
         when "aws"
           spec["networks"] = {"type" => "dynamic"}
