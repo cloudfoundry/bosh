@@ -46,7 +46,7 @@ namespace :stemcell2 do
   def default_options(args)
     infrastructure = args[:infrastructure]
     unless infrastructure
-      STDERR.puts "Please specify target infrastructure (vsphere, aws, openstack)"
+      STDERR.puts "Please specify target infrastructure (vsphere, vcloud, aws, openstack)"
       exit 1
     end
 
@@ -65,6 +65,9 @@ namespace :stemcell2 do
     # Pass OVFTOOL environment variable when targeting vsphere
     if infrastructure == "vsphere"
       options[:image_vsphere_ovf_ovftool_path] = ENV["OVFTOOL"]
+    end
+    if infrastructure == "vcloud"
+      options[:image_vcloud_ovf_ovftool_path] = ENV["OVFTOOL"]
     end
 
     options
@@ -93,7 +96,7 @@ namespace :stemcell2 do
     return ENV["STEMCELL_HYPERVISOR"] if ENV["STEMCELL_HYPERVISOR"]
 
     case infrastructure
-      when "vsphere"
+      when "vsphere", "vcloud"
         hypervisor = "esxi"
       when "aws"
         hypervisor = "xen"

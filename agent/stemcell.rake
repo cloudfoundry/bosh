@@ -359,10 +359,10 @@ namespace "stemcell" do
     build_vm_image(:hypervisor => "esxi")
   end
 
-  desc "Build chroot tgz [infrastructure] - optional argument: vsphere (default) or aws"
+  desc "Build chroot tgz [infrastructure] - optional argument: vsphere (default), vcloud or aws"
   task "chroot_tgz", :infrastructure do |t, args|
     if args[:infrastructure]
-      INFRASTRUCTURES = %w[vsphere aws]
+      INFRASTRUCTURES = %w[vsphere vcloud aws]
       unless INFRASTRUCTURES.include?(args[:infrastructure])
         puts "Please specify an infrastructure. Supported infrastructures are #{INFRASTRUCTURES}"
         exit 1
@@ -439,7 +439,7 @@ namespace "stemcell" do
 
     # Create vm image
     case get_infrastructure_name
-    when "vsphere"
+    when "vsphere", "vcloud"
       build_vm_image
     when "aws"
       Rake::Task["stemcell:aws"].invoke(get_chroot_dir)
