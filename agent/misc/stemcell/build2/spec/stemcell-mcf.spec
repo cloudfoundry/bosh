@@ -28,6 +28,7 @@ stage system_kernel
 stage system_open_vm_tools
 
 # Misc
+stage mcf_network
 stage system_parameters
 
 # Finalisation
