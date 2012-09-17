@@ -12,7 +12,7 @@ module Bosh::Agent
 
     def setup_networking
       case Bosh::Agent::Config.infrastructure_name
-      when "vsphere"
+      when "vsphere", "vcloud"
         setup_networking_from_settings
       when "aws"
         # Nothing to do
