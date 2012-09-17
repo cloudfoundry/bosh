@@ -24,6 +24,22 @@ cp --archive ${dir}/assets/tty1.conf ${chroot}/etc/init/
 
 mkdir ${chroot}/${shared_dir}
 
+cp ${dir}/assets/extra.conf ${chroot}/etc/dnsmasq.d/
+
+rm ${chroot}/etc/update-motd.d/*
+cp ${dir}/assets/00-mcf ${chroot}/etc/update-motd.d/
+cp ${dir}/assets/10-legal ${chroot}/etc/update-motd.d/
+chmod 755 ${chroot}/etc/update-motd.d/*
+
+# Prevent delays in offline mode.
+echo 'UseDNS no' >> ${chroot}/etc/ssh/sshd_config
+
+# Listen to IPv4 only.
+echo 'ListenAddress 0.0.0.0' >> ${chroot}/etc/ssh/sshd_config
+
+# Start in offline mode
+touch ${chroot}/var/vcap/micro/offline
+
 run_in_bosh_chroot ${chroot} "
 chown vcap:vcap ${micro_dest}
 chmod 755 ${micro_dest}
