@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vcloud:Item xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1"
+          xmlns:vcloud="http://www.vmware.com/vcloud/v1.5"
+          xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData">
+</vcloud:Item>
