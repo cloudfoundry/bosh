@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns7:Media
+        xmlns="http://www.vmware.com/vcloud/extension/v1"
+        xmlns:ns7="http://www.vmware.com/vcloud/v1.5"
+        size="" name="" imageType="">
+</ns7:Media>

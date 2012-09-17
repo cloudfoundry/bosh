@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<IpScope xmlns="http://www.vmware.com/vcloud/v1.5">
+  <IsInherited/>
+  <Gateway/>
+  <Netmask/>
+  <IpRanges>
+    <IpRange>
+      <StartAddress/>
+      <EndAddress/>
+    </IpRange>
+  </IpRanges>
+</IpScope>
