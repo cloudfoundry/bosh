@@ -17,6 +17,7 @@ cp -aL $bosh_agent_src_dir/{bin,lib,vendor,Gemfile*} $chroot/$agent_dir
 run_in_bosh_chroot $chroot "
 ln -s $agent_dir agent
 chmod +x agent/bin/agent
+gem update --system
 "
 
 # Install gems
