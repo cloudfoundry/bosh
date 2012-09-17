@@ -1,0 +1,26 @@
+BOSH vCloud Cloud Provider
+
+A BOSH CPI implementation for a vCloud Director backed infrastructure cloud.
+
+Use the vSphere MICRO BOSH and BOSH stemcells when targetting vCloud Director.
+
+In order to target a vCloud Director instance, BOSH must be set to use
+the vCloud plugin configuration as shown below.  Follow the same process
+as when targetting vSphere but replacing the cloud plugin configuration.
+
+-------------------------------------------------------------
+  plugin: vcloud
+  vcds:
+    - url:  <VCD url> (e.g. http://1.2.3.4)
+      user: <VCD user> (e.g. orgadmin)
+      password: <>
+      entities:
+        organization: <Organization name>
+        virtual_datacenter: <VDC name>
+        vapp_catalog: <Organization catalog name>
+        media_catalog: <Organization catalog name>
+        vm_metadata_key: cf-agent-env
+        description: <Text associated with Cloud Foundry VMs>
+-------------------------------------------------------------
+
+BOSH requires vCloud Director version 5.1 or newer.
