@@ -1,0 +1,19 @@
+source :rubygems
+gemspec
+
+gem "rake"
+
+group :test, :development do
+  gem "rspec"
+  gem "rest-client"
+  gem "nokogiri", "~> 1.4.1"
+  gem "nokogiri-diff"
+
+  gem "ruby-debug", :platforms => :ruby_18
+  gem "ruby-debug19", :platforms => :ruby_19
+
+  gem "rcov", :platforms => :ruby_18
+
+  gem "simplecov", :platforms => :ruby_19
+  gem "simplecov-rcov", :platforms => :ruby_19
+end
