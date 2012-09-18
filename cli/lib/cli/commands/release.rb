@@ -426,6 +426,11 @@ module Bosh::Cli::Command
           versions = r["versions"].sort do |v1, v2|
             version_cmp(v1, v2)
           end
+          versions = if r.has_key?("in_use")
+            versions.map { |v| (r["in_use"].include? v)? "#{v}*" : v }
+          else
+            versions
+          end
 
           t << [r["name"], versions.join(", ")]
         end
@@ -433,6 +438,7 @@ module Bosh::Cli::Command
 
       nl
       say(releases_table)
+      say("(*) Currently deployed")
       nl
       say("Releases total: %d" % releases.size)
     end
