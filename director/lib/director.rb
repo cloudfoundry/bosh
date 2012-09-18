@@ -187,6 +187,18 @@ module Bosh::Director
         (task.state == "processing" || task.state == "cancelling") &&
           (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
       end
+
+      def release_versions(release)
+        release.versions_dataset.order_by(:version.asc).all.map do |rv|
+          rv.version.to_s
+        end
+      end
+
+      def release_versions_in_use(release)
+        release.versions_dataset.order_by(:version.asc).reject do |rv|
+          rv.deployments.empty?
+        end.map { |rv| rv.version }
+      end
     end
 
     configure do
@@ -251,7 +263,8 @@ module Bosh::Director
       releases = Models::Release.order_by(:name.asc).map do |release|
         {
           "name"     => release.name,
-          "versions" => release.versions_dataset.order_by(:version.asc).all.map { |rv| rv.version.to_s }
+          "versions" => release_versions(release),
+          "in_use"   => release_versions_in_use(release)
         }
       end
 
