@@ -323,6 +323,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     +--------------+----------+
     | bosh-release | 0.1-dev  |
     +--------------+----------+
+    (*) Currently deployed
 
     Releases total: 1
     OUT

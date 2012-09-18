@@ -196,8 +196,11 @@ describe Bosh::Director::Controller do
         releases = (1..10).map do |i|
           release = Bosh::Director::Models::Release.create(:name => "release-#{i}")
           (0..rand(3)).each do |v|
-            Bosh::Director::Models::ReleaseVersion.create(:release => release, :version => v)
+            Bosh::Director::Models::ReleaseVersion.create(:release => release,
+                                                          :version => v)
           end
+          d = Bosh::Director::Models::Deployment.create(:name => "deployment-#{i}")
+          d.add_release_version(release.versions.sample)
           release
         end
 
@@ -208,8 +211,18 @@ describe Bosh::Director::Controller do
         body.kind_of?(Array).should be_true
         body.size.should == 10
 
-        response_collection = body.map { |e| [e["name"], e["versions"].join(" ")] }
-        expected_collection = releases.sort_by { |e| e.name }.map { |e| [e.name.to_s, e.versions.map { |v| v.version.to_s }.join(" ")] }
+        response_collection = body.map do |e|
+          [e["name"], e["versions"].join(" "), e["in_use"].join(" ")]
+        end
+
+        expected_collection = releases.sort_by { |e| e.name }.map do |e|
+          [e.name.to_s,
+           e.versions.map { |v| v.version.to_s }.join(" "),
+           e.versions_dataset.order_by(:version.asc).reject do |rv|
+                          rv.deployments.empty?
+                        end.map { |rv| rv.version }.join(" ")
+          ]
+        end
 
         response_collection.should == expected_collection
       end
