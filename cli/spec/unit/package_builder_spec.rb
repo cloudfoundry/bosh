@@ -410,7 +410,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
       { "name" => "bar", "files" => globs }, @release_dir, true, blobstore)
     lambda {
       final_builder.build
-    }.should raise_error(Bosh::Cli::CliExit)
+    }.should raise_error(Bosh::Cli::CliError)
 
     builder = make_builder("bar", globs)
     builder.build
@@ -427,7 +427,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
       { "name" => "bar", "files" => globs }, @release_dir, true, blobstore)
     lambda {
       final_builder3.build
-    }.should raise_error(Bosh::Cli::CliExit)
+    }.should raise_error(Bosh::Cli::CliError)
   end
 
   it "includes dotfiles in a fingerprint" do

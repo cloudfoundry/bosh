@@ -375,7 +375,7 @@ describe Bosh::Cli::JobBuilder do
                                 [], true, true, blobstore)
     lambda {
       final_builder.build
-    }.should raise_error(Bosh::Cli::CliExit)
+    }.should raise_error(Bosh::Cli::CliError)
 
     dev_builder = new_builder("foo", [], ["bar", "baz"],
                               [], true, false, blobstore)
@@ -392,7 +392,7 @@ describe Bosh::Cli::JobBuilder do
 
     lambda {
       final_builder3.build
-    }.should raise_error(Bosh::Cli::CliExit)
+    }.should raise_error(Bosh::Cli::CliError)
   end
 
   it "allows template subdirectories" do

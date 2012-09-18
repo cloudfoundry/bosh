@@ -4,28 +4,23 @@ module Bosh::Cli::Command
   class CloudCheck < Base
     include Bosh::Cli::DeploymentHelper
 
-    # usage  "cloudcheck [<deployment>]"
-    # desc   "Cloud consistency check and interactive repair"
-    # option "--auto", "resolve problems automatically " +
-    #     "(not recommended for production)"
-    # option "--report", "generate report only, " +
-    #     "don't attempt to resolve problems"
-    # route  :cloud_check, :perform
-    def perform(*options)
+    # bosh cloudcheck
+    usage "cloudcheck"
+    desc "Cloud consistency check and interactive repair"
+    option "--auto",
+           "resolve problems automatically ",
+           "(not recommended for production)"
+    option "--report",
+           "generate report only, ",
+           "don't attempt to resolve problems"
+    def perform(deployment_name = nil)
       auth_required
-      # TODO: introduce option helpers
-      deployment_name = options.shift unless options[0] =~ /^--/
-
-      @auto_mode = options.delete("--auto")
-      @report_mode = options.delete("--report")
+      @auto_mode = options[:auto]
+      @report_mode = options[:report]
 
       if non_interactive? && !@report_mode
         err ("Cloudcheck cannot be run in non-interactive mode\n" +
              "Please use `--auto' flag if you want automated resolutions")
-      end
-
-      if options.size > 0
-        err("Unknown options: #{options.join(", ")}")
       end
 
       if @auto_mode && @report_mode
@@ -97,7 +92,7 @@ module Bosh::Cli::Command
 
       if @problems.empty?
         say("No problems found".green)
-        quit
+        exit(0)
       end
 
       @problems.each do |problem|

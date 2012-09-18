@@ -3,13 +3,13 @@
 module Bosh::Cli::Command
   class User < Base
 
-    # usage "create user [<name>] [<password>]"
-    # desc  "Create user"
-    # route :user, :create
+    # bosh create user
+    usage "create user"
+    desc  "Create user"
     def create(username = nil, password = nil)
       auth_required
 
-      unless options[:non_interactive]
+      if interactive?
         username = ask("Enter username: ") if username.blank?
         if password.blank?
           password = ask("Enter password: ") { |q| q.echo = "*" }
@@ -21,7 +21,7 @@ module Bosh::Cli::Command
       end
 
       if director.create_user(username, password)
-        say("User #{username} has been created")
+        say("User `#{username}' has been created".green)
       else
         err("Error creating user")
       end

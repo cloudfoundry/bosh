@@ -3,7 +3,7 @@
 module Bosh
   module Cli
     DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_config")
-    DEFAULT_CACHE_DIR   = File.expand_path("~/.bosh_cache")
+    DEFAULT_CACHE_DIR = File.expand_path("~/.bosh_cache")
   end
 end
 
@@ -41,6 +41,7 @@ require "common/common"
 
 require "cli/config"
 require "cli/core_ext"
+require "cli/command_discovery"
 require "cli/errors"
 require "cli/yaml_helper"
 require "cli/version_calc"
@@ -74,17 +75,19 @@ require "common/properties"
 require "cli/job_property_collection"
 require "cli/job_property_validator"
 
-require "cli/command_definition"
+require "cli/command_discovery"
+require "cli/command_handler"
 require "cli/runner"
+require "cli/base_command"
 
-YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
+if defined?(YAML::ENGINE.yamler)
+  YAML::ENGINE.yamler = "syck"
+end
 
 tmpdir = Dir.mktmpdir
 at_exit { FileUtils.rm_rf(tmpdir) }
 ENV["TMPDIR"] = tmpdir
 
-require File.expand_path(File.dirname(__FILE__) + "/cli/commands/base")
-
 Dir[File.dirname(__FILE__) + "/cli/commands/*.rb"].each do |file|
-  require File.expand_path(file)
+  require file
 end

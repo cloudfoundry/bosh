@@ -5,14 +5,40 @@ module Bosh::Cli
     VALID_ID = /^[-a-z0-9_.]+$/i
 
     class << self
+      # @return [Hash<String,Bosh::Cli::CommandDefinition>] Available commands
+      attr_reader :commands
+
+      # @return [Boolean] Should CLI output be colorized?
       attr_accessor :colorize
+
+      # @return [IO] Where output goes
       attr_accessor :output
+
+      # @return [Boolean] Is CLI being used interactively?
       attr_accessor :interactive
+
+      # @return [Bosh::Cli::Cache] CLI cache (to save task logs etc.)
       attr_accessor :cache
     end
 
+    @commands = {}
+    @colorize = true
+    @output = nil
+    @interactive = false
+    @cache = nil
+
+    # Register command with BOSH CLI
+    # @param [Bosh::Cli::CommandDefinition] command
+    # @return [void]
+    def self.register_command(command)
+      if @commands.has_key?(command.usage)
+        raise CliError, "Duplicate command `#{command.usage}'"
+      end
+      @commands[command.usage] = command
+    end
+
     def initialize(filename, work_dir = Dir.pwd)
-      @filename = File.expand_path(filename)
+      @filename = File.expand_path(filename || Bosh::Cli::DEFAULT_CONFIG_PATH)
       @work_dir = work_dir
 
       unless File.exists?(@filename)

@@ -4,9 +4,9 @@ module Bosh::Cli::Command
   class PropertyManagement < Base
     include Bosh::Cli::DeploymentHelper
 
-    # usage "set property <name> <value>"
-    # desc  "Set deployment property"
-    # route :property_management, :set
+    # bosh set property
+    usage "set property"
+    desc "Set deployment property"
     def set(name, value)
       prepare
       show_header
@@ -26,10 +26,9 @@ module Bosh::Cli::Command
       end
 
       prompt = "Are you sure you want to set property" +
-          " `#{name.green}' to `#{format_property(value).green}'? " +
-          "(type yes to proceed): "
+        " `#{name.green}' to `#{format_property(value).green}'?"
 
-      if interactive? && ask(prompt) != "yes"
+      unless confirmed?(prompt)
         err("Canceled")
       end
 
@@ -46,17 +45,17 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage "unset property <name>"
-    # desc  "Unset deployment property"
-    # route :property_management, :unset
+    # bosh unset property
+    usage "unset property"
+    desc "Unset deployment property"
     def unset(name)
       prepare
       show_header
 
       prompt = "Are you sure you want to unset property " +
-          "`#{name.green}'? (type yes to proceed): "
+        "`#{name.green}'?"
 
-      if interactive? && ask(prompt) != "yes"
+      unless confirmed?(prompt)
         err("Canceled")
       end
 
@@ -69,9 +68,9 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage "get property <name>"
-    # desc  "Get deployment property"
-    # route :property_management, :get
+    # bosh get property
+    usage "get property"
+    desc "Get deployment property"
     def get(name)
       prepare
       show_header
@@ -85,13 +84,13 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage  "properties"
-    # desc   "List current deployment properties"
-    # option "--terse", "easy to parse output"
-    # route  :property_management, :list
-    def list(*args)
+    # bosh properties
+    usage "properties"
+    desc "List deployment properties"
+    option "--terse", "easy to parse output"
+    def list
       prepare
-      terse = args.include?("--terse")
+      terse = options[:terse]
       show_header unless terse
 
       properties = director.list_properties(@deployment_name)
@@ -110,12 +109,11 @@ module Bosh::Cli::Command
       else
         if output.size > 0
           properties_table = table do |t|
-            t.headings = ["Name", "Value"]
+            t.headings = %w(Name Value)
             output.each { |row| t << [row[0], row[1].truncate(40)] }
           end
           say(properties_table)
         else
-          # TODO normalize? we use err() in other places
           say("No properties found")
         end
       end

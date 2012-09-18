@@ -9,28 +9,25 @@ module Bosh::Cli::Command
     # @param [String] template The string path to the template that should be
     #     used.
     #
-    # usage "diff [<template_file>]"
-    # desc  "Diffs your current BOSH deployment configuration against " +
-    #       "the specified BOSH deployment configuration template so that " +
-    #       "you can keep your deployment configuration file up to date.  " +
-    #       "A dev template can be found in deployments repos."
-    # route :biff, :biff
+    usage "diff"
+    desc "Diffs your current BOSH deployment configuration against " +
+         "the specified BOSH deployment configuration template so that " +
+         "you can keep your deployment configuration file up to date " +
+         "A dev template can be found in deployments repos."
     def biff(template)
-      begin
-        setup(template)
+      setup(template)
 
-        template_to_fill = ERB.new(File.read(@template_file), 0, "%<>-")
-        @template_output = template_to_fill.result(binding)
+      template_to_fill = ERB.new(File.read(@template_file), 0, "%<>-")
+      @template_output = template_to_fill.result(binding)
 
-        if @errors == 0
-          print_string_diff(File.read(@deployment_file), @template_output)
-          keep_new_file unless @no_differences
-        else
-          err("There were #{@errors} errors.")
-        end
-      ensure
-        delete_temp_diff_files
+      if @errors == 0
+        print_string_diff(File.read(@deployment_file), @template_output)
+        keep_new_file unless @no_differences
+      else
+        err("There were #{@errors} errors.")
       end
+    ensure
+      delete_temp_diff_files
     end
 
     private

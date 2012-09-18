@@ -3,30 +3,60 @@
 module Bosh::Cli::Command
   class Task < Base
 
-    # Tracks a running task or outputs the logs from an old task.  Triggered
-    # with 'bosh task <task_num>'. Check parse_flags to see what flags can be
-    # used with this.
-    #
-    # @param [Array] args The arguments from the command line command.
-    #
-    # usage  "task [<task_id>|last]"
-    # desc   "Show task status and start tracking its output"
-    # option "--no-cache", "don't cache output locally"
-    # option "--event|--soap|--debug", "different log types to track"
-    # option "--raw", "don't beautify log"
-    # option "--no-filter", "last task will include all types " +
-    #        "(ssh, logs, vms, etc)"
-    # route  :task, :track
-    def track(*args)
-      auth_required
+    INCLUDE_ALL = "Include all task types (ssh, logs, vms, etc)"
 
-      task_id, log_type, no_cache, raw_output = parse_flags(args)
+    # bosh task
+    usage  "task"
+    desc   "Show task status and start tracking its output"
+    option "--no-cache", "Don't cache output locally"
+    option "--event", "Track event log"
+    option "--soap", "Track CPI log"
+    option "--debug", "Track debug log"
+    option "--result", "Track result log"
+    option "--raw", "Show raw log"
+    option "--no-filter", INCLUDE_ALL
+    def track(task_id = nil)
+      auth_required
+      use_filter = !options.key?(:no_filter)
+      use_cache = !options.key?(:no_cache)
+      raw_output = options[:raw]
+
+      log_type = "event"
+      n_types = 0
+      if options[:soap]
+        log_type = "soap"
+        n_types += 1
+      end
+
+      if options[:debug]
+        log_type = "debug"
+        n_types += 1
+      end
+
+      if options[:event]
+        log_type = "event"
+        n_types += 1
+      end
+
+      if options[:result]
+        log_type = "result"
+        raw_output = true
+        n_types += 1
+      end
+
+      if n_types > 1
+        err("Cannot track more than one log type")
+      end
 
       track_options = {
         :log_type => log_type,
-        :use_cache => no_cache ? false : true,
+        :use_cache => use_cache,
         :raw_output => raw_output
       }
+
+      if task_id.nil? || %w(last latest).include?(task_id)
+        task_id = get_last_task_id(get_verbose_level(use_filter))
+      end
 
       if task_id.to_i <= 0
         err("Task id must be a positive integer")
@@ -36,98 +66,53 @@ module Bosh::Cli::Command
       tracker.track
     end
 
-    # usage "tasks"
-    # desc  "Show the list of running tasks"
-    # option "--no-filter", "include all task types (ssh, logs, vms, etc)"
-    # route :task, :list_running
-    def list_running(*options)
+    # bosh tasks
+    usage "tasks"
+    desc "Show running tasks"
+    option "--no-filter", INCLUDE_ALL
+    def list_running
       auth_required
-      no_filter = options.delete("--no-filter")
-      tasks = director.list_running_tasks(get_verbose_level(no_filter))
+      use_filter = !options.key?(:no_filter)
+      tasks = director.list_running_tasks(get_verbose_level(use_filter))
       err("No running tasks") if tasks.empty?
       show_tasks_table(tasks.sort_by { |t| t["id"].to_i * -1 })
       say("Total tasks running now: %d" % [tasks.size])
     end
 
-    # usage "tasks recent [<number>]"
-    # desc  "Show <number> recent tasks"
-    # option "--no-filter", "include all task types (ssh, logs, vms, etc)"
-    # route :task, :list_recent
-    def list_recent(*options)
+    # bosh tasks recent
+    usage "tasks recent"
+    desc "Show <number> recent tasks"
+    option "--no-filter", INCLUDE_ALL
+    def list_recent(count = 30)
       auth_required
-      no_filter = options.delete("--no-filter")
-      count = options.first || 30
-      tasks = director.list_recent_tasks(count, get_verbose_level(no_filter))
+      use_filter = !options.key?(:no_filter)
+      tasks = director.list_recent_tasks(count, get_verbose_level(use_filter))
       err("No recent tasks") if tasks.empty?
       show_tasks_table(tasks)
-      say("Showing %d recent %s" % [tasks.size,
-                                    tasks.size == 1 ? "task" : "tasks"])
+      say("Showing #{tasks.size} recent #{tasks.size == 1 ? "task" : "tasks"}")
     end
 
-    # usage "cancel task <id>"
-    # desc  "Cancel task once it reaches the next cancel checkpoint"
-    # route :task, :cancel
+    # bosh cancel task
+    usage "cancel task"
+    desc "Cancel task once it reaches the next checkpoint"
     def cancel(task_id)
       auth_required
       task = Bosh::Cli::DirectorTask.new(director, task_id)
       task.cancel
-      say("Cancelling task #{task_id}")
+      say("Task #{task_id} is getting canceled")
     end
 
     private
 
-    # Parses the command line args to see what options have been specified.
-    #
-    # @param [Array] flags The args that were passed in from the command line.
-    # @return [String, String, Boolean, Boolean] The task id, the type of log
-    #     output, whether to use cache or not, whether to output the raw log.
-    def parse_flags(flags)
-      no_filter = flags.delete("--no-filter")
-      task_id = flags.shift
-      if asking_for_last_task?(task_id)
-        task_id = get_last_task_id(get_verbose_level(no_filter))
-      end
-
-      log_type = get_log_type(flags)
-      no_cache = flags.include?("--no-cache")
-      raw_output = flags.include?("--raw")
-
-      [task_id, log_type, no_cache, raw_output]
-    end
-
-    # Whether the bosh user has asked for the last (most recently run) task.
-    #
-    # @param [String] task_id The task id specified by the user. Could be a
-    #     number as a string or it could be "last" or "latest".
-    # @return [Boolean] Whether the user is asking for the most recent task.
-    def asking_for_last_task?(task_id)
-      task_id.nil? || %w(last latest).include?(task_id)
-    end
-
     # Returns the task id of the most recently run task.
-    #
     # @return [String] The task id of the most recently run task.
     def get_last_task_id(verbose = 1)
       last = director.list_recent_tasks(1, verbose)
-      if last.size == 0
+      if last.empty?
         err("No tasks found")
       end
 
       last[0]["id"]
-    end
-
-    # Returns what type of log output the user is asking for.
-    #
-    # @param [Array] flags The args that were passed in from the command line.
-    # @return [String] The type of log output the user is asking for.
-    def get_log_type(flags)
-      if flags.include?("--soap")
-        "soap"
-      elsif flags.include?("--debug")
-        "debug"
-      else
-        "event"
-      end
     end
 
     def show_tasks_table(tasks)
@@ -146,11 +131,10 @@ module Bosh::Cli::Command
     end
 
     # Returns the verbose level for the given no_filter flag
-    #
-    # @param [Boolean] no_filter no_filter flag from the command line
+    # @param [Boolean] use_filter Is filtering performed?
     # @return [Number] director verbose level
-    def get_verbose_level(no_filter)
-      no_filter ? 2 : 1
+    def get_verbose_level(use_filter)
+      use_filter ? 1 : 2
     end
   end
 end

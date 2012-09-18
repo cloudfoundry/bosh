@@ -4,19 +4,18 @@ module Bosh::Cli::Command
   class Misc < Base
     DEFAULT_STATUS_TIMEOUT = 3 # seconds
 
-    # usage "version"
-    # desc  "Show version"
-    # route :misc, :version
+    # bosh version
+    usage "version"
+    desc  "Show version"
     def version
       say("BOSH %s" % [Bosh::Cli::VERSION])
     end
 
-    # usage "status"
-    # desc  "Show current status (current target, " +
-    #           "user, deployment info etc.)"
-    # route :misc, :status
+    # bosh status
+    usage "status"
+    desc  "Show current status (current target, user, deployment info etc)"
     def status
-      if config.target && options[:director_checks]
+      if config.target
         say("Updating director data...", " ")
 
         begin
@@ -31,64 +30,61 @@ module Bosh::Cli::Command
             say("done".green)
           end
         rescue TimeoutError
-          err("timed out")
+          say("timed out".red)
         rescue => e
-          err("error: #{e.message}")
+          say("error: #{e.message}")
         end
         nl
       end
 
-      target_name = full_target_name ? full_target_name.green : "not set".red
-      target_uuid = config.target_uuid ? config.target_uuid.green : "n/a".red
-      user = logged_in? ? username.green : "not set".red
-      deployment = config.deployment ? config.deployment.green : "not set".red
+      say("Director".green)
+      if target_url.nil?
+        say("  not set".yellow)
+      else
+        print_value("Name", config.target_name)
+        print_value("URL", target_url)
+        print_value("Version", config.target_version)
+        print_value("User", username, "not logged in")
+        print_value("UUID", config.target_uuid)
+      end
 
-      say("Target".ljust(15) + target_name)
-      say("UUID".ljust(15) + target_uuid)
-      say("User".ljust(15) + user)
-      say("Deployment".ljust(15) + deployment)
+      nl
+      say("Deployment".green)
+
+      if deployment
+        print_value("Manifest", deployment)
+      else
+        say("  not set".yellow)
+      end
 
       if in_release_dir?
-        header("You are in release directory")
+        nl
+        say("Release".green)
 
-        dev_name = release.dev_name
         dev_version = Bosh::Cli::VersionsIndex.new(
-            File.join(work_dir, "dev_releases")).latest_version
+          File.join(work_dir, "dev_releases")).latest_version
 
-        final_name = release.final_name
         final_version = Bosh::Cli::VersionsIndex.new(
-            File.join(work_dir, "releases")).latest_version
+          File.join(work_dir, "releases")).latest_version
 
-        say("Dev name:      %s" % [dev_name ? dev_name.green : "not set".red])
-        say("Dev version:   %s" % [dev_version ?
-                                     dev_version.to_s.green :
-                                     "no versions yet".red])
-        say("\n")
-        say("Final name:    %s" % [final_name ?
-                                       final_name.green :
-                                       "not set".red])
-        say("Final version: %s" % [final_version ?
-                                     final_version.to_s.green :
-                                     "no versions yet".red])
+        dev = release.dev_name
+        dev += "/#{dev_version}" if dev && dev_version
 
-        say("\n")
-        say("Packages")
-        print_specs("package", "packages")
+        final = release.final_name
+        final += "/#{final_version}" if final && final_version
 
-        say("\n")
-        say("Jobs")
-        print_specs("job", "jobs")
+        print_value("dev", dev)
+        print_value("final", final)
       end
     end
 
-    # usage "login [<name>] [<password>]"
-    # desc  "Provide credentials for the subsequent interactions " +
-    #           "with targeted director"
-    # route :misc, :login
+    # bosh login
+    usage "login"
+    desc  "Log in to currently targeted director"
     def login(username = nil, password = nil)
       target_required
 
-      unless options[:non_interactive]
+      if interactive?
         username = ask("Your username: ").to_s if username.blank?
 
         password_retries = 0
@@ -103,75 +99,57 @@ module Bosh::Cli::Command
       end
       logged_in = false
 
-      if options[:director_checks]
-        director = Bosh::Cli::Director.new(target, username, password)
+      director.user = username
+      director.password = password
 
-        if director.authenticated?
-          say("Logged in as `#{username}'")
-          logged_in = true
-        elsif options[:non_interactive]
-          err("Cannot log in as `#{username}'")
-        else
-          say("Cannot log in as `#{username}', please try again")
-          redirect(:misc, :login, username, nil)
-        end
+      if director.authenticated?
+        say("Logged in as `#{username}'".green)
+        logged_in = true
+      elsif non_interactive?
+        err("Cannot log in as `#{username}'".red)
+      else
+        say("Cannot log in as `#{username}', please try again".red)
+        login(username)
       end
 
-      if logged_in || !options[:director_checks]
+      if logged_in
         config.set_credentials(target, username, password)
         config.save
       end
     end
 
-    # usage "logout"
-    # desc  "Forget saved credentials for targeted director"
-    # route :misc, :logout
+    # bosh logout
+    usage "logout"
+    desc  "Forget saved credentials for targeted director"
     def logout
       target_required
       config.set_credentials(target, nil, nil)
       config.save
-      say("You are no longer logged in to '#{target}'")
+      say("You are no longer logged in to `#{target}'".yellow)
     end
 
-    # usage "purge"
-    # desc  "Purge local manifest cache"
-    # route :misc, :purge_cache
+    # bosh purge
+    usage "purge"
+    desc  "Purge local manifest cache"
     def purge_cache
       if cache.cache_dir != Bosh::Cli::DEFAULT_CACHE_DIR
-        # TODO use different exit code?
-        say("Cache directory `#{@cache.cache_dir}' differs from default, " +
-            "please remove manually")
+        err("Cache directory overriden, please remove manually")
       else
         FileUtils.rm_rf(cache.cache_dir)
-        say("Purged cache")
+        say("Purged cache".green)
       end
     end
 
-    # usage "target [<name>] [<alias>]"
-    # desc  "Choose director to talk to (optionally creating an alias). " +
-    #           "If no arguments given, show currently targeted director"
-    # route do |args|
-    #   (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
-    # end
-    def show_target
-      if target
-        if interactive?
-          say("Current target is `#{full_target_name.green}'")
-        else
-          say(full_target_name)
-        end
-      else
-        err("Target not set")
+    # bosh target
+    usage "target"
+    desc  "Choose director to talk to (optionally creating an alias). " +
+          "If no arguments given, show currently targeted director"
+    def set_target(director_url = nil, name = nil)
+      if director_url.nil?
+        show_target
+        return
       end
-    end
 
-    # usage "target [<name>] [<alias>]"
-    # desc  "Choose director to talk to (optionally creating an alias). " +
-    #           "If no arguments given, show currently targeted director"
-    # route do |args|
-    #   (args.size > 0) ? [:misc, :set_target] : [:misc, :show_target]
-    # end
-    def set_target(director_url, name = nil)
       if name.nil?
         director_url =
           config.resolve_alias(:target, director_url) || director_url
@@ -183,23 +161,19 @@ module Bosh::Cli::Command
 
       director_url = normalize_url(director_url)
       if target && director_url == normalize_url(target)
-        say("Target already set to `#{full_target_name.green}'")
+        say("Target already set to `#{target_name.green}'")
         return
       end
 
       director = Bosh::Cli::Director.new(director_url)
 
-      if options[:director_checks]
-        begin
-          status = director.get_status
-        rescue Bosh::Cli::AuthError
-          status = {}
-        rescue Bosh::Cli::DirectorError
-          err("Cannot talk to director at `#{director_url}', " +
-              "please set correct target")
-        end
-      else
-        status = {"name" => "Unknown Director", "version" => "n/a"}
+      begin
+        status = director.get_status
+      rescue Bosh::Cli::AuthError
+        status = {}
+      rescue Bosh::Cli::DirectorError
+        err("Cannot talk to director at `#{director_url}', " +
+            "please set correct target")
       end
 
       config.target = director_url
@@ -216,64 +190,87 @@ module Bosh::Cli::Command
       end
 
       config.save
-      say("Target set to `#{full_target_name.green}'")
+      say("Target set to `#{target_name.green}'")
 
       if interactive? && !logged_in?
-        redirect(:misc, :login)
+        redirect("login")
       end
     end
 
-    # usage "targets"
-    # desc  "Show the list of available targets"
-    # route :misc, :list_targets
+    # bosh targets
+    usage "targets"
+    desc  "Show the list of available targets"
     def list_targets
-      # TODO: Bonus point will be checking each director status
-      # (maybe an --status option?)
       targets = config.aliases(:target) || {}
 
-      err("No targets found") if targets.size == 0
+      err("No targets found") if targets.empty?
 
       targets_table = table do |t|
         t.headings = [ "Name", "Director URL" ]
         targets.each { |row| t << [row[0], row[1]] }
       end
 
-      say("\n")
+      nl
       say(targets_table)
-      say("\n")
+      nl
       say("Targets total: %d" % targets.size)
     end
 
-    # usage "alias <name> <command>"
-    # desc  "Create an alias <name> for command <command>"
-    # route :misc, :set_alias
-    def set_alias(name, value)
-      config.set_alias(:cli, name, value.to_s.strip)
+    # bosh alias
+    usage "alias"
+    desc  "Create an alias <name> for command <command>"
+    def set_alias(name, command)
+      config.set_alias(:cli, name, command.to_s.strip)
       config.save
-      say("Alias `#{name.green}' created for command `#{value.green}'")
+      say("Alias `#{name.green}' created for command `#{command.green}'")
     end
 
-    # usage "aliases"
-    # desc  "Show the list of available command aliases"
-    # route :misc, :list_aliases
+    # bosh aliases
+    usage "aliases"
+    desc  "Show the list of available command aliases"
     def list_aliases
       aliases = config.aliases(:cli) || {}
+      err("No aliases found") if aliases.empty?
 
-      err("No aliases found") if aliases.size == 0
-
-      sorted = aliases.sort_by { |name, value| name }
+      sorted = aliases.sort_by { |name, _| name }
       aliases_table = table do |t|
-        t.headings = [ "Alias", "Command" ]
+        t.headings = %w(Alias Command)
         sorted.each { |row| t << [row[0], row[1]] }
       end
 
-      say("\n")
+      nl
       say(aliases_table)
-      say("\n")
+      nl
       say("Aliases total: %d" % aliases.size)
     end
 
     private
+
+    def print_value(label, value, if_none = nil)
+      if value
+        message = label.ljust(10) + value.yellow
+      else
+        message = label.ljust(10) + (if_none || "n/a").yellow
+      end
+      say(message.indent(2))
+    end
+
+    def show_target
+      if config.target
+        if interactive?
+          if config.target_name
+            name = "#{config.target} (#{config.target_name})"
+          else
+            name = config.target
+          end
+          say("Current target is #{name.green}")
+        else
+          say(config.target)
+        end
+      else
+        err("Target not set")
+      end
+    end
 
     def print_specs(entity, dir)
       specs = Dir[File.join(work_dir, dir, "*", "spec")]
@@ -282,7 +279,7 @@ module Bosh::Cli::Command
         say("No #{entity} specs found")
       end
 
-      t = table ["Name", "Dev", "Final"]
+      t = table %w(Name Dev Final)
 
       specs.each do |spec_file|
         if spec_file.is_a?(String) && File.file?(spec_file)
