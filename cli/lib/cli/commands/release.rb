@@ -422,17 +422,21 @@ module Bosh::Cli::Command
 
       releases_table = table do |t|
         t.headings = "Name", "Versions"
-        releases.each do |r|
-          versions = r["versions"].sort do |v1, v2|
+        releases.each do |release|
+          versions = release["versions"].sort do |v1, v2|
             version_cmp(v1, v2)
+          end.map do |version|
+            versions_in_use = release.fetch("in_use") { [] }
+            (versions_in_use.include? version) ? "#{version}*" : version
           end
 
-          t << [r["name"], versions.join(", ")]
+          t << [release["name"], versions.join(", ")]
         end
       end
 
       nl
       say(releases_table)
+      say("(*) Currently deployed")
       nl
       say("Releases total: %d" % releases.size)
     end
