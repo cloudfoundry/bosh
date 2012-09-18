@@ -12,6 +12,12 @@ module Bosh
 
       attr_reader :director_uri
 
+      # @return [String]
+      attr_accessor :user
+
+      # @return [String]
+      attr_accessor :password
+
       def initialize(director_uri, user = nil, password = nil)
         if director_uri.nil? || director_uri =~ /^\s*$/
           raise DirectorMissing, "no director URI given"
@@ -199,11 +205,7 @@ module Bosh
         options[:payload] = JSON.generate(payload)
         options[:content_type] = "application/json"
 
-        status, task_id = request_and_track(:post, url, options)
-
-        # TODO: this needs to be done in command handler, not in director.rb
-        return nil if status != :done
-        JSON.parse(get_task_result_log(task_id))
+        request_and_track(:post, url, options)
       end
 
       def cleanup_ssh(deployment_name, job, user_regex, indexes, options = {})

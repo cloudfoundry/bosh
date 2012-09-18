@@ -3,66 +3,72 @@
 module Bosh::Cli::Command
   class Ssh < Base
     include Bosh::Cli::DeploymentHelper
-    CMD_UPLOAD = "upload"
-    CMD_DOWNLOAD = "download"
-    CMD_EXEC = "exec"
+
     SSH_USER_PREFIX = "bosh_"
-    SSH_DEFAULT_PASSWORD = "bosh"
     SSH_DSA_PUB = File.expand_path("~/.ssh/id_dsa.pub")
     SSH_RSA_PUB = File.expand_path("~/.ssh/id_rsa.pub")
 
-    def parse_options(args)
-      options = {}
+    # bosh ssh
+    usage "ssh"
+    desc "Execute command or start an interactive session"
+    option "--public_key FILE", "Public key"
+    option "--gateway_host HOST", "Gateway host"
+    option "--gateway_user USER", "Gateway user"
+    option "--default_password PASSWORD",
+           "Use default ssh password (NOT RECOMMENDED)"
+    def shell(*args)
+      job, index, command = parse_args(args)
 
-      # Check if index is supplied on the command line
-      begin
-        # Ruby 1.8.7 treats Integer(nil) as 0, hence the if check
-        if args.size > 0
-          options["index"] = Integer(args[0])
-          args.shift
+      if command.empty?
+        if index.nil?
+          err("Can't run interactive shell on more than one instance")
         end
-      rescue ArgumentError, TypeError
-        # No index given
-      end
-
-      %w(public_key gateway_host gateway_user).each do |option|
-        pos = args.index("--#{option}")
-        if pos
-          options[option] = args[pos + 1]
-          args.delete_at(pos + 1)
-          args.delete_at(pos)
-        end
-      end
-      options
-    end
-
-    def get_public_key(options)
-      # Get public key
-      public_key = nil
-      if options["public_key"]
-        unless File.file?(options["public_key"])
-          err("Please specify a valid public key file")
-        end
-        public_key = File.read(options["public_key"])
+        setup_interactive_shell(job, index)
       else
-        # See if ssh-add can be used
-        %x[ssh-add -L 1>/dev/null 2>&1]
-        if $?.exitstatus == 0
-          keys = %x[ssh-add -L]
-          public_key = keys.split("\n")[0]
-        else
-          # Pick up public key from home dir
-          [SSH_DSA_PUB, SSH_RSA_PUB].each do |key_file|
-            if File.file?(key_file)
-              public_key = File.read(key_file)
-              break
-            end
-          end
-        end
+        say("Executing `#{command.join(" ")}' on #{job}/#{index}")
+        perform_operation(:exec, job, index, command)
       end
-      err("Please specify a public key file") if public_key.nil?
-      public_key
     end
+
+    # bosh scp
+    usage "scp"
+    desc "upload/download the source file to the given job. " +
+         "Note: for download /path/to/destination is a directory"
+    option "--download", "Download file"
+    option "--upload", "Upload file"
+    option "--public_key FILE", "Public key"
+    option "--gateway_host HOST", "Gateway host"
+    option "--gateway_user USER", "Gateway user"
+    def scp(*args)
+      job, index, args = parse_args(args)
+      upload = options[:upload]
+      download = options[:download]
+      if (upload && download) || (upload.nil? && download.nil?)
+        err("Please specify either --upload or --download")
+      end
+
+      if args.size != 2
+        err("Please enter valid source and destination paths")
+      end
+      say("Executing file operations on job #{job}")
+      perform_operation(upload ? :upload : :download, job, index, args)
+    end
+
+    usage "cleanup ssh"
+    desc "Cleanup SSH artifacts"
+    def cleanup(*args)
+      job, index, args = parse_args(args)
+      if args.size > 0
+        err("SSH cleanup doesn't accept any extra args")
+      end
+
+      manifest_name = prepare_deployment_manifest["name"]
+
+      say("Cleaning up ssh artifacts from #{job}/#{index}")
+      director.cleanup_ssh(manifest_name, job, "^#{SSH_USER_PREFIX}", [index])
+    end
+
+    private
 
     def get_salt_charset
       charset = []
@@ -84,217 +90,173 @@ module Bosh::Cli::Command
       plain_text.crypt(salt)
     end
 
-    def setup_ssh(job, index, password, options, &block)
-      # Get public key
-      public_key = get_public_key(options)
-
-      # Generate a random user name
+    # @param [String] job
+    # @param [Integer] index
+    # @param [optional,String] password
+    def setup_ssh(job, index, password = nil)
+      public_key = get_public_key
       user = SSH_USER_PREFIX + rand(36**9).to_s(36)
+      deployment_name = prepare_deployment_manifest["name"]
 
-      # Get deployment name
-      manifest_name = prepare_deployment_manifest["name"]
+      say("Target deployment is `#{deployment_name}'")
+      status, task_id = director.setup_ssh(
+        deployment_name, job, index, user,
+        public_key, encrypt_password(password))
 
-      say "Target deployment is #{manifest_name}"
-      results = director.setup_ssh(manifest_name, job, index, user, public_key,
-                                   encrypt_password(password))
-
-      unless results && results.kind_of?(Array) && !results.empty?
-        err("Error setting up ssh, #{results.inspect}, " +
-            "check task logs for more details")
+      unless status == :done
+        err("Failed to set up SSH: see task #{task_id} log for details")
       end
 
-      results.each do |result|
-        unless result.kind_of?(Hash)
-          err("Unexpected results #{results.inspect}, " +
-              "check task logs for more details")
+      sessions = JSON.parse(director.get_task_result_log(task_id))
+
+      unless sessions && sessions.kind_of?(Array) && sessions.size > 0
+        err("Error setting up ssh, check task #{task_id} log for more details")
+      end
+
+      sessions.each do |session|
+        unless session.kind_of?(Hash)
+          err("Unexpected SSH session info: #{session.inspect}. " +
+              "Please check task #{task_id} log for more details")
         end
       end
 
-      if block_given?
-        yield results, user
+      if options[:gateway_host]
+        gw_host = options[:gateway_host]
+        gw_user = options[:gateway_user] || ENV["USER"]
+        gateway = Net::SSH::Gateway.new(gw_host, gw_user)
+      else
+        gateway = nil
       end
-    ensure
-      if results
+
+      begin
+        yield sessions, user, gateway
+      ensure
+        nl
         say("Cleaning up ssh artifacts")
-        indexes = results.map {|result| result["index"]}
-        # Cleanup only this one 'user'
-        director.cleanup_ssh(manifest_name, job, "^#{user}$", indexes)
+        indices = sessions.map { |session| session["index"] }
+        director.cleanup_ssh(deployment_name, job, "^#{user}$", indices)
+        gateway.shutdown! if gateway
       end
     end
 
-    def get_free_port
-      socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-      socket.bind(Addrinfo.tcp("127.0.0.1", 0))
-      port = socket.local_address.ip_port
-      socket.close
-
-      # The port could get used in the interim, but unlikely in real life
-      port
-    end
-
-    def setup_interactive_shell(job, password, options)
-      index = options["index"]
-      err("Please specify a job index") if index.nil?
+    # @param [String] job Job name
+    # @param [Integer] index Job index
+    def setup_interactive_shell(job, index)
+      password = options[:default_password]
 
       if password.nil?
-        password_retries = 0
-        while password.blank? && password_retries < 3
-          password = ask("Enter password " +
-                     "(use it to sudo on remote host): ") { |q| q.echo = "*" }
-          password_retries += 1
-        end
+        password = ask(
+          "Enter password (use it to " +
+          "sudo on remote host): ") { |q| q.echo = "*" }
+
         err("Please provide ssh password") if password.blank?
       end
 
-      setup_ssh(job, index, password, options) do |results, user|
-        result = results.first
-        unless result["status"] && result["status"] == "success" && result["ip"]
-          err("Failed to setup ssh on index #{index} #{results.inspect}")
+      setup_ssh(job, index, password) do |sessions, user, gateway|
+        session = sessions.first
+
+        unless session["status"] == "success" && session["ip"]
+          err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
         end
 
-        say("Starting interactive shell on job #{job}, index #{index}")
-        # Start interactive session
-        if options["gateway_host"]
-          local_port = get_free_port
-          say("Connecting to local port #{local_port}")
-          # Create the ssh tunnel
-          fork do
-            gateway = (options["gateway_user"] ?
-                "#{options["gateway_user"]}@" : "") +
-                options["gateway_host"]
-            # Tunnel will close after 30 seconds,
-            # so no need to worry about cleaning it up
-            exec("ssh -f -L#{local_port}:#{result["ip"]}:22 #{gateway} " +
-                 "sleep 30")
+        say("Starting interactive shell on job #{job}/#{index}")
+
+        if gateway
+          port = gateway.open(session["ip"], 22)
+          ssh_session = fork do
+            exec("ssh #{user}@localhost -p #{port}")
           end
-          result["ip"] = "localhost -p #{local_port}"
-          # Wait for tunnel to get established
-          sleep 3
-        end
-        ssh_session = fork do
-          exec("ssh #{user}@#{result["ip"]}")
-        end
-        Process.waitpid(ssh_session)
-      end
-    end
-
-    # usage "ssh <job>[/<index>] [index] [<options>] [command]"
-    # desc  "Given a job, execute the given command or " +
-    #       "start an interactive session"
-    # option "--public_key <file>"
-    # option "--gateway_host <host>"
-    # option "--gateway_user <user>"
-    # option "--default_password", "Use default ssh password. Not recommended."
-    # route :ssh, :shell
-    def shell(*args)
-      job = args.shift
-      password = args.delete("--default_password") && SSH_DEFAULT_PASSWORD
-      options = parse_options(args)
-
-      # check if the job was specified as job/index
-      if (match = job.match(%r{/(\d+)}))
-        if (index = options["index"])
-          err("multiple jobs indices specified: #{index} and #{match[1]}")
+          Process.waitpid(ssh_session)
+          gateway.close(port)
         else
-          options["index"] = match[1]
-        end
-      end
-
-      if args.size == 0
-        setup_interactive_shell(job, password, options)
-      else
-        say("Executing command '#{args.join(" ")}' on job #{job}")
-        execute_command(CMD_EXEC, job, options, args)
-      end
-    end
-
-    def with_ssh(gateway, ip, user, &block)
-      if gateway
-        gateway.ssh(ip, user) do |ssh|
-          yield(ssh)
-        end
-      else
-        Net::SSH.start(ip, user) do |ssh|
-          yield(ssh)
+          ssh_session = fork do
+            exec("ssh #{user}@#{session["ip"]}")
+          end
+          Process.waitpid(ssh_session)
         end
       end
     end
 
-    def with_gateway(host, user, &block)
-      gateway = Net::SSH::Gateway.new(host, user || ENV['USER']) if host
-      yield(gateway ||= nil)
-    ensure
-      gateway.shutdown! if gateway
-    end
+    def perform_operation(operation, job, index, args)
+      setup_ssh(job, index, nil) do |sessions, user, gateway|
+        sessions.each do |session|
+          unless session["status"] == "success" && session["ip"]
+            err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")
+          end
 
-    def execute_command(command, job, options, args)
-      setup_ssh(job, options["index"], nil, options) do |results, user|
-        with_gateway(options["gateway_host"],
-                     options["gateway_user"]) do |gateway|
-          results.each do | result|
-            unless result["status"] && result["status"] == "success" &&
-                   result["ip"]
-              err("Failed to setup ssh on index #{options["index"]}, " +
-                  "error: #{result.inspect}")
-            end
-            with_ssh(gateway, result["ip"], user) do |ssh|
-              case command
-              when CMD_EXEC
-                say("\nJob #{job} index #{result["index"]}")
-                puts ssh.exec!(args.join(" "))
-              when CMD_UPLOAD
-                ssh.scp.upload!(args[0], args[1])
-              when CMD_DOWNLOAD
-                file = File.basename(args[0])
-                path = "#{args[1]}/#{file}.#{job}.#{result["index"]}"
-                ssh.scp.download!(args[0], path)
-                say("Downloaded file to #{path}")
-              end
+          with_ssh(user, session["ip"], gateway) do |ssh|
+            case operation
+            when :exec
+              nl
+              say("#{job}/#{session["index"]}")
+              say(ssh.exec!(args.join(" ")))
+            when :upload
+              ssh.scp.upload!(args[0], args[1])
+            when :download
+              file = File.basename(args[0])
+              path = "#{args[1]}/#{file}.#{job}.#{session["index"]}"
+              ssh.scp.download!(args[0], path)
+              say("Downloaded file to #{path}".green)
+            else
+              err("Unknown operation #{operation}")
             end
           end
         end
       end
     end
 
-    # usage "scp <job> [index] (--upload|--download) [options] " +
-    #   "/path/to/source /path/to/destination"
-    # desc  "upload/download the source file to the given job. " +
-    #   "Note: for dowload /path/to/destination is a directory"
-    # option "--public_key <file>"
-    # option "--gateway_host <host>"
-    # option "--gateway_user <user>"
-    # route :ssh, :scp
-    def scp(*args)
+    # @param [Array] args
+    # @return [Array] job, index, command
+    def parse_args(args)
       job = args.shift
-      options = parse_options(args)
-      upload = args.delete("--upload")
-      download = args.delete("--download")
-      if upload.nil? && download.nil?
-        err("Please specify one of --upload or --download")
+      job, index = job.split("/", 2)
+
+      if index
+        if index =~ /^\d+$/
+          index = index.to_i
+        else
+          err("Invalid job index, integer number expected")
+        end
+      elsif args[0] =~ /^\d+$/
+        index = args.shift.to_i
       end
 
-      if args.empty? || args.size < 2
-        err("Please enter valid source and destination paths")
-      end
-      say("Executing file operations on job #{job}")
-      execute_command(upload ? CMD_UPLOAD : CMD_DOWNLOAD, job, options, args)
+      [job, index, args]
     end
 
-    # usage "ssh_cleanup <job> [index]"
-    # desc  "Cleanup SSH artifacts"
-    # route :ssh, :cleanup
-    def cleanup(*args)
-      job = args.shift
-      options = parse_options(args)
-      manifest_name = prepare_deployment_manifest["name"]
-      results = nil
-      if options["index"]
-        results = []
-        results << { "index" => options["index"] }
+    # @return [String] Public key
+    def get_public_key
+      public_key_path = options[:public_key]
+
+      if public_key_path
+        unless File.file?(public_key_path)
+          err("Can't find file `#{public_key_path}'")
+        end
+        return File.read(public_key_path)
+      else
+        %x[ssh-add -L 1>/dev/null 2>&1]
+        if $?.exitstatus == 0
+          return %x[ssh-add -L].split.first
+        else
+          [SSH_DSA_PUB, SSH_RSA_PUB].each do |key_file|
+            return File.read(key_file) if File.file?(key_file)
+          end
+        end
       end
-      say "Cleaning up ssh artifacts from job #{job}, index #{options["index"]}"
-      director.cleanup_ssh(manifest_name, job, "^#{SSH_USER_PREFIX}",
-                           [options["index"]])
+
+      err("Please specify a public key file")
+    end
+
+    # @param [String] user
+    # @param [String] ip
+    # @param [optional, Net::SSH::Gateway] gateway
+    # @yield [Net::SSH]
+    def with_ssh(user, ip, gateway = nil)
+      if gateway
+        gateway.ssh(ip, user) { |ssh| yield ssh }
+      else
+        Net::SSH.start(ip, user) { |ssh| yield ssh }
+      end
     end
   end
 end

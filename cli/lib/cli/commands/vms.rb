@@ -4,25 +4,22 @@ module Bosh::Cli::Command
   class Vms < Base
     include Bosh::Cli::DeploymentHelper
 
-    # usage "vms [<deployment>]"
-    # desc  "List all VMs that supposed to be in a deployment"
-    # route :vms, :list
-    def list(*args)
+    usage "vms"
+    desc  "List all VMs that in a deployment"
+    option "--full", "Return detailed VM information"
+    def list(deployment_name = nil)
       auth_required
+      show_full_stats = options[:full]
 
-      show_full_stats = !args.delete("--full").nil?
-      name = args.first
-
-      if name.nil?
+      if deployment_name.nil?
         deployment_required
         manifest = prepare_deployment_manifest
-        name = manifest["name"]
+        deployment_name = manifest["name"]
       end
 
-      say("Deployment #{name.green}")
-
-      vms = director.fetch_vm_state(name)
-      err("No VMs") if vms.size == 0
+      say("Deployment `#{deployment_name.green}'")
+      vms = director.fetch_vm_state(deployment_name)
+      err("No VMs") if vms.empty?
 
       sorted = vms.sort do |a, b|
         s = a["job_name"].to_s <=> b["job_name"].to_s
@@ -38,17 +35,19 @@ module Bosh::Cli::Command
         t.headings = headings
 
         sorted.each do |vm|
-          job = "#{vm["job_name"]}/#{vm["index"]}" if vm["job_name"]
-          row = [job, vm["job_state"],
-                 vm["resource_pool"], Array(vm["ips"]).join(", ")]
+          job = "#{vm["job_name"] || "unknown"}/#{vm["index"] || "unknown"}"
+          ips = Array(vm["ips"]).join(", ")
+
+          row = [job, vm["job_state"], vm["resource_pool"], ips]
           row += [vm["vm_cid"], vm["agent_id"]] if show_full_stats
+
           t << row
         end
       end
 
-      say("\n")
+      nl
       say(vms_table)
-      say("\n")
+      nl
       say("VMs total: %d" % vms.size)
     end
 

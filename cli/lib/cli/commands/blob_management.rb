@@ -4,10 +4,8 @@ module Bosh::Cli::Command
   class BlobManagement < Base
 
     # Prints out blobs status
-    #
-    # usage "blobs"
-    # desc  "Print current blobs status"
-    # route :blob_management, :status
+    usage "blobs"
+    desc "Print current blobs status"
     def status
       blob_manager.print_status
     end
@@ -15,15 +13,13 @@ module Bosh::Cli::Command
     # Adds blob to managed blobs
     # @param [String] local_path Local file path
     # @param [optional, String] blob_dir Directory to store blob in, relative
-    #     to blobs dir
-    #
-    # usage  "add blob <local_path> [<blob_dir>]"
-    # desc   "Add a local file as BOSH blob"
-    # route  :blob_management, :add
+    #   to blobs dir
+    usage "add blob"
+    desc "Add a local file as BOSH blob"
     def add(local_path, blob_dir = nil)
       blob_path = File.basename(local_path)
       if blob_dir
-        # We don't need about blobs prefix,
+        # We don't need 'blobs/' prefix,
         # but it might be handy for people who rely on auto-completion
         if blob_dir[0..5] == "blobs/"
           blob_dir = blob_dir[6..-1]
@@ -34,10 +30,8 @@ module Bosh::Cli::Command
     end
 
     # Uploads all blobs that need to be uploaded
-    #
-    # usage  "upload blobs"
-    # desc   "Upload new and updated blobs to the blobstore"
-    # route  :blob_management, :upload
+    usage "upload blobs"
+    desc "Upload new and updated blobs to the blobstore"
     def upload
       blob_manager.print_status
 
@@ -50,14 +44,11 @@ module Bosh::Cli::Command
     end
 
     # Syncs blobs with blobstore
-    #
-    # usage "sync blobs"
-    # desc  "Sync blob with the blobstore"
-    # route :blob_management, :sync
+    usage "sync blobs"
+    desc "Sync blob with the blobstore"
     def sync
       blob_manager.sync
       blob_manager.print_status
     end
-
   end
 end

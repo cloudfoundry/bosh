@@ -4,43 +4,19 @@ module Bosh::Cli::Command
   class Deployment < Base
     include Bosh::Cli::DeploymentHelper
 
-    # usage "deployment [<name>]"
-    # desc  "Choose deployment to work with " +
-    #           "(it also updates current target)"
-    # route do |args|
-    #   if args.size > 0
-    #     [:deployment, :set_current]
-    #   else
-    #     [:deployment, :show_current]
-    #   end
-    # end
-    def show_current
-      if deployment
-        if interactive?
-          say("Current deployment is `#{deployment.green}'")
-        else
-          say(deployment)
-        end
-      else
-        err("Deployment not set")
+    # bosh deployment
+    usage "deployment"
+    desc "Get/set current deployment"
+    def set_current(filename = nil)
+      if filename.nil?
+        show_current
+        return
       end
-    end
 
-    # usage "deployment [<name>]"
-    # desc  "Choose deployment to work with " +
-    #           "(it also updates current target)"
-    # route do |args|
-    #   if args.size > 0
-    #     [:deployment, :set_current]
-    #   else
-    #     [:deployment, :show_current]
-    #   end
-    # end
-    def set_current(name)
-      manifest_filename = find_deployment(name)
+      manifest_filename = find_deployment(filename)
 
       unless File.exists?(manifest_filename)
-        err("Missing manifest for #{name} (tried `#{manifest_filename}')")
+        err("Missing manifest for `#{filename}'")
       end
 
       manifest = load_yaml_file(manifest_filename)
@@ -71,13 +47,14 @@ module Bosh::Cli::Command
 
         if new_target_url.blank?
           err("This manifest references director with UUID " +
-                "#{new_director_uuid}.\n" +
-                "You've never targeted it before.\n" +
-                "Please find your director IP or hostname and target it first.")
+              "#{new_director_uuid}.\n" +
+              "You've never targeted it before.\n" +
+              "Please find your director IP or hostname and target it first.")
         end
 
-        new_director = Bosh::Cli::Director.new(new_target_url,
-                                               username, password)
+        new_director = Bosh::Cli::Director.new(
+          new_target_url, username, password)
+
         status = new_director.get_status
 
         config.target = new_target_url
@@ -93,29 +70,25 @@ module Bosh::Cli::Command
       config.save
     end
 
-    # usage  "edit deployment"
-    # desc   "Edit current deployment manifest"
-    # route  :deployment, :edit
+    # bosh edit deployment
+    usage "edit deployment"
+    desc "Edit current deployment manifest"
     def edit
-      unless deployment
-        quit("Deployment not set".red)
-      end
-
+      deployment_required
       editor = ENV['EDITOR'] || "vi"
       system("#{editor} #{deployment}")
     end
 
-    # usage  "deploy"
-    # desc   "Deploy according to the currently selected " +
-    #            "deployment manifest"
-    # option "--recreate", "recreate all VMs in deployment"
-    # route  :deployment, :perform
-    def perform(*options)
+    # bosh deploy
+    usage "deploy"
+    desc "Deploy according to the currently selected deployment manifest"
+    option "--recreate", "recreate all VMs in deployment"
+    def perform
       auth_required
-      recreate = options.include?("--recreate")
+      recreate = !!options[:recreate]
 
-      manifest_yaml =
-        prepare_deployment_manifest(:yaml => true, :resolve_properties => true)
+      manifest_yaml = prepare_deployment_manifest(
+        :yaml => true, :resolve_properties => true)
 
       if interactive?
         inspect_deployment_changes(YAML.load(manifest_yaml))
@@ -133,16 +106,16 @@ module Bosh::Cli::Command
       task_report(status, "Deployed #{desc}")
     end
 
-    # usage "delete deployment <name>"
-    # desc  "Delete deployment"
-    # option "--force", "ignore all errors while deleting parts " +
-    #     "of the deployment"
-    # route :deployment, :delete
-    def delete(name, *options)
+    # bosh delete deployment
+    usage "delete deployment"
+    desc "Delete deployment"
+    option "--force", "ignore errors while deleting"
+    def delete(name)
       auth_required
-      force = options.include?("--force")
+      force = !!options[:force]
 
-      say("\nYou are going to delete deployment `#{name}'.\n\n")
+      say("\nYou are going to delete deployment `#{name}'.".red)
+      nl
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
 
       unless confirmed?
@@ -155,10 +128,10 @@ module Bosh::Cli::Command
       task_report(status, "Deleted deployment `#{name}'")
     end
 
-    # usage "validate jobs"
-    # desc  "Validates all jobs in the current release using current " +
-    #       "deployment manifest as the source of properties"
-    # route :deployment, :validate_jobs
+    # bosh validate jobs
+    usage "validate jobs"
+    desc "Validates all jobs in the current release using current " +
+         "deployment manifest as the source of properties"
     def validate_jobs
       check_if_release_dir
       manifest = prepare_deployment_manifest(:resolve_properties => true)
@@ -212,15 +185,14 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage "deployments"
-    # desc  "Show the list of available deployments"
-    # route :deployment, :list
+    # bosh deployments
+    usage "deployments"
+    desc "Show the list of available deployments"
     def list
       auth_required
-
       deployments = director.list_deployments
 
-      err("No deployments") if deployments.size == 0
+      err("No deployments") if deployments.empty?
 
       deployments_table = table do |t|
         t.headings = %w(Name)
@@ -229,45 +201,48 @@ module Bosh::Cli::Command
         end
       end
 
-      say("\n")
+      nl
       say(deployments_table)
-      say("\n")
+      nl
       say("Deployments total: %d" % deployments.size)
     end
 
-    def download_manifest(deployment_name, given_path = "")
+    # bosh download manifest
+    usage "download manifest"
+    desc "Download deployment manifest locally"
+    def download_manifest(deployment_name, save_as = nil)
       auth_required
 
-      existing = director.list_deployments.select do |dp|
-        dp["name"] == deployment_name
-      end
-
-      if existing.empty?
-        err("Deployment `#{deployment_name}' not found on director")
-      end
-
-      if File.directory?(given_path)
-        download_path = File.join(given_path, deployment_name + ".yml")
-      else
-        download_path = given_path
-      end
-
-      if File.exists?(download_path) &&
-          !agree("Local file `#{download_path}' already exists. Overwrite it? [yn]")
-        return
+      if save_as && File.exists?(save_as) &&
+         !confirmed?("Overwrite `#{save_as}'?")
+        err("Please choose another file to save the manifest to")
       end
 
       deployment = director.get_deployment(deployment_name)
-      downloaded_deployment = YAML.load(deployment["manifest"])
 
-      unless download_path.blank?
-        File.open(download_path, "w") do |f|
-          dump_yaml_to_file(downloaded_deployment, f)
+      if save_as
+        File.open(save_as, "w") do |f|
+          f.write(deployment["manifest"])
         end
-        say("Downloaded deployment manifest from director to `#{download_path}'")
+        say("Deployment manifest saved to `#{save_as}'".green)
       else
-        say(YAML.dump(downloaded_deployment))
+        say(deployment["manifest"])
       end
     end
+
+    private
+
+    def show_current
+      if deployment
+        if interactive?
+          say("Current deployment is `#{deployment.green}'")
+        else
+          say(deployment)
+        end
+      else
+        err("Deployment not set")
+      end
+    end
+
   end
 end

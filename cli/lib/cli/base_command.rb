@@ -3,29 +3,48 @@
 module Bosh::Cli
   module Command
     class Base
-      attr_reader :cache, :config, :options, :work_dir
-      attr_accessor :out, :usage
+      extend Bosh::Cli::CommandDiscovery
+
+      attr_reader :options
+      attr_reader :work_dir
+      attr_reader :runner
+
+      attr_accessor :out
+
+      # @return [Array] Arguments passed to command handler
+      attr_accessor :args
 
       DEFAULT_DIRECTOR_PORT = 25555
 
-      def initialize(options = {})
-        @options = options.dup
+      # @param [Bosh::Cli::Runner] runner
+      def initialize(runner = nil)
+        @runner = runner
+        @options = {}
         @work_dir = Dir.pwd
-        config_file = @options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
-        @config = Config.new(config_file)
-        @cache = Config.cache
         @exit_code = 0
         @out = nil
-        @usage = nil
+        @args = []
       end
 
-      class << self
-        attr_reader :commands
+      # @return [Bosh::Cli::Cache] Current CLI cache
+      def cache
+        Config.cache
+      end
 
-        def command(name, &block)
-          @commands ||= {}
-          @commands[name] = block
+      # @return [Bosh::Cli::Config] Current configuration
+      def config
+        @config ||= begin
+          config_file = options[:config] || Bosh::Cli::DEFAULT_CONFIG_PATH
+          Bosh::Cli::Config.new(config_file)
         end
+      end
+
+      def add_option(name, value)
+        @options[name] = value
+      end
+
+      def remove_option(name)
+        @options.delete(name)
       end
 
       def director
@@ -51,38 +70,24 @@ module Bosh::Cli
       end
 
       def non_interactive?
-        !interactive?
+        options[:non_interactive]
       end
 
       def interactive?
-        !options[:non_interactive]
+        !non_interactive?
       end
 
       def verbose?
-        options[:verbose]
-      end
-
-      # TODO: implement it
-      def dry_run?
-        options[:dry_run]
-      end
-
-      def show_usage
-        say("Usage: #{@usage}") if @usage
-      end
-
-      def run(namespace, action, *args)
-        eval(namespace.to_s.capitalize).new(options).send(action.to_sym, *args)
+        @options[:verbose]
       end
 
       def redirect(*args)
-        run(*args)
-        raise Bosh::Cli::GracefulExit, "redirected to %s" % [args.join(" ")]
+        Bosh::Cli::Runner.new(args, @options).run
       end
 
       def confirmed?(question = "Are you sure?")
-        non_interactive? ||
-          ask("#{question} (type 'yes' to continue): ") == "yes"
+        return true if non_interactive?
+        ask("#{question} (type 'yes' to continue): ") == "yes"
       end
 
       # @return [String] Target director URL
@@ -110,17 +115,6 @@ module Bosh::Cli
 
       def target_name
         config.target_name || target_url
-      end
-
-      def target_version
-        config.target_version ? "Ver: " + config.target_version : ""
-      end
-
-      def full_target_name
-        # TODO refactor this method
-        ret = (target_name.blank? || target_name == target_url ?
-            target_name : "%s (%s)" % [target_name, target_url])
-        ret + " %s" % target_version if ret
       end
 
       # Sets or returns command exit code
