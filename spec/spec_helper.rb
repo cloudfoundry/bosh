@@ -79,13 +79,14 @@ def yaml_file(name, object)
 end
 
 def director_version
-  "Ver: #{Bosh::Director::VERSION} (#{`(git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1`.strip})"
+  version = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000)`
+  "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
 end
 
 def run_bosh(cmd, work_dir = nil)
   Dir.chdir(work_dir || BOSH_WORK_DIR) do
     ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-    `#{CLI_DIR}/bin/bosh --non-interactive --config #{BOSH_CONFIG} --cache-dir #{BOSH_CACHE_DIR} #{cmd}`
+    `#{CLI_DIR}/bin/bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
   end
 end
 

@@ -7,11 +7,9 @@ module Bosh::Cli::Command
     RELEASES_TO_KEEP = 2
     STEMCELLS_TO_KEEP = 2
 
-    # usage "cleanup"
-    # desc  "Remove all but several recent stemcells and releases " +
-    #           "from current director " +
-    #           "(stemcells and releases currently in use are NOT deleted)"
-    # route :maintenance, :cleanup
+    # bosh cleanup
+    usage "cleanup"
+    desc  "Cleanup releases and stemcells"
     def cleanup
       target_required
       auth_required
@@ -33,7 +31,9 @@ module Bosh::Cli::Command
         Releases and stemcells that are in use will not be affected.
       EOS
 
-      say("\n#{desc}\n")
+      nl
+      say(desc)
+      nl
 
       err("Cleanup canceled") unless confirmed?
 

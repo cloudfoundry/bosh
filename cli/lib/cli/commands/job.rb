@@ -3,9 +3,9 @@
 module Bosh::Cli::Command
   class Job < Base
 
-    # usage "generate job <name>"
-    # desc  "Generate job template"
-    # route :job, :generate
+    # bosh generate job
+    usage "generate job"
+    desc "Generate job template"
     def generate(name)
       check_if_release_dir
 

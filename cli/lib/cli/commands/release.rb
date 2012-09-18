@@ -7,25 +7,18 @@ module Bosh::Cli::Command
     include Bosh::Cli::DependencyHelper
     include Bosh::Cli::VersionCalc
 
-    # usage "init release [<path>]"
-    # desc  "Initialize release directory"
-    # option "--git", "initialize git repository"
-    # route :release, :init
-    def init(base=nil, *options)
-      if base[0..0] == "-"
-        # TODO: need to add some option parsing helpers to avoid that
-        options.unshift(base)
-        base = nil
-      end
-      git = options.include?("--git")
-
+    # bosh init release
+    usage "init release"
+    desc "Initialize release directory"
+    option "--git", "initialize git repository"
+    def init(base = nil)
       if base
-        FileUtils.mkdir_p(base) unless Dir.exist?(base)
+        FileUtils.mkdir_p(base)
         Dir.chdir(base)
       end
 
       err("Release already initialized") if in_release_dir?
-      git_init if git
+      git_init if options[:git]
 
       %w[config jobs packages src blobs].each do |dir|
         FileUtils.mkdir(dir)
@@ -39,77 +32,64 @@ module Bosh::Cli::Command
       say("Release directory initialized".green)
     end
 
-    def git_init
-      out = %x{git init 2>&1}
-      if $? != 0
-        say("error running 'git init':\n#{out}")
+    # bosh create release
+    usage "create release"
+    desc "Create release (assumes current directory " +
+         "to be a release repository)"
+    option "--force", "bypass git dirty state check"
+    option "--final", "create final release"
+    option "--with-tarball", "create release tarball"
+    option "--dry-run", "stop before writing release manifest"
+    def create(manifest_file = nil)
+      check_if_release_dir
+
+      if manifest_file && File.file?(manifest_file)
+        release_filename = create_from_manifest(manifest_file)
       else
-        File.open(".gitignore", "w") do |f|
-          f << <<-EOS.gsub(/^\s{10}/, '')
-          config/dev.yml
-          config/private.yml
-          releases/*.tgz
-          dev_releases
-          .blobs
-          blobs
-          .dev_builds
-          .idea
-          .DS_Store
-          .final_builds/jobs/**/*.tgz
-          .final_builds/packages/**/*.tgz
-          *.swp
-          *~
-          *#
-          #*
-          EOS
-        end
+        release_filename = create_from_spec
       end
-    rescue Errno::ENOENT
-      say("Unable to run 'git init'".red)
+
+      if release_filename
+        release.latest_release_filename = release_filename
+        release.save_config
+      end
     end
 
-    # usage "verify release <path>"
-    # desc  "Verify release"
-    # route :release, :verify
+    # bosh verify release
+    usage "verify release"
+    desc "Verify release"
     def verify(tarball_path)
       tarball = Bosh::Cli::ReleaseTarball.new(tarball_path)
 
-      say("\nVerifying release...")
+      nl
+      say("Verifying release...")
       tarball.validate
       nl
 
       if tarball.valid?
-        say("'%s' is a valid release" % [tarball_path] )
+        say("`#{tarball_path}' is a valid release".green)
       else
         say("Validation errors:".red)
-        for error in tarball.errors
-          say("- %s" % [error])
+        tarball.errors.each do |error|
+          say("- #{error}")
         end
-        err("'%s' is not a valid release" % [tarball_path] )
+        err("`#{tarball_path}' is not a valid release".red)
       end
     end
 
-    # usage "upload release [<path>]"
-    # desc  "Upload release (<path> can point to tarball or manifest, " +
-    #           "defaults to the most recently created release)"
-    # route :release, :upload
-    def upload(*options)
+    usage "upload release"
+    desc "Upload release"
+    option "--rebase",
+           "Rebases this release onto the latest version",
+           "known by director (discards local job/package",
+           "versions in favor of versions assigned by director)"
+    def upload(release_file = nil)
       auth_required
 
-      # TODO: need option helpers badly!
-      release_file = nil
-      if options.size > 0 && options.first[0..0] != "-"
-        release_file = options.shift
-      end
-
       upload_options = {
-        :rebase => !!options.delete("--rebase"),
+        :rebase => options[:rebase],
         :repack => true
       }
-
-      if options.size > 0
-        err("Unknown options: #{options.join(", ")}")
-      end
 
       if release_file.nil?
         check_if_release_dir
@@ -133,10 +113,85 @@ module Bosh::Cli::Command
 
       if file_type =~ /text\/(plain|yaml)/
         upload_manifest(release_file, upload_options)
-      else # Just assume tarball
+      else
         upload_tarball(release_file, upload_options)
       end
     end
+
+    usage "reset release"
+    desc "Reset dev release"
+    def reset
+      check_if_release_dir
+
+      say("Your dev release environment will be completely reset".red)
+      if confirmed?
+        say("Removing dev_builds index...")
+        FileUtils.rm_rf(".dev_builds")
+        say("Clearing dev name...")
+        release.dev_name = nil
+        release.save_config
+        say("Removing dev tarballs...")
+        FileUtils.rm_rf("dev_releases")
+
+        say("Release has been reset".green)
+      else
+        say("Canceled")
+      end
+    end
+
+    usage "releases"
+    desc "Show the list of available releases"
+    def list
+      auth_required
+      releases = director.list_releases.sort do |r1, r2|
+        r1["name"] <=> r2["name"]
+      end
+
+      err("No releases") if releases.empty?
+
+      releases_table = table do |t|
+        t.headings = "Name", "Versions"
+        releases.each do |r|
+          versions = r["versions"].sort do |v1, v2|
+            version_cmp(v1, v2)
+          end
+
+          t << [r["name"], versions.join(", ")]
+        end
+      end
+
+      nl
+      say(releases_table)
+      nl
+      say("Releases total: %d" % releases.size)
+    end
+
+    usage "delete release"
+    desc "Delete release (or a particular release version)"
+    option "--force", "ignore errors during deletion"
+    def delete(name, version = nil)
+      auth_required
+      force = !!options[:force]
+
+      desc = "#{name}"
+      desc << "/#{version}" if version
+
+      if force
+        say("Deleting `#{desc}' (FORCED DELETE, WILL IGNORE ERRORS)".red)
+      else
+        say("Deleting `#{desc}'".red)
+      end
+
+      if confirmed?
+        status, _ = director.delete_release(
+          name, :force => force, :version => version)
+        task_report(status, "Deleted `#{desc}'")
+      else
+        say("Canceled deleting release".green)
+      end
+    end
+
+    protected
 
     def upload_manifest(manifest_path, upload_options = {})
       package_matches = match_remote_packages(File.read(manifest_path))
@@ -211,53 +266,20 @@ module Bosh::Cli::Command
       end
     end
 
-    # usage  "create release"
-    # desc   "Create release (assumes current directory " +
-    #            "to be a release repository)"
-    # option "--force", "bypass git dirty state check"
-    # option "--final", "create production-ready release " +
-    #     "(stores artefacts in blobstore, bumps final version)"
-    # option "--with-tarball", "create full release tarball" +
-    #     "(by default only manifest is created)"
-    # option "--dry-run", "stop before writing release " +
-    #     "manifest (for diagnostics)"
-    # route  :release, :create
-    def create(*options)
-      check_if_release_dir
-      if options.size == 1 && File.file?(options[0])
-        create_from_manifest(options[0])
-        release_filename = options[0]
-      else
-        release_filename = create_from_spec(*options)
-      end
-
-      if release_filename
-        release.latest_release_filename = release_filename
-        release.save_config
-      end
-    end
-
     def create_from_manifest(manifest_file)
       say("Recreating release from the manifest")
       Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
+      manifest_file
     end
 
-    def create_from_spec(*options)
-      flags = options.inject({}) { |h, option| h[option] = true; h }
-
-      final = flags.delete("--final")
-      force = flags.delete("--force")
-      manifest_only = !flags.delete("--with-tarball")
-      dry_run = flags.delete("--dry-run")
+    def create_from_spec
+      final = options[:final]
+      force = options[:force]
+      manifest_only = !options[:with_tarball]
+      dry_run = options[:dry_run]
 
       if final && !release.has_blobstore_secret?
         err("Can't create final release without blobstore secret")
-      end
-
-      if flags.size > 0
-        say("Unknown flags: #{flags.keys.join(", ")}".red)
-        show_usage
-        exit(1)
       end
 
       blob_manager.sync
@@ -273,15 +295,12 @@ module Bosh::Cli::Command
       check_if_dirty_state unless force
 
       confirmation = "Are you sure you want to " +
-                     "generate #{'final'.red} version? "
+        "generate #{'final'.red} version? "
 
       if final && !dry_run && !confirmed?(confirmation)
         say("Canceled release generation".green)
         exit(1)
       end
-
-      packages = []
-      jobs = []
 
       if final
         header("Building FINAL release".green)
@@ -293,12 +312,12 @@ module Bosh::Cli::Command
 
       if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
         err("You should use CLI >= #{release.min_cli_version} " +
-            "with this release, you have #{Bosh::Cli::VERSION}")
+              "with this release, you have #{Bosh::Cli::VERSION}")
       end
 
       if release_name.blank?
         confirmation = "Please enter %s release name: " % [
-            final ? "final" : "development"]
+          final ? "final" : "development"]
         name = interactive? ? ask(confirmation).to_s : DEFAULT_RELEASE_NAME
         err("Canceled release creation, no name given") if name.blank?
         if final
@@ -377,7 +396,7 @@ module Bosh::Cli::Command
 
       unless manifest_only
         say("Release tarball (#{pretty_size(builder.tarball_path)}): " +
-            builder.tarball_path.green)
+              builder.tarball_path.green)
       end
 
       release.min_cli_version = Bosh::Cli::VERSION
@@ -386,85 +405,33 @@ module Bosh::Cli::Command
       builder.manifest_path
     end
 
-    # usage "reset release"
-    # desc  "Reset release development environment " +
-    #           "(deletes all dev artifacts)"
-    # route :release, :reset
-    def reset
-      check_if_release_dir
-
-      say("Your dev release environment will be completely reset".red)
-      if confirmed?
-        say("Removing dev_builds index...")
-        FileUtils.rm_rf(".dev_builds")
-        say("Clearing dev name...")
-        release.dev_name = nil
-        release.save_config
-        say("Removing dev tarballs...")
-        FileUtils.rm_rf("dev_releases")
-
-        say("Release has been reset".green)
+    def git_init
+      out = %x{git init 2>&1}
+      if $? != 0
+        say("error running 'git init':\n#{out}")
       else
-        say("Canceled")
-      end
-    end
-
-    # usage "releases"
-    # desc  "Show the list of available releases"
-    # route :release, :list
-    def list
-      auth_required
-      releases = director.list_releases.sort do |r1, r2|
-        r1["name"] <=> r2["name"]
-      end
-
-      err("No releases") if releases.empty?
-
-      releases_table = table do |t|
-        t.headings = "Name", "Versions"
-        releases.each do |r|
-          versions = r["versions"].sort do |v1, v2|
-            version_cmp(v1, v2)
-          end
-
-          t << [r["name"], versions.join(", ")]
+        File.open(".gitignore", "w") do |f|
+          f << <<-EOS.gsub(/^\s{10}/, '')
+          config/dev.yml
+          config/private.yml
+          releases/*.tgz
+          dev_releases
+          .blobs
+          blobs
+          .dev_builds
+          .idea
+          .DS_Store
+          .final_builds/jobs/**/*.tgz
+          .final_builds/packages/**/*.tgz
+          *.swp
+          *~
+          *#
+          #*
+          EOS
         end
       end
-
-      nl
-      say(releases_table)
-      nl
-      say("Releases total: %d" % releases.size)
-    end
-
-    # usage  "delete release <name> [<version>]"
-    # desc   "Delete release (or a particular release version)"
-    # option "--force", "ignore errors during deletion"
-    # route  :release, :delete
-    def delete(name, *options)
-      auth_required
-      force = options.include?("--force")
-      options.delete("--force")
-      version = options.shift
-
-      desc = "release `#{name}'"
-      desc << " version #{version}" if version
-
-      if force
-        say("Deleting #{desc} (FORCED DELETE, WILL IGNORE ERRORS)".red)
-      elsif options.size > 0
-        err("Unknown option, currently only '--force' is supported")
-      else
-        say("Deleting #{desc}".red)
-      end
-
-      if confirmed?
-        status, _ = director.delete_release(name, :force => force,
-                                               :version => version)
-        task_report(status, "Deleted #{desc}")
-      else
-        say("Canceled deleting release".green)
-      end
+    rescue Errno::ENOENT
+      say("Unable to run 'git init'".red)
     end
 
     private
@@ -484,14 +451,14 @@ module Bosh::Cli::Command
 
     def show_summary(builder)
       packages_table = table do |t|
-        t.headings = %w(Name Version Notes Fingerprint)
+        t.headings = %w(Name Version Notes)
         builder.packages.each do |package|
           t << artefact_summary(package)
         end
       end
 
       jobs_table = table do |t|
-        t.headings = %w(Name Version Notes Fingerprint)
+        t.headings = %w(Name Version Notes)
         builder.jobs.each do |job|
           t << artefact_summary(job)
         end
@@ -525,7 +492,6 @@ module Bosh::Cli::Command
       result << artefact.name
       result << artefact.version
       result << artefact.notes.join(", ")
-      result << artefact.fingerprint
       result
     end
 

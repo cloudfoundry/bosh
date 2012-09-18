@@ -4,39 +4,34 @@ module Bosh::Cli::Command
   class JobRename < Base
     include Bosh::Cli::DeploymentHelper
 
-    # usage "rename <old_job_name> <new_job_name>"
-    # desc  "Renames a job. NOTE, your deployment manifest must also be " +
-    #       "updated to reflect the new job name."
-    # power_option "--force"
-    # route :job_rename, :rename
-    def rename(*args)
+    # bosh rename
+    usage "rename job"
+    desc "Renames a job. NOTE, your deployment manifest must also be " +
+         "updated to reflect the new job name."
+    option "--force", "Ignore errors"
+    def rename(old_name, new_name)
       auth_required
       manifest_yaml = prepare_deployment_manifest(:yaml => true)
       manifest = YAML.load(manifest_yaml)
 
-      args = args.dup
-      force = args.delete("--force")
-      old_name = args.shift
-      new_name = args.shift
-
-      say("You are about to rename #{old_name.green} to #{new_name.green}")
+      force = options[:force]
+      say("You are about to rename `#{old_name.green}' to `#{new_name.green}'")
 
       unless confirmed?
         nl
         say("Job rename canceled".green)
-        return
+        exit(0)
       end
 
       sanity_check_job_rename(manifest_yaml, old_name, new_name)
 
-      status, _ = director.rename_job(manifest["name"], manifest_yaml,
-                                      old_name, new_name, force)
+      status, _ = director.rename_job(
+        manifest["name"], manifest_yaml, old_name, new_name, force)
 
       task_report(status, "Rename successful")
     end
 
     def sanity_check_job_rename(manifest_yaml, old_name, new_name)
-
       # Makes sure the new deployment manifest contains the renamed job
       manifest = YAML.load(manifest_yaml)
       new_jobs = manifest["jobs"].map { |job| job["name"] }
@@ -91,7 +86,6 @@ module Bosh::Cli::Command
       if renamed_jobs.first != old_name
         err("Manifest does not rename old job `#{old_name}'")
       end
-
 
       # Final sanity check, make sure that no
       # other properties or anything other than the names
