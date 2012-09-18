@@ -5,49 +5,46 @@ require "spec_helper"
 describe Bosh::Cli::Command::Base do
 
   before :each do
-    @config = File.join(Dir.mktmpdir, "bosh_config")
-    @cache = File.join(Dir.mktmpdir, "bosh_cache")
-    @opts = { :config => @config, :cache_dir => @cache }
+    tmpdir = Dir.mktmpdir
+    @config = File.join(tmpdir, "bosh_config")
+    @cache = File.join(tmpdir, "bosh_cache")
+    @director = mock(Bosh::Cli::Director)
+    Bosh::Cli::Director.stub!(:new).and_return(@director)
+    @director.stub!(:get_status).and_return("name" => "ZB")
   end
 
   describe Bosh::Cli::Command::Misc do
 
     before :each do
-      @cmd = Bosh::Cli::Command::Misc.new(@opts)
-      @cmd.stub!(:interactive?).and_return(false)
+      @cmd = Bosh::Cli::Command::Misc.new
+      @cmd.add_option(:config, @config)
+      @cmd.add_option(:cache_dir, @cache)
+      @cmd.add_option(:non_interactive, true)
     end
 
     it "sets the target" do
-      @cmd.target.should == nil
+      @cmd.target.should be_nil
       @cmd.set_target("http://example.com:232")
       @cmd.target.should == "http://example.com:232"
     end
 
     it "normalizes target" do
-      @cmd.target.should == nil
+      @cmd.target.should be_nil
       @cmd.set_target("test")
       @cmd.target.should == "http://test:25555"
     end
 
-    it "respects director checks option when setting target" do
-      @cmd.options[:director_checks] = true
+    it "handles director errors when setting target" do
+      @director.should_receive(:get_status).and_raise(Bosh::Cli::DirectorError)
 
       lambda {
-        mock_director = mock(Object)
-        mock_director.stub!(:get_status).and_raise(Bosh::Cli::DirectorError)
-        Bosh::Cli::Director.should_receive(:new).
-            with("http://test:25555").and_return(mock_director)
         @cmd.set_target("test")
-      }.should raise_error(Bosh::Cli::CliExit,
-                           "Cannot talk to director at `http://test:25555', " +
-                           "please set correct target")
+      }.should raise_error(Bosh::Cli::CliError, /cannot talk to director/i)
 
-      @cmd.target.should == nil
+      @cmd.target.should be_nil
+    end
 
-      mock_director = mock(Bosh::Cli::Director)
-      mock_director.stub!(:get_status).and_return("name" => "ZB")
-      Bosh::Cli::Director.should_receive(:new).
-          with("http://test:25555").and_return(mock_director)
+    it "sets target" do
       @cmd.set_target("test")
       @cmd.target.should == "http://test:25555"
     end
@@ -66,6 +63,9 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "logs user in" do
+      @director.should_receive(:authenticated?).and_return(true)
+      @director.should_receive(:user=).with("user")
+      @director.should_receive(:password=).with("pass")
       @cmd.set_target("test")
       @cmd.login("user", "pass")
       @cmd.logged_in?.should be_true
@@ -75,26 +75,22 @@ describe Bosh::Cli::Command::Base do
 
     it "logs user out" do
       @cmd.set_target("test")
+      @director.should_receive(:authenticated?).and_return(true)
+      @director.should_receive(:user=).with("user")
+      @director.should_receive(:password=).with("pass")
       @cmd.login("user", "pass")
       @cmd.logout
       @cmd.logged_in?.should be_false
     end
 
     it "respects director checks option when logging in" do
-      @cmd.options[:director_checks] = true
+      @director.stub!(:get_status).
+        and_return({ "user" => "user", "name" => "ZB" })
+      @director.stub(:authenticated?).and_return(true)
 
-      mock_director = mock(Object)
-      mock_director.stub(:get_status).
-          and_return({ "user" => "user", "name" => "ZB" })
-      mock_director.stub(:authenticated?).and_return(true)
-
-      Bosh::Cli::Director.should_receive(:new).
-          with("http://test:25555").and_return(mock_director)
       @cmd.set_target("test")
-
-      Bosh::Cli::Director.should_receive(:new).
-          with("http://test:25555", "user", "pass").and_return(mock_director)
-
+      @director.should_receive(:user=).with("user")
+      @director.should_receive(:password=).with("pass")
       @cmd.login("user", "pass")
       @cmd.logged_in?.should be_true
       @cmd.username.should == "user"
@@ -109,7 +105,9 @@ describe Bosh::Cli::Command::Base do
           and_return([{ "name" => "foo", "version" => "123" }])
       @director.should_receive(:list_stemcells)
 
-      @cmd = Bosh::Cli::Command::Stemcell.new(@opts)
+      @cmd = Bosh::Cli::Command::Stemcell.new
+      @cmd.add_option(:non_interactive, true)
+
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
@@ -118,12 +116,11 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the stemcell" do
       @director.should_receive(:delete_stemcell).with("foo", "123")
-
-      @cmd.stub!(:interactive?).and_return(false)
       @cmd.delete("foo", "123")
     end
 
     it "needs confirmation to delete stemcell" do
+      @cmd.remove_option(:non_interactive)
       @director.should_not_receive(:delete_stemcell)
 
       @cmd.stub!(:ask).and_return("")
@@ -133,16 +130,18 @@ describe Bosh::Cli::Command::Base do
     it "raises error when deleting if stemcell does not exist" do
       @director.should_not_receive(:delete_stemcell)
 
-      @cmd.stub!(:interactive?).and_return(false)
+      @cmd.add_option(:non_interactive, true)
       lambda {
         @cmd.delete("foo", "111")
-      }.should raise_error(Bosh::Cli::CliExit, "Stemcell `foo/111' does not exist")
+      }.should raise_error(Bosh::Cli::CliError,
+                           "Stemcell `foo/111' does not exist")
     end
   end
 
   describe Bosh::Cli::Command::Deployment do
     before :each do
-      @cmd = Bosh::Cli::Command::Deployment.new(@opts)
+      @cmd = Bosh::Cli::Command::Deployment.new
+      @cmd.add_option(:non_interactive, true)
     end
 
     it "allows deleting the deployment" do
@@ -162,6 +161,7 @@ describe Bosh::Cli::Command::Base do
       mock_director = mock(Bosh::Cli::Director)
       mock_director.should_not_receive(:delete_deployment)
 
+      @cmd.remove_option(:non_interactive)
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
@@ -175,27 +175,28 @@ describe Bosh::Cli::Command::Base do
     before :each do
       @director = mock(Bosh::Cli::Director)
 
-      @cmd = Bosh::Cli::Command::Release.new(@opts)
+      @cmd = Bosh::Cli::Command::Release.new
+      @cmd.add_option(:non_interactive, true)
+
       @cmd.stub!(:target).and_return("test")
       @cmd.stub!(:username).and_return("user")
       @cmd.stub!(:password).and_return("pass")
       @cmd.stub!(:director).and_return(@director)
-      @cmd.stub!(:ask).and_return("yes")
     end
 
     it "allows deleting the release (non-force)" do
       @director.should_receive(:delete_release).
           with("foo", :force => false, :version => nil)
 
-      @cmd.stub!(:interactive?).and_return(false)
       @cmd.delete("foo")
     end
 
-    it "allows deleting the release (non-force)" do
+    it "allows deleting the release (force)" do
       @director.should_receive(:delete_release).
           with("foo", :force => true, :version => nil)
 
-      @cmd.delete("foo", "--force")
+      @cmd.add_option(:force, true)
+      @cmd.delete("foo")
     end
 
     it "allows deleting a particular release version (non-force)" do
@@ -205,15 +206,17 @@ describe Bosh::Cli::Command::Base do
       @cmd.delete("foo", "42")
     end
 
-    it "allows deleting a particular release version (non-force)" do
+    it "allows deleting a particular release version (force)" do
       @director.should_receive(:delete_release).
           with("foo", :force => true, :version => "42")
 
-      @cmd.delete("foo", "42", "--force")
+      @cmd.add_option(:force, true)
+      @cmd.delete("foo", "42")
     end
 
     it "requires confirmation on deleting release" do
       @director.should_not_receive(:delete_release)
+      @cmd.remove_option(:non_interactive)
 
       @cmd.stub!(:ask).and_return("")
       @cmd.delete("foo")
@@ -225,10 +228,11 @@ describe Bosh::Cli::Command::Base do
     before :each do
       @manifest_path = spec_asset("deployment.MF")
       @manifest_yaml = YAML.dump({ "name" => "foo" })
-      @cmd = Bosh::Cli::Command::JobManagement.new(@opts)
+
+      @cmd = Bosh::Cli::Command::JobManagement.new
+      @cmd.add_option(:non_interactive, true)
       @cmd.stub!(:prepare_deployment_manifest).
-          with(:yaml => true).and_return(@manifest_yaml)
-      @cmd.stub!(:interactive?).and_return(false)
+        with(:yaml => true).and_return(@manifest_yaml)
       @cmd.stub!(:deployment).and_return(@manifest_path)
       @cmd.stub!(:target).and_return("test.com")
       @cmd.stub!(:target_name).and_return("dev2")
@@ -240,76 +244,80 @@ describe Bosh::Cli::Command::Base do
 
     it "allows starting jobs" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", nil, "started")
+        with("foo", @manifest_yaml, "dea", nil, "started")
       @cmd.start_job("dea")
     end
 
     it "allows starting job instances" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", 3, "started")
+        with("foo", @manifest_yaml, "dea", 3, "started")
       @cmd.start_job("dea", 3)
     end
 
     it "allows stopping jobs" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", nil, "stopped")
+        with("foo", @manifest_yaml, "dea", nil, "stopped")
       @cmd.stop_job("dea")
     end
 
     it "allows stopping job instances" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", 3, "stopped")
+        with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.stop_job("dea", 3)
     end
 
     it "allows restarting jobs" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", nil, "restart")
+        with("foo", @manifest_yaml, "dea", nil, "restart")
       @cmd.restart_job("dea")
     end
 
     it "allows restart job instances" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", 3, "restart")
+        with("foo", @manifest_yaml, "dea", 3, "restart")
       @cmd.restart_job("dea", 3)
     end
 
     it "allows recreating jobs" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", nil, "recreate")
+        with("foo", @manifest_yaml, "dea", nil, "recreate")
       @cmd.recreate_job("dea")
     end
 
     it "allows recreating job instances" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", 3, "recreate")
+        with("foo", @manifest_yaml, "dea", 3, "recreate")
       @cmd.recreate_job("dea", 3)
     end
 
     it "allows hard stop" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", 3, "detached")
-      @cmd.stop_job("dea", 3, "--hard")
+        with("foo", @manifest_yaml, "dea", 3, "detached")
+      @cmd.add_option(:hard, true)
+      @cmd.stop_job("dea", 3)
     end
 
     it "allows soft stop (= regular stop)" do
       @director.should_receive(:change_job_state).
-          with("foo", @manifest_yaml, "dea", 3, "stopped")
-      @cmd.stop_job("dea", 3, "--soft")
+        with("foo", @manifest_yaml, "dea", 3, "stopped")
+      @cmd.add_option(:soft, true)
+      @cmd.stop_job("dea", 3)
     end
 
   end
 
   describe Bosh::Cli::Command::BlobManagement do
     before :each do
-      @cmd = Bosh::Cli::Command::BlobManagement.new(@opts)
+      @cmd = Bosh::Cli::Command::BlobManagement.new
+      @cmd.add_option(:non_interactive, true)
+
       @blob_manager = mock("blob manager")
       @release = mock("release")
 
       @cmd.should_receive(:check_if_release_dir)
       Bosh::Cli::Release.stub!(:new).and_return(@release)
       Bosh::Cli::BlobManager.stub!(:new).with(@release).
-          and_return(@blob_manager)
+        and_return(@blob_manager)
     end
 
     it "prints blobs status" do

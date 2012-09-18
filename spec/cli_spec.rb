@@ -14,23 +14,24 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     format_output(run_bosh(cmd)).should == format_output(expected_output)
   end
 
-  it "shows help message" do
+  it "has help message" do
     run_bosh("help")
     $?.should == 0
   end
 
   it "shows status" do
     expect_output("status", <<-OUT)
-     Target         not set
-     UUID           n/a
-     User           not set
-     Deployment     not set
+     Director
+       not set
+
+     Deployment
+       not set
     OUT
   end
 
   it "whines on inaccessible target" do
     out = run_bosh("target http://nowhere.com")
-    out.should =~ /Error 103: cannot access director/
+    out.should =~ /cannot access director/i
 
     expect_output("target", <<-OUT)
       Target not set
@@ -38,25 +39,20 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "sets correct target" do
-    ver = director_version
     expect_output("target http://localhost:57523", <<-OUT)
-      Target set to `Test Director (http://localhost:57523) #{ver}'
+      Target set to `Test Director'
     OUT
 
-    expect_output("target", <<-OUT)
-      Test Director (http://localhost:57523) #{ver}
-    OUT
-
+    message = "http://localhost:57523"
+    expect_output("target", message)
     Dir.chdir("/tmp") do
-      expect_output("target", <<-OUT)
-        Test Director (http://localhost:57523) #{ver}
-      OUT
+      expect_output("target", message)
     end
   end
 
   it "allows omitting http" do
     expect_output("target localhost:57523", <<-OUT)
-      Target set to `Test Director (http://localhost:57523) #{director_version}'
+      Target set to `Test Director'
     OUT
   end
 
@@ -70,11 +66,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("deployment test2")
 
     expect_output("target http://localhost:57523", <<-OUT)
-      Target already set to `Test Director (http://localhost:57523) #{director_version}'
+      Target already set to `Test Director'
     OUT
 
-    expect_output("--skip-director-checks target http://local", <<-OUT)
-      Target set to `Unknown Director (http://local:25555) Ver: n/a'
+    expect_output("target http://127.0.0.1:57523", <<-OUT)
+      Target set to `Test Director'
     OUT
 
     expect_output("deployment", "Deployment not set")
@@ -84,70 +80,28 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "keeps track of user associated with target" do
-    run_bosh("--skip-director-checks target foo")
-    run_bosh("--skip-director-checks login john pass")
+    run_bosh("target http://localhost:57523 foo")
+    run_bosh("login admin admin")
 
-    run_bosh("--skip-director-checks target bar")
+    run_bosh("target http://127.0.0.1:57523 bar")
 
-    run_bosh("--skip-director-checks login jane pass")
-    expect_output("--skip-director-checks status", <<-OUT)
-        Target         Unknown Director (http://bar:25555) Ver: n/a
-        UUID           n/a
-        User           jane
-        Deployment     not set
-    OUT
+    run_bosh("login admin admin")
+    run_bosh("status").should =~ /user\s+admin/i
 
-    run_bosh("--skip-director-checks target foo")
-    expect_output("--skip-director-checks status", <<-OUT)
-        Target         Unknown Director (http://foo:25555) Ver: n/a
-        UUID           n/a
-        User           john
-        Deployment     not set
-    OUT
+    run_bosh("target foo")
+    run_bosh("status").should =~ /user\s+admin/i
   end
 
   it "verifies a sample valid stemcell" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
-    expect_output("verify stemcell #{stemcell_filename}", <<-OUT)
-      Verifying stemcell...
-      File exists and readable                                     OK
-      Manifest not found in cache, verifying tarball...
-      Extract tarball                                              OK
-      Manifest exists                                              OK
-      Stemcell image file                                          OK
-      Writing manifest to cache...
-      Stemcell properties                                          OK
-
-      Stemcell info
-      -------------
-      Name:    ubuntu-stemcell
-      Version: 1
-
-     '#{stemcell_filename}' is a valid stemcell
-    OUT
+    success = regexp("#{stemcell_filename}' is a valid stemcell")
+    run_bosh("verify stemcell #{stemcell_filename}").should =~ success
   end
 
   it "points to an error when verifying an invalid stemcell" do
     stemcell_filename = spec_asset("stemcell_invalid_mf.tgz")
-    expect_output("verify stemcell #{stemcell_filename}", <<-OUT)
-      Verifying stemcell...
-      File exists and readable                                     OK
-      Manifest not found in cache, verifying tarball...
-      Extract tarball                                              OK
-      Manifest exists                                              OK
-      Stemcell image file                                          OK
-      Writing manifest to cache...
-      Stemcell properties                                          FAILED
-
-      Stemcell info
-      -------------
-      Name:    ubuntu-stemcell
-      Version: missing
-
-      Validation errors:
-      - Manifest should contain valid name, version and cloud properties
-      '#{stemcell_filename}' is not a valid stemcell
-    OUT
+    failure = regexp("`#{stemcell_filename}' is not a valid stemcell")
+    run_bosh("verify stemcell #{stemcell_filename}").should =~ failure
   end
 
   it "uses cache when verifying stemcell for the second time" do
@@ -162,39 +116,31 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "doesn't allow purging when using non-default directory" do
-    run_bosh("purge").should =~ Regexp.new(Regexp.escape("Cache directory `#{BOSH_CACHE_DIR}' differs from default, please remove manually"))
+    run_bosh("purge").should =~ regexp("please remove manually")
   end
 
   it "verifies a sample valid release" do
     release_filename = spec_asset("valid_release.tgz")
     out = run_bosh("verify release #{release_filename}")
-    out.should =~ Regexp.new(Regexp.escape("'#{release_filename}' is a valid release"))
+    out.should =~ regexp("`#{release_filename}' is a valid release")
   end
 
   it "points to an error on invalid release" do
     release_filename = spec_asset("release_invalid_checksum.tgz")
     out = run_bosh("verify release #{release_filename}")
-    out.should =~ Regexp.new(Regexp.escape("'#{release_filename}' is not a valid release"))
+    out.should =~ regexp("`#{release_filename}' is not a valid release")
   end
 
-  it "asks to login if no user set and operation requires talking to director" do
-    expect_output("create user john pass", <<-OUT)
-      Please choose target first
-    OUT
-
+  it "requires login when talking to director" do
+    run_bosh("properties").should =~ /please choose target first/i
     run_bosh("target http://localhost:57523")
-    expect_output("create user john pass", <<-OUT)
-      Please log in first
-    OUT
+    run_bosh("properties").should =~ /please log in first/i
   end
 
   it "creates a user when correct target accessed" do
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
-
-    expect_output("create user john pass", <<-OUT)
-      User john has been created
-    OUT
+    run_bosh("create user john pass").should =~ /user `john' has been created/i
   end
 
   it "can log in as a freshly created user and issue commands" do
@@ -203,9 +149,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("create user jane pass")
     run_bosh("login jane pass")
 
-    expect_output("create user tester testpass", <<-OUT)
-      User tester has been created
-    OUT
+    success = /User `tester' has been created/i
+    run_bosh("create user tester testpass").should =~ success
   end
 
   it "cannot log in if password is invalid" do
@@ -220,7 +165,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   it "can upload a stemcell" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
-    expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
+    # That's the contents of image file:
+    expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
@@ -229,20 +175,16 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /Stemcell uploaded and created/
     File.exists?(CLOUD_DIR + "/stemcell_#{expected_id}").should be_true
 
-    expect_output("stemcells", <<-OUT )
-    +-----------------+---------+------------------------------------------+
-    | Name            | Version | CID                                      |
-    +-----------------+---------+------------------------------------------+
-    | ubuntu-stemcell | 1       | #{expected_id} |
-    +-----------------+---------+------------------------------------------+
-
-    Stemcells total: 1
-    OUT
+    out = run_bosh("stemcells")
+    out.should =~ /stemcells total: 1/i
+    out.should =~ /ubuntu-stemcell.+1/
+    out.should =~ regexp(expected_id.to_s)
   end
 
   it "can delete a stemcell" do
     stemcell_filename = spec_asset("valid_stemcell.tgz")
-    expected_id = Digest::SHA1.hexdigest("STEMCELL\n") # That's the contents of image file
+    # That's the contents of image file:
+    expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
     run_bosh("target http://localhost:57523")
     run_bosh("login admin admin")
@@ -273,17 +215,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("login admin admin")
     out = run_bosh("upload release #{release_filename}")
 
-    out.should =~ /Release uploaded/
+    out.should =~ /release uploaded/i
 
-    expect_output("releases", <<-OUT )
-    +----------+----------+
-    | Name     | Versions |
-    +----------+----------+
-    | appcloud | 0.1      |
-    +----------+----------+
-
-    Releases total: 1
-    OUT
+    out = run_bosh("releases")
+    out.should =~ /releases total: 1/i
+    out.should =~ /appcloud.+0\.1/
   end
 
   it "uploads the latest generated release if no release path given" do
@@ -298,15 +234,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release", Dir.pwd)
     end
 
-    expect_output("releases", <<-OUT )
-    +--------------+----------+
-    | Name         | Versions |
-    +--------------+----------+
-    | bosh-release | 0.1-dev  |
-    +--------------+----------+
-
-    Releases total: 1
-    OUT
+    out = run_bosh("releases")
+    out.should =~ /releases total: 1/i
+    out.should =~ /bosh-release.+0\.1\-dev/
   end
 
   it "sparsely uploads the release" do
@@ -345,15 +275,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ regexp("Release repacked")
     out.should =~ /Release uploaded/
 
-    expect_output("releases", <<-OUT )
-    +--------------+------------------+
-    | Name         | Versions         |
-    +--------------+------------------+
-    | bosh-release | 0.1-dev, 0.2-dev |
-    +--------------+------------------+
-
-    Releases total: 1
-    OUT
+    out = run_bosh("releases")
+    out.should =~ /releases total: 1/i
+    out.should =~ /bosh-release.+0\.1\-dev, 0\.2\-dev/
   end
 
   it "release lifecycle: create, upload, update (w/sparse upload), delete" do
@@ -383,20 +307,14 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
       out = run_bosh("upload release #{release_2}", Dir.pwd)
       out.should =~ regexp("Building tarball")
-      out.should_not =~ regexp("Checking if can repack release for faster upload")
+      out.should_not =~ regexp("Checking if can repack")
       out.should_not =~ regexp("Release repacked")
       out.should =~ /Release uploaded/
     end
 
-    expect_output("releases", <<-OUT )
-    +--------------+------------------+
-    | Name         | Versions         |
-    +--------------+------------------+
-    | bosh-release | 0.1-dev, 0.2-dev |
-    +--------------+------------------+
-
-    Releases total: 1
-    OUT
+    out = run_bosh("releases")
+    out.should =~ /releases total: 1/i
+    out.should =~ /bosh-release.+0\.1\-dev, 0\.2\-dev/
 
     run_bosh("delete release bosh-release 0.2-dev")
     expect_output("releases", <<-OUT )
@@ -433,7 +351,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("upload release #{release_filename}")
 
     out = run_bosh("delete release appcloud")
-    out.should =~ /Deleted release `appcloud'/
+    out.should =~ regexp("Deleted `appcloud")
 
     expect_output("releases", <<-OUT)
     No releases
@@ -448,7 +366,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("upload release #{release_filename}")
 
     out = run_bosh("delete release appcloud 0.1")
-    out.should =~ /Deleted release `appcloud' version 0.1/
+    out.should =~ regexp("Deleted `appcloud/0.1")
   end
 
   describe "deployment prerequisites" do
@@ -467,8 +385,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   describe "deployment process" do
     it "successfully performed with minimal manifest" do
-      release_filename = spec_asset("valid_release.tgz") # It's a dummy release (appcloud 0.1)
-      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
+      release_filename = spec_asset("valid_release.tgz")
+      deployment_manifest = yaml_file(
+        "minimal", Bosh::Spec::Deployments.minimal_manifest)
 
       run_bosh("target localhost:57523")
       run_bosh("deployment #{deployment_manifest.path}")
@@ -476,13 +395,15 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ regexp("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
+      filename = File.basename(deployment_manifest.path)
+      out.should =~ regexp("Deployed `#{filename}' to `Test Director'")
     end
 
     it "generates release and deploys it via simple manifest" do
       assets_dir = File.dirname(spec_asset("foo"))
       # Test release created with bosh (see spec/assets/test_release_template)
-      release_filename = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.tgz")
+      release_file = "test_release/dev_releases/bosh-release-0.1-dev.tgz"
+      release_filename = spec_asset(release_file)
       # Dummy stemcell (ubuntu-stemcell 1)
       stemcell_filename = spec_asset("valid_stemcell.tgz")
 
@@ -491,7 +412,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
         run_bosh("create release --with-tarball", Dir.pwd)
       end
 
-      deployment_manifest = yaml_file("simple", Bosh::Spec::Deployments.simple_manifest)
+      deployment_manifest = yaml_file(
+        "simple", Bosh::Spec::Deployments.simple_manifest)
 
       File.exists?(release_filename).should be_true
       File.exists?(deployment_manifest.path).should be_true
@@ -503,16 +425,18 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       out = run_bosh("deploy")
-      out.should =~ regexp("Deployed `#{File.basename(deployment_manifest.path)}' to `Test Director'")
+      filename = File.basename(deployment_manifest.path)
+      out.should =~ regexp("Deployed `#{filename}' to `Test Director'")
 
       run_bosh("cloudcheck --report").should =~ regexp("No problems found")
-      $?.should == 0 # Cloudcheck shouldn't find any problems with this new deployment
+      $?.should == 0
       # TODO: figure out which artefacts should be created by the given manifest
     end
 
     it "can delete deployment" do
       release_filename = spec_asset("valid_release.tgz")
-      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
+      deployment_manifest = yaml_file(
+        "minimal", Bosh::Spec::Deployments.minimal_manifest)
 
       run_bosh("target localhost:57523")
       run_bosh("deployment #{deployment_manifest.path}")
@@ -520,7 +444,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("upload release #{release_filename}")
 
       run_bosh("deploy")
-      run_bosh("delete deployment minimal").should =~ regexp("Deleted deployment `minimal'")
+      failure = regexp("Deleted deployment `minimal'")
+      run_bosh("delete deployment minimal").should =~ failure
       # TODO: test that we don't have artefacts,
       # possibly upgrade to more featured deployment,
       # possibly merge to the previous spec
@@ -531,7 +456,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     it "can get/set/delete deployment properties" do
       release_filename = spec_asset("valid_release.tgz")
-      deployment_manifest = yaml_file("minimal", Bosh::Spec::Deployments.minimal_manifest)
+      deployment_manifest = yaml_file(
+        "minimal", Bosh::Spec::Deployments.minimal_manifest)
 
       run_bosh("target localhost:57523")
       run_bosh("deployment #{deployment_manifest.path}")
@@ -540,10 +466,14 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
       run_bosh("deploy")
 
-      run_bosh("set property foo bar").should =~ regexp("Property `foo' set to `bar'")
-      run_bosh("get property foo").should =~ regexp("Property `foo' value is `bar'")
-      run_bosh("set property foo baz").should =~ regexp("Property `foo' set to `baz'")
-      run_bosh("unset property foo").should =~ regexp("Property `foo' has been unset")
+      run_bosh("set property foo bar").should =~ regexp(
+        "Property `foo' set to `bar'")
+      run_bosh("get property foo").should =~ regexp(
+        "Property `foo' value is `bar'")
+      run_bosh("set property foo baz").should =~ regexp(
+        "Property `foo' set to `baz'")
+      run_bosh("unset property foo").should =~ regexp(
+        "Property `foo' has been unset")
 
       run_bosh("set property nats.user admin")
       run_bosh("set property nats.password pass")
