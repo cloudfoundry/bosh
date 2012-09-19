@@ -1,0 +1,25 @@
+BOSH Acceptance Tests
+=====================
+
+Note! If you don't run BAT via the rake tasks, it is up to you to make sure the environment is setup correctly.
+
+Before you can run BAT, you need to set the following environment variables:
+* BAT_DIRECTOR
+  DNS name or IP address of the bosh director
+* BAT_STEMCELL
+  path to the stemcell you want to use for testing
+* BAT_DEPLOYMENT
+  path to the bat deployment manifest
+* BAT_RELEASE_DIR
+  path to the bat release repository
+
+When all of the above is ready, you can run:
+rake bat
+which will run the whole test suite.
+
+TODO
+* method generate different deployments manifests
+  should only need network info as input
+* tag fast tests
+  and add rake task to run them
+* add rake task to download stemcell & bat-release
