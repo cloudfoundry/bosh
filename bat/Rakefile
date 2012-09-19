@@ -1,0 +1,28 @@
+# Copyright (c) 2012 VMware, Inc.
+
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
+
+require "rake"
+require "rspec/core/rake_task"
+
+desc "Run BAT tests"
+task :bat => %w[bat:env]
+
+namespace "bat" do
+  SPEC_OPTS = %w(--format documentation --color)
+
+  desc "Verify BAT environment"
+  RSpec::Core::RakeTask.new(:env) do |t|
+    t.pattern = "spec/_init_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  desc "Run release tests"
+  RSpec::Core::RakeTask.new(:release => :env) do |t|
+    t.pattern = "spec/release_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+end
