@@ -6,6 +6,7 @@ module BoshHelper
   def bosh(arguments, options={})
     options[:on_error] = :return unless options[:on_error]
     command = "bosh --non-interactive #{arguments} 2>&1"
+    puts("--> #{command}") if debug?
     # TODO write to log
     result = Bosh::Exec.sh(command, options)
     yield result.output if block_given?
@@ -33,6 +34,10 @@ module BoshHelper
 
   def deployment
     read_environment('BAT_DEPLOYMENT')
+  end
+
+  def debug?
+    ENV.has_key?('BAT_DEBUG')
   end
 
   def bat_release_files
@@ -65,12 +70,24 @@ module BoshHelper
   end
 
   def jbosh(path)
-    json = http_client.get([director_url, path].join, "application/json").body
-    JSON.parse(json)
+    body = http_client.get([director_url, path].join, "application/json").body
+    JSON.parse(body)
   end
 
   def director_url
     "http://#{bosh_director}:25555"
+  end
+
+  def info
+    jbosh("/info")
+  end
+
+  def aws?
+    info["cpi"] == "aws"
+  end
+
+  def vsphere?
+    info["cpi"] == "vsphere"
   end
 
   def releases
@@ -95,5 +112,53 @@ module BoshHelper
     else
       raise "#{variable} not set"
     end
+  end
+end
+
+RSpec::Matchers.define :succeed_with do |expected|
+  match do |actual|
+    if actual.exit_status != 0
+      false
+    elsif expected.instance_of?(String)
+      actual.output == expected
+    elsif expected.instance_of?(Regexp)
+      !!actual.output.match(expected)
+    else
+      raise ArgumentError, "don't know what to do with a #{expected.class}"
+    end
+  end
+  failure_message_for_should do |actual|
+    if expected.instance_of?(Regexp)
+      what = "match"
+      exp = "/#{expected.source}/"
+    else
+      what = "be"
+      exp = expected
+    end
+    "expected\n#{actual.output}to #{what}\n#{exp}"
+  end
+end
+
+RSpec::Matchers.define :fail_with do |expected|
+  match do |actual|
+    if actual.exit_status == 0
+      false
+    elsif expected.instance_of?(String)
+      actual.output == expected
+    elsif expected.instance_of?(Regexp)
+      !!actual.output.match(expected)
+    else
+      raise ArgumentError, "don't know what to do with a #{expected.class}"
+    end
+  end
+  failure_message_for_should do |actual|
+    if expected.instance_of?(Regexp)
+      what = "match"
+      exp = "/#{expected.source}/"
+    else
+      what = "be"
+      exp = expected
+    end
+    "expected\n#{actual.output}to #{what}\n#{exp}"
   end
 end

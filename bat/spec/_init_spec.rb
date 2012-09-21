@@ -13,7 +13,6 @@ describe "initialization" do
 
   it "should be able to target the director" do
     bosh("target #{bosh_director}").should succeed_with /#{bosh_director}/
-    # TODO it should abort if this doesn't succeed
   end
 
   it "should have a readable stemcell" do

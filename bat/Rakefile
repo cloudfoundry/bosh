@@ -8,7 +8,7 @@ require "rake"
 require "rspec/core/rake_task"
 
 desc "Run BAT tests"
-task :bat => %w[bat:env]
+task :bat => %w[bat:release bat:deployment bat:stemcell]
 
 namespace "bat" do
   SPEC_OPTS = %w(--format documentation --color)
@@ -22,6 +22,24 @@ namespace "bat" do
   desc "Run release tests"
   RSpec::Core::RakeTask.new(:release => :env) do |t|
     t.pattern = "spec/release_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  desc "Run deployment tests"
+  RSpec::Core::RakeTask.new(:deployment => :env) do |t|
+    t.pattern = "spec/deployment_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  desc "Run stemcell tests"
+  RSpec::Core::RakeTask.new(:stemcell => :env) do |t|
+    t.pattern = "spec/deployment_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  desc "Clean up lingering things on the director"
+  RSpec::Core::RakeTask.new(:cleanup) do |t|
+    t.pattern = "spec/cleanup_spec.rb"
     t.rspec_opts = SPEC_OPTS
   end
 
