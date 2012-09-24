@@ -22,6 +22,7 @@ describe Bosh::Deployer do
     end
 
     it "should access vSphere cloud" do
+      pending "requires access to an existing environment"
       @deployer.cloud.should be_kind_of(Bosh::Clouds::VSphere)
     end
 
