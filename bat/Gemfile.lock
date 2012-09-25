@@ -32,6 +32,7 @@ GEM
     json_pure (1.6.7)
     log4r (1.1.10)
     mime-types (1.19)
+    minitar (0.5.3)
     multi_json (1.1.0)
     net-scp (1.0.4)
       net-ssh (>= 1.99.1)
@@ -64,5 +65,6 @@ DEPENDENCIES
   bosh_cli (>= 0.19)
   httpclient (~> 2.2)
   json (~> 1.7)
+  minitar
   rake (~> 0.9)
   rspec (~> 2.11)

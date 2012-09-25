@@ -29,7 +29,8 @@ describe "log" do
 
   it "should get agent log" do
     bosh("logs batarang 0 --agent").should succeed_with /Logs saved in/
-    # verify contents
+    files = tar_contents(tarfile)
+    files.should include "./current"
   end
 
   it "should get cpi log" do
@@ -38,6 +39,8 @@ describe "log" do
 
   it "should get job logs" do
     bosh("logs batarang 0").should succeed_with /Logs saved in/
-    # verify contents
+    files = tar_contents(tarfile)
+    files.should include "./batarang/batarang.stdout.log"
+    files.should include "./batarang/batarang.stderr.log"
   end
 end

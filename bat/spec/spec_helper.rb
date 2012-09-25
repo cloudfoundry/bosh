@@ -14,10 +14,13 @@ require "common/exec"
 
 require "bosh_helper"
 require "task_helper"
+require "tar_helper"
 
 RSpec.configure do |config|
   config.include(BoshHelper)
   config.include(TaskHelper)
+  config.include(TarHelper)
+
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
