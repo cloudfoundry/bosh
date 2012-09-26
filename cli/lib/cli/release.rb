@@ -135,7 +135,15 @@ module Bosh::Cli
     # and merges it into the blobstore options.
     def merge_private_data(provider, options)
       bs = @private_config["blobstore"]
-      options.merge(bs ? bs[provider] : {})
+      private_options = {}
+      if bs
+        if bs[provider]
+          private_options = bs[provider]
+        elsif has_blobstore_secret?
+          err("blobstore private provider does not match final provider")
+        end
+      end
+      options.merge(private_options)
     end
 
     # stores blobstore_secret as blobstore.atmos.secret
