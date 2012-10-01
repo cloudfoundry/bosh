@@ -109,7 +109,19 @@ namespace :stemcell2 do
   end
 
   def env
-    "env http_proxy=#{ENV["HTTP_PROXY"] || ENV["http_proxy"]}"
+    keep = %w{
+      HTTP_PROXY
+      http_proxy
+      NO_PROXY
+      no_proxy
+      }
+
+    format_env(ENV.select { |k| keep.include?(k) })
+  end
+
+  # Format a hash as an env command.
+  def format_env(h)
+    'env ' + h.map { |k,v| "#{k}='#{v}'" }.join(' ')
   end
 
   def build(spec, options)
