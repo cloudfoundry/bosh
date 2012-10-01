@@ -6,9 +6,9 @@ require "common/exec"
 describe Bosh::Exec do
   let(:opts) { {} }
 
-  describe "existing command" do
+  context "existing command" do
 
-    describe "executes successfully" do
+    context "executes successfully" do
       it "should not fail" do
         Bosh::Exec.sh("ls /", opts).failed?.should be_false
       end
@@ -22,11 +22,14 @@ describe Bosh::Exec do
       end
     end
 
-    describe "fails to execute" do
+    context "fails to execute" do
       it "should raise error by default" do
-        lambda {
+        expect {
           Bosh::Exec.sh("ls /asdasd 2>&1", opts)
-        }.should raise_error Bosh::Exec::Error
+        }.to raise_error { |error|
+          error.should be_a Bosh::Exec::Error
+          error.output.should match /No such file or directory/
+        }
       end
 
       it "should yield block on false" do
@@ -46,32 +49,32 @@ describe Bosh::Exec do
 
   end
 
-  describe "missing command" do
+  context "missing command" do
     it "should raise error by default" do
-      lambda {
+      expect {
         Bosh::Exec.sh("/asdasd 2>&1", opts)
-      }.should raise_error Bosh::Exec::Error
+      }.to raise_error Bosh::Exec::Error
     end
 
     it "should not raise error when requested" do
       opts[:on_error] = :return
-      lambda {
+      expect {
         Bosh::Exec.sh("/asdasd 2>&1", opts)
-      }.should_not raise_error Bosh::Exec::Error
+      }.to_not raise_error Bosh::Exec::Error
     end
 
     it "should execute block when requested" do
       opts[:yield] = :on_false
-      lambda {
+      expect {
       Bosh::Exec.sh("/asdasd 2>&1", opts) do
         raise "foo"
       end
-      }.should raise_error "foo"
+      }.to raise_error "foo"
     end
 
   end
 
-  describe "mock" do
+  context "mock" do
     it "should be possible fake result" do
       cmd = "ls /"
       result = Bosh::Exec::Result.new(cmd, "output", 0)
@@ -81,13 +84,13 @@ describe Bosh::Exec do
     end
   end
 
-  describe "module" do
+  context "module" do
     it "should be possible to invoke as a module" do
       Bosh::Exec.sh("ls /").success?.should be_true
     end
   end
 
-  describe "include" do
+  context "include" do
     class IncludeTest
       include Bosh::Exec
       def run

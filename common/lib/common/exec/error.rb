@@ -3,9 +3,12 @@
 module Bosh::Exec
 # Raised when there was an error executing the command
   class Error < StandardError
-    def initialize(status, command)
+    attr_reader :output
+
+    def initialize(status, command, output=nil)
       @status = status
       @command = command
+      @output = output
     end
 
     def message
@@ -14,6 +17,10 @@ module Bosh::Exec
       else
         "command not found: #{@command}"
       end
+    end
+
+    def to_s
+      message
     end
   end
 end

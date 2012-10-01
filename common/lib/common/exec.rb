@@ -1,5 +1,7 @@
 # Copyright (c) 2012 VMware, Inc.
 
+module Bosh; end
+
 require "common/exec/result"
 require "common/exec/error"
 
@@ -57,7 +59,7 @@ module Bosh
 
       if result.failed?
         unless opts[:on_error] == :return
-          raise Error.new(result.exit_status, command)
+          raise Error.new(result.exit_status, command, output)
         end
         yield result if block_given? && opts[:yield] == :on_false
 
