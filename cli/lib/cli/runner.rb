@@ -491,7 +491,7 @@ module Bosh::Cli
         usage  "task [<task_id>|last]"
         desc   "Show task status and start tracking its output"
         option "--no-cache", "don't cache output locally"
-        option "--event|--soap|--debug", "different log types to track"
+        option "--event|--cpi|--debug", "different log types to track"
         option "--raw", "don't beautify log"
         option "--no-filter", "last task will include all types " +
                "(ssh, logs, vms, etc)"

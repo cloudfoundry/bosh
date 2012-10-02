@@ -12,7 +12,7 @@ module Bosh::Cli::Command
     # usage  "task [<task_id>|last]"
     # desc   "Show task status and start tracking its output"
     # option "--no-cache", "don't cache output locally"
-    # option "--event|--soap|--debug", "different log types to track"
+    # option "--event|--cpi|--debug", "different log types to track"
     # option "--raw", "don't beautify log"
     # option "--no-filter", "last task will include all types " +
     #        "(ssh, logs, vms, etc)"
@@ -123,6 +123,8 @@ module Bosh::Cli::Command
     def get_log_type(flags)
       if flags.include?("--soap")
         "soap"
+      elsif flags.include?("--cpi")
+        "cpi"
       elsif flags.include?("--debug")
         "debug"
       else
