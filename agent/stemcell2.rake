@@ -39,6 +39,7 @@ namespace :stemcell2 do
     options[:build_time] = ENV['BUILD_TIME'] ||
       Time.now.strftime('%Y%m%d.%H%M%S')
     options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
+    options[:bosh_users_password] = 'micr0cloud'
 
     options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(args))
