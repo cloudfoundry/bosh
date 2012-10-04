@@ -20,6 +20,7 @@ ${image_vsphere_ovf_ovftool_path} \
 
 cp ${micro_src}/micro/README ${archive_dir}
 cp ${micro_src}/micro/RELEASE_NOTES ${archive_dir}
+cp ${micro_src}/micro/go.sh ${archive_dir}
 
 cd ${dest_dir}
 zip --recurse-paths micro-${version}.zip ${archive_dir_name}
