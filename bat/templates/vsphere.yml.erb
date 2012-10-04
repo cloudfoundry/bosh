@@ -1,0 +1,72 @@
+---
+name: bat
+director_uuid: <%= properties.uuid %>
+
+release:
+  name: bat
+  version: latest
+
+compilation:
+  workers: 1
+  network: default
+  reuse_compilation_vms: true
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 1
+
+update:
+  canaries: 1
+  canary_watch_time: 3000-90000
+  update_watch_time: 3000-90000
+  max_in_flight: 1
+  max_errors: 1
+
+networks:
+- name: default
+  subnets:
+  - range: <%= properties.network.cidr %>
+    reserved:
+      <% properties.network.reserved.each do |range| %>
+      - <%= range %>
+      <% end %>
+    static:
+      <% properties.network.static.each do |range| %>
+      - <%= range %>
+      <% end %>
+    gateway: <%= properties.network.gateway %>
+    dns:
+      - <%= properties.network.dns %>
+    cloud_properties:
+      name: <%= properties.network.vlan %>
+
+resource_pools:
+  - name: common
+    network: default
+    size: <%= properties.pool_size %>
+    stemcell:
+      name: <%= properties.stemcell.name %>
+      version: <%= properties.stemcell.version %>
+    cloud_properties:
+      ram: 512
+      disk: 2048
+      cpu: 1
+
+jobs:
+  - name: batarang
+    template: batarang
+    instances: <%= properties.jobs %>
+    resource_pool: common
+    <% if properties.persistent_disk %>
+    persistent_disk: <%= properties.persistent_disk %>
+    <% end %>
+    networks:
+      - name: default
+      <% if properties.static_ips %>
+        static_ips:
+          - <%= properties.static_ips %>
+      <% end %>
+
+
+properties:
+  mbus: <%= properties.mbus %>
