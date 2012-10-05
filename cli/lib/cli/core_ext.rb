@@ -27,7 +27,7 @@ module BoshExtensions
   end
 
   def err(message)
-    raise Bosh::Cli::CliExit.new message
+    raise Bosh::Cli::CliError, message
   end
 
   def quit(message = nil)
@@ -85,6 +85,11 @@ module BoshExtensions
     file.write(yaml.gsub(" \n", "\n"))
     file.flush
   end
+
+  # @return [Fixnum]
+  def terminal_width
+    [HighLine::SystemExtensions.terminal_size[0], 120].min
+  end
 end
 
 module BoshStringExtensions
@@ -136,6 +141,27 @@ module BoshStringExtensions
     else
       stripped
     end
+  end
+
+  def columnize(width = 80, left_margin = 0)
+    result = ""
+    buf = ""
+    self.split(/\s+/).each do |word|
+      if buf.size + word.size > width
+        result << buf << "\n" << " " * left_margin
+        buf = word + " "
+      else
+        buf << word << " "
+      end
+
+    end
+    result + buf
+  end
+
+  def indent(margin = 2)
+    self.split("\n").map { |line|
+      " " * margin + line
+    }.join("\n")
   end
 
 end

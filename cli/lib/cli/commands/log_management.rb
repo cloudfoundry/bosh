@@ -4,62 +4,51 @@ module Bosh::Cli::Command
   class LogManagement < Base
     include Bosh::Cli::DeploymentHelper
 
-    # usage  "logs <job> <index>"
-    # desc   "Fetch job (default) or agent (if option provided) logs"
-    # option "--agent", "fetch agent logs"
-    # option "--only <filter1>[...]", "only fetch logs that satisfy " +
-    #     "given filters (defined in job spec)"
-    # option "--all", "fetch all files in the job or agent log directory"
-    # route  :log_management, :fetch_logs
-    def fetch_logs(*args)
+    # bosh logs
+    usage "logs"
+    desc "Fetch job or agent logs from a BOSH-managed VM"
+    option "--agent", "fetch agent logs"
+    option "--job", "fetch job logs"
+    option "--only filter1,filter2,...", Array,
+           "only fetch logs that satisfy",
+           "given filters (defined in job spec)"
+    option "--all", "fetch all files in the job or agent log directory"
+    def fetch_logs(job, index)
       auth_required
       target_required
-
-      job = args.shift
-      index = args.shift
-      filters = nil
-      log_type = nil
-
-      for_job = args.delete("--job")
-      for_agent = args.delete("--agent")
-
-      if for_job && for_agent
-        err("Please specify which logs you want, job or agent")
-      elsif for_agent
-        log_type = "agent"
-      else # default log type is 'job'
-        log_type = "job"
-      end
-
-      if args.include?("--only")
-        pos = args.index("--only")
-        filters = args[pos+1]
-        if filters.nil?
-          err("Please provide a list of filters separated by comma")
-        end
-        args.delete("--only")
-        args.delete(filters)
-      elsif args.include?("--all")
-        args.delete("--all")
-        filters = "all"
-      end
-
-      if for_agent && !filters.nil? && filters != "all"
-        err("Custom filtering is not supported for agent logs")
-      end
 
       if index !~ /^\d+$/
         err("Job index is expected to be a positive integer")
       end
 
-      if args.size > 0
-        err("Unknown arguments: #{args.join(", ")}")
+      if options[:agent]
+        if options[:job]
+          err("You can't use --job and --agent together")
+        end
+        log_type = "agent"
+      else
+        log_type = "job"
+      end
+
+      if options[:only]
+        if options[:all]
+          err("You can't use --only and --all together")
+        end
+        filters = options[:only].join(",")
+      elsif options[:all]
+        filters = "all"
+      else
+        filters = nil
+      end
+
+      if options[:agent] && filters && filters != "all"
+        err("Custom filtering is not supported for agent logs")
       end
 
       manifest = prepare_deployment_manifest
 
-      resource_id = director.fetch_logs(manifest["name"], job, index,
-                                        log_type, filters)
+      resource_id = director.fetch_logs(
+        manifest["name"], job, index, log_type, filters)
 
       if resource_id.nil?
         err("Error retrieving logs")

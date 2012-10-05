@@ -29,8 +29,9 @@ describe Bosh::Cli::Command::Base do
       job_rename = Bosh::Cli::Command::JobRename.new
 
       lambda {
-        job_rename.sanity_check_job_rename(new_extra_changes_manifest, "old_job", "new_job")
-      }.should raise_error(Bosh::Cli::CliExit, /cannot have any other changes/)
+        job_rename.sanity_check_job_rename(
+          new_extra_changes_manifest, "old_job", "new_job")
+      }.should raise_error(Bosh::Cli::CliError, /cannot have any other changes/)
     end
 
     it "should raise exception if new manifest removed some properties" do
@@ -42,7 +43,7 @@ describe Bosh::Cli::Command::Base do
 
       lambda {
         job_rename.sanity_check_job_rename(new_manifest_with_some_deletions, "old_job", "new_job")
-      }.should raise_error(Bosh::Cli::CliExit, /cannot have any other changes/)
+      }.should raise_error(Bosh::Cli::CliError, /cannot have any other changes/)
     end
 
     it "should raise exception if deployment is not updated with new job name" do
@@ -50,7 +51,7 @@ describe Bosh::Cli::Command::Base do
 
       lambda {
         job_rename.sanity_check_job_rename(new_missing_new_job, "old_job", "new_job")
-      }.should raise_error(Bosh::Cli::CliExit, /include the new job/)
+      }.should raise_error(Bosh::Cli::CliError, /include the new job/)
     end
 
     it "should raise exception if old job name does not exist in manifest" do
@@ -62,7 +63,7 @@ describe Bosh::Cli::Command::Base do
 
       lambda {
         job_rename.sanity_check_job_rename(new_extra_changes_manifest, "non_existent_job", "new_job")
-      }.should raise_error(Bosh::Cli::CliExit, /non existent job/)
+      }.should raise_error(Bosh::Cli::CliError, /non existent job/)
     end
 
     it "should raise exception if 2 jobs are changed in manifest" do
@@ -74,7 +75,7 @@ describe Bosh::Cli::Command::Base do
 
       lambda {
         job_rename.sanity_check_job_rename(new_extra_job_rename_manifest, "old_job", "new_job")
-      }.should raise_error(Bosh::Cli::CliExit, /Cannot rename more than one job/)
+      }.should raise_error(Bosh::Cli::CliError, /Cannot rename more than one job/)
     end
 
     def old_manifest_yaml

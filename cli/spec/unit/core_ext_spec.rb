@@ -67,7 +67,7 @@ describe Object do
   it "raises a special exception to signal a premature exit" do
     lambda {
       err("Done")
-    }.should raise_error(Bosh::Cli::CliExit, "Done")
+    }.should raise_error(Bosh::Cli::CliError, "Done")
   end
 
   it "can tell if object is blank" do

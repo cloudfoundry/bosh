@@ -19,7 +19,10 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(Bosh::Cli::CliExit, "IP range '2..9' is not within the bounds of network 'default', which only has 1 IPs.")
+    }.should raise_error(
+               Bosh::Cli::CliError,
+               "IP range '2..9' is not within " +
+               "the bounds of network 'default', which only has 1 IPs.")
   end
 
   it "throws an error when there is more than one subnet for default" do
@@ -28,7 +31,7 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(Bosh::Cli::CliExit, "Biff doesn't know how to deal " +
+    }.should raise_error(Bosh::Cli::CliError, "Biff doesn't know how to deal " +
         "with anything other than one subnet in default")
   end
 
@@ -38,7 +41,7 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(Bosh::Cli::CliExit, "Biff only supports " +
+    }.should raise_error(Bosh::Cli::CliError, "Biff only supports " +
         "configurations where the gateway is the first IP (e.g. 172.31.196.1).")
   end
 
@@ -48,7 +51,7 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(Bosh::Cli::CliExit, "Biff requires each network to " +
+    }.should raise_error(Bosh::Cli::CliError, "Biff requires each network to " +
         "have range and dns entries.")
   end
 
@@ -58,7 +61,7 @@ describe Bosh::Cli::Command::Biff do
     @biff.stub!(:deployment).and_return(config_file)
     lambda {
       @biff.biff(template_file)
-    }.should raise_error(Bosh::Cli::CliExit, "You must have subnets in default")
+    }.should raise_error(Bosh::Cli::CliError, "You must have subnets in default")
   end
 
   it "outputs the required yaml when the input does not contain it" do
@@ -78,7 +81,7 @@ describe Bosh::Cli::Command::Biff do
 
     lambda {
       @biff.biff(template_file)
-    }.should raise_error Bosh::Cli::CliExit, "There were 1 errors."
+    }.should raise_error Bosh::Cli::CliError, "There were 1 errors."
   end
 
   it "correctly generates a file and reports when there are no differences" do
