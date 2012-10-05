@@ -14,7 +14,7 @@ archive_dir=${dest_dir}/${archive_dir_name}
 mkdir --parents ${archive_dir}
 
 ${image_vsphere_ovf_ovftool_path} \
-    --extraConfig:displayname="Micro Cloud Foundry v${version}" \
+    --extraConfig:displayname="Micro Cloud Foundry ${version}" \
     ${work}/vsphere/image.ovf \
     ${archive_dir}/micro
 
