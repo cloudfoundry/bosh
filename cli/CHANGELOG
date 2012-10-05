@@ -1,3 +1,16 @@
+== 0.21 - 10/04/12
+* don't show 'url' column of public stemcells unless --full
+* 'download manifest' command
+* tagging public stemcells
+* simplified non-interactive output
+* 'latest' alias for stemcells
+* checking if stemcell exists before deleting
+* warn if package matching not supported
+* only show pre-packaging output on failure
+* don't leak temp files
+* properties support
+* support 'ssh dea/0' syntax
+
 == 0.20 - 08/29/12
 * release rebase support
 * --no-filter option for 'bosh tasks'
