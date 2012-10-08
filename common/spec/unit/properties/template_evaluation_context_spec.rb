@@ -32,6 +32,11 @@ describe Bosh::Common::TemplateEvaluationContext do
     eval_template("<%= properties.foo %>", @context).should == "bar"
   end
 
+  it "retains raw_properties" do
+    eval_template("<%= raw_properties['router'] %>", @context).should == {"token" => "zbb"}
+    eval_template("<%= raw_properties['router']['token] %>", @context).should == "zbb"
+  end
+
   it "supports looking up template index" do
     eval_template("<%= spec.index %>", @context).should == "0"
   end
