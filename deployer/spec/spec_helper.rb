@@ -7,8 +7,10 @@ require "bundler"
 Bundler.setup(:default, :test)
 
 require "rspec"
-require "deployer"
 require "cli"
+#require "deployer"
+#require "ruby-debug"
+#debugger
 require "bosh/cli/commands/micro"
 
 def spec_asset(filename)
