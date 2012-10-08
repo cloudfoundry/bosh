@@ -12,17 +12,19 @@ describe Bosh::Deployer do
     @deployer = Bosh::Deployer::InstanceManager.new(config)
   end
 
-  after(:all) do
-    FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
-  end
-
   describe "vSphere" do
     before(:all) do
       setup("test-bootstrap-config.yml")
     end
 
+    after(:all) do
+      FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
+    end
+
     it "should access vSphere cloud" do
-      @deployer.cloud.should be_kind_of(Bosh::Clouds::VSphere)
+      pending "can't connect to an existing environment" do
+        @deployer.cloud.should be_kind_of(Bosh::Clouds::VSphere)
+      end
     end
 
     it "should create a Bosh VM" do
@@ -45,6 +47,10 @@ describe Bosh::Deployer do
   describe "aws" do
     before(:all) do
       setup("test-bootstrap-config-aws.yml")
+    end
+
+    after(:all) do
+      FileUtils.remove_entry_secure @dir unless ENV['BOSH_DEPLOYER_DIR']
     end
 
     it "should instantiate a deployer" do

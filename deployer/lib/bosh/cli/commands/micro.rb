@@ -10,54 +10,61 @@ module Bosh::Cli::Command
     MICRO_DIRECTOR_PORT = 25555
     DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_deployer_config")
 
-    command :micro_deployment do
-      usage "micro deployment [<name>]"
-      desc  "Choose micro deployment to work with"
-      route { |args| (args.size > 0) ? [:micro, :set_current] : [:micro, :show_current] }
-    end
-
-    command :micro_status do
-      usage "micro status"
-      desc  "Display micro BOSH deployment status"
-      route :micro, :status
-    end
-
-    command :micro_list_deployments do
-      usage "micro deployments"
-      desc  "Show the list of deployments"
-      route :micro, :list
-    end
-
-    command :micro_deploy do
-      usage  "micro deploy [<stemcell>]"
-      desc   "Deploy a micro BOSH instance to the currently selected deployment"
-      option "--update", "update existing instance"
-      route  :micro, :perform
-    end
-
-    command :micro_delete do
-      usage  "micro delete"
-      desc   "Delete micro BOSH instance (including persistent disk)"
-      route  :micro, :delete
-    end
-
-    command :micro_agent do
-      usage "micro agent <args>"
-      desc  "Send agent messages"
-      route :micro, :agent
-    end
-
-    command :micro_apply do
-      usage "micro apply <spec>"
-      desc  "Apply spec"
-      route :micro, :apply
-    end
-
-    def initialize(options = {})
+    def initialize(runner)
+      super(runner)
       options[:config] ||= DEFAULT_CONFIG_PATH #hijack Cli::Config
-      super(options)
     end
 
+    usage "micro deployment"
+    desc  "Choose micro deployment to work with, or display current deployment"
+    def micro_deployment(name=nil)
+      if manifest
+        set_current(name)
+      else
+        show_current
+      end
+    end
+
+    def set_current(name)
+      manifest_filename = find_deployment(name)
+
+      if !File.exists?(manifest_filename)
+        err "Missing manifest for #{name} (tried '#{manifest_filename}')"
+      end
+
+      manifest = load_yaml_file(manifest_filename)
+
+      unless manifest.is_a?(Hash)
+        err "Invalid manifest format"
+      end
+
+      if manifest["network"].blank?
+        err "network is not defined in deployment manifest"
+      end
+      ip = deployer(manifest_filename).discover_bosh_ip || name
+
+      if target
+        old_director_ip = URI.parse(target).host
+      else
+        old_director_ip = nil
+      end
+
+      if old_director_ip != ip
+        set_target(ip)
+        say "#{"WARNING!".red} Your target has been changed to `#{target.red}'!"
+      end
+
+      say "Deployment set to '#{manifest_filename.green}'"
+      config.set_deployment(manifest_filename)
+      config.save
+    end
+
+    def show_current
+      say(deployment ? "Current deployment is '#{deployment.green}'" : "Deployment not set")
+    end
+
+    usage "micro status"
+    desc  "Display micro BOSH deployment status"
     def status
       stemcell_cid = deployer_state(:stemcell_cid)
       stemcell_name = deployer_state(:stemcell_name)
@@ -78,9 +85,11 @@ module Bosh::Cli::Command
       say("Target".ljust(15) + target_name)
     end
 
-    def perform(*options)
-      update = options.delete("--update")
-      stemcell = options.shift
+    usage  "micro deploy"
+    desc   "Deploy a micro BOSH instance to the currently selected deployment"
+    option "--update", "update existing instance"
+    def perform(stemcell=nil)
+      update = !!options[:update]
 
       err "No deployment set" unless deployment
 
@@ -158,6 +167,8 @@ module Bosh::Cli::Command
       say("Deployed #{desc}, took #{format_time(duration).green} to complete")
     end
 
+    usage  "micro delete"
+    desc   "Delete micro BOSH instance (including persistent disk)"
     def delete
       unless deployer.exists?
         err "No existing instance to delete"
@@ -188,44 +199,8 @@ module Bosh::Cli::Command
       say("Deleted deployment '#{name}', took #{format_time(duration).green} to complete")
     end
 
-    def set_current(name)
-      manifest_filename = find_deployment(name)
-
-      if !File.exists?(manifest_filename)
-        err "Missing manifest for #{name} (tried '#{manifest_filename}')"
-      end
-
-      manifest = load_yaml_file(manifest_filename)
-
-      unless manifest.is_a?(Hash)
-        err "Invalid manifest format"
-      end
-
-      if manifest["network"].blank?
-        err "network is not defined in deployment manifest"
-      end
-      ip = deployer(manifest_filename).discover_bosh_ip || name
-
-      if target
-        old_director_ip = URI.parse(target).host
-      else
-        old_director_ip = nil
-      end
-
-      if old_director_ip != ip
-        set_target(ip)
-        say "#{"WARNING!".red} Your target has been changed to `#{target.red}'!"
-      end
-
-      say "Deployment set to '#{manifest_filename.green}'"
-      config.set_deployment(manifest_filename)
-      config.save
-    end
-
-    def show_current
-      say(deployment ? "Current deployment is '#{deployment.green}'" : "Deployment not set")
-    end
-
+    usage "micro deployments"
+    desc  "Show the list of deployments"
     def list
       file = File.join(work_dir, DEPLOYMENTS_FILE)
       if File.exists?(file)
@@ -251,6 +226,8 @@ module Bosh::Cli::Command
       say("Deployments total: %d" % deployments.size)
     end
 
+    usage "micro agent <args>"
+    desc  "Send agent messages"
     def agent(*args)
       message = args.shift
       args = args.map do |arg|
@@ -264,6 +241,8 @@ module Bosh::Cli::Command
       say(deployer.agent.send(message.to_sym, *args).pretty_inspect)
     end
 
+    usage "micro apply"
+    desc  "Apply spec"
     def apply(spec)
       deployer.apply(load_yaml_file(spec))
     end
