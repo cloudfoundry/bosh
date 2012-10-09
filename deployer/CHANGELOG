@@ -1,3 +1,8 @@
+=== 0.6.1 - 2012-10-09
+* support for fetching service IP address using any network name
+* fix deployer vip support for OpenStack
+* update deployer to work with cli 1.0
+
 === 0.6.0 - 2012-09-04
 * include health manager in deployer apply_spec
 * allow stemcell id to be specified by in micro_bosh.yml using
