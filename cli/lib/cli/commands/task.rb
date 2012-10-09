@@ -10,7 +10,7 @@ module Bosh::Cli::Command
     desc   "Show task status and start tracking its output"
     option "--no-cache", "Don't cache output locally"
     option "--event", "Track event log"
-    option "--soap", "Track CPI log"
+    option "--cpi", "Track CPI log"
     option "--debug", "Track debug log"
     option "--result", "Track result log"
     option "--raw", "Show raw log"
@@ -23,8 +23,8 @@ module Bosh::Cli::Command
 
       log_type = "event"
       n_types = 0
-      if options[:soap]
-        log_type = "soap"
+      if options[:cpi]
+        log_type = "cpi"
         n_types += 1
       end
 
