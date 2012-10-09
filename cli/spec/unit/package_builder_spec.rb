@@ -224,12 +224,21 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     dev_versions   = Bosh::Cli::VersionsIndex.new(
         File.join(@release_dir, ".dev_builds", "packages", "bar"))
 
+    tmp_file = Tempfile.new("");
+    File.open(tmp_file.path, "w") do |f|
+      f.write("payload")
+    end
+    tmp_file_dev = Tempfile.new("");
+    File.open(tmp_file_dev.path, "w") do |f|
+      f.write("dev_payload")
+    end
+
     final_versions.add_version(fingerprint,
                                { "version" => "4", "blobstore_id" => "12321" },
-                               "payload")
+                               tmp_file.path)
     dev_versions.add_version(fingerprint,
                              { "version" => "0.7-dev" },
-                             "dev_payload")
+                             tmp_file_dev.path)
 
     builder = make_builder("bar", globs)
     builder.fingerprint.should == fingerprint
@@ -370,14 +379,18 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
                                  ".final_builds", "packages", "bar")
     builder.build
 
+    tmp_file = Tempfile.new("");
+    File.open(tmp_file.path, "w") do |f|
+      f.write("payload")
+    end
     final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
-    final_index.add_version("deadbeef", { "version" => 34 }, "payload")
+    final_index.add_version("deadbeef", { "version" => 34 }, tmp_file.path)
 
     add_file("src", "foo/foo14.rb")
     builder.reload.build
     builder.version.should == "34.1-dev"
 
-    final_index.add_version("deadbeef2", { "version" => 37 }, "payload")
+    final_index.add_version("deadbeef2", { "version" => 37 }, tmp_file.path)
 
     add_file("src", "foo/foo15.rb")
     builder.reload.build
@@ -389,7 +402,7 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     FileUtils.rm_rf(final_builds_dir)
     final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
-    final_index.add_version("deadbeef3", { "version" => 34 }, "payload")
+    final_index.add_version("deadbeef3", { "version" => 34 },tmp_file.path)
 
     add_file("src", "foo/foo17.rb")
     builder.reload.build

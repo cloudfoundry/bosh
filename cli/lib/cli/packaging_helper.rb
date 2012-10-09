@@ -93,9 +93,10 @@ module Bosh::Cli
 
       if need_fetch
         say("Downloading `#{name} (#{version})'...".green)
-        payload = @blobstore.get(blobstore_id)
-        if Digest::SHA1.hexdigest(payload) == item["sha1"]
-          @tarball_path = @final_index.add_version(fingerprint, item, payload)
+        tmp_file = Tempfile.new(name);
+        @blobstore.get(blobstore_id, tmp_file.path)
+        if Digest::SHA1.file(tmp_file.path).hexdigest == item["sha1"]
+          @tarball_path = @final_index.add_version(fingerprint, item, tmp_file.path)
         else
           err("`#{name}' (#{version}) is corrupted in blobstore " +
                   "(id=#{blobstore_id}), " +
@@ -167,14 +168,12 @@ module Bosh::Cli
         end
       end
 
-      payload = tmp_file.read
-
       item = {
         "version" => version
       }
 
       unless dry_run?
-        @dev_index.add_version(fingerprint, item, payload)
+        @dev_index.add_version(fingerprint, item, tmp_file.path)
         @tarball_path = @dev_index.filename(version)
       end
 
@@ -196,9 +195,11 @@ module Bosh::Cli
       end
 
       version = @final_index.latest_version.to_i + 1
-      payload = File.read(path)
 
-      blobstore_id = @blobstore.create(payload)
+      blobstore_id = nil
+      File.open(path, "r") do |f|
+        blobstore_id = @blobstore.create(f)
+      end
 
       item = {
         "blobstore_id" => blobstore_id,
@@ -206,7 +207,7 @@ module Bosh::Cli
       }
 
       say("Uploaded, blobstore id #{blobstore_id}")
-      @final_index.add_version(fingerprint, item, payload)
+      @final_index.add_version(fingerprint, item, path)
       @tarball_path = @final_index.filename(version)
       @version = version
       @promoted = true

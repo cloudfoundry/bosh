@@ -319,12 +319,21 @@ describe Bosh::Cli::JobBuilder do
     dev_versions   = Bosh::Cli::VersionsIndex.new(
         File.join(@release_dir, ".dev_builds", "jobs", "foo"))
 
+    tmp_file = Tempfile.new(fingerprint);
+    File.open(tmp_file.path, "w") do |f|
+      f.write("payload")
+    end
     final_versions.add_version(fingerprint,
                                { "version" => "4", "blobstore_id" => "12321" },
-                               "payload")
+                               tmp_file.path)
+
+    dev_tmp_file = Tempfile.new(fingerprint);
+    File.open(dev_tmp_file.path, "w") do |f|
+      f.write("dev_payload")
+    end
     dev_versions.add_version(fingerprint,
                              { "version" => "0.7-dev" },
-                             "dev_payload")
+                             dev_tmp_file.path)
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
