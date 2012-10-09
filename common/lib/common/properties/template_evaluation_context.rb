@@ -14,6 +14,9 @@ module Bosh::Common
     # @return [Hash] Template properties
     attr_reader :properties
 
+    # @return [Hash] Raw template properties (no openstruct)
+    attr_reader :raw_properties
+
     # @return [Hash] Template spec
     attr_reader :spec
 
