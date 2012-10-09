@@ -62,6 +62,18 @@ namespace "bat" do
     t.rspec_opts = SPEC_OPTS
   end
 
+  desc "Run job tests"
+  RSpec::Core::RakeTask.new(:job => :env) do |t|
+    t.pattern = "spec/bat/job_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  desc "Run property tests"
+  RSpec::Core::RakeTask.new(:property => :env) do |t|
+    t.pattern = "spec/bat/property_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
   desc "Clean up lingering things on the director"
   task :cleanup do
     raise "environment variable BAT_DIRECTOR not set" unless bosh_director
