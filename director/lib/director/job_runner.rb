@@ -72,8 +72,8 @@ module Bosh::Director
         Config.cloud_options["plugin"] == "vsphere" &&
         Config.cloud_options["properties"].is_a?(Hash)
 
-        soap_log = File.join(@task.output, "soap")
-        Config.cloud_options["properties"]["soap_log"] = soap_log
+        cpi_log = File.join(@task.output, "cpi")
+        Config.cloud_options["properties"]["cpi_log"] = cpi_log
       end
     end
 

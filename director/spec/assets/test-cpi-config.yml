@@ -49,7 +49,7 @@ cloud:
           user: vcap
           password: vcap
       mbus: nats://localhost:4222
-    soap_log: /tmp/soap.log
+    cpi_log: /tmp/cpi.log
     vcenters:
       - host: 172.31.113.55
         user: ad\TestDevCloudSC

@@ -506,6 +506,9 @@ module Bosh::Director
       json_encode(@task_manager.task_to_hash(task))
     end
 
+    # Sends back output of given task id and params[:type]
+    # Example: `get /tasks/5/output?type=event` will send back the file
+    # at /var/vcap/store/director/tasks/5/event
     get "/tasks/:id/output" do
       log_type = params[:type] || "debug"
       task = @task_manager.find_task(params[:id])
@@ -515,6 +518,13 @@ module Bosh::Director
       end
 
       if File.directory?(task.output)
+        # Backward compatbility from renaming `soap` log to `cpi` log.
+        # Old tasks might have been written to the file `soap` and we should
+        # still return them if log_type = cpi. Same goes for new task logs
+        # written to `cpi` but an old CLI has requested log_type = soap.
+        if %w(soap cpi).include?(log_type)
+          log_type = File.file?(File.join(task.output, "soap")) ? "soap" : "cpi"
+        end
         log_file = File.join(task.output, log_type)
       else
         log_file = task.output # Backward compatibility
