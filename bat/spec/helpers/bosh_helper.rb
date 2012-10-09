@@ -47,7 +47,7 @@ module BoshHelper
 
   def bat_release_files
     glob = File.join(bat_release_dir, "dev_releases/bat-*.yml")
-    releases = Dir.glob(glob)
+    releases = Dir.glob(glob).sort
     raise "no releases found" if releases.empty?
     releases
   end
