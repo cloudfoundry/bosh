@@ -3,7 +3,7 @@ PATH
   specs:
     bosh_vsphere_cpi (0.4.9)
       bosh_common
-      bosh_cpi (>= 0.4.2)
+      bosh_cpi (>= 0.4.4)
       ruby_vim_sdk
       sequel
       uuidtools
@@ -12,8 +12,8 @@ GEM
   remote: http://rubygems.org/
   specs:
     archive-tar-minitar (0.5.2)
-    bosh_common (0.4.0)
-    bosh_cpi (0.4.2)
+    bosh_common (0.5.1)
+    bosh_cpi (0.4.4)
       bosh_common
     builder (3.0.0)
     ci_reporter (1.6.9)
