@@ -6,8 +6,10 @@ require "rubygems"
 require "bundler"
 Bundler.setup(:default, :test)
 
+$:.unshift(File.expand_path("../../../common/lib", __FILE__))
+$:.unshift(File.expand_path("../../../cli/lib", __FILE__))
+
 require "rspec"
-require "deployer"
 require "cli"
 require "bosh/cli/commands/micro"
 

@@ -7,14 +7,15 @@ describe Bosh::Cli::Command::Base do
   before :each do
     @config = File.join(Dir.mktmpdir, "bosh_config")
     @cache = File.join(Dir.mktmpdir, "bosh_cache")
-    @opts = { :config => @config, :cache_dir => @cache }
   end
 
   describe Bosh::Cli::Command::Micro do
 
     before :each do
-      @cmd = Bosh::Cli::Command::Micro.new(@opts)
-      @cmd.stub!(:interactive?).and_return(false)
+      @cmd = Bosh::Cli::Command::Micro.new(nil)
+      @cmd.add_option(:non_interactive, true)
+      @cmd.add_option(:config, @config)
+      @cmd.add_option(:cache_dir, @cache)
       @manifest_path = spec_asset("deployment.MF")
       @manifest_yaml = { "name" => "foo", "cloud" => {} }
       @manifest_yaml["resources"] = {
@@ -62,7 +63,7 @@ describe Bosh::Cli::Command::Base do
         @manifest_yaml = { "name" => "foo" }
         @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
         @cmd.perform()
-      }.should raise_error(Bosh::Cli::CliExit, "No stemcell provided")
+      }.should raise_error(Bosh::Cli::CliError, "No stemcell provided")
     end
 
     it "should require a persistent disk" do
