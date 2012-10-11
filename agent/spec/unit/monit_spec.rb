@@ -92,7 +92,7 @@ describe Bosh::Agent::Monit do
 
   it "should provide monit api client" do
     http_client = mock("http_client")
-    Net::HTTP.should_receive(:new).with("localhost", 2822).and_return(http_client)
+    Net::HTTP.should_receive(:new).with("127.0.0.1", 2822).and_return(http_client)
 
     Bosh::Agent::Monit.stub!(:random_credential).and_return('foobar')
 
