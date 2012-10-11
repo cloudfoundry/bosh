@@ -10,7 +10,7 @@ namespace :stemcell2 do
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
-    options[:image_create_disk_size] = 1280
+    options[:image_create_disk_size] = 1380
 
     options = options.merge(bosh_agent_options)
 
