@@ -226,10 +226,10 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     final_versions.add_version(fingerprint,
                                { "version" => "4", "blobstore_id" => "12321" },
-                               "payload")
+                               get_tmp_file_path("payload"))
     dev_versions.add_version(fingerprint,
                              { "version" => "0.7-dev" },
-                             "dev_payload")
+                             get_tmp_file_path("dev_payload"))
 
     builder = make_builder("bar", globs)
     builder.fingerprint.should == fingerprint
@@ -371,13 +371,17 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
     builder.build
 
     final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
-    final_index.add_version("deadbeef", { "version" => 34 }, "payload")
+    final_index.add_version("deadbeef",
+                            { "version" => 34 },
+                            get_tmp_file_path("payload"))
 
     add_file("src", "foo/foo14.rb")
     builder.reload.build
     builder.version.should == "34.1-dev"
 
-    final_index.add_version("deadbeef2", { "version" => 37 }, "payload")
+    final_index.add_version("deadbeef2",
+                            { "version" => 37 },
+                            get_tmp_file_path("payload"))
 
     add_file("src", "foo/foo15.rb")
     builder.reload.build
@@ -389,7 +393,9 @@ describe Bosh::Cli::PackageBuilder, "dev build" do
 
     FileUtils.rm_rf(final_builds_dir)
     final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
-    final_index.add_version("deadbeef3", { "version" => 34 }, "payload")
+    final_index.add_version("deadbeef3",
+                            { "version" => 34 },
+                            get_tmp_file_path("payload"))
 
     add_file("src", "foo/foo17.rb")
     builder.reload.build
