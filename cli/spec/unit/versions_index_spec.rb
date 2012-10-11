@@ -21,7 +21,11 @@ describe Bosh::Cli::VersionsIndex do
     @index.latest_version.should be_nil
     File.exists?(@index_file).should be_false
 
-    @index.add_version("deadcafe", { "version" => 2 }, "payload2")
+    tmp_file = Tempfile.new("");
+    File.open(tmp_file.path, "w") do |f|
+      f.write("payload2")
+    end
+    @index.add_version("deadcafe", { "version" => 2 }, tmp_file.path)
     File.exists?(@index_file).should be_true
   end
 
@@ -44,8 +48,16 @@ describe Bosh::Cli::VersionsIndex do
   it "can be used to add versioned payloads to index" do
     item1 = { "a" => 1, "b" => 2, "version" => 1 }
     item2 = { "a" => 3, "b" => 4, "version" => 2 }
-    @index.add_version("deadbeef", item1, "payload1")
-    @index.add_version("deadcafe", item2, "payload2")
+    tmp_file1 = Tempfile.new("");
+    File.open(tmp_file1.path, "w") do |f|
+      f.write("payload1")
+    end
+    tmp_file2 = Tempfile.new("");
+    File.open(tmp_file2.path, "w") do |f|
+      f.write("payload2")
+    end
+    @index.add_version("deadbeef", item1, tmp_file1.path)
+    @index.add_version("deadcafe", item2, tmp_file2.path)
 
     @index.latest_version.should == 2
     @index["deadbeef"].should ==
@@ -72,13 +84,25 @@ describe Bosh::Cli::VersionsIndex do
     item1 = { "a" => 1, "b" => 2, "version" => 1 }
     item2 = { "a" => 3, "b" => 4, "version" => 2 }
     item3 = { "a" => 3, "b" => 4, "version" => 3 }
+    tmp_file1 = Tempfile.new("");
+    File.open(tmp_file1.path, "w") do |f|
+      f.write("payload1")
+    end
+    tmp_file2 = Tempfile.new("");
+    File.open(tmp_file2.path, "w") do |f|
+      f.write("payload2")
+    end
+    tmp_file3 = Tempfile.new("");
+    File.open(tmp_file3.path, "w") do |f|
+      f.write("payload3")
+    end
 
-    @index.add_version("deadbeef", item1, "payload1")
-    @index.add_version("deadcafe", item2, "payload2")
+    @index.add_version("deadbeef", item1, tmp_file1.path)
+    @index.add_version("deadcafe", item2, tmp_file2.path)
     @index.latest_version.should == 2
-    @index.add_version("addedface", item3, "payload2")
+    @index.add_version("addedface", item3, tmp_file2.path)
     @index.latest_version.should == 3
-    @index.add_version("facedbeef", item1.merge("version" => "1.5"), "payload3")
+    @index.add_version("facedbeef", item1.merge("version" => "1.5"), tmp_file3.path)
     @index.latest_version.should == 3
   end
 
@@ -86,24 +110,44 @@ describe Bosh::Cli::VersionsIndex do
     item1 = { "a" => 1, "b" => 2, "version" => "1.9-dev" }
     item2 = { "a" => 3, "b" => 4, "version" => "1.8-dev" }
     item3 = { "a" => 3, "b" => 4, "version" => "1.10-dev" }
+    tmp_file1 = Tempfile.new("");
+    File.open(tmp_file1.path, "w") do |f|
+      f.write("payload1")
+    end
+    tmp_file2 = Tempfile.new("");
+    File.open(tmp_file2.path, "w") do |f|
+      f.write("payload2")
+    end
+    tmp_file3 = Tempfile.new("");
+    File.open(tmp_file3.path, "w") do |f|
+      f.write("payload3")
+    end
 
-    @index.add_version("deadbeef", item1, "payload1")
-    @index.add_version("deadcafe", item2, "payload2")
+    @index.add_version("deadbeef", item1, tmp_file1.path)
+    @index.add_version("deadcafe", item2, tmp_file2.path)
     @index.latest_version.should == "1.9-dev"
-    @index.add_version("facedead", item3, "payload2")
+    @index.add_version("facedead", item3, tmp_file2.path)
     @index.latest_version.should == "1.10-dev"
-    @index.add_version("badbed", item1.merge("version" => "2.15-dev"), "payload3")
+    @index.add_version("badbed", item1.merge("version" => "2.15-dev"), tmp_file3.path)
     @index.latest_version.should == "2.15-dev"
   end
 
   it "doesn't allow duplicate fingerprints or versions" do
     item1 = { "a" => 1, "b" => 2, "version" => "1.9-dev" }
     item2 = { "a" => 3, "b" => 4, "version" => "1.8-dev" }
+    tmp_file1 = Tempfile.new("");
+    File.open(tmp_file1.path, "w") do |f|
+      f.write("payload1")
+    end
+    tmp_file2 = Tempfile.new("");
+    File.open(tmp_file2.path, "w") do |f|
+      f.write("payload3")
+    end
 
-    @index.add_version("deadbeef", item1, "payload1")
+    @index.add_version("deadbeef", item1, tmp_file1.path)
 
     lambda {
-      @index.add_version("deadcafe", item1, "payload3")
+      @index.add_version("deadcafe", item1, tmp_file2.path)
     }.should raise_error("Trying to add duplicate version `1.9-dev' " +
                          "into index `#{File.join(@dir, "index.yml")}'")
   end
@@ -111,9 +155,17 @@ describe Bosh::Cli::VersionsIndex do
   it "supports finding entries by checksum" do
     item1 = { "a" => 1, "b" => 2, "version" => 1 }
     item2 = { "a" => 3, "b" => 4, "version" => 2 }
+    tmp_file1 = Tempfile.new("");
+    File.open(tmp_file1.path, "w") do |f|
+      f.write("payload1")
+    end
+    tmp_file2 = Tempfile.new("");
+    File.open(tmp_file2.path, "w") do |f|
+      f.write("payload2")
+    end
 
-    @index.add_version("deadbeef", item1, "payload1")
-    @index.add_version("deadcafe", item2, "payload2")
+    @index.add_version("deadbeef", item1, tmp_file1.path)
+    @index.add_version("deadcafe", item2, tmp_file2.path)
 
     checksum1 = Digest::SHA1.hexdigest("payload1")
     checksum2 = Digest::SHA1.hexdigest("payload2")
@@ -124,8 +176,13 @@ describe Bosh::Cli::VersionsIndex do
 
   it "supports name prefix" do
     item = { "a" => 1, "b" => 2, "version" => 1 }
+    tmp_file1 = Tempfile.new("");
+    File.open(tmp_file1.path, "w") do |f|
+      f.write("payload1")
+    end
+
     @index = Bosh::Cli::VersionsIndex.new(@dir, "foobar")
-    @index.add_version("deadbeef", item, "payload1")
+    @index.add_version("deadbeef", item, tmp_file1.path)
     @index.filename(1).should == File.join(@dir, "foobar-1.tgz")
   end
 

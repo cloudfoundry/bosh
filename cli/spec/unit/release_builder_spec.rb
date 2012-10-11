@@ -68,14 +68,18 @@ describe Bosh::Cli::ReleaseBuilder do
   it "bumps dev version in sync with final version" do
     final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir,
                                                          "releases"))
+    tmp_file = Tempfile.new("");
+    File.open(tmp_file.path, "w") do |f|
+      f.write("payload")
+    end
 
-    final_index.add_version("deadbeef", { "version" => 2 }, "payload")
+    final_index.add_version("deadbeef", { "version" => 2 }, tmp_file.path)
 
     builder = new_builder
     builder.version.should == "2.1-dev"
     builder.build
 
-    final_index.add_version("deadbeef", { "version" => 7 }, "payload")
+    final_index.add_version("deadbeef", { "version" => 7 }, tmp_file.path)
     builder = new_builder
     builder.version.should == "7.1-dev"
   end
