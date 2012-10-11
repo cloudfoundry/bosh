@@ -12,6 +12,13 @@ network:
   cloud_properties:
     name: VLAN2194
 
+resources:
+  persistent_disk: 16384
+  cloud_properties:
+    ram: 4096
+    disk: 16384
+    cup: 2
+
 cloud:
   plugin: vsphere
   properties:
