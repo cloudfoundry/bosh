@@ -101,3 +101,11 @@ bosh-stemcell-aws-0.6.4.tgz:
   tags:
   - aws
   - stable
+bosh-stemcell-vsphere-0.6.7.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E1MWUxMjIwMDRlNGU4ZWM2ODQwNzcwNTA3NjRh%0AZDAyNWRjNCIsInNpZyI6IlgzVDhtZ1daMmVLSFFGUGJ4MGpLMHIrS0FGaz0i%0AfQ==%0A
+  url: https://blob.cfblob.com/rest/objects/4e4e78bca51e122004e4e8ec684077050764ad025dc4?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=X3T8mgWZ2eKHQFPbx0jK0r+KAFk=
+  sha: 85122eb1fb3cd7f9e4a379c05427966a9e73fdb4
+  size: 418594708
+  tags:
+  - vsphere
+  - test
