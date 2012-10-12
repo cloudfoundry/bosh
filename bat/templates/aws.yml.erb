@@ -4,7 +4,7 @@ director_uuid: <%= properties.uuid %>
 
 release:
   name: bat
-  version: latest
+  version: <%= properties.release || "latest" %>
 
 compilation:
   workers: 1

@@ -57,6 +57,7 @@ module BoshHelper
   end
 
   def previous_bat_release
+    raise "no previous release" unless bat_release_files.size > 1
     bat_release_files[-2]
   end
 
