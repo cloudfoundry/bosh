@@ -52,7 +52,7 @@ namespace "bat" do
 
   desc "Run stemcell tests"
   RSpec::Core::RakeTask.new(:stemcell => :env) do |t|
-    t.pattern = "spec/bat/deployment_spec.rb"
+    t.pattern = "spec/bat/stemcell_spec.rb"
     t.rspec_opts = SPEC_OPTS
   end
 
