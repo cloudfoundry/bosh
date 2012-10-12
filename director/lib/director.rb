@@ -249,9 +249,16 @@ module Bosh::Director
 
     get "/releases" do
       releases = Models::Release.order_by(:name.asc).map do |release|
+        versions_in_use = []
+        versions = release.versions_dataset.order_by(:version.asc).map do |rv|
+          versions_in_use << rv.version.to_s unless rv.deployments.empty?
+          rv.version.to_s
+        end
+
         {
           "name"     => release.name,
-          "versions" => release.versions_dataset.order_by(:version.asc).all.map { |rv| rv.version.to_s }
+          "versions" => versions,
+          "in_use"   => versions_in_use
         }
       end
 
