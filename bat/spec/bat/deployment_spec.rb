@@ -5,6 +5,7 @@ require "spec_helper"
 describe "deployment" do
   DEPLOYED_REGEXP = /Deployed \`\S+' to \`\S+'/
   DEPLOYMENT_REGEXP = /Deployment set to/
+  SAVE_FILE = "/var/vcap/store/batarang/save"
 
   before(:all) do
     bosh("upload release #{latest_bat_release}")
@@ -41,6 +42,21 @@ describe "deployment" do
     # TODO validate by checking batarang pid before and after
   end
 
+  it "should do two deployments from one release" do
+    bosh("deployment #{@deployment}")
+    bosh("deploy").should succeed_with DEPLOYED_REGEXP
+
+    spec = deployment_spec.dup
+    # or there will be an IP collision with the other deployment
+    use_static_ip(spec)
+    spec["properties"]["name"] = "bat2"
+    with_deployment(spec) do |deployment|
+      bosh("deployment #{deployment}")
+      bosh("deploy").should succeed_with DEPLOYED_REGEXP
+      bosh("delete deployment bat2")
+    end
+  end
+
   describe "network" do
     context "aws" do
       it "should deploy using a dynamic network"
@@ -56,37 +72,37 @@ describe "deployment" do
   describe "persistent disk" do
     it "should create a disk" do
       spec = deployment_spec
-      spec["properties"]["persistent_disk"] = 2048
+      use_static_ip(spec)
+      use_persistent_disk(spec, 2048)
       with_deployment(spec) do |manifest|
         bosh("deployment #{manifest}").should succeed_with DEPLOYMENT_REGEXP
         bosh("deploy").should succeed_with DEPLOYED_REGEXP
 
-        host = spec["properties"]["static_ips"]
-        persistent_disk(host).should_not be_nil
+        persistent_disk(static_ip(spec)).should_not be_nil
       end
     end
 
     it "should migrate disk contents" do
       spec = deployment_spec
-      host = spec["properties"]["static_ips"]
+      host = static_ip(spec)
+      use_static_ip(spec)
       size = nil
-      password = "c1oudc0w"
 
-      spec["properties"]["persistent_disk"] = 2048
+      use_persistent_disk(spec, 2048)
       with_deployment(spec) do |manifest|
         bosh("deployment #{manifest}").should succeed_with DEPLOYMENT_REGEXP
         bosh("deploy").should succeed_with DEPLOYED_REGEXP
-        ssh(host, "root", password, "echo 'foobar' > /var/vcap/store/save")
+        ssh(host, "vcap", password, "echo 'foobar' > #{SAVE_FILE}")
         size = persistent_disk(host)
         size.should_not be_nil
       end
 
-      spec["properties"]["persistent_disk"] = 4096
+      use_persistent_disk(spec, 4096)
       with_deployment(spec) do |manifest|
         bosh("deployment #{manifest}").should succeed_with DEPLOYMENT_REGEXP
         bosh("deploy").should succeed_with DEPLOYED_REGEXP
         persistent_disk(host).should_not == size
-        ssh(host, "root", password, "cat /var/vcap/store/save").should match /foobar/
+        ssh(host, "vcap", password, "cat #{SAVE_FILE}").should match /foobar/
       end
     end
   end

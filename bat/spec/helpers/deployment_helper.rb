@@ -31,4 +31,17 @@ module DeploymentHelper
     template = File.expand_path("../../../templates/#{cpi}.yml.erb", __FILE__)
     File.read(template)
   end
+
+  def use_static_ip(spec)
+    spec["properties"]["use_static_ip"] = true
+  end
+
+  def static_ip(spec)
+    spec["properties"]["static_ip"]
+  end
+
+  def use_persistent_disk(spec, size)
+    spec["properties"]["persistent_disk"] = size
+  end
+
 end
