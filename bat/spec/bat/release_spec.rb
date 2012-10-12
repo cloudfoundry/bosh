@@ -73,7 +73,7 @@ describe "release" do
       end
 
       it "should be possible to delete all releases" do
-        bosh("delete release bat").should succeed_with /Deleted release/
+        bosh("delete release bat").should succeed_with /Deleted `bat'/
         releases["bat"].should be_nil
       end
     end
