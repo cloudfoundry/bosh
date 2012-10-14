@@ -18,3 +18,11 @@ RSpec.configure do |c|
 
   c.color_enabled = true
 end
+
+def get_tmp_file_path(content)
+  tmp_file = Tempfile.new("")
+  File.open(tmp_file.path, "w") do |f|
+    f.write(content)
+  end
+  tmp_file.path
+end

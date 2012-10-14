@@ -69,13 +69,17 @@ describe Bosh::Cli::ReleaseBuilder do
     final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir,
                                                          "releases"))
 
-    final_index.add_version("deadbeef", { "version" => 2 }, "payload")
+    final_index.add_version("deadbeef",
+                            { "version" => 2 },
+                            get_tmp_file_path("payload"))
 
     builder = new_builder
     builder.version.should == "2.1-dev"
     builder.build
 
-    final_index.add_version("deadbeef", { "version" => 7 }, "payload")
+    final_index.add_version("deadbeef",
+                            { "version" => 7 },
+                            get_tmp_file_path("payload"))
     builder = new_builder
     builder.version.should == "7.1-dev"
   end

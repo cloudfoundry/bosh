@@ -54,7 +54,7 @@ module Bosh::Cli
       File.exists?(filename(version))
     end
 
-    def add_version(fingerprint, item, payload = nil)
+    def add_version(fingerprint, item, tmp_file_path = nil)
       version = item["version"]
 
       if version.blank?
@@ -64,10 +64,8 @@ module Bosh::Cli
 
       create_directories
 
-      if payload
-        File.open(filename(version), "w") do |f|
-          f.write(payload)
-        end
+      if tmp_file_path
+        FileUtils.cp(tmp_file_path, filename(version), :preserve => true)
       end
 
       @data["builds"].each_pair do |fp, build|
@@ -78,8 +76,9 @@ module Bosh::Cli
       end
 
       @data["builds"][fingerprint] = item
-      if payload
-        @data["builds"][fingerprint]["sha1"] = Digest::SHA1.hexdigest(payload)
+      if tmp_file_path
+        file_sha1 = Digest::SHA1.file(tmp_file_path).hexdigest
+        @data["builds"][fingerprint]["sha1"] = file_sha1
       end
 
       File.open(@index_file, "w") do |f|

@@ -321,10 +321,11 @@ describe Bosh::Cli::JobBuilder do
 
     final_versions.add_version(fingerprint,
                                { "version" => "4", "blobstore_id" => "12321" },
-                               "payload")
+                               get_tmp_file_path("payload"))
+
     dev_versions.add_version(fingerprint,
                              { "version" => "0.7-dev" },
-                             "dev_payload")
+                             get_tmp_file_path("dev_payload"))
 
     builder = new_builder("foo", [], ["bar", "baz"], [])
 
