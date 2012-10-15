@@ -151,5 +151,23 @@ describe Bosh::Cli::Release do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
       r.has_blobstore_secret?.should be_true
     end
+
+    it "should not throw an error when merging empty secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/local"))
+      opts = {
+          :blobstore_path => "/tmp/blobstore"
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("local", opts)
+      r.blobstore
+    end
+
+    it "throws an error when blobstore providers does not match" do
+      r = Bosh::Cli::Release.new(spec_asset("config/bad-providers"))
+      expect {
+        r.blobstore
+      }.to raise_error(Bosh::Cli::CliError, "blobstore private provider " +
+          "does not match final provider")
+
+    end
   end
 end
