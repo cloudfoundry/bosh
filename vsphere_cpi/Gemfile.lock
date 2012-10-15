@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_vsphere_cpi (0.4.11)
+    bosh_vsphere_cpi (0.5.0)
       bosh_common
       bosh_cpi (>= 0.4.4)
       membrane
