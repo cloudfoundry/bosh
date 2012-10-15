@@ -1,7 +1,18 @@
+require "rubygems"
+require "membrane"
 require "ruby_vim_sdk"
+
 require "cloud/vsphere/client"
+require "cloud/vsphere/config"
 require "cloud/vsphere/lease_updater"
 require "cloud/vsphere/resources"
+require "cloud/vsphere/resources/cluster"
+require "cloud/vsphere/resources/datacenter"
+require "cloud/vsphere/resources/datastore"
+require "cloud/vsphere/resources/folder"
+require "cloud/vsphere/resources/resource_pool"
+require "cloud/vsphere/resources/scorer"
+require "cloud/vsphere/resources/util"
 require "cloud/vsphere/models/disk"
 
 module VSphereCloud
@@ -14,37 +25,17 @@ module VSphereCloud
     attr_accessor :client
 
     def initialize(options)
-      @vcenters = options["vcenters"]
-      raise "Invalid number of VCenters" unless @vcenters.size == 1
-      @vcenter = @vcenters[0]
+      Config.configure(options)
 
-      @logger = Bosh::Clouds::Config.logger
+      @logger = Config.logger
+      @client = Config.client
+      @rest_client = Config.rest_client
+      @resources = Resources.new
 
-      @agent_properties = options["agent"]
-
-      @client = Client.new("https://#{@vcenter["host"]}/sdk/vimService", options)
-      @client.login(@vcenter["user"], @vcenter["password"], "en")
-
-      @rest_client = HTTPClient.new
-      @rest_client.send_timeout = 14400 # 4 hours
-      @rest_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-      # HACK: read the session from the SOAP client so we don't leak sessions when using the REST client
-      cookie_str = @client.stub.cookie
-      @rest_client.cookie_manager.parse(cookie_str, URI.parse("https://#{@vcenter["host"]}"))
-
-      mem_ratio = 1.0
-      if options["mem_overcommit_ratio"]
-        mem_ratio = options["mem_overcommit_ratio"].to_f
-      end
-
-      @resources = Resources.new(@client, @vcenter, mem_ratio)
-
-      # HACK: provide a way to copy the disks instead of moving them.
-      # Used for extra data protection until we have proper backups
-      @copy_disks = options["copy_disks"] || false
-
+      # Global lock
       @lock = Mutex.new
+
+      # Resource locks
       @locks = {}
       @locks_mutex = Mutex.new
 
@@ -76,12 +67,13 @@ module VSphereCloud
           @logger.info("Generated name: #{name}")
 
           # TODO: make stemcell friendly version of the calls below
-          cluster, datastore = @resources.get_resources
+          stemcell_size = File.size(image) / (1024 * 1024)
+          cluster, datastore = @resources.place(0, stemcell_size, [])
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
-          import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool, datastore.mob)
-          lease = obtain_nfc_lease(cluster.resource_pool, import_spec_result.import_spec,
-                                   cluster.datacenter.template_folder)
+          import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool.mob, datastore.mob)
+          lease = obtain_nfc_lease(cluster.resource_pool.mob, import_spec_result.import_spec,
+                                   cluster.datacenter.template_folder.mob)
           @logger.info("Waiting for NFC lease")
           state = wait_for_nfc_lease(lease)
           raise "Could not acquire HTTP NFC lease" unless state == Vim::HttpNfcLease::State::READY
@@ -115,7 +107,7 @@ module VSphereCloud
         Bosh::ThreadPool.new(:max_threads => 32, :logger => @logger).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-            templates = client.get_property(datacenter.template_folder, Vim::Folder, "childEntity", :ensure_all => true)
+            templates = client.get_property(datacenter.template_folder.mob, Vim::Folder, "childEntity", :ensure_all => true)
             template_properties = client.get_properties(templates, Vim::VirtualMachine, ["name"])
             template_properties.each_value do |properties|
               template_name = properties["name"].gsub("%2f", "/")
@@ -133,16 +125,25 @@ module VSphereCloud
       end
     end
 
-    def disk_spec(vm_disk, persistent_disks)
+    def disk_spec(persistent_disks)
       disks = []
-      disks << {"size" => vm_disk, "persistent" => false}
-
-      persistent_disks ||= {}
-      persistent_disks.each do |disk_id|
-        disk = Models::Disk[disk_id]
-        disks << {"size" => disk.size, "persistent" => true, "datacenter" => disk.datacenter, "datastore" => disk.datastore}
+      if persistent_disks
+        persistent_disks.each do |disk_id|
+          disk = Models::Disk[disk_id]
+          disks << {
+              :size => disk.size,
+              :dc_name => disk.datacenter,
+              :ds_name => disk.datastore
+          }
+        end
       end
       disks
+    end
+
+    def stemcell_vm(name)
+      dc = @resources.datacenters.values.first
+      client.find_by_inventory_path(
+          [dc.name, "vm", dc.template_folder.name, name])
     end
 
     def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, environment = nil)
@@ -156,11 +157,21 @@ module VSphereCloud
           raise "Number of vCPUs: #{cpu} is not a power of 2."
         end
 
-        disks = disk_spec(disk, disk_locality)
-        cluster, datastore = @resources.get_resources(memory, disks)
+        stemcell_vm = stemcell_vm(stemcell)
+        raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
+
+        stemcell_size = client.get_property(
+            stemcell_vm, Vim::VirtualMachine, "summary.storage.committed",
+            :ensure_all => true)
+        stemcell_size /= 1024 * 1024
+
+        disks = disk_spec(disk_locality)
+        # need to include swap and linked clone log
+        ephemeral = disk + memory + stemcell_size
+        cluster, datastore = @resources.place(memory, ephemeral, disks)
 
         name = "vm-#{generate_unique_name}"
-        @logger.info("Creating vm:: #{name} on #{cluster.mob} stored in #{datastore.mob}")
+        @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
         replicated_stemcell_vm = replicate_stemcell(cluster, datastore, stemcell)
         replicated_stemcell_properties = client.get_properties(replicated_stemcell_vm, Vim::VirtualMachine,
@@ -199,7 +210,7 @@ module VSphereCloud
 
         @logger.info("Cloning vm: #{replicated_stemcell_vm} to #{name}")
 
-        task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder, cluster.resource_pool,
+        task = clone_vm(replicated_stemcell_vm, name, cluster.datacenter.vm_folder.mob, cluster.resource_pool.mob,
                         :datastore => datastore.mob, :linked => true, :snapshot => snapshot.current_snapshot,
                         :config => config)
         vm = client.wait_for_task(task)
@@ -426,7 +437,8 @@ module VSphereCloud
 
     def find_persistent_datastore(datacenter_name, host_info, disk_size)
       # Find datastore
-      datastore = @resources.find_persistent_datastore(datacenter_name, host_info["cluster"], disk_size)
+      datastore = @resources.place_persistent_datastore(
+          datacenter_name, host_info["cluster"], disk_size)
 
       if datastore.nil?
         raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info["cluster"]}, #{disk_size}"
@@ -452,21 +464,18 @@ module VSphereCloud
 
         vm_properties = client.get_properties(vm, Vim::VirtualMachine, "config.hardware.device", :ensure_all => true)
         host_info = get_vm_host_info(vm)
-        persistent_datastore = nil
 
         create_disk = false
         if disk.path
           if disk.datacenter == datacenter_name &&
                   @resources.validate_persistent_datastore(datacenter_name, disk.datastore) &&
                   host_info["datastores"].include?(disk.datastore)
-            # Looks like we have a valid persistent data store
-
             @logger.info("Disk already in the right datastore #{datacenter_name} #{disk.datastore}")
-            persistent_datastore = @resources.get_persistent_datastore(datacenter_name, host_info["cluster"],
-                                                                       disk.datastore)
+            persistent_datastore = @resources.persistent_datastore(
+                datacenter_name, host_info["cluster"], disk.datastore)
+            @logger.debug("Datastore: #{persistent_datastore}")
           else
             @logger.info("Disk needs to move from #{datacenter_name} #{disk.datastore}")
-
             # Find the destination datastore
             persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
 
@@ -478,7 +487,7 @@ module VSphereCloud
             destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.id}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
 
-            if @copy_disks
+            if Config.copy_disks
               client.copy_disk(source_datacenter, source_path, datacenter, destination_path)
               @logger.info("Copied disk successfully")
             else
@@ -581,7 +590,7 @@ module VSphereCloud
         disk = Models::Disk.new
         disk.size = size
         disk.save
-        @logger.info("Created disk: #{disk.pretty_inspect}")
+        @logger.info("Created disk: #{disk.inspect}")
         disk.id.to_s
       end
     end
@@ -610,23 +619,27 @@ module VSphereCloud
     end
 
     def get_vm_by_cid(vm_cid)
-      # TODO: fix when we go to multiple DCs
-      datacenter = @resources.datacenters.values.first
-      vm = client.find_by_inventory_path([datacenter.name, "vm", datacenter.vm_folder_name, vm_cid])
-      raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found" if vm.nil?
-      vm
+      @resources.datacenters.each_value do |datacenter|
+        vm = client.find_by_inventory_path(
+            [datacenter.name, "vm", datacenter.vm_folder.name, vm_cid])
+        unless vm.nil?
+          return vm
+        end
+      end
+      raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found"
     end
 
     def replicate_stemcell(cluster, datastore, stemcell)
+      # TODO: support more than a single datacenter
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, "vm",
-                                                   cluster.datacenter.template_folder_name, stemcell])
+                                                   cluster.datacenter.template_folder.name, stemcell])
       raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
       stemcell_datastore = client.get_property(stemcell_vm, Vim::VirtualMachine, "datastore", :ensure_all => true)
 
       if stemcell_datastore != datastore.mob
         @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
         local_stemcell_name    = "#{stemcell} / #{datastore.mob.__mo_id__}"
-        local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder_name,
+        local_stemcell_path    = [cluster.datacenter.name, "vm", cluster.datacenter.template_folder.name,
                                   local_stemcell_name]
         replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
 
@@ -644,8 +657,8 @@ module VSphereCloud
             replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
             if replicated_stemcell_vm.nil?
               @logger.info("Replicating #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name}")
-              task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder,
-                              cluster.resource_pool, :datastore => datastore.mob)
+              task = clone_vm(stemcell_vm, local_stemcell_name, cluster.datacenter.template_folder.mob,
+                              cluster.resource_pool.mob, :datastore => datastore.mob)
               replicated_stemcell_vm = client.wait_for_task(task)
               @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to " +
                                "#{local_stemcell_name} (#{replicated_stemcell_vm})")
@@ -716,7 +729,7 @@ module VSphereCloud
       env["agent_id"] = agent_id
       env["networks"] = networking_env
       env["disks"] = disk_env
-      env.merge!(@agent_properties)
+      env.merge!(Config.agent)
       env
     end
 
@@ -742,7 +755,7 @@ module VSphereCloud
         end
       end
 
-      {:datacenter => datacenter_name, :datastore =>datastore_name, :vm =>vm_name}
+      {:datacenter => datacenter_name, :datastore => datastore_name, :vm => vm_name}
     end
 
     def get_primary_datastore(devices)
@@ -831,7 +844,7 @@ module VSphereCloud
 
     def fetch_file(datacenter_name, datastore_name, path)
       retry_block do
-        url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
+        url = "https://#{Config.vcenter.host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
         "&dsName=#{URI.escape(datastore_name)}"
 
         response = @rest_client.get(url)
@@ -848,7 +861,7 @@ module VSphereCloud
 
     def upload_file(datacenter_name, datastore_name, path, contents)
       retry_block do
-        url = "https://#{@vcenter["host"]}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
+        url = "https://#{Config.vcenter.host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}" +
               "&dsName=#{URI.escape(datastore_name)}"
         response = @rest_client.put(url, contents, {"Content-Type" => "application/octet-stream",
                                                     "Content-Length" => contents.length})
@@ -1057,34 +1070,5 @@ module VSphereCloud
           sleep(1.0)
         end
     end
-
-    def delete_all_vms
-      Bosh::ThreadPool.new(:max_threads => 32, :logger => @logger).wrap do |pool|
-        index = 0
-
-        @resources.datacenters.each_value do |datacenter|
-          vm_folder_path = [datacenter.name, "vm", datacenter.vm_folder_name]
-          vm_folder = client.find_by_inventory_path(vm_folder_path)
-          vms = client.get_managed_objects(Vim::VirtualMachine, :root => vm_folder)
-          next if vms.empty?
-
-          vm_properties = client.get_properties(vms, Vim::VirtualMachine, ["name"])
-
-          vm_properties.each do |_, properties|
-            pool.process do
-              @lock.synchronize {index += 1}
-              vm = properties["name"]
-              @logger.debug("Deleting #{index}/#{vms.size}: #{vm}")
-              begin
-                delete_vm(vm)
-              rescue Exception => e
-                @logger.info("#{e} - #{e.backtrace.join("\n")}")
-              end
-            end
-          end
-        end
-      end
-    end
-
   end
 end
