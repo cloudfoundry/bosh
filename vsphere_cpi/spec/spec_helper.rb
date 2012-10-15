@@ -27,5 +27,7 @@ config = VSphereSpecConfig.new
 config.db = db
 config.logger = Logger.new(STDOUT)
 config.logger.level = Logger::ERROR
+config.uuid = "123"
 
 Bosh::Clouds::Config.configure(config)
+VSphereCloud::Config.logger = config.logger
