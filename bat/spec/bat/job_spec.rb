@@ -26,18 +26,18 @@ describe "job" do
   end
 
   it "should restart a job" do
-    bosh("restart bat 0").should succeed_with /bat\(0\) has been restarted/
+    bosh("restart bat 0").should succeed_with /bat\/0 has been restarted/
     # TODO verify that the process gets a new pid
   end
 
   it "should recreate a job" do
-    bosh("recreate bat 0").should succeed_with /bat\(0\) has been recreated/
+    bosh("recreate bat 0").should succeed_with /bat\/0 has been recreated/
     # TODO verify that the VM gets a new cid
   end
 
   it "should stop and start a job" do
-    bosh("stop bat 0").should succeed_with /bat\(0\) has been stopped/
-    bosh("start bat 0").should succeed_with /bat\(0\) has been started/
+    bosh("stop bat 0").should succeed_with /bat\/0 has been stopped/
+    bosh("start bat 0").should succeed_with /bat\/0 has been started/
     # TODO verify that the process gets a new pid
   end
 

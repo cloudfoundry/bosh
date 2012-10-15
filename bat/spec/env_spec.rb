@@ -48,7 +48,7 @@ describe "initialization" do
 
   describe "director" do
     it "should be targetable" do
-      bosh("target #{bosh_director}").should succeed_with /#{bosh_director}/
+      bosh("target #{bosh_director}").should succeed_with /Target \w*\s*set/
     end
 
     it "should not have a bat deployment" do
