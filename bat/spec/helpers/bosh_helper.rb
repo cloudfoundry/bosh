@@ -90,6 +90,10 @@ module BoshHelper
     jbosh("/info")
   end
 
+  def cpi
+    info["cpi"]
+  end
+
   def aws?
     info["cpi"] == "aws"
   end

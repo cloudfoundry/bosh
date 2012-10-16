@@ -81,14 +81,23 @@ describe "deployment" do
   end
 
   describe "network" do
-    context "aws" do
-      it "should deploy using a dynamic network"
-      it "should deploy using a static network"
-    end
+    it "should deploy using dynamic network"
 
-    context "vsphere" do
-      it "should deploy using dynamic network"
-      it "should deploy using a static network"
+    it "should deploy using a static network" do
+      spec = deployment_spec
+      host = static_ip(spec)
+      use_static_ip(spec)
+
+      with_deployment(spec) do |deployment|
+        bosh("deployment #{deployment}")
+        bosh("deploy").should succeed_with DEPLOYED_REGEXP
+      end
+
+      if aws?
+        pending "doesn't work on AWS as the VIP IP isn't visible to the VM"
+      else
+        ssh(host, "vcap", password, "ifconfig eth0").should match /#{host}/
+      end
     end
   end
 

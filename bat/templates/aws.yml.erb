@@ -23,8 +23,10 @@ update:
 networks:
 - name: default
   type: dynamic
+  cloud_properties: {}
 - name: static
   type: vip
+  cloud_properties: {}
 
 resource_pools:
   - name: common
@@ -46,7 +48,9 @@ jobs:
     <% end %>
     networks:
       - name: default
+        default: [dns, gateway]
       <% if properties.use_static_ip %>
+      - name: static
         static_ips:
           - <%= properties.static_ip %>
       <% end %>
