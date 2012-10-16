@@ -53,7 +53,7 @@ module Bosh::Agent
       end
 
       case Bosh::Agent::Config.infrastructure_name
-      when "vsphere"
+      when "vsphere", "vcloud"
         # VSphere passes in scsi disk id
         sys_path = detect_block_device(disk_id)
         blockdev = File.basename(sys_path)
@@ -114,7 +114,7 @@ module Bosh::Agent
     VSPHERE_DATA_DISK = "/dev/sdb"
     def get_data_disk_device_name
       case Bosh::Agent::Config.infrastructure_name
-      when "vsphere"
+      when "vsphere", "vcloud"
         VSPHERE_DATA_DISK
       when "aws"
         settings = Bosh::Agent::Config.settings
