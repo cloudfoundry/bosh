@@ -34,7 +34,7 @@ describe "log" do
   end
 
   it "should get agent log" do
-    bosh("logs batarang 0 --agent").should succeed_with /Logs saved in/
+    bosh("logs batlight 0 --agent").should succeed_with /Logs saved in/
     files = tar_contents(tarfile)
     files.should include "./current"
   end
@@ -44,9 +44,9 @@ describe "log" do
   end
 
   it "should get job logs" do
-    bosh("logs batarang 0").should succeed_with /Logs saved in/
+    bosh("logs batlight 0").should succeed_with /Logs saved in/
     files = tar_contents(tarfile)
-    files.should include "./batarang/batarang.stdout.log"
-    files.should include "./batarang/batarang.stderr.log"
+    files.should include "./batlight/batlight.stdout.log"
+    files.should include "./batlight/batlight.stderr.log"
   end
 end

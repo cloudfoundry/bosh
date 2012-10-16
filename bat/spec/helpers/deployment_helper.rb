@@ -32,6 +32,10 @@ module DeploymentHelper
     File.read(template)
   end
 
+  def use_job(spec, job)
+    spec["properties"]["job"] = job
+  end
+
   def use_static_ip(spec)
     spec["properties"]["use_static_ip"] = true
   end

@@ -105,6 +105,7 @@ describe "deployment" do
     it "should create a disk" do
       spec = deployment_spec
       use_static_ip(spec)
+      use_job(spec, "batarang")
       use_persistent_disk(spec, 2048)
       with_deployment(spec) do |manifest|
         bosh("deployment #{manifest}").should succeed_with DEPLOYMENT_REGEXP
@@ -118,6 +119,7 @@ describe "deployment" do
       spec = deployment_spec
       host = static_ip(spec)
       use_static_ip(spec)
+      use_job(spec, "batarang")
       size = nil
 
       use_persistent_disk(spec, 2048)
