@@ -95,6 +95,7 @@ module Bosh::Cli
         say("Downloading `#{name} (#{version})'...".green)
         tmp_file = Tempfile.new(name);
         @blobstore.get(blobstore_id, tmp_file)
+        tmp_file.close
         if Digest::SHA1.file(tmp_file.path).hexdigest == item["sha1"]
           @tarball_path = @final_index.add_version(fingerprint,
                                                    item,
