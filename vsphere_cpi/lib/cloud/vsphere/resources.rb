@@ -1,570 +1,220 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 module VSphereCloud
 
+  # Resources model.
   class Resources
-    include VimSdk
-
     MEMORY_THRESHOLD = 128
-    DISK_THRESHOLD = 512
+    DISK_THRESHOLD = 1024
+    STALE_TIMEOUT = 60
+    BYTES_IN_MB = 1024 * 1024
 
-    class Datacenter
-      attr_accessor :mob
-      attr_accessor :name
-      attr_accessor :clusters
-      attr_accessor :vm_folder
-      attr_accessor :vm_folder_name
-      attr_accessor :template_folder
-      attr_accessor :template_folder_name
-      attr_accessor :disk_path
-      attr_accessor :datastore_pattern
-      attr_accessor :persistent_datastore_pattern
-      attr_accessor :allow_mixed_datastores
-      attr_accessor :spec
-
-      def inspect
-        "<Datacenter: #{@mob} / #{@name}>"
-      end
+    # Creates a new resources model.
+    def initialize
+      @client = Config.client
+      @logger = Config.logger
+      @last_update = 0
+      @lock = Monitor.new
     end
 
-    class Datastore
-      attr_accessor :mob
-      attr_accessor :name
-      attr_accessor :total_space
-      attr_accessor :free_space
-      attr_accessor :unaccounted_space
-
-      def real_free_space
-        @free_space - @unaccounted_space
-      end
-
-      def inspect
-        "<Datastore: #{@mob} / #{@name}>"
-      end
-    end
-
-    class Cluster
-      attr_accessor :mob
-      attr_accessor :name
-      attr_accessor :datacenter
-      attr_accessor :resource_pool
-      attr_accessor :datastores
-      attr_accessor :persistent_datastores
-      attr_accessor :idle_cpu
-      attr_accessor :total_memory
-      attr_accessor :free_memory
-      attr_accessor :unaccounted_memory
-      attr_accessor :mem_over_commit
-
-      def real_free_memory
-        @free_memory - @unaccounted_memory * @mem_over_commit
-      end
-
-      def inspect
-        "<Cluster: #{@mob} / #{@name}>"
-      end
-    end
-
-    def initialize(client, vcenter, mem_over_commit = 1.0)
-      @client           = client
-      @vcenter          = vcenter
-      @datacenters      = {}
-      @timestamp        = 0
-      @lock             = Monitor.new
-      @logger           = Bosh::Clouds::Config.logger
-      @mem_over_commit  = mem_over_commit
-    end
-
-    def resource_pools_in_use?(datacenter_spec)
-      cluster_spec = get_cluster_spec(datacenter_spec["clusters"])
-      cluster_spec.find {|_, properties| properties["resource_pool"] != nil }
-    end
-
-    def setup_folder(datacenter, base_folder_name)
-      base_folder = @client.find_by_inventory_path([datacenter.name, "vm", base_folder_name])
-      raise "Missing folder #{base_folder_name}" if base_folder.nil?
-      return base_folder_name, base_folder unless datacenter.spec["use_sub_folder"] || resource_pools_in_use?(datacenter.spec)
-
-      # Create unique folder
-      sub_folder_name = [base_folder_name, Bosh::Clouds::Config.uuid]
-      @logger.debug("Searching for folder #{sub_folder_name.join("/")}")
-      sub_folder = @client.find_by_inventory_path([datacenter.name, "vm", sub_folder_name])
-      if sub_folder.nil?
-        @logger.info("Creating folder #{sub_folder_name.join("/")}")
-        sub_folder = base_folder.create_folder(Bosh::Clouds::Config.uuid)
-      else
-        @logger.debug("Found folder #{sub_folder_name.join("/")}")
-      end
-      [sub_folder_name, sub_folder]
-    end
-
-    def fetch_datacenters
-      datacenters      = @client.get_managed_objects(Vim::Datacenter)
-      properties       = @client.get_properties(datacenters, Vim::Datacenter, ["name"])
-      datacenter_specs = {}
-
-      @vcenter["datacenters"].each { |spec| datacenter_specs[spec["name"]] = spec }
-      properties.delete_if { |_, datacenter_properties| !datacenter_specs.has_key?(datacenter_properties["name"]) }
-
-      datacenters = {}
-      properties.each_value do |datacenter_properties|
-        datacenter                      = Datacenter.new
-        datacenter.mob                  = datacenter_properties[:obj]
-        datacenter.name                 = datacenter_properties["name"]
-
-        @logger.debug("Found datacenter: #{datacenter.name} @ #{datacenter.mob}")
-
-        datacenter.spec                 = datacenter_specs[datacenter.name]
-
-        # Setup folders
-        datacenter.template_folder_name, datacenter.template_folder = setup_folder(datacenter,
-                                                                                   datacenter.spec["template_folder"])
-        datacenter.vm_folder_name, datacenter.vm_folder = setup_folder(datacenter, datacenter.spec["vm_folder"])
-
-        datacenter.disk_path            = datacenter.spec["disk_path"]
-        datacenter.datastore_pattern    = Regexp.new(datacenter.spec["datastore_pattern"])
-        raise "Missing persistent_datastore_pattern in director config" if datacenter.spec["persistent_datastore_pattern"].nil?
-        datacenter.persistent_datastore_pattern = Regexp.new(datacenter.spec["persistent_datastore_pattern"])
-
-        datacenter.allow_mixed_datastores = !!datacenter.spec["allow_mixed_datastores"]
-
-        datacenter.clusters             = fetch_clusters(datacenter)
-        datacenters[datacenter.name]    = datacenter
-      end
-      datacenters
-    end
-
-    # Allow clusters to be specified as
+    # Returns the list of datacenters available for placement.
     #
-    # clusters:                      clusters:
-    #   - CLUSTER1                     - CLUSTER1:
-    #   - CLUSTER2       OR                resource_pool: SOME_RP
-    #   - CLUSTER3                     - CLUSTER2
-    #                                  - CLUSTER3
-    def get_cluster_spec(clusters)
-      cluster_spec = {}
-      clusters.each do |cluster|
-        case cluster
-        when String
-          cluster_spec[cluster] = {}
-        when Hash
-          cluster_spec[cluster.keys.first] = {"resource_pool" => cluster[cluster.keys.first]["resource_pool"]}
-        else
-          raise "Bad cluster information in datacenter spec #{clusters.pretty_inspect}"
-        end
-      end
-      cluster_spec
-    end
-
-    def fetch_clusters(datacenter)
-      datacenter_spec = datacenter.spec
-      cluster_mobs    = @client.get_managed_objects(Vim::ClusterComputeResource, :root => datacenter.mob)
-      properties      = @client.get_properties(cluster_mobs, Vim::ClusterComputeResource,
-                                               ["name", "datastore", "resourcePool", "host"], :ensure_all => true)
-
-      cluster_spec = get_cluster_spec(datacenter_spec["clusters"])
-      cluster_names = Set.new(cluster_spec.keys)
-      properties.delete_if { |_, cluster_properties| !cluster_names.include?(cluster_properties["name"]) }
-
-      clusters = []
-      properties.each_value do |cluster_properties|
-        requested_resource_pool = cluster_spec[cluster_properties["name"]]["resource_pool"]
-        cluster_resource_pool = fetch_resource_pool(requested_resource_pool, cluster_properties)
-        next if cluster_resource_pool.nil?
-
-        cluster                    = Cluster.new
-        cluster.mem_over_commit    = @mem_over_commit
-        cluster.mob                = cluster_properties[:obj]
-        cluster.name               = cluster_properties["name"]
-
-        @logger.debug("Found cluster: #{cluster.name} @ #{cluster.mob}")
-
-        cluster.resource_pool      = cluster_resource_pool
-        cluster.datacenter         = datacenter
-        cluster.datastores         = fetch_datastores(datacenter, cluster_properties["datastore"],
-                                                      datacenter.datastore_pattern)
-        cluster.persistent_datastores = fetch_datastores(datacenter, cluster_properties["datastore"],
-                                                         datacenter.persistent_datastore_pattern)
-
-        # make sure datastores and persistent_datastores are mutually exclusive
-        datastore_names = cluster.datastores.map { |ds|
-          ds.name
-        }
-        persistent_datastore_names = cluster.persistent_datastores.map { |ds|
-          ds.name
-        }
-        if (datastore_names & persistent_datastore_names).length != 0 && !datacenter.allow_mixed_datastores
-          raise("datastore patterns are not mutually exclusive non-persistent are " +
-                "#{datastore_names.pretty_inspect}\n persistent are #{persistent_datastore_names.pretty_inspect}, " +
-                "please use allow_mixed_datastores director configuration parameter to allow this")
-        end
-        @logger.debug("non-persistent datastores are " + "#{datastore_names.pretty_inspect}\n " +
-                      "persistent datastores are #{persistent_datastore_names.pretty_inspect}")
-
-        if requested_resource_pool.nil?
-          # Ideally we would just get the utilization for the root resource pool, but
-          # VC does not really have "real time" updates for utilization so for
-          # now we work around that by querying the cluster hosts directly.
-          fetch_cluster_utilization(cluster, cluster_properties["host"])
-        else
-          fetch_resource_pool_utilization(requested_resource_pool, cluster)
-        end
-
-        clusters << cluster
-      end
-      clusters
-    end
-
-    def fetch_resource_pool(requested_resource_pool, cluster_properties)
-      root_resource_pool = cluster_properties["resourcePool"]
-
-      return root_resource_pool if requested_resource_pool.nil?
-
-      return traverse_resource_pool(requested_resource_pool, root_resource_pool)
-    end
-
-    def traverse_resource_pool(requested_resource_pool, resource_pool)
-      # Get list of resource pools under this resource pool
-      properties = @client.get_properties(resource_pool, Vim::ResourcePool, ["resourcePool"])
-
-      if properties && properties["resourcePool"] && properties["resourcePool"].size != 0
-
-        # Get the name of each resource pool under this resource pool
-        child_properties = @client.get_properties(properties["resourcePool"], Vim::ResourcePool, ["name"])
-        if child_properties
-          child_properties.each_value do | resource_pool |
-            if resource_pool["name"] == requested_resource_pool
-              @logger.info("Found requested resource pool #{requested_resource_pool}")
-              return resource_pool[:obj]
-            end
-          end
-
-          child_properties.each_value do | resource_pool |
-            pool = traverse_resource_pool(requested_resource_pool, resource_pool[:obj])
-            return pool if pool != nil
-          end
-        end
-
-        return nil
-      end
-
-      return nil
-    end
-
-    def fetch_datastores(datacenter, datastore_mobs, match_pattern)
-      properties = @client.get_properties(datastore_mobs, Vim::Datastore,
-                                          ["summary.freeSpace", "summary.capacity", "name"])
-      properties.delete_if { |_, datastore_properties| datastore_properties["name"] !~ match_pattern }
-
-      datastores = []
-      properties.each_value do |datastore_properties|
-        datastore                   = Datastore.new
-        datastore.mob               = datastore_properties[:obj]
-        datastore.name              = datastore_properties["name"]
-
-        @logger.debug("Found datastore: #{datastore.name} @ #{datastore.mob}")
-
-        datastore.free_space        = datastore_properties["summary.freeSpace"].to_i / (1024 * 1024)
-        datastore.total_space       = datastore_properties["summary.capacity"].to_i / (1024 * 1024)
-        datastore.unaccounted_space = 0
-        datastores << datastore
-      end
-      datastores
-    end
-
-    def fetch_cluster_utilization(cluster, host_mobs)
-      properties = @client.get_properties(host_mobs, Vim::HostSystem,
-                                          ["hardware.memorySize", "runtime.inMaintenanceMode"], :ensure_all => true)
-      properties.delete_if { |_, host_properties| host_properties["runtime.inMaintenanceMode"] == "true" }
-
-      samples       = 0
-      total_memory  = 0
-      free_memory   = 0
-      cpu_usage     = 0
-
-      perf_counters = @client.get_perf_counters(host_mobs, ["cpu.usage.average", "mem.usage.average"], :max_sample => 5)
-      perf_counters.each do |host_mob, perf_counter|
-        host_properties          = properties[host_mob]
-        next if host_properties.nil?
-        host_total_memory        = host_properties["hardware.memorySize"].to_i
-        host_percent_memory_used = average_csv(perf_counter["mem.usage.average"]) / 10000
-        host_free_memory         = (1.0 - host_percent_memory_used) * host_total_memory
-
-        samples                  += 1
-        total_memory             += host_total_memory
-        free_memory              += host_free_memory.to_i
-        cpu_usage                += average_csv(perf_counter["cpu.usage.average"]) / 100
-      end
-
-      cluster.idle_cpu     = (100 - cpu_usage / samples) / 100
-      cluster.total_memory = total_memory/(1024 * 1024)
-      cluster.free_memory  = free_memory/(1024 * 1024)
-      cluster.unaccounted_memory = 0
-    end
-
-    def fetch_resource_pool_utilization(resource_pool, cluster)
-      properties = @client.get_properties(cluster.resource_pool, Vim::ResourcePool, ["summary"])
-      raise "Failed to get utilization for resource pool #{resource_pool}" if properties.nil?
-
-      if properties["summary"].runtime.overall_status == "green"
-        runtime_info = properties["summary"].runtime
-        cluster.idle_cpu = ((runtime_info.cpu.max_usage - runtime_info.cpu.overall_usage) * 1.0)/runtime_info.cpu.max_usage
-        cluster.total_memory = (runtime_info.memory.reservation_used + runtime_info.memory.unreserved_for_vm)/(1024 * 1024)
-        cluster.free_memory = [runtime_info.memory.unreserved_for_vm, runtime_info.memory.max_usage - runtime_info.memory.overall_usage].min/(1024 * 1024)
-        cluster.unaccounted_memory = 0
-      else
-        @logger.warn("Ignoring cluster: #{cluster.name} resource_pool: #{resource_pool} as its state" +
-                     "is unreliable #{properties["summary"].runtime.overall_status}")
-        # resource pool is in an unreliable state
-        cluster.idle_cpu = 0
-        cluster.total_memory = 0
-        cluster.free_memory = 0
-        cluster.unaccounted_memory = 0
-      end
-    end
-
-    def average_csv(csv)
-      values = csv.split(",")
-      result = 0
-      values.each { |v| result += v.to_f }
-      result / values.size
-    end
-
+    # Will lazily load them and reload the data when it's stale.
+    #
+    # @return [List<Resources::Datacenter>] datacenters.
     def datacenters
       @lock.synchronize do
-        if Time.now.to_i - @timestamp > 60
-          @datacenters = fetch_datacenters
-          @timestamp = Time.now.to_i
-        end
+        update if Time.now.to_i - @last_update > STALE_TIMEOUT
       end
       @datacenters
     end
 
-    def filter_used_resources(memory, vm_disk_size, persistent_disks_size, cluster_affinity,
-                              report = nil)
-      resources = []
-      datacenters.each_value do |datacenter|
-        datacenter.clusters.each do |cluster|
-
-          unless cluster_affinity.nil? || cluster.mob == cluster_affinity.mob
-            report << "Skipping cluster #{cluster.name} because of affinity mismatch" if report
-            next
-          end
-
-          unless cluster.real_free_memory - memory > MEMORY_THRESHOLD
-            report << "Skipping cluster #{cluster.name} because of memory constraint. " +
-                      "Free #{cluster.real_free_memory}, requested #{memory}, " +
-                      "threshold #{MEMORY_THRESHOLD}" if report
-            next
-          end
-
-          if pick_datastore(cluster.persistent_datastores, persistent_disks_size, report).nil?
-            report << "Skipping cluster #{cluster.name} because of above persistent " +
-                      "disk constraint failure." if report
-            next
-          end
-
-          if (datastore = pick_datastore(cluster.datastores, vm_disk_size, report)).nil?
-            report << "Skipping cluster #{cluster.name} because of above " +
-                      "disk constraint failure." if report
-            next
-          end
-
-          resources << [cluster, datastore]
-        end
-      end
-      resources
-    end
-
-    def get_cluster(dc_name, cluster_name)
+    # Returns the persistent datastore for the requested context.
+    #
+    # @param [String] dc_name datacenter name.
+    # @param [String] cluster_name cluster name.
+    # @param [String] datastore_name datastore name.
+    # @return [Resources::Datastore] persistent datastore.
+    def persistent_datastore(dc_name, cluster_name, datastore_name)
       datacenter = datacenters[dc_name]
       return nil if datacenter.nil?
-
-      cluster = nil
-      datacenter.clusters.each do |c|
-        if c.name == cluster_name
-          cluster = c
-          break
-        end
-      end
-      cluster
+      cluster = datacenter.clusters[cluster_name]
+      return nil if cluster.nil?
+      cluster.persistent(datastore_name)
     end
 
+    # Validate that the persistent datastore is still valid so we don't have to
+    # move the disk.
+    #
+    # @param [String] dc_name datacenter name.
+    # @param [String] datastore_name datastore name.
+    # @return [true, false] true iff the datastore still exists and is in the
+    #   persistent pool.
     def validate_persistent_datastore(dc_name, datastore_name)
       datacenter = datacenters[dc_name]
-      raise "Invalid datacenter #{dc_name} #{datacenters.pretty_inspect}" if datacenter.nil?
-
-      return datastore_name =~ datacenter.persistent_datastore_pattern
+      # TODO: should actually check vCenter since we can move disks across
+      # datacenters.
+      if datacenter.nil?
+        raise "Invalid datacenter #{dc_name} #{datacenters.inspect}"
+      end
+      datacenter.clusters.each_value do |cluster|
+        return true unless cluster.persistent(datastore_name).nil?
+      end
+      false
     end
 
-    def get_persistent_datastore(dc_name, cluster_name, persistent_datastore_name)
-      cluster = get_cluster(dc_name, cluster_name)
-      return nil if cluster.nil?
-
-      datastore = nil
-      cluster.persistent_datastores.each { |ds|
-        if ds.name == persistent_datastore_name
-          datastore = ds
-          break
-        end
-      }
-      datastore
+    # Place the persistent datastore in the given datacenter and cluster with
+    # the requested disk space.
+    #
+    # @param [String] dc_name datacenter name.
+    # @param [String] cluster_name cluster name.
+    # @param [Integer] disk_space disk space.
+    # @return [Datastore?] datastore if it was placed succesfuly.
+    def place_persistent_datastore(dc_name, cluster_name, disk_space)
+      @lock.synchronize do
+        datacenter = datacenters[dc_name]
+        return nil if datacenter.nil?
+        cluster = datacenter.clusters[cluster_name]
+        return nil if cluster.nil?
+        datastore = cluster.pick_persistent(disk_space)
+        return nil if datastore.nil?
+        datastore.allocate(disk_space)
+        return datastore
+      end
     end
 
-    def pick_datastore(datastores, disk_space, report = nil)
-      selected_datastores = {}
-      datastores.each { |ds|
-        if ds.real_free_space - disk_space > DISK_THRESHOLD
-          selected_datastores[ds] = score_datastore(ds, disk_space)
-        else
-          report << "Skipping datastore #{ds.name}. Free space #{ds.real_free_space}, " +
-                    "requested #{disk_space}, threshold #{DISK_THRESHOLD}" if report
-        end
-      }
-      return nil if selected_datastores.empty?
-      pick_random_with_score(selected_datastores)
-    end
+    # Find a place for the requested resources.
+    #
+    # @param [Integer] memory requested memory.
+    # @param [Integer] ephemeral requested ephemeral storage.
+    # @param [Array<Hash>] persistent requested persistent storage.
+    # @return [Array] an array/tuple of Cluster and Datastore if the resources
+    #   were placed successfully, otherwise exception.
+    def place(memory, ephemeral, persistent)
+      populate_resources(persistent)
 
-    def get_datastore_cluster(datacenter, datastore)
-      datacenter = datacenters[datacenter]
-      if !datacenter.nil?
-        datacenter.clusters.each do |c|
-          c.persistent_datastores.select do |ds|
-            yield c if ds.name == datastore
+      # calculate locality to prioritizing clusters that contain the most
+      # persistent data.
+      locality = cluster_locality(persistent)
+      locality.sort! { |a, b| b[1] <=> a[1] }
+
+      @lock.synchronize do
+        locality.each do |cluster, _|
+          persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
+
+          scorer = Scorer.new(cluster, memory, ephemeral, persistent_sizes)
+          if scorer.score > 0
+            datastore = cluster.pick_ephemeral(ephemeral)
+            if datastore
+              cluster.allocate(memory)
+              datastore.allocate(ephemeral)
+              return [cluster, datastore]
+            end
           end
         end
-      end
-    end
 
-    def find_persistent_datastore(dc_name, cluster_name, disk_space)
-      cluster = get_cluster(dc_name, cluster_name)
-      return nil if cluster.nil?
-
-      chosen_datastore = nil
-      @lock.synchronize do
-        chosen_datastore = pick_datastore(cluster.persistent_datastores, disk_space)
-        break if chosen_datastore.nil?
-
-        chosen_datastore.unaccounted_space += disk_space
-      end
-      chosen_datastore
-    end
-
-    def find_resources(memory, disk_size, persistent_disks_size, cluster_affinity, report = nil)
-      cluster = nil
-      datastore = nil
-
-      # account for swap
-      disk_size += memory
-
-      @lock.synchronize do
-        resources = filter_used_resources(memory, disk_size, persistent_disks_size,
-                                          cluster_affinity, report)
-        break if resources.empty?
-
-        scored_resources = {}
-        resources.each do |resource|
-          cluster, datastore = resource
-          scored_resources[resource] = score_resource(cluster, datastore, memory, disk_size)
+        unless locality.empty?
+          @logger.debug("Ignoring datastore locality as we could not find " +
+                            "any resources near disks: #{persistent.inspect}")
         end
 
-        scored_resources = scored_resources.sort_by { |resource| 1 - resource.last }
-        scored_resources = scored_resources[0..2]
-
-        scored_resources.each do |resource, score|
-          cluster, datastore = resource
-          @logger.debug("Cluster: #{cluster.inspect} Datastore: #{datastore.inspect} score: #{score}")
+        weighted_clusters = []
+        datacenters.each_value do |datacenter|
+          datacenter.clusters.each_value do |cluster|
+            persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
+            scorer = Scorer.new(cluster, memory, ephemeral, persistent_sizes)
+            score = scorer.score
+            @logger.debug("Score: #{cluster.name}: #{score}")
+            weighted_clusters << [cluster, score] if score > 0
+          end
         end
 
-        cluster, datastore = pick_random_with_score(scored_resources)
+        raise "No available resources" if weighted_clusters.empty?
 
-        @logger.debug("Picked: #{cluster.inspect} / #{datastore.inspect}")
+        cluster = Util.weighted_random(weighted_clusters)
+        datastore = cluster.pick_ephemeral(ephemeral)
 
-        cluster.unaccounted_memory += memory
-        datastore.unaccounted_space += disk_size
+        if datastore
+          cluster.allocate(memory)
+          datastore.allocate(ephemeral)
+          return [cluster, datastore]
+        end
+
+        raise "No available resources"
       end
-
-      return [] if cluster.nil?
-      [cluster, datastore]
     end
 
-    def get_resources(memory_size=1, disks=[])
-      # Sort out the persistent and non persistent disks
-      non_persistent_disks_size = 0
-      persistent_disks = {}
-      persistent_disks_size = 0
+    private
+
+    # Updates the resource models from vSphere.
+    # @return [void]
+    def update
+      @datacenters = {}
+      Config.vcenter.datacenters.each_value do |config|
+        @datacenters[config.name] = Datacenter.new(config)
+      end
+      @last_update = Time.now.to_i
+    end
+
+    # Calculates the cluster locality for the provided persistent disks.
+    #
+    # @param [Array<Hash>] disks persistent disk specs.
+    # @return [Hash<String, Integer>] hash of cluster names to amount of
+    #   persistent disk space is currently allocated on them.
+    def cluster_locality(disks)
+      locality = {}
       disks.each do |disk|
-        if disk["persistent"]
-          if !disk["datastore"].nil?
-            # sanity check the persistent disks
-            raise "Invalid persistent disk #{disk.pretty_inspect}" unless validate_persistent_datastore(disk["datacenter"], disk["datastore"])
+        cluster = disk[:cluster]
+        unless cluster.nil?
+          locality[cluster] ||= 0
+          locality[cluster] += disk[:size]
+        end
+      end
+      locality.to_a
+    end
 
-            # sort the persistent disks into clusters they belong to
-            get_datastore_cluster(disk["datacenter"], disk["datastore"]) { |cluster|
-              persistent_disks[cluster] ||= 0
-              persistent_disks[cluster] += disk["size"]
-            }
+    # Fill in the resource models on the provided persistent disk specs.
+    # @param [Array<Hash>] disks persistent disk specs.
+    # @return [void]
+    def populate_resources(disks)
+      disks.each do |disk|
+        unless disk[:ds_name].nil?
+          resources = persistent_datastore_resources(disk[:dc_name],
+                                                     disk[:ds_name])
+          if resources
+            disk[:datacenter], disk[:cluster], disk[:datastore] = resources
           end
-          persistent_disks_size += disk["size"]
-        else
-          non_persistent_disks_size += disk["size"]
         end
       end
-      non_persistent_disks_size = 1 if non_persistent_disks_size == 0
-      persistent_disks_size = 1 if persistent_disks_size == 0
+    end
 
-      if !persistent_disks.empty?
-        # Sort clusters by largest persistent disk footprint
-        persistent_disks_by_size = persistent_disks.sort { |a, b| b[1] <=> a [1] }
-
-        # Search for resources near the desired cluster
-        persistent_disks_by_size.each do |cluster, size|
-          resources = find_resources(memory_size, non_persistent_disks_size, persistent_disks_size - size, cluster)
-          return resources unless resources.empty?
-        end
-        @logger.info("Ignoring datastore locality as we could not find any resources near persistent disks" +
-                     "#{persistent_disks.pretty_inspect}")
+    # Find the resource models for a given datacenter and datastore name.
+    #
+    # Has to traverse the resource hierarchy to find the cluster, then returns
+    # all of the resources.
+    #
+    # @param [String] dc_name datacenter name.
+    # @param [String] ds_name datastore name.
+    # @return [Array] array/tuple of Datacenter, Cluster, and Datastore.
+    def persistent_datastore_resources(dc_name, ds_name)
+      datacenter = datacenters[dc_name]
+      return nil if datacenter.nil?
+      datacenter.clusters.each_value do |cluster|
+        datastore = cluster.persistent(ds_name)
+        return [datacenter, cluster, datastore] unless datastore.nil?
       end
-
-      report = []
-      resources = find_resources(memory_size, non_persistent_disks_size,
-                                 persistent_disks_size, nil, report)
-      raise "No available resources as #{report.join("\n")}" if resources.empty?
-      resources
+      nil
     end
 
-    def score_datastore(datastore, disk)
-      percent_of_free_disk = 1 - (disk.to_f / datastore.real_free_space)
-      percent_of_total_disk = 1 - (disk.to_f / datastore.total_space)
-      percent_of_free_disk * 0.67 + percent_of_total_disk * 0.33
+    # Filters out all of the persistent disk specs that were already allocated
+    # in the cluster.
+    #
+    # @param [Resources::Cluster] cluster specified cluster.
+    # @param [Array<Hash>] disks disk specs.
+    # @return [Array<Hash>] filtered out disk specs.
+    def persistent_sizes_for_cluster(cluster, disks)
+      disks.select { |disk| disk[:cluster] != cluster }.
+          collect { |disk| disk[:size] }
     end
-
-    def score_resource(cluster, datastore, memory, disk)
-      percent_of_free_mem = 1 - (memory.to_f / cluster.real_free_memory)
-      percent_of_total_mem = 1 - (memory.to_f / cluster.total_memory)
-      percent_free_mem_left = (cluster.real_free_memory.to_f - memory) / cluster.total_memory
-      memory_score = percent_of_free_mem * 0.5 + percent_of_total_mem * 0.25 + percent_free_mem_left * 0.25
-
-      cpu_score = cluster.idle_cpu
-      disk_score = score_datastore(datastore, disk)
-      memory_score * 0.5 + cpu_score * 0.25 + disk_score * 0.25
-    end
-
-    def pick_random_with_score(elements)
-      score_sum = 0
-      elements.each { |element| score_sum += element[1] }
-
-      random_score = rand * score_sum
-      base_score = 0
-
-      elements.each do |element|
-        score = element[1]
-        return element[0] if base_score + score > random_score
-        base_score += score
-      end
-
-      # fall through
-      elements.last[0]
-    end
-
   end
-
 end
