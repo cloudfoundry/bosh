@@ -9,7 +9,8 @@ module VSphereCloud
     @schema = Membrane::SchemaParser.parse do
         {
             "agent" => dict(String, Object), # passthrough to the agent
-            "soap_log" => String,
+            optional("cpi_log") => String,
+            optional("soap_log") => String,
             optional("mem_overcommit_ratio") => Numeric,
             optional("copy_disks") => bool,
             "vcenters" => [{
@@ -226,7 +227,7 @@ module VSphereCloud
         @vcenter = VCenterConfig.new(config["vcenters"].first)
 
         @client = Client.new("https://#{@vcenter.host}/sdk/vimService", {
-            "soap_log" => config["soap_log"]
+            "soap_log" => config["soap_log"] || config["cpi_log"]
         })
         @client.login(@vcenter.user, @vcenter.password, "en")
 

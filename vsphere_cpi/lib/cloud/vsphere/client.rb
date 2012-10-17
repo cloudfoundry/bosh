@@ -13,7 +13,7 @@ module VSphereCloud
 
     def initialize(host, options = {})
       http_client = HTTPClient.new
-      log_path = options["cpi_log"] || options["soap_log"]
+      log_path = options["soap_log"]
       if log_path
         log_file = File.open(log_path, "w")
         log_file.sync = true
