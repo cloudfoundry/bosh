@@ -94,7 +94,6 @@ module Bosh
       end
 
       def list_recent_tasks(count = 30, verbose = 1)
-        count = [count.to_i, 100].min
         get_json("/tasks?limit=#{count}&verbose=#{verbose}")
       end
 
