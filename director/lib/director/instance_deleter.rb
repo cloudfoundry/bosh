@@ -37,7 +37,7 @@ module Bosh::Director
         drain(vm.agent_id)
         @cloud.delete_vm(vm.cid)
         delete_persistent_disks(instance.persistent_disks)
-        delete_dns_records(instance.job, instance.index)
+        delete_dns(instance.job, instance.index)
 
         vm.db.transaction do
           instance.destroy
@@ -94,18 +94,11 @@ module Bosh::Director
     # @param [String] job job name
     # @param [Numeric] index job index
     # @return [void]
-    def delete_dns_records(job, index)
+    def delete_dns(job, index)
       if Config.dns_enabled?
         record_pattern = [index, canonical(job), "%",
                           @deployment_plan.canonical_name, "bosh"].join(".")
-        records = Models::Dns::Record.
-          filter(:domain_id => @deployment_plan.dns_domain.id).
-          filter(:name.like(record_pattern))
-
-        records.each do |record|
-          @logger.info("Deleting DNS record: #{record.name}")
-          record.destroy
-        end
+        delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
       end
     end
 

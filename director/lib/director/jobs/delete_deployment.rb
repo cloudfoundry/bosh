@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class DeleteDeployment < BaseJob
+      include DnsHelper
 
       @queue = :normal
 
@@ -49,6 +50,10 @@ module Bosh::Director
             event_log.track(property.name) do
               property.destroy
             end
+          end
+
+          track_and_log("Delete DNS records") do
+            delete_dns(@deployment_name)
           end
 
           track_and_log("Destroy deployment") do
@@ -149,6 +154,13 @@ module Bosh::Director
         end
 
         vm.destroy
+      end
+
+      def delete_dns(name)
+        if Config.dns_enabled?
+          record_pattern = ["%", canonical(name), "bosh"].join(".")
+          delete_dns_records(record_pattern)
+        end
       end
 
       def ignoring_errors_when_forced

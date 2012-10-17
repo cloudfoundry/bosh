@@ -43,7 +43,10 @@ describe Bosh::Director::InstanceDeleter do
 
       @deleter.should_receive(:drain).with(vm.agent_id)
       @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
-      @deleter.should_receive(:delete_dns_records).with("test", 5)
+      @deleter.should_receive(:delete_dns_records).with("5.test.%.foo.bosh", 0)
+      @deployment_plan.should_receive(:canonical_name).and_return("foo")
+      domain = stub('domain', :id => 0)
+      @deployment_plan.should_receive(:dns_domain).and_return(domain)
       @cloud.should_receive(:delete_vm).with(vm.cid)
 
       @deleter.delete_instance(instance)
@@ -123,46 +126,15 @@ describe Bosh::Director::InstanceDeleter do
 
   end
 
-  describe :delete_dns_records do
-
-    it "should only delete records that match the deployment, job, and index" do
+  describe :delete_dns do
+    it "should generate a correct SQL query string" do
       domain = Models::Dns::Domain.make
       @deployment_plan.stub!(:canonical_name).and_return("dep")
       @deployment_plan.stub!(:dns_domain).and_return(domain)
-
-      Models::Dns::Record.make(:domain => domain, :name => "0.job-a.network-a.dep.bosh")
-      Models::Dns::Record.make(:domain => domain, :name => "1.job-a.network-a.dep.bosh")
-      Models::Dns::Record.make(:domain => domain, :name => "0.job-b.network-b.dep.bosh")
-      Models::Dns::Record.make(:domain => domain, :name => "0.job-a.network-a.dep-b.bosh")
-
-      @deleter.delete_dns_records("job-a", 0)
-
-      remaining_names = Set.new
-      Models::Dns::Record.each { |record| remaining_names << record.name }
-      remaining_names.should == Set.new(["1.job-a.network-a.dep.bosh",
-                                         "0.job-b.network-b.dep.bosh",
-                                         "0.job-a.network-a.dep-b.bosh"])
+      pattern = "0.foo.%.dep.bosh"
+      @deleter.should_receive(:delete_dns_records).with(pattern, domain.id)
+      @deleter.delete_dns("foo", 0)
     end
-
-    it "should delete records that match the canonical names" do
-      domain = Models::Dns::Domain.make
-      @deployment_plan.stub!(:canonical_name).and_return("dep_a")
-      @deployment_plan.stub!(:dns_domain).and_return(domain)
-
-      Models::Dns::Record.make(:domain => domain, :name => "0.job-a.network-a.dep-a.bosh")
-      Models::Dns::Record.make(:domain => domain, :name => "1.job-a.network-a.dep-a.bosh")
-      Models::Dns::Record.make(:domain => domain, :name => "0.job-b.network-b.dep-a.bosh")
-      Models::Dns::Record.make(:domain => domain, :name => "0.job-a.network-a.dep-b.bosh")
-
-      @deleter.delete_dns_records("job_a", 0)
-
-      remaining_names = Set.new
-      Models::Dns::Record.each { |record| remaining_names << record.name }
-      remaining_names.should == Set.new(["1.job-a.network-a.dep-a.bosh",
-                                         "0.job-b.network-b.dep-a.bosh",
-                                         "0.job-a.network-a.dep-b.bosh"])
-    end
-
   end
 
 end

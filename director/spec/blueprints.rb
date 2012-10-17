@@ -16,8 +16,15 @@ Sham.define do
   description   { |index| "description #{index}" }
   type          { |index| "type #{index}" }
   sha1          { |index| "sha1-#{index}" }
-  ip            { |index| "#{index % 255}.#{index % 255}.#{index % 255}.#{index % 255}"}
   build         { |index| index }
+  ip            { |index|
+                  octet = index % 255
+                  "#{octet}.#{octet}.#{octet}.#{octet}"
+                }
+  ptr           { |index|
+                  octet = index % 255
+                  "#{octet}.#{octet}.#{octet}.in-addr.arpa"
+                }
 end
 
 module Bosh::Director::Models
@@ -124,6 +131,13 @@ module Bosh::Director::Models::Dns
     name     { Sham.name }
     type     { "A" }
     content  { Sham.ip }
+  end
+
+  Record.blueprint(:PTR) do
+    domain   { Domain.make }
+    name     { Sham.ptr }
+    type     { "PTR" }
+    content  { Sham.name }
   end
 
 end
