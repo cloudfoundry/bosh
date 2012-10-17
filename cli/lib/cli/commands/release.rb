@@ -162,7 +162,7 @@ module Bosh::Cli::Command
 
       nl
       say(releases_table)
-      say("(*) Currently deployed")
+      say("(*) Currently deployed") if releases_table.to_s =~ /\*/
       nl
       say("Releases total: %d" % releases.size)
     end
