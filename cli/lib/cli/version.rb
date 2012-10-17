@@ -2,6 +2,6 @@
 
 module Bosh
   module Cli
-    VERSION = "1.0.rc1"
+    VERSION = "1.0"
   end
 end
