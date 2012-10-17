@@ -112,7 +112,7 @@ describe Bosh::Cli::Director do
       @director.list_recent_tasks
 
       @director.should_receive(:get).
-        with("/tasks?limit=100&verbose=1", "application/json").
+        with("/tasks?limit=100000&verbose=1", "application/json").
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(100000)
 
