@@ -18,7 +18,7 @@ module Bosh::Cli::Command
     usage "micro deployment"
     desc  "Choose micro deployment to work with, or display current deployment"
     def micro_deployment(name=nil)
-      if manifest
+      if name
         set_current(name)
       else
         show_current
