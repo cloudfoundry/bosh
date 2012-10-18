@@ -1,3 +1,10 @@
+== 1.0 - 10/18/12
+* support 'cpi' log type
+* 'bosh deployments' now shows stemcell and release version
+* 'bosh releases' now shows which release versions are in use
+* don't limit max number of tasks returned by 'bosh tasks'
+* better large files support when reading from blobstore
+
 == 1.0.rc1 - 10/04/12
 * new command definition framework
 * option helpers
