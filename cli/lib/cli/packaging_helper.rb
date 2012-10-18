@@ -93,7 +93,7 @@ module Bosh::Cli
 
       if need_fetch
         say("Downloading `#{name} (#{version})'...".green)
-        tmp_file = Tempfile.new(name);
+        tmp_file = File.open(File.join(Dir.mktmpdir, name), "w")
         @blobstore.get(blobstore_id, tmp_file)
         tmp_file.close
         if Digest::SHA1.file(tmp_file.path).hexdigest == item["sha1"]
@@ -191,8 +191,7 @@ module Bosh::Cli
 
       say("Uploading final version #{version}...")
 
-      if !item.nil?
-        version = item["version"]
+      if item
         say("This package has already been uploaded")
         return
       end
