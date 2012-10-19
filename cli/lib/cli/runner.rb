@@ -38,8 +38,8 @@ module Bosh::Cli
       Config.interactive = !@options[:non_interactive]
       Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir])
 
-      build_parse_tree
       load_plugins
+      build_parse_tree
       add_shortcuts
 
       if @args.empty?
