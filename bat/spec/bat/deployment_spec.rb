@@ -57,6 +57,29 @@ describe "deployment" do
     end
   end
 
+  it "should drain when updating" do
+    spec = deployment_spec
+    host = static_ip(spec)
+    use_static_ip(spec)
+
+    bosh("upload release #{previous_bat_release}")
+    spec["properties"]["release"] = previous_bat_version
+    with_deployment(spec) do |deployment|
+      bosh("deployment #{deployment}")
+      bosh("deploy").should succeed_with DEPLOYED_REGEXP
+    end
+
+    spec["properties"]["release"] = "latest"
+    with_deployment(spec) do |deployment|
+      bosh("deployment #{deployment}")
+      bosh("deploy").should succeed_with DEPLOYED_REGEXP
+
+      # drain script creates $TMPDIR/drain
+      ssh(host, "vcap", password, "ls /tmp/drain 2> /dev/null").should
+        match %r{/tmp/drain}
+    end
+  end
+
   describe "network" do
     context "aws" do
       it "should deploy using a dynamic network"
