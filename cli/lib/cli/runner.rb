@@ -147,19 +147,17 @@ module Bosh::Cli
     def load_plugins
       plugins_glob = "bosh/cli/commands/*.rb"
 
-      unless Gem.respond_to?(:find_files)
+      unless Gem::Specification.respond_to?(:latest_specs) ||
+             Gem::Specification.respond_to?(:matches_for_glob)
         say("Cannot load plugins, ".yellow +
             "please run `gem update --system' to ".yellow +
             "update your RubyGems".yellow)
         return
       end
 
-      plugins = begin
-        Gem.find_files(plugins_glob, true)
-      rescue ArgumentError
-        # Handling rubygems compatibility issue
-        Gem.find_files(plugins_glob)
-      end
+      plugins = Gem::Specification.latest_specs(true).map do |spec|
+        spec.matches_for_glob(plugins_glob)
+      end.flatten
 
       plugins.each do |plugin|
         n_commands = Config.commands.size
