@@ -3,34 +3,41 @@
 require "spec_helper"
 
 describe "stemcell" do
-  it "should upload a stemcell" do
-    bosh("upload stemcell #{stemcell}").should succeed_with /Stemcell uploaded/
-    bosh("delete stemcell bosh-stemcell #{stemcell_version}")
+
+  before(:each) do
+    load_deployment_spec
   end
 
-  it "should delete a stemcell" do
-    bosh("upload stemcell #{stemcell}")
-    bosh("delete stemcell bosh-stemcell #{stemcell_version}").should succeed_with /Deleted stemcell/
+  # for the sake of speed this test does two things:
+  # if the stemcell is already uploaded, it deletes it and then uploads it
+  # if it isn't uploaded, it uploads it and then deletes it
+  # i.e. the state is the same as before the test is run
+  it "should upload and delete a stemcell" do
+    if stemcells.include?(stemcell)
+      deployments.should_not include(release.name)
+      bosh("delete stemcell #{stemcell.name} #{stemcell.version}").should succeed_with /Deleted stemcell/
+      bosh("upload stemcell #{stemcell.to_path}").should succeed_with /Stemcell uploaded/
+    else
+      bosh("upload stemcell #{stemcell.to_path}").should succeed_with /Stemcell uploaded/
+      bosh("delete stemcell #{stemcell.name} #{stemcell.version}").should succeed_with /Deleted stemcell/
+    end
+    cleanup stemcell
   end
 
   it "should not delete a stemcell in use" do
-    bosh("upload release #{latest_bat_release}")
-    bosh("upload stemcell #{stemcell}")
+    requirement stemcell
+    requirement release
 
-    with_deployment(deployment_spec) do |deployment|
-      bosh("deployment #{deployment}")
-      bosh("deploy")
-
+    with_deployment do
       expect {
-        bosh("delete stemcell bosh-stemcell #{stemcell_version}")
+        bosh("delete stemcell #{stemcell.name} #{stemcell.version}")
       }.to raise_error { |error|
         error.should be_a Bosh::Exec::Error
         error.output.should match /Error 50004/
       }
     end
 
-    bosh("delete deployment bat")
-    bosh("delete stemcell bosh-stemcell #{stemcell_version}")
-    bosh("delete release bat")
+    cleanup release
+    cleanup stemcell
   end
 end

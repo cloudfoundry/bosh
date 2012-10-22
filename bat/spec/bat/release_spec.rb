@@ -3,22 +3,35 @@
 require "spec_helper"
 
 describe "release" do
+
+  before(:all) do
+    requirement stemcell
+    requirement release
+  end
+
+  after(:all) do
+    cleanup release
+    cleanup stemcell
+  end
+
+  before(:each) do
+    load_deployment_spec
+    @previous = release.previous
+    if releases.include?(@previous)
+      bosh("delete release #{@previous.name} #{@previous.version}")
+    end
+  end
+
   describe "upload" do
-    before(:each) do
-      bosh("upload release #{previous_bat_release}")
-    end
-
-    after(:each) do
-      bosh("delete release bat")
-    end
-
     it "should succeed when the release is valid" do
-      bosh("upload release #{latest_bat_release}").should
+      bosh("upload release #{@previous.to_path}").should
         succeed_with /Release uploaded/
     end
 
     it "should fail when the release already is uploaded" do
-      expect { bosh("upload release #{previous_bat_release}") }.to raise_error { |error|
+      expect {
+        bosh("upload release #{release.to_path}")
+      }.to raise_error { |error|
         error.should be_a Bosh::Exec::Error
         error.output.should match /This release version has already been uploaded/
       }
@@ -27,54 +40,43 @@ describe "release" do
 
   describe "delete" do
 
-    context "in use" do
-      before(:all) do
-        bosh("upload release #{latest_bat_release}")
-        bosh("upload stemcell #{stemcell}")
-        @deployment = with_deployment(deployment_spec)
-        bosh("deployment #{@deployment}")
-        bosh("deploy")
-      end
+    before(:each) do
+      bosh("upload release #{@previous.to_path}")
+    end
 
-      after(:all) do
-        bosh("delete deployment bat")
-        FileUtils.rm(@deployment)
-        bosh("delete stemcell bosh-stemcell #{stemcell_version}")
-        bosh("delete release bat")
-      end
+    context "in use" do
 
       it "should not be possible to delete" do
         expect {
-          bosh("delete release bat")
+          with_deployment do
+            bosh("delete release #{@previous.name}")
+          end
         }.to raise_error { |error|
           error.should be_a Bosh::Exec::Error
           error.output.should match /Error 30007/
         }
+        bosh("delete release #{@previous.name} #{@previous.version}")
       end
 
       it "should be possible to delete a different version" do
-        bosh("upload release #{previous_bat_release}")
-        bosh("delete release bat #{previous_bat_version}").should
-          succeed_with /Deleted release/
+        with_deployment do
+          bosh("delete release #{@previous.name} #{@previous.version}").should
+            succeed_with /Deleted release/
+        end
       end
     end
 
     context "not in use" do
-      before(:each) do
-        bosh("upload release #{latest_bat_release}")
-        bosh("upload release #{previous_bat_release}")
-      end
-
       it "should be possible to delete a single release" do
-        bosh("delete release bat #{previous_bat_version}").should
+        bosh("delete release #{@previous.name} #{@previous.version}").should
           succeed_with /Deleted release/
-        releases["bat"].should_not include(previous_bat_version)
-        bosh("delete release bat")
+        releases.should_not include(@previous)
       end
 
       it "should be possible to delete all releases" do
-        bosh("delete release bat").should succeed_with /Deleted `bat'/
-        releases["bat"].should be_nil
+        bosh("delete release #{release.name}").should succeed_with /Deleted `#{release.name}'/
+        releases.should_not include(release)
+        # TODO this fails when running in fast mode, as it tries to delete the release too
       end
     end
   end
