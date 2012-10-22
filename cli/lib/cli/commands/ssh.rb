@@ -236,7 +236,7 @@ module Bosh::Cli::Command
       else
         %x[ssh-add -L 1>/dev/null 2>&1]
         if $?.exitstatus == 0
-          return %x[ssh-add -L].split.first
+          return %x[ssh-add -L].split("\n").first
         else
           [SSH_DSA_PUB, SSH_RSA_PUB].each do |key_file|
             return File.read(key_file) if File.file?(key_file)
