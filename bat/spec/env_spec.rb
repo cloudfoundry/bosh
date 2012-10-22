@@ -8,7 +8,7 @@ describe "initialization" do
       BAT_DIRECTOR
       BAT_STEMCELL
       BAT_DEPLOYMENT_SPEC
-      BAT_PASSWORD
+      BAT_VCAP_PASSWORD
       BAT_RELEASE_DIR
     ].each do |var|
       it "should have #{var} set" do
@@ -18,29 +18,17 @@ describe "initialization" do
 
     describe "requirements" do
       it "should have a readable stemcell" do
-        File.exist?(stemcell).should be_true
-      end
-
-      it "should have a sane stemcell version" do
-        stemcell_version.should match /\d+\.\d+\.\d+/
+        File.exist?(stemcell.to_path).should be_true
       end
 
       it "should have readable releases" do
-        bat_release_files.each do |file|
-          File.exist?(file).should be_true
-        end
-      end
-
-      it "should have sane release versions" do
-        bat_release_files.each do |file|
-          file.should match /\d+\.*\d*[-dev]*/
-        end
+        File.exist?(release.to_path).should be_true
       end
 
       it "should have a readable deployment" do
-        File.exists?(deployment_spec_file).should be_true
-        with_deployment(deployment_spec) do |manifest|
-          File.exists?(manifest).should be_true
+        load_deployment_spec
+        with_deployment do |deployment|
+          File.exists?(deployment.to_path).should be_true
         end
       end
     end
@@ -51,17 +39,16 @@ describe "initialization" do
       bosh("target #{bosh_director}").should succeed_with /Target \w*\s*set/
     end
 
-    it "should not have a bat deployment" do
-      deployments["bat"].should be_nil
+    it "should fetch deployments" do
+      deployments.should_not be_nil
     end
 
-    it "should not have any bat releases" do
-      releases["bat"].should be_nil
+    it "should fetch releases" do
+      releases.should_not be_nil
     end
 
-    it "should not have stemcell version" do
-      stemcell_version.should_not be_nil
-      stemcells.map {|s| s["version"]}.should_not include stemcell_version
+    it "should fetch stemcells" do
+      stemcells.each { |s| s.should_not be_nil }
     end
   end
 end
