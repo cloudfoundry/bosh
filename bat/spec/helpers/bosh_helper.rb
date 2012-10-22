@@ -1,6 +1,15 @@
 # Copyright (c) 2012 VMware, Inc.
 
+require "httpclient"
+require "json"
+require "net/ssh"
+require "zlib"
+require "archive/tar/minitar"
+
+require "common/exec"
+
 module BoshHelper
+  include Archive::Tar
 
   # TODO use BOSH_BIN ?
   def bosh(arguments, options={})
@@ -20,53 +29,15 @@ module BoshHelper
   end
 
   def password
-    read_environment('BAT_PASSWORD')
-  end
-
-  def bat_release_dir
-    read_environment('BAT_RELEASE_DIR')
-  end
-
-  def stemcell
-    read_environment('BAT_STEMCELL')
-  end
-
-  # this is a little counter intuitive, but it is better than calling the
-  # environment variable BAT_DEPLOYMENT_SPEC_FILE
-  def deployment_spec_file
-    read_environment('BAT_DEPLOYMENT_SPEC')
-  end
-
-  def deployment_spec
-    YAML.load_file(deployment_spec_file)
+    read_environment('BAT_VCAP_PASSWORD')
   end
 
   def debug?
     ENV.has_key?('BAT_DEBUG')
   end
 
-  def bat_release_files
-    glob = File.join(bat_release_dir, "dev_releases/bat-*.yml")
-    releases = Dir.glob(glob).sort
-    raise "no releases found" if releases.empty?
-    releases
-  end
-
-  def latest_bat_release
-    bat_release_files.last
-  end
-
-  def previous_bat_release
-    raise "no previous release" unless bat_release_files.size > 1
-    bat_release_files[-2]
-  end
-
-  def previous_bat_version
-    previous_bat_release.match(/bat-(\d+\.*\d*[-dev]*)/)[1]
-  end
-
-  def stemcell_version
-    stemcell.match(/bosh-stemcell-\w+-(\d+\.\d+.\d+)/)[1]
+  def fast?
+    ENV.has_key?('BAT_FAST')
   end
 
   def http_client
@@ -98,21 +69,6 @@ module BoshHelper
     info["cpi"] == "vsphere"
   end
 
-  def releases
-    result = {}
-    jbosh("/releases").each {|r| result[r["name"]] = r["versions"] }
-    result
-  end
-
-  def deployments
-    result = {}
-    jbosh("/deployments").each {|d| result[d["name"]] = d}
-    result
-  end
-
-  def stemcells
-    jbosh("/stemcells")
-  end
 
   def read_environment(variable)
     if ENV[variable]
@@ -133,6 +89,9 @@ def persistent_disk(host)
   end
 end
 
+# this method will retry a bunch of times, as when it is used to
+# get json from a new batarang job, it may not have started when
+# it we call it
 def get_json(url, max_times=120)
   client = HTTPClient.new
   tries = 0
@@ -148,26 +107,25 @@ def get_json(url, max_times=120)
   JSON.parse(body)
 end
 
-RSpec::Matchers.define :succeed_with do |expected|
-  match do |actual|
-    if actual.exit_status != 0
-      false
-    elsif expected.instance_of?(String)
-      actual.output == expected
-    elsif expected.instance_of?(Regexp)
-      !!actual.output.match(expected)
-    else
-      raise ArgumentError, "don't know what to do with a #{expected.class}"
-    end
+def ssh(host, user, password, command)
+  output = nil
+  puts "--> ssh: vcap@#{host} '#{command}'" if debug?
+  Net::SSH.start(host, user, :password => password, :user_known_hosts_file => %w[/dev/null]) do |ssh|
+    output = ssh.exec!(command)
   end
-  failure_message_for_should do |actual|
-    if expected.instance_of?(Regexp)
-      what = "match"
-      exp = "/#{expected.source}/"
-    else
-      what = "be"
-      exp = expected
-    end
-    "expected\n#{actual.output}to #{what}\n#{exp}"
+  puts "--> ssh output: '#{output}'" if debug?
+  output
+end
+
+def tarfile
+  Dir.glob("*.tgz").first
+end
+
+def tar_contents(tgz)
+  list = []
+  tar = Zlib::GzipReader.open(tgz)
+  Minitar.open(tar).each do |entry|
+    list << entry.name if entry.file?
   end
+  list
 end
