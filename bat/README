@@ -17,14 +17,14 @@ Before you can run BAT, you need to set the following environment variables:
   (see bat/templates)
 * BAT_RELEASE_DIR
   path to the bat release repository
-* BAT_PASSWORD
+* BAT_VCAP_PASSWORD
   password used to ssh to the stemcells
+
+If BAT_FAST is set, the stemcell & release will not be deleted between each spec. This speeds up testing considerably!
 
 When all of the above is ready, you can run:
 rake bat
 which will run the whole test suite.
 
 TODO
-* tag fast tests (with a decent code coverage)
-  and add rake task to run them
 * add rake task to download stemcell & bat-release (for full automation)

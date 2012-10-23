@@ -4,25 +4,17 @@ require "tmpdir"
 describe "log" do
 
   before(:all) do
-    bosh("upload release #{latest_bat_release}")
-    bosh("upload stemcell #{stemcell}")
+    requirement stemcell
+    requirement release
   end
 
   after(:all) do
-    bosh("delete deployment bat")
-    bosh("delete stemcell bosh-stemcell #{stemcell_version}")
-    bosh("delete release bat")
-  end
-
-  around do |example|
-    with_deployment(deployment_spec) do |deployment|
-      bosh("deployment #{deployment}")
-      bosh("deploy")
-      example.run
-    end
+    cleanup release
+    cleanup stemcell
   end
 
   before(:each) do
+    load_deployment_spec
     @tmp = Dir.mktmpdir
     @back = Dir.pwd
     Dir.chdir(@tmp)
@@ -34,9 +26,11 @@ describe "log" do
   end
 
   it "should get agent log" do
-    bosh("logs batarang 0 --agent").should succeed_with /Logs saved in/
-    files = tar_contents(tarfile)
-    files.should include "./current"
+    with_deployment do
+      bosh("logs batlight 0 --agent").should succeed_with /Logs saved in/
+      files = tar_contents(tarfile)
+      files.should include "./current"
+    end
   end
 
   it "should get cpi log" do
@@ -44,9 +38,11 @@ describe "log" do
   end
 
   it "should get job logs" do
-    bosh("logs batarang 0").should succeed_with /Logs saved in/
-    files = tar_contents(tarfile)
-    files.should include "./batarang/batarang.stdout.log"
-    files.should include "./batarang/batarang.stderr.log"
+    with_deployment do
+      bosh("logs batlight 0").should succeed_with /Logs saved in/
+      files = tar_contents(tarfile)
+      files.should include "./batlight/batlight.stdout.log"
+      files.should include "./batlight/batlight.stderr.log"
+    end
   end
 end

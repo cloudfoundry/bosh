@@ -6,22 +6,6 @@ Bundler.setup(:default, :test)
 require "rake"
 require "rspec/core/rake_task"
 
-$LOAD_PATH << "spec/helpers"
-require "bosh_helper"
-include BoshHelper
-require "common/exec"
-
-def cleanup(command, message)
-  printf "checking for lingering #{message}: "
-  bosh(command, :on_error => :return) do |result|
-    if result.exit_status == 0
-      puts "deleted"
-    else
-      puts "none"
-    end
-  end
-end
-
 SPEC_OPTS = %w(--format documentation --color)
 
 desc "Run BAT tests"
@@ -72,15 +56,6 @@ namespace "bat" do
   RSpec::Core::RakeTask.new(:property => :env) do |t|
     t.pattern = "spec/bat/property_spec.rb"
     t.rspec_opts = SPEC_OPTS
-  end
-
-  desc "Clean up lingering things on the director"
-  task :cleanup do
-    raise "environment variable BAT_DIRECTOR not set" unless bosh_director
-    bosh("target #{bosh_director}")
-    cleanup("delete deployment bat", "deployment")
-    cleanup("delete release bat", "release")
-    cleanup("delete stemcell bosh-stemcell #{stemcell_version}", "stemcell")
   end
 
 end

@@ -68,6 +68,6 @@ DEPENDENCIES
   httpclient (~> 2.2)
   json (~> 1.7)
   minitar
-  net-ssh
+  net-ssh (>= 2.2.2)
   rake (~> 0.9)
   rspec (~> 2.11)
