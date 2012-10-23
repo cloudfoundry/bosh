@@ -88,7 +88,7 @@ module BoshExtensions
 
   # @return [Fixnum]
   def terminal_width
-    [HighLine::SystemExtensions.terminal_size[0], 120].min
+    STDIN.tty? ? [HighLine::SystemExtensions.terminal_size[0], 120].min : 80
   end
 end
 
