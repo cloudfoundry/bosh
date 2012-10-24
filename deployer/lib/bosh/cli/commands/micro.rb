@@ -271,8 +271,6 @@ module Bosh::Cli::Command
         end
 
         @deployer = Bosh::Deployer::InstanceManager.create(manifest)
-
-        $stderr.reopen("/dev/null") #silence ssl warnings
       end
 
       @deployer
