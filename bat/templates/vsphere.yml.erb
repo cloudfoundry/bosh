@@ -16,10 +16,10 @@ compilation:
     cpu: 1
 
 update:
-  canaries: 1
+  canaries: <%= properties.canaries || 1 %>
   canary_watch_time: 3000-90000
   update_watch_time: 3000-90000
-  max_in_flight: 1
+  max_in_flight: <%= properties.max_in_flight || 1 %>
   max_errors: 1
 
 networks:
@@ -53,8 +53,8 @@ resource_pools:
       cpu: 1
 
 jobs:
-  - name: batarang
-    template: batarang
+  - name: <%= properties.job || "batlight" %>
+    template: <%= properties.job || "batlight" %>
     instances: <%= properties.jobs %>
     resource_pool: common
     <% if properties.persistent_disk %>

@@ -106,6 +106,10 @@ module DeploymentHelper
     @spec["properties"]["job"] = job
   end
 
+  def use_job_instances(count)
+    @spec["properties"]["jobs"] = count
+  end
+
   def use_deployment_name(name)
     @spec["properties"]["name"] = name
   end
@@ -126,6 +130,18 @@ module DeploymentHelper
     @spec["properties"]["persistent_disk"] = size
   end
 
+  def use_canaries(count)
+    @spec["properties"]["canaries"] = count
+  end
+
+  def use_max_in_flight(count)
+    @spec["properties"]["max_in_flight"] = count
+  end
+
+  def use_pool_size(size)
+    @spec["properties"]["pool_size"] = size
+  end
+
   def get_task_id(output)
     match = output.match(/Task (\d+) done/)
     match.should_not be_nil
@@ -142,6 +158,17 @@ module DeploymentHelper
       event_list << event if event
     end
     event_list
+  end
+
+  def start_and_finish_times_for_job_updates(task_id)
+    jobs = {}
+    events(task_id).select { |e|
+      e["stage"] == "Updating job" && %w(started finished).include?(e["state"])
+    }.each do |e|
+      jobs[e["task"]] ||= {}
+      jobs[e["task"]][e["state"]] = e["time"]
+    end
+    jobs
   end
 
   private
