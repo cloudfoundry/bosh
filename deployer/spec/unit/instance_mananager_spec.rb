@@ -202,34 +202,34 @@ describe Bosh::Deployer::InstanceManager do
   it "should fail to create a Bosh instance if stemcell CID exists" do
     @deployer.state.stemcell_cid = "SC-CID"
 
-    lambda {
+    expect {
       @deployer.create(BOSH_STEMCELL_TGZ)
-    }.should raise_error(Bosh::Deployer::ConfigError)
+    }.to raise_error(Bosh::Cli::CliError)
   end
 
   it "should fail to create a Bosh instance if VM CID exists" do
     @deployer.state.vm_cid = "VM-CID"
 
-    lambda {
+    expect {
       @deployer.create(BOSH_STEMCELL_TGZ)
-    }.should raise_error(Bosh::Deployer::ConfigError)
+    }.to raise_error(Bosh::Cli::CliError)
   end
 
   it "should fail to destroy a Bosh instance unless stemcell CID exists" do
     @deployer.state.vm_cid = "VM-CID"
     @agent.should_receive(:run_task).with(:stop)
     @cloud.should_receive(:delete_vm).with("VM-CID")
-    lambda {
+    expect {
       @deployer.destroy
-    }.should raise_error(Bosh::Deployer::ConfigError)
+    }.to raise_error(Bosh::Cli::CliError)
   end
 
   it "should fail to destroy a Bosh instance unless VM CID exists" do
     @deployer.state.stemcell_cid = "SC-CID"
     @agent.should_receive(:run_task).with(:stop)
-    lambda {
+    expect {
       @deployer.destroy
-    }.should raise_error(Bosh::Deployer::ConfigError)
+    }.to raise_error(Bosh::Cli::CliError)
   end
 
 end

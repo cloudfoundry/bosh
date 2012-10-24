@@ -30,12 +30,10 @@ module Bosh::Deployer
         @ssh_wait = properties["openstack"]["ssh_wait"] || 60
 
         key = properties["openstack"]["private_key"]
-        unless key
-          raise ConfigError, "Missing properties.openstack.private_key"
-        end
+        err "Missing properties.openstack.private_key" unless key
         @ssh_key = File.expand_path(key)
         unless File.exists?(@ssh_key)
-          raise ConfigError, "properties.openstack.private_key '#{key}' does not exist"
+          err "properties.openstack.private_key '#{key}' does not exist"
         end
 
         uri = URI.parse(properties["registry"]["endpoint"])
@@ -73,7 +71,7 @@ module Bosh::Deployer
         end
 
         unless has_openstack_registry?
-          raise "openstack_registry command not found - " +
+          err "openstack_registry command not found - " +
             "run 'gem install bosh_openstack_registry'"
         end
 
@@ -84,7 +82,7 @@ module Bosh::Deployer
         5.times do
           sleep 0.5
           if Process.waitpid(@registry_pid, Process::WNOHANG)
-            raise Error, "`#{cmd}` failed, exit status=#{$?.exitstatus}"
+            err "`#{cmd}` failed, exit status=#{$?.exitstatus}"
           end
         end
 
@@ -97,7 +95,7 @@ module Bosh::Deployer
           if timeout_time - Time.now.to_f > 0
             retry
           else
-            raise "Cannot access openstack_registry: #{e.message}"
+            err "Cannot access openstack_registry: #{e.message}"
           end
         end
         logger.info("openstack_registry is ready on port #{@registry_port}")
@@ -138,7 +136,7 @@ module Bosh::Deployer
                           |addr| addr.instance_id == server.id
                         }
           ip = floating_ip.nil? ? service_ip : floating_ip.ip
-          raise "Unable to discover bosh ip" if ip.nil?
+          err "Unable to discover bosh ip" if ip.nil?
 
           if ip != Config.bosh_ip
             Config.bosh_ip = ip
@@ -163,7 +161,7 @@ module Bosh::Deployer
           address = ip_addresses.select { |ip| ip["version"] == 4 }.first
           ip = address ? address["addr"] : nil
         end
-        raise "Unable to discover service ip" if ip.nil?
+        err "Unable to discover service ip" if ip.nil?
         ip
       end
 

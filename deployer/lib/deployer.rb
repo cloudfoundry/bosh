@@ -17,7 +17,6 @@ require "common/common"
 require "common/thread_formatter"
 
 require "deployer/version"
-require "deployer/errors"
 require "deployer/helpers"
 require "deployer/config"
 require "deployer/instance_manager"

@@ -13,9 +13,9 @@ describe Bosh::Deployer::Config do
   end
 
   it "configure should fail without cloud properties" do
-    lambda {
+    expect {
       Bosh::Deployer::Config.configure({"dir" => @dir})
-    }.should raise_error(Bosh::Deployer::ConfigError)
+    }.to raise_error(Bosh::Cli::CliError)
   end
 
   it "should default agent properties" do
