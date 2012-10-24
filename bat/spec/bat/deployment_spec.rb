@@ -4,7 +4,6 @@ require "spec_helper"
 
 describe "deployment" do
   DEPLOYED_REGEXP = /Deployed \`\S+' to \`\S+'/
-  DEPLOYMENT_REGEXP = /Deployment set to/
   SAVE_FILE = "/var/vcap/store/batarang/save"
 
   before(:all) do
@@ -102,6 +101,21 @@ describe "deployment" do
     with_deployment do
       ssh(static_ip, "vcap", password, "ls /tmp/drain 2> /dev/null").should
         match %r{/tmp/drain}
+    end
+
+    bosh("delete release #{previous.name} #{previous.version}")
+  end
+
+  it "should return vms in a deployment" do
+    with_deployment do |deployment|
+      bosh("deployment #{deployment.to_path}").should succeed
+      bosh("deploy").should succeed_with DEPLOYED_REGEXP
+
+      bat_vms = vms(deployment.name)
+      bat_vms.size.should == 1
+      bat_vms.first.name.should == "batlight/0"
+
+      bosh("delete deployment #{deployment.name}").should succeed
     end
   end
 
