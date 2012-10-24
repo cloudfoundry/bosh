@@ -11,12 +11,8 @@ module Bosh::Deployer
     end
 
     def cloud_plugin(config)
-      if config["cloud"].nil?
-        raise ConfigError, "No cloud properties defined"
-      end
-      if config["cloud"]["plugin"].nil?
-        raise ConfigError, "No cloud plugin defined"
-      end
+      err "No cloud properties defined" if config["cloud"].nil?
+      err "No cloud plugin defined" if config["cloud"]["plugin"].nil?
 
       config["cloud"]["plugin"]
     end

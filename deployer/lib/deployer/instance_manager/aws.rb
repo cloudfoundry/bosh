@@ -30,12 +30,10 @@ module Bosh::Deployer
         @ssh_wait = properties["aws"]["ssh_wait"] || 60
 
         key = properties["aws"]["ec2_private_key"]
-        unless key
-          raise ConfigError, "Missing properties.aws.ec2_private_key"
-        end
+        err "Missing properties.aws.ec2_private_key" unless key
         @ssh_key = File.expand_path(key)
         unless File.exists?(@ssh_key)
-          raise ConfigError, "properties.aws.ec2_private_key '#{key}' does not exist"
+          err "properties.aws.ec2_private_key '#{key}' does not exist"
         end
 
         uri = URI.parse(properties["registry"]["endpoint"])
@@ -73,7 +71,7 @@ module Bosh::Deployer
         end
 
         unless has_aws_registry?
-          raise "aws_registry command not found - " +
+          err "aws_registry command not found - " +
             "run 'gem install bosh_aws_registry'"
         end
 
@@ -84,7 +82,7 @@ module Bosh::Deployer
         5.times do
           sleep 0.5
           if Process.waitpid(@registry_pid, Process::WNOHANG)
-            raise Error, "`#{cmd}` failed, exit status=#{$?.exitstatus}"
+            err "`#{cmd}` failed, exit status=#{$?.exitstatus}"
           end
         end
 
@@ -97,7 +95,7 @@ module Bosh::Deployer
           if timeout_time - Time.now.to_f > 0
             retry
           else
-            raise "Cannot access aws_registry: #{e.message}"
+            err "Cannot access aws_registry: #{e.message}"
           end
         end
         logger.info("aws_registry is ready on port #{@registry_port}")
