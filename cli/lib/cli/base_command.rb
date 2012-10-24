@@ -179,7 +179,8 @@ module Bosh::Cli
         if dirty_state?
           say("\n%s\n" % [`git status`])
           err("Your current directory has some local modifications, " +
-              "please discard or commit them first")
+              "please discard or commit them first.\n\n" +
+              "Use the --force option to skip this check.")
         end
       end
 
