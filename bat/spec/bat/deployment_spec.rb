@@ -66,6 +66,26 @@ describe "deployment" do
     deployment.delete
   end
 
+  it "should update a job with multiple instances in parallel" do
+    use_canaries(0)
+    use_max_in_flight(2)
+    use_job_instances(3)
+    use_pool_size(3)
+    with_deployment do |deployment|
+      bosh("deployment #{deployment.to_path}").should succeed
+      result = bosh("deploy")
+      result.should succeed_with DEPLOYED_REGEXP
+
+      times = start_and_finish_times_for_job_updates(get_task_id(result.output))
+      times["batlight/1"]["started"].should be >= times["batlight/0"]["started"]
+      times["batlight/1"]["started"].should be < times["batlight/0"]["finished"]
+      times["batlight/2"]["started"].should be >=
+          [times["batlight/0"]["finished"], times["batlight/1"]["finished"]].min
+
+      bosh("delete deployment #{deployment.name}").should succeed
+    end
+  end
+
   it "should drain when updating" do
     use_static_ip
 
