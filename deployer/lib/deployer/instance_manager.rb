@@ -37,7 +37,7 @@ module Bosh::Deployer
         begin
           require "deployer/instance_manager/#{plugin}"
         rescue LoadError
-          raise Error, "Could not find Provider Plugin: #{plugin}"
+          err "Could not find Provider Plugin: #{plugin}"
         end
         Bosh::Deployer::InstanceManager.const_get(plugin.capitalize).new(config)
       end
@@ -118,11 +118,9 @@ module Bosh::Deployer
     end
 
     def create(stemcell_tgz)
-      if state.vm_cid
-        raise ConfigError, "VM #{state.vm_cid} already exists"
-      end
+      err "VM #{state.vm_cid} already exists" if state.vm_cid
       if state.stemcell_cid && state.stemcell_cid != state.stemcell_name
-        raise ConfigError, "stemcell #{state.stemcell_cid} already exists"
+        err "stemcell #{state.stemcell_cid} already exists"
       end
 
       renderer.enter_stage("Deploy Micro BOSH", 11)
@@ -289,7 +287,7 @@ module Bosh::Deployer
 
     def detach_disk(disk_cid)
       unless disk_cid
-        raise "Error while detaching disk: unknown disk attached to instance"
+        err "Error while detaching disk: unknown disk attached to instance"
       end
 
       unmount_disk(disk_cid)
@@ -308,7 +306,9 @@ module Bosh::Deployer
       return if state.disk_cid.nil?
       agent_disk_cid = disk_info.first
       if agent_disk_cid != state.disk_cid
-        raise "instance #{state.vm_cid} has invalid disk: Agent reports #{agent_disk_cid} while deployer's record shows #{state.disk_cid}"
+        err "instance #{state.vm_cid} has invalid disk: " +
+          "Agent reports #{agent_disk_cid} while " +
+          "deployer's record shows #{state.disk_cid}"
       end
     end
 
@@ -465,9 +465,7 @@ module Bosh::Deployer
     end
 
     def delete_stemcell
-      unless state.stemcell_cid
-        raise ConfigError, "Cannot find existing stemcell"
-      end
+      err "Cannot find existing stemcell" unless state.stemcell_cid
 
       if state.stemcell_cid == state.stemcell_name
         step "Preserving stemcell" do
@@ -484,9 +482,8 @@ module Bosh::Deployer
     end
 
     def delete_vm
-      unless state.vm_cid
-        raise ConfigError, "Cannot find existing VM"
-      end
+      err "Cannot find existing VM" unless state.vm_cid
+
       step "Delete VM" do
         cloud.delete_vm(state.vm_cid)
       end
@@ -506,13 +503,13 @@ module Bosh::Deployer
 
     def load_apply_spec(dir)
       load_spec("#{dir}/apply_spec.yml") do
-        raise "this isn't a micro bosh stemcell - apply_spec.yml missing"
+        err "this isn't a micro bosh stemcell - apply_spec.yml missing"
       end
     end
 
     def load_stemcell_manifest(dir)
       load_spec("#{dir}/stemcell.MF") do
-        raise "this isn't a stemcell - stemcell.MF missing"
+        err "this isn't a stemcell - stemcell.MF missing"
       end
     end
 
@@ -557,7 +554,7 @@ module Bosh::Deployer
       output = `#{command} 2>&1`
       if $?.exitstatus != 0
         $stderr.puts output
-        raise "'#{command}' failed with exit status=#{$?.exitstatus} [#{output}]"
+        err "'#{command}' failed with exit status=#{$?.exitstatus} [#{output}]"
       end
     end
 
