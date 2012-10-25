@@ -40,7 +40,7 @@ describe "initialization" do
     end
 
     it "should fetch deployments" do
-      deployments.should_not be_nil
+      deployments.should_not have_key("bat")
     end
 
     it "should fetch releases" do
