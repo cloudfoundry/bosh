@@ -10,6 +10,7 @@ require "rspec"
 require "stemcell"
 require "release"
 require "deployment"
+require "vm"
 
 helpers = Dir.glob("spec/helpers/*_helper.rb")
 helpers.each do |helper|

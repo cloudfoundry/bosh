@@ -35,6 +35,29 @@ module DeploymentHelper
     result
   end
 
+  # @return [Array[VM]]
+  def vms(deployment, polls=30)
+    vm_path = "/deployments/#{deployment}/vms?format=full"
+    task_uri = http_client.get([director_url, vm_path].join).headers["Location"]
+    task_uri.should =~ /\/tasks\/(\d+)\/?$/ # Looks like we received task URI
+    task_result_uri = [task_uri, "/output?type=result"].join
+
+    body = nil
+    tries = polls.times do
+      body = http_client.get(task_result_uri, "application/json").body
+      break unless body.empty?
+      sleep(1)
+    end
+
+    if tries == polls && body.empty?
+      raise "failed to get VMs after #{tries} tries from `#{task_result_uri}'"
+    end
+
+    body.to_s.split("\n").map do |vm_state|
+      VM.new(JSON.parse(vm_state))
+    end
+  end
+
   def requirement(what, present=true)
     case what
     when Stemcell
