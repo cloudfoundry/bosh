@@ -62,7 +62,8 @@ module Bosh::Director
                                         :name => name)
       if record.nil?
         record = Models::Dns::Record.new(:domain_id => domain.id,
-                                         :name => name, :type => "A")
+                                         :name => name, :type => "A",
+                                         :ttl => TTL_5M)
       end
       record.content = ip_address
       record.change_date = Time.now.to_i
@@ -84,13 +85,22 @@ module Bosh::Director
                                          :type =>'NS', :ttl => TTL_4H,
                                          :content => "ns.bosh")
 
-      record = Models::Dns::Record.find(:domain_id => rdomain.id,
-                                        :name => reverse,
-                                        :type =>'PTR', :ttl => TTL_5M)
+      record = Models::Dns::Record.find(:content => name, :type =>'PTR')
+
+      # delete the record if the IP address changed
+      if record && record.name != reverse
+        id = record.domain_id
+        record.destroy
+        record = nil
+
+        delete_empty_domain(Models::Dns::Domain[id])
+      end
+
+      reverse = reverse_host(ip_address)
       unless record
         record = Models::Dns::Record.new(:domain_id => rdomain.id,
                                          :name => reverse,
-                                         :type =>'PTR')
+                                         :type =>'PTR', :ttl => TTL_5M)
       end
       record.content = name
       record.change_date = Time.now.to_i
@@ -129,16 +139,19 @@ module Bosh::Director
         rdomain = Models::Dns::Domain.filter(:name => reverse,
                                              :type => "NATIVE")
         rdomain.each do |domain|
-          # if the count is 2, it means we only have the NS & SOA record
-          # and the domain is "empty" and can be deleted
-          if domain.records.size == 2
-            @logger.info("Deleting empty reverse domain #{reverse}")
-            domain.destroy # cascaded - all records are removed
-          end
+          delete_empty_domain(domain)
         end
       end
     end
 
+    # if the count is 2, it means we only have the NS & SOA record
+    # and the domain is "empty" and can be deleted
+    def delete_empty_domain(domain)
+      if domain.records.size == 2
+        @logger.info("Deleting empty reverse domain #{domain.name}")
+        domain.destroy # cascaded - all records are removed
+      end
+    end
 
     # @param [String] network name
     # @param [String] reason

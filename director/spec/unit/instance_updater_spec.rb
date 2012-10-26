@@ -475,8 +475,10 @@ describe Bosh::Director::InstanceUpdater do
     records = Bosh::Director::Models::Dns::Record.all
     records.size.should == 8
     records.each { |record| map[record.name] = record.content }
-    dns_records["4.3.2.in-addr.arpa"] = "0.some.record"
-    dns_records["8.7.6.in-addr.arpa"] = "0.some.other.record"
+    dns_records["4.3.2.1.in-addr.arpa"] = "0.some.record"
+    dns_records["4.3.2.in-addr.arpa"] = "ns.bosh"
+    dns_records["8.7.6.5.in-addr.arpa"] = "0.some.other.record"
+    dns_records["8.7.6.in-addr.arpa"] = "ns.bosh"
     map.should == dns_records
   end
 
