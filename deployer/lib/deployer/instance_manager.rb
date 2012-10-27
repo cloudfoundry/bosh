@@ -359,7 +359,7 @@ module Bosh::Deployer
       end
 
       services = %w{postgres director redis blobstore nats aws_registry
-                    openstack_registry}
+                    openstack_registry powerdns}
       services.each do |service|
         update_service_address(properties, service, service_ip)
       end
