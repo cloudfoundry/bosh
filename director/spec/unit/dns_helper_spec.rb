@@ -56,6 +56,47 @@ describe Bosh::Director::DnsHelper do
     end
   end
 
+  describe :update_dns_a_record do
+    it "should create new record" do
+      domain = BDM::Dns::Domain.make
+      update_dns_a_record(domain, "0.foo.default.bosh", "1.2.3.4")
+      record = BDM::Dns::Record.find(:domain_id => domain.id,
+                                     :name => "0.foo.default.bosh")
+      record.content.should == "1.2.3.4"
+      record.type.should == "A"
+    end
+
+    it "should update existing record" do
+      domain = BDM::Dns::Domain.make
+      update_dns_a_record(domain, "0.foo.default.bosh", "1.2.3.4")
+      update_dns_a_record(domain, "0.foo.default.bosh", "5.6.7.8")
+      record = BDM::Dns::Record.find(:domain_id => domain.id,
+                                     :name => "0.foo.default.bosh")
+      record.content.should == "5.6.7.8"
+    end
+  end
+
+  describe :update_dns_ptr_record do
+    before(:each) do
+      @logger = Logger.new("/dev/null")
+    end
+
+    it "should create new record" do
+      update_dns_ptr_record("0.foo.default.bosh", "1.2.3.4")
+      record = BDM::Dns::Record.find(:name => "4.3.2.1.in-addr.arpa")
+      record.content.should == "0.foo.default.bosh"
+      record.type.should == "PTR"
+    end
+
+    it "should update existing record" do
+      update_dns_ptr_record("0.foo.default.bosh", "1.2.3.4")
+      update_dns_ptr_record("0.foo.default.bosh", "5.6.7.8")
+      record = BDM::Dns::Record.find(:name => "8.7.6.5.in-addr.arpa")
+      record.content.should == "0.foo.default.bosh"
+      BDM::Dns::Record.all.size.should == 3
+    end
+  end
+
   describe :delete_dns_records do
 
     before(:each) do
