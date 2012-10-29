@@ -86,9 +86,18 @@ module Bosh
       json_data = data["json_data"]
 
       json_hmac = signature(json_data)
-      unless hmac == json_hmac
+      unless constant_time_comparison(hmac, json_hmac)
         raise SignatureError, "Expected hmac (#{hmac}), got (#{json_hmac})"
       end
+    end
+
+    # constant time comparison snagged from activesupport
+    def constant_time_comparison(a, b)
+      return false unless a.bytesize == b.bytesize
+      l = a.unpack "C#{a.bytesize}"
+      res = 0
+      b.each_byte { |byte| res |= byte ^ l.shift }
+      res == 0
     end
 
     def verify_session(decrypted_data)
