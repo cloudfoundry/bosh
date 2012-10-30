@@ -48,7 +48,9 @@ jobs:
     <% end %>
     networks:
       - name: default
+        default: [dns, gateway]
       <% if properties.use_static_ip %>
+      - name: static
         static_ips:
           - <%= properties.static_ip %>
       <% end %>
