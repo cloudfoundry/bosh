@@ -165,7 +165,7 @@ module Bosh::Director
 
     def reverse(ip, n)
       octets = ip.split(/\./)
-      "#{octets.reverse[0..n].join(".")}.in-addr.arpa"
+      "#{octets[0..n].reverse.join(".")}.in-addr.arpa"
     end
 
   end
