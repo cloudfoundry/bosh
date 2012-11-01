@@ -340,6 +340,17 @@ describe Bosh::Director::Controller do
       end
     end
 
+    describe "getting deployment vms vitals" do
+      it "returns a list of vms vitals" do
+        deployment = BD::Models::Deployment.
+            create(:name => "test_deployment",
+                   :manifest => YAML.dump({"foo" => "bar"}))
+
+        get "/deployments/test_deployment/vms/vitals"
+        expect_redirect_to_queued_task(last_response)
+      end
+    end
+
     describe "deleting release" do
       it "deletes the whole release" do
         release = BD::Models::Release.create(:name => "test_release")

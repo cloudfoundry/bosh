@@ -93,6 +93,7 @@ require "director/jobs/update_release"
 require "director/jobs/update_stemcell"
 require "director/jobs/fetch_logs"
 require "director/jobs/vm_state"
+require "director/jobs/vm_vitals"
 require "director/jobs/cloud_check/scan"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
@@ -377,6 +378,13 @@ module Bosh::Director
       else
         @deployment_manager.deployment_vms_to_json(deployment)
       end
+    end
+
+    get "/deployments/:name/vms/vitals" do
+      deployment = @deployment_manager.find_by_name(params[:name])
+
+      task = @vm_state_manager.fetch_vm_vitals(@user, deployment)
+      redirect "/tasks/#{task.id}"
     end
 
     delete "/deployments/:name" do

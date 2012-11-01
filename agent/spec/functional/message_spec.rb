@@ -89,6 +89,14 @@ describe "messages" do
     end
   end
 
+  it "should respond to vitals message" do
+    nats('vitals') do |msg|
+      value = get_value(msg)
+      value.should have_key('job_state')
+      value.should have_key('vitals')
+    end
+  end
+
   it "should respond to ping message" do
     nats('ping') do |msg|
       value = get_value(msg)

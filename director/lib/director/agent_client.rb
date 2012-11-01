@@ -8,7 +8,7 @@ module Bosh::Director
     def initialize(id, options = {})
       # Retry 'get_state' and 'get_task' in case of timeout errors
       defaults = {
-        :retry_methods => { :get_state => 2, :get_task => 2}
+        :retry_methods => { :get_state => 2, :get_task => 2, :vitals => 2 }
       }
 
       credentials = Bosh::Director::Models::Vm.find(:agent_id => id).credentials

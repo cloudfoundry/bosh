@@ -59,6 +59,7 @@ require "agent/message/apply"
 require "agent/message/compile_package"
 require "agent/message/logs"
 require "agent/message/ssh"
+require "agent/message/vitals"
 
 require "agent/handler"
 

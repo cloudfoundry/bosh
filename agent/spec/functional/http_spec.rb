@@ -74,6 +74,13 @@ describe "http messages" do
     end
   end
 
+  it "should respond to vitals message" do
+    http('vitals') do |msg|
+      msg.should have_key('job_state')
+      msg.should have_key('vitals')
+    end
+  end
+
   it "should respond to ping message" do
     http('ping') do |msg|
       msg.should == 'pong'

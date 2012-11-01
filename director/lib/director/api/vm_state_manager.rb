@@ -10,6 +10,12 @@ module Bosh::Director
         Resque.enqueue(Jobs::VmState, task.id, deployment.id)
         task
       end
+
+      def fetch_vm_vitals(user, deployment)
+        task = create_task(user, :vms, "retrieve vm-vitals")
+        Resque.enqueue(Jobs::VmVitals, task.id, deployment.id)
+        task
+      end
     end
   end
 end
