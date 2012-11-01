@@ -81,7 +81,7 @@ module Bosh::Cli::Command
 
       update_target
 
-      target_name = full_target_name ? full_target_name.green : "not set".red
+      target_name = target ? target.green : "not set".red
       say("Target".ljust(15) + target_name)
     end
 
