@@ -35,7 +35,6 @@ cloud:
         properties:
           blobstore_path: /var/vcap/micro_bosh/data/cache
       mbus:
-    soap_log:
     vcenters: []
 
 apply_spec:
