@@ -7,7 +7,7 @@ stage base_warden
 stage bosh_users
 stage bosh_debs
 stage bosh_monit
-stage mcf_ruby
+stage bosh_ruby
 stage mcf_agent
 stage bosh_sysstat
 stage bosh_sysctl
