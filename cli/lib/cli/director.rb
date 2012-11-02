@@ -296,6 +296,25 @@ module Bosh
         end
       end
 
+      def fetch_vm_vitals(deployment_name, options = {})
+        options = options.dup
+
+        url = "/deployments/#{deployment_name}/vms/vitals"
+
+        status, task_id = request_and_track(:get, url, options)
+
+        # TODO: this should be done in command handler, not in director.rb
+        if status != :done
+          raise DirectorError, "Failed to fetch VMs vitals from director"
+        end
+
+        output = get_task_result_log(task_id)
+
+        output.to_s.split("\n").map do |vm_vitals|
+          JSON.parse(vm_vitals)
+        end
+      end
+
       def download_resource(id)
         status, tmp_file, _ = get("/resources/#{id}",
                                   nil, nil, {}, :file => true)

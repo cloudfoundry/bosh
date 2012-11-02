@@ -224,6 +224,13 @@ describe Bosh::Cli::Director do
       @director.get_task_output(232, 42).should == ["test", 57]
     end
 
+    it "gets vms vitals" do
+      @director.should_receive(:request_and_track).
+        with(:get, "/deployments/foo/vms/vitals", {}).and_return(:done)
+      @director.should_receive(:get_task_result_log).and_return({})
+      @director.fetch_vm_vitals("foo")
+    end
+
     it "doesn't set task output new offset if it wasn't a partial response" do
       @director.should_receive(:get).
         with("/tasks/232/output", nil, nil,
