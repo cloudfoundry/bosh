@@ -25,7 +25,7 @@ make -j4 && make install
 "
 
 # RubyGems
-rubygems_basename=rubygems-1.7.2
+rubygems_basename=rubygems-1.8.24
 rubygems_archive=$rubygems_basename.tgz
 
 mkdir -p $chroot/$bosh_dir/src
@@ -45,10 +45,10 @@ mkdir -p $chroot/var/vcap/bosh/etc
 echo "gem: --no-rdoc --no-ri" >> $chroot/var/vcap/bosh/etc/gemrc
 
 # Bundler
-bundler_gem=bundler-1.2.0.gem
+bundler_gem=bundler-1.2.1.gem
 
 mkdir -p $chroot/$bosh_dir/src
-wget -O $chroot/$bosh_dir/src/$bundler_gem http://rubygems.org/downloads/$bundler_gem
+cp -r $dir/assets/$bundler_gem $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
 cd src
