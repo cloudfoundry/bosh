@@ -146,11 +146,11 @@ module Bosh::Cli
       elsif blobstore_id
         say("FOUND REMOTE".yellow)
         say("Downloading #{blobstore_id.to_s.green}...")
+        tmp_file = Tempfile.new("")
+        @blobstore.get(blobstore_id, tmp_file)
 
-        payload = @blobstore.get(blobstore_id)
-
-        if Digest::SHA1.hexdigest(payload) == sha1
-          File.open(filename, "w") { |f| f.write(payload) }
+        if Digest::SHA1.file(tmp_file.path).hexdigest == sha1
+          FileUtils.mv(tmp_file.path, filename)
         else
           err("#{desc} is corrupted in blobstore (id=#{blobstore_id})")
         end
