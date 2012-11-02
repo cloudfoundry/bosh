@@ -25,7 +25,7 @@ make -j4 && make install
 "
 
 # RubyGems
-rubygems_basename=rubygems-1.3.7
+rubygems_basename=rubygems-1.7.2
 rubygems_archive=$rubygems_basename.tgz
 
 mkdir -p $chroot/$bosh_dir/src
