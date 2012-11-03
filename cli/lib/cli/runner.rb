@@ -126,6 +126,9 @@ module Bosh::Cli
         @options[:non_interactive] = true
         Config.colorize = false
       end
+      opts.on("-N", "--no-track", "Return Task ID and don't track") do
+        @options[:no_track] = true
+      end
       opts.on("-t", "--target URL", "Override target") do |target|
         @options[:target] = target
       end

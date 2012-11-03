@@ -184,9 +184,9 @@ module Bosh::Cli::Command
       end
 
       if confirmed?
-        status, _ = director.delete_release(
+        status, task_id = director.delete_release(
           name, :force => force, :version => version)
-        task_report(status, "Deleted `#{desc}'")
+        task_report(status, task_id, "Deleted `#{desc}'")
       else
         say("Canceled deleting release".green)
       end
