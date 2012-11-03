@@ -101,9 +101,9 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      status, _ = director.deploy(manifest_yaml, :recreate => recreate)
+      status, task_id = director.deploy(manifest_yaml, :recreate => recreate)
 
-      task_report(status, "Deployed #{desc}")
+      task_report(status, task_id, "Deployed #{desc}")
     end
 
     # bosh delete deployment
@@ -123,9 +123,9 @@ module Bosh::Cli::Command
         return
       end
 
-      status, _ = director.delete_deployment(name, :force => force)
+      status, task_id = director.delete_deployment(name, :force => force)
 
-      task_report(status, "Deleted deployment `#{name}'")
+      task_report(status, task_id, "Deleted deployment `#{name}'")
     end
 
     # bosh validate jobs

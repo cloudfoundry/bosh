@@ -115,10 +115,10 @@ module Bosh::Cli::Command
       nl
       say("Performing `#{op_desc}'...")
 
-      status, _ = director.change_job_state(
+      status, task_id = director.change_job_state(
         manifest["name"], manifest_yaml, job, index, new_state)
 
-      task_report(status, completion_desc)
+      task_report(status, task_id, completion_desc)
     end
 
   end

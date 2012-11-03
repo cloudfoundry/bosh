@@ -16,6 +16,7 @@ module Bosh::Cli::Command
     def fetch_logs(job, index)
       auth_required
       target_required
+      no_track_unsupported
 
       if index !~ /^\d+$/
         err("Job index is expected to be a positive integer")
