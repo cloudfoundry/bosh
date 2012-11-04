@@ -136,8 +136,19 @@ module Bosh::Cli::Command
       check_if_release_dir
       manifest = prepare_deployment_manifest(:resolve_properties => true)
 
-      nl
-      say("Analyzing release directory...".yellow)
+      if manifest["release"]
+        release_name = manifest["release"]["name"]
+      elsif manifest["releases"].count > 1
+        err("Cannot validate a deployment manifest with more than 1 release")
+      else
+        release_name = manifest["releases"].first["name"]
+      end
+      if release_name == release.dev_name || release_name == release.final_name
+        nl
+        say("Analyzing release directory...".yellow)
+      else
+        err("This release was not found in deployment manifest")
+      end
 
       say(" - discovering packages")
       packages = Bosh::Cli::PackageBuilder.discover(

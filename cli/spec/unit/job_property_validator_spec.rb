@@ -3,5 +3,5 @@
 require "spec_helper"
 
 describe Bosh::Cli::JobPropertyValidator do
-
+  pending "needs tests"
 end
