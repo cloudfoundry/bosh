@@ -120,32 +120,38 @@ module Bosh::Director
     end
 
     def stop
-      if @instance.resource_pool_changed? ||
-         @instance.persistent_disk_changed? ||
-         @instance.networks_changed? ||
-         @target_state == "stopped" ||
-         @target_state == "detached"
+      if shutting_down?
         drain_time = agent.drain("shutdown")
       else
         drain_time = agent.drain("update", @instance.spec)
       end
 
-      if drain_time < 0
-        drain_time = drain_time.abs
-        begin
-          # TODO: refactor this bit
-          Config.job_cancelled?
-          @logger.info("Drain - check back in #{drain_time} seconds")
-          sleep(drain_time)
-          drain_time = agent.drain("status")
-        rescue => e
-          @logger.warn("Failed to check drain status: #{e.inspect}")
-          raise if e.kind_of?(Bosh::Director::TaskCancelled)
-          break
-        end while drain_time > 0
-      else
+      if drain_time > 0
         sleep(drain_time)
+      else
+        loop do
+          # This could go on forever if drain script is broken, canceling
+          # the task is a way out.
+          Config.task_checkpoint
+
+          wait_time = drain_time.abs
+          if wait_time > 0
+            @logger.info("`#{@instance}' is draining: " +
+                         "checking back in #{wait_time}s")
+            sleep(wait_time)
+          end
+          # Positive number always means last drain call:
+          break if drain_time >= 0
+
+          # We used to ignore exceptions from drain status for compatibility
+          # with older agents but it doesn't need to happen anymore, as
+          # realistically speaking, all agents have already been updated
+          # to support drain status mechanism and swallowing real errors
+          # would be bad here, as it could mask potential problems.
+          drain_time = agent.drain("status")
+        end
       end
+
       agent.stop
     end
 
@@ -436,6 +442,15 @@ module Bosh::Director
       step = [1000, delta / intervals].max
 
       [min_watch_time, [step] * (delta / step).floor].flatten
+    end
+
+    # @return [Boolean] Is instance shutting down for this update?
+    def shutting_down?
+      @instance.resource_pool_changed? ||
+        @instance.persistent_disk_changed? ||
+        @instance.networks_changed? ||
+        @target_state == "stopped" ||
+        @target_state == "detached"
     end
 
     def canary_watch_times

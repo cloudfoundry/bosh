@@ -868,4 +868,34 @@ describe Bosh::Director::InstanceUpdater do
       updater.watch_schedule(2000, 15000, 2).should == [2000, 6500, 6500]
     end
   end
+
+
+  describe "dynamic drain" do
+    it "will perform dynamic drain if drain returns a negative number" do
+      @instance_spec.stub!("state").and_return("started")
+      @instance_spec.stub!(:resource_pool_changed?).and_return(true)
+
+      updater = make_updater(@instance_spec)
+
+      @agent_1.should_receive(:drain).with("shutdown").ordered.and_return(-5)
+      updater.should_receive(:sleep).with(5).ordered
+
+      @agent_1.should_receive(:drain).with("status").ordered.and_return(-1)
+      updater.should_receive(:sleep).with(1).ordered
+
+      @agent_1.should_receive(:drain).with("status").ordered.and_return(-2)
+      updater.should_receive(:sleep).with(2).ordered
+
+      @agent_1.should_receive(:drain).with("status").ordered.and_return(-7)
+      updater.should_receive(:sleep).with(7).ordered
+
+      @agent_1.should_receive(:drain).with("status").ordered.and_return(3)
+      updater.should_receive(:sleep).with(3).ordered
+
+      @agent_1.should_receive(:stop).ordered
+
+      updater.stop
+    end
+  end
+
 end
