@@ -148,6 +148,7 @@ module Bosh::Cli
         say("Downloading #{blobstore_id.to_s.green}...")
         tmp_file = Tempfile.new("")
         @blobstore.get(blobstore_id, tmp_file)
+        tmp_file.close
 
         if Digest::SHA1.file(tmp_file.path).hexdigest == sha1
           FileUtils.mv(tmp_file.path, filename)
