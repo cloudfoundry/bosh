@@ -15,6 +15,9 @@ module Bosh::Cli::Command
     usage "status"
     desc  "Show current status (current target, user, deployment info etc)"
     def status
+      cpi = nil
+      dns = nil
+
       if config.target
         say("Updating director data...", " ")
 
@@ -26,6 +29,8 @@ module Bosh::Cli::Command
             config.target_name = status["name"]
             config.target_version = status["version"]
             config.target_uuid = status["uuid"]
+            cpi = status["cpi"]
+            dns = format_dns(status["dns"])
             config.save
             say("done".green)
           end
@@ -46,6 +51,8 @@ module Bosh::Cli::Command
         print_value("Version", config.target_version)
         print_value("User", username, "not logged in")
         print_value("UUID", config.target_uuid)
+        print_value("CPI", cpi, "n/a (update director)")
+        print_value("DNS", dns)
       end
 
       nl
@@ -313,5 +320,14 @@ module Bosh::Cli::Command
       say(t) unless t.rows.empty?
     end
 
+    def format_dns(value)
+      if value.nil?
+        "n/a (outdated director)"
+      elsif value
+        "enabled"
+      else
+        "disabled"
+      end
+    end
   end
 end
