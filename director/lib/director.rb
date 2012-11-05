@@ -635,7 +635,8 @@ module Bosh::Director
         "uuid"    => Config.uuid,
         "version" => "#{VERSION} (#{Config.revision})",
         "user"    => @user,
-        "cpi"     => Config.cloud_type
+        "cpi"     => Config.cloud_type,
+        "dns"     => !!Config.dns
       }
       content_type(:json)
       json_encode(status)
