@@ -171,6 +171,7 @@ module Bosh::Director
       def job_cancelled?
         @current_job.task_checkpoint if @current_job
       end
+      alias_method :task_checkpoint, :job_cancelled?
 
       def redis_options=(options)
         @redis_options = options
