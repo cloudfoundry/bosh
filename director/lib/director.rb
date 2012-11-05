@@ -631,11 +631,12 @@ module Bosh::Director
 
     get "/info" do
       status = {
-        "name"    => Config.name,
-        "uuid"    => Config.uuid,
-        "version" => "#{VERSION} (#{Config.revision})",
-        "user"    => @user,
-        "cpi"     => Config.cloud_type
+        "name"     => Config.name,
+        "uuid"     => Config.uuid,
+        "version"  => "#{VERSION} (#{Config.revision})",
+        "user"     => @user,
+        "cpi"      => Config.cloud_type,
+        "features" => {"dns" => !!Config.dns}
       }
       content_type(:json)
       json_encode(status)
