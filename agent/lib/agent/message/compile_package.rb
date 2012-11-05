@@ -209,7 +209,7 @@ module Bosh::Agent
         File.open(compiled_package, 'r') do |f|
           compiled_blobstore_id = @blobstore_client.create(f)
         end
-        compiled_sha1 = Digest::SHA1.hexdigest(File.read(compiled_package))
+        compiled_sha1 = Digest::SHA1.file(compiled_package).hexdigest
         compile_log_id = @blobstore_client.create(@log_file)
         @logger.info("Uploaded #{@package_name} #{@package_version} " +
                      "(sha1: #{compiled_sha1}, " +
