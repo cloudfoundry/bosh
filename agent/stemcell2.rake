@@ -134,7 +134,7 @@ namespace :stemcell2 do
     build_path = File.join(root, "build")
     cp_r File.expand_path("../misc/stemcell/build2", __FILE__), build_path, :preserve => true
 
-    work_path = File.join(root, "work")
+    work_path = ENV["WORK_PATH"] || File.join(root, "work")
     mkdir_p work_path
 
     # Apply options
