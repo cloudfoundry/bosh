@@ -159,6 +159,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("create user jane pass")
     run_bosh("logout")
     expect_output("login jane foo", <<-OUT)
+      Current target is http://localhost:57523
       Cannot log in as `jane'
     OUT
   end
@@ -318,6 +319,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     run_bosh("delete release bosh-release 0.2-dev")
     expect_output("releases", <<-OUT )
+    Current target is http://localhost:57523
     +--------------+----------+
     | Name         | Versions |
     +--------------+----------+
@@ -329,6 +331,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     run_bosh("delete release bosh-release 0.1-dev")
     expect_output("releases", <<-OUT )
+    Current target is http://localhost:57523
     No releases
     OUT
   end
@@ -354,6 +357,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ regexp("Deleted `appcloud")
 
     expect_output("releases", <<-OUT)
+    Current target is http://localhost:57523
     No releases
     OUT
   end
