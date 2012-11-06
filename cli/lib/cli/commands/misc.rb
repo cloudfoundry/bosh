@@ -255,23 +255,6 @@ module Bosh::Cli::Command
       say(message.indent(2))
     end
 
-    def show_target
-      if config.target
-        if interactive?
-          if config.target_name
-            name = "#{config.target} (#{config.target_name})"
-          else
-            name = config.target
-          end
-          say("Current target is #{name.green}")
-        else
-          say(config.target)
-        end
-      else
-        err("Target not set")
-      end
-    end
-
     def print_specs(entity, dir)
       specs = Dir[File.join(work_dir, dir, "*", "spec")]
 
