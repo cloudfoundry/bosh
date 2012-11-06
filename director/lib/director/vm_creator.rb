@@ -30,6 +30,7 @@ module Bosh::Director
       vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties,
                                 network_settings, disks, env)
       vm.cid = vm_cid
+      vm.env = env
 
       if Config.encryption?
         vm.credentials = credentials

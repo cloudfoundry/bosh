@@ -19,6 +19,17 @@ module Bosh::Director::Models
       self.apply_spec_json = Yajl::Encoder.encode(spec)
     end
 
+    # @param [Hash] env_hash Environment hash
+    def env=(env_hash)
+      self.env_json = Yajl::Encoder.encode(env_hash)
+    end
+
+    # @return [Hash] VM environment hash
+    def env
+      return nil if env_json.nil?
+      Yajl::Parser.parse(env_json)
+    end
+
     def credentials
       return nil if credentials_json.nil?
       Yajl::Parser.parse(credentials_json)

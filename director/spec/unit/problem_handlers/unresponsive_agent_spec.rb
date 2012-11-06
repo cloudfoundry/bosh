@@ -105,8 +105,17 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
                            "Unable to look up VM apply spec")
     end
 
+    it "doesn't recreate VM if apply spec is unknown" do
+      @vm.update(:apply_spec => {})
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+      lambda {
+        handler.apply_resolution(:recreate_vm)
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
+                           "Unable to look up VM environment")
+    end
+
     it "whines on invalid spec format" do
-      @vm.update(:apply_spec => "foobar")
+      @vm.update(:apply_spec => "foobar", :env => "bar")
       handler = make_handler(@vm, @cloud, @agent)
       @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
@@ -116,8 +125,22 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
                            "Invalid apply spec format")
     end
 
+    it "whines on invalid env format" do
+      @vm.update(:apply_spec => {}, :env => "bar")
+      handler = make_handler(@vm, @cloud, @agent)
+      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+
+      lambda {
+        handler.apply_resolution(:recreate_vm)
+      }.should raise_error(Bosh::Director::ProblemHandlerError,
+                           "Invalid VM environment format")
+    end
+
     it "whines when stemcell is not in apply spec" do
-      @vm.update(:apply_spec => { "resource_pool" => { "stemcell" => { "name" => "foo" } }}) # no version
+      spec = {"resource_pool" => {"stemcell" => {"name" => "foo"}}} # no version
+      env = {"key1" => "value1"}
+
+      @vm.update(:apply_spec => spec, :env => env)
       handler = make_handler(@vm, @cloud, @agent)
       @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
@@ -136,8 +159,9 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
           }
         }
       }
+      env = {"key1" => "value1"}
 
-      @vm.update(:apply_spec => spec)
+      @vm.update(:apply_spec => spec, :env => env)
       handler = make_handler(@vm, @cloud, @agent)
       @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
 
@@ -155,7 +179,6 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
             "version" => "3.0.2"
           },
           "cloud_properties" => { "foo" => "bar" },
-          "env" => { "key1" => "value1" }
         },
         "networks" => ["A", "B", "C"]
       }
@@ -166,9 +189,9 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       # SQLite resets autoincrement id when table becomes empty,
       # so having this dummy record VM allows us to distinguish
-      # between deleted VM and new VM (otherwise the'll have same id)
-      dummy_vm = Bosh::Director::Models::Vm.make
-      @vm.update(:apply_spec => spec)
+      # between deleted VM and new VM (otherwise they will have same id)
+      Bosh::Director::Models::Vm.make
+      @vm.update(:apply_spec => spec, :env => {"key1" => "value1"})
 
       handler = make_handler(@vm, @cloud, @agent)
       handler.stub!(:generate_agent_id).and_return("agent-222")
@@ -212,14 +235,13 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
             "version" => "3.0.2"
           },
           "cloud_properties" => { "foo" => "bar" },
-          "env" => { "key1" => "value1" }
         },
         "networks" => ["A", "B", "C"]
       }
       Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-222")
 
-      stemcell = Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
-      @vm.update(:apply_spec => spec)
+      Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
+      @vm.update(:apply_spec => spec, :env => {"key1" => "value1"})
 
       handler = make_handler(@vm, @cloud, @agent)
       handler.stub!(:generate_agent_id).and_return("agent-222")

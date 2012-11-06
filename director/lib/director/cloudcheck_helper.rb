@@ -92,10 +92,19 @@ module Bosh::Director
         handler_error("Unable to look up VM apply spec")
       end
 
+      if vm.env.nil?
+        handler_error("Unable to look up VM environment")
+      end
+
       spec = vm.apply_spec
+      env = vm.env
 
       unless spec.kind_of?(Hash)
         handler_error("Invalid apply spec format")
+      end
+
+      unless env.kind_of?(Hash)
+        handler_error("Invalid VM environment format")
       end
 
       instance = vm.instance
@@ -112,7 +121,6 @@ module Bosh::Director
 
       cloud_properties = resource_pool_spec["cloud_properties"] || {}
       stemcell_spec = resource_pool_spec["stemcell"] || {}
-      env = resource_pool_spec["env"]
 
       stemcell_name = stemcell_spec["name"]
       stemcell_version = stemcell_spec["version"]
