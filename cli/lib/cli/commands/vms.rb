@@ -12,7 +12,6 @@ module Bosh::Cli::Command
       show_full_stats = options[:full]
 
       if deployment_name.nil?
-        deployment_required
         manifest = prepare_deployment_manifest
         deployment_name = manifest["name"]
       end

@@ -166,6 +166,11 @@ module Bosh::Cli
 
       def deployment_required
         err("Please choose deployment first") if deployment.nil?
+        show_deployment
+      end
+
+      def show_deployment
+        say("Current deployment is #{deployment.green}")
       end
 
       def check_if_release_dir
