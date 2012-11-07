@@ -94,8 +94,11 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected resource pool
       #   specification differs from the one provided by the VM
       def resource_pool_changed?
-        resource_pool.spec != @current_state["resource_pool"] ||
-            resource_pool.deployment_plan.recreate
+        return true if resource_pool.spec != @current_state["resource_pool"]
+        return true if resource_pool.deployment_plan.recreate
+        return true if @vm && @vm.env != resource_pool.env
+
+        false
       end
 
       ##
