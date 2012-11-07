@@ -15,6 +15,17 @@ module Bosh::Cli::Command
       options[:config] ||= DEFAULT_CONFIG_PATH #hijack Cli::Config
     end
 
+    usage "micro"
+    desc  "show micro bosh sub-commands"
+    def micro_help
+      say("bosh micro sub-commands:")
+      nl
+      cmds = Bosh::Cli::Config.commands.values.find_all {|c|
+        c.usage =~ /^micro/
+      }
+      Bosh::Cli::Command::Help.list_commands(cmds)
+    end
+
     usage "micro deployment"
     desc  "Choose micro deployment to work with, or display current deployment"
     def micro_deployment(name=nil)
