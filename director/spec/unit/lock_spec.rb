@@ -6,7 +6,7 @@ describe Bosh::Director::Lock do
 
   it "should acquire a lock" do
     redis = mock("redis")
-    Bosh::Director::Config.stub!(:redis).and_return(redis)
+    BD::Config.stub!(:redis).and_return(redis)
 
     started = Time.now.to_f
 
@@ -33,7 +33,7 @@ describe Bosh::Director::Lock do
       nil
     end
 
-    lock = Bosh::Director::Lock.new("foo")
+    lock = BD::Lock.new("foo")
 
     ran_once = false
     lock.lock do
@@ -45,10 +45,11 @@ describe Bosh::Director::Lock do
 
   it "should not let two clients to acquire the same lock at the same time" do
     redis = mock("redis")
-    Bosh::Director::Config.stub!(:redis).and_return(redis)
+    BD::Config.stub!(:redis).and_return(redis)
 
     stored_value = nil
-    redis.should_receive(:setnx).with("foo", anything).any_number_of_times.and_return do |_, value|
+    redis.should_receive(:setnx).with("foo", anything).any_number_of_times.
+        and_return do |_, value|
       timestamp = value.split(":")[0].to_f
       timestamp.should be_within(2.0).of(Time.now.to_f + 10)
       if stored_value.nil?
@@ -75,13 +76,13 @@ describe Bosh::Director::Lock do
       nil
     end
 
-    lock_a = Bosh::Director::Lock.new("foo")
-    lock_b = Bosh::Director::Lock.new("foo", :timeout => 0.1)
+    lock_a = BD::Lock.new("foo")
+    lock_b = BD::Lock.new("foo", :timeout => 0.1)
 
     ran_once = false
     lock_a.lock do
       ran_once = true
-      lambda {lock_b.lock {}}.should raise_exception(Bosh::Director::Lock::TimeoutError)
+      lambda {lock_b.lock {}}.should raise_exception(BD::Lock::TimeoutError)
     end
 
     ran_once.should be_true
@@ -89,10 +90,11 @@ describe Bosh::Director::Lock do
 
   it "should return immediately with lock busy if try lock fails to get lock" do
     redis = mock("redis")
-    Bosh::Director::Config.stub!(:redis).and_return(redis)
+    BD::Config.stub!(:redis).and_return(redis)
 
     stored_value = nil
-    redis.should_receive(:setnx).with("foo", anything).any_number_of_times.and_return do |_, value|
+    redis.should_receive(:setnx).with("foo", anything).any_number_of_times.
+        and_return do |_, value|
       timestamp = value.split(":")[0].to_f
       timestamp.should be_within(2.0).of(Time.now.to_f + 10)
       if stored_value.nil?
@@ -115,13 +117,13 @@ describe Bosh::Director::Lock do
       nil
     end
 
-    lock_a = Bosh::Director::Lock.new("foo")
-    lock_b = Bosh::Director::Lock.new("foo")
+    lock_a = BD::Lock.new("foo", :timeout => 0)
+    lock_b = BD::Lock.new("foo", :timeout => 0)
 
     ran_once = false
-    lock_a.try_lock do
+    lock_a.lock do
       ran_once = true
-      lambda {lock_b.try_lock {}}.should raise_exception(Bosh::Director::Lock::LockBusy)
+      lambda {lock_b.lock {}}.should raise_exception(BD::Lock::TimeoutError)
     end
 
     ran_once.should be_true
