@@ -65,10 +65,22 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
       @vm.resource_pool_changed?.should == false
     end
 
-
     it "should return true when the deployment is being recreated" do
       @deployment.stub(:recreate).and_return(true)
       @vm.current_state = {"resource_pool" => {"size" => "small"}}
+      @vm.resource_pool_changed?.should == true
+    end
+
+    it "should return true when VM env changes" do
+      @deployment.stub(:recreate).and_return(false)
+      @resource_pool.stub(:env).and_return({"foo" => "bar"})
+
+      @vm.current_state = {"resource_pool" => {"size" => "small"}}
+      @vm.vm = BD::Models::Vm.make
+
+      @vm.vm.update(:env => {"foo" => "bar"})
+      @vm.resource_pool_changed?.should == false
+      @vm.vm.update(:env => {"foo" => "baz"})
       @vm.resource_pool_changed?.should == true
     end
   end

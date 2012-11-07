@@ -166,12 +166,12 @@ describe Bosh::Director::DeploymentPlan::Instance do
       }.to raise_error(BD::InstanceTargetStateUndefined)
     end
   end
+
   describe "updating deployment" do
     it "needs to smartly compare specs before deciding to update a job" do
       @deployment = make_deployment("mycloud")
-      BD::DeploymentPlan::Job.any_instance.stub(:initialize)
       @plan = mock(BD::DeploymentPlan, :model => @deployment)
-      @job = BD::DeploymentPlan::Job.new(@plan)
+      @job = BD::DeploymentPlan::Job.new(@plan, {})
 
       @job.release = mock(BD::DeploymentPlan::Release)
       @job.release.should_receive(:name).twice.and_return("hbase-release")
@@ -204,5 +204,35 @@ describe Bosh::Director::DeploymentPlan::Instance do
       # Check that the old way of comparing would say that the job has changed.
       (@job.spec == instance.current_state).should == false
     end
+
+    describe "changes" do
+      it "detects resource pool change when instance VM env changes" do
+        deployment = make_deployment("mycloud")
+
+        resource_pool = mock(BD::DeploymentPlan::ResourcePool)
+        resource_pool.stub(:spec).and_return("foo" => "bar")
+        resource_pool.stub(:env).and_return("key" => "value")
+
+        plan = mock(BD::DeploymentPlan, :model => deployment)
+        plan.stub!(:recreate).and_return(false)
+
+        job = BD::DeploymentPlan::Job.new(plan, {})
+        job.stub!(:instance_state).with(0).and_return("started")
+        job.stub!(:resource_pool).and_return(resource_pool)
+
+        instance_model = BD::Models::Instance.make
+        instance_model.vm.update(:env => {"key" => "value"})
+
+        instance = make(job, 0)
+        instance.current_state = {"resource_pool" => {"foo" => "bar"}}
+        instance.use_model(instance_model)
+
+        instance.resource_pool_changed?.should be_false
+        instance_model.vm.update(:env => {"key" => "value2"})
+
+        instance.resource_pool_changed?.should be_true
+      end
+    end
+
   end
 end
