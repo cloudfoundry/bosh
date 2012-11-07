@@ -121,6 +121,7 @@ module Bosh::Cli::Command
       end
 
       if options[:gateway_host]
+        require "net/ssh/gateway"
         gw_host = options[:gateway_host]
         gw_user = options[:gateway_user] || ENV["USER"]
         gateway = Net::SSH::Gateway.new(gw_host, gw_user)
@@ -255,6 +256,8 @@ module Bosh::Cli::Command
       if gateway
         gateway.ssh(ip, user) { |ssh| yield ssh }
       else
+        require "net/ssh"
+        require "net/scp"
         Net::SSH.start(ip, user) { |ssh| yield ssh }
       end
     end

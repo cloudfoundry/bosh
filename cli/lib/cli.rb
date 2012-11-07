@@ -29,9 +29,6 @@ require "tmpdir"
 require "uri"
 require "yaml"
 require "netaddr"
-require "net/ssh"
-require "net/scp"
-require "net/ssh/gateway"
 
 unless defined?(Bosh::Cli::VERSION)
   require "cli/version"
