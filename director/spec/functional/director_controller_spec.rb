@@ -81,7 +81,8 @@ describe Bosh::Director::Controller do
           "version" => "#{BD::VERSION} (#{BD::Config.revision})",
           "uuid" => BD::Config.uuid,
           "user" => "admin",
-          "cpi"  => "dummy"
+          "cpi"  => "dummy",
+          "features" => {"dns" => false}
       }
 
       Yajl::Parser.parse(last_response.body).should == expected
