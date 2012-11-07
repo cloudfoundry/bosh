@@ -2,15 +2,13 @@
 
 require File.expand_path("../../spec_helper", __FILE__)
 
-describe Bosh::Director::InstanceDeleter do
-  include Bosh::Director
-
+describe BD::InstanceDeleter do
   before(:each) do
     @cloud = mock("cloud")
-    Config.stub!(:cloud).and_return(@cloud)
+    BD::Config.stub!(:cloud).and_return(@cloud)
 
     @deployment_plan = mock("deployment_plan")
-    @deleter = InstanceDeleter.new(@deployment_plan)
+    @deleter = BD::InstanceDeleter.new(@deployment_plan)
   end
 
   describe :delete_instances do
@@ -19,7 +17,7 @@ describe Bosh::Director::InstanceDeleter do
       5.times { instances << mock("instance") }
 
       pool = mock("pool")
-      ThreadPool.stub!(:new).with(:max_threads => 2).and_return(pool)
+      BD::ThreadPool.stub!(:new).with(:max_threads => 2).and_return(pool)
       pool.stub!(:wrap).and_yield(pool)
       # TODO when switching to rspec 2.9.0 this needs to be changed as they
       # have changed the call to not include the proc
@@ -36,9 +34,9 @@ describe Bosh::Director::InstanceDeleter do
   describe :delete_instance do
 
     it "should delete a single instance" do
-      vm = Models::Vm.make
-      instance = Models::Instance.make(:vm => vm, :job => "test", :index => 5)
-      persistent_disks = [Models::PersistentDisk.make, Models::PersistentDisk.make]
+      vm = BDM::Vm.make
+      instance = BDM::Instance.make(:vm => vm, :job => "test", :index => 5)
+      persistent_disks = [BDM::PersistentDisk.make, BDM::PersistentDisk.make]
       persistent_disks.each { |disk| instance.persistent_disks << disk }
 
       @deleter.should_receive(:drain).with(vm.agent_id)
@@ -51,8 +49,8 @@ describe Bosh::Director::InstanceDeleter do
 
       @deleter.delete_instance(instance)
 
-      Models::Vm[vm.id].should == nil
-      Models::Instance[instance.id].should == nil
+      BDM::Vm[vm.id].should == nil
+      BDM::Instance[instance.id].should == nil
     end
 
   end
@@ -61,7 +59,7 @@ describe Bosh::Director::InstanceDeleter do
 
     it "should drain the VM" do
       agent = mock("agent")
-      AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
+      BD::AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
 
       agent.should_receive(:drain).with("shutdown").and_return(2)
       agent.should_receive(:stop)
@@ -72,8 +70,8 @@ describe Bosh::Director::InstanceDeleter do
 
     it "should dynamically drain the VM" do
       agent = mock("agent")
-      AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
-      Bosh::Director::Config.stub!(:job_cancelled?).and_return(nil)
+      BD::AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
+      BD::Config.stub!(:job_cancelled?).and_return(nil)
 
       agent.should_receive(:drain).with("shutdown").and_return(-2)
       agent.should_receive(:drain).with("status").and_return(1, 0)
@@ -87,10 +85,10 @@ describe Bosh::Director::InstanceDeleter do
 
     it "should stop vm-drain if task is cancelled" do
       agent = mock("agent")
-      AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
-      Bosh::Director::Config.stub!(:job_cancelled?).and_raise(Bosh::Director::TaskCancelled.new(1))
+      BD::AgentClient.stub!(:new).with("some_agent_id").and_return(agent)
+      BD::Config.stub!(:job_cancelled?).and_raise(BD::TaskCancelled.new(1))
       agent.should_receive(:drain).with("shutdown").and_return(-2)
-      lambda {@deleter.drain("some_agent_id")}.should raise_error(Bosh::Director::TaskCancelled)
+      lambda {@deleter.drain("some_agent_id")}.should raise_error(BD::TaskCancelled)
     end
 
   end
@@ -98,8 +96,8 @@ describe Bosh::Director::InstanceDeleter do
   describe :delete_persistent_disks do
 
     it "should delete the persistent disks" do
-      persistent_disks = [Models::PersistentDisk.make(:active => true),
-                          Models::PersistentDisk.make(:active => false)]
+      persistent_disks = [BDM::PersistentDisk.make(:active => true),
+                          BDM::PersistentDisk.make(:active => false)]
 
       persistent_disks.each do |disk|
         @cloud.should_receive(:delete_disk).with(disk.disk_cid)
@@ -108,18 +106,18 @@ describe Bosh::Director::InstanceDeleter do
       @deleter.delete_persistent_disks(persistent_disks)
 
       persistent_disks.each do |disk|
-        Models::PersistentDisk[disk.id].should == nil
+        BDM::PersistentDisk[disk.id].should == nil
       end
     end
 
     it "should ignore errors to inactive persistent disks" do
-      disk = Models::PersistentDisk.make(:active => false)
+      disk = BDM::PersistentDisk.make(:active => false)
       @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
       @deleter.delete_persistent_disks([disk])
     end
 
     it "should not ignore errors to active persistent disks" do
-      disk = Models::PersistentDisk.make(:active => true)
+      disk = BDM::PersistentDisk.make(:active => true)
       @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
       lambda { @deleter.delete_persistent_disks([disk]) }.should raise_error(Bosh::Clouds::DiskNotFound)
     end
@@ -128,7 +126,7 @@ describe Bosh::Director::InstanceDeleter do
 
   describe :delete_dns do
     it "should generate a correct SQL query string" do
-      domain = Models::Dns::Domain.make
+      domain = BDM::Dns::Domain.make
       @deployment_plan.stub!(:canonical_name).and_return("dep")
       @deployment_plan.stub!(:dns_domain).and_return(domain)
       pattern = "0.foo.%.dep.bosh"
