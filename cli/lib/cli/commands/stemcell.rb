@@ -105,9 +105,11 @@ module Bosh::Cli::Command
     desc "Show the list of publicly available stemcells for download."
     option "--full", "show the full download url"
     option "--tags tag1,tag2...", Array, "filter by tag"
+    option "--all", "show all stemcells"
     def list_public
       full = !!options[:full]
       tags = options[:tags] || [DEFAULT_PUB_STEMCELL_TAG]
+      tags = [ALL_STEMCELLS_TAG] if options[:all]
 
       yaml = get_public_stemcell_list
       stemcells_table = table do |t|
