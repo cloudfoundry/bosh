@@ -30,7 +30,7 @@ module Bosh::Director
               scan_disks
               "scan complete"
             end
-          rescue Lock::LockBusy
+          rescue Lock::TimeoutError
             raise "Unable to get deployment lock, maybe a deployment is " +
                   "in progress. Try again later."
           end
@@ -223,7 +223,7 @@ module Bosh::Director
         end
 
         def with_deployment_try_lock
-          Lock.new("lock:deployment:#{@deployment.name}").try_lock do
+          Lock.new("lock:deployment:#{@deployment.name}", :timeout => 0).lock do
             yield
           end
         end
