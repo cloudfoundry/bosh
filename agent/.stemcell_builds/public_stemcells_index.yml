@@ -10,14 +10,6 @@ public_stemcells_index.yml:
   sha: c616046a1d7e7a942b9e98ecde314b789bc3e263
   url: https://blob.cfblob.com/rest/objects/4e4e78bca21e121204e4e86ee151bc04f6a19ce46b22?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=NJuAr9c8eOid7dKFmOEN7bmzAlI=
   object_id: eyJvaWQiOiI0ZTRlNzhiY2EyMWUxMjEyMDRlNGU4NmVlMTUxYmMwNGY2YTE5%0AY2U0NmIyMiIsInNpZyI6Ik5KdUFyOWM4ZU9pZDdkS0ZtT0VON2JtekFsST0i%0AfQ==%0A
-micro-bosh-stemcell-0.1.0.tgz:
-  size: 522749400
-  sha: 9ed4349a917655fcfcc750ee3383c2c77c730ea2
-  url: https://blob.cfblob.com/rest/objects/4e4e78bca51e122004e4e8ec68407704f7f6981dd8cf?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=qBNHS+y3k2n8hhcVGTA6yFh5Mms=
-  object_id: eyJzaWciOiJxQk5IUyt5M2sybjhoaGNWR1RBNnlGaDVNbXM9Iiwib2lkIjoi%0ANGU0ZTc4YmNhNTFlMTIyMDA0ZTRlOGVjNjg0MDc3MDRmN2Y2OTgxZGQ4Y2Yi%0AfQ==%0A
-  tags:
-  - vsphere
-  - micro
 bosh-stemcell-0.3.0.tgz:
   size: 304976057
   sha: 283be73063d30482c8a9e68f0aa80532207e172d
