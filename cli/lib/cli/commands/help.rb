@@ -78,10 +78,14 @@ module Bosh::Cli::Command
         end
       end
 
+      self.class.list_commands(good_matches)
+    end
+
+    def self.list_commands(commands)
       help_column_width = terminal_width - 5
       help_indent = 4
 
-      good_matches.each_with_index do |command, i|
+      commands.each_with_index do |command, i|
         nl if i > 0
         margin = command.usage.size + 1
         say("#{command.usage_with_params.columnize(70, margin).green}")
