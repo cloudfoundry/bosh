@@ -7,5 +7,4 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
 
-assert_available losetup
-assert_available fdisk
+assert_available qemu-img
