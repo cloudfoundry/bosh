@@ -58,4 +58,10 @@ namespace "bat" do
     t.rspec_opts = SPEC_OPTS
   end
 
+  desc "Run dns tests"
+  RSpec::Core::RakeTask.new(:dns => :env) do |t|
+    t.pattern = "spec/bat/dns_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
 end

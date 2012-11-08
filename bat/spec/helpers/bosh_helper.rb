@@ -69,6 +69,10 @@ module BoshHelper
     info["cpi"] == "vsphere"
   end
 
+  def dns?
+    return true
+    info["features"] && info["features"]["dns"]
+  end
 
   def read_environment(variable)
     if ENV[variable]
