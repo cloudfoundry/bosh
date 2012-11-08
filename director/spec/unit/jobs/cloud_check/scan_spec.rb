@@ -13,9 +13,10 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
     it "performs disk scan and VM scan while holding a deployment lock" do
       lock = mock("deployment_lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
+      Bosh::Director::Lock.stub!(:new).
+          with("lock:deployment:mycloud", :timeout => 0).and_return(lock)
 
-      lock.should_receive(:try_lock).and_yield
+      lock.should_receive(:lock).and_yield
       @job.should_receive(:scan_vms).ordered
       @job.should_receive(:scan_disks).ordered
       @job.perform.should == "scan complete"
@@ -56,8 +57,9 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
     describe "Mount info scan" do
       it "unresponsive agents should not be considered disk info mismatch" do
         lock = mock("deployment_lock")
-        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
-        lock.should_receive(:try_lock).and_yield
+        Bosh::Director::Lock.stub!(:new).
+            with("lock:deployment:mycloud", :timeout => 0).and_return(lock)
+        lock.should_receive(:lock).and_yield
 
         vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
         instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
@@ -81,8 +83,9 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       it "old agents without list_disk method" do
         lock = mock("deployment_lock")
-        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
-        lock.should_receive(:try_lock).and_yield
+        Bosh::Director::Lock.stub!(:new).
+            with("lock:deployment:mycloud", :timeout => 0).and_return(lock)
+        lock.should_receive(:lock).and_yield
 
         vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
         instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
@@ -107,8 +110,9 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       it "scan not-mounted active disk" do
         lock = mock("deployment_lock")
-        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
-        lock.should_receive(:try_lock).and_yield
+        Bosh::Director::Lock.stub!(:new).
+            with("lock:deployment:mycloud", :timeout => 0).and_return(lock)
+        lock.should_receive(:lock).and_yield
 
         vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid", :agent_id => "agent", :deployment => @mycloud)
         instance = Bosh::Director::Models::Instance.make(:vm => vm, :deployment => @mycloud,
@@ -139,8 +143,9 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       it "scan disks mounted twice" do
         lock = mock("deployment_lock")
-        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
-        lock.should_receive(:try_lock).and_yield
+        Bosh::Director::Lock.stub!(:new).
+            with("lock:deployment:mycloud", :timeout => 0).and_return(lock)
+        lock.should_receive(:lock).and_yield
 
         (1..2).each do |i|
           vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid-#{i}", :agent_id => "agent-#{i}", :deployment => @mycloud)
@@ -185,8 +190,9 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
       it "scan disks mounted in a different VM" do
         lock = mock("deployment_lock")
-        Bosh::Director::Lock.stub!(:new).with("lock:deployment:mycloud").and_return(lock)
-        lock.should_receive(:try_lock).and_yield
+        Bosh::Director::Lock.stub!(:new).
+            with("lock:deployment:mycloud", :timeout => 0).and_return(lock)
+        lock.should_receive(:lock).and_yield
 
         (1..2).each do |i|
           vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid-#{i}", :agent_id => "agent-#{i}", :deployment => @mycloud)
