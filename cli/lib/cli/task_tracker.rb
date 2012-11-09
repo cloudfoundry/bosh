@@ -10,6 +10,8 @@ module Bosh
 
       attr_reader :output
 
+      attr_reader :renderer
+
       # @param [Bosh::Cli::Director] director
       # @param [Integer] task_id
       # @param [Hash] options
@@ -28,7 +30,9 @@ module Bosh
         @cache = Config.cache
         @task = Bosh::Cli::DirectorTask.new(@director, @task_id, @log_type)
 
-        if options[:raw_output]
+        if options[:renderer]
+          @renderer = options[:renderer]
+        elsif options[:raw_output]
           @renderer = Bosh::Cli::TaskLogRenderer.new
         else
           @renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(@log_type)
