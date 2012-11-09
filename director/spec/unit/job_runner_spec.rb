@@ -5,6 +5,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::Director::JobRunner do
 
   before(:each) do
+    BD::Config.stub!(:cloud_options).and_return({})
     @task_dir = Dir.mktmpdir
     @task = Bosh::Director::Models::Task.make(:id => 42, :output => @task_dir)
 

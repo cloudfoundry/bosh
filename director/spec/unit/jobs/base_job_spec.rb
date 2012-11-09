@@ -5,6 +5,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 describe Bosh::Director::Jobs::BaseJob do
 
   before(:each) do
+    BD::Config.stub!(:cloud_options).and_return({})
     @task_dir = Dir.mktmpdir
     @event_log = Bosh::Director::EventLog.new(StringIO.new)
     @logger = Logger.new(StringIO.new)

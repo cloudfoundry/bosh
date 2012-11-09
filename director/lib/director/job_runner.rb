@@ -68,13 +68,9 @@ module Bosh::Director
         Config.dns_db.logger = @debug_logger
       end
 
-      if Config.cloud_options.is_a?(Hash) &&
-        Config.cloud_options["plugin"] == "vsphere" &&
-        Config.cloud_options["properties"].is_a?(Hash)
-
-        cpi_log = File.join(@task.output, "cpi")
-        Config.cloud_options["properties"]["cpi_log"] = cpi_log
-      end
+      cpi_log = File.join(@task.output, "cpi")
+      Config.cloud_options["properties"] ||= {}
+      Config.cloud_options["properties"]["cpi_log"] = cpi_log
     end
 
     # Instantiates and performs director job.
