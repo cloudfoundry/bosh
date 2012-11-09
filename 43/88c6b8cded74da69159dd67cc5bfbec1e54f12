@@ -1,0 +1,7 @@
+Code-Review+2: Doug MacEachern <dougm@vmware.com>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Vadim Spivak <vspivak@vmware.com>
+Submitted-at: Fri, 09 Nov 2012 02:11:47 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/11253
+Project: bosh
+Branch: refs/heads/master
