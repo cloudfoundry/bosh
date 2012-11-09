@@ -160,10 +160,6 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     # TODO: refactor to use less mocks (and a real manifest)
     it "should do a basic update" do
-      deployment_lock = mock("deployment_lock")
-      foo_release_lock = mock("release_lock")
-      bar_release_lock = mock("release_lock")
-
       deployment = Bosh::Director::Models::Deployment.
         make(:name => "test_deployment")
 
@@ -188,20 +184,11 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan.stub!(:releases).and_return(release_specs)
       @deployment_plan.stub!(:model).and_return(deployment)
 
-      Bosh::Director::Lock.stub!(:new).
-        with("lock:deployment:test_deployment").and_return(deployment_lock)
-
-      Bosh::Director::Lock.stub!(:new).
-        with("lock:release:foo").and_return(foo_release_lock)
-      Bosh::Director::Lock.stub!(:new).
-        with("lock:release:bar").and_return(bar_release_lock)
-
-      deployment_lock.should_receive(:lock).ordered.and_yield
-      # Note the order of release locks is alphabetical (order is important)
-      bar_release_lock.should_receive(:lock).ordered
-      foo_release_lock.should_receive(:lock).ordered
-
       job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
+      job.should_receive(:with_deployment_lock).with(@deployment_plan).
+          and_yield.ordered
+      job.should_receive(:with_release_locks).with(@deployment_plan).
+          and_yield.ordered
       job.should_receive(:prepare).ordered
       job.should_receive(:update).ordered
       job.should_receive(:update_stemcell_references).ordered
@@ -212,15 +199,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       deployment.should_receive(:add_release_version).
         with(bar_release_version)
 
-      foo_release_lock.should_receive(:release).ordered
-      bar_release_lock.should_receive(:release).ordered
-
       job.perform.should == "/deployments/test_deployment"
 
       deployment.refresh
       deployment.manifest.should == "manifest"
     end
-
   end
-
 end

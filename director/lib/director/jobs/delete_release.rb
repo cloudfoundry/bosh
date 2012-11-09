@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class DeleteRelease < BaseJob
+      include LockHelper
 
       @queue = :normal
 
@@ -152,9 +153,7 @@ module Bosh::Director
       def perform
         logger.info("Processing delete release")
 
-        lock = Lock.new("lock:release:#{@name}", :timeout => 10)
-
-        lock.lock do
+        with_release_lock(@name, :timeout => 10) do
           logger.info("Looking up release: #{@name}")
           release = @release_manager.find_by_name(@name)
           desc = "#{@name}/#{@version}"
@@ -176,7 +175,6 @@ module Bosh::Director
             end
 
             delete_release_version(release_version)
-
           else
             logger.info("Checking for any deployments still using the release")
             deployments = release.versions.map { |version|

@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
+      include LockHelper
 
       @queue = :normal
 
@@ -185,8 +186,8 @@ module Bosh::Director
       end
 
       def perform
-        with_deployment_lock do
-          with_release_locks do
+        with_deployment_lock(@deployment_plan) do
+          with_release_locks(@deployment_plan) do
             logger.info("Preparing deployment")
             prepare
             begin
@@ -219,31 +220,6 @@ module Bosh::Director
       end
 
       private
-
-      def with_deployment_lock
-        name = @deployment_plan.name
-        logger.info("Acquiring deployment lock on #{name}")
-        Lock.new("lock:deployment:#{name}").lock { yield }
-      end
-
-      def with_release_locks
-        release_names = @deployment_plan.releases.map do |release|
-          release.name
-        end
-
-        # Sorting to enforce lock order to avoid deadlocks
-        locks = release_names.sort.map do |release_name|
-          logger.info("Acquiring release lock: #{release_name}")
-          Lock.new("lock:release:#{release_name}")
-        end
-
-        begin
-          locks.each { |lock| lock.lock }
-          yield
-        ensure
-          locks.reverse_each { |lock| lock.release }
-        end
-      end
 
       def sum_across_pools(counting_method)
         @resource_pool_updaters.inject(0) do |sum, updater|

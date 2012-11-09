@@ -3,6 +3,7 @@
 module Bosh::Director
   module Jobs
     class DeleteStemcell < BaseJob
+      include LockHelper
 
       @queue = :normal
 
@@ -20,10 +21,7 @@ module Bosh::Director
 
       def perform
         logger.info("Processing delete stemcell")
-
-        lock = Lock.new("lock:stemcells:#{@name}:#{@version}", :timeout => 10)
-
-        lock.lock do
+        with_stemcell_lock(@name, @version) do
           desc = "#{@name}/#{@version}"
           logger.info("Looking up stemcell: #{desc}")
           @stemcell =

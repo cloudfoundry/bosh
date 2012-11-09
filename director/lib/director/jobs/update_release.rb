@@ -3,7 +3,8 @@
 module Bosh::Director
   module Jobs
     class UpdateRelease < BaseJob
-      include Bosh::Director::VersionCalc
+      include LockHelper
+      include VersionCalc
 
       @queue = :normal
 
@@ -44,8 +45,7 @@ module Bosh::Director
         single_step_stage("Extracting release") { extract_release }
         single_step_stage("Verifying manifest") { verify_manifest }
 
-        release_lock = Lock.new("lock:release:#{@name}")
-        release_lock.lock { process_release }
+        with_release_lock(@name) { process_release }
 
         if @rebase && @packages_unchanged && @jobs_unchanged
           raise DirectorError,

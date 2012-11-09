@@ -6,9 +6,12 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
   before(:each) do
     @blobstore = mock(Bosh::Blobstore::Client)
-    Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore)
-
+    BD::Config.stub!(:blobstore).and_return(@blobstore)
     @release_dir = Dir.mktmpdir("release_dir")
+  end
+
+  after(:each) do
+    FileUtils.remove_entry_secure(@release_dir) if File.exist?(@release_dir)
   end
 
   describe "rebasing release" do
@@ -68,63 +71,55 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       @job = BD::Jobs::UpdateRelease.new(@release_dir, "rebase" => true)
 
-      @release = BD::Models::Release.make(:name => "appcloud")
-      @rv = BD::Models::ReleaseVersion.make(
-        :release => @release, :version => "37")
+      @release = BDM::Release.make(:name => "appcloud")
+      @rv = BDM::ReleaseVersion.make(:release => @release, :version => "37")
 
-      BD::Models::Package.make(
+      BDM::Package.make(
         :release => @release, :name => "foo", :version => "2.7-dev")
-      BD::Models::Package.make(
+      BDM::Package.make(
         :release => @release, :name => "bar", :version => "42")
-      BD::Models::Package.make(
+      BDM::Package.make(
         :release => @release, :name => "zbb",
         :version => "25", :fingerprint => "deadbad")
 
-      BD::Models::Template.make(
+      BDM::Template.make(
         :release => @release, :name => "baz", :version => "33.7-dev")
-      BD::Models::Template.make(
+      BDM::Template.make(
         :release => @release, :name => "zaz", :version => "17")
-      BD::Models::Template.make(
+      BDM::Template.make(
         :release => @release, :name => "zbz",
         :version => "28", :fingerprint => "baddead")
-
-      @lock = mock(Bosh::Director::Lock)
-      Bosh::Director::Lock.stub(:new).
-        with("lock:release:appcloud").
-        and_return(@lock)
     end
 
     it "rebases original versions saving the major version" do
-      @lock.should_receive(:lock).and_yield
-
       @blobstore.should_receive(:create).
         exactly(4).times.and_return("b1", "b2", "b3", "b4")
-
+      @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
 
-      foos = BD::Models::Package.filter(
+      foos = BDM::Package.filter(
         :release_id => @release.id, :name => "foo").all
-      bars = BD::Models::Package.filter(
+      bars = BDM::Package.filter(
         :release_id => @release.id, :name => "bar").all
-      zbbs = BD::Models::Package.filter(
+      zbbs = BDM::Package.filter(
         :release_id => @release.id, :name => "zbb").all
 
       foos.map { |foo| foo.version }.should =~ %w(2.7-dev 2.8-dev)
       bars.map { |bar| bar.version }.should =~ %w(42 3.1-dev)
       zbbs.map { |zbb| zbb.version }.should =~ %w(25) # fingerprint match
 
-      bazs = BD::Models::Template.filter(
+      bazs = BDM::Template.filter(
         :release_id => @release.id, :name => "baz").all
-      zazs = BD::Models::Template.filter(
+      zazs = BDM::Template.filter(
         :release_id => @release.id, :name => "zaz").all
-      zbzs = BD::Models::Template.filter(
+      zbzs = BDM::Template.filter(
         :release_id => @release.id, :name => "zbz").all
 
       bazs.map { |baz| baz.version }.should =~ %w(33 33.7-dev)
       zazs.map { |zaz| zaz.version }.should =~ %w(17 0.1-dev)
       zbzs.map { |zbz| zbz.version }.should =~ %w(28) # fingerprint match
 
-      rv = BD::Models::ReleaseVersion.filter(
+      rv = BDM::ReleaseVersion.filter(
         :release_id => @release.id, :version => "42.1-dev").first
 
       rv.should_not be_nil
@@ -139,34 +134,33 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "uses major.1-dev version for initial rebase if no version exists" do
-      @lock.should_receive(:lock).and_yield
-
       @blobstore.should_receive(:create).
         exactly(6).times.and_return("b1", "b2", "b3", "b4", "b5", "b6")
 
       @rv.destroy
-      BD::Models::Package.each { |p| p.destroy }
-      BD::Models::Template.each { |t| t.destroy }
+      BDM::Package.each { |p| p.destroy }
+      BDM::Template.each { |t| t.destroy }
 
+      @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
 
-      foos = BD::Models::Package.filter(
+      foos = BDM::Package.filter(
         :release_id => @release.id, :name => "foo").all
-      bars = BD::Models::Package.filter(
+      bars = BDM::Package.filter(
         :release_id => @release.id, :name => "bar").all
 
       foos.map { |foo| foo.version }.should =~ %w(2.1-dev)
       bars.map { |bar| bar.version }.should =~ %w(3.1-dev)
 
-      bazs = BD::Models::Template.filter(
+      bazs = BDM::Template.filter(
         :release_id => @release.id, :name => "baz").all
-      zazs = BD::Models::Template.filter(
+      zazs = BDM::Template.filter(
         :release_id => @release.id, :name => "zaz").all
 
       bazs.map { |baz| baz.version }.should =~ %w(33)
       zazs.map { |zaz| zaz.version }.should =~ %w(0.1-dev)
 
-      rv = BD::Models::ReleaseVersion.filter(
+      rv = BDM::ReleaseVersion.filter(
         :release_id => @release.id, :version => "42.1-dev").first
 
       rv.packages.map { |p| p.version }.should =~ %w(2.1-dev 3.1-dev 333)
@@ -179,12 +173,13 @@ describe Bosh::Director::Jobs::UpdateRelease do
       dup_release_dir = Dir.mktmpdir
       FileUtils.cp(File.join(@release_dir, "release.tgz"), dup_release_dir)
 
-      @lock.should_receive(:lock).twice.and_yield
       @blobstore.should_receive(:create).
         exactly(4).times.and_return("b1", "b2", "b3", "b4")
+      @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
 
       job = BD::Jobs::UpdateRelease.new(dup_release_dir, "rebase" => true)
+      job.should_receive(:with_release_lock).with("appcloud").and_yield
 
       expect {
         job.perform
@@ -194,44 +189,44 @@ describe Bosh::Director::Jobs::UpdateRelease do
     it "prefers the same name/version, then final version, " +
        "then version with most compiled packages" +
        "when there's more than one match" do
-      BD::Models::Package.each { |p| p.destroy }
-      BD::Models::Template.each { |t| t.destroy }
+      BDM::Package.each { |p| p.destroy }
+      BDM::Template.each { |t| t.destroy }
 
-      BD::Models::Package.make(
+      BDM::Package.make(
         :release => @release, :name => "bar",
         :version => "3.14-dev", :fingerprint => "badcafe")
 
-      BD::Models::Package.make(
+      BDM::Package.make(
         :release => @release, :name => "bar",
         :version => "52", :fingerprint => "badcafe")
 
-      zbb1 = BD::Models::Package.make(
+      zbb1 = BDM::Package.make(
         :release => @release, :name => "zbb",
         :version => "22.1-dev", :fingerprint => "deadbad")
 
-      zbb2 = BD::Models::Package.make(
+      zbb2 = BDM::Package.make(
         :release => @release, :name => "zbb",
         :version => "22.2-dev", :fingerprint => "deadbad")
 
-      BD::Models::CompiledPackage.make(:package => zbb1)
+      BDM::CompiledPackage.make(:package => zbb1)
       2.times do
-        BD::Models::CompiledPackage.make(:package => zbb2)
+        BDM::CompiledPackage.make(:package => zbb2)
       end
 
-      BD::Models::Template.make(
+      BDM::Template.make(
         :release => @release, :name => "baz",
         :version => "332.1-dev", :fingerprint => "deadbeef")
 
-      BD::Models::Template.make(
+      BDM::Template.make(
         :release => @release, :name => "baz",
         :version => "333", :fingerprint => "deadbeef")
 
-      @lock.stub(:lock).and_yield
       @blobstore.should_receive(:create).
         exactly(3).times.and_return("b1", "b2", "b3")
+      @job.should_receive(:with_release_lock).with("appcloud").and_yield
       @job.perform
 
-      rv = BD::Models::ReleaseVersion.filter(
+      rv = BDM::ReleaseVersion.filter(
         :release_id => @release.id, :version => "42.1-dev").first
 
       rv.packages.select { |p| p.name == "bar" }.
@@ -248,14 +243,9 @@ describe Bosh::Director::Jobs::UpdateRelease do
   describe "create_package" do
 
     before(:each) do
-      @release = Bosh::Director::Models::Release.make
-
-      @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
+      @release = BDM::Release.make
+      @job = BD::Jobs::UpdateRelease.new(@release_dir)
       @job.release_model = @release
-    end
-
-    after(:each) do
-      FileUtils.rm_rf(@release_dir)
     end
 
     it "should create simple packages" do
@@ -276,7 +266,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
         }
       )
 
-      package = Bosh::Director::Models::Package[:name => "test_package",
+      package = BDM::Package[:name => "test_package",
                                                 :version => "1.0"]
       package.should_not be_nil
       package.name.should == "test_package"
@@ -287,7 +277,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
     end
 
     it "should copy package blob" do
-      Bosh::Director::BlobUtil.should_receive(:copy_blob).and_return("blob_id")
+      BD::BlobUtil.should_receive(:copy_blob).and_return("blob_id")
       FileUtils.mkdir_p(File.join(@release_dir, "packages"))
       package_path = File.join(@release_dir, "packages", "test_package.tgz")
       File.open(package_path, "w") do |f|
@@ -299,7 +289,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
                            "dependencies" => ["foo_package", "bar_package"],
                            "blobstore_id" => "blah"})
 
-      package = Bosh::Director::Models::Package[:name => "test_package",
+      package = BDM::Package[:name => "test_package",
                                                 :version => "1.0"]
       package.should_not be_nil
       package.name.should == "test_package"
@@ -314,7 +304,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
   describe "resolve_package_dependencies" do
 
     before(:each) do
-      @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
+      @job = BD::Jobs::UpdateRelease.new(@release_dir)
     end
 
     it "should normalize nil dependencies" do
@@ -357,7 +347,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
   describe "create jobs" do
 
     before :each do
-      @release = Bosh::Director::Models::Release.make
+      @release = BDM::Release.make
       @tarball = File.join(@release_dir, "jobs", "foo.tgz")
       @job_bits = create_job(
         "foo", "monit",
@@ -372,7 +362,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       FileUtils.mkdir_p(File.dirname(@tarball))
 
-      @job = Bosh::Director::Jobs::UpdateRelease.new(@release_dir)
+      @job = BD::Jobs::UpdateRelease.new(@release_dir)
       @job.release_model = @release
     end
 
@@ -387,10 +377,10 @@ describe Bosh::Director::Jobs::UpdateRelease do
         Digest::SHA1.hexdigest(f.read)
       end
 
-      Bosh::Director::Models::Template.count.should == 0
+      BDM::Template.count.should == 0
       @job.create_job(@job_attrs)
 
-      template = Bosh::Director::Models::Template.first
+      template = BDM::Template.first
       template.name.should == "foo"
       template.version.should == "1"
       template.release.should == @release
@@ -402,7 +392,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       lambda {
         @job.create_job(@job_attrs)
-      }.should raise_error(Bosh::Director::JobInvalidArchive)
+      }.should raise_error(BD::JobInvalidArchive)
     end
 
     it "whines on missing manifest" do
@@ -415,7 +405,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       lambda {
         @job.create_job(@job_attrs)
-      }.should raise_error(Bosh::Director::JobMissingManifest)
+      }.should raise_error(BD::JobMissingManifest)
     end
 
     it "whines on missing monit file" do
@@ -428,7 +418,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       lambda {
         @job.create_job(@job_attrs)
-      }.should raise_error(Bosh::Director::JobMissingMonit)
+      }.should raise_error(BD::JobMissingMonit)
     end
 
     it "does not whine when it has a foo.monit file" do
@@ -441,7 +431,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       lambda {
         @job.create_job(@job_attrs)
-      }.should_not raise_error(Bosh::Director::JobMissingMonit)
+      }.should_not raise_error(BD::JobMissingMonit)
     end
 
     it "whines on missing template" do
@@ -454,7 +444,7 @@ describe Bosh::Director::Jobs::UpdateRelease do
 
       lambda {
         @job.create_job(@job_attrs)
-      }.should raise_error(Bosh::Director::JobMissingTemplateFile)
+      }.should raise_error(BD::JobMissingTemplateFile)
     end
   end
 

@@ -6,103 +6,89 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
   before(:each) do
     @blobstore = mock("blobstore")
-    Bosh::Director::Config.stub!(:blobstore).and_return(@blobstore)
+    BD::Config.stub!(:blobstore).and_return(@blobstore)
   end
 
   describe "perform" do
 
     it "should fail for unknown releases" do
-      lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
-          and_return(lock)
-      lock.should_receive(:lock).and_yield
-
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
-      lambda { job.perform }.should raise_exception(Bosh::Director::ReleaseNotFound)
+      job = BD::Jobs::DeleteRelease.new("test_release")
+      job.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
+      expect { job.perform }.to raise_exception(BD::ReleaseNotFound)
     end
 
     it "should fail if the deployments still reference this release" do
-      release = Bosh::Director::Models::Release.make(:name => "test")
-      version = Bosh::Director::Models::ReleaseVersion.
-        make(:release => release, :version => "42-dev")
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test")
+      release = BDM::Release.make(:name => "test")
+      version = BDM::ReleaseVersion.make(:release => release,
+                                         :version => "42-dev")
+      deployment = BDM::Deployment.make(:name => "test")
 
       deployment.add_release_version(version)
 
-      lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test",
-                                            :timeout => 10).and_return(lock)
-      lock.should_receive(:lock).and_yield
-
-      job = Bosh::Director::Jobs::DeleteRelease.new("test")
-      lambda {
-        job.perform
-      }.should raise_exception(Bosh::Director::ReleaseInUse)
+      job = BD::Jobs::DeleteRelease.new("test")
+      job.should_receive(:with_release_lock).
+          with("test", :timeout => 10).and_yield
+      expect { job.perform }.to raise_exception(BD::ReleaseInUse)
     end
 
-    it "should delete the release and associated jobs, packages, compiled packages and their metadata" do
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
+    it "should delete the release and associated jobs, packages, " +
+           "compiled packages and their metadata" do
+      release = BDM::Release.make(:name => "test_release")
 
-      lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
-          and_return(lock)
-      lock.should_receive(:lock).and_yield
-
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release")
+      job.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
       job.should_receive(:delete_release).with(release)
       job.perform
     end
 
     it "should fail if the delete was not successful" do
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
+      release = BDM::Release.make(:name => "test_release")
 
-      lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
-          and_return(lock)
-      lock.should_receive(:lock).and_yield
-
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release")
       job.should_receive(:delete_release).with(release)
+      job.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
       job.instance_eval { @errors << "bad" }
       lambda { job.perform }.should raise_exception
     end
 
     it "should support deleting a particular release version" do
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
-      rv1 = Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => "1")
-      rv2 = Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => "2")
+      release = BDM::Release.make(:name => "test_release")
+      rv1 = BDM::ReleaseVersion.make(:release => release, :version => "1")
+      BDM::ReleaseVersion.make(:release => release, :version => "2")
 
-      lock = stub("lock")
-      lock.should_receive(:lock).and_yield
-
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).and_return(lock)
-
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release", "version" => rv1.version)
+      job = BD::Jobs::DeleteRelease.new("test_release",
+                                        "version" => rv1.version)
       job.should_receive(:delete_release_version).with(rv1)
+      job.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
       job.perform
     end
 
-    it "should fail deleting version if there is a deployment which uses that version" do
-      release = Bosh::Director::Models::Release.make(:name => "test_release")
-      rv1 = Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => "1")
-      rv2 = Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => "2")
+    it "should fail deleting version if there is a deployment which " +
+           "uses that version" do
+      release = BDM::Release.make(:name => "test_release")
+      rv1 = BDM::ReleaseVersion.make(:release => release, :version => "1")
+      rv2 = BDM::ReleaseVersion.make(:release => release, :version => "2")
 
-      manifest = YAML.dump("release" => { "name" => "test_release", "version" => "2"})
+      manifest = YAML.dump(
+          "release" => {"name" => "test_release", "version" => "2"})
 
-      deployment = Bosh::Director::Models::Deployment.make(:name => "test_deployment", :manifest => manifest)
+      deployment = BDM::Deployment.make(:name => "test_deployment",
+                                        :manifest => manifest)
       deployment.add_release_version(rv2)
 
-      lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).and_return(lock)
-      lock.stub!(:lock).and_yield
+      job1 = BD::Jobs::DeleteRelease.new("test_release", "version" => "2")
+      job1.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
 
-      job1 = Bosh::Director::Jobs::DeleteRelease.new("test_release", "version" => "2")
+      expect { job1.perform }.to raise_exception(BD::ReleaseVersionInUse)
 
-      lambda {
-        job1.perform
-      }.should raise_exception(Bosh::Director::ReleaseVersionInUse)
-
-      job2 = Bosh::Director::Jobs::DeleteRelease.new("test_release", "version" => "1")
+      job2 = BD::Jobs::DeleteRelease.new("test_release", "version" => "1")
+      job2.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
       job2.should_receive(:delete_release_version).with(rv1)
       job2.perform
     end
@@ -112,13 +98,16 @@ describe Bosh::Director::Jobs::DeleteRelease do
   describe "delete_release" do
 
     before(:each) do
-      @release = Bosh::Director::Models::Release.make(:name => "test_release")
-      @release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release)
-      @package = Bosh::Director::Models::Package.make(:release => @release, :blobstore_id => "package-blb")
-      @template = Bosh::Director::Models::Template.make(:release => @release, :blobstore_id => "template-blb")
-      @stemcell = Bosh::Director::Models::Stemcell.make
-      @compiled_package = Bosh::Director::Models::CompiledPackage.make(:package => @package, :stemcell => @stemcell,
-                                                                       :blobstore_id => "compiled-package-blb")
+      @release = BDM::Release.make(:name => "test_release")
+      @release_version = BDM::ReleaseVersion.make(:release => @release)
+      @package = BDM::Package.make(:release => @release,
+                                   :blobstore_id => "package-blb")
+      @template = BDM::Template.make(:release => @release,
+                                     :blobstore_id => "template-blb")
+      @stemcell = BDM::Stemcell.make
+      @compiled_package = BDM::CompiledPackage.make(
+          :package => @package, :stemcell => @stemcell,
+          :blobstore_id => "compiled-package-blb")
       @release_version.add_package(@package)
       @release_version.add_template(@template)
     end
@@ -128,16 +117,16 @@ describe Bosh::Director::Jobs::DeleteRelease do
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release")
       job.delete_release(@release)
 
       job.instance_eval {@errors}.should be_empty
 
-      Bosh::Director::Models::Release[@release.id].should be_nil
-      Bosh::Director::Models::ReleaseVersion[@release_version.id].should be_nil
-      Bosh::Director::Models::Package[@package.id].should be_nil
-      Bosh::Director::Models::Template[@template.id].should be_nil
-      Bosh::Director::Models::CompiledPackage[@compiled_package.id].should be_nil
+      BDM::Release[@release.id].should be_nil
+      BDM::ReleaseVersion[@release_version.id].should be_nil
+      BDM::Package[@package.id].should be_nil
+      BDM::Template[@template.id].should be_nil
+      BDM::CompiledPackage[@compiled_package.id].should be_nil
     end
 
     it "should fail to delete the release if there is a blobstore error" do
@@ -145,18 +134,18 @@ describe Bosh::Director::Jobs::DeleteRelease do
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release")
+      job = BD::Jobs::DeleteRelease.new("test_release")
       job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
       errors.length.should eql(1)
       errors.first.to_s.should eql("bad")
 
-      Bosh::Director::Models::Release[@release.id].should_not be_nil
-      Bosh::Director::Models::ReleaseVersion[@release_version.id].should_not be_nil
-      Bosh::Director::Models::Package[@package.id].should be_nil
-      Bosh::Director::Models::Template[@template.id].should_not be_nil
-      Bosh::Director::Models::CompiledPackage[@compiled_package.id].should be_nil
+      BDM::Release[@release.id].should_not be_nil
+      BDM::ReleaseVersion[@release_version.id].should_not be_nil
+      BDM::Package[@package.id].should be_nil
+      BDM::Template[@template.id].should_not be_nil
+      BDM::CompiledPackage[@compiled_package.id].should be_nil
     end
 
     it "should forcefully delete the release when requested even if there is a blobstore error" do
@@ -164,42 +153,42 @@ describe Bosh::Director::Jobs::DeleteRelease do
       @blobstore.should_receive(:delete).with("package-blb")
       @blobstore.should_receive(:delete).with("compiled-package-blb")
 
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release", "force" => true)
+      job = BD::Jobs::DeleteRelease.new("test_release", "force" => true)
       job.delete_release(@release)
 
       errors = job.instance_eval {@errors}
       errors.length.should eql(1)
       errors.first.to_s.should eql("bad")
 
-      Bosh::Director::Models::Release[@release.id].should be_nil
-      Bosh::Director::Models::ReleaseVersion[@release_version.id].should be_nil
-      Bosh::Director::Models::Package[@package.id].should be_nil
-      Bosh::Director::Models::Template[@template.id].should be_nil
-      Bosh::Director::Models::CompiledPackage[@compiled_package.id].should be_nil
+      BDM::Release[@release.id].should be_nil
+      BDM::ReleaseVersion[@release_version.id].should be_nil
+      BDM::Package[@package.id].should be_nil
+      BDM::Template[@template.id].should be_nil
+      BDM::CompiledPackage[@compiled_package.id].should be_nil
     end
 
   end
 
   describe "delete release version" do
     before(:each) do
-      @release = Bosh::Director::Models::Release.make(:name => "test_release")
+      @release = BDM::Release.make(:name => "test_release")
 
-      @rv1 = Bosh::Director::Models::ReleaseVersion.make(:release => @release)
-      @rv2 = Bosh::Director::Models::ReleaseVersion.make(:release => @release)
+      @rv1 = BDM::ReleaseVersion.make(:release => @release)
+      @rv2 = BDM::ReleaseVersion.make(:release => @release)
 
-      @pkg1 = Bosh::Director::Models::Package.make(:release => @release, :blobstore_id => "pkg1")
-      @pkg2 = Bosh::Director::Models::Package.make(:release => @release, :blobstore_id => "pkg2")
-      @pkg3 = Bosh::Director::Models::Package.make(:release => @release, :blobstore_id => "pkg3")
+      @pkg1 = BDM::Package.make(:release => @release, :blobstore_id => "pkg1")
+      @pkg2 = BDM::Package.make(:release => @release, :blobstore_id => "pkg2")
+      @pkg3 = BDM::Package.make(:release => @release, :blobstore_id => "pkg3")
 
-      @tmpl1 = Bosh::Director::Models::Template.make(:release => @release, :blobstore_id => "template1")
-      @tmpl2 = Bosh::Director::Models::Template.make(:release => @release, :blobstore_id => "template2")
-      @tmpl3 = Bosh::Director::Models::Template.make(:release => @release, :blobstore_id => "template3")
+      @tmpl1 = BDM::Template.make(:release => @release, :blobstore_id => "template1")
+      @tmpl2 = BDM::Template.make(:release => @release, :blobstore_id => "template2")
+      @tmpl3 = BDM::Template.make(:release => @release, :blobstore_id => "template3")
 
-      @stemcell = Bosh::Director::Models::Stemcell.make
+      @stemcell = BDM::Stemcell.make
 
-      @cpkg1 = Bosh::Director::Models::CompiledPackage.make(:package => @pkg1, :stemcell => @stemcell, :blobstore_id => "deadbeef")
-      @cpkg2 = Bosh::Director::Models::CompiledPackage.make(:package => @pkg2, :stemcell => @stemcell, :blobstore_id => "badcafe")
-      @cpkg3 = Bosh::Director::Models::CompiledPackage.make(:package => @pkg3, :stemcell => @stemcell, :blobstore_id => "feeddead")
+      @cpkg1 = BDM::CompiledPackage.make(:package => @pkg1, :stemcell => @stemcell, :blobstore_id => "deadbeef")
+      @cpkg2 = BDM::CompiledPackage.make(:package => @pkg2, :stemcell => @stemcell, :blobstore_id => "badcafe")
+      @cpkg3 = BDM::CompiledPackage.make(:package => @pkg3, :stemcell => @stemcell, :blobstore_id => "feeddead")
 
       @rv1.add_package(@pkg1)
       @rv1.add_package(@pkg2)
@@ -217,7 +206,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
     end
 
     it "should delete release version without touching any shared packages/templates" do
-      job = Bosh::Director::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version)
+      job = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version)
 
       @blobstore.should_receive(:delete).with("pkg3")
       @blobstore.should_receive(:delete).with("template3")
@@ -225,49 +214,49 @@ describe Bosh::Director::Jobs::DeleteRelease do
 
       job.delete_release_version(@rv1)
 
-      Bosh::Director::Models::ReleaseVersion[@rv1.id].should be_nil
-      Bosh::Director::Models::ReleaseVersion[@rv2.id].should_not be_nil
+      BDM::ReleaseVersion[@rv1.id].should be_nil
+      BDM::ReleaseVersion[@rv2.id].should_not be_nil
 
-      Bosh::Director::Models::Package[@pkg1.id].should == @pkg1
-      Bosh::Director::Models::Package[@pkg2.id].should == @pkg2
-      Bosh::Director::Models::Package[@pkg3.id].should be_nil
+      BDM::Package[@pkg1.id].should == @pkg1
+      BDM::Package[@pkg2.id].should == @pkg2
+      BDM::Package[@pkg3.id].should be_nil
 
-      Bosh::Director::Models::Template[@tmpl1.id].should == @tmpl1
-      Bosh::Director::Models::Template[@tmpl2.id].should == @tmpl2
-      Bosh::Director::Models::Template[@tmpl3.id].should be_nil
+      BDM::Template[@tmpl1.id].should == @tmpl1
+      BDM::Template[@tmpl2.id].should == @tmpl2
+      BDM::Template[@tmpl3.id].should be_nil
 
-      Bosh::Director::Models::CompiledPackage[@cpkg1.id].should == @cpkg1
-      Bosh::Director::Models::CompiledPackage[@cpkg2.id].should == @cpkg2
-      Bosh::Director::Models::CompiledPackage[@cpkg3.id].should be_nil
+      BDM::CompiledPackage[@cpkg1.id].should == @cpkg1
+      BDM::CompiledPackage[@cpkg2.id].should == @cpkg2
+      BDM::CompiledPackage[@cpkg3.id].should be_nil
     end
 
-    it "should not leave any release/package/templates artefacts after all release versions have been deleted" do
-      job1 = Bosh::Director::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version)
-      job2 = Bosh::Director::Jobs::DeleteRelease.new("test_release", "version" => @rv2.version)
+    it "should not leave any release/package/templates artifacts after all " +
+           "release versions have been deleted" do
+      job1 = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv1.version)
+      job2 = BD::Jobs::DeleteRelease.new("test_release", "version" => @rv2.version)
 
       @blobstore.stub!(:delete)
 
-      lock = stub("lock")
-      Bosh::Director::Lock.stub!(:new).with("lock:release:test_release", :timeout => 10).
-        and_return(lock)
-      lock.should_receive(:lock).exactly(2).times.and_yield
-
+      job1.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
       job1.perform
 
-      Bosh::Director::Models::Release.count.should == 1
+      BDM::Release.count.should == 1
 
       # This assertion is very important as SQLite doesn't check integrity
       # but Postgres does and it can fail on postgres if there are any hanging
       # references to release version in packages_release_versions
-      Bosh::Director::Models::Package.db[:packages_release_versions].count.should == 2
+      BDM::Package.db[:packages_release_versions].count.should == 2
 
+      job2.should_receive(:with_release_lock).
+          with("test_release", :timeout => 10).and_yield
       job2.perform
 
-      Bosh::Director::Models::ReleaseVersion.count.should == 0
-      Bosh::Director::Models::Package.count.should == 0
-      Bosh::Director::Models::Template.count.should  == 0
-      Bosh::Director::Models::CompiledPackage.count.should == 0
-      Bosh::Director::Models::Release.count.should == 0
+      BDM::ReleaseVersion.count.should == 0
+      BDM::Package.count.should == 0
+      BDM::Template.count.should  == 0
+      BDM::CompiledPackage.count.should == 0
+      BDM::Release.count.should == 0
     end
 
   end

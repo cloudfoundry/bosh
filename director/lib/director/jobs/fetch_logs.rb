@@ -3,6 +3,8 @@
 module Bosh::Director
   module Jobs
     class FetchLogs < BaseJob
+      include LockHelper
+
       DEFAULT_BUNDLE_LIFETIME = 86400 * 10 # 10 days
 
       @queue = :normal
@@ -31,10 +33,7 @@ module Bosh::Director
                 "`#{desc}' doesn't belong to any deployment"
         end
 
-        deployment_name = deployment.name
-        deployment_lock = Lock.new("lock:deployment:#{deployment_name}")
-
-        deployment_lock.lock do
+        with_deployment_lock(deployment) do
           cleanup_old_bundles
 
           event_log.begin_stage("Fetching logs for #{desc}", 1)

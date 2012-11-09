@@ -4,6 +4,8 @@ module Bosh::Director
   module Jobs
     module CloudCheck
       class ApplyResolutions < BaseJob
+        include LockHelper
+
         @queue = :normal
 
         # @param [String] deployment_name Deployment name
@@ -30,7 +32,7 @@ module Bosh::Director
         end
 
         def perform
-          with_deployment_lock do
+          with_deployment_lock(@deployment) do
             apply_resolutions
             "#{@resolved_count} resolved"
           end
@@ -114,12 +116,6 @@ module Bosh::Director
         def log_resolution_error(problem, error)
           logger.error("Error resolving problem `#{problem.id}': #{error}")
           logger.error(error.backtrace.join("\n"))
-        end
-
-        def with_deployment_lock
-          Lock.new("lock:deployment:#{@deployment.name}").lock do
-            yield
-          end
         end
       end
     end

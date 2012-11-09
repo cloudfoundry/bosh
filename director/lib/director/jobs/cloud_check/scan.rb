@@ -4,6 +4,8 @@ module Bosh::Director
   module Jobs
     module CloudCheck
       class Scan < BaseJob
+        include LockHelper
+
         AGENT_TIMEOUT = 10 # seconds
 
         @queue = :normal
@@ -21,7 +23,7 @@ module Bosh::Director
 
         def perform
           begin
-            with_deployment_try_lock do
+            with_deployment_lock(@deployment, :timeout => 0) do
               reset
               # TODO: decide if scanning procedures should be
               # extracted into their own classes (for clarity)
@@ -220,12 +222,6 @@ module Bosh::Director
 
         def get_disk_owners(disk_cid)
           @agent_disks[disk_cid]
-        end
-
-        def with_deployment_try_lock
-          Lock.new("lock:deployment:#{@deployment.name}", :timeout => 0).lock do
-            yield
-          end
         end
       end
     end

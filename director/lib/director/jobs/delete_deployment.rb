@@ -4,6 +4,7 @@ module Bosh::Director
   module Jobs
     class DeleteDeployment < BaseJob
       include DnsHelper
+      include LockHelper
 
       @queue = :normal
 
@@ -22,9 +23,8 @@ module Bosh::Director
         deployment = find_deployment(@deployment_name)
 
         logger.info("Acquiring deployment lock: #{deployment.name}")
-        deployment_lock = Lock.new("lock:deployment:#{@deployment_name}")
 
-        deployment_lock.lock do
+        with_deployment_lock(@deployment_name) do
           # Make sure it wasn't deleted
           deployment = find_deployment(@deployment_name)
 
