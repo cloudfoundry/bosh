@@ -170,6 +170,8 @@ module Bosh::Agent
           # TODO: error handling
           ENV['BOSH_COMPILE_TARGET'] = compile_dir
           ENV['BOSH_INSTALL_TARGET'] = install_dir
+          ENV['BOSH_PACKAGE_NAME'] = @package_name.to_s
+          ENV['BOSH_PACKAGE_VERSION'] = @package_version.to_s
           if File.exist?('packaging')
             @logger.info("Compiling #{@package_name} #{@package_version}")
             output = `bash -x packaging 2>&1`
