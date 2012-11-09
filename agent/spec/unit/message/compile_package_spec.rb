@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../spec_helper'
+require File.dirname(__FILE__) + "/../../spec_helper"
 
 describe Bosh::Agent::Message::CompilePackage do
 
@@ -15,23 +15,26 @@ describe Bosh::Agent::Message::CompilePackage do
     args = "some_blobstore_id", "some_sha1", "some_name", 1
     @handler = Bosh::Agent::Message::CompilePackage.new(args)
 
-    @handler.compile_base = File.dirname(__FILE__) + '/../../tmp/data/compile'
-    @handler.install_base = File.dirname(__FILE__) + '/../../tmp/data/packages'
+    @handler.compile_base = File.dirname(__FILE__) + "/../../tmp/data/compile"
+    @handler.install_base = File.dirname(__FILE__) + "/../../tmp/data/packages"
     @handler.stub(:disk_used).and_return(5)
     @handler.stub(:disk_total).and_return(10)
   end
 
-  it 'should have a blobstore client' do
+  it "should have a blobstore client" do
     handler = Bosh::Agent::Message::CompilePackage.new(nil)
-    handler.blobstore_client.should be_an_instance_of Bosh::Blobstore::SimpleBlobstoreClient
+    handler.blobstore_client.
+        should be_an_instance_of(Bosh::Blobstore::SimpleBlobstoreClient)
   end
 
 
-  # TODO: this is essentially re-testing the blobstore client, but I didn't know the API well enough
-  it 'should unpack a package' do
+  # TODO: this is essentially re-testing the blobstore client,
+  # but I didnt know the API well enough
+  it "should unpack a package" do
     dummy_compile_data
 
-    package_file = File.join(@handler.compile_base, 'tmp', @handler.blobstore_id)
+    package_file = File.join(@handler.compile_base, "tmp",
+                             @handler.blobstore_id)
     File.exist?(package_file).should be_false
     @handler.get_source_package
     File.exist?(package_file).should be_true
@@ -40,32 +43,34 @@ describe Bosh::Agent::Message::CompilePackage do
     File.directory?(compile_dir).should be_false
     @handler.unpack_source_package
     File.directory?(compile_dir).should be_true
-    File.exist?(File.join(compile_dir, 'packaging')).should be_true
+    File.exist?(File.join(compile_dir, "packaging")).should be_true
   end
 
-  it 'should compile a package' do
+  it "should compile a package" do
     dummy_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
 
     @handler.compile
-    dummy_file = File.join(@handler.install_base, @handler.package_name, @handler.package_version.to_s, 'dummy.txt')
+    dummy_file = File.join(@handler.install_base, @handler.package_name,
+                           @handler.package_version.to_s, "dummy.txt")
     File.exist?(dummy_file).should be_true
   end
 
-  it 'should fail packaing script returns a non-zero exit code' do
+  it "should fail packaging script returns a non-zero exit code" do
     dummy_failing_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
 
-    lambda {
+    expect {
       @handler.compile
-    }.should raise_error(Bosh::Agent::MessageHandlerError, /Compile Package Failure/)
+    }.to raise_error(Bosh::Agent::MessageHandlerError,
+                     /Compile Package Failure/)
   end
 
-  it 'should pack a compiled package' do
+  it "should pack a compiled package" do
     dummy_compile_data
 
     @handler.get_source_package
@@ -74,7 +79,7 @@ describe Bosh::Agent::Message::CompilePackage do
     @handler.pack
   end
 
-  it 'should upload compiled package' do
+  it "should upload compiled package" do
     dummy_compile_data
 
     @handler.get_source_package
@@ -83,39 +88,39 @@ describe Bosh::Agent::Message::CompilePackage do
     @handler.pack
 
     # This should probably just be stubbed
-    sha1 = Digest::SHA1.hexdigest(File.read(@handler.compiled_package))
+    sha1 = Digest::SHA1.file(@handler.compiled_package).hexdigest
     File.open(@handler.compiled_package) do |f|
       stub_blobstore_id = "bfa8e2e1-d386-4df7-ad5e-fd21f49333d6"
       compile_log_id = "bfa8e2e1-d386-4df7-ad5e-fd21f49333d7"
 
-      @handler.blobstore_client.stub(:create).and_return(stub_blobstore_id, compile_log_id)
-      # @handler.blobstore_client.stub(:create).with(instance_of(File)).and_return(stub_blobstore_id)
+      @handler.blobstore_client.stub(:create).
+          and_return(stub_blobstore_id, compile_log_id)
       result = @handler.upload
-      result.delete('compile_log')
-      result.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id, "compile_log_id" => compile_log_id}
+      result.delete("compile_log")
+      result.should == { "sha1" => sha1, "blobstore_id" => stub_blobstore_id,
+                         "compile_log_id" => compile_log_id}
     end
   end
 
-  it 'should correctly calculate disk percentage used' do
+  it "should correctly calculate disk percentage used" do
     @handler.stub(:disk_used).and_return(6)
     @handler.stub(:disk_total).and_return(10)
-    @handler.pct_disk_used('./').should == 60
+    @handler.pct_disk_used("./").should == 60
   end
 
-  it 'should throw error when disk percentage >= 90' do
+  it "should throw error when disk percentage >= 90" do
     @handler.stub(:pct_disk_used).and_return(90)
     dummy_compile_data
 
     @handler.get_source_package
     @handler.unpack_source_package
-    lambda {
+    expect {
       @handler.compile
-    }.should raise_error(Bosh::Agent::MessageHandlerError)
+    }.to raise_error(Bosh::Agent::MessageHandlerError)
   end
 
-  it 'should clear the log file every time create_logger is called' do
-    dir = Dir.mktmpdir
-    begin
+  it "should clear the log file every time create_logger is called" do
+    Dir.mktmpdir do |dir|
       logger = @handler.clear_log_file("#{dir}/logger")
       logger.info("test log data")
       logger.close
@@ -123,8 +128,6 @@ describe Bosh::Agent::Message::CompilePackage do
       logger = @handler.clear_log_file("#{dir}/logger")
       logger.close
       File.read("#{dir}/logger")["test log data"].should be_nil
-    ensure
-      FileUtils.remove_entry_secure(dir)
     end
   end
 
@@ -141,7 +144,8 @@ describe Bosh::Agent::Message::CompilePackage do
     response = mock("response")
     response.stub!(:status).and_return(200)
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
-    @httpclient.should_receive(:get).with(*get_args).and_yield(data).and_return(response)
+    @httpclient.should_receive(:get).with(*get_args).and_yield(data).
+        and_return(response)
   end
 
 end
