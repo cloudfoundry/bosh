@@ -383,9 +383,9 @@ describe Bosh::Director::InstanceUpdater do
     @cloud.should_receive(:delete_vm).with("vm-id").ordered
     @cloud.should_receive(:create_vm).with("agent-2", "stemcell-id", BASIC_PLAN["resource_pool"]["cloud_properties"],
       BASIC_PLAN["networks"], ["disk-id"], {}).ordered.and_return("vm-id-2")
+    @agent_2.should_receive(:wait_until_ready).ordered
     @cloud.should_receive(:attach_disk).ordered.with("vm-id-2", "disk-id")
 
-    @agent_2.should_receive(:wait_until_ready).ordered
     @agent_2.should_receive(:mount_disk).with("disk-id").ordered.and_return({"state" => "done"})
     @agent_2.should_receive(:list_disk).and_return(["disk-id"])
 
