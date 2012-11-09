@@ -207,9 +207,9 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
         ordered.and_return("new-vm-cid")
 
       Bosh::Director::AgentClient.stub!(:new).with("agent-222", anything).and_return(new_agent)
+      new_agent.should_receive(:wait_until_ready).ordered
       @cloud.should_receive(:attach_disk).with("new-vm-cid", "disk-cid").ordered
 
-      new_agent.should_receive(:wait_until_ready).ordered
       new_agent.should_receive(:mount_disk).with("disk-cid").ordered
       new_agent.should_receive(:apply).with(spec).ordered
       new_agent.should_receive(:start).ordered

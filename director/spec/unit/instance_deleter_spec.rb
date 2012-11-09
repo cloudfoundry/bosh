@@ -19,9 +19,7 @@ describe BD::InstanceDeleter do
       pool = mock("pool")
       BD::ThreadPool.stub!(:new).with(:max_threads => 2).and_return(pool)
       pool.stub!(:wrap).and_yield(pool)
-      # TODO when switching to rspec 2.9.0 this needs to be changed as they
-      # have changed the call to not include the proc
-      pool.stub!(:process).and_return { |*args| args.first.call }
+      pool.stub!(:process).and_yield
 
       5.times do |index|
         @deleter.should_receive(:delete_instance).with(instances[index])

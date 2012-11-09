@@ -96,19 +96,20 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       @deployment_plan.stub!(:jobs).and_return([job])
 
       deployment_plan_compiler.should_receive(:bind_dns).ordered
+
+      resource_pool_updater.should_receive(:delete_extra_vms).ordered
+      resource_pool_updater.should_receive(:delete_outdated_idle_vms).ordered
+      resource_pool_updater.should_receive(:create_bound_missing_vms).ordered
+
       deployment_plan_compiler.should_receive(:bind_instance_vms).ordered
       deployment_plan_compiler.should_receive(:bind_configuration).ordered
       deployment_plan_compiler.should_receive(:delete_unneeded_vms).ordered
       deployment_plan_compiler.should_receive(:delete_unneeded_instances).ordered
 
-      resource_pool_updater.should_receive(:delete_extra_vms).ordered
-      resource_pool_updater.should_receive(:delete_outdated_idle_vms).ordered
+      job_updater.should_receive(:update)
 
-      resource_pool_updater.should_receive(:create_bound_missing_vms).ordered
       resource_pool_updater.should_receive(:reserve_networks).ordered
       resource_pool_updater.should_receive(:create_missing_vms).ordered
-
-      job_updater.should_receive(:update)
 
       update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
 
@@ -206,10 +207,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       job.should_receive(:update_stemcell_references).ordered
 
       deployment.should_receive(:add_release_version).
-        with(foo_release_version).ordered
+        with(foo_release_version)
 
       deployment.should_receive(:add_release_version).
-        with(bar_release_version).ordered
+        with(bar_release_version)
 
       foo_release_lock.should_receive(:release).ordered
       bar_release_lock.should_receive(:release).ordered

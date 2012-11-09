@@ -183,8 +183,8 @@ describe Bosh::Director::PackageCompiler do
         "networks" => net
       }
 
-      agent.should_receive(:wait_until_ready).ordered
-      agent.should_receive(:apply).with(initial_state).ordered
+      agent.should_receive(:wait_until_ready)
+      agent.should_receive(:apply).with(initial_state)
       agent.should_receive(:compile_package) do |*args|
         name = args[2]
         dot = args[3].rindex(".")
@@ -264,8 +264,8 @@ describe Bosh::Director::PackageCompiler do
         "networks" => net
       }
 
-      agent.should_receive(:wait_until_ready).at_most(6).times.ordered
-      agent.should_receive(:apply).with(initial_state).at_most(6).times.ordered
+      agent.should_receive(:wait_until_ready).at_most(6).times
+      agent.should_receive(:apply).with(initial_state).at_most(6).times
       agent.should_receive(:compile_package).at_most(6).times do |*args|
         name = args[2]
         dot = args[3].rindex(".")

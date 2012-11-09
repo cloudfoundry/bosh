@@ -8,9 +8,7 @@ describe Bosh::Director::NatsRpc do
     @nats = mock("nats")
     Bosh::Director::Config.stub(:nats).and_return(@nats)
     Bosh::Director::Config.stub(:process_uuid).and_return(123)
-    EM.stub!(:next_tick).and_return do |block|
-      block.call
-    end
+    EM.stub!(:next_tick).and_yield
   end
 
   describe "send_request" do
@@ -34,8 +32,8 @@ describe Bosh::Director::NatsRpc do
     it "should fire callback when message is received" do
       subscribe_callback = nil
       @nats.should_receive(:subscribe).with("director.123.>").
-          and_return do |*args|
-        subscribe_callback = args[1]
+          and_return do |&block|
+        subscribe_callback = block
       end
       @nats.should_receive(:publish).and_return do
         subscribe_callback.call("", nil, "director.123.req1")
@@ -56,10 +54,8 @@ describe Bosh::Director::NatsRpc do
     it "should fire once even if two messages were received" do
       subscribe_callback = nil
       @nats.should_receive(:subscribe).with("director.123.>").
-          and_return do |*args|
-        # TODO when switching to rspec 2.9.0 this needs to be changed as they
-        # have changed the call to not include the proc
-        subscribe_callback = args[1]
+          and_return do |&block|
+        subscribe_callback = block
       end
       @nats.should_receive(:publish).and_return do
         subscribe_callback.call("", nil, "director.123.req1")
@@ -84,10 +80,8 @@ describe Bosh::Director::NatsRpc do
     it "should not fire after cancel was called" do
       subscribe_callback = nil
       @nats.should_receive(:subscribe).with("director.123.>").
-          and_return do |*args|
-        # TODO when switching to rspec 2.9.0 this needs to be changed as they
-        # have changed the call to not include the proc
-        subscribe_callback = args[1]
+          and_return do |&block|
+        subscribe_callback = block
       end
       @nats.should_receive(:publish)
 
