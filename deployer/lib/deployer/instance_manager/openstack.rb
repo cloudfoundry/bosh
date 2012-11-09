@@ -120,8 +120,12 @@ module Bosh::Deployer
       end
 
       def wait_until_agent_ready
-        tunnel(@registry_port)
+        open_registry_tunnel(@ssh_wait)
         super
+      end
+
+      def open_registry_tunnel(wait=0)
+        tunnel(@registry_port, wait)
       end
 
       def discover_bosh_ip

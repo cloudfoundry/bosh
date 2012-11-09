@@ -35,14 +35,14 @@ module Bosh::Deployer
       socket.close if socket
     end
 
-    def tunnel(port)
+    def tunnel(port, ssh_wait)
       return if @session
 
       ip = discover_bosh_ip
 
       loop until socket_readable?(ip, @ssh_port) do
         #sshd is up, sleep while host keys are generated
-        sleep @ssh_wait
+        sleep ssh_wait
       end
 
       lo = "127.0.0.1"

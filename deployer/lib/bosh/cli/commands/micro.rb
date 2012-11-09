@@ -85,6 +85,29 @@ module Bosh::Cli::Command
       say("Target".ljust(15) + target_name)
     end
 
+    usage "micro tunnel"
+    desc "Provides tunnel to local registry for remote micro bosh vm, " +
+         "only to be used if it has been rebooted"
+    option "--port port",
+           "director port number (defaults to #{DEFAULT_DIRECTOR_PORT})"
+    def micro_tunnel
+      deployment_required
+      port = options[:port] || DEFAULT_DIRECTOR_PORT
+
+      manifest = load_yaml_file(deployment)
+      if manifest["cloud"]["plugin"] == "vsphere"
+        err("not applicable to vsphere")
+      end
+
+      deployer.with_lifecycle do
+        say("registry running, waiting for agent...")
+        deployer.open_registry_tunnel
+        say("waiting for director to start...")
+        deployer.wait_until_director_ready(port)
+        say("director started, closing tunnel...")
+      end
+    end
+
     usage  "micro deploy"
     desc   "Deploy a micro BOSH instance to the currently selected deployment"
     option "--update", "update existing instance"

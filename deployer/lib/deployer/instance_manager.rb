@@ -394,6 +394,15 @@ module Bosh::Deployer
       # nothing to check, move on...
     end
 
+    def wait_until_director_ready(director_port=nil)
+      port = director_port || @apply_spec["properties"]["director"]["port"]
+      url = "http://#{bosh_ip}:#{port}/info"
+      wait_until_ready do
+        info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
+        logger.info("Director is ready: #{info.inspect}")
+      end
+    end
+
     private
 
     # update the agent service section from the contents of the apply_spec
@@ -453,15 +462,6 @@ module Bosh::Deployer
 
     def wait_until_agent_ready #XXX >> agent_client
       wait_until_ready { agent.ping }
-    end
-
-    def wait_until_director_ready
-      port = @apply_spec["properties"]["director"]["port"]
-      url = "http://#{bosh_ip}:#{port}/info"
-      wait_until_ready do
-        info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
-        logger.info("Director is ready: #{info.inspect}")
-      end
     end
 
     def delete_stemcell
