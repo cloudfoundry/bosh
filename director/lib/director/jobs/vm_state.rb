@@ -3,13 +3,13 @@
 module Bosh::Director
   module Jobs
     class VmState < BaseJob
+      TIMEOUT = 5
 
       @queue = :normal
 
       # @param [Integer] deployment_id Deployment id
       def initialize(deployment_id)
         super
-
         @deployment_id = deployment_id
       end
 
@@ -30,14 +30,13 @@ module Bosh::Director
 
       def process_vm(vm)
         ips = []
-        # TODO: properly handle nil agent_id
-        agent = AgentClient.new(vm.agent_id)
         job_name = nil
         job_state = nil
         resource_pool = nil
         index = nil
 
         begin
+          agent = AgentClient.new(vm.agent_id, :timeout => TIMEOUT)
           agent_state = agent.get_state
           agent_state["networks"].each_value do |network|
             ips << network["ip"]
