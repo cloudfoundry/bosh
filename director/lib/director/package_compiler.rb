@@ -2,6 +2,7 @@
 
 module Bosh::Director
   class PackageCompiler
+    include LockHelper
 
     # TODO Support nested dependencies
     # TODO Decouple tsort from the actual compilation
@@ -215,31 +216,37 @@ module Bosh::Director
       package = task.package
       stemcell = task.stemcell
 
-      build = generate_build_number(package, stemcell)
-      agent_task = nil
+      with_compile_lock(package.id, stemcell.id) do
+        # Check if the package was compiled in a parallel deployment
+        compiled_package = find_compiled_package(task)
+        if compiled_package.nil?
+          build = generate_build_number(package, stemcell)
+          agent_task = nil
 
-      prepare_vm(stemcell) do |vm_data|
-        agent_task =
-          vm_data.agent.compile_package(package.blobstore_id,
-                                        package.sha1, package.name,
-                                        "#{package.version}.#{build}",
-                                        task.dependency_spec)
+          prepare_vm(stemcell) do |vm_data|
+            agent_task =
+              vm_data.agent.compile_package(package.blobstore_id,
+                                            package.sha1, package.name,
+                                            "#{package.version}.#{build}",
+                                            task.dependency_spec)
+          end
+
+          task_result = agent_task["result"]
+
+          compiled_package = Models::CompiledPackage.create do |p|
+            p.package = package
+            p.stemcell = stemcell
+            p.sha1 = task_result["sha1"]
+            p.build = build
+            p.blobstore_id = task_result["blobstore_id"]
+            p.dependency_key = task.dependency_key
+          end
+
+          @counter_mutex.synchronize { @compilations_performed += 1 }
+        end
+
+        task.use_compiled_package(compiled_package)
       end
-
-      task_result = agent_task["result"]
-
-      compiled_package = Models::CompiledPackage.create do |p|
-        p.package = package
-        p.stemcell = stemcell
-        p.sha1 = task_result["sha1"]
-        p.build = build
-        p.blobstore_id = task_result["blobstore_id"]
-        p.dependency_key = task.dependency_key
-      end
-
-      @counter_mutex.synchronize { @compilations_performed += 1 }
-
-      task.use_compiled_package(compiled_package)
     end
 
     def enqueue_unblocked_tasks(task)

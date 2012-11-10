@@ -31,6 +31,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
     r1.should_receive(:bind_model)
     r2.should_receive(:bind_model)
 
+    compiler.should_receive(:with_release_locks).and_yield
     compiler.bind_releases
   end
 

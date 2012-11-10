@@ -108,4 +108,18 @@ describe Bosh::Director::LockHelper do
     end
   end
 
+  describe :with_compile_lock do
+    it "should support a package and stemcell id" do
+      lock = mock(:lock)
+      BD::Lock.stub!(:new).with("lock:compile:3:4", {:timeout=>900}).
+          and_return(lock)
+      lock.should_receive(:lock).and_yield
+
+      called = false
+      @test_instance.with_compile_lock(3, 4) do
+        called = true
+      end
+      called.should be_true
+    end
+  end
 end

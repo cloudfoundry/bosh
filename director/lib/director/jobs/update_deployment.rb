@@ -187,15 +187,15 @@ module Bosh::Director
 
       def perform
         with_deployment_lock(@deployment_plan) do
-          with_release_locks(@deployment_plan) do
-            logger.info("Preparing deployment")
-            prepare
-            begin
-              deployment = @deployment_plan.model
-              logger.info("Finished preparing deployment")
-              logger.info("Updating deployment")
-              update
+          logger.info("Preparing deployment")
+          prepare
+          begin
+            deployment = @deployment_plan.model
+            logger.info("Finished preparing deployment")
+            logger.info("Updating deployment")
+            update
 
+            with_release_locks(@deployment_plan) do
               deployment.db.transaction do
                 deployment.remove_all_release_versions
                 # Now we know that deployment has succeeded and can remove
@@ -205,14 +205,14 @@ module Bosh::Director
                   deployment.add_release_version(release.model)
                 end
               end
-
-              deployment.manifest = @manifest
-              deployment.save
-              logger.info("Finished updating deployment")
-              "/deployments/#{deployment.name}"
-            ensure
-              update_stemcell_references
             end
+
+            deployment.manifest = @manifest
+            deployment.save
+            logger.info("Finished updating deployment")
+            "/deployments/#{deployment.name}"
+          ensure
+            update_stemcell_references
           end
         end
       ensure

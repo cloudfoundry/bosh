@@ -187,10 +187,10 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
       job.should_receive(:with_deployment_lock).with(@deployment_plan).
           and_yield.ordered
-      job.should_receive(:with_release_locks).with(@deployment_plan).
-          and_yield.ordered
       job.should_receive(:prepare).ordered
       job.should_receive(:update).ordered
+      job.should_receive(:with_release_locks).with(@deployment_plan).
+          and_yield.ordered
       job.should_receive(:update_stemcell_references).ordered
 
       deployment.should_receive(:add_release_version).

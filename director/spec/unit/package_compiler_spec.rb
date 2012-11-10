@@ -205,6 +205,16 @@ describe Bosh::Director::PackageCompiler do
       end
     end
 
+    @package_set_a.each do |package|
+      compiler.should_receive(:with_compile_lock).
+          with(package.id, @stemcell_a.model.id).and_yield
+    end
+
+    @package_set_b.each do |package|
+      compiler.should_receive(:with_compile_lock).
+          with(package.id, @stemcell_b.model.id).and_yield
+    end
+
     @j_dea.should_receive(:use_compiled_package).exactly(6).times
     @j_router.should_receive(:use_compiled_package).exactly(5).times
 
@@ -296,12 +306,43 @@ describe Bosh::Director::PackageCompiler do
     @director_job.should_receive(:task_checkpoint).once
 
     compiler = make(@plan)
+
+    @package_set_a.each do |package|
+      compiler.should_receive(:with_compile_lock).
+          with(package.id, @stemcell_a.model.id).and_yield
+    end
+
     compiler.compile
     compiler.compilations_performed.should == 6
 
     @package_set_a.each do |package|
       package.compiled_packages.size.should >= 1
     end
+  end
+
+  it "should make sure a parallel deployment did not compile a " +
+         "package already" do
+
+    package = BDM::Package.make
+    stemcell = BDM::Stemcell.make
+
+    task = BD::CompileTask.new(package, stemcell)
+    task.dependency_key = "[]"
+
+    compiler = make(@plan)
+    callback = nil
+    compiler.should_receive(:with_compile_lock).
+        with(package.id, stemcell.id) do |&block|
+      callback = block
+    end
+    compiler.compile_package(task)
+
+    compiled_package = BDM::CompiledPackage.make(
+        :package => package, :stemcell => stemcell, :dependency_key => "[]")
+
+    callback.call
+
+    task.compiled_package.should == compiled_package
   end
 
 end
