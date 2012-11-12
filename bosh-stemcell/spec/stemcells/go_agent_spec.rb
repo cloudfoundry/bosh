@@ -9,9 +9,13 @@ describe 'Stemcell with Go Agent' do
       end
     end
 
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+    end
+
     {
-        '/etc/cron.allow' => { mode: '640', owner: 'root', group: 'vcap' },
-        '/etc/at.allow' => { mode: '640', owner: 'root', group: 'vcap' },
+      '/etc/cron.allow' => { mode: '640', owner: 'root', group: 'vcap' },
+      '/etc/at.allow' => { mode: '640', owner: 'root', group: 'vcap' },
     }.each do |file_name, properties|
 
       describe file(file_name) do

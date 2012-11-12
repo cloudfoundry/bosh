@@ -33,6 +33,15 @@ module Bat
       @bosh_api.info['cpi'] == 'openstack'
     end
 
+    def warden?
+      @bosh_api.info['cpi'] == 'warden'
+    end
+
+    def compiled_package_cache?
+      info = @bosh_api.info
+      info['features'] && info['features']['compiled_package_cache']
+    end
+
     def dns?
       info = @bosh_api.info
       info['features'] && info['features']['dns']['status']

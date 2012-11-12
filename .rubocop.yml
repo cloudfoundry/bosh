@@ -13,6 +13,7 @@ AllCops:
     - bosh_openstack_cpi/**
     - bosh-registry/**
     - bosh_vsphere_cpi/**
+    - bosh_warden_cpi/**
     - bosh-monitor/**
     - bosh-release/**
     - bosh-stemcell/spec/stemcells/centos_spec.rb

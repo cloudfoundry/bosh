@@ -23,7 +23,16 @@ module Bosh::Dev
         Candidate.new(number, DownloadAdapter.new(logger))
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
-        Local.new('0000', LocalDownloadAdapter.new(logger))
+
+        subnum = ENV['STEMCELL_BUILD_NUMBER']
+        if subnum
+          logger.info("STEMCELL_BUILD_NUMBER is #{subnum}. Using local build with stemcell build number.")
+        else
+          logger.info('STEMCELL_BUILD_NUMBER not set. Using local build.')
+          subnum = '0000'
+        end
+
+        Local.new(subnum, LocalDownloadAdapter.new(logger))
       end
     end
 

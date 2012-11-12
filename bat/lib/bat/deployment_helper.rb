@@ -156,7 +156,7 @@ module Bat
     end
 
     def network_type
-      @spec['properties']['network']['type']
+      @spec['properties'].fetch('network', {}).fetch('type', nil)
     end
 
     def get_task_id(output, state = 'done')

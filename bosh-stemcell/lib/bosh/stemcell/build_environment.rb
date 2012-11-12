@@ -139,6 +139,8 @@ module Bosh::Stemcell
         ' --tag ~exclude_on_vsphere'
       when 'vcloud'
         ' --tag ~exclude_on_vcloud'
+      when 'warden'
+        ' --tag ~exclude_on_warden'
       else
         ''
       end

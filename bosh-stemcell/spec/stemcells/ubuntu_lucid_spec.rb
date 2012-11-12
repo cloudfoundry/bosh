@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'Ubuntu stemcell' do
-  context 'installed by image_install_grub' do
+  context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
       it { should contain 'default=0' }
@@ -39,7 +39,7 @@ describe 'Ubuntu stemcell' do
     end
   end
 
-  context 'installed by system-aws-network', exclude_on_vsphere: true, exclude_on_vcloud: true do
+  context 'with system-aws-network', exclude_on_vsphere: true, exclude_on_vcloud: true, exclude_on_warden: true do
     describe file('/etc/network/interfaces') do
       it { should be_file }
       it { should contain 'auto eth0' }

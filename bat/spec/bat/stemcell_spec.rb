@@ -94,6 +94,10 @@ describe Bat::Stemcell do
       'bosh-vsphere-esxi-centos-go_agent' => false,
       'bosh-vcloud-esxi-centos-go_agent' => false,
 
+      # Warden CPI does not support network reconfig
+      'bosh-warden-boshlite-ubuntu-go_agent' => false,
+      'bosh-warden-boshlite-centos-go_agent' => false,
+
     }.each do |stemcell_name, expected|
       it "returns #{expected} for #{stemcell_name}" do
         stemcell = Bat::Stemcell.new(stemcell_name, nil)
