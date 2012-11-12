@@ -1,0 +1,13 @@
+---
+cloud:
+  plugin: warden
+  properties:
+    warden:
+      unix_domain_socket: /tmp/warden.sock
+    agent:
+      ntp: []
+      blobstore:
+        plugin: local
+        properties:
+          blobstore_path: /var/vcap/micro_bosh/data/cache
+      mbus: nats://nats:nats@localhost:4222
