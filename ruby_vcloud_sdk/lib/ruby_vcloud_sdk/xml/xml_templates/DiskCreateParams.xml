@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DiskCreateParams xmlns="http://www.vmware.com/vcloud/v1.5">
+  <Disk
+          name=""
+          size=""
+          busType=""
+          busSubType="">
+  </Disk>
+</DiskCreateParams>

@@ -1,0 +1,8 @@
+<MetadataValue
+  xmlns="http://www.vmware.com/vcloud/v1.5"
+  type="application/vnd.vmware.vcloud.metadata.value+xml"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <TypedValue xsi:type="MetadataStringValue">
+        <Value/>
+    </TypedValue>
+</MetadataValue>
