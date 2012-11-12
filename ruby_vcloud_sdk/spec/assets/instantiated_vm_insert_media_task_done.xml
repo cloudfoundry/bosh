@@ -1,0 +1,6 @@
+        <Task xmlns="http://www.vmware.com/vcloud/v1.5" status="success" startTime="2011-09-23T15:34:12.094-07:00" operationName="vappInsertCdFloppy" operation="Inserting Media Virtual Machine (4cad7e64-b201-4042-8892-8dfa50ed5516)" expiryTime="2011-12-22T15:34:12.094-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+            <Link rel="task:cancel" href="%s/api/task/%s/action/cancel"/>
+            <Owner type="application/vnd.vmware.vcloud.vm+xml" name="" href="%s/api/vApp/vm-4cad7e64-b201-4042-8892-8dfa50ed5516"/>
+            <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            <Organization type="application/vnd.vmware.vcloud.org+xml" name="vcap" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+        </Task>

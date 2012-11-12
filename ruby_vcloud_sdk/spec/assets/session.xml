@@ -1,0 +1,7 @@
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Session xmlns="http://www.vmware.com/vcloud/v1.5" user="%s" org="%s" type="application/vnd.vmware.vcloud.session+xml" href="%s/api/session/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://localhost/api/v1.5/schema/master.xsd">
+            <Link rel="down" type="application/vnd.vmware.vcloud.orgList+xml" href="%s/api/org/"/>
+            <Link rel="down" type="application/vnd.vmware.admin.vcloud+xml" href="%s/api/admin/"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.query.queryList+xml" href="%s/api/query"/>
+            <Link rel="entityResolver" type="application/vnd.vmware.vcloud.entity+xml" href="%s/api/entity/"/>
+        </Session>

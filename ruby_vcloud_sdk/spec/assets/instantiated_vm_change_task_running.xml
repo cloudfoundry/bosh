@@ -1,0 +1,6 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="running" startTime="2011-09-08T10:08:22.903-07:00" operationName="vappUpdateVm" operation="Updating Virtual Machine (%s)" expiryTime="2011-12-07T10:08:22.903-08:00" name="task" id="urn:vcloud:task:2eea2897-d189-4cf7-9739-758dbfd225d6" type="application/vnd.vmware.vcloud.task+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="task:cancel" href="%s/api/task/2eea2897-d189-4cf7-9739-758dbfd225d6/action/cancel"/>
+    <Owner type="application/vnd.vmware.vcloud.vm+xml" name="" href="%s/api/vApp/vm-619151db-274e-44e9-bcbe-b69bba4ec8c4"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="vcap" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+</Task>

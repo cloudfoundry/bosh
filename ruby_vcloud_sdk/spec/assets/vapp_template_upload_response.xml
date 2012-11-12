@@ -1,0 +1,25 @@
+        <?xml version="1.0" encoding="UTF-8"?>
+        <VAppTemplate xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" ovfDescriptorUploaded="false" goldMaster="false" status="0" name="%s" id="urn:vcloud:vapptemplate:c032c1a3-21a2-4ac2-8e98-0cc29229e10c" type="application/vnd.vmware.vcloud.vAppTemplate+xml" href="%s/api/vAppTemplate/vappTemplate-c032c1a3-21a2-4ac2-8e98-0cc29229e10c" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.dmtf.org/ovf/envelope/1 http://schemas.dmtf.org/ovf/envelope/1/dsp8023_1.1.0.xsd http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/%s"/>
+            <Link rel="remove" href="%s/api/vAppTemplate/vappTemplate-c032c1a3-21a2-4ac2-8e98-0cc29229e10c"/>
+            <Description/>
+            <Files>
+                <File size="-1" bytesTransferred="0" name="descriptor.ovf">
+                    <Link rel="upload:default" href="%s/transfer/22467867-7ada-4a55-a9cb-e05aa30a4f96/descriptor.ovf"/>
+                </File>
+            </Files>
+            <Owner type="application/vnd.vmware.vcloud.owner+xml">
+                <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            </Owner>
+            <Children/>
+            <LeaseSettingsSection type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vAppTemplate/vappTemplate-c032c1a3-21a2-4ac2-8e98-0cc29229e10c/leaseSettingsSection/" ovf:required="false">
+                <ovf:Info>Lease settings section</ovf:Info>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vAppTemplate/vappTemplate-c032c1a3-21a2-4ac2-8e98-0cc29229e10c/leaseSettingsSection/"/>
+                <StorageLeaseInSeconds>7776000</StorageLeaseInSeconds>
+                <StorageLeaseExpiration>2011-11-03T13:39:00.977-07:00</StorageLeaseExpiration>
+            </LeaseSettingsSection>
+            <CustomizationSection type="application/vnd.vmware.vcloud.customizationSection+xml" href="%s/api/vAppTemplate/vappTemplate-c032c1a3-21a2-4ac2-8e98-0cc29229e10c/customizationSection/" ovf:required="false">
+                <ovf:Info>VApp template customization section</ovf:Info>
+                <CustomizeOnInstantiate>false</CustomizeOnInstantiate>
+            </CustomizationSection>
+        </VAppTemplate>

@@ -1,0 +1,22 @@
+<OrgNetwork xmlns="http://www.vmware.com/vcloud/v1.5" name="%s" id="urn:vcloud:network:%s" type="application/vnd.vmware.vcloud.orgNetwork+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="up" type="application/vnd.vmware.vcloud.org+xml" href="https://10.20.46.172:8443/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="https://10.20.46.172:8443/api/network/%s/metadata"/>
+    <Description/>
+    <Configuration>
+        <IpScope>
+            <IsInherited>true</IsInherited>
+            <Gateway>192.168.1.1</Gateway>
+            <Netmask>255.255.255.0</Netmask>
+            <IpRanges>
+                <IpRange>
+                    <StartAddress>192.168.1.2</StartAddress>
+                    <EndAddress>192.168.1.100</EndAddress>
+                </IpRange>
+            </IpRanges>
+        </IpScope>
+        <FenceMode>bridged</FenceMode>
+        <RetainNetInfoAcrossDeployments>false</RetainNetInfoAcrossDeployments>
+        <SyslogServerSettings/>
+    </Configuration>
+    <AllowedExternalIpAddresses/>
+</OrgNetwork>

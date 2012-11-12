@@ -1,0 +1,19 @@
+<Disk xmlns="http://www.vmware.com/vcloud/v1.5" size="0" busType="6" busSubType="lsilogic" status="0" name="test5" id="urn:vcloud:disk:%s" type="application/vnd.vmware.vcloud.disk+xml" href="%s/api/disk%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/7152945d-1041-4c08-9423-23b32c9be1f4"/>
+    <Link rel="remove" href="%s"/>
+    <Link rel="edit" type="application/vnd.vmware.vcloud.disk+xml" href="%s/api/disk/%s"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/disk/%s/owner"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/disk/%s/metadata"/>
+    <Tasks>
+        <Task status="success" startTime="2011-10-05T14:23:03.138-07:00" operationName="vdcCreateDisk" operation="Creating Disk test5(%s)" expiryTime="2012-01-03T14:23:03.138-08:00" name="task" id="urn:vcloud:task:3cdaeaa1-6dd3-439d-95d5-a9208e0c5dba" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/3cdaeaa1-6dd3-439d-95d5-a9208e0c5dba">
+            <Link rel="task:cancel" href="%s/api/task/3cdaeaa1-6dd3-439d-95d5-a9208e0c5dba/action/cancel"/>
+            <Owner type="application/vnd.vmware.vcloud.disk+xml" name="test5" href="%s/api/disk/%s"/>
+            <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/f37afbc4-77a9-4ca6-93b3-d1607f82b329"/>
+            <Organization type="application/vnd.vmware.vcloud.org+xml" name="vcap" href="%s/api/org/7b8a9ff3-1f41-48ae-8eb2-b91140adc010"/>
+        </Task>
+    </Tasks>
+    <StorageClass type="application/vnd.vmware.vcloud.vdcStorageClass+xml" name="*" href="%s/api/vdcStorageClass/8fe92f5a-efb7-456e-af78-54a120c9cf8f"/>
+    <Owner type="application/vnd.vmware.vcloud.owner+xml">
+        <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/61150fcf-1eda-4cd3-a8a5-e51717a2806d"/>
+    </Owner>
+</Disk>

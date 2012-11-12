@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NetworkConfig xmlns="http://www.vmware.com/vcloud/v1.5" networkName="">
+  <Description/>
+  <Configuration>
+    <IpScopes>
+      <IpScope>
+        <IsInherited />
+        <Gateway />
+        <Netmask />
+        <IpRanges>
+          <IpRange>
+            <StartAddress />
+            <EndAddress />
+          </IpRange>
+        </IpRanges>
+      </IpScope>
+    </IpScopes>
+    <ParentNetwork type="application/vnd.vmware.vcloud.network+xml" name="" href=""/>
+    <FenceMode />
+  </Configuration>
+</NetworkConfig>

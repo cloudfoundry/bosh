@@ -1,0 +1,36 @@
+<NetworkConfigSection xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" type="application/vnd.vmware.vcloud.networkConfigSection+xml" href="%s" ovf:required="false">
+        <ovf:Info>The configuration parameters for logical networks</ovf:Info>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.networkConfigSection+xml" href="%s"/>
+        <NetworkConfig networkName="none">
+            <Description>This is a special place-holder used for disconnected network interfaces.</Description>
+            <Configuration>
+                <IpScope>
+                    <IsInherited>false</IsInherited>
+                    <Gateway>196.254.254.254</Gateway>
+                    <Netmask>255.255.0.0</Netmask>
+                    <Dns1>196.254.254.254</Dns1>
+                </IpScope>
+                <FenceMode>isolated</FenceMode>
+            </Configuration>
+            <IsDeployed>false</IsDeployed>
+        </NetworkConfig>
+    <NetworkConfig networkName="%s">
+  <Description/>
+  <Configuration>
+    <IpScopes>
+      <IpScope>
+        <IsInherited>true</IsInherited>
+        <Gateway>192.168.1.1</Gateway>
+        <Netmask>255.255.255.0</Netmask>
+        <IpRanges>
+          <IpRange>
+            <StartAddress>192.168.1.2</StartAddress>
+            <EndAddress>192.168.1.100</EndAddress>
+          </IpRange>
+        </IpRanges>
+      </IpScope>
+    </IpScopes>
+    <ParentNetwork type="application/vnd.vmware.vcloud.network+xml" name="%s" href="%s"/>
+    <FenceMode>bridged</FenceMode>
+  </Configuration>
+</NetworkConfig></NetworkConfigSection>
