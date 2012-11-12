@@ -1,0 +1,11 @@
+        <Item xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" vcloud:href="%s/api/vApp/vm-%s/virtualHardwareSection/memory" vcloud:type="application/vnd.vmware.vcloud.rasdItem+xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2.22.0/CIM_ResourceAllocationSettingData.xsd">
+            <rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>
+            <rasd:Description>Memory Size</rasd:Description>
+            <rasd:ElementName>32 MB of memory</rasd:ElementName>
+            <rasd:InstanceID>5</rasd:InstanceID>
+            <rasd:Reservation>0</rasd:Reservation>
+            <rasd:ResourceType>4</rasd:ResourceType>
+            <rasd:VirtualQuantity>32</rasd:VirtualQuantity>
+            <rasd:Weight>0</rasd:Weight>
+            <Link rel="edit" type="application/vnd.vmware.vcloud.rasdItem+xml" href="%s/api/vApp/vm-%s/virtualHardwareSection/memory"/>
+        </Item>

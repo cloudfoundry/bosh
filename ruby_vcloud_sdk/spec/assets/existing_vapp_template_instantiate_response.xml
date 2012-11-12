@@ -1,0 +1,20 @@
+<VApp xmlns="http://www.vmware.com/vcloud/v1.5" deployed="false" status="0" name="%s" id="urn:vcloud:vapp:%s" type="application/vnd.vmware.vcloud.vApp+xml" href="%s/api/vApp/vapp-%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="down" type="application/vnd.vmware.vcloud.controlAccess+xml" href="%s/api/vApp/vapp-%s/controlAccess/"/>
+    <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/%s"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/vApp/vapp-%s/owner"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/vApp/vapp-%s/metadata"/>
+    <Description>test</Description>
+    <Tasks>
+        <Task status="running" startTime="2011-08-29T11:21:36.484-07:00" operationName="vdcInstantiateVapp" operation="Creating Virtual Application %s(%s)" expiryTime="2011-11-27T11:21:36.484-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/%s">
+            <Link rel="task:cancel" href="%s/api/task/%s/action/cancel"/>
+            <Owner type="application/vnd.vmware.vcloud.vApp+xml" name="%s" href="%s/api/vApp/vapp-%s"/>
+            <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Progress>1</Progress>
+        </Task>
+    </Tasks>
+    <Owner type="application/vnd.vmware.vcloud.owner+xml">
+        <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    </Owner>
+    <InMaintenanceMode>false</InMaintenanceMode>
+</VApp>

@@ -1,0 +1,6 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="success" startTime="2011-10-05T14:23:35.027-07:00" operationName="vdcDeleteDisk" operation="Deleting Disk (%s)" expiryTime="2012-01-03T14:23:35.027-08:00" name="task" id="urn:vcloud:task:0e83b4d9-2f24-4ec1-9dd3-7d9c20936cbf" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/0e83b4d9-2f24-4ec1-9dd3-7d9c20936cbf" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="task:cancel" href="%s/api/task/0e83b4d9-2f24-4ec1-9dd3-7d9c20936cbf/action/cancel"/>
+    <Owner type="application/vnd.vmware.vcloud.disk+xml" name="" href="%s"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/f37afbc4-77a9-4ca6-93b3-d1607f82b329"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/7b8a9ff3-1f41-48ae-8eb2-b91140adc010"/>
+</Task>
