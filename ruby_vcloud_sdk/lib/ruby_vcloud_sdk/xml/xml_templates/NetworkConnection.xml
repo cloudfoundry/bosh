@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<NetworkConnection
+        xmlns="http://www.vmware.com/vcloud/v1.5"
+        network="" needsCustomization="false">
+  <NetworkConnectionIndex/>
+  <IpAddress/>
+  <ExternalIpAddress/>
+  <IsConnected/>
+  <MACAddress/>
+  <IpAddressAllocationMode/>
+</NetworkConnection>
