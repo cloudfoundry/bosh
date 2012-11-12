@@ -1,0 +1,6 @@
+        <Task xmlns="http://www.vmware.com/vcloud/v1.5" status="success" startTime="2011-09-22T13:12:32.551-07:00" operationName="vdcDeleteMedia" operation="Deleting Media File (4ed2b53a-dbdd-4761-8036-fa67920749c5)" expiryTime="2011-12-21T13:12:32.551-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+            <Link rel="task:cancel" href="%s/api/task/%s/action/cancel"/>
+            <Owner type="application/vnd.vmware.vcloud.media+xml" name="" href="%s"/>
+            <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+        </Task>

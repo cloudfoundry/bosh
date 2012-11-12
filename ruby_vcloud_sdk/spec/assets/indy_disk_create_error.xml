@@ -1,0 +1,1 @@
+<Error xmlns="http://www.vmware.com/vcloud/v1.5" minorErrorCode="BAD_REQUEST" message="The requested operation will exceed the vDC's storage quota." majorErrorCode="400" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd"></Error>

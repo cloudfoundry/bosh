@@ -1,0 +1,8 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="success" startTime="2012-07-30T23:04:37.935-07:00" serviceNamespace="com.vmware.vcloud" operationName="vappUpdateVm" operation="Updating Virtual Machine (%s)" expiryTime="2012-10-28T23:04:37.935-07:00" cancelRequested="false" name="task" id="urn:vcloud:task:5a1bc92b-1cd0-4286-9ad8-eae948220865" type="application/vnd.vmware.vcloud.task+xml" href="https://10.147.33.83/api/task/5a1bc92b-1cd0-4286-9ad8-eae948220865" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.147.33.83/api/v1.5/schema/master.xsd">
+    <Link rel="task:cancel" href="%s/api/task/5a1bc92b-1cd0-4286-9ad8-eae948220865/action/cancel"/>
+    <Owner type="application/vnd.vmware.vcloud.vm+xml" name="" href="%s/api/vApp/%s"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="cfadmin" href="%s/api/admin/user/454f6594-a964-480a-86b5-a3155c876da2"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="cf-org" href="%s/api/org/0b332876-850d-4d7d-8ffd-c5f1749edd64"/>
+    <Progress>0</Progress>
+    <Details/>
+</Task>
