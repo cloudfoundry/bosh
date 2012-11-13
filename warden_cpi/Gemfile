@@ -1,0 +1,7 @@
+source :rubygems
+
+gem "rake"
+gem "uuidtools"
+gem "bosh_cpi"
+gem "rspec"
+gem "sys-filesystem"
