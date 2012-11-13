@@ -1,7 +1,11 @@
 require "securerandom"
+require "sys/filesystem"
+
+require "common/exec"
 
 require "cloud"
 require "cloud/warden/helpers"
+require "cloud/warden/disk_manager"
 require "cloud/warden/cloud"
 require "cloud/warden/version"
 

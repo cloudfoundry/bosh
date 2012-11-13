@@ -10,6 +10,9 @@ end
 
 group :development, :test do
   gem "sqlite3"
+  gem "sys-filesystem"
+  gem "bosh_cpi"
+  gem "bosh_common"
 
   gem "ci_reporter"
   gem "rspec", "~>2.10"
