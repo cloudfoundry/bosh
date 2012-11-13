@@ -5,6 +5,7 @@ module Bosh::Director
   # about existing deployment and information from director DB
   class DeploymentPlanCompiler
     include DnsHelper
+    include LockHelper
     include IpUtil
 
     # @param [DeploymentPlan] deployment_plan Deployment plan
@@ -25,8 +26,10 @@ module Bosh::Director
     # Binds release DB record(s) to a plan
     # @return [void]
     def bind_releases
-      @deployment_plan.releases.each do |release|
-        release.bind_model
+      with_release_locks(@deployment_plan) do
+        @deployment_plan.releases.each do |release|
+          release.bind_model
+        end
       end
     end
 
