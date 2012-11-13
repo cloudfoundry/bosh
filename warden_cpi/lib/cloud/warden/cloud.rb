@@ -6,6 +6,7 @@ module Bosh::WardenCloud
 
     DEFAULT_WARDEN_SOCK = "/tmp/warden.sock"
     DEFAULT_STEMCELL_ROOT = "/var/vcap/stemcell"
+    DEFAULT_DISK_DIR = "/var/vcap/disk_images"
 
     attr_accessor :logger
 
@@ -19,9 +20,14 @@ module Bosh::WardenCloud
       @agent_properties = options["agent"] || {}
       @warden_properties = options["warden"] || {}
       @stemcell_properties = options["stemcell"] || {}
+      @db_properties = options["db"] || {}
+      @device_pool_properties = options["device_pool"] || {}
+      @disk_dir = options["disk_dir"] || DEFAULT_DISK_DIR
 
       setup_warden
       setup_stemcell
+      setup_db
+      setup_disk_manager
     end
 
     ##
@@ -84,23 +90,52 @@ module Bosh::WardenCloud
       # no-op
     end
 
+    ##
+    # Creates a new disk image
+    # @param [Integer] size disk size in MiB
+    # @param [String] vm_locality not be used in warden cpi
+    # @raise [Bosh::Clouds::NoDiskSpace] if system has not enough free space
+    # @raise [Bosh::Clouds::CloudError] when meeting internal error
+    # @return [String] disk id
     def create_disk(size, vm_locality = nil)
-      # vm_locality is a string, which might mean the disk_path
+      not_used(vm_locality)
 
-      disk_id = disk_uuid
-      disk_path = "/tmp/disk/#{disk_id}"
-
-      disk_id
+      with_thread_name("create_disk(#{size}, _)") do
+        disk = @disk_manager.create_disk(size)
+        begin
+          @db.save_disk(disk)
+        rescue
+          @disk_manager.delete_disk(disk)
+          raise
+        end
+        disk.uuid
+      end
+    rescue => e
+      cloud_error(e)
     end
 
+    ##
+    # Delete a disk image
+    # @param [String] disk_id
+    # @return nil
     def delete_disk(disk_id)
       # TODO to be implemented
     end
 
+    ##
+    # Attach a disk image to a vm
+    # @param [String] vm_id warden container handle
+    # @param [String] disk_id disk id
+    # @return nil
     def attach_disk(vm_id, disk_id)
       # TODO to be implemented
     end
 
+    ##
+    # Detach a disk image from a vm
+    # @param [String] vm_id warden container handle
+    # @param [String] disk_id disk id
+    # @return nil
     def detach_disk(vm_id, disk_id)
       # TODO to be implemented
     end
@@ -119,6 +154,15 @@ module Bosh::WardenCloud
       File.join(@stemcell_root, stemcell_id)
     end
 
+    def setup_device_pool(option)
+      pool = []
+      option["count"].times do |i|
+        device_num = option["start_num"] + i
+        pool.push(device_num) unless @db.device_occupied?(device_num)
+      end
+      DevicePool.new(pool)
+    end
+
     def setup_warden
       @warden_unix_path = @warden_properties["unix_domain_path"] || DEFAULT_WARDEN_SOCK
 
@@ -131,5 +175,15 @@ module Bosh::WardenCloud
       FileUtils.mkdir_p(@stemcell_root)
     end
 
+    def setup_db
+      @db = DB.new(@db_properties)
+    end
+
+    def setup_disk_manager
+      @disk_manager = DiskManager.new(
+        @disk_dir,
+        setup_device_pool(@device_pool_properties)
+      )
+    end
   end
 end
