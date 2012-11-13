@@ -1,8 +1,14 @@
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
+
+require "tmpdir"
 require "rspec"
 require "logger"
 require "tmpdir"
 
-require "cloud"
 require "cloud/warden"
 
 def cloud_options
