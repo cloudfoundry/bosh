@@ -19,9 +19,15 @@ module Bosh::WardenCloud
       @agent_properties = options["agent"] || {}
       @warden_properties = options["warden"] || {}
       @stemcell_properties = options["stemcell"] || {}
+      @db_properties = options["db"]
+      @device_pool_properties = options["device_pool"] || {}
+
+      @disk_manager = DiskManager.new(options["disk"])
 
       setup_warden
       setup_stemcell
+      setup_db
+      setup_device_pool
     end
 
     ##
@@ -84,23 +90,53 @@ module Bosh::WardenCloud
       # no-op
     end
 
+    ##
+    # Creates a new disk image
+    # @param [Integer] size disk size in MiB
+    # @param [String] vm_locality not be used in warden cpi
+    # @raise [Bosh::Clouds::NoDiskSpace] if system has not enough free space
+    # @raise [Bosh::Clouds::CloudError] when meeting internal error
+    # @return [String] disk id
     def create_disk(size, vm_locality = nil)
-      # vm_locality is a string, which might mean the disk_path
+      not_used(vm_locality)
 
-      disk_id = disk_uuid
-      disk_path = "/tmp/disk/#{disk_id}"
-
-      disk_id
+      with_thread_name("create_disk(#{size}, _)") do
+        disk = Disk.new(disk_uuid, @device_pool.acquire)
+        @disk_manager.create_disk(disk, size)
+        begin
+          @db.save_disk(disk)
+        rescue
+          @disk_manager.delete_disk(disk)
+          raise
+        end
+        disk.uuid
+      end
+    rescue => e
+      cloud_error(e)
     end
 
+    ##
+    # Delete a disk image
+    # @param [String] disk_id
+    # @return nil
     def delete_disk(disk_id)
       # TODO to be implemented
     end
 
+    ##
+    # Attach a disk image to a vm
+    # @param [String] vm_id warden container handle
+    # @param [String] disk_id disk id
+    # @return nil
     def attach_disk(vm_id, disk_id)
       # TODO to be implemented
     end
 
+    ##
+    # Detach a disk image from a vm
+    # @param [String] vm_id warden container handle
+    # @param [String] disk_id disk id
+    # @return nil
     def detach_disk(vm_id, disk_id)
       # TODO to be implemented
     end
@@ -111,12 +147,85 @@ module Bosh::WardenCloud
 
     private
 
+    class DevicePool
+
+      def initialize(pool)
+        @pool = pool
+      end
+
+      def acquire
+        device_num = @pool.delete_at(0)
+        unless device_num
+          raise Bosh::Clouds::CloudError.new
+        end
+        device_num
+      end
+
+      def release(device_num)
+        @pool.push(device_num)
+      end
+    end
+
+    class DBWrapper
+
+      def initialize(db)
+        @db = db
+      end
+
+      def device_exist?(device_num)
+        items = DB[:disk]
+        items.each do |item|
+          return true if item[:device_num] == device_num
+        end
+        false
+      end
+
+      def save_disk(disk)
+        items = DB[:disk]
+        items.insert(:uuid => "#{disk.uuid}", :device_num => "#{device_num}")
+      end
+    end
+
     def not_used(var)
       # no-op
     end
 
     def stemcell_path(stemcell_id)
       File.join(@stemcell_root, stemcell_id)
+    end
+
+    def setup_db
+      db_type = @db_properties["type"]
+      db_file = @db_properties["path"]
+
+      if db_type != "sqlite"
+        raise Bosh::Clouds::NotSupported.new, "#{db_type} not supported"
+      end
+
+      FileUtils.mkdir_p(File.dirname(db_file))
+      db = Sequel.connect("#{db_type}://#{file}")
+
+      db.create_table? :disk do
+        primary_key String :uuid
+        Int :device_num
+      end
+
+      db.create_table? :disk_mapping do
+        primary_key String :disk_id
+        String :container_id
+        String :device_path
+      end
+
+      @db = DBWrapper.new(db)
+    end
+
+    def setup_device_pool
+      @pool = []
+      @pool_count.times do |i|
+        device_num = @pool_start_num + i
+        @pool.push(device_num) unless @db.device_exist?(device_num)
+      end
+      nil
     end
 
     def setup_warden
