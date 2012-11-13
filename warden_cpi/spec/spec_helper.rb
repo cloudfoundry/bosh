@@ -1,27 +1,20 @@
+ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :test)
+
 require "rspec"
 require "logger"
 
-require "cloud"
 require "cloud/warden"
 
-def cloud_options
-  {
-    "warden" => warden_options,
-  }
+class WardenConfig
+  attr_accessor :logger
 end
 
-def warden_options
-  {
-    "unix_domain_socket" => "/tmp/warden.sock",
-  }
-end
+warden_config = WardenConfig.new
+warden_config.logger = Logger.new(StringIO.new)
+warden_config.logger.level = Logger::DEBUG
 
-module Bosh::Clouds
-  class Config
-    class << self
-      attr_accessor :logger
-    end
-  end
-end
-
-Bosh::Clouds::Config.logger = Logger.new("/dev/null")
+Bosh::Clouds::Config.configure(warden_config)
