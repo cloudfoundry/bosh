@@ -7,20 +7,39 @@ module Bosh::WardenCloud
     attr_accessor :logger
 
     def initialize(options)
-      @agent_properties = options["agent"] || {}
-      @warden_properties = options["warden"]
+      @logger = Bosh::Clouds::Config.logger
 
-      @client = Warden::Client.new(@warden_properties["unix_domain_path"])
+      @agent_properties = options["agent"] || {}
+      @warden_properties = options["warden"] || {}
+      @stemcell_properties = options["stemcell"] || {}
+
+      setup_warden
+      setup_stemcell
     end
 
     def create_stemcell(image_path, cloud_properties)
-      # TODO to be implemented
+      not_used(cloud_properties)
 
-      SecureRandom.uuid
+      stemcell_id = SecureRandom.uuid
+      stemcell_path = stemcell_path(stemcell_id)
+
+      with_thread_name("create_stemcell(#{image_path}, _)") do
+        # Extract to tarball
+        @logger.info("Extracting stemcell from #{image_path} to #{stemcell_path}")
+        FileUtils.mkdir_p(stemcell_path)
+        output = `tar -C #{stemcell_path} -xzf #{image_path} 2>&1`
+        raise "Corrupt image, status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
+
+        # TODO Verify if it is a valid stemcell
+      end
+
+      stemcell_id
     end
 
     def delete_stemcell(stemcell_id)
-      # TODO to be implemented
+      stemcell_path = stemcell_path(stemcell_id)
+      output = `rm -rf #{stemcell_path} 2>&1`
+      raise "Cannot delete stemcell #{stemcell_id}, ret: #{$?.exitstatus}, #{output}" if $?.exitstatus != 0
     end
 
     def create_vm(agent_id, stemcell_id, resource_pool,
@@ -75,6 +94,22 @@ module Bosh::WardenCloud
 
     def not_used(var)
       # no-op
+    end
+
+    def stemcell_path(stemcell_id)
+      File.join(@stemcell_root, stemcell_id)
+    end
+
+    def setup_warden
+      @warden_unix_path = @warden_properties["unix_domain_path"] || "/tmp/warden.sock"
+
+      @client = Warden::Client.new(@warden_unix_path)
+    end
+
+    def setup_stemcell
+      @stemcell_root = @stemcell_properties["root"] || "/var/vcap/stemcell"
+
+      FileUtils.mkdir_p(@stemcell_root)
     end
 
   end
