@@ -1,5 +1,6 @@
 require "rspec"
 require "logger"
+require "tmpdir"
 
 require "cloud"
 require "cloud/warden"
@@ -7,12 +8,19 @@ require "cloud/warden"
 def cloud_options
   {
     "warden" => warden_options,
+    "stemcell" => stemcell_options,
   }
 end
 
 def warden_options
   {
     "unix_domain_socket" => "/tmp/warden.sock",
+  }
+end
+
+def stemcell_options
+  {
+    "root" => "/var/vcap/stemcell",
   }
 end
 
