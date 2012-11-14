@@ -6,21 +6,54 @@ module Bosh::WardenCloud
 
     attr_accessor :logger
 
+    ##
+    # Initialize BOSH Warden CPI
+    # @param [Hash] options CPI options
+    #
     def initialize(options)
+      @logger = Bosh::Clouds::Config.logger
+
       @agent_properties = options["agent"] || {}
-      @warden_properties = options["warden"]
+      @warden_properties = options["warden"] || {}
+      @stemcell_properties = options["stemcell"] || {}
 
-      @client = Warden::Client.new(@warden_properties["unix_domain_path"])
+      setup_warden
+      setup_stemcell
     end
 
+    ##
+    # Create a stemcell using stemcell image
+    # This method simply untar the stemcell image to a local directory. Warden
+    # can use the rootfs within the image as a base fs.
+    # @param [String] image_path local path to a stemcell image
+    # @param [Hash] cloud_properties not used
+    # return [String] stemcell id
     def create_stemcell(image_path, cloud_properties)
-      # TODO to be implemented
+      not_used(cloud_properties)
 
-      SecureRandom.uuid
+      stemcell_id = SecureRandom.uuid
+      stemcell_path = stemcell_path(stemcell_id)
+
+      with_thread_name("create_stemcell(#{image_path}, _)") do
+        # Extract to tarball
+        @logger.info("Extracting stemcell from #{image_path} to #{stemcell_path}")
+        FileUtils.mkdir_p(stemcell_path)
+        output = `tar -C #{stemcell_path} -xzf #{image_path} 2>&1`
+        raise "Corrupt image, status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
+
+        # TODO Verify if it is a valid stemcell
+      end
+
+      stemcell_id
     end
 
+    ##
+    # Delete the stemcell
+    # @param [String] id of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
-      # TODO to be implemented
+      stemcell_path = stemcell_path(stemcell_id)
+      output = `rm -rf #{stemcell_path} 2>&1`
+      raise "Cannot delete stemcell #{stemcell_id}, ret: #{$?.exitstatus}, #{output}" if $?.exitstatus != 0
     end
 
     def create_vm(agent_id, stemcell_id, resource_pool,
@@ -75,6 +108,22 @@ module Bosh::WardenCloud
 
     def not_used(var)
       # no-op
+    end
+
+    def stemcell_path(stemcell_id)
+      File.join(@stemcell_root, stemcell_id)
+    end
+
+    def setup_warden
+      @warden_unix_path = @warden_properties["unix_domain_path"] || "/tmp/warden.sock"
+
+      @client = Warden::Client.new(@warden_unix_path)
+    end
+
+    def setup_stemcell
+      @stemcell_root = @stemcell_properties["root"] || "/var/vcap/stemcell"
+
+      FileUtils.mkdir_p(@stemcell_root)
     end
 
   end

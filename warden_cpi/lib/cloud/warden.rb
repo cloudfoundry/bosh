@@ -1,4 +1,8 @@
+require "fileutils"
 require "securerandom"
+
+require "common/thread_pool"
+require "common/thread_formatter"
 
 require "cloud"
 require "cloud/warden/helpers"
