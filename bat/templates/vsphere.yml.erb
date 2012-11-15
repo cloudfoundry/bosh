@@ -51,6 +51,11 @@ resource_pools:
       ram: 512
       disk: 2048
       cpu: 1
+    <% if properties.password %>
+    env:
+      bosh:
+        password: <%= properties.password %>
+    <% end %>
 
 jobs:
   - name: <%= properties.job || "batlight" %>

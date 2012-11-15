@@ -37,6 +37,11 @@ resource_pools:
       version: <%= properties.stemcell.version %>
     cloud_properties:
       instance_type: m1.small
+    <% if properties.password %>
+    env:
+      bosh:
+        password: <%= properties.password %>
+    <% end %>
 
 jobs:
   - name: <%= properties.job || "batlight" %>
