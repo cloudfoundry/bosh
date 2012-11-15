@@ -39,7 +39,7 @@ describe "initialization" do
       bosh("target #{bosh_director}").should succeed_with /Target \w*\s*set/
     end
 
-    it "should fetch deployments" do
+    it "should not have a 'bat' deployment" do
       deployments.should_not have_key("bat")
     end
 
