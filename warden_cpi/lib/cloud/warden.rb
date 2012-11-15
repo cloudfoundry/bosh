@@ -1,9 +1,8 @@
 require "fileutils"
+require "set"
 require "securerandom"
 require "sys/filesystem"
 require "sequel"
-
-require "common/exec"
 
 require "common/exec"
 require "common/thread_pool"
@@ -12,10 +11,10 @@ require "common/thread_formatter"
 require "cloud"
 require "cloud/warden/helpers"
 require "cloud/warden/model/disk"
-require "cloud/warden/model/disk_mapping"
 require "cloud/warden/db.rb"
 require "cloud/warden/device_pool"
 require "cloud/warden/disk_manager"
+require "cloud/warden/container"
 require "cloud/warden/cloud"
 require "cloud/warden/version"
 
