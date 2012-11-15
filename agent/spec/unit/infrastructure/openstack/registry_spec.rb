@@ -10,6 +10,15 @@ describe Bosh::Agent::Infrastructure::Openstack::Registry do
     @settings = { 'status' => "ok", 'settings' => settings_json }
   end
 
+  it "should raise exception when settings are invalid" do
+    Bosh::Agent::Infrastructure::Openstack::Registry.stub(:current_instance_id).and_return("os_instance")
+    Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_json_from_url).and_return({})
+    Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_registry_endpoint).and_return("blah")
+    expect {
+      settings = Bosh::Agent::Infrastructure::Openstack::Registry.get_settings
+    }.to raise_error Bosh::Agent::LoadSettingsError
+  end
+
   it 'should get settings' do
     Bosh::Agent::Infrastructure::Openstack::Registry.stub(:current_server_id).and_return("i-server")
     Bosh::Agent::Infrastructure::Openstack::Registry.stub(:get_json_from_url).and_return(@settings)

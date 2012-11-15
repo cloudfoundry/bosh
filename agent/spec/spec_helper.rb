@@ -59,8 +59,12 @@ def base_dir
   Bosh::Agent::Config.base_dir
 end
 
+def asset(filename)
+  File.join(File.dirname(__FILE__), 'assets', filename)
+end
+
 def read_asset(filename)
-  File.open(File.join(File.dirname(__FILE__), 'assets', filename)).read
+  File.open(asset(filename)).read
 end
 
 def dummy_package_data

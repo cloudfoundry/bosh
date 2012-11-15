@@ -57,9 +57,34 @@ module Bosh::Agent
     end
 
     def load_settings
-      @settings = Bosh::Agent::Config.infrastructure.load_settings
+      @settings = load_infrastructure_settings
       Bosh::Agent::Config.settings = @settings
     end
+
+    def load_infrastructure_settings
+      settings = Bosh::Agent::Config.infrastructure.load_settings
+      store_cached_settings(settings)
+      settings
+    rescue LoadSettingsError
+      load_cached_settings
+    end
+
+    def store_cached_settings(settings)
+      json = Yajl::Encoder.encode(settings)
+      File.open(Bosh::Agent::Config.settings_file, 'w') do |file|
+        file.write(json)
+      end
+    end
+
+    def load_cached_settings
+      json = File.read(Bosh::Agent::Config.settings_file)
+      logger.info("failed to load infrastructre settings, " \
+                  "falling back to cached settings")
+      Yajl::Parser.new.parse(json)
+    rescue Errno::ENOENT
+      raise LoadSettingsError, "could neither load infrastructure settings " \
+        "nor cached settings from: #{Bosh::Agent::Config.settings_file}"
+      end
 
     def iptables(cmd)
       output = %x{iptables #{cmd} 2> /dev/null}
