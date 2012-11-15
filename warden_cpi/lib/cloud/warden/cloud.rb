@@ -124,11 +124,26 @@ module Bosh::WardenCloud
 
     ##
     # Attach a disk image to a vm
-    # @param [String] vm_id warden container handle
+    # @param [String] vm_id warden container id
     # @param [String] disk_id disk id
+    # @raise [Bosh::Clouds::DiskNotFound] if disk not exist
+    # @raise [Bosh::Clouds::VMNotFound] if container not exist
     # @return nil
     def attach_disk(vm_id, disk_id)
-      # TODO to be implemented
+      with_thread_name("attach_disk(#{vm_id}, #{disk_id})") do
+        disk = @db.find_disk(disk_id)
+        vm = container(vm_id)
+        device_path = vm.create_device(disk.device_num)
+        begin
+          @db.save_disk_mapping(DiskMapping.new(disk_id, vm_id, device_path))
+        rescue
+          vm.delete_device(device_path)
+          raise
+        end
+        # register attach info on agent, to be done
+      end
+    rescue => e
+      cloud_error(e)
     end
 
     ##
@@ -184,6 +199,14 @@ module Bosh::WardenCloud
         @disk_dir,
         setup_device_pool(@device_pool_properties)
       )
+    end
+
+    def container(id)
+      container = Container.new(id, @warden_client)
+      unless container.exist?
+        raise Bosh::Clouds::VMNotFound, "Container #{id} not exist"
+      end
+      container
     end
   end
 end

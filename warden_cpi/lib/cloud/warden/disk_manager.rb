@@ -47,14 +47,6 @@ module Bosh::WardenCloud
       FileUtils.rm_f(disk_path)
     end
 
-    def attach_disk(vm_id, disk_id)
-      # TODO to be implemented
-    end
-
-    def detach_disk(vm_id, disk_id)
-      # TODO to be implemented
-    end
-
     private
 
     def sh(cmd)

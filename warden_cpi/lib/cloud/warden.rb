@@ -1,4 +1,5 @@
 require "fileutils"
+require "set"
 require "securerandom"
 require "sys/filesystem"
 require "sequel"
