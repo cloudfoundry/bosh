@@ -8,7 +8,6 @@ Bosh::Agent::Config.infrastructure
 describe Bosh::Agent::Infrastructure::Vsphere::Settings do
 
   before(:each) do
-    Bosh::Agent::Config.settings_file = File.join(base_dir, 'bosh', 'settings.json')
     @settings = Bosh::Agent::Infrastructure::Vsphere::Settings.new
     @settings.cdrom_retry_wait = 0.1
 
@@ -24,33 +23,6 @@ describe Bosh::Agent::Infrastructure::Vsphere::Settings do
 
     FileUtils.mkdir_p(cdrom_dir)
     File.open(env, 'w') { |f| f.write(settings_json) }
-
-    @settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
-  end
-
-  it 'should write env to settings file' do
-    cdrom_dir = File.join(base_dir, 'bosh', 'settings')
-    env = File.join(cdrom_dir, 'env')
-
-    FileUtils.mkdir_p(cdrom_dir)
-    File.open(env, 'w') { |f| f.write(settings_json) }
-
-    data = @settings.load_settings
-
-    settings_file = File.join(base_dir, 'bosh', 'settings.json')
-    settings_json_from_file = File.read(settings_file)
-
-    settings_json_from_file.should == settings_json
-    data.should == Yajl::Parser.new.parse(settings_json_from_file)
-  end
-
-  it 'should fall back to load settings from file' do
-    @settings.stub!(:check_cdrom).and_raise(Bosh::Agent::LoadSettingsError)
-
-    FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
-    settings_file = File.join(base_dir, 'bosh', 'settings.json')
-
-    File.open(settings_file, 'w') { |f| f.write(settings_json) }
 
     @settings.load_settings.should == Yajl::Parser.new.parse(settings_json)
   end
