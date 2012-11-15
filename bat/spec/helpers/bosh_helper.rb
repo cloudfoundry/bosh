@@ -73,6 +73,10 @@ module BoshHelper
     info["features"] && info["features"]["dns"]
   end
 
+  def colocation?
+    info["features"] && info["features"]["colocation"]
+  end
+
   def read_environment(variable)
     if ENV[variable]
       ENV[variable]
