@@ -9,6 +9,7 @@ module Bosh::Cli::Command
     option "--full", "Return detailed VM information"
     def list(deployment_name = nil)
       auth_required
+      no_track_unsupported
       show_full_stats = options[:full]
 
       if deployment_name.nil?

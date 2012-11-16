@@ -15,6 +15,7 @@ module Bosh::Cli::Command
            "don't attempt to resolve problems"
     def perform(deployment_name = nil)
       auth_required
+      no_track_unsupported
       @auto_mode = options[:auto]
       @report_mode = options[:report]
 
@@ -30,10 +31,10 @@ module Bosh::Cli::Command
       say("Performing cloud check...")
       deployment_name ||= prepare_deployment_manifest["name"]
 
-      status, _ = director.perform_cloud_scan(deployment_name)
+      status, task_id = director.perform_cloud_scan(deployment_name)
 
       if status != :done
-        task_report(status)
+        task_report(status, task_id)
         exit(1)
       end
 
@@ -75,10 +76,10 @@ module Bosh::Cli::Command
         hash
       end
 
-      status, _ = director.apply_resolutions(deployment_name, action_map)
+      status, task_id = director.apply_resolutions(deployment_name, action_map)
 
       if status != :done
-        task_report(status)
+        task_report(status, task_id)
         exit(1)
       end
 

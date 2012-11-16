@@ -48,7 +48,8 @@ module Bosh::Cli
       end
 
       def director
-        @director ||= Bosh::Cli::Director.new(target, username, password)
+        @director ||= Bosh::Cli::Director.new(
+          target, username, password, @options.select {|k,v| k == :no_track})
       end
 
       def release
@@ -132,12 +133,15 @@ module Bosh::Cli
       # contains pretty detailed error report and other UI niceties, so most
       # of the time this could just do nothing
       # @param [Symbol] status Task status
-      def task_report(status, success_msg = nil, error_msg = nil)
+      # @param [#to_s] task_id Task ID
+      def task_report(status, task_id, success_msg = nil, error_msg = nil)
         case status
           when :non_trackable
             report = "Can't track director task".red
           when :track_timeout
             report = "Task tracking timeout".red
+          when :running
+            report = "Director task #{task_id.yellow} is running"
           when :error
             report = error_msg
           when :done
@@ -166,6 +170,12 @@ module Bosh::Cli
 
       def deployment_required
         err("Please choose deployment first") if deployment.nil?
+      end
+
+      def no_track_unsupported
+        if @options.delete(:no_track)
+          say("Ignoring `" + "--no-track".yellow + "' option")
+        end
       end
 
       def check_if_release_dir

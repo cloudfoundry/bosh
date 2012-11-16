@@ -184,9 +184,9 @@ module Bosh::Cli::Command
       end
 
       if confirmed?
-        status, _ = director.delete_release(
+        status, task_id = director.delete_release(
           name, :force => force, :version => version)
-        task_report(status, "Deleted `#{desc}'")
+        task_report(status, task_id, "Deleted `#{desc}'")
       else
         say("Canceled deleting release".green)
       end
@@ -258,12 +258,12 @@ module Bosh::Cli::Command
 
       if rebase
         say("Uploading release (#{"will be rebased".yellow})")
-        status, _ = director.rebase_release(tarball_path)
-        task_report(status, "Release rebased")
+        status, task_id = director.rebase_release(tarball_path)
+        task_report(status, task_id, "Release rebased")
       else
         say("\nUploading release\n")
-        status, _ = director.upload_release(tarball_path)
-        task_report(status, "Release uploaded")
+        status, task_id = director.upload_release(tarball_path)
+        task_report(status, task_id, "Release uploaded")
       end
     end
 
