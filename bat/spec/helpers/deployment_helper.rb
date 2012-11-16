@@ -165,6 +165,10 @@ module DeploymentHelper
     @spec["properties"]["pool_size"] = size
   end
 
+  def use_password(passwd)
+    @spec["properties"]["password"] = passwd
+  end
+
   def get_task_id(output)
     match = output.match(/Task (\d+) done/)
     match.should_not be_nil

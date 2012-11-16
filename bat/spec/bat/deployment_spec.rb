@@ -167,4 +167,13 @@ describe "deployment" do
       deployment.delete
     end
   end
+
+  it "should set vcap password" do
+    # using password 'foobar'
+    use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
+    use_static_ip
+    with_deployment do
+      ssh(static_ip, "vcap", "foobar", "cat /etc/hosts").should_not == ""
+    end
+  end
 end
