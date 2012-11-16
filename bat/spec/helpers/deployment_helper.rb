@@ -129,6 +129,10 @@ module DeploymentHelper
     @spec["properties"]["job"] = job
   end
 
+  def use_template(template)
+    @spec["properties"]["template"] = template
+  end
+
   def use_job_instances(count)
     @spec["properties"]["jobs"] = count
   end

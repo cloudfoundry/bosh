@@ -59,7 +59,7 @@ resource_pools:
 
 jobs:
   - name: <%= properties.job || "batlight" %>
-    template: <%= properties.job || "batlight" %>
+    template: <%= properties.template || properties.job || "batlight" %>
     instances: <%= properties.jobs %>
     resource_pool: common
     <% if properties.persistent_disk %>

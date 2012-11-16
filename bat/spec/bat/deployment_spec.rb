@@ -65,6 +65,25 @@ describe "deployment" do
     deployment.delete
   end
 
+  it "should use job colocation" do
+    pending "director lacks colocation support" unless colocation?
+    jobs = %w[
+      /var/vcap/packages/batlight/bin/batlight
+      /var/vcap/packages/batarang/bin/batarang
+    ]
+    use_job("composite")
+    use_template("
+      - batarang
+      - batlight")
+    use_static_ip
+    with_deployment do
+      jobs.each do |job|
+        grep = "pgrep -lf #{job}"
+        ssh(static_ip, "vcap", password, grep).should match %r{#{job}}
+      end
+    end
+  end
+
   it "should update a job with multiple instances in parallel" do
     use_canaries(0)
     use_max_in_flight(2)
