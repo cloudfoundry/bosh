@@ -1,5 +1,7 @@
+require "yajl"
 require "sequel"
 require "fileutils"
+require "tempfile"
 require "securerandom"
 
 require "common/exec"
