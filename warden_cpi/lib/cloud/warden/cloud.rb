@@ -61,19 +61,89 @@ module Bosh::WardenCloud
       end
     end
 
+    ##
+    # Create a container in warden
+    #
+    # Limitaion: We don't support creating VM with multiple network nics.
+    #
+    # @param [String] agent_id UUID for bosh agent
+    # @param [String] stemcell_id stemcell id
+    # @param [Hash] resource_pool not used
+    # @param [Hash] networks list of networks and their settings needed for this VM
+    # @param [optional, String, Array] disk_locality not used
+    # @param [optional, Hash] env environment that will be passed to this vm
+    # @return [String] vm_id
     def create_vm(agent_id, stemcell_id, resource_pool,
                   networks, disk_locality = nil, env = nil)
       not_used(resource_pool)
       not_used(disk_locality)
       not_used(env)
 
-      # TODO to be implemented
+      with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
 
-      vm_uuid
+        stemcell_path = stemcell_path(stemcell_id)
+
+        raise "Not support more than 1 nics" if networks.size > 1
+        raise "Stemcell(#{stemcell_id}) not found" unless Dir.exist?(stemcell_path)
+
+        vm = Models::VM.new
+
+        # Create Container
+        handle = with_warden do |client|
+          request = Warden::Protocol::CreateRequest.new
+          request.rootfs = File.join(stemcell_path, 'root')
+          if networks.first[1]['type'] != 'dynamic'
+            request.network = '1.1.1.1'
+          end
+
+          response = client.call(request)
+          response.handle
+        end
+
+        # Agent settings
+        env = generate_agent_env(vm, agent_id, networks)
+
+        tempfile = Tempfile.new('settings')
+        tempfile.write(yajl::Encoder.encode(env)) # TODO
+        tempfile.close
+
+        with_warden do |client|
+          request = Warden::Protocol::CopyInRequest.new
+          request.handle = handle
+          request.src_path = tempfile.path
+          request.dst_path = Bosh::Agent::Config.settings_file
+
+          client.call(request)
+        end
+
+        # TODO start agent and other init scripts, something like power on
+
+        # Save to DB
+        vm.container_id = handle
+        vm.save
+
+        vm.id.to_s
+      end
+    rescue => e
+      # TODO how to clean up
+      cloud_error(e)
     end
 
+    ##
+    # Deletes a VM
+    #
+    # @param [String] vm_id vm id
     def delete_vm(vm_id)
-      # TODO to be implemented
+      with_thread_name("delete_vm(#{vm_id})") do
+        with_warden do |client|
+          request = Warden::Protocol::DestroyRequest.new
+          client.call(request)
+        end
+
+        Models::VM[vm_id.to_i].delete
+      end
+
+      # TODO remove vm_id from database
     end
 
     def reboot_vm(vm_id)
@@ -121,14 +191,37 @@ module Bosh::WardenCloud
 
     def setup_warden
       @warden_unix_path = @warden_properties["unix_domain_path"] || DEFAULT_WARDEN_SOCK
-
-      @client = Warden::Client.new(@warden_unix_path)
     end
 
     def setup_stemcell
       @stemcell_root = @stemcell_properties["root"] || DEFAULT_STEMCELL_ROOT
 
       FileUtils.mkdir_p(@stemcell_root)
+    end
+
+    def with_warden
+      # TODO make sure client is running as root inside container
+      client = Warden::Client.new(@warden_unix_path)
+      client.connect
+      ret = yield client
+      client.disconnect
+
+      ret
+    end
+
+
+    def generate_agent_env(vm, agent_id, networks)
+      vm_env = {
+        "name" => vm.container_id,
+        "id" => vm.id
+      }
+
+      env = {
+        "vm" => vm_env,
+        "agent_id" => agent_id,
+        "networks" => networks,
+      }
+      env
     end
 
   end

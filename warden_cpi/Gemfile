@@ -19,4 +19,4 @@ group :development, :test do
   gem "simplecov-rcov", :platforms => :ruby_19
 end
 
-gem "warden-client", :git => "https://github.com/cloudfoundry/warden.git", :ref => 'be42aec7'
+gem "warden-client", :git => "https://github.com/cloudfoundry/warden.git", :ref => '2dc6f5de'

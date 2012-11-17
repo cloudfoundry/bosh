@@ -1,12 +1,10 @@
 GIT
   remote: https://github.com/cloudfoundry/warden.git
-  revision: be42aec7fe26d2e08491d6e1bf34dc35b2dc69c4
-  ref: be42aec7
+  revision: 2dc6f5def0c81e0b641d0e42f63d967c68c3d6cf
+  ref: 2dc6f5de
   specs:
     warden-client (0.0.7)
       warden-protocol
-    warden-protocol (0.0.10)
-      beefcake
 
 PATH
   remote: .
@@ -69,6 +67,8 @@ GEM
     simplecov-rcov (0.2.3)
       simplecov (>= 0.4.1)
     sqlite3 (1.3.6)
+    warden-protocol (0.0.11)
+      beefcake
 
 PLATFORMS
   ruby
