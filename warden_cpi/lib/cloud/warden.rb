@@ -1,3 +1,4 @@
+require "sequel"
 require "fileutils"
 require "securerandom"
 
@@ -9,6 +10,7 @@ require "cloud"
 require "cloud/warden/helpers"
 require "cloud/warden/cloud"
 require "cloud/warden/version"
+require "cloud/warden/models/vm"
 
 require "warden/client"
 

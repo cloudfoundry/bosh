@@ -2,8 +2,8 @@ require "rspec"
 require "logger"
 require "tmpdir"
 
-require "cloud"
-require "cloud/warden"
+require "sequel"
+require "sequel/adapters/sqlite"
 
 def cloud_options
   {
@@ -24,12 +24,23 @@ def stemcell_options
   }
 end
 
-module Bosh::Clouds
-  class Config
-    class << self
-      attr_accessor :logger
-    end
-  end
+# DB migration
+Sequel.extension :migration
+db = Sequel.sqlite(':memory:')
+migration = File.expand_path("../../db/migrations/warden_cpi", __FILE__)
+Sequel::TimestampMigrator.new(db, migration, :table => "warden_cpi_schema").run
+
+require "cloud"
+
+class WardenConfig
+  attr_accessor :logger, :db, :uuid
 end
 
-Bosh::Clouds::Config.logger = Logger.new("/dev/null")
+config = WardenConfig.new
+config.db = db
+config.logger = Logger.new("/dev/null")
+config.uuid = "1024"
+
+Bosh::Clouds::Config.configure(config)
+
+require "cloud/warden"

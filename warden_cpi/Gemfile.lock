@@ -14,6 +14,7 @@ PATH
     bosh_warden_cpi (0.0.1)
       bosh_common
       bosh_cpi (>= 0.4.4)
+      sequel
       warden-client
 
 GEM
@@ -60,6 +61,7 @@ GEM
       ruby-debug-base19 (>= 0.11.19)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
+    sequel (3.41.0)
     simplecov (0.7.1)
       multi_json (~> 1.0)
       simplecov-html (~> 0.7.1)
