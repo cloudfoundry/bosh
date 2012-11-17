@@ -8,6 +8,8 @@ module Bosh::WardenCloud
     DEFAULT_DISK_ROOT = "/var/vcap/store/disk"
     DEFAULT_FS_TYPE = "ext4"
 
+    DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
+
     attr_accessor :logger
 
     ##
@@ -72,19 +74,103 @@ module Bosh::WardenCloud
       end
     end
 
+    ##
+    # Create a container in warden
+    #
+    # Limitaion: We don't support creating VM with multiple network nics.
+    #
+    # @param [String] agent_id UUID for bosh agent
+    # @param [String] stemcell_id stemcell id
+    # @param [Hash] resource_pool not used
+    # @param [Hash] networks list of networks and their settings needed for this VM
+    # @param [optional, String, Array] disk_locality not used
+    # @param [optional, Hash] env environment that will be passed to this vm
+    # @return [String] vm_id
     def create_vm(agent_id, stemcell_id, resource_pool,
                   networks, disk_locality = nil, env = nil)
       not_used(resource_pool)
       not_used(disk_locality)
       not_used(env)
 
-      # TODO to be implemented
+      with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
 
-      uuid("vm")
+        stemcell_path = stemcell_path(stemcell_id)
+
+        if networks.size > 1
+          raise ArgumentError, "Not support more than 1 nics"
+        end
+
+        unless Dir.exist?(stemcell_path)
+          raise ArgumentError, "Stemcell(#{stemcell_id}) not found"
+        end
+
+        vm = Models::VM.new
+
+        # Create Container
+        handle = with_warden do |client|
+          request = Warden::Protocol::CreateRequest.new
+          request.rootfs = File.join(stemcell_path, 'root')
+          if networks.first[1]['type'] != 'dynamic'
+            request.network = networks.first[1]['ip'] # TODO make sure 'ip' is the right field
+          end
+
+          response = client.call(request)
+          response.handle
+        end
+
+        # Agent settings
+        env = generate_agent_env(vm, agent_id, networks)
+
+        tempfile = Tempfile.new('settings')
+        tempfile.write(Yajl::Encoder.encode(env)) # TODO make sure env is the right setting
+        tempfile.close
+
+        with_warden do |client|
+          request = Warden::Protocol::CopyInRequest.new
+          request.handle = handle
+          request.src_path = tempfile.path
+          request.dst_path = agent_settings_file
+
+          client.call(request)
+        end
+
+        # TODO start agent and other init scripts, something like power on
+        with_warden do |client|
+          # TODO to be implemented
+        end
+
+        # Save to DB
+        vm.container_id = handle
+        vm.save
+
+        vm.id.to_s
+      end
+    rescue => e
+      # TODO how to clean up
+      cloud_error(e)
     end
 
+    ##
+    # Deletes a VM
+    #
+    # @param [String] vm_id vm id
     def delete_vm(vm_id)
-      # TODO to be implemented
+      with_thread_name("delete_vm(#{vm_id})") do
+        vm = Models::VM[vm_id.to_i]
+        raise "VM #{vm} not found" unless vm
+
+        with_warden do |client|
+          request = Warden::Protocol::DestroyRequest.new
+          request.handle = vm.container_id
+
+          client.call(request)
+        end
+
+        Models::VM[vm_id.to_i].delete
+      end
+
+    rescue => e
+      cloud_error(e)
     end
 
     def reboot_vm(vm_id)
@@ -169,7 +255,7 @@ module Bosh::WardenCloud
 
     private
 
-    def not_used(var)
+    def not_used(*arg)
       # no-op
     end
 
@@ -183,8 +269,6 @@ module Bosh::WardenCloud
 
     def setup_warden
       @warden_unix_path = @warden_properties["unix_domain_path"] || DEFAULT_WARDEN_SOCK
-
-      @client = Warden::Client.new(@warden_unix_path)
     end
 
     def setup_stemcell
@@ -196,6 +280,36 @@ module Bosh::WardenCloud
     def setup_disk
       @disk_root = @disk_properties["root"] || DEFAULT_DISK_ROOT
       @fs_type = @disk_properties["fs"] || DEFAULT_FS_TYPE
+    end
+
+    def with_warden
+      # TODO make sure client is running as root inside container
+      client = Warden::Client.new(@warden_unix_path)
+      client.connect
+
+      ret = yield client
+
+      ret
+    ensure
+      client.disconnect if client
+    end
+
+    def agent_settings_file
+      DEFAULT_SETTINGS_FILE
+    end
+
+    def generate_agent_env(vm, agent_id, networks)
+      vm_env = {
+        "name" => vm.container_id,
+        "id" => vm.id
+      }
+
+      env = {
+        "vm" => vm_env,
+        "agent_id" => agent_id,
+        "networks" => networks,
+      }
+      env
     end
 
   end
