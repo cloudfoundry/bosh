@@ -18,4 +18,5 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_cpi", ">= 0.4.4"
   s.add_dependency "warden-client"
   s.add_dependency "sequel"
+  s.add_dependency "yajl-ruby"
 end
