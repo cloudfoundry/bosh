@@ -26,5 +26,17 @@ module Bosh::WardenCloud
       items = @db[:disk]
       items.insert(:uuid => "#{disk.uuid}", :device_num => "#{device_num}")
     end
+
+    def find_disk(disk_id)
+      data = @db[:disk][:uuid => disk_id]
+      unless data
+        raise Bosh::Clouds::DiskNotFound, "Disk #{disk_id} not exist"
+      end
+      Disk.new(disk_id, data[:device_num])
+    end
+
+    def delete_disk(disk)
+      @db[:disk].where(:uuid => disk.uuid).delete
+    end
   end
 end

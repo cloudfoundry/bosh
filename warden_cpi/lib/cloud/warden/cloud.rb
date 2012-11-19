@@ -121,9 +121,16 @@ module Bosh::WardenCloud
     ##
     # Delete a disk image
     # @param [String] disk_id
+    # @raise [Bosh::Clouds::DiskNotFound] if disk not exist
     # @return nil
     def delete_disk(disk_id)
-      # TODO to be implemented
+      with_thread_name("delete_disk(#{disk_id})") do
+        disk = @db.find_disk(disk_id)
+        @db.delete_disk(disk)
+        @disk_manager.delete_disk(disk)
+      end
+    rescue => e
+      cloud_error(e)
     end
 
     ##
