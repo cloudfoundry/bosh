@@ -9,23 +9,12 @@ module Bosh::Agent
     def initialize
       base_dir = Bosh::Agent::Config.base_dir
       @logger = Bosh::Agent::Config.logger
-      @settings_file = Bosh::Agent::Config.settings_file
       @cdrom_retry_wait = DEFAULT_CDROM_RETRY_WAIT
       @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
     end
 
     def load_settings
-      begin
-        load_cdrom_settings
-      rescue LoadSettingsError
-        if File.exist?(@settings_file)
-          @logger.info("Falling back to cached settings file")
-          load_settings_file(@settings_file)
-        else
-          raise LoadSettingsError, "No cdrom or cached settings.json"
-        end
-      end
-      Bosh::Agent::Config.settings = @settings
+      load_cdrom_settings
     end
 
     def load_cdrom_settings
@@ -38,14 +27,13 @@ module Bosh::Agent
       begin
         settings_json = File.read(env_file)
         @settings = Yajl::Parser.new.parse(settings_json)
-
-        File.open(@settings_file, 'w') { |f| f.write(settings_json) }
       rescue
         raise Bosh::Agent::LoadSettingsError, 'Failed to read/write env/settings.json'
       ensure
         umount_cdrom
         eject_cdrom
       end
+      @settings
     end
 
     def check_cdrom
@@ -122,15 +110,6 @@ module Bosh::Agent
       output = `mount /dev/cdrom #{@cdrom_settings_mount_point} 2>&1`
       raise Bosh::Agent::LoadSettingsError,
         "Failed to mount settings on #{@cdrom_settings_mount_point}: #{output}" unless $?.exitstatus == 0
-    end
-
-    def load_settings_file(settings_file)
-      if File.exists?(settings_file)
-        settings_json = File.read(settings_file)
-        @settings = Yajl::Parser.new.parse(settings_json)
-      else
-        raise LoadSettingsError, "No settings file #{settings_file}"
-      end
     end
 
     def umount_cdrom

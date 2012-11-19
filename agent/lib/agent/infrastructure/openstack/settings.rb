@@ -7,10 +7,6 @@ module Bosh::Agent
     DHCP_NETWORK_TYPE = "dynamic"
     AUTHORIZED_KEYS = File.join("/home/", BOSH_APP_USER, ".ssh/authorized_keys")
 
-    def initialize
-      @settings_file = Bosh::Agent::Config.settings_file
-    end
-
     def logger
       Bosh::Agent::Config.logger
     end
@@ -36,10 +32,7 @@ module Bosh::Agent
 
     def load_settings
       setup_openssh_key
-      settings = Infrastructure::Openstack::Registry.get_settings
-      settings_json = Yajl::Encoder.encode(settings)
-      File.open(@settings_file, 'w') { |f| f.write(settings_json) }
-      Bosh::Agent::Config.settings = settings
+      Infrastructure::Openstack::Registry.get_settings
     end
 
     def get_network_settings(network_name, properties)
