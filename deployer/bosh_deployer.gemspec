@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc Rakefile)
   s.require_paths = ["lib", "config"]
 
-  s.add_dependency "bosh_cli", ">=1.0"
+  s.add_dependency "bosh_cli", ">=1.0.2"
   s.add_dependency "bosh_cpi", "~>0.4.4"
   s.add_dependency "bosh_vsphere_cpi", "~>0.5.0"
   s.add_dependency "bosh_aws_cpi", "~>0.6.2"

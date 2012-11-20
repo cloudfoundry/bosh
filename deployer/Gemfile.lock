@@ -5,7 +5,7 @@ PATH
       agent_client (~> 0.1.1)
       bosh_aws_cpi (~> 0.6.2)
       bosh_aws_registry (~> 0.2.2)
-      bosh_cli (>= 1.0)
+      bosh_cli (>= 1.0.2)
       bosh_cpi (~> 0.4.4)
       bosh_openstack_cpi (~> 0.0.3)
       bosh_openstack_registry (~> 0.0.2)
@@ -48,7 +48,7 @@ GEM
       sinatra
       thin
       yajl-ruby
-    bosh_cli (1.0)
+    bosh_cli (1.0.2)
       blobstore_client (~> 0.4.0)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
