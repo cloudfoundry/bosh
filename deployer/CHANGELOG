@@ -1,3 +1,17 @@
+=== 1.1.0 - 2012-11-20
+* added "micro bosh" helper command
+
+=== 1.0.2 - 2012-11-01
+* replace powerdns address during deployment
+* vSphere soap log change
+
+=== 1.0.1 - 2012-10-24
+* fix for stderr redirect bug
+
+=== 1.0.0 - 2012-10-20
+* use cli 1.0
+* use vSphere CPI v 0.5.0
+
 === 0.6.1 - 2012-10-09
 * support for fetching service IP address using any network name
 * fix deployer vip support for OpenStack
