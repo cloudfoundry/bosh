@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+# Copyright (c) 2009-2012 VMware, Inc.
+
+gemfile = File.expand_path("../../Gemfile", __FILE__)
+
+if File.exists?(gemfile)
+  ENV["BUNDLE_GEMFILE"] = gemfile
+  require "rubygems"
+  require "bundler/setup"
+end
+
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
+require "cloud"
+require "sequel"
+require "logger"
+require "irb"
+require "irb/completion"
+require "ostruct"
+require "optparse"
+
+config_file = nil
+
+opts_parser = OptionParser.new do |opts|
+  opts.on("-c", "--config FILE") { |file| config_file = file }
+end
+
+opts_parser.parse!
+
+config_file ||= File.expand_path("../../config/warden.yml", __FILE__)
+
+@config = YAML.load_file(config_file)["cloud"]["properties"]
+
+module ConsoleHelpers
+  def cpi
+    @cpi ||= Bosh::WardenCloud::Cloud.new(@config)
+  end
+end
+
+# Setup in-memory DB
+Sequel.extension :migration
+db = Sequel.sqlite(':memory:')
+migration = File.expand_path("../../db/migrations/warden_cpi", __FILE__)
+Sequel::TimestampMigrator.new(db, migration, :table => "warden_cpi_schema").run
+
+cloud_config = OpenStruct.new(
+  :logger => Logger.new(STDOUT),
+  :db => db,
+)
+
+Bosh::Clouds::Config.configure(cloud_config)
+
+require "cloud/warden"
+
+include ConsoleHelpers
+
+begin
+  require "ruby-debug"
+  puts "=> Debugger enabled"
+rescue LoadError
+  puts "=> ruby-debug not found, debugger disabled"
+end
+
+puts "=> Welcome to BOSH Warden CPI console"
+puts "You can use 'cpi' to access CPI methods"
+
+IRB.start
