@@ -62,3 +62,7 @@ jobs:
 
 properties:
   mbus: <%= properties.mbus %>
+  batlight:
+    <% if properties.batlight %>
+    fail: <%= properties.batlight.fail %>
+    <% end %>

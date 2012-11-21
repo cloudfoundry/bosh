@@ -113,13 +113,19 @@ module DeploymentHelper
       yield
     elsif block.arity == 1
       yield deployment
+    elsif block.arity == 2
+      bosh("deployment #{deployment.to_path}").should succeed
+      result = bosh("deploy")
+      result.should succeed
+      deployed = true
+      yield deployment, result
     else
       raise "unknown arity: #{block.arity}"
     end
   ensure
     if block_given?
       deployment.delete if deployment
-      if block.arity == 0 && deployed
+      if deployed
         bosh("delete deployment #{deployment.name}").should succeed
       end
     end
@@ -130,7 +136,15 @@ module DeploymentHelper
   end
 
   def use_template(template)
-    @spec["properties"]["template"] = template
+    @spec["properties"]["template"] = if template.respond_to?(:each)
+      string = ""
+      template.each do |item|
+        string += "\n      - #{item}"
+      end
+      string
+    else
+      template
+    end
   end
 
   def use_job_instances(count)
@@ -173,15 +187,20 @@ module DeploymentHelper
     @spec["properties"]["password"] = passwd
   end
 
-  def get_task_id(output)
-    match = output.match(/Task (\d+) done/)
+  def use_failing_job(where="control")
+    @spec["properties"]["batlight"] = {}
+    @spec["properties"]["batlight"]["fail"] = where
+  end
+
+  def get_task_id(output, state="done")
+    match = output.match(/Task (\d+) #{state}/)
     match.should_not be_nil
     match[1]
   end
 
   def events(task_id)
     result = bosh("task #{task_id} --raw")
-    result.should succeed_with /Task \d+ done/
+    result.should succeed_with /Task \d+ \w+/
 
     event_list = []
     result.output.split("\n").each do |line|

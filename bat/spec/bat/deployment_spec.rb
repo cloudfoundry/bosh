@@ -21,31 +21,19 @@ describe "deployment" do
   end
 
   it "should do an initial deployment" do
-    deployment = with_deployment
-    deployments.should_not include(deployment.name)
-    bosh("deployment #{deployment.to_path}").should succeed
-    bosh("deploy").should succeed_with DEPLOYED_REGEXP
-    deployments.should include(deployment.name)
-    bosh("delete deployment #{deployment.name}").should succeed
-    deployment.delete
+    with_deployment do
+      # nothing to check, it is done in the with_deployment helper
+    end
   end
 
   it "should not change the deployment on a noop" do
-    deployment = with_deployment
-    bosh("deployment #{deployment.to_path}").should succeed
-    bosh("deploy").should succeed
-
-    result = bosh("deploy")
-    result.should succeed_with DEPLOYED_REGEXP
-
-    task_id = get_task_id(result.output)
-    events(task_id).each do |event|
-      event["stage"].should_not match /^Updating/
+    with_deployment do |deployment, result|
+      result = bosh("deploy")
+      events(get_task_id(result.output)).each do |event|
+        event["stage"].should_not match /^Updating/
+      end
+      # TODO validate by checking job pid before and after
     end
-    # TODO validate by checking job pid before and after
-
-    bosh("delete deployment #{deployment.name}")
-    deployment.delete
   end
 
   it "should do two deployments from one release" do
@@ -72,9 +60,7 @@ describe "deployment" do
       /var/vcap/packages/batarang/bin/batarang
     ]
     use_job("composite")
-    use_template("
-      - batarang
-      - batlight")
+    use_template(%w[batarang batlight])
     use_static_ip
     with_deployment do
       jobs.each do |job|
@@ -84,23 +70,40 @@ describe "deployment" do
     end
   end
 
+  it "should use a canary" do
+    use_canaries(1)
+    use_pool_size(2)
+    use_job_instances(2)
+    use_failing_job
+    with_deployment do |deployment|
+      bosh("deployment #{deployment.to_path}").should succeed
+      result = bosh("deploy", :on_error => :return)
+      # possibly check for:
+      # Error 400007: `batlight/0' is not running after update
+      result.should_not succeed
+
+      events(get_task_id(result.output, "error")).each do |event|
+        if event["stage"] == "Updating job"
+          event["task"].should_not match %r{^batlight/1}
+        end
+      end
+
+      bosh("delete deployment #{deployment.name}")
+      deployment.delete
+    end
+  end
+
   it "should update a job with multiple instances in parallel" do
     use_canaries(0)
     use_max_in_flight(2)
     use_job_instances(3)
     use_pool_size(3)
-    with_deployment do |deployment|
-      bosh("deployment #{deployment.to_path}").should succeed
-      result = bosh("deploy")
-      result.should succeed_with DEPLOYED_REGEXP
-
+    with_deployment do |deployment, result|
       times = start_and_finish_times_for_job_updates(get_task_id(result.output))
       times["batlight/1"]["started"].should be >= times["batlight/0"]["started"]
       times["batlight/1"]["started"].should be < times["batlight/0"]["finished"]
       times["batlight/2"]["started"].should be >=
           [times["batlight/0"]["finished"], times["batlight/1"]["finished"]].min
-
-      bosh("delete deployment #{deployment.name}").should succeed
     end
   end
 
@@ -126,15 +129,10 @@ describe "deployment" do
   end
 
   it "should return vms in a deployment" do
-    with_deployment do |deployment|
-      bosh("deployment #{deployment.to_path}").should succeed
-      bosh("deploy").should succeed_with DEPLOYED_REGEXP
-
+    with_deployment do |deployment, result|
       bat_vms = vms(deployment.name)
       bat_vms.size.should == 1
       bat_vms.first.name.should == "batlight/0"
-
-      bosh("delete deployment #{deployment.name}").should succeed
     end
   end
 
