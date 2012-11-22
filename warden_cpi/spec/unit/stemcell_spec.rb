@@ -35,9 +35,10 @@ describe Bosh::WardenCloud::Cloud do
         Dir.glob("*").should have(1).items
         Dir.glob("*").should include(stemcell_id)
 
-        @cloud.delete_stemcell(stemcell_id)
+        ret = @cloud.delete_stemcell(stemcell_id)
 
         Dir.glob("*").should be_empty
+        ret.should be_nil
       end
     end
   end

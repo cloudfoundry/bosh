@@ -55,10 +55,13 @@ module Bosh::WardenCloud
     ##
     # Delete the stemcell
     # @param [String] id of the stemcell to be deleted
+    # return nil
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id}, _)") do
         stemcell_dir = stemcell_path(stemcell_id)
         FileUtils.rm_rf(stemcell_dir)
+
+        nil
       end
     end
 
