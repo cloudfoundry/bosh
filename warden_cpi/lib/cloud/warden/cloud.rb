@@ -35,7 +35,7 @@ module Bosh::WardenCloud
       not_used(cloud_properties)
 
       with_thread_name("create_stemcell(#{image_path}, _)") do
-        stemcell_id = SecureRandom.uuid
+        stemcell_id = stemcell_uuid
         stemcell_path = stemcell_path(stemcell_id)
 
         # Extract to tarball
