@@ -1,0 +1,9 @@
+Code-Review+2: Martin Englund <menglund@vmware.com>
+Code-Review+1: Anfernee Gui <agui@vmware.com>
+Code-Review+1: Pieter Noordhuis <pnoordhuis@rbcon.com>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Anfernee Gui <agui@vmware.com>
+Submitted-at: Thu, 22 Nov 2012 06:05:39 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/11543
+Project: bosh
+Branch: refs/heads/warden-cpi
