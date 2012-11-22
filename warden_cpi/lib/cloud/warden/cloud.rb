@@ -1,4 +1,3 @@
-
 module Bosh::WardenCloud
   class Cloud < Bosh::Cloud
 
@@ -38,17 +37,21 @@ module Bosh::WardenCloud
       stemcell_dir = stemcell_path(stemcell_id)
 
       with_thread_name("create_stemcell(#{image_path}, _)") do
+
         # Extract to tarball
         @logger.info("Extracting stemcell from #{image_path} to #{stemcell_dir}")
         FileUtils.mkdir_p(stemcell_dir)
-        Bosh::Exec.sh "tar -C #{stemcell_dir} -xzf #{image_path} 2>&1"
+
+        # This command needs priviledge because the stemcell contains device files,
+        # which cannot be untared without priviledge
+        sudo "tar -C #{stemcell_dir} -xzf #{image_path} 2>&1"
 
         # TODO Verify if it is a valid stemcell
 
         stemcell_id
       end
     rescue => e
-      FileUtils.rm_rf(stemcell_dir)
+      sudo "rm -rf #{stemcell_dir}" rescue nil
       cloud_error(e)
     end
 
@@ -59,7 +62,7 @@ module Bosh::WardenCloud
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id}, _)") do
         stemcell_dir = stemcell_path(stemcell_id)
-        FileUtils.rm_rf(stemcell_dir)
+        sudo "rm -rf #{stemcell_dir}"
 
         nil
       end

@@ -29,5 +29,10 @@ module Bosh::WardenCloud
       end
     end
 
+    def sudo(cmd)
+      logger.info "run 'sudo -n #{cmd}'"
+      Bosh::Exec.sh "sudo -n #{cmd}"
+    end
+
   end
 end
