@@ -34,20 +34,21 @@ module Bosh::WardenCloud
     def create_stemcell(image_path, cloud_properties)
       not_used(cloud_properties)
 
-      with_thread_name("create_stemcell(#{image_path}, _)") do
-        stemcell_id = stemcell_uuid
-        stemcell_path = stemcell_path(stemcell_id)
+      stemcell_id = stemcell_uuid
+      stemcell_dir = stemcell_path(stemcell_id)
 
+      with_thread_name("create_stemcell(#{image_path}, _)") do
         # Extract to tarball
-        @logger.info("Extracting stemcell from #{image_path} to #{stemcell_path}")
-        FileUtils.mkdir_p(stemcell_path)
-        Bosh::Exec.sh "tar -C #{stemcell_path} -xzf #{image_path} 2>&1"
+        @logger.info("Extracting stemcell from #{image_path} to #{stemcell_dir}")
+        FileUtils.mkdir_p(stemcell_dir)
+        Bosh::Exec.sh "tar -C #{stemcell_dir} -xzf #{image_path} 2>&1"
 
         # TODO Verify if it is a valid stemcell
 
         stemcell_id
       end
     rescue => e
+      FileUtils.rm_rf(stemcell_dir)
       cloud_error(e)
     end
 
@@ -56,8 +57,8 @@ module Bosh::WardenCloud
     # @param [String] id of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id}, _)") do
-        stemcell_path = stemcell_path(stemcell_id)
-        FileUtils.rm_rf(stemcell_path)
+        stemcell_dir = stemcell_path(stemcell_id)
+        FileUtils.rm_rf(stemcell_dir)
       end
     end
 

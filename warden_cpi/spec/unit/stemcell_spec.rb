@@ -14,9 +14,11 @@ describe Bosh::WardenCloud::Cloud do
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
   end
 
-  context "successful cases" do
+  let(:image_path) { File.expand_path("../../assets/stemcell-warden-test.tgz", __FILE__) }
+  let(:bad_image_path) { File.expand_path("../../assets/stemcell-not-existed.tgz", __FILE__) }
 
-    let(:image_path) { File.expand_path("../../assets/stemcell-warden-test.tgz", __FILE__) }
+
+  context "successful cases" do
 
     it "can create stemcell" do
       stemcell_id = @cloud.create_stemcell(image_path, nil)
@@ -43,12 +45,30 @@ describe Bosh::WardenCloud::Cloud do
 
   context "failed cases" do
 
-    let(:image_path) { File.expand_path("../../assets/stemcell-not-existed.tgz", __FILE__) }
-
     it "should raise error with bad image path" do
       expect {
-        stemcell_id = @cloud.create_stemcell(image_path, nil)
+        stemcell_id = @cloud.create_stemcell(bad_image_path, nil)
       }.to raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should clean up after an error is raised" do
+      Bosh::Exec.stub(:sh) do |cmd|
+        `#{cmd}`
+        raise 'error'
+      end
+
+      Dir.chdir(@stemcell_root) do
+
+        Dir.glob("*").should be_empty
+
+        expect {
+          stemcell_id = @cloud.create_stemcell(image_path, nil)
+        }.to raise_error Bosh::Clouds::CloudError
+
+        Dir.glob("*").should be_empty
+
+      end
+
     end
 
   end
