@@ -44,3 +44,7 @@ config.uuid = "1024"
 Bosh::Clouds::Config.configure(config)
 
 require "cloud/warden"
+
+def asset(file)
+  File.join(File.dirname(__FILE__), "assets", file)
+end
