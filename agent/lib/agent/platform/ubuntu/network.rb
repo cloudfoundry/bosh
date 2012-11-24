@@ -147,12 +147,16 @@ module Bosh::Agent
       updated = Bosh::Agent::Util::update_file(result, '/etc/dhcp3/dhclient.conf')
       if updated
         logger.info("Updated dhclient.conf")
-        renew_dhcp_lease
+        restart_dhclient
       end
     end
 
-    def renew_dhcp_lease
-      %x{/sbin/dhclient}
+    # Executing /sbin/dhclient starts another dhclient process, so it'll cause
+    # a conflict with the existing system dhclient process and dns changes will
+    # be flip floping each lease time. So in order to refresh dhclient
+    # configuration we need to restart networking.
+    def restart_dhclient
+      %x{/etc/init.d/networking restart}
     end
 
     def load_erb(file)
