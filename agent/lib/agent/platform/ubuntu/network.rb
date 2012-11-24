@@ -152,7 +152,7 @@ module Bosh::Agent
     end
 
     def renew_dhcp_lease
-      %x{/sbin/dhclient}
+      %x{/etc/init.d/networking restart}
     end
 
     def load_erb(file)
