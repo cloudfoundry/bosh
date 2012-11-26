@@ -48,3 +48,7 @@ require "cloud/warden"
 def asset(file)
   File.join(File.dirname(__FILE__), "assets", file)
 end
+
+def image_file(disk_id)
+  "#{disk_id}.img"
+end

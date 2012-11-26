@@ -27,5 +27,10 @@ module Bosh::WardenCloud
       Bosh::Exec.sh "sudo -n #{cmd}"
     end
 
+    def sh(cmd)
+      logger.info "run '#{cmd}'"
+      Bosh::Exec.sh "#{cmd}"
+    end
+
   end
 end
