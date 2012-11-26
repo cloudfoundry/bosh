@@ -11,6 +11,7 @@ require "cloud/warden/helpers"
 require "cloud/warden/cloud"
 require "cloud/warden/version"
 require "cloud/warden/models/vm"
+require "cloud/warden/models/disk"
 
 require "warden/client"
 
