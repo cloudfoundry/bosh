@@ -5,6 +5,8 @@ module Bosh::WardenCloud
 
     DEFAULT_WARDEN_SOCK = "/tmp/warden.sock"
     DEFAULT_STEMCELL_ROOT = "/var/vcap/stemcell"
+    DEFAULT_DISK_ROOT = "/var/vcap/store/disk"
+    DEFAULT_FS_TYPE = "ext4"
 
     attr_accessor :logger
 
@@ -18,9 +20,11 @@ module Bosh::WardenCloud
       @agent_properties = options["agent"] || {}
       @warden_properties = options["warden"] || {}
       @stemcell_properties = options["stemcell"] || {}
+      @disk_properties = options["disk"] || {}
 
       setup_warden
       setup_stemcell
+      setup_disk
     end
 
     ##
@@ -91,17 +95,64 @@ module Bosh::WardenCloud
       # no-op
     end
 
+    ##
+    # Create a disk
+    #
+    # @param [Integer] size disk size in MB
+    # @param [String] vm_locality vm id if known of the VM that this disk will
+    #                 be attached to
+    # return [String] disk id
     def create_disk(size, vm_locality = nil)
-      # vm_locality is a string, which might mean the disk_path
+      not_used(vm_locality)
 
-      disk_id = uuid("disk")
-      disk_path = "/tmp/disk/#{disk_id}"
+      disk = nil
+      image_file = nil
 
-      disk_id
+      raise ArgumentError, "disk size <= 0" unless size > 0
+
+      with_thread_name("create_disk(#{size}, _)") do
+        disk = Models::Disk.create
+
+        image_file = image_path(disk.id)
+
+        FileUtils.touch(image_file)
+        File.truncate(image_file, size << 20) # 1 MB == 1<<20 Byte
+        sh "mkfs -t #{@fs_type} -F #{image_file} 2>&1"
+
+        disk.image_path = image_file
+        disk.attached = false
+        disk.save
+
+        disk.id.to_s
+      end
+    rescue => e
+      FileUtils.rm image_file if image_file
+      disk.destroy if disk
+
+      cloud_error(e)
     end
 
+    ##
+    # Delete a disk
+    #
+    # @param [String] disk id
+    # return nil
     def delete_disk(disk_id)
-      # TODO to be implemented
+      with_thread_name("delete_disk(#{disk_id})") do
+        disk = Models::Disk[disk_id.to_i]
+
+        raise "Cannot find disk #{disk_id}" unless disk
+        raise "Cannot delete attached disk" if disk.attached
+
+        disk.destroy
+
+        image_file = image_path(disk_id)
+        FileUtils.rm image_file
+
+        nil
+      end
+    rescue => e
+      cloud_error(e)
     end
 
     def attach_disk(vm_id, disk_id)
@@ -126,6 +177,10 @@ module Bosh::WardenCloud
       File.join(@stemcell_root, stemcell_id)
     end
 
+    def image_path(disk_id)
+      File.join(@disk_root, "#{disk_id}.img")
+    end
+
     def setup_warden
       @warden_unix_path = @warden_properties["unix_domain_path"] || DEFAULT_WARDEN_SOCK
 
@@ -136,6 +191,11 @@ module Bosh::WardenCloud
       @stemcell_root = @stemcell_properties["root"] || DEFAULT_STEMCELL_ROOT
 
       FileUtils.mkdir_p(@stemcell_root)
+    end
+
+    def setup_disk
+      @disk_root = @disk_properties["root"] || DEFAULT_DISK_ROOT
+      @fs_type = @disk_properties["fs"] || DEFAULT_FS_TYPE
     end
 
   end
