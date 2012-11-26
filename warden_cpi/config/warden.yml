@@ -13,3 +13,6 @@ cloud:
       mbus: nats://nats:nats@localhost:4222
     stemcell:
       root: /var/vcap/stemcell
+    disk:
+      root: /var/vcap/disk
+      fs: ext4
