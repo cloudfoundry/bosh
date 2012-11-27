@@ -162,17 +162,14 @@ describe Bosh::Cli::BlobManager do
         }
       }
 
-      tmp_file = Tempfile.new("mock-blob")
-      Tempfile.stub!(:new).with("bosh-blob").and_return(tmp_file)
-
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
         YAML.dump(index, f)
       end
 
       @manager = make_manager(@release)
       @blobstore.should_receive(:get).with("deadbeef",
-                                           an_instance_of(Tempfile)).
-        and_return { tmp_file.write("blob contents"); tmp_file.close }
+                                           an_instance_of(File)).
+        and_return { |_, f | f.write("blob contents") }
 
       path = @manager.download_blob("foo")
       File.read(path).should == "blob contents"
