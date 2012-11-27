@@ -10,6 +10,7 @@ require "common/thread_formatter"
 
 require "cloud"
 require "cloud/warden/helpers"
+require "cloud/warden/device_pool"
 require "cloud/warden/cloud"
 require "cloud/warden/version"
 require "cloud/warden/models/vm"
