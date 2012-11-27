@@ -16,3 +16,6 @@ cloud:
     disk:
       root: /var/vcap/disk
       fs: ext4
+      pool_size: 128
+      pool_start_number: 10
+      device_path_prefix: /dev/sdz
