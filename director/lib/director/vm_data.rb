@@ -1,6 +1,7 @@
 module Bosh::Director
   # A class for storing VMs and their associated data so that they can be
   # accessed and deleted easily.
+  # @todo reconcile with IdleVm and Instance.
   class VmData
 
     # @attr [NetworkReservation] The network reservation for this VM.
