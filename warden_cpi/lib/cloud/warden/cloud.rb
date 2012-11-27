@@ -7,6 +7,9 @@ module Bosh::WardenCloud
     DEFAULT_STEMCELL_ROOT = "/var/vcap/stemcell"
     DEFAULT_DISK_ROOT = "/var/vcap/store/disk"
     DEFAULT_FS_TYPE = "ext4"
+    DEFAULT_POOL_SIZE = 128
+    DEFAULT_POOL_START_NUMBER = 10
+    DEFAULT_DEVICE_PREFIX = "/dev/sdz"
 
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
 
@@ -27,6 +30,8 @@ module Bosh::WardenCloud
       setup_warden
       setup_stemcell
       setup_disk
+
+      setup_pool
     end
 
     ##
@@ -242,11 +247,82 @@ module Bosh::WardenCloud
     end
 
     def attach_disk(vm_id, disk_id)
-      # TODO to be implemented
+      with_thread_name("attach_disk(#{vm_id}, #{disk_id})") do
+        vm = Models::VM[vm_id.to_i]
+        disk = Models::Disk[disk_id.to_i]
+
+        raise "Cannot find vm #{vm_id}" unless vm
+        raise "Cannot find disk #{disk_id}" unless disk
+        raise "disk #{disk_id} already attached" if disk.attached
+
+        # Get a device number from the pool
+        number = @pool.acquire
+        raise "Failed to fetch device number" unless number
+
+        # Create a device file inside warden container
+        script = attach_script(number, @device_path_prefix)
+
+        device_path = with_warden do |client|
+          request = Warden::Protocol::RunRequest.new
+          request.handle = vm.container_id
+          request.script = script
+          request.privileged = true # TODO or false
+
+          response = client.call(request)
+
+          stdout = response.stdout || ""
+          stdout.strip
+        end
+
+        # Save DB entry
+        disk.device_path = device_path
+        disk.device_num = number
+        disk.attached = true
+        disk.save
+
+        nil
+      end
+    rescue => e
+      cloud_error(e)
     end
 
     def detach_disk(vm_id, disk_id)
-      # TODO to be implemented
+      with_thread_name("detach_disk(#{vm_id}, #{disk_id})") do
+        vm = Models::VM[vm_id.to_i]
+        disk = Models::Disk[disk_id.to_i]
+
+        raise "Cannot find vm #{vm_id}" unless vm
+        raise "Cannot find disk #{disk_id}" unless disk
+        raise "disk #{disk_id} not attached" unless disk.attached
+
+        device_num = disk.device_num
+        device_path = disk.device_path
+
+        # Save DB entry
+        disk.attached = false
+        disk.device_num = 0
+        disk.device_path = nil
+        disk.save
+
+        # Release the device number back to pool
+        @pool.release(device_num)
+
+        # Remove the device file inside warden container
+        script = "rm #{device_path}"
+
+        with_warden do |client|
+          request = Warden::Protocol::RunRequest.new
+          request.handle = vm.container_id
+          request.script = script
+          request.privileged = true # TODO or false
+
+          client.call(request)
+        end
+
+        nil
+      end
+    rescue => e
+      cloud_error(e)
     end
 
     def validate_deployment(old_manifest, new_manifest)
@@ -280,6 +356,24 @@ module Bosh::WardenCloud
     def setup_disk
       @disk_root = @disk_properties["root"] || DEFAULT_DISK_ROOT
       @fs_type = @disk_properties["fs"] || DEFAULT_FS_TYPE
+      @pool_size = @disk_properties["pool_count"] || DEFAULT_POOL_SIZE
+      @pool_start_number = @disk_properties["pool_start_number"] || DEFAULT_POOL_START_NUMBER
+      @device_path_prefix = @disk_properties["device_path_prefix"] || DEFAULT_DEVICE_PREFIX
+    end
+
+    def setup_pool
+      @pool = DevicePool.new(@pool_size) { |i| i + @pool_start_number }
+
+      occupied_numbers = Models::Disk.collect { |disk| disk.device_num }
+      @pool.delete_if do |i|
+        occupied_numbers.include? i
+      end
+
+      # Initialize the loop devices
+      last = @pool_start_number + @pool_size - 1
+      @pool_start_number.upto(last) do |i|
+        sudo "mknod /dev/loop#{i} b 7 #{i}" unless File.exists? "/dev/loop#{i}"
+      end
     end
 
     def with_warden
