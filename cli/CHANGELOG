@@ -1,3 +1,6 @@
+== 1.0.3 - 11/26/12
+* fixed a bug with Tempfile#path when syncing blobs
+
 == 1.0.2 - 11/19/12
 * '--no-track' support
 * additional checks for 'validate jobs'
