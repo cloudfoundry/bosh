@@ -32,5 +32,12 @@ module Bosh::WardenCloud
       Bosh::Exec.sh "#{cmd}"
     end
 
+    def attach_script(device_number, device_prefix)
+      script = <<-EOF
+for i in `seq 256`; do (stat #{device_prefix}$i > /dev/null 2>&1) || break; done
+mknod #{device_prefix}$i b 7 #{device_number} > /dev/null 2>&1 && echo "#{device_prefix}$i"
+      EOF
+    end
+
   end
 end
