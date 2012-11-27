@@ -1,0 +1,11 @@
+    <NetworkConnectionSection xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" type="application/vnd.vmware.vcloud.networkConnectionSection+xml" href="%s" ovf:required="false" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.dmtf.org/ovf/envelope/1 http://schemas.dmtf.org/ovf/envelope/1/dsp8023_1.1.0.xsd http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+        <ovf:Info>Specifies the available VM network connections</ovf:Info>
+        <PrimaryNetworkConnectionIndex>0</PrimaryNetworkConnectionIndex>
+        <NetworkConnection network="none" needsCustomization="true">
+            <NetworkConnectionIndex>0</NetworkConnectionIndex>
+            <IsConnected>false</IsConnected>
+            <MACAddress>00:50:56:02:01:cb</MACAddress>
+            <IpAddressAllocationMode>NONE</IpAddressAllocationMode>
+        </NetworkConnection>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.networkConnectionSection+xml" href="%s"/>
+    </NetworkConnectionSection>

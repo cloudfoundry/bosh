@@ -1,0 +1,8 @@
+        <CatalogItem xmlns="http://www.vmware.com/vcloud/v1.5" name="%s" id="urn:vcloud:catalogitem:%s" type="application/vnd.vmware.vcloud.catalogItem+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.vcloud.catalog+xml" href="%s/api/catalog/cfab326c-ab71-445c-bc0b-abf15239de8b"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/catalogItem/%s/metadata"/>
+            <Link rel="edit" type="application/vnd.vmware.vcloud.catalogItem+xml" href="%s/api/catalogItem/%s"/>
+            <Link rel="remove" href="%s/api/catalogItem/%s"/>
+            <Description/>
+            <Entity type="application/vnd.vmware.vcloud.media+xml" name="%s" href="%s"/>
+        </CatalogItem>

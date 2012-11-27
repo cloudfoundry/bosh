@@ -1,0 +1,6 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="success" startTime="2011-09-14T14:07:14.185-07:00" operationName="vdcUpdateVappNetworkSection" operation="Updating Virtual Application %s(%s)" expiryTime="2011-12-13T14:07:14.185-08:00" name="task" id="urn:vcloud:task:23e5280c-2a91-4a8c-a136-9822ba33f34f" type="application/vnd.vmware.vcloud.task+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="task:cancel" href="%s/api/task/23e5280c-2a91-4a8c-a136-9822ba33f34f/action/cancel"/>
+    <Owner type="application/vnd.vmware.vcloud.vApp+xml" name="test17_3_10" href="%s/api/vApp/vapp-53599c71-4d39-49ad-878f-45e43ecaa7c8"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+</Task>

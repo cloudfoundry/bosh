@@ -1,0 +1,14 @@
+<ns7:InstantiateVAppTemplateParams xmlns="http://www.vmware.com/vcloud/extension/v1" xmlns:ns2="http://www.vmware.com/vcloud/v1" xmlns:ns3="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns4="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns5="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns6="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:ns7="http://www.vmware.com/vcloud/v1.5" xmlns:ns8="http://schemas.dmtf.org/ovf/environment/1" xmlns:ns9="http://www.vmware.com/vcloud/extension/v1.5" xmlns:ns10="http://www.vmware.com/vcloud/versions" linkedClone="false" powerOn="false" deploy="false" name="%s">
+  <ns7:Description>desc</ns7:Description>
+  <ns7:VAppParent href=""/>
+  <ns7:InstantiationParams/>
+  <ns7:Source href="%s/api/vAppTemplate/vappTemplate-%s" id="urn:vcloud:vapptemplate:%s" type="application/vnd.vmware.vcloud.vAppTemplate+xml"/>
+  <ns7:IsSourceDelete>false</ns7:IsSourceDelete>
+  <ns7:SourcedVmInstantiationParams>
+    <ns7:Source type="application/vnd.vmware.vcloud.vm+xml" name="%s" href="%s"/>
+    <ns7:LocalityParams>
+      <ns7:ResourceEntity type="application/vnd.vmware.vcloud.disk+xml" name="%s" href="%s"/>
+    </ns7:LocalityParams>
+  </ns7:SourcedVmInstantiationParams>
+  <ns7:AllEULAsAccepted>true</ns7:AllEULAsAccepted>
+</ns7:InstantiateVAppTemplateParams>

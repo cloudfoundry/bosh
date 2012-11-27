@@ -1,0 +1,79 @@
+<VAppTemplate xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" ovfDescriptorUploaded="true" goldMaster="false" status="8" name="%s" id="urn:vcloud:vapptemplate:%s" type="application/vnd.vmware.vcloud.vAppTemplate+xml" href="%s/api/vAppTemplate/vappTemplate-%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.dmtf.org/ovf/envelope/1 http://schemas.dmtf.org/ovf/envelope/1/dsp8023_1.1.0.xsd http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+    <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/%s"/>
+    <Link rel="remove" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+    <Link rel="edit" type="application/vnd.vmware.vcloud.vAppTemplate+xml" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+    <Link rel="ovf" type="text/xml" href="%s/api/vAppTemplate/vappTemplate-%s/ovf"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/vAppTemplate/vappTemplate-%s/owner"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/vAppTemplate/vappTemplate-%s/metadata"/>
+    <Description/>
+    <Owner type="application/vnd.vmware.vcloud.owner+xml">
+        <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    </Owner>
+    <Children>
+        <Vm goldMaster="false" name="vm1" id="urn:vcloud:vm:%s" type="application/vnd.vmware.vcloud.vm+xml" href="%s/api/vAppTemplate/vm-%s">
+            <Link rel="up" type="application/vnd.vmware.vcloud.vAppTemplate+xml" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/vAppTemplate/vm-%s/metadata"/>
+            <Description>A virtual machine</Description>
+            <NetworkConnectionSection type="application/vnd.vmware.vcloud.networkConnectionSection+xml" href="%s/api/vAppTemplate/vm-%s/networkConnectionSection/" ovf:required="false">
+                <ovf:Info>Specifies the available VM network connections</ovf:Info>
+                <PrimaryNetworkConnectionIndex>0</PrimaryNetworkConnectionIndex>
+                <NetworkConnection network="none" needsCustomization="true">
+                    <NetworkConnectionIndex>0</NetworkConnectionIndex>
+                    <IsConnected>false</IsConnected>
+                    <MACAddress>00:50:56:02:00:fd</MACAddress>
+                    <IpAddressAllocationMode>NONE</IpAddressAllocationMode>
+                </NetworkConnection>
+            </NetworkConnectionSection>
+            <GuestCustomizationSection type="application/vnd.vmware.vcloud.guestCustomizationSection+xml" href="%s/api/vAppTemplate/vm-%s/guestCustomizationSection/" ovf:required="false">
+                <ovf:Info>Specifies Guest OS Customization Settings</ovf:Info>
+                <Enabled>false</Enabled>
+                <ChangeSid>false</ChangeSid>
+                <VirtualMachineId>%s</VirtualMachineId>
+                <JoinDomainEnabled>false</JoinDomainEnabled>
+                <UseOrgSettings>false</UseOrgSettings>
+                <AdminPasswordEnabled>true</AdminPasswordEnabled>
+                <AdminPasswordAuto>true</AdminPasswordAuto>
+                <ResetPasswordRequired>false</ResetPasswordRequired>
+                <ComputerName>vm1-001</ComputerName>
+            </GuestCustomizationSection>
+            <ovf:ProductSection ovf:instance="" ovf:class="" ovf:required="true">
+                <ovf:Info>Information about the installed software</ovf:Info>
+                <ovf:Product>UnOS</ovf:Product>
+            </ovf:ProductSection>
+            <VAppScopedLocalId>vm1</VAppScopedLocalId>
+        </Vm>
+    </Children>
+    <ovf:NetworkSection xmlns:vcloud="http://www.vmware.com/vcloud/v1.5" vcloud:href="%s/api/vAppTemplate/vappTemplate-%s/networkSection/" vcloud:type="application/vnd.vmware.vcloud.networkSection+xml">
+        <ovf:Info>The list of logical networks</ovf:Info>
+        <ovf:Network ovf:name="none">
+            <ovf:Description>This is a special place-holder used for disconnected network interfaces.</ovf:Description>
+        </ovf:Network>
+    </ovf:NetworkSection>
+    <NetworkConfigSection type="application/vnd.vmware.vcloud.networkConfigSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/networkConfigSection/" ovf:required="false">
+        <ovf:Info>The configuration parameters for logical networks</ovf:Info>
+        <NetworkConfig networkName="none">
+            <Description>This is a special place-holder used for disconnected network interfaces.</Description>
+            <Configuration>
+                <IpScope>
+                    <IsInherited>false</IsInherited>
+                    <Gateway>196.254.254.254</Gateway>
+                    <Netmask>255.255.0.0</Netmask>
+                    <Dns1>196.254.254.254</Dns1>
+                </IpScope>
+                <FenceMode>isolated</FenceMode>
+            </Configuration>
+            <IsDeployed>false</IsDeployed>
+        </NetworkConfig>
+    </NetworkConfigSection>
+    <LeaseSettingsSection type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/leaseSettingsSection/" ovf:required="false">
+        <ovf:Info>Lease settings section</ovf:Info>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/leaseSettingsSection/"/>
+        <StorageLeaseInSeconds>7776000</StorageLeaseInSeconds>
+        <StorageLeaseExpiration>2011-11-16T12:27:05.327-08:00</StorageLeaseExpiration>
+    </LeaseSettingsSection>
+    <CustomizationSection type="application/vnd.vmware.vcloud.customizationSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/customizationSection/" ovf:required="false">
+        <ovf:Info>VApp template customization section</ovf:Info>
+        <CustomizeOnInstantiate>true</CustomizeOnInstantiate>
+        <Link rel="edit" type="application/vnd.vmware.vcloud.customizationSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/customizationSection/"/>
+    </CustomizationSection>
+</VAppTemplate>
