@@ -108,6 +108,18 @@ module Bosh
     end
 
     ##
+    # Set metadata for a VM
+    #
+    # Optional. Implement to provide more information for the IaaS.
+    #
+    # @param [String] vm vm id that was once returned by {#create_vm}
+    # @param [Hash] metadata metadata key/value pairs
+    # @return nil
+    def set_vm_metadata(vm, metadata)
+      not_implemented(:set_vm_metadata)
+    end
+
+    ##
     # Configures networking an existing VM.
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
