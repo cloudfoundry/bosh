@@ -1,7 +1,10 @@
 module Bosh::Director
   # Creates VM model and call out to CPI to create VM in IaaS
+  # @todo refactor to accept Instance or IdleVM instead of passing in all of the
+  # arguments directly.
   class VmCreator
     include EncryptionHelper
+    include MetadataHelper
 
     def self.create(*args)
       new.create(*args)
@@ -37,6 +40,7 @@ module Bosh::Director
       end
 
       vm.save
+      update_vm_metadata(vm)
       vm
     end
 

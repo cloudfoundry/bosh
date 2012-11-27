@@ -3,6 +3,8 @@
 module Bosh::Director
   class InstanceUpdater
     include DnsHelper
+    include MetadataHelper
+
     MAX_ATTACH_DISK_TRIES = 3
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
@@ -62,6 +64,9 @@ module Bosh::Director
       step { update_persistent_disk }
       step { update_networks }
       step { update_dns }
+
+      update_vm_metadata(@vm)
+
       step { apply_state(@instance.spec) }
 
       if @target_state == "started"
