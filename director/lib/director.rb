@@ -42,6 +42,7 @@ require "director/errors"
 require "director/ext"
 require "director/ip_util"
 require "director/lock_helper"
+require "director/metadata_helper"
 require "director/validation_helper"
 
 require "director/version"

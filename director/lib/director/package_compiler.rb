@@ -3,6 +3,7 @@
 module Bosh::Director
   class PackageCompiler
     include LockHelper
+    include MetadataHelper
 
     # TODO Support nested dependencies
     # TODO Decouple tsort from the actual compilation
@@ -224,6 +225,7 @@ module Bosh::Director
           agent_task = nil
 
           prepare_vm(stemcell) do |vm_data|
+            update_vm_metadata(vm_data.vm, :compiling => package.name)
             agent_task =
               vm_data.agent.compile_package(package.blobstore_id,
                                             package.sha1, package.name,
