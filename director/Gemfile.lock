@@ -42,11 +42,11 @@ GEM
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
-    bosh_vsphere_cpi (0.5.0)
+    bosh_vsphere_cpi (0.5.1)
       bosh_common
       bosh_cpi (>= 0.4.4)
       membrane
-      ruby_vim_sdk
+      ruby_vim_sdk (>= 0.0.3)
       sequel
       uuidtools
     builder (3.0.0)
@@ -154,7 +154,7 @@ GEM
     ruby-hmac (0.4.0)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
-    ruby_vim_sdk (0.0.2)
+    ruby_vim_sdk (0.0.3)
       builder
       httpclient
       nokogiri
@@ -193,7 +193,7 @@ DEPENDENCIES
   bosh_cpi (>= 0.4.3)
   bosh_encryption (>= 0.0.2)
   bosh_openstack_cpi (>= 0.0.4)
-  bosh_vsphere_cpi (>= 0.5.0)
+  bosh_vsphere_cpi (>= 0.5.1)
   ci_reporter
   eventmachine
   guard
