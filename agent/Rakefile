@@ -56,6 +56,11 @@ if defined?(RSpec)
     end
 
   end
+
+  task :spec do
+    Rake::Task['spec:combined:run'].invoke
+  end
+
 end
 
 # stemcell generation is now in its own file
