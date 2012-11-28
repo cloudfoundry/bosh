@@ -46,16 +46,46 @@ module Bosh::Common
     end
 
     # Property lookup helper
-    # @param [String] name Property name
-    # @param [optional, Object] default Default value
-    # @return [Object] Property value
-    def p(name, default = nil)
-      result = lookup_property(@raw_properties, name)
-      if result.nil?
-        return default if default
-        raise UnknownProperty.new(name)
+    #
+    # @overload p(name, default_value)
+    #   Returns property value or default value if property not set
+    #   @param [String] name Property name
+    #   @param [Object] default_value Default value
+    #   @return [Object] Property value
+    #
+    # @overload p(names, default_value)
+    #   Returns first property from the list that is set or default value if
+    #   none of them are set
+    #   @param [Array<String>] names Property names
+    #   @param [Object] default_value Default value
+    #   @return [Object] Property value
+    #
+    # @overload p(names)
+    #   Looks up first property from the list that is set, raises an error
+    #   if none of them are set.
+    #   @param [Array<String>] names Property names
+    #   @return [Object] Property value
+    #   @raise [Bosh::Common::UnknownProperty]
+    #
+    # @overload p(name)
+    #   Looks up property and raises an error if it's not set
+    #   @param [String] name Property name
+    #   @return [Object] Property value
+    #   @raise [Bosh::Common::UnknownProperty]
+    def p(*args)
+      names = args[0]
+      default_given = args.size > 1
+      default = args[1]
+
+      names = Array(names) unless names.kind_of?(Array)
+
+      names.each do |name|
+        result = lookup_property(@raw_properties, name)
+        return result if result
       end
-      result
+
+      return default if default_given
+      raise UnknownProperty.new(name)
     end
 
     # Run a block of code if all given properties are defined

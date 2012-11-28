@@ -50,6 +50,32 @@ describe Bosh::Common::TemplateEvaluationContext do
     eval_template("<%= p('bar.baz', 22) %>", @context).should == "22"
   end
 
+  it "supports chaining property lookup via 'p' helper" do
+    eval_template(<<-TMPL, @context).strip.should == "zbb"
+      <%= p(%w(a b router.token c)) %>
+    TMPL
+
+    expect {
+      eval_template(<<-TMPL, @context)
+        <%= p(%w(a b c)) %>
+      TMPL
+    }.to raise_error(Bosh::Common::UnknownProperty)
+
+    eval_template(<<-TMPL, @context).strip.should == "22"
+      <%= p(%w(a b c), 22) %>
+    TMPL
+  end
+
+  it "allows 'false' and 'nil' defaults for 'p' helper" do
+    eval_template(<<-TMPL, @context).strip.should == "false"
+      <%= p(%w(a b c), false) %>
+    TMPL
+
+    eval_template(<<-TMPL, @context).strip.should == ""
+      <%= p(%w(a b c), nil) %>
+    TMPL
+  end
+
   it "supports 'if_p' helper" do
     template = <<-TMPL
       <% if_p("router.token") do |token| %>
