@@ -347,6 +347,40 @@ module VSphereCloud
       end
     end
 
+    def set_vm_metadata(vm_cid, metadata)
+      with_thread_name("set_vm_metadata(#{vm_cid}, ...)") do
+        begin
+          fields_manager = client.service_content.custom_fields_manager
+          custom_fields = fields_manager.field
+          name_to_key_id = {}
+
+          metadata.each_key do |name|
+            field = custom_fields.find { |field| field.name == name.to_s &&
+                field.managed_object_type == Vim::VirtualMachine }
+            unless field
+              field = fields_manager.add_field_definition(
+                  name.to_s, Vim::VirtualMachine, nil, nil)
+            end
+            name_to_key_id[name] = field.key
+          end
+
+          vm = get_vm_by_cid(vm_cid)
+
+          metadata.each do |name, value|
+            value = "" if value.nil? # value is required
+            fields_manager.set_field(vm, name_to_key_id[name], value)
+          end
+        rescue SoapException => e
+          if e.fault.kind_of?(Vim::Fault::NoPermission)
+            @logger.warn("Can't set custom fields due to lack of " +
+                             "permission: #{e.message}")
+          else
+            raise e
+          end
+        end
+      end
+    end
+
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
         vm = get_vm_by_cid(vm_cid)
