@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_common (0.5.2)
+    bosh_common (0.5.3)
 
 GEM
   remote: http://rubygems.org/
