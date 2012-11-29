@@ -22,36 +22,6 @@ describe Bosh::Agent::Bootstrap do
     @processor.stub(:mem_total).and_return(3951616)
   end
 
-  describe "settings" do
-    it "should load based on infrastructure" do
-      @processor.load_settings
-      Bosh::Agent::Config.settings.should == complete_settings
-    end
-
-    it "should be stored" do
-      @processor.load_settings
-      File.exist?(Bosh::Agent::Config.settings_file).should be_true
-    end
-
-    it "should fallback to cached data" do
-      Bosh::Agent::Config.settings_file = File.join(asset("settings.json"))
-      Bosh::Agent::Config.infrastructure.should_receive(:load_settings)
-        .and_raise(Bosh::Agent::LoadSettingsError)
-      @processor.load_settings
-      Bosh::Agent::Config.settings.should == {"foo" => "bar"}
-    end
-
-    it "should raise an error if it can't fall back on cached data" do
-      Bosh::Agent::Config.settings.should be_nil
-      Bosh::Agent::Config.infrastructure.should_receive(:load_settings)
-        .and_raise(Bosh::Agent::LoadSettingsError)
-      File.should_receive(:read).and_raise(Errno::ENOENT)
-      expect {
-        @processor.load_settings
-      }.to raise_error Bosh::Agent::LoadSettingsError
-    end
-  end
-
   it "should update credentials" do
     @processor.load_settings
     @processor.update_credentials

@@ -91,8 +91,7 @@ module Bosh::Agent
       end
 
       def update_settings
-        Bosh::Agent::Config.settings = Bosh::Agent::Config.infrastructure.load_settings
-        logger.info("Settings: #{settings}")
+        Bosh::Agent::Config.settings = Bosh::Agent::Settings.load
       end
 
       def setup_disk
