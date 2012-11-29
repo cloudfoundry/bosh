@@ -174,6 +174,8 @@ module Bosh::WardenCloud
         vm = Models::VM[vm_id.to_i]
         raise "VM #{vm} not found" unless vm
 
+        raise "Cannot delete vm with disks attached" if vm.disks.size > 0
+
         with_warden do |client|
           request = Warden::Protocol::DestroyRequest.new
           request.handle = vm.container_id
@@ -294,6 +296,7 @@ module Bosh::WardenCloud
         disk.device_path = device_path
         disk.device_num = number
         disk.attached = true
+        disk.vm = vm
         disk.save
 
         nil
@@ -324,6 +327,7 @@ module Bosh::WardenCloud
         disk.attached = false
         disk.device_num = 0
         disk.device_path = nil
+        disk.vm = nil
         disk.save
 
         # Release the device number back to pool
