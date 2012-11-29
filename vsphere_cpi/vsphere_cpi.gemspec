@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "bosh_common"
-  s.add_dependency "bosh_cpi", ">= 0.4.4"
+  s.add_dependency "bosh_cpi", ">= 0.5.0"
   s.add_dependency "membrane"
   s.add_dependency "ruby_vim_sdk"
   s.add_dependency "sequel"
