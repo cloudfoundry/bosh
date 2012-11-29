@@ -123,6 +123,16 @@ module Bosh::WardenCloud
           response.handle
         end
 
+        # Chown /var/vcap from root to vcap
+        with_warden do |client|
+          request = Warden::Protocol::RunRequest.new
+          request.handle = handle
+          request.privileged = true
+          request.script = "chown -R vcap:vcap /var/vcap"
+
+          client.call(request)
+        end
+
         # Agent settings
         env = generate_agent_env(vm, agent_id, networks)
 
