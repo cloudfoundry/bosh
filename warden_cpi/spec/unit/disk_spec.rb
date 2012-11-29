@@ -226,19 +226,25 @@ describe Bosh::WardenCloud::Cloud do
   end
 
   context "attach script" do
-    it "should provide the right device path" do
-      device_root = Dir.mktmpdir("warden-cpi-device")
+    before :each do
+      @device_root = Dir.mktmpdir("warden-cpi-device")
 
-      device_prefix = File.join(device_root, "sda")
+      @device_prefix = File.join(@device_root, "sda")
 
       1.upto 5 do |i|
-        FileUtils.touch("#{device_prefix}#{i}")
+        FileUtils.touch("#{@device_prefix}#{i}")
       end
+    end
 
-      script = attach_script(10, device_prefix)
+    after :each do
+      FileUtils.rm_rf @device_root
+    end
+
+    it "should provide the right device path" do
+      script = attach_script(10, @device_prefix)
       device_file = sh("sudo bash -c '#{script}'").output.strip
 
-      device_file.should == "#{device_prefix}6"
+      device_file.should == "#{@device_prefix}6"
       File.exist?(device_file).should be_true
     end
   end
