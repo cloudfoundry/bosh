@@ -60,6 +60,7 @@ module Bosh::AwsCloud
                                      registry_user,
                                      registry_password)
 
+      @aki_picker = AKIPicker.new(@ec2)
       @metadata_lock = Mutex.new
     end
 
@@ -244,6 +245,7 @@ module Bosh::AwsCloud
           settings["disks"]["persistent"] ||= {}
           settings["disks"]["persistent"][disk_id] = device_name
         end
+        @logger.info("Attached `#{disk_id}' to `#{instance_id}'")
       end
     end
 
@@ -335,26 +337,8 @@ module Bosh::AwsCloud
           snapshot = volume.create_snapshot
           wait_resource(snapshot, :completed)
 
-          root_device_name = cloud_properties["root_device_name"]
-          architecture = cloud_properties["architecture"]
-
-          aki = find_aki(architecture, root_device_name)
-
-          # we could set :description here, but since we don't have a
-          # handle to the stemcell name and version, we can't set it
-          # to something useful :(
-          image_params = {
-            :name => "BOSH-#{generate_unique_name}",
-            :architecture => architecture,
-            :kernel_id => aki,
-            :root_device_name =>  root_device_name,
-            :block_device_mappings => {
-              "/dev/sda" => { :snapshot_id => snapshot.id },
-              "/dev/sdb" => "ephemeral0"
-            }
-          }
-
-          image = @ec2.images.create(image_params)
+          params = image_params(cloud_properties, snapshot.id)
+          image = @ec2.images.create(params)
           wait_resource(image, :available, :state)
 
           image.id
@@ -369,42 +353,6 @@ module Bosh::AwsCloud
           end
         end
       end
-    end
-
-    # finds the correct aki for the current region
-    def find_aki(arch, root_device_name)
-
-      filters = []
-      filters << {:name => "architecture", :values => [arch]}
-      filters << {:name => "image-type", :values => %w[kernel]}
-      filters << {:name => "owner-alias", :values => %w[amazon]}
-
-      response = @ec2.client.describe_images(:filters => filters)
-
-      # do nasty hackery to select boot device and version from
-      # the image_location string e.g. pv-grub-hd00_1.03-x86_64.gz
-      if root_device_name == "/dev/sda1"
-        regexp = /-hd00[-_](\d+)\.(\d+)/
-      else
-        regexp = /-hd0[-_](\d+)\.(\d+)/
-      end
-
-      candidate = nil
-      major = 0
-      minor = 0
-      response.images_set.each do |image|
-        match = image.image_location.match(regexp)
-        if match && match[1].to_i > major && match[2].to_i > minor
-          candidate = image
-          major = match[1].to_i
-          minor = match[2].to_i
-        end
-      end
-
-      cloud_error("unable to find AKI") unless candidate
-      @logger.info("auto-selected AKI: #{candidate.image_id}")
-
-      candidate.image_id
     end
 
     def delete_stemcell(stemcell_id)
@@ -446,6 +394,29 @@ module Bosh::AwsCloud
     end
 
     private
+
+    def image_params(cloud_properties, snapshot_id)
+      root_device_name = cloud_properties["root_device_name"]
+      architecture = cloud_properties["architecture"]
+
+      # we could set :description here, but since we don't have a
+      # handle to the stemcell name and version, we can't set it
+      # to something useful :(
+      {
+          :name => "BOSH-#{generate_unique_name}",
+          :architecture => architecture,
+          :kernel_id => find_aki(architecture, root_device_name),
+          :root_device_name =>  root_device_name,
+          :block_device_mappings => {
+              "/dev/sda" => { :snapshot_id => snapshot_id },
+              "/dev/sdb" => "ephemeral0"
+          }
+      }
+    end
+
+    def find_aki(architecture, root_device_name)
+      @aki_picker.pick(architecture, root_device_name)
+    end
 
     ##
     # Generates initial agent settings. These settings will be read by agent

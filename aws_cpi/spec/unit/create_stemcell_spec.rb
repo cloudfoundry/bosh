@@ -1,11 +1,15 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
   before :each do
     @tmp_dir = Dir.mktmpdir
+  end
+
+  after(:each) do
+    FileUtils.rm_rf(@tmp_dir)
   end
 
   describe "EBS-volume based flow" do
@@ -39,18 +43,10 @@ describe Bosh::AwsCloud::Cloud do
         ec2.volumes.stub(:[]).with("v-foo").and_return(volume)
         ec2.instances.stub(:[]).with("i-current").and_return(current_instance)
         ec2.images.should_receive(:create).with(image_params).and_return(image)
-
-        i1 = double("image-1", :root_device_name => "/dev/sda1",
-                       :image_location => "pv-grub-hd00_1.03-x86_64.gz",
-                       :image_id => "aki-b4aa75dd")
-        i2 = double("image-2", :root_device_name => "/dev/sda1",
-                    :image_location => "pv-grub-hd00_1.02-x86_64.gz",
-                    :image_id => "aki-b4aa75d0")
-
-        result = double("images_set", :images_set => [i1, i2])
-        client = double("client", :describe_images => result)
-        ec2.should_receive(:client).and_return(client)
       end
+
+      cloud.should_receive(:find_aki).with("x86_64", "/dev/sda1")
+        .and_return("aki-b4aa75dd")
 
       cloud.stub(:generate_unique_name).and_return(unique_name)
       cloud.stub(:current_instance_id).and_return("i-current")
