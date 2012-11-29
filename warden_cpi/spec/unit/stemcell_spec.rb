@@ -3,7 +3,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 describe Bosh::WardenCloud::Cloud do
 
   before :each do
-    @stemcell_root = Dir.mktmpdir("warden-cpi")
+    @stemcell_root = Dir.mktmpdir("warden-cpi-stemcell")
 
     options = {
       "stemcell" => {
@@ -12,6 +12,10 @@ describe Bosh::WardenCloud::Cloud do
     }
 
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
+  end
+
+  after :each do
+    FileUtils.rm_rf @stemcell_root
   end
 
   let(:image_path) { asset("stemcell-warden-test.tgz") }
