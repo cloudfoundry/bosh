@@ -5,7 +5,7 @@ PATH
       bosh_common
       bosh_cpi (>= 0.5.0)
       membrane
-      ruby_vim_sdk
+      ruby_vim_sdk (>= 0.0.3)
       sequel
       uuidtools
 
@@ -55,7 +55,7 @@ GEM
       ruby-debug-base19 (>= 0.11.19)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
-    ruby_vim_sdk (0.0.2)
+    ruby_vim_sdk (0.0.3)
       builder
       httpclient
       nokogiri
