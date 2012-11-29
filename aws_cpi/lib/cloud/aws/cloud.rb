@@ -354,8 +354,10 @@ module Bosh::AwsCloud
             }
           }
 
+          # create an EC2 AMI of the stemcell
           image = @ec2.images.create(image_params)
           wait_resource(image, :available, :state)
+          snapshot.delete
 
           image.id
         rescue => e
