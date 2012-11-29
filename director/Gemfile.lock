@@ -42,6 +42,12 @@ GEM
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
+    bosh_vcloud_cpi (0.4.8)
+      bosh_common
+      bosh_cpi (>= 0.4.2)
+      ruby_vcloud_sdk
+      uuidtools
+      yajl-ruby (>= 0.8.2)
     bosh_vsphere_cpi (0.5.1)
       bosh_common
       bosh_cpi (>= 0.4.4)
@@ -127,6 +133,8 @@ GEM
       redis-namespace (>= 0.10.0)
       sinatra (>= 0.9.2)
       vegas (~> 0.1.2)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
     rspec (2.11.0)
       rspec-core (~> 2.11.0)
       rspec-expectations (~> 2.11.0)
@@ -154,6 +162,11 @@ GEM
     ruby-hmac (0.4.0)
     ruby_core_source (0.1.5)
       archive-tar-minitar (>= 0.5.2)
+    ruby_vcloud_sdk (0.4.8)
+      builder
+      httpclient
+      nokogiri (~> 1.5)
+      rest-client
     ruby_vim_sdk (0.0.3)
       builder
       httpclient
@@ -193,6 +206,7 @@ DEPENDENCIES
   bosh_cpi (>= 0.4.3)
   bosh_encryption (>= 0.0.2)
   bosh_openstack_cpi (>= 0.0.4)
+  bosh_vcloud_cpi (>= 0.4.8)
   bosh_vsphere_cpi (>= 0.5.1)
   ci_reporter
   eventmachine
