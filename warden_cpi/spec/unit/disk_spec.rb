@@ -26,6 +26,11 @@ describe Bosh::WardenCloud::Cloud do
     end
   end
 
+  after :each do
+    FileUtils.rm_rf @disk_root
+    Disk.dataset.delete
+  end
+
   context "create_disk" do
 
     it "can create disk" do
@@ -53,6 +58,19 @@ describe Bosh::WardenCloud::Cloud do
       expect {
         @cloud.create_disk(-1, nil)
       }.to raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should clean up when create disk failed" do
+      @cloud.delegate.stub(:image_path) { '/path/not/exist' }
+
+      expect {
+        @cloud.create_disk(1, nil)
+      }.to raise_error Bosh::Clouds::CloudError
+
+      Disk.dataset.all.size.should == 0
+      Dir.chdir(@disk_root) do
+        Dir.glob("*").should be_empty
+      end
     end
 
   end

@@ -52,3 +52,9 @@ end
 def image_file(disk_id)
   "#{disk_id}.img"
 end
+
+module Bosh::Clouds
+  class Warden
+    attr_accessor :delegate
+  end
+end
