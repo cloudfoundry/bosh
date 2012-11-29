@@ -42,10 +42,7 @@ module Bosh::Cli
       build_parse_tree
       add_shortcuts
 
-      if @args.empty?
-        say(usage)
-        exit(0)
-      end
+      @args = %w(help) if @args.empty?
 
       command = search_parse_tree(@parse_tree)
       if command.nil? && Config.interactive
