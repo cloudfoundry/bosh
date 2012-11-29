@@ -51,6 +51,8 @@ describe Bosh::WardenCloud::Cloud do
           request.dst_path.should == "/var/vcap/bosh/settings.json"
 
           resp = CopyInResponse.new
+        elsif request.instance_of? RunRequest
+          resp = RunResponse.new
         else
           raise "not supported"
         end
