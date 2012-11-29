@@ -217,8 +217,8 @@ module Bosh::WardenCloud
         disk.id.to_s
       end
     rescue => e
-      FileUtils.rm image_file if image_file
-      disk.destroy if disk
+      FileUtils.rm_f image_file if image_file rescue nil
+      disk.destroy if disk rescue nil
 
       cloud_error(e)
     end
