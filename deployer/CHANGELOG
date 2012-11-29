@@ -1,3 +1,6 @@
+=== 1.2.0 - 2012-11-29
+* set_vm_metadata CPI call & vSphere implementation of it
+
 === 1.1.0 - 2012-11-20
 * added "micro bosh" helper command
 
