@@ -100,7 +100,7 @@ bosh-stemcell-vsphere-0.6.7.tgz:
   size: 418594708
   tags:
   - vsphere
-  - test
+  - stable
 bosh-stemcell-aws-0.6.7.tgz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjEwMDRlNGU3ZDUxZDk1MGUwNTA3ZDVj%0ANDAxZTdmYiIsInNpZyI6Ik4ra0xwY2pmN2xCWXVneG8xQkxpbTUyaUZoYz0i%0AfQ==%0A
   url: https://blob.cfblob.com/rest/objects/4e4e78bca61e121004e4e7d51d950e0507d5c401e7fb?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=N+kLpcjf7lBYugxo1BLim52iFhc=
