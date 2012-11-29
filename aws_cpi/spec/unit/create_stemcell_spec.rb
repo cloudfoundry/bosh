@@ -1,11 +1,15 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
   before :each do
     @tmp_dir = Dir.mktmpdir
+  end
+
+  after(:each) do
+    FileUtils.rm_rf(@tmp_dir)
   end
 
   describe "EBS-volume based flow" do
@@ -19,7 +23,7 @@ describe Bosh::AwsCloud::Cloud do
                           :device => "/dev/sdh",
                           :volume => volume)
 
-      snapshot = double("snapshot", :id => "s-baz")
+      snapshot = double("snapshot", :id => "s-baz", :delete => nil)
       image = double("image", :id => "i-bar")
 
       unique_name = UUIDTools::UUID.random_create.to_s
