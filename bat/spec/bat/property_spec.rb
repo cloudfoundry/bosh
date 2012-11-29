@@ -18,47 +18,59 @@ describe "property" do
     load_deployment_spec
   end
 
-  context "with no property" do
+  describe "managed properties" do
+    context "with no property" do
 
-    it "should not return a value" do
-      with_deployment do
-        expect {
-          bosh("get property doesntexist")
-        }.to raise_error { |error|
-          error.should be_a Bosh::Exec::Error
-          error.output.should match /Error 110003/
-        }
+      it "should not return a value" do
+        with_deployment do
+          expect {
+            bosh("get property doesntexist")
+          }.to raise_error { |error|
+            error.should be_a Bosh::Exec::Error
+            error.output.should match /Error 110003/
+          }
+        end
       end
+
+      it "should set a property" do
+        with_deployment do
+          result = bosh("set property newprop something")
+          result.output.should match /This will be a new property/
+          result.output.should match /Property `newprop' set to `something'/
+        end
+      end
+
     end
 
-    it "should set a property" do
-      with_deployment do
-        result = bosh("set property newprop something")
-        result.output.should match /This will be a new property/
-        result.output.should match /Property `newprop' set to `something'/
-      end
-    end
+    context "with existing property" do
 
+      it "should set a property" do
+        with_deployment do
+          bosh("set property prop1 value1")
+          result = bosh("set property prop1 value2")
+          result.output.should match /Current `prop1' value is `value1'/
+          result.output.should match /Property `prop1' set to `value2'/
+        end
+      end
+
+      it "should get a value" do
+        with_deployment do
+          bosh("set property prop2 value3")
+          bosh("get property prop2").should succeed_with /Property `prop2' value is `value3'/
+        end
+      end
+
+    end
   end
 
-  context "with existing property" do
-
-    it "should set a property" do
+  describe "template properties" do
+    it "should render correct properties" do
+      use_static_ip
       with_deployment do
-        bosh("set property prop1 value1")
-        result = bosh("set property prop1 value2")
-        result.output.should match /Current `prop1' value is `value1'/
-        result.output.should match /Property `prop1' set to `value2'/
+        props = "/var/vcap/jobs/batlight/config/properties"
+        expected = "foo\ntrue\n\nboth\n\n"
+        ssh(static_ip, "vcap", password, "cat #{props}").should == expected
       end
     end
-
-    it "should get a value" do
-      with_deployment do
-        bosh("set property prop2 value3")
-        bosh("get property prop2").should succeed_with /Property `prop2' value is `value3'/
-      end
-    end
-
   end
-
 end
