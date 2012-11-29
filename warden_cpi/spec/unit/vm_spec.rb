@@ -31,6 +31,7 @@ describe Bosh::WardenCloud::Cloud do
   end
 
   after :each do
+    Disk.dataset.delete
     VM.dataset.delete
   end
 
@@ -118,6 +119,21 @@ describe Bosh::WardenCloud::Cloud do
       expect {
         @cloud.delete_vm(11) # vm id 11 doesn't exist
       }.to raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should raise error when trying to delete a vm with disk attached" do
+      vm = VM.new
+      vm.container_id = '1234'
+      vm.save
+
+      disk = Disk.new
+      disk.vm = vm
+      disk.attached = true
+      disk.save
+
+      expect {
+        @cloud.delete_vm(vm.id.to_s)
+      }.to raise_error Bosh::Clouds::CloudError, /with disks attached/
     end
 
   end

@@ -149,9 +149,12 @@ describe Bosh::WardenCloud::Cloud do
       @cloud.attach_disk(@vm_id, @disk_id)
 
       disk = Disk[@disk_id.to_i]
+      vm = VM[@vm_id.to_i]
+
       disk.attached.should == true
       disk.device_path.should == "/dev/sda1"
       disk.device_num.should_not == 0
+      disk.vm.should == vm
     end
 
     it "raise error when trying to attach a disk that is already attached" do
@@ -210,6 +213,7 @@ describe Bosh::WardenCloud::Cloud do
       disk.attached.should == false
       disk.device_path.should be_nil
       disk.device_num.should == 0
+      disk.vm.should be_nil
     end
 
     it "raise error when trying to detach a disk that is not attached" do

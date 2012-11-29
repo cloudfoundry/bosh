@@ -4,7 +4,7 @@ module Bosh::WardenCloud
 
     def cloud_error(error)
       unless error.instance_of? Bosh::Clouds::CloudError
-        error = Bosh::Clouds::CloudError.new error
+        error = Bosh::Clouds::CloudError.new error.message
       end
 
       @logger.error(error.message) if @logger
