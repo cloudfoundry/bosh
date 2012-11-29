@@ -7,6 +7,7 @@ Sequel.migration do
 
     create_table? :warden_disk do
       primary_key :id
+      foreign_key :vm_id, :warden_vm
       Integer :device_num
       String :device_path
       String :image_path
@@ -15,7 +16,7 @@ Sequel.migration do
   end
 
   down do
-    drop_table :warden_vm
     drop_table :warden_disk
+    drop_table :warden_vm
   end
 end
