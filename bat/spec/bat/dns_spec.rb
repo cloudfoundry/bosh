@@ -5,6 +5,9 @@ require "resolv"
 
 describe "dns" do
   before(:all) do
+    requirement stemcell
+    requirement release
+
     @dns = Resolv::DNS.new(:nameserver => bosh_director)
 
     load_deployment_spec
@@ -19,6 +22,13 @@ describe "dns" do
   after(:all) do
     bosh("delete deployment #{@deployment.name}")
     @deployment.delete
+
+    cleanup release
+    cleanup stemcell
+  end
+
+  before(:each) do
+    load_deployment_spec
   end
 
   # raises Resolv::ResolvError if not found
