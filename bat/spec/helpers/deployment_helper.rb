@@ -95,6 +95,10 @@ module DeploymentHelper
 
   def load_deployment_spec
     @spec ||= YAML.load_file(read_environment('BAT_DEPLOYMENT_SPEC'))
+    # Always set the batlight.missing to something, or deployments will fail.
+    # It is used for negative testing.
+    @spec["properties"]["batlight"] ||= {}
+    @spec["properties"]["batlight"]["missing"] = "nope"
   end
 
   # if with_deployment() is called without a block, it is up to the caller to
@@ -188,8 +192,11 @@ module DeploymentHelper
   end
 
   def use_failing_job(where="control")
-    @spec["properties"]["batlight"] = {}
     @spec["properties"]["batlight"]["fail"] = where
+  end
+
+  def use_missing_property(property="missing")
+    @spec["properties"]["batlight"].delete(property)
   end
 
   def get_task_id(output, state="done")
