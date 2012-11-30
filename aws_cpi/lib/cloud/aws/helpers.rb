@@ -24,6 +24,8 @@ module Bosh::AwsCloud
       desc = resource.to_s
 
       loop do
+        task_checkpoint
+
         duration = Time.now - started_at
 
         if duration > timeout
@@ -35,19 +37,8 @@ module Bosh::AwsCloud
                         "(#{duration}s)")
         end
 
-        begin
-          state = resource.send(state_method)
-        rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
-               AWS::EC2::Errors::InvalidInstanceID::NotFound => e
-          # ugly workaround for AWS race conditions:
-          # 1) sometimes when we upload a stemcell and proceed to create a VM
-          #    from it, AWS reports that the AMI is missing
-          # 2) sometimes when we create a new EC2 instance, AWS reports that
-          #    the instance it returns is missing
-          # in both cases we just wait a little and retry...
-          raise e if failures > 3
-          failures += 1
-          @logger.error("#{e.message}: #{desc}")
+        state = get_state_for(resource, state_method) do |error|
+          @logger.error("#{error.message}: #{desc}")
           sleep(1)
           next
         end
@@ -70,6 +61,21 @@ module Bosh::AwsCloud
         total = Time.now - started_at
         @logger.info("#{desc} is now #{target_state}, took #{total}s")
       end
+    end
+
+    private
+
+    def get_state_for(resource, state_method)
+      resource.send(state_method)
+    rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
+        AWS::EC2::Errors::InvalidInstanceID::NotFound => e
+      # ugly workaround for AWS race conditions:
+      # 1) sometimes when we upload a stemcell and proceed to create a VM
+      #    from it, AWS reports that the AMI is missing
+      # 2) sometimes when we create a new EC2 instance, AWS reports that
+      #    the instance it returns is missing
+      # in both cases we just catch the exception, wait a little and retry...
+      yield e
     end
   end
 end
