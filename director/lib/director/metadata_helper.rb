@@ -4,7 +4,7 @@ module Bosh
 
       def update_vm_metadata(vm, metadata = {})
         if Config.cloud.respond_to?(:set_vm_metadata)
-          metadata[:deployment] = vm.deployment
+          metadata[:deployment] = vm.deployment.name
 
           if vm.instance
             metadata[:job] = vm.instance.job
