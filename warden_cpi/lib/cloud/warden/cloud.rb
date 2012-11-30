@@ -265,6 +265,9 @@ module Bosh::WardenCloud
         number = @pool.acquire
         raise "Failed to fetch device number" unless number
 
+        # Attach image file to the device
+        sudo "losetup /dev/loop#{number} #{disk.image_path}"
+
         # Create a device file inside warden container
         script = attach_script(number, @device_path_prefix)
 
@@ -315,6 +318,9 @@ module Bosh::WardenCloud
         disk.device_num = 0
         disk.device_path = nil
         disk.save
+
+        # Detach image file from loop device
+        sudo "losetup -d /dev/loop#{device_num}"
 
         # Release the device number back to pool
         @pool.release(device_num)
