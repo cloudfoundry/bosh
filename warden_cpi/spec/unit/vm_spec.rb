@@ -35,7 +35,7 @@ describe Bosh::WardenCloud::Cloud do
     VM.dataset.delete
   end
 
-  context "successful cases" do
+  context "create_vm" do
     it "can create vm" do
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
@@ -72,6 +72,25 @@ describe Bosh::WardenCloud::Cloud do
       VM[id.to_i].id.should == id.to_i
     end
 
+    it "should raise error for invalid stemcell" do
+      expect {
+        @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, {})
+      }.to raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should raise error for more than 1 nics" do
+      expect {
+        network_spec = {
+          "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
+          "nic2" => { "type" => "dynamic" },
+        }
+        @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, network_spec)
+      }.to raise_error Bosh::Clouds::CloudError
+    end
+  end
+
+  context "delete_vm" do
+
     it "can delete vm" do
       vm = VM.new
       vm.container_id = DEFAULT_HANDLE
@@ -96,24 +115,6 @@ describe Bosh::WardenCloud::Cloud do
 
       VM.dataset.all.size.should == 0
     end
-  end
-
-  context "failed cases" do
-    it "should raise error for invalid stemcell" do
-      expect {
-        @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, {})
-      }.to raise_error Bosh::Clouds::CloudError
-    end
-
-    it "should raise error for more than 1 nics" do
-      expect {
-        network_spec = {
-          "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
-          "nic2" => { "type" => "dynamic" },
-        }
-        @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, network_spec)
-      }.to raise_error Bosh::Clouds::CloudError
-    end
 
     it "should raise error when trying to delete a vm which doesn't exist" do
       expect {
@@ -135,6 +136,6 @@ describe Bosh::WardenCloud::Cloud do
         @cloud.delete_vm(vm.id.to_s)
       }.to raise_error Bosh::Clouds::CloudError, /with disks attached/
     end
-
   end
+
 end
