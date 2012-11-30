@@ -53,6 +53,7 @@ Bosh::Clouds::Config.configure(cloud_config)
 
 require "cloud/warden"
 
+include Bosh::WardenCloud::Models
 include ConsoleHelpers
 
 begin
