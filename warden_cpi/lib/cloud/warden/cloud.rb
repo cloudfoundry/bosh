@@ -216,6 +216,7 @@ module Bosh::WardenCloud
       not_used(vm_locality)
 
       disk = nil
+      number = nil
       image_file = nil
 
       raise ArgumentError, "disk size <= 0" unless size > 0
@@ -229,13 +230,25 @@ module Bosh::WardenCloud
         File.truncate(image_file, size << 20) # 1 MB == 1<<20 Byte
         sh "mkfs -t #{@fs_type} -F #{image_file} 2>&1"
 
+        # Get a device number from the pool
+        number = @pool.acquire
+        raise "Failed to fetch device number" unless number
+
+        # Attach image file to the device
+        sudo "losetup /dev/loop#{number} #{image_file}"
+
         disk.image_path = image_file
+        disk.device_num = number
         disk.attached = false
         disk.save
 
         disk.id.to_s
       end
     rescue => e
+      if number
+        sudo "losetup -d /dev/loop#{number}" rescue nil
+        @pool.release(number)
+      end
       FileUtils.rm_f image_file if image_file rescue nil
       disk.destroy if disk rescue nil
 
@@ -254,10 +267,17 @@ module Bosh::WardenCloud
         raise "Cannot find disk #{disk_id}" unless disk
         raise "Cannot delete attached disk" if disk.attached
 
+        # Detach image file from loop device
+        sudo "losetup -d /dev/loop#{disk.device_num}"
+
+        # Release the device number back to pool
+        @pool.release(disk.device_num)
+
+        # Delete DB entry
         disk.destroy
 
-        image_file = image_path(disk_id)
-        FileUtils.rm image_file
+        # Remove image file
+        FileUtils.rm_f image_path(disk_id)
 
         nil
       end
@@ -280,15 +300,8 @@ module Bosh::WardenCloud
         raise "Cannot find disk #{disk_id}" unless disk
         raise "disk #{disk_id} already attached" if disk.attached
 
-        # Get a device number from the pool
-        number = @pool.acquire
-        raise "Failed to fetch device number" unless number
-
-        # Attach image file to the device
-        sudo "losetup /dev/loop#{number} #{disk.image_path}"
-
         # Create a device file inside warden container
-        script = attach_script(number, @device_path_prefix)
+        script = attach_script(disk.device_num, @device_path_prefix)
 
         device_path = with_warden do |client|
           request = Warden::Protocol::RunRequest.new
@@ -304,7 +317,6 @@ module Bosh::WardenCloud
 
         # Save DB entry
         disk.device_path = device_path
-        disk.device_num = number
         disk.attached = true
         disk.vm = vm
         disk.save
@@ -335,16 +347,9 @@ module Bosh::WardenCloud
 
         # Save DB entry
         disk.attached = false
-        disk.device_num = 0
         disk.device_path = nil
         disk.vm = nil
         disk.save
-
-        # Detach image file from loop device
-        sudo "losetup -d /dev/loop#{device_num}"
-
-        # Release the device number back to pool
-        @pool.release(device_num)
 
         # Remove the device file inside warden container
         script = "rm #{device_path}"
