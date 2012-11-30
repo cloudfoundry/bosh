@@ -376,7 +376,9 @@ module Bosh::Cli
     end
 
     def calculate_terminal_width
-      if !ENV["TERM"].blank?
+      if ENV["COLUMNS"].to_s =~ /^\d+$/
+        ENV["COLUMNS"].to_i
+      elsif !ENV["TERM"].blank?
         width = `tput cols`
         $?.exitstatus == 0 ? [width.to_i, 100].min : 80
       else
