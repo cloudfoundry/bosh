@@ -143,6 +143,7 @@ module Bosh::Cli::Command
     # @param [String] job Job name
     # @param [Integer] index Job index
     def setup_interactive_shell(job, index)
+      deployment_required
       password = options[:default_password]
 
       if password.nil?
