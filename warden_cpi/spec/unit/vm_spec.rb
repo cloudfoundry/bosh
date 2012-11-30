@@ -36,7 +36,10 @@ describe Bosh::WardenCloud::Cloud do
   end
 
   context "create_vm" do
+
     it "can create vm" do
+      @cloud.delegate.should_receive(:sudo).once
+
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
         if request.instance_of? CreateRequest
