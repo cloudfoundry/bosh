@@ -34,6 +34,8 @@ describe Bosh::WardenCloud::Cloud do
   context "create_disk" do
 
     it "can create disk" do
+      @cloud.delegate.should_receive(:sudo).with(/losetup \/dev\/loop[0-9]* .*/)
+
       disk_id  = @cloud.create_disk(1, nil)
 
       Dir.chdir(@disk_root) do
@@ -77,14 +79,20 @@ describe Bosh::WardenCloud::Cloud do
 
   context "delete_disk" do
 
+    before :each do
+      @cloud.delegate.stub(:sudo) { }
+      @disk_id = @cloud.create_disk(1, nil)
+    end
+
     it "can delete disk" do
+
       Dir.chdir(@disk_root) do
-        disk_id  = @cloud.create_disk(1, nil)
 
         Dir.glob("*").should have(1).items
-        Dir.glob("*").should include(image_file(disk_id))
+        Dir.glob("*").should include(image_file(@disk_id))
 
-        ret = @cloud.delete_disk(disk_id)
+        @cloud.delegate.should_receive(:sudo).with("losetup -d /dev/loop10")
+        ret = @cloud.delete_disk(@disk_id)
 
         Dir.glob("*").should be_empty
         ret.should be_nil
@@ -98,12 +106,10 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "should raise error when disk is attached" do
-      disk_id = @cloud.create_disk(1, nil)
-
-      attach_disk(disk_id)
+      attach_disk(@disk_id)
 
       expect {
-        @cloud.delete_disk(disk_id)
+        @cloud.delete_disk(@disk_id)
       }.to raise_error Bosh::Clouds::CloudError
     end
   end
