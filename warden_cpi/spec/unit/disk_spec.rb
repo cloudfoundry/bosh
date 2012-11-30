@@ -99,11 +99,14 @@ describe Bosh::WardenCloud::Cloud do
 
       disk = Disk.new
       disk.attached = false
+      disk.image_path = "image_path"
       disk.save
       @disk_id = disk.id.to_s
 
       attached_disk = Disk.new
       attached_disk.attached = true
+      attached_disk.device_num = 10
+      attached_disk.vm = vm
       attached_disk.save
       @attached_disk_id = attached_disk.id.to_s
 
@@ -119,9 +122,12 @@ describe Bosh::WardenCloud::Cloud do
 
         resp
       end
+
     end
 
     it "can attach disk" do
+      @cloud.delegate.should_receive(:sudo).with("losetup /dev/loop10 image_path")
+
       @cloud.attach_disk(@vm_id, @disk_id)
 
       disk = Disk[@disk_id.to_i]
@@ -152,11 +158,14 @@ describe Bosh::WardenCloud::Cloud do
 
       disk = Disk.new
       disk.attached = false
+      disk.image_path = "image_path"
       disk.save
       @disk_id = disk.id.to_s
 
       attached_disk = Disk.new
       attached_disk.attached = true
+      attached_disk.device_num = 10
+      attached_disk.vm = vm
       attached_disk.save
       @attached_disk_id = attached_disk.id.to_s
 
@@ -171,9 +180,12 @@ describe Bosh::WardenCloud::Cloud do
 
         resp
       end
+
     end
 
     it "can detach disk" do
+      @cloud.delegate.should_receive(:sudo).with("losetup -d /dev/loop10")
+
       @cloud.detach_disk(@vm_id, @attached_disk_id)
 
       disk = Disk[@attached_disk_id.to_i]
