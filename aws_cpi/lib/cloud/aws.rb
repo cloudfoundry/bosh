@@ -21,6 +21,7 @@ require "cloud/aws/cloud"
 require "cloud/aws/registry_client"
 require "cloud/aws/version"
 
+require "cloud/aws/aki_picker"
 require "cloud/aws/network_configurator"
 require "cloud/aws/network"
 require "cloud/aws/dynamic_network"

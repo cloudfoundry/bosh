@@ -68,21 +68,23 @@ def mock_registry(endpoint = "http://registry:3333")
 end
 
 def mock_cloud(options = nil)
-  instances = double("instances")
-  volumes = double("volumes")
-  images = double("images")
-
-  ec2 = double(AWS::EC2)
-
-  ec2.stub(:instances).and_return(instances)
-  ec2.stub(:volumes).and_return(volumes)
-  ec2.stub(:images).and_return(images)
-
+  ec2 = mock_ec2
   AWS::EC2.stub(:new).and_return(ec2)
 
   yield ec2 if block_given?
 
   Bosh::AwsCloud::Cloud.new(options || mock_cloud_options)
+end
+
+def mock_ec2
+  ec2 = double(AWS::EC2,
+               :instances => double("instances"),
+               :volumes => double("volumes"),
+               :images =>double("images"))
+
+  yield ec2 if block_given?
+
+  ec2
 end
 
 def dynamic_network_spec
