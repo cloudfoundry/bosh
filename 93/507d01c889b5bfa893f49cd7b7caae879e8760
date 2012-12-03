@@ -1,0 +1,7 @@
+Code-Review+2: Vadim Spivak <vspivak@vmware.com>
+Verified+1: CI Master <cf-ci@rbcon.com>
+Submitted-by: Martin Englund <menglund@vmware.com>
+Submitted-at: Mon, 03 Dec 2012 19:09:40 +0000
+Reviewed-on: http://reviews.cloudfoundry.org/11955
+Project: bosh
+Branch: refs/heads/master
