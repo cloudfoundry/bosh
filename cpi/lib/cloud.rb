@@ -42,7 +42,7 @@ module Bosh
     # Deletes a stemcell
     #
     # @param [String] stemcell stemcell id that was once returned by {#create_stemcell}
-    # @return nil
+    # @return [void]
     def delete_stemcell(stemcell_id)
       not_implemented(:delete_stemcell)
     end
@@ -92,7 +92,7 @@ module Bosh
     # Deletes a VM
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
-    # @return nil
+    # @return [void]
     def delete_vm(vm_id)
       not_implemented(:delete_vm)
     end
@@ -102,7 +102,7 @@ module Bosh
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [Optional, Hash] CPI specific options (e.g hard/soft reboot)
-    # @return nil
+    # @return [void]
     def reboot_vm(vm_id)
       not_implemented(:reboot_vm)
     end
@@ -114,7 +114,7 @@ module Bosh
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [Hash] metadata metadata key/value pairs
-    # @return nil
+    # @return [void]
     def set_vm_metadata(vm, metadata)
       not_implemented(:set_vm_metadata)
     end
@@ -125,7 +125,7 @@ module Bosh
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [Hash] networks list of networks and their settings needed for this VM,
     #               same as the networks argument in {#create_vm}
-    # @return nil
+    # @return [void]
     def configure_networks(vm_id, networks)
       not_implemented(:configure_networks)
     end
@@ -148,7 +148,7 @@ module Bosh
     # Will raise an exception if the disk is attached to a VM
     #
     # @param [String] disk disk id that was once returned by {#create_disk}
-    # @return nil
+    # @return [void]
     def delete_disk(disk_id)
       not_implemented(:delete_disk)
     end
@@ -158,7 +158,7 @@ module Bosh
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [String] disk disk id that was once returned by {#create_disk}
-    # @return nil
+    # @return [void]
     def attach_disk(vm_id, disk_id)
       not_implemented(:attach_disk)
     end
@@ -168,7 +168,7 @@ module Bosh
     #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [String] disk disk id that was once returned by {#create_disk}
-    # @return nil
+    # @return [void]
     def detach_disk(vm_id, disk_id)
       not_implemented(:detach_disk)
     end
