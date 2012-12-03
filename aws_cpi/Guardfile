@@ -5,11 +5,16 @@ guard :bundler, :notify => false do
 end
 
 group :unit_tests do
-  guard :rspec, :version => 2, :cli => "--color --format nested --fail-fast",
+  guard :rspec, :cli => "--color --format nested --fail-fast -p",
                 :all_after_pass => false, :spec_paths => %w(spec/unit) do
     watch("spec/spec_helper.rb")            { "spec/unit" }
     watch("aws.rb")                         { "spec/unit" }
     watch(%r{^spec/unit/.+_spec\.rb})
     watch(%r{^lib/cloud/aws/(.+)\.rb})      { |m| "spec/unit/#{m[1]}_spec.rb" }
   end
+end
+
+guard :yard, :stdout => "/dev/null", :stderr => "/dev/null" do
+  watch("README.md")
+  watch(%r{lib/cloud/aws/.+\.rb})
 end
