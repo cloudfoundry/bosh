@@ -23,7 +23,7 @@ describe Bosh::AwsCloud::Cloud do
                           :device => "/dev/sdh",
                           :volume => volume)
 
-      snapshot = double("snapshot", :id => "s-baz")
+      snapshot = double("snapshot", :id => "s-baz", :delete => nil)
       image = double("image", :id => "i-bar")
 
       unique_name = UUIDTools::UUID.random_create.to_s

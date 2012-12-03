@@ -317,9 +317,10 @@ module Bosh::AwsCloud
       # TODO: refactor into several smaller methods
       with_thread_name("create_stemcell(#{image_path}...)") do
         begin
-          # These two variables are used in 'ensure' clause
+          # These three variables are used in 'ensure' clause
           instance = nil
           volume = nil
+          snapshot = nil
           # 1. Create and mount new EBS volume (2GB default)
           disk_size = cloud_properties["disk"] || 2048
           volume_id = create_disk(disk_size, current_instance_id)
@@ -343,7 +344,6 @@ module Bosh::AwsCloud
 
           image.id
         rescue => e
-          # TODO: delete snapshot?
           @logger.error(e)
           raise e
         ensure
@@ -351,6 +351,7 @@ module Bosh::AwsCloud
             detach_ebs_volume(instance, volume)
             delete_disk(volume.id)
           end
+          snapshot.delete if snapshot
         end
       end
     end
