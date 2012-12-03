@@ -5,20 +5,24 @@ module Bosh::AwsCloud
   class Cloud < Bosh::Cloud
     include Helpers
 
+    # default maximum number of times to retry an AWS API call
     DEFAULT_MAX_RETRIES = 2
+    # default availability zone for instances and disks
     DEFAULT_AVAILABILITY_ZONE = "us-east-1a"
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
-    METADATA_TIMEOUT = 5 # seconds
-    DEVICE_POLL_TIMEOUT = 60 # seconds
+    METADATA_TIMEOUT = 5 # in seconds
+    DEVICE_POLL_TIMEOUT = 60 # in seconds
 
     attr_reader :ec2
     attr_reader :registry
     attr_accessor :logger
 
     ##
-    # Initialize BOSH AWS CPI
+    # Initialize BOSH AWS CPI. The contents of sub-hashes are defined in the {file:README.md}
     # @param [Hash] options CPI options
-    #
+    # @option options [Hash] aws AWS specific options
+    # @option options [Hash] agent agent options
+    # @option options [Hash] registry agent options
     def initialize(options)
       @options = options.dup
 
@@ -65,22 +69,21 @@ module Bosh::AwsCloud
     end
 
     ##
-    # Creates EC2 instance and waits until it's in running state
-    # @param [String] agent_id Agent id associated with new VM
-    # @param [String] stemcell_id AMI id that will be used
-    #   to power on new instance
-    # @param [Hash] resource_pool Resource pool specification
-    # @param [Hash] network_spec Network specification, if it contains
-    #  security groups they must be existing
-    # @param [optional, Array] disk_locality List of disks that
+    # Create an EC2 instance and wait until it's in running state
+    # @param [String] agent_id agent id associated with new VM
+    # @param [String] stemcell_id AMI id of the stemcell used to
+    #  create the new instance
+    # @param [Hash] resource_pool resource pool specification
+    # @param [Hash] network_spec network specification, if it contains
+    #  security groups they must already exist
+    # @param [optional, Array] disk_locality list of disks that
     #   might be attached to this instance in the future, can be
     #   used as a placement hint (i.e. instance will only be created
     #   if resource pool availability zone is the same as disk
     #   availability zone)
-    # @param [optional, Hash] environment Data to be merged into
+    # @param [optional, Hash] environment data to be merged into
     #   agent settings
-    #
-    # @return [String] created instance id
+    # @return [String] EC2 instance id of the new virtual machine
     def create_vm(agent_id, stemcell_id, resource_pool,
                   network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
@@ -133,8 +136,9 @@ module Bosh::AwsCloud
     end
 
     ##
-    # Terminates EC2 instance and waits until it reports as terminated
-    # @param [String] instance_id Running instance id
+    # Delete EC2 instance ("terminate" in AWS language) and wait until
+    # it reports as terminated
+    # @param [String] instance_id EC2 instance id
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
         instance = @ec2.instances[instance_id]
@@ -155,8 +159,8 @@ module Bosh::AwsCloud
     end
 
     ##
-    # Reboots EC2 instance
-    # @param [String] instance_id Running instance id
+    # Reboot EC2 instance
+    # @param [String] instance_id EC2 instance id
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
         instance = @ec2.instances[instance_id]
@@ -167,7 +171,7 @@ module Bosh::AwsCloud
     ##
     # Creates a new EBS volume
     # @param [Integer] size disk size in MiB
-    # @param [optional, String] instance_id vm id
+    # @param [optional, String] instance_id EC2 instance id
     #        of the VM that this disk will be attached to
     # @return [String] created EBS volume id
     def create_disk(size, instance_id = nil)
@@ -207,10 +211,9 @@ module Bosh::AwsCloud
     end
 
     ##
-    # Deletes EBS volume
-    # @param [String] disk_id volume id
+    # Delete EBS volume
+    # @param [String] disk_id EBS volume id
     # @raise [Bosh::Clouds::CloudError] if disk is not in available state
-    # @return nil
     def delete_disk(disk_id)
       with_thread_name("delete_disk(#{disk_id})") do
         volume = @ec2.volumes[disk_id]
@@ -233,6 +236,9 @@ module Bosh::AwsCloud
       end
     end
 
+    # Attach an EBS volume to an EC2 instance
+    # @param [String] instance_id EC2 instance id of the virtual machine to attach the disk to
+    # @param [String] disk_id EBS volume id of the disk to attach
     def attach_disk(instance_id, disk_id)
       with_thread_name("attach_disk(#{instance_id}, #{disk_id})") do
         instance = @ec2.instances[instance_id]
@@ -249,6 +255,9 @@ module Bosh::AwsCloud
       end
     end
 
+    # Detach an EBS volume from an EC2 instance
+    # @param [String] instance_id EC2 instance id of the virtual machine to detach the disk from
+    # @param [String] disk_id EBS volume id of the disk to detach
     def detach_disk(instance_id, disk_id)
       with_thread_name("detach_disk(#{instance_id}, #{disk_id})") do
         instance = @ec2.instances[instance_id]
@@ -266,10 +275,10 @@ module Bosh::AwsCloud
       end
     end
 
-    # Configures network for a running instance
-    # @param [String] instance_id instance identifier
+    # Configure network for an EC2 instance
+    # @param [String] instance_id EC2 instance id
     # @param [Hash] network_spec network properties
-    # @raises [Bosh::Clouds:NotSupported] if the security groups change
+    # @raise [Bosh::Clouds:NotSupported] if the security groups change
     def configure_networks(instance_id, network_spec)
       with_thread_name("configure_networks(#{instance_id}, ...)") do
         @logger.info("Configuring `#{instance_id}' to use the following " \
@@ -299,17 +308,18 @@ module Bosh::AwsCloud
     end
 
     ##
-    # Creates a new AMI using stemcell image.
+    # Creates a new EC2 AMI using stemcell image.
     # This method can only be run on an EC2 instance, as image creation
     # involves creating and mounting new EBS volume as local block device.
     # @param [String] image_path local filesystem path to a stemcell image
-    # @param [Hash] cloud_properties CPI-specific properties
+    # @param [Hash] cloud_properties AWS-specific stemcell properties
     # @option cloud_properties [String] kernel_id
-    #   AKI, auto-selected based on the region
+    #   AKI, auto-selected based on the region, unless specified
     # @option cloud_properties [String] root_device_name
-    #   provided by the stemcell manifest
+    #   block device path (e.g. /dev/sda1), provided by the stemcell manifest, unless specified
     # @option cloud_properties [String] architecture
-    #   provided by the stemcell manifest
+    #   instruction set architecture (e.g. x86_64), provided by the stemcell manifest,
+    #   unless specified
     # @option cloud_properties [String] disk (2048)
     #   root disk size
     # @return [String] EC2 AMI name of the stemcell
@@ -356,6 +366,8 @@ module Bosh::AwsCloud
       end
     end
 
+    # Delete a stemcell
+    # @param [String] stemcell_id EC2 AMI name of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
         image = @ec2.images[stemcell_id]
@@ -363,6 +375,7 @@ module Bosh::AwsCloud
       end
     end
 
+    # @note Not implemented in the AWS CPI
     def validate_deployment(old_manifest, new_manifest)
       # Not implemented in VSphere CPI as well
       not_implemented(:validate_deployment)
@@ -375,6 +388,7 @@ module Bosh::AwsCloud
     # @param [String] resource_pool_az availability zone specified in
     #   the resource pool (may be nil)
     # @return [String] availability zone to use
+    # @note this is a private method that is public to make it easier to test
     def select_availability_zone(volumes, resource_pool_az)
       if volumes && !volumes.empty?
         disks = volumes.map { |vid| @ec2.volumes[vid] }
@@ -386,6 +400,7 @@ module Bosh::AwsCloud
     end
 
     # ensure all supplied availability zones are the same
+    # @note this is a private method that is public to make it easier to test
     def ensure_same_availability_zone(disks, default)
       zones = disks.map { |disk| disk.availability_zone }
       zones << default if default
