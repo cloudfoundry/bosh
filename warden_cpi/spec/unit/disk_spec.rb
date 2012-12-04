@@ -63,7 +63,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "should clean up when create disk failed" do
-      @cloud.delegate.stub(:image_path) { '/path/not/exist' }
+      @cloud.delegate.stub(:image_path) { "/path/not/exist" }
 
       expect {
         @cloud.create_disk(1, nil)

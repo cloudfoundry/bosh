@@ -6,7 +6,7 @@ describe Bosh::WardenCloud::Helpers do
 
   context "uuid" do
     it "can generate the correct uuid" do
-      uuid('disk').should start_with 'disk'
+      uuid("disk").should start_with "disk"
     end
   end
 end

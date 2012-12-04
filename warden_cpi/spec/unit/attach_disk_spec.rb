@@ -26,7 +26,7 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     vm = VM.new
-    vm.container_id = '1234'
+    vm.container_id = "1234"
     vm.save
     @vm_id = vm.id.to_s
 
@@ -86,7 +86,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it "raise error when trying to attach a disk to a non-existed vm" do
       expect {
-        @cloud.attach_disk('vm_not_existed', @disk_id)
+        @cloud.attach_disk("vm_not_existed", @disk_id)
       }.to raise_error Bosh::Clouds::CloudError
     end
   end
@@ -124,7 +124,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it "raise error when trying to detach a disk to a non-existed vm" do
       expect {
-        @cloud.detach_disk('vm_not_existed', @attached_disk_id)
+        @cloud.detach_disk("vm_not_existed", @attached_disk_id)
       }.to raise_error Bosh::Clouds::CloudError
     end
   end
