@@ -150,7 +150,7 @@ module Bosh::Cli
             report = nil
         end
 
-        if status != :done
+        unless [:running, :done].include?(status)
           exit_code(1)
         end
 
