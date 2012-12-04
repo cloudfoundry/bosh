@@ -48,9 +48,9 @@ GEM
       ruby_vcloud_sdk
       uuidtools
       yajl-ruby (>= 0.8.2)
-    bosh_vsphere_cpi (0.5.1)
+    bosh_vsphere_cpi (0.6.0)
       bosh_common
-      bosh_cpi (>= 0.4.4)
+      bosh_cpi (>= 0.5.0)
       membrane
       ruby_vim_sdk (>= 0.0.3)
       sequel
@@ -207,7 +207,7 @@ DEPENDENCIES
   bosh_encryption (>= 0.0.2)
   bosh_openstack_cpi (>= 0.0.4)
   bosh_vcloud_cpi (>= 0.4.9)
-  bosh_vsphere_cpi (>= 0.5.1)
+  bosh_vsphere_cpi (>= 0.6.0)
   ci_reporter
   eventmachine
   guard
