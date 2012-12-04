@@ -43,23 +43,31 @@ namespace "migration" do
     end
 
     migrate(config["db"]["database"], nil, "db/migrations/director")
-    migrate(config["db"]["database"], "vsphere_cpi_schema",
-            "db/migrations/vsphere_cpi")
 
     if config["dns"] && config["dns"]["db"]
       migrate(config["dns"]["db"]["database"], "dns_schema",
               "db/migrations/dns")
     end
+
+    cpi = config["cloud"]["plugin"]
+    require_path = File.join("cloud", cpi)
+    cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, require_path)) }
+    migrations = File.expand_path("../db/migrations", cpi_path)
+
+    if File.directory?(migrations)
+      migrate(config["db"]["database"], "#{cpi}_cpi_schema", migrations)
+    end
   end
 
-  task "manual", :type, :db, :schema do |task, args|
-    migrate(args[:db], args[:schema], "db/migrations/#{args[:type]}")
+  desc "Run manual migration"
+  task "manual", :path, :db, :schema, :target do |task, args|
+    migrate(args[:db], args[:schema], args[:path], args[:target])
   end
 
   def migrate(database, schema_table, dir, target = nil)
     dir = "\"#{dir}\""
     schema_table = schema_table ? "\"#{schema_table}\"" : "nil"
-    target = target ? "\"#{target}\"" : "nil"
+    target ||= "nil"
 
     script=<<-EOS
       Sequel.extension :migration
