@@ -35,7 +35,7 @@ describe Bosh::WardenCloud::Cloud do
     it "should raise error with bad image path" do
       expect {
         stemcell_id = @cloud.create_stemcell(bad_image_path, nil)
-      }.to raise_error Bosh::Clouds::CloudError
+      }.to raise_error
     end
 
     it "should clean up after an error is raised" do
@@ -50,7 +50,7 @@ describe Bosh::WardenCloud::Cloud do
 
         expect {
           stemcell_id = @cloud.create_stemcell(image_path, nil)
-        }.to raise_error Bosh::Clouds::CloudError
+        }.to raise_error
 
         Dir.glob("*").should be_empty
 

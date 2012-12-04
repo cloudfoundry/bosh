@@ -53,13 +53,13 @@ describe Bosh::WardenCloud::Cloud do
     it "should raise error if size is 0" do
       expect {
         @cloud.create_disk(0, nil)
-      }.to raise_error Bosh::Clouds::CloudError
+      }.to raise_error ArgumentError
     end
 
     it "should raise error if size is smaller than 0" do
       expect {
         @cloud.create_disk(-1, nil)
-      }.to raise_error Bosh::Clouds::CloudError
+      }.to raise_error ArgumentError
     end
 
     it "should clean up when create disk failed" do
@@ -67,7 +67,7 @@ describe Bosh::WardenCloud::Cloud do
 
       expect {
         @cloud.create_disk(1, nil)
-      }.to raise_error Bosh::Clouds::CloudError
+      }.to raise_error
 
       Disk.dataset.all.size.should == 0
       Dir.chdir(@disk_root) do

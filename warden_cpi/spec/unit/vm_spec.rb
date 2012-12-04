@@ -88,7 +88,7 @@ describe Bosh::WardenCloud::Cloud do
           "nic2" => { "type" => "dynamic" },
         }
         @cloud.create_vm("agent_id", "invalid_stemcell_id", nil, network_spec)
-      }.to raise_error Bosh::Clouds::CloudError
+      }.to raise_error ArgumentError
     end
   end
 

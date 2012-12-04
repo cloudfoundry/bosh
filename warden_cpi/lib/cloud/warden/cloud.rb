@@ -63,7 +63,8 @@ module Bosh::WardenCloud
       end
     rescue => e
       sudo "rm -rf #{stemcell_dir}" rescue nil
-      cloud_error(e)
+
+      raise e
     end
 
     ##
@@ -106,7 +107,7 @@ module Bosh::WardenCloud
         end
 
         unless Dir.exist?(stemcell_path)
-          raise ArgumentError, "Stemcell(#{stemcell_id}) not found"
+          cloud_error("Cannot find Stemcell(#{stemcell_id})")
         end
 
         vm = Models::VM.new
@@ -169,7 +170,7 @@ module Bosh::WardenCloud
       end
     rescue => e
       # TODO how to clean up
-      cloud_error(e)
+      raise e
     end
 
     ##
@@ -179,9 +180,9 @@ module Bosh::WardenCloud
     def delete_vm(vm_id)
       with_thread_name("delete_vm(#{vm_id})") do
         vm = Models::VM[vm_id.to_i]
-        raise "VM #{vm} not found" unless vm
+        cloud_error("Cannot find VM #{vm}") unless vm
 
-        raise "Cannot delete vm with disks attached" if vm.disks.size > 0
+        cloud_error("Cannot delete vm with disks attached") if vm.disks.size > 0
 
         with_warden do |client|
           request = Warden::Protocol::DestroyRequest.new
@@ -193,8 +194,6 @@ module Bosh::WardenCloud
         Models::VM[vm_id.to_i].delete
       end
 
-    rescue => e
-      cloud_error(e)
     end
 
     def reboot_vm(vm_id)
@@ -232,7 +231,7 @@ module Bosh::WardenCloud
 
         # Get a device number from the pool
         number = @pool.acquire
-        raise "Failed to fetch device number" unless number
+        cloud_error("Failed to fetch device number") unless number
 
         # Attach image file to the device
         sudo "losetup /dev/loop#{number} #{image_file}"
@@ -252,7 +251,7 @@ module Bosh::WardenCloud
       FileUtils.rm_f image_file if image_file rescue nil
       disk.destroy if disk rescue nil
 
-      cloud_error(e)
+      raise e
     end
 
     ##
@@ -264,8 +263,8 @@ module Bosh::WardenCloud
       with_thread_name("delete_disk(#{disk_id})") do
         disk = Models::Disk[disk_id.to_i]
 
-        raise "Cannot find disk #{disk_id}" unless disk
-        raise "Cannot delete attached disk" if disk.attached
+        cloud_error("Cannot find disk #{disk_id}") unless disk
+        cloud_error("Cannot delete attached disk") if disk.attached
 
         # Detach image file from loop device
         sudo "losetup -d /dev/loop#{disk.device_num}"
@@ -281,8 +280,6 @@ module Bosh::WardenCloud
 
         nil
       end
-    rescue => e
-      cloud_error(e)
     end
 
     ##
@@ -296,9 +293,9 @@ module Bosh::WardenCloud
         vm = Models::VM[vm_id.to_i]
         disk = Models::Disk[disk_id.to_i]
 
-        raise "Cannot find vm #{vm_id}" unless vm
-        raise "Cannot find disk #{disk_id}" unless disk
-        raise "disk #{disk_id} already attached" if disk.attached
+        cloud_error("Cannot find vm #{vm_id}") unless vm
+        cloud_error("Cannot find disk #{disk_id}") unless disk
+        cloud_error("Disk #{disk_id} already attached") if disk.attached
 
         # Create a device file inside warden container
         script = attach_script(disk.device_num, @device_path_prefix)
@@ -323,8 +320,6 @@ module Bosh::WardenCloud
 
         nil
       end
-    rescue => e
-      cloud_error(e)
     end
 
     ##
@@ -338,9 +333,9 @@ module Bosh::WardenCloud
         vm = Models::VM[vm_id.to_i]
         disk = Models::Disk[disk_id.to_i]
 
-        raise "Cannot find vm #{vm_id}" unless vm
-        raise "Cannot find disk #{disk_id}" unless disk
-        raise "disk #{disk_id} not attached" unless disk.attached
+        cloud_error("Cannot find vm #{vm_id}") unless vm
+        cloud_error("Cannot find disk #{disk_id}") unless disk
+        cloud_error("Disk #{disk_id} not attached") unless disk.attached
 
         device_num = disk.device_num
         device_path = disk.device_path
@@ -365,8 +360,6 @@ module Bosh::WardenCloud
 
         nil
       end
-    rescue => e
-      cloud_error(e)
     end
 
     def validate_deployment(old_manifest, new_manifest)
