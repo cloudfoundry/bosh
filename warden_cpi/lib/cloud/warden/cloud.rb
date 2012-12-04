@@ -114,9 +114,9 @@ module Bosh::WardenCloud
         # Create Container
         handle = with_warden do |client|
           request = Warden::Protocol::CreateRequest.new
-          request.rootfs = File.join(stemcell_path, 'root')
-          if networks.first[1]['type'] != 'dynamic'
-            request.network = networks.first[1]['ip'] # TODO make sure 'ip' is the right field
+          request.rootfs = File.join(stemcell_path, "root")
+          if networks.first[1]["type"] != "dynamic"
+            request.network = networks.first[1]["ip"] # TODO make sure ip is the right field
           end
 
           response = client.call(request)
@@ -136,7 +136,7 @@ module Bosh::WardenCloud
         # Agent settings
         env = generate_agent_env(vm, agent_id, networks)
 
-        tempfile = Tempfile.new('settings')
+        tempfile = Tempfile.new("settings")
         tempfile.write(Yajl::Encoder.encode(env)) # TODO make sure env is the right setting
         tempfile.close
 

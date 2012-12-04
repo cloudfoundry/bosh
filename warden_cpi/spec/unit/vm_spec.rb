@@ -5,9 +5,9 @@ describe Bosh::WardenCloud::Cloud do
   include Warden::Protocol
   include Bosh::WardenCloud::Models
 
-  DEFAULT_HANDLE = '1234'
-  DEFAULT_STEMCELL_ID = 'stemcell-abcd'
-  DEFAULT_AGENT_ID = 'agent-abcd'
+  DEFAULT_HANDLE = "1234"
+  DEFAULT_STEMCELL_ID = "stemcell-abcd"
+  DEFAULT_AGENT_ID = "agent-abcd"
 
   before :all do
     @stemcell_root = Dir.mktmpdir("warden-cpi")
@@ -43,15 +43,15 @@ describe Bosh::WardenCloud::Cloud do
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
         if request.instance_of? CreateRequest
-          request.network.should == '1.1.1.1'
-          request.rootfs.should == File.join(@stemcell_path, 'root')
+          request.network.should == "1.1.1.1"
+          request.rootfs.should == File.join(@stemcell_path, "root")
 
           resp = CreateResponse.new
           resp.handle = DEFAULT_HANDLE
         elsif request.instance_of? CopyInRequest
-          raise 'Container not found' unless request.handle == DEFAULT_HANDLE
+          raise "Container not found" unless request.handle == DEFAULT_HANDLE
           env = Yajl::Parser.parse(File.read(request.src_path))
-          env['agent_id'].should == DEFAULT_AGENT_ID
+          env["agent_id"].should == DEFAULT_AGENT_ID
           request.dst_path.should == "/var/vcap/bosh/settings.json"
 
           resp = CopyInResponse.new
@@ -77,7 +77,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it "should raise error for invalid stemcell" do
       expect {
-        @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, {})
+        @cloud.create_vm("agent_id", "invalid_stemcell_id", nil, {})
       }.to raise_error Bosh::Clouds::CloudError
     end
 
@@ -87,7 +87,7 @@ describe Bosh::WardenCloud::Cloud do
           "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
           "nic2" => { "type" => "dynamic" },
         }
-        @cloud.create_vm('agent_id', 'invalid_stemcell_id', nil, network_spec)
+        @cloud.create_vm("agent_id", "invalid_stemcell_id", nil, network_spec)
       }.to raise_error Bosh::Clouds::CloudError
     end
   end
@@ -127,7 +127,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it "should raise error when trying to delete a vm with disk attached" do
       vm = VM.new
-      vm.container_id = '1234'
+      vm.container_id = "1234"
       vm.save
 
       disk = Disk.new

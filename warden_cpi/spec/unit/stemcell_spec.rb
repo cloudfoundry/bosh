@@ -41,7 +41,7 @@ describe Bosh::WardenCloud::Cloud do
     it "should clean up after an error is raised" do
       Bosh::Exec.stub(:sh) do |cmd|
         `#{cmd}`
-        raise 'error'
+        raise "error"
       end
 
       Dir.chdir(@stemcell_root) do
