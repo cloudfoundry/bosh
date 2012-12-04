@@ -35,7 +35,7 @@ module Bosh::WardenCloud
       not_used(cloud_properties)
 
       with_thread_name("create_stemcell(#{image_path}, _)") do
-        stemcell_id = SecureRandom.uuid
+        stemcell_id = uuid("stemcell")
         stemcell_path = stemcell_path(stemcell_id)
 
         # Extract to tarball
@@ -69,7 +69,7 @@ module Bosh::WardenCloud
 
       # TODO to be implemented
 
-      vm_uuid
+      uuid("vm")
     end
 
     def delete_vm(vm_id)
@@ -87,7 +87,7 @@ module Bosh::WardenCloud
     def create_disk(size, vm_locality = nil)
       # vm_locality is a string, which might mean the disk_path
 
-      disk_id = disk_uuid
+      disk_id = uuid("disk")
       disk_path = "/tmp/disk/#{disk_id}"
 
       disk_id

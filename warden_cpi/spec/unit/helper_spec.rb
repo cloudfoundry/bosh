@@ -6,13 +6,7 @@ describe Bosh::WardenCloud::Helpers do
 
   context "uuid" do
     it "can generate the correct uuid" do
-      disk_uuid.should start_with 'disk'
-    end
-
-    it "throw exceptions on missed methods other than uuid" do
-      expect {
-        unknown_method()
-      }.to raise_error NoMethodError
+      uuid('disk').should start_with 'disk'
     end
   end
 end

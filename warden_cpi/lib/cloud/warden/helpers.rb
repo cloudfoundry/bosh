@@ -21,13 +21,5 @@ module Bosh::WardenCloud
       id
     end
 
-    def method_missing(method, *args, &block)
-      if method.to_s =~ /(.+)_uuid$/
-        uuid($1)
-      else
-        super
-      end
-    end
-
   end
 end
