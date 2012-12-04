@@ -141,7 +141,7 @@ module Bosh::Cli
           when :track_timeout
             report = "Task tracking timeout".red
           when :running
-            report = "Director task #{task_id.yellow} is running"
+            report = "Task #{task_id.yellow} running"
           when :error
             report = error_msg
           when :done
@@ -150,7 +150,7 @@ module Bosh::Cli
             report = nil
         end
 
-        if status != :done
+        unless [:running, :done].include?(status)
           exit_code(1)
         end
 
