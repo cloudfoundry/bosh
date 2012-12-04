@@ -414,7 +414,6 @@ module Bosh::WardenCloud
     end
 
     def with_warden
-      # TODO make sure client is running as root inside container
       client = Warden::Client.new(@warden_unix_path)
       client.connect
 
