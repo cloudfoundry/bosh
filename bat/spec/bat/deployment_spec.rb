@@ -136,6 +136,24 @@ describe "deployment" do
     end
   end
 
+  it "should cancel a deployment" do
+    deployment = with_deployment
+    bosh("deployment #{deployment.to_path}")
+    result = bosh("--no-track deploy")
+    task_id = get_task_id(result.output, "running")
+
+    sleep 5 # Wait for deployment to start
+    bosh("cancel task #{task_id}").should
+      succeed_with /Task #{task_id} is getting canceled/
+
+    error_event = events(task_id).last["error"]
+    error_event["code"].should == 10001
+    error_event["message"].should == "Task #{task_id} cancelled"
+
+    bosh("delete deployment #{deployment.name}")
+    deployment.delete
+  end
+
   describe "network" do
     it "should deploy using dynamic network"
 
