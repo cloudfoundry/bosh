@@ -38,9 +38,12 @@ module Bosh::AwsCloud
         end
 
         state = get_state_for(resource, state_method) do |error|
-          @logger.error("#{error.message}: #{desc}")
-          sleep(1)
-          next
+          if block_given?
+            yield error
+          else
+            @logger.error("#{error.message}: #{desc}")
+            nil
+          end
         end
 
         # This is not a very strong convention, but some resources
@@ -68,7 +71,8 @@ module Bosh::AwsCloud
     def get_state_for(resource, state_method)
       resource.send(state_method)
     rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
-        AWS::EC2::Errors::InvalidInstanceID::NotFound => e
+        AWS::EC2::Errors::InvalidInstanceID::NotFound,
+        AWS::Core::Resource::NotFound => e
       # ugly workaround for AWS race conditions:
       # 1) sometimes when we upload a stemcell and proceed to create a VM
       #    from it, AWS reports that the AMI is missing
