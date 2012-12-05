@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib", "config"]
 
   s.add_dependency "bosh_cli", ">=1.0.2"
-  s.add_dependency "bosh_cpi", "~>0.5.0"
+  s.add_dependency "bosh_cpi", "~>0.5.1"
   s.add_dependency "bosh_vcloud_cpi", "~>0.4.8"
   s.add_dependency "bosh_vsphere_cpi", "~>0.5.1"
   s.add_dependency "bosh_aws_cpi", "~>0.6.2"

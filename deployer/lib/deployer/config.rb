@@ -112,6 +112,13 @@ module Bosh::Deployer
         @networks
       end
 
+      def task_checkpoint
+        # Bosh::Clouds::Config (bosh_cli >= 0.5.1) delegates task_checkpoint
+        # method to periodically check if director task is cancelled,
+        # so we need to define a void method in Bosh::Deployer::Config to avoid
+        # NoMethodError exceptions.
+      end
+
       private
 
       def deep_merge(src, dst)
