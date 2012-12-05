@@ -1,3 +1,5 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
 Sequel.migration do
   up do
     # This used to be included in the director migrations, so we should not fail (hence create_table?) if this table
