@@ -128,8 +128,8 @@ module VSphereCloud
     def disk_spec(persistent_disks)
       disks = []
       if persistent_disks
-        persistent_disks.each do |disk_id|
-          disk = Models::Disk[disk_id]
+        persistent_disks.each do |disk_cid|
+          disk = Models::Disk.first(:uuid => disk_cid)
           disks << {
               :size => disk.size,
               :dc_name => disk.datacenter,
@@ -488,7 +488,7 @@ module VSphereCloud
     def attach_disk(vm_cid, disk_cid)
       with_thread_name("attach_disk(#{vm_cid}, #{disk_cid})") do
         @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
-        disk = Models::Disk[disk_cid]
+        disk = Models::Disk.first(:uuid => disk_cid)
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
         vm = get_vm_by_cid(vm_cid)
@@ -518,7 +518,7 @@ module VSphereCloud
             source_path = disk.path
             datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
 
-            destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.id}"
+            destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.uuid}"
             @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
 
             if Config.copy_disks
@@ -544,7 +544,7 @@ module VSphereCloud
           disk.datacenter = datacenter_name
           disk.datastore = persistent_datastore.name
           datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.id}"
+          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.uuid}"
           disk.save
           create_disk = true
         end
@@ -564,7 +564,7 @@ module VSphereCloud
         location = get_vm_location(vm, :datacenter => datacenter_name)
         env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        env["disks"]["persistent"][disk.id.to_s] = attached_disk_config.device.unit_number
+        env["disks"]["persistent"][disk.uuid] = attached_disk_config.device.unit_number
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(vm, location, env)
         @logger.info("Attaching disk")
@@ -576,7 +576,7 @@ module VSphereCloud
     def detach_disk(vm_cid, disk_cid)
       with_thread_name("detach_disk(#{vm_cid}, #{disk_cid})") do
         @logger.info("Detaching disk: #{disk_cid} from vm: #{vm_cid}")
-        disk = Models::Disk[disk_cid]
+        disk = Models::Disk.first(:uuid => disk_cid)
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
         vm = get_vm_by_cid(vm_cid)
@@ -595,7 +595,7 @@ module VSphereCloud
         location = get_vm_location(vm)
         env = get_current_agent_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        env["disks"]["persistent"].delete(disk.id.to_s)
+        env["disks"]["persistent"].delete(disk.uuid)
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
         set_agent_env(vm, location, env)
         @logger.info("Detaching disk")
@@ -622,17 +622,18 @@ module VSphereCloud
       with_thread_name("create_disk(#{size}, _)") do
         @logger.info("Creating disk with size: #{size}")
         disk = Models::Disk.new
+        disk.uuid = "disk-#{generate_unique_name}"
         disk.size = size
         disk.save
         @logger.info("Created disk: #{disk.inspect}")
-        disk.id.to_s
+        disk.uuid
       end
     end
 
     def delete_disk(disk_cid)
       with_thread_name("delete_disk(#{disk_cid})") do
         @logger.info("Deleting disk: #{disk_cid}")
-        disk = Models::Disk[disk_cid]
+        disk = Models::Disk.first(:uuid => disk_cid)
         if disk
           if disk.path
             datacenter = client.find_by_inventory_path(disk.datacenter)
