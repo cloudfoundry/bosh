@@ -37,13 +37,7 @@ module Bosh::Deployer
 
         @db = Sequel.sqlite
 
-        @db.create_table :vsphere_disk do
-          primary_key :id
-          column :path, :text
-          column :datacenter, :text
-          column :datastore, :text
-          column :size, :integer
-        end
+        migrate_cpi
 
         @db.create_table :instances do
           primary_key :id
@@ -113,6 +107,20 @@ module Bosh::Deployer
       end
 
       private
+
+      def migrate_cpi
+        cpi = @cloud_options["plugin"]
+        require_path = File.join("cloud", cpi)
+        cpi_path = $LOAD_PATH.find { |p| File.exist?(
+            File.join(p, require_path)) }
+        migrations = File.expand_path("../db/migrations", cpi_path)
+
+        if File.directory?(migrations)
+          Sequel.extension :migration
+          Sequel::TimestampMigrator.new(
+              @db, migrations, :table => "#{cpi}_cpi_schema").run
+        end
+      end
 
       def deep_merge(src, dst)
         src.merge(dst) do |key, old, new|
