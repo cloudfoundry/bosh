@@ -2,6 +2,8 @@
 
 module Bosh::Director
   class ConfigurationHasher
+    GONIT_FILENAME_REGEX = /.*gonit.yml$/
+
     # @param [DeploymentPlan::Job]
     def initialize(job)
       @job = job
@@ -44,9 +46,20 @@ module Bosh::Director
         end
       end
 
+      gonit_templates = []
+      Dir.foreach(template_dir) do |filename|
+        unless (filename =~ GONIT_FILENAME_REGEX).nil?
+          file_path = File.join(template_dir, filename)
+          gonit_template = erb(file_path)
+          gonit_template.filename = filename
+          gonit_templates << gonit_template
+        end
+      end
+
       @cached_templates[job_template.name] = {
         "templates" => templates,
-        "monit_template" => monit_template
+        "monit_template" => monit_template,
+        "gonit_templates" => gonit_templates
       }
     ensure
       FileUtils.rm_rf(template_dir) if template_dir
@@ -65,12 +78,19 @@ module Bosh::Director
           templates = @cached_templates[job_template.name]["templates"]
           monit_template =
               @cached_templates[job_template.name]["monit_template"]
+          gonit_templates =
+              cached_templates[job_template.name]["gonit_templates"]
 
           binding_helper = Bosh::Common::TemplateEvaluationContext.new(
             instance.spec)
 
           bound_templates = bind_template(monit_template, binding_helper,
                                           instance.index)
+
+          gonit_templates.each do |gonit_template|
+            bound_templates << bind_template(gonit_template, binding_helper,
+                                             instance.index)
+          end
 
           templates.keys.sort.each do |template_name|
             template = templates[template_name]
