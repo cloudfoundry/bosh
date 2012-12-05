@@ -5,6 +5,8 @@ module VimSdk
       PC = Vmodl::Query::PropertyCollector
 
       attr_reader :version
+      attr_reader :uri
+      attr_reader :http_client
 
       def initialize(uri, version, http_client)
         @uri = URI.parse(uri)
