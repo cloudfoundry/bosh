@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_vcloud_cpi (0.4.8)
+    bosh_vcloud_cpi (0.4.9)
       bosh_common
       bosh_cpi (>= 0.4.2)
       ruby_vcloud_sdk
