@@ -29,11 +29,11 @@ module Bosh::Deployer
 
     # @return [Integer] size in MiB
     def disk_size(cid)
-      disk_model[cid].size
+      disk_model.first(:uuid => cid).size
     end
 
     def persistent_disk_changed?
-      Config.resources['persistent_disk'] != disk_size(state.disk_cid)
+      Config.resources["persistent_disk"] != disk_size(state.disk_cid)
     end
 
     def check_dependencies
