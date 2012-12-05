@@ -204,6 +204,10 @@ def create_job(name, monit, configuration_files, options = { })
       monit_file = options[:monit_file] ? options[:monit_file] : "monit"
       tar.add_file(monit_file, {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
     end
+    if options[:include_gonit]
+      gonit_file = "monit"
+      tar.add_file(gonit_file, {:mode => "0644", :mtime => 0}) { |os, _| os.write("gonit contents") }
+    end
 
     tar.mkdir("templates", {:mode => "0755", :mtime => 0})
     configuration_files.each do |path, configuration_file|
