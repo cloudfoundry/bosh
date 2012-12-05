@@ -11,9 +11,9 @@ require "common/exec"
 module BoshHelper
   include Archive::Tar
 
-  # TODO use BOSH_BIN ?
   def bosh(arguments, options={})
-    command = "bosh --non-interactive #{arguments} 2>&1"
+    @bosh_bin ||= ENV['BAT_BOSH_BIN'] || "bosh"
+    command = "#{@bosh_bin} --non-interactive #{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log
     result = Bosh::Exec.sh(command, options)
