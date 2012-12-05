@@ -10,7 +10,7 @@ describe Bosh::Deployer::InstanceManager do
     @config = YAML.load_file(spec_asset("test-bootstrap-config.yml"))
     @config["dir"] = @dir
     @config["name"] = "spec-#{UUIDTools::UUID.random_create.to_s}"
-    @config["logging"] = { "file" => "#{@dir}/bmim.log" }
+    @config["logging"] = {"file" => "#{@dir}/bmim.log"}
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = mock("cloud")
     Bosh::Deployer::Config.stub!(:cloud).and_return(@cloud)
@@ -174,7 +174,11 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.state.stemcell_cid = "SC-CID-UPDATE"
     @deployer.state.vm_cid = "VM-CID-UPDATE"
     @deployer.state.disk_cid = disk_cid
-    @deployer.disk_model.insert({:id => disk_cid, :size => 4096})
+
+    disk = @deployer.disk_model.new
+    disk.uuid = disk_cid
+    disk.size = 4096
+    disk.save
 
     @agent.should_receive(:run_task).with(:stop)
     @agent.should_receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
