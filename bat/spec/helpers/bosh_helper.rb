@@ -11,9 +11,8 @@ require "common/exec"
 module BoshHelper
   include Archive::Tar
 
-  # TODO use BOSH_BIN ?
   def bosh(arguments, options={})
-    command = "bosh --non-interactive #{arguments} 2>&1"
+    command = "#{bosh_bin} --non-interactive #{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log
     result = Bosh::Exec.sh(command, options)
@@ -22,6 +21,10 @@ module BoshHelper
   rescue Bosh::Exec::Error => e
     msg = "failed to execute '#{command}':\n#{e.output}"
     raise Bosh::Exec::Error.new(e.status, msg, e.output)
+  end
+
+  def bosh_bin
+    read_environment('BAT_BOSH_BIN', 'bosh')
   end
 
   def bosh_director
@@ -77,11 +80,10 @@ module BoshHelper
     info["features"] && info["features"]["colocation"]
   end
 
-  def read_environment(variable)
-    if ENV[variable]
-      ENV[variable]
-    else
-      raise "#{variable} not set"
+  def read_environment(variable, default=nil)
+    ENV.fetch(variable) do |v|
+      return default if default
+      raise "#{v} not set"
     end
   end
 
