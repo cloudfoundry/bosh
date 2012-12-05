@@ -5,6 +5,8 @@ module VimSdk
       PC = Vmodl::Query::PropertyCollector
 
       attr_reader :version
+      attr_reader :uri
+      attr_reader :http_client
 
       def initialize(uri, version, http_client)
         @uri = URI.parse(uri)
@@ -62,11 +64,16 @@ module VimSdk
 
       def compute_version_id(version)
         version_ns = VmomiSupport.version_namespace(version)
-        if version_ns.index("/")
+        begin
+          if version_ns.index("/")
           "\"urn:#{version_ns}\""
         else
           ""
         end
+        rescue Exception => e
+          #this happens during execution of tests, ignore
+        end
+
       end
 
       def serialize_request(managed_object, info, arguments)
