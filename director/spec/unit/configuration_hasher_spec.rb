@@ -46,6 +46,47 @@ describe Bosh::Director::ConfigurationHasher do
     configuration_hasher.hash
   end
 
+  it "should hash a job with gonit files" do
+    template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
+
+    instance_spec = mock("instance_spec")
+    template_spec = mock("template_spec", :template => template)
+    job_spec = mock("job_spec")
+
+    template_spec.stub!(:blobstore_id).and_return("b_id")
+    template_spec.stub!(:name).and_return("router")
+    job_spec.stub!(:name).and_return("foo")
+    job_spec.stub!(:instances).and_return([instance_spec])
+    job_spec.stub!(:templates).and_return([template_spec])
+    instance_spec.stub!(:index).and_return(0)
+    instance_spec.stub!(:spec).and_return(
+      {
+        "job" => {"name" => "foo"},
+        "test" => "spec",
+        "properties" => {"foo" => "bar"},
+        "index" => 0
+      })
+
+    template_contents =
+      create_job("foo", "monit file",
+                 {"test" => {
+                   "destination" => "test_dst",
+                   "contents" => "test contents"}
+                 }, {:include_gonit => true})
+
+    tmp_file = Tempfile.new("blob")
+    File.open(tmp_file.path, "w") { |f| f.write(template_contents) }
+    template_spec.should_receive(:download_blob).and_return(tmp_file.path)
+
+    instance_spec.should_receive(:configuration_hash=).
+      with("0d34123c19ab0eb9b10c89c26abb17821873b757")
+    instance_spec.should_receive(:template_hashes=).with(
+        {"router"=>"0d34123c19ab0eb9b10c89c26abb17821873b757"})
+
+    configuration_hasher = Bosh::Director::ConfigurationHasher.new(job_spec)
+    configuration_hasher.hash
+  end
+
   it "should correctly hash a job with two templates and two instances" do
     template = Bosh::Director::Models::Template.make(:blobstore_id => "b_id")
     template2 = Bosh::Director::Models::Template.make(:blobstore_id => "b_id2")
