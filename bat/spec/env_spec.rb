@@ -17,6 +17,17 @@ describe "initialization" do
     end
 
     describe "requirements" do
+      it "should have bosh cli installed" do
+        if bosh_bin = ENV['BAT_BOSH_BIN']
+          File.file?(bosh_bin).should be_true
+          File.executable?(bosh_bin).should be_true
+        else
+          bosh_bin = "bosh"
+        end
+
+        `#{bosh_bin} -v`.should match %r{BOSH \d+\.\d+\.\d+}
+      end
+
       it "should have a readable stemcell" do
         File.exist?(stemcell.to_path).should be_true
       end
