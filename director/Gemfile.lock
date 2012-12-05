@@ -42,7 +42,7 @@ GEM
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
-    bosh_vcloud_cpi (0.4.8)
+    bosh_vcloud_cpi (0.4.9)
       bosh_common
       bosh_cpi (>= 0.4.2)
       ruby_vcloud_sdk
@@ -206,7 +206,7 @@ DEPENDENCIES
   bosh_cpi (>= 0.4.3)
   bosh_encryption (>= 0.0.2)
   bosh_openstack_cpi (>= 0.0.4)
-  bosh_vcloud_cpi (>= 0.4.8)
+  bosh_vcloud_cpi (>= 0.4.9)
   bosh_vsphere_cpi (>= 0.5.1)
   ci_reporter
   eventmachine
