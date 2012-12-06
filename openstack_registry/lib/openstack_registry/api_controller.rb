@@ -17,7 +17,7 @@ module Bosh::OpenstackRegistry
 
     get "/servers/:server_id/settings" do
       ip_check = authorized? ? nil : request.ip
-      settings = @server_manager.read_settings(params[:server_id])
+      settings = @server_manager.read_settings(params[:server_id], ip_check)
       json(:status => "ok", :settings => settings)
     end
 

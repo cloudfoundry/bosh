@@ -22,7 +22,7 @@ describe Bosh::OpenstackRegistry::ApiController do
 
   it "returns settings for given OpenStack server (IP check)" do
     @server_manager.should_receive(:read_settings).
-      with("foo").and_return("bar")
+      with("foo", "127.0.0.1").and_return("bar")
 
     @session.get("/servers/foo/settings")
 
@@ -32,7 +32,7 @@ describe Bosh::OpenstackRegistry::ApiController do
 
   it "returns settings (authorized user, no IP check)" do
     @server_manager.should_receive(:read_settings).
-      with("foo").and_return("bar")
+      with("foo", nil).and_return("bar")
 
     @session.basic_authorize("admin", "admin")
     @session.get("/servers/foo/settings")
