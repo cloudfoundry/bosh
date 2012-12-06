@@ -60,9 +60,9 @@ module Bosh::AwsCloud
 
       candidate
     end
-  end
 
-  def logger
-    Bosh::Clouds::Config.logger
+    def logger
+      Bosh::Clouds::Config.logger
+    end
   end
 end

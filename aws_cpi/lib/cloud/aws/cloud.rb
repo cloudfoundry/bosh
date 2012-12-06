@@ -330,7 +330,6 @@ module Bosh::AwsCloud
           # These three variables are used in 'ensure' clause
           instance = nil
           volume = nil
-          snapshot = nil
           # 1. Create and mount new EBS volume (2GB default)
           disk_size = cloud_properties["disk"] || 2048
           volume_id = create_disk(disk_size, current_instance_id)
@@ -361,17 +360,32 @@ module Bosh::AwsCloud
             detach_ebs_volume(instance, volume)
             delete_disk(volume.id)
           end
-          snapshot.delete if snapshot
         end
       end
     end
 
-    # Delete a stemcell
+    # Delete a stemcell and the accompanying snapshots
     # @param [String] stemcell_id EC2 AMI name of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
+        snapshots = []
         image = @ec2.images[stemcell_id]
+
+        image.block_device_mappings.each do |device, map|
+          id = map.snapshot_id
+          if id
+            @logger.debug("queuing snapshot #{id} for deletion")
+            snapshots << id
+          end
+        end
+
         image.deregister
+
+        snapshots.each do |id|
+          @logger.info("cleaning up snapshot #{id}")
+          snapshot = @ec2.snapshots[id]
+          snapshot.delete
+        end
       end
     end
 
@@ -562,10 +576,11 @@ module Bosh::AwsCloud
       attachment = volume.detach_from(instance, device_map[volume.id])
       @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
-      begin
-        wait_resource(attachment, :detached)
-      rescue AWS::Core::Resource::NotFound
-        # It's OK, just means attachment is gone by now
+      wait_resource(attachment, :detached) do |error|
+        if error.is_a? AWS::Core::Resource::NotFound
+          @logger.info("attachment is no longer found, assuming it to be detached")
+          :detached
+        end
       end
     end
 
