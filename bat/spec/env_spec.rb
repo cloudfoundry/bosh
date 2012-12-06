@@ -17,6 +17,10 @@ describe "initialization" do
     end
 
     describe "requirements" do
+      it "should have bosh cli installed" do
+        %x{#{bosh_bin} --version}.should match %r{BOSH \d+\.\d+}
+      end
+
       it "should have a readable stemcell" do
         File.exist?(stemcell.to_path).should be_true
       end
