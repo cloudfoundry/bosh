@@ -42,7 +42,7 @@ module Bosh::AwsCloud
       payload = Yajl::Encoder.encode(settings)
       url = "#{@endpoint}/instances/#{instance_id}/settings"
 
-      response = @client.put(url, payload, @headers)
+      response = @client.put(url, {:body => payload, :header => @headers})
 
       if response.status != 200
         cloud_error("Cannot update settings for `#{instance_id}', " \
@@ -59,7 +59,7 @@ module Bosh::AwsCloud
     def read_settings(instance_id)
       url = "#{@endpoint}/instances/#{instance_id}/settings"
 
-      response = @client.get(url, {}, @headers)
+      response = @client.get(url, {:header => @headers})
 
       if response.status != 200
         cloud_error("Cannot read settings for `#{instance_id}', " \
@@ -94,7 +94,7 @@ module Bosh::AwsCloud
     def delete_settings(instance_id)
       url = "#{@endpoint}/instances/#{instance_id}/settings"
 
-      response = @client.delete(url, @headers)
+      response = @client.delete(url, {:header => @headers})
 
       if response.status != 200
         cloud_error("Cannot delete settings for `#{instance_id}', " \
