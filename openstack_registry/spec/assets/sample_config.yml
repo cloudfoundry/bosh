@@ -16,3 +16,4 @@ openstack:
   username: foo
   api_key: bar
   tenant: foo
+  region:

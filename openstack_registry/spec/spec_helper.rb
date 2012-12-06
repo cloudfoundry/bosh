@@ -101,7 +101,8 @@ def valid_config
       "auth_url" => "http://127.0.0.1:5000/v2.0/tokens",
       "username" => "foo",
       "api_key" => "bar",
-      "tenant" => "foo"
+      "tenant" => "foo",
+      "region" => ""
     }
   }
 end
