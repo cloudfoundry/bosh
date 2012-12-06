@@ -7,5 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-# Copy root
-time rsync -aHA $chroot/* $work/stemcell/root
+pushd $chroot
+tar zcvf $work/stemcell/image .
+popd
