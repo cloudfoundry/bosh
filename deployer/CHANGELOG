@@ -1,4 +1,12 @@
-=== 1.3.0 - 2012-12-5
+=== 1.3.1 - 2013-01-04
+* use cpi 0.5.1
+* use aws cpi 0.6.3
+* use vcloud cpi 0.4.9
+* use openstack cpi 0.0.5
+* use openstack registry 0.0.5
+* set agent ntp
+
+=== 1.3.0 - 2012-12-05
 * use CPI gems for any DB migrations
 
 === 1.2.0 - 2012-11-29
