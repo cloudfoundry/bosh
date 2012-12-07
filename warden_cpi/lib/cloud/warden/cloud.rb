@@ -44,7 +44,7 @@ module Bosh::WardenCloud
     def create_stemcell(image_path, cloud_properties)
       not_used(cloud_properties)
 
-      stemcell_id = uuid("stemcell")
+      stemcell_id = uuid("warden-stemcell")
       stemcell_dir = stemcell_path(stemcell_id)
 
       with_thread_name("create_stemcell(#{image_path}, _)") do
