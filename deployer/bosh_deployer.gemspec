@@ -14,10 +14,10 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib", "config"]
 
   s.add_dependency "bosh_cli", ">=1.0.2"
-  s.add_dependency "bosh_cpi", "~>0.5.1"
+  s.add_dependency "bosh_cpi", ">=0.5.1"
   s.add_dependency "bosh_vcloud_cpi", "~>0.4.9"
   s.add_dependency "bosh_vsphere_cpi", ">=0.6.0"
-  s.add_dependency "bosh_aws_cpi", "~>0.6.2"
+  s.add_dependency "bosh_aws_cpi", ">=0.6.3"
   s.add_dependency "bosh_aws_registry", "~>0.2.2"
   s.add_dependency "bosh_openstack_cpi", "~>0.0.3"
   s.add_dependency "bosh_openstack_registry", "~>0.0.2"
