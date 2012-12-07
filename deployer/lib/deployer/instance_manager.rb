@@ -163,12 +163,14 @@ module Bosh::Deployer
     end
 
     def destroy
-      renderer.enter_stage("Delete micro BOSH", 6)
+      renderer.enter_stage("Delete micro BOSH", 7)
       agent_stop
       if state.disk_cid
-        delete_disk(state.disk_cid, state.vm_cid)
-        state.disk_cid = nil
-        save_state
+        step "Deleting persistent disk `#{state.disk_cid}'" do
+          delete_disk(state.disk_cid, state.vm_cid)
+          state.disk_cid = nil
+          save_state
+        end
       end
       delete_vm
       delete_stemcell
@@ -287,7 +289,7 @@ module Bosh::Deployer
 
     def detach_disk(disk_cid)
       unless disk_cid
-        err "Error while detaching disk: unknown disk attached to instance"
+        err "Error: nil value given for persistent disk id"
       end
 
       unmount_disk(disk_cid)

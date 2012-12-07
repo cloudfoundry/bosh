@@ -58,16 +58,18 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should not allow deploying a micro BOSH instance if no stemcell is provided" do
-      lambda {
+      expect {
         @cmd.stub!(:deployment).and_return(@manifest_path)
         @manifest_yaml = { "name" => "foo" }
         @cmd.stub!(:load_yaml_file).and_return(@manifest_yaml)
         @cmd.perform()
-      }.should raise_error(Bosh::Cli::CliError, "No stemcell provided")
+      }.to raise_error(Bosh::Cli::CliError, "No stemcell provided")
     end
 
     it "should require a persistent disk" do
-      lambda {
+      file = Bosh::Cli::Command::Micro::MICRO_BOSH_YAML
+      error_message = "No persistent disk configured in #{file}"
+      expect {
         mock_deployer = mock(Bosh::Deployer::InstanceManager)
         mock_deployer.should_receive(:check_dependencies)
         mock_deployer.should_receive(:exists?).exactly(1).times
@@ -79,7 +81,7 @@ describe Bosh::Cli::Command::Base do
         @manifest_yaml["resources"]["persistent_disk"] = nil
         @cmd.stub!(:deployer).and_return(mock_deployer)
         @cmd.perform()
-      }.should raise_error(Bosh::Cli::CliExit, "No persistent disk configured!")
+      }.to raise_error(Bosh::Cli::CliExit, error_message)
     end
 
   end
