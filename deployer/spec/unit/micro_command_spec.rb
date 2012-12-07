@@ -84,6 +84,22 @@ describe Bosh::Cli::Command::Base do
       }.to raise_error(Bosh::Cli::CliExit, error_message)
     end
 
+    it "should clear cached target values when setting a new deployment" do
+      @cmd.stub(:find_deployment).with("foo").and_return(spec_asset("test-bootstrap-config-aws.yml"))
+      @cmd.stub_chain(:deployer, :discover_bosh_ip).and_return(nil)
+
+      config = double("config", :target => "target", :resolve_alias => nil, :set_deployment => nil)
+
+      config.should_receive(:target=).with("http://foo:25555")
+      config.should_receive(:target_name=).with(nil)
+      config.should_receive(:target_version=).with(nil)
+      config.should_receive(:target_uuid=).with(nil)
+      config.should_receive(:save)
+
+      @cmd.stub(:config).and_return(config)
+
+      @cmd.set_current("foo")
+    end
   end
 
 end
