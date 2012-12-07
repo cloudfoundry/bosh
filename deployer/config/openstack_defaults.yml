@@ -33,7 +33,7 @@ cloud:
       default_security_groups: []
       ssh_user: vcap
     registry:
-      endpoint: http://admin:admin@localhost:25889
+      endpoint: http://admin:admin@localhost:25555
       user: admin
       password: admin
     stemcell:
