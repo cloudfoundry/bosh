@@ -20,3 +20,4 @@ group :development, :test do
 end
 
 gem "warden-client", :git => "https://github.com/cloudfoundry/warden.git", :ref => '2dc6f5de'
+gem "warden-protocol", :git => "https://github.com/cloudfoundry/warden.git", :ref => '2dc6f5de'
