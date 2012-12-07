@@ -57,6 +57,11 @@ describe Bosh::WardenCloud::Cloud do
           resp = CopyInResponse.new
         elsif request.instance_of? RunRequest
           resp = RunResponse.new
+        elsif request.instance_of? SpawnRequest
+          request.script.should == "/usr/sbin/runsvdir-start"
+          request.privileged.should == true
+
+          resp = SpawnResponse.new
         else
           raise "not supported"
         end
