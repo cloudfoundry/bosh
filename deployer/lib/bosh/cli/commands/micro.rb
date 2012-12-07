@@ -9,6 +9,7 @@ module Bosh::Cli::Command
 
     MICRO_DIRECTOR_PORT = 25555
     DEFAULT_CONFIG_PATH = File.expand_path("~/.bosh_deployer_config")
+    MICRO_BOSH_YAML = "micro_bosh.yml"
 
     def initialize(runner)
       super(runner)
@@ -139,7 +140,7 @@ module Bosh::Cli::Command
 
         # make sure the user knows a persistent disk is required
         unless dig_hash(manifest, "resources", "persistent_disk")
-          quit("No persistent disk configured!".red)
+          quit("No persistent disk configured in #{MICRO_BOSH_YAML}".red)
         end
 
         confirmation = "Deploying new"
@@ -296,7 +297,7 @@ module Bosh::Cli::Command
 
     def find_deployment(name)
       check_if_deployments_dir
-      File.expand_path(File.join(work_dir, "#{name}", "micro_bosh.yml"))
+      File.expand_path(File.join(work_dir, "#{name}", MICRO_BOSH_YAML))
     end
 
     def deployment_name
