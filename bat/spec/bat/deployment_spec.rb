@@ -3,7 +3,7 @@
 require "spec_helper"
 
 describe "deployment" do
-  DEPLOYED_REGEXP = /Deployed \`\S+' to \`\S+'/
+  DEPLOYED_REGEXP = /Deployed \`.*' to \`.*'/
   SAVE_FILE = "/var/vcap/store/batarang/save"
 
   before(:all) do
