@@ -444,6 +444,7 @@ module Bosh::WardenCloud
         "agent_id" => agent_id,
         "networks" => networks,
       }
+      env.merge!(@agent_properties)
       env
     end
 

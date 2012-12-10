@@ -9,6 +9,7 @@ def cloud_options
   {
     "warden" => warden_options,
     "stemcell" => stemcell_options,
+    "agent" => agent_options,
   }
 end
 
@@ -21,6 +22,17 @@ end
 def stemcell_options
   {
     "root" => "/var/vcap/stemcell",
+  }
+end
+
+def agent_options
+  {
+    "blobstore" => {
+      "plugin" => "simple",
+      "properties" => {},
+    },
+    "mbus" => "nats://nats:nats@localhost:4222",
+    "ntp" => [],
   }
 end
 

@@ -22,6 +22,7 @@ describe Bosh::WardenCloud::Cloud do
   before :each do
     options = {
       "stemcell" => { "root" => @stemcell_root },
+      "agent" => agent_options,
     }
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
 
@@ -54,6 +55,9 @@ describe Bosh::WardenCloud::Cloud do
           env["agent_id"].should == DEFAULT_AGENT_ID
           env["vm"]["name"].should_not == nil
           env["vm"]["id"].should_not == nil
+          env["mbus"].should_not == nil
+          env["ntp"].should be_instance_of Array
+          env["blobstore"].should be_instance_of Hash
           request.dst_path.should == "/var/vcap/bosh/settings.json"
 
           resp = CopyInResponse.new
