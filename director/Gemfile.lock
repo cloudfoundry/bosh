@@ -35,9 +35,9 @@ GEM
       gibberish (~> 1.2.0)
       uuidtools (~> 2.1.2)
       yajl-ruby
-    bosh_openstack_cpi (0.0.4)
+    bosh_openstack_cpi (0.0.5)
       bosh_common (>= 0.5.1)
-      bosh_cpi (>= 0.4.4)
+      bosh_cpi (>= 0.5.1)
       fog (>= 1.6.0)
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
@@ -205,7 +205,7 @@ DEPENDENCIES
   bosh_common (>= 0.5.1)
   bosh_cpi (>= 0.4.3)
   bosh_encryption (>= 0.0.2)
-  bosh_openstack_cpi (>= 0.0.4)
+  bosh_openstack_cpi (>= 0.0.5)
   bosh_vcloud_cpi (>= 0.4.9)
   bosh_vsphere_cpi (>= 0.6.0)
   ci_reporter
