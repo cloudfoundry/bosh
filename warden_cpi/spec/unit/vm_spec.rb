@@ -52,6 +52,8 @@ describe Bosh::WardenCloud::Cloud do
           raise "Container not found" unless request.handle == DEFAULT_HANDLE
           env = Yajl::Parser.parse(File.read(request.src_path))
           env["agent_id"].should == DEFAULT_AGENT_ID
+          env["vm"]["name"].should_not == nil
+          env["vm"]["id"].should_not == nil
           request.dst_path.should == "/var/vcap/bosh/settings.json"
 
           resp = CopyInResponse.new

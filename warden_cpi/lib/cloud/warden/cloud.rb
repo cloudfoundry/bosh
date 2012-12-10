@@ -110,7 +110,7 @@ module Bosh::WardenCloud
           cloud_error("Cannot find Stemcell(#{stemcell_id})")
         end
 
-        vm = Models::VM.new
+        vm = Models::VM.create
 
         # Create Container
         handle = with_warden do |client|
@@ -123,6 +123,7 @@ module Bosh::WardenCloud
           response = client.call(request)
           response.handle
         end
+        vm.container_id = handle
 
         # Chown /var/vcap from root to vcap
         with_warden do |client|
@@ -168,7 +169,6 @@ module Bosh::WardenCloud
         end
 
         # Save to DB
-        vm.container_id = handle
         vm.save
 
         vm.id.to_s
