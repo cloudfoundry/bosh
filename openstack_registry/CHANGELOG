@@ -1,0 +1,6 @@
+=== 0.0.4 - 2012-12-10
+
+* verify IP if no auth credentials are provided
+* added basic documentation
+* added OpenStack regions support
+* fixed EM error handling
