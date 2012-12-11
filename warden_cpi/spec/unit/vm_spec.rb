@@ -45,7 +45,7 @@ describe Bosh::WardenCloud::Cloud do
         resp = nil
         if request.instance_of? CreateRequest
           request.network.should == "1.1.1.1"
-          request.rootfs.should == File.join(@stemcell_path, "root")
+          request.rootfs.should == @stemcell_path
 
           resp = CreateResponse.new
           resp.handle = DEFAULT_HANDLE

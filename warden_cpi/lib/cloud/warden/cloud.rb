@@ -115,7 +115,7 @@ module Bosh::WardenCloud
         # Create Container
         handle = with_warden do |client|
           request = Warden::Protocol::CreateRequest.new
-          request.rootfs = File.join(stemcell_path, "root")
+          request.rootfs = stemcell_path
           if networks.first[1]["type"] != "dynamic"
             request.network = networks.first[1]["ip"] # TODO make sure ip is the right field
           end
