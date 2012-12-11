@@ -12,7 +12,9 @@ module BoshHelper
   include Archive::Tar
 
   def bosh(arguments, options={})
-    command = "#{bosh_bin} --non-interactive #{arguments} 2>&1"
+    command = "#{bosh_bin} --non-interactive --config " +
+      "#{BH::bosh_cli_config_path} --user admin --password admin " +
+      "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log
     result = Bosh::Exec.sh(command, options)
@@ -23,16 +25,20 @@ module BoshHelper
     raise Bosh::Exec::Error.new(e.status, msg, e.output)
   end
 
+  def self.bosh_cli_config_path
+    BH.read_environment('BAT_BOSH_CLI_CONFIG', ".bosh_cli_config")
+  end
+
   def bosh_bin
-    read_environment('BAT_BOSH_BIN', 'bosh')
+    BH.read_environment('BAT_BOSH_BIN', 'bosh')
   end
 
   def bosh_director
-    read_environment('BAT_DIRECTOR')
+    BH.read_environment('BAT_DIRECTOR')
   end
 
   def password
-    read_environment('BAT_VCAP_PASSWORD')
+    BH.read_environment('BAT_VCAP_PASSWORD')
   end
 
   def debug?
@@ -80,7 +86,7 @@ module BoshHelper
     info["features"] && info["features"]["colocation"]
   end
 
-  def read_environment(variable, default=nil)
+  def self.read_environment(variable, default=nil)
     ENV.fetch(variable) do |v|
       return default if default
       raise "#{v} not set"
