@@ -125,12 +125,13 @@ module Bosh::WardenCloud
         end
         vm.container_id = handle
 
-        # Chown /var/vcap from root to vcap
+        # Make /var/vcap/bosh writable for all
+        # This is because warden only supports copy_in as non-privileged user
         with_warden do |client|
           request = Warden::Protocol::RunRequest.new
           request.handle = handle
           request.privileged = true
-          request.script = "chown -R vcap:vcap /var/vcap"
+          request.script = "chmod 777 /var/vcap/bosh"
 
           client.call(request)
         end
