@@ -5,6 +5,8 @@ module Bosh::AwsRegistry
   class ApiController < Sinatra::Base
 
     not_found do
+      exception = request.env["sinatra.error"]
+      @logger.error(exception.message)
       json(:status => "not_found")
     end
 
