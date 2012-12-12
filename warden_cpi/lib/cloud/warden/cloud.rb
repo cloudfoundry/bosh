@@ -402,6 +402,8 @@ module Bosh::WardenCloud
       @pool_size = @disk_properties["pool_count"] || DEFAULT_POOL_SIZE
       @pool_start_number = @disk_properties["pool_start_number"] || DEFAULT_POOL_START_NUMBER
       @device_path_prefix = @disk_properties["device_path_prefix"] || DEFAULT_DEVICE_PREFIX
+
+      FileUtils.mkdir_p(@disk_root)
     end
 
     def setup_pool
