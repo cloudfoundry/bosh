@@ -27,7 +27,7 @@ describe Bosh::OpenstackRegistry::ServerManager do
     })
 
     @compute.should_receive(:servers).and_return(servers)
-    servers.should_receive(:get).with("foo").and_return(server)
+    servers.should_receive(:find).and_return(server)
   end
 
   describe "reading settings" do
@@ -69,7 +69,7 @@ describe Bosh::OpenstackRegistry::ServerManager do
       expect {
         servers = mock("servers")
         @compute.should_receive(:servers).and_return(servers)
-        servers.should_receive(:get).with("foo").and_return(nil)
+        servers.should_receive(:find).and_return(nil)
         create_server(:server_id => "foo", :settings => "bar")
         manager.read_settings("foo", "10.0.0.1")
       }.to raise_error(Bosh::OpenstackRegistry::ServerNotFound,

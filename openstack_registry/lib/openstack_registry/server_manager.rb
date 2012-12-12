@@ -64,7 +64,7 @@ module Bosh::OpenstackRegistry
 
     # Get the list of IPs belonging to this server
     def server_ips(server_id)
-      server = @openstack.servers.get(server_id)
+      server = @openstack.servers.find { |s| s.name == server_id }
       raise ServerNotFound, "Server `#{server_id}' not found" unless server
       ips = []
       server.addresses.each do |network, addresses|
