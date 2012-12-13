@@ -9,7 +9,7 @@ module Bosh::WardenCloud
     DEFAULT_FS_TYPE = "ext4"
     DEFAULT_POOL_SIZE = 128
     DEFAULT_POOL_START_NUMBER = 10
-    DEFAULT_DEVICE_PREFIX = "/dev/sdz"
+    DEFAULT_DEVICE_PREFIX = "/dev/sd"
 
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
 
@@ -138,19 +138,7 @@ module Bosh::WardenCloud
 
         # Agent settings
         env = generate_agent_env(vm, agent_id, networks)
-
-        tempfile = Tempfile.new("settings")
-        tempfile.write(Yajl::Encoder.encode(env)) # TODO make sure env is the right setting
-        tempfile.close
-
-        with_warden do |client|
-          request = Warden::Protocol::CopyInRequest.new
-          request.handle = handle
-          request.src_path = tempfile.path
-          request.dst_path = agent_settings_file
-
-          client.call(request)
-        end
+        set_agent_env(vm.container_id, env)
 
         # Notice: It's a little hacky, but it's the way it is now.
         #
@@ -318,6 +306,11 @@ module Bosh::WardenCloud
           stdout.strip
         end
 
+        # Save device path into agent env settings
+        env = get_agent_env(vm.container_id)
+        env["disks"]["persistent"][disk_id] = device_path
+        set_agent_env(vm.container_id, env)
+
         # Save DB entry
         disk.device_path = device_path
         disk.attached = true
@@ -346,14 +339,19 @@ module Bosh::WardenCloud
         device_num = disk.device_num
         device_path = disk.device_path
 
+        # Save device path into agent env settings
+        env = get_agent_env(vm.container_id)
+        env["disks"]["persistent"][disk_id] = nil
+        set_agent_env(vm.container_id, env)
+
         # Save DB entry
         disk.attached = false
         disk.device_path = nil
         disk.vm = nil
         disk.save
 
-        # Remove the device file inside warden container
-        script = "rm #{device_path}"
+        # Remove the device file and partition file inside warden container
+        script = "rm #{partition_path(device_path)} #{device_path}"
 
         with_warden do |client|
           request = Warden::Protocol::RunRequest.new
@@ -446,9 +444,53 @@ module Bosh::WardenCloud
         "vm" => vm_env,
         "agent_id" => agent_id,
         "networks" => networks,
+        "disks" => { "persistent" => {} },
       }
       env.merge!(@agent_properties)
       env
+    end
+
+    def get_agent_env(handle)
+      tempfile = Tempfile.new("settings_out")
+      tempfile.close
+
+      with_warden do |client|
+        request = Warden::Protocol::CopyOutRequest.new
+        request.handle = handle
+        request.src_path = agent_settings_file
+        request.dst_path = tempfile.path
+
+        client.call(request)
+      end
+
+      # TODO: use run request to cat out the agent setting file
+      # This looks tricky, because the copied out file is owned by root, and all
+      # the files in temp dir is 700. We need to add read permission to the temp
+      # file.
+      sudo "chmod +r #{tempfile.path}"
+
+      body = File.read(tempfile.path)
+      tempfile.unlink
+
+      env = Yajl::Parser.parse(body)
+      env
+    end
+
+    def set_agent_env(handle, env)
+      tempfile = Tempfile.new("settings")
+      tempfile.write(Yajl::Encoder.encode(env))
+      tempfile.close
+
+      with_warden do |client|
+        request = Warden::Protocol::CopyInRequest.new
+        request.handle = handle
+        request.src_path = tempfile.path
+        request.dst_path = agent_settings_file
+
+        client.call(request)
+      end
+
+      tempfile.unlink
     end
 
   end
