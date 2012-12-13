@@ -42,6 +42,9 @@ describe Bosh::WardenCloud::Cloud do
     attached_disk.vm = vm
     attached_disk.save
     @attached_disk_id = attached_disk.id.to_s
+
+    @cloud.delegate.stub(:get_agent_env).and_return({"disks" => {"persistent" => {}}})
+    @cloud.delegate.stub(:set_agent_env) {}
   end
 
   after :each do
@@ -133,10 +136,10 @@ describe Bosh::WardenCloud::Cloud do
     before :each do
       @device_root = Dir.mktmpdir("warden-cpi-device")
 
-      @device_prefix = File.join(@device_root, "sda")
+      @device_prefix = File.join(@device_root, "sd")
 
-      1.upto 5 do |i|
-        FileUtils.touch("#{@device_prefix}#{i}")
+      ["a", "b", "c"].each do |i|
+        FileUtils.touch("#{@device_prefix}#{i}1")
       end
     end
 
@@ -148,7 +151,7 @@ describe Bosh::WardenCloud::Cloud do
       script = attach_script(10, @device_prefix)
       device_file = sh("sudo bash -c '#{script}'").output.strip
 
-      device_file.should == "#{@device_prefix}6"
+      device_file.should == "#{@device_prefix}d1"
       File.exist?(device_file).should be_true
     end
   end

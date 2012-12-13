@@ -28,10 +28,13 @@ module Bosh::WardenCloud
       Bosh::Exec.sh "#{cmd}"
     end
 
+    # This method generate a script that is run inside a container, to get an
+    # available partition name. Partition name has a "1" in the end. For example,
+    # /dev/sda1.
     def attach_script(device_number, device_prefix)
       script = <<-EOF
-for i in `seq 256`; do (stat #{device_prefix}$i > /dev/null 2>&1) || break; done
-mknod #{device_prefix}$i b 7 #{device_number} > /dev/null 2>&1 && echo "#{device_prefix}$i"
+for i in a b c d e f g h; do (stat #{device_prefix}${i}1 > /dev/null 2>&1) || break; done
+mknod #{device_prefix}${i}1 b 7 #{device_number} > /dev/null 2>&1 && echo "#{device_prefix}${i}1"
       EOF
     end
 

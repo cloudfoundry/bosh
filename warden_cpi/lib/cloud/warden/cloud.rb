@@ -9,7 +9,7 @@ module Bosh::WardenCloud
     DEFAULT_FS_TYPE = "ext4"
     DEFAULT_POOL_SIZE = 128
     DEFAULT_POOL_START_NUMBER = 10
-    DEFAULT_DEVICE_PREFIX = "/dev/sdz"
+    DEFAULT_DEVICE_PREFIX = "/dev/sd"
 
     DEFAULT_SETTINGS_FILE = "/var/vcap/bosh/settings.json"
 
@@ -138,19 +138,7 @@ module Bosh::WardenCloud
 
         # Agent settings
         env = generate_agent_env(vm, agent_id, networks)
-
-        tempfile = Tempfile.new("settings")
-        tempfile.write(Yajl::Encoder.encode(env)) # TODO make sure env is the right setting
-        tempfile.close
-
-        with_warden do |client|
-          request = Warden::Protocol::CopyInRequest.new
-          request.handle = handle
-          request.src_path = tempfile.path
-          request.dst_path = agent_settings_file
-
-          client.call(request)
-        end
+        set_agent_env(vm.container_id, env)
 
         # Notice: It's a little hacky, but it's the way it is now.
         #
@@ -318,6 +306,11 @@ module Bosh::WardenCloud
           stdout.strip
         end
 
+        # Save device path into agent env settings
+        env = get_agent_env(vm.container_id)
+        env["disks"]["persistent"][disk_id] = device_path
+        set_agent_env(vm.container_id, env)
+
         # Save DB entry
         disk.device_path = device_path
         disk.attached = true
@@ -345,6 +338,11 @@ module Bosh::WardenCloud
 
         device_num = disk.device_num
         device_path = disk.device_path
+
+        # Save device path into agent env settings
+        env = get_agent_env(vm.container_id)
+        env["disks"]["persistent"][disk_id] = nil
+        set_agent_env(vm.container_id, env)
 
         # Save DB entry
         disk.attached = false
@@ -446,9 +444,47 @@ module Bosh::WardenCloud
         "vm" => vm_env,
         "agent_id" => agent_id,
         "networks" => networks,
+        "disks" => { "persistent" => {} },
       }
       env.merge!(@agent_properties)
       env
+    end
+
+    def get_agent_env(handle)
+      tempfile = Tempfile.new("settings_out")
+      tempfile.close
+
+      with_warden do |client|
+        request = Warden::Protocol::CopyOutRequest.new
+        request.handle = handle
+        request.src_path = agent_settings_file
+        request.dst_path = tempfile.path
+
+        client.call(request)
+      end
+
+      body = File.read(tempfile.path)
+      tempfile.unlink
+
+      env = Yajl::Parser.parse(body)
+      env
+    end
+
+    def set_agent_env(handle, env)
+      tempfile = Tempfile.new("settings")
+      tempfile.write(Yajl::Encoder.encode(env))
+      tempfile.close
+
+      with_warden do |client|
+        request = Warden::Protocol::CopyInRequest.new
+        request.handle = handle
+        request.src_path = tempfile.path
+        request.dst_path = agent_settings_file
+
+        client.call(request)
+      end
+
+      tempfile.unlink
     end
 
   end
