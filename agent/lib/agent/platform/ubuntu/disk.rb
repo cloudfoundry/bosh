@@ -64,6 +64,9 @@ module Bosh::Agent
       when "openstack"
         # OpenStack passes in the device name
         get_available_path(disk_id)
+      when "warden"
+        # Warden directly stores the device path
+        disk_id
       else
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
@@ -112,10 +115,13 @@ module Bosh::Agent
     end
 
     VSPHERE_DATA_DISK = "/dev/sdb"
+    WARDEN_DATA_DISK = "/dev/nod"  # Warden don't use any data disk
     def get_data_disk_device_name
       case Bosh::Agent::Config.infrastructure_name
       when "vsphere"
         VSPHERE_DATA_DISK
+      when "warden"
+        WARDEN_DATA_DISK
       when "aws"
         settings = Bosh::Agent::Config.settings
         dev_path = settings['disks']['ephemeral']
