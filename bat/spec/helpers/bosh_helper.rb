@@ -16,6 +16,7 @@ module BoshHelper
     puts("--> #{command}") if debug?
     # TODO write to log
     result = Bosh::Exec.sh(command, options)
+    puts(result.output) if verbose?
     yield result if block_given?
     result
   rescue Bosh::Exec::Error => e
@@ -37,6 +38,10 @@ module BoshHelper
 
   def debug?
     ENV.has_key?('BAT_DEBUG')
+  end
+
+  def verbose?
+    ENV["BAT_DEBUG"] == "verbose"
   end
 
   def fast?
@@ -76,10 +81,6 @@ module BoshHelper
     info["features"] && info["features"]["dns"]
   end
 
-  def colocation?
-    info["features"] && info["features"]["colocation"]
-  end
-
   def read_environment(variable, default=nil)
     ENV.fetch(variable) do |v|
       return default if default
@@ -117,11 +118,11 @@ module BoshHelper
 
   def ssh(host, user, password, command)
     output = nil
-    puts "--> ssh: vcap@#{host} '#{command}'" if debug?
+    puts "--> ssh: #{user}@#{host} '#{command}'" if debug?
     Net::SSH.start(host, user, :password => password, :user_known_hosts_file => %w[/dev/null]) do |ssh|
       output = ssh.exec!(command)
     end
-    puts "--> ssh output: '#{output}'" if debug?
+    puts "--> ssh output: '#{output}'" if verbose?
     output
   end
 
