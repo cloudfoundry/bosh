@@ -1,4 +1,5 @@
 # Copyright (c) 2012 VMware, Inc.
+require "tmpdir"
 
 module DeploymentHelper
 
@@ -137,6 +138,19 @@ module DeploymentHelper
         bosh("delete deployment #{deployment.name}").should succeed
       end
     end
+  end
+
+  def with_tmpdir
+    dir = nil
+    back = Dir.pwd
+    Dir.mktmpdir do |tmpdir|
+      dir = tmpdir
+      Dir.chdir(dir)
+      yield dir
+    end
+  ensure
+    Dir.chdir(back)
+    FileUtils.rm_rf(dir) if dir
   end
 
   def use_job(job)

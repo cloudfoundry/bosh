@@ -64,4 +64,16 @@ namespace "bat" do
     t.rspec_opts = SPEC_OPTS
   end
 
+  desc "Run agent tests"
+  RSpec::Core::RakeTask.new(:agent => :env) do |t|
+    t.pattern = "spec/bat/agent_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
+  desc "Run disk tests"
+  RSpec::Core::RakeTask.new(:disk => :env) do |t|
+    t.pattern = "spec/bat/disk_spec.rb"
+    t.rspec_opts = SPEC_OPTS
+  end
+
 end

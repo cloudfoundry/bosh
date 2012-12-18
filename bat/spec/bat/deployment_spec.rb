@@ -54,7 +54,6 @@ describe "deployment" do
   end
 
   it "should use job colocation" do
-    pending "director lacks colocation support" unless colocation?
     jobs = %w[
       /var/vcap/packages/batlight/bin/batlight
       /var/vcap/packages/batarang/bin/batarang
@@ -170,45 +169,4 @@ describe "deployment" do
     end
   end
 
-  describe "persistent disk" do
-    it "should create a disk" do
-      use_static_ip
-      use_job("batarang")
-      use_persistent_disk(2048)
-      with_deployment do
-        persistent_disk(static_ip).should_not be_nil
-      end
-    end
-
-    it "should migrate disk contents" do
-      use_static_ip
-      use_job("batarang")
-      size = nil
-
-      use_persistent_disk(2048)
-      deployment = with_deployment
-      bosh("deployment #{deployment.to_path}")
-      bosh("deploy")
-
-      ssh(static_ip, "vcap", password, "echo 'foobar' > #{SAVE_FILE}")
-      size = persistent_disk(static_ip)
-      size.should_not be_nil
-
-      use_persistent_disk(4096)
-      with_deployment do
-        persistent_disk(static_ip).should_not == size
-        ssh(static_ip, "vcap", password, "cat #{SAVE_FILE}").should match /foobar/
-      end
-      deployment.delete
-    end
-  end
-
-  it "should set vcap password" do
-    # using password 'foobar'
-    use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
-    use_static_ip
-    with_deployment do
-      ssh(static_ip, "vcap", "foobar", "cat /etc/hosts").should_not == ""
-    end
-  end
 end
