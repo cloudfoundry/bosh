@@ -37,6 +37,10 @@ RSpec.configure do |config|
   config.after(:suite) do
     # any suite cleanup should go here
   end
+
+  config.before(:each) do
+    requirement :no_tasks_processing unless example.metadata[:skip_task_check]
+  end
 end
 
 RSpec::Matchers.define :succeed do |expected|

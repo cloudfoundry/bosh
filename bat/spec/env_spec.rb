@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe "initialization" do
+describe "initialization", :skip_task_check do
   describe "environment" do
     %w[
       BAT_DIRECTOR
