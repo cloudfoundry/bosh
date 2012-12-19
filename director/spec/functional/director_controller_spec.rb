@@ -265,23 +265,44 @@ describe Bosh::Director::Controller do
 
     describe "listing deployments" do
       it "has API call that returns a list of deployments in JSON" do
-        deployments = (1..10).map do |i|
-          BD::Models::Deployment.create(:name => "deployment-#{i}")
-        end
+        num_dummies = Random.new.rand(3..7)
+        stemcells = (1..num_dummies).map { |i|
+          BD::Models::Stemcell.create(
+            :name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
+        }
+        releases = (1..num_dummies).map { |i|
+          release = BD::Models::Release.create(:name => "release-#{i}")
+          BD::Models::ReleaseVersion.create(:release => release, :version => i)
+          release
+        }
+        deployments = (1..num_dummies).map { |i|
+          d = BD::Models::Deployment.create(:name => "deployment-#{i}")
+          (0..rand(num_dummies)).each do |v|
+            d.add_stemcell(stemcells[v])
+            d.add_release_version(releases[v].versions.sample)
+          end
+          d
+        }
 
         get "/deployments", {}, {}
         last_response.status.should == 200
 
         body = Yajl::Parser.parse(last_response.body)
         body.kind_of?(Array).should be_true
-        body.size.should == 10
+        body.size.should == num_dummies
 
-        response_collection = body.map { |e| [e["name"]] }
-        expected_collection = deployments.sort_by { |e| e.name }.map do |e|
-          [e.name.to_s]
-        end
+        expected_collection = deployments.sort_by { |e| e.name }.map { |e|
+          name = e.name
+          releases = e.release_versions.map { |rv|
+            Hash["name", rv.release.name, "version", rv.version]
+          }
+          stemcells = e.stemcells.map { |sc|
+            Hash["name", sc.name, "version", sc.version]
+          }
+          Hash["name", name, "releases", releases, "stemcells", stemcells]
+        }
 
-        response_collection.should == expected_collection
+        body.should == expected_collection
       end
     end
 
