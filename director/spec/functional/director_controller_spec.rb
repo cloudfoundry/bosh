@@ -265,8 +265,23 @@ describe Bosh::Director::Controller do
 
     describe "listing deployments" do
       it "has API call that returns a list of deployments in JSON" do
-        deployments = (1..10).map do |i|
-          BD::Models::Deployment.create(:name => "deployment-#{i}")
+        num_dummies = Random.new.rand(3..7)
+        stemcells = (1..num_dummies).map do |i|
+          BD::Models::Stemcell.create(
+            :name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
+        end
+        releases = (1..num_dummies).map do |i|
+          release = BD::Models::Release.create(:name => "release-#{i}")
+          BD::Models::ReleaseVersion.create(:release => release, :version => i)
+          release
+        end
+        deployments = (1..num_dummies).map do |i|
+          d = BD::Models::Deployment.create(:name => "deployment-#{i}")
+          (0..rand(num_dummies)).each do |v|
+            d.add_stemcell(stemcells[v])
+            d.add_release_version(releases[v].versions.sample)
+          end
+          d
         end
 
         get "/deployments", {}, {}
@@ -274,14 +289,20 @@ describe Bosh::Director::Controller do
 
         body = Yajl::Parser.parse(last_response.body)
         body.kind_of?(Array).should be_true
-        body.size.should == 10
+        body.size.should == num_dummies
 
-        response_collection = body.map { |e| [e["name"]] }
         expected_collection = deployments.sort_by { |e| e.name }.map do |e|
-          [e.name.to_s]
+          name = e.name
+          releases = e.release_versions.map do |rv|
+            Hash["name", rv.release.name, "version", rv.version]
+          end
+          stemcells = e.stemcells.map do |sc|
+            Hash["name", sc.name, "version", sc.version]
+          end
+          Hash["name", name, "releases", releases, "stemcells", stemcells]
         end
 
-        response_collection.should == expected_collection
+        body.should == expected_collection
       end
     end
 

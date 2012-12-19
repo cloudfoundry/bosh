@@ -356,9 +356,17 @@ module Bosh::Director
 
     get "/deployments" do
       deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
-        {
-          "name" => deployment.name
-        }
+        name = deployment.name
+
+        releases = deployment.release_versions.map do |rv|
+          Hash["name", rv.release.name, "version", rv.version]
+        end
+
+        stemcells = deployment.stemcells.map do |sc|
+          Hash["name", sc.name, "version", sc.version]
+        end
+
+        Hash["name", name, "releases", releases, "stemcells", stemcells]
       end
 
       json_encode(deployments)
