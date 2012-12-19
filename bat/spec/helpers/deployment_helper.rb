@@ -152,7 +152,7 @@ module DeploymentHelper
   end
 
   def use_job_instances(count)
-    @spec["properties"]["jobs"] = count
+    @spec["properties"]["instances"] = count
   end
 
   def use_deployment_name(name)
