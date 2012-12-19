@@ -182,6 +182,7 @@ module Bosh::WardenCloud
     # Deletes a VM
     #
     # @param [String] vm_id vm id
+    # @return [void]
     def delete_vm(vm_id)
       with_thread_name("delete_vm(#{vm_id})") do
         vm = Models::VM[vm_id.to_i]
@@ -197,6 +198,8 @@ module Bosh::WardenCloud
         end
 
         Models::VM[vm_id.to_i].delete
+
+        nil
       end
 
     end
