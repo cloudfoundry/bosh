@@ -38,8 +38,7 @@ describe Bosh::WardenCloud::Cloud do
 
   context "create_vm" do
 
-    it "can create vm" do
-      @cloud.delegate.should_receive(:sudo).once
+    before :each do
 
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
@@ -68,12 +67,21 @@ describe Bosh::WardenCloud::Cloud do
           request.privileged.should == true
 
           resp = SpawnResponse.new
+        elsif request.instance_of? DestroyRequest
+          @destroy_called = true
+          request.handle.should == DEFAULT_AGENT_ID
+
+          resp = DestroyResponse.new
         else
           raise "not supported"
         end
 
         resp
       end
+    end
+
+    it "can create vm" do
+      @cloud.delegate.should_receive(:sudo).once
 
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
@@ -100,6 +108,20 @@ describe Bosh::WardenCloud::Cloud do
         }
         @cloud.create_vm("agent_id", "invalid_stemcell_id", nil, network_spec)
       }.to raise_error ArgumentError
+    end
+
+    it "should clean up DB and warden when an error raised" do
+      @cloud.delegate.stub(:sudo) { raise 'error' }
+
+      network_spec = {
+        "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
+      }
+      expect {
+        id = @cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
+      }.to raise_error
+
+      VM.dataset.all.size.should == 0
+      @destroy_called.should be_true
     end
   end
 

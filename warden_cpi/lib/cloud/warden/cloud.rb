@@ -96,6 +96,8 @@ module Bosh::WardenCloud
       not_used(disk_locality)
       not_used(env)
 
+      vm = nil
+
       with_thread_name("create_vm(#{agent_id}, #{stemcell_id}, #{networks})") do
 
         stemcell_path = stemcell_path(stemcell_id)
@@ -161,7 +163,18 @@ module Bosh::WardenCloud
         vm.id.to_s
       end
     rescue => e
-      # TODO how to clean up
+      if vm
+        if vm.container_id
+          with_warden do |client|
+            request = Warden::Protocol::DestroyRequest.new
+            request.handle = vm.container_id
+
+            client.call(request)
+          end rescue nil
+        end
+
+        vm.destroy rescue nil
+      end
       raise e
     end
 
