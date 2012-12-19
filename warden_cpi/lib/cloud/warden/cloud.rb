@@ -57,8 +57,6 @@ module Bosh::WardenCloud
         # which cannot be untared without priviledge
         sudo "tar -C #{stemcell_dir} -xzf #{image_path} 2>&1"
 
-        # TODO Verify if it is a valid stemcell
-
         stemcell_id
       end
     rescue => e
@@ -117,7 +115,7 @@ module Bosh::WardenCloud
           request = Warden::Protocol::CreateRequest.new
           request.rootfs = stemcell_path
           if networks.first[1]["type"] != "dynamic"
-            request.network = networks.first[1]["ip"] # TODO make sure ip is the right field
+            request.network = networks.first[1]["ip"]
           end
 
           response = client.call(request)
@@ -298,7 +296,7 @@ module Bosh::WardenCloud
           request = Warden::Protocol::RunRequest.new
           request.handle = vm.container_id
           request.script = script
-          request.privileged = true # TODO or false
+          request.privileged = true
 
           response = client.call(request)
 
@@ -357,7 +355,7 @@ module Bosh::WardenCloud
           request = Warden::Protocol::RunRequest.new
           request.handle = vm.container_id
           request.script = script
-          request.privileged = true # TODO or false
+          request.privileged = true
 
           client.call(request)
         end
