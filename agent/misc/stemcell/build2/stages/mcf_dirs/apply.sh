@@ -16,6 +16,8 @@ shared_dir=${bosh_app_dir}/shared
 
 cp --archive --recursive ${micro_src}/micro/* ${chroot}/${micro_dest}
 
+cp --archive ${micro_src}/micro/mcf-api.conf ${chroot}/etc/init
+
 cp --archive ${dir}/assets/console.sh ${chroot}/etc/init.d
 
 cp --archive ${dir}/assets/settings.json ${chroot}/${bosh_dir}
