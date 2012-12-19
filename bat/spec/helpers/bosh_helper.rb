@@ -80,6 +80,11 @@ module BoshHelper
     info["features"] && info["features"]["colocation"]
   end
 
+  def tasks_processing?
+    # `bosh tasks` exit code is 1 if no tasks running
+    bosh("tasks", :on_error => :return).output =~ /\| processing \|/
+  end
+
   def read_environment(variable, default=nil)
     ENV.fetch(variable) do |v|
       return default if default

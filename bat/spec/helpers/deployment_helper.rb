@@ -74,6 +74,10 @@ module DeploymentHelper
         puts "release not uploaded" if debug?
         bosh("upload release #{what.to_path}")
       end
+    when :no_tasks_processing
+      if tasks_processing?
+        raise "director `#{bosh_director}' is currently processing tasks"
+      end
     else
       raise "unknown requirement: #{what}"
     end
