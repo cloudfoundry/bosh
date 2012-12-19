@@ -274,7 +274,13 @@ module Bosh::Agent
             return result
           end
 
-          disk_usage.split("\n")[1..-1].each do |line|
+          lines = disk_usage.split("\n")
+          if lines.size == 0
+            logger.error("Empty df result")
+            return result
+          end
+
+          lines[1..-1].each do |line|
             usage, mountpoint = line.split(/\s+/)
             usage.gsub!(/%$/, '')
 
