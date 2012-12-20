@@ -8,7 +8,7 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source ${base_dir}/lib/prelude_apply.bash
 source ${base_dir}/lib/prelude_bosh.bash
 
-apt_get --assume-yes install console-data dnsmasq nfs-kernel-server
+apt_get --assume-yes install console-data dnsmasq nfs-kernel-server git-core
 
 micro_src=${HOME}/micro
 micro_dest=${bosh_app_dir}/micro
