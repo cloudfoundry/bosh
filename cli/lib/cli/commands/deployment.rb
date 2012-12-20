@@ -208,23 +208,12 @@ module Bosh::Cli::Command
       deployments_table = table do |t|
         t.headings = %w(Name Release(s) Stemcell(s))
         deployments.each do |d|
-          deployment = director.get_deployment(d["name"])
-
-          row = if (deployment["manifest"])
-            manifest = YAML.load(deployment["manifest"])
-
-            stemcells = manifest["resource_pools"].map { |rp|
-              rp["stemcell"].values_at("name", "version").join("/")
-            }.sort.uniq
-
-            releases = manifest["releases"] || [manifest["release"]]
-            releases = releases.map { |rl|
-              rl.values_at("name", "version").join("/")
-            }.sort
-
-            [manifest["name"], releases.join("\n"), stemcells.join("\n")]
+          row = if (d.has_key?("releases") && d.has_key?("stemcells"))
+            row_for_deployments_table(d)
           else
-            [d["name"], "n/a", "n/a"]
+            # backwards compatible but slow: pull down each deployment
+            # manifest to get releases and stemcells in use
+            row_for_deployments_table_by_manifest(d["name"])
           end
 
           t.add_row(row)
@@ -262,7 +251,6 @@ module Bosh::Cli::Command
     end
 
     private
-
     def show_current
       if deployment
         if interactive?
@@ -275,5 +263,35 @@ module Bosh::Cli::Command
       end
     end
 
+    def row_for_deployments_table(deployment)
+      stemcells = names_and_versions_from(deployment["stemcells"])
+      releases  = names_and_versions_from(deployment["releases"])
+
+      [deployment["name"], releases.join("\n"), stemcells.join("\n")]
+    end
+
+    def row_for_deployments_table_by_manifest(deployment_name)
+      raw_manifest = director.get_deployment(deployment_name)
+      if (raw_manifest.has_key?("manifest"))
+        manifest = YAML.load(raw_manifest["manifest"])
+
+        stemcells = manifest["resource_pools"].map { |rp|
+          rp["stemcell"].values_at("name", "version").join("/")
+        }.sort.uniq
+
+        releases = manifest["releases"] || [manifest["release"]]
+        releases = names_and_versions_from(releases)
+
+        [manifest["name"], releases.join("\n"), stemcells.join("\n")]
+      else
+        [deployment_name, "n/a", "n/a"]
+      end
+    end
+
+    def names_and_versions_from(arr)
+      arr.map { |hash|
+        hash.values_at("name", "version").join("/")
+      }.sort
+    end
   end
 end
