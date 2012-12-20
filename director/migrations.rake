@@ -45,6 +45,8 @@ namespace "migration" do
     migrate(config["db"]["database"], nil, "db/migrations/director")
     migrate(config["db"]["database"], "vsphere_cpi_schema",
             "db/migrations/vsphere_cpi")
+    migrate(config["db"]["database"], "warden_cpi_schema",
+            "db/migrations/warden_cpi")
 
     if config["dns"] && config["dns"]["db"]
       migrate(config["dns"]["db"]["database"], "dns_schema",

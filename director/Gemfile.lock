@@ -13,6 +13,7 @@ GEM
       nokogiri (<= 1.5.0)
       uuidtools (~> 2.1)
     bcrypt-ruby (2.1.4)
+    beefcake (0.3.7)
     blobstore_client (0.5.0)
       aws-s3 (~> 0.6.2)
       bosh_common (~> 0.5)
@@ -49,6 +50,13 @@ GEM
       ruby_vim_sdk
       sequel
       uuidtools
+    bosh_warden_cpi (0.0.1)
+      bosh_common
+      bosh_cpi (~> 0.4.4)
+      sequel
+      warden-client
+      warden-protocol (>= 0.0.12)
+      yajl-ruby
     builder (3.0.0)
     ci_reporter (1.6.4)
       builder (>= 2.1.2)
@@ -178,6 +186,10 @@ GEM
     uuidtools (2.1.2)
     vegas (0.1.8)
       rack (>= 1.0.0)
+    warden-client (0.0.7)
+      warden-protocol
+    warden-protocol (0.0.12)
+      beefcake
     xml-simple (1.1.1)
     yajl-ruby (1.1.0)
 
@@ -194,6 +206,7 @@ DEPENDENCIES
   bosh_encryption (>= 0.0.2)
   bosh_openstack_cpi (>= 0.0.4)
   bosh_vsphere_cpi (>= 0.5.0)
+  bosh_warden_cpi (>= 0.0.1)
   ci_reporter
   eventmachine
   guard
