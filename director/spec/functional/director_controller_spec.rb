@@ -247,7 +247,7 @@ describe Bosh::Director::Controller do
            e.versions.map { |v| v.version.to_s }.join(" "),
            e.versions_dataset.order_by(:version.asc).reject { |rv|
              rv.deployments.empty?
-           }.map { |rv| rv.version }.join(" ")
+           }.map { |rv| rv.version.to_s }.join(" ")
           ]
         end
 
@@ -294,7 +294,7 @@ describe Bosh::Director::Controller do
         expected_collection = deployments.sort_by { |e| e.name }.map { |e|
           name = e.name
           releases = e.release_versions.map { |rv|
-            Hash["name", rv.release.name, "version", rv.version]
+            Hash["name", rv.release.name, "version", rv.version.to_s]
           }
           stemcells = e.stemcells.map { |sc|
             Hash["name", sc.name, "version", sc.version]

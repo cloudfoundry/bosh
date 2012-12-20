@@ -359,7 +359,7 @@ module Bosh::Director
         name = deployment.name
 
         releases = deployment.release_versions.map { |rv|
-          Hash["name", rv.release.name, "version", rv.version]
+          Hash["name", rv.release.name, "version", rv.version.to_s]
         }
 
         stemcells = deployment.stemcells.map { |sc|
