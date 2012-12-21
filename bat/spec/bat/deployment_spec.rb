@@ -106,25 +106,51 @@ describe "deployment" do
     end
   end
 
-  it "should drain when updating" do
-    use_static_ip
+  context "drain" do
+    before(:each) do
+      use_static_ip
 
-    previous = release.previous
-    use_release(previous.version)
-    bosh("upload release #{previous.to_path}")
-
-    deployment = with_deployment
-    bosh("deployment #{deployment.to_path}")
-    bosh("deploy").should succeed_with DEPLOYED_REGEXP
-    deployment.delete
-
-    use_release("latest")
-    with_deployment do
-      ssh(static_ip, "vcap", password, "ls /tmp/drain 2> /dev/null").should
-        match %r{/tmp/drain}
+      @previous = release.previous
+      if releases.include?(@previous)
+        bosh("delete release #{@previous.name} #{@previous.version}")
+      end
+      use_release(@previous.version)
+      bosh("upload release #{@previous.to_path}")
     end
 
-    bosh("delete release #{previous.name} #{previous.version}")
+    after(:each) do
+      bosh("delete release #{@previous.name} #{@previous.version}")
+    end
+
+    it "should drain when updating" do
+      deployment = with_deployment
+      bosh("deployment #{deployment.to_path}")
+      bosh("deploy").should succeed_with DEPLOYED_REGEXP
+      deployment.delete
+
+      use_release("latest")
+      with_deployment do
+        ssh(static_ip, "vcap", password, "ls /tmp/drain 2> /dev/null").should
+          match %r{/tmp/drain}
+      end
+    end
+
+    it "should drain dynamically when updating" do
+      use_dynamic_drain
+      deployment = with_deployment
+      bosh("deployment #{deployment.to_path}")
+      bosh("deploy").should succeed_with DEPLOYED_REGEXP
+      deployment.delete
+
+      use_release("latest")
+      with_deployment do
+        output = ssh(static_ip, "vcap", password, "cat /tmp/drain 2> /dev/null")
+        drain_times = output.split.map { |time| time.to_i }
+        drain_times.size.should == 3
+        (drain_times[1] - drain_times[0]).should be > 3
+        (drain_times[2] - drain_times[1]).should be > 4
+      end
+    end
   end
 
   it "should return vms in a deployment" do

@@ -217,6 +217,10 @@ module DeploymentHelper
     @spec["properties"]["batlight"].delete(property)
   end
 
+  def use_dynamic_drain
+    @spec["properties"]["batlight"]["drain_type"] = "dynamic"
+  end
+
   def get_task_id(output, state="done")
     match = output.match(/Task (\d+) #{state}/)
     match.should_not be_nil
