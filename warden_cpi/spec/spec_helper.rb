@@ -55,6 +55,21 @@ config.uuid = "1024"
 
 Bosh::Clouds::Config.configure(config)
 
+class WardenCloudHelper
+  attr_accessor :wardencloud
+  def initialize
+    @wardencloud = nil
+  end
+
+  def method_missing method, *args, &block
+    if @wardencloud.respond_to? method, true
+        @wardencloud.send(method, *args, &block)
+    else
+      raise NoMethodError
+    end
+  end
+end
+
 require "cloud/warden"
 
 def asset(file)
