@@ -20,9 +20,11 @@ hypervisor = "${stemcell_hypervisor:-kvm}"
 
 case hypervisor
 when "kvm"
+  container_format = "bare"
   disk_format = "qcow2"
 when "xen"
-  disk_format = "ami"
+  container_format = "bare"
+  disk_format = "raw"
 end
 
 manifest = {
@@ -34,7 +36,10 @@ manifest = {
         "version" => version,
         "infrastructure" => stemcell_infrastructure,
         "disk_format" => disk_format,
-        "container_format" => "bare"
+        "container_format" => container_format,
+        "os_type" => "linux",
+        "architecture" => "x86_64",
+        "auto_disk_config" => "true"
     }
 }
 
