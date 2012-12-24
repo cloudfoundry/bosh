@@ -40,6 +40,8 @@ module Bosh::AwsCloud
       @default_key_name = @aws_properties["default_key_name"]
       @default_security_groups = @aws_properties["default_security_groups"]
 
+      AWS.config(:proxy_uri=>options["aws"]["proxy_uri"],:no_proxy=>options["aws"]["no_proxy"])
+
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
         :secret_access_key => @aws_properties["secret_access_key"],
@@ -110,10 +112,20 @@ module Bosh::AwsCloud
           :image_id => stemcell_id,
           :count => 1,
           :key_name => resource_pool["key_name"] || @default_key_name,
-          :security_groups => security_groups,
+        # :security_groups => security_groups,
           :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data)
         }
+
+        if resource_pool["subnet_id"] != nil
+          instance_params[:subnet_id] = resource_pool["subnet_id"]
+        else
+          instance_params[:security_groups] = security_groups
+        end
+
+        if network_configurator.private_ip
+          instance_params[:private_ip_address] = network_configurator.private_ip
+        end
 
         instance_params[:availability_zone] =
           select_availability_zone(disk_locality,

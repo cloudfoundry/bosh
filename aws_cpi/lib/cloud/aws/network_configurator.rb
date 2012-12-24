@@ -11,7 +11,7 @@ module Bosh::AwsCloud
   #
   class NetworkConfigurator
     include Helpers
-
+    attr_reader :private_ip
     ##
     # Creates new network spec
     #
@@ -38,6 +38,11 @@ module Bosh::AwsCloud
           else
             @dynamic_network = DynamicNetwork.new(name, spec)
             @security_groups += extract_security_groups(spec)
+
+            unless spec["ip"] == nil
+              @private_ip = spec["ip"]
+            end
+
           end
         when "vip"
           if @vip_network
@@ -66,6 +71,8 @@ module Bosh::AwsCloud
 
       if @vip_network
         @vip_network.configure(ec2, instance)
+      elsif @private_ip != nil
+       # no-opps
       else
         # If there is no vip network we should disassociate any elastic IP
         # currently held by instance (as it might have had elastic IP before)
