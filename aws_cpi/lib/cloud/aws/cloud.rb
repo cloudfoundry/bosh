@@ -40,6 +40,10 @@ module Bosh::AwsCloud
       @default_key_name = @aws_properties["default_key_name"]
       @default_security_groups = @aws_properties["default_security_groups"]
 
+      if @aws_properties["proxy_uri"]
+        AWS.config(:proxy_uri=>@aws_properties["proxy_uri"])
+      end
+
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
         :secret_access_key => @aws_properties["secret_access_key"],
@@ -110,14 +114,22 @@ module Bosh::AwsCloud
           :image_id => stemcell_id,
           :count => 1,
           :key_name => resource_pool["key_name"] || @default_key_name,
-          :security_groups => security_groups,
           :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data)
         }
 
-        instance_params[:availability_zone] =
-          select_availability_zone(disk_locality,
-          resource_pool["availability_zone"])
+        if resource_pool["subnet_id"] != nil
+          instance_params[:subnet_id] = resource_pool["subnet_id"]
+          instance_params[:private_ip_address] = network_configurator.private_ip
+          subnet = find_subnet(resource_pool["subnet_id"])
+          instance_params[:availability_zone] = subnet.availability_zone
+          instance_params[:security_groups] = select_subnet_security_groups(subnet,security_groups)
+        else
+         instance_params[:security_groups] = security_groups
+         instance_params[:availability_zone] =
+            select_availability_zone(disk_locality,
+            resource_pool["availability_zone"])
+        end
 
         @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)
@@ -133,6 +145,41 @@ module Bosh::AwsCloud
 
         instance.id
       end
+    end
+
+    ##
+    # Select vcp security groups by subnet and security group names
+    # @param [AWS:EC2:Subnet] subnet
+    # @param [Array] security groups
+    # @return [Array] vcp security groups
+    #
+    def select_subnet_security_groups(subnet,security_groups)
+      select_subnet_security_groups = []
+      @ec2.security_groups.each do |group|
+        if security_groups.include? group.name
+           if group.vpc_id == subnet.vpc_id
+             select_subnet_security_groups << group
+           end
+        end
+      end
+      if select_subnet_security_groups.empty?
+        nil
+      end
+      select_subnet_security_groups
+    end
+
+    ##
+    # Find subnet instance from ec2 instance by subnet id
+    # @param [String] subnet id
+    # @return [AWS:EC2:Subnet] subnet
+    # @raise [ArgumentError] if not found subnet
+    def find_subnet(subnet_id)
+      @ec2.subnets.each do |subnet|
+        if subnet.id == subnet_id
+          return subnet
+        end
+      end
+      raise ArgumentError, "Not found subnet:#{subnet_id}"
     end
 
     ##

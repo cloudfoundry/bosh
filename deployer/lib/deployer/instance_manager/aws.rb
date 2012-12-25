@@ -135,10 +135,15 @@ module Bosh::Deployer
             ip = cloud.ec2.instances[state.vm_cid].public_ip_address
           end
 
+          unless ip
+            ip = cloud.ec2.instances[state.vm_cid].private_ip_address
+          end
+
           if ip != Config.bosh_ip
             Config.bosh_ip = ip
             logger.info("discovered bosh ip=#{Config.bosh_ip}")
           end
+
         end
 
         super
