@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bosh_openstack_registry (0.0.4)
+    bosh_openstack_registry (0.0.5)
       fog (>= 1.6.0)
       sequel
       sinatra
