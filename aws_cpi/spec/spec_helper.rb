@@ -103,6 +103,16 @@ def vip_network_spec
   }
 end
 
+def vpc_network_spec
+  {
+    "type" => "dynamic",
+    "ip" => "10.0.0.1",
+    "cloud_properties" => {
+      "security_groups" => %w[group_s]
+    }
+  }
+end
+
 def combined_network_spec
   {
     "network_a" => dynamic_network_spec,
@@ -118,4 +128,12 @@ def resource_pool_spec
   }
 end
 
+def vpc_resource_pool_spec
+  {
+    "key_name" => "test_key",
+    "availability_zone" => "foobar-1a",
+    "subnet_id" =>"subnet_a",
+    "instance_type" => "m3.zb"
+  }
+end
 

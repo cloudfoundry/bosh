@@ -41,6 +41,21 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     }
   end
 
+  def vpc_params(user_data, security_groups=[])
+    {
+      :image_id => "sc-id",
+      :count => 1,
+      :key_name => "test_key",
+      :security_groups => security_groups,
+      :instance_type => "m3.zb",
+      :subnet_id=>"subnet_a",
+      :private_ip_address=>"10.0.0.1",
+      :user_data => Yajl::Encoder.encode(user_data),
+      :availability_zone => "zone_a1"
+    }
+  end
+
+
   before(:each) do
     @registry = mock_registry
   end
@@ -117,6 +132,57 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     vm_id = cloud.create_vm("agent-id", "sc-id",
                             resource_pool_spec,
                             { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+
+    vm_id.should == "i-test"
+  end
+
+  it "creates VPC instance " do
+    unique_name = UUIDTools::UUID.random_create.to_s
+
+    user_data = {
+      "registry" => {
+        "endpoint" => "http://registry:3333"
+      }
+    }
+
+    instance = double("instance",
+                      :id => "i-test",
+                      :security_groups => [])
+    client = double("client", :describe_images => fake_image_set)
+    security_groups = [double("security_group","name"=>"group_s","vpc_id"=>"vpc_001")]
+    network_spec = dynamic_network_spec
+    network_spec["ip"]="10.0.0.1"
+    network_spec["cloud_properties"] = {
+      "security_groups"=>["group_s"]
+    }
+
+    cloud = mock_cloud do |ec2|
+      ec2.instances.should_receive(:create).
+        with(vpc_params(user_data, security_groups)).
+        and_return(instance)
+      ec2.should_receive(:client).and_return(client)
+      ec2.should_receive(:subnets).
+        and_return(
+          [double("subnet_a","id"=>"subnet_a",:availability_zone=>"zone_a1","vpc_id"=>"vpc_001")])
+
+      ec2.should_receive(:security_groups).
+        and_return(
+          [
+            security_groups[0],
+            double("security_group","name"=>"group_s","vpc_id"=>"vpc_002")
+          ])
+
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(instance, :running)
+    @registry.should_receive(:update_settings)
+      .with("i-test", agent_settings(unique_name, network_spec))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            vpc_resource_pool_spec,
+                            { "network_a" => vpc_network_spec },
                             nil, { "test_env" => "value" })
 
     vm_id.should == "i-test"

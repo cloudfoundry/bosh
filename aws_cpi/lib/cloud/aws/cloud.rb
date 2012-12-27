@@ -40,6 +40,8 @@ module Bosh::AwsCloud
       @default_key_name = @aws_properties["default_key_name"]
       @default_security_groups = @aws_properties["default_security_groups"]
 
+      AWS.config(:proxy_uri=>@aws_properties["proxy_uri"])
+
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
         :secret_access_key => @aws_properties["secret_access_key"],
@@ -87,7 +89,6 @@ module Bosh::AwsCloud
     def create_vm(agent_id, stemcell_id, resource_pool,
                   network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        network_configurator = NetworkConfigurator.new(network_spec)
 
         user_data = {
           "registry" => {
@@ -95,9 +96,7 @@ module Bosh::AwsCloud
           }
         }
 
-        security_groups =
-          network_configurator.security_groups(@default_security_groups)
-        @logger.debug("using security groups: #{security_groups.join(', ')}")
+        network_configurator = NetworkConfigurator.new(network_spec)
 
         response = @ec2.client.describe_images(:image_ids => [stemcell_id])
         images_set = response.images_set
@@ -110,14 +109,11 @@ module Bosh::AwsCloud
           :image_id => stemcell_id,
           :count => 1,
           :key_name => resource_pool["key_name"] || @default_key_name,
-          :security_groups => security_groups,
           :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data)
         }
 
-        instance_params[:availability_zone] =
-          select_availability_zone(disk_locality,
-          resource_pool["availability_zone"])
+        apply_network_config(instance_params,resource_pool,disk_locality,network_configurator)
 
         @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)
@@ -702,6 +698,50 @@ module Bosh::AwsCloud
 
     def task_checkpoint
       Bosh::Clouds::Config.task_checkpoint
+    end
+
+    def apply_network_config(instance_params,resource_pool,disk_locality,network_configurator)
+        security_groups =
+          network_configurator.security_groups(@default_security_groups)
+        @logger.debug("using security groups: #{security_groups.join(', ')}")
+
+        if resource_pool["subnet_id"] != nil
+          instance_params[:subnet_id] = resource_pool["subnet_id"]
+          instance_params[:private_ip_address] = network_configurator.private_ip
+          subnet = find_subnet(resource_pool["subnet_id"])
+          instance_params[:availability_zone] = subnet.availability_zone
+          instance_params[:security_groups] = select_subnet_security_groups(subnet,security_groups)
+        else
+         instance_params[:security_groups] = security_groups
+         instance_params[:availability_zone] =
+            select_availability_zone(disk_locality,resource_pool["availability_zone"])
+        end
+    end
+
+    ##
+    # Select vpc security groups by subnet and security group names
+    # @param [AWS:EC2:Subnet] subnet
+    # @param [Array] security groups
+    # @return [Array] vpc security groups
+    #
+    def select_subnet_security_groups(subnet,security_groups)
+      select_subnet_security_groups = @ec2.security_groups.find_all do |group|
+        security_groups.include? group.name and group.vpc_id == subnet.vpc_id
+      end
+      return nil if select_subnet_security_groups.empty?
+      select_subnet_security_groups
+    end
+
+    ##
+    # Find subnet instance from ec2 instance by subnet id
+    # @param [String] subnet id
+    # @param [AWS:EC2] ec2
+    # @return [AWS:EC2:Subnet] subnet
+    # @raise [ArgumentError] if not found subnet
+    def find_subnet(subnet_id)
+      subnet = ec2.subnets.find {|subnet| subnet.id == subnet_id}
+      raise ArgumentError, "Not found subnet:#{subnet_id}" unless subnet
+      subnet
     end
   end
 
