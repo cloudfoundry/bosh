@@ -61,7 +61,7 @@ GEM
       netaddr (~> 1.5.0)
       progressbar (~> 0.9.0)
       terminal-table (~> 1.4.2)
-    bosh_common (0.5.2)
+    bosh_common (0.5.3)
     bosh_cpi (0.5.1)
       bosh_common (~> 0.5)
     bosh_openstack_cpi (0.0.5)
