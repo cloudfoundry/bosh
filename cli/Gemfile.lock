@@ -29,7 +29,7 @@ GEM
       multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
-    bosh_common (0.5.1)
+    bosh_common (0.5.3)
     builder (3.0.0)
     ci_reporter (1.6.3)
       builder (>= 2.1.2)
