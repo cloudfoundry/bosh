@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud, "create_vm" do
 
@@ -76,6 +76,46 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     vm_id = cloud.create_vm("agent-id", "sc-id",
                             resource_pool_spec,
                             { "network_a" => dynamic_network_spec },
+                            nil, { "test_env" => "value" })
+
+    vm_id.should == "i-test"
+  end
+
+  it "passes dns servers in ec2 user data when present" do
+    unique_name = UUIDTools::UUID.random_create.to_s
+
+    user_data = {
+        "registry" => {
+            "endpoint" => "http://registry:3333"
+        },
+        "dns" => { "nameserver" => ["1.2.3.4"] }
+    }
+
+    sec_grp = double("security_group", :name => "default")
+    instance = double("instance",
+                      :id => "i-test",
+                      :elastic_ip => nil,
+                      :security_groups => sec_grp)
+    client = double("client", :describe_images => fake_image_set)
+
+    network_spec = dynamic_network_spec
+    network_spec["dns"] = { "nameserver" => ["1.2.3.4"] }
+
+    cloud = mock_cloud do |ec2|
+      ec2.instances.should_receive(:create).
+          with(ec2_params(user_data, %w[default])).
+          and_return(instance)
+      ec2.should_receive(:client).and_return(client)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(instance, :running)
+    @registry.should_receive(:update_settings)
+      .with("i-test", agent_settings(unique_name, network_spec))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            resource_pool_spec,
+                            { "network_a" => network_spec },
                             nil, { "test_env" => "value" })
 
     vm_id.should == "i-test"
