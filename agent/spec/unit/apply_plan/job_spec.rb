@@ -264,6 +264,29 @@ describe Bosh::Agent::ApplyPlan::Job do
                          "'foo.erb': line 1, error: undefined method " +
                          "`bar' for nil:NilClass")
       end
+
+      it "fails if property cannot be found" do
+        manifest = {
+          "templates" => {
+            "foo.erb" => "config/foo"
+          }
+        }
+
+        template_for(job) do |template|
+          template.add_file("job.MF", YAML.dump(manifest))
+          template.add_file("templates/foo.erb", "<%= p('foo.bar') %>")
+        end
+
+        manifest_path = File.join(job.install_path, "job.MF")
+
+        expect {
+          job.install
+        }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
+                         "Failed to install job 'ccdb.postgres': " +
+                         "failed to process configuration template " +
+                         "'foo.erb': line 1, error: Can't find property " +
+                         "`[\"foo.bar\"]'")
+      end
     end
   end
 

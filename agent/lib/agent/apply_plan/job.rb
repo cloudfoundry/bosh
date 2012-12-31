@@ -113,12 +113,14 @@ module Bosh::Agent
           end
 
           template = ERB.new(File.read(template_path))
+          template.filename = src
           begin
             result = template.result(@config_binding)
           rescue Exception => e
             # We are essentially running an arbitrary code,
             # hence such a generic rescue clause
-            line = e.backtrace.first.match(/:(\d+):/).captures.first
+            line_index = e.backtrace.index{ |l| l.include?(src) } || [0]
+            line = e.backtrace[line_index].match(/:(\d+):/).captures.first
             install_failed("failed to process configuration template " +
                            "'#{src}': " +
                            "line #{line}, error: #{e.message}")
