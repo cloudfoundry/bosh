@@ -81,7 +81,7 @@ module Bosh::Common
 
       names.each do |name|
         result = lookup_property(@raw_properties, name)
-        return result if result
+        return result unless result.nil?
       end
 
       return default if default_given

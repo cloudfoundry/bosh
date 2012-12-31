@@ -20,7 +20,9 @@ describe Bosh::Common::TemplateEvaluationContext do
       },
       "properties" => {
         "foo" => "bar",
-        "router" => {"token" => "zbb"}
+        "router" => {"token" => "zbb"},
+        "vtrue" => true,
+        "vfalse" => false
       },
       "index" => 0,
     }
@@ -43,11 +45,14 @@ describe Bosh::Common::TemplateEvaluationContext do
 
   it "supports 'p' helper" do
     eval_template("<%= p('router.token') %>", @context).should == "zbb"
+
+    eval_template("<%= p('vtrue') %>", @context).should == "true"
+    eval_template("<%= p('vfalse') %>", @context).should == "false"
+
     expect {
       eval_template("<%= p('bar.baz') %>", @context)
     }.to raise_error(Bosh::Common::UnknownProperty,
                      "Can't find property `[\"bar.baz\"]'")
-
     eval_template("<%= p('bar.baz', 22) %>", @context).should == "22"
   end
 
