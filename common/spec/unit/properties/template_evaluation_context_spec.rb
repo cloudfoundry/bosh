@@ -45,7 +45,8 @@ describe Bosh::Common::TemplateEvaluationContext do
     eval_template("<%= p('router.token') %>", @context).should == "zbb"
     expect {
       eval_template("<%= p('bar.baz') %>", @context)
-    }.to raise_error(Bosh::Common::UnknownProperty)
+    }.to raise_error(Bosh::Common::UnknownProperty,
+                     "Can't find property `[\"bar.baz\"]'")
 
     eval_template("<%= p('bar.baz', 22) %>", @context).should == "22"
   end
@@ -59,7 +60,8 @@ describe Bosh::Common::TemplateEvaluationContext do
       eval_template(<<-TMPL, @context)
         <%= p(%w(a b c)) %>
       TMPL
-    }.to raise_error(Bosh::Common::UnknownProperty)
+    }.to raise_error(Bosh::Common::UnknownProperty,
+                     "Can't find property `[\"a\", \"b\", \"c\"]'")
 
     eval_template(<<-TMPL, @context).strip.should == "22"
       <%= p(%w(a b c), 22) %>

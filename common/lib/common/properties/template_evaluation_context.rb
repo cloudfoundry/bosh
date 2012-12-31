@@ -85,7 +85,7 @@ module Bosh::Common
       end
 
       return default if default_given
-      raise UnknownProperty.new(name)
+      raise UnknownProperty.new(names)
     end
 
     # Run a block of code if all given properties are defined
