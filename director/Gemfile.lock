@@ -28,7 +28,7 @@ GEM
       httpclient (>= 2.2.0)
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
-    bosh_common (0.5.3)
+    bosh_common (0.5.4)
     bosh_cpi (0.5.1)
       bosh_common (~> 0.5)
     bosh_encryption (0.0.3)
@@ -202,7 +202,7 @@ DEPENDENCIES
   bcrypt-ruby
   blobstore_client (~> 0.5.0)
   bosh_aws_cpi (>= 0.6.3)
-  bosh_common (>= 0.5.1)
+  bosh_common (>= 0.5.4)
   bosh_cpi (>= 0.4.3)
   bosh_encryption (>= 0.0.2)
   bosh_openstack_cpi (>= 0.0.5)
