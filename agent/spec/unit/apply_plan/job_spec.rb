@@ -50,6 +50,15 @@ describe Bosh::Agent::ApplyPlan::Job do
     }
   end
 
+  let(:valid_bonus_spec) do
+    {
+      "name" => "nats",
+      "version" => "5",
+      "sha1" => "badcafe",
+      "blobstore_id" => "beefdad"
+    }
+  end
+
   describe "initialization" do
     it "expects Hash argument" do
       expect {
@@ -317,7 +326,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       job.configure
 
       monit_file = File.join(job.install_path, "ccdb.postgres.monitrc")
-      monit_link = File.join(@base_dir, "monit", "job", "ccdb.postgres.monitrc")
+      monit_link = File.join(@base_dir, "monit", "job", "01_ccdb.postgres.monitrc")
 
       File.exists?(monit_file).should be_true
       File.exists?(monit_link).should be_true
@@ -326,7 +335,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       extra_monit_file = File.join(job.install_path,
                                    "ccdb.postgres_extra.monitrc")
       extra_monit_link = File.join(@base_dir, "monit",
-                                   "job", "ccdb.postgres_extra.monitrc")
+                                   "job", "01_ccdb.postgres_extra.monitrc")
 
       File.exists?(extra_monit_file).should be_true
       File.exists?(extra_monit_link).should be_true
@@ -334,6 +343,58 @@ describe Bosh::Agent::ApplyPlan::Job do
         should == "check process ccdb_extra mode manual"
 
       File.realpath(extra_monit_link).should == File.realpath(extra_monit_file)
+    end
+
+    it "configures monit links with ordered numberical prefixes" do
+      config_binding = Bosh::Agent::Util.config_binding({})
+      job = make_job(JOB_NAME, valid_spec["name"], valid_spec, config_binding)
+
+      mock_template("first_job", "first_job", job.install_path) do |template|
+        template.add_file("job.MF", YAML.dump({}))
+        template.add_file("monit", "check process ccdb\nmode manual\n" +
+                          "<%= properties.foo %>")
+        template.add_file("extra.monit", "check process ccdb_extra\n")
+      end
+
+      mock_template("second_job", "second_job", job.install_path) do |template|
+        template.add_file("job.MF", YAML.dump({}))
+        template.add_file("monit", "check process ccdb\nmode manual\n" +
+                          "<%= properties.foo %>")
+        template.add_file("bonus.monit", "check process ccdb_bonus\n")
+      end
+
+      job.install
+
+      Bosh::Agent::Util.should_receive(:run_hook).
+        with("post_install", "postgres")
+
+      job.configure
+
+      # first job
+      monit_file = File.join(job.install_path, "ccdb.postgres.monitrc")
+      monit_link = File.join(@base_dir, "monit", "job", "01_ccdb.postgres.monitrc")
+
+      File.exists?(monit_file).should be_true
+      File.exists?(monit_link).should be_true
+      File.read(monit_file).should == "check process ccdb mode manual bar"
+
+      extra_monit_file = File.join(job.install_path,
+                                   "ccdb.postgres_extra.monitrc")
+      extra_monit_link = File.join(@base_dir, "monit",
+                                   "job", "01_ccdb.postgres_extra.monitrc")
+
+     # second job
+     monit_file = File.join(job.install_path, "ccdb.postgres.monitrc")
+     monit_link = File.join(@base_dir, "monit", "job", "02_ccdb.postgres.monitrc")
+
+     File.exists?(monit_file).should be_true
+     File.exists?(monit_link).should be_true
+     File.read(monit_file).should == "check process ccdb mode manual bar"
+
+     extra_monit_file = File.join(job.install_path,
+                                  "ccdb.postgres_extra.monitrc")
+     extra_monit_link = File.join(@base_dir, "monit",
+                                  "job", "01_ccdb.postgres_extra.monitrc")
     end
 
     describe "configuration errors" do
