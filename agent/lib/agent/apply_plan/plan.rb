@@ -82,9 +82,13 @@ module Bosh::Agent
         end
       end
 
+      # Configure the 1+ job templates (job colocation)
+      # This also creates the monit symlinks, which will be
+      # numerically ordered to ensure monit loads them in
+      # the order that the spec specified them.
       def configure_jobs
-        @jobs.each do |job|
-          job.configure
+        @jobs.each_with_index do |job, job_index|
+          job.configure(job_index)
         end
       end
 
