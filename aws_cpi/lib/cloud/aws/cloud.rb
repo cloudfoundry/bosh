@@ -12,6 +12,8 @@ module Bosh::AwsCloud
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
     METADATA_TIMEOUT = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
+    MAX_TAG_KEY_LENGTH = 127
+    MAX_TAG_VALUE_LENGTH = 255
 
     attr_reader :ec2
     attr_reader :registry
@@ -389,6 +391,27 @@ module Bosh::AwsCloud
       end
     end
 
+    # Add tags to an instance. In addition to the suplied tags,
+    # it adds a 'Name' tag as it is shown in the AWS console.
+    # @param [String] vm vm id that was once returned by {#create_vm}
+    # @param [Hash] metadata metadata key/value pairs
+    # @return [void]
+    def set_vm_metadata(vm, metadata)
+      instance = @ec2.instances[vm]
+
+      # TODO should we clear existing tags that don't exist in metadata?
+      metadata.each_pair do |key, value|
+        tag(instance, key, value)
+      end
+
+      # should deployment name be included too?
+      job = metadata[:job]
+      index = metadata[:index]
+      tag(instance, "Name", "#{job}/#{index}") if job && index
+    rescue AWS::EC2::Errors::TagLimitExceeded => e
+      @logger.error("could not tag #{instance.id}: #{e.message}")
+    end
+
     # @note Not implemented in the AWS CPI
     def validate_deployment(old_manifest, new_manifest)
       # Not implemented in VSphere CPI as well
@@ -424,6 +447,15 @@ module Bosh::AwsCloud
     end
 
     private
+
+    # add a tag to something
+    def tag(taggable, key, value)
+      trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
+      trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
+      taggable.add_tag(trimmed_key, :value => trimmed_value)
+    rescue AWS::EC2::Errors::InvalidParameterValue => e
+      @logger.error("could not tag #{taggable.id}: #{e.message}")
+    end
 
     def image_params(cloud_properties, snapshot_id)
       root_device_name = cloud_properties["root_device_name"]
