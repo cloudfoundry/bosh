@@ -7,9 +7,9 @@ module Bosh::Deployer
 
       include InstanceManagerHelpers
 
+      # TODO extract
       def update_spec(spec)
-        spec = super(spec)
-        properties = spec["properties"]
+        properties = spec.properties
 
         properties["aws"] =
           Config.spec_properties["aws"] ||
@@ -19,8 +19,6 @@ module Bosh::Deployer
         properties["aws"]["stemcell"] = Config.cloud_options["properties"]["stemcell"]
 
         spec.delete("networks")
-
-        spec
       end
 
       def configure

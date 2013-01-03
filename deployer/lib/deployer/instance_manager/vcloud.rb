@@ -5,17 +5,15 @@ module Bosh::Deployer
 
     class Vcloud < InstanceManager
 
+      # TODO extract
       def update_spec(spec)
-        spec = super(spec)
-        properties = spec["properties"]
+        properties = spec.properties
 
         properties["vcd"] =
           Config.spec_properties["vcd"] ||
           Config.cloud_options["properties"]["vcds"].first.dup
 
         properties["vcd"]["address"] ||= properties["vcd"]["url"]
-
-        spec
       end
 
       # @return [Integer] size in MiB

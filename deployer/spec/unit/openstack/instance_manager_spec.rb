@@ -39,31 +39,6 @@ describe Bosh::Deployer::InstanceManager do
     @openstack.should_receive(:addresses).and_return(addresses)
   end
 
-  it "should update the apply spec" do
-    dummy_ip = "1.2.3.4"
-    @deployer.stub!(:service_ip).and_return(dummy_ip)
-    spec = YAML.load_file(spec_asset("apply_spec_openstack.yml"))
-    @deployer.update_spec(spec)
-    props = spec["properties"]
-
-    %w{blobstore postgres director redis nats openstack_registry}.each do |service|
-      ip = props[service]["address"]
-      ip.should_not be_nil
-      ip.should_not == "127.0.0.1"
-      ip.should == dummy_ip
-    end
-  end
-
-  it "should apply" do
-    @deployer.stub!(:service_ip).and_return("10.0.0.10")
-    spec = YAML.load_file(spec_asset("apply_spec_openstack.yml"))
-    updated_spec = @deployer.update_spec(spec.dup)
-    @agent.should_receive(:run_task).with(:stop)
-    @agent.should_receive(:run_task).with(:apply, updated_spec)
-    @agent.should_receive(:run_task).with(:start)
-    @deployer.apply(spec)
-  end
-
   it "should not populate disk model" do
     disk_model = @deployer.disk_model
     disk_model.should == nil
@@ -72,6 +47,8 @@ describe Bosh::Deployer::InstanceManager do
   it "should create a Bosh instance" do
     @deployer.stub!(:service_ip).and_return("10.0.0.10")
     spec = YAML.load_file(spec_asset("apply_spec_openstack.yml"))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
@@ -133,6 +110,8 @@ describe Bosh::Deployer::InstanceManager do
   it "should update a Bosh instance" do
     @deployer.stub!(:service_ip).and_return("10.0.0.10")
     spec = YAML.load_file(spec_asset("apply_spec_openstack.yml"))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+
     disk_cid = "22"
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)

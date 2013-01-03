@@ -151,11 +151,11 @@ module Bosh::Deployer
 
       unless @apply_spec
         step "Fetching apply spec" do
-          @apply_spec = agent.release_apply_spec
+          @apply_spec = Specification.new(agent.release_apply_spec)
         end
       end
 
-      apply(@apply_spec)
+      apply
 
       step "Waiting for the director" do
         wait_until_director_ready
@@ -202,14 +202,14 @@ module Bosh::Deployer
           run_command("tar -zxf #{stemcell_tgz} -C #{stemcell}")
         end
 
-        @apply_spec = load_apply_spec(stemcell)
+        @apply_spec = Specification.load_from_stemcell(stemcell)
 
         # load properties from stemcell manifest
         properties = load_stemcell_manifest(stemcell)
 
         # override with values from the deployment manifest
         override = Config.cloud_options["properties"]["stemcell"]
-        override_property(properties, "cloud_properties", override)
+        properties["cloud_properties"].merge!(override) if override
 
         step "Uploading stemcell" do
           cloud.create_stemcell("#{stemcell}/image", properties["cloud_properties"])
@@ -344,41 +344,12 @@ module Bosh::Deployer
       save_state
     end
 
-    def update_spec(spec)
-      properties = spec["properties"]
-
-      # set the director name to what is specified in the micro_bosh.yml
-      if Config.name
-        properties["director"] = {} unless properties["director"]
-        properties["director"]["name"] = Config.name
-      end
-
-      # blobstore and nats need to use an elastic IP (if available),
-      # as when the micro bosh instance is re-created during a
-      # deployment, it might get a new private IP
-      %w{blobstore nats}.each do |service|
-        update_agent_service_address(properties, service, bosh_ip)
-      end
-
-      services = %w{postgres director redis blobstore nats aws_registry
-                    openstack_registry powerdns}
-      services.each do |service|
-        update_service_address(properties, service, service_ip)
-      end
-
-      # health monitor does not listen to any ports, so there is no
-      # need to update the service address, but we still want to
-      # be able to override values in the apply_spec
-      override_property(properties, "hm", Config.spec_properties["hm"])
-
-      spec
-    end
-
-    def apply(spec)
+    def apply
       agent_stop
 
       step "Applying micro BOSH spec" do
-        agent.run_task(:apply, update_spec(spec.dup))
+        update_spec(@apply_spec)
+        agent.run_task(:apply, @apply_spec.update(bosh_ip, service_ip))
       end
 
       agent_start
@@ -397,28 +368,6 @@ module Bosh::Deployer
     end
 
     private
-
-    # update the agent service section from the contents of the apply_spec
-    def update_agent_service_address(properties, service, address)
-      if Config.agent_properties
-        agent = properties["agent"] ||= {}
-        svc = agent[service] ||= {}
-        svc["address"] = address
-
-        override_property(agent, service, Config.agent_properties[service])
-      end
-    end
-
-    def update_service_address(properties, service, address)
-      return unless properties[service]
-      properties[service]["address"] = address
-
-      override_property(properties, service, Config.spec_properties[service])
-    end
-
-    def override_property(properties, service, override)
-      properties[service].merge!(override) if override
-    end
 
     def bosh_ip
       Config.bosh_ip
@@ -458,7 +407,7 @@ module Bosh::Deployer
     end
 
     def wait_until_director_ready
-      port = @apply_spec["properties"]["director"]["port"]
+      port = @apply_spec.director_port
       url = "http://#{bosh_ip}:#{port}/info"
       wait_until_ready do
         info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
@@ -503,6 +452,7 @@ module Bosh::Deployer
       end
     end
 
+    # TODO remove
     def load_apply_spec(dir)
       load_spec("#{dir}/apply_spec.yml") do
         err "this isn't a micro bosh stemcell - apply_spec.yml missing"

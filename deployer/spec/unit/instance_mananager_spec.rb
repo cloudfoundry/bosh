@@ -27,70 +27,6 @@ describe Bosh::Deployer::InstanceManager do
     @deployer.send(:load_deployments)["instances"].select { |d| d[:name] == @deployer.state.name }.first
   end
 
-  it "should update the apply spec" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
-    @deployer.update_spec(spec)
-    props = spec["properties"]
-
-    %w{blobstore postgres director redis nats}.each do |service|
-      ip = props[service]["address"]
-      ip.should_not be_nil
-      ip.should_not == "127.0.0.1"
-      ip.should == Bosh::Deployer::Config.networks["bosh"]["ip"]
-    end
-
-    cloud_options = Bosh::Deployer::Config.cloud_options
-    case cloud_options["plugin"]
-    when "vsphere"
-      props["vcenter"]["address"].should_not == "127.0.0.1"
-      props["vcenter"]["address"].should == cloud_options["properties"]["vcenters"].first["host"]
-      props["vcenter"]["user"].should_not == "vcenter-user"
-      props["vcenter"]["password"].should_not == "vcenter-password"
-    else
-    end
-  end
-
-  it "should override the apply spec with properties" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
-
-    properties = YAML.load_file(spec_asset("test-apply-spec-properties.yml"))
-
-    Bosh::Deployer::Config.spec_properties.merge!(properties["apply_spec"]["properties"])
-
-    @deployer.update_spec(spec)
-    props = spec["properties"]
-
-    %w{blobstore postgres director redis nats}.each do |service|
-      ip = props[service]["address"]
-      ip.should_not be_nil
-      ip.should_not == "127.0.0.1"
-      if override = Bosh::Deployer::Config.spec_properties[service]
-        expected_ip = override["address"]
-      end
-      expected_ip ||= Bosh::Deployer::Config.networks["bosh"]["ip"]
-      ip.should == expected_ip
-    end
-
-    cloud_options = Bosh::Deployer::Config.cloud_options
-    case cloud_options["plugin"]
-    when "vsphere"
-      props["vcenter"]["address"].should == "devNN"
-      props["vcenter"]["address"].should_not == cloud_options["properties"]["vcenters"].first["host"]
-      props["vcenter"]["user"].should == "devNN-user"
-      props["vcenter"]["password"].should == "devNN-password"
-    else
-    end
-  end
-
-  it "should apply" do
-    spec = YAML.load_file(spec_asset("apply_spec.yml"))
-    updated_spec = @deployer.update_spec(spec.dup)
-    @agent.should_receive(:run_task).with(:stop)
-    @agent.should_receive(:run_task).with(:apply, updated_spec)
-    @agent.should_receive(:run_task).with(:start)
-    @deployer.apply(spec)
-  end
-
   it "should populate disk model" do
     disk_model = @deployer.disk_model
     disk_model.should == VSphereCloud::Models::Disk
@@ -106,6 +42,9 @@ describe Bosh::Deployer::InstanceManager do
 
   it "should create a Bosh instance" do
     spec = YAML.load_file(spec_asset("apply_spec.yml"))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+    Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)
     @deployer.stub!(:wait_until_director_ready)
@@ -164,6 +103,9 @@ describe Bosh::Deployer::InstanceManager do
 
   it "should update a Bosh instance" do
     spec = YAML.load_file(spec_asset("apply_spec.yml"))
+    Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
+    Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+
     disk_cid = "22"
     @deployer.stub!(:run_command)
     @deployer.stub!(:wait_until_agent_ready)
