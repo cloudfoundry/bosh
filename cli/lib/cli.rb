@@ -30,6 +30,9 @@ require "uri"
 require "yaml"
 require "netaddr"
 
+require "httpclient"
+require "http_patch"
+
 unless defined?(Bosh::Cli::VERSION)
   require "cli/version"
 end

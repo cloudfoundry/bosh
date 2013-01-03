@@ -106,6 +106,7 @@ module Bosh::Director
         find_subnet(reservation.ip) do |subnet|
           ip = ip_to_netaddr(reservation.ip)
           config = {
+              "type" =>"manual",
               "ip" => ip.ip,
               "netmask" => subnet.netmask,
               "cloud_properties" => subnet.cloud_properties

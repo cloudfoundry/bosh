@@ -29,7 +29,7 @@ module Bosh::AwsRegistry
       @http_password = config["http"]["password"]
 
       @aws = config["aws"]
-
+      AWS.config(:proxy_uri=>@aws["proxy_uri"])
       @aws_options = {
         :access_key_id => @aws["access_key_id"],
         :secret_access_key => @aws["secret_access_key"],

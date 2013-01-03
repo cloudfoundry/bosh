@@ -11,7 +11,7 @@ module Bosh::AwsCloud
   #
   class NetworkConfigurator
     include Helpers
-
+    attr_reader :private_ip
     ##
     # Creates new network spec
     #
@@ -38,6 +38,11 @@ module Bosh::AwsCloud
           else
             @dynamic_network = DynamicNetwork.new(name, spec)
             @security_groups += extract_security_groups(spec)
+
+            if spec["ip"]
+              @private_ip = spec["ip"]
+            end
+
           end
         when "vip"
           if @vip_network
@@ -45,6 +50,14 @@ module Bosh::AwsCloud
           else
             @vip_network = VipNetwork.new(name, spec)
             @security_groups += extract_security_groups(spec)
+          end
+        when "manual"
+          if @dynamic_network
+            cloud_error("More than one dynamic network for `#{name}'")
+          else
+            @dynamic_network = DynamicNetwork.new(name, spec)
+            @security_groups += extract_security_groups(spec)
+            @private_ip = spec["ip"]
           end
         else
           cloud_error("Invalid network type `#{network_type}': AWS CPI " \
@@ -66,6 +79,8 @@ module Bosh::AwsCloud
 
       if @vip_network
         @vip_network.configure(ec2, instance)
+      elsif @private_ip
+       # no-op
       else
         # If there is no vip network we should disassociate any elastic IP
         # currently held by instance (as it might have had elastic IP before)

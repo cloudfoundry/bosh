@@ -43,7 +43,8 @@ function run_in_chroot {
     mkdir -p $chroot/proc
     mount -n -t proc proc $chroot/proc
 
-    chroot $chroot env -i $(cat $chroot/etc/environment) http_proxy=${http_proxy:-} bash -e -c "$script"
+    chroot $chroot env -i $(cat $chroot/etc/environment) http_proxy=${http_proxy:-} HTTP_PROXY=${http_proxy:-} https_proxy=${http_proxy:-} HTTPS_PROXY=${http_proxy:-}  bash -e -c "$script"
+
 EOS
 
   # Enable daemon startup
