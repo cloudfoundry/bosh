@@ -40,4 +40,16 @@ describe "job" do
     end
   end
 
+  it "should rename a job" do
+    with_deployment do
+      use_job("batfoo")
+      use_template("batlight")
+      updated_job_manifest = with_deployment
+      bosh("deployment #{updated_job_manifest.to_path}").should succeed
+      bosh('rename job batlight batfoo').should succeed_with %r{Rename successful}
+      bosh('vms').should succeed_with %r{batfoo}
+      updated_job_manifest.delete
+    end
+  end
+
 end
