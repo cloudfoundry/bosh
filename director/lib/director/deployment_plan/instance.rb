@@ -265,7 +265,7 @@ module Bosh::Director
           # The agent job spec could be in legacy form.  job_spec cannot be,
           # though, because we got it from the spec function in job.rb which
           # automatically makes it non-legacy.
-          return job_spec == Job.convert_from_legacy_spec(@current_state["job"])
+          return job_spec != Job.convert_from_legacy_spec(@current_state["job"])
         end
         return false
       end

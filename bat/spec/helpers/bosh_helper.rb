@@ -21,9 +21,6 @@ module BoshHelper
     puts(result.output) if verbose?
     yield result if block_given?
     result
-  rescue Bosh::Exec::Error => e
-    msg = "failed to execute '#{command}':\n#{e.output}"
-    raise Bosh::Exec::Error.new(e.status, msg, e.output)
   end
 
   def self.bosh_cli_config_path

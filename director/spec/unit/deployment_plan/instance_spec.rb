@@ -200,7 +200,7 @@ describe Bosh::Director::DeploymentPlan::Instance do
           "blobstore_id" => "e2e4e58e-a40e-43ec-bac5-fc50457d5563"
         }
       }
-      instance.job_changed?.should == false
+      instance.job_changed?.should == true
       # Check that the old way of comparing would say that the job has changed.
       (@job.spec == instance.current_state).should == false
     end
