@@ -160,6 +160,7 @@ module Bosh::Cli
       }.flatten
 
       plugins.each do |plugin|
+        next if Gem.loaded_path?(plugin)
         n_commands = Config.commands.size
         gem_dir = Pathname.new(Gem.dir)
         plugin_name = Pathname.new(plugin).relative_path_from(gem_dir)
