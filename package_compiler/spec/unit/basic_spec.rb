@@ -61,4 +61,36 @@ describe Bosh::PackageCompiler::Compiler do
     @compiler.compile.should include("aws_registry")
   end
 
+  it "should respect spec properties if job properties are empty" do
+    spec_properties = {
+      "foo" => {"bar1" => "original"}
+    }
+    job_properties = {}
+
+    @compiler = Bosh::PackageCompiler::Compiler.new(@options)
+    @compiler.add_default_properties(spec_properties, job_properties)
+    spec_properties.should == spec_properties
+  end
+
+  it "should add default job properties to spec properties" do
+    spec_properties = {
+      "foo" => {"bar1" => "original"}
+    }
+
+    job_properties = {
+      "foo.bar1" => {"default" => "notreplaced"},
+      "foo.bar2" => {"default" => "added"},
+      "bar.vtrue" => {"default" => true},
+      "bar.vfalse" => {"default" => false}
+    }
+
+    @compiler = Bosh::PackageCompiler::Compiler.new(@options)
+    @compiler.add_default_properties(spec_properties, job_properties)
+    spec_properties.should == {"foo" => {"bar1" => "original",
+                                         "bar2" => "added"},
+                               "bar" => {"vtrue" => true,
+                                         "vfalse" => false}
+                              }
+  end
+
 end
