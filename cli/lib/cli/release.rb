@@ -131,17 +131,39 @@ module Bosh::Cli
     end
 
 
-    # Extracts private blobstore data from final.yml (i.e. secrets)
-    # and merges it into the blobstore options.
     def merge_private_data(provider, options)
-      bs = @private_config["blobstore"]
-      return options unless bs
+      private_blobstore = @private_config["blobstore"]
+      return options unless private_blobstore
 
-      if bs[provider].nil? && has_blobstore_secret?
+      if private_blobstore[provider].nil? && has_blobstore_secret?
         err("blobstore private provider does not match final provider")
       end
 
-      options.merge(bs[provider] ? bs[provider] : {})
+      if provider == 'composite'
+        options['blobstores'].each_with_index { |final_inner_blobstore, index|
+          private_inner_blobstore = private_blobstore[provider]['blobstores'][index]
+          if private_inner_blobstore.nil?
+            err("Each of a composite blobstore's inner blobstores from #{@final_config_file} must also be in #{@private_config_file}")
+          end
+          err("Component blobstore at index #{index} in #{@final_config_file} does not have a 'name'") if final_inner_blobstore['name'].nil?
+          err("Component blobstore at index #{index} in #{@private_config_file} does not have a 'name'") if private_inner_blobstore['name'].nil?
+          if private_inner_blobstore['name'] != final_inner_blobstore['name']
+            err("Inner blobstore with name '#{private_inner_blobstore['name']}' in #{@private_config_file} does not match the name of the corresponding blobstore in #{@final_config_file}.")
+          end
+          if final_inner_blobstore['options']
+            if private_inner_blobstore['options']
+              final_inner_blobstore['options'] = final_inner_blobstore['options'].merge(private_inner_blobstore['options'])
+            end
+          else
+            if private_inner_blobstore['options']
+              final_inner_blobstore['options'] = private_inner_blobstore['options']
+            end
+          end
+        }
+        options
+      else
+        options.merge(private_blobstore[provider] ? private_blobstore[provider] : {})
+      end
     end
 
     # stores blobstore_secret as blobstore.atmos.secret

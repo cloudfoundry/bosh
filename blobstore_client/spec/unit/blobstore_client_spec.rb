@@ -35,6 +35,12 @@ describe Bosh::Blobstore::Client do
     bs.should be_instance_of Bosh::Blobstore::SwiftBlobstoreClient
   end
 
+  it "should have a composite provider" do
+    options = {:blobstores => [{'provider' => 'simple', 'options' => {}}, {'provider' => 'simple', 'options' => {}}]}
+    bs = Bosh::Blobstore::Client.create('composite', options)
+    bs.should be_instance_of Bosh::Blobstore::CompositeBlobstoreClient
+  end
+
   it "should raise an exception on an unknown client" do
     lambda {
       bs = Bosh::Blobstore::Client.create('foobar', {})

@@ -1,0 +1,5 @@
+---
+blobstore:
+  composite:
+    blobstores:
+    - name: b1

@@ -1,0 +1,13 @@
+---
+blobstore:
+  provider: composite
+  options:
+    blobstores:
+    - name: b1
+      options:
+        final_b1a: final_b1a_val
+        both_b1b: final_b1b_val
+    - name: b2
+    - name: b3
+      options:
+        final_b3: final_b3_val

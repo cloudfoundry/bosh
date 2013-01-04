@@ -1,0 +1,8 @@
+---
+blobstore:
+  provider: composite
+  options:
+    blobstores:
+    - name: b1
+      provider: p1
+    - name: b2

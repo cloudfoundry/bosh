@@ -170,4 +170,65 @@ describe Bosh::Cli::Release do
 
     end
   end
+
+  describe "merging private and final config for a composite blobstore" do
+    it "should properly merge the options for each inner blobstore" do
+      r = Bosh::Cli::Release.new(spec_asset("config/composite/good"))
+      opts = {
+          :blobstores => [
+              {
+                  'name' => 'b1',
+                  'options' => {
+                      'final_b1a' => 'final_b1a_val',
+                      'both_b1b' => 'private_b1b_val',
+                      'private_b1c' => 'private_b1c_val'
+                  }
+              },
+              {
+                  'name' => 'b2',
+                  'options' => {
+                      'private_b2' => 'private_b2_val'
+                  }
+              },
+              {
+                  'name' => 'b3',
+                  'options' => {
+                      'final_b3' => 'final_b3_val'
+                  }
+              }
+          ]
+      }
+      Bosh::Blobstore::Client.should_receive(:create).with("composite", opts)
+      r.blobstore
+    end
+
+    it "raises an error when inner blobstores' names do not match for a given index" do
+      r = Bosh::Cli::Release.new(spec_asset("config/composite/mismatched_names"))
+      expect {
+        r.blobstore
+      }.to raise_error(Bosh::Cli::CliError, /Inner blobstore with name 'wrong_name' .+ does not match the name of the corresponding blobstore/)
+    end
+
+    it "raises an error if an inner blobstore in final.yml does not have a name" do
+      r = Bosh::Cli::Release.new(spec_asset("config/composite/no_name_in_final"))
+      expect {
+        r.blobstore
+      }.to raise_error(Bosh::Cli::CliError, /Component blobstore at index 1 .+final.yml does not have a 'name'/)
+    end
+
+    it "raises an error if an inner blobstore in private.yml does not have a name" do
+      r = Bosh::Cli::Release.new(spec_asset("config/composite/no_name_in_private"))
+      expect {
+        r.blobstore
+      }.to raise_error(Bosh::Cli::CliError, /Component blobstore at index 1 .+private.yml does not have a 'name'/)
+    end
+
+    it "raises an error if an inner blobstore in final config is not found in private config" do
+      r = Bosh::Cli::Release.new(spec_asset("config/composite/blobstore_missing_from_private"))
+      expect {
+        r.blobstore
+      }.to raise_error(Bosh::Cli::CliError, /Each of a composite blobstore's inner blobstores .+ must also be in .*private.yml/)
+    end
+
+  end
 end

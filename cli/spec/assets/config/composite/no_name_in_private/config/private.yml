@@ -1,0 +1,6 @@
+---
+blobstore:
+  composite:
+    blobstores:
+    - name: b1
+    - not_a_name: val

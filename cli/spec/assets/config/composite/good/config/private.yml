@@ -1,0 +1,12 @@
+---
+blobstore:
+  composite:
+    blobstores:
+    - name: b1
+      options:
+        both_b1b: private_b1b_val
+        private_b1c: private_b1c_val
+    - name: b2
+      options:
+        private_b2: private_b2_val
+    - name: b3
