@@ -1,6 +1,7 @@
 module Bosh
   module PackageCompiler
     class Compiler
+      include Bosh::Common::PropertyHelper
 
       OPTIONS = {
         "blobstore_options" => { "blobstore_path" => "/var/vcap/micro_bosh/data/cache" },
@@ -73,6 +74,11 @@ module Bosh
           # then do the micro job
           untar(micro_job_path) do
             job = YAML.load_file("job.MF")
+
+            # add default job spec properties to apply spec
+            add_default_properties(@spec["properties"], job["properties"])
+
+            # Compile job packages
             compile_packages(dir, manifest, job["packages"])
           end
         end
@@ -213,6 +219,16 @@ module Bosh
         properties["redis"]["address"] = ip
         properties["nats"]["address"] = ip
         @spec["properties"] = properties
+      end
+
+      def add_default_properties(spec_properties, job_properties)
+        return unless  job_properties
+
+        job_properties.each_pair do |name, definition|
+          unless definition["default"].nil?
+            copy_property(spec_properties, spec_properties, name, definition["default"])
+          end
+        end
       end
 
     end
