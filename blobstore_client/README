@@ -1,1 +1,3 @@
-Blobstore client for VMware AppCloud Outer Shell.
+Common blobstore API.
+
+Lets BOSH access multiple blobstores using a unified API.
