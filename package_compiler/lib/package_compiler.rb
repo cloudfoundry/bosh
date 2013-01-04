@@ -3,6 +3,8 @@ module Bosh; module PackageCompiler; end; end
 require 'logger'
 require 'yaml'
 require 'blobstore_client'
+require 'common/common'
+require 'common/properties'
 require 'agent_client'
 require 'package_compiler/compiler'
 
