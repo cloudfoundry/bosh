@@ -13,17 +13,15 @@ module Bosh::Deployer
         @disk_model
       end
 
+      # TODO extract
       def update_spec(spec)
-        spec = super(spec)
-        properties = spec["properties"]
+        properties = spec.properties
 
         properties["vcenter"] =
           Config.spec_properties["vcenter"] ||
           Config.cloud_options["properties"]["vcenters"].first.dup
 
         properties["vcenter"]["address"] ||= properties["vcenter"]["host"]
-
-        spec
       end
     end
 
