@@ -89,7 +89,7 @@ describe Bosh::Agent::ApplyPlan::Plan do
 
     it "configures job" do
       plan.jobs.length.should == 1
-      plan.jobs[0].should_receive(:configure)
+      plan.jobs[0].should_receive(:configure).with(0)
       plan.configure_jobs
     end
 

@@ -82,9 +82,13 @@ module Bosh::Agent
         end
       end
 
+      # Configure the 1+ job templates (job colocation)
+      # They are reversed for the purposes of ensuring monit
+      # starts them in the order that they are specified
+      # in the original deployment manifest
       def configure_jobs
-        @jobs.each do |job|
-          job.configure
+        @jobs.reverse.each_with_index do |job, job_index|
+          job.configure(job_index)
         end
       end
 
