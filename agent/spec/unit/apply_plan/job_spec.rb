@@ -314,19 +314,19 @@ describe Bosh::Agent::ApplyPlan::Job do
       Bosh::Agent::Util.should_receive(:run_hook).
         with("post_install", "postgres")
 
-      job.configure
+      job.configure(3)
 
-      monit_file = File.join(job.install_path, "ccdb.postgres.monitrc")
-      monit_link = File.join(@base_dir, "monit", "job", "ccdb.postgres.monitrc")
+      monit_file = File.join(job.install_path, "03_ccdb.postgres.monitrc")
+      monit_link = File.join(@base_dir, "monit", "job", "03_ccdb.postgres.monitrc")
 
       File.exists?(monit_file).should be_true
       File.exists?(monit_link).should be_true
       File.read(monit_file).should == "check process ccdb mode manual bar"
 
       extra_monit_file = File.join(job.install_path,
-                                   "ccdb.postgres_extra.monitrc")
-      extra_monit_link = File.join(@base_dir, "monit",
-                                   "job", "ccdb.postgres_extra.monitrc")
+                                   "03_ccdb.postgres_extra.monitrc")
+      extra_monit_link = File.join(@base_dir, "monit", "job",
+                                   "03_ccdb.postgres_extra.monitrc")
 
       File.exists?(extra_monit_file).should be_true
       File.exists?(extra_monit_link).should be_true
@@ -354,7 +354,7 @@ describe Bosh::Agent::ApplyPlan::Job do
           with("post_install", "postgres")
 
         expect {
-          job.configure
+          job.configure(0)
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::ConfigurationError,
                          "Failed to configure job 'ccdb.postgres': " +
                          "failed to process monit template " +
