@@ -199,7 +199,7 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     handler.apply
 
-    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.hubba_hubba.monitrc')
+    monitrc = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0000_hubba.hubba_hubba.monitrc')
     File.exist?(monitrc).should == true
   end
 
@@ -235,10 +235,10 @@ describe Bosh::Agent::Message::Apply do
     handler.stub!(:apply_packages)
     handler.apply
 
-    monitrc1 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', 'hubba.hubba_hubba.monitrc')
+    monitrc1 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba', '77', '0001_hubba.hubba_hubba.monitrc')
     File.exist?(monitrc1).should == true
 
-    monitrc2 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba2', '77', 'hubba.hubba2_hubba.monitrc')
+    monitrc2 = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'hubba2', '77', '0000_hubba.hubba2_hubba.monitrc')
     File.exist?(monitrc2).should == true
   end
 
