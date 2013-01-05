@@ -54,9 +54,9 @@ module Bosh::Agent
         install_failed("system call error: #{e.message}")
       end
 
-      def configure
+      def configure(job_index)
         run_post_install_hook
-        configure_monit
+        configure_monit(job_index)
       rescue SystemCallError => e
         config_failed("system call error: #{e.message}")
       end
@@ -158,26 +158,27 @@ module Bosh::Agent
         Bosh::Agent::Util.run_hook("post_install", @template)
       end
 
-      def configure_monit
+      def configure_monit(job_index)
         Dir.foreach(@install_path).each do |file|
           full_path = File.expand_path(file, @install_path)
 
           if file == "monit"
-            install_job_monitrc(full_path, @name)
+            install_job_monitrc(full_path, @name, job_index)
           elsif file =~ /(.*)\.monit$/
-            install_job_monitrc(full_path, "#{@name}_#{$1}")
+            install_job_monitrc(full_path, "#{@name}_#{$1}", job_index)
           end
         end
       end
 
-      def install_job_monitrc(template_path, label)
+      def install_job_monitrc(template_path, label, job_index)
         if @config_binding.nil?
           config_failed("Unable to configure monit, " +
                         "no binding provided")
         end
 
         template = ERB.new(File.read(template_path))
-        out_file = File.join(@install_path, "#{label}.monitrc")
+        formatted_job_index = "%02d" % job_index
+        out_file = File.join(@install_path, "#{formatted_job_index}_#{label}.monitrc")
 
         begin
           result = template.result(@config_binding)
@@ -194,7 +195,7 @@ module Bosh::Agent
 
         # Monit will load all {base_dir}/monit/job/*.monitrc files,
         # so we need to blow away this directory when we clean up.
-        link_path = File.join(@base_dir, "monit", "job", "#{label}.monitrc")
+        link_path = File.join(@base_dir, "monit", "job", "#{formatted_job_index}_#{label}.monitrc")
 
         FileUtils.mkdir_p(File.dirname(link_path))
         Bosh::Agent::Util.create_symlink(out_file, link_path)
