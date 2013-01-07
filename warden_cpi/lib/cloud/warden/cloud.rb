@@ -186,18 +186,20 @@ module Bosh::WardenCloud
     def delete_vm(vm_id)
       with_thread_name("delete_vm(#{vm_id})") do
         vm = Models::VM[vm_id.to_i]
-        cloud_error("Cannot find VM #{vm}") unless vm
 
+        cloud_error("Cannot find VM #{vm}") unless vm
         cloud_error("Cannot delete vm with disks attached") if vm.disks.size > 0
+
+        container_id = vm.container_id
+
+        vm.destroy
 
         with_warden do |client|
           request = Warden::Protocol::DestroyRequest.new
-          request.handle = vm.container_id
+          request.handle = container_id
 
           client.call(request)
         end
-
-        Models::VM[vm_id.to_i].delete
 
         nil
       end
