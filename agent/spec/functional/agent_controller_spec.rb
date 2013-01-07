@@ -19,10 +19,8 @@ end
 describe Bosh::Agent::AgentController do
   include Rack::Test::Methods
 
-  def app
-    handler = Bosh::Agent::HTTPHandler.new
-    Bosh::Agent::AgentController.new(handler)
-  end
+  let(:handler) { Bosh::Agent::HTTPHandler.new }
+  let(:app) { Bosh::Agent::AgentController.new(handler) }
 
   def agent_call(method, args=[])
     post "/agent", {}, {
@@ -79,6 +77,8 @@ describe Bosh::Agent::AgentController do
   end
 
   it "should throw exception with invalid apply_spec" do
+    handler.should_receive(:kill_main_thread_in)
+
     message = Bosh::Agent::Message::ReleaseApplySpec
     message.any_instance.stub(:release_apply_spec).and_return("")
 
