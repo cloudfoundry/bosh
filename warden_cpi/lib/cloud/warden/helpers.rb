@@ -52,5 +52,9 @@ mknod #{device_prefix}${i}1 b 7 #{device_number} > /dev/null 2>&1 && echo "#{dev
       "#{device_path}1"
     end
 
+    def process_user
+      Etc.getpwuid(Process.uid).name
+    end
+
   end
 end

@@ -475,15 +475,10 @@ module Bosh::WardenCloud
         request.handle = handle
         request.src_path = agent_settings_file
         request.dst_path = tempfile.path
+        request.owner = process_user
 
         client.call(request)
       end
-
-      # TODO: use run request to cat out the agent setting file
-      # This looks tricky, because the copied out file is owned by root, and all
-      # the files in temp dir is 700. We need to add read permission to the temp
-      # file.
-      sudo "chmod +r #{tempfile.path}"
 
       body = File.read(tempfile.path)
       tempfile.unlink
