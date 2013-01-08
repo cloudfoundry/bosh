@@ -166,6 +166,7 @@ module Bosh::Cli
 
       def target_required
         err("Please choose target first") if target.nil?
+        show_target
       end
 
       def deployment_required
@@ -175,6 +176,23 @@ module Bosh::Cli
       def no_track_unsupported
         if @options.delete(:no_track)
           say("Ignoring `" + "--no-track".yellow + "' option")
+        end
+      end
+
+      def show_target
+        if config.target
+          if interactive?
+            if config.target_name
+              name = "#{config.target} (#{config.target_name})"
+            else
+              name = config.target
+            end
+            say("Current target is #{name.green}")
+          else
+            say(config.target)
+          end
+        else
+          err("Target not set")
         end
       end
 
