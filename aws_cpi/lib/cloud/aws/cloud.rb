@@ -91,12 +91,6 @@ module Bosh::AwsCloud
       with_thread_name("create_vm(#{agent_id}, ...)") do
         network_configurator = NetworkConfigurator.new(network_spec)
 
-        user_data = {
-          "registry" => {
-            "endpoint" => @registry.endpoint
-          }
-        }
-
         security_groups =
           network_configurator.security_groups(@default_security_groups)
         @logger.debug("using security groups: #{security_groups.join(', ')}")
@@ -114,7 +108,7 @@ module Bosh::AwsCloud
           :key_name => resource_pool["key_name"] || @default_key_name,
           :security_groups => security_groups,
           :instance_type => resource_pool["instance_type"],
-          :user_data => Yajl::Encoder.encode(user_data)
+          :user_data => Yajl::Encoder.encode(user_data(network_spec))
         }
 
         instance_params[:availability_zone] =
@@ -455,6 +449,33 @@ module Bosh::AwsCloud
       taggable.add_tag(trimmed_key, :value => trimmed_value)
     rescue AWS::EC2::Errors::InvalidParameterValue => e
       @logger.error("could not tag #{taggable.id}: #{e.message}")
+    end
+
+    # Prepare EC2 user data
+    # @param [Hash] network_spec network specification
+    # @return [Hash] EC2 user data
+    def user_data(network_spec)
+      data = {}
+
+      data["registry"] = { "endpoint" => @registry.endpoint }
+
+      with_dns(network_spec) do |servers|
+        data["dns"] = { "nameserver" => servers }
+      end
+
+      data
+    end
+
+    # extract dns server list from network spec and yield the the list
+    # @param [Hash] network_spec network specification for instance
+    # @yield [Array]
+    def with_dns(network_spec)
+      network_spec.each_value do |properties|
+        if properties["dns"]
+          yield properties["dns"]
+          return
+        end
+      end
     end
 
     def image_params(cloud_properties, snapshot_id)
