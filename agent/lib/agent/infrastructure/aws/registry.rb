@@ -88,7 +88,47 @@ module Bosh::Agent
           raise(LoadSettingsError,
                 "Cannot parse user data for endpoint #{user_data.inspect}")
         end
-        user_data["registry"]["endpoint"]
+        lookup_registry(user_data)
+      end
+
+      # If the registry endpoint is specified with a bosh dns name, e.g.
+      # 0.registry.default.aws.bosh, then the agent needs to lookup the
+      # name and insert the IP address, as the agent doesn't update
+      # resolv.conf until after the bootstrap is run.
+      def lookup_registry(user_data)
+        endpoint = user_data["registry"]["endpoint"]
+
+        # if we get data from an old director which doesn't set dns
+        # info, there is noting we can do, so just return the endpoint
+        unless user_data.has_key?("dns")
+          return endpoint
+        end
+
+        hostname = extract_registry_hostname(endpoint)
+        nameservers = user_data["dns"]["nameserver"]
+        ip = bosh_lookup(hostname, nameservers)
+        inject_registry_ip(ip, endpoint)
+      rescue Resolv::ResolvError => e
+        raise(LoadSettingsError,
+              "Cannot lookup #{hostname} using #{nameservers.join(', ')}" +
+                  "\n#{e.inspect}")
+      end
+
+      def bosh_lookup(hostname, nameservers)
+        resolver = Resolv::DNS.new(:nameserver => nameservers)
+        resolver.getaddress(hostname)
+      end
+
+      def extract_registry_hostname(endpoint)
+        match = endpoint.match(%r{https*://([^:]+):})
+        unless match.size == 2
+          raise LoadSettingsError, "Could not extract registry hostname"
+        end
+        match[1]
+      end
+
+      def inject_registry_ip(ip, endpoint)
+        endpoint.sub(%r{//[^:]+:}, "//#{ip}:")
       end
 
       def get_openssh_key
