@@ -347,6 +347,8 @@ module Bosh::AwsCloud
           image = @ec2.images.create(params)
           wait_resource(image, :available, :state)
 
+          tag(image, "Name", params[:description]) if params[:description]
+
           image.id
         rescue => e
           @logger.error(e)
@@ -482,10 +484,7 @@ module Bosh::AwsCloud
       root_device_name = cloud_properties["root_device_name"]
       architecture = cloud_properties["architecture"]
 
-      # we could set :description here, but since we don't have a
-      # handle to the stemcell name and version, we can't set it
-      # to something useful :(
-      {
+      params = {
           :name => "BOSH-#{generate_unique_name}",
           :architecture => architecture,
           :kernel_id => find_aki(architecture, root_device_name),
@@ -495,6 +494,14 @@ module Bosh::AwsCloud
               "/dev/sdb" => "ephemeral0"
           }
       }
+
+      # old stemcells doesn't have name & version
+      if cloud_properties["name"] && cloud_properties["version"]
+        name = "#{cloud_properties['name']} #{cloud_properties['version']}"
+        params[:description] = name
+      end
+
+      params
     end
 
     def find_aki(architecture, root_device_name)
