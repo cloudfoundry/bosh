@@ -33,11 +33,15 @@ describe Bosh::AwsCloud::Cloud do
         :architecture => "x86_64",
         :kernel_id => "aki-b4aa75dd",
         :root_device_name => "/dev/sda1",
+        :description => "bosh-stemcell 1.2.3",
         :block_device_mappings => {
           "/dev/sda" => { :snapshot_id => "s-baz" },
           "/dev/sdb" => "ephemeral0"
         }
       }
+
+
+      image.should_receive(:add_tag).with("Name", {:value=>"bosh-stemcell 1.2.3"})
 
       cloud = mock_cloud do |ec2|
         ec2.volumes.stub(:[]).with("v-foo").and_return(volume)
@@ -98,7 +102,9 @@ describe Bosh::AwsCloud::Cloud do
 
       cloud_properties = {
           "root_device_name" => "/dev/sda1",
-          "architecture" => "x86_64"
+          "architecture" => "x86_64",
+          "name" => "bosh-stemcell",
+          "version" => "1.2.3"
       }
       cloud.create_stemcell("/tmp/foo", cloud_properties).should == "i-bar"
     end
