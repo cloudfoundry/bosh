@@ -48,12 +48,30 @@ describe Bosh::Common::TemplateEvaluationContext do
 
     eval_template("<%= p('vtrue') %>", @context).should == "true"
     eval_template("<%= p('vfalse') %>", @context).should == "false"
+  end
 
-    expect {
-      eval_template("<%= p('bar.baz') %>", @context)
-    }.to raise_error(Bosh::Common::UnknownProperty,
-                     "Can't find property `[\"bar.baz\"]'")
-    eval_template("<%= p('bar.baz', 22) %>", @context).should == "22"
+  describe "returning default values" do
+    it "raises an error if no default is passed in and no value or default is found in the spec" do
+      expect {
+        eval_template("<%= p('bar.baz') %>", @context)
+      }.to raise_error(Bosh::Common::UnknownProperty,"Can't find property `[\"bar.baz\"]'")
+    end
+
+    it "should return a default value if it passed into the 'p' helper" do
+      eval_template("<%= p('bar.baz', 22) %>", @context).should == "22"
+    end
+
+    it "returns the default from the spec if it's a hash with a default key, and no default is passed in" do
+      @spec["properties"]["foo"] = {"default" => "default_foo"}
+      @context = make(@spec)
+      eval_template("<%= p('foo') %>", @context).should == "default_foo"
+    end
+
+    it "gives precedence to defaults in the spec over passed in defaults" do
+      @spec["properties"]["foo"] = {"default" => "default_foo"}
+      @context = make(@spec)
+      eval_template("<%= p('foo', 22) %>", @context).should == "default_foo"
+    end
   end
 
   it "supports chaining property lookup via 'p' helper" do

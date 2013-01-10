@@ -73,18 +73,14 @@ module Bosh::Common
     #   @return [Object] Property value
     #   @raise [Bosh::Common::UnknownProperty]
     def p(*args)
-      names = args[0]
-      default_given = args.size > 1
-      default = args[1]
-
-      names = Array(names) unless names.kind_of?(Array)
+      names = Array(args[0]) unless names.kind_of?(Array)
 
       names.each do |name|
-        result = lookup_property(@raw_properties, name)
+        result = extract_value(name)
         return result unless result.nil?
       end
 
-      return default if default_given
+      return args[1] if args.length == 2
       raise UnknownProperty.new(names)
     end
 
@@ -114,6 +110,11 @@ module Bosh::Common
         else
           object
       end
+    end
+
+    def extract_value(name)
+      spec_property = lookup_property(@raw_properties, name)
+      spec_property.is_a?(Hash) ? spec_property["default"] : spec_property
     end
   end
 end
