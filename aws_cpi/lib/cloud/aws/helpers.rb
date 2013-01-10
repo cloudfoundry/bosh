@@ -21,7 +21,9 @@ module Bosh::AwsCloud
 
       started_at = Time.now
       failures = 0
-      desc = resource.to_s
+
+      # all resources but Attachment have id
+      desc = resource.respond_to?(:id) ? resource.id : resource.to_s
 
       loop do
         task_checkpoint
