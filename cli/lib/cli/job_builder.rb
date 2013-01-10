@@ -37,7 +37,7 @@ module Bosh::Cli
         end
 
         unless $?.exitstatus == 0
-          raise InvalidJob, "`#{script_path}' script failed"
+          raise InvalidJob, "`#{script_path}' script failed: #{output}"
         end
 
         output
