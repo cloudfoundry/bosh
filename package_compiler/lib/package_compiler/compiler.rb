@@ -125,13 +125,10 @@ module Bosh
 
       def compile_packages(dir, manifest, packages)
         packages.each do |name|
-          @logger.debug "compiling package #{name}"
           package = find_package(manifest, name)
-          package["dependencies"].each do |dep|
-            @logger.debug "compiling dependency #{dep}"
-            pkg = find_package(manifest, dep)
-            compile_package(dir, pkg, dep)
-          end
+          compile_packages(dir, manifest, package["dependencies"]) if package["dependencies"]
+
+          @logger.debug "compiling package #{name}"
           compile_package(dir, package, name)
         end
       end
