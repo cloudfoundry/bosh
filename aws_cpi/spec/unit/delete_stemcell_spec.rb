@@ -20,7 +20,7 @@ describe Bosh::AwsCloud::Cloud do
 
     image.should_receive(:deregister)
 
-    map = { "/dev/sda" => double("map", :snapshot_id => "snap-123") }
+    map = { "/dev/sda" => {:snapshot_id => "snap-123"} }
     image.should_receive(:block_device_mappings).and_return(map)
 
     cloud.delete_stemcell("i-foo")

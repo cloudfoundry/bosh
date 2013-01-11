@@ -370,7 +370,7 @@ module Bosh::AwsCloud
         image = @ec2.images[stemcell_id]
 
         image.block_device_mappings.each do |device, map|
-          id = map.snapshot_id
+          id = map[:snapshot_id]
           if id
             @logger.debug("queuing snapshot #{id} for deletion")
             snapshots << id
