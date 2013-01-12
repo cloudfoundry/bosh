@@ -58,6 +58,13 @@ module Bosh::Deployer
         @properties["agent"]["ntp"] = Config.spec_properties["ntp"]
       end
 
+      # TODO: this override is ugly (aws-specific) but needed for aws_registry
+      if Config.spec_properties["aws"] ||
+         Config.cloud_options["properties"]["aws"]
+        @properties["aws"] = Config.spec_properties["aws"] ||
+                             Config.cloud_options["properties"]["aws"]
+      end
+
       @spec
     end
 
