@@ -110,6 +110,12 @@ module Bosh::Agent
         end
 
         hostname = extract_registry_hostname(endpoint)
+
+        # if the registry endpoint is an IP address, just return the endpoint
+        unless (IPAddr.new(hostname) rescue(nil)).nil?
+          return endpoint
+        end
+
         nameservers = user_data["dns"]["nameserver"]
         ip = bosh_lookup(hostname, nameservers)
         inject_registry_ip(ip, endpoint)

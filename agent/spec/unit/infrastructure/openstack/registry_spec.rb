@@ -65,6 +65,16 @@ describe Bosh::Agent::Infrastructure::Openstack::Registry do
       endpoint.should == "http://4.3.2.1:25777"
     end
 
+    it 'should allow registry endpoint with ip' do
+      hostname = "4.3.2.1"
+      nameservers = ["1.2.3.4"]
+
+      data = user_data("http://#{hostname}:25777", nameservers)
+      endpoint = Bosh::Agent::Infrastructure::Openstack::Registry
+                   .lookup_registry(data)
+      endpoint.should == "http://4.3.2.1:25777"
+    end
+
     it "should raise an error when it can't lookup the name" do
       hostname = "foo.com"
       nameservers = ["1.1.1.1", "2.2.2.2"]

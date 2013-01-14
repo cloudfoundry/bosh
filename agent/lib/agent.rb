@@ -16,6 +16,7 @@ require "posix/spawn"
 require "monit_api"
 require "fileutils"
 require "resolv"
+require "ipaddr"
 
 require "common/properties"
 require "encryption/encryption_handler"
