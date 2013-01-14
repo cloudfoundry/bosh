@@ -125,17 +125,6 @@ module Bosh::WardenCloud
         end
         vm.container_id = handle
 
-        # Make /var/vcap/bosh writable for all
-        # This is because warden only supports copy_in as non-privileged user
-        with_warden do |client|
-          request = Warden::Protocol::RunRequest.new
-          request.handle = handle
-          request.privileged = true
-          request.script = "chmod 777 /var/vcap/bosh"
-
-          client.call(request)
-        end
-
         # Agent settings
         env = generate_agent_env(vm, agent_id, networks)
         set_agent_env(vm.container_id, env)
@@ -467,21 +456,14 @@ module Bosh::WardenCloud
     end
 
     def get_agent_env(handle)
-      tempfile = Tempfile.new("settings_out")
-      tempfile.close
-
-      with_warden do |client|
-        request = Warden::Protocol::CopyOutRequest.new
+      body = with_warden do |client|
+        request = Warden::Protocol::RunRequest.new
         request.handle = handle
-        request.src_path = agent_settings_file
-        request.dst_path = tempfile.path
-        request.owner = process_user
+        request.privileged = true
+        request.script = "cat #{agent_settings_file}"
 
         client.call(request)
       end
-
-      body = File.read(tempfile.path)
-      tempfile.unlink
 
       env = Yajl::Parser.parse(body)
       env
@@ -492,11 +474,20 @@ module Bosh::WardenCloud
       tempfile.write(Yajl::Encoder.encode(env))
       tempfile.close
 
+      # Here we copy the setting file to temp file in container, then mv it to
+      # /var/vcap/bosh by privileged user.
       with_warden do |client|
         request = Warden::Protocol::CopyInRequest.new
         request.handle = handle
         request.src_path = tempfile.path
-        request.dst_path = agent_settings_file
+        request.dst_path = tempfile.path
+
+        client.call(request)
+
+        request = Warden::Protocol::RunRequest.new
+        request.handle = handle
+        request.privileged = true
+        request.script = "mv #{tempfile.path} #{agent_settings_file}"
 
         client.call(request)
       end

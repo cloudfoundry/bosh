@@ -57,7 +57,6 @@ describe Bosh::WardenCloud::Cloud do
           env["mbus"].should_not == nil
           env["ntp"].should be_instance_of Array
           env["blobstore"].should be_instance_of Hash
-          request.dst_path.should == "/var/vcap/bosh/settings.json"
 
           resp = CopyInResponse.new
         elsif request.instance_of? RunRequest
