@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_vsphere_cpi", ">=0.6.0"
   s.add_dependency "bosh_aws_cpi", ">=0.6.3"
   s.add_dependency "bosh_aws_registry", "~>0.2.2"
-  s.add_dependency "bosh_openstack_cpi", "~>0.0.5"
+  s.add_dependency "bosh_openstack_cpi", "~>0.0.6"
   s.add_dependency "bosh_openstack_registry", "~>0.0.5"
   s.add_dependency "agent_client", "~>0.1.1"
   s.add_dependency "sqlite3", "~>1.3.3"
