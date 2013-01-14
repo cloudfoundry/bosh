@@ -17,15 +17,16 @@ send host-name "<hostname>";
 #send dhcp-client-identifier 1:0:a0:24:ab:fb:9c;
 #send dhcp-lease-time 3600;
 #supersede domain-name "fugue.com home.vix.com";
-<% if @dns -%>
-<% @dns.each do |server| -%>
-prepend domain-name-servers <%= server %>;
-<% end -%>
-<% end -%>
 request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
+<% if @dns -%>
+<% @dns.reverse.each do |server| -%>
+prepend domain-name-servers <%= server %>;
+<% end -%>
+<% end -%>
+
 #require subnet-mask, domain-name-servers;
 #timeout 60;
 #retry 60;
