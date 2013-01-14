@@ -119,11 +119,11 @@ module Bosh::Cli::Command
         end
       end
 
+      deployer.check_dependencies
+
       rel_path = deployment[/#{Regexp.escape File.join(work_dir, '')}(.*)/, 1]
 
       desc = "`#{rel_path.green}' to `#{target_name.green}'"
-
-      deployer.check_dependencies
 
       if update
         unless deployer.exists?
