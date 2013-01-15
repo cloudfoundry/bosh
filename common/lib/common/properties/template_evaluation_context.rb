@@ -73,7 +73,7 @@ module Bosh::Common
     #   @return [Object] Property value
     #   @raise [Bosh::Common::UnknownProperty]
     def p(*args)
-      names = Array(args[0]) unless names.kind_of?(Array)
+      names = Array(args[0])
 
       names.each do |name|
         result = extract_value(name)
