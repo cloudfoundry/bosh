@@ -32,6 +32,7 @@ aws_cpi/pkg
 aws_registry/pkg
 openstack_registry/pkg
 package_compiler/pkg
+aws_bootstrap/spec/assets/private.yml
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
 spec/assets/test_release/config/dev.yml
