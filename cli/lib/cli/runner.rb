@@ -142,39 +142,52 @@ module Bosh::Cli
       @args = @option_parser.order!(@args)
     end
 
+    def plugins_glob; "bosh/cli/commands/*.rb"; end
+
     # Discover and load CLI plugins from all available gems
     # @return [void]
     def load_plugins
-      plugins_glob = "bosh/cli/commands/*.rb"
+      load_local_plugins
+      load_gem_plugins
+    end
 
-      unless Gem::Specification.respond_to?(:latest_specs) &&
-             Gem::Specification.instance_methods.include?(:matches_for_glob)
-        say("Cannot load plugins, ".yellow +
-            "please run `gem update --system' to ".yellow +
-            "update your RubyGems".yellow)
-        return
+    def load_local_plugins
+      Dir.glob(File.join("lib", plugins_glob)).each do |file|
+        say("WARNING: loading local plugin: #{file}")
+        require_plugin(file)
       end
+    end
 
-      plugins = Gem::Specification.latest_specs(true).map { |spec|
-        spec.matches_for_glob(plugins_glob)
-      }.flatten
+    def load_gem_plugins
+      get_gem_plugins.each do |plugin_path|
+        original_commands = Config.commands.size
 
-      plugins.each do |plugin|
-        next if Gem.loaded_path?(plugin)
-        n_commands = Config.commands.size
-        gem_dir = Pathname.new(Gem.dir)
-        plugin_name = Pathname.new(plugin).relative_path_from(gem_dir)
         begin
-          require plugin
+          require_plugin plugin_path
         rescue Exception => e
-          say("Failed to load plugin #{plugin_name}: #{e.message}".red)
+          err("Failed to load plugin #{plugin_path}: #{e.message}".red)
         end
-        if Config.commands.size == n_commands
-          say(("File #{plugin_name} has been loaded as plugin but it didn't " +
+
+        if Config.commands =~ original_commands
+          say(("File #{plugin_path} has been loaded as plugin but it didn't " +
               "contain any commands.\nMake sure this plugin is updated to be " +
               "compatible with BOSH CLI 1.0.").columnize(80).yellow)
         end
       end
+    end
+
+    def get_gem_plugins
+      Gem::Specification.latest_specs(true).map { |spec|
+        spec.matches_for_glob(plugins_glob)
+      }.flatten.uniq
+    rescue
+      err("Cannot load plugins, ".yellow +
+              "please run `gem update --system' to ".yellow +
+              "update your RubyGems".yellow)
+    end
+
+    def require_plugin(file)
+      require File.absolute_path(file)
     end
 
     def build_parse_tree
