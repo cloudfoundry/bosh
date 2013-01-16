@@ -1,0 +1,34 @@
+---
+aws:
+  access_key_id: ...
+  secret_access_key: ...
+  region: us-east-1
+vpc:
+  domain: dev102.cf.com
+  tenancy: default
+  cidr: 10.10.0.0/16
+  subnets:
+    - cidr: 10.10.0.0/24
+      availability_zone: us-east-1a
+    - cidr: 10.10.1.0/24
+      availability_zone: us-east-1b
+  dhcp_options:
+    domain_name: dev102.cf.com
+    domain_name_servers:
+      - 10.10.0.5
+      - 172.16.0.23
+  elastic_ips: 2
+  security_groups:
+    - name: open
+      ingress:
+        - protocol: tcp
+          ports: 0 - 65535
+          sources: 0.0.0.0/0
+        - protocol: udp
+          ports: 0 - 65535
+          sources: 0.0.0.0/0
+    - name: ssh
+      ingress:
+        - protocol: tcp
+          ports: 22
+          sources: 0.0.0.0/0
