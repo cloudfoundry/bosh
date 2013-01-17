@@ -23,7 +23,17 @@ update:
 networks:
 - name: default
   type: dynamic
+  <% if properties.dns_nameserver %>
+  dns:
+    - <%= properties.dns_nameserver %>
+  <% end %>
+  <% if properties.security_group %>
+  cloud_properties:
+    security_groups:
+      - <%= properties.security_group %>
+  <% else %>
   cloud_properties: {}
+  <% end %>
 - name: static
   type: vip
   cloud_properties: {}
