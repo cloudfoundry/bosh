@@ -55,7 +55,7 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
 
   describe "aws" do
     def partial_settings
-      json = %q[{"networks":{"default":{"dns":["1.2.3.4"],"default":["gateway","dns"]}}]
+      json = %q[{"networks":{"default":{"dns":["1.2.3.4","5.6.7.8"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)
     end
 
@@ -67,7 +67,7 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
 
       @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
-        contents.should match /^prepend domain-name-servers 1\.2\.3\.4;$/
+        contents.should match /^prepend domain-name-servers 5\.6\.7\.8;\nprepend domain-name-servers 1\.2\.3\.4;$/
         file.should == "/etc/dhcp3/dhclient.conf"
         true # fake a change
       end
