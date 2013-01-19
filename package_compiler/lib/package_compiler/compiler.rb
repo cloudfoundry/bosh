@@ -35,7 +35,7 @@ module Bosh
       def connect_to_agent
         num_tries = 0
         begin
-          @agent = Bosh::Agent::Client.create(@options["agent_uri"], "user" => "vcap" , "password" => "vcap")
+          @agent = Bosh::Agent::Client.create(@options["agent_uri"], "user" => "vcap", "password" => "vcap")
           @agent.ping
         rescue => e
           num_tries += 1
@@ -50,37 +50,40 @@ module Bosh
       def compile
         @logger.info("Compiling #{@options["manifest"]} with tarball #{@options["release"]}")
         connect_to_agent
-        @spec = prep_spec(YAML.load_file(File.expand_path(@options["manifest"])))
+        deployment_mf = YAML.load_file(File.expand_path(@options["manifest"]))
+        @spec = prep_spec(deployment_mf)
+
         @packages = {}
-        micro_job = @options[:job]
+        @spec["job"] = { "name" => @options[:job] }
+
         untar(@options["release"]) do |dir|
-          manifest = YAML.load_file("release.MF")
-          micro_job_path = File.expand_path("jobs/#{micro_job}.tgz")
-          # add micro job to apply spec
-          file = File.new(micro_job_path)
-          id = @blobstore_client.create(file)
-          @logger.debug "stored micro job as #{id}"
-          job = manifest["jobs"].detect { |j| j["name"] == micro_job }
-          # make sure version is a string or apply() will fail
-          job["version"] = job["version"].to_s
-          job["template"] = micro_job
-          job["blobstore_id"] = id
-          @spec["job"] = job
+          release_mf = YAML.load_file("release.MF")
+          jobs = []
 
-          # first do the micro package from the manifest
-          micro = find_package(manifest, micro_job)
-          compile_packages(dir, manifest, micro["dependencies"]) if micro
+          jobs_to_compile(@options[:job], deployment_mf).each do |spec_job|
+            job = find_by_name(release_mf["jobs"], spec_job)
+            job_path = File.expand_path("jobs/#{job["name"]}.tgz")
+            jobs << apply_spec_job(job, job_path)
 
-          # then do the micro job
-          untar(micro_job_path) do
-            job = YAML.load_file("job.MF")
+            if job["name"] == @options[:job]
+              @spec["job"]["version"] = job["version"].to_s
+              @spec["job"]["template"] = @options[:job]
+              @spec["job"]["sha1"] = job["sha1"]
+              @spec["job"]["blobstore_id"] = @blobstore_client.create(File.new(job_path))
+            end
 
-            # add default job spec properties to apply spec
-            add_default_properties(@spec["properties"], job["properties"])
+            untar(job_path) do
+              job = YAML.load_file("job.MF")
 
-            # Compile job packages
-            compile_packages(dir, manifest, job["packages"])
+              # add default job spec properties to apply spec
+              add_default_properties(@spec["properties"], job["properties"])
+
+              # Compile job packages
+              compile_packages(dir, release_mf, job["packages"])
+            end
           end
+
+          @spec["job"]["templates"] = jobs
         end
         cleanup
 
@@ -91,6 +94,34 @@ module Bosh
         @spec["packages"]
       rescue => e
         @logger.error("Error #{e.message}, #{e.backtrace.join("\n")}")
+      end
+
+      def find_by_name(enum, name)
+        result = enum.find { |j| j["name"] == name }
+        if result
+          result
+        else
+          raise "Could not find name #{name} in #{enum}"
+        end
+      end
+
+      # Check manifest for job collocation
+      def jobs_to_compile(name, manifest)
+        compile_job = manifest["jobs"].find { |j| j["name"] == name } if manifest["jobs"]
+        if compile_job
+          compile_job["template"]
+        else
+          [name]
+        end
+      end
+
+      def apply_spec_job(job, job_path)
+        {
+          "name" => job["name"],
+          "version" => job["version"].to_s,
+          "sha1" => job["sha1"],
+          "blobstore_id" => @blobstore_client.create(File.new(job_path))
+        }
       end
 
       def cleanup
