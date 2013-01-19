@@ -5,7 +5,7 @@ aws:
   region: us-east-1
 vpc:
   domain: dev102.cf.com
-  tenancy: default
+  instance_tenancy: default
   cidr: 10.10.0.0/16
   subnets:
     - cidr: 10.10.0.0/24
