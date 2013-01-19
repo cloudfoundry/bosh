@@ -33,6 +33,7 @@ stage system_parameters
 # Finalisation
 stage bosh_clean
 stage bosh_harden
+stage bosh_tripwire
 stage bosh_dpkg_list
 
 # Image/bootloader

@@ -65,6 +65,8 @@ namespace :stemcell2 do
       :bosh_protocol_version => Bosh::Agent::BOSH_PROTOCOL,
       :UBUNTU_ISO => ENV["UBUNTU_ISO"],
       :UBUNTU_MIRROR => ENV["UBUNTU_MIRROR"],
+      :TW_LOCAL_PASSPHRASE => ENV["TW_LOCAL_PASSPHRASE"],
+      :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
       :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
     }
 
