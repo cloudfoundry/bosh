@@ -70,4 +70,4 @@ cloud:
           delete_vapp: true
         testing:
           cookies: fake-cookie
-    log_file: /tmp/vcd-cpi-test/debug
+    log_file: /tmp/vcd-cpi-test-debug
