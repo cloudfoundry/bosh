@@ -528,8 +528,7 @@ module VCloudCloud
         env_path = File.join(path, "env")
         iso_path = File.join(path, "env.iso")
         File.open(env_path, "w") { |f| f.write(env_json) }
-        output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
-        raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
+        gen_iso_image(iso_path, env_path)
 
         @client.set_metadata(vm, @vcd["entities"]["vm_metadata_key"], env_json)
 
@@ -542,6 +541,11 @@ module VCloudCloud
         @client.insert_catalog_media(vm, vm.name)
         @logger.info("Uploaded and inserted ISO #{iso_path} as #{vm.name}")
       end
+    end
+
+    def gen_iso_image(iso_path, env_path)
+      output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
+      raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
     end
 
     def delete_vapp_networks(vapp, exclude_nets)

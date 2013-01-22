@@ -23,7 +23,8 @@ describe Bosh::Blobstore::S3BlobstoreClient do
       @s3.delete(@oid2) if @oid2
     end
 
-    before(:all) do
+    before do
+      pending "EC2_ACCESS_KEY required to run S3 specs" unless ENV['EC2_ACCESS_KEY']
       s3_options = {
           :bucket_name => "bosh-blobstore-bucket",
           :access_key_id => access_key_id,
@@ -95,7 +96,8 @@ describe Bosh::Blobstore::S3BlobstoreClient do
     end
 
     context "encrypted", :focus => true do
-      before(:all) do
+      before do
+        pending "EC2_ACCESS_KEY required to run S3 specs" unless ENV['EC2_ACCESS_KEY']
         s3_options = {
             :bucket_name => "bosh-blobstore-bucket",
             :access_key_id => access_key_id,

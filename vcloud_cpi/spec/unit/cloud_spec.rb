@@ -212,6 +212,7 @@ module VCloudCloud
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.stub!(:gen_iso_image)
 
       stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"),
         {})
@@ -253,6 +254,7 @@ module VCloudCloud
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.stub!(:gen_iso_image)
 
       disk_locality = []
       disk_locality << "test_disk_id"
@@ -383,6 +385,7 @@ module VCloudCloud
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.stub!(:gen_iso_image)
 
       cloud.configure_networks(vapp.name, test_manifest["network"])
     end
@@ -455,6 +458,7 @@ module VCloudCloud
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.stub!(:gen_iso_image)
 
       cloud.attach_disk(vapp.name, "test_disk_id")
     end
@@ -486,6 +490,7 @@ module VCloudCloud
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.stub!(:gen_iso_image)
 
       cloud.detach_disk(vapp.name, "test_disk_id")
     end
