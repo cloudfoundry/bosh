@@ -13,9 +13,11 @@ describe Bosh::AwsCloud::Cloud, "#set_vm_metadata" do
 
   it "should add new tags" do
     metadata = {:job => "job", :index => "index"}
+
     @cloud.should_receive(:tag).with(@instance, :job, "job")
     @cloud.should_receive(:tag).with(@instance, :index, "index")
     @cloud.should_receive(:tag).with(@instance, "Name", "job/index")
+
     @cloud.set_vm_metadata("i-foobar", metadata)
   end
 
@@ -26,5 +28,12 @@ describe Bosh::AwsCloud::Cloud, "#set_vm_metadata" do
       options[:value].size.should == 255
     end
     @cloud.set_vm_metadata("i-foobar", metadata)
+  end
+
+  it "should set 'Name' tag for compilation instances" do
+    @cloud.should_receive(:tag).with(@instance, :compiling, "package")
+    @cloud.should_receive(:tag).with(@instance, "Name", "compilation")
+
+    @cloud.set_vm_metadata("i-foobar", {:compiling => "package"})
   end
 end

@@ -400,10 +400,11 @@ module Bosh::AwsCloud
         tag(instance, key, value)
       end
 
-      # should deployment name be included too?
-      job = metadata[:job]
-      index = metadata[:index]
-      tag(instance, "Name", "#{job}/#{index}") if job && index
+      if metadata.has_key?(:compiling)
+        tag(instance, "Name", "compilation")
+      elsif metadata.has_key?(:job) && metadata.has_key?(:index)
+        tag(instance, "Name", "#{metadata[:job]}/#{metadata[:index]}")
+      end
     rescue AWS::EC2::Errors::TagLimitExceeded => e
       @logger.error("could not tag #{instance.id}: #{e.message}")
     end
@@ -444,7 +445,8 @@ module Bosh::AwsCloud
 
     private
 
-    # add a tag to something
+    # Add a tag to something, make sure that the tag conforms to the
+    # AWS limitation of 127 character key and 255 character value
     def tag(taggable, key, value)
       trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
       trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
