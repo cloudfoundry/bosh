@@ -27,6 +27,120 @@ describe Bosh::AwsCloud::Cloud do
       cloud.has_stemcell_copy(path).should_not be_nil
     end
 
+    it "should throw ArgumentError if non Hash object is passed" do
+      mock_cloud_options_one =''
+      error = ''
+
+      begin
+        cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options_one)
+      rescue Exception => e
+        error = e.class.name
+      end
+      error.should eq("ArgumentError")
+    end
+
+    it "should throw ArgumentError if 'aws' key is not present in the options" do
+      def mock_cloud_options_one
+        {
+            "registry" => {
+                "endpoint" => "localhost:42288",
+                "user" => "admin",
+                "password" => "admin"
+            },
+            "agent" => {
+                "foo" => "bar",
+                "baz" => "zaz"
+            }
+        }
+      end
+      error = ''
+
+      begin
+        cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options_one)
+      rescue Exception => e
+        error = e.class.name
+      end
+      error.should eq("ArgumentError")
+    end
+
+    it "should throw ArgumentError if 'registry' key is not present in the options" do
+      def mock_cloud_options_one
+        {
+            "aws" => {
+                "access_key_id" => MOCK_AWS_ACCESS_KEY_ID,
+                "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY
+            },
+            "agent" => {
+                "foo" => "bar",
+                "baz" => "zaz"
+            }
+        }
+      end
+      error = ''
+
+      begin
+        cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options_one)
+      rescue Exception => e
+        error = e.class.name
+      end
+      error.should eq("ArgumentError")
+    end
+
+    it "should throw ArgumentError if aws access_key_id is not provided" do
+
+       def mock_cloud_options_one
+        {
+            "aws" => {
+                "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY
+            },
+            "registry" => {
+                "endpoint" => "localhost:42288",
+                "user" => "admin",
+                "password" => "admin"
+            },
+            "agent" => {
+                "foo" => "bar",
+                "baz" => "zaz"
+            }
+        }
+      end
+      error = ''
+
+      begin
+        cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options_one)
+      rescue Exception => e
+        error = e.class.name
+      end
+      error.should eq("ArgumentError")
+    end
+
+    it "should throw ArgumentError if aws secret_access_key is not provided" do
+      def mock_cloud_options_one
+        {
+            "aws" => {
+                "access_key_id" => MOCK_AWS_ACCESS_KEY_ID,
+            },
+            "registry" => {
+                "endpoint" => "localhost:42288",
+                "user" => "admin",
+                "password" => "admin"
+            },
+            "agent" => {
+                "foo" => "bar",
+                "baz" => "zaz"
+            }
+        }
+      end
+
+      error = ''
+
+      begin
+        cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options_one)
+      rescue Exception => e
+        error = e.class.name
+      end
+      error.should eq("ArgumentError")
+    end
   end
 
 end
