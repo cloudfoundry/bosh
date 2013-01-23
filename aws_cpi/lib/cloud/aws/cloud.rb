@@ -730,7 +730,7 @@ module Bosh::AwsCloud
     # be used to create all required data structures etc.
     #
     def validate_options
-      unless @options["aws"].is_a?(Hash) &&
+      unless  @options["aws"].is_a?(Hash) &&
           @options.has_key?("aws") &&
           @options["aws"]["access_key_id"] &&
           @options["aws"]["secret_access_key"]
