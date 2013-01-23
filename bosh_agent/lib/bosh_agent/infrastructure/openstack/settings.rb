@@ -5,6 +5,12 @@ module Bosh::Agent
 
     VIP_NETWORK_TYPE = "vip"
     DHCP_NETWORK_TYPE = "dynamic"
+    MANUAL_NETWORK_TYPE = "manual"
+
+    SUPPORTED_NETWORK_TYPES = [
+        VIP_NETWORK_TYPE, DHCP_NETWORK_TYPE, MANUAL_NETWORK_TYPE
+    ]
+
     AUTHORIZED_KEYS = File.join("/home/", BOSH_APP_USER, ".ssh/authorized_keys")
 
     def logger
@@ -36,9 +42,11 @@ module Bosh::Agent
     end
 
     def get_network_settings(network_name, properties)
-      unless properties["type"] &&
-             [VIP_NETWORK_TYPE, DHCP_NETWORK_TYPE].include?(properties["type"])
-        raise Bosh::Agent::StateError, "Unsupported network #{properties["type"]}"
+      type = properties["type"]
+      unless type && SUPPORTED_NETWORK_TYPES.include?(type)
+        raise Bosh::Agent::StateError,
+              "Unsupported network type '%s', valid types are: %s" %
+                  [type, SUPPORTED_NETWORK_TYPES.join(', ')]
       end
 
       # Nothing to do for "vip" networks
