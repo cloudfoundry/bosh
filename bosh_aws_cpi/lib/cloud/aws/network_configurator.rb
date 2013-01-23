@@ -12,6 +12,8 @@ module Bosh::AwsCloud
   class NetworkConfigurator
     include Helpers
 
+    attr_reader :vip_network, :network
+
     ##
     # Creates new network spec
     #
@@ -24,7 +26,7 @@ module Bosh::AwsCloud
       end
 
       @logger = Bosh::Clouds::Config.logger
-      @dynamic_network = nil
+      @network = nil
       @vip_network = nil
       @security_groups = []
 
@@ -32,37 +34,49 @@ module Bosh::AwsCloud
         network_type = spec["type"]
 
         case network_type
-        when "dynamic"
-          if @dynamic_network
-            cloud_error("More than one dynamic network for `#{name}'")
-          else
-            @dynamic_network = DynamicNetwork.new(name, spec)
-            @security_groups += extract_security_groups(spec)
-          end
-        when "vip"
-          if @vip_network
-            cloud_error("More than one vip network for `#{name}'")
-          else
+          when "dynamic"
+            cloud_error("Must have exactly one dynamic or manual network per instance") if @network
+            @network = DynamicNetwork.new(name, spec)
+
+          when "manual"
+            cloud_error("Must have exactly one dynamic or manual network per instance") if @network
+            @network = ManualNetwork.new(name, spec)
+
+          when "vip"
+            cloud_error("More than one vip network for '#{name}'") if @vip_network
             @vip_network = VipNetwork.new(name, spec)
-            @security_groups += extract_security_groups(spec)
-          end
-        else
-          cloud_error("Invalid network type `#{network_type}': AWS CPI " \
-                      "can only handle `dynamic' and `vip' network types")
+
+          else
+            cloud_error("Invalid network type '#{network_type}' for AWS, " \
+                        "can only handle 'dynamic', 'vip', or 'manual' network types")
         end
+        @security_groups += extract_security_groups(spec)
 
       end
 
-      if @dynamic_network.nil?
-        cloud_error("At least one dynamic network should be defined")
+      unless @network
+        cloud_error("Exactly one dynamic or manual network must be defined")
       end
+    end
+
+    def subnet
+      @network.subnet
+    end
+
+    def private_ip
+      cloud_error "private IP only exist for manual network" unless vpc?
+      @network.private_ip
+    end
+
+    def vpc?
+      @network.is_a? ManualNetwork
     end
 
     # Applies network configuration to the vm
     # @param [AWS:EC2] ec2 instance EC2 client
     # @param [AWS::EC2::Instance] instance EC2 instance to configure
     def configure(ec2, instance)
-      @dynamic_network.configure(ec2, instance)
+      @network.configure(ec2, instance)
 
       if @vip_network
         @vip_network.configure(ec2, instance)

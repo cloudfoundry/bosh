@@ -25,6 +25,7 @@ require "cloud/aws/aki_picker"
 require "cloud/aws/network_configurator"
 require "cloud/aws/network"
 require "cloud/aws/dynamic_network"
+require "cloud/aws/manual_network"
 require "cloud/aws/vip_network"
 
 module Bosh

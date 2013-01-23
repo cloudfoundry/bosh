@@ -162,6 +162,63 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     vm_id.should == "i-test"
   end
 
+  it "should create an instance in a subnet when a manual network is used" do
+    user_data = {
+        "registry" => {
+            "endpoint" => "http://registry:3333"
+        }
+    }
+
+    subnet = double("subnet1", :availability_zone => "az-1b" )
+    subnets = {"subnet-11a35d7c" => subnet}
+
+    instance_params = {
+        :image_id => "ami",
+        :count => 1,
+        :key_name => "test_key",
+        :security_groups => ["a_group"],
+        :instance_type => "m3.zb",
+        :user_data => Yajl::Encoder.encode(user_data),
+        :availability_zone => "az-1b",
+        :subnet => subnet,
+        :private_ip => '1.2.3.4'
+    }
+
+    resource_pool_spec = {
+        "key_name" => "test_key",
+        "instance_type" => "m3.zb"
+    }
+    network_spec = {
+        "network1" => {
+            "type" => "manual",
+            "ip" => '1.2.3.4',
+            "cloud_properties" => {
+                "subnet" => "subnet-11a35d7c",
+                "security_groups" => ["a_group"]
+            }
+        }
+    }
+
+    instance = double("instance",
+                      :id => "i-test",
+                      :elastic_ip => nil,
+                      :security_groups => [],
+                      :status => :running)
+
+    client = double("client", :describe_images => fake_image_set)
+
+    cloud = mock_cloud do |ec2|
+      ec2.instances.should_receive(:create).
+          with(instance_params).and_return(instance)
+      ec2.should_receive(:client).and_return(client)
+      ec2.should_receive(:subnets).and_return(subnets)
+    end
+
+    @registry.stub(:update_settings)
+
+    instance_id = cloud.create_vm("agent-id", "ami", resource_pool_spec, network_spec)
+  end
+
   it "associates instance with elastic ip if vip network is provided" do
     sec_grp = double("security_group", :name => "default")
     instance = double("instance",

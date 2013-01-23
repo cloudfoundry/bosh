@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
@@ -87,7 +87,7 @@ describe Bosh::AwsCloud::Cloud do
     expect {
       mock_cloud.configure_networks("i-foobar", "net_a" => vip_network_spec)
     }.to raise_error(Bosh::Clouds::CloudError,
-                     "At least one dynamic network should be defined")
+                     "Exactly one dynamic or manual network must be defined")
 
     expect {
       mock_cloud.configure_networks("i-foobar",
@@ -101,13 +101,13 @@ describe Bosh::AwsCloud::Cloud do
                                     "net_a" => dynamic_network_spec,
                                     "net_b" => dynamic_network_spec)
     }.to raise_error(Bosh::Clouds::CloudError,
-                     /More than one dynamic network/)
+                     "Must have exactly one dynamic or manual network per instance")
 
     expect {
       mock_cloud.configure_networks("i-foobar",
                                     "net_a" => { "type" => "foo" })
     }.to raise_error(Bosh::Clouds::CloudError,
-                     /Invalid network type `foo'/)
+                     /Invalid network type 'foo'/)
   end
 
 end

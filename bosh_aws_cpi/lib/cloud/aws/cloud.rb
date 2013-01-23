@@ -50,6 +50,8 @@ module Bosh::AwsCloud
         :logger => @aws_logger
       }
 
+      aws_params[:proxy_uri] = @aws_properties["proxy_uri"] if @aws_properties["proxy_uri"]
+
       registry_endpoint = @registry_properties["endpoint"]
       registry_user = @registry_properties["user"]
       registry_password = @registry_properties["password"]
@@ -91,10 +93,6 @@ module Bosh::AwsCloud
       with_thread_name("create_vm(#{agent_id}, ...)") do
         network_configurator = NetworkConfigurator.new(network_spec)
 
-        security_groups =
-          network_configurator.security_groups(@default_security_groups)
-        @logger.debug("using security groups: #{security_groups.join(', ')}")
-
         response = @ec2.client.describe_images(:image_ids => [stemcell_id])
         images_set = response.images_set
         if images_set.empty?
@@ -106,14 +104,33 @@ module Bosh::AwsCloud
           :image_id => stemcell_id,
           :count => 1,
           :key_name => resource_pool["key_name"] || @default_key_name,
-          :security_groups => security_groups,
           :instance_type => resource_pool["instance_type"],
           :user_data => Yajl::Encoder.encode(user_data(network_spec))
         }
 
-        instance_params[:availability_zone] =
-          select_availability_zone(disk_locality,
-          resource_pool["availability_zone"])
+        security_groups =
+            network_configurator.security_groups(@default_security_groups)
+
+        if network_configurator.vpc?
+          subnet = @ec2.subnets[network_configurator.subnet]
+
+          instance_params[:subnet] = subnet
+          if subnet.availability_zone
+            # include disk_locality check?
+            instance_params[:availability_zone] = subnet.availability_zone
+          end
+          instance_params[:private_ip] = network_configurator.private_ip
+
+          instance_params[:security_groups] = security_groups
+        else
+          @logger.debug("using security groups: #{security_groups.join(', ')}")
+          instance_params[:security_groups] = security_groups
+
+          # az should be able to be unset, if we want to let EC2 to pick
+          instance_params[:availability_zone] =
+              select_availability_zone(disk_locality,
+                                       resource_pool["availability_zone"])
+        end
 
         @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)

@@ -7,6 +7,9 @@ require "cloud/aws"
 
 class AwsConfig
   attr_accessor :db, :logger, :uuid
+  def task_checkpoint
+
+  end
 end
 
 aws_config = AwsConfig.new
