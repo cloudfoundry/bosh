@@ -400,11 +400,10 @@ module Bosh::AwsCloud
         tag(instance, key, value)
       end
 
-      if metadata.has_key?(:compiling)
-        tag(instance, "Name", "compilation")
-      elsif metadata.has_key?(:job) && metadata.has_key?(:index)
-        tag(instance, "Name", "#{metadata[:job]}/#{metadata[:index]}")
-      end
+      # should deployment name be included too?
+      job = metadata[:job]
+      index = metadata[:index]
+      tag(instance, "Name", "#{job}/#{index}") if job && index
     rescue AWS::EC2::Errors::TagLimitExceeded => e
       @logger.error("could not tag #{instance.id}: #{e.message}")
     end
@@ -445,8 +444,7 @@ module Bosh::AwsCloud
 
     private
 
-    # Add a tag to something, make sure that the tag conforms to the
-    # AWS limitation of 127 character key and 255 character value
+    # add a tag to something
     def tag(taggable, key, value)
       trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
       trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
@@ -730,8 +728,8 @@ module Bosh::AwsCloud
     # be used to create all required data structures etc.
     #
     def validate_options
-      unless @options.has_key?("aws") &&
-          @options["aws"].is_a?(Hash) &&
+      unless @options["aws"].is_a?(Hash) &&
+          @options.has_key?("aws") &&
           @options["aws"]["access_key_id"] &&
           @options["aws"]["secret_access_key"]
         raise ArgumentError, "Invalid AWS configuration parameters"
