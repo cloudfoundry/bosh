@@ -43,11 +43,11 @@ module Bosh::AwsCloud
       @default_security_groups = @aws_properties["default_security_groups"]
 
       aws_params = {
-        :access_key_id => @aws_properties["access_key_id"],
-        :secret_access_key => @aws_properties["secret_access_key"],
-        :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
-        :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
-        :logger => @aws_logger
+          :access_key_id => @aws_properties["access_key_id"],
+          :secret_access_key => @aws_properties["secret_access_key"],
+          :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
+          :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
+          :logger => @aws_logger
       }
 
       registry_endpoint = @registry_properties["endpoint"]
@@ -87,12 +87,12 @@ module Bosh::AwsCloud
     #   agent settings
     # @return [String] EC2 instance id of the new virtual machine
     def create_vm(agent_id, stemcell_id, resource_pool,
-                  network_spec, disk_locality = nil, environment = nil)
+        network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         network_configurator = NetworkConfigurator.new(network_spec)
 
         security_groups =
-          network_configurator.security_groups(@default_security_groups)
+            network_configurator.security_groups(@default_security_groups)
         @logger.debug("using security groups: #{security_groups.join(', ')}")
 
         response = @ec2.client.describe_images(:image_ids => [stemcell_id])
@@ -103,17 +103,17 @@ module Bosh::AwsCloud
         root_device_name = images_set.first.root_device_name
 
         instance_params = {
-          :image_id => stemcell_id,
-          :count => 1,
-          :key_name => resource_pool["key_name"] || @default_key_name,
-          :security_groups => security_groups,
-          :instance_type => resource_pool["instance_type"],
-          :user_data => Yajl::Encoder.encode(user_data(network_spec))
+            :image_id => stemcell_id,
+            :count => 1,
+            :key_name => resource_pool["key_name"] || @default_key_name,
+            :security_groups => security_groups,
+            :instance_type => resource_pool["instance_type"],
+            :user_data => Yajl::Encoder.encode(user_data(network_spec))
         }
 
         instance_params[:availability_zone] =
-          select_availability_zone(disk_locality,
-          resource_pool["availability_zone"])
+            select_availability_zone(disk_locality,
+                                     resource_pool["availability_zone"])
 
         @logger.info("Creating new instance...")
         instance = @ec2.instances.create(instance_params)
@@ -194,8 +194,8 @@ module Bosh::AwsCloud
         end
 
         volume_params = {
-          :size => (size / 1024.0).ceil,
-          :availability_zone => availability_zone
+            :size => (size / 1024.0).ceil,
+            :availability_zone => availability_zone
         }
 
         volume = @ec2.volumes.create(volume_params)
@@ -292,7 +292,7 @@ module Bosh::AwsCloud
         unless actual == new
           raise Bosh::Clouds::NotSupported,
                 "security groups change requires VM recreation: %s to %s" %
-                [actual.join(", "), new.join(", ")]
+                    [actual.join(", "), new.join(", ")]
         end
 
         network_configurator.configure(@ec2, instance)
@@ -440,7 +440,7 @@ module Bosh::AwsCloud
       zones << default if default
       zones.uniq!
       cloud_error "can't use multiple availability zones: %s" %
-        zones.join(", ") unless zones.size == 1 || zones.empty?
+                      zones.join(", ") unless zones.size == 1 || zones.empty?
     end
 
     private
@@ -526,18 +526,18 @@ module Bosh::AwsCloud
     # @param [String] root_device_name root device, e.g. /dev/sda1
     # @return [Hash]
     def initial_agent_settings(agent_id, network_spec, environment,
-                               root_device_name)
+        root_device_name)
       settings = {
-        "vm" => {
-          "name" => "vm-#{generate_unique_name}"
-        },
-        "agent_id" => agent_id,
-        "networks" => network_spec,
-        "disks" => {
-          "system" => root_device_name,
-          "ephemeral" => "/dev/sdb",
-          "persistent" => {}
-        }
+          "vm" => {
+              "name" => "vm-#{generate_unique_name}"
+          },
+          "agent_id" => agent_id,
+          "networks" => network_spec,
+          "disks" => {
+              "system" => root_device_name,
+              "ephemeral" => "/dev/sdb",
+              "persistent" => {}
+          }
       }
 
       settings["env"] = environment if environment
@@ -593,8 +593,8 @@ module Bosh::AwsCloud
       new_attachment = nil
 
       ("f".."p").each do |char| # f..p is what console suggests
-        # Some kernels will remap sdX to xvdX, so agent needs
-        # to lookup both (sd, then xvd)
+                                # Some kernels will remap sdX to xvdX, so agent needs
+                                # to lookup both (sd, then xvd)
         dev_name = "/dev/sd#{char}"
         if device_names.include?(dev_name)
           @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
@@ -730,8 +730,8 @@ module Bosh::AwsCloud
     # be used to create all required data structures etc.
     #
     def validate_options
-      unless @options.has_key?("aws") &&
-          @options["aws"].is_a?(Hash) &&
+      unless @options["aws"].is_a?(Hash) &&
+          @options.has_key?("aws") &&
           @options["aws"]["access_key_id"] &&
           @options["aws"]["secret_access_key"]
         raise ArgumentError, "Invalid AWS configuration parameters"
