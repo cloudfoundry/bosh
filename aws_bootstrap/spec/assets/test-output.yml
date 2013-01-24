@@ -5,6 +5,10 @@ aws:
   region: us-east-1
 vpc: 
   id: vpc-13724979
-elastic_ips: 
-- 107.23.46.162
-- 107.23.53.76
+  domain: cfdev.com
+elastic_ips:
+ router:
+  dns_record: "*"
+  ips:
+  - 107.23.46.162
+  - 107.23.53.76
