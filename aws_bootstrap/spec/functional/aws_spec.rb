@@ -10,9 +10,11 @@ describe Bosh::Cli::Command::AWS do
       it "should create all the components of the vpc" do
         fake_ec2 = mock("ec2")
         fake_vpc = mock("vpc")
+        fake_route53 = mock("route53")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         Bosh::Aws::VPC.stub(:create).with(fake_ec2, "10.10.0.0/16", "default").and_return(fake_vpc)
+        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
 
         fake_vpc.stub(:vpc_id)
 
@@ -28,10 +30,14 @@ describe Bosh::Cli::Command::AWS do
           args.length.should == 2
           args.first.keys.should =~ %w[name ingress]
         end
-        fake_ec2.should_receive(:allocate_elastic_ips).with 2
+        fake_ec2.should_receive(:allocate_elastic_ips).with(2)
 
-        fake_ec2.stub(:elastic_ips)
+        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76"])
+
         fake_vpc.stub(:flush_output_state)
+
+        fake_route53.should_receive(:create_zone).with("dev102.cf.com")
+        fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["107.23.46.162", "107.23.53.76"])
 
         aws.create_vpc config_file
       end
@@ -39,9 +45,11 @@ describe Bosh::Cli::Command::AWS do
       it "should flush the output to a YAML file" do
         fake_ec2 = mock("ec2")
         fake_vpc = mock("vpc")
+        fake_route53 = mock("route53")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
+        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
 
         fake_vpc.stub(:vpc_id).and_return("vpc id")
         fake_vpc.stub(:create_dhcp_options)
@@ -49,6 +57,8 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_subnets)
         fake_ec2.stub(:allocate_elastic_ips)
         fake_ec2.stub(:elastic_ips).and_return(["1.2.3.4", "5.6.7.8"])
+        fake_route53.stub(:create_zone)
+        fake_route53.stub(:add_record)
 
         aws.should_receive(:flush_output_state) do |args|
           args.should match(/create-vpc-output-\d{14}.yml/)
@@ -57,7 +67,8 @@ describe Bosh::Cli::Command::AWS do
         aws.create_vpc config_file
 
         aws.output_state["vpc"]["id"].should == "vpc id"
-        aws.output_state["elastic_ips"].should == ["1.2.3.4", "5.6.7.8"]
+        aws.output_state["elastic_ips"]["router"]["ips"].should == ["1.2.3.4", "5.6.7.8"]
+        aws.output_state["elastic_ips"]["router"]["dns_record"].should == "*"
       end
 
       context "when a step in the creation fails" do
@@ -93,9 +104,11 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2 = mock("ec2")
         fake_vpc = mock("vpc")
         fake_dhcp_options = mock("dhcp options")
+        fake_route53 = mock("route53")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         Bosh::Aws::VPC.stub(:find).with(fake_ec2, "vpc-13724979").and_return(fake_vpc)
+        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
 
         fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
         fake_vpc.stub(:instances_count).and_return(0)
@@ -105,6 +118,9 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.should_receive :delete_vpc
         fake_dhcp_options.should_receive :delete
         fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
+
+        fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
+        fake_route53.should_receive(:delete_zone).with("cfdev.com")
 
         aws.delete_vpc output_file
       end

@@ -1,6 +1,7 @@
 require_relative '../../../bosh_aws_bootstrap/vpc'
 require_relative '../../../bosh_aws_bootstrap/ec2'
 require_relative '../../../bosh_aws_bootstrap/s3'
+require_relative '../../../bosh_aws_bootstrap/route53'
 
 module Bosh::Cli::Command
   class AWS < Base
@@ -34,7 +35,7 @@ module Bosh::Cli::Command
       @output_state["aws"] = config["aws"]
 
       vpc = Bosh::Aws::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
-      @output_state["vpc"] = {"id" => vpc.vpc_id}
+      @output_state["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
 
       subnets = config["vpc"]["subnets"]
       say "creating subnets: #{subnets.map { |subnet| subnet["cidr"] }.join(", ")}"
@@ -48,10 +49,33 @@ module Bosh::Cli::Command
       say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
       vpc.create_security_groups(security_groups)
 
-      count = config["vpc"]["elastic_ips"]
+      count = config["elastic_ips"].values.reduce(0) { |total,job| total += job["instances"] }
       say "allocating #{count} elastic IP(s)"
       ec2.allocate_elastic_ips(count)
-      @output_state["elastic_ips"] = ec2.elastic_ips
+
+      elastic_ips = ec2.elastic_ips
+      route53 = Bosh::Aws::Route53.new(config["aws"])
+      route53.create_zone(config["vpc"]["domain"])
+
+      config["elastic_ips"].each do |name, job|
+        @output_state["elastic_ips"] ||= {}
+        @output_state["elastic_ips"][name] = {}
+        ips = []
+
+        job["instances"].times do
+          ips << elastic_ips.shift
+        end
+        @output_state["elastic_ips"][name]["ips"] = ips
+
+      end
+      config["elastic_ips"].each do |name, job|
+        if job["dns_record"]
+          say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
+          route53.add_record(job["dns_record"], config["vpc"]["domain"], @output_state["elastic_ips"][name]["ips"])
+          @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
+        end
+      end
+
     ensure
       file_path = File.join(File.dirname(config_file), OUTPUT_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
       flush_output_state file_path
@@ -67,6 +91,7 @@ module Bosh::Cli::Command
 
       ec2 = Bosh::Aws::EC2.new(details["aws"])
       vpc = Bosh::Aws::VPC.find(ec2, details["vpc"]["id"])
+      route53 = Bosh::Aws::Route53.new(details["aws"])
 
       err("#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first") if vpc.instances_count > 0
 
@@ -76,7 +101,16 @@ module Bosh::Cli::Command
       vpc.delete_subnets
       vpc.delete_vpc
       dhcp_options.delete
-      ec2.release_elastic_ips details["elastic_ips"]
+
+      if details["elastic_ips"]
+        details["elastic_ips"].values.each do |job|
+          ec2.release_elastic_ips(job["ips"])
+          if job["dns_record"]
+            route53.delete_record(job["dns_record"], details["vpc"]["domain"])
+          end
+        end
+      end
+      route53.delete_zone(details["vpc"]["domain"])
 
       say "deleted VPC and all dependencies".green
     end
