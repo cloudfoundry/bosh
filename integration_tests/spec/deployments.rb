@@ -44,7 +44,7 @@ module Bosh::Spec
                        }],
 
         "resource_pools" => [{ "name" => "a",
-                               "size" => 10,
+                               "size" => 3,
                                "cloud_properties" => { },
                                "network" => "a",
                                "stemcell" => {
