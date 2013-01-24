@@ -7,48 +7,29 @@ Gem::Specification.new do |s|
   s.summary = 'Agent for Cloud Foundry BOSH release engineering tool.'
   s.description = 'This agent listens for instructions from the bosh director on each server that bosh manages.'
   s.author = 'VMware'
+  s.version = Bosh::Agent::VERSION
   s.homepage = 'https://github.com/cloudfoundry/bosh'
   s.license = 'Apache 2.0'
-  s.version = Bosh::Agent::VERSION
+  s.email        = "support@cloudfoundry.com"
+  s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
 
   %w{
     highline
     monit_api
     netaddr
     posix-spawn
-    rack-test
-    rake
     ruby-atmos-pure
-    sinatra
     thin
     uuidtools
     yajl-ruby
+    blobstore_client
+    bosh_common
+    bosh_encryption
     }.each { |g| s.add_dependency g }
 
-  %w{
-    blobstore_client ~> 0.3.13
-    bosh_common >= 0.5.1
-    bosh_encryption >= 0.0.3
-    nats = 0.4.22
-    sigar >= 0.7.2
-    }.each_slice(3) { |g,o,v| s.add_dependency(g, "#{o} #{v}") }
-
-  %w{
-    ci_reporter
-    guard
-    guard-bundler
-    guard-rspec
-    rcov
-    ruby-debug
-    ruby-debug19
-    ruby_gntp
-    simplecov
-    simplecov-rcov
-    }.each { |g| s.add_development_dependency g }
-
-  %w{
-    rspec = 2.8
-    }.each_slice(3) { |g,o,v| s.add_development_dependency(g, "#{o} #{v}") }
+  s.add_dependency 'sinatra', "~> 1.2.8"
+  s.add_dependency 'nats', "~> 0.4.28"
+  s.add_dependency 'sigar', ">= 0.7.2"
 
   s.files = `git ls-files`.split("\n")
   s.executables = %w{agent}

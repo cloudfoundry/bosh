@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.executables  = %w(openstack_registry)
 
   s.add_dependency "sequel"
-  s.add_dependency "sinatra"
+  s.add_dependency "sinatra", "~> 1.2.8"
   s.add_dependency "thin"
   s.add_dependency "yajl-ruby"
   s.add_dependency "fog", ">=1.6.0"

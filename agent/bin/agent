@@ -2,11 +2,6 @@
 #
 # Copyright (c) 2009-2012 VMware, Inc.
 
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
-require "rubygems"
-require "bundler/setup"
-
 $:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
 
 require "agent"

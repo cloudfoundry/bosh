@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "bosh_common"
-  s.add_dependency "bosh_cpi", ">= 0.4.2"
+  s.add_dependency "bosh_cpi"
   s.add_dependency "ruby_vcloud_sdk"
   s.add_dependency "uuidtools"
   s.add_dependency "yajl-ruby", ">=0.8.2"

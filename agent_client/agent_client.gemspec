@@ -7,11 +7,13 @@ Gem::Specification.new do |s|
   s.summary      = "BOSH agent client"
   s.description  = s.summary
   s.author       = "VMware"
-  s.email        = "support@vmware.com"
-  s.homepage     = "http://www.vmware.com"
+  s.homepage = 'https://github.com/cloudfoundry/bosh'
+  s.license = 'Apache 2.0'
+  s.email        = "support@cloudfoundry.com"
+  s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
+
 
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README Rakefile)
-  s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
 
   s.add_dependency "httpclient"

@@ -59,7 +59,7 @@ describe Bosh::Agent::Handler do
     exception[:message].should == "boo!"
   end
 
-  it "should process long running tasks" do
+  pending "should process long running tasks" do
     handler = Bosh::Agent::Handler.new
     handler.start
 
@@ -145,7 +145,7 @@ describe Bosh::Agent::Handler do
       @cipher = Gibberish::AES.new(@credentials["crypt_key"])
     end
 
-    it "should decrypt message and encrypt response with credentials" do
+    pending "should decrypt message and encrypt response with credentials" do
 
       # The expectation uses a non-existent message handler to avoid the handler
       # to spawn a thread.
@@ -192,7 +192,7 @@ describe Bosh::Agent::Handler do
       )
     end
 
-    it "should handle session errors" do
+    pending "should handle session errors" do
       encrypted_data = @encryption_handler.encrypt(
         "method" => "bogus_message", "arguments" => []
       )
@@ -268,7 +268,7 @@ describe Bosh::Agent::Handler do
       )
     end
 
-    it "should handle sequence number errors" do
+    pending "should handle sequence number errors" do
       encrypted_data = @encryption_handler.encrypt(
         "method" => "bogus_message", "arguments" => []
       )
@@ -301,7 +301,7 @@ describe Bosh::Agent::Handler do
     end
   end
 
-  it "should raise a RemoteException when message > NATS_MAX_PAYLOAD" do
+  pending "should raise a RemoteException when message > NATS_MAX_PAYLOAD" do
     payload = "a" * (Bosh::Agent::Handler::NATS_MAX_PAYLOAD_SIZE + 1)
     @nats.should_receive(:publish).with("reply", "exception", nil)
 

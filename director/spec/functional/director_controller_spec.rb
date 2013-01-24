@@ -4,7 +4,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 require "rack/test"
 
-describe Bosh::Director::Controller do
+describe Bosh::Director::ApiController do
   include Rack::Test::Methods
 
   before(:each) do
@@ -27,7 +27,7 @@ describe Bosh::Director::Controller do
   end
 
   def app
-    @app ||= Bosh::Director::Controller.new
+    @app ||= Bosh::Director::ApiController.new
   end
 
   def login_as_admin
@@ -55,6 +55,11 @@ describe Bosh::Director::Controller do
   it "requires auth" do
     get "/"
     last_response.status.should == 401
+  end
+
+  it "sets the date header" do
+    get "/"
+    last_response.headers['Date'].should_not be_nil
   end
 
   it "allows Basic HTTP Auth with admin/admin credentials for " +
@@ -572,25 +577,6 @@ describe Bosh::Director::Controller do
         get "/resources/#{id}"
         last_response.status.should == 200
         last_response.body.should == "some data"
-      end
-
-      it "cleans up temp file after serving it" do
-        tmp_file = File.join(Dir.tmpdir,
-            "resource-#{UUIDTools::UUID.random_create}")
-
-        File.open(tmp_file, "w") do |f|
-          f.write("some data")
-        end
-
-        FileUtils.touch(tmp_file)
-        manager = mock("manager")
-        BD::Api::ResourceManager.stub!(:new).and_return(manager)
-        manager.stub!(:get_resource_path).with("deadbeef").and_return(tmp_file)
-
-        File.exists?(tmp_file).should be_true
-        get "/resources/deadbeef"
-        last_response.body.should == "some data"
-        File.exists?(tmp_file).should be_false
       end
     end
 

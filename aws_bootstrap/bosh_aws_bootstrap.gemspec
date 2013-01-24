@@ -16,6 +16,6 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^spec/})
   gem.require_paths = ["lib"]
 
-  gem.add_dependency "bosh_cli", ">=1.0.4"
+  gem.add_dependency "bosh_cli"
   gem.add_dependency "aws-sdk", ">=1.8.0"
 end

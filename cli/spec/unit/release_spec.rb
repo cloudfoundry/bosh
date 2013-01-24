@@ -167,7 +167,6 @@ describe Bosh::Cli::Release do
         r.blobstore
       }.to raise_error(Bosh::Cli::CliError, "blobstore private provider " +
           "does not match final provider")
-
     end
   end
 end

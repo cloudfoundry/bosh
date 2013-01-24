@@ -181,7 +181,7 @@ module VCloudCloud
       cloud.delete_stemcell("test_stemcell_name")
     end
 
-    it "can create a vm" do
+    it "can create a vm", :genisoimage=> true do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:upload_vapp_template).with(an_instance_of(String),
@@ -220,7 +220,7 @@ module VCloudCloud
         test_manifest["network"])
     end
 
-    it "can create a vm with disk locality" do
+    it "can create a vm with disk locality", :genisoimage=> true do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:upload_vapp_template).with(an_instance_of(String),
@@ -356,7 +356,7 @@ module VCloudCloud
       cloud.reboot_vm(vapp.name)
     end
 
-    it "can re-configure vm networks" do
+    it "can re-configure vm networks", :genisoimage=> true do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:get_vapp).at_least(:once).with(
@@ -428,7 +428,7 @@ module VCloudCloud
       cloud.delete_disk("test_disk_id")
     end
 
-    it "can attach a disk to a vm" do
+    it "can attach a disk to a vm", :genisoimage=> true do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:get_vapp).at_least(:once).with(
@@ -459,7 +459,7 @@ module VCloudCloud
       cloud.attach_disk(vapp.name, "test_disk_id")
     end
 
-    it "can detach a disk from a vm" do
+    it "can detach a disk from a vm", :genisoimage=> true do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:get_vapp).at_least(:once).with(

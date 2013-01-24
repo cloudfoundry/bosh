@@ -5,6 +5,7 @@ describe Bosh::Blobstore::Client do
   it "should have a local provider" do
     Dir.mktmpdir do |tmp|
       bs = Bosh::Blobstore::Client.create('local', {:blobstore_path => tmp})
+      puts bs.class
       bs.should be_instance_of Bosh::Blobstore::LocalClient
     end
   end

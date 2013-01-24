@@ -22,6 +22,19 @@ BundlerTask.new
 
 import "migrations.rake"
 
+gem_helper = Bundler::GemHelper.new(Dir.pwd)
+
+desc "Build BOSH Director gem into the pkg directory"
+task "build" do
+  gem_helper.build_gem
+end
+
+desc "Build and install BOSH Director into system gems"
+task "install" do
+  Rake::Task["bundler:install"].invoke
+  gem_helper.install_gem
+end
+
 if defined?(RSpec)
   namespace "redis" do
     REDIS_DIR = File.join(File.dirname(__FILE__), "spec/assets")
@@ -57,7 +70,6 @@ if defined?(RSpec)
   end
 
   namespace :spec do
-    ENV["BUNDLE_GEMFILE"] = File.expand_path("../Gemfile", __FILE__)
     SPEC_OPTS = %w(--format documentation --colour)
 
     desc "Run Unit Tests"

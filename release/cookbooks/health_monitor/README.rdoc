@@ -1,4 +1,0 @@
-= DESCRIPTION:
-
-Bosh Health Monitor configuration.
-

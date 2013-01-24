@@ -19,8 +19,8 @@ Gem::Specification.new do |s|
   s.executables  = %w(aws_registry)
 
   s.add_dependency "sequel"
-  s.add_dependency "sinatra"
+  s.add_dependency "sinatra", "~> 1.2.8"
   s.add_dependency "thin"
-  s.add_dependency "yajl-ruby"
-  s.add_dependency "aws-sdk", "~>1.6.9"
+  s.add_dependency "yajl-ruby", "~> 1.1.0"
+  s.add_dependency "aws-sdk"
 end

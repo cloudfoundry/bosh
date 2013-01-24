@@ -18,13 +18,13 @@ Gem::Specification.new do |s|
   s.bindir       = "bin"
   s.executables  = %w(bosh)
 
-  s.add_dependency "bosh_common", ">=0.5.1"
-  s.add_dependency "json_pure", "~>1.6.1"
+  s.add_dependency "bosh_common"
+  s.add_dependency "json_pure", "~>1.7.6"
   s.add_dependency "highline", "~>1.6.2"
   s.add_dependency "progressbar", "~>0.9.0"
   s.add_dependency "httpclient", ">=2.2.4", "<=2.2.4"
   s.add_dependency "terminal-table", "~>1.4.2"
-  s.add_dependency "blobstore_client", "~>0.4.0"
+  s.add_dependency "blobstore_client"
   s.add_dependency "net-ssh", ">=2.2.1"
   s.add_dependency "net-ssh-gateway", "~>1.1.0"
   s.add_dependency "net-scp", "~>1.0.4"

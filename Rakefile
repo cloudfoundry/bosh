@@ -5,6 +5,12 @@ task :build do
   sh("cd cli && bundle exec rake install")
 end
 
+desc "clean build and install all gems"
+task :clean_install do
+  raise "You need to have rvm installed to run this task" unless system('rvm --version')
+  sh("rvm gemset use --create bosh && rvm gemset --force empty && bundle install")
+end
+
 desc "install all gem dependencies"
 task :bundle_install do
   bundle_cmd = "bundle install --local --without development production"

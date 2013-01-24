@@ -5,8 +5,8 @@ require "rspec/core"
 $:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
-def spec_asset(filename)
-  File.expand_path(File.join(File.dirname(__FILE__), "assets", filename))
+def spec_asset(dir_or_file_name)
+  File.expand_path(File.join(File.dirname(__FILE__), "assets", dir_or_file_name))
 end
 
 RSpec.configure do |c|

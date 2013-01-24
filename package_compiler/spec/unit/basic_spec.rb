@@ -1,4 +1,5 @@
-require "spec_helper"
+require 'spec_helper'
+require 'tmpdir'
 
 describe Bosh::PackageCompiler::Compiler do
   before :all do

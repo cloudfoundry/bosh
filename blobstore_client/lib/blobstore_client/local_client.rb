@@ -1,5 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
+require "uuidtools"
+
 module Bosh
   module Blobstore
     class LocalClient < BaseClient

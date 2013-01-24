@@ -2,7 +2,7 @@
 
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
+#ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
 
 require "digest/sha1"
 require "fileutils"
@@ -10,9 +10,9 @@ require "logger"
 require "tmpdir"
 require "zlib"
 
-require "rubygems"
-require "bundler"
-Bundler.setup(:default, :test)
+#require "rubygems"
+#require "bundler"
+#Bundler.setup(:default, :test)
 
 require "archive/tar/minitar"
 require "rspec"

@@ -103,7 +103,7 @@ describe Bosh::Director::DnsHelper do
       @logger = Logger.new("/dev/null")
     end
 
-    BDM = Bosh::Director::Models
+    BDM = Bosh::Director::Models unless defined?(BDM)
     it "should only delete records that match the deployment, job, and index" do
       domain = BDM::Dns::Domain.make
 

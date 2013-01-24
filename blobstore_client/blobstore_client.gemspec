@@ -7,23 +7,23 @@ Gem::Specification.new do |s|
   s.version      = Bosh::Blobstore::Client::VERSION
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH blobstore client"
-  s.description  = s.summary
   s.author       = "VMware"
-  s.email        = "support@vmware.com"
-  s.homepage     = "http://www.vmware.com"
+  s.homepage = 'https://github.com/cloudfoundry/bosh'
+  s.license = 'Apache 2.0'
+  s.email        = "support@cloudfoundry.com"
+  s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
+
 
   s.files        = `git ls-files -- bin/* lib/*`.split("\n") + %w(README Rakefile)
-  s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
   s.bindir       = "bin"
   s.executables  = %w(blobstore_client_console)
 
-  # should aws-sdk be locked to the same version as the aws cpi?
-  s.add_dependency "aws-sdk", ">=1.7.1"
-  s.add_dependency "fog", "~>1.6.0"
+  s.add_dependency "aws-sdk"
+  s.add_dependency "fog", ">= 1.9.0"
   s.add_dependency "httpclient", ">=2.2"
   s.add_dependency "multi_json", "~> 1.1.0"
   s.add_dependency "ruby-atmos-pure", "~> 1.0.5"
   s.add_dependency "uuidtools", "~> 2.1.2"
-  s.add_dependency "bosh_common", "~> 0.5"
+  s.add_dependency "bosh_common"
 end

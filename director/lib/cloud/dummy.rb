@@ -45,12 +45,11 @@ module Bosh
         agent_cmd = File.join(agent_dir, "bin", "agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir} --no-alerts")
 
         agent_pid = fork do
-          ENV["BUNDLE_GEMFILE"] = File.join(agent_dir, 'Gemfile')
           # exec will actually fork off another process (due to shell expansion),
           # so in order to kill all these new processes when cleaning up we need them
           # in a single process group.
           Process.setpgid(0, 0)
-          exec "ruby #{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
+          exec "#{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
         end
 
         Process.detach(agent_pid)

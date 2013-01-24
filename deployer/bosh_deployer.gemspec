@@ -13,14 +13,14 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc Rakefile)
   s.require_paths = ["lib", "config"]
 
-  s.add_dependency "bosh_cli", ">=1.0.2"
-  s.add_dependency "bosh_cpi", ">=0.5.1"
-  s.add_dependency "bosh_vcloud_cpi", "~>0.4.9"
-  s.add_dependency "bosh_vsphere_cpi", ">=0.6.0"
-  s.add_dependency "bosh_aws_cpi", ">=0.7.0"
-  s.add_dependency "bosh_aws_registry", "~>0.2.2"
-  s.add_dependency "bosh_openstack_cpi", "~>0.0.7"
-  s.add_dependency "bosh_openstack_registry", "~>0.0.5"
-  s.add_dependency "agent_client", "~>0.1.1"
+  s.add_dependency "bosh_cli"
+  s.add_dependency "bosh_cpi"
+  s.add_dependency "bosh_vcloud_cpi"
+  s.add_dependency "bosh_vsphere_cpi"
+  s.add_dependency "bosh_aws_cpi"
+  s.add_dependency "bosh_aws_registry"
+  s.add_dependency "bosh_openstack_cpi"
+  s.add_dependency "bosh_openstack_registry"
+  s.add_dependency "agent_client"
   s.add_dependency "sqlite3", "~>1.3.3"
 end

@@ -60,7 +60,7 @@ module Bosh
 
             ENV.delete("GEM_HOME") # Bundler sets this as well
             Dir.chdir(DIRECTOR_PATH) do
-              output = `BUNDLE_GEMFILE=#{DIRECTOR_PATH}/Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
+              output = `BUNDLE_GEMFILE=../Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
               unless $?.exitstatus == 0
                 puts "Failed to run migration:"
                 puts output

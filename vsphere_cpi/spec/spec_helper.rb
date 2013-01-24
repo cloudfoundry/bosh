@@ -13,7 +13,7 @@ require "sequel/adapters/sqlite"
 
 Sequel.extension :migration
 db = Sequel.sqlite(':memory:')
-migration = File.expand_path("../../db/migrations/vsphere_cpi", __FILE__)
+migration = File.expand_path("../../db/migrations", __FILE__)
 Sequel::TimestampMigrator.new(db, migration, :table => "vsphere_cpi_schema").run
 
 require 'cloud'

@@ -8,8 +8,8 @@ module Bosh
 end
 
 autoload :HTTPClient, "httpclient"
-Bosh.autoload :Blobstore, "blobstore_client"
 
+require "blobstore_client"
 require "base64"
 require "digest/sha1"
 require "fileutils"

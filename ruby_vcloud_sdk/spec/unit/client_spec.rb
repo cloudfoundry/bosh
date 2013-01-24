@@ -697,7 +697,7 @@ module VCloudSdk
         end
       end
 
-      it "gets information on HD", :positive do
+      xit "gets information on HD", :positive do
         conn = create_mock_client
         client = Client.new(nil, username, password, entities, control, conn)
         vapp = client.get_vapp(Test::Response::EXISTING_VAPP_URN)
