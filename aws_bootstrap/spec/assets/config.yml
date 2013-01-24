@@ -17,7 +17,6 @@ vpc:
     domain_name_servers:
       - 10.10.0.5
       - 172.16.0.23
-  elastic_ips: 2
   security_groups:
     - name: open
       ingress:
@@ -32,3 +31,7 @@ vpc:
         - protocol: tcp
           ports: 22
           sources: 0.0.0.0/0
+elastic_ips:
+  router:
+    instances: 2
+    dns_record: "*"
