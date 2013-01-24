@@ -121,7 +121,6 @@ module Bosh::Cli
       end
       opts.on("-n", "--non-interactive", "Don't ask for user input") do
         @options[:non_interactive] = true
-        Config.colorize = false
       end
       opts.on("-N", "--no-track", "Return Task ID and don't track") do
         @options[:no_track] = true
