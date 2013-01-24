@@ -13,6 +13,7 @@ require "blobstore_client/s3_blobstore_client"
 require "blobstore_client/swift_blobstore_client"
 require "blobstore_client/local_client"
 require "blobstore_client/atmos_blobstore_client"
+require "blobstore_client/composite_blobstore_client"
 
 module Bosh
   module Blobstore
@@ -23,7 +24,8 @@ module Bosh
         "s3" => S3BlobstoreClient,
         "swift" => SwiftBlobstoreClient,
         "atmos" => AtmosBlobstoreClient,
-        "local" => LocalClient
+        "local" => LocalClient,
+        "composite" => CompositeBlobstoreClient
       }
 
       def self.create(blobstore_provider, options = {})
