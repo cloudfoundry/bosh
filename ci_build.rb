@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 def bundle_without
-  ENV['HAS_JOSH_K_SEAL_OF_APPROVAL'] ? "--without development" : "" # aka: on travis
+  ENV['HAS_JOSH_K_SEAL_OF_APPROVAL'] ? "--local --without development" : "" # aka: on travis
 end
 
 def run_build(build)
