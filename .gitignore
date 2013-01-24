@@ -13,7 +13,6 @@ spec_coverage
 spec.log
 *.rbc
 *.swp
-.rvmrc
 .DS_Store
 spec/assets/*.pid
 spec/assets/*.db
