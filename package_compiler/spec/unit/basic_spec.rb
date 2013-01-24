@@ -53,11 +53,10 @@ describe Bosh::PackageCompiler::Compiler do
     end
 
     context "when job uses job collocation" do
-      pending "Not working on travis"
       let(:manifest) { "micro_bosh_collo/micro_bosh_collo.yml" }
       let(:release_tar) { "micro_bosh_collo/micro_bosh_collo.tgz" }
 
-      it "should add collocated jobs in apply spec" do
+      xit "should add collocated jobs in apply spec" do
         compiler.compile
         spec = YAML.load_file(compiler.apply_spec)
 
