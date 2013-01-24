@@ -15,7 +15,8 @@ if ENV['SUITE'] == "integration"
   run_build('integration_tests')
 else
   builds = Dir['*'].select {|f| File.directory?(f) && File.exists?("#{f}/spec")}
-  builds -= ['bat', 'integration_tests']
+  builds -= ['bat']
+  builds -= ['integration_tests'] if ENV['SUITE'] == "unit"
 
   redis_pid = fork { exec("redis-server  --port 63790") }
   at_exit { Process.kill("KILL", redis_pid) }

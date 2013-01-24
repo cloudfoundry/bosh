@@ -33,40 +33,18 @@ To file a bug against Cloud Foundry Open Source and its components, sign up and 
 
 ## OSS Contributions
 
-The Cloud Foundry team uses Gerrit, a code review tool that originated in the Android Open Source Project. We also use GitHub as an official mirror, though all pull requests are accepted via Gerrit.
+The Cloud Foundry team uses GitHub and accepts contirubtions via [pull request](https://help.github.com/articles/using-pull-requests)
 
 Follow these steps to make a contribution to any of our open source repositories:
 
 1. Complete our CLA Agreement for [individuials](http://www.cloudfoundry.org/individualcontribution.pdf) or [corporations](http://www.cloudfoundry.org/corpcontribution.pdf)
-1. Sign up for an account on our public Gerrit server at http://reviews.cloudfoundry.org/
-1. Create and upload your public SSH key in your Gerrit account profile
 1. Set your name and email
 
 		git config --global user.name "Firstname Lastname"
 		git config --global user.email "your_email@youremail.com"
 
-Install our gerrit-cli gem:
+Fork the BOSH repo
 
-		gem install gerrit-cli
+Make your changes on a topic branch, commit, and push to github and open a pull request.
 
-Clone the Cloud Foundry repo
-
-_Note: to clone the BOSH repo, or the Documentation repo, replace `vcap` with `bosh` or `oss-docs`_
-
-		gerrit clone ssh://reviews.cloudfoundry.org:29418/vcap
-		cd vcap
-
-Make your changes, commit, and push to gerrit:
-
-		git commit
-		gerrit push
-
-Once your commits are approved by our Continuous Integration Bot (CI Bot) as well as our engineering staff, return to the Gerrit interface and MERGE your changes. The merge will be replicated to GitHub automatically at [http://github.com/cloudfoundry/](https://github.com/cloudfoundry/). If you get feedback on your submission, we recommend squashing your commit with the original change-id. See the squashing section here for more details: [http://help.github.com/rebase/](http://help.github.com/rebase/).
-
-After the CI Bot successfully tests your change, you need to ask some Reviewers to accept your commit.
-
-Add a reviewer "Platforms Team", which explodes out into a subset of VMWare employees who work on BOSH. You can also add explicit reviewers by their name.
-
-Once your commit has been given a "+2" by one of the reviewers above, you can then merge your commit in via Gerrit dashboard.
-
-Finally, your contribution will be available via the gerrit and github git repositories.
+Once your commits are approved by Travis CI and reviewed by the core team, they will be merged.

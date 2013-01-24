@@ -1,0 +1,6 @@
+script: "./ci_build.rb"
+rvm:
+  - 1.9.2
+env:
+  - SUITE=unit
+  - SUITE=integration
