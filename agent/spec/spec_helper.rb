@@ -16,6 +16,7 @@ require "digest/sha1"
 require "fileutils"
 require "tmpdir"
 require "zlib"
+require "httpclient"
 
 tmpdir = Dir.mktmpdir
 ENV["TMPDIR"] = tmpdir

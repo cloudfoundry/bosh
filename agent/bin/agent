@@ -1,4 +1,4 @@
-#!/var/vcap/bosh/bin/ruby
+#!/usr/bin/env ruby
 #
 # Copyright (c) 2009-2012 VMware, Inc.
 

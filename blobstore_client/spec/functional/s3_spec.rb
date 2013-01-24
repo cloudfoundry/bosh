@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'tempfile'
 require 'net/http'
 
-describe Bosh::Blobstore::S3BlobstoreClient do
+describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
   EXISTING_BLOB_ID = "d704cb05d9c6af7e74188f4a858f33de"
 
   def access_key_id

@@ -1,12 +1,26 @@
 #!/usr/bin/env ruby
 
-builds = Dir['*'].select {|f| File.directory?(f) && File.exists?("#{f}/spec")}
-builds -= ['bat', 'director', 'ruby_vcloud_sdk', 'vsphere_cpi', 'vcloud_cpi']
+def bundle_without
+  ENV['HAS_JOSH_K_SEAL_OF_APPROVAL'] ? "--without development" : "" # aka: on travis
+end
 
-redis_pid = fork { exec("redis-server  --port 63790") }
-at_exit { Process.kill("KILL", redis_pid) }
-
-builds.each do |build|
+def run_build(build)
   p "-----#{build}-----"
-  system("cd #{build} && (bundle check || bundle) && bundle exec rspec spec") || raise(build)
+  system("cd #{build} && bundle exec rspec spec") || raise(build)
+end
+
+system("bundle check || bundle #{bundle_without}")
+
+if ENV['SUITE'] == "integration"
+  run_build('integration_tests')
+else
+  builds = Dir['*'].select {|f| File.directory?(f) && File.exists?("#{f}/spec")}
+  builds -= ['bat', 'integration_tests']
+
+  redis_pid = fork { exec("redis-server  --port 63790") }
+  at_exit { Process.kill("KILL", redis_pid) }
+
+  builds.each do |build|
+    run_build(build)
+  end
 end

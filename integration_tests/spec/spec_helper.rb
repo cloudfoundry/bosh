@@ -9,7 +9,7 @@ require "sandbox"
 require "deployments"
 require "redis"
 require "restclient"
-require File.expand_path("../../director/lib/director/version", __FILE__)
+require "director"
 
 ASSETS_DIR = File.expand_path("../assets", __FILE__)
 
@@ -17,7 +17,7 @@ TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
 TEST_RELEASE_DIR = File.join(ASSETS_DIR, "test_release")
 
 CLOUD_DIR      = "/tmp/bosh_test_cloud"
-CLI_DIR        = File.expand_path("../../cli", __FILE__)
+CLI_DIR        = File.expand_path("../../../cli", __FILE__)
 BOSH_CACHE_DIR = Dir.mktmpdir
 BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
@@ -85,7 +85,6 @@ end
 
 def run_bosh(cmd, work_dir = nil)
   Dir.chdir(work_dir || BOSH_WORK_DIR) do
-    ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
     `#{CLI_DIR}/bin/bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
   end
 end

@@ -26,9 +26,9 @@ module Bosh
       NATS_PID      = File.join(ASSETS_PATH, "nats.pid")
       HM_PID        = File.join(ASSETS_PATH, "health_monitor.pid")
 
-      DIRECTOR_PATH   = File.expand_path("../../director", __FILE__)
-      HM_PATH         = File.expand_path("../../health_monitor", __FILE__)
-      BLOBSTORE_PATH  = File.expand_path("../../simple_blobstore_server", __FILE__)
+      DIRECTOR_PATH   = File.expand_path("../../../director", __FILE__)
+      HM_PATH         = File.expand_path("../../../health_monitor", __FILE__)
+      BLOBSTORE_PATH  = File.expand_path("../../../simple_blobstore_server", __FILE__)
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
 
       BLOBSTORE_STORAGE_DIR = "/tmp/bosh_test_blobstore"
@@ -54,27 +54,19 @@ module Bosh
           @sqlite_db = File.join(ASSETS_PATH, "director.db")
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
-          bundle_path = ENV["BUNDLE_PATH"]
-          Bundler.with_clean_env do
-            ENV["BUNDLE_PATH"] = bundle_path
-
-            ENV.delete("GEM_HOME") # Bundler sets this as well
-            Dir.chdir(DIRECTOR_PATH) do
-              output = `BUNDLE_GEMFILE=../Gemfile bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
-              unless $?.exitstatus == 0
-                puts "Failed to run migration:"
-                puts output
-                exit 1
-              end
+          Dir.chdir(DIRECTOR_PATH) do
+            output = `bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
+            unless $?.exitstatus == 0
+              puts "Failed to run migration:"
+              puts output
+              exit 1
             end
           end
 
           FileUtils.cp(TESTCASE_SQLITE_DB, @sqlite_db)
 
-          blobstore_env = { "BUNDLE_GEMFILE" => "#{BLOBSTORE_PATH}/Gemfile" }
-
           run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
-          run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID, :env => blobstore_env)
+          run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID)
 
           run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
 
@@ -123,19 +115,15 @@ module Bosh
             f.write(Yajl::Encoder.encode({"uuid" => DIRECTOR_UUID}))
           end
 
-          director_env = { "BUNDLE_GEMFILE" => "#{DIRECTOR_PATH}/Gemfile" }
-          worker_env   = director_env.merge("QUEUE" => "*")
-          hm_env       = { "BUNDLE_GEMFILE" => "#{HM_PATH}/Gemfile" }
-
           run_with_pid("#{DIRECTOR_PATH}/bin/director -c #{DIRECTOR_CONF}", DIRECTOR_PID,
-                       :output => director_output, :env => director_env)
+                       :output => director_output)
           run_with_pid("#{DIRECTOR_PATH}/bin/worker -c #{DIRECTOR_CONF}", WORKER_PID,
-                       :output => worker_output, :env => worker_env)
+                       :output => worker_output, :env => {"QUEUE" => "*"})
           run_with_pid("#{HM_PATH}/bin/health_monitor -c #{HM_CONF}", HM_PID,
-                       :output => hm_output, :env => hm_env)
+                       :output => hm_output)
 
           loop do
-            `lsof -i :57523 | grep LISTEN`
+            `lsof -w -i :57523 | grep LISTEN`
             break if $?.exitstatus == 0
             sleep(0.5)
           end

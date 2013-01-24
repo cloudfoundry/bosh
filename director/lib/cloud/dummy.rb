@@ -49,7 +49,7 @@ module Bosh
           # so in order to kill all these new processes when cleaning up we need them
           # in a single process group.
           Process.setpgid(0, 0)
-          exec "#{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
+          exec "bundle exec #{agent_cmd} > /tmp/bosh_test_cloud/agent.#{agent_id}.log 2>&1"
         end
 
         Process.detach(agent_pid)
