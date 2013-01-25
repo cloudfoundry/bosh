@@ -82,6 +82,17 @@ PATH
       terminal-table (~> 1.4.2)
 
 PATH
+  remote: common
+  specs:
+    bosh_common (0.5.5)
+
+PATH
+  remote: cpi
+  specs:
+    bosh_cpi (0.5.1)
+      bosh_common
+
+PATH
   remote: deployer
   specs:
     bosh_deployer (1.4.0)
@@ -227,9 +238,6 @@ GEM
       nokogiri (>= 1.4.4)
       uuidtools (~> 2.1)
     bcrypt-ruby (3.0.1)
-    bosh_common (0.5.4)
-    bosh_cpi (0.5.1)
-      bosh_common (~> 0.5)
     bosh_openstack_cpi (0.0.7)
       bosh_common (>= 0.5.1)
       bosh_cpi (>= 0.5.1)
@@ -394,6 +402,8 @@ DEPENDENCIES
   bosh_aws_cpi!
   bosh_aws_registry!
   bosh_cli!
+  bosh_common!
+  bosh_cpi!
   bosh_deployer!
   bosh_encryption!
   bosh_openstack_registry!

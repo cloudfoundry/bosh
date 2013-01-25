@@ -3,6 +3,8 @@
 source :rubygems
 
 gem "bosh_agent", path: "agent"
+gem "bosh_common", path: "common"
+gem "bosh_cpi", path: "cpi"
 gem "agent_client", path: "agent_client"
 gem "bosh_aws_bootstrap", path: "aws_bootstrap"
 gem "bosh_aws_cpi", path: "aws_cpi"
