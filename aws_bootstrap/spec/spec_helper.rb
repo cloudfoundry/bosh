@@ -1,5 +1,3 @@
-$:.unshift(File.expand_path("../../../cli/lib", __FILE__))
-
 require "cli"
 require "bosh/cli/commands/aws"
 

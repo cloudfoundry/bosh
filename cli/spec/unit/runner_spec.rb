@@ -84,7 +84,6 @@ describe Bosh::Cli::Runner do
       runner.load_gem_plugins
     end
 
-    pending "raises an error if RubyGems is not sufficiently up to date"
     pending "raises an error if a plugin fails to load"
     pending "warns the user if a loaded plugin doesn't result in any new CLI commands"
   end

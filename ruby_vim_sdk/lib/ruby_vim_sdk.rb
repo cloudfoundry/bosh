@@ -14,7 +14,6 @@ require "thread"
 require "uri"
 require "zlib"
 
-require "rubygems"
 require "builder"
 require "httpclient"
 require "nokogiri"

@@ -1,9 +1,6 @@
 #!/usr/bin/env ruby
 
 require "erb"
-
-$:.unshift(File.expand_path("../../lib", __FILE__))
-
 require "director"
 
 config_file = nil

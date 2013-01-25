@@ -1,14 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
-require "rubygems"
-require "bundler"
-Bundler.setup(:default, :test)
-
-$:.unshift(File.expand_path("../../../common/lib", __FILE__))
-$:.unshift(File.expand_path("../../../cli/lib", __FILE__))
-
 require "rspec"
 require "cli"
 require "bosh/cli/commands/micro"

@@ -1,6 +1,5 @@
 $:.unshift(File.expand_path("..", __FILE__))
 
-require "rubygems" # Needed for Ruby 1.8
 require "logger"
 
 module VCloudSdk; end

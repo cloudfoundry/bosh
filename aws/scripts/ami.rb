@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 #
 
-require 'rubygems'
 require 'bosh_aws_cpi'
 require 'cloud'
 require 'ostruct'

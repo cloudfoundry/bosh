@@ -13,7 +13,7 @@ describe Bosh::PackageCompiler::Compiler do
       "blobstore_options" => {"blobstore_path" => @blobstore_path},
       "blobstore_provider" => "local",
       "base_dir" => @base_dir,
-      "logfile" => File.join(@base_dir, "spec.log"),
+      "logfile" => "/tmp/spec.log",
       "manifest" => spec_asset(manifest),
       "release" => spec_asset(release_tar),
       "apply_spec" => File.join(@base_dir, "micro/apply_spec.yml"),

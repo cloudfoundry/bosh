@@ -1,18 +1,10 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
-
-#ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
 require "digest/sha1"
 require "fileutils"
 require "logger"
 require "tmpdir"
 require "zlib"
-
-#require "rubygems"
-#require "bundler"
-#Bundler.setup(:default, :test)
 
 require "archive/tar/minitar"
 require "rspec"
@@ -41,7 +33,7 @@ module SpecHelper
       if ENV["DEBUG"]
         @logger = Logger.new(STDOUT)
       else
-        path = File.expand_path("../spec.log", __FILE__)
+        path = File.expand_path("/tmp/spec.log", __FILE__)
         log_file = File.open(path, "w")
         log_file.sync = true
         @logger = Logger.new(log_file)

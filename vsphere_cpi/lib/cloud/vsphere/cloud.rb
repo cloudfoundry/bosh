@@ -1,4 +1,3 @@
-require "rubygems"
 require "membrane"
 require "ruby_vim_sdk"
 

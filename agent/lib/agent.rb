@@ -107,7 +107,7 @@ module Bosh::Agent
         require "agent/http_handler"
         Bosh::Agent::HTTPHandler.start
       else
-        Bosh::Agent::Handler.start
+        Bosh::Agent::Handgit sler.start
       end
     end
   end

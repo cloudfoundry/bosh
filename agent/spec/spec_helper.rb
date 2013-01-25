@@ -1,11 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
-
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-require "rubygems"
-require "bundler"
-Bundler.setup(:default, :test)
 require "rspec"
 
 ENV["RACK_ENV"] = "test"
