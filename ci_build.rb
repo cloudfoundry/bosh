@@ -19,7 +19,6 @@ else
   builds -= ['integration_tests'] if ENV['SUITE'] == "unit"
 
   redis_pid = fork { exec("redis-server  --port 63790") }
-  at_exit {  }
 
   at_exit do
     begin
