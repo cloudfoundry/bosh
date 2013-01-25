@@ -26,6 +26,8 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
 
     varz_json = RestClient.get("http://admin:admin@localhost:25932/varz")
     varz = Yajl::Parser.parse(varz_json)
+    p varz_json
+    p varz
 
     varz["deployments_count"].should == 1
     varz["agents_count"].should == 3

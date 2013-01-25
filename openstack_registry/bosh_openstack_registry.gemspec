@@ -13,8 +13,7 @@ Gem::Specification.new do |s|
   s.homepage     = "http://www.vmware.com"
 
   s.files        = `git ls-files -- bin/* lib/*`.split("\n") +
-                   %w(README.md Rakefile)
-  s.test_files   = `git ls-files -- spec/*`.split("\n")
+                   %w(README.md)
   s.require_path = "lib"
   s.bindir       = "bin"
   s.executables  = %w(openstack_registry)

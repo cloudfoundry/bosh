@@ -7,14 +7,14 @@ Gem::Specification.new do |s|
   s.summary      = "BOSH Director"
   s.description  = s.summary
   s.author       = "VMware"
-  s.homepage = 'https://github.com/cloudfoundry/bosh'
-  s.license = 'Apache 2.0'
+  s.homepage     = 'https://github.com/cloudfoundry/bosh'
+  s.license      = 'Apache 2.0'
   s.email        = "support@cloudfoundry.com"
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
 
 
 
-  s.files        = `git ls-files -- lib/*`.split("\n") + %w(CHANGELOG Rakefile)
+  s.files        = `git ls-files -- lib/*`.split("\n") + %w(CHANGELOG)
   s.require_path = "lib"
 
   s.add_dependency  "bcrypt-ruby"

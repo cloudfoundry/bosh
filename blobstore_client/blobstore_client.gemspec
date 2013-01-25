@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
 
 
-  s.files        = `git ls-files -- bin/* lib/*`.split("\n") + %w(README Rakefile)
+  s.files        = `git ls-files -- bin/* lib/*`.split("\n") + %w(README)
   s.require_path = "lib"
   s.bindir       = "bin"
   s.executables  = %w(blobstore_client_console)

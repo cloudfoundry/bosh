@@ -1,12 +1,6 @@
-# Copyright (c) 2012 VMware, Inc.
 
-require "bundler"
-Bundler.setup(:default, :test)
-
-require "rake"
+require "rspec"
 require "rspec/core/rake_task"
-
-SPEC_OPTS = %w(--format documentation --color)
 
 desc "Run BAT tests"
 RSpec::Core::RakeTask.new(:bat) do |t|

@@ -1,33 +1,14 @@
-task :default => [ :spec, :build ]
+task :default => :spec
 
 desc "build and install the bosh cli gem"
 task :build do
   sh("cd cli && bundle exec rake install")
 end
 
-desc "clean build and install all gems"
-task :clean_install do
-  raise "You need to have rvm installed to run this task" unless system('rvm --version')
-  sh("rvm gemset use --create bosh && rvm gemset --force empty && bundle install")
-end
-
-desc "install all gem dependencies"
-task :bundle_install do
-  bundle_cmd = "bundle install --local --without development production"
-
-  %w(spec director cli simple_blobstore_server agent health_monitor).each do |component|
-    sh("cd #{component} && #{bundle_cmd}")
-  end
-end
-
 desc "run spec tests"
-task :spec => [ :bundle_install ] do
-  sh("cd spec && bundle exec rake spec")
+task :spec do
+  sh("./ci_build.rb")
 end
 
-desc "run CI spec tests"
-task "spec:ci" => [ :bundle_install ] do
-  sh("cd spec && bundle exec rake spec:ci")
-end
-
-
+import File.join("rake","stemcell.rake")
+import File.join("rake","bat.rake")

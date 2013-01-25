@@ -1,11 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.join(File.dirname(__FILE__), "/lib/agent/version.rb")
-require File.join(File.dirname(__FILE__), "/../micro/lib/micro/version.rb")
-
+require "agent"
 require "rbconfig"
 
-namespace :stemcell2 do
+namespace :stemcell do
 
   desc "Build stemcell"
   task :basic, :infrastructure do |t, args|
@@ -23,7 +21,7 @@ namespace :stemcell2 do
   task :micro, :infrastructure, :manifest, :tarball do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "micro-bosh-stemcell"
-    options[:stemcell_version] ||= Bosh::Micro::VERSION
+    options[:stemcell_version] ||= "0.8.1"
     options[:image_create_disk_size] = 2048
 
     options = options.merge(bosh_agent_options)

@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.email        = "support@vmware.com"
   s.homepage     = "http://www.vmware.com"
 
-  s.files        = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc Rakefile)
+  s.files        = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
   s.require_paths = ["lib", "config"]
 
   s.add_dependency "bosh_cli"

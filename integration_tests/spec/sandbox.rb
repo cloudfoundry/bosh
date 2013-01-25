@@ -5,7 +5,7 @@ module Bosh
       ASSETS_PATH = File.expand_path("../assets", __FILE__)
       LOGS_PATH   = File.join(ASSETS_PATH, "logs")
       REDIS_CONF  = File.join(ASSETS_PATH, "redis_test.conf")
-      REDIS_PID   = File.join(ASSETS_PATH, "redis_db/redis.pid")
+      REDIS_PID   = File.join(ASSETS_PATH, "redis.pid")
 
       NATS_PORT = 42112
       DIRECTOR_UUID = "deadbeef"

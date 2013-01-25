@@ -19,7 +19,16 @@ else
   builds -= ['integration_tests'] if ENV['SUITE'] == "unit"
 
   redis_pid = fork { exec("redis-server  --port 63790") }
-  at_exit { Process.kill("KILL", redis_pid) }
+  at_exit {  }
+
+  at_exit do
+    begin
+      status = $!.is_a?(::SystemExit) ? $!.status : 1
+      Process.kill("KILL", redis_pid)
+    ensure
+      exit status
+    end
+  end
 
   builds.each do |build|
     run_build(build)
