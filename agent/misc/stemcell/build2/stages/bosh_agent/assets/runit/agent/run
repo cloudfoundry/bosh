@@ -1,9 +1,0 @@
-#!/bin/bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
-
-set -e
-
-export PATH=/var/vcap/bosh/bin:$PATH
-exec 2>&1
-exec /usr/bin/nice -n -10 /var/vcap/bosh/agent/bin/agent -c -I $(cat /etc/infrastructure)

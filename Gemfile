@@ -2,7 +2,7 @@
 
 source :rubygems
 
-gem "bosh_agent", path: "agent"
+gem "bosh_agent", path: "bosh_agent"
 gem "bosh_common", path: "common"
 gem "bosh_cpi", path: "cpi"
 gem "agent_client", path: "agent_client"

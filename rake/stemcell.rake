@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "agent"
+require "bosh_agent"
 require "rbconfig"
 
 namespace :stemcell do
