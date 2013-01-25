@@ -22,7 +22,11 @@ else
 
   at_exit do
     begin
-      status = $!.is_a?(::SystemExit) ? $!.status : 1
+      if $!
+        status = $!.is_a?(::SystemExit) ? $!.status : 1
+      else
+        status = 0
+      end
       Process.kill("KILL", redis_pid)
     ensure
       exit status
