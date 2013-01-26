@@ -81,7 +81,7 @@ module Bosh::Agent
         manifest_path = File.join(@install_path, "job.MF")
 
         unless File.exists?(manifest_path)
-          install_failed("cannot find job manifest")
+          install_failed("cannot find job manifest #{manifest_path}")
         end
 
         FileUtils.mkdir_p(bin_dir)
@@ -89,7 +89,7 @@ module Bosh::Agent
         begin
           manifest = YAML.load_file(manifest_path)
         rescue ArgumentError
-          install_failed("malformed job manifest")
+          install_failed("malformed job manifest #{manifest_path}")
         end
 
         unless manifest.is_a?(Hash)
