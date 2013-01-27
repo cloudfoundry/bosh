@@ -56,6 +56,20 @@ describe Bosh::Director::DnsHelper do
     end
   end
 
+  describe :dns_domain_name do
+    it "should return the DNS domain name" do
+      BD::Config.stub(:dns_domain_name).and_return("test_domain")
+      dns_domain_name.should == "test_domain"
+    end
+  end
+
+  describe :dns_ns_record do
+    it "should return the DNS name server" do
+      BD::Config.stub(:dns_domain_name).and_return("test_domain")
+      dns_ns_record.should == "ns.test_domain"
+    end
+  end
+
   describe :update_dns_a_record do
     it "should create new record" do
       domain = BDM::Dns::Domain.make

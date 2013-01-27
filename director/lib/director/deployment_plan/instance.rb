@@ -203,7 +203,7 @@ module Bosh::Director
         @dns_record_info = {}
         network_settings.each do |network_name, network|
           name = [index, job.canonical_name, canonical(network_name),
-                  job.deployment.canonical_name, :bosh].join(".")
+                  job.deployment.canonical_name, dns_domain_name].join(".")
           @dns_record_info[name] = network["ip"]
         end
         @dns_record_info
