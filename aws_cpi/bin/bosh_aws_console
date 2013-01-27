@@ -6,7 +6,6 @@
 # irb(main):001:0> cpi.create_vm("test", "ami-809a48e9",
 #                  {"instance_type" => "m1.small"}, {}, [], {"foo" =>"bar"})
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
 require "bosh_aws_cpi"
 require "irb"
 require "irb/completion"

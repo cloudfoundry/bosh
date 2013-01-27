@@ -1,7 +1,3 @@
-$:.unshift(File.expand_path("..", __FILE__))
-$:.unshift(File.join(File.dirname(__FILE__), "."))
-$:.unshift(File.join(File.dirname(__FILE__), "unit"))
-
 require "yaml"
 require "ruby_vcloud_sdk"
 

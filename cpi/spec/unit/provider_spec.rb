@@ -1,4 +1,4 @@
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
 describe Bosh::Clouds::Provider do

@@ -1,5 +1,3 @@
-$:.unshift(File.expand_path("..", __FILE__))
-
 require "base64"
 require "date"
 require "delegate"

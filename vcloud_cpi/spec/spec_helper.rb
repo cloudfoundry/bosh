@@ -1,10 +1,5 @@
-$:.unshift(File.expand_path("..", __FILE__))
-$:.unshift(File.join(File.dirname(__FILE__), "."))
-$:.unshift(File.join(File.dirname(__FILE__), "../lib/cloud"))
-$:.unshift(File.join(File.dirname(__FILE__), "unit"))
-
 require "yaml"
-require "vcloud"
+require "cloud/vcloud"
 
 
 module VCloudCloud

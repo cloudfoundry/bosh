@@ -1,5 +1,3 @@
-require "vapp"
-
 module VCloudSdk
   module Xml
 

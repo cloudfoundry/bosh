@@ -1,5 +1,5 @@
 require "spec_helper"
-require "client_response"
+require_relative "client_response"
 require "stringio"
 require "logger"
 require "nokogiri/diff"

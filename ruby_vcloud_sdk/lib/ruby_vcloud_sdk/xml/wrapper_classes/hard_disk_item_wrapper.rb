@@ -1,5 +1,3 @@
-require "item"
-
 module VCloudSdk
   module Xml
 

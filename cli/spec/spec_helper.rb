@@ -2,7 +2,6 @@
 
 require "rspec/core"
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
 require "cli"
 
 def spec_asset(dir_or_file_name)

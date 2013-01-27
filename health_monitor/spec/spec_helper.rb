@@ -1,6 +1,5 @@
 require 'rspec/core'
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
 require 'health_monitor'
 
 def spec_asset(filename)
