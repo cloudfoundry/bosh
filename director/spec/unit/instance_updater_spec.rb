@@ -461,6 +461,7 @@ describe Bosh::Director::InstanceUpdater do
     instance_updater = Bosh::Director::InstanceUpdater.new(@instance_spec)
     instance_updater.stub!(:cloud).and_return(@cloud)
 
+    BD::Config.stub!(:dns_domain_name).and_return("bosh")
     dns_domain = Bosh::Director::Models::Dns::Domain.make
     Bosh::Director::Models::Dns::Record.make(:domain => dns_domain, :name => "0.some.record", :content => "0.0.0.0")
 

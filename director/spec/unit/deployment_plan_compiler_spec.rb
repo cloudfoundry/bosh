@@ -465,6 +465,7 @@ describe Bosh::Director::DeploymentPlanCompiler do
   describe :bind_dns do
     before(:each) do
       BD::Config.stub(:dns).and_return({"address" => '1.2.3.4'})
+      BD::Config.stub(:dns_domain_name).and_return("bosh")
     end
 
     it "should create the domain if it doesn't exist" do

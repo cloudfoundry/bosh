@@ -158,7 +158,7 @@ module Bosh::Director
 
       def delete_dns(name)
         if Config.dns_enabled?
-          record_pattern = ["%", canonical(name), "bosh"].join(".")
+          record_pattern = ["%", canonical(name), dns_domain_name].join(".")
           delete_dns_records(record_pattern)
         end
       end
