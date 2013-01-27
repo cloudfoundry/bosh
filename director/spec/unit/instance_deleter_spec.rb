@@ -39,6 +39,7 @@ describe BD::InstanceDeleter do
 
       @deleter.should_receive(:drain).with(vm.agent_id)
       @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
+      BD::Config.stub!(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with("5.test.%.foo.bosh", 0)
       @deployment_plan.should_receive(:canonical_name).and_return("foo")
       domain = stub('domain', :id => 0)
@@ -128,6 +129,7 @@ describe BD::InstanceDeleter do
       @deployment_plan.stub!(:canonical_name).and_return("dep")
       @deployment_plan.stub!(:dns_domain).and_return(domain)
       pattern = "0.foo.%.dep.bosh"
+      BD::Config.stub!(:dns_domain_name).and_return("bosh")
       @deleter.should_receive(:delete_dns_records).with(pattern, domain.id)
       @deleter.delete_dns("foo", 0)
     end

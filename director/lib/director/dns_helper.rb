@@ -56,6 +56,16 @@ module Bosh::Director
       servers
     end
 
+    # returns the DNS domain name
+    def dns_domain_name
+      Config.dns_domain_name
+    end
+
+    # returns the DNS name server record
+    def dns_ns_record
+      "ns.#{dns_domain_name}"
+    end
+
     # create/update DNS A record
     def update_dns_a_record(domain, name, ip_address)
       record = Models::Dns::Record.find(:domain_id => domain.id,
@@ -83,7 +93,7 @@ module Bosh::Director
       Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
                                          :name => reverse,
                                          :type =>'NS', :ttl => TTL_4H,
-                                         :content => "ns.bosh")
+                                         :content => dns_ns_record)
 
       record = Models::Dns::Record.find(:content => name, :type =>'PTR')
 

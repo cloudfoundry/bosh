@@ -4,6 +4,7 @@ module Bosh::Director
   class Config
 
     class << self
+      include DnsHelper
 
       CONFIG_OPTIONS = [
         :base_dir,
@@ -11,6 +12,7 @@ module Bosh::Director
         :db,
         :dns,
         :dns_db,
+        :dns_domain_name,
         :event_log,
         :logger,
         :max_tasks,
@@ -97,8 +99,10 @@ module Bosh::Director
 
         @db = configure_db(config["db"])
         @dns = config["dns"]
-        if @dns && @dns["db"]
-          @dns_db = configure_db(@dns["db"])
+        @dns_domain_name = "bosh"
+        if @dns
+          @dns_db = configure_db(@dns["db"]) if @dns["db"]
+          @dns_domain_name = canonical(@dns["domain_name"]) if @dns["domain_name"]
         end
 
         @encryption = config["encryption"]
