@@ -173,7 +173,7 @@ describe Bosh::Agent::ApplyPlan::Job do
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
                          "Failed to install job 'ccdb.postgres': " +
-                         "cannot find job manifest")
+                         "cannot find job manifest #{manifest_path}")
       end
 
       it "fails if job manifest is malformed" do
@@ -187,7 +187,7 @@ describe Bosh::Agent::ApplyPlan::Job do
           job.install
         }.to raise_error(Bosh::Agent::ApplyPlan::Job::InstallationError,
                          "Failed to install job 'ccdb.postgres': " +
-                         "malformed job manifest")
+                         "malformed job manifest #{manifest_path}")
       end
 
       it "fails if job manifest is not a Hash" do
