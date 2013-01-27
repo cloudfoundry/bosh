@@ -1,8 +1,3 @@
-require_relative '../../../bosh_aws_bootstrap/vpc'
-require_relative '../../../bosh_aws_bootstrap/ec2'
-require_relative '../../../bosh_aws_bootstrap/s3'
-require_relative '../../../bosh_aws_bootstrap/route53'
-
 module Bosh::Cli::Command
   class AWS < Base
     DEFAULT_CIDR = "10.0.0.0/16" # KILL

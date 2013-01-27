@@ -1,3 +1,7 @@
+require 'aws-sdk'
+require 'uuidtools'
+
+require "bosh/cli/commands/aws"
 require "bosh_aws_bootstrap/ec2"
 require "bosh_aws_bootstrap/route53"
 require "bosh_aws_bootstrap/s3"

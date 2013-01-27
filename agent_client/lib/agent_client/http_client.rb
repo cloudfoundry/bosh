@@ -1,7 +1,5 @@
 module Bosh; module Agent; end; end
 
-require "httpclient"
-
 module Bosh::Agent
   class HTTPClient < BaseClient
 

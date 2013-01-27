@@ -1,6 +1,3 @@
-require 'aws-sdk'
-require 'uuidtools'
-
 module Bosh
   module Aws
     class Route53

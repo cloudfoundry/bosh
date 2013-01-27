@@ -1,5 +1,3 @@
-require 'aws-sdk'
-
 module Bosh
   module Aws
     class VPC
