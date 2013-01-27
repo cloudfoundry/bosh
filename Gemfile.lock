@@ -37,7 +37,7 @@ PATH
 PATH
   remote: blobstore_client
   specs:
-    blobstore_client (0.5.1)
+    blobstore_client (0.5.2)
       aws-sdk
       bosh_common
       fog (>= 1.9.0)

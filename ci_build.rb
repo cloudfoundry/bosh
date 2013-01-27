@@ -9,7 +9,7 @@ def run_build(build)
   system("cd #{build} && bundle exec rspec spec") || raise(build)
 end
 
-system("bundle check || bundle #{bundle_without}")
+system("bundle check || bundle #{bundle_without}")  || raise("Bundler is required.")
 
 if ENV['SUITE'] == "integration"
   run_build('integration_tests')

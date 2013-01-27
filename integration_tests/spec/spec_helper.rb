@@ -101,4 +101,15 @@ def cleanup_bosh
 end
 
 start_sandbox
-at_exit { stop_sandbox }
+at_exit do
+  begin
+    if $!
+      status = $!.is_a?(::SystemExit) ? $!.status : 1
+    else
+      status = 0
+    end
+    stop_sandbox
+  ensure
+    exit status
+  end
+end

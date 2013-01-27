@@ -15,7 +15,18 @@ require "httpclient"
 tmpdir = Dir.mktmpdir
 ENV["TMPDIR"] = tmpdir
 FileUtils.mkdir_p(tmpdir)
-at_exit { FileUtils.rm_rf(tmpdir) }
+at_exit do
+  begin
+    if $!
+      status = $!.is_a?(::SystemExit) ? $!.status : 1
+    else
+      status = 0
+    end
+    FileUtils.rm_rf(tmpdir)
+  ensure
+    exit status
+  end
+end
 
 RSpec.configure do |rspec_config|
   rspec_config.before(:each) do
