@@ -284,9 +284,9 @@ GEM
       guard (>= 1.1)
       rspec (~> 2.11)
     highline (1.6.15)
-    httparty (0.10.0)
+    httparty (0.10.2)
       multi_json (~> 1.0)
-      multi_xml
+      multi_xml (>= 0.5.2)
     httpclient (2.2.4)
     json (1.7.6)
     json_pure (1.7.6)
