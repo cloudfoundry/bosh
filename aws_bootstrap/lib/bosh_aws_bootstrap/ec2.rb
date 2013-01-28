@@ -28,6 +28,10 @@ module Bosh
         aws_ec2.elastic_ips.each { |ip| ip.release if ips.include? ip.public_ip }
       end
 
+      def terminate_instances
+        aws_ec2.instances.each &:terminate
+      end
+
       private
 
       def aws_ec2

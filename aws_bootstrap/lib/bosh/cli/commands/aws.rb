@@ -1,3 +1,5 @@
+require_relative "../../../bosh_aws_bootstrap"
+
 module Bosh::Cli::Command
   class AWS < Base
     DEFAULT_CIDR = "10.0.0.0/16" # KILL
@@ -120,6 +122,14 @@ module Bosh::Cli::Command
       say("Buckets:\n\t#{s3.bucket_names.join("\n\t")}")
 
       s3.empty if agree("Are you sure you want to empty and delete all buckets?")
+    end
+
+    usage "aws terminate_all ec2"
+    desc "terminates all EC2 instances and attached EBS volumes"
+
+    def terminate_all_ec2(config_file)
+      credentials = load_yaml(config_file)["aws"]
+      Bosh::Aws::EC2.new(credentials).terminate_instances
     end
 
     private

@@ -196,5 +196,26 @@ describe Bosh::Cli::Command::AWS do
         end
       end
     end
+
+    describe "aws terminate_all ec2" do
+      let(:config_file) { asset "config.yml" }
+
+      pending "should warn the user that the operation is destructive and list the instances" do
+
+      end
+
+
+      context 'when the user agrees to terminate all the instances' do
+        it 'should terminate all instances' do
+          fake_ec2 = mock("ec2")
+
+          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+
+          fake_ec2.should_receive :terminate_instances
+
+          aws.terminate_all_ec2(config_file)
+        end
+      end
+    end
   end
 end

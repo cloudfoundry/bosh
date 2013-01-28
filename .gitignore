@@ -43,3 +43,5 @@ ci_result/
 **/vendor/
 **/Gemfile
 **/Gemfile.lock
+bin/
+create-vpc-output*.yml

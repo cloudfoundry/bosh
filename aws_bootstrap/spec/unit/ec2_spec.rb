@@ -46,4 +46,22 @@ describe Bosh::Aws::EC2 do
       end
     end
   end
+
+  describe "instances" do
+    describe "termination" do
+      it "should terminate all instances" do
+        instance_1 = double("instance")
+        instance_2 = double("instance")
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2])
+
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+
+        instance_1.should_receive :terminate
+        instance_2.should_receive :terminate
+
+        ec2.terminate_instances
+      end
+
+    end
+  end
 end
