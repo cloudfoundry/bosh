@@ -3,8 +3,6 @@ require 'tempfile'
 require 'net/http'
 
 describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
-  EXISTING_BLOB_ID = "d704cb05d9c6af7e74188f4a858f33de"
-
   def access_key_id
     key = ENV['AWS_ACCESS_KEY_ID']
     raise "need to set AWS_ACCESS_KEY_ID environment variable" unless key
@@ -18,9 +16,26 @@ describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
   end
 
   def bucket_name
-    key = ENV['S3_BUCKET_NAME']
-    raise "need to set S3_BUCKET_NAME environment variable" unless key
-    key
+    @bucket_name
+  end
+
+  before(:all) do
+    s3 = AWS::S3.new(
+      :access_key_id     => access_key_id,
+      :secret_access_key => secret_access_key,
+      :use_ssl           => true,
+      :port              => 443
+    )
+
+    @bucket_name = "bosh-blobstore-bucket-%08x" % rand(2**32)
+    @bucket = s3.buckets.create(@bucket_name, :acl => :public_read)
+
+    object = @bucket.objects["public"]
+    object.write("foobar", :acl => :public_read)
+  end
+
+  after(:all) do
+    @bucket.delete!
   end
 
   context "Read/Write" do
@@ -131,8 +146,7 @@ describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
   context "Read-Only" do
     let(:s3_options) do
       {
-        :endpoint => "https://s3-us-west-1.amazonaws.com",
-        :bucket_name => "bosh-blobstore-bucket"
+        :bucket_name => bucket_name,
       }
     end
 
@@ -140,22 +154,25 @@ describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
       Bosh::Blobstore::Client.create("s3", s3_options)
     end
 
+    let(:contents) do
+      "foobar"
+    end
+
     describe "get object" do
       it "should save to a file" do
         file = Tempfile.new("contents")
-        s3.get(EXISTING_BLOB_ID, file)
+        s3.get("public", file)
         file.rewind
-        file.read.should == EXISTING_BLOB_ID
+        file.read.should == contents
       end
 
       it "should return the contents" do
-        s3.get(EXISTING_BLOB_ID).should == EXISTING_BLOB_ID
+        s3.get("public").should == contents
       end
 
       it "should raise an error when the object is missing" do
-        id = "foooooo"
         expect {
-          s3.get(id)
+          s3.get("foooooo")
         }.to raise_error Bosh::Blobstore::BlobstoreError, /Could not fetch object/
       end
     end
@@ -163,7 +180,7 @@ describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
     describe "create object" do
       it "should raise an error" do
         expect {
-          s3.create("foobar")
+          s3.create(contents)
         }.to raise_error Bosh::Blobstore::BlobstoreError, "unsupported action"
       end
     end
@@ -171,7 +188,7 @@ describe Bosh::Blobstore::S3BlobstoreClient, :s3_credentials => true do
     describe "delete object" do
       it "should raise an error" do
         expect {
-          s3.delete(EXISTING_BLOB_ID)
+          s3.delete("public")
         }.to raise_error Bosh::Blobstore::BlobstoreError, "unsupported action"
       end
     end
