@@ -50,7 +50,6 @@ module Bosh::Cli::Command
 
       elastic_ips = ec2.elastic_ips
       route53 = Bosh::Aws::Route53.new(config["aws"])
-      route53.create_zone(config["vpc"]["domain"])
 
       config["elastic_ips"].each do |name, job|
         @output_state["elastic_ips"] ||= {}
@@ -105,7 +104,6 @@ module Bosh::Cli::Command
           end
         end
       end
-      route53.delete_zone(details["vpc"]["domain"])
 
       say "deleted VPC and all dependencies".green
     end
