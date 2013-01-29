@@ -148,6 +148,9 @@ settings_file=etc/settings.bash
 $ sudo bin/build_from_spec.sh $work_dir $specification_file $settings_file
 ```
 
+If you are using the stemcell builder rake task, set the environment
+variable WORK_PATH to your btrfs mount.
+
 ## Hacking
 
 **Keep stages fully isolated.**
