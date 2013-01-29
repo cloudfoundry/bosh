@@ -27,8 +27,6 @@ module Bosh
       HM_PID        = File.join(ASSETS_PATH, "health_monitor.pid")
 
       DIRECTOR_PATH   = File.expand_path("../../../director", __FILE__)
-      HM_PATH         = File.expand_path("../../../health_monitor", __FILE__)
-      BLOBSTORE_PATH  = File.expand_path("../../../simple_blobstore_server", __FILE__)
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
 
       BLOBSTORE_STORAGE_DIR = "/tmp/bosh_test_blobstore"

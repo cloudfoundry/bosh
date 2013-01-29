@@ -66,8 +66,6 @@ group :development, :test do
   # from ruby_vcloud_sdk
   gem "nokogiri-diff"
 
-  # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
-  # also bosh_openstack_registry, vsphere_cpi, director
   gem "sqlite3"
 
   #  gem "guard-yard"

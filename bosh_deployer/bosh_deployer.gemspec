@@ -26,5 +26,4 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_openstack_cpi", "~>0.0.7"
   s.add_dependency "bosh_openstack_registry", "~>#{version}"
   s.add_dependency "agent_client", "~>#{version}"
-  s.add_dependency "sqlite3", "~>1.3.7"
 end
