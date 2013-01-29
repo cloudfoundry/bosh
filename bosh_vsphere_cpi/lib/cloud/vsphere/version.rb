@@ -1,6 +1,6 @@
 module Bosh
-  module Agent
-    class Client
+  module Clouds
+    class VSphere
       VERSION = '1.5.0.pre'
     end
   end

@@ -1,3 +1,3 @@
 module Bosh::HealthMonitor
-  VERSION  = "0.1.2"
+  VERSION = '1.5.0.pre'
 end
