@@ -85,7 +85,7 @@ end
 
 def run_bosh(cmd, work_dir = nil)
   Dir.chdir(work_dir || BOSH_WORK_DIR) do
-    `#{CLI_DIR}/bin/bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
+    `bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
   end
 end
 

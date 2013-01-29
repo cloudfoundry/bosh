@@ -33,7 +33,6 @@ module Bosh
       end
 
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
-        agent_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "bosh_agent"))
         agent_base_dir = "/tmp/bosh_test_cloud/agent-base-dir-#{agent_id}"
 
         root_dir = File.join(agent_base_dir, 'root_dir')
@@ -42,7 +41,7 @@ module Bosh
         # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
         # then port should be overriden for each agent, otherwise all but first won't start
         # (won't be able to bind to port)
-        agent_cmd = File.join(agent_dir, "bin", "bosh_agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir} --no-alerts")
+        agent_cmd = "bosh_agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir} --no-alerts"
 
         agent_pid = fork do
           # exec will actually fork off another process (due to shell expansion),

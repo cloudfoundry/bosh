@@ -55,7 +55,7 @@ module Bosh
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
           Dir.chdir(DIRECTOR_PATH) do
-            output = `rake migration:run[#{DIRECTOR_CONF}] --trace`
+            output = `bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
             unless $?.exitstatus == 0
               puts "Failed to run migration:"
               puts output
@@ -66,9 +66,9 @@ module Bosh
           FileUtils.cp(TESTCASE_SQLITE_DB, @sqlite_db)
 
           run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
-          run_with_pid("#{BLOBSTORE_PATH}/bin/simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID)
+          run_with_pid("bundle exec simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID)
 
-          run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
+          run_with_pid("bundle exec nats-server -p #{NATS_PORT}", NATS_PID)
 
           if ENV["DEBUG"]
             FileUtils.rm_rf(LOGS_PATH)
@@ -115,11 +115,11 @@ module Bosh
             f.write(Yajl::Encoder.encode({"uuid" => DIRECTOR_UUID}))
           end
 
-          run_with_pid("#{DIRECTOR_PATH}/bin/director -c #{DIRECTOR_CONF}", DIRECTOR_PID,
+          run_with_pid("bundle exec director -c #{DIRECTOR_CONF}", DIRECTOR_PID,
                        :output => director_output)
-          run_with_pid("#{DIRECTOR_PATH}/bin/worker -c #{DIRECTOR_CONF}", WORKER_PID,
+          run_with_pid("bundle exec worker -c #{DIRECTOR_CONF}", WORKER_PID,
                        :output => worker_output, :env => {"QUEUE" => "*"})
-          run_with_pid("#{HM_PATH}/bin/health_monitor -c #{HM_CONF}", HM_PID,
+          run_with_pid("bundle exec health_monitor -c #{HM_CONF}", HM_PID,
                        :output => hm_output)
 
           loop do

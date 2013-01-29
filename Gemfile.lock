@@ -1,47 +1,47 @@
 PATH
   remote: agent_client
   specs:
-    agent_client (0.1.1)
-      httpclient
-      yajl-ruby
+    agent_client (1.5.0.pre)
+      httpclient (= 2.2.4)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: aws_bootstrap
   specs:
-    bosh_aws_bootstrap (0.0.1)
-      aws-sdk (>= 1.8.0)
-      bosh_cli
-      uuidtools (>= 2.1.3)
+    bosh_aws_bootstrap (1.5.0.pre)
+      aws-sdk (~> 1.8.0)
+      bosh_cli (~> 1.5.0.pre)
+      uuidtools (~> 2.1.3)
 
 PATH
   remote: aws_cpi
   specs:
-    bosh_aws_cpi (0.7.0)
-      aws-sdk (>= 1.3.5)
-      bosh_common
-      bosh_cpi
-      httpclient (>= 2.2.0)
-      uuidtools (>= 2.1.2)
+    bosh_aws_cpi (1.5.0.pre)
+      aws-sdk (~> 1.8.0)
+      bosh_common (~> 1.5.0.pre)
+      bosh_cpi (~> 1.5.0.pre)
+      httpclient (= 2.2.4)
+      uuidtools (~> 2.1.3)
       yajl-ruby (>= 0.8.2)
 
 PATH
   remote: aws_registry
   specs:
-    bosh_aws_registry (0.2.3)
-      aws-sdk
-      sequel
+    bosh_aws_registry (1.5.0.pre)
+      aws-sdk (~> 1.8.0)
+      sequel (~> 3.43.0)
       sinatra (~> 1.2.8)
-      thin
+      thin (~> 1.5.0)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: blobstore_client
   specs:
-    blobstore_client (0.5.2)
-      aws-sdk
-      bosh_common
-      fog (>= 1.9.0)
-      httpclient (>= 2.2)
+    blobstore_client (1.5.0.pre)
+      aws-sdk (~> 1.8.0)
+      bosh_common (~> 1.5.0.pre)
+      fog (~> 1.9.0)
+      httpclient (= 2.2.4)
       multi_json (~> 1.1.0)
       ruby-atmos-pure (~> 1.0.5)
       uuidtools (~> 2.1.2)
@@ -49,183 +49,183 @@ PATH
 PATH
   remote: bosh_agent
   specs:
-    bosh_agent (0.7.0)
-      blobstore_client
-      bosh_common
-      bosh_encryption
-      highline
-      monit_api
+    bosh_agent (1.5.0.pre)
+      blobstore_client (~> 1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
+      bosh_encryption (~> 1.5.0.pre)
+      highline (~> 1.6.2)
+      monit_api (~> 1.5.0.pre)
       nats (~> 0.4.28)
-      netaddr
-      posix-spawn
-      ruby-atmos-pure
+      netaddr (~> 1.5.0)
+      posix-spawn (~> 0.3.6)
+      ruby-atmos-pure (~> 1.0.5)
       sigar (>= 0.7.2)
       sinatra (~> 1.2.8)
-      thin
-      uuidtools
-      yajl-ruby
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: cli
   specs:
-    bosh_cli (1.0.3)
-      blobstore_client
-      bosh_common
+    bosh_cli (1.5.0.pre)
+      blobstore_client (~> 1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
       highline (~> 1.6.2)
-      httpclient (>= 2.2.4, <= 2.2.4)
+      httpclient (= 2.2.4)
       json_pure (~> 1.7.6)
       net-scp (~> 1.0.4)
       net-ssh (>= 2.2.1)
       net-ssh-gateway (~> 1.1.0)
       netaddr (~> 1.5.0)
       progressbar (~> 0.9.0)
-      terminal-table (~> 1.4.2)
+      terminal-table (~> 1.4.3)
 
 PATH
   remote: common
   specs:
-    bosh_common (0.5.5)
+    bosh_common (1.5.0.pre)
 
 PATH
   remote: cpi
   specs:
-    bosh_cpi (0.5.1)
-      bosh_common
+    bosh_cpi (1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
 
 PATH
   remote: deployer
   specs:
-    bosh_deployer (1.4.0)
-      agent_client
-      bosh_aws_cpi
-      bosh_aws_registry
-      bosh_cli
-      bosh_cpi
-      bosh_openstack_cpi
-      bosh_openstack_registry
-      bosh_vcloud_cpi
-      bosh_vsphere_cpi
-      sqlite3 (~> 1.3.3)
+    bosh_deployer (1.5.0.pre)
+      agent_client (~> 1.5.0.pre)
+      bosh_aws_cpi (~> 1.5.0.pre)
+      bosh_aws_registry (~> 1.5.0.pre)
+      bosh_cli (~> 1.5.0.pre)
+      bosh_cpi (~> 1.5.0.pre)
+      bosh_openstack_cpi (~> 0.0.7)
+      bosh_openstack_registry (~> 1.5.0.pre)
+      bosh_vcloud_cpi (~> 1.5.0.pre)
+      bosh_vsphere_cpi (~> 1.5.0.pre)
+      sqlite3 (~> 1.3.7)
 
 PATH
   remote: director
   specs:
-    director (0.7)
-      bcrypt-ruby
-      blobstore_client
-      bosh_aws_cpi
-      bosh_common
-      bosh_cpi
-      bosh_encryption
-      bosh_openstack_cpi
-      bosh_vcloud_cpi
-      bosh_vsphere_cpi
-      eventmachine
-      httpclient
+    director (1.5.0.pre)
+      bcrypt-ruby (~> 3.0.1)
+      blobstore_client (~> 1.5.0.pre)
+      bosh_aws_cpi (~> 1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
+      bosh_cpi (~> 1.5.0.pre)
+      bosh_encryption (~> 1.5.0.pre)
+      bosh_openstack_cpi (~> 0.0.7)
+      bosh_vcloud_cpi (~> 1.5.0.pre)
+      bosh_vsphere_cpi (~> 1.5.0.pre)
+      eventmachine (~> 0.12.9)
+      httpclient (= 2.2.4)
       nats (~> 0.4.28)
-      netaddr
-      rack-test
-      rake
-      redis
-      resque
-      sequel
+      netaddr (~> 1.5.0)
+      rack-test (~> 0.6.2)
+      rake (~> 10.0.3)
+      redis (~> 3.0.2)
+      resque (~> 1.23.0)
+      sequel (~> 3.43.0)
       sinatra (~> 1.2.8)
-      thin
-      uuidtools
-      yajl-ruby
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: encryption
   specs:
-    bosh_encryption (0.0.4)
+    bosh_encryption (1.5.0.pre)
       gibberish (~> 1.2.0)
-      uuidtools (~> 2.1.2)
-      yajl-ruby
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: health_monitor
   specs:
-    health_monitor (0.1.2)
+    health_monitor (1.5.0.pre)
       em-http-request (~> 0.3.0)
       eventmachine (~> 0.12.10)
       logging (~> 1.5.0)
       nats (~> 0.4.28)
       sinatra (~> 1.2.8)
-      thin
-      uuidtools
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1.3)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: monit_api
   specs:
-    monit_api (1.0.2)
-      crack
+    monit_api (1.5.0.pre)
+      crack (~> 0.3.2)
 
 PATH
   remote: openstack_registry
   specs:
-    bosh_openstack_registry (0.0.5)
-      fog (>= 1.6.0)
-      sequel
+    bosh_openstack_registry (1.5.0.pre)
+      fog (~> 1.9.0)
+      sequel (~> 3.43.0)
       sinatra (~> 1.2.8)
-      thin
-      yajl-ruby
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: package_compiler
   specs:
-    package_compiler (0.2.0)
-      agent_client
-      blobstore_client
-      bosh_common
+    package_compiler (1.5.0.pre)
+      agent_client (~> 1.5.0.pre)
+      blobstore_client (~> 1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
       trollop (~> 1.16)
-      yajl-ruby
+      yajl-ruby (~> 1.1.0)
 
 PATH
   remote: ruby_vcloud_sdk
   specs:
-    ruby_vcloud_sdk (0.4.8)
-      builder
-      httpclient
-      nokogiri (~> 1.5)
-      rest-client
+    ruby_vcloud_sdk (1.5.0.pre)
+      builder (~> 3.1.4)
+      httpclient (= 2.2.4)
+      nokogiri (~> 1.5.6)
+      rest-client (~> 1.6.7)
 
 PATH
   remote: ruby_vim_sdk
   specs:
-    ruby_vim_sdk (0.0.3)
-      builder
-      httpclient
-      nokogiri
+    ruby_vim_sdk (1.5.0.pre)
+      builder (~> 3.1.4)
+      httpclient (= 2.2.4)
+      nokogiri (~> 1.5.6)
 
 PATH
   remote: simple_blobstore_server
   specs:
-    simple_blobstore_server (0.0.1)
+    simple_blobstore_server (1.5.0.pre)
       sinatra (~> 1.2.8)
-      thin
-      uuidtools
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1)
 
 PATH
   remote: vcloud_cpi
   specs:
-    bosh_vcloud_cpi (0.4.9)
-      bosh_common
-      bosh_cpi
-      ruby_vcloud_sdk
-      uuidtools
+    bosh_vcloud_cpi (1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
+      bosh_cpi (~> 1.5.0.pre)
+      ruby_vcloud_sdk (~> 1.5.0.pre)
+      uuidtools (~> 2.1)
       yajl-ruby (>= 0.8.2)
 
 PATH
   remote: vsphere_cpi
   specs:
-    bosh_vsphere_cpi (0.6.0)
-      bosh_common
-      bosh_cpi
-      membrane
-      ruby_vim_sdk
-      sequel
-      uuidtools
+    bosh_vsphere_cpi (1.5.0.pre)
+      bosh_common (~> 1.5.0.pre)
+      bosh_cpi (~> 1.5.0.pre)
+      membrane (~> 0.0.2)
+      ruby_vim_sdk (~> 1.5.0.pre)
+      sequel (~> 3.43.0)
+      uuidtools (~> 2.1.3)
 
 GEM
   remote: http://rubygems.org/
@@ -246,7 +246,7 @@ GEM
       uuidtools (>= 2.1.2)
       yajl-ruby (>= 0.8.2)
     builder (3.1.4)
-    ci_reporter (1.8.3)
+    ci_reporter (1.8.4)
       builder (>= 2.1.2)
     coderay (1.0.8)
     columnize (0.3.6)
@@ -272,10 +272,11 @@ GEM
       ruby-hmac
     formatador (0.2.4)
     gibberish (1.2.0)
-    guard (1.6.1)
+    guard (1.6.2)
       listen (>= 0.6.0)
       lumberjack (>= 1.0.2)
       pry (>= 0.9.10)
+      terminal-table (>= 1.4.3)
       thor (>= 0.14.6)
     guard-bundler (1.0.0)
       bundler (~> 1.0)
@@ -290,7 +291,7 @@ GEM
     httpclient (2.2.4)
     json (1.7.6)
     json_pure (1.7.6)
-    linecache19 (0.5.12)
+    linecache19 (0.5.13)
       ruby_core_source (>= 0.1.4)
     listen (0.7.2)
     little-plugger (1.1.3)
@@ -327,7 +328,7 @@ GEM
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.4)
-    rack (1.5.0)
+    rack (1.5.1)
     rack-test (0.6.2)
       rack (>= 1.0)
     rake (10.0.3)
@@ -348,7 +349,7 @@ GEM
     rspec-core (2.12.2)
     rspec-expectations (2.12.1)
       diff-lcs (~> 1.1.3)
-    rspec-mocks (2.12.1)
+    rspec-mocks (2.12.2)
     ruby-atmos-pure (1.0.5)
       log4r (>= 1.1.9)
       ruby-hmac (>= 0.4.0)
@@ -383,7 +384,7 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
-    thor (0.16.0)
+    thor (0.17.0)
     tilt (1.3.3)
     trollop (1.16.2)
     uuidtools (2.1.3)

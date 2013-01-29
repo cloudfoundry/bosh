@@ -1,8 +1,10 @@
-require File.dirname(__FILE__) + "/lib/agent_client/version"
+# -*- encoding: utf-8 -*-
+# Copyright (c) 2009-2012 VMware, Inc.
+version = File.read(File.expand_path('../../BOSH_VERSION', __FILE__)).strip
 
 Gem::Specification.new do |s|
   s.name         = "agent_client"
-  s.version      = Bosh::Agent::Client::VERSION
+  s.version      = version
   s.platform     = Gem::Platform::RUBY
   s.summary      = "BOSH agent client"
   s.description  = s.summary
@@ -10,12 +12,12 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/cloudfoundry/bosh'
   s.license = 'Apache 2.0'
   s.email        = "support@cloudfoundry.com"
-  s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
+  s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
 
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = "lib"
 
-  s.add_dependency "httpclient"
-  s.add_dependency "yajl-ruby"
+  s.add_dependency "httpclient", "=2.2.4"
+  s.add_dependency "yajl-ruby", "~>1.1.0"
 end
