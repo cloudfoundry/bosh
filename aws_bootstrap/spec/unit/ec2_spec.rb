@@ -61,7 +61,18 @@ describe Bosh::Aws::EC2 do
 
         ec2.terminate_instances
       end
+    end
 
+    describe "listing names" do
+      it "should list the names of all instances" do
+        instance_1 = double("instance", instance_id: "id_1", tags: {"Name" => "instance1"})
+        instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"})
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2])
+
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+
+        ec2.instance_names.should == {"id_1" => "instance1", "id_2" => "instance2"}
+      end
     end
   end
 end

@@ -117,7 +117,6 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.should_receive :delete_vpc
         fake_dhcp_options.should_receive :delete
         fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
-
         fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
 
         aws.delete_vpc output_file
@@ -200,10 +199,20 @@ describe Bosh::Cli::Command::AWS do
     describe "aws terminate_all ec2" do
       let(:config_file) { asset "config.yml" }
 
-      pending "should warn the user that the operation is destructive and list the instances" do
+      it "should warn the user that the operation is destructive and list the instances" do
+        fake_ec2 = mock("ec2")
 
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instance_names).and_return({"I12345" => "instance_1", "I67890" => "instance_2"})
+
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
+        aws.should_receive(:agree).
+            with("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?").
+            and_return(false)
+
+        aws.terminate_all_ec2 config_file
       end
-
 
       context 'when the user agrees to terminate all the instances' do
         it 'should terminate all instances' do
@@ -211,11 +220,29 @@ describe Bosh::Cli::Command::AWS do
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
 
+          aws.stub(:say).twice
+          aws.stub(:agree).and_return(true)
+          fake_ec2.stub(:instance_names).and_return(double.as_null_object)
+
           fake_ec2.should_receive :terminate_instances
 
           aws.terminate_all_ec2(config_file)
         end
       end
+
+      context 'when the user wants to bail out of ec2 termination'
+        it 'should not terminate any instances' do
+          fake_ec2 = mock("ec2")
+
+          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+          aws.stub(:say).twice
+          aws.stub(:agree).and_return(false)
+          fake_ec2.stub(:instance_names).and_return(double.as_null_object)
+
+          fake_ec2.should_not_receive :terminate_instances
+
+          aws.terminate_all_ec2 config_file
+        end
     end
   end
 end

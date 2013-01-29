@@ -32,6 +32,13 @@ module Bosh
         aws_ec2.instances.each &:terminate
       end
 
+      def instance_names
+        aws_ec2.instances.inject({}) do |memo, instance|
+          memo[instance.instance_id] = instance.tags["Name"]
+          memo
+        end
+      end
+
       private
 
       def aws_ec2

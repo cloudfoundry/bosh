@@ -129,7 +129,13 @@ module Bosh::Cli::Command
 
     def terminate_all_ec2(config_file)
       credentials = load_yaml(config_file)["aws"]
-      Bosh::Aws::EC2.new(credentials).terminate_instances
+      ec2 = Bosh::Aws::EC2.new(credentials)
+
+      formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("Instances:\n\t#{formatted_names.join("\n\t")}")
+
+      ec2.terminate_instances if agree("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?")
     end
 
     private
