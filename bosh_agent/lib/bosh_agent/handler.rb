@@ -102,7 +102,6 @@ module Bosh::Agent
 
     def shutdown
       @logger.info("Exit")
-      raise
       NATS.stop { EM.stop; exit }
     end
 
@@ -162,7 +161,6 @@ module Bosh::Agent
       elsif method == "get_task"
         handle_get_task(reply_to, args.first)
       elsif method == "shutdown"
-        @logger.info("################# Got a shutdown message?")
         handle_shutdown(reply_to)
       else
         re = RemoteException.new("unknown message #{msg.inspect}")
@@ -206,7 +204,6 @@ module Bosh::Agent
     end
 
     def handle_get_task(reply_to, agent_task_id)
-      @logger.info("########################## got get_task")
       if @long_running_agent_task == [agent_task_id]
         publish(reply_to, {"value" => {"state" => "running", "agent_task_id" => agent_task_id}})
       else
@@ -218,7 +215,6 @@ module Bosh::Agent
           publish(reply_to, {"exception" => "unknown agent_task_id" })
         end
       end
-      @logger.info("########################## replied to get_task")
     end
 
     # TODO once we upgrade to nats 0.4.22 we can use
