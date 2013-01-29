@@ -20,8 +20,7 @@ spec/assets/**/*.pid
 spec/assets/bosh_config.yml
 spec/assets/test_release
 bosh_agent/spec/tmp
-pkg
-*/pkg
+pkg/
 aws_bootstrap/spec/assets/private.yml
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
@@ -34,5 +33,5 @@ ci_result/
 **/vendor/
 **/Gemfile
 **/Gemfile.lock
-bin/
+/bin/
 create-vpc-output*.yml
