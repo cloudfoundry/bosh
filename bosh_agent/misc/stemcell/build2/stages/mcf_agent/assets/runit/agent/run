@@ -5,5 +5,6 @@
 set -e
 
 export PATH=/var/vcap/bosh/bin:$PATH
+cd /var/vcap/bosh/bosh/bosh_agent
 exec 2>&1
-exec /var/vcap/bosh/bosh_agent/bin/bosh_agent -c -I $(cat /etc/infrastructure) -n http://vcap:vcap@localhost:6969 -P microcloud
+exec bundle exec bin/bosh_agent -c -I $(cat /etc/infrastructure) -n http://vcap:vcap@localhost:6969 -P microcloud
