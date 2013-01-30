@@ -84,6 +84,11 @@ opts = OptionParser.new do |opts|
       options["blobstore_options"]["endpoint"] = endpoint
     end
   end
+
+  opts.on("--help", "Help") do
+    puts opts
+    exit 0
+  end
 end
 opts.parse!(ARGV.dup)
 
