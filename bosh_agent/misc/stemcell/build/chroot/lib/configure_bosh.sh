@@ -46,7 +46,7 @@ version=$(cat version)
 agent_path=${bosh_app_dir}/bosh/bosh_agent_${version}_builtin
 
 mkdir -p ${agent_path}
-cp -a bin lib Gemfile* vendor ${agent_path}
+cp -a bin lib ${agent_path}
 ln -s ${agent_path} ${bosh_app_dir}/bosh/bosh_agent
 chmod +x ${bosh_app_dir}/bosh/bosh_agent/bin/bosh_agent
 

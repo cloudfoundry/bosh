@@ -8,29 +8,19 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
-agent_dir=$bosh_dir/agent_${bosh_agent_src_version}_builtin
-
-mkdir -p $chroot/$agent_dir
-cp -aL $bosh_agent_src_dir/{bin,lib,vendor,Gemfile*} $chroot/$agent_dir
-
-# Link agent
-run_in_bosh_chroot $chroot "
-ln -s $agent_dir agent
-chmod +x bosh_agent/bin/bosh_agent
-gem update --system
-"
-
-# Install gems
-run_in_bosh_chroot $chroot "
-cd agent
-bundle install --path $bosh_dir/gems --without development test
-"
+cp -aL $bosh_src_root $chroot/$bosh_dir
+chown vcap:vcap $chroot/$bosh_dir
 
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent
+chmod +x $chroot/etc/sv/agent/run
+chmod +x $chroot/etc/sv/agent/log/run
 
-# runit
 run_in_bosh_chroot $chroot "
-chmod +x /etc/sv/agent/run /etc/sv/agent/log/run
+gem update --system
+cd bosh
+apt-get --assume-yes install git-core libpq-dev libsqlite3-dev
+bundle install --path $bosh_dir/gems --without development test
+chmod +x bosh_agent/bin/bosh_agent
 ln -s /etc/sv/agent /etc/service/agent
 "
 

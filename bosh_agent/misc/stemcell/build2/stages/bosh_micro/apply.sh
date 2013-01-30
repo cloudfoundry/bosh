@@ -9,7 +9,7 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
 mkdir -p $chroot/$bosh_dir/src/micro_bosh
-cp -rH $bosh_micro_package_compiler_path $chroot/$bosh_dir/src/micro_bosh
+cp -rH $bosh_src_root $chroot/$bosh_dir/src/micro_bosh
 cp -rH $bosh_micro_manifest_yml_path $chroot/$bosh_dir/src/micro_bosh/release.yml
 cp -rH $bosh_micro_release_tgz_path $chroot/$bosh_dir/src/micro_bosh/release.tgz
 cp $dir/assets/configure_micro_bosh.sh $chroot/$bosh_dir/src/micro_bosh

@@ -14,3 +14,5 @@ then
   persist_file bosh_micro_release_tgz_path
   persist_value system_parameters_infrastructure
 fi
+
+persist_dir bosh_src_root

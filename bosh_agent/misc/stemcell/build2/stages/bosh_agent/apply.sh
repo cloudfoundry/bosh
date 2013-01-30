@@ -11,7 +11,7 @@ source $base_dir/lib/prelude_bosh.bash
 agent_dir=$bosh_dir/bosh_agent_${bosh_agent_src_version}_builtin
 
 mkdir -p $chroot/$agent_dir
-cp -aL $bosh_agent_src_dir/{bin,lib,vendor,Gemfile*} $chroot/$agent_dir
+cp -aL $bosh_agent_src_dir/{bin,lib} $chroot/$agent_dir
 
 # Link agent
 run_in_bosh_chroot $chroot "
