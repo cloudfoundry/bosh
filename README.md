@@ -48,3 +48,4 @@ Fork the BOSH repo
 Make your changes on a topic branch, commit, and push to github and open a pull request.
 
 Once your commits are approved by Travis CI and reviewed by the core team, they will be merged.
+
