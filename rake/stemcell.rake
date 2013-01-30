@@ -78,7 +78,7 @@ namespace :stemcell do
 
   def bosh_agent_options
     {
-      :bosh_agent_src_dir => File.expand_path("..", __FILE__)
+      :bosh_agent_src_dir => File.expand_path("../../bosh_agent", __FILE__)
     }
   end
 
@@ -88,11 +88,12 @@ namespace :stemcell do
       :bosh_micro_package_compiler_path => File.expand_path("../../package_compiler", __FILE__),
       :bosh_micro_manifest_yml_path => args[:manifest],
       :bosh_micro_release_tgz_path => args[:tarball],
+      :bosh_src_root => File.expand_path('../..', __FILE__)
     }
   end
 
   def get_working_dir
-    "/var/tmp/bosh/agent-#{version}-#{$$}"
+    "/var/tmp/bosh/agent-#{Bosh::Agent::VERSION}-#{$$}"
   end
 
   def get_hypervisor(infrastructure)
@@ -132,7 +133,7 @@ namespace :stemcell do
     mkdir_p root
 
     build_path = File.join(root, "build")
-    cp_r File.expand_path("../misc/stemcell/build2", __FILE__), build_path, :preserve => true
+    cp_r File.expand_path("../../bosh_agent/misc/stemcell/build2", __FILE__), build_path, :preserve => true
 
     work_path = ENV["WORK_PATH"] || File.join(root, "work")
     mkdir_p work_path

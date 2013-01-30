@@ -21,8 +21,8 @@ export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
 
 (
-  cd ${bosh_src_dir}/package_compiler
-  chmod +x bin/package_compiler
+  cd ${bosh_src_dir}/bosh
+  chmod +x package_compiler/bin/package_compiler
   mkdir -p ${bosh_src_dir}/bosh/gems
   bundle install --path ${bosh_src_dir}/bosh/gems
 )
@@ -48,7 +48,7 @@ function wait_agent {
 wait_agent ${agent_host} ${agent_port}
 
 # Start compiler
-/var/vcap/bosh/bin/ruby ${bosh_src_dir}/package_compiler/bin/package_compiler \
+/var/vcap/bosh/bin/ruby ${bosh_src_dir}/bosh/package_compiler/bin/package_compiler \
   --cpi ${infrastructure} \
   compile \
     ${bosh_src_dir}/release.yml \

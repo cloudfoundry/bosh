@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2009-2012 VMware, Inc.
 
+set -e
+
 if [ $# -ne 1 ]
 then
   echo "Usage: env `basename $0` [infrastructure]"
@@ -20,20 +22,17 @@ agent_uri=http://vcap:vcap@${agent_host}:${agent_port}
 export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
 
-(
-  cd ${bosh_src_dir}/package_compiler
-  chmod +x bin/package_compiler
-  mkdir -p ${bosh_src_dir}/bosh/gems
-  bundle install --path ${bosh_src_dir}/bosh/gems --without development test
-)
-
 mkdir -p ${bosh_app_dir}/bosh/blob
 mkdir -p ${blobstore_path}
 
 echo "Starting micro bosh compilation"
 
+cd ${bosh_src_dir}/bosh
+bundle install --without development test
+
 # Start agent
-/var/vcap/bosh/bosh_agent/bin/bosh_agent -I ${infrastructure} -n ${agent_uri} -s ${blobstore_path} -p local &
+chmod +x bosh_agent/bin/bosh_agent
+bundle exec bosh_agent/bin/bosh_agent -I ${infrastructure} -n ${agent_uri} -s ${blobstore_path} -p local &
 agent_pid=$!
 echo "Starting BOSH Agent for compiling micro bosh package, agent pid is $agent_pid"
 
@@ -48,7 +47,8 @@ function wait_agent {
 wait_agent ${agent_host} ${agent_port}
 
 # Start compiler
-/var/vcap/bosh/bin/ruby ${bosh_src_dir}/package_compiler/bin/package_compiler \
+chmod +x package_compiler/bin/package_compiler
+bundle exec package_compiler/bin/package_compiler \
   --cpi ${infrastructure} \
   --job micro \
   compile \
