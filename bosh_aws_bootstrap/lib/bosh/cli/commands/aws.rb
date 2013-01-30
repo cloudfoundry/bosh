@@ -138,6 +138,20 @@ module Bosh::Cli::Command
       ec2.terminate_instances if agree("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?")
     end
 
+    usage "aws delete_all rds databases"
+    desc "delete all RDS database instances"
+
+    def delete_all_rds_dbs(config_file)
+      credentials = load_yaml(config_file)["aws"]
+      rds = Bosh::Aws::RDS.new(credentials)
+
+      formatted_names = rds.database_names.map {|instance, db| "#{instance}\t(database_name: #{db})"}
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
+
+      rds.delete_databases if agree("Are you sure you want to delete all databases?")
+    end
+
     private
 
     def flush_output_state(file_path)

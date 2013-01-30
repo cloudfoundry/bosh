@@ -244,5 +244,55 @@ describe Bosh::Cli::Command::AWS do
           aws.terminate_all_ec2 config_file
         end
     end
+
+    describe "aws delete_all rds databases" do
+      let(:config_file) { asset "config.yml"}
+
+      it "should warn the user that the operation is destructive and list the instances" do
+        fake_rds = mock("rds")
+        fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db" })
+
+        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).
+            with("Database Instances:\n\tinstance1\t(database_name: bosh_db)\n\tinstance2\t(database_name: important_db)")
+        aws.should_receive(:agree).with("Are you sure you want to delete all databases?").
+            and_return(false)
+
+        aws.delete_all_rds_dbs(config_file)
+      end
+
+      context "when the user agrees to delete all the databases" do
+        it "should delete all instances" do
+          fake_rds = mock("rds")
+
+          Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+          aws.stub(:say).twice
+          aws.stub(:agree).and_return(true)
+          fake_rds.stub(:database_names).and_return(double.as_null_object)
+
+          fake_rds.should_receive :delete_databases
+
+          aws.delete_all_rds_dbs(config_file)
+        end
+      end
+
+      context "when the user wants to bail out of rds database deletion" do
+        it "should not terminate any instances" do
+          fake_rds = mock("rds")
+
+          Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+          aws.stub(:say).twice
+          aws.stub(:agree).and_return(false)
+          fake_rds.stub(:database_names).and_return(double.as_null_object)
+
+          fake_rds.should_not_receive :delete_databases
+
+          aws.delete_all_rds_dbs(config_file)
+        end
+      end
+
+    end
   end
 end
