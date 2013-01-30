@@ -1,25 +1,21 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
-  before(:each) do
-    @registry = mock_registry
-  end
-
   it "deletes an EC2 instance" do
-    instance = double("instance", :id => "i-foobar")
+    instance_manager = double("InstanceManager")
+    instance_manager.should_receive(:terminate).with("i-foobar")
 
-    cloud = mock_cloud do |ec2|
-      ec2.instances.stub(:[]).with("i-foobar").and_return(instance)
+    registry = mock_registry
+    region = nil
+    ec2 = mock_cloud do |ec2, r|
+      region = r
     end
 
-    instance.should_receive(:terminate)
-    cloud.should_receive(:wait_resource).with(instance, :terminated)
+    Bosh::AwsCloud::InstanceManager.should_receive(:new).with(region, registry).and_return(instance_manager)
 
-    @registry.should_receive(:delete_settings).with("i-foobar")
-
-    cloud.delete_vm("i-foobar")
+    ec2.delete_vm("i-foobar")
   end
 end

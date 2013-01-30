@@ -4,35 +4,15 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::AwsCloud::Cloud do
 
-  before :each do
-    @instance = double("instance", :id => "i-foobar")
+  describe "#reboot_vm" do
+    let(:fake_instance_id) {"i-xxxxxxxx"}
 
-    @cloud = mock_cloud(mock_cloud_options) do |ec2|
-      ec2.instances.stub(:[]).with("i-foobar").and_return(@instance)
+    it "should reboot an instance given the id" do
+      cloud = mock_cloud(mock_cloud_options)
+      im = double(Bosh::AwsCloud::InstanceManager)
+      im.should_receive(:reboot).with(fake_instance_id)
+      Bosh::AwsCloud::InstanceManager.stub(:new).and_return(im)
+      cloud.reboot_vm(fake_instance_id)
     end
   end
-
-  it "reboots an EC2 instance (CPI call picks soft reboot)" do
-    @cloud.should_receive(:soft_reboot).with(@instance)
-    @cloud.reboot_vm("i-foobar")
-  end
-
-  it "soft reboots an EC2 instance" do
-    @instance.should_receive(:reboot)
-    @cloud.send(:soft_reboot, @instance)
-  end
-
-  it "hard reboots an EC2 instance" do
-    # N.B. This requires ebs-store instance
-    @instance.should_receive(:stop).ordered
-    @cloud.should_receive(:wait_resource).
-      with(@instance, :stopped).ordered
-
-    @instance.should_receive(:start)
-    @cloud.should_receive(:wait_resource).ordered.
-      with(@instance, :running)
-
-    @cloud.send(:hard_reboot, @instance)
-  end
-
 end

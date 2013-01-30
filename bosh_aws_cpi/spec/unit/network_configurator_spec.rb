@@ -4,13 +4,13 @@ require "spec_helper"
 
 describe Bosh::AwsCloud::NetworkConfigurator do
 
-  let(:dynamic) {{"type" => "dynamic"}}
-  let(:manual) {{"type" => "manual", "cloud_properties" => {"subnet" => "sn-xxxxxxxx"}}}
-  let(:vip) {{"type" => "vip"}}
+  let(:dynamic) { {"type" => "dynamic"} }
+  let(:manual) { {"type" => "manual", "cloud_properties" => {"subnet" => "sn-xxxxxxxx"}} }
+  let(:vip) { {"type" => "vip"} }
 
   def set_security_groups(spec, security_groups)
     spec["cloud_properties"] = {
-      "security_groups" => security_groups
+        "security_groups" => security_groups
     }
   end
 
@@ -35,7 +35,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
 
   describe "network types" do
 
-   it "should raise an error if both dynamic and manual networks are defined" do
+    it "should raise an error if both dynamic and manual networks are defined" do
       network_spec = {
           "network1" => dynamic,
           "network2" => manual
@@ -46,9 +46,9 @@ describe Bosh::AwsCloud::NetworkConfigurator do
     end
 
     it "should raise an error if neither dynamic nor manual networks are defined" do
-       expect {
-         Bosh::AwsCloud::NetworkConfigurator.new("network1" => vip)
-       }.to raise_error Bosh::Clouds::CloudError, "Exactly one dynamic or manual network must be defined"
+      expect {
+        Bosh::AwsCloud::NetworkConfigurator.new("network1" => vip)
+      }.to raise_error Bosh::Clouds::CloudError, "Exactly one dynamic or manual network must be defined"
     end
 
     it "should raise an error if multiple vip networks are defined" do
@@ -89,8 +89,8 @@ describe Bosh::AwsCloud::NetworkConfigurator do
     end
 
     describe "#configure" do
-      let(:ec2) {double("ec2")}
-      let(:instance) {double("instance")}
+      let(:ec2) { double("ec2") }
+      let(:instance) { double("instance") }
 
       describe "with vip" do
         it "should configure dynamic network" do
@@ -157,45 +157,6 @@ describe Bosh::AwsCloud::NetworkConfigurator do
           end
         end
       end
-    end
-  end
-
-  describe "security groups" do
-    it "should be extracted from both dynamic and vip network" do
-      spec = {}
-      spec["network_a"] = dynamic_network_spec
-      set_security_groups(spec["network_a"], %w[foo])
-      spec["network_b"] = vip_network_spec
-      set_security_groups(spec["network_b"], %w[bar])
-
-      nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(nil).should == %w[bar foo]
-    end
-
-    it "should return the default groups if none are extracted" do
-      spec = {}
-      spec["network_a"] = {"type" => "dynamic"}
-
-      nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(%w[foo]).should == %w[foo]
-    end
-
-    it "should return an empty list if no default group is set" do
-      spec = {}
-      spec["network_a"] = {"type" => "dynamic"}
-
-      nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(nil).should == []
-    end
-
-    it "should raise an error when it isn't an array" do
-      spec = {}
-      spec["network_a"] = dynamic_network_spec
-      set_security_groups(spec["network_a"], "foo")
-
-      lambda {
-        Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      }.should raise_error ArgumentError, "security groups must be an Array"
     end
   end
 end

@@ -7,8 +7,6 @@ module Bosh::AwsCloud
 
     # default maximum number of times to retry an AWS API call
     DEFAULT_MAX_RETRIES = 2
-    # default availability zone for instances and disks
-    DEFAULT_AVAILABILITY_ZONE = "us-east-1a"
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
     METADATA_TIMEOUT = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
@@ -36,7 +34,7 @@ module Bosh::AwsCloud
 
       @agent_properties = @options["agent"] || {}
       @aws_properties = @options["aws"]
-      @aws_region = @aws_properties.delete("region")
+      @aws_region = @aws_properties["region"]
       @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
@@ -69,6 +67,8 @@ module Bosh::AwsCloud
                                      registry_password)
 
       @aki_picker = AKIPicker.new(@ec2)
+      @region = @ec2.regions[@aws_region]
+      @az_selector = AvailabilityZoneSelector.new(@region, @aws_properties["default_availability_zone"])
       @metadata_lock = Mutex.new
     end
 
@@ -88,64 +88,61 @@ module Bosh::AwsCloud
     # @param [optional, Hash] environment data to be merged into
     #   agent settings
     # @return [String] EC2 instance id of the new virtual machine
-    def create_vm(agent_id, stemcell_id, resource_pool,
-                  network_spec, disk_locality = nil, environment = nil)
+    def create_vm(agent_id, stemcell_id, resource_pool, network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        network_configurator = NetworkConfigurator.new(network_spec)
+        # do this early to fail fast
+        stemcell = Stemcell.find(stemcell_id)
 
-        response = @ec2.client.describe_images(:image_ids => [stemcell_id])
-        images_set = response.images_set
-        if images_set.empty?
-          cloud_error("no stemcell info for #{stemcell_id}")
-        end
-        root_device_name = images_set.first.root_device_name
-
-        instance_params = {
-          :image_id => stemcell_id,
-          :count => 1,
-          :key_name => resource_pool["key_name"] || @default_key_name,
-          :instance_type => resource_pool["instance_type"],
-          :user_data => Yajl::Encoder.encode(user_data(network_spec))
-        }
-
-        security_groups =
-            network_configurator.security_groups(@default_security_groups)
-
-        if network_configurator.vpc?
-          subnet = @ec2.subnets[network_configurator.subnet]
-
-          instance_params[:subnet] = subnet
-          if subnet.availability_zone
-            # include disk_locality check?
-            instance_params[:availability_zone] = subnet.availability_zone
-          end
-          instance_params[:private_ip] = network_configurator.private_ip
-
-          instance_params[:security_groups] = security_groups
-        else
-          @logger.debug("using security groups: #{security_groups.join(', ')}")
-          instance_params[:security_groups] = security_groups
-
-          # az should be able to be unset, if we want to let EC2 to pick
-          instance_params[:availability_zone] =
-              select_availability_zone(disk_locality,
-                                       resource_pool["availability_zone"])
-        end
-
-        @logger.info("Creating new instance...")
-        instance = @ec2.instances.create(instance_params)
-
+        instance = InstanceManager.
+            new(@region, @registry, az_selector).
+            create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
         @logger.info("Creating new instance `#{instance.id}'")
         wait_resource(instance, :running)
 
-        network_configurator.configure(@ec2, instance)
+        NetworkConfigurator.new(network_spec).configure(@region, instance)
 
-        settings = initial_agent_settings(agent_id, network_spec, environment,
-                                          root_device_name)
-        @registry.update_settings(instance.id, settings)
+        registry_settings = initial_agent_settings(
+            agent_id,
+            network_spec,
+            environment,
+            stemcell.root_device_name,
+            options["agent"] || {}
+        )
+        @registry.update_settings(instance.id, registry_settings)
 
         instance.id
       end
+    end
+    # Generates initial agent settings. These settings will be read by agent
+    # from AWS registry (also a BOSH component) on a target instance. Disk
+    # conventions for amazon are:
+    # system disk: /dev/sda
+    # ephemeral disk: /dev/sdb
+    # EBS volumes can be configured to map to other device names later (sdf
+    # through sdp, also some kernels will remap sd* to xvd*).
+    #
+    # @param [String] agent_id Agent id (will be picked up by agent to
+    #   assume its identity
+    # @param [Hash] network_spec Agent network spec
+    # @param [Hash] environment
+    # @param [String] root_device_name root device, e.g. /dev/sda1
+    # @return [Hash]
+    def initial_agent_settings(agent_id, network_spec, environment, root_device_name, agent_properties)
+      settings = {
+          "vm" => {
+              "name" => "vm-#{UUIDTools::UUID.random_create}"
+          },
+          "agent_id" => agent_id,
+          "networks" => network_spec,
+          "disks" => {
+              "system" => root_device_name,
+              "ephemeral" => "/dev/sdb",
+              "persistent" => {}
+          }
+      }
+
+      settings["env"] = environment if environment
+      settings.merge(agent_properties)
     end
 
     ##
@@ -154,20 +151,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
-        instance = @ec2.instances[instance_id]
-
-        instance.terminate
-
-        begin
-          # TODO: should this be done before or after deleting VM?
-          @logger.info("Deleting instance settings for `#{instance.id}'")
-          @registry.delete_settings(instance.id)
-
-          @logger.info("Deleting instance `#{instance.id}'")
-          wait_resource(instance, :terminated)
-        rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
-          # It's OK, just means that instance has already been deleted
-        end
+        InstanceManager.new(@region, @registry).terminate(instance_id)
       end
     end
 
@@ -176,8 +160,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
-        instance = @ec2.instances[instance_id]
-        soft_reboot(instance)
+        InstanceManager.new(@region, @registry).reboot(instance_id)
       end
     end
 
@@ -203,17 +186,11 @@ module Bosh::AwsCloud
 
         # if the disk is created for an instance, use the same availability
         # zone as they must match
-        if instance_id
-          instance = @ec2.instances[instance_id]
-          availability_zone = instance.availability_zone
-        else
-          availability_zone = default_availability_zone
-        end
-
         volume_params = {
           :size => (size / 1024.0).ceil,
-          :availability_zone => availability_zone
         }
+        az = @az_selector.select_from_instance_id(instance_id)
+        volume_params[:availability_zone] = az if az
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")
@@ -297,22 +274,22 @@ module Bosh::AwsCloud
         @logger.info("Configuring `#{instance_id}' to use the following " \
                      "network settings: #{network_spec.pretty_inspect}")
 
-        network_configurator = NetworkConfigurator.new(network_spec)
         instance = @ec2.instances[instance_id]
 
         actual = instance.security_groups.collect {|sg| sg.name }.sort
-        new = network_configurator.security_groups(@default_security_groups)
+        new = extract_security_group_names(network_spec)
+        new = @default_security_groups if new.empty?
 
         # If the security groups change, we need to recreate the VM
         # as you can't change the security group of a running instance,
         # we need to send the InstanceUpdater a request to do it for us
-        unless actual == new
+        unless actual =~ new
           raise Bosh::Clouds::NotSupported,
                 "security groups change requires VM recreation: %s to %s" %
                 [actual.join(", "), new.join(", ")]
         end
 
-        network_configurator.configure(@ec2, instance)
+        NetworkConfigurator.new(network_spec).configure(@ec2, instance)
 
         update_agent_settings(instance) do |settings|
           settings["networks"] = network_spec
@@ -395,6 +372,7 @@ module Bosh::AwsCloud
         end
 
         image.deregister
+        # TODO wait for it to go away
 
         snapshots.each do |id|
           @logger.info("cleaning up snapshot #{id}")
@@ -431,37 +409,12 @@ module Bosh::AwsCloud
       not_implemented(:validate_deployment)
     end
 
-    # Selects the availability zone to use from a list of disk volumes,
-    # resource pool availability zone (if any) and the default availability
-    # zone.
-    # @param [Hash] volumes volume ids to attach to the vm
-    # @param [String] resource_pool_az availability zone specified in
-    #   the resource pool (may be nil)
-    # @return [String] availability zone to use
-    # @note this is a private method that is public to make it easier to test
-    def select_availability_zone(volumes, resource_pool_az)
-      if volumes && !volumes.empty?
-        disks = volumes.map { |vid| @ec2.volumes[vid] }
-        ensure_same_availability_zone(disks, resource_pool_az)
-        disks.first.availability_zone
-      else
-        resource_pool_az || default_availability_zone
-      end
-    end
-
-    # ensure all supplied availability zones are the same
-    # @note this is a private method that is public to make it easier to test
-    def ensure_same_availability_zone(disks, default)
-      zones = disks.map { |disk| disk.availability_zone }
-      zones << default if default
-      zones.uniq!
-      cloud_error "can't use multiple availability zones: %s" %
-        zones.join(", ") unless zones.size == 1 || zones.empty?
-    end
-
     private
 
-    # add a tag to something
+    attr_reader :az_selector
+
+    # Add a tag to something, make sure that the tag conforms to the
+    # AWS limitation of 127 character key and 255 character value
     def tag(taggable, key, value)
       trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
       trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
@@ -470,39 +423,12 @@ module Bosh::AwsCloud
       @logger.error("could not tag #{taggable.id}: #{e.message}")
     end
 
-    # Prepare EC2 user data
-    # @param [Hash] network_spec network specification
-    # @return [Hash] EC2 user data
-    def user_data(network_spec)
-      data = {}
-
-      data["registry"] = { "endpoint" => @registry.endpoint }
-
-      with_dns(network_spec) do |servers|
-        data["dns"] = { "nameserver" => servers }
-      end
-
-      data
-    end
-
-    # extract dns server list from network spec and yield the the list
-    # @param [Hash] network_spec network specification for instance
-    # @yield [Array]
-    def with_dns(network_spec)
-      network_spec.each_value do |properties|
-        if properties["dns"]
-          yield properties["dns"]
-          return
-        end
-      end
-    end
-
     def image_params(cloud_properties, snapshot_id)
       root_device_name = cloud_properties["root_device_name"]
       architecture = cloud_properties["architecture"]
 
       params = {
-          :name => "BOSH-#{generate_unique_name}",
+          :name => "BOSH-#{UUIDTools::UUID.random_create}",
           :architecture => architecture,
           :kernel_id => find_aki(architecture, root_device_name),
           :root_device_name =>  root_device_name,
@@ -525,40 +451,6 @@ module Bosh::AwsCloud
       @aki_picker.pick(architecture, root_device_name)
     end
 
-    ##
-    # Generates initial agent settings. These settings will be read by agent
-    # from AWS registry (also a BOSH component) on a target instance. Disk
-    # conventions for amazon are:
-    # system disk: /dev/sda
-    # ephemeral disk: /dev/sdb
-    # EBS volumes can be configured to map to other device names later (sdf
-    # through sdp, also some kernels will remap sd* to xvd*).
-    #
-    # @param [String] agent_id Agent id (will be picked up by agent to
-    #   assume its identity
-    # @param [Hash] network_spec Agent network spec
-    # @param [Hash] environment
-    # @param [String] root_device_name root device, e.g. /dev/sda1
-    # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment,
-                               root_device_name)
-      settings = {
-        "vm" => {
-          "name" => "vm-#{generate_unique_name}"
-        },
-        "agent_id" => agent_id,
-        "networks" => network_spec,
-        "disks" => {
-          "system" => root_device_name,
-          "ephemeral" => "/dev/sdb",
-          "persistent" => {}
-        }
-      }
-
-      settings["env"] = environment if environment
-      settings.merge(@agent_properties)
-    end
-
     def update_agent_settings(instance)
       unless block_given?
         raise ArgumentError, "block is not provided"
@@ -567,10 +459,6 @@ module Bosh::AwsCloud
       settings = @registry.read_settings(instance.id)
       yield settings
       @registry.update_settings(instance.id, settings)
-    end
-
-    def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
     end
 
     ##
@@ -715,32 +603,6 @@ module Bosh::AwsCloud
     end
 
     ##
-    # Soft reboots EC2 instance
-    # @param [AWS::EC2::Instance] instance EC2 instance
-    def soft_reboot(instance)
-      # There is no trackable status change for the instance being
-      # rebooted, so it's up to CPI client to keep track of agent
-      # being ready after reboot.
-      instance.reboot
-    end
-
-    ##
-    # Hard reboots EC2 instance
-    # @param [AWS::EC2::Instance] instance EC2 instance
-    def hard_reboot(instance)
-      # N.B. This will only work with ebs-store instances,
-      # as instance-store instances don't support stop/start.
-      instance.stop
-
-      @logger.info("Stopping instance `#{instance.id}'")
-      wait_resource(instance, :stopped)
-
-      instance.start
-      @logger.info("Starting instance `#{instance.id}'")
-      wait_resource(instance, :running)
-    end
-
-    ##
     # Checks if options passed to CPI are valid and can actually
     # be used to create all required data structures etc.
     #
@@ -748,7 +610,9 @@ module Bosh::AwsCloud
       unless @options.has_key?("aws") &&
           @options["aws"].is_a?(Hash) &&
           @options["aws"]["access_key_id"] &&
-          @options["aws"]["secret_access_key"]
+          @options["aws"]["secret_access_key"] &&
+          @options["aws"]["region"]
+        # TODO refactor to show individual failures
         raise ArgumentError, "Invalid AWS configuration parameters"
       end
 
@@ -766,14 +630,6 @@ module Bosh::AwsCloud
         "ec2.#{@aws_region}.amazonaws.com"
       else
         DEFAULT_EC2_ENDPOINT
-      end
-    end
-
-    def default_availability_zone
-      if @aws_region
-        "#{@aws_region}b"
-      else
-        DEFAULT_AVAILABILITY_ZONE
       end
     end
 

@@ -28,30 +28,27 @@ module Bosh::AwsCloud
       @logger = Bosh::Clouds::Config.logger
       @network = nil
       @vip_network = nil
-      @security_groups = []
 
-      spec.each_pair do |name, spec|
-        network_type = spec["type"]
+      spec.each_pair do |name, network_spec|
+        network_type = network_spec["type"] || "manual"
 
         case network_type
           when "dynamic"
             cloud_error("Must have exactly one dynamic or manual network per instance") if @network
-            @network = DynamicNetwork.new(name, spec)
+            @network = DynamicNetwork.new(name, network_spec)
 
           when "manual"
             cloud_error("Must have exactly one dynamic or manual network per instance") if @network
-            @network = ManualNetwork.new(name, spec)
+            @network = ManualNetwork.new(name, network_spec)
 
           when "vip"
             cloud_error("More than one vip network for '#{name}'") if @vip_network
-            @vip_network = VipNetwork.new(name, spec)
+            @vip_network = VipNetwork.new(name, network_spec)
 
           else
             cloud_error("Invalid network type '#{network_type}' for AWS, " \
                         "can only handle 'dynamic', 'vip', or 'manual' network types")
         end
-        @security_groups += extract_security_groups(spec)
-
       end
 
       unless @network
@@ -92,41 +89,5 @@ module Bosh::AwsCloud
         end
       end
     end
-
-    ##
-    # Returns the security groups for this network configuration, or
-    # the default security groups if the configuration does not contain
-    # security groups
-    # @param [Array] default Default security groups
-    # @return [Array] security groups
-    def security_groups(default)
-      if @security_groups.empty? && default
-        default.sort
-      else
-        @security_groups.sort
-      end
-    end
-
-    private
-
-    ##
-    # Extracts the security groups from the network configuration
-    # @param [Hash] network_spec Network specification
-    # @raise [ArgumentError] if the security groups in the network_spec
-    #   is not an Array
-    def extract_security_groups(network_spec)
-      if network_spec && network_spec["cloud_properties"]
-        cloud_properties = network_spec["cloud_properties"]
-        if cloud_properties && cloud_properties["security_groups"]
-          unless cloud_properties["security_groups"].is_a?(Array)
-            raise ArgumentError, "security groups must be an Array"
-          end
-          return cloud_properties["security_groups"]
-        end
-      end
-      []
-    end
-
   end
-
 end

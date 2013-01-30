@@ -17,7 +17,7 @@ module Bosh::AwsCloud
     end
 
     def wait_resource(resource, target_state, state_method = :status,
-                      timeout = DEFAULT_TIMEOUT)
+        timeout = DEFAULT_TIMEOUT)
 
       started_at = Time.now
       failures = 0
@@ -66,6 +66,16 @@ module Bosh::AwsCloud
         total = Time.now - started_at
         @logger.info("#{desc} is now #{target_state}, took #{total}s")
       end
+    end
+
+    def extract_security_group_names(networks_spec)
+      networks_spec.
+          values.
+          map { |network_spec| network_spec["cloud_properties"] }.
+          select { |cloud_properties| cloud_properties.has_key? "security_groups" }.
+          map { |cloud_properties| Array(cloud_properties["security_groups"]) }.
+          flatten.
+          uniq
     end
 
     private

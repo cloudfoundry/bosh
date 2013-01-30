@@ -24,8 +24,9 @@ module Bosh::AwsCloud
         cloud_error("No IP provided for vip network `#{@name}'")
       end
 
+      elastic_ip = ec2.elastic_ips[@ip]
       @logger.info("Associating instance `#{instance.id}' " \
-                   "with elastic IP `#{@ip}'")
+                   "with elastic IP `#{elastic_ip}'")
 
       # New elastic IP reservation supposed to clear the old one,
       # so no need to disassociate manually. Also, we don't check
@@ -33,7 +34,7 @@ module Bosh::AwsCloud
       # API call will fail in that case.
       # TODO: wrap error for non-existing elastic IP?
       # TODO: poll instance until this IP is returned as its public IP?
-      instance.associate_elastic_ip(@ip)
+      instance.associate_elastic_ip(elastic_ip)
     end
 
   end

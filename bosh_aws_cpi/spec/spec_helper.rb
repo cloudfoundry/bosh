@@ -40,7 +40,8 @@ def mock_cloud_options
   {
     "aws" => {
       "access_key_id" => MOCK_AWS_ACCESS_KEY_ID,
-      "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY
+      "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY,
+      "region" => "us-east-1"
     },
     "registry" => {
       "endpoint" => "localhost:42288",
@@ -65,23 +66,25 @@ def mock_registry(endpoint = "http://registry:3333")
 end
 
 def mock_cloud(options = nil)
-  ec2 = mock_ec2
+  ec2, region = mock_ec2
   AWS::EC2.stub(:new).and_return(ec2)
 
-  yield ec2 if block_given?
+  yield ec2, region if block_given?
 
   Bosh::AwsCloud::Cloud.new(options || mock_cloud_options)
 end
 
 def mock_ec2
+  region = double("region")
   ec2 = double(AWS::EC2,
                :instances => double("instances"),
                :volumes => double("volumes"),
-               :images =>double("images"))
+               :images => double("images"),
+               :regions => double("regions", :[] => region))
 
-  yield ec2 if block_given?
+  yield ec2, region if block_given?
 
-  ec2
+  return ec2, region
 end
 
 def dynamic_network_spec

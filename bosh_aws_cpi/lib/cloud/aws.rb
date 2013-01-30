@@ -24,9 +24,12 @@ require "cloud/aws/version"
 require "cloud/aws/aki_picker"
 require "cloud/aws/network_configurator"
 require "cloud/aws/network"
+require "cloud/aws/stemcell"
 require "cloud/aws/dynamic_network"
 require "cloud/aws/manual_network"
 require "cloud/aws/vip_network"
+require "cloud/aws/instance_manager"
+require "cloud/aws/availability_zone_selector"
 
 module Bosh
   module Clouds

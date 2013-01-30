@@ -1,13 +1,12 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
   it "creates an EC2 volume" do
     disk_params = {
-      :size => 2,
-      :availability_zone => "us-east-1a"
+      :size => 2
     }
 
     volume = double("volume", :id => "v-foobar")
@@ -23,8 +22,7 @@ describe Bosh::AwsCloud::Cloud do
 
   it "rounds up disk size" do
     disk_params = {
-      :size => 3,
-      :availability_zone => "us-east-1a"
+      :size => 3
     }
 
     volume = double("volume", :id => "v-foobar")
@@ -60,9 +58,9 @@ describe Bosh::AwsCloud::Cloud do
 
     volume = double("volume", :id => "v-foobar")
 
-    cloud = mock_cloud do |ec2|
+    cloud = mock_cloud do |ec2, region|
       ec2.volumes.should_receive(:create).with(disk_params).and_return(volume)
-      ec2.instances.stub(:[]).with("i-test").and_return(instance)
+      region.stub(:instances => double("instances", :[] =>instance))
     end
 
     cloud.should_receive(:wait_resource).with(volume, :available)

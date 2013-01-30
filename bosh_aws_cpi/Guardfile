@@ -5,7 +5,7 @@ guard :bundler, :notify => false do
 end
 
 group :unit_tests do
-  guard :rspec, :cli => "--color --format nested --fail-fast -p",
+  guard :rspec, :cli => "--color --format nested -p",
                 :all_after_pass => false, :spec_paths => %w(spec/unit) do
     watch("spec/spec_helper.rb")            { "spec/unit" }
     watch("aws.rb")                         { "spec/unit" }
