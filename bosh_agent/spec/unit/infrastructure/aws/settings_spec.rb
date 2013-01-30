@@ -43,12 +43,11 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     properties.should be_nil
   end
 
-  it 'should raise unsupported network exception for manual network' do
+  it 'should raise unsupported network exception for unknown network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
-    network_properties = {}
-    lambda {
-      properties = settings_wrapper.get_network_settings("test", network_properties)
-    }.should raise_error(Bosh::Agent::StateError, /Unsupported network/)
+    expect {
+      settings_wrapper.get_network_settings("test", {"type" => "unknown"})
+    }.to raise_error(Bosh::Agent::StateError, /Unsupported network type 'unknown'/)
   end
 
   it 'should setup the ssh public key' do

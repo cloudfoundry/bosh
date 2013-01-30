@@ -35,8 +35,11 @@ module Bosh::Agent
             infrastructure = Bosh::Agent::Config.infrastructure
             network_settings =
                 infrastructure.get_network_settings(network, properties)
+            logger.debug("current network settings from VM: #{network_settings.inspect}")
+            logger.debug("new network settings to be applied: #{properties.inspect}")
             if network_settings
               @new_spec["networks"][network].merge!(network_settings)
+              logger.debug("merged network settings: #{@new_spec["networks"].inspect}")
             end
           end
         end
