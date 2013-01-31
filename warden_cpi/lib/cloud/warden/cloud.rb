@@ -470,7 +470,7 @@ module Bosh::WardenCloud
     end
 
     def set_agent_env(handle, env)
-      tempfile = Tempfile.new("settings")
+      tempfile = Tempfile.new("settings", "/tmp")
       tempfile.write(Yajl::Encoder.encode(env))
       tempfile.close
 
