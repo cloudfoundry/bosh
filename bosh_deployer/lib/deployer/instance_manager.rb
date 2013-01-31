@@ -129,17 +129,11 @@ module Bosh::Deployer
       state.stemcell_name = File.basename(stemcell_tgz, ".tgz")
       save_state
 
-      begin
-        step "Creating VM from #{state.stemcell_cid}" do
-          state.vm_cid = create_vm(state.stemcell_cid)
-          discover_bosh_ip
-        end
-        save_state
-      rescue => e
-        # only delete the stemcell if we were trying to upload it
-        delete_stemcell if is_tgz?(stemcell_tgz)
-        raise e
+      step "Creating VM from #{state.stemcell_cid}" do
+        state.vm_cid = create_vm(state.stemcell_cid)
+        discover_bosh_ip
       end
+      save_state
 
       step "Waiting for the agent" do
         wait_until_agent_ready
@@ -215,6 +209,10 @@ module Bosh::Deployer
           cloud.create_stemcell("#{stemcell}/image", properties["cloud_properties"])
         end
       end
+    rescue => e
+      # make sure we clean up the stemcell if something goes wrong
+      delete_stemcell if is_tgz?(stemcell_tgz)
+      raise e
     end
 
     def create_vm(stemcell_cid)

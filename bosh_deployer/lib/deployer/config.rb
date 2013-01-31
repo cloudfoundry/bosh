@@ -99,7 +99,8 @@ module Bosh::Deployer
         if @net_conf["vip"]
           @networks["vip"] = {
               "ip" => @net_conf["vip"],
-              "type" => "vip"
+              "type" => "vip",
+              "cloud_properties" => {}
           }
         end
 
