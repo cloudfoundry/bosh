@@ -20,7 +20,7 @@ namespace :stemcell do
   desc "Build micro bosh stemcell"
   task :micro, [:infrastructure] => "all:build_with_deps" do |t, args|
     release_tarball = build_micro_bosh_release
-    manifest = "release/micro/#{args[:infrastructure]}.yml"
+    manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", "micro","#{args[:infrastructure]}.yml")
 
     options = default_options(args)
     options[:stemcell_name] ||= "micro-bosh-stemcell"
@@ -56,7 +56,7 @@ namespace :stemcell do
       sh('bosh create release --force --with-tarball')
       release_tarball = `ls -1 dev_releases/micro-bosh*.tgz | tail -1`
     end
-    "release/.dev_builds/#{release_tarball}"
+    File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", release_tarball)
   end
 
   def default_options(args)
