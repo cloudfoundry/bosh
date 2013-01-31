@@ -23,7 +23,7 @@ export PATH=${bosh_app_dir}/bosh/bin:$PATH
 export HOME=/root
 
 (
-  cd ${bosh_src_dir}/package_compiler
+  cd ${bosh_src_dir}/package_compiler/gems
   gem install package_compiler --no-rdoc --no-ri -l -w #-i ${bosh_src_dir}/bosh/gems
 )
 

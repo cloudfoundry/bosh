@@ -41,5 +41,7 @@ ruby="$ruby_bin -I$bosh_agent_src_dir/lib"
 bosh_agent_src_version=$($ruby -r"bosh_agent/version" -e"puts Bosh::Agent::VERSION")
 
 persist_dir bosh_agent_src_dir
-persist_dir bosh_release_src_dir
+
+cp -aL $bosh_release_src_dir/bosh_agent $assets_dir/gems
+
 persist_value bosh_agent_src_version

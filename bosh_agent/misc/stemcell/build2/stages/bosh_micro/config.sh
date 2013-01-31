@@ -16,4 +16,4 @@ then
   persist_value system_parameters_infrastructure
 fi
 
-persist_dir bosh_release_src_dir
+cp -rvH $bosh_release_src_dir/package_compiler $assets_dir/gems
