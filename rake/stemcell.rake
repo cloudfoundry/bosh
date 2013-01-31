@@ -6,7 +6,7 @@ require "rbconfig"
 namespace :stemcell do
 
   desc "Build stemcell"
-  task :basic, :infrastructure do |t, args|
+  task :basic, [ :infrastructure] => "all:build_with_deps"  do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -18,20 +18,23 @@ namespace :stemcell do
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, :infrastructure, :manifest, :tarball do |t, args|
+  task :micro, [:infrastructure] => "all:build_with_deps" do |t, args|
+    release_tarball = build_micro_bosh_release
+    manifest = "release/micro/#{args[:infrastructure]}.yml"
+
     options = default_options(args)
     options[:stemcell_name] ||= "micro-bosh-stemcell"
     options[:stemcell_version] ||= "0.8.1"
     options[:image_create_disk_size] = 2048
 
     options = options.merge(bosh_agent_options)
-    options = options.merge(bosh_micro_options(args))
+    options = options.merge(bosh_micro_options(manifest, release_tarball))
 
     build("stemcell-#{args[:infrastructure]}", options)
   end
 
   desc "Build Micro Cloud Foundry"
-  task :mcf, :infrastructure, :manifest, :tarball do |t, args|
+  task :mcf, [:infrastructure, :manifest, :tarball] => "all:build_with_deps" do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "mcf-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -42,9 +45,18 @@ namespace :stemcell do
     options[:bosh_users_password] = 'micr0cloud'
 
     options = options.merge(bosh_agent_options)
-    options = options.merge(bosh_micro_options(args))
+    options = options.merge(bosh_micro_options(args[:mainfest],args[:tarball]))
 
     build("stemcell-mcf", options)
+  end
+
+  def build_micro_bosh_release
+    release_tarball = nil
+    Dir.chdir('release') do
+      sh('bosh create release --force --with-tarball')
+      release_tarball = `ls -1 dev_releases/micro-bosh*.tgz | tail -1`
+    end
+    "release/.dev_builds/#{release_tarball}"
   end
 
   def default_options(args)
@@ -83,12 +95,12 @@ namespace :stemcell do
     }
   end
 
-  def bosh_micro_options(args)
+  def bosh_micro_options(manifest, tarball)
     {
       :bosh_micro_enabled => "yes",
       :bosh_micro_package_compiler_path => File.expand_path("../../package_compiler", __FILE__),
-      :bosh_micro_manifest_yml_path => args[:manifest],
-      :bosh_micro_release_tgz_path => args[:tarball],
+      :bosh_micro_manifest_yml_path => manifest,
+      :bosh_micro_release_tgz_path => tarball,
     }
   end
 

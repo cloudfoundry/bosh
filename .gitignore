@@ -38,7 +38,6 @@ create-vpc-output*.yml
 /release/blobs
 /release/releases
 /release/dev-releases
-/release/config/dev.yml
 /release/config/private.yml
 /release/releases/*.tgz
 /release/dev_releases
