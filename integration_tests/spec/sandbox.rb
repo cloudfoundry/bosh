@@ -53,7 +53,7 @@ module Bosh
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
           Dir.chdir(DIRECTOR_PATH) do
-            output = `bundle exec rake migration:run[#{DIRECTOR_CONF}] --trace`
+            output = `bundle exec bin/migrate -c #{DIRECTOR_CONF}`
             unless $?.exitstatus == 0
               puts "Failed to run migration:"
               puts output
