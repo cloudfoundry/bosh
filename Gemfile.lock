@@ -25,6 +25,7 @@ PATH
       bosh_common (~> 1.5.0.pre)
       bosh_encryption (~> 1.5.0.pre)
       highline (~> 1.6.2)
+      httpclient (= 2.2.4)
       monit_api (~> 1.5.0.pre)
       nats (~> 0.4.28)
       netaddr (~> 1.5.0)

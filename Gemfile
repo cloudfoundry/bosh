@@ -37,13 +37,14 @@ group :development do
   gem "ruby-debug19"
 end
 
-group :development, :test do
-
-  # for BAT
+group :bat do
   gem "httpclient"
   gem "json"
   gem "minitar"
   gem "net-ssh"
+end
+
+group :development, :test do
 
   gem "rack-test"
   gem "guard"
