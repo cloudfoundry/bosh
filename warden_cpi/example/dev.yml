@@ -1,0 +1,219 @@
+--- name: staging_micro_bosh_xuf
+director_uuid: c5ac4f66-6737-483d-91b6-afbe0b31b1e6
+
+release:
+  name: warden
+  version: 111.4-dev
+
+compilation:
+  workers: 1
+  reuse_compilation_vms: true
+  network: compile
+  cloud_properties:
+    cpu: 4
+
+update:
+  canaries: 1
+  canary_watch_time: 3000-90000
+  update_watch_time: 3000-90000
+  max_in_flight: 4
+  max_errors: 1
+
+networks:
+
+- name: compile
+  subnets:
+  - range: 10.254.0.240/30
+    static:
+    - 10.254.0.241 - 10.254.0.241
+    cloud_properties:
+      name: random
+- name: default
+  subnets:
+  - range: 10.254.0.0/23
+    static:
+    - 10.254.0.1 - 10.254.0.99
+    cloud_properties:
+      name: random
+
+resource_pools:
+
+- name: infrastructure
+  network: default
+  size: 9
+  stemcell:
+    name: bosh-stemcell
+    version: 0.6.7
+  cloud_properties:
+    cpu: 4
+
+jobs:
+
+- name: syslog_aggregator
+  template: syslog_aggregator
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 100
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.2
+
+- name: nats
+  template: nats
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.6
+
+- name: ccdb_postgres
+  template: postgres
+  instances: 1
+  resource_pool: infrastructure
+  persistent_disk: 100
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.10
+  properties:
+    db: ccdb
+
+- name: vcap_redis
+  template: vcap_redis
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.14
+
+- name: cloud_controller
+  template: cloud_controller
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.18
+
+- name: router
+  template: router
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.22
+
+- name: health_manager
+  template: health_manager
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.26
+
+- name: dea
+  template: dea
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.30
+
+- name: stager
+  template: stager
+  instances: 1
+  resource_pool: infrastructure
+  networks:
+  - name: default
+    static_ips:
+    - 10.254.0.34
+
+properties:
+  domain: vcap.me
+
+  env:
+
+  networks:
+    apps: default
+    management: default
+
+  nats:
+    user: nats
+    password: z2b3ij3122
+    address: 10.254.0.6
+    port: 4222
+
+  ccdb:
+    address: 10.254.0.10
+    port: 5524
+    pool_size: 10
+    roles:
+    - tag: admin
+      name: ccadmin
+      password: tauBauWauZZb2
+    databases:
+    - tag: cc
+      name: appcloud
+
+  uaadb:
+
+  cc:
+    srv_api_uri: http://api.vcap.me
+    password: zbTuuLaap44jadlas2l312lk
+    token: 267f4eaa8c1758f66d5cb7adcb24adb9d7
+    use_nginx: true
+    new_stager_percent: 100
+    new_stager_email_regexp: '.*@vmware.com'
+    staging_upload_user: zxsfhgjg
+    staging_upload_password: ZNVfdase9
+    allow_registration: true
+    uaa:
+      enabled: false
+      resource_id: cloud_controller
+      token_creation_email_filter: [""]
+    admins:
+    - admin@vmware.com
+
+  uaa:
+    cc:
+      token_secret: WGvbxaiC371JM
+      client_secret: fOZF5DMNDZIfCb9A
+    admin:
+      client_secret: MeM5fER8evgEisjj
+    batch:
+      username: do0H2AKay2jAc
+      password: FSCTiplI5Q83n
+
+  vcap_redis:
+    address: 10.254.0.14
+    port: 5454
+    password: PoIxbL98RWpwBuUJvKNojnpIcRb1ot2
+    maxmemory: 2000000000 # 2GB
+
+  router:
+    client_inactivity_timeout: 60
+    app_inactivity_timeout: 60
+    port: 8088
+    status:
+      port: 8080
+      user: sBNUxXlS0pc71wVef
+      password: 7nTmaIf9vPV4mJyBe
+
+  dea:
+    max_memory: 32768
+
+  syslog_aggregator:
+    address: 10.254.0.2
+    port: 54321
+
+  stager:
+    max_staging_duration: 120
+    max_active_tasks: 20
+    queues:
+    - staging
