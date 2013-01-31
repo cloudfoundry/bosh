@@ -42,7 +42,7 @@ $bosh_dir/bin/ruby setup.rb || true
 
 # Skip gem docs
 mkdir -p $chroot/var/vcap/bosh/etc
-echo "gem: --no-rdoc --no-ri" >> $chroot/var/vcap/bosh/etc/gemrc
+echo "gem: --local --no-rdoc --no-ri" >> $chroot/var/vcap/bosh/etc/gemrc
 
 # Bundler
 bundler_gem=bundler-1.2.3.gem

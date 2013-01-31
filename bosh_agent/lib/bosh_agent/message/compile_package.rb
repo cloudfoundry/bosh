@@ -109,6 +109,7 @@ module Bosh::Agent
           output = `tar -zxf #{@source_file} 2>&1`
           # stick the output in the blobstore
           unless $?.exitstatus == 0
+	    STDOUT.puts(output)
             raise Bosh::Agent::MessageHandlerError.new(
               "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus})",
               output)
@@ -176,11 +177,11 @@ module Bosh::Agent
             @logger.info("Compiling #{@package_name} #{@package_version}")
             output = `bash -x packaging 2>&1`
             # stick the output in the blobstore
+            @logger.info(output)
             unless $?.exitstatus == 0
               raise Bosh::Agent::MessageHandlerError.new(
                 "Compile Package Failure (exit code: #{$?.exitstatus})", output)
             end
-            @logger.info(output)
           end
         end
       end
