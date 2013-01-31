@@ -3,23 +3,105 @@
 require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud, "create_vm" do
+  let(:registry) { double("registry") }
+  let(:region) { double("region") }
+  let(:availability_zone_selector) { double("availability zone selector") }
+  let(:stemcell) { double("stemcell", root_device_name: "root name") }
+  let(:instance_manager) { double("instance manager") }
+  let(:instance) { double("instance", id: "expected instance id", status: :running) }
+  let(:network_configurator) { double("network configurator") }
 
-  it "should create an EC2 instance" do
-    instance_manager = double("InstanceManager")
-    instance_manager.should_receive(:create).with("agent_id", "stemcell_id", "resource_pool", "network_spec", "disk_locality", "environment", mock_cloud_options)
+  let(:agent_id) { "agent_id" }
+  let(:stemcell_id) { "stemcell_id" }
+  let(:resource_pool) { mock("resource_pool") }
+  let(:networks_spec) { mock("network_spec") }
+  let(:disk_locality) { mock("disk locality") }
+  let(:environment) { "environment" }
 
-    registry = mock_registry
-    region = nil
-    az_selector = nil
-    ec2 = mock_cloud do |ec2, r|
-      region = r
-      az_selector = double("az_selector")
-    end
-    ec2.stub(:az_selector => az_selector)
+  let(:options) {
+    {
+        "aws" => {
+            "default_availability_zone" => "foo",
+            "region" => "bar",
+            "access_key_id" => "access",
+            "secret_access_key" => "secret"
+        },
+        "registry" => {
+            "endpoint" => "endpoint",
+            "user" => "user",
+            "password" => "password"
+        },
+        "agent" => {
+            "baz" => "qux"
+        }
+    }
+  }
+  let(:cloud) { described_class.new(options) }
 
-    Bosh::AwsCloud::InstanceManager.should_receive(:new).with(region, registry, az_selector).and_return(instance_manager)
-
-    ec2.create_vm("agent_id", "stemcell_id", "resource_pool", "network_spec", "disk_locality", "environment")
+  before do
+    Bosh::AwsCloud::RegistryClient.
+        stub(:new).
+        and_return(registry)
+    AWS::EC2.
+        stub(:new).
+        and_return(double("ec2", regions: {"bar" => region}))
+    Bosh::AwsCloud::AvailabilityZoneSelector.
+        stub(:new).
+        with(region, "foo").
+        and_return(availability_zone_selector)
+    Bosh::AwsCloud::Stemcell.
+        stub(:find).
+        with(stemcell_id).
+        and_return(stemcell)
+    Bosh::AwsCloud::InstanceManager.
+        stub(:new).
+        with(region, registry, availability_zone_selector).
+        and_return(instance_manager)
+    instance_manager.
+        stub(:create).
+        with(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options).
+        and_return(instance)
+    Bosh::AwsCloud::NetworkConfigurator.
+        stub(:new).
+        with(networks_spec).
+        and_return(network_configurator)
   end
 
+  it "should create an EC2 instance and return its id" do
+    network_configurator.stub(:configure)
+    registry.stub(:update_settings)
+
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "expected instance id"
+  end
+
+  it "should configure the IP for the created instance according to the network specifications" do
+    registry.stub(:update_settings)
+
+    network_configurator.should_receive(:configure).with(region, instance)
+
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
+  end
+
+  it "should update the registry settings with the new instance" do
+    network_configurator.stub(:configure)
+    UUIDTools::UUID.stub(:random_create).and_return("rand0m")
+
+    agent_settings = {
+        "vm" => {
+            "name" => "vm-rand0m"
+        },
+        "agent_id" => agent_id,
+        "networks" => networks_spec,
+        "disks" => {
+            "system" => "root name",
+            "ephemeral" => "/dev/sdb",
+            "persistent" => {}
+        },
+        "env" => environment,
+        "baz" => "qux"
+    }
+    registry.should_receive(:update_settings).with("expected instance id", agent_settings)
+
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
+  end
 end

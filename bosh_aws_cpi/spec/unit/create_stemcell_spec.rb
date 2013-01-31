@@ -26,10 +26,10 @@ describe Bosh::AwsCloud::Cloud do
       snapshot = double("snapshot", :id => "s-baz", :delete => nil)
       image = double("image", :id => "i-bar")
 
-      unique_name = UUIDTools::UUID.random_create.to_s
+      UUIDTools::UUID.stub(:random_create).and_return("rand0m").to_s
 
       image_params = {
-        :name => "BOSH-#{unique_name}",
+        :name => "BOSH-rand0m",
         :architecture => "x86_64",
         :kernel_id => "aki-b4aa75dd",
         :root_device_name => "/dev/sda1",
@@ -52,7 +52,6 @@ describe Bosh::AwsCloud::Cloud do
       cloud.should_receive(:find_aki).with("x86_64", "/dev/sda1")
         .and_return("aki-b4aa75dd")
 
-      cloud.stub(:generate_unique_name).and_return(unique_name)
       cloud.stub(:current_instance_id).and_return("i-current")
 
       old_mappings = {

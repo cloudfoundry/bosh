@@ -14,6 +14,8 @@ module Bosh::AwsCloud
       super
     end
 
+    def configure(ec2, instance)
+    end
   end
 end
 

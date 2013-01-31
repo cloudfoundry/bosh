@@ -38,7 +38,7 @@ module Bosh::AwsCloud
       @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
-      @default_security_groups = @aws_properties["default_security_groups"]
+      @default_security_groups = @aws_properties["default_security_groups"] || []
 
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
@@ -106,43 +106,12 @@ module Bosh::AwsCloud
             network_spec,
             environment,
             stemcell.root_device_name,
-            options["agent"] || {}
+            @options["agent"] || {}
         )
         @registry.update_settings(instance.id, registry_settings)
 
         instance.id
       end
-    end
-    # Generates initial agent settings. These settings will be read by agent
-    # from AWS registry (also a BOSH component) on a target instance. Disk
-    # conventions for amazon are:
-    # system disk: /dev/sda
-    # ephemeral disk: /dev/sdb
-    # EBS volumes can be configured to map to other device names later (sdf
-    # through sdp, also some kernels will remap sd* to xvd*).
-    #
-    # @param [String] agent_id Agent id (will be picked up by agent to
-    #   assume its identity
-    # @param [Hash] network_spec Agent network spec
-    # @param [Hash] environment
-    # @param [String] root_device_name root device, e.g. /dev/sda1
-    # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment, root_device_name, agent_properties)
-      settings = {
-          "vm" => {
-              "name" => "vm-#{UUIDTools::UUID.random_create}"
-          },
-          "agent_id" => agent_id,
-          "networks" => network_spec,
-          "disks" => {
-              "system" => root_device_name,
-              "ephemeral" => "/dev/sdb",
-              "persistent" => {}
-          }
-      }
-
-      settings["env"] = environment if environment
-      settings.merge(agent_properties)
     end
 
     ##
@@ -276,17 +245,17 @@ module Bosh::AwsCloud
 
         instance = @ec2.instances[instance_id]
 
-        actual = instance.security_groups.collect {|sg| sg.name }.sort
-        new = extract_security_group_names(network_spec)
-        new = @default_security_groups if new.empty?
+        actual_group_names = instance.security_groups.collect {|sg| sg.name }
+        specified_group_names = extract_security_group_names(network_spec)
+        new_group_names = specified_group_names.empty?? @default_security_groups : specified_group_names
 
         # If the security groups change, we need to recreate the VM
         # as you can't change the security group of a running instance,
         # we need to send the InstanceUpdater a request to do it for us
-        unless actual =~ new
+        unless actual_group_names.sort == new_group_names.sort
           raise Bosh::Clouds::NotSupported,
                 "security groups change requires VM recreation: %s to %s" %
-                [actual.join(", "), new.join(", ")]
+                [actual_group_names.join(", "), new_group_names.join(", ")]
         end
 
         NetworkConfigurator.new(network_spec).configure(@ec2, instance)
@@ -636,6 +605,37 @@ module Bosh::AwsCloud
     def task_checkpoint
       Bosh::Clouds::Config.task_checkpoint
     end
-  end
 
+    # Generates initial agent settings. These settings will be read by agent
+    # from AWS registry (also a BOSH component) on a target instance. Disk
+    # conventions for amazon are:
+    # system disk: /dev/sda
+    # ephemeral disk: /dev/sdb
+    # EBS volumes can be configured to map to other device names later (sdf
+    # through sdp, also some kernels will remap sd* to xvd*).
+    #
+    # @param [String] agent_id Agent id (will be picked up by agent to
+    #   assume its identity
+    # @param [Hash] network_spec Agent network spec
+    # @param [Hash] environment
+    # @param [String] root_device_name root device, e.g. /dev/sda1
+    # @return [Hash]
+    def initial_agent_settings(agent_id, network_spec, environment, root_device_name, agent_properties)
+      settings = {
+          "vm" => {
+              "name" => "vm-#{UUIDTools::UUID.random_create}"
+          },
+          "agent_id" => agent_id,
+          "networks" => network_spec,
+          "disks" => {
+              "system" => root_device_name,
+              "ephemeral" => "/dev/sdb",
+              "persistent" => {}
+          }
+      }
+
+      settings["env"] = environment if environment
+      settings.merge(agent_properties)
+    end
+  end
 end

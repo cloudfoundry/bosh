@@ -71,6 +71,7 @@ module Bosh::AwsCloud
     def extract_security_group_names(networks_spec)
       networks_spec.
           values.
+          select { |network_spec| network_spec.has_key? "cloud_properties" }.
           map { |network_spec| network_spec["cloud_properties"] }.
           select { |cloud_properties| cloud_properties.has_key? "security_groups" }.
           map { |cloud_properties| Array(cloud_properties["security_groups"]) }.
