@@ -224,8 +224,8 @@ module Bosh::Agent
     def publish(reply_to, payload, &blk)
       @logger.info("reply_to: #{reply_to}: payload: #{payload.inspect}")
 
+      unencrypted = payload
       if @credentials
-        unencrypted = payload
         payload = encrypt(reply_to, payload)
       end
 
@@ -239,8 +239,8 @@ module Bosh::Agent
         end
       else
         msg = "message > NATS_MAX_PAYLOAD, stored in blobstore"
-        original = @credentials ? payload : unencrypted
-        exception = RemoteException.new(msg, nil, original)
+        # TODO this stores the exception content unencrypted, we should store the encrypted and decrypt on fetch
+        exception = RemoteException.new(msg, nil, unencrypted)
         @logger.fatal(msg)
         EM.next_tick do
           @nats.publish(reply_to, exception.to_hash, blk)
