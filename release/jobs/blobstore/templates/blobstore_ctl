@@ -19,7 +19,7 @@ case $1 in
 
     echo $$ > $PIDFILE
 
-    exec chpst -u vcap /var/vcap/packages/blobstore/bosh/simple_blobstore_server/bin/simple_blobstore_server -c /var/vcap/jobs/blobstore/config/blobstore.yml >>$LOG_DIR/blobstore.stdout.log 2>>$LOG_DIR/blobstore.stderr.log
+    exec chpst -u vcap /var/vcap/packages/blobstore/bin/simple_blobstore_server -c /var/vcap/jobs/blobstore/config/blobstore.yml >>$LOG_DIR/blobstore.stdout.log 2>>$LOG_DIR/blobstore.stderr.log
     ;;
 
   stop)

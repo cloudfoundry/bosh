@@ -1,14 +1,11 @@
 set -e
 
-exec 2>&1 > /var/tmp/director_packaging
+cp bosh/REVISION ${BOSH_INSTALL_TARGET}/gems
+cd bosh/director
 
-cp -a * ${BOSH_INSTALL_TARGET}
-
-cd ${BOSH_INSTALL_TARGET}/bosh/director
-
-gem_cmd='/var/vcap/packages/ruby/bin/gem install --local'
+gem_cmd="/var/vcap/packages/ruby/bin/gem install --local --no-ri --no-rdoc -w -n ${BOSH_INSTALL_TARGET}/bin -i ${BOSH_INSTALL_TARGET}/gems"
 libpq_dir=/var/vcap/packages/libpq
-$gem_cmd pg --no-ri --no-rdoc -- --with-pg-lib=$libpq_dir/lib --with-pg-include=$libpq_dir/include
+$gem_cmd pg -- --with-pg-lib=$libpq_dir/lib --with-pg-include=$libpq_dir/include
 
-$gem_cmd director --no-ri --no-rdoc
+$gem_cmd director
 

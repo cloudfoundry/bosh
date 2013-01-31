@@ -38,25 +38,20 @@ case $1 in
 
     COMPONENT=director erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/director.yml
 
-    HERE=`pwd`
-    cd /var/vcap/packages/director/bosh/director
     chpst -u $RUNAS:$RUNAS \
-      bundle exec \
-      rake migration:run[/var/vcap/jobs/director/config/director.yml] \
-      >>$LOG_DIR/migration.stdout.log \
-      2>>$LOG_DIR/migration.stderr.log
+          /var/vcap/packages/director/bin/migrate \
+          -c /var/vcap/jobs/director/config/director.yml \
+          >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
 
-    if [ $? != 0 ]; then
-      echo "Migrations failed"
-      exit 1
-    fi
-
-    cd $HERE
+        if [ $? -ne 0 ]; then
+          echo "migration failed"
+          exit 1
+        fi
 
     echo $$ > $PIDFILE
 
     exec chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/director/bosh/director/bin/director \
+      /var/vcap/packages/director/bin/director \
       -c /var/vcap/jobs/director/config/director.yml \
       >>$LOG_DIR/director.stdout.log 2>>$LOG_DIR/director.stderr.log
     ;;

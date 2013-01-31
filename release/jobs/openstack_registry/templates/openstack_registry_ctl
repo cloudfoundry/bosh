@@ -16,7 +16,7 @@ case $1 in
     echo $$ > $PIDFILE
 
     chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/openstack_registry/bosh/openstack_registry/bin/migrate \
+      /var/vcap/packages/openstack_registry/bin/migrate \
       -c /var/vcap/jobs/openstack_registry/config/openstack_registry.yml \
       >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
 
@@ -26,7 +26,7 @@ case $1 in
     fi
 
     exec chpst -u $RUNAS:$RUNAS \
-      /var/vcap/packages/openstack_registry/bosh/openstack_registry/bin/openstack_registry \
+      /var/vcap/packages/openstack_registry/bin/openstack_registry \
       -c /var/vcap/jobs/openstack_registry/config/openstack_registry.yml \
       >>$LOG_DIR/openstack_registry.stdout.log 2>>$LOG_DIR/openstack_registry.stderr.log
     ;;
