@@ -9,12 +9,12 @@ Gem::Specification.new do |s|
   s.summary      = "Micro BOSH Deployer"
   s.description  = s.summary
   s.author       = "VMware"
-  s.homepage = 'https://github.com/cloudfoundry/bosh'
-  s.license = 'Apache 2.0'
+  s.homepage     = 'https://github.com/cloudfoundry/bosh'
+  s.license      = 'Apache 2.0'
   s.email        = "support@cloudfoundry.com"
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
-  s.files        = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
+  s.files         = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
   s.require_paths = ["lib", "config"]
 
   s.bindir       = "bin"
@@ -29,4 +29,5 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_openstack_cpi", "~>0.0.7"
   s.add_dependency "bosh_openstack_registry", "~>#{version}"
   s.add_dependency "agent_client", "~>#{version}"
+  s.add_dependency "sqlite3", "~>1.3.7"
 end
