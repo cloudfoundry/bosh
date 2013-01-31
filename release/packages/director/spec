@@ -1,0 +1,7 @@
+---
+name: director
+dependencies:
+- libpq
+- ruby
+files:
+- bosh/director/*.gem

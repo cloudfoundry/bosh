@@ -1,0 +1,14 @@
+---
+name: director
+templates:
+  director_ctl: bin/director_ctl
+  director.yml.erb: config/director.yml.erb
+  worker_ctl: bin/worker_ctl
+  drain: bin/drain
+  sudoers: config/sudoers
+  stemcell-copy.sh: bin/stemcell-copy
+packages:
+- director
+- genisoimage
+- libpq
+- ruby

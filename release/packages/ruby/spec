@@ -1,0 +1,7 @@
+---
+name: ruby
+files:
+- ruby/ruby-1.9.3-p327.tar.gz
+- ruby/rubygems-1.8.24.tgz
+- ruby/rubygems-datefix.patch
+- ruby/bundler-1.2.3.gem

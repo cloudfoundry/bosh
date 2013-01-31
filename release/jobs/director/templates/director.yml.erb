@@ -1,0 +1,157 @@
+---
+name: <%= properties.director.name %>
+port: <%= properties.director.port %>
+encryption: <%= properties.director.encryption %>
+logging:
+  level: DEBUG
+  file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
+<% if properties.redis %>
+redis:
+  host: <%= properties.redis.address %>
+  port: <%= properties.redis.port %>
+  password: <%= properties.redis.password %>
+<% end %>
+mbus: nats://<%= properties.nats.user %>:<%= properties.nats.password %>@<%= properties.nats.address %>:<%= properties.nats.port %>
+dir: /var/vcap/store/director
+db:
+  <% if properties.postgres %>
+  database: postgres://<%= properties.postgres.user %>:<%= properties.postgres.password %>@<%= properties.postgres.address %>/<%= properties.postgres.database %>
+  max_connections: 32
+  pool_timeout: 10
+  <% else %>
+  database: sqlite:///var/vcap/store/director/director.db
+  <% end %>
+<% if dns = properties.dns %>
+dns:
+  server: <%= dns.address %>
+  <% if dns.domain_name %>
+  domain_name: <%= dns.domain_name %>
+  <% end %>
+  db:
+    database: postgres://<%= dns.user %>:<%= dns.password %>@<%= dns.address %>:<%= dns.database.port || "5432" %>/<%= dns.database.name %>
+    max_connections: 32
+    pool_timeout: 10
+<% end %>
+blobstore:
+  plugin: simple
+  properties:
+    endpoint: http://<%= properties.blobstore.address %>:<%= properties.blobstore.port %>
+    user: <%= properties.blobstore.director.user %>
+    password: <%= properties.blobstore.director.password %>
+cloud:
+<%
+if properties.aws
+  plugin = "aws"
+elsif properties.openstack
+  plugin = "openstack"
+elsif properties.vcenter
+  plugin = "vsphere"
+elsif properties.vcd
+  plugin = "vcloud"
+else
+  raise "Unknown cloud plugin"
+end
+%>
+  plugin: <%= plugin %>
+  properties:
+    agent:
+      ntp: [<%= properties.ntp ? properties.ntp.join(", ") : "" %>]
+      blobstore:
+        plugin: simple
+        properties:
+<% agent = properties.agent %>
+<% blobstore = agent ? agent.blobstore : nil %>
+<% address = blobstore ? blobstore.address : properties.blobstore.address %>
+          endpoint: 'http://<%= address %>:<%= properties.blobstore.port %>'
+          user: <%= properties.blobstore.agent.user %>
+          password: <%= properties.blobstore.agent.password %>
+<% nats = agent ? agent.nats : nil %>
+<% address = nats ? nats.address : properties.nats.address %>
+      mbus: nats://<%= properties.nats.user %>:<%= properties.nats.password %>@<%= address %>:<%= properties.nats.port %>
+<%
+case plugin
+when "aws"
+%>
+    aws:
+      access_key_id: <%= properties.aws.access_key_id %>
+      secret_access_key: <%= properties.aws.secret_access_key %>
+      ec2_endpoint: <%= properties.aws.ec2_endpoint %>
+      default_key_name: <%= properties.aws.default_key_name %>
+      default_security_groups: <%= properties.aws.default_security_groups %>
+    registry:
+      endpoint: http://<%= properties.aws_registry.address %>:<%= properties.aws_registry.http.port %>
+      user: <%= properties.aws_registry.http.user %>
+      password: <%= properties.aws_registry.http.password %>
+    <% if properties.aws.stemcell %>
+    stemcell:
+      kernel_id: <%= properties.aws.stemcell.kernel_id %>
+    <% end %>
+<%
+when "openstack"
+%>
+    openstack:
+      auth_url: <%= properties.openstack.auth_url %>
+      username: <%= properties.openstack.username %>
+      api_key: <%= properties.openstack.api_key %>
+      tenant: <%= properties.openstack.tenant %>
+      default_key_name: <%= properties.openstack.default_key_name %>
+      default_security_groups: <%= properties.openstack.default_security_groups %>
+    registry:
+      endpoint: http://<%= properties.openstack_registry.address %>:<%= properties.openstack_registry.http.port %>
+      user: <%= properties.openstack_registry.http.user %>
+      password: <%= properties.openstack_registry.http.password %>
+    <% if properties.openstack.stemcell %>
+    stemcell:
+      kernel_id: <%= properties.openstack.stemcell.kernel_id %>
+      ramdisk_id: <%= properties.openstack.stemcell.ramdisk_id %>
+    <% end %>
+<%
+when "vsphere"
+%>
+    mem_overcommit_ratio: 0.7
+    cpi_log: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.cpi.log
+    vcenters:
+      - host: <%= properties.vcenter.address %>
+        user: <%= properties.vcenter.user %>
+        password: <%= properties.vcenter.password %>
+        datacenters:
+          <% properties.vcenter.datacenters.each do |dc| %>
+          - name: <%= dc.name %>
+            vm_folder: <%= dc.vm_folder || "BOSH_VMs" %>
+            template_folder: <%= dc.template_folder || "BOSH_Templates" %>
+            disk_path: <%= dc.disk_path || "BOSH_Disks" %>
+            datastore_pattern: <%= dc.datastore_pattern %>
+            persistent_datastore_pattern: <%= dc.persistent_datastore_pattern %>
+            allow_mixed_datastores: <%= dc.allow_mixed_datastores || true %>
+            clusters:
+              <% dc.clusters.each do |cluster| %>
+                <% case cluster
+                   when OpenStruct %>
+                  <% cluster_hash = cluster.marshal_dump %>
+                  <% cluster_hash.each do |cluster_name, cluster_properties| %>
+              - <%= cluster_name.to_s %>:
+                    <% properties_hash = cluster_properties.marshal_dump %>
+                    <% properties_hash.each do |k, v| %>
+                  <%= "#{k.to_s}: #{v}" %>
+                    <% end %>
+                  <% end %>
+                <% when String %>
+              - <%= cluster.to_s %>
+                <% end %>
+              <% end %>
+          <% end %>
+<%
+when "vcloud"
+%>
+    vcds:
+      - url: <%= properties.vcd.url %>
+        user: <%= properties.vcd.user %>
+        password: <%= properties.vcd.password %>
+        entities:
+          organization: <%= properties.vcd.entities.organization %>
+          virtual_datacenter: <%= properties.vcd.entities.virtual_datacenter %>
+          vapp_catalog: <%= properties.vcd.entities.vapp_catalog %>
+          media_catalog: <%= properties.vcd.entities.media_catalog %>
+          vm_metadata_key: <%= properties.vcd.entities.vm_metadata_key || "vcd-cf" %>
+          description: <%= properties.vcd.entities.description || "vcd-cf" %>
+<% end %>

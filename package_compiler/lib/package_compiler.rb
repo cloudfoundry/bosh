@@ -7,6 +7,7 @@ require 'common/common'
 require 'common/properties'
 require 'agent_client'
 require 'package_compiler/compiler'
+require 'fileutils'
 
 module Bosh
   module PackageCompiler

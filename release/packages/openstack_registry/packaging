@@ -1,0 +1,11 @@
+set -e
+
+cp -a * ${BOSH_INSTALL_TARGET}
+
+cd ${BOSH_INSTALL_TARGET}/bosh/bosh_openstack_registry
+
+gem_cmd='/var/vcap/packages/ruby/bin/gem install --local'
+libpq_dir=/var/vcap/packages/libpq
+$gem_cmd pg --no-ri --no-rdoc -- --with-pg-lib=$libpq_dir/lib --with-pg-include=$libpq_dir/include
+
+$gem_cmd bosh_openstack_registry --no-ri --no-rdoc

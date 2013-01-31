@@ -1,0 +1,10 @@
+set -e
+
+cp -a * ${BOSH_INSTALL_TARGET}
+
+cd ${BOSH_INSTALL_TARGET}/bosh/health_monitor
+
+gem_cmd='/var/vcap/packages/ruby/bin/gem install --local'
+
+$gem_cmd health_monitor --no-ri --no-rdoc
+

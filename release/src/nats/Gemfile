@@ -1,0 +1,4 @@
+gem "eventmachine", "=0.12.10"
+gem "yajl-ruby", "=0.7.8"
+gem "daemons", "=1.1.4"
+gem "nats", "=0.4.28"

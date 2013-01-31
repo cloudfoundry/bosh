@@ -3,6 +3,8 @@ COMPONENTS = %w( agent_client bosh_aws_bootstrap bosh_aws_cpi bosh_aws_registry 
                  monit_api bosh_openstack_registry package_compiler ruby_vcloud_sdk ruby_vim_sdk
                  simple_blobstore_server bosh_vcloud_cpi bosh_vsphere_cpi)
 
+COMPONENTS_WITH_PG = %w( director bosh_aws_registry bosh_openstack_registry )
+
 root    = File.expand_path('../../', __FILE__)
 version = File.read("#{root}/BOSH_VERSION").strip
 branch     = "v#{version}"
@@ -31,14 +33,31 @@ COMPONENTS.each do |component|
       File.open(file, 'w') { |f| f.write ruby }
     end
 
-    task gem => %w(update_version_rb pkg) do
+    task :gem => [:update_version_rb, :pkg] do
       cmd = ""
       cmd << "cd #{component} && "
       cmd << "gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/"
       sh cmd
     end
 
-    task :build => [:clean, gem]
+    task :gem_with_deps => 'all:prepare_all_gems' do
+      dirname = "#{root}/release/src/bosh/#{component}"
+      rm_rf dirname
+      mkdir_p dirname
+      Dir.chdir dirname do
+        Bundler::Resolver.resolve(
+            Bundler.definition.send(:expand_dependencies, Bundler.definition.dependencies.select{|d| d.name == component}),
+            Bundler.definition.index
+        ).each do |spec|
+          sh "cp /tmp/all_the_gems/#{spec.name}-*.gem ."
+          sh "cp /tmp/all_the_gems/pg*.gem ." if COMPONENTS_WITH_PG.include?(component)
+        end
+      end
+    end
+
+    task :build => [:clean, :gem]
+    task :build_with_deps => [:clean, :gem_with_deps]
+
     task :install => :build do
       sh "gem install #{gem}"
     end
@@ -81,11 +100,21 @@ namespace :all do
   desc "Build all gems"
   task :build   => COMPONENTS.map { |f| "#{f}:build"   }
 
+  desc "Build all gems into bosh release/src with their dependencies"
+  task :build_with_deps   => COMPONENTS.map { |f| "#{f}:build_with_deps"   }
+
   desc "Install all gems"
   task :install => COMPONENTS.map { |f| "#{f}:install" }
 
   desc "Push all gems to rubygems"
   task :push    => COMPONENTS.map { |f| "#{f}:push"    }
+
+  task :prepare_all_gems => :build do
+    rm_rf "/tmp/all_the_gems"
+    mkdir_p "/tmp/all_the_gems"
+    sh "cp #{root}/pkg/*.gem /tmp/all_the_gems"
+    sh "cp #{root}/vendor/cache/*.gem /tmp/all_the_gems"
+  end
 
   task :ensure_clean_state do
     unless `git status -s | grep -v BOSH_VERSION`.strip.empty?

@@ -11,18 +11,17 @@ source $base_dir/lib/prelude_bosh.bash
 agent_dir=$bosh_dir/bosh_agent_${bosh_agent_src_version}_builtin
 
 mkdir -p $chroot/$agent_dir
-cp -aL $bosh_agent_src_dir/{bin,lib,vendor,Gemfile*} $chroot/$agent_dir
+cp -aL $bosh_release_src_dir/bosh_agent $chroot/$agent_dir
 
 # Link agent
 run_in_bosh_chroot $chroot "
 ln -s $agent_dir agent
-chmod +x agent/bin/bosh_agent
 "
 
 # Install gems
 run_in_bosh_chroot $chroot "
-cd agent
-bundle install --path $bosh_dir/gems --without development test
+cd agent/bosh_agent
+gem install bosh_agent --no-rdoc --no-ri -l
 "
 
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent

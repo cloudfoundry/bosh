@@ -1,0 +1,46 @@
+#!/bin/bash
+
+INDEX=$2
+
+RUN_DIR=/var/vcap/sys/run/director
+LOG_DIR=/var/vcap/sys/log/director
+PIDFILE=$RUN_DIR/worker_$INDEX.pid
+RUNAS=vcap
+
+PATH=/var/vcap/packages/ruby/bin:/var/vcap/packages/genisoimage:$PATH
+PATH=$PATH:/var/vcap/jobs/director/bin
+export PATH
+
+
+export TMPDIR=/var/vcap/data/tmp/director
+
+export QUEUE=normal
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR $TMPDIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $TMPDIR
+
+    echo $$ > $PIDFILE
+
+    COMPONENT=worker_$INDEX erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/worker_$INDEX.yml
+
+    exec chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/director/bosh/director/bin/worker \
+      -c /var/vcap/jobs/director/config/worker_$INDEX.yml \
+      >>$LOG_DIR/worker_$INDEX.stdout.log \
+      2>>$LOG_DIR/worker_$INDEX.stderr.log
+    ;;
+
+  stop)
+    PID=$(head -1 $PIDFILE)
+    kill $PID
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+    rm -f $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: worker_ctl {start|stop}" ;;
+esac
+exit 0

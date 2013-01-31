@@ -1,0 +1,7 @@
+---
+name: aws_registry
+dependencies:
+- libpq
+- ruby
+files:
+- bosh/bosh_aws_registry/*.gem

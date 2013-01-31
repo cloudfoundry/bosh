@@ -1,0 +1,137 @@
+---
+name: health_monitor
+
+templates:
+  health_monitor_ctl:     bin/health_monitor_ctl
+  health_monitor.yml.erb: config/health_monitor.yml
+
+packages:
+  - health_monitor
+  - ruby
+
+properties:
+  #
+  # Health Monitor options
+  #
+  hm.http.port:
+    description: TCP port Health Monitor daemon listens on
+    default: 25923
+  hm.http.user:
+    description: Username clients must use to access Health Monitor via HTTP Basic Auth
+  hm.http.password:
+    description: Password clients must use to access Health Monitor via HTTP Basic Auth
+
+  hm.intervals.prune_events:
+    description: Interval (in seconds) to prune received events
+    default: 30
+  hm.intervals.poll_director:
+    description: Interval (in seconds) to get the list of managed VMs from Bosh Director
+    default: 60
+  hm.intervals.poll_grace_period:
+    description: Interval (in seconds) between discovering managed VMs and analyzing their status
+    default: 30
+  hm.intervals.log_stats:
+    description: Interval (in seconds) to log Health Monitor statistics
+    default: 60
+  hm.intervals.analyze_agents:
+    description: Interval (in seconds) to analyze the status of agents
+    default: 60
+  hm.intervals.agent_timeout:
+    description: Interval (in seconds) to consider an agent has timed out
+    default: 60
+  hm.intervals.rogue_agent_alert:
+    description: Interval (in seconds) to consider an agent as rogue (an agent that is no part of any deployment)
+    default: 120
+
+  hm.loglevel:
+    description: Level of log messages (fatal, error, warn, info, debug)
+    default: info
+
+  #
+  # NATS options (to get alerts from agents)
+  #
+  nats.address:
+    description: Address of the NATS message bus to connect to
+  nats.port:
+    description: Port of the NATS message bus port to connect to
+  nats.user:
+    description: User for the NATS message bus connection
+  nats.password:
+    description: Password for NATS message bus connection
+
+  #
+  # Bosh Director options (to get the list of managed VMs)
+  #
+  director.address:
+    description: Address of the Bosh Director to connect to
+  director.port:
+    description: Port of the Bosh Director to connect to
+  hm.director_account.user:
+    description: User to access Bosh Director
+  hm.director_account.password:
+    description: Password to access Bosh Director
+
+  #
+  # Health Monitor Plugins options
+  #
+
+  # Send events via NATS message bus
+  event_nats_enabled:
+    description: Enable event NATS message bus plugin
+    default: false
+  event_nats.address:
+    description: Address of the event NATS message bus to connect to
+  event_nats.port:
+    description: Port of the event NATS message bus port to connect to
+  event_nats.user:
+    description: User for the event NATS message bus connection
+  event_nats.password:
+    description: Password for event NATS message bus connection
+
+  # Send events via Email
+  hm.email_notifications:
+    description: Enable email notifications plugin
+    default: false
+  hm.email_recipients:
+    description: Email of recipients (Array)
+  hm.smtp.from:
+    description: Email of sender
+  hm.smtp.host:
+    description: Address of the SMTP server to connect to
+  hm.smtp.port:
+    description: Port of the SMTP server to connect to
+  hm.smtp.domain:
+    description: SMTP EHLO domain
+  hm.smtp.tls:
+    description: Use STARTTLS (optional)
+  hm.smtp.auth:
+    description: SMTP Authentication type (optional, only "plain" is supported)
+  hm.smtp.user:
+    description: User for SMTP Authentication (optional, use in conjuction with hm.smtp.auth)
+  hm.smtp.password:
+    description: Password for SMTP Authentication (optional, use in conjuction with hm.smtp.auth)
+  hm.email_interval:
+    description: Interval (in seconds) to deliver alerts by email (optional)
+
+  # Send events via TSDB
+  hm.tsdb_enabled:
+    description: Enable TSDB plugin
+    default: false
+  hm.tsdb.address:
+    description: Address of TSDB to connect to
+  hm.tsdb.port:
+    description: Port of TSDB to connect to
+
+  # Send events via PagerDuty
+  hm.pagerduty_enabled:
+    description: Enable PagerDuty plugin
+    default: false
+  hm.pagerduty.service_key:
+    description: PagerDuty service API key
+  hm.pagerduty.http_proxy:
+    description: HTTP proxy to connect to PagerDuty (optional)
+
+  # Send events via /varz endpoint
+  hm.varz_enabled:
+    description: Enable /varz plugin
+    default: false

@@ -1,0 +1,5 @@
+check process openstack_registry
+  with pidfile /var/vcap/sys/run/openstack_registry/openstack_registry.pid
+  start program "/var/vcap/jobs/openstack_registry/bin/openstack_registry_ctl start"
+  stop program "/var/vcap/jobs/openstack_registry/bin/openstack_registry_ctl stop"
+  group vcap

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+export PATH=/var/vcap/packages/ruby/bin:$PATH
+
+RUN_DIR=/var/vcap/sys/run/director
+LOG_DIR=/var/vcap/sys/log/director
+mkdir -p $LOG_DIR
+
+default_wait_time=15
+
+stop_workers()
+{
+  for pid_file in "$RUN_DIR"/worker_*.pid
+  do
+      worker_pid=`cat ${pid_file}`
+      # Stop resque workers from accepting any new jobs
+      kill -s USR2 ${worker_pid}
+  done
+}
+
+stop_workers
+
+COMPONENT=drain erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/drain.yml
+
+num_workers=`/var/vcap/packages/director/bosh/director/bin/drain_workers -r -c /var/vcap/jobs/director/config/drain.yml 2>>$LOG_DIR/drain.stderr.log`
+
+if [ $num_workers -eq 0 ]; then
+  echo 0
+else
+  echo -$default_wait_time
+fi

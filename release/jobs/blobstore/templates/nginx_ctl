@@ -1,0 +1,28 @@
+#!/bin/bash
+
+RUN_DIR=/var/vcap/sys/run/nginx
+LOG_DIR=/var/vcap/sys/log/nginx
+PIDFILE=$RUN_DIR/nginx.pid
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR
+    mkdir -p $LOG_DIR
+
+    echo $$ > $PIDFILE
+
+    exec /var/vcap/packages/nginx/sbin/nginx -c /var/vcap/jobs/blobstore/config/nginx.conf >>$LOG_DIR/nginx.stdout.log 2>>$LOG_DIR/nginx.stderr.log
+    ;;
+
+  stop)
+    PID=$(head -1 $PIDFILE)
+    kill $PID
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+    rm -f $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: nginx_ctl {start|stop}" ;;
+esac
+exit 0

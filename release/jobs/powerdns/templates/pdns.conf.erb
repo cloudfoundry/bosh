@@ -1,0 +1,26 @@
+launch=gpgsql
+gpgsql-host=127.0.0.1
+gpgsql-port=<%= p("dns.database.port") %>
+gpgsql-user=<%= p("dns.user") %>
+gpgsql-password=<%= p("dns.password") %>
+gpgsql-dbname=<%= p("dns.database.name") %>
+config-dir=/var/vcap/jobs/powerdns/config
+daemon=yes
+guardian=no
+max-tcp-connections=256
+module-dir=/usr/local/lib
+allow-recursion-override=yes
+<% if_p("dns.recursors") do |recursors| %>
+recursor=<%= recursors[spec.index.to_i % recursors.length] %>
+<% end %>
+setgid=vcap
+setuid=vcap
+version-string=anonymous
+<% if_p("dns.webserver.port",
+        "dns.webserver.address",
+        "dns.webserver.password") do |web_port, web_address, web_pass|  %>
+webserver=yes
+webserver-port=<%= web_port %>
+webserver-address=<%= web_address %>
+webserver-password=<%= web_pass %>
+<% end %>

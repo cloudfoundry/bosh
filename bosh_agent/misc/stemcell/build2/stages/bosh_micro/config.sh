@@ -4,6 +4,7 @@
 
 set -e
 
+
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
 
@@ -14,3 +15,5 @@ then
   persist_file bosh_micro_release_tgz_path
   persist_value system_parameters_infrastructure
 fi
+
+persist_dir bosh_release_src_dir

@@ -66,6 +66,7 @@ namespace :stemcell do
       :TW_LOCAL_PASSPHRASE => ENV["TW_LOCAL_PASSPHRASE"],
       :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
       :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
+      :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__),
     }
 
     # Pass OVFTOOL environment variable when targeting vsphere
@@ -78,7 +79,7 @@ namespace :stemcell do
 
   def bosh_agent_options
     {
-      :bosh_agent_src_dir => File.expand_path("..", __FILE__)
+      :bosh_agent_src_dir => File.expand_path("../../bosh_agent", __FILE__)
     }
   end
 
@@ -92,7 +93,7 @@ namespace :stemcell do
   end
 
   def get_working_dir
-    "/var/tmp/bosh/agent-#{version}-#{$$}"
+    "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{$$}"
   end
 
   def get_hypervisor(infrastructure)
@@ -130,9 +131,12 @@ namespace :stemcell do
   def build(spec, options)
     root = get_working_dir
     mkdir_p root
+	puts "MADE ROOT: #{root}"
+	puts "PWD: #{Dir.pwd}"
 
     build_path = File.join(root, "build")
-    cp_r File.expand_path("../misc/stemcell/build2", __FILE__), build_path, :preserve => true
+
+    cp_r File.expand_path("../../bosh_agent/misc/stemcell/build2", __FILE__), build_path, :preserve => true
 
     work_path = ENV["WORK_PATH"] || File.join(root, "work")
     mkdir_p work_path
@@ -151,7 +155,9 @@ namespace :stemcell do
 
     # Run builder
     STDOUT.puts "building in #{work_path}..."
-    system("sudo #{env} #{builder_path} #{work_path} #{spec_path} #{settings_path}")
+    cmd = "sudo #{env} #{builder_path} #{work_path} #{spec_path} #{settings_path}"
+	puts cmd
+    system(cmd)
   end
 
   namespace "public" do

@@ -1,0 +1,8 @@
+---
+name: nginx
+files:
+- nginx/headers-more-v0.15rc1.tgz
+- nginx/nginx-0.8.54.tar.gz
+- nginx/pcre-8.12.tar.gz
+- nginx/nginx_upload_module-2.2.0.tar.gz
+- nginx/upload_module_put_support.patch

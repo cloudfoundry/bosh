@@ -1,0 +1,44 @@
+#!/bin/bash
+
+RUN_DIR=/var/vcap/sys/run/openstack_registry
+LOG_DIR=/var/vcap/sys/log/openstack_registry
+PIDFILE=$RUN_DIR/openstack_registry.pid
+RUNAS=vcap
+
+export PATH=/var/vcap/packages/ruby/bin:$PATH
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
+
+    echo $$ > $PIDFILE
+
+    chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/openstack_registry/bosh/openstack_registry/bin/migrate \
+      -c /var/vcap/jobs/openstack_registry/config/openstack_registry.yml \
+      >>$LOG_DIR/migrate.stdout.log 2>>$LOG_DIR/migrate.stderr.log
+
+    if [ $? -ne 0 ]; then
+      echo "migration failed"
+      exit 1
+    fi
+
+    exec chpst -u $RUNAS:$RUNAS \
+      /var/vcap/packages/openstack_registry/bosh/openstack_registry/bin/openstack_registry \
+      -c /var/vcap/jobs/openstack_registry/config/openstack_registry.yml \
+      >>$LOG_DIR/openstack_registry.stdout.log 2>>$LOG_DIR/openstack_registry.stderr.log
+    ;;
+
+  stop)
+    PID=$(head -1 $PIDFILE)
+    kill $PID
+    while [ -e /proc/$PID ]; do sleep 0.1; done
+    rm -f $PIDFILE
+    ;;
+
+  *)
+  echo "Usage: openstack_registry_ctl {start|stop}" ;;
+esac
+exit 0
