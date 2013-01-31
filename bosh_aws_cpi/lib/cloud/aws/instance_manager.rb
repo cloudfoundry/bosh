@@ -17,7 +17,7 @@ module Bosh::AwsCloud
       @instance_params[:instance_type] = resource_pool["instance_type"]
       set_user_data_parameter(networks_spec)
       set_key_name_parameter(resource_pool["key_name"], options["aws"]["default_key_name"])
-      set_security_groups_parameter(networks_spec, options["aws"]["default_security_group_options"])
+      set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
       set_vpc_parameters(networks_spec)
       set_availability_zone_parameter(
           (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone },
@@ -74,7 +74,7 @@ module Bosh::AwsCloud
     def set_vpc_parameters(network_spec)
       manual_network_spec = network_spec.values.select{ |spec| ["manual", nil].include? spec["type"] }.first
       if manual_network_spec
-        instance_params[:subnet] = @region.subnets[manual_network_spec["subnet"]]
+        instance_params[:subnet] = @region.subnets[manual_network_spec["cloud_properties"]["subnet"]]
         instance_params[:private_ip_address] = manual_network_spec["ip"]
       end
     end

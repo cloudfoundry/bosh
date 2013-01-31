@@ -42,7 +42,7 @@ describe Bosh::AwsCloud::InstanceManager do
           },
           "other" => {
               "type" => "manual",
-              "subnet" => "sub-123456",
+              "cloud_properties" => {"subnet" => "sub-123456"},
               "ip" => "1.2.3.4"
           }
       }
@@ -115,7 +115,13 @@ describe Bosh::AwsCloud::InstanceManager do
         it "should not set the subnet and private IP address parameters" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
-              {"network" => {"type" => "designed by robots", "ip" => "1.2.3.4", "subnet" => "sub-123456"}}
+              {
+                  "network" => {
+                      "type" => "designed by robots",
+                      "ip" => "1.2.3.4",
+                      "cloud_properties" => {"subnet" => "sub-123456"}
+                  }
+              }
           )
 
           instance_manager.instance_params.keys.should_not include(:private_ip_address)
@@ -127,7 +133,13 @@ describe Bosh::AwsCloud::InstanceManager do
         it "should set the subnet and private IP address parameters" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
-              {"network" => {"type" => "manual", "ip" => "1.2.3.4", "subnet" => "sub-123456"}}
+              {
+                  "network" => {
+                      "type" => "manual",
+                      "ip" => "1.2.3.4",
+                      "cloud_properties" => {"subnet" => "sub-123456"}
+                  }
+              }
           )
 
           instance_manager.instance_params[:private_ip_address].should == "1.2.3.4"
@@ -138,7 +150,14 @@ describe Bosh::AwsCloud::InstanceManager do
       context "when there is a network in the specs with unspecified type" do
         it "should set the subnet and private IP address parameters for that network (treat it as manual)" do
           instance_manager = described_class.new(region, registry)
-          instance_manager.set_vpc_parameters({"network" => {"ip" => "1.2.3.4", "subnet" => "sub-123456"}})
+          instance_manager.set_vpc_parameters(
+              {
+                  "network" => {
+                      "ip" => "1.2.3.4",
+                      "cloud_properties" => {"subnet" => "sub-123456"}
+                  }
+              }
+          )
 
           instance_manager.instance_params[:private_ip_address].should == "1.2.3.4"
           instance_manager.instance_params[:subnet].should == fake_aws_subnet

@@ -66,12 +66,12 @@ describe Bosh::AwsCloud::Helpers do
     let(:networks_spec) do
       {
           "vip" => {"cloud_properties" => {}},
-          "default" => {"cloud_properties" => {"security_groups" => ["numero uno", "two to tango"]}},
+          "default" => {"cloud_properties" => {"security_groups" => ["two to tango", "numero uno"]}},
           "other" => {"cloud_properties" => {"security_groups" => "numero uno"}}
       }
     end
 
-    it "should return a list of unique security_group_names" do
+    it "should return a sorted list of unique security_group_names" do
       class HelpersTester
         include Bosh::AwsCloud::Helpers
       end

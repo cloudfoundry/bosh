@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+76# Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::AwsCloud
   ##
@@ -73,8 +73,6 @@ module Bosh::AwsCloud
     # @param [AWS:EC2] ec2 instance EC2 client
     # @param [AWS::EC2::Instance] instance EC2 instance to configure
     def configure(ec2, instance)
-      @network.configure(ec2, instance)
-
       if @vip_network
         @vip_network.configure(ec2, instance)
       else

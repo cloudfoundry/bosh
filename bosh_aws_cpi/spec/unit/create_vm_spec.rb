@@ -51,7 +51,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         and_return(availability_zone_selector)
     Bosh::AwsCloud::Stemcell.
         stub(:find).
-        with(stemcell_id).
+        with(region, stemcell_id).
         and_return(stemcell)
     Bosh::AwsCloud::InstanceManager.
         stub(:new).

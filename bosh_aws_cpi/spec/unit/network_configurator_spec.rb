@@ -97,7 +97,6 @@ describe Bosh::AwsCloud::NetworkConfigurator do
           network_spec = {"network1" => dynamic, "network2" => vip}
           nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-          nc.network.should_receive(:configure).with(ec2, instance)
           nc.vip_network.should_receive(:configure).with(ec2, instance)
 
           nc.configure(ec2, instance)
@@ -107,7 +106,6 @@ describe Bosh::AwsCloud::NetworkConfigurator do
           network_spec = {"network1" => vip, "network2" => manual}
           nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-          nc.network.should_receive(:configure).with(ec2, instance)
           nc.vip_network.should_receive(:configure).with(ec2, instance)
 
           nc.configure(ec2, instance)
@@ -123,7 +121,6 @@ describe Bosh::AwsCloud::NetworkConfigurator do
             network_spec = {"network1" => dynamic}
             nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-            nc.network.should_receive(:configure).with(ec2, instance)
             nc.vip_network.should be_nil
 
             nc.configure(ec2, instance)
@@ -135,7 +132,6 @@ describe Bosh::AwsCloud::NetworkConfigurator do
             network_spec = {"network1" => manual}
             nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-            nc.network.should_receive(:configure).with(ec2, instance)
             nc.vip_network.should be_nil
 
             nc.configure(ec2, instance)

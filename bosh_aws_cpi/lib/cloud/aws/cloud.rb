@@ -15,6 +15,7 @@ module Bosh::AwsCloud
 
     attr_reader :ec2
     attr_reader :registry
+    attr_reader :options
     attr_accessor :logger
 
     ##
@@ -38,7 +39,6 @@ module Bosh::AwsCloud
       @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
-      @default_security_groups = @aws_properties["default_security_groups"] || []
 
       aws_params = {
         :access_key_id => @aws_properties["access_key_id"],
@@ -91,7 +91,7 @@ module Bosh::AwsCloud
     def create_vm(agent_id, stemcell_id, resource_pool, network_spec, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
         # do this early to fail fast
-        stemcell = Stemcell.find(stemcell_id)
+        stemcell = Stemcell.find(@region, stemcell_id)
 
         instance = InstanceManager.
             new(@region, @registry, az_selector).
@@ -247,7 +247,7 @@ module Bosh::AwsCloud
 
         actual_group_names = instance.security_groups.collect {|sg| sg.name }
         specified_group_names = extract_security_group_names(network_spec)
-        new_group_names = specified_group_names.empty?? @default_security_groups : specified_group_names
+        new_group_names = specified_group_names.empty? ? Array(@aws_properties["default_security_groups"]): specified_group_names
 
         # If the security groups change, we need to recreate the VM
         # as you can't change the security group of a running instance,

@@ -76,6 +76,7 @@ module Bosh::AwsCloud
           select { |cloud_properties| cloud_properties.has_key? "security_groups" }.
           map { |cloud_properties| Array(cloud_properties["security_groups"]) }.
           flatten.
+          sort.
           uniq
     end
 

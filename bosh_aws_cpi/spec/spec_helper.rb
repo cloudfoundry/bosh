@@ -41,7 +41,8 @@ def mock_cloud_options
     "aws" => {
       "access_key_id" => MOCK_AWS_ACCESS_KEY_ID,
       "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY,
-      "region" => "us-east-1"
+      "region" => "us-east-1",
+      "default_security_groups" => []
     },
     "registry" => {
       "endpoint" => "localhost:42288",
@@ -99,7 +100,8 @@ end
 def vip_network_spec
   {
     "type" => "vip",
-    "ip" => "10.0.0.1"
+    "ip" => "10.0.0.1",
+    "cloud_properties" => {}
   }
 end
 
