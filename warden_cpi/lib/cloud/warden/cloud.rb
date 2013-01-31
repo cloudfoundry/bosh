@@ -462,7 +462,7 @@ module Bosh::WardenCloud
         request.privileged = true
         request.script = "cat #{agent_settings_file}"
 
-        client.call(request)
+        client.call(request).stdout
       end
 
       env = Yajl::Parser.parse(body)
