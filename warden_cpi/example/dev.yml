@@ -1,9 +1,10 @@
---- name: staging_micro_bosh_xuf
-director_uuid: c5ac4f66-6737-483d-91b6-afbe0b31b1e6
+---
+name: name_of_deploy
+director_uuid: uuid_of_director
 
 release:
-  name: warden
-  version: 111.4-dev
+  name: name_of_release
+  version: 111-dev
 
 compilation:
   workers: 1
