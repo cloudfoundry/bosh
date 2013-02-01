@@ -41,11 +41,11 @@ module Bosh::AwsCloud
       @default_key_name = @aws_properties["default_key_name"]
 
       aws_params = {
-        :access_key_id => @aws_properties["access_key_id"],
-        :secret_access_key => @aws_properties["secret_access_key"],
-        :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
-        :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
-        :logger => @aws_logger
+          :access_key_id => @aws_properties["access_key_id"],
+          :secret_access_key => @aws_properties["secret_access_key"],
+          :ec2_endpoint => @aws_properties["ec2_endpoint"] || default_ec2_endpoint,
+          :max_retries => @aws_properties["max_retries"] || DEFAULT_MAX_RETRIES,
+          :logger => @aws_logger
       }
 
       aws_params[:proxy_uri] = @aws_properties["proxy_uri"] if @aws_properties["proxy_uri"]
@@ -156,7 +156,7 @@ module Bosh::AwsCloud
         # if the disk is created for an instance, use the same availability
         # zone as they must match
         volume_params = {
-          :size => (size / 1024.0).ceil,
+            :size => (size / 1024.0).ceil,
         }
         az = @az_selector.select_from_instance_id(instance_id)
         volume_params[:availability_zone] = az if az
@@ -245,9 +245,9 @@ module Bosh::AwsCloud
 
         instance = @ec2.instances[instance_id]
 
-        actual_group_names = instance.security_groups.collect {|sg| sg.name }
+        actual_group_names = instance.security_groups.collect { |sg| sg.name }
         specified_group_names = extract_security_group_names(network_spec)
-        new_group_names = specified_group_names.empty? ? Array(@aws_properties["default_security_groups"]): specified_group_names
+        new_group_names = specified_group_names.empty? ? Array(@aws_properties["default_security_groups"]) : specified_group_names
 
         # If the security groups change, we need to recreate the VM
         # as you can't change the security group of a running instance,
@@ -255,7 +255,7 @@ module Bosh::AwsCloud
         unless actual_group_names.sort == new_group_names.sort
           raise Bosh::Clouds::NotSupported,
                 "security groups change requires VM recreation: %s to %s" %
-                [actual_group_names.join(", "), new_group_names.join(", ")]
+                    [actual_group_names.join(", "), new_group_names.join(", ")]
         end
 
         NetworkConfigurator.new(network_spec).configure(@ec2, instance)
@@ -400,9 +400,9 @@ module Bosh::AwsCloud
           :name => "BOSH-#{UUIDTools::UUID.random_create}",
           :architecture => architecture,
           :kernel_id => find_aki(architecture, root_device_name),
-          :root_device_name =>  root_device_name,
+          :root_device_name => root_device_name,
           :block_device_mappings => {
-              "/dev/sda" => { :snapshot_id => snapshot_id },
+              "/dev/sda" => {:snapshot_id => snapshot_id},
               "/dev/sdb" => "ephemeral0"
           }
       }
@@ -465,8 +465,8 @@ module Bosh::AwsCloud
       new_attachment = nil
 
       ("f".."p").each do |char| # f..p is what console suggests
-        # Some kernels will remap sdX to xvdX, so agent needs
-        # to lookup both (sd, then xvd)
+                                # Some kernels will remap sdX to xvdX, so agent needs
+                                # to lookup both (sd, then xvd)
         dev_name = "/dev/sd#{char}"
         if device_names.include?(dev_name)
           @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
@@ -576,22 +576,22 @@ module Bosh::AwsCloud
     # be used to create all required data structures etc.
     #
     def validate_options
-      unless @options.has_key?("aws") &&
-          @options["aws"].is_a?(Hash) &&
-          @options["aws"]["access_key_id"] &&
-          @options["aws"]["secret_access_key"] &&
-          @options["aws"]["region"]
-        # TODO refactor to show individual failures
-        raise ArgumentError, "Invalid AWS configuration parameters"
+      required_keys = {
+          "aws" => ["access_key_id", "secret_access_key", "region"],
+          "registry" => ["endpoint", "user", "password"],
+      }
+
+      missing_keys = []
+
+      required_keys.each_pair do |key, values|
+        values.each do |value|
+          if (!@options.has_key?(key) || !@options[key].has_key?(value))
+            missing_keys << "#{key}:#{value}"
+          end
+        end
       end
 
-      unless @options.has_key?("registry") &&
-          @options["registry"].is_a?(Hash) &&
-          @options["registry"]["endpoint"] &&
-          @options["registry"]["user"] &&
-          @options["registry"]["password"]
-        raise ArgumentError, "Invalid registry configuration parameters"
-      end
+      raise ArgumentError, "missing configuration parameters > #{missing_keys.join(', ')}" unless missing_keys.empty?
     end
 
     def default_ec2_endpoint
