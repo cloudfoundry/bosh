@@ -85,10 +85,12 @@ module Bosh::AwsCloud
     end
 
     def set_user_data_parameter(networks_spec)
-      @instance_params[:user_data] = {registry: {endpoint: @registry.endpoint}}
+      user_data = {registry: {endpoint: @registry.endpoint}}
 
       spec_with_dns = networks_spec.values.select { |spec| spec.has_key? "dns" }.first
-      @instance_params[:user_data][:dns] = {nameserver: spec_with_dns["dns"]} if spec_with_dns
+      user_data[:dns] = {nameserver: spec_with_dns["dns"]} if spec_with_dns
+
+      @instance_params[:user_data] = Yajl::Encoder.encode(user_data)
     end
 
     private

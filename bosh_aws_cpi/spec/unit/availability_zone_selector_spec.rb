@@ -44,4 +44,17 @@ describe Bosh::AwsCloud::AvailabilityZoneSelector do
     end
 
   end
+
+  describe "#random_availability_zone" do
+    before do
+      region.stub(:availability_zones => [
+        double("us-east-1a", :name => "us-east-1a"), double("us-east-1b", :name => "us-east-1b")
+      ])
+    end
+
+    it "should should select a random availability zone in the region" do
+      Random.stub(:rand => 0)
+      selector.random_availability_zone.should == "us-east-1a"
+    end
+  end
 end

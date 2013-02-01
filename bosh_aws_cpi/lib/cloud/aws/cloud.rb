@@ -94,7 +94,7 @@ module Bosh::AwsCloud
         stemcell = Stemcell.find(@region, stemcell_id)
 
         instance = InstanceManager.
-            new(@region, @registry, az_selector).
+            new(@region, registry, az_selector).
             create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
         @logger.info("Creating new instance `#{instance.id}'")
         wait_resource(instance, :running)
@@ -108,7 +108,7 @@ module Bosh::AwsCloud
             stemcell.root_device_name,
             @options["agent"] || {}
         )
-        @registry.update_settings(instance.id, registry_settings)
+        registry.update_settings(instance.id, registry_settings)
 
         instance.id
       end
@@ -120,7 +120,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
-        InstanceManager.new(@region, @registry).terminate(instance_id)
+        InstanceManager.new(@region, registry).terminate(instance_id)
       end
     end
 
@@ -129,7 +129,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
-        InstanceManager.new(@region, @registry).reboot(instance_id)
+        InstanceManager.new(@region, registry).reboot(instance_id)
       end
     end
 
@@ -153,13 +153,18 @@ module Bosh::AwsCloud
           cloud_error("AWS CPI maximum disk size is 1 TiB")
         end
 
+        if instance_id
+          az = @az_selector.select_from_instance_id(instance_id)
+        else
+          az = @az_selector.random_availability_zone
+        end
+
         # if the disk is created for an instance, use the same availability
         # zone as they must match
         volume_params = {
             :size => (size / 1024.0).ceil,
+            :availability_zone => az
         }
-        az = @az_selector.select_from_instance_id(instance_id)
-        volume_params[:availability_zone] = az if az
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")
@@ -425,9 +430,9 @@ module Bosh::AwsCloud
         raise ArgumentError, "block is not provided"
       end
 
-      settings = @registry.read_settings(instance.id)
+      settings = registry.read_settings(instance.id)
       yield settings
-      @registry.update_settings(instance.id, settings)
+      registry.update_settings(instance.id, settings)
     end
 
     ##

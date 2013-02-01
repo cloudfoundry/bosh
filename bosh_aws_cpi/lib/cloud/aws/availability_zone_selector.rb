@@ -22,6 +22,12 @@ module Bosh::AwsCloud
       end
     end
 
+    def random_availability_zone
+      zones = []
+      region.availability_zones.each { |zone| zones << zone.name }
+      zones[Random.rand(zones.size)]
+    end
+
     private
 
     def ensure_same_availability_zone(zone_names)

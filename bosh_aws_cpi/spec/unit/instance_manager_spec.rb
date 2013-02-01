@@ -20,7 +20,7 @@ describe Bosh::AwsCloud::InstanceManager do
               count: 1,
               image_id: "stemcell-id",
               instance_type: "m1.small",
-              user_data: {registry: {endpoint: "http://..."}, dns: {nameserver: "foo"}},
+              user_data: "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}",
               key_name: "bar",
               security_groups: ["baz"],
               subnet: fake_aws_subnet,
@@ -201,10 +201,8 @@ describe Bosh::AwsCloud::InstanceManager do
               }
           )
 
-          instance_manager.instance_params[:user_data].should == {
-              registry: {endpoint: "http://..."},
-              dns: {nameserver: "bar"}
-          }
+          instance_manager.instance_params[:user_data].should ==
+              "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"bar\"}}"
         end
       end
 
@@ -217,9 +215,8 @@ describe Bosh::AwsCloud::InstanceManager do
               }
           )
 
-          instance_manager.instance_params[:user_data].should == {
-              registry: {endpoint: "http://..."}
-          }
+          instance_manager.instance_params[:user_data].should ==
+              "{\"registry\":{\"endpoint\":\"http://...\"}}"
         end
       end
     end

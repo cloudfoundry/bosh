@@ -4,15 +4,17 @@ require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud do
 
-  it "creates an EC2 volume" do
-    disk_params = {
-      :size => 2
-    }
+  let(:zones) { [double("us-east-1a", :name => "us-east-1a")] }
 
+  it "creates an EC2 volume" do
     volume = double("volume", :id => "v-foobar")
 
-    cloud = mock_cloud do |ec2|
-      ec2.volumes.should_receive(:create).with(disk_params).and_return(volume)
+    cloud = mock_cloud do |ec2, region|
+      ec2.volumes.should_receive(:create) do |params|
+        params[:size].should == 2
+        volume
+      end
+      region.stub(:availability_zones => zones)
     end
 
     cloud.should_receive(:wait_resource).with(volume, :available)
@@ -21,14 +23,14 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   it "rounds up disk size" do
-    disk_params = {
-      :size => 3
-    }
-
     volume = double("volume", :id => "v-foobar")
 
-    cloud = mock_cloud do |ec2|
-      ec2.volumes.should_receive(:create).with(disk_params).and_return(volume)
+    cloud = mock_cloud do |ec2, region|
+      ec2.volumes.should_receive(:create) do |params|
+        params[:size].should == 3
+        volume
+      end
+      region.stub(:availability_zones => zones)
     end
 
     cloud.should_receive(:wait_resource).with(volume, :available)
@@ -63,9 +65,24 @@ describe Bosh::AwsCloud::Cloud do
       region.stub(:instances => double("instances", :[] =>instance))
     end
 
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    cloud.stub(:wait_resource)
 
     cloud.create_disk(1024, "i-test")
   end
 
+  it "should pick a random availability zone when no instance is given" do
+    volume = double("volume", :id => "v-foobar")
+
+    cloud = mock_cloud do |ec2, region|
+      ec2.volumes.should_receive(:create) do |params|
+        params[:availability_zone].should === "us-east-1a"
+        volume
+      end
+      region.stub(:availability_zones => zones)
+    end
+
+    cloud.stub(:wait_resource)
+
+    cloud.create_disk(2048)
+  end
 end
