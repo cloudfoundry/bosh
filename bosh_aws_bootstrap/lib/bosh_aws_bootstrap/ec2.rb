@@ -1,6 +1,9 @@
 module Bosh
   module Aws
     class EC2
+      MAX_TAG_KEY_LENGTH = 127
+      MAX_TAG_VALUE_LENGTH = 255
+
       attr_reader :elastic_ips
 
       def initialize(credentials)
@@ -39,10 +42,30 @@ module Bosh
         end
       end
 
+      def instances_for_ids(ids)
+        aws_ec2.instances.filter('instance-id', *ids)
+      end
+
+      def snapshot_volume(volume, snapshot_name, description, tags = {})
+        snap = volume.create_snapshot(description)
+        tag(snap, 'Name', snapshot_name)
+        tags.each_pair { |key, value| tag(snap, key, value) }
+        snap
+      end
+
+
       private
 
       def aws_ec2
         @aws_ec2 ||= ::AWS::EC2.new(@credentials)
+      end
+
+      def tag(taggable, key, value)
+        trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
+        trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
+        taggable.add_tag(trimmed_key, :value => trimmed_value)
+      rescue AWS::EC2::Errors::InvalidParameterValue => e
+        say("could not tag #{taggable.id}: #{e.message}")
       end
     end
   end

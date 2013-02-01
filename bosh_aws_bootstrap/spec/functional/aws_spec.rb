@@ -245,6 +245,68 @@ describe Bosh::Cli::Command::AWS do
         end
     end
 
+    describe "aws snapshot director deployments" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should snapshot EBS volumes in all deployments" do
+        bat_vm_fixtures = [
+            {"agent_id" => "a1b2", "cid" => "i-a1b2c3" ,"job" => "director", "index" => 0},
+            {"agent_id" => "a3b4", "cid" => "i-d4e5f6" ,"job" => "postgres", "index" => 0}
+        ]
+        bosh_vm_fixtures = [
+            {"agent_id" => "a1b2", "cid" => "i-g1h2i3" ,"job" => "director", "index" => 0}
+        ]
+
+        fake_director = mock("director", :uuid => "dir-uuid")
+        fake_ec2 = mock("ec2")
+        fake_instance_collection = mock("instance_collection")
+        fake_instance = mock("instance", :exists? => true)
+
+        fake_attachment = mock("attachment")
+
+        Bosh::Cli::Director.stub(:new).with("http://1.2.3.4:56789", "foo", "bar").and_return(fake_director)
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        AWS::EC2::InstanceCollection.stub(:new).and_return(fake_instance_collection)
+
+
+
+        fake_ec2.should_receive(:snapshot_volume).exactly(4).times
+
+        aws.should_receive(:say).with("Creating snapshots for director `http://1.2.3.4:56789'")
+        fake_director.should_receive(:list_deployments).and_return([{"name" => "bat"}, {"name" => "bosh"}])
+
+        aws.should_receive(:say).with("  deployment: `bat'")
+        fake_director.should_receive(:list_vms).with("bat").and_return(bat_vm_fixtures)
+        fake_ec2.should_receive(:instances_for_ids).with(["i-a1b2c3", "i-d4e5f6"]).and_return(fake_instance_collection)
+        fake_instance_collection.should_receive(:[]).twice.times.and_return(fake_instance)
+
+        aws.should_receive(:say).with("    instance: `i-a1b2c3'")
+        fake_instance.should_receive(:block_device_mappings).
+            and_return({"/dev/sda" => fake_attachment,"/dev/sdb" => fake_attachment})
+        aws.should_receive(:say).with("      volume: `v-a1b2c3' device: `/dev/sda'")
+        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-a1b2c3"))
+        aws.should_receive(:say).with("      volume: `v-a4b5c6' device: `/dev/sdb'")
+        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-a4b5c6"))
+
+        aws.should_receive(:say).with("    instance: `i-d4e5f6'")
+        fake_instance.should_receive(:block_device_mappings).and_return({"/dev/sdc" => fake_attachment})
+        aws.should_receive(:say).with("      volume: `v-d4e5f6' device: `/dev/sdc'")
+        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-d4e5f6"))
+
+        aws.should_receive(:say).with("  deployment: `bosh'")
+        fake_director.should_receive(:list_vms).with("bosh").and_return(bosh_vm_fixtures)
+        fake_ec2.should_receive(:instances_for_ids).with(["i-g1h2i3"]).and_return(fake_instance_collection)
+        fake_instance_collection.should_receive(:[]).and_return(fake_instance)
+
+        aws.should_receive(:say).with("    instance: `i-g1h2i3'")
+        fake_instance.should_receive(:block_device_mappings).and_return({"/dev/sdd" => fake_attachment})
+        aws.should_receive(:say).with("      volume: `v-g1h2i3' device: `/dev/sdd'")
+        fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-g1h2i3"))
+
+        aws.snapshot_deployments(config_file)
+      end
+    end
+
     describe "aws delete_all rds databases" do
       let(:config_file) { asset "config.yml"}
 
