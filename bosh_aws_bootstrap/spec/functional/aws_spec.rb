@@ -163,34 +163,50 @@ describe Bosh::Cli::Command::AWS do
         aws.empty_s3 config_file
       end
 
-      context "when the users agrees to nuke the buckets" do
+      context "interactive mode (default)" do
+        context "when the users agrees to nuke the buckets" do
+          it "should empty and delete all S3 buckets associated with an account" do
+            fake_s3 = mock("s3")
+
+            Bosh::Aws::S3.stub(:new).and_return(fake_s3)
+            fake_s3.stub(:bucket_names).and_return(double.as_null_object)
+
+            aws.stub(:say).twice
+            aws.stub(:agree).and_return(true)
+
+            fake_s3.should_receive :empty
+
+            aws.empty_s3 config_file
+          end
+        end
+
+        context "when the user wants to bail out" do
+          it "should not destroy the buckets" do
+            fake_s3 = mock("s3")
+
+            Bosh::Aws::S3.stub(:new).and_return(fake_s3)
+            fake_s3.stub(:bucket_names).and_return(double.as_null_object)
+            aws.stub(:say).twice
+            aws.stub(:agree).and_return(false)
+
+            fake_s3.should_not_receive :empty
+
+            aws.empty_s3 config_file
+          end
+        end
+      end
+
+      context "non-interactive mode" do
         it "should empty and delete all S3 buckets associated with an account" do
           fake_s3 = mock("s3")
 
           Bosh::Aws::S3.stub(:new).and_return(fake_s3)
           fake_s3.stub(:bucket_names).and_return(double.as_null_object)
-
           aws.stub(:say).twice
-          aws.stub(:agree).and_return(true)
 
           fake_s3.should_receive :empty
 
-          aws.empty_s3 config_file
-        end
-      end
-
-      context "when the user wants to bail out" do
-        it "should not destroy the buckets" do
-          fake_s3 = mock("s3")
-
-          Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-          fake_s3.stub(:bucket_names).and_return(double.as_null_object)
-
-          aws.stub(:say).twice
-          aws.stub(:agree).and_return(false)
-
-          fake_s3.should_not_receive :empty
-
+          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.empty_s3 config_file
         end
       end
@@ -214,35 +230,52 @@ describe Bosh::Cli::Command::AWS do
         aws.terminate_all_ec2 config_file
       end
 
-      context 'when the user agrees to terminate all the instances' do
+      context "interactive mode (default)" do
+        context 'when the user agrees to terminate all the instances' do
+          it 'should terminate all instances' do
+            fake_ec2 = mock("ec2")
+
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            aws.stub(:say).twice
+            aws.stub(:agree).and_return(true)
+            fake_ec2.stub(:instance_names).and_return(double.as_null_object)
+
+            fake_ec2.should_receive :terminate_instances
+
+            aws.terminate_all_ec2(config_file)
+          end
+        end
+
+        context 'when the user wants to bail out of ec2 termination' do
+          it 'should not terminate any instances' do
+            fake_ec2 = mock("ec2")
+
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            aws.stub(:say).twice
+            aws.stub(:agree).and_return(false)
+            fake_ec2.stub(:instance_names).and_return(double.as_null_object)
+
+            fake_ec2.should_not_receive :terminate_instances
+
+            aws.terminate_all_ec2 config_file
+          end
+        end
+      end
+
+      context "non-interactive mode" do
         it 'should terminate all instances' do
           fake_ec2 = mock("ec2")
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-
           aws.stub(:say).twice
-          aws.stub(:agree).and_return(true)
           fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
           fake_ec2.should_receive :terminate_instances
 
+          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.terminate_all_ec2(config_file)
         end
       end
-
-      context 'when the user wants to bail out of ec2 termination'
-        it 'should not terminate any instances' do
-          fake_ec2 = mock("ec2")
-
-          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-          aws.stub(:say).twice
-          aws.stub(:agree).and_return(false)
-          fake_ec2.stub(:instance_names).and_return(double.as_null_object)
-
-          fake_ec2.should_not_receive :terminate_instances
-
-          aws.terminate_all_ec2 config_file
-        end
     end
 
     describe "aws snapshot director deployments" do
@@ -308,11 +341,11 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe "aws delete_all rds databases" do
-      let(:config_file) { asset "config.yml"}
+      let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list the instances" do
         fake_rds = mock("rds")
-        fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db" })
+        fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
 
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
 
@@ -325,36 +358,52 @@ describe Bosh::Cli::Command::AWS do
         aws.delete_all_rds_dbs(config_file)
       end
 
-      context "when the user agrees to delete all the databases" do
-        it "should delete all instances" do
+      context "interactive mode (default)" do
+        context "when the user agrees to delete all the databases" do
+          it "should delete all databases" do
+            fake_rds = mock("rds")
+
+            Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+            aws.stub(:say).twice
+            aws.stub(:agree).and_return(true)
+            fake_rds.stub(:database_names).and_return(double.as_null_object)
+
+            fake_rds.should_receive :delete_databases
+
+            aws.delete_all_rds_dbs(config_file)
+          end
+        end
+
+        context "when the user wants to bail out of rds database deletion" do
+          it "should not terminate any databases" do
+            fake_rds = mock("rds")
+
+            Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+            aws.stub(:say).twice
+            aws.stub(:agree).and_return(false)
+            fake_rds.stub(:database_names).and_return(double.as_null_object)
+
+            fake_rds.should_not_receive :delete_databases
+
+            aws.delete_all_rds_dbs(config_file)
+          end
+        end
+      end
+
+      context "non-interactive mode" do
+        it "should delete all databases" do
           fake_rds = mock("rds")
 
           Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
           aws.stub(:say).twice
-          aws.stub(:agree).and_return(true)
           fake_rds.stub(:database_names).and_return(double.as_null_object)
 
           fake_rds.should_receive :delete_databases
 
+          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.delete_all_rds_dbs(config_file)
         end
       end
-
-      context "when the user wants to bail out of rds database deletion" do
-        it "should not terminate any instances" do
-          fake_rds = mock("rds")
-
-          Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
-          aws.stub(:say).twice
-          aws.stub(:agree).and_return(false)
-          fake_rds.stub(:database_names).and_return(double.as_null_object)
-
-          fake_rds.should_not_receive :delete_databases
-
-          aws.delete_all_rds_dbs(config_file)
-        end
-      end
-
     end
   end
 end
