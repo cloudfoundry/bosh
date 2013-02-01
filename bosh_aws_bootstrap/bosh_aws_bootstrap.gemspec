@@ -18,6 +18,6 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "bosh_cli", "~>#{version}"
-  s.add_dependency "aws-sdk", "~>1.8.0"
+  s.add_dependency "aws-sdk", "~>1.8.1.1"
   s.add_dependency "uuidtools", "~>2.1.3"
 end
