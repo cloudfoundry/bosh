@@ -14,7 +14,7 @@ cloud:
     aws:
       access_key_id: foo-key
       secret_access_key: foo-secret
-      ec2_endpoint: ec2.us-west-1.amazonaws.com
+      region: us-west-1
       max_retries: 2
       default_key_name: foo-key
       default_security_groups: ["quick-start-1"]
