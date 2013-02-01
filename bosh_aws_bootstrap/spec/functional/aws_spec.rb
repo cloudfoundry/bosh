@@ -297,12 +297,17 @@ describe Bosh::Cli::Command::AWS do
 
         fake_attachment = mock("attachment")
 
-        Bosh::Cli::Director.stub(:new).with("http://1.2.3.4:56789", "foo", "bar").and_return(fake_director)
+        # Inherited from Bosh::Cli::Command::Base
+        aws.stub(
+            auth_required: true,
+            director: fake_director,
+            target: "http://1.2.3.4:56789",
+            target_url: "http://1.2.3.4:56789",
+            target_name: "http://1.2.3.4:56789"
+        )
+
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         AWS::EC2::InstanceCollection.stub(:new).and_return(fake_instance_collection)
-
-
-
         fake_ec2.should_receive(:snapshot_volume).exactly(4).times
 
         aws.should_receive(:say).with("Creating snapshots for director `http://1.2.3.4:56789'")

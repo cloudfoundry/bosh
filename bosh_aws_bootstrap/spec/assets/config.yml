@@ -35,7 +35,3 @@ elastic_ips:
   router:
     instances: 2
     dns_record: "*"
-director:
-  uri: http://1.2.3.4:56789
-  user: foo
-  password: bar

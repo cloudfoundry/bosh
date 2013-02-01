@@ -22,14 +22,13 @@ module Bosh::Cli::Command
       Bosh::Cli::Command::Help.list_commands(commands)
     end
 
-    usage "aws snapshot director deployments"
-    desc "snapshot director deployments"
+    usage "aws snapshot deployments"
+    desc "snapshot all EBS volumes in all deployments"
     def snapshot_deployments(config_file)
+      auth_required
       config = load_yaml(config_file)
-      director_config = config["director"]
 
-      say("Creating snapshots for director `#{director_config["uri"]}'")
-      director = Bosh::Cli::Director.new(director_config["uri"], director_config["user"], director_config["password"])
+      say("Creating snapshots for director `#{target_name}'")
       ec2 = Bosh::Aws::EC2.new(config["aws"])
 
       deployments = director.list_deployments.map { |d| d["name"] }
@@ -52,7 +51,7 @@ module Bosh::Cli::Command
               tags = {
                   "device" => device_path,
                   "bosh_data" => vm_metadata,
-                  "director_uri" => director_config["uri"],
+                  "director_uri" => target_url,
                   "director_uuid" => director.uuid
               }
               ec2.snapshot_volume(attachment.volume, snapshot_name, vm_metadata, tags)

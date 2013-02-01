@@ -46,10 +46,10 @@ module Bosh
         aws_ec2.instances.filter('instance-id', *ids)
       end
 
-      def snapshot_volume(volume, snapshot_name, description, tags = {})
-        snap = volume.create_snapshot(description)
+      def snapshot_volume(volume, snapshot_name, description = "", tags = {})
+        snap = volume.create_snapshot(description.to_s)
         tag(snap, 'Name', snapshot_name)
-        tags.each_pair { |key, value| tag(snap, key, value) }
+        tags.each_pair { |key, value| tag(snap, key.to_s, value) }
         snap
       end
 
