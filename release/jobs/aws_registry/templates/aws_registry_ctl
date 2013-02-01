@@ -6,6 +6,7 @@ PIDFILE=$RUN_DIR/aws_registry.pid
 RUNAS=vcap
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
+export GEM_HOME=/var/vcap/packages/aws_registry/gem_home
 
 case $1 in
 

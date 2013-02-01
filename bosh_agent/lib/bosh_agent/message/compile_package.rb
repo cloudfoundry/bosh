@@ -33,27 +33,31 @@ module Bosh::Agent
 
         @log_file = "#{@base_dir}/data/tmp/#{Bosh::Agent::Config.agent_id}"
         @logger = Logger.new(@log_file)
+	@logger.level = Logger::DEBUG
         @compile_base = "#{@base_dir}/data/compile"
         @install_base = "#{@base_dir}/data/packages"
       end
 
       def start
-        # TODO implement sha1 verification
-        # TODO propagate errors
-        install_dependencies
-        get_source_package
-        unpack_source_package
-        compile
-        pack
-        result = upload
-        return { "result" => result }
-      rescue RuntimeError => e
-        @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
-        raise Bosh::Agent::MessageHandlerError, e
-      ensure
-        clear_log_file(@log_file)
-        delete_tmp_files
+	begin
+	  # TODO implement sha1 verification
+	  # TODO propagate errors
+	  install_dependencies
+	  get_source_package
+	  unpack_source_package
+	  compile
+	  pack
+	  result = upload
+	  clear_log_file(@log_file)
+	  return { "result" => result }
+	rescue RuntimeError => e
+	  @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
+	  raise Bosh::Agent::MessageHandlerError, e
+	ensure
+	  delete_tmp_files
+	end
       end
+
 
       # Delete the leftover compilation files after a compilation is done. This
       # is done so that the reuse_compilation_vms option does not fill up a VM.
@@ -107,6 +111,7 @@ module Bosh::Agent
         Dir.chdir(compile_dir) do
           # TODO: error handling
           output = `tar -zxf #{@source_file} 2>&1`
+	  @logger.info(output)
           # stick the output in the blobstore
           unless $?.exitstatus == 0
 	    STDOUT.puts(output)
@@ -177,7 +182,7 @@ module Bosh::Agent
             @logger.info("Compiling #{@package_name} #{@package_version}")
             output = `bash -x packaging 2>&1`
             # stick the output in the blobstore
-            @logger.info(output)
+            @logger.fatal(output)
             unless $?.exitstatus == 0
               raise Bosh::Agent::MessageHandlerError.new(
                 "Compile Package Failure (exit code: #{$?.exitstatus})", output)

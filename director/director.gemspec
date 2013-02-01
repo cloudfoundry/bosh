@@ -47,4 +47,5 @@ Gem::Specification.new do |s|
   s.executables << 'director'
   s.executables << 'drain_workers'
   s.executables << 'worker'
+  s.executables << 'migrate'
 end

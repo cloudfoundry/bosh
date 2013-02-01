@@ -1,2 +1,3 @@
 --- 
 dev_name: micro-bosh
+latest_release_filename: /home/pivotal/workspace/bosh/release/dev_releases/micro-bosh-0.21-dev.yml

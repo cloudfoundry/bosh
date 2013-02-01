@@ -11,6 +11,8 @@ PIDFILE=$RUN_DIR/blobstore.pid
 PATH=/var/vcap/packages/ruby/bin:$PATH
 export PATH
 
+export GEM_HOME=/var/vcap/packages/blobstore/gem_home
+
 case $1 in
 
   start)

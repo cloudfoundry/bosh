@@ -14,11 +14,11 @@ Gem::Specification.new do |s|
   s.email        = "support@cloudfoundry.com"
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
-  s.files        = `git ls-files -- bin/* lib/*`.split("\n") +
+  s.files        = `git ls-files -- lib/* db/*`.split("\n") +
                    %w(README.md)
   s.require_path = "lib"
   s.bindir       = "bin"
-  s.executables  = %w(openstack_registry)
+  s.executables  = %w(openstack_registry migrate)
 
   s.add_dependency "sequel", "~>3.43.0"
   s.add_dependency "sinatra", "~> 1.2.8"

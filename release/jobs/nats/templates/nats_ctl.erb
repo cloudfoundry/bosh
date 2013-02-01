@@ -17,9 +17,9 @@ case $1 in
 
   start)
     mkdir -p $RUN_DIR $LOG_DIR
+    echo $$ > $PIDFILE
     chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
 
-    echo $$ > $PIDFILE
     ulimit -n 65536
     exec chpst -u $RUNAS:$RUNAS \
       bundle exec nats-server \

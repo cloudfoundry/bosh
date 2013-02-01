@@ -6,6 +6,7 @@ PIDFILE=$RUN_DIR/openstack_registry.pid
 RUNAS=vcap
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
+export GEM_HOME=/var/vcap/packages/openstack_registry/gem_home
 
 case $1 in
 

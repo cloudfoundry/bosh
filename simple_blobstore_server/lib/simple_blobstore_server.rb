@@ -3,6 +3,7 @@ require "fileutils"
 require "set"
 require "optparse"
 require "pp"
+require "yaml"
 
 require "sinatra"
 require "uuidtools"

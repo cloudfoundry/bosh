@@ -10,6 +10,5 @@ logfile stdout
 databases 16
 dir /var/vcap/store/redis
 requirepass <%= p("redis.password") %>
-maxclients 0
 maxmemory-policy noeviction
 appendonly no

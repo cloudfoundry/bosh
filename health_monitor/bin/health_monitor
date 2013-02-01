@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require "health_monitor"
+require "optparse"
 
 config_file = nil
 
