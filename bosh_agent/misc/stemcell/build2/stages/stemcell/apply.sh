@@ -9,6 +9,9 @@ source $base_dir/lib/prelude_apply.bash
 
 pushd $work/stemcell
 
+# compute checksum of the image file
+stemcell_checksum=`shasum -a 1 image | cut -f1 -d' '`
+
 # NOTE: architecture and root_device_name aren't dynamically detected
 # as we don't have a way to persist values across stages, and until we
 # build for multiple architectures or multiple root devices, hardcoding
@@ -21,11 +24,13 @@ stemcell_name = "$stemcell_name"
 version = "$stemcell_version"
 bosh_protocol = "$bosh_protocol_version".to_i
 stemcell_infrastructure = "$stemcell_infrastructure"
+stemcell_checksum = "$stemcell_checksum"
 
 manifest = {
     "name" => stemcell_name,
     "version" => version,
     "bosh_protocol" => bosh_protocol,
+    "sha1" => stemcell_checksum,
     "cloud_properties" => {
         "name" => stemcell_name,
         "version" => version,
