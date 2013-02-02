@@ -6,7 +6,7 @@ aws:
 vpc:
   domain: dev102.cf.com
   instance_tenancy: default
-  cidr: 10.10.0.0/16
+  cidr: 10.10.0.0/<%= 8 + 8 %>
   subnets:
     - cidr: 10.10.0.0/24
       availability_zone: us-east-1a

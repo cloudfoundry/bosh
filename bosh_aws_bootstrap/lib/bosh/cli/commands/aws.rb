@@ -197,7 +197,7 @@ module Bosh::Cli::Command
     end
 
     def load_yaml(file)
-      YAML.load_file file
+      YAML::load(ERB.new(File.read(file)).result)
     rescue
       err "unable to read #{file}".red
     end
