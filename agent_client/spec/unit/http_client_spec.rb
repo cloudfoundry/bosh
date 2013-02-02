@@ -22,8 +22,8 @@ describe Bosh::Agent::HTTPClient do
       @httpclient.should_receive(:request).and_return(response)
 
       @client = Bosh::Agent::HTTPClient.new("http://localhost",
-                                            { "user" => "john",
-                                              "password" => "smith" })
+                                            {"user" => "john",
+                                             "password" => "smith"})
       @client.ping
     end
 
@@ -36,7 +36,7 @@ describe Bosh::Agent::HTTPClient do
         @httpclient.should_receive(method)
       end
 
-      headers = { "Content-Type" => "application/json" }
+      headers = {"Content-Type" => "application/json"}
       payload = '{"method":"shh","arguments":["hunting","wabbits"],"reply_to":"elmer"}'
 
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
@@ -56,7 +56,7 @@ describe Bosh::Agent::HTTPClient do
         @httpclient.should_receive(method)
       end
 
-      headers = { "Content-Type" => "application/json" }
+      headers = {"Content-Type" => "application/json"}
       payload = '{"method":"ping","arguments":[],"reply_to":"fudd"}'
 
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
@@ -76,7 +76,7 @@ describe Bosh::Agent::HTTPClient do
         @httpclient.should_receive(method)
       end
 
-      headers = { "Content-Type" => "application/json" }
+      headers = {"Content-Type" => "application/json"}
       payload = '{"method":"compile_package","arguments":["id","sha1"],"reply_to":"bugs"}'
 
       @httpclient.should_receive(:request).with(:post, "http://localhost/agent",
@@ -97,7 +97,7 @@ describe Bosh::Agent::HTTPClient do
 
       @client = Bosh::Agent::HTTPClient.new("http://localhost", {"reply_to" => "bugs"})
 
-      @client.run_task(:compile_package, "id", "sha1").should == { "state" => "done" }
+      @client.run_task(:compile_package, "id", "sha1").should == {"state" => "done"}
     end
 
     it "should raise handler exception when method is invalid" do
@@ -130,6 +130,30 @@ describe Bosh::Agent::HTTPClient do
       @client = Bosh::Agent::HTTPClient.new("http://localhost")
 
       lambda { @client.ping }.should raise_error(Bosh::Agent::AuthError)
+    end
+  end
+
+  describe "making a request" do
+    describe "error handling" do
+      it "should raise an error specifying the type of error and details of the failed request" do
+        @client = Bosh::Agent::HTTPClient.new(
+            "base_uri",
+            {'user' => 'yooser', 'password' => '90553076'}
+        )
+
+        [:send_timeout=, :receive_timeout=, :connect_timeout=, :set_auth].each do |method|
+          @httpclient.stub(method)
+        end
+        @httpclient.stub(:request).and_raise(ZeroDivisionError, "3.14")
+
+
+        expect {
+          @client.foo("argz")
+        }.to raise_error(
+                 Bosh::Agent::Error,
+                 /base_uri.+foo.+argz.+yooser.+90553076.+ZeroDivisionError: 3\.14/m
+             )
+      end
     end
   end
 end

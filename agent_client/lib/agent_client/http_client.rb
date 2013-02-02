@@ -40,14 +40,13 @@ module Bosh::Agent
       http_client.request(method, @base_uri + uri,
                           :body => payload, :header => headers)
 
-    rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
-      raise Error, "cannot access agent (%s)" % [ e.message ]
-    rescue SystemCallError => e
-      raise Error, "System call error while talking to agent: #{e}"
-    rescue ::HTTPClient::BadResponseError => e
-      raise Error, "Received bad HTTP response from agent: #{e}"
     rescue => e
-      raise Error, "Agent call exception: #{e}"
+      raise Error, "Request details:\n" +
+          "uri: #{@base_uri + uri}\n" +
+          "payload: #{payload}\n" +
+          (@options['user'] ? "user: #{@options['user']}\n" : "") +
+          (@options['password'] ? "password: #{@options['password']}\n" : "") +
+          "#{e.class}: #{e.message}"
     end
 
     def post_json(url, payload)
