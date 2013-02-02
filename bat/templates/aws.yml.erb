@@ -12,6 +12,9 @@ compilation:
   reuse_compilation_vms: true
   cloud_properties:
     instance_type: m1.small
+    <% if properties.key_name %>
+    key_name: <%= properties.key_name %>
+    <% end %>
 
 update:
   canaries: <%= properties.canaries || 1 %>
@@ -47,6 +50,9 @@ resource_pools:
       version: <%= properties.stemcell.version %>
     cloud_properties:
       instance_type: m1.small
+      <% if properties.key_name %>
+      key_name: <%= properties.key_name %>
+      <% end %>
     <% if properties.password %>
     env:
       bosh:
