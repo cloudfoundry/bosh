@@ -2,6 +2,7 @@
 set -e
 set -x
 
+source .rvmrc
 gem list | grep bundler || gem install bundler
 bundle check || bundle install
 
