@@ -1,0 +1,35 @@
+---
+aws:
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  region: us-east-1
+vpc:
+  domain: <%= ENV["VPC_SUBDOMAIN"] %>.cf-app.com
+  instance_tenancy: default
+  cidr: 10.10.0.0/16
+  subnets:
+    - cidr: 10.10.0.0/16
+  dhcp_options:
+    domain_name_servers:
+      - 10.10.0.5
+      - 172.16.0.23
+  security_groups:
+    - name: open
+      ingress:
+        - protocol: tcp
+          ports: 0 - 65535
+          sources: 0.0.0.0/0
+        - protocol: udp
+          ports: 0 - 65535
+          sources: 0.0.0.0/0
+    - name: ssh
+      ingress:
+        - protocol: tcp
+          ports: 22
+          sources: 0.0.0.0/0
+elastic_ips:
+  router:
+    instances: 2
+    dns_record: "*"
+  foobar:
+    instances: 3
