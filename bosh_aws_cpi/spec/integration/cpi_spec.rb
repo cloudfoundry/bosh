@@ -8,7 +8,7 @@ describe Bosh::AwsCloud::Cloud do
 
   before(:each) do
     unless ENV["CPI_CONFIG_FILE"]
-      raise "Please provide CPI_CONFIG_FILE environment variable"
+      pending "Please provide CPI_CONFIG_FILE environment variable"
     end
     @config = YAML.load_file(ENV["CPI_CONFIG_FILE"])
     @logger = Logger.new(STDOUT)
