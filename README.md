@@ -33,11 +33,11 @@ To file a bug against Cloud Foundry Open Source and its components, sign up and 
 
 ## OSS Contributions
 
-The Cloud Foundry team uses GitHub and accepts contirubtions via [pull request](https://help.github.com/articles/using-pull-requests)
+The Cloud Foundry team uses GitHub and accepts contributions via [pull request](https://help.github.com/articles/using-pull-requests)
 
 Follow these steps to make a contribution to any of our open source repositories:
 
-1. Complete our CLA Agreement for [individuials](http://www.cloudfoundry.org/individualcontribution.pdf) or [corporations](http://www.cloudfoundry.org/corpcontribution.pdf)
+1. Complete our CLA Agreement for [individuals](http://www.cloudfoundry.org/individualcontribution.pdf) or [corporations](http://www.cloudfoundry.org/corpcontribution.pdf)
 1. Set your name and email
 
 		git config --global user.name "Firstname Lastname"
