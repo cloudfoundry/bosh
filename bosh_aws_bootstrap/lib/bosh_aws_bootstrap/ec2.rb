@@ -11,6 +11,10 @@ module Bosh
         @elastic_ips = []
       end
 
+      def instances_count
+        aws_ec2.instances.count
+      end
+
       def vpcs
         aws_ec2.vpcs
       end

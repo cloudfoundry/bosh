@@ -151,6 +151,9 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list the buckets" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(20)
         fake_s3 = mock("s3")
 
         Bosh::Aws::S3.stub(:new).and_return(fake_s3)
@@ -163,9 +166,22 @@ describe Bosh::Cli::Command::AWS do
         aws.empty_s3 config_file
       end
 
+      it "should not empty S3 if more than 20 insances are running" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(21)
+
+        expect {
+          aws.empty_s3 config_file
+        }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
+      end
+
       context "interactive mode (default)" do
         context "when the users agrees to nuke the buckets" do
           it "should empty and delete all S3 buckets associated with an account" do
+            fake_ec2 = mock("ec2")
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            fake_ec2.stub(:instances_count).and_return(20)
             fake_s3 = mock("s3")
 
             Bosh::Aws::S3.stub(:new).and_return(fake_s3)
@@ -182,6 +198,9 @@ describe Bosh::Cli::Command::AWS do
 
         context "when the user wants to bail out" do
           it "should not destroy the buckets" do
+            fake_ec2 = mock("ec2")
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            fake_ec2.stub(:instances_count).and_return(20)
             fake_s3 = mock("s3")
 
             Bosh::Aws::S3.stub(:new).and_return(fake_s3)
@@ -198,6 +217,9 @@ describe Bosh::Cli::Command::AWS do
 
       context "non-interactive mode" do
         it "should empty and delete all S3 buckets associated with an account" do
+          fake_ec2 = mock("ec2")
+          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+          fake_ec2.stub(:instances_count).and_return(20)
           fake_s3 = mock("s3")
 
           Bosh::Aws::S3.stub(:new).and_return(fake_s3)
@@ -219,6 +241,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2 = mock("ec2")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(2)
         fake_ec2.stub(:instance_names).and_return({"I12345" => "instance_1", "I67890" => "instance_2"})
 
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
@@ -230,6 +253,16 @@ describe Bosh::Cli::Command::AWS do
         aws.terminate_all_ec2 config_file
       end
 
+      it "should error if more than 20 instances are running" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(21)
+
+        expect {
+          aws.terminate_all_ec2 config_file
+        }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
+      end
+
       context "interactive mode (default)" do
         context 'when the user agrees to terminate all the instances' do
           it 'should terminate all instances' do
@@ -238,6 +271,7 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say).twice
             aws.stub(:agree).and_return(true)
+            fake_ec2.stub(:instances_count).and_return(0)
             fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
             fake_ec2.should_receive :terminate_instances
@@ -253,6 +287,7 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say).twice
             aws.stub(:agree).and_return(false)
+            fake_ec2.stub(:instances_count).and_return(0)
             fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
             fake_ec2.should_not_receive :terminate_instances
@@ -268,6 +303,7 @@ describe Bosh::Cli::Command::AWS do
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           aws.stub(:say).twice
+          fake_ec2.stub(:instances_count).and_return(0)
           fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
           fake_ec2.should_receive :terminate_instances
@@ -349,6 +385,9 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should warn the user that the operation is destructive and list the instances" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(20)
         fake_rds = mock("rds")
         fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
 
@@ -363,7 +402,23 @@ describe Bosh::Cli::Command::AWS do
         aws.delete_all_rds_dbs(config_file)
       end
 
+      it "should not delete_all rds databases if more than 20 insances are running" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(21)
+
+        expect {
+          aws.delete_all_rds_dbs config_file
+        }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
+      end
+
       context "interactive mode (default)" do
+        before do
+          fake_ec2 = mock("ec2")
+          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+          fake_ec2.stub(:instances_count).and_return(20)
+        end
+
         context "when the user agrees to delete all the databases" do
           it "should delete all databases" do
             fake_rds = mock("rds")
@@ -397,6 +452,9 @@ describe Bosh::Cli::Command::AWS do
 
       context "non-interactive mode" do
         it "should delete all databases" do
+          fake_ec2 = mock("ec2")
+          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+          fake_ec2.stub(:instances_count).and_return(20)
           fake_rds = mock("rds")
 
           Bosh::Aws::RDS.stub(:new).and_return(fake_rds)

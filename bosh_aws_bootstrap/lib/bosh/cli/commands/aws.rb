@@ -154,6 +154,8 @@ module Bosh::Cli::Command
     def empty_s3(config_file)
       config = load_yaml config_file
 
+      check_instance_count(config)
+
       s3 = Bosh::Aws::S3.new(config["aws"])
 
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
@@ -166,7 +168,9 @@ module Bosh::Cli::Command
     desc "terminates all EC2 instances and attached EBS volumes"
 
     def terminate_all_ec2(config_file)
-      credentials = load_yaml(config_file)["aws"]
+      config = load_yaml(config_file)
+      credentials = config["aws"]
+      check_instance_count(config)
       ec2 = Bosh::Aws::EC2.new(credentials)
 
       formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
@@ -180,7 +184,9 @@ module Bosh::Cli::Command
     desc "delete all RDS database instances"
 
     def delete_all_rds_dbs(config_file)
-      credentials = load_yaml(config_file)["aws"]
+      config = load_yaml(config_file)
+      credentials = config["aws"]
+      check_instance_count(config)
       rds = Bosh::Aws::RDS.new(credentials)
 
       formatted_names = rds.database_names.map {|instance, db| "#{instance}\t(database_name: #{db})"}
@@ -200,6 +206,11 @@ module Bosh::Cli::Command
       YAML::load(ERB.new(File.read(file)).result)
     rescue
       err "unable to read #{file}".red
+    end
+
+    def check_instance_count(config)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+      err("#{ec2.instances_count} instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.instances_count > 20
     end
   end
 end
