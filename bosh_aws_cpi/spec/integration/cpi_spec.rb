@@ -7,10 +7,13 @@ require "tempfile"
 describe Bosh::AwsCloud::Cloud do
 
   before(:each) do
-    unless ENV["CPI_CONFIG_FILE"]
-      pending "Please provide CPI_CONFIG_FILE environment variable"
+    unless ENV["EC2_ACCESS_KEY"] && ENV["EC2_SECRET_KEY"]
+      pending "please provide access_key_id and secret_access_key"
     end
-    @config = YAML.load_file(ENV["CPI_CONFIG_FILE"])
+    @config = YAML.load_file(asset("config.yml"))
+    @config["aws"]["access_key_id"] = ENV["EC2_ACCESS_KEY"]
+    @config["aws"]["secret_access_key"] = ENV["EC2_SECRET_KEY"]
+
     @logger = Logger.new(STDOUT)
     Bosh::Clouds::Config.stub(:logger => @logger)
   end

@@ -1,0 +1,11 @@
+---
+aws:
+  region: us-east-1
+  fast_path_delete: yes
+ami: ami-809a48e9
+subnet: subnet-cce723a1
+ip: 10.10.0.9
+registry:
+  endpoint: fake
+  user: fake
+  password: fake
