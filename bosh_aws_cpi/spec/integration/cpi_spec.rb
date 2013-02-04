@@ -85,16 +85,23 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   describe "vpc" do
-    it "should exercise the vm lifecycle" do
-      network_spec = {
-        "default" => {
-          "type" => "manual",
-          "ip" => @config["ip"],
-          "cloud_properties" => {"subnet" => @config["subnet"]}
-        }
+    let(:network_spec) do
+      {
+          "default" => {
+              "type" => "manual",
+              "ip" => @config["ip"],
+              "cloud_properties" => {"subnet" => @config["subnet"]}
+          }
       }
-      vm_lifecycle(@config["ami"], network_spec, [])
+
     end
+
+    context "without existing disks" do
+      it "should exercise the vm lifecycle" do
+        vm_lifecycle(@config["ami"], network_spec, [])
+      end
+    end
+
   end
 
 end

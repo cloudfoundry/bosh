@@ -6,7 +6,7 @@ describe Bosh::AwsCloud::Cloud do
 
   it "deletes an EC2 instance" do
     instance_manager = double("InstanceManager")
-    instance_manager.should_receive(:terminate).with("i-foobar")
+    instance_manager.should_receive(:terminate).with("i-foobar", nil)
 
     registry = mock_registry
     region = nil

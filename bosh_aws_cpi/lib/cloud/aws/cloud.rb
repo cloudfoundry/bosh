@@ -10,8 +10,6 @@ module Bosh::AwsCloud
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
     METADATA_TIMEOUT = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
-    MAX_TAG_KEY_LENGTH = 127
-    MAX_TAG_VALUE_LENGTH = 255
 
     attr_reader :ec2
     attr_reader :registry
@@ -39,6 +37,7 @@ module Bosh::AwsCloud
       @registry_properties = @options["registry"]
 
       @default_key_name = @aws_properties["default_key_name"]
+      @fast_path_delete = @aws_properties["fast_path_delete"]
 
       aws_params = {
           :access_key_id => @aws_properties["access_key_id"],
@@ -120,7 +119,8 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
-        InstanceManager.new(@region, registry).terminate(instance_id)
+        @logger.info("Deleting instance '#{instance_id}'")
+        InstanceManager.new(@region, registry).terminate(instance_id, @fast_path_delete)
       end
     end
 
@@ -187,10 +187,16 @@ module Bosh::AwsCloud
           cloud_error("Cannot delete volume `#{volume.id}', state is #{state}")
         end
 
+        @logger.info("Deleting volume `#{volume.id}'")
         volume.delete
 
+        if @fast_path_delete
+          TagManager.tag(volume, "Name", "to be deleted")
+          @logger.info("Volume `#{disk_id}' has been marked for deletion")
+          return
+        end
+
         begin
-          @logger.info("Deleting volume `#{volume.id}'")
           wait_resource(volume, :deleted)
         rescue AWS::EC2::Errors::InvalidVolume::NotFound
           # It's OK, just means the volume has already been deleted
@@ -315,7 +321,7 @@ module Bosh::AwsCloud
           image = @ec2.images.create(params)
           wait_resource(image, :available, :state)
 
-          tag(image, "Name", params[:description]) if params[:description]
+          TagManager.tag(image, "Name", params[:description]) if params[:description]
 
           image.id
         rescue => e
@@ -366,13 +372,13 @@ module Bosh::AwsCloud
 
       # TODO should we clear existing tags that don't exist in metadata?
       metadata.each_pair do |key, value|
-        tag(instance, key, value)
+        TagManager.tag(instance, key, value)
       end
 
       # should deployment name be included too?
       job = metadata[:job]
       index = metadata[:index]
-      tag(instance, "Name", "#{job}/#{index}") if job && index
+      TagManager.tag(instance, "Name", "#{job}/#{index}") if job && index
     rescue AWS::EC2::Errors::TagLimitExceeded => e
       @logger.error("could not tag #{instance.id}: #{e.message}")
     end
@@ -386,16 +392,6 @@ module Bosh::AwsCloud
     private
 
     attr_reader :az_selector
-
-    # Add a tag to something, make sure that the tag conforms to the
-    # AWS limitation of 127 character key and 255 character value
-    def tag(taggable, key, value)
-      trimmed_key = key[0..(MAX_TAG_KEY_LENGTH - 1)]
-      trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
-      taggable.add_tag(trimmed_key, :value => trimmed_value)
-    rescue AWS::EC2::Errors::InvalidParameterValue => e
-      @logger.error("could not tag #{taggable.id}: #{e.message}")
-    end
 
     def image_params(cloud_properties, snapshot_id)
       root_device_name = cloud_properties["root_device_name"]

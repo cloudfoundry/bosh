@@ -29,6 +29,7 @@ require "cloud/aws/dynamic_network"
 require "cloud/aws/manual_network"
 require "cloud/aws/vip_network"
 require "cloud/aws/instance_manager"
+require "cloud/aws/tag_manager"
 require "cloud/aws/availability_zone_selector"
 
 module Bosh

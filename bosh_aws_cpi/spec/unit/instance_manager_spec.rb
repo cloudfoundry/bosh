@@ -248,7 +248,21 @@ describe Bosh::AwsCloud::InstanceManager do
         instance_manager.terminate(instance_id)
       }.to_not raise_error
     end
-  end
+
+    describe "fast path deletion" do
+      it "should do a fast path delete when requested" do
+        region.stub(:instances).and_return({instance_id => fake_aws_instance})
+        fake_aws_instance.stub(:terminate)
+        registry.stub(:delete_settings)
+
+        instance_manager.should_not_receive(:wait_resource)
+        Bosh::AwsCloud::TagManager.should_receive(:tag).with(fake_aws_instance, "Name", "to be deleted")
+
+        instance_manager.terminate(instance_id, true)
+      end
+    end
+
+end
 
   describe "#reboot" do
     let(:fake_aws_instance) { double("aws_instance") }

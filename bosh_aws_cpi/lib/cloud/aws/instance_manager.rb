@@ -29,17 +29,23 @@ module Bosh::AwsCloud
       @region.instances.create instance_params
     end
 
-    def terminate(instance_id)
+    def terminate(instance_id, fast=false)
       instance = @region.instances[instance_id]
 
       instance.terminate
 
-      begin
-        # TODO: should this be done before or after deleting VM?
-        @logger.info("Deleting instance settings for `#{instance.id}'")
-        @registry.delete_settings(instance.id)
+      # TODO: should this be done before or after deleting VM?
+      @logger.info("Deleting instance settings for '#{instance.id}'")
+      @registry.delete_settings(instance.id)
 
-        @logger.info("Deleting instance `#{instance.id}'")
+      if fast
+        TagManager.tag(instance, "Name", "to be deleted")
+        @logger.info("Instance #{instance_id} marked to deletion")
+        return
+      end
+
+      begin
+        @logger.info("Deleting instance '#{instance.id}'")
         wait_resource(instance, :terminated)
       rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
         # It's OK, just means that instance has already been deleted
