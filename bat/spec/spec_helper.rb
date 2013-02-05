@@ -7,7 +7,8 @@ require "release"
 require "deployment"
 require "vm"
 
-helpers = Dir.glob("spec/helpers/*_helper.rb")
+helper_regex = File.join(File.expand_path(File.dirname(__FILE__)),"helpers", "*_helper.rb")
+helpers = Dir.glob(helper_regex)
 helpers.each do |helper|
   require File.expand_path(helper)
 end

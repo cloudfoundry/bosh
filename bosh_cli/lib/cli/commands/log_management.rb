@@ -13,6 +13,7 @@ module Bosh::Cli::Command
            "only fetch logs that satisfy",
            "given filters (defined in job spec)"
     option "--all", "fetch all files in the job or agent log directory"
+    option "--dir destination_directory", String, "download directory"
     def fetch_logs(job, index)
       auth_required
       target_required
@@ -60,7 +61,7 @@ module Bosh::Cli::Command
 
       begin
         time = Time.now.strftime("%Y-%m-%d@%H-%M-%S")
-        log_file = File.join(Dir.pwd, "#{job}.#{index}.#{time}.tgz")
+        log_file = File.join(log_directory, "#{job}.#{index}.#{time}.tgz")
 
         tmp_file = director.download_resource(resource_id)
 
@@ -72,6 +73,10 @@ module Bosh::Cli::Command
         FileUtils.rm_rf(tmp_file) if File.exists?(tmp_file)
       end
 
+    end
+
+    def log_directory
+      options[:dir] || Dir.pwd
     end
 
   end

@@ -78,7 +78,7 @@ namespace :stemcell do
       :TW_LOCAL_PASSPHRASE => ENV["TW_LOCAL_PASSPHRASE"],
       :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
       :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-      :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__),
+      :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__)
     }
 
     # Pass OVFTOOL environment variable when targeting vsphere
