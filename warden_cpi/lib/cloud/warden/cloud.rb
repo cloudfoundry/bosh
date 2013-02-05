@@ -462,7 +462,7 @@ module Bosh::WardenCloud
         request.privileged = true
         request.script = "cat #{agent_settings_file}"
 
-        client.call(request)
+        client.call(request).stdout
       end
 
       env = Yajl::Parser.parse(body)
@@ -474,20 +474,22 @@ module Bosh::WardenCloud
       tempfile.write(Yajl::Encoder.encode(env))
       tempfile.close
 
+      tempfile_in = "/tmp/#{rand(100000)}"
+
       # Here we copy the setting file to temp file in container, then mv it to
       # /var/vcap/bosh by privileged user.
       with_warden do |client|
         request = Warden::Protocol::CopyInRequest.new
         request.handle = handle
         request.src_path = tempfile.path
-        request.dst_path = tempfile.path
+        request.dst_path = tempfile_in
 
         client.call(request)
 
         request = Warden::Protocol::RunRequest.new
         request.handle = handle
         request.privileged = true
-        request.script = "mv #{tempfile.path} #{agent_settings_file}"
+        request.script = "mv #{tempfile_in} #{agent_settings_file}"
 
         client.call(request)
       end
