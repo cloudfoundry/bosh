@@ -110,12 +110,6 @@ describe Bosh::Cli::Command::AWS do
           aws.output_state["vpc"]["id"].should == "vpc id"
         end
       end
-
-      it "throws a nice error message when an invalid config file path is given" do
-        expect {
-          aws.create_vpc "badfilename"
-        }.to raise_error(Bosh::Cli::CliError, "unable to read badfilename")
-      end
     end
 
     describe "aws destroy vpc" do
@@ -159,13 +153,6 @@ describe Bosh::Cli::Command::AWS do
             aws.delete_vpc output_file
           }.to raise_error(Bosh::Cli::CliError, "1 instance(s) running in vpc-13724979 - delete them first")
         end
-      end
-
-      it "throws a nice error message when an invalid details file path is given" do
-        expect {
-          Bosh::Aws::VPC.any_instance.should_not_receive(:delete_security_groups)
-          aws.delete_vpc "nonsense"
-        }.to raise_error(Bosh::Cli::CliError, "unable to read nonsense")
       end
     end
 

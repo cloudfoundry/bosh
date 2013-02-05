@@ -26,7 +26,7 @@ module Bosh::Cli::Command
     desc "snapshot all EBS volumes in all deployments"
     def snapshot_deployments(config_file)
       auth_required
-      config = load_yaml(config_file)
+      config = load_yaml_file(config_file)
 
       say("Creating snapshots for director `#{target_name}'")
       ec2 = Bosh::Aws::EC2.new(config["aws"])
@@ -64,7 +64,7 @@ module Bosh::Cli::Command
     usage "aws create vpc"
     desc "create vpc"
     def create_vpc(config_file)
-      config = load_yaml(config_file)
+      config = load_yaml_file(config_file)
 
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       @output_state["aws"] = config["aws"]
@@ -124,7 +124,7 @@ module Bosh::Cli::Command
     desc "delete a vpc"
 
     def delete_vpc(details_file)
-      details = load_yaml details_file
+      details = load_yaml_file details_file
 
       ec2 = Bosh::Aws::EC2.new(details["aws"])
       vpc = Bosh::Aws::VPC.find(ec2, details["vpc"]["id"])
@@ -155,7 +155,7 @@ module Bosh::Cli::Command
     desc "empty and delete all s3 buckets"
 
     def empty_s3(config_file)
-      config = load_yaml config_file
+      config = load_yaml_file config_file
 
       check_instance_count(config)
 
@@ -171,7 +171,7 @@ module Bosh::Cli::Command
     desc "terminates all EC2 instances and attached EBS volumes"
 
     def terminate_all_ec2(config_file)
-      config = load_yaml(config_file)
+      config = load_yaml_file(config_file)
       credentials = config["aws"]
       check_instance_count(config)
       ec2 = Bosh::Aws::EC2.new(credentials)
@@ -187,7 +187,7 @@ module Bosh::Cli::Command
     desc "delete all RDS database instances"
 
     def delete_all_rds_dbs(config_file)
-      config = load_yaml(config_file)
+      config = load_yaml_file(config_file)
       credentials = config["aws"]
       check_instance_count(config)
       rds = Bosh::Aws::RDS.new(credentials)
@@ -215,12 +215,6 @@ module Bosh::Cli::Command
 
     def flush_output_state(file_path)
       File.open(file_path, 'w') { |f| f.write output_state.to_yaml }
-    end
-
-    def load_yaml(file)
-      YAML::load(ERB.new(File.read(file)).result)
-    rescue
-      err "unable to read #{file}".red
     end
 
     def check_instance_count(config)

@@ -26,7 +26,7 @@ describe String do
 
   it "has colorization helpers (but only if tty)" do
     Bosh::Cli::Config.colorize = false
-    "string".red.should   == "string"
+    "string".red.should == "string"
     "string".green.should == "string"
     "string".colorize("a").should == "string"
     "string".colorize(:green).should == "string"
@@ -78,4 +78,21 @@ describe Object do
     o.should_not be_blank
   end
 
+  describe "loading YAML files" do
+    it "can load YAML files with ERB" do
+      load_yaml_file(spec_asset("dummy.yml.erb")).should == {"four" => 4}
+    end
+
+    it "gives a nice error when the file cannot be found" do
+      expect { load_yaml_file("non-existent.yml") }.to raise_error(Bosh::Cli::CliError, "Cannot find file `non-existent.yml'")
+    end
+
+    it "gives a nice error when the parsed YAML is not a Hash" do
+      expect { load_yaml_file(spec_asset("not_a_hash.yml")) }.to raise_error(Bosh::Cli::CliError, /Incorrect file format in/)
+    end
+
+    it "gives a nice error when the parsed YAML produces a hash with repeated keys" do
+      expect { load_yaml_file(spec_asset("duplicate_keys.yml")) }.to raise_error(RuntimeError, /Bad yaml file/)
+    end
+  end
 end
