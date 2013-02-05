@@ -204,8 +204,12 @@ module Bosh::Cli::Command
     def was_vpc_eventually_available?(vpc)
       return true if vpc.state.to_s == 'available'
       (1..60).any? do |attempt|
-        sleep 1
-        vpc.state.to_s == "available"
+        begin
+          sleep 1
+          vpc.state.to_s == "available"
+        rescue AWS::EC2::Errors::InvalidVpcID::NotFound
+          # try again
+        end
       end
     end
 
