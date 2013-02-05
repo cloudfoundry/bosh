@@ -73,6 +73,7 @@ describe "deployment" do
     use_canaries(1)
     use_pool_size(2)
     use_job_instances(2)
+    use_dynamic_ip
     use_failing_job
     with_deployment do |deployment|
       bosh("deployment #{deployment.to_path}").should succeed
