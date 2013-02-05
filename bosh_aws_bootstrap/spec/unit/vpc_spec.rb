@@ -170,4 +170,13 @@ describe Bosh::Aws::VPC do
       end
     end
   end
+
+  describe "state" do
+    it "should return the underlying state" do
+      fake_aws_vpc = mock("aws_vpc")
+      fake_aws_vpc.should_receive(:state).and_return("a cool state")
+
+      Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).state.should == 'a cool state'
+    end
+  end
 end

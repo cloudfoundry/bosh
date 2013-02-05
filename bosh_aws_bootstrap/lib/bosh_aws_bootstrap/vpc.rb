@@ -2,7 +2,6 @@ module Bosh
   module Aws
     class VPC
       DEFAULT_CIDR = "10.0.0.0/16"
-
       def initialize(ec2, aws_vpc)
         @ec2 = ec2
         @aws_vpc = aws_vpc
@@ -27,6 +26,10 @@ module Bosh
 
       def dhcp_options
         @aws_vpc.dhcp_options
+      end
+
+      def state
+        @aws_vpc.state
       end
 
       def delete_vpc

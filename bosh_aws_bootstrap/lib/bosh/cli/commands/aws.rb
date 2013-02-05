@@ -72,44 +72,47 @@ module Bosh::Cli::Command
       vpc = Bosh::Aws::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
       @output_state["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
 
-      subnets = config["vpc"]["subnets"]
-      say "creating subnets: #{subnets.map { |subnet| subnet["cidr"] }.join(", ")}"
-      vpc.create_subnets(subnets)
+      if was_vpc_eventually_available?(vpc)
+        subnets = config["vpc"]["subnets"]
+        say "creating subnets: #{subnets.map { |subnet| subnet["cidr"] }.join(", ")}"
+        vpc.create_subnets(subnets)
 
-      dhcp_options = config["vpc"]["dhcp_options"]
-      say "creating DHCP options"
-      vpc.create_dhcp_options(dhcp_options)
+        dhcp_options = config["vpc"]["dhcp_options"]
+        say "creating DHCP options"
+        vpc.create_dhcp_options(dhcp_options)
 
-      security_groups = config["vpc"]["security_groups"]
-      say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
-      vpc.create_security_groups(security_groups)
+        security_groups = config["vpc"]["security_groups"]
+        say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
+        vpc.create_security_groups(security_groups)
 
-      count = config["elastic_ips"].values.reduce(0) { |total,job| total += job["instances"] }
-      say "allocating #{count} elastic IP(s)"
-      ec2.allocate_elastic_ips(count)
+        count = config["elastic_ips"].values.reduce(0) { |total,job| total += job["instances"] }
+        say "allocating #{count} elastic IP(s)"
+        ec2.allocate_elastic_ips(count)
 
-      elastic_ips = ec2.elastic_ips
-      route53 = Bosh::Aws::Route53.new(config["aws"])
+        elastic_ips = ec2.elastic_ips
+        route53 = Bosh::Aws::Route53.new(config["aws"])
 
-      config["elastic_ips"].each do |name, job|
-        @output_state["elastic_ips"] ||= {}
-        @output_state["elastic_ips"][name] = {}
-        ips = []
+        config["elastic_ips"].each do |name, job|
+          @output_state["elastic_ips"] ||= {}
+          @output_state["elastic_ips"][name] = {}
+          ips = []
 
-        job["instances"].times do
-          ips << elastic_ips.shift
+          job["instances"].times do
+            ips << elastic_ips.shift
+          end
+          @output_state["elastic_ips"][name]["ips"] = ips
+
         end
-        @output_state["elastic_ips"][name]["ips"] = ips
-
-      end
-      config["elastic_ips"].each do |name, job|
-        if job["dns_record"]
-          say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
-          route53.add_record(job["dns_record"], config["vpc"]["domain"], @output_state["elastic_ips"][name]["ips"])
-          @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
+        config["elastic_ips"].each do |name, job|
+          if job["dns_record"]
+            say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
+            route53.add_record(job["dns_record"], config["vpc"]["domain"], @output_state["elastic_ips"][name]["ips"])
+            @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
+          end
         end
+      else
+        err "VPC #{vpc.vpc_id} was not available within 60 seconds, giving up"
       end
-
     ensure
       file_path = File.join(File.dirname(config_file), OUTPUT_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
       flush_output_state file_path
@@ -197,6 +200,14 @@ module Bosh::Cli::Command
     end
 
     private
+
+    def was_vpc_eventually_available?(vpc)
+      return true if vpc.state.to_s == 'available'
+      (1..60).any? do |attempt|
+        sleep 1
+        vpc.state.to_s == "available"
+      end
+    end
 
     def flush_output_state(file_path)
       File.open(file_path, 'w') { |f| f.write output_state.to_yaml }
