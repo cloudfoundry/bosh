@@ -2,10 +2,10 @@ module Bosh
   module Spec
     class Sandbox
 
-      ASSETS_PATH = File.expand_path("../assets", __FILE__)
-      LOGS_PATH   = File.join(ASSETS_PATH, "logs")
-      REDIS_CONF  = File.join(ASSETS_PATH, "redis_test.conf")
-      REDIS_PID   = File.join(ASSETS_PATH, "redis.pid")
+      #ASSETS_DIR = File.expand_path("../assets", __FILE__)
+      LOGS_PATH   = File.join(ASSETS_DIR, "logs")
+      REDIS_CONF  = File.join(ASSETS_DIR, "redis_test.conf")
+      REDIS_PID   = File.join(ASSETS_DIR, "redis.pid")
 
       NATS_PORT = 42112
       DIRECTOR_UUID = "deadbeef"
@@ -16,15 +16,15 @@ module Bosh
       TASK_LOGS_DIR       = "/tmp/boshdir/tasks"
       AGENT_TMP_PATH      = "/tmp/bosh_test_cloud"
 
-      DIRECTOR_CONF  = File.join(ASSETS_PATH, "director_test.yml")
-      BLOBSTORE_CONF = File.join(ASSETS_PATH, "blobstore_server.yml")
-      HM_CONF        = File.join(ASSETS_PATH, "health_monitor.yml")
+      DIRECTOR_CONF  = File.join(ASSETS_DIR, "director_test.yml")
+      BLOBSTORE_CONF = File.join(ASSETS_DIR, "blobstore_server.yml")
+      HM_CONF        = File.join(ASSETS_DIR, "health_monitor.yml")
 
-      DIRECTOR_PID  = File.join(ASSETS_PATH, "director.pid")
-      WORKER_PID    = File.join(ASSETS_PATH, "worker.pid")
-      BLOBSTORE_PID = File.join(ASSETS_PATH, "blobstore.pid")
-      NATS_PID      = File.join(ASSETS_PATH, "nats.pid")
-      HM_PID        = File.join(ASSETS_PATH, "health_monitor.pid")
+      DIRECTOR_PID  = File.join(ASSETS_DIR, "director.pid")
+      WORKER_PID    = File.join(ASSETS_DIR, "worker.pid")
+      BLOBSTORE_PID = File.join(ASSETS_DIR, "blobstore.pid")
+      NATS_PID      = File.join(ASSETS_DIR, "nats.pid")
+      HM_PID        = File.join(ASSETS_DIR, "health_monitor.pid")
 
       DIRECTOR_PATH   = File.expand_path("../../../director", __FILE__)
       MIGRATIONS_PATH = File.join(DIRECTOR_PATH, "db", "migrations")
@@ -49,7 +49,7 @@ module Bosh
         end
 
         def start
-          @sqlite_db = File.join(ASSETS_PATH, "director.db")
+          @sqlite_db = File.join(ASSETS_DIR, "director.db")
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
           Dir.chdir(DIRECTOR_PATH) do
@@ -63,6 +63,7 @@ module Bosh
 
           FileUtils.cp(TESTCASE_SQLITE_DB, @sqlite_db)
 
+          raise "Please install redis on this machine" unless system("which redis-server > /dev/null")
           run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
           run_with_pid("bundle exec simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID)
 

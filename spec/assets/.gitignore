@@ -2,3 +2,5 @@
 *.db
 test_release
 bosh_config.yml
+bosh_work_dir/tmp
+logs/*

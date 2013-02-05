@@ -120,6 +120,24 @@ BDM = BD::Models
 
 RSpec.configure do |rspec|
   rspec.before(:each) do
+    unless $redis_63790_started
+      redis_pid = fork { exec("redis-server  --port 63790") }
+      $redis_63790_started = true
+
+      at_exit do
+        begin
+          if $!
+            status = $!.is_a?(::SystemExit) ? $!.status : 1
+          else
+            status = 0
+          end
+          Process.kill("KILL", redis_pid)
+        ensure
+          exit status
+        end
+      end
+    end
+
     SpecHelper.reset
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog.new(@event_buffer)
