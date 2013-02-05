@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e
-set -x
 
 source .rvmrc
 gem list | grep bundler || gem install bundler
-bundle check || bundle install
+bundle check || bundle install --without development
 
+set +e
+ruby integration_tests/aws/create_aws_resources.rb &&
+    bundle exec rake spec:integration
+TEST_EXIT_CODE=$?
 
+ruby integration_tests/aws/cleanup_aws_resources.rb
+CLEAN_UP_EXIT_CODE=$?
 
-bundle exec bosh aws create vpc aws_configuration_template.yml.erb
+exit $(($TEST_EXIT_CODE || $CLEAN_UP_EXIT_CODE))
