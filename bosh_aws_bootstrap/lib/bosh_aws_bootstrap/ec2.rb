@@ -35,6 +35,22 @@ module Bosh
         aws_ec2.elastic_ips.each { |ip| ip.release if ips.include? ip.public_ip }
       end
 
+      def create_internet_gateway
+        aws_ec2.internet_gateways.create
+      end
+
+      def internet_gateway_ids
+        aws_ec2.internet_gateways.map &:id
+      end
+
+      def delete_internet_gateways(ids)
+        Array(ids).each do |id|
+          gw = aws_ec2.internet_gateways[id]
+          gw.attachments.map &:delete
+          gw.delete
+        end
+      end
+
       def terminate_instances
         aws_ec2.instances.each &:terminate
       end
@@ -57,6 +73,21 @@ module Bosh
         snap
       end
 
+      def add_key_pair(name, path_to_public_private_key)
+        private_key_path = path_to_public_private_key.gsub(/.pub$/, '')
+        public_key_path = "#{private_key_path}.pub"
+        if !File.exist?(private_key_path)
+          system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
+        end
+
+        aws_ec2.key_pairs.import(name, File.read(public_key_path))
+      rescue AWS::EC2::Errors::InvalidKeyPair::Duplicate => e
+        err "Key pair #{name} already exists on AWS".red
+      end
+
+      def remove_key_pair(name)
+        aws_ec2.key_pairs[name].delete
+      end
 
       private
 

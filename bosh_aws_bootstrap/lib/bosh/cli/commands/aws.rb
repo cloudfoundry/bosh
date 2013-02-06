@@ -73,9 +73,14 @@ module Bosh::Cli::Command
       @output_state["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
 
       if was_vpc_eventually_available?(vpc)
+        say "creating internet gateway"
+        ec2.create_internet_gateway
+        vpc.attach_internet_gateway(ec2.internet_gateway_ids.first)
+
         subnets = config["vpc"]["subnets"]
         say "creating subnets: #{subnets.map { |subnet| subnet["cidr"] }.join(", ")}"
         vpc.create_subnets(subnets)
+        @output_state["vpc"]["subnet_ids"] = vpc.subnet_ids
 
         dhcp_options = config["vpc"]["dhcp_options"]
         say "creating DHCP options"
@@ -85,7 +90,14 @@ module Bosh::Cli::Command
         say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
         vpc.create_security_groups(security_groups)
 
-        count = config["elastic_ips"].values.reduce(0) { |total,job| total += job["instances"] }
+        @output_state["key_pairs"] = []
+        say "allocating #{config["key_pairs"].length} KeyPair(s)"
+        config["key_pairs"].each do |name, path|
+          ec2.add_key_pair(name, path)
+          @output_state["key_pairs"] << name
+        end
+
+        count = config["elastic_ips"].values.reduce(0) { |total, job| total += job["instances"] }
         say "allocating #{count} elastic IP(s)"
         ec2.allocate_elastic_ips(count)
 
@@ -136,8 +148,15 @@ module Bosh::Cli::Command
 
       vpc.delete_security_groups
       vpc.delete_subnets
+      ec2.delete_internet_gateways(ec2.internet_gateway_ids)
       vpc.delete_vpc
       dhcp_options.delete
+
+      if details["key_pairs"]
+        details["key_pairs"].each do |name|
+          ec2.remove_key_pair name
+        end
+      end
 
       if details["elastic_ips"]
         details["elastic_ips"].values.each do |job|
@@ -192,7 +211,7 @@ module Bosh::Cli::Command
       check_instance_count(config)
       rds = Bosh::Aws::RDS.new(credentials)
 
-      formatted_names = rds.database_names.map {|instance, db| "#{instance}\t(database_name: #{db})"}
+      formatted_names = rds.database_names.map { |instance, db| "#{instance}\t(database_name: #{db})" }
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
@@ -202,10 +221,9 @@ module Bosh::Cli::Command
     private
 
     def was_vpc_eventually_available?(vpc)
-      return true if vpc.state.to_s == 'available'
       (1..60).any? do |attempt|
         begin
-          sleep 1
+          sleep 1 unless attempt == 1
           vpc.state.to_s == "available"
         rescue AWS::EC2::Errors::InvalidVpcID::NotFound
           # try again

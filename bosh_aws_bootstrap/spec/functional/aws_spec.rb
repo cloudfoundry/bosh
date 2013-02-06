@@ -21,7 +21,12 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_dhcp_options)
         fake_vpc.stub(:create_security_groups)
         fake_vpc.stub(:create_subnets)
+        fake_vpc.stub(:subnet_ids).and_return(["amz-subnet1"])
+        fake_vpc.stub(:attach_internet_gateway)
         fake_ec2.stub(:allocate_elastic_ips)
+        fake_ec2.stub(:add_key_pair)
+        fake_ec2.stub(:create_internet_gateway)
+        fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_ec2.stub(:elastic_ips).and_return(["1.2.3.4", "5.6.7.8"])
         fake_route53.stub(:create_zone)
         fake_route53.stub(:add_record)
@@ -52,9 +57,13 @@ describe Bosh::Cli::Command::AWS do
           args.first.keys.should =~ %w[name ingress]
         end
         fake_ec2.should_receive(:allocate_elastic_ips).with(2)
+        fake_ec2.should_receive(:add_key_pair).with("somename", "/tmp/somekey")
+        fake_ec2.should_receive(:create_internet_gateway)
+        fake_ec2.should_receive(:internet_gateway_ids).and_return(["id1", "id2"])
+        fake_vpc.should_receive(:attach_internet_gateway).with("id1")
 
+        fake_vpc.stub(:subnet_ids)
         fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76"])
-
         fake_vpc.stub(:flush_output_state)
         fake_vpc.stub(:state).and_return(:available)
 
@@ -74,8 +83,10 @@ describe Bosh::Cli::Command::AWS do
         aws.create_vpc config_file
 
         aws.output_state["vpc"]["id"].should == "vpc id"
+        aws.output_state["vpc"]["subnet_ids"].should == ["amz-subnet1"]
         aws.output_state["elastic_ips"]["router"]["ips"].should == ["1.2.3.4", "5.6.7.8"]
         aws.output_state["elastic_ips"]["router"]["dns_record"].should == "*"
+        aws.output_state["key_pairs"].should == ["somename"]
       end
 
       context "when the VPC is not immediately available" do
@@ -132,6 +143,9 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.should_receive :delete_subnets
         fake_vpc.should_receive :delete_vpc
         fake_dhcp_options.should_receive :delete
+        fake_ec2.should_receive(:internet_gateway_ids).and_return(["gw1id", "gw2id"])
+        fake_ec2.should_receive(:delete_internet_gateways).with(["gw1id", "gw2id"])
+        fake_ec2.should_receive(:remove_key_pair).with "somenamez"
         fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
         fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
 

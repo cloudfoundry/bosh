@@ -100,7 +100,107 @@ describe Bosh::Aws::EC2 do
 
         fake_snapshot.should_receive(:add_tag).exactly(3).times
 
-        ec2.snapshot_volume(fake_volume, "snapshot name", "description", { "tag1" => "value1", "tag2" => "value2"})
+        ec2.snapshot_volume(fake_volume, "snapshot name", "description", {"tag1" => "value1", "tag2" => "value2"})
+      end
+    end
+  end
+
+  describe "internet gateways" do
+    describe "creating" do
+      it "should create an internet gateway" do
+        fake_gateway_collection = double("internet_gateways")
+        ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: fake_gateway_collection))
+        fake_gateway_collection.should_receive(:create)
+        ec2.create_internet_gateway
+      end
+    end
+
+    describe "listing" do
+      it "should return a list of internet gateway IDs" do
+        ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: [double("gw1", id: "gw1id"), double("gw2", id: "gw2id")]))
+        ec2.internet_gateway_ids.should =~ ["gw1id", "gw2id"]
+      end
+    end
+
+    describe "deleting" do
+      it "should delete the internet gateways with the specified IDs" do
+        fake_gateways = {
+            "gw1" => double("fake gateway", attachments: [double("fake_attach")]),
+            "gw2" => double("fake gateway", attachments: [double("fake_attach2"), double("fake_attach3")])
+        }
+        ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: fake_gateways))
+        fake_gateways.values.each do |gateway|
+          gateway.should_receive :delete
+          gateway.attachments.each {|a| a.should_receive(:delete) }
+        end
+
+        ec2.delete_internet_gateways ["gw1", "gw2"]
+      end
+    end
+  end
+
+  describe "key pairs" do
+    describe "adding" do
+      let(:fake_aws_ec2) { double("aws_ec2", key_pairs: double("key_pairs", import: nil)) }
+      let(:public_key_path) { asset("id_spec_rsa.pub") }
+      let(:private_key_path) { asset("id_spec_rsa") }
+
+      before do
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      end
+
+      describe "when the provided SSH key does not yet exist on the machine" do
+        let(:public_key_path) { asset("id_new_rsa.pub") }
+        let(:private_key_path) { asset("id_new_rsa") }
+
+        after(:each) do
+          system "rm -f #{asset('id_new_rsa')}*"
+        end
+
+        it "should generate an SSH key when given a private_key_path" do
+          File.should_not be_exist(public_key_path)
+          File.should_not be_exist(private_key_path)
+          ec2.add_key_pair("name", private_key_path)
+          File.should be_exist(public_key_path)
+          File.should be_exist(private_key_path)
+        end
+
+        it "should generate an SSH key when given a public_key_path" do
+          File.should_not be_exist(public_key_path)
+          File.should_not be_exist(private_key_path)
+          ec2.add_key_pair("name", public_key_path)
+          File.should be_exist(public_key_path)
+          File.should be_exist(private_key_path)
+        end
+      end
+
+      describe "when the key pair name exists on AWS" do
+        it "should raise a nice error" do
+          fake_aws_ec2.key_pairs.stub(:import).and_raise(AWS::EC2::Errors::InvalidKeyPair::Duplicate)
+
+          expect {
+            ec2.add_key_pair("name", public_key_path)
+          }.to raise_error(Bosh::Cli::CliError, /key pair name already exists on AWS/i)
+        end
+      end
+
+      it "should create an EC2 keypair with the correct name" do
+        fake_aws_ec2.key_pairs.should_receive(:import).with("name", File.read(public_key_path))
+        ec2.add_key_pair("name", public_key_path)
+      end
+    end
+
+    describe "removing" do
+      let(:key_pair) { double("key pair") }
+      let(:fake_aws_ec2) { double("aws_ec2", key_pairs: {"name" => key_pair}) }
+
+      before do
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      end
+
+      it "should remove the EC2 keypair" do
+        key_pair.should_receive(:delete)
+        ec2.remove_key_pair("name")
       end
     end
   end

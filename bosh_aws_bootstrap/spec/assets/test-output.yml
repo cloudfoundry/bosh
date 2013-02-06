@@ -12,3 +12,5 @@ elastic_ips:
   ips:
   - 107.23.46.162
   - 107.23.53.76
+key_pairs:
+- somenamez

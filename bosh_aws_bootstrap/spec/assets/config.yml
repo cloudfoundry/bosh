@@ -35,3 +35,5 @@ elastic_ips:
   router:
     instances: 2
     dns_record: "*"
+key_pairs:
+  somename: /tmp/somekey

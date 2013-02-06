@@ -32,6 +32,10 @@ module Bosh
         @aws_vpc.state
       end
 
+      def subnet_ids
+        @aws_vpc.subnets.map &:id
+      end
+
       def delete_vpc
         @aws_vpc.delete
       rescue ::AWS::EC2::Errors::DependencyViolation => e
@@ -75,6 +79,10 @@ module Bosh
         #say "\tcreated and associated DHCP options #{new_dhcp_options.id}".green
 
         default_dhcp_opts.delete
+      end
+
+      def attach_internet_gateway(gateway_id)
+        @aws_vpc.internet_gateway = gateway_id
       end
 
       private

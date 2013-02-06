@@ -179,4 +179,21 @@ describe Bosh::Aws::VPC do
       Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).state.should == 'a cool state'
     end
   end
+
+  describe "subnet_ids" do
+    it "should produce an array of the VPC's subnets' IDs" do
+      fake_aws_vpc = mock("aws_vpc")
+      fake_aws_vpc.should_receive(:subnets).and_return([double("subnet", id: "sub-1"), double("subnet", id: "sub-2")])
+
+      Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).subnet_ids.should == ['sub-1', 'sub-2']
+    end
+  end
+
+  describe "attaching internet gateways" do
+    it "should attach to a VPC by gateway ID" do
+      fake_aws_vpc = mock("aws_vpc")
+      fake_aws_vpc.should_receive(:internet_gateway=).with("gw1id")
+      Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).attach_internet_gateway("gw1id")
+    end
+  end
 end
