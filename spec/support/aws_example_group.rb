@@ -32,6 +32,7 @@ module AwsSystemExampleGroup
     base.after(:each) do
       puts "Using VPC output: #{vpc_outfile_path}"
       puts "Failed to terminate EC2 instances" unless system "bundle exec bosh -n aws terminate_all ec2 '#{vpc_outfile_path}'"
+      puts "Failed to cleanup EBS volumes" unless system "bundle exec bosh -n aws delete_all volumes '#{vpc_outfile_path}'"
       puts "Failed to create VPC resources" unless system "bundle exec bosh -n aws delete vpc '#{vpc_outfile_path}'"
       puts "CLEANUP SUCCESSFUL"
     end

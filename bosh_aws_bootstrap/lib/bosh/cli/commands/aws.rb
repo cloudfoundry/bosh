@@ -226,6 +226,22 @@ module Bosh::Cli::Command
       rds.delete_databases if non_interactive? || agree("Are you sure you want to delete all databases?")
     end
 
+    usage "aws delete_all volumes"
+    desc "delete all EBS volumes"
+    def delete_all_ebs(config_file)
+      config = load_yaml_file(config_file)
+      credentials = config["aws"]
+      ec2 = Bosh::Aws::EC2.new(credentials)
+      check_volume_count(config)
+
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("It will delete #{ec2.volume_count} EBS volume(s)")
+
+      if non_interactive? || agree("Are you sure you want to delete all EBS volumes?")
+        ec2.delete_volumes
+      end
+    end
+
     private
 
     def was_vpc_eventually_available?(vpc)
@@ -247,5 +263,11 @@ module Bosh::Cli::Command
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       err("#{ec2.instances_count} instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.instances_count > 20
     end
+
+    def check_volume_count(config)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+      err("#{ec2.volume_count} volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.volume_count > 20
+    end
+
   end
 end

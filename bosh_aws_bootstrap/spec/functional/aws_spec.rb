@@ -272,7 +272,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
         aws.should_receive(:agree).
-            with("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?").
+            with("Are you sure you want to terminate all EC2 instances and their associated non-persistent EBS volumes?").
             and_return(false)
 
         aws.terminate_all_ec2 config_file
@@ -335,6 +335,82 @@ describe Bosh::Cli::Command::AWS do
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.terminate_all_ec2(config_file)
+        end
+      end
+    end
+
+    describe "aws delete_all ebs" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should warn the user that the operation is destructive and list number of volumes to be deleted" do
+        fake_ec2 = mock("ec2")
+
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:volume_count).and_return(2)
+
+        aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        aws.should_receive(:say).with("It will delete 2 EBS volume(s)")
+        aws.should_receive(:agree).
+            with("Are you sure you want to delete all EBS volumes?").
+            and_return(false)
+
+        aws.delete_all_ebs config_file
+      end
+
+      it "should error if more than 20 volumes are present" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:volume_count).and_return(21)
+
+        expect {
+          aws.delete_all_ebs config_file
+        }.to raise_error(Bosh::Cli::CliError, "21 volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
+      end
+
+      context "interactive mode (default)" do
+        context 'when the user agrees to terminate all the instances' do
+          it 'should terminate all instances' do
+            fake_ec2 = mock("ec2")
+
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            aws.stub(:say)
+            aws.stub(:agree).and_return(true)
+            fake_ec2.stub(:volume_count).and_return(0)
+
+            fake_ec2.should_receive :delete_volumes
+
+            aws.delete_all_ebs(config_file)
+          end
+        end
+
+        context 'when the user wants to bail out of ec2 termination' do
+          it 'should not terminate any instances' do
+            fake_ec2 = mock("ec2")
+
+            Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+            aws.stub(:say)
+            aws.stub(:agree).and_return(false)
+            fake_ec2.stub(:volume_count).and_return(0)
+
+            fake_ec2.should_not_receive :delete_volumes
+
+            aws.delete_all_ebs config_file
+          end
+        end
+      end
+
+      context "non-interactive mode" do
+        it 'should terminate all instances' do
+          fake_ec2 = mock("ec2")
+
+          Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+          aws.stub(:say)
+          fake_ec2.stub(:volume_count).and_return(0)
+
+          fake_ec2.should_receive :delete_volumes
+
+          ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
+          aws.delete_all_ebs(config_file)
         end
       end
     end

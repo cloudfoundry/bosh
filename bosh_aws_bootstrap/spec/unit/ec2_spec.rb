@@ -207,4 +207,22 @@ describe Bosh::Aws::EC2 do
       end
     end
   end
+
+  describe "deleting all EBS volumes" do
+    let(:fake_aws_ec2) { double("aws_ec2") }
+    let(:vol1) { double("vol1") }
+    let(:vol2) { double("vol2") }
+
+    before do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+    end
+
+    it "should delete all volumes" do
+      vol1.should_receive(:delete)
+      vol2.should_receive(:delete)
+      fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2])
+
+      ec2.delete_volumes
+    end
+  end
 end

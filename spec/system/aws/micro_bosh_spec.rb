@@ -1,7 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + "/../../spec_helper")
 
 describe "AWS" do
-  STEMCELL_AMI = "ami-30d94f59"
+  STEMCELL_AMI = "ami-42cf592b"
   it "should be able to launch a MicroBosh from existing stemcell" do
     Dir.chdir(File.join(ASSETS_DIR, "aws", "deployments")) do
       FileUtils.rm_f("aws_registry.log")

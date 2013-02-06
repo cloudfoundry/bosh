@@ -61,6 +61,14 @@ module Bosh
         retries > 0
       end
 
+      def delete_volumes
+        aws_ec2.volumes.each &:delete
+      end
+
+      def volume_count
+        aws_ec2.volumes.count
+      end
+
       def instance_names
         aws_ec2.instances.inject({}) do |memo, instance|
           memo[instance.instance_id] = instance.tags["Name"]
