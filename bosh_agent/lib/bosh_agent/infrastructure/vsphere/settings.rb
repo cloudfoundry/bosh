@@ -89,7 +89,13 @@ module Bosh::Agent
     end
 
     def udevadm_settle
-      `/sbin/udevadm settle`
+      if File.exists? "/sbin/udevadm"
+        `/sbin/udevadm settle`
+      elsif File.exists? "/sbin/udevsettle"
+        `/sbin/udevsettle`
+      else
+        raise Bosh::Agent::LoadSettingsError, "No udevsettle"
+      end
     end
 
     def read_cdrom_byte
