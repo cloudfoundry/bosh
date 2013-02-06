@@ -186,14 +186,11 @@ describe "deployment" do
     it "should deploy using dynamic network"
 
     it "should deploy using a static network" do
+      pending "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
       use_static_ip
       with_deployment do
-        if aws?
-          pending "doesn't work on AWS as the VIP IP isn't visible to the VM"
-        else
-          ssh(static_ip, "vcap", password, "ifconfig eth0").should
-            match /#{static_ip}/
-        end
+        ssh(static_ip, "vcap", password, "ifconfig eth0").should
+          match /#{static_ip}/
       end
     end
   end
