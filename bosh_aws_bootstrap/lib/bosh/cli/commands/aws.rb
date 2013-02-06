@@ -78,9 +78,9 @@ module Bosh::Cli::Command
         vpc.attach_internet_gateway(ec2.internet_gateway_ids.first)
 
         subnets = config["vpc"]["subnets"]
-        say "creating subnets: #{subnets.map { |subnet| subnet["cidr"] }.join(", ")}"
+        say "creating subnets: #{subnets.keys.join(", ")}"
         vpc.create_subnets(subnets)
-        @output_state["vpc"]["subnet_ids"] = vpc.subnet_ids
+        @output_state["vpc"]["subnets"] = vpc.subnets
 
         dhcp_options = config["vpc"]["dhcp_options"]
         say "creating DHCP options"

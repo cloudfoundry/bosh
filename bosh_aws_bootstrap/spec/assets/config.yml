@@ -8,9 +8,11 @@ vpc:
   instance_tenancy: default
   cidr: 10.10.0.0/<%= 8 + 8 %>
   subnets:
-    - cidr: 10.10.0.0/24
+    sub1:
+      cidr: 10.10.0.0/24
       availability_zone: us-east-1a
-    - cidr: 10.10.1.0/24
+    sub2:
+      cidr: 10.10.1.0/24
       availability_zone: us-east-1b
   dhcp_options:
     domain_name: dev102.cf.com

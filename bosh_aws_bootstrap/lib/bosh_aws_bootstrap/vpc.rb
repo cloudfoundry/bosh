@@ -2,13 +2,14 @@ module Bosh
   module Aws
     class VPC
       DEFAULT_CIDR = "10.0.0.0/16"
+
       def initialize(ec2, aws_vpc)
         @ec2 = ec2
         @aws_vpc = aws_vpc
       end
 
       def self.create(ec2, cidr = DEFAULT_CIDR, instance_tenancy = nil)
-        vpc_options = instance_tenancy ? { instance_tenancy: instance_tenancy } : {}
+        vpc_options = instance_tenancy ? {instance_tenancy: instance_tenancy} : {}
         self.new(ec2, ec2.vpcs.create(cidr, vpc_options))
       end
 
@@ -32,8 +33,8 @@ module Bosh
         @aws_vpc.state
       end
 
-      def subnet_ids
-        @aws_vpc.subnets.map &:id
+      def subnets
+        Hash[@aws_vpc.subnets.map { |subnet| [subnet.tags["Name"], subnet.id] }]
       end
 
       def delete_vpc
@@ -59,10 +60,11 @@ module Bosh
       end
 
       def create_subnets(subnets)
-        subnets.each do |subnet|
+        subnets.each_pair do |name, subnet|
           options = {}
           options[:availability_zone] = subnet["availability_zone"] if subnet["availability_zone"]
-          @aws_vpc.subnets.create(subnet["cidr"], options)
+          subnet = @aws_vpc.subnets.create(subnet["cidr"], options)
+          subnet.add_tag("Name", :value => name)
           #say "\tdone creating subnet: #{subnet["cidr"]}".green
         end
       end

@@ -52,13 +52,18 @@ describe Bosh::Aws::VPC do
       it "can create subnets with the specified CIDRs and, optionally, AZs" do
         subnet_1_specs = {"cidr" => "cider", "availability_zone" => "canada"}
         subnet_2_specs = {"cidr" => "cedar"}
+        sub1 = mock("sub1")
+        sub2 = mock("sub2")
+
+        sub1.should_receive(:add_tag).with("Name", :value => "sub1")
+        sub2.should_receive(:add_tag).with("Name", :value => "sub2")
 
         fake_aws_vpc = mock("aws_vpc", subnets: mock("subnets"))
 
-        fake_aws_vpc.subnets.should_receive(:create).with("cider", {availability_zone: "canada"})
-        fake_aws_vpc.subnets.should_receive(:create).with("cedar", {})
+        fake_aws_vpc.subnets.should_receive(:create).with("cider", {availability_zone: "canada"}).and_return(sub1)
+        fake_aws_vpc.subnets.should_receive(:create).with("cedar", {}).and_return(sub2)
 
-        Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).create_subnets([subnet_1_specs, subnet_2_specs])
+        Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).create_subnets({"sub1" => subnet_1_specs, "sub2" => subnet_2_specs})
       end
     end
 
@@ -69,6 +74,19 @@ describe Bosh::Aws::VPC do
         fake_aws_vpc.subnets.each { |subnet| subnet.should_receive :delete }
 
         Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).delete_subnets
+      end
+    end
+
+    describe "listing" do
+      it "should produce an hash of the VPC's subnets' names and IDs" do
+        fake_aws_vpc = mock("aws_vpc")
+        sub1 = double("subnet", id: "sub-1")
+        sub2 = double("subnet", id: "sub-2")
+        sub1.stub(:tags).and_return("Name" => 'name1')
+        sub2.stub(:tags).and_return("Name" => 'name2')
+        fake_aws_vpc.should_receive(:subnets).and_return([sub1, sub2])
+
+        Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).subnets.should == {'name1' => 'sub-1', 'name2' => 'sub-2'}
       end
     end
   end
@@ -177,15 +195,6 @@ describe Bosh::Aws::VPC do
       fake_aws_vpc.should_receive(:state).and_return("a cool state")
 
       Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).state.should == 'a cool state'
-    end
-  end
-
-  describe "subnet_ids" do
-    it "should produce an array of the VPC's subnets' IDs" do
-      fake_aws_vpc = mock("aws_vpc")
-      fake_aws_vpc.should_receive(:subnets).and_return([double("subnet", id: "sub-1"), double("subnet", id: "sub-2")])
-
-      Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).subnet_ids.should == ['sub-1', 'sub-2']
     end
   end
 
