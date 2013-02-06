@@ -8,3 +8,9 @@ env:
   matrix:
     - SUITE=unit
     - SUITE=integration
+notifications:
+  email:
+    recipients:
+      - martin@englund.nu
+    on_success: change
+    on_failure: always
