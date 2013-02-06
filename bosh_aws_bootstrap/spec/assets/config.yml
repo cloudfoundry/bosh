@@ -8,7 +8,7 @@ vpc:
   instance_tenancy: default
   cidr: 10.10.0.0/<%= 8 + 8 %>
   subnets:
-    sub1:
+    bosh:
       cidr: 10.10.0.0/24
       availability_zone: us-east-1a
     sub2:

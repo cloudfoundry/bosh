@@ -21,8 +21,9 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_dhcp_options)
         fake_vpc.stub(:create_security_groups)
         fake_vpc.stub(:create_subnets)
-        fake_vpc.stub(:subnets).and_return({'name1' => "amz-subnet1", 'name2' => "amz-subnet2"})
+        fake_vpc.stub(:subnets).and_return({'bosh' => "amz-subnet1", 'name2' => "amz-subnet2"})
         fake_vpc.stub(:attach_internet_gateway)
+        fake_vpc.stub(:make_route_for_internet_gateway)
         fake_ec2.stub(:allocate_elastic_ips)
         fake_ec2.stub(:add_key_pair)
         fake_ec2.stub(:create_internet_gateway)
@@ -45,7 +46,7 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:vpc_id)
 
         fake_vpc.should_receive(:create_subnets).with({
-                                                          "sub1" => {"cidr" => "10.10.0.0/24", "availability_zone" => "us-east-1a"},
+                                                          "bosh" => {"cidr" => "10.10.0.0/24", "availability_zone" => "us-east-1a"},
                                                           "sub2" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1b"}
                                                       })
         fake_vpc.should_receive(:create_dhcp_options).with(
@@ -59,10 +60,11 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.should_receive(:allocate_elastic_ips).with(2)
         fake_ec2.should_receive(:add_key_pair).with("somename", "/tmp/somekey")
         fake_ec2.should_receive(:create_internet_gateway)
-        fake_ec2.should_receive(:internet_gateway_ids).and_return(["id1", "id2"])
+        fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_vpc.should_receive(:attach_internet_gateway).with("id1")
+        fake_vpc.should_receive(:make_route_for_internet_gateway).with("amz-sub1id", "id1")
 
-        fake_vpc.stub(:subnets)
+        fake_vpc.stub(:subnets).and_return("bosh" => "amz-sub1id")
         fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76"])
         fake_vpc.stub(:flush_output_state)
         fake_vpc.stub(:state).and_return(:available)
@@ -83,7 +85,7 @@ describe Bosh::Cli::Command::AWS do
         aws.create_vpc config_file
 
         aws.output_state["vpc"]["id"].should == "vpc id"
-        aws.output_state["vpc"]["subnets"].should == { "name1" => "amz-subnet1", "name2" => "amz-subnet2" }
+        aws.output_state["vpc"]["subnets"].should == { "bosh" => "amz-subnet1", "name2" => "amz-subnet2" }
         aws.output_state["elastic_ips"]["router"]["ips"].should == ["1.2.3.4", "5.6.7.8"]
         aws.output_state["elastic_ips"]["router"]["dns_record"].should == "*"
         aws.output_state["key_pairs"].should == ["somename"]
