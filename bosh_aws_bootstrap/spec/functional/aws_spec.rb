@@ -292,7 +292,7 @@ describe Bosh::Cli::Command::AWS do
             fake_ec2 = mock("ec2")
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-            aws.stub(:say).twice
+            aws.stub(:say)
             aws.stub(:agree).and_return(true)
             fake_ec2.stub(:instances_count).and_return(0)
             fake_ec2.stub(:instance_names).and_return(double.as_null_object)
@@ -325,7 +325,7 @@ describe Bosh::Cli::Command::AWS do
           fake_ec2 = mock("ec2")
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-          aws.stub(:say).twice
+          aws.stub(:say)
           fake_ec2.stub(:instances_count).and_return(0)
           fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
