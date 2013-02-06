@@ -43,7 +43,7 @@ module Bosh::AwsCloud
           if block_given?
             yield error
           else
-            @logger.error("#{error.message}: #{desc}")
+            @logger.error("#{error.message}: #{desc}") if @logger
             nil
           end
         end

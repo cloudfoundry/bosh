@@ -100,7 +100,7 @@ describe Bosh::Aws::VPC do
       let(:security_groups) { double("security_groups") }
       let(:security_group) { double("security_group") }
 
-      it "should be created" do
+      it "should be created with a single port" do
         security_groups.stub(:create).with("sg").and_return(security_group)
         security_groups.stub(:each)
 
@@ -108,8 +108,21 @@ describe Bosh::Aws::VPC do
         security_group.should_receive(:authorize_ingress).with(:tcp, 23, "1.2.4.0/24")
 
         ingress_rules = [
-            {"protocol" => :tcp, "ports" => 22, "sources" => "1.2.3.0/24"},
-            {"protocol" => :tcp, "ports" => 23, "sources" => "1.2.4.0/24"}
+            {"protocol" => :tcp, "ports" => '22', "sources" => "1.2.3.0/24"},
+            {"protocol" => :tcp, "ports" => '23', "sources" => "1.2.4.0/24"}
+        ]
+        Bosh::Aws::VPC.new(mock("ec2"), mock("aws_vpc", security_groups: security_groups)).
+            create_security_groups ["name" => "sg", "ingress" => ingress_rules]
+      end
+
+      it "should be created with a port range" do
+        security_groups.stub(:create).with("sg").and_return(security_group)
+        security_groups.stub(:each)
+
+        security_group.should_receive(:authorize_ingress).with(:tcp, 5..60, "1.2.3.0/24")
+
+        ingress_rules = [
+            {"protocol" => :tcp, "ports" => "5 - 60", "sources" => "1.2.3.0/24"}
         ]
         Bosh::Aws::VPC.new(mock("ec2"), mock("aws_vpc", security_groups: security_groups)).
             create_security_groups ["name" => "sg", "ingress" => ingress_rules]

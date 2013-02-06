@@ -40,6 +40,10 @@ module Bosh
         Hash[@aws_vpc.subnets.map { |subnet| [subnet.tags["Name"], subnet.id] }]
       end
 
+      def make_route_for_internet_gateway(subnet_id, gateway_id)
+        @aws_vpc.subnets[subnet_id].route_table.create_route("0.0.0.0/0", :internet_gateway => gateway_id)
+      end
+
       def delete_vpc
         @aws_vpc.delete
       rescue ::AWS::EC2::Errors::DependencyViolation => e
@@ -51,7 +55,9 @@ module Bosh
           if group_name_available group_spec["name"]
             security_group = @aws_vpc.security_groups.create(group_spec["name"])
             group_spec["ingress"].each do |ingress|
-              security_group.authorize_ingress(ingress["protocol"], ingress["ports"].to_i, ingress["sources"])
+              range_match = ingress["ports"].to_s.match(/(\d+)\s*-\s*(\d+)/)
+              ports = range_match ? (range_match[1].to_i)..(range_match[2].to_i) : ingress["ports"].to_i
+              security_group.authorize_ingress(ingress["protocol"], ports, ingress["sources"])
             end
             #say "\tcreated security group #{group["name"]}".green
           end

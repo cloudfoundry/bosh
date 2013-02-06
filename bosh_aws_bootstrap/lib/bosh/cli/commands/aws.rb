@@ -82,6 +82,9 @@ module Bosh::Cli::Command
         vpc.create_subnets(subnets)
         @output_state["vpc"]["subnets"] = vpc.subnets
 
+        say "creating route"
+        vpc.make_route_for_internet_gateway(vpc.subnets["bosh"], ec2.internet_gateway_ids.first)
+
         dhcp_options = config["vpc"]["dhcp_options"]
         say "creating DHCP options"
         vpc.create_dhcp_options(dhcp_options)
@@ -201,7 +204,9 @@ module Bosh::Cli::Command
 
       if non_interactive? || agree("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?")
         say "Terminating instances and waiting for them to die..."
-        ec2.terminate_instances
+        if !ec2.terminate_instances
+          say "Warning: instances did not terminate yet after 100 retries".red
+        end
       end
     end
 
