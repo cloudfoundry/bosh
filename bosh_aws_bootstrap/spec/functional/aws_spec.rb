@@ -5,6 +5,33 @@ describe Bosh::Cli::Command::AWS do
   before { aws.stub(:sleep)  }
 
   describe "command line tools" do
+    describe "create_micro_bosh_manifest" do
+      let(:config_file) { asset "config.yml" }
+      let(:create_vpc_output_yml) { asset "test-output.yml" }
+
+      around do |test|
+        Dir.mktmpdir do |dir|
+          Dir.chdir(dir) do
+            aws.create_micro_bosh_manifest(config_file, create_vpc_output_yml)
+            test.run
+          end
+        end
+      end
+
+      it "uses some of the normal director keys" do
+        @micro_bosh_yaml = YAML.load_file("micro_bosh.yml")
+
+        @micro_bosh_yaml['name'].should == "micro-dev102"
+        @micro_bosh_yaml['network']['vip'].should == "123.45.6.7"
+        @micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
+        @micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
+
+        @micro_bosh_yaml['cloud']['properties']['aws']['access_key_id'].should == "..."
+        @micro_bosh_yaml['cloud']['properties']['aws']['secret_access_key'].should == "..."
+        @micro_bosh_yaml['cloud']['properties']['aws']['region'].should == "us-east-1"
+      end
+    end
+
     describe "aws create vpc" do
       let(:config_file) { asset "config.yml" }
 
@@ -47,7 +74,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_vpc.should_receive(:create_subnets).with({
                                                           "bosh" => {"cidr" => "10.10.0.0/24", "availability_zone" => "us-east-1a"},
-                                                          "sub2" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1b"}
+                                                          "other" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1b"}
                                                       })
         fake_vpc.should_receive(:create_dhcp_options).with(
             "domain_name" => "dev102.cf.com",
@@ -57,19 +84,20 @@ describe Bosh::Cli::Command::AWS do
           args.length.should == 2
           args.first.keys.should =~ %w[name ingress]
         end
-        fake_ec2.should_receive(:allocate_elastic_ips).with(2)
-        fake_ec2.should_receive(:add_key_pair).with("somename", "/tmp/somekey")
+        fake_ec2.should_receive(:allocate_elastic_ips).with(3)
+        fake_ec2.should_receive(:add_key_pair).with("dev102", "/tmp/somekey")
         fake_ec2.should_receive(:create_internet_gateway)
         fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_vpc.should_receive(:attach_internet_gateway).with("id1")
         fake_vpc.should_receive(:make_route_for_internet_gateway).with("amz-sub1id", "id1")
 
         fake_vpc.stub(:subnets).and_return("bosh" => "amz-sub1id")
-        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76"])
+        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76", "123.45.6.7"])
         fake_vpc.stub(:flush_output_state)
         fake_vpc.stub(:state).and_return(:available)
 
         fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["107.23.46.162", "107.23.53.76"])
+        fake_route53.should_receive(:add_record).with("micro", "dev102.cf.com", ["123.45.6.7"])
 
         aws.create_vpc config_file
       end
@@ -88,7 +116,7 @@ describe Bosh::Cli::Command::AWS do
         aws.output_state["vpc"]["subnets"].should == { "bosh" => "amz-subnet1", "name2" => "amz-subnet2" }
         aws.output_state["elastic_ips"]["router"]["ips"].should == ["1.2.3.4", "5.6.7.8"]
         aws.output_state["elastic_ips"]["router"]["dns_record"].should == "*"
-        aws.output_state["key_pairs"].should == ["somename"]
+        aws.output_state["key_pairs"].should == ["dev102"]
       end
 
       context "when the VPC is not immediately available" do
@@ -149,7 +177,9 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.should_receive(:delete_internet_gateways).with(["gw1id", "gw2id"])
         fake_ec2.should_receive(:remove_key_pair).with "somenamez"
         fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
+        fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.7"]
         fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
+        fake_route53.should_receive(:delete_record).with("micro", "cfdev.com")
 
         aws.delete_vpc output_file
       end

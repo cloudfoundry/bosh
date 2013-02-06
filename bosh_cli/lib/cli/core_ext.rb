@@ -92,7 +92,7 @@ module BoshExtensions
   end
 
   def warning(message)
-    Kernel.warn("[WARNING] #{message}".yellow)
+    warn("[WARNING] #{message}".yellow)
   end
 end
 

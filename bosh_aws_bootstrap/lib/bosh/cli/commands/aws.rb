@@ -22,6 +22,14 @@ module Bosh::Cli::Command
       Bosh::Cli::Command::Help.list_commands(commands)
     end
 
+    usage "aws generate micro_bosh"
+    desc "generate micro_bosh.yml"
+    def create_micro_bosh_manifest(config_file, receipt_file)
+      File.open("micro_bosh.yml", "w+") do |f|
+        f.write(Bosh::Aws::MicroboshManifest.new(YAML.load_file(config_file), YAML.load_file(receipt_file)).to_yaml)
+      end
+    end
+
     usage "aws snapshot deployments"
     desc "snapshot all EBS volumes in all deployments"
     def snapshot_deployments(config_file)

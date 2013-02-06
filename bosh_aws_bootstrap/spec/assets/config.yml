@@ -1,17 +1,18 @@
 ---
 aws:
-  access_key_id: ... 
-  secret_access_key: ... 
+  access_key_id: ...
+  secret_access_key: ...
   region: us-east-1
+name: dev102
 vpc:
   domain: dev102.cf.com
   instance_tenancy: default
-  cidr: 10.10.0.0/<%= 8 + 8 %>
+  cidr: 10.10.0.0/16
   subnets:
     bosh:
       cidr: 10.10.0.0/24
       availability_zone: us-east-1a
-    sub2:
+    other:
       cidr: 10.10.1.0/24
       availability_zone: us-east-1b
   dhcp_options:
@@ -37,5 +38,8 @@ elastic_ips:
   router:
     instances: 2
     dns_record: "*"
+  micro:
+    instances: 1
+    dns_record: micro
 key_pairs:
-  somename: /tmp/somekey
+  dev102: /tmp/somekey

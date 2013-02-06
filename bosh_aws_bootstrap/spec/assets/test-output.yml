@@ -1,16 +1,23 @@
---- 
-aws: 
+---
+aws:
   access_key_id: ...
   secret_access_key: ...
   region: us-east-1
-vpc: 
+vpc:
   id: vpc-13724979
   domain: cfdev.com
+  subnets:
+    bosh: subnet-4bdf6c26
+    other: subnet-xxxxxxxx
 elastic_ips:
  router:
   dns_record: "*"
   ips:
   - 107.23.46.162
   - 107.23.53.76
+ micro:
+  dns_record: micro
+  ips:
+  - 123.45.6.7
 key_pairs:
 - somenamez

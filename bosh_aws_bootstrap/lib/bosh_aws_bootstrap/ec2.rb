@@ -88,7 +88,7 @@ module Bosh
       end
 
       def add_key_pair(name, path_to_public_private_key)
-        private_key_path = path_to_public_private_key.gsub(/.pub$/, '')
+        private_key_path = path_to_public_private_key.gsub(/\.pub$/, '')
         public_key_path = "#{private_key_path}.pub"
         if !File.exist?(private_key_path)
           system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path

@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.email         = "support@cloudfoundry.com"
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
-  s.files         = `git ls-files -- lib/*`.split($/)
+  s.files         = `git ls-files -- lib/* templates/*`.split($/)
   s.require_path = "lib"
 
   s.add_dependency "bosh_cli", "~>#{version}"
