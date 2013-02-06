@@ -7,7 +7,7 @@ end
 system("bundle check || bundle #{bundle_without}")  || raise("Bundler is required.")
 
 if ENV['SUITE'] == "integration"
-  system "bundle exec rake spec:integration" || raise("failed to run spec/integration")
+  system("bundle exec rake spec:integration") || raise("failed to run spec/integration")
 else
-  system "bundle exec rake spec:unit" || raise("failed to run unit tests")
+  system("bundle exec rake spec:unit") || raise("failed to run unit tests")
 end
