@@ -65,7 +65,6 @@ module Bosh::AwsCloud
                                      registry_user,
                                      registry_password)
 
-      @aki_picker = AKIPicker.new(@ec2)
       @region = @ec2.regions[@aws_region]
       @az_selector = AvailabilityZoneSelector.new(@region, @aws_properties["default_availability_zone"])
       @metadata_lock = Mutex.new
@@ -298,15 +297,20 @@ module Bosh::AwsCloud
     # @option cloud_properties [String] disk (2048)
     #   root disk size
     # @return [String] EC2 AMI name of the stemcell
-    def create_stemcell(image_path, cloud_properties)
+    def create_stemcell(image_path, stemcell_properties)
       # TODO: refactor into several smaller methods
       with_thread_name("create_stemcell(#{image_path}...)") do
+        creator = StemcellCreator.new(@region, stemcell_properties)
+
+        return creator.fake.id if creator.fake?
+
         begin
           # These three variables are used in 'ensure' clause
           instance = nil
           volume = nil
+
           # 1. Create and mount new EBS volume (2GB default)
-          disk_size = cloud_properties["disk"] || 2048
+          disk_size = stemcell_properties["disk"] || 2048
           volume_id = create_disk(disk_size, current_instance_id)
           volume = @ec2.volumes[volume_id]
           instance = @ec2.instances[current_instance_id]
@@ -314,21 +318,8 @@ module Bosh::AwsCloud
           sd_name = attach_ebs_volume(instance, volume)
           ebs_volume = find_ebs_device(sd_name)
 
-          # 2. Copy image to new EBS volume
-          @logger.info("Copying stemcell disk image to '#{ebs_volume}'")
-          copy_root_image(image_path, ebs_volume)
-
-          # 3. Create snapshot and then an image using this snapshot
-          snapshot = volume.create_snapshot
-          wait_resource(snapshot, :completed)
-
-          params = image_params(cloud_properties, snapshot.id)
-          image = @ec2.images.create(params)
-          wait_resource(image, :available, :state)
-
-          TagManager.tag(image, "Name", params[:description]) if params[:description]
-
-          image.id
+          @logger.info("Creating stemcell with: '#{volume.id}' and '#{stemcell_properties.inspect}'")
+          creator.create(volume, ebs_volume, image_path).id
         rescue => e
           @logger.error(e)
           raise e
@@ -345,25 +336,8 @@ module Bosh::AwsCloud
     # @param [String] stemcell_id EC2 AMI name of the stemcell to be deleted
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
-        snapshots = []
-        image = @ec2.images[stemcell_id]
-
-        image.block_device_mappings.to_h.each do |device, map|
-          id = map[:snapshot_id]
-          if id
-            @logger.debug("queuing snapshot #{id} for deletion")
-            snapshots << id
-          end
-        end
-
-        image.deregister
-        # TODO wait for it to go away
-
-        snapshots.each do |id|
-          @logger.info("cleaning up snapshot #{id}")
-          snapshot = @ec2.snapshots[id]
-          snapshot.delete
-        end
+        stemcell = Stemcell.find(@region, stemcell_id)
+        stemcell.delete
       end
     end
 
@@ -399,37 +373,24 @@ module Bosh::AwsCloud
       not_implemented(:validate_deployment)
     end
 
+    def find_ebs_device(sd_name)
+      xvd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/xvd")
+
+      DEVICE_POLL_TIMEOUT.times do
+        if File.blockdev?(sd_name)
+          return sd_name
+        elsif File.blockdev?(xvd_name)
+          return xvd_name
+        end
+        sleep(1)
+      end
+
+      cloud_error("Cannot find EBS volume on current instance")
+    end
+
     private
 
     attr_reader :az_selector
-
-    def image_params(cloud_properties, snapshot_id)
-      root_device_name = cloud_properties["root_device_name"]
-      architecture = cloud_properties["architecture"]
-
-      params = {
-          :name => "BOSH-#{UUIDTools::UUID.random_create}",
-          :architecture => architecture,
-          :kernel_id => find_aki(architecture, root_device_name),
-          :root_device_name => root_device_name,
-          :block_device_mappings => {
-              "/dev/sda" => {:snapshot_id => snapshot_id},
-              "/dev/sdb" => "ephemeral0"
-          }
-      }
-
-      # old stemcells doesn't have name & version
-      if cloud_properties["name"] && cloud_properties["version"]
-        name = "#{cloud_properties['name']} #{cloud_properties['version']}"
-        params[:description] = name
-      end
-
-      params
-    end
-
-    def find_aki(architecture, root_device_name)
-      @aki_picker.pick(architecture, root_device_name)
-    end
 
     def update_agent_settings(instance)
       unless block_given?
@@ -527,66 +488,6 @@ module Bosh::AwsCloud
           :detached
         end
       end
-    end
-
-    # This method tries to execute the helper script stemcell-copy
-    # as root using sudo, since it needs to write to the ebs_volume.
-    # If stemcell-copy isn't available, it falls back to writing directly
-    # to the device, which is used in the micro bosh deployer.
-    # The stemcell-copy script must be in the PATH of the user running
-    # the director, and needs sudo privileges to execute without
-    # password.
-
-    # TODO we require sudo to write to the EBS volume device.
-    #  Luckly on aws ubuntu we have passwordless sudo for everything
-    #  We should really fix this so we either don't need sudo or give
-    #   the user more warning / explanation for the
-    #   possible sudo password prompt
-    def copy_root_image(image_path, ebs_volume)
-      path = ENV["PATH"]
-
-      if stemcell_copy = has_stemcell_copy(path)
-        @logger.debug("copying stemcell using stemcell-copy script")
-        # note that is is a potentially dangerous operation, but as the
-        # stemcell-copy script sets PATH to a sane value this is safe
-        out = `sudo -n #{stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
-      else
-        @logger.info("falling back to using included copy stemcell")
-        included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy.sh", __FILE__)
-        out = `sudo -n #{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
-      end
-
-      unless $?.exitstatus == 0
-        cloud_error("Unable to copy stemcell root image, " \
-                    "exit status #{$?.exitstatus}: #{out}")
-      end
-
-      @logger.debug("stemcell copy output:\n#{out}")
-    end
-
-    # checks if the stemcell-copy script can be found in
-    # the current PATH
-    def has_stemcell_copy(path)
-      path.split(":").each do |dir|
-        stemcell_copy = File.join(dir, "stemcell-copy")
-        return stemcell_copy if File.exist?(stemcell_copy)
-      end
-      nil
-    end
-
-    def find_ebs_device(sd_name)
-      xvd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/xvd")
-
-      DEVICE_POLL_TIMEOUT.times do
-        if File.blockdev?(sd_name)
-          return sd_name
-        elsif File.blockdev?(xvd_name)
-          return xvd_name
-        end
-        sleep(1)
-      end
-
-      cloud_error("Cannot find EBS volume on current instance")
     end
 
     ##

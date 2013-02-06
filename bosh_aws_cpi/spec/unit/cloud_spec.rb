@@ -12,22 +12,6 @@ describe Bosh::AwsCloud::Cloud do
 
   end
 
-  internal_to Bosh::AwsCloud::Cloud do
-
-    it "should not find stemcell-copy" do
-      cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options)
-      cloud.has_stemcell_copy("/usr/bin:/usr/sbin").should be_nil
-    end
-
-    it "should find stemcell-copy" do
-      cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options)
-      path = ENV["PATH"]
-      path += ":#{File.expand_path('../../assets', __FILE__)}"
-      cloud.has_stemcell_copy(path).should_not be_nil
-    end
-
-  end
-
   describe "validating initialization options" do
     it "raises an error warning the user of all the missing required configurations" do
       expect {
