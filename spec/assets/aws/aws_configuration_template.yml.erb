@@ -8,7 +8,8 @@ vpc:
   instance_tenancy: default
   cidr: 10.10.0.0/16
   subnets:
-    - cidr: 10.10.0.0/16
+    bosh:
+      cidr: 10.10.0.0/24
   dhcp_options:
     domain_name_servers:
       - 10.10.0.5  # IP of the BOSH DNS server?
@@ -17,10 +18,10 @@ vpc:
     - name: open
       ingress:
         - protocol: tcp
-          ports: 0 - 65535
+          ports: '0 - 65535'
           sources: 0.0.0.0/0
         - protocol: udp
-          ports: 0 - 65535
+          ports: '0 - 65535'
           sources: 0.0.0.0/0
     - name: ssh
       ingress:
@@ -33,3 +34,6 @@ elastic_ips:
     dns_record: "*"
   bosh:
     instances: 1
+
+key_pairs:
+  <%= ENV["BOSH_KEY_PAIR_NAME"] %>: <%= ENV["BOSH_KEY_PATH"] %>
