@@ -202,7 +202,7 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("Instances:\n\t#{formatted_names.join("\n\t")}")
 
-      if non_interactive? || agree("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?")
+      if non_interactive? || agree("Are you sure you want to terminate all EC2 instances and their associated non-persistent EBS volumes?")
         say "Terminating instances and waiting for them to die..."
         if !ec2.terminate_instances
           say "Warning: instances did not terminate yet after 100 retries".red
