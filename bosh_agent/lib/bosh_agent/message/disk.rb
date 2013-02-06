@@ -268,15 +268,26 @@ module Bosh::Agent
 
           disk_usage = `#{disk_usage_command}`
 
-          if $?.to_i != 0
+          if $?.to_i != 0 || disk_usage.empty?
             logger.error("Failed to get disk usage data, df exit code = #{$?.to_i}")
             return result
           end
 
-          disk_usage.split("\n")[1..-1].each do |line|
-            usage, mountpoint = line.split(/\s+/)
-            usage.gsub!(/%$/, '')
+          lines = disk_usage.split("\n")
 
+          index = lines[0].index("Use%")
+          if index.nil?
+            logger.error("Corrupted df output, No Use%")
+            return result
+          end
+
+          lines.each { |line| line.slice!(0, index) }
+
+          lines[1..-1].each do |line|
+            usage, mountpoint = line.split
+            next unless usage && mountpoint
+
+            usage.gsub!(/%$/, '')
             case mountpoint
             when "/"
               result["system"]["percent"] = usage
@@ -296,7 +307,7 @@ module Bosh::Agent
         def disk_usage_command
           # '-l' excludes non-local partitions.
           # This allows us not to worry about NFS.
-          "df -l | awk '{print $5, $6}'"
+          "df -l"
         end
 
       end
