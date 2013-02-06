@@ -14,7 +14,7 @@ describe Bosh::AwsCloud::Cloud do
     @config["aws"]["access_key_id"] = ENV["EC2_ACCESS_KEY"]
     @config["aws"]["secret_access_key"] = ENV["EC2_SECRET_KEY"]
 
-    @logger = Logger.new(STDOUT)
+    @logger = Logger.new("/dev/null")
     Bosh::Clouds::Config.stub(:logger => @logger)
   end
 
