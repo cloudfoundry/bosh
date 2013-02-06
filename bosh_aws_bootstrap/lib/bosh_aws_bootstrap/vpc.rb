@@ -1,6 +1,9 @@
 module Bosh
   module Aws
     class VPC
+      include Bosh::AwsCloud::Helpers
+      def task_checkpoint; end
+
       DEFAULT_CIDR = "10.0.0.0/16"
 
       def initialize(ec2, aws_vpc)
@@ -64,6 +67,7 @@ module Bosh
           options = {}
           options[:availability_zone] = subnet["availability_zone"] if subnet["availability_zone"]
           subnet = @aws_vpc.subnets.create(subnet["cidr"], options)
+          wait_resource(subnet, :available, :state)
           subnet.add_tag("Name", :value => name)
           #say "\tdone creating subnet: #{subnet["cidr"]}".green
         end

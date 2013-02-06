@@ -57,13 +57,17 @@ describe Bosh::Aws::VPC do
 
         sub1.should_receive(:add_tag).with("Name", :value => "sub1")
         sub2.should_receive(:add_tag).with("Name", :value => "sub2")
+        sub1.should_receive(:state).and_return(:pending, :available)
+        sub2.should_receive(:state).and_return(:pending, :available)
 
         fake_aws_vpc = mock("aws_vpc", subnets: mock("subnets"))
 
         fake_aws_vpc.subnets.should_receive(:create).with("cider", {availability_zone: "canada"}).and_return(sub1)
         fake_aws_vpc.subnets.should_receive(:create).with("cedar", {}).and_return(sub2)
 
-        Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).create_subnets({"sub1" => subnet_1_specs, "sub2" => subnet_2_specs})
+        vpc = Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc)
+        vpc.stub(:sleep)
+        vpc.create_subnets({"sub1" => subnet_1_specs, "sub2" => subnet_2_specs})
       end
     end
 

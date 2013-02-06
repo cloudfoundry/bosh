@@ -86,6 +86,7 @@ module Bosh::AwsCloud
       resource.send(state_method)
     rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
         AWS::EC2::Errors::InvalidInstanceID::NotFound,
+        AWS::EC2::Errors::InvalidSubnetID::NotFound,
         AWS::Core::Resource::NotFound => e
       # ugly workaround for AWS race conditions:
       # 1) sometimes when we upload a stemcell and proceed to create a VM
