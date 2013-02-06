@@ -73,7 +73,6 @@ describe "deployment" do
     use_canaries(1)
     use_pool_size(2)
     use_job_instances(2)
-    use_dynamic_ip
     use_failing_job
     with_deployment do |deployment|
       bosh("deployment #{deployment.to_path}").should succeed
@@ -98,7 +97,6 @@ describe "deployment" do
     use_max_in_flight(2)
     use_job_instances(3)
     use_pool_size(3)
-    use_dynamic_ip
     with_deployment do |deployment, result|
       times = start_and_finish_times_for_job_updates(get_task_id(result.output))
       times["batlight/1"]["started"].should be >= times["batlight/0"]["started"]
