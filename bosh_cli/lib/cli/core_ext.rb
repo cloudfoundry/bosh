@@ -90,6 +90,10 @@ module BoshExtensions
   def terminal_width
     STDIN.tty? ? [HighLine::SystemExtensions.terminal_size[0], 120].min : 80
   end
+
+  def warning(message)
+    Kernel.warn("[WARNING] #{message}".yellow)
+  end
 end
 
 module BoshStringExtensions

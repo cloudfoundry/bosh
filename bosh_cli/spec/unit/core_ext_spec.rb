@@ -64,6 +64,12 @@ describe Object do
     s.read.should == "\ntest\naaaa\n"
   end
 
+  it 'has a warn helper' do
+    should_receive(:warn).with("[WARNING] Could not find keypair".yellow)
+
+    warning("Could not find keypair")
+  end
+
   it "raises a special exception to signal a premature exit" do
     lambda {
       err("Done")
