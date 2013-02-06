@@ -199,7 +199,10 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("Instances:\n\t#{formatted_names.join("\n\t")}")
 
-      ec2.terminate_instances if non_interactive? || agree("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?")
+      if non_interactive? || agree("Are you sure you want to terminate all EC2 instances and their associated EBS volumes?")
+        say "Terminating instances and waiting for them to die..."
+        ec2.terminate_instances
+      end
     end
 
     usage "aws delete_all rds databases"

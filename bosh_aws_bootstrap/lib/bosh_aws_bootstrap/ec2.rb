@@ -53,6 +53,11 @@ module Bosh
 
       def terminate_instances
         aws_ec2.instances.each &:terminate
+        retries = 100
+        until aws_ec2.instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
+          sleep 3
+          retries -= 1
+        end
       end
 
       def instance_names

@@ -49,15 +49,18 @@ describe Bosh::Aws::EC2 do
 
   describe "instances" do
     describe "termination" do
-      it "should terminate all instances" do
+      it "should terminate all instances and wait until completed before returning" do
         instance_1 = double("instance")
         instance_2 = double("instance")
         fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2])
 
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+        ec2.stub(:sleep)
 
         instance_1.should_receive :terminate
         instance_2.should_receive :terminate
+        instance_1.should_receive(:status).and_return(:shutting_down, :shutting_down, :terminated)
+        instance_2.should_receive(:status).and_return(:shutting_down, :terminated, :terminated)
 
         ec2.terminate_instances
       end
@@ -131,7 +134,7 @@ describe Bosh::Aws::EC2 do
         ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: fake_gateways))
         fake_gateways.values.each do |gateway|
           gateway.should_receive :delete
-          gateway.attachments.each {|a| a.should_receive(:delete) }
+          gateway.attachments.each { |a| a.should_receive(:delete) }
         end
 
         ec2.delete_internet_gateways ["gw1", "gw2"]
