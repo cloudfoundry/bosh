@@ -52,3 +52,4 @@ create-vpc-output*.yml
 /release/jobs/micro_*/spec
 /release/jobs/micro_*/templates/
 /release/src/bosh/*
+/tmp/*

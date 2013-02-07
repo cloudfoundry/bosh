@@ -23,7 +23,7 @@ cloud:
     aws:
       access_key_id: <%= access_key_id %>
       secret_access_key: <%= secret_access_key %>
-      default_key_name: <%= name %>
+      default_key_name: <%= key_pair_name %>
       default_security_groups: ["bosh"]
       region: <%= region %>
       ec2_private_key: <%= private_key_path %>
@@ -40,6 +40,8 @@ apply_spec:
     aws:
       access_key_id: <%= access_key_id %>
       secret_access_key: <%= secret_access_key %>
-      default_key_name: <%= name %>
+      default_key_name: <%= key_pair_name %>
       default_security_groups: ["bosh"]
       ec2_endpoint: ec2.<%= region %>.amazonaws.com
+      region: <%= region %>
+

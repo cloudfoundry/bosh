@@ -21,7 +21,7 @@ module Bosh
       end
 
       def availability_zone
-        config['vpc']['subnets']['bosh']['availability_zone']
+        config['vpc']['subnets']['bosh']['availability_zone'] || warning('Missing availability zone in vpc.subnets.bosh')
       end
 
       def access_key_id
@@ -36,14 +36,12 @@ module Bosh
         config['aws']['region'] || warning('Missing aws region field')
       end
 
+      def key_pair_name
+        config['key_pairs'].any? ? config['key_pairs'].keys[0] : warning("Missing key_pairs field, must have at least 1 keypair")
+      end
+
       def private_key_path
-        key_name = config['name']
-        path = config['key_pairs'][key_name]
-        unless path
-          warning("Missing keypair '#{key_name}'")
-          return nil
-        end
-        path.gsub(/\.pub$/, '')
+        config['key_pairs'].any? ? config['key_pairs'].values[0].gsub(/\.pub$/, '') : warning("Missing key_pairs field, must have at least 1 keypair")
       end
 
       # RSpec overloads to_yaml when you set up expectations on an object;

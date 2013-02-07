@@ -26,7 +26,7 @@ module Bosh::Cli::Command
     desc "generate micro_bosh.yml"
     def create_micro_bosh_manifest(config_file, receipt_file)
       File.open("micro_bosh.yml", "w+") do |f|
-        f.write(Bosh::Aws::MicroboshManifest.new(YAML.load_file(config_file), YAML.load_file(receipt_file)).to_yaml)
+        f.write(Bosh::Aws::MicroboshManifest.new(load_yaml_file(config_file), load_yaml_file(receipt_file)).to_yaml)
       end
     end
 

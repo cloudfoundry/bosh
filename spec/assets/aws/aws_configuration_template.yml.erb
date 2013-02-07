@@ -3,6 +3,7 @@ aws:
   secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
   access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
   region: us-east-1
+name: <%= ENV["VPC_SUBDOMAIN"] %>
 vpc:
   domain: <%= ENV["VPC_SUBDOMAIN"] %>.cf-app.com
   instance_tenancy: default
@@ -10,12 +11,13 @@ vpc:
   subnets:
     bosh:
       cidr: 10.10.0.0/24
+      availability_zone: us-east-1d
   dhcp_options:
     domain_name_servers:
       - 10.10.0.5  # IP of the BOSH DNS server?
       - 172.16.0.23  # amazon public DNS server
   security_groups:
-    - name: open
+    - name: bosh
       ingress:
         - protocol: tcp
           ports: '0 - 65535'
@@ -23,17 +25,21 @@ vpc:
         - protocol: udp
           ports: '0 - 65535'
           sources: 0.0.0.0/0
-    - name: ssh
+    - name: cf
       ingress:
         - protocol: tcp
-          ports: 22
+          ports: '0 - 65535'
+          sources: 0.0.0.0/0
+        - protocol: udp
+          ports: '0 - 65535'
           sources: 0.0.0.0/0
 elastic_ips:
   router:
     instances: 1
     dns_record: "*"
-  bosh:
+  micro:
     instances: 1
+    dns_record: "micro"
 
 key_pairs:
-  <%= ENV["BOSH_KEY_PAIR_NAME"] %>: <%= ENV["BOSH_KEY_PATH"] %>
+  <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_bosh_rsa" %>
