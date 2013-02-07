@@ -106,7 +106,7 @@ namespace :stemcell do
   end
 
   def get_working_dir
-    "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{$$}"
+    ENV["BUILD_PATH"] || "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{$$}"
   end
 
   def get_hypervisor(infrastructure)
