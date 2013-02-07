@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Ubuntu::Logrotate
+  class Platform::Linux::Logrotate
     DEFAULT_MAX_LOG_FILE_SIZE = "50M"
 
     def initialize(spec)
@@ -14,7 +14,7 @@ module Bosh::Agent
       size = max_log_file_size
 
       Template.write do |t|
-        t.src 'platform/ubuntu/templates/logrotate.erb'
+        t.src 'platform/linux/templates/logrotate.erb'
         t.dst "#{@system_root}/etc/logrotate.d/#{BOSH_APP_GROUP}"
       end
     end
