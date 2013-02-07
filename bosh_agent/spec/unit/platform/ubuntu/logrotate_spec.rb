@@ -15,14 +15,14 @@ describe Bosh::Agent::Platform::Ubuntu::Logrotate do
 
   it 'should create logrotate file named after BOSH_APP_GROUP' do
     spec_properties = {}
-    Bosh::Agent::Platform::Ubuntu::Logrotate.new(spec_properties).install
+    Bosh::Agent::Platform::Ubuntu::Logrotate.new.install(spec_properties)
     File.exist?(File.join(@logrotate_path, Bosh::Agent::BOSH_APP_GROUP)).should == true
   end
 
   it 'should default to DEFAULT_MAX_LOG_FILE_SIZE' do
     default_max_log_file_size = Bosh::Agent::Platform::Ubuntu::Logrotate::DEFAULT_MAX_LOG_FILE_SIZE
     spec_properties = {}
-    Bosh::Agent::Platform::Ubuntu::Logrotate.new(spec_properties).install
+    Bosh::Agent::Platform::Ubuntu::Logrotate.new.install(spec_properties)
     match_expression = %r|size=#{default_max_log_file_size}|
     File.read(File.join(@logrotate_path, Bosh::Agent::BOSH_APP_GROUP)).should match(match_expression)
   end
