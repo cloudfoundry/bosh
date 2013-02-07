@@ -48,7 +48,6 @@ function wait_agent {
 wait_agent ${agent_host} ${agent_port}
 
 # Start compiler
-#/var/vcap/bosh/bin/ruby ${bosh_src_dir}/bosh/gems/bin/package_compiler \
 package_compiler \
   --cpi ${infrastructure} \
   compile \
@@ -74,5 +73,4 @@ kill_agent 0 || kill_agent 9
 
 # Clean out src
 cd /var/tmp
-#TEMPORARY
-#rm -fr ${bosh_app_dir}/bosh/src
+rm -fr ${bosh_app_dir}/bosh/src

@@ -45,3 +45,4 @@ persist_dir bosh_agent_src_dir
 cp -aL $bosh_release_src_dir/bosh_agent $assets_dir/gems
 
 persist_value bosh_agent_src_version
+persist_value mcf_enabled
