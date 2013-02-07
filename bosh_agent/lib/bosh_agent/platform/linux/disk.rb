@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Ubuntu::Disk
+  class Platform::Linux::Disk
 
     def initialize
     end
@@ -70,13 +70,16 @@ module Bosh::Agent
       end
     end
 
+    # Note: This is not cross-platform (only works in Ubuntu)
     def rescan_scsi_bus
+      # TODO: rescan-scsi-bus.sh locates in /usr/bin in RHEL
       `/sbin/rescan-scsi-bus.sh`
       unless $?.exitstatus == 0
         raise Bosh::Agent::FatalError, "Failed to run /sbin/rescan-scsi-bus.sh (exit code #{$?.exitstatus})"
       end
     end
 
+    # Note: This is not cross-platform (only works in Ubuntu)
     def detect_block_device(disk_id)
       rescan_scsi_bus
       dev_path = "/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"

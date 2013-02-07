@@ -3,7 +3,8 @@
 require "bosh_agent/platform/linux"
 
 module Bosh::Agent
-  class Platform::Ubuntu < Platform::Linux
+  class Platform::Rhel < Platform::Linux
+    # TODO Work in progress
 
   end
 end

@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Ubuntu::Password
+  class Platform::Linux::Password
 
     def update(settings)      
       # TODO - also support user/password hash override

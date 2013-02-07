@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Ubuntu::Network
+  class Platform::Linux::Network
 
     def initialize
     end
@@ -50,7 +50,7 @@ module Bosh::Agent
       end
 
       verify_networks
-      write_ubuntu_network_interfaces
+      write_network_interfaces
       write_resolv_conf
       gratuitous_arp
     end
@@ -109,16 +109,6 @@ module Bosh::Agent
       end
     end
 
-    def write_ubuntu_network_interfaces
-      template = ERB.new(load_erb("interfaces.erb"), 0, '%<>-')
-      result = template.result(binding)
-      network_updated = Bosh::Agent::Util::update_file(result, '/etc/network/interfaces')
-      if network_updated
-        logger.info("Updated networking")
-        restart_networking_service
-      end
-    end
-
     def verify_networks
       # This only verifies that the fields has values
       @networks.each do |k, v|
@@ -130,6 +120,18 @@ module Bosh::Agent
       end
     end
 
+    # Note: this is not cross-platform! (Only works in Ubuntu)
+    def write_network_interfaces
+      template = ERB.new(load_erb("interfaces.erb"), 0, '%<>-')
+      result = template.result(binding)
+      network_updated = Bosh::Agent::Util::update_file(result, '/etc/network/interfaces')
+      if network_updated
+        logger.info("Updated networking")
+        restart_networking_service
+      end
+    end
+
+    # Note: this is not cross-platform! (Only works in Ubuntu)
     def restart_networking_service
       # ubuntu 10.04 networking startup/upstart stuff is quite borked
       @networks.each do |k, v|
@@ -141,6 +143,7 @@ module Bosh::Agent
       end
     end
 
+    # Note: this is not cross-platform! (Only works in Ubuntu)
     def write_dhcp_conf
       template = ERB.new(load_erb("dhclient_conf.erb"), 0, '%<>-')
       result = template.result(binding)
