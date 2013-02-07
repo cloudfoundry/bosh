@@ -4,23 +4,19 @@ module Bosh::Agent
   class Platform::Linux::Logrotate
     DEFAULT_MAX_LOG_FILE_SIZE = "50M"
 
-    def initialize(spec)
-      @spec = spec
-      @system_root = Bosh::Agent::Config.system_root
+    def initialize
     end
 
-    def install
-      base_dir = Bosh::Agent::Config.base_dir
-      size = max_log_file_size
+    def install(spec)
+      size = max_log_file_size(spec['properties'])
 
       Template.write do |t|
-        t.src 'platform/linux/templates/logrotate.erb'
-        t.dst "#{@system_root}/etc/logrotate.d/#{BOSH_APP_GROUP}"
+        t.src File.join(File.dirname(__FILE__), 'templates/logrotate.erb')
+        t.dst "#{Bosh::Agent::Config.system_root}/etc/logrotate.d/#{BOSH_APP_GROUP}"
       end
     end
 
-    def max_log_file_size
-      properties = @spec['properties']
+    def max_log_file_size(properties)
       if properties && properties.key?('logging') && properties['logging'].key?('max_log_file_size')
         properties['logging']['max_log_file_size']
       else

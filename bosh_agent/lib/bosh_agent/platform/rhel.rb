@@ -4,7 +4,16 @@ require "bosh_agent/platform/linux"
 
 module Bosh::Agent
   class Platform::Rhel < Platform::Linux
-    # TODO Work in progress
+
+    require "bosh_agent/platform/rhel/disk"
+    require "bosh_agent/platform/rhel/network"
+
+    def initialize
+      @disk ||= Disk.new
+      @network ||= Network.new
+
+      super
+    end
 
   end
 end
