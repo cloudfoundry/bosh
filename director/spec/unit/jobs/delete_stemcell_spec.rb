@@ -14,7 +14,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
     end
 
     it "should fail for unknown stemcells" do
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       lambda { job.perform }.should raise_exception(BD::StemcellNotFound)
@@ -28,10 +28,24 @@ describe Bosh::Director::Jobs::DeleteStemcell do
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid").
           and_raise("error")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       lambda { job.perform }.should raise_exception("error")
+    end
+
+    it "should not fail of the CPI raises an error and the force options is used" do
+      BDM::Stemcell.make(:name => "test_stemcell",
+                         :version => "test_version",
+                         :cid => "stemcell_cid")
+
+      @cloud.should_receive(:delete_stemcell).with("stemcell_cid").
+          and_raise("error")
+
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {"force" => true})
+      job.should_receive(:with_stemcell_lock).
+          with("test_stemcell", "test_version").and_yield
+      lambda { job.perform }.should_not raise_error
     end
 
     it "should fail if the deployments still reference this stemcell" do
@@ -42,7 +56,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
       deployment = BDM::Deployment.make
       deployment.add_stemcell(stemcell)
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       expect { job.perform }.to raise_exception(BD::StemcellInUse)
@@ -55,7 +69,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
       @cloud.should_receive(:delete_stemcell).with("stemcell_cid")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       job.perform
@@ -77,7 +91,7 @@ describe Bosh::Director::Jobs::DeleteStemcell do
 
       @blobstore.should_receive(:delete).with("compiled-package-blb-id")
 
-      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version")
+      job = BD::Jobs::DeleteStemcell.new("test_stemcell", "test_version", {})
       job.should_receive(:with_stemcell_lock).
           with("test_stemcell", "test_version").and_yield
       job.perform

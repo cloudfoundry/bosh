@@ -177,8 +177,10 @@ module Bosh::Cli::Command
     # bosh delete stemcell
     usage "delete stemcell"
     desc  "Delete stemcell"
+    option "--force", "ignore errors while deleting the stemcell"
     def delete(name, version)
       auth_required
+      force = !!options[:force]
 
       say("Checking if stemcell exists...")
 
@@ -193,7 +195,7 @@ module Bosh::Cli::Command
         return
       end
 
-      status, task_id = director.delete_stemcell(name, version)
+      status, task_id = director.delete_stemcell(name, version, :force => force)
 
       task_report(status, task_id, "Deleted stemcell `#{name}/#{version}'")
     end

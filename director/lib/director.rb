@@ -413,8 +413,10 @@ module Bosh::Director
 
     delete "/stemcells/:name/:version" do
       name, version = params[:name], params[:version]
+      options = {}
+      options["force"] = true if params["force"] == "true"
       stemcell = @stemcell_manager.find_by_name_and_version(name, version)
-      task = @stemcell_manager.delete_stemcell(@user, stemcell)
+      task = @stemcell_manager.delete_stemcell(@user, stemcell, options)
       redirect "/tasks/#{task.id}"
     end
 
