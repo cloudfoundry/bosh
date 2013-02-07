@@ -292,11 +292,11 @@ module Bosh::Agent
         udev_file = '/etc/udev/rules.d/70-persistent-net.rules'
         if File.exist?(udev_file)
           @logger.info("deleting 70-persistent-net.rules - again")
-          `rm #{udev_file}`
+          File.delete(udev_file)
         end
         @logger.info("Removing settings.json")
         settings_file = Bosh::Agent::Config.settings_file
-        `rm #{settings_file}`
+        File.delete(settings_file)
       end
 
       @logger.info("Halt after networking change")
