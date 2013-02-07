@@ -46,7 +46,7 @@ module Bosh::Agent
       find_message_processors
     end
 
-    # TODO: add runtime loading of messag handlers
+    # TODO: add runtime loading of message handlers
     def find_message_processors
       message_consts = Bosh::Agent::Message.constants
       @processors = {}
