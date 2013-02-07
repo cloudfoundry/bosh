@@ -296,7 +296,7 @@ module Bosh::Agent
         def disk_usage_command
           # '-l' excludes non-local partitions.
           # This allows us not to worry about NFS.
-          "df -l | awk '{print $5, $6}'"
+          "df -l -P | awk '{print $5, $6}'"
         end
 
       end
