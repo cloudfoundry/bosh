@@ -39,6 +39,10 @@ module BoshHelper
     BH.read_environment('BAT_VCAP_PASSWORD')
   end
 
+  def bosh_dns_host
+    ENV.has_key?('BAT_DNS_HOST') ? BH.read_environment('BAT_DNS_HOST') : nil
+  end
+
   def debug?
     ENV.has_key?('BAT_DEBUG')
   end

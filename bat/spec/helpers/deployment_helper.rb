@@ -104,6 +104,7 @@ module DeploymentHelper
     # It is used for negative testing.
     @spec["properties"]["batlight"] ||= {}
     @spec["properties"]["batlight"]["missing"] = "nope"
+    @spec["properties"]["dns_nameserver"] = bosh_dns_host if bosh_dns_host
   end
 
   # if with_deployment() is called without a block, it is up to the caller to
