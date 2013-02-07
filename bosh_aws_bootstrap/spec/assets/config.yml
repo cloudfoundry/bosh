@@ -43,3 +43,8 @@ elastic_ips:
     dns_record: micro
 key_pairs:
   dev102: /tmp/somekey
+rds:
+  - name: ccdb
+    tag: cc
+  - name: uaadb
+    tag: uaa

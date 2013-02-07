@@ -35,6 +35,7 @@ ci_result/
 **/Gemfile.lock
 /bin/
 create-vpc-output*.yml
+create-rds-output*.yml
 /release/blobs
 /release/releases
 /release/dev-releases

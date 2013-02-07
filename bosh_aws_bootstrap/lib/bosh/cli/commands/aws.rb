@@ -3,7 +3,8 @@ require_relative "../../../bosh_aws_bootstrap"
 module Bosh::Cli::Command
   class AWS < Base
     DEFAULT_CIDR = "10.0.0.0/16" # KILL
-    OUTPUT_FILE_BASE = "create-vpc-output-%s.yml"
+    OUTPUT_VPC_FILE_BASE = "create-vpc-output-%s.yml"
+    OUTPUT_RDS_FILE_BASE = "create-rds-output-%s.yml"
 
     attr_reader :output_state, :config_dir, :ec2
     attr_accessor :vpc
@@ -137,7 +138,7 @@ module Bosh::Cli::Command
         err "VPC #{vpc.vpc_id} was not available within 60 seconds, giving up"
       end
     ensure
-      file_path = File.join(File.dirname(config_file), OUTPUT_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
+      file_path = File.join(File.dirname(config_file), OUTPUT_VPC_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
       flush_output_state file_path
 
       say "details in #{file_path}"
@@ -218,6 +219,46 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "aws create rds"
+    desc "create all RDS database instances"
+    def create_rds_dbs(config_file)
+      config = load_yaml_file(config_file)
+      credentials = config["aws"]
+      rds = Bosh::Aws::RDS.new(credentials)
+
+      config["rds"].each do |rds_db_config|
+        name = rds_db_config["name"]
+        tag = rds_db_config["tag"]
+
+        unless rds.database_exists?(name)
+          response = rds.create_database(name)
+          output_rds_properties(name, tag, response)
+        end
+      end
+
+      if was_rds_eventually_available?(rds)
+        config["rds"].each do |rds_db_config|
+          name = rds_db_config["name"]
+
+          if deployment_properties[name]
+            db_instance = rds.database(name)
+            deployment_properties[name].merge!(
+              "address" => db_instance.endpoint_address,
+              "port" => db_instance.endpoint_port
+            )
+          end
+        end
+      else
+        err "RDS was not available within 10 minutes, giving up"
+      end
+
+    ensure
+      file_path = File.join(File.dirname(config_file), OUTPUT_RDS_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
+      flush_output_state file_path
+
+      say "details in #{file_path}"
+    end
+
     usage "aws delete_all rds"
     desc "delete all RDS database instances"
 
@@ -261,6 +302,50 @@ module Bosh::Cli::Command
           # try again
         end
       end
+    end
+
+    def was_rds_eventually_available?(rds)
+      return true if all_rds_instances_available?(rds, :silent => true)
+      (1..60).any? do |attempt|
+        sleep 10
+        all_rds_instances_available?(rds)
+      end
+    end
+
+    def all_rds_instances_available?(rds, opts = {})
+      silent = opts[:silent]
+      say("checking rds status...") unless silent
+      rds.databases.all? do |db_instance|
+        say("  #{db_instance.db_name} #{db_instance.db_instance_status} #{db_instance.endpoint_address}") unless silent
+        !db_instance.endpoint_address.nil?
+      end
+    end
+
+    def output_rds_properties(name, tag, response)
+      deployment_properties[name] = {
+        "db_scheme" => response[:engine],
+        "roles" => [
+          {
+            "tag" => "admin",
+            "name" => response[:master_username],
+            "password" => response[:master_user_password]
+          }
+        ],
+          "databases" => [
+            {
+              "tag" => tag,
+              "name" => name
+            }
+        ]
+      }
+    end
+
+    def deployment_manifest_state
+      @output_state["deployment_manifest"] ||= {}
+    end
+
+    def deployment_properties
+      deployment_manifest_state["properties"] ||= {}
     end
 
     def flush_output_state(file_path)
