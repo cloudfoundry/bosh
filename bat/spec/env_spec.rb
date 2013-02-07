@@ -43,7 +43,7 @@ describe "initialization", :skip_task_check do
       bosh("target #{bosh_director}").should succeed_with /Target \w*\s*set/
     end
 
-    it "should not have a 'bat' deployments" do
+    it "should not have 'bat' deployments" do
       deployments.should_not have_key("bat")
       deployments.should_not have_key("bat2")
     end
