@@ -75,18 +75,19 @@ describe Bosh::Agent::Heartbeat do
     Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
     Bosh::Agent::Monit.enabled = true
 
-    disk_usage_output = <<-EOS.gsub(/^\s+/, '')
-    Use% Mounted
-    87% /
-    1% /dev
-    0% /dev/shm
-    1% /var/run
-    0% /var/lock
-    0% /lib/init/rw
-    87% /var/lib/ureadahead/debugfs
-    4% #{Bosh::Agent::Config.base_dir}/data
-    5% /tmp
-    3% #{Bosh::Agent::Config.base_dir}/store
+    disk_usage_output = <<-EOS
+Filesystem           1K-blocks      Used Available Use% Mounted
+/very/long/device/name
+                      19737268  11298444   7436228  87% /
+none                    503880       216    503664   1% /dev
+none                    509592         0    509592   0% /dev/shm
+none                    509592        68    509524   1% /var/run
+none                    509592         0    509524   0% /var/lock
+none                    509592         0    509524   0% /lib/init/rw
+none                    509592         0    509524  87% /var/lib/ureadahead/debugfs
+none                    509592        68    509524   4% #{Bosh::Agent::Config.base_dir}/data
+none                    509592        68    509524   5% /tmp
+none                    509592        68    509524   3% #{Bosh::Agent::Config.base_dir}/store
     EOS
 
     Bosh::Agent::Message::DiskUtil.stub!(:disk_usage_command).and_return("echo \"#{disk_usage_output}\"")
