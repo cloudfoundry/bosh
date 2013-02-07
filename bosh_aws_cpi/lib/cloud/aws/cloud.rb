@@ -535,8 +535,9 @@ module Bosh::AwsCloud
         # stemcell-copy script sets PATH to a sane value this is safe
         out = `sudo #{stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       else
-        @logger.info("falling back to using dd to copy stemcell")
-        out = `tar -xzf #{image_path} -O root.img | dd of=#{ebs_volume} 2>&1`
+        @logger.info("falling back to using included copy stemcell")
+        included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy.sh", __FILE__)
+        out = `#{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       end
 
       unless $?.exitstatus == 0

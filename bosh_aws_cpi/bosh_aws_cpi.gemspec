@@ -9,12 +9,12 @@ Gem::Specification.new do |s|
   s.summary      = "BOSH AWS CPI"
   s.description  = s.summary
   s.author       = "VMware"
-  s.homepage = 'https://github.com/cloudfoundry/bosh'
-  s.license = 'Apache 2.0'
+  s.homepage     = 'https://github.com/cloudfoundry/bosh'
+  s.license      = 'Apache 2.0'
   s.email        = "support@cloudfoundry.com"
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
-  s.files        = `git ls-files -- bin/* lib/*`.split("\n") + %w(README.md)
+  s.files        = `git ls-files -- bin/* lib/* scripts/*`.split("\n") + %w(README.md)
   s.require_path = "lib"
   s.bindir       = "bin"
   s.executables  = %w(bosh_aws_console)
