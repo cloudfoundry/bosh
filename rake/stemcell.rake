@@ -29,6 +29,7 @@ namespace :stemcell do
 
     options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(manifest, release_tarball))
+    options[:non_interactive] = true
 
     build("stemcell-#{args[:infrastructure]}", options)
   end
