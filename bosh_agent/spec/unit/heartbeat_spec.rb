@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require File.dirname(__FILE__) + '/../spec_helper'
+require 'sys/filesystem'
 
 describe Bosh::Agent::Heartbeat do
 
@@ -75,21 +76,18 @@ describe Bosh::Agent::Heartbeat do
     Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
     Bosh::Agent::Monit.enabled = true
 
-    disk_usage_output = <<-EOS.gsub(/^\s+/, '')
-    Use% Mounted
-    87% /
-    1% /dev
-    0% /dev/shm
-    1% /var/run
-    0% /var/lock
-    0% /lib/init/rw
-    87% /var/lib/ureadahead/debugfs
-    4% #{Bosh::Agent::Config.base_dir}/data
-    5% /tmp
-    3% #{Bosh::Agent::Config.base_dir}/store
-    EOS
+    class StubStat
+      attr_accessor :blocks, :blocks_available
 
-    Bosh::Agent::Message::DiskUtil.stub!(:disk_usage_command).and_return("echo \"#{disk_usage_output}\"")
+      def initialize(remaining)
+        @blocks = 1
+        @blocks_available = 1 - remaining
+      end
+    end
+
+    Sys::Filesystem.stub!(:stat).with('/'){ StubStat.new(0.87) }
+    Sys::Filesystem.stub!(:stat).with(File.join(Bosh::Agent::Config.base_dir, "data")){ StubStat.new(0.04) }
+    Sys::Filesystem.stub!(:stat).with(File.join(Bosh::Agent::Config.base_dir, "store")){ StubStat.new(0.03) }
 
     expected_payload = {
       "job" => "mutator",
@@ -101,9 +99,9 @@ describe Bosh::Agent::Heartbeat do
         "swap" => { "percent" => 0.0, "kb" => 0 },
         "cpu" => { "user" => 2.2, "sys" => 0.2, "wait" => 3.2 },
         "disk" => {
-          "system" => { "percent" => "87" },
-          "ephemeral" => { "percent" => "4" },
-          "persistent" => { "percent" => "3" }
+          "system" => { "percent" => 87 },
+          "ephemeral" => { "percent" => 4 },
+          "persistent" => { "percent" => 3 }
         }
       },
       "ntp" => { "message" => Bosh::Agent::NTP::FILE_MISSING }
