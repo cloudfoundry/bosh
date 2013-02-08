@@ -279,7 +279,7 @@ module Bosh::Agent
           usage_percent = nil
           begin
             stat = Filesystem.stat(path)
-            usage_percent = ((1 -  (stat.blocks_available.to_f/stat.blocks.to_f)) * 100).to_i
+            usage_percent = ((1 -  (stat.blocks_available.to_f/stat.blocks.to_f)) * 100).to_i.to_s
           rescue Sys::Filesystem::Error => e
           end
           usage_percent
