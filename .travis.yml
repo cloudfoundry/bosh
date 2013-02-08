@@ -1,6 +1,6 @@
 script: "./ci_build.rb"
 rvm:
-  - 1.9.3
+  - ruby-1.9.3-p327
 env:
   global:
     - secure: "tS1rXSEDk71HuMuhUj0k07jLb0DhMPl5Fys5MnDvMlhgOOUZ8ViD+0niExhP\nA3WWYtbUkty+ugo+iuPg5IZ7Z1oviqc35fLfWZRPYqZ5W4hjpEb3U/2mwFZv\nvqIbUjyjRxIG6d0whG/HTEWvEcgFUa0qjH70mdOMGoS1CHCyzuw="
