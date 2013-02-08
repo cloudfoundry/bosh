@@ -375,10 +375,15 @@ module Bosh::AwsCloud
         TagManager.tag(instance, key, value)
       end
 
-      # should deployment name be included too?
       job = metadata[:job]
       index = metadata[:index]
-      TagManager.tag(instance, "Name", "#{job}/#{index}") if job && index
+
+      if job && index
+        name = "#{job}/#{index}"
+      elsif metadata[:compiling]
+        name = "compiling/#{metadata[:compiling]}"
+      end
+      TagManager.tag(instance, "Name", name)
     rescue AWS::EC2::Errors::TagLimitExceeded => e
       @logger.error("could not tag #{instance.id}: #{e.message}")
     end
