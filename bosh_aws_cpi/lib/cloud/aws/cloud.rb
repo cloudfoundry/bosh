@@ -585,7 +585,7 @@ module Bosh::AwsCloud
     #
     def validate_options
       required_keys = {
-          "aws" => ["access_key_id", "secret_access_key", "region"],
+          "aws" => ["access_key_id", "secret_access_key", "region", "default_key_name"],
           "registry" => ["endpoint", "user", "password"],
       }
 

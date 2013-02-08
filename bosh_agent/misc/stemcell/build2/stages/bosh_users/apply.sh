@@ -25,11 +25,3 @@ cp $assets_dir/sudoers $chroot/etc/sudoers
 
 echo "export PATH=$bosh_dir/bin:$PATH" >> $chroot/root/.bashrc
 echo "export PATH=$bosh_dir/bin:$PATH" >> $chroot/home/vcap/.bashrc
-
-# No root ssh
-sed "/^ *PermitRootLogin/d" -i $chroot/etc/ssh/sshd_config
-echo 'PermitRootLogin no' >> $chroot/etc/ssh/sshd_config
-
-# No passwords
-sed "/^ *PasswordAuthentication/d" -i $chroot/etc/ssh/sshd_config
-echo 'PasswordAuthentication no' >> $chroot/etc/ssh/sshd_config
