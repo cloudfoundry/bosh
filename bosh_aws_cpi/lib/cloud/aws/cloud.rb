@@ -539,11 +539,11 @@ module Bosh::AwsCloud
         @logger.debug("copying stemcell using stemcell-copy script")
         # note that is is a potentially dangerous operation, but as the
         # stemcell-copy script sets PATH to a sane value this is safe
-        out = `sudo #{stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
+        out = `sudo -p #{stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       else
         @logger.info("falling back to using included copy stemcell")
         included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy.sh", __FILE__)
-        out = `sudo #{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
+        out = `sudo -p #{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       end
 
       unless $?.exitstatus == 0
