@@ -87,6 +87,18 @@ module SpecHelper
       Bosh::Director::Config.dns_db = @dns_db
     end
 
+    def disconnect_database
+      if @db
+        @db.disconnect
+        @db = nil
+      end
+
+      if @dns_db
+        @dns_db.disconnect
+        @dns_db = nil
+      end
+    end
+
     def run_migrations
       Sequel::Migrator.apply(@dns_db, @dns_migrations, nil)
       Sequel::Migrator.apply(@db, @director_migrations, nil)
@@ -94,6 +106,8 @@ module SpecHelper
     end
 
     def reset_database
+      disconnect_database
+
       if @db_dir && File.directory?(@db_dir)
         FileUtils.rm_rf(@db_dir)
       end
