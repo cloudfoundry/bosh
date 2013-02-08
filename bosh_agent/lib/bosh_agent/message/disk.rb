@@ -281,7 +281,6 @@ module Bosh::Agent
             stat = Filesystem.stat(path)
             usage_percent = ((1 -  (stat.blocks_available.to_f/stat.blocks.to_f)) * 100).to_i
           rescue Sys::Filesystem::Error => e
-#                logger.info("Unable to get disk usage for #{path}: #{e.message}")
           end
           usage_percent
         end
