@@ -99,9 +99,9 @@ describe Bosh::Agent::Heartbeat do
         "swap" => { "percent" => 0.0, "kb" => 0 },
         "cpu" => { "user" => 2.2, "sys" => 0.2, "wait" => 3.2 },
         "disk" => {
-          "system" => { "percent" => 87 },
-          "ephemeral" => { "percent" => 4 },
-          "persistent" => { "percent" => 3 }
+          "system" => { "percent" => "87" },
+          "ephemeral" => { "percent" => "4" },
+          "persistent" => { "percent" => "3" }
         }
       },
       "ntp" => { "message" => Bosh::Agent::NTP::FILE_MISSING }
