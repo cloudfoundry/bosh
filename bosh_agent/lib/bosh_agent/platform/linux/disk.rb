@@ -70,13 +70,9 @@ module Bosh::Agent
       end
     end
 
-    # Note: This is not cross-platform (only works in Ubuntu)
+    # Note: This is not cross-platform (works in Ubuntu and RHEL)
     def rescan_scsi_bus
-      # TODO: rescan-scsi-bus.sh locates in /usr/bin in RHEL
-      `/sbin/rescan-scsi-bus.sh`
-      unless $?.exitstatus == 0
-        raise Bosh::Agent::FatalError, "Failed to run /sbin/rescan-scsi-bus.sh (exit code #{$?.exitstatus})"
-      end
+      Bosh::Exec.sh "rescan-scsi-bus.sh"
     end
 
     # Note: This is not cross-platform (only works in Ubuntu)
