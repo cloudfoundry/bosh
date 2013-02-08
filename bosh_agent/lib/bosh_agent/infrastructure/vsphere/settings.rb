@@ -90,9 +90,9 @@ module Bosh::Agent
 
     def udevadm_settle
       if File.exists? "/sbin/udevadm"
-        `/sbin/udevadm settle`
+        Bosh::Exec.sh "/sbin/udevadm settle"
       elsif File.exists? "/sbin/udevsettle"
-        `/sbin/udevsettle`
+        Bosh::Exec.sh "/sbin/udevsettle"
       else
         raise Bosh::Agent::LoadSettingsError, "No udevsettle"
       end
