@@ -218,7 +218,7 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws delete_all rds databases"
+    usage "aws delete_all rds"
     desc "delete all RDS database instances"
 
     def delete_all_rds_dbs(config_file)
