@@ -1,5 +1,12 @@
 #!/bin/sh
+#
+# This script runs as root through sudo without the need for a password,
+# so it needs to make sure it can't be abused.
+#
 
+# make sure we have a secure PATH
+PATH=/bin:/usr/bin
+export PATH
 if [ $# -ne 2 ]; then
   echo "usage: $0 <image-file> <block device>"
   exit 1

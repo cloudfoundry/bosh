@@ -526,6 +526,12 @@ module Bosh::AwsCloud
     # The stemcell-copy script must be in the PATH of the user running
     # the director, and needs sudo privileges to execute without
     # password.
+
+    # TODO we require sudo to write to the EBS volume device.
+    #  Luckly on aws ubuntu we have passwordless sudo for everything
+    #  We should really fix this so we either don't need sudo or give
+    #   the user more warning / explanation for the
+    #   possible sudo password prompt
     def copy_root_image(image_path, ebs_volume)
       path = ENV["PATH"]
 
@@ -537,7 +543,7 @@ module Bosh::AwsCloud
       else
         @logger.info("falling back to using included copy stemcell")
         included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy.sh", __FILE__)
-        out = `#{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
+        out = `sudo #{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       end
 
       unless $?.exitstatus == 0
