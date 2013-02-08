@@ -14,6 +14,9 @@ module Bosh
       end
 
       def create_database(name, options = {})
+        # symbolize options keys
+        options = options.inject({}) { |memo, (k,v)| memo[k.to_sym] = v; memo }
+
         creation_options = DEFAULT_RDS_OPTIONS.merge(options)
         creation_options[:db_instance_identifier] = name
         creation_options[:db_name] = name

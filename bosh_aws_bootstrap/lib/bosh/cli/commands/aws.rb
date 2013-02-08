@@ -231,7 +231,13 @@ module Bosh::Cli::Command
         tag = rds_db_config["tag"]
 
         unless rds.database_exists?(name)
-          response = rds.create_database(name)
+          # This is a bit odd, and the naturual way would be to just pass creation_opts
+          # in directly, but it makes this easier to mock.  Once could argue that the
+          # params to create_database should change to just a hash instead of a name +
+          # a hash.
+          creation_opts = [name]
+          creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
+          response = rds.create_database(*creation_opts)
           output_rds_properties(name, tag, response)
         end
       end
