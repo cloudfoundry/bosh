@@ -55,7 +55,7 @@ namespace :stemcell do
   def build_micro_bosh_release
     release_tarball = nil
     Dir.chdir('release') do
-      sh('bosh create release --force --with-tarball -n')
+      sh('bosh create release --force --with-tarball')
       release_tarball = `ls -1t dev_releases/micro-bosh*.tgz | head -1`
     end
     File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", release_tarball)
