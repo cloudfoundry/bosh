@@ -15,7 +15,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:detect_block_device).and_return('/sys/long/bus/scsi/path/sdy')
+      disk_wrapper.stub(:detect_block_device).and_return('sdy')
       disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdy'
     end
 

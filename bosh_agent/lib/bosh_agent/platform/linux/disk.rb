@@ -55,8 +55,7 @@ module Bosh::Agent
       case Bosh::Agent::Config.infrastructure_name
       when "vsphere"
         # VSphere passes in scsi disk id
-        sys_path = detect_block_device(disk_id)
-        blockdev = File.basename(sys_path)
+        blockdev = detect_block_device(disk_id)
         File.join('/dev', blockdev)
       when "aws"
         # AWS passes in the device name
@@ -83,7 +82,7 @@ module Bosh::Agent
         logger.info("Waiting for #{dev_path}")
         sleep 0.1
       end
-      Dir[dev_path].first
+      File.basename(Dir[dev_path].first)
     end
 
     def get_dev_paths(dev_path)
