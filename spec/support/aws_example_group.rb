@@ -16,7 +16,7 @@ module AwsSystemExampleGroup
   end
 
   def deployments_path
-    File.expand_path("../../../tmp/spec/deployments", __FILE__)
+    File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
 
   def micro_deployment_path
