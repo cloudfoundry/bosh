@@ -24,9 +24,26 @@ If BAT_FAST is set, the stemcell & release will not be deleted between each spec
 
 For help troubleshooting test failures, set BAT_DEBUG. For more verbosity, set BAT_DEBUG to "verbose".
 
-If BAT_BOSH_CLI_CONFIG is set, you can change the BOSH CLI config file that is used for tests. The default is to use ./.bosh_cli_config.
-
 If you want the tests to use a specifc bosh cli (versus the default picked up in the shell PATH), set BAT_BOSH_BIN to the `bosh` path.
+
+## BAT_DEPLOYMENT_SPEC
+
+This yaml file should look like the following:
+
+```yaml
+---
+cpi: aws
+properties:
+  static_ip: 54.235.115.62 # static/elastic IP to use for the bat-release jobs
+  uuid: 3aa92242-0423-40f8-97ac-15f8d2f385fa # BAT_DIRECTOR UUID
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: 1.5.0.pre
+  instances: 1
+  key_name: idora # AWS key name if you're running on AWS
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
+```
 
 ## Running BAT
 

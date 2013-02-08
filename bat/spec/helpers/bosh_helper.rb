@@ -24,7 +24,11 @@ module BoshHelper
   end
 
   def self.bosh_cli_config_path
-    BH.read_environment('BAT_BOSH_CLI_CONFIG', ".bosh_cli_config")
+    @bosh_cli_config_path
+  end
+
+  def self.bosh_cli_config_path=(new_path)
+    @bosh_cli_config_path = new_path
   end
 
   def bosh_bin
