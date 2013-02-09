@@ -4,7 +4,7 @@ class Release
   attr_reader :versions
 
   def self.from_path(path, name="bat")
-    glob = File.join(path, "dev_releases", "#{name}-*.yml")
+    glob = File.join(path, "releases", "#{name}-*.yml")
     paths = Dir.glob(glob).sort
     raise "no matches" if paths.empty?
     versions = paths.map { |p| p.match(%r{/#{name}-([^/]+)\.yml})[1] }
@@ -23,7 +23,7 @@ class Release
 
   def to_path
     file = "#{to_s}.yml"
-    File.join(@path, "dev_releases", file)
+    File.join(@path, "releases", file)
   end
 
   def version
