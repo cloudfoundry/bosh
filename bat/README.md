@@ -28,8 +28,9 @@ If you want the tests to use a specifc bosh cli (versus the default picked up in
 
 ## BAT_DEPLOYMENT_SPEC
 
-This yaml file should look like the following:
+Example yaml files are below.
 
+On EC2 with AWS-provided DHCP:
 ```yaml
 ---
 cpi: aws
@@ -45,9 +46,41 @@ properties:
   mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
 ```
 
+On EC2 with VPC networking:
+```yaml
+---
+cpi: aws
+properties:
+  static_ip: 107.23.221.197
+  uuid: 93a7819d-ca4e-4636-96dd-35a9f44a579b
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: 1.5.0.pre
+  instances: 1
+  key_name: bosh_ci
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
+  network:
+    cidr: 10.10.0.0/24
+    reserved:
+    - 10.10.0.2 - 10.10.0.9
+    static:
+    - 10.10.0.10 - 10.10.0.30
+    gateway: 10.10.0.1
+    subnet: subnet-5088073d
+    security_groups:
+    - bat
+```
 ## Running BAT
+
+### On EC2 with AWS-provided DHCP networking
+Add TCP port `4567` to the **default** security group.
+
+### On EC2 with VPC networking
+Create a **bat** security group in the same VPC the BAT_DIRECTOR is running in. Allow inbound access to TCP ports
+ `22` and `4567` to the bat security group.
 
 When all of the above is ready, you can run `rake bat` which will run the whole test suite.
 
-TODO
+## TODO
 * add rake task to download stemcell & bat-release (for full automation)

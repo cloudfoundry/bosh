@@ -24,22 +24,49 @@ update:
   max_errors: 1
 
 networks:
+
+- name: static
+  type: vip
+  cloud_properties: {}
+
 - name: default
+<% if p('network.subnet') %>
+  type: manual
+  subnets:
+  - range: <%= properties.network.cidr %>
+    reserved:
+      <% properties.network.reserved.each do |range| %>
+      - <%= range %>
+      <% end %>
+    static:
+      <% properties.network.static.each do |range| %>
+      - <%= range %>
+      <% end %>
+    gateway: <%= properties.network.gateway %>
+    dns:
+      <% if_p('dns_nameserver') do |dns_nameserver| %>
+      - <%= dns_nameserver %>
+      <% end %>
+      <% if_p('network.dns') do |dns| %>
+      - <%= dns %>
+      <% end %>
+    cloud_properties:
+      security_groups: <%= p('network.security_groups') %>
+      subnet: <%= p('network.subnet') %>
+<% else %>
   type: dynamic
   <% if_p('dns_nameserver') do |dns_nameserver| %>
   dns:
     - <%= dns_nameserver %>
   <% end %>
-  <% if properties.security_group %>
+  <% if properties.security_groups %>
   cloud_properties:
     security_groups:
-      - <%= properties.security_group %>
+      - <%= properties.security_groups %>
   <% else %>
   cloud_properties: {}
   <% end %>
-- name: static
-  type: vip
-  cloud_properties: {}
+<% end %>
 
 resource_pools:
   - name: common
