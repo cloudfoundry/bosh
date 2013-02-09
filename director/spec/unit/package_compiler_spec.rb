@@ -248,8 +248,7 @@ describe Bosh::Director::PackageCompiler do
 
     @config.stub!(:reuse_compilation_vms => true)
 
-    # number of reservations = n_stemcells * n_workers
-    @network.should_receive(:reserve).at_least(@n_workers).times do |reservation|
+    @network.should_receive(:reserve).at_most(@n_workers).times do |reservation|
       reservation.should be_an_instance_of(BD::NetworkReservation)
       reservation.reserved = true
     end
@@ -302,7 +301,7 @@ describe Bosh::Director::PackageCompiler do
       @cloud.should_receive(:delete_vm).at_most(1).times.with(vm_cid)
     end
 
-    @network.should_receive(:release).at_least(@n_workers).times
+    @network.should_receive(:release).at_most(@n_workers).times
     @director_job.should_receive(:task_checkpoint).once
 
     compiler = make(@plan)
