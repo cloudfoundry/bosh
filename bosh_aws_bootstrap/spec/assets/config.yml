@@ -38,6 +38,7 @@ elastic_ips:
   router:
     instances: 2
     dns_record: "*"
+    ttl: 3000
   micro:
     instances: 1
     dns_record: micro

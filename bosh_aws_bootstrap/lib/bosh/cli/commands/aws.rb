@@ -130,7 +130,7 @@ module Bosh::Cli::Command
         config["elastic_ips"].each do |name, job|
           if job["dns_record"]
             say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
-            route53.add_record(job["dns_record"], config["vpc"]["domain"], @output_state["elastic_ips"][name]["ips"])
+            route53.add_record(job["dns_record"], config["vpc"]["domain"], @output_state["elastic_ips"][name]["ips"], {ttl: job["ttl"]})
             @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
           end
         end

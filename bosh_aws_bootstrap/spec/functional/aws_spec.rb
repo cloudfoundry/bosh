@@ -96,8 +96,8 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:flush_output_state)
         fake_vpc.stub(:state).and_return(:available)
 
-        fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["107.23.46.162", "107.23.53.76"])
-        fake_route53.should_receive(:add_record).with("micro", "dev102.cf.com", ["123.45.6.7"])
+        fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["107.23.46.162", "107.23.53.76"], {ttl: 3000})
+        fake_route53.should_receive(:add_record).with("micro", "dev102.cf.com", ["123.45.6.7"], {ttl: nil})
 
         aws.create_vpc config_file
       end
