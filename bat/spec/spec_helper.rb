@@ -9,6 +9,10 @@ require "vm"
 
 require 'tempfile'
 
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+ASSETS_DIR = File.join(SPEC_ROOT, "assets")
+BAT_RELEASE_DIR = File.join(ASSETS_DIR, "bat-release")
+
 helper_regex = File.join(File.expand_path(File.dirname(__FILE__)),"helpers", "*_helper.rb")
 helpers = Dir.glob(helper_regex)
 helpers.each do |helper|

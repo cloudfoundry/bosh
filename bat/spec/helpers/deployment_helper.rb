@@ -8,7 +8,7 @@ module DeploymentHelper
   end
 
   def release
-    @release ||= Release.from_path(BH::read_environment('BAT_RELEASE_DIR'))
+    @release ||= Release.from_path(BAT_RELEASE_DIR)
   end
 
   # @return [Array[String]]
