@@ -37,9 +37,11 @@ elastic_ips:
   router:
     instances: 1
     dns_record: "*"
+    ttl: 60
   micro:
     instances: 1
     dns_record: "micro"
+    ttl: 60
 
 key_pairs:
   <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_bosh_rsa" %>
