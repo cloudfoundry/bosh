@@ -50,15 +50,17 @@ describe Bosh::Aws::EC2 do
   describe "instances" do
     describe "termination" do
       it "should terminate all instances and wait until completed before returning" do
-        instance_1 = double("instance")
-        instance_2 = double("instance")
-        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2])
+        instance_1 = double("instance", api_termination_disabled?: false)
+        instance_2 = double("instance", api_termination_disabled?: false)
+        instance_3 = double("instance", api_termination_disabled?: true)
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3])
 
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
         ec2.stub(:sleep)
 
         instance_1.should_receive :terminate
         instance_2.should_receive :terminate
+        instance_3.should_not_receive :terminate
         instance_1.should_receive(:status).and_return(:shutting_down, :shutting_down, :terminated)
         instance_2.should_receive(:status).and_return(:shutting_down, :terminated, :terminated)
 
@@ -67,10 +69,11 @@ describe Bosh::Aws::EC2 do
     end
 
     describe "listing names" do
-      it "should list the names of all instances" do
-        instance_1 = double("instance", instance_id: "id_1", tags: {"Name" => "instance1"})
-        instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"})
-        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2])
+      it "should list the names of all terminatable instances" do
+        instance_1 = double("instance", instance_id: "id_1", tags: {"Name" => "instance1"}, api_termination_disabled?: false)
+        instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: false)
+        instance_3 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: true)
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3])
 
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
 
@@ -210,17 +213,19 @@ describe Bosh::Aws::EC2 do
 
   describe "deleting all EBS volumes" do
     let(:fake_aws_ec2) { double("aws_ec2") }
-    let(:vol1) { double("vol1") }
-    let(:vol2) { double("vol2") }
+    let(:vol1) { double("vol1", attachments: []) }
+    let(:vol2) { double("vol2", attachments: []) }
+    let(:vol3) { double("vol3", attachments: ["something"]) }
 
     before do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
     end
 
-    it "should delete all volumes" do
+    it "should delete all unattached volumes" do
       vol1.should_receive(:delete)
       vol2.should_receive(:delete)
-      fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2])
+      vol3.should_not_receive(:delete)
+      fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2, vol3])
 
       ec2.delete_volumes
     end

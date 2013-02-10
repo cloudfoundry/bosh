@@ -52,9 +52,9 @@ module Bosh
       end
 
       def terminate_instances
-        aws_ec2.instances.each &:terminate
+        terminatable_instances.each(&:terminate)
         retries = 100
-        until !aws_ec2.instances.any? || aws_ec2.instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
+        until !terminatable_instances.any? || terminatable_instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
           sleep 4
           retries -= 1
         end
@@ -62,15 +62,22 @@ module Bosh
       end
 
       def delete_volumes
-        aws_ec2.volumes.each &:delete
+        unattached_volumes.each &:delete
       end
 
       def volume_count
-        aws_ec2.volumes.count
+        unattached_volumes.count
       end
 
       def instance_names
-        aws_ec2.instances.inject({}) do |memo, instance|
+        terminatable_instances.inject({}) do |memo, instance|
+          memo[instance.instance_id] = instance.tags["Name"]
+          memo
+        end
+      end
+
+      def terminatable_instance_names
+        terminatable_instances.inject({}) do |memo, instance|
           memo[instance.instance_id] = instance.tags["Name"]
           memo
         end
@@ -107,6 +114,14 @@ module Bosh
 
       def aws_ec2
         @aws_ec2 ||= ::AWS::EC2.new(@credentials)
+      end
+
+      def terminatable_instances
+        aws_ec2.instances.reject(&:api_termination_disabled?)
+      end
+
+      def unattached_volumes
+        aws_ec2.volumes.reject{|v| v.attachments.any? }
       end
 
       def tag(taggable, key, value)

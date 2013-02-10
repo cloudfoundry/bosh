@@ -302,7 +302,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
         aws.should_receive(:agree).
-            with("Are you sure you want to terminate all EC2 instances and their associated non-persistent EBS volumes?").
+            with("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?").
             and_return(false)
 
         aws.terminate_all_ec2 config_file
@@ -381,7 +381,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).with("It will delete 2 EBS volume(s)")
         aws.should_receive(:agree).
-            with("Are you sure you want to delete all EBS volumes?").
+            with("Are you sure you want to delete all unattached EBS volumes?").
             and_return(false)
 
         aws.delete_all_ebs config_file
