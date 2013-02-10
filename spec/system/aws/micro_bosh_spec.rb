@@ -49,28 +49,29 @@ describe "AWS" do
       end
     end
 
-    #Dir.chdir cf_release_path do
-    #  run_bosh "create release"
-    #  run_bosh "upload release #{cf_dev_release_yaml_path}"
-    #end
+    Dir.chdir cf_release_path do
+      run_bosh "create release"
+      run_bosh "upload release"
+    end
 
-    #Dir.chdir deployments_path do
-    #  run_bosh "deployment cf-aws-stub.yml"
-    #  run_bosh "diff ../templates/cf-min-aws-vpc.erb"
-    #end
-  end
-
-  def cf_dev_release_yaml_path
-    `ls #{cf_release_path}/dev_releases/cf*.yml`.strip
+    Dir.chdir deployments_path do
+      run "#{deployments_aws_path}/generators/generator.rb '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+      FileUtils.cp("cf-aws-stub.yml", "cf-aws.yml")
+      run_bosh "deployment cf-aws.yml"
+      run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.erb"
+    end
   end
 
   def cf_release_path
     @cf_release_path ||= begin
       path = File.join(BOSH_TMP_DIR, "spec", "cf-release")
       puts "Cloning CF-RELEASE"
-      run "rm -rf #{path}"
-      run "git clone git://github.com/cloudfoundry/cf-release.git '#{path}'"
-      run "cd #{path} && ./update"
+      if File.exist? path
+        run "cd '#{path}' && git reset --hard"
+      else
+        run "git clone git://github.com/cloudfoundry/cf-release.git '#{path}'"
+      end
+      run "cd '#{path}' && ./update"
       path
     end
   end
