@@ -28,6 +28,7 @@ module AwsSystemExampleGroup
   end
 
   def run(cmd, options = {})
+Bundler.with_clean_env do
     if !system(cmd)
       err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?}"
 
@@ -38,13 +39,25 @@ module AwsSystemExampleGroup
         raise(err_msg)
       end
     end
+end
     true
   end
 
   def run_bosh(cmd, options = {})
-    run "bundle exec bosh -n --config '#{bosh_config_path}' #{cmd}", options
+    run "#{binstubs_path}/bosh -n --config '#{bosh_config_path}' #{cmd}", options
   end
 
+  def binstubs_path
+    @binstubs_path ||= begin
+      path = File.join(BOSH_TMP_DIR, "spec", "bin")
+      run "rm -rf '#{path}'"
+      FileUtils.mkdir_p path
+      Dir.chdir(BOSH_ROOT_DIR) do
+        run "bundle install --binstubs='#{path}'"
+      end
+      path
+    end
+  end
 
   def self.included(base)
     base.before(:each) do
