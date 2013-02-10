@@ -6,17 +6,21 @@ describe "AWS" do
 
   # we always need a microbosh to deploy whatever the next step is
   before do
-    Dir.chdir(micro_deployment_path) do
-      run_bosh "aws generate micro_bosh '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+    unless ENV["NO_PROVISION"]
+      Dir.chdir(micro_deployment_path) do
+        run_bosh "aws generate micro_bosh '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+      end
     end
 
     Dir.chdir(deployments_path) do
-      puts "MICRO_BOSH.YML:"
-      puts ERB.new(File.read("micro/micro_bosh.yml")).result
+      unless ENV["NO_PROVISION"]
+        puts "MICRO_BOSH.YML:"
+        puts ERB.new(File.read("micro/micro_bosh.yml")).result
 
-      puts ""
-      run_bosh "micro deployment micro"
-      run_bosh "micro deploy #{STEMCELL_AMI}"
+        puts ""
+        run_bosh "micro deployment micro"
+        run_bosh "micro deploy #{STEMCELL_AMI}"
+      end
       run_bosh "target micro.#{ENV["VPC_SUBDOMAIN"]}.cf-app.com"
     end
   end

@@ -44,7 +44,7 @@ end
   end
 
   def run_bosh(cmd, options = {})
-    run "#{binstubs_path}/bosh -n --config '#{bosh_config_path}' #{cmd}", options
+    run "#{binstubs_path}/bosh -v -n --config '#{bosh_config_path}' #{cmd}", options
   end
 
   def binstubs_path
@@ -64,21 +64,30 @@ end
       ENV['BOSH_KEY_PAIR_NAME'] = "bosh_ci"
       ENV['BOSH_KEY_PATH'] = "/tmp/id_bosh_ci"
 
-      system "rm -f #{ASSETS_DIR}/aws/create-vpc-output-*.yml"
       FileUtils.rm_rf deployments_path
       FileUtils.mkdir_p micro_deployment_path
 
-      run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+      if ENV["NO_PROVISION"]
+        puts "Not creating AWS resources, assuming we already have them"
+      else
+        system "rm -f #{ASSETS_DIR}/aws/create-vpc-output-*.yml"
 
-      puts "AWS RESOURCES CREATED SUCCESSFULLY!"
+        run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+
+        puts "AWS RESOURCES CREATED SUCCESSFULLY!"
+      end
     end
 
     base.after(:each) do
-      puts "Using VPC output: #{vpc_outfile_path}"
-      run_bosh "aws terminate_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
-      run_bosh "aws delete_all volumes '#{vpc_outfile_path}'", :ignore_failures => true
-      run_bosh "aws delete vpc '#{vpc_outfile_path}'"
-      puts "CLEANUP SUCCESSFUL"
+      if ENV["NO_PROVISION"] || ENV["NO_CLEANUP"]
+        puts "Not cleaning up AWS resources"
+      else
+        puts "Using VPC output: #{vpc_outfile_path}"
+        run_bosh "aws terminate_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
+        run_bosh "aws delete_all volumes '#{vpc_outfile_path}'", :ignore_failures => true
+        run_bosh "aws delete vpc '#{vpc_outfile_path}'"
+        puts "CLEANUP SUCCESSFUL"
+      end
     end
   end
 end
