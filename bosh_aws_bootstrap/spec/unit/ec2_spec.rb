@@ -61,8 +61,8 @@ describe Bosh::Aws::EC2 do
         instance_1.should_receive :terminate
         instance_2.should_receive :terminate
         instance_3.should_not_receive :terminate
-        instance_1.should_receive(:status).and_return(:shutting_down, :shutting_down, :terminated)
-        instance_2.should_receive(:status).and_return(:shutting_down, :terminated, :terminated)
+        instance_1.should_receive(:status).and_return(:shutting_down, :shutting_down, :terminated, :terminated)
+        instance_2.should_receive(:status).and_return(:shutting_down, :terminated, :terminated, :terminated)
 
         ec2.terminate_instances
       end
@@ -70,10 +70,11 @@ describe Bosh::Aws::EC2 do
 
     describe "listing names" do
       it "should list the names of all terminatable instances" do
-        instance_1 = double("instance", instance_id: "id_1", tags: {"Name" => "instance1"}, api_termination_disabled?: false)
-        instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: false)
-        instance_3 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: true)
-        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3])
+        instance_1 = double("instance", instance_id: "id_1", tags: {"Name" => "instance1"}, api_termination_disabled?: false, status: :running)
+        instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: false, status: :pending)
+        instance_3 = double("instance", instance_id: "id_3", tags: {"Name" => "instance3"}, api_termination_disabled?: true, status: :running)
+        instance_4 = double("instance", instance_id: "id_4", tags: {"Name" => "instance4"}, api_termination_disabled?: false, status: :terminated)
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3, instance_4])
 
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
 

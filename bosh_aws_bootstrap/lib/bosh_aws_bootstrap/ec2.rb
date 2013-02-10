@@ -117,7 +117,7 @@ module Bosh
       end
 
       def terminatable_instances
-        aws_ec2.instances.reject(&:api_termination_disabled?)
+        aws_ec2.instances.reject{|i| i.api_termination_disabled? || i.status.to_s == "terminated"}
       end
 
       def unattached_volumes
