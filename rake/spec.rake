@@ -20,6 +20,24 @@ namespace :spec do
   end
 
   namespace :system do
+    namespace :aws do
+      desc "Run AWS MicroBOSH deployment suite"
+      RSpec::Core::RakeTask.new(:micro) do |t|
+        t.pattern = "spec/system/aws/**/*_spec.rb"
+        t.rspec_opts = %w(--format documentation --color --tag ~cf --tag ~full)
+      end
+      desc "Run AWS FullBOSH deployment suite"
+      RSpec::Core::RakeTask.new(:full) do |t|
+        t.pattern = "spec/system/aws/**/*_spec.rb"
+        t.rspec_opts = %w(--format documentation --color --tag full)
+      end
+      desc "Run AWS CF deployment suite"
+      RSpec::Core::RakeTask.new(:cf) do |t|
+        t.pattern = "spec/system/aws/**/*_spec.rb"
+        t.rspec_opts = %w(--format documentation --color --tag cf)
+      end
+    end
+
     desc "Run AWS system-wide suite"
     RSpec::Core::RakeTask.new(:aws) do |t|
       t.pattern = "spec/system/aws/**/*_spec.rb"

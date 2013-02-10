@@ -53,7 +53,7 @@ end
       run "rm -rf '#{path}'"
       FileUtils.mkdir_p path
       Dir.chdir(BOSH_ROOT_DIR) do
-        run "bundle install --binstubs='#{path}'"
+        run "bundle install --binstubs='#{path}' --local"
       end
       path
     end
