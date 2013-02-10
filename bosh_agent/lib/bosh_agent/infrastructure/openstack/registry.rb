@@ -92,6 +92,7 @@ module Bosh::Agent
                user_data["registry"].has_key?("endpoint")
           raise("Cannot parse user data for endpoint #{user_data.inspect}")
         end
+        Bosh::Agent::Config.logger.info("got user_data: #{user_data}")
         lookup_registry(user_data)
       end
 
@@ -105,7 +106,7 @@ module Bosh::Agent
 
         # if we get data from an old director which doesn't set dns
         # info, there is noting we can do, so just return the endpoint
-        unless user_data.has_key?("dns")
+        if user_data["dns"].nil? || user_data["dns"]["nameserver"].nil?
           return endpoint
         end
 
