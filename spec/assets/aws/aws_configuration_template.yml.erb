@@ -1,9 +1,9 @@
 ---
 aws:
-  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
-  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] || raise("Missing ENV variable AWS_SECRET_ACCESS_KEY") %>
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] || raise("Missing ENV variable AWS_ACCESS_KEY_ID") %>
   region: us-east-1
-name: <%= ENV["VPC_SUBDOMAIN"] %>
+name: <%= ENV["VPC_SUBDOMAIN"]  || raise("Missing ENV variable VPC_SUBDOMAIN") %>
 vpc:
   domain: <%= ENV["VPC_SUBDOMAIN"] %>.cf-app.com
   instance_tenancy: default
