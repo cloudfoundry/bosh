@@ -19,7 +19,8 @@ module Bosh::Agent
     def load
       load_from_infrastructure
       cache
-    rescue LoadSettingsError
+    rescue LoadSettingsError => e
+      logger.info("failed to load infrastructure settings: #{e.message}")
       load_from_cache
     end
 
@@ -45,8 +46,7 @@ module Bosh::Agent
       json = File.read(@cache_file)
       # perhaps catch json parser errors too and raise as LoadSettingsSerror?
       @settings = Yajl::Parser.new.parse(json)
-      logger.info("failed to load infrastructre settings, " \
-                  "falling back to cached settings: #{@settings.inspect}")
+      logger.info("loaded cached settings: #{@settings.inspect}")
     rescue Errno::ENOENT
       raise LoadSettingsError, "could neither load infrastructure settings " \
         "nor cached settings from: #@cache_file"
