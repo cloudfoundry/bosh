@@ -2,8 +2,8 @@ require File.expand_path(File.dirname(__FILE__) + "/../../spec_helper")
 
 describe "AWS" do
   STEMCELL_AMI = "ami-42cf592b"
-  STEMCELL_VERSION = "1.5.0"
-  CF_STEMCELL = "bosh-stemcell-aws-#{STEMCELL_VERSION}.pre.tgz"
+  STEMCELL_VERSION = "1.5.0.pre"
+  CF_STEMCELL = "bosh-stemcell-aws-#{STEMCELL_VERSION}.tgz"
 
   # we always need a microbosh to deploy whatever the next step is
   before do
@@ -40,9 +40,9 @@ describe "AWS" do
   it "should be able to deploy CF-release on top of microbosh", cf: true do
     Dir.chdir deployments_path do
       existing_stemcells = run_bosh "stemcells", :return_output => true, :ignore_failures => true
-      if existing_stemcells.include?("bosh-release")
-        puts "Deleting existing stemcell bosh-release"
-        run_bosh "delete stemcell bosh-release #{STEMCELL_VERSION}"
+      if existing_stemcells.include?("bosh-stemcell")
+        puts "Deleting existing stemcell bosh-stemcell"
+        run_bosh "delete stemcell bosh-stemcell #{STEMCELL_VERSION}"
       end
       if ENV["STEMCELL_DIR"]
         stemcell_path = "#{ENV["STEMCELL_DIR"]}/#{CF_STEMCELL}"
@@ -78,11 +78,10 @@ describe "AWS" do
     @cf_release_path ||= begin
       path = File.join(BOSH_TMP_DIR, "spec", "cf-release")
       puts "Cloning CF-RELEASE"
-      if File.exist? path
-        run "cd '#{path}' && git reset --hard"
-      else
+      if !File.exist? path
         run "git clone git://github.com/cloudfoundry/cf-release.git '#{path}'"
       end
+      run "cd '#{path}' && git checkout staging && git reset --hard origin/staging"
       run "cd '#{path}' && ./update"
       path
     end
