@@ -36,7 +36,7 @@ module AwsSystemExampleGroup
 
       if options[:ignore_failures]
         puts("#{err_msg}, continuing anyway")
-        r = false
+        r = false unless options[:return_output]
       else
         raise(err_msg)
       end

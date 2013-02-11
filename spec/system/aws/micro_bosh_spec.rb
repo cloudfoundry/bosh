@@ -39,8 +39,8 @@ describe "AWS" do
 
   it "should be able to deploy CF-release on top of microbosh", cf: true do
     Dir.chdir deployments_path do
-      existing_stemcells = run_bosh "stemcells", :return_output => true
-      if existing_releases.include?("bosh-release")
+      existing_stemcells = run_bosh "stemcells", :return_output => true, :ignore_failures => true
+      if existing_stemcells.include?("bosh-release")
         puts "Deleting existing stemcell bosh-release"
         run_bosh "delete stemcell bosh-release #{STEMCELL_VERSION}"
       end
@@ -56,7 +56,7 @@ describe "AWS" do
     end
 
     Dir.chdir cf_release_path do
-      existing_releases = run_bosh "releases", :return_output => true
+      existing_releases = run_bosh "releases", :return_output => true, :ignore_failures => true
       if existing_releases.include?("bosh-release")
         puts "Deleting existing bosh-release"
         run_bosh "delete release bosh-release"
