@@ -33,7 +33,7 @@ dns:
     pool_timeout: 10
 <% end %>
 blobstore:
-  plugin: <%= properties.blobstore.plugin || simple %>
+  plugin: <%= properties.blobstore.plugin || 'simple' %>
   properties:
 <% if properties.blobstore.plugin == "s3" %>
     bucket_name: <%= properties.blobstore.bucket_name %>
@@ -63,7 +63,7 @@ end
     agent:
       ntp: [<%= properties.ntp ? properties.ntp.join(", ") : "" %>]
       blobstore:
-        plugin: <%= properties.blobstore.plugin || simple %>
+        plugin: <%= properties.blobstore.plugin || 'simple' %>
         properties:
 <% agent = properties.agent %>
 <% blobstore = agent ? agent.blobstore : properties.blobstore %>
