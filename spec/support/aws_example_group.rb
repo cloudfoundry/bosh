@@ -28,19 +28,22 @@ module AwsSystemExampleGroup
   end
 
   def run(cmd, options = {})
-Bundler.with_clean_env do
-    if !system(cmd)
-      err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?}"
+    r = true
+    Bundler.with_clean_env do
+    options[:return_output] ? (r=`#{cmd}`) : system(cmd)
+    unless $?.success?
+      err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}"
 
       if options[:ignore_failures]
         puts("#{err_msg}, continuing anyway")
-        return false
+        r = false
       else
         raise(err_msg)
       end
+    
     end
-end
-    true
+    end
+    r
   end
 
   def run_bosh(cmd, options = {})
@@ -79,7 +82,7 @@ end
     end
 
     base.after(:each) do
-      if ENV["NO_PROVISION"] || ENV["NO_CLEANUP"]
+      if ENV["NO_CLEANUP"]
         puts "Not cleaning up AWS resources"
       else
         puts "Using VPC output: #{vpc_outfile_path}"

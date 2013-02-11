@@ -2,7 +2,8 @@ require File.expand_path(File.dirname(__FILE__) + "/../../spec_helper")
 
 describe "AWS" do
   STEMCELL_AMI = "ami-42cf592b"
-  CF_STEMCELL = "bosh-stemcell-aws-1.5.0.pre.tgz"
+  STEMCELL_VERSION = "1.5.0"
+  CF_STEMCELL = "bosh-stemcell-aws-#{STEMCELL_VERSION}.pre.tgz"
 
   # we always need a microbosh to deploy whatever the next step is
   before do
@@ -38,6 +39,11 @@ describe "AWS" do
 
   it "should be able to deploy CF-release on top of microbosh", cf: true do
     Dir.chdir deployments_path do
+      existing_stemcells = run_bosh "stemcells", :return_output => true
+      if existing_releases.include?("bosh-release")
+        puts "Deleting existing stemcell bosh-release"
+        run_bosh "delete stemcell bosh-release #{STEMCELL_VERSION}"
+      end
       if ENV["STEMCELL_DIR"]
         stemcell_path = "#{ENV["STEMCELL_DIR"]}/#{CF_STEMCELL}"
         puts "Using existing stemcell on this machine: #{stemcell_path}"
@@ -50,15 +56,21 @@ describe "AWS" do
     end
 
     Dir.chdir cf_release_path do
+      existing_releases = run_bosh "releases", :return_output => true
+      if existing_releases.include?("bosh-release")
+        puts "Deleting existing bosh-release"
+        run_bosh "delete release bosh-release"
+      end
       run_bosh "create release"
       run_bosh "upload release"
     end
 
     Dir.chdir deployments_path do
-      run "#{deployments_aws_path}/generators/generator.rb '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+      run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}' '#{aws_configuration_template_path}'"
       FileUtils.cp("cf-aws-stub.yml", "cf-aws.yml")
       run_bosh "deployment cf-aws.yml"
-      run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.erb"
+      run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
+      run_bosh "deploy"
     end
   end
 
