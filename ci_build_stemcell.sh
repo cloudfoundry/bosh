@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --login
 
 set -e
 
@@ -12,7 +12,7 @@ else
 fi
 
 sudo rm -rf /mnt/$directory
-if [ -f $WORKSPACE/*.tgz]
+if [ -f $WORKSPACE/*.tgz ]
 then
   rm $WORKSPACE/*.tgz
 fi
