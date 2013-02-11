@@ -49,3 +49,8 @@ rds:
     tag: cc
   - name: uaadb
     tag: uaa
+s3:
+  - bucket_name: b1
+    tag: blobstore
+  - bucket_name: b2
+    tag: other

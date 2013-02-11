@@ -202,6 +202,21 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe "aws create s3" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should create all configured buckets" do
+        fake_s3 = mock("s3")
+
+        Bosh::Aws::S3.stub(:new).and_return(fake_s3)
+
+        fake_s3.should_receive(:create_bucket).with("b1").ordered
+        fake_s3.should_receive(:create_bucket).with("b2").ordered
+
+        aws.create_s3(config_file)
+      end
+    end
+
     describe "aws empty s3" do
       let(:config_file) { asset "config.yml" }
 

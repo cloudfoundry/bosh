@@ -182,6 +182,21 @@ module Bosh::Cli::Command
       say "deleted VPC and all dependencies".green
     end
 
+    usage "aws create s3"
+    desc "create s3 buckets"
+
+    def create_s3(config_file)
+      config = load_yaml_file(config_file)
+
+      s3 = Bosh::Aws::S3.new(config["aws"])
+
+      config["s3"].each do |e|
+        bucket_name = e["bucket_name"]
+        say "creating bucket #{bucket_name}"
+        s3.create_bucket(bucket_name)
+      end
+    end
+
     usage "aws empty s3"
     desc "empty and delete all s3 buckets"
 
