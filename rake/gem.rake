@@ -40,7 +40,7 @@ COMPONENTS.each do |component|
       sh cmd
     end
 
-    task :gem_with_deps => 'component:build' do
+    task :gem_with_deps => "#{component}:build" do
       dirname = "#{root}/release/src/bosh/#{component}"
       rm_rf dirname
       mkdir_p dirname
