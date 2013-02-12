@@ -19,6 +19,7 @@ require "resolv"
 require "ipaddr"
 require 'httpclient'
 
+require "common/exec"
 require "common/properties"
 require "encryption/encryption_handler"
 
