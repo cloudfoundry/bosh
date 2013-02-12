@@ -78,12 +78,6 @@ def director_version
   "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
 end
 
-def run_bosh(cmd, work_dir = nil)
-  Dir.chdir(work_dir || BOSH_WORK_DIR) do
-    `bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
-  end
-end
-
 def cleanup_bosh
   [
    BOSH_CONFIG,
