@@ -17,12 +17,7 @@ then
   rm $WORKSPACE/*.tgz
 fi
 
-source .rvmrc
-gem list | grep bundler > /dev/null || gem install bundler
-bundle check || bundle install --without development
-
-
-WORK_PATH=/mnt/$directory/work BUILD_PATH=/mnt/$directory/build bundle exec rake stemcell:$task[aws]
+WORK_PATH=/mnt/$directory/work BUILD_PATH=/mnt/$directory/build $WORKSPACE/spec/ci_build.sh stemcell:$task[aws]
 
 stemcell=`ls /mnt/$directory/work/work/*.tgz`
 stemcell_base=`basename $stemcell tgz`
