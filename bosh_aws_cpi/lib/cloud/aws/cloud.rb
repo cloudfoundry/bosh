@@ -383,7 +383,7 @@ module Bosh::AwsCloud
       elsif metadata[:compiling]
         name = "compiling/#{metadata[:compiling]}"
       end
-      TagManager.tag(instance, "Name", name)
+      TagManager.tag(instance, "Name", name) if name
     rescue AWS::EC2::Errors::TagLimitExceeded => e
       @logger.error("could not tag #{instance.id}: #{e.message}")
     end
