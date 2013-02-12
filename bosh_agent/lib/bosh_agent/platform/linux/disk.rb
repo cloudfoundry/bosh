@@ -75,11 +75,11 @@ module Bosh::Agent
       end
     end
 
-protected
     def detect_block_device(disk_id)
       raise Bosh::Agent::UnimplementedMethod.new
     end
 
+protected
     def rescan_scsi_bus
       Bosh::Exec.sh "rescan-scsi-bus.sh"
     end

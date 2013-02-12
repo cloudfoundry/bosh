@@ -3,5 +3,7 @@ BOOTPROTO=static
 IPADDR=<%= n["ip"]%>
 NETMASK=<%= n["netmask"]%>
 BROADCAST=<%= n["broadcast"] %>
+<% if n.key?('default') && n['default'].include?('gateway') -%>
 GATEWAY=<%= n["gateway"] %>
+<% end %>
 ONBOOT=yes

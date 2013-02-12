@@ -3,7 +3,6 @@ require 'bosh_agent/platform'
 
 module Bosh::Agent
 
-  # The default implementation is all based on Ubuntu!
   class Platform::Linux
 
     def initialize(disk, logrotate, password, network)
@@ -16,7 +15,6 @@ module Bosh::Agent
     def configure_disks(settings)
     end
 
-    # FIXME: placeholder
     def mount_persistent_disk(cid)
       @disk.mount_persistent_disk(cid)
     end

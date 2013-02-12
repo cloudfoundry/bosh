@@ -1,5 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 require 'bosh_agent/platform/linux/network'
+require 'bosh_agent/platform/rhel'
 
 module Bosh::Agent
   class Platform::Rhel::Network < Platform::Linux::Network
@@ -10,17 +11,15 @@ module Bosh::Agent
 
     def write_network_interfaces
       template = ERB.new(load_erb("rhel-ifcfg.erb"), 0, '%<>-')
-      result = template.result(binding)
-      network_updated = Bosh::Agent::Util::update_file(result, '/etc/sysconfig/network-scripts/ifcfg-eth0')
-
-      if network_updated
-        logger.info("Updated networking")
-        restart_networking_service
+      @networks.each do |name, n|
+        result = template.result(binding)
+        Bosh::Agent::Util::update_file(result, "/etc/sysconfig/network-scripts/ifcfg-#{name}")
       end
+      restart_networking_service
     end
 
     def restart_networking_service
-      logger.info("Restarting network")
+      @logger.info("Restarting network")
       Bosh::Exec.sh "service network restart"
     end
 
@@ -29,13 +28,13 @@ module Bosh::Agent
       result = template.result(binding)
       updated = Bosh::Agent::Util::update_file(result, '/etc/dhclient.conf')
       if updated
-        logger.info("Updated dhclient.conf")
+        @logger.info("Updated dhclient.conf")
         restart_dhclient
       end
     end
 
     def restart_dhclient
-      logger.info("Restarting network to restart dhclient")
+      @logger.info("Restarting network to restart dhclient")
       Bosh::Exec.sh "service network restart"
     end
 

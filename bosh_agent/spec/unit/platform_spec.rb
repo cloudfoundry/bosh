@@ -3,27 +3,28 @@ require 'bosh_agent/platform'
 
 describe Bosh::Agent::Platform do
 
-  it "Loads the correct platform" do
-    Bosh::Agent::Platform.new("dummy")
-    require('bosh_agent/platform/dummy').should be_false
+  context "Ubuntu" do
+    it "loads the correct platform" do
+      Bosh::Agent::Platform.new("ubuntu")
+      require('bosh_agent/platform/ubuntu').should be_false
+    end
+    it "returns the correct class" do
+      Bosh::Agent::Platform.new("ubuntu").platform.should be_a_kind_of Bosh::Agent::Platform::Ubuntu
+    end
+  end
+
+  context "Rhel" do
+    it "loads the correct platform" do
+      Bosh::Agent::Platform.new("rhel")
+      require('bosh_agent/platform/rhel').should be_false
+    end
+    it "returns the correct class" do
+      Bosh::Agent::Platform.new("rhel").platform.should be_a_kind_of Bosh::Agent::Platform::Rhel
+    end
   end
 
   it "raises exception in case platform is not found" do
     lambda {Bosh::Agent::Platform.new("unknown")}.should raise_exception(Bosh::Agent::UnknownPlatform)
   end
-
-  it "returns the correct class" do
-    Bosh::Agent::Platform.new("dummy").platform.should be_a_kind_of Bosh::Agent::Platform::Dummy
-  end
-
-  #it 'should update logrotate from platform' do
-  #  default_max_log_file_size = Bosh::Agent::Platform::Ubuntu::Logrotate::DEFAULT_MAX_LOG_FILE_SIZE
-  #  spec_properties = {}
-  #
-  #  Bosh::Agent::Config.platform.update_logging(spec_properties)
-  #
-  #  match_expression = %r|size=#{default_max_log_file_size}|
-  #  File.read(@logrotate_dst_path).should match(match_expression)
-  #end
 
 end
