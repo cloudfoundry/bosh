@@ -46,5 +46,5 @@ namespace :spec do
   end
 end
 
-desc "Run unit, integration, and AWS system specs"
-task :spec => ["spec:unit", "spec:integration", "spec:system:aws"]
+desc "Run unit and integration specs"
+task :spec => ["spec:unit", "spec:integration"]
