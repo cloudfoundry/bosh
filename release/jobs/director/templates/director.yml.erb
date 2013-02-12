@@ -68,7 +68,7 @@ end
 <% agent = properties.agent %>
 <% blobstore = agent ? agent.blobstore : properties.blobstore %>
       <% if blobstore.plugin == "s3" %>
-          bucket_name: <%= blobstore.bucket_name %>
+          bucket_name: <%= properties.blobstore.bucket_name %>
           access_key_id: <%= blobstore.access_key_id %>
           secret_access_key: <%= blobstore.secret_access_key %>
       <% else %>
