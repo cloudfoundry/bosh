@@ -26,11 +26,7 @@ namespace :spec do
         t.pattern = "spec/system/aws/**/*_spec.rb"
         t.rspec_opts = %w(--format documentation --color --tag ~cf --tag ~full)
       end
-      desc "Run AWS FullBOSH deployment suite"
-      RSpec::Core::RakeTask.new(:full) do |t|
-        t.pattern = "spec/system/aws/**/*_spec.rb"
-        t.rspec_opts = %w(--format documentation --color --tag full)
-      end
+
       desc "Run AWS CF deployment suite"
       RSpec::Core::RakeTask.new(:cf) do |t|
         t.pattern = "spec/system/aws/**/*_spec.rb"
