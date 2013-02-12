@@ -23,6 +23,10 @@ module AwsSystemExampleGroup
     File.join(deployments_path, "micro")
   end
 
+  def bat_deployment_path
+    File.join(deployments_path, "bat")
+  end
+
   def aws_configuration_template_path
     "#{ASSETS_DIR}/aws/aws_configuration_template.yml.erb"
   end

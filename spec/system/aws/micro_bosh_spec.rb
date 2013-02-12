@@ -29,12 +29,25 @@ describe "AWS" do
 
   it "should be able to launch a MicroBosh from existing stemcell" do
     run_bosh "status"
-
     puts "DEPLOYMENT FINISHED!"
-    puts "Ideally we'd run BAT tests now and mark this successful"
 
-    #puts "Press enter to continue and cleanup your resources"
-    #gets
+    puts "Uploading Stemcell"
+    stemcell_path = "#{ENV["STEMCELL_DIR"]}/#{CF_STEMCELL}"
+    run_bosh "upload stemcell #{stemcell_path}"
+
+    puts "Running BAT Tests"
+    unless ENV["NO_PROVISION"]
+      Dir.chdir(bat_deployment_path) do
+        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{vpc_outfile_path}' '#{STEMCELL_VERSION}'"
+      end
+    end
+    bat_env = {
+        'BAT_DIRECTOR' => "micro.#{ENV["VPC_SUBDOMAIN"]}.cf-app.com",
+        'BAT_STEMCELL' => stemcell_path,
+        'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
+        'BAT_VCAP_PASSWORD' => 'c1oudc0w'
+    }
+    system(bat_env, "rake bat").should be_true
   end
 
   it "should be able to deploy CF-release on top of microbosh", cf: true do

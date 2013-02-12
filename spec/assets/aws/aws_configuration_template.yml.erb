@@ -25,6 +25,14 @@ vpc:
         - protocol: udp
           ports: '0 - 65535'
           sources: 0.0.0.0/0
+    - name: bat
+      ingress:
+        - protocol: tcp
+          ports: '4567'
+          sources: 0.0.0.0/0
+        - protocol: tcp
+          ports: '22'
+          sources: 0.0.0.0/0
     - name: cf
       ingress:
         - protocol: tcp
@@ -41,6 +49,10 @@ elastic_ips:
   micro:
     instances: 1
     dns_record: "micro"
+    ttl: 60
+  bat:
+    instances: 1
+    dns_record: "bat"
     ttl: 60
 
 key_pairs:

@@ -31,6 +31,14 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "aws generate bat_manifest"
+    desc "generate bat.yml"
+    def create_bat_manifest(config_file, receipt_file, stemcell_version)
+      File.open("bat.yml", "w+") do |f|
+        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(config_file), load_yaml_file(receipt_file), stemcell_version).to_yaml)
+      end
+    end
+
     usage "aws snapshot deployments"
     desc "snapshot all EBS volumes in all deployments"
     def snapshot_deployments(config_file)
