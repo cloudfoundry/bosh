@@ -42,6 +42,7 @@ def mock_cloud_options
       "access_key_id" => MOCK_AWS_ACCESS_KEY_ID,
       "secret_access_key" => MOCK_AWS_SECRET_ACCESS_KEY,
       "region" => "us-east-1",
+      "default_key_name" => "sesame",
       "default_security_groups" => []
     },
     "registry" => {

@@ -26,6 +26,7 @@ spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
 spec/assets/test_release/config/dev.yml
 spec/assets/test_release/config/final.yml
+spec/reports
 director/director.db
 micro/tmp
 health_monitor/spec/assets/dev*.yml
@@ -35,6 +36,7 @@ ci_result/
 **/Gemfile.lock
 /bin/
 create-vpc-output*.yml
+create-rds-output*.yml
 /release/blobs
 /release/releases
 /release/dev-releases
@@ -52,3 +54,4 @@ create-vpc-output*.yml
 /release/jobs/micro_*/spec
 /release/jobs/micro_*/templates/
 /release/src/bosh/*
+/tmp/*

@@ -36,7 +36,12 @@ networks:
       <% end %>
     gateway: <%= properties.network.gateway %>
     dns:
-      - <%= properties.network.dns %>
+      <% if_p('dns_nameserver') do |dns_nameserver| %>
+      - <%= dns_nameserver %>
+      <% end %>
+      <% if_p('network.dns') do |dns| %>
+      - <%= dns %>
+      <% end %>
     cloud_properties:
       name: <%= properties.network.vlan %>
 

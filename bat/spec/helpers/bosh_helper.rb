@@ -24,11 +24,15 @@ module BoshHelper
   end
 
   def self.bosh_cli_config_path
-    BH.read_environment('BAT_BOSH_CLI_CONFIG', ".bosh_cli_config")
+    @bosh_cli_config_path
+  end
+
+  def self.bosh_cli_config_path=(new_path)
+    @bosh_cli_config_path = new_path
   end
 
   def bosh_bin
-    BH.read_environment('BAT_BOSH_BIN', 'bosh')
+    BH.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
   end
 
   def bosh_director
@@ -37,6 +41,10 @@ module BoshHelper
 
   def password
     BH.read_environment('BAT_VCAP_PASSWORD')
+  end
+
+  def bosh_dns_host
+    ENV.has_key?('BAT_DNS_HOST') ? BH.read_environment('BAT_DNS_HOST') : nil
   end
 
   def debug?

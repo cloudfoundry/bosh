@@ -35,12 +35,49 @@ module Bosh
         aws_ec2.elastic_ips.each { |ip| ip.release if ips.include? ip.public_ip }
       end
 
+      def create_internet_gateway
+        aws_ec2.internet_gateways.create
+      end
+
+      def internet_gateway_ids
+        aws_ec2.internet_gateways.map &:id
+      end
+
+      def delete_internet_gateways(ids)
+        Array(ids).each do |id|
+          gw = aws_ec2.internet_gateways[id]
+          gw.attachments.map &:delete
+          gw.delete
+        end
+      end
+
       def terminate_instances
-        aws_ec2.instances.each &:terminate
+        terminatable_instances.each(&:terminate)
+        retries = 100
+        until !terminatable_instances.any? || terminatable_instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
+          sleep 4
+          retries -= 1
+        end
+        retries > 0
+      end
+
+      def delete_volumes
+        unattached_volumes.each &:delete
+      end
+
+      def volume_count
+        unattached_volumes.count
       end
 
       def instance_names
-        aws_ec2.instances.inject({}) do |memo, instance|
+        terminatable_instances.inject({}) do |memo, instance|
+          memo[instance.instance_id] = instance.tags["Name"]
+          memo
+        end
+      end
+
+      def terminatable_instance_names
+        terminatable_instances.inject({}) do |memo, instance|
           memo[instance.instance_id] = instance.tags["Name"]
           memo
         end
@@ -57,11 +94,34 @@ module Bosh
         snap
       end
 
+      def add_key_pair(name, path_to_public_private_key)
+        private_key_path = path_to_public_private_key.gsub(/\.pub$/, '')
+        public_key_path = "#{private_key_path}.pub"
+        if !File.exist?(private_key_path)
+          system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
+        end
+
+        aws_ec2.key_pairs.import(name, File.read(public_key_path))
+      rescue AWS::EC2::Errors::InvalidKeyPair::Duplicate => e
+        err "Key pair #{name} already exists on AWS".red
+      end
+
+      def remove_key_pair(name)
+        aws_ec2.key_pairs[name].delete
+      end
 
       private
 
       def aws_ec2
         @aws_ec2 ||= ::AWS::EC2.new(@credentials)
+      end
+
+      def terminatable_instances
+        aws_ec2.instances.reject{|i| i.api_termination_disabled? || i.status.to_s == "terminated"}
+      end
+
+      def unattached_volumes
+        aws_ec2.volumes.reject{|v| v.attachments.any? }
       end
 
       def tag(taggable, key, value)

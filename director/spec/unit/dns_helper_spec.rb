@@ -49,10 +49,63 @@ describe Bosh::Director::DnsHelper do
           %w[1.2.3.4 5.6.7.8]
     end
 
+    it "should add default dns server to an array of DNS servers" do
+      BD::Config.stub(:dns).and_return({"server" => "9.10.11.12"})
+      dns_servers('network', {"dns" => %w[1.2.3.4 5.6.7.8]}).should ==
+          %w[1.2.3.4 5.6.7.8 9.10.11.12]
+    end
+
+    it "should not add default dns server to an array of DNS servers" do
+      BD::Config.stub(:dns).and_return({"server" => "9.10.11.12"})
+      dns_servers('network', {"dns" => %w[1.2.3.4 5.6.7.8]}, false).should ==
+          %w[1.2.3.4 5.6.7.8]
+    end
+
     it "should raise an error if a DNS server isn't specified with as an IP" do
       lambda {
         dns_servers('network', {"dns" => %w[1.2.3.4 foo.bar]})
       }.should raise_error
+    end
+  end
+
+  describe :default_dns_server do
+    it "should return nil when there are no default DNS server" do
+      default_dns_server.should be_nil
+    end
+
+    it "should return the default DNS server when is set" do
+      BD::Config.stub(:dns).and_return({"server" => "1.2.3.4"})
+      default_dns_server.should == "1.2.3.4"
+    end
+  end
+
+  describe :add_default_dns_server do
+    before(:each) do
+      BD::Config.stub(:dns).and_return({"server" => "9.10.11.12"})
+    end
+
+    it "should add default dns server when there are no DNS servers" do
+      add_default_dns_server([]).should == %w[9.10.11.12]
+    end
+
+    it "should add default dns server to an array of DNS servers" do
+      add_default_dns_server(%w[1.2.3.4 5.6.7.8]).should ==
+          %w[1.2.3.4 5.6.7.8 9.10.11.12]
+    end
+
+    it "should not add default dns server if already set" do
+      add_default_dns_server(%w[1.2.3.4 9.10.11.12]).should ==
+          %w[1.2.3.4 9.10.11.12]
+    end
+
+    it "should not add default dns server if it is 127.0.0.1" do
+      BD::Config.stub(:dns).and_return({"server" => "127.0.0.1"})
+      add_default_dns_server(%w[1.2.3.4]).should == %w[1.2.3.4]
+    end
+
+    it "should not add default dns server when dns is not enabled" do
+      BD::Config.stub(:dns_enabled?).and_return(false)
+      add_default_dns_server(%w[1.2.3.4]).should == %w[1.2.3.4]
     end
   end
 

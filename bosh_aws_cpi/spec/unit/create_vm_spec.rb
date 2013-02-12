@@ -24,7 +24,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
             "default_availability_zone" => "foo",
             "region" => "bar",
             "access_key_id" => "access",
-            "secret_access_key" => "secret"
+            "secret_access_key" => "secret",
+            "default_key_name" => "sesame"
         },
         "registry" => {
             "endpoint" => "endpoint",

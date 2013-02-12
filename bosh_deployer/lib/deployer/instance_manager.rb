@@ -342,12 +342,14 @@ module Bosh::Deployer
       save_state
     end
 
-    def apply
+    def apply(spec = nil)
       agent_stop
 
+      spec ||= @apply_spec
+
       step "Applying micro BOSH spec" do
-        update_spec(@apply_spec)
-        agent.run_task(:apply, @apply_spec.update(bosh_ip, service_ip))
+        update_spec(spec)
+        agent.run_task(:apply, spec.update(bosh_ip, service_ip))
       end
 
       agent_start

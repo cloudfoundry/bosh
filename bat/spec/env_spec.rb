@@ -9,7 +9,6 @@ describe "initialization", :skip_task_check do
       BAT_STEMCELL
       BAT_DEPLOYMENT_SPEC
       BAT_VCAP_PASSWORD
-      BAT_RELEASE_DIR
     ].each do |var|
       it "should have #{var} set" do
         ENV[var].should_not be_nil
@@ -43,7 +42,7 @@ describe "initialization", :skip_task_check do
       bosh("target #{bosh_director}").should succeed_with /Target \w*\s*set/
     end
 
-    it "should not have a 'bat' deployments" do
+    it "should not have 'bat' deployments" do
       deployments.should_not have_key("bat")
       deployments.should_not have_key("bat2")
     end

@@ -8,17 +8,13 @@ stage bosh_users
 stage bosh_debs
 stage bosh_monit
 stage bosh_ruby
-stage mcf_agent
+stage bosh_agent
 stage bosh_sysstat
 stage bosh_sysctl
 stage bosh_ntpdate
 stage bosh_sudoers
 
-# Micro BOSH
-if [ ${bosh_micro_enabled:-no} == "yes" ]
-then
-  stage mcf_micro_bosh
-fi
+stage bosh_micro
 
 stage mcf_version
 stage mcf_dirs

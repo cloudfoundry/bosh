@@ -1,6 +1,7 @@
 ---
 aws:
   region: us-east-1
+  default_key_name: dolores
   fast_path_delete: yes
 ami: ami-809a48e9
 subnet: subnet-cce723a1

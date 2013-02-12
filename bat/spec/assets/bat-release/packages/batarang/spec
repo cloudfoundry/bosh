@@ -1,0 +1,8 @@
+---
+name: batarang
+
+dependencies:
+  - ruby
+
+files:
+  - batarang/**/*

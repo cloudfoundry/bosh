@@ -5,6 +5,10 @@ module Bosh
         @credentials = credentials
       end
 
+      def create_bucket(bucket_name)
+        aws_s3.buckets.create(bucket_name)
+      end
+
       def empty
         aws_s3.buckets.each &:delete!
       end

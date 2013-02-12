@@ -52,13 +52,22 @@ describe Bosh::Aws::VPC do
       it "can create subnets with the specified CIDRs and, optionally, AZs" do
         subnet_1_specs = {"cidr" => "cider", "availability_zone" => "canada"}
         subnet_2_specs = {"cidr" => "cedar"}
+        sub1 = mock("sub1")
+        sub2 = mock("sub2")
+
+        sub1.should_receive(:add_tag).with("Name", :value => "sub1")
+        sub2.should_receive(:add_tag).with("Name", :value => "sub2")
+        sub1.should_receive(:state).and_return(:pending, :available)
+        sub2.should_receive(:state).and_return(:pending, :available)
 
         fake_aws_vpc = mock("aws_vpc", subnets: mock("subnets"))
 
-        fake_aws_vpc.subnets.should_receive(:create).with("cider", {availability_zone: "canada"})
-        fake_aws_vpc.subnets.should_receive(:create).with("cedar", {})
+        fake_aws_vpc.subnets.should_receive(:create).with("cider", {availability_zone: "canada"}).and_return(sub1)
+        fake_aws_vpc.subnets.should_receive(:create).with("cedar", {}).and_return(sub2)
 
-        Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).create_subnets([subnet_1_specs, subnet_2_specs])
+        vpc = Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc)
+        vpc.stub(:sleep)
+        vpc.create_subnets({"sub1" => subnet_1_specs, "sub2" => subnet_2_specs})
       end
     end
 
@@ -71,6 +80,19 @@ describe Bosh::Aws::VPC do
         Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).delete_subnets
       end
     end
+
+    describe "listing" do
+      it "should produce an hash of the VPC's subnets' names and IDs" do
+        fake_aws_vpc = mock("aws_vpc")
+        sub1 = double("subnet", id: "sub-1")
+        sub2 = double("subnet", id: "sub-2")
+        sub1.stub(:tags).and_return("Name" => 'name1')
+        sub2.stub(:tags).and_return("Name" => 'name2')
+        fake_aws_vpc.should_receive(:subnets).and_return([sub1, sub2])
+
+        Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).subnets.should == {'name1' => 'sub-1', 'name2' => 'sub-2'}
+      end
+    end
   end
 
   describe "security groups" do
@@ -78,7 +100,7 @@ describe Bosh::Aws::VPC do
       let(:security_groups) { double("security_groups") }
       let(:security_group) { double("security_group") }
 
-      it "should be created" do
+      it "should be created with a single port" do
         security_groups.stub(:create).with("sg").and_return(security_group)
         security_groups.stub(:each)
 
@@ -86,8 +108,21 @@ describe Bosh::Aws::VPC do
         security_group.should_receive(:authorize_ingress).with(:tcp, 23, "1.2.4.0/24")
 
         ingress_rules = [
-            {"protocol" => :tcp, "ports" => 22, "sources" => "1.2.3.0/24"},
-            {"protocol" => :tcp, "ports" => 23, "sources" => "1.2.4.0/24"}
+            {"protocol" => :tcp, "ports" => '22', "sources" => "1.2.3.0/24"},
+            {"protocol" => :tcp, "ports" => '23', "sources" => "1.2.4.0/24"}
+        ]
+        Bosh::Aws::VPC.new(mock("ec2"), mock("aws_vpc", security_groups: security_groups)).
+            create_security_groups ["name" => "sg", "ingress" => ingress_rules]
+      end
+
+      it "should be created with a port range" do
+        security_groups.stub(:create).with("sg").and_return(security_group)
+        security_groups.stub(:each)
+
+        security_group.should_receive(:authorize_ingress).with(:tcp, 5..60, "1.2.3.0/24")
+
+        ingress_rules = [
+            {"protocol" => :tcp, "ports" => "5 - 60", "sources" => "1.2.3.0/24"}
         ]
         Bosh::Aws::VPC.new(mock("ec2"), mock("aws_vpc", security_groups: security_groups)).
             create_security_groups ["name" => "sg", "ingress" => ingress_rules]
@@ -177,6 +212,14 @@ describe Bosh::Aws::VPC do
       fake_aws_vpc.should_receive(:state).and_return("a cool state")
 
       Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).state.should == 'a cool state'
+    end
+  end
+
+  describe "attaching internet gateways" do
+    it "should attach to a VPC by gateway ID" do
+      fake_aws_vpc = mock("aws_vpc")
+      fake_aws_vpc.should_receive(:internet_gateway=).with("gw1id")
+      Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).attach_internet_gateway("gw1id")
     end
   end
 end

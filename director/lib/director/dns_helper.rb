@@ -37,7 +37,7 @@ module Bosh::Director
     end
 
     # build a list of dns servers to use
-    def dns_servers(network, spec)
+    def dns_servers(network, spec, add_default_dns = true)
       servers = nil
       dns_property = safe_property(spec, "dns",
                                    :class => Array, :optional => true)
@@ -51,6 +51,26 @@ module Bosh::Director
 
           servers << dns.ip
         end
+      end
+
+      return servers unless add_default_dns
+
+      add_default_dns_server(servers)
+    end
+
+    # returns the default DNS server
+    def default_dns_server
+      Config.dns["server"] if Config.dns
+    end
+
+    # add default dns server to an array of dns servers
+    def add_default_dns_server(servers)
+      return servers unless Config.dns_enabled?
+
+      default_server = default_dns_server
+      if default_server && default_server != "127.0.0.1"
+        (servers ||= []) << default_server
+        servers.uniq!
       end
 
       servers

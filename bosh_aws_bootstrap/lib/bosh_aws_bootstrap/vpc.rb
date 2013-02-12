@@ -1,14 +1,18 @@
 module Bosh
   module Aws
     class VPC
+      include Bosh::AwsCloud::Helpers
+      def task_checkpoint; end
+
       DEFAULT_CIDR = "10.0.0.0/16"
+
       def initialize(ec2, aws_vpc)
         @ec2 = ec2
         @aws_vpc = aws_vpc
       end
 
       def self.create(ec2, cidr = DEFAULT_CIDR, instance_tenancy = nil)
-        vpc_options = instance_tenancy ? { instance_tenancy: instance_tenancy } : {}
+        vpc_options = instance_tenancy ? {instance_tenancy: instance_tenancy} : {}
         self.new(ec2, ec2.vpcs.create(cidr, vpc_options))
       end
 
@@ -32,6 +36,14 @@ module Bosh
         @aws_vpc.state
       end
 
+      def subnets
+        Hash[@aws_vpc.subnets.map { |subnet| [subnet.tags["Name"], subnet.id] }]
+      end
+
+      def make_route_for_internet_gateway(subnet_id, gateway_id)
+        @aws_vpc.subnets[subnet_id].route_table.create_route("0.0.0.0/0", :internet_gateway => gateway_id)
+      end
+
       def delete_vpc
         @aws_vpc.delete
       rescue ::AWS::EC2::Errors::DependencyViolation => e
@@ -43,7 +55,9 @@ module Bosh
           if group_name_available group_spec["name"]
             security_group = @aws_vpc.security_groups.create(group_spec["name"])
             group_spec["ingress"].each do |ingress|
-              security_group.authorize_ingress(ingress["protocol"], ingress["ports"].to_i, ingress["sources"])
+              range_match = ingress["ports"].to_s.match(/(\d+)\s*-\s*(\d+)/)
+              ports = range_match ? (range_match[1].to_i)..(range_match[2].to_i) : ingress["ports"].to_i
+              security_group.authorize_ingress(ingress["protocol"], ports, ingress["sources"])
             end
             #say "\tcreated security group #{group["name"]}".green
           end
@@ -55,10 +69,12 @@ module Bosh
       end
 
       def create_subnets(subnets)
-        subnets.each do |subnet|
+        subnets.each_pair do |name, subnet|
           options = {}
           options[:availability_zone] = subnet["availability_zone"] if subnet["availability_zone"]
-          @aws_vpc.subnets.create(subnet["cidr"], options)
+          subnet = @aws_vpc.subnets.create(subnet["cidr"], options)
+          wait_resource(subnet, :available, :state)
+          subnet.add_tag("Name", :value => name)
           #say "\tdone creating subnet: #{subnet["cidr"]}".green
         end
       end
@@ -75,6 +91,10 @@ module Bosh
         #say "\tcreated and associated DHCP options #{new_dhcp_options.id}".green
 
         default_dhcp_opts.delete
+      end
+
+      def attach_internet_gateway(gateway_id)
+        @aws_vpc.internet_gateway = gateway_id
       end
 
       private
