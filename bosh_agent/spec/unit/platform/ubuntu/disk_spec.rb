@@ -1,13 +1,15 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
+require 'spec_helper'
+require 'bosh_agent/platform/ubuntu/disk'
 
-Bosh::Agent::Config.platform_name = "ubuntu"
-Bosh::Agent::Config.platform
+#setup_directories
+#Bosh::Agent::Config.platform_name = "ubuntu"
+#Bosh::Agent::Config.platform
 
 describe Bosh::Agent::Platform::Ubuntu::Disk do
 
-  describe "vSphere" do
+  context "vSphere" do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'persistent' => { 2 => '333'} } }
       Bosh::Agent::Config.infrastructure_name = "vsphere"
@@ -15,7 +17,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:detect_block_device).and_return('/sys/long/bus/scsi/path/sdy')
+      disk_wrapper.stub(:detect_block_device).and_return('sdy')
       disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdy'
     end
 
@@ -35,7 +37,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
     end
   end
 
-  describe "AWS" do
+  context "AWS" do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
                                                     'persistent' => { 2 => '/dev/sdf'} } }
@@ -44,7 +46,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
     it 'should get data disk device name' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:dev_path_timeout).and_return(1)
+      disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
       lambda {
         disk_wrapper.get_data_disk_device_name.should == '/dev/sdq'
       }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdq", "\/dev\/vdq", "\/dev\/xvdq"/)
@@ -52,14 +54,14 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:dev_path_timeout).and_return(1)
+      disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
       lambda {
         disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdf'
       }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdf", "\/dev\/vdf", "\/dev\/xvdf"/)
     end
   end
 
-  describe "OpenStack" do
+  context "OpenStack" do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
                                                     'persistent' => { 2 => '/dev/sdf'} } }
@@ -68,7 +70,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
     it 'should get data disk device name' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:dev_path_timeout).and_return(1)
+      disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
       lambda {
         disk_wrapper.get_data_disk_device_name.should == '/dev/vdq'
       }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdq", "\/dev\/vdq", "\/dev\/xvdq"/)
@@ -76,7 +78,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:dev_path_timeout).and_return(1)
+      disk_wrapper.instance_variable_set(:@dev_path_timeout, 0)
       lambda {
         disk_wrapper.lookup_disk_by_cid(2).should == '/dev/vdf'
       }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdf", "\/dev\/vdf", "\/dev\/xvdf"/)

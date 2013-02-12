@@ -42,7 +42,7 @@ module Bosh::Agent
     end
 
     def get_network_settings(network_name, properties)
-      type = properties["type"]
+      type = properties["type"] || "manual"
       unless type && SUPPORTED_NETWORK_TYPES.include?(type)
         raise Bosh::Agent::StateError,
               "Unsupported network type '%s', valid types are: %s" %

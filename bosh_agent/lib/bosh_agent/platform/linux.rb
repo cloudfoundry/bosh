@@ -1,19 +1,16 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/platform'
 
 module Bosh::Agent
 
   # The default implementation is all based on Ubuntu!
   class Platform::Linux
-    require 'bosh_agent/platform/linux/disk'
-    require 'bosh_agent/platform/linux/logrotate'
-    require 'bosh_agent/platform/linux/password'
-    require 'bosh_agent/platform/linux/network'
 
-    def initialize
-      @disk ||= Disk.new
-      @logrotate ||= Logrotate.new
-      @password ||= Password.new
-      @network ||= Network.new
+    def initialize(disk, logrotate, password, network)
+      @disk = disk
+      @logrotate = logrotate
+      @password = password
+      @network = network
     end
 
     def configure_disks(settings)

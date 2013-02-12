@@ -1,13 +1,11 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-
-Bosh::Agent::Config.platform_name = "ubuntu"
-Bosh::Agent::Config.platform
+require 'spec_helper'
+require 'bosh_agent/platform/ubuntu/network'
 
 describe Bosh::Agent::Platform::Ubuntu::Network do
 
-  describe "vsphere" do
+  context "vSphere" do
     before(:each) do
       Bosh::Agent::Config.infrastructure_name = "vsphere"
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
@@ -53,7 +51,7 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     end
   end
 
-  describe "aws" do
+  context "AWS" do
     def partial_settings
       json = %q[{"networks":{"default":{"dns":["1.2.3.4","5.6.7.8"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)
@@ -76,7 +74,7 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     end
   end
 
-  describe "OpenStack" do
+  context "OpenStack" do
     def partial_settings
       json = %q[{"networks":{"default":{"dns":["1.2.3.4"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)

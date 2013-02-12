@@ -1,17 +1,19 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/platform/linux'
 
 module Bosh::Agent
   class Platform::Linux::Network
 
-    def initialize
-    end
-
-    def logger
-      Bosh::Agent::Config.logger
+    def initialize(template_dir)
+      @template_dir = template_dir
+      @config   ||= Bosh::Agent::Config
+      @logger   ||= @config.logger
+      @networks   = []
+      @dns        = []
     end
 
     def setup_networking
-      case Bosh::Agent::Config.infrastructure_name
+      case @config.infrastructure_name
       when "vsphere"
         setup_networking_from_settings
       when "aws"
@@ -23,12 +25,12 @@ module Bosh::Agent
       end
     end
 
+private
     def setup_networking_from_settings
       mac_addresses = detect_mac_addresses
-      settings = Bosh::Agent::Config.settings
 
       @dns = []
-      @networks = settings["networks"]
+      @networks = @config.settings["networks"]
       @networks.each do |k, v|
          mac = v["mac"]
 
@@ -57,7 +59,7 @@ module Bosh::Agent
 
     def setup_dhcp_from_settings
       @dns = []
-      @networks = Bosh::Agent::Config.settings["networks"]
+      @networks = @config.settings["networks"]
       @networks.each do |_, settings|
         parse_dns(settings)
       end
@@ -101,7 +103,7 @@ module Bosh::Agent
             end
 
             arp_cmd = "arping -c 1 -U -I #{network['interface']} #{network['ip']}"
-            logger.info(arp_cmd)
+            @logger.info(arp_cmd)
             `#{arp_cmd}`
           end
           sleep 10
@@ -120,51 +122,22 @@ module Bosh::Agent
       end
     end
 
-    # Note: this is not cross-platform! (Only works in Ubuntu)
+protected
+
     def write_network_interfaces
-      template = ERB.new(load_erb("interfaces.erb"), 0, '%<>-')
-      result = template.result(binding)
-      network_updated = Bosh::Agent::Util::update_file(result, '/etc/network/interfaces')
-      if network_updated
-        logger.info("Updated networking")
-        restart_networking_service
-      end
+      raise Bosh::Agent::UnimplementedMethod.new
     end
 
-    # Note: this is not cross-platform! (Only works in Ubuntu)
     def restart_networking_service
-      # ubuntu 10.04 networking startup/upstart stuff is quite borked
-      @networks.each do |k, v|
-        interface = v['interface']
-        logger.info("Restarting #{interface}")
-        output = `service network-interface stop INTERFACE=#{interface}`
-        output += `service network-interface start INTERFACE=#{interface}`
-        logger.info("Restarted networking: #{output}")
-      end
+      raise Bosh::Agent::UnimplementedMethod.new
     end
 
-    # Note: this is not cross-platform! (Only works in Ubuntu)
     def write_dhcp_conf
-      template = ERB.new(load_erb("dhclient_conf.erb"), 0, '%<>-')
-      result = template.result(binding)
-      updated = Bosh::Agent::Util::update_file(result, '/etc/dhcp3/dhclient.conf')
-      if updated
-        logger.info("Updated dhclient.conf")
-        restart_dhclient
-      end
-    end
-
-    # Executing /sbin/dhclient starts another dhclient process, so it'll cause
-    # a conflict with the existing system dhclient process and dns changes will
-    # be flip floping each lease time. So in order to refresh dhclient
-    # configuration we need to restart networking.
-    def restart_dhclient
-      %x{/etc/init.d/networking restart}
+      raise Bosh::Agent::UnimplementedMethod.new
     end
 
     def load_erb(file)
-      dir = File.dirname(__FILE__)
-      path = File.expand_path("templates/#{file}", dir)
+      path = File.expand_path(file, @template_dir)
       File.open(path) do |f|
         f.read
       end

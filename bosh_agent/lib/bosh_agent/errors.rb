@@ -6,6 +6,7 @@ module Bosh::Agent
 
   class FatalError < Error; end
   class StateError < Error; end
+  class UnimplementedMethod < FatalError; end
 
   class MessageHandlerError < Error
     attr_reader :blob

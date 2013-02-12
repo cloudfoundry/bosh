@@ -1,93 +1,87 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/platform/linux'
+
+require 'sys/filesystem'
+include Sys
 
 module Bosh::Agent
+
   class Platform::Linux::Disk
 
-    def initialize
-    end
-
-    def logger
-      Bosh::Agent::Config.logger
-    end
-
-    def base_dir
-      Bosh::Agent::Config.base_dir
-    end
-
-    def store_path
-      File.join(base_dir, 'store')
-    end
-
+    VSPHERE_DATA_DISK = "/dev/sdb"
     DEV_PATH_TIMEOUT=180
-    def dev_path_timeout
-      DEV_PATH_TIMEOUT
+
+    def initialize
+      @config   ||= Bosh::Agent::Config
+      @platform_name ||= @config.platform_name
+      @logger   ||= @config.logger
+      @store_dir ||= File.join(@config.base_dir, 'store')
+      @dev_path_timeout ||= DEV_PATH_TIMEOUT
     end
 
     def mount_persistent_disk(cid)
-      FileUtils.mkdir_p(store_path)
+      FileUtils.mkdir_p(@store_dir)
       disk = lookup_disk_by_cid(cid)
       partition = "#{disk}1"
-      if File.blockdev?(partition) && !mount_entry(partition)
+      if File.blockdev?(partition) && !mount_exists?(partition)
         mount(partition, store_path)
       end
     end
 
-    def mount(partition, path)
-      logger.info("Mount #{partition} #{path}")
-      `mount #{partition} #{path}`
-      unless $?.exitstatus == 0
-        raise Bosh::Agent::FatalError, "Failed to mount: #{partition} #{path}"
+    def get_data_disk_device_name
+      case @config.infrastructure_name
+        when "vsphere"
+          VSPHERE_DATA_DISK
+        when "aws"
+          settings = @config.settings
+          dev_path = settings['disks']['ephemeral']
+          unless dev_path
+            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+          end
+          get_available_path(dev_path)
+        when "openstack"
+          settings = @config.settings
+          dev_path = settings['disks']['ephemeral']
+          unless dev_path
+            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+          end
+          get_available_path(dev_path)
+        else
+          raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #@infrastructure_name"
       end
     end
 
-    def mount_entry(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
-    end
-
     def lookup_disk_by_cid(cid)
-      settings = Bosh::Agent::Config.settings
+      settings = @config.settings
       disk_id = settings['disks']['persistent'][cid]
 
       unless disk_id
         raise Bosh::Agent::FatalError, "Unknown persistent disk: #{cid}"
       end
 
-      case Bosh::Agent::Config.infrastructure_name
-      when "vsphere"
-        # VSphere passes in scsi disk id
-        sys_path = detect_block_device(disk_id)
-        blockdev = File.basename(sys_path)
-        File.join('/dev', blockdev)
-      when "aws"
-        # AWS passes in the device name
-        get_available_path(disk_id)
-      when "openstack"
-        # OpenStack passes in the device name
-        get_available_path(disk_id)
-      else
-        raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
-                                       "#{Bosh::Agent::Config.infrastructure_name}"
+      case @config.infrastructure_name
+        when "vsphere"
+          # VSphere passes in scsi disk id
+          blockdev = detect_block_device(disk_id)
+          File.join('/dev', blockdev)
+        when "aws"
+          # AWS passes in the device name
+          get_available_path(disk_id)
+        when "openstack"
+          # OpenStack passes in the device name
+          get_available_path(disk_id)
+        else
+          raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #@infrastructure_name"
       end
     end
 
-    # Note: This is not cross-platform (only works in Ubuntu)
-    def rescan_scsi_bus
-      # TODO: rescan-scsi-bus.sh locates in /usr/bin in RHEL
-      `/sbin/rescan-scsi-bus.sh`
-      unless $?.exitstatus == 0
-        raise Bosh::Agent::FatalError, "Failed to run /sbin/rescan-scsi-bus.sh (exit code #{$?.exitstatus})"
-      end
-    end
-
-    # Note: This is not cross-platform (only works in Ubuntu)
+protected
     def detect_block_device(disk_id)
-      rescan_scsi_bus
-      dev_path = "/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"
-      while Dir[dev_path].empty?
-        logger.info("Waiting for #{dev_path}")
-        sleep 0.1
-      end
-      Dir[dev_path].first
+      raise Bosh::Agent::UnimplementedMethod.new
+    end
+
+    def rescan_scsi_bus
+      Bosh::Exec.sh "rescan-scsi-bus.sh"
     end
 
     def get_dev_paths(dev_path)
@@ -104,41 +98,23 @@ module Bosh::Agent
       start = Time.now
       dev_paths = get_dev_paths(dev_path)
       while Dir.glob(dev_paths).empty?
-        logger.info("Waiting for #{dev_paths}")
+        @logger.info("Waiting for #{dev_paths}")
         sleep 0.1
-        if (Time.now - start) > dev_path_timeout
+        if (Time.now - start) > @dev_path_timeout
           raise Bosh::Agent::FatalError, "Timed out waiting for #{dev_paths}"
         end
       end
-
       Dir.glob(dev_paths).last
     end
 
-    VSPHERE_DATA_DISK = "/dev/sdb"
-    def get_data_disk_device_name
-      case Bosh::Agent::Config.infrastructure_name
-      when "vsphere"
-        VSPHERE_DATA_DISK
-      when "aws"
-        settings = Bosh::Agent::Config.settings
-        dev_path = settings['disks']['ephemeral']
-        unless dev_path
-          raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
-        end
+private
+    def mount(partition, path)
+      @logger.info("Mount #{partition} #{path}")
+      Bosh::Exec.sh "mount #{partition} #{path}"
+    end
 
-        get_available_path(dev_path)
-      when "openstack"
-        settings = Bosh::Agent::Config.settings
-        dev_path = settings['disks']['ephemeral']
-        unless dev_path
-          raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
-        end
-
-        get_available_path(dev_path)
-      else
-        raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
-                                       "#{Bosh::Agent::Config.infrastructure_name}"
-      end
+    def mount_exists?(partition)
+      Filesystem.mounts.select{|mount| mount.name == partition}.any?
     end
 
   end
