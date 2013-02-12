@@ -235,11 +235,7 @@ describe Bosh::Cli::Command::AWS do
         fake_s3.should_not_receive(:create_bucket)
 
         aws.create_s3(config_file)
-
       end
-
-
-
     end
 
     describe "aws empty s3" do
@@ -597,6 +593,14 @@ describe Bosh::Cli::Command::AWS do
       it "should create all rds databases" do
         fake_aws_rds = make_fake_rds!
         aws.create_rds_dbs config_file
+      end
+
+      it "should do nothing if rds config is empty" do
+        aws.stub(:load_yaml_file).and_return({})
+
+        aws.should_receive(:say).with("rds not set in config.  Skipping")
+
+        aws.create_rds_dbs(config_file)
       end
 
       context "when the config file has option overrides" do

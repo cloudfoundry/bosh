@@ -260,46 +260,54 @@ module Bosh::Cli::Command
     desc "create all RDS database instances"
     def create_rds_dbs(config_file)
       config = load_yaml_file(config_file)
-      credentials = config["aws"]
-      rds = Bosh::Aws::RDS.new(credentials)
 
-      config["rds"].each do |rds_db_config|
-        name = rds_db_config["name"]
-        tag = rds_db_config["tag"]
-
-        unless rds.database_exists?(name)
-          # This is a bit odd, and the naturual way would be to just pass creation_opts
-          # in directly, but it makes this easier to mock.  Once could argue that the
-          # params to create_database should change to just a hash instead of a name +
-          # a hash.
-          creation_opts = [name]
-          creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
-          response = rds.create_database(*creation_opts)
-          output_rds_properties(name, tag, response)
-        end
+      if !config["rds"]
+        say "rds not set in config.  Skipping"
+        return
       end
 
-      if was_rds_eventually_available?(rds)
+      begin
+        credentials = config["aws"]
+        rds = Bosh::Aws::RDS.new(credentials)
+
         config["rds"].each do |rds_db_config|
           name = rds_db_config["name"]
+          tag = rds_db_config["tag"]
 
-          if deployment_properties[name]
-            db_instance = rds.database(name)
-            deployment_properties[name].merge!(
-              "address" => db_instance.endpoint_address,
-              "port" => db_instance.endpoint_port
-            )
+          unless rds.database_exists?(name)
+            # This is a bit odd, and the naturual way would be to just pass creation_opts
+            # in directly, but it makes this easier to mock.  Once could argue that the
+            # params to create_database should change to just a hash instead of a name +
+            # a hash.
+            creation_opts = [name]
+            creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
+            response = rds.create_database(*creation_opts)
+            output_rds_properties(name, tag, response)
           end
         end
-      else
-        err "RDS was not available within 10 minutes, giving up"
+
+        if was_rds_eventually_available?(rds)
+          config["rds"].each do |rds_db_config|
+            name = rds_db_config["name"]
+
+            if deployment_properties[name]
+              db_instance = rds.database(name)
+              deployment_properties[name].merge!(
+                "address" => db_instance.endpoint_address,
+                "port" => db_instance.endpoint_port
+              )
+            end
+          end
+        else
+          err "RDS was not available within 10 minutes, giving up"
+        end
+
+      ensure
+        file_path = File.join(File.dirname(config_file), OUTPUT_RDS_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
+        flush_output_state file_path
+
+        say "details in #{file_path}"
       end
-
-    ensure
-      file_path = File.join(File.dirname(config_file), OUTPUT_RDS_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
-      flush_output_state file_path
-
-      say "details in #{file_path}"
     end
 
     usage "aws delete_all rds"
