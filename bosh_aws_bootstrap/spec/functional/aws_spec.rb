@@ -32,6 +32,18 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe "aws create" do
+      let(:config_file) {asset "create_all.yml"}
+
+      it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
+        aws.should_receive(:create_vpc).with(config_file)
+        aws.should_receive(:create_rds_dbs).with(config_file)
+        aws.should_receive(:create_s3).with(config_file)
+        aws.create config_file
+      end
+
+    end
+
     describe "aws create vpc" do
       let(:config_file) { asset "config.yml" }
 
@@ -204,9 +216,9 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create s3" do
       let(:config_file) { asset "config.yml" }
+      let(:fake_s3) { mock("s3")}
 
       it "should create all configured buckets" do
-        fake_s3 = mock("s3")
 
         Bosh::Aws::S3.stub(:new).and_return(fake_s3)
 
@@ -215,6 +227,19 @@ describe Bosh::Cli::Command::AWS do
 
         aws.create_s3(config_file)
       end
+
+      it "should do nothing if s3 config is empty" do
+        aws.stub(:load_yaml_file).and_return({})
+
+        aws.should_receive(:say).with("s3 not set in config.  Skipping")
+        fake_s3.should_not_receive(:create_bucket)
+
+        aws.create_s3(config_file)
+
+      end
+
+
+
     end
 
     describe "aws empty s3" do

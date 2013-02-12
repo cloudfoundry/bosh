@@ -78,6 +78,15 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "aws create"
+    desc "create everything in config file"
+    def create(config_file)
+
+      create_vpc(config_file)
+      create_rds_dbs(config_file)
+      create_s3(config_file)
+    end
+
     usage "aws create vpc"
     desc "create vpc"
     def create_vpc(config_file)
@@ -195,6 +204,11 @@ module Bosh::Cli::Command
 
     def create_s3(config_file)
       config = load_yaml_file(config_file)
+
+      if !config["s3"]
+        say "s3 not set in config.  Skipping"
+        return
+      end
 
       s3 = Bosh::Aws::S3.new(config["aws"])
 
