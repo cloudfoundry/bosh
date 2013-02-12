@@ -1,9 +1,8 @@
 require "spec_helper"
+require "bosh_agent/version"
 
 describe "AWS" do
-  STEMCELL_AMI = "ami-42cf592b"
-  STEMCELL_VERSION = "1.5.0.pre"
-  CF_STEMCELL = "bosh-stemcell-aws-#{STEMCELL_VERSION}.tgz"
+  STEMCELL_VERSION = Bosh::Agent::VERSION
 
   # we always need a microbosh to deploy whatever the next step is
   before do
@@ -18,9 +17,9 @@ describe "AWS" do
         puts "MICRO_BOSH.YML:"
         puts ERB.new(File.read("micro/micro_bosh.yml")).result
 
-        puts ""
+        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell_path}"
         run_bosh "micro deployment micro"
-        run_bosh "micro deploy #{STEMCELL_AMI}"
+        run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
       end
       run_bosh "target micro.#{ENV["VPC_SUBDOMAIN"]}.cf-app.com"
       run_bosh "login admin admin"
@@ -31,9 +30,8 @@ describe "AWS" do
     run_bosh "status"
     puts "DEPLOYMENT FINISHED!"
 
-    puts "Uploading Stemcell"
-    stemcell_path = "#{ENV["STEMCELL_DIR"]}/#{CF_STEMCELL}"
-    run_bosh "upload stemcell #{stemcell_path}"
+    puts "Uploading latest stemcell from #{latest_stemcell_path}"
+    run_bosh "upload stemcell #{latest_stemcell_path}"
 
     puts "Running BAT Tests"
     unless ENV["NO_PROVISION"]
@@ -57,15 +55,9 @@ describe "AWS" do
         puts "Deleting existing stemcell bosh-stemcell"
         run_bosh "delete stemcell bosh-stemcell #{STEMCELL_VERSION}"
       end
-      if ENV["STEMCELL_DIR"]
-        stemcell_path = "#{ENV["STEMCELL_DIR"]}/#{CF_STEMCELL}"
-        puts "Using existing stemcell on this machine: #{stemcell_path}"
-        run_bosh "upload stemcell #{stemcell_path}"
-      else
-        puts "Downloading public stemcell: #{CF_STEMCELL}"
-        run_bosh "download public stemcell #{CF_STEMCELL}"
-        run_bosh "upload stemcell #{CF_STEMCELL}"
-      end
+
+      puts "Using existing stemcell on this machine: #{latest_stemcell_path}"
+      run_bosh "upload stemcell #{latest_stemcell_path}"
     end
 
     Dir.chdir cf_release_path do

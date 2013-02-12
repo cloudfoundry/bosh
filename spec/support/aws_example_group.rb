@@ -15,6 +15,14 @@ module AwsSystemExampleGroup
     @bosh_config_path ||= Tempfile.new("bosh_config").path
   end
 
+  def latest_micro_bosh_stemcell_path
+    `ls #{ENV['WORKSPACE']}/../../aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz`
+  end
+
+  def latest_stemcell_path
+    `ls #{ENV['WORKSPACE']}/../../aws_bosh_stemcell/lastSuccessful/archive/*.tgz`
+  end
+
   def deployments_path
     File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
