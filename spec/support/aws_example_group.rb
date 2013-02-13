@@ -39,10 +39,9 @@ module AwsSystemExampleGroup
     "#{ASSETS_DIR}/aws/aws_configuration_template.yml.erb"
   end
 
-  def run(cmd, options = {:return_output => true})
-    r = true
+  def run(cmd, options = {})
     Bundler.with_clean_env do
-    options[:return_output] ? (r=`#{cmd}`) : system(cmd)
+    r=`#{cmd}`
     unless $?.success?
       err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}"
 
