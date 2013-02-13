@@ -77,6 +77,9 @@ describe "AWS" do
       run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
       run_bosh "deploy"
     end
+
+    # We should also run some tests and make assertions against this deployment of CF (rather than just having
+    # "not blowing up" as passing criteria for the test)
   end
 
   def cf_release_path

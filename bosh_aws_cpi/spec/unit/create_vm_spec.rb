@@ -37,6 +37,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         }
     }
   }
+
   let(:cloud) { described_class.new(options) }
 
   before do
@@ -66,6 +67,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         stub(:new).
         with(networks_spec).
         and_return(network_configurator)
+
+    cloud.stub(:task_checkpoint)
   end
 
   it "should create an EC2 instance and return its id" do

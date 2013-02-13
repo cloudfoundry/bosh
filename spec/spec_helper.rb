@@ -53,7 +53,7 @@ RSpec.configure do |c|
       :file_path => /\/integration\//
   }
   c.include AwsSystemExampleGroup, :example_group => {
-      :file_path => /\/system\/aws\//
+      :file_path => /\/system\/aws\/micro_bosh_spec\.rb/
   }
 end
 
