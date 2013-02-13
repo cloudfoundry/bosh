@@ -16,11 +16,11 @@ module AwsSystemExampleGroup
   end
 
   def latest_micro_bosh_stemcell_path
-    `ls #{ENV['WORKSPACE']}/../../aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz`
+    `readlink -nf #{ENV['WORKSPACE']}/../../aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz`
   end
 
   def latest_stemcell_path
-    `ls #{ENV['WORKSPACE']}/../../aws_bosh_stemcell/lastSuccessful/archive/*.tgz`
+    `readlink -nf #{ENV['WORKSPACE']}/../../aws_bosh_stemcell/lastSuccessful/archive/*.tgz`
   end
 
   def deployments_path
