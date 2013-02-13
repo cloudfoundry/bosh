@@ -44,13 +44,12 @@ module AwsSystemExampleGroup
     Bundler.with_clean_env do
       r=`#{cmd}`
       unless $?.success?
-        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}"
+        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}\n\n #{r}"
 
         if options[:ignore_failures]
           puts("#{err_msg}, continuing anyway")
           r = false unless options[:return_output]
         else
-          puts r
           raise(err_msg)
         end
 
