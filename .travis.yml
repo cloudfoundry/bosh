@@ -3,9 +3,8 @@ bundler_args: "--local --without development"
 rvm:
   - ruby-1.9.3
 env:
-  matrix:
-    - SUITE=unit
-    - SUITE=integration
+  - SUITE=unit
+  - SUITE=integration
 notifications:
   email:
     recipients:
