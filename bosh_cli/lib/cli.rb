@@ -29,6 +29,9 @@ require "tmpdir"
 require "uri"
 require "yaml"
 require "netaddr"
+require "zlib"
+require "archive/tar/minitar"
+include Archive::Tar
 
 unless defined?(Bosh::Cli::VERSION)
   require "cli/version"
