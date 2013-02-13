@@ -1,8 +1,9 @@
 ---
 aws:
   region: us-east-1
-  default_key_name: bosh
+  default_key_name: lobot_bosh
   fast_path_delete: yes
+availability_zone: us-east-1d
 ami: ami-809a48e9
 ip: 10.0.0.9
 registry:
