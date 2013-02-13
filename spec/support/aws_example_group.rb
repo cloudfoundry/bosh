@@ -40,20 +40,21 @@ module AwsSystemExampleGroup
   end
 
   def run(cmd, options = {})
+    r = true
     Bundler.with_clean_env do
-    r=`#{cmd}`
-    unless $?.success?
-      err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}"
+      r=`#{cmd}`
+      unless $?.success?
+        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}"
 
-      if options[:ignore_failures]
-        puts("#{err_msg}, continuing anyway")
-        r = false unless options[:return_output]
-      else
-        puts r
-        raise(err_msg)
+        if options[:ignore_failures]
+          puts("#{err_msg}, continuing anyway")
+          r = false unless options[:return_output]
+        else
+          puts r
+          raise(err_msg)
+        end
+
       end
-    
-    end
     end
     r
   end
