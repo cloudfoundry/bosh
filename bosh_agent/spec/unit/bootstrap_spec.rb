@@ -135,7 +135,7 @@ describe Bosh::Agent::Bootstrap do
         end
 
         @processor.should_receive(:sh).with("mkswap #{data_disk}1")
-        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
+        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j -E lazy_itable_init=1 #{data_disk}2")
         @processor.should_receive(:sh).with("swapon #{data_disk}1")
 
         FileUtils.stub(:mkdir_p)
