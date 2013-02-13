@@ -28,6 +28,8 @@ BOSH_CACHE_DIR = Dir.mktmpdir
 BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
 
+STDOUT.sync = true
+
 module Bosh
   module Spec
     module IntegrationTest

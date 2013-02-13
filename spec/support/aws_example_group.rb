@@ -81,6 +81,7 @@ module AwsSystemExampleGroup
 
       FileUtils.rm_rf deployments_path
       FileUtils.mkdir_p micro_deployment_path
+      FileUtils.mkdir_p bat_deployment_path
 
       if ENV["NO_PROVISION"]
         puts "Not creating AWS resources, assuming we already have them"
