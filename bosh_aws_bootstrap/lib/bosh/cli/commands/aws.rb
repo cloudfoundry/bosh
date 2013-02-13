@@ -232,7 +232,7 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("Buckets:\n\t#{s3.bucket_names.join("\n\t")}")
 
-      s3.empty if non_interactive? || agree("Are you sure you want to empty and delete all buckets?")
+      s3.empty if confirmed?("Are you sure you want to empty and delete all buckets?")
     end
 
     usage "aws terminate_all ec2"
@@ -248,7 +248,7 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("Instances:\n\t#{formatted_names.join("\n\t")}")
 
-      if non_interactive? || agree("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?")
+      if confirmed?("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?")
         say "Terminating instances and waiting for them to die..."
         if !ec2.terminate_instances
           say "Warning: instances did not terminate yet after 100 retries".red
@@ -323,7 +323,7 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-      rds.delete_databases if non_interactive? || agree("Are you sure you want to delete all databases?")
+      rds.delete_databases if confirmed?("Are you sure you want to delete all databases?")
     end
 
     usage "aws delete_all volumes"
@@ -337,9 +337,7 @@ module Bosh::Cli::Command
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
       say("It will delete #{ec2.volume_count} EBS volume(s)")
 
-      if non_interactive? || agree("Are you sure you want to delete all unattached EBS volumes?")
-        ec2.delete_volumes
-      end
+      ec2.delete_volumes if confirmed?("Are you sure you want to delete all unattached EBS volumes?")
     end
 
     private
