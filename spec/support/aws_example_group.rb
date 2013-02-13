@@ -39,7 +39,7 @@ module AwsSystemExampleGroup
     "#{ASSETS_DIR}/aws/aws_configuration_template.yml.erb"
   end
 
-  def run(cmd, options = {})
+  def run(cmd, options = {:return_output => true})
     r = true
     Bundler.with_clean_env do
     options[:return_output] ? (r=`#{cmd}`) : system(cmd)
@@ -50,6 +50,7 @@ module AwsSystemExampleGroup
         puts("#{err_msg}, continuing anyway")
         r = false unless options[:return_output]
       else
+        puts r
         raise(err_msg)
       end
     
