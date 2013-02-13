@@ -21,7 +21,7 @@ describe "AWS" do
         run_bosh "micro deployment micro"
         run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
       end
-      run_bosh "target micro.#{ENV["VPC_SUBDOMAIN"]}.cf-app.com"
+      run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
       run_bosh "login admin admin"
     end
   end
@@ -40,7 +40,7 @@ describe "AWS" do
       end
     end
     bat_env = {
-        'BAT_DIRECTOR' => "micro.#{ENV["VPC_SUBDOMAIN"]}.cf-app.com",
+        'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
         'BAT_STEMCELL' => stemcell_path,
         'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
         'BAT_VCAP_PASSWORD' => 'c1oudc0w'
