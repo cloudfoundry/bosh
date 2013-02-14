@@ -5,7 +5,7 @@
 set -e
 
 echo "AAA"
-base_dir=$(readlink -nf $(dirname $)/../..)
+base_dir=$(readlink -nf $(dirname $0)/../..)
 echo "BBB"
 source $base_dir/lib/prelude_apply.bash
 echo "CCC"
