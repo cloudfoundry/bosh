@@ -22,7 +22,7 @@ Questions about the Cloud Foundry Open Source Project can be directed to our Goo
 
 ## File a bug
 
-Bugs can be filed using Github Issues within the various repositories of the [http://github.com/cloudfoundry](Cloud Foundry) components.
+Bugs can be filed using Github Issues within the various repositories of the [Cloud Foundry](http://github.com/cloudfoundry) components.
 
 ## OSS Contributions
 
