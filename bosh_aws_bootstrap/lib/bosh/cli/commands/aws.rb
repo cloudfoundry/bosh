@@ -134,7 +134,7 @@ module Bosh::Cli::Command
         @output_state["key_pairs"] = []
         say "allocating #{config["key_pairs"].length} KeyPair(s)"
         config["key_pairs"].each do |name, path|
-          ec2.add_key_pair(name, path)
+          ec2.force_add_key_pair(name, path)
           @output_state["key_pairs"] << name
         end
 

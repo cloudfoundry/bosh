@@ -110,8 +110,13 @@ module Bosh
         err "Key pair #{name} already exists on AWS".red
       end
 
+      def force_add_key_pair(name, path_to_public_private_key)
+        remove_key_pair(name)
+        add_key_pair(name, path_to_public_private_key)
+      end
+
       def remove_key_pair(name)
-        aws_ec2.key_pairs[name].delete
+        aws_ec2.key_pairs[name].delete if aws_ec2.key_pairs[name]
       end
 
       def remove_all_key_pairs

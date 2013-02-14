@@ -79,7 +79,7 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:attach_internet_gateway)
         fake_vpc.stub(:make_route_for_internet_gateway)
         fake_ec2.stub(:allocate_elastic_ips)
-        fake_ec2.stub(:add_key_pair)
+        fake_ec2.stub(:force_add_key_pair)
         fake_ec2.stub(:create_internet_gateway)
         fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_ec2.stub(:elastic_ips).and_return(["1.2.3.4", "5.6.7.8"])
@@ -112,7 +112,7 @@ describe Bosh::Cli::Command::AWS do
           args.first.keys.should =~ %w[name ingress]
         end
         fake_ec2.should_receive(:allocate_elastic_ips).with(3)
-        fake_ec2.should_receive(:add_key_pair).with("dev102", "/tmp/somekey")
+        fake_ec2.should_receive(:force_add_key_pair).with("dev102", "/tmp/somekey")
         fake_ec2.should_receive(:create_internet_gateway)
         fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_vpc.should_receive(:attach_internet_gateway).with("id1")

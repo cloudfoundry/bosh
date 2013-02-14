@@ -205,9 +205,14 @@ describe Bosh::Aws::EC2 do
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
       end
 
-      it "should remove the EC2 keypair" do
+      it "should remove the EC2 keypair if it exists" do
         key_pair.should_receive(:delete)
         ec2.remove_key_pair("name")
+      end
+
+      it "should not attempt to remove a non-existent keypair" do
+        key_pair.should_not_receive(:delete)
+        ec2.remove_key_pair("foobar")
       end
     end
   end
