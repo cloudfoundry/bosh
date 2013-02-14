@@ -20,6 +20,10 @@ Questions about the Cloud Foundry Open Source Project can be directed to our Goo
 * BOSH Users:[https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics](https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics)
 * VCAP (Cloud Foundry) Developers: [https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics](https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics)
 
+## File a bug
+
+Bugs can be filed using Github Issues within the various repositories of the [http://github.com/cloudfoundry](Cloud Foundry) components.
+
 ## OSS Contributions
 
 The Cloud Foundry team uses GitHub and accepts contributions via [pull request](https://help.github.com/articles/using-pull-requests)
