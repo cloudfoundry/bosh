@@ -80,7 +80,19 @@ describe Bosh::Aws::RDS do
   describe "delete" do
     it "should delete all databases" do
 
+      db_instance_1.stub(:db_instance_status)
+      db_instance_2.stub(:db_instance_status)
       db_instance_1.should_receive(:delete).with(skip_final_snapshot: true)
+      db_instance_2.should_receive(:delete).with(skip_final_snapshot: true)
+
+      rds.delete_databases
+    end
+
+    it "should delete all databases but skip ones with status=deleting" do
+
+      db_instance_1.stub(:db_instance_status).and_return("deleting")
+      db_instance_2.stub(:db_instance_status)
+      db_instance_1.should_not_receive(:delete)
       db_instance_2.should_receive(:delete).with(skip_final_snapshot: true)
 
       rds.delete_databases

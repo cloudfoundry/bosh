@@ -90,13 +90,13 @@ module Bosh::Cli::Command
     usage "aws destroy"
     desc "destroy everything in an AWS account"
     def destroy(config_file)
-      terminate_all_ec2(config_file)
+      delete_all_ec2(config_file)
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
-      empty_s3(config_file)
+      delete_all_s3(config_file)
       delete_all_vpcs(config_file)
       delete_all_security_groups(config_file)
-      delete_all_records(config_file, omit_types: %w[NS SOA])
+      delete_all_route53_records(config_file)
     end
 
     usage "aws create vpc"
@@ -211,7 +211,7 @@ module Bosh::Cli::Command
       say "deleted VPC and all dependencies".green
     end
 
-    usage "aws delete_all_vpcs"
+    usage "aws delete_all vpcs"
     desc "delete all VPCs in an AWS account"
 
     def delete_all_vpcs(config_file)
@@ -266,10 +266,10 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws empty s3"
-    desc "empty and delete all s3 buckets"
+    usage "aws delete_all s3"
+    desc "delete all s3 buckets"
 
-    def empty_s3(config_file)
+    def delete_all_s3(config_file)
       config = load_yaml_file config_file
 
       check_instance_count(config)
@@ -287,10 +287,10 @@ module Bosh::Cli::Command
       end
     end
 
-    usage "aws terminate_all ec2"
+    usage "aws delete_all ec2"
     desc "terminates all EC2 instances and attached EBS volumes"
 
-    def terminate_all_ec2(config_file)
+    def delete_all_ec2(config_file)
       config = load_yaml_file(config_file)
       credentials = config["aws"]
       check_instance_count(config)
@@ -404,6 +404,33 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "aws delete_all security_groups"
+    desc "delete all Security Groups"
+    def delete_all_security_groups(config_file)
+      config = load_yaml_file(config_file)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+      ec2.delete_all_security_groups
+    end
+
+    usage "aws delete_all route53 records"
+    desc "delete all Route 53 records except NS and SOA"
+    option "--omit_types CNAME,A,TXT...", Array, "override default omissions (NS and SOA)"
+    def delete_all_route53_records(config_file)
+      config = load_yaml_file(config_file)
+      route53 = Bosh::Aws::Route53.new(config["aws"])
+
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+
+      omit_types = options[:omit_types] || %w[NS SOA]
+      if omit_types.empty?
+        msg = "Are you sure you want to delete all records from Route 53?"
+      else
+        msg = "Are you sure you want to delete all but #{omit_types.join("/")} records from Route 53?"
+      end
+
+      route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
+    end
+
     private
 
     def was_vpc_eventually_available?(vpc)
@@ -473,25 +500,6 @@ module Bosh::Cli::Command
     def check_volume_count(config)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       err("#{ec2.volume_count} volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.volume_count > 20
-    end
-
-    def delete_all_records(config_file, options = {})
-      config = load_yaml_file(config_file)
-      route53 = Bosh::Aws::Route53.new(config["aws"])
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-      omit_types = options[:omit_types] || []
-      if omit_types.empty?
-        msg = "Are you sure you want to delete all records from Route 53?"
-      else
-        msg = "Are you sure you want to delete all but #{omit_types.join("/")} records from Route 53?"
-      end
-      route53.delete_all_records(options) if confirmed?(msg)
-    end
-
-    def delete_all_security_groups(config_file)
-      config = load_yaml_file(config_file)
-      ec2 = Bosh::Aws::EC2.new(config["aws"])
-      ec2.delete_all_security_groups
     end
 
   end

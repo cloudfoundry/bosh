@@ -48,13 +48,13 @@ describe Bosh::Cli::Command::AWS do
       let(:config_file) { asset "config.yml" }
 
       it "should destroy the specified VPCs, RDS DBs, and S3 Volumes" do
-        aws.should_receive(:terminate_all_ec2).with(config_file)
+        aws.should_receive(:delete_all_ec2).with(config_file)
         aws.should_receive(:delete_all_ebs).with(config_file)
         aws.should_receive(:delete_all_rds_dbs).with(config_file)
-        aws.should_receive(:empty_s3).with(config_file)
+        aws.should_receive(:delete_all_s3).with(config_file)
         aws.should_receive(:delete_all_vpcs).with(config_file)
         aws.should_receive(:delete_all_security_groups).with(config_file)
-        aws.should_receive(:delete_all_records).with(config_file, omit_types: %w[NS SOA])
+        aws.should_receive(:delete_all_route53_records).with(config_file)
         aws.destroy config_file
       end
     end
@@ -269,7 +269,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("Buckets:\n\tbuckets of fun\n\tbarrel of monkeys")
         aws.should_receive(:confirmed?).with("Are you sure you want to empty and delete all buckets?").and_return(false)
 
-        aws.empty_s3 config_file
+        aws.delete_all_s3 config_file
       end
 
       it "should not empty S3 if more than 20 insances are running" do
@@ -278,7 +278,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(21)
 
         expect {
-          aws.empty_s3 config_file
+          aws.delete_all_s3 config_file
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
@@ -299,7 +299,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_s3.should_receive :empty
 
-            aws.empty_s3 config_file
+            aws.delete_all_s3 config_file
           end
         end
 
@@ -317,7 +317,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_s3.should_not_receive :empty
 
-            aws.empty_s3 config_file
+            aws.delete_all_s3 config_file
           end
         end
       end
@@ -336,7 +336,7 @@ describe Bosh::Cli::Command::AWS do
           fake_s3.should_receive :empty
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.empty_s3 config_file
+          aws.delete_all_s3 config_file
         end
       end
     end
@@ -357,7 +357,7 @@ describe Bosh::Cli::Command::AWS do
             with("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?").
             and_return(false)
 
-        aws.terminate_all_ec2 config_file
+        aws.delete_all_ec2 config_file
       end
 
       it "should error if more than 20 instances are running" do
@@ -366,7 +366,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(21)
 
         expect {
-          aws.terminate_all_ec2 config_file
+          aws.delete_all_ec2 config_file
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
       end
 
@@ -383,7 +383,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_ec2.should_receive :terminate_instances
 
-            aws.terminate_all_ec2(config_file)
+            aws.delete_all_ec2(config_file)
           end
         end
 
@@ -399,7 +399,7 @@ describe Bosh::Cli::Command::AWS do
 
             fake_ec2.should_not_receive :terminate_instances
 
-            aws.terminate_all_ec2 config_file
+            aws.delete_all_ec2 config_file
           end
         end
       end
@@ -416,7 +416,7 @@ describe Bosh::Cli::Command::AWS do
           fake_ec2.should_receive :terminate_instances
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-          aws.terminate_all_ec2(config_file)
+          aws.delete_all_ec2(config_file)
         end
       end
     end
