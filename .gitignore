@@ -21,7 +21,7 @@ spec/assets/bosh_config.yml
 spec/assets/test_release
 bosh_agent/spec/tmp
 pkg/
-aws_bootstrap/spec/assets/private.yml
+bosh_aws_bootstrap/spec/assets/private.yml
 spec/assets/test_release/dev_releases
 spec/assets/test_release/.dev_builds
 spec/assets/test_release/config/dev.yml

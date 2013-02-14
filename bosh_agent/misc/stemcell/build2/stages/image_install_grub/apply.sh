@@ -4,23 +4,31 @@
 
 set -e
 
-base_dir=$(readlink -nf $(dirname $0)/../..)
+echo "AAA"
+base_dir=$(readlink -nf $(dirname $)/../..)
+echo "BBB"
 source $base_dir/lib/prelude_apply.bash
-
+echo "CCC"
 disk_image_name=root.img
 
 # Map partition in image to loopback
 dev=$(kpartx -av $work/$disk_image_name | grep "^add" | cut -d" " -f3)
+echo "dev $dev"
 
 # Mount partition
 mnt=$work/mnt
+echo "mnt $mnt"
 mkdir -p $mnt
 mount /dev/mapper/$dev $mnt
 
 # Install bootloader
+echo "mkdir -p $mnt/tmp/grub"
 mkdir -p $mnt/tmp/grub
 
+echo "touch $mnt/tmp/grub/$disk_image_name"
 touch $mnt/tmp/grub/$disk_image_name
+
+echo "mount --bind $work/$disk_image_name $mnt/tmp/grub/$disk_image_name"
 mount --bind $work/$disk_image_name $mnt/tmp/grub/$disk_image_name
 
 cat > $mnt/tmp/grub/device.map <<EOS

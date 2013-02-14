@@ -5,20 +5,6 @@ require "tmpdir"
 
 require "cloud/aws"
 
-class AwsConfig
-  attr_accessor :db, :logger, :uuid
-  def task_checkpoint
-
-  end
-end
-
-aws_config = AwsConfig.new
-aws_config.db = nil # AWS CPI doesn't need DB
-aws_config.logger = Logger.new(StringIO.new)
-aws_config.logger.level = Logger::DEBUG
-
-Bosh::Clouds::Config.configure(aws_config)
-
 MOCK_AWS_ACCESS_KEY_ID = "foo"
 MOCK_AWS_SECRET_ACCESS_KEY = "bar"
 
@@ -123,4 +109,8 @@ end
 
 def asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), "assets", filename))
+end
+
+RSpec.configure do |config|
+  config.before(:each) { Bosh::Clouds::Config.stub(:logger).and_return(double.as_null_object)  }
 end

@@ -85,12 +85,15 @@ function stage_with_btrfs() {
 }
 
 function stage_direct() {
+  echo "$1"
+  echo "$mnt"
   local stage=$1
   local mnt_work=$mnt/work
 
   mkdir -p $mnt_work
 
   # Apply stage
+  echo "$stages_dir/$stage/apply.sh $mnt_work"
   $stages_dir/$stage/apply.sh $mnt_work
 }
 
@@ -118,6 +121,8 @@ source $spec
 previous_stage=
 
 function stage() {
+  echo "$mnt_type"
+  echo "$1"
   if [ "$mnt_type" == "btrfs" ]
   then
     stage_with_btrfs $1

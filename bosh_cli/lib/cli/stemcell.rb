@@ -28,22 +28,37 @@ module Bosh::Cli
       else
         say("Manifest not found in cache, verifying tarball...")
 
-        step("Extract tarball",
-             "Cannot extract tarball #{@stemcell_file}", :fatal) do
-          `tar -C #{tmp_dir} -xzf #{@stemcell_file} 2>&1`
-          $?.exitstatus == 0
+        stemcell_mf = "stemcell.MF"
+
+        tar = nil
+        step("Read tarball",
+             "Cannot read tarball #{@stemcell_file}", :fatal) do
+          tgz = Zlib::GzipReader.new(File.open(@stemcell_file))
+          tar = Minitar.open(tgz)
+          !!tar
         end
 
-        manifest_file = File.expand_path("stemcell.MF", tmp_dir)
+        manifest = false
+        image = false
+        tar.each do |entry|
+          if entry.full_name == stemcell_mf
+            tar.extract_entry(tmp_dir, entry)
+            manifest = true
+          elsif entry.full_name == "image"
+            image = true
+          end
+        end
 
         step("Manifest exists", "Cannot find stemcell manifest", :fatal) do
-          File.exists?(manifest_file)
+          manifest
         end
 
         step("Stemcell image file",
              "Stemcell image file is missing", :fatal) do
-          File.exists?(File.expand_path("image", tmp_dir))
+          image
         end
+
+        manifest_file = File.expand_path(stemcell_mf, tmp_dir)
 
         say("Writing manifest to cache...")
         manifest_yaml = File.read(manifest_file)

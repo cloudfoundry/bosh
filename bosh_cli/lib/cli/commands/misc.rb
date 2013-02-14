@@ -322,22 +322,41 @@ module Bosh::Cli::Command
 
     def print_feature_list(features)
       if features.respond_to?(:each)
-        features.each do |feature, status|
-          print_value(feature, format_feature_status(status))
+        features.each do |feature, info|
+          # Old director only returns status as a Boolean
+          if info.kind_of?(Hash)
+            status = info["status"]
+            extras = info["extras"]
+          else
+            status = info
+            extras = nil
+          end
+          print_value(feature, format_feature_status(status, extras))
         end
       else
         say("Unknown feature list: #{features.inspect}".red)
       end
     end
 
-    def format_feature_status(status)
+    def format_feature_status(status, extras)
       if status.nil?
         "n/a"
       elsif status
-        "enabled"
+        "enabled #{format_feature_extras(extras)}"
       else
         "disabled"
       end
+    end
+
+    def format_feature_extras(extras)
+      return "" if extras.nil? || extras.empty?
+
+      result = []
+      extras.each do |name, value|
+        result << "#{name}: #{value}"
+      end
+
+      "(#{result.join(", ")})"
     end
   end
 end

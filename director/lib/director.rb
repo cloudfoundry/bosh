@@ -114,6 +114,7 @@ module Bosh::Director
 
     include Api::ApiHelper
     include Api::Http
+    include DnsHelper
 
     def initialize
       super
@@ -643,7 +644,12 @@ module Bosh::Director
         "version"  => "#{VERSION} (#{Config.revision})",
         "user"     => @user,
         "cpi"      => Config.cloud_type,
-        "features" => {"dns" => !!Config.dns}
+        "features" => {
+          "dns" => {
+            "status" => Config.dns_enabled?,
+            "extras" => { "domain_name" => dns_domain_name }
+          }
+        }
       }
       content_type(:json)
       json_encode(status)

@@ -28,6 +28,8 @@ BOSH_CACHE_DIR = Dir.mktmpdir
 BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
 
+STDOUT.sync = true
+
 module Bosh
   module Spec
     module IntegrationTest
@@ -53,7 +55,7 @@ RSpec.configure do |c|
       :file_path => /\/integration\//
   }
   c.include AwsSystemExampleGroup, :example_group => {
-      :file_path => /\/system\/aws\//
+      :file_path => /\/system\/aws\/micro_bosh_spec\.rb/
   }
 end
 
@@ -76,12 +78,6 @@ end
 def director_version
   version = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000)`
   "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
-end
-
-def run_bosh(cmd, work_dir = nil)
-  Dir.chdir(work_dir || BOSH_WORK_DIR) do
-    `bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
-  end
 end
 
 def cleanup_bosh

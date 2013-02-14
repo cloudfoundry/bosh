@@ -32,6 +32,18 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe "aws create" do
+      let(:config_file) {asset "create_all.yml"}
+
+      it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
+        aws.should_receive(:create_vpc).with(config_file)
+        aws.should_receive(:create_rds_dbs).with(config_file)
+        aws.should_receive(:create_s3).with(config_file)
+        aws.create config_file
+      end
+
+    end
+
     describe "aws create vpc" do
       let(:config_file) { asset "config.yml" }
 
@@ -204,14 +216,23 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create s3" do
       let(:config_file) { asset "config.yml" }
+      let(:fake_s3) { mock("s3")}
 
       it "should create all configured buckets" do
-        fake_s3 = mock("s3")
 
         Bosh::Aws::S3.stub(:new).and_return(fake_s3)
 
         fake_s3.should_receive(:create_bucket).with("b1").ordered
         fake_s3.should_receive(:create_bucket).with("b2").ordered
+
+        aws.create_s3(config_file)
+      end
+
+      it "should do nothing if s3 config is empty" do
+        aws.stub(:load_yaml_file).and_return({})
+
+        aws.should_receive(:say).with("s3 not set in config.  Skipping")
+        fake_s3.should_not_receive(:create_bucket)
 
         aws.create_s3(config_file)
       end
@@ -231,7 +252,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).with("Buckets:\n\tbuckets of fun\n\tbarrel of monkeys")
-        aws.should_receive(:agree).with("Are you sure you want to empty and delete all buckets?").and_return(false)
+        aws.should_receive(:confirmed?).with("Are you sure you want to empty and delete all buckets?").and_return(false)
 
         aws.empty_s3 config_file
       end
@@ -258,7 +279,7 @@ describe Bosh::Cli::Command::AWS do
             fake_s3.stub(:bucket_names).and_return(double.as_null_object)
 
             aws.stub(:say).twice
-            aws.stub(:agree).and_return(true)
+            aws.stub(:confirmed?).and_return(true)
 
             fake_s3.should_receive :empty
 
@@ -276,7 +297,7 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::S3.stub(:new).and_return(fake_s3)
             fake_s3.stub(:bucket_names).and_return(double.as_null_object)
             aws.stub(:say).twice
-            aws.stub(:agree).and_return(false)
+            aws.stub(:confirmed?).and_return(false)
 
             fake_s3.should_not_receive :empty
 
@@ -316,7 +337,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).with("Instances:\n\tinstance_1 (id: I12345)\n\tinstance_2 (id: I67890)")
-        aws.should_receive(:agree).
+        aws.should_receive(:confirmed?).
             with("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?").
             and_return(false)
 
@@ -340,7 +361,7 @@ describe Bosh::Cli::Command::AWS do
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
-            aws.stub(:agree).and_return(true)
+            aws.stub(:confirmed?).and_return(true)
             fake_ec2.stub(:instances_count).and_return(0)
             fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
@@ -356,7 +377,7 @@ describe Bosh::Cli::Command::AWS do
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say).twice
-            aws.stub(:agree).and_return(false)
+            aws.stub(:confirmed?).and_return(false)
             fake_ec2.stub(:instances_count).and_return(0)
             fake_ec2.stub(:instance_names).and_return(double.as_null_object)
 
@@ -395,7 +416,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).with("It will delete 2 EBS volume(s)")
-        aws.should_receive(:agree).
+        aws.should_receive(:confirmed?).
             with("Are you sure you want to delete all unattached EBS volumes?").
             and_return(false)
 
@@ -419,7 +440,7 @@ describe Bosh::Cli::Command::AWS do
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
-            aws.stub(:agree).and_return(true)
+            aws.stub(:confirmed?).and_return(true)
             fake_ec2.stub(:volume_count).and_return(0)
 
             fake_ec2.should_receive :delete_volumes
@@ -434,7 +455,7 @@ describe Bosh::Cli::Command::AWS do
 
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
-            aws.stub(:agree).and_return(false)
+            aws.stub(:confirmed?).and_return(false)
             fake_ec2.stub(:volume_count).and_return(0)
 
             fake_ec2.should_not_receive :delete_volumes
@@ -574,6 +595,14 @@ describe Bosh::Cli::Command::AWS do
         aws.create_rds_dbs config_file
       end
 
+      it "should do nothing if rds config is empty" do
+        aws.stub(:load_yaml_file).and_return({})
+
+        aws.should_receive(:say).with("rds not set in config.  Skipping")
+
+        aws.create_rds_dbs(config_file)
+      end
+
       context "when the config file has option overrides" do
         let(:config_file) { asset "config_with_override.yml" }
         it "should create all rds databases with option overrides" do
@@ -659,7 +688,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:say).with("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         aws.should_receive(:say).
             with("Database Instances:\n\tinstance1\t(database_name: bosh_db)\n\tinstance2\t(database_name: important_db)")
-        aws.should_receive(:agree).with("Are you sure you want to delete all databases?").
+        aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").
             and_return(false)
 
         aws.delete_all_rds_dbs(config_file)
@@ -688,7 +717,7 @@ describe Bosh::Cli::Command::AWS do
 
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             aws.stub(:say).twice
-            aws.stub(:agree).and_return(true)
+            aws.stub(:confirmed?).and_return(true)
             fake_rds.stub(:database_names).and_return(double.as_null_object)
 
             fake_rds.should_receive :delete_databases
@@ -703,7 +732,7 @@ describe Bosh::Cli::Command::AWS do
 
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             aws.stub(:say).twice
-            aws.stub(:agree).and_return(false)
+            aws.stub(:confirmed?).and_return(false)
             fake_rds.stub(:database_names).and_return(double.as_null_object)
 
             fake_rds.should_not_receive :delete_databases

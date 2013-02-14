@@ -30,4 +30,5 @@ Gem::Specification.new do |s|
   s.add_dependency "net-ssh-gateway", "~>1.1.0"
   s.add_dependency "net-scp", "~>1.0.4"
   s.add_dependency "netaddr", "~>1.5.0"
+  s.add_dependency "archive-tar-minitar", "~>0.5"
 end
