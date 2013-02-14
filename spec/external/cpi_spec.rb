@@ -9,37 +9,32 @@ require "bosh_aws_bootstrap/vpc"
 
 describe Bosh::AwsCloud::Cloud do
   let(:cpi) do
-    cpi = Bosh::AwsCloud::Cloud.new(@config)
-    cpi.logger = @logger
-    cpi.stub(:registry => double("registry").as_null_object)
-
-    cpi
+    described_class.new(
+        {
+            "aws" => {
+                "region" => "us-east-1",
+                "default_key_name" => "bosh_ci",
+                "fast_path_delete" => "yes",
+                "access_key_id" => ENV["BOSH_AWS_ACCESS_KEY_ID"],
+                "secret_access_key" => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
+            },
+            "registry" => {
+                "endpoint" => "fake",
+                "user" => "fake",
+                "password" => "fake"
+            }
+        }
+    )
   end
+  let(:ami) { "ami-809a48e9" }
+  let(:ip) { "10.0.0.9" }
+  let(:availability_zone) { "us-east-1d" }
 
   before do
-    class AwsConfig
-      attr_accessor :db, :logger, :uuid
-      def task_checkpoint
-
-      end
-    end
-
-    aws_config = AwsConfig.new
-    aws_config.db = nil # AWS CPI doesn't need DB
-    aws_config.logger = Logger.new(StringIO.new)
-    aws_config.logger.level = Logger::DEBUG
-
-    Bosh::Clouds::Config.configure(aws_config)
-
-    unless ENV["BOSH_AWS_ACCESS_KEY_ID"] && ENV["BOSH_AWS_SECRET_ACCESS_KEY"]
-      pending "please provide access_key_id and secret_access_key"
-    end
-    @config = YAML.load_file(spec_asset("aws/aws_cpi_config.yml"))
-    @config["aws"]["access_key_id"] = ENV["BOSH_AWS_ACCESS_KEY_ID"]
-    @config["aws"]["secret_access_key"] = ENV["BOSH_AWS_SECRET_ACCESS_KEY"]
-
-    @logger = Logger.new("/dev/null")
-    Bosh::Clouds::Config.stub(:logger => @logger)
+    delegate = double("delegate", logger: double("logger").as_null_object)
+    delegate.stub(:task_checkpoint)
+    Bosh::Clouds::Config.configure(delegate)
+    Bosh::AwsCloud::RegistryClient.stub(:new).and_return(double("registry").as_null_object)
 
     @instance_id = nil
     @volume_id = nil
@@ -64,10 +59,10 @@ describe Bosh::AwsCloud::Cloud do
     @instance_id = cpi.create_vm(
         "agent-007",
         ami,
-        { "instance_type" => "m1.small" },
+        {"instance_type" => "m1.small"},
         network_spec,
         disk_locality,
-        { "key" => "value" })
+        {"key" => "value"})
 
     @instance_id.should_not be_nil
 
@@ -93,7 +88,7 @@ describe Bosh::AwsCloud::Cloud do
 
     context "without existing disks" do
       it "should exercise the vm lifecycle" do
-        vm_lifecycle(@config["ami"], network_spec, [])
+        vm_lifecycle(ami, network_spec, [])
       end
     end
 
@@ -107,7 +102,7 @@ describe Bosh::AwsCloud::Cloud do
       end
 
       it "should exercise the vm lifecycle" do
-        vm_lifecycle(@config["ami"], network_spec, [@existing_volume_id])
+        vm_lifecycle(ami, network_spec, [@existing_volume_id])
       end
     end
   end
@@ -117,7 +112,7 @@ describe Bosh::AwsCloud::Cloud do
       {
           "default" => {
               "type" => "manual",
-              "ip" => @config["ip"],
+              "ip" => ip,
               "cloud_properties" => {"subnet" => @subnet_id}
           }
       }
@@ -127,14 +122,14 @@ describe Bosh::AwsCloud::Cloud do
       @ec2 = Bosh::Aws::EC2.new(access_key_id: ENV["BOSH_AWS_ACCESS_KEY_ID"], secret_access_key: ENV["BOSH_AWS_SECRET_ACCESS_KEY"])
       @vpc = Bosh::Aws::VPC.create(@ec2)
 
-      subnet_configuration = { "vpc_subnet" => { "cidr" => "10.0.0.0/24", "availability_zone" => @config["availability_zone"] } }
+      subnet_configuration = {"vpc_subnet" => {"cidr" => "10.0.0.0/24", "availability_zone" => availability_zone}}
       @vpc.create_subnets(subnet_configuration)
       @subnet_id = @vpc.subnets.first[1]
     end
 
     context "without existing disks" do
       it "should exercise the vm lifecycle" do
-        vm_lifecycle(@config["ami"], network_spec, [])
+        vm_lifecycle(ami, network_spec, [])
       end
     end
   end
