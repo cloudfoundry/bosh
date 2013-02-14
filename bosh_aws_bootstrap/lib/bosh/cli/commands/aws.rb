@@ -87,6 +87,18 @@ module Bosh::Cli::Command
       create_s3(config_file)
     end
 
+    usage "aws destroy"
+    desc "destroy everything in an AWS account"
+    def destroy(config_file)
+      terminate_all_ec2(config_file)
+      delete_all_ebs(config_file)
+      delete_all_rds_dbs(config_file)
+      empty_s3(config_file)
+      delete_all_vpcs(config_file)
+      delete_all_security_groups(config_file)
+      delete_all_records(config_file, omit_types: %w[NS SOA])
+    end
+
     usage "aws create vpc"
     desc "create vpc"
     def create_vpc(config_file)
@@ -199,6 +211,41 @@ module Bosh::Cli::Command
       say "deleted VPC and all dependencies".green
     end
 
+    usage "aws delete_all_vpcs"
+    desc "delete all VPCs in an AWS account"
+
+    def delete_all_vpcs(config_file)
+      config = load_yaml_file(config_file)
+
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+      vpc_ids = ec2.vpcs.map { |vpc| vpc.id }
+
+      unless vpc_ids.empty?
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("VPCs:\n\t#{vpc_ids.join("\n\t")}")
+
+        if confirmed?("Are you sure you want to delete all VPCs?")
+          vpc_ids.each do |vpc_id|
+            vpc = Bosh::Aws::VPC.find(ec2, vpc_id)
+            err("#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first") if vpc.instances_count > 0
+
+            dhcp_options = vpc.dhcp_options
+
+            vpc.delete_security_groups
+            vpc.delete_subnets
+            ec2.delete_internet_gateways(ec2.internet_gateway_ids)
+            vpc.delete_vpc
+            dhcp_options.delete
+          end
+        end
+      else
+        say("No VPCs found")
+      end
+
+      ec2.remove_all_key_pairs
+      ec2.release_all_elastic_ips
+    end
+
     usage "aws create s3"
     desc "create s3 buckets"
 
@@ -228,11 +275,16 @@ module Bosh::Cli::Command
       check_instance_count(config)
 
       s3 = Bosh::Aws::S3.new(config["aws"])
+      bucket_names = s3.bucket_names
 
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-      say("Buckets:\n\t#{s3.bucket_names.join("\n\t")}")
+      unless bucket_names.empty?
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("Buckets:\n\t#{bucket_names.join("\n\t")}")
 
-      s3.empty if confirmed?("Are you sure you want to empty and delete all buckets?")
+        s3.empty if confirmed?("Are you sure you want to empty and delete all buckets?")
+      else
+        say("No S3 buckets found")
+      end
     end
 
     usage "aws terminate_all ec2"
@@ -245,14 +297,18 @@ module Bosh::Cli::Command
       ec2 = Bosh::Aws::EC2.new(credentials)
 
       formatted_names = ec2.instance_names.map { |id, name| "#{name} (id: #{id})" }
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-      say("Instances:\n\t#{formatted_names.join("\n\t")}")
+      unless formatted_names.empty?
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("Instances:\n\t#{formatted_names.join("\n\t")}")
 
-      if confirmed?("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?")
-        say "Terminating instances and waiting for them to die..."
-        if !ec2.terminate_instances
-          say "Warning: instances did not terminate yet after 100 retries".red
+        if confirmed?("Are you sure you want to terminate all terminatable EC2 instances and their associated non-persistent EBS volumes?")
+          say "Terminating instances and waiting for them to die..."
+          if !ec2.terminate_instances
+            say "Warning: instances did not terminate yet after 100 retries".red
+          end
         end
+      else
+        say("No EC2 instances found")
       end
     end
 
@@ -320,10 +376,14 @@ module Bosh::Cli::Command
       rds = Bosh::Aws::RDS.new(credentials)
 
       formatted_names = rds.database_names.map { |instance, db| "#{instance}\t(database_name: #{db})" }
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-      say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
+      unless formatted_names.empty?
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-      rds.delete_databases if confirmed?("Are you sure you want to delete all databases?")
+        rds.delete_databases if confirmed?("Are you sure you want to delete all databases?")
+      else
+        say("No RDS databases found")
+      end
     end
 
     usage "aws delete_all volumes"
@@ -334,10 +394,14 @@ module Bosh::Cli::Command
       ec2 = Bosh::Aws::EC2.new(credentials)
       check_volume_count(config)
 
-      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-      say("It will delete #{ec2.volume_count} EBS volume(s)")
+      if ec2.volume_count > 0
+        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+        say("It will delete #{ec2.volume_count} EBS volume(s)")
 
-      ec2.delete_volumes if confirmed?("Are you sure you want to delete all unattached EBS volumes?")
+        ec2.delete_volumes if confirmed?("Are you sure you want to delete all unattached EBS volumes?")
+      else
+        say("No EBS volumes found")
+      end
     end
 
     private
@@ -409,6 +473,25 @@ module Bosh::Cli::Command
     def check_volume_count(config)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       err("#{ec2.volume_count} volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.volume_count > 20
+    end
+
+    def delete_all_records(config_file, options = {})
+      config = load_yaml_file(config_file)
+      route53 = Bosh::Aws::Route53.new(config["aws"])
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      omit_types = options[:omit_types] || []
+      if omit_types.empty?
+        msg = "Are you sure you want to delete all records from Route 53?"
+      else
+        msg = "Are you sure you want to delete all but #{omit_types.join("/")} records from Route 53?"
+      end
+      route53.delete_all_records(options) if confirmed?(msg)
+    end
+
+    def delete_all_security_groups(config_file)
+      config = load_yaml_file(config_file)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+      ec2.delete_all_security_groups
     end
 
   end

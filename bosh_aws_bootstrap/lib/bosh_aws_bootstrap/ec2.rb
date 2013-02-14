@@ -35,6 +35,10 @@ module Bosh
         aws_ec2.elastic_ips.each { |ip| ip.release if ips.include? ip.public_ip }
       end
 
+      def release_all_elastic_ips
+        aws_ec2.elastic_ips.map(&:release)
+      end
+
       def create_internet_gateway
         aws_ec2.internet_gateways.create
       end
@@ -108,6 +112,23 @@ module Bosh
 
       def remove_key_pair(name)
         aws_ec2.key_pairs[name].delete
+      end
+
+      def remove_all_key_pairs
+        aws_ec2.key_pairs.map(&:delete)
+      end
+
+      def delete_all_security_groups
+        # Revoke all permissions before deleting because a permission can reference
+        # another security group, causing a delete to fail
+        aws_ec2.security_groups.each do |sg|
+          sg.ingress_ip_permissions.map(&:revoke)
+          sg.egress_ip_permissions.map(&:revoke)
+        end
+
+        aws_ec2.security_groups.each do |sg|
+          sg.delete unless (sg.name == "default" && !sg.vpc_id)
+        end
       end
 
       private

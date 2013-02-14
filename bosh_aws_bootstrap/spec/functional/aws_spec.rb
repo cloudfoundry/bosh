@@ -44,6 +44,21 @@ describe Bosh::Cli::Command::AWS do
 
     end
 
+    describe "aws destroy" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should destroy the specified VPCs, RDS DBs, and S3 Volumes" do
+        aws.should_receive(:terminate_all_ec2).with(config_file)
+        aws.should_receive(:delete_all_ebs).with(config_file)
+        aws.should_receive(:delete_all_rds_dbs).with(config_file)
+        aws.should_receive(:empty_s3).with(config_file)
+        aws.should_receive(:delete_all_vpcs).with(config_file)
+        aws.should_receive(:delete_all_security_groups).with(config_file)
+        aws.should_receive(:delete_all_records).with(config_file, omit_types: %w[NS SOA])
+        aws.destroy config_file
+      end
+    end
+
     describe "aws create vpc" do
       let(:config_file) { asset "config.yml" }
 
@@ -274,9 +289,10 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             fake_ec2.stub(:instances_count).and_return(20)
             fake_s3 = mock("s3")
+            fake_bucket_names = %w[foo bar]
 
             Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-            fake_s3.stub(:bucket_names).and_return(double.as_null_object)
+            fake_s3.stub(:bucket_names).and_return(fake_bucket_names)
 
             aws.stub(:say).twice
             aws.stub(:confirmed?).and_return(true)
@@ -314,7 +330,7 @@ describe Bosh::Cli::Command::AWS do
           fake_s3 = mock("s3")
 
           Bosh::Aws::S3.stub(:new).and_return(fake_s3)
-          fake_s3.stub(:bucket_names).and_return(double.as_null_object)
+          fake_s3.stub(:bucket_names).and_return(%w[foo bar])
           aws.stub(:say).twice
 
           fake_s3.should_receive :empty
@@ -362,8 +378,8 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
             aws.stub(:confirmed?).and_return(true)
-            fake_ec2.stub(:instances_count).and_return(0)
-            fake_ec2.stub(:instance_names).and_return(double.as_null_object)
+            fake_ec2.stub(:instances_count).and_return(2)
+            fake_ec2.stub(:instance_names).and_return(%w[i-foo i-bar])
 
             fake_ec2.should_receive :terminate_instances
 
@@ -395,7 +411,7 @@ describe Bosh::Cli::Command::AWS do
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           aws.stub(:say)
           fake_ec2.stub(:instances_count).and_return(0)
-          fake_ec2.stub(:instance_names).and_return(double.as_null_object)
+          fake_ec2.stub_chain(:instance_names, :map).and_return(["foo (id: i-1234)"])
 
           fake_ec2.should_receive :terminate_instances
 
@@ -441,7 +457,7 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
             aws.stub(:say)
             aws.stub(:confirmed?).and_return(true)
-            fake_ec2.stub(:volume_count).and_return(0)
+            fake_ec2.stub(:volume_count).and_return(1)
 
             fake_ec2.should_receive :delete_volumes
 
@@ -471,7 +487,7 @@ describe Bosh::Cli::Command::AWS do
 
           Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
           aws.stub(:say)
-          fake_ec2.stub(:volume_count).and_return(0)
+          fake_ec2.stub(:volume_count).and_return(1)
 
           fake_ec2.should_receive :delete_volumes
 
@@ -718,7 +734,7 @@ describe Bosh::Cli::Command::AWS do
             Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
             aws.stub(:say).twice
             aws.stub(:confirmed?).and_return(true)
-            fake_rds.stub(:database_names).and_return(double.as_null_object)
+            fake_rds.stub(:database_names).and_return(%w[foo bar])
 
             fake_rds.should_receive :delete_databases
 
@@ -751,7 +767,7 @@ describe Bosh::Cli::Command::AWS do
 
           Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
           aws.stub(:say).twice
-          fake_rds.stub(:database_names).and_return(double.as_null_object)
+          fake_rds.stub_chain(:database_names, :map).and_return(["database_name: foo"])
 
           fake_rds.should_receive :delete_databases
 

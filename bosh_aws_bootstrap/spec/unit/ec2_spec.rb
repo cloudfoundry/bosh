@@ -212,6 +212,32 @@ describe Bosh::Aws::EC2 do
     end
   end
 
+  describe "security groups" do
+    let (:fake_vpc_sg) { double("security group", :name => "bosh", :vpc_id => "vpc-123") }
+    let (:fake_default_sg) { double("security group", :name => "default", :vpc_id => false) }
+    let (:fake_security_groups) { [fake_vpc_sg, fake_default_sg] }
+    let (:fake_aws_ec2) { double("aws ec2", security_groups: fake_security_groups) }
+    let (:ip_permissions) { double("ip permissions").as_null_object}
+
+    before do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+    end
+
+    describe "deleting" do
+      it "should delete all" do
+        fake_aws_ec2.should_receive(:security_groups)
+        fake_vpc_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
+        fake_vpc_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
+        fake_vpc_sg.should_receive(:delete)
+        fake_default_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
+        fake_default_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
+        fake_default_sg.should_not_receive(:delete)
+
+        ec2.delete_all_security_groups
+      end
+    end
+  end
+
   describe "deleting all EBS volumes" do
     let(:fake_aws_ec2) { double("aws_ec2") }
     let(:vol1) { double("vol1", attachments: []) }
