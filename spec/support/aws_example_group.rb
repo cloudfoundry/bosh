@@ -40,11 +40,17 @@ module AwsSystemExampleGroup
   end
 
   def run(cmd, options = {})
-    r = true
+    cmd_out = ''
     Bundler.with_clean_env do
-      r=`#{cmd}`
+      lines = []
+      IO.popen(cmd).each do |line|
+        puts line.chomp
+        lines << line.chomp
+      end.close # force the process to close so that $? is set
+
+      cmd_out = lines.join("\n")
       unless $?.success?
-        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}\n\n #{r}"
+        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}\n\n #{cmd_out}"
 
         if options[:ignore_failures]
           puts("#{err_msg}, continuing anyway")
@@ -55,7 +61,7 @@ module AwsSystemExampleGroup
 
       end
     end
-    r
+    cmd_out
   end
 
   def run_bosh(cmd, options = {})
