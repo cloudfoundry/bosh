@@ -31,12 +31,12 @@ describe Bosh::AwsCloud::Cloud do
 
     Bosh::Clouds::Config.configure(aws_config)
 
-    unless ENV["AWS_ACCESS_KEY_ID"] && ENV["AWS_SECRET_ACCESS_KEY"]
+    unless ENV["BOSH_AWS_ACCESS_KEY_ID"] && ENV["BOSH_AWS_SECRET_ACCESS_KEY"]
       pending "please provide access_key_id and secret_access_key"
     end
     @config = YAML.load_file(spec_asset("aws/aws_cpi_config.yml"))
-    @config["aws"]["access_key_id"] = ENV["AWS_ACCESS_KEY_ID"]
-    @config["aws"]["secret_access_key"] = ENV["AWS_SECRET_ACCESS_KEY"]
+    @config["aws"]["access_key_id"] = ENV["BOSH_AWS_ACCESS_KEY_ID"]
+    @config["aws"]["secret_access_key"] = ENV["BOSH_AWS_SECRET_ACCESS_KEY"]
 
     @logger = Logger.new("/dev/null")
     Bosh::Clouds::Config.stub(:logger => @logger)
@@ -124,7 +124,7 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     before do
-      @ec2 = Bosh::Aws::EC2.new(access_key_id: ENV["AWS_ACCESS_KEY_ID"], secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"])
+      @ec2 = Bosh::Aws::EC2.new(access_key_id: ENV["BOSH_AWS_ACCESS_KEY_ID"], secret_access_key: ENV["BOSH_AWS_SECRET_ACCESS_KEY"])
       @vpc = Bosh::Aws::VPC.create(@ec2)
 
       subnet_configuration = { "vpc_subnet" => { "cidr" => "10.0.0.0/24", "availability_zone" => @config["availability_zone"] } }
