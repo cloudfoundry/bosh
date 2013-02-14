@@ -65,3 +65,15 @@ key_pairs:
 s3:
   - bucket_name: <%= (ENV["BOSH_VPC_SUBDOMAIN"] || raise("Missing ENV variable BOSH_VPC_SUBDOMAIN")) + "-bosh-blobstore" %>
     tag: blobstore
+rds:
+  - name: ccdb
+    tag: cc
+    # aws_creation_options:
+    #   # These are passed on directly to the AWS API call.
+    #   # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
+    #   db_instance_class: db.m2.x4.large
+    #   allocated_storage: 7
+    #   multi_az: true
+  - name: uaadb
+    tag: uaa
+
