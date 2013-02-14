@@ -4,10 +4,11 @@
 
 set -e
 
+echo "AAA"
 base_dir=$(readlink -nf $(dirname $)/../..)
-echo "base_dir $base_dir"
+echo "BBB"
 source $base_dir/lib/prelude_apply.bash
-
+echo "CCC"
 disk_image_name=root.img
 
 # Map partition in image to loopback

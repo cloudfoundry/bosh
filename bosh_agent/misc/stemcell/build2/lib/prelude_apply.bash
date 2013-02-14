@@ -1,4 +1,3 @@
-echo "START: $(basename $0)"
 source $base_dir/lib/prelude_common.bash
 source $base_dir/lib/helpers.sh
 
