@@ -105,9 +105,7 @@ module AwsSystemExampleGroup
         puts "Not cleaning up AWS resources"
       else
         puts "Using VPC output: #{vpc_outfile_path}"
-        run_bosh "aws terminate_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
-        run_bosh "aws delete_all volumes '#{vpc_outfile_path}'", :ignore_failures => true
-        run_bosh "aws delete vpc '#{vpc_outfile_path}'"
+        run_bosh "aws destroy '#{vpc_outfile_path}'"
         puts "CLEANUP SUCCESSFUL"
       end
     end
