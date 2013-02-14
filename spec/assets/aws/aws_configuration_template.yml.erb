@@ -54,6 +54,10 @@ elastic_ips:
     instances: 1
     dns_record: "bat"
     ttl: 60
+  bosh:
+    instances: 1
+    dns_record: bosh
+    ttl: 60
 
 key_pairs:
   <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_bosh_rsa" %>
