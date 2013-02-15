@@ -30,7 +30,7 @@ networks:
   cloud_properties: {}
 
 - name: default
-<% if p('network.subnet') %>
+<% if p('network.subnet', false) %>
   type: manual
   subnets:
   - range: <%= properties.network.cidr %>
