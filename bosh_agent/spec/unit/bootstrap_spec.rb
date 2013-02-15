@@ -129,13 +129,30 @@ describe Bosh::Agent::Bootstrap do
         Bosh::Agent::Config.settings = {}
       end
 
-      it "should partition the disk with one data and one swap partition" do
+      it "should partition the disk with one data and one swap partition (with lazy_itable_init)" do
         Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
           disk.should == data_disk
         end
+        Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(true)
 
         @processor.should_receive(:sh).with("mkswap #{data_disk}1")
         @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j -E lazy_itable_init=1 #{data_disk}2")
+        @processor.should_receive(:sh).with("swapon #{data_disk}1")
+
+        FileUtils.stub(:mkdir_p)
+        @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+        @processor.setup_data_disk
+      end
+
+      it "should partition the disk with one data and one swap partition (without lazy_itable_init)" do
+        Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
+          disk.should == data_disk
+        end
+        Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(false)
+
+        @processor.should_receive(:sh).with("mkswap #{data_disk}1")
+        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
         @processor.should_receive(:sh).with("swapon #{data_disk}1")
 
         FileUtils.stub(:mkdir_p)

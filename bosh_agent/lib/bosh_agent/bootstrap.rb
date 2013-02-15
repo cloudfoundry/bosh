@@ -174,7 +174,10 @@ module Bosh::Agent
 
           logger.info("Create swap and data partitions")
           sh "mkswap #{swap_partition}"
-          sh "/sbin/mke2fs -t ext4 -j -E lazy_itable_init=1 #{data_partition}"
+
+          mke2fs_options = ["-t ext4", "-j"]
+          mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
+          sh "/sbin/mke2fs #{mke2fs_options.join(" ")} #{data_partition}"
         end
 
         logger.info("Swapon partition #{swap_partition}")
