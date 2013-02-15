@@ -18,7 +18,7 @@ describe "agent" do
     load_deployment_spec
   end
 
-  it "should set vcap password" do
+  it "should set vcap password", ssh: true do
     # using password 'foobar'
     use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
     use_static_ip
@@ -27,7 +27,7 @@ describe "agent" do
     end
   end
 
-  it "should survive agent dying" do
+  it "should survive agent dying", ssh: true do
     use_static_ip
 
     Dir.mktmpdir do |tmpdir|

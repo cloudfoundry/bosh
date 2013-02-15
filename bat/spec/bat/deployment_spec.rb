@@ -52,7 +52,7 @@ describe "deployment" do
     deployment.delete
   end
 
-  it "should use job colocation" do
+  it "should use job colocation", ssh: true do
     jobs = %w[
       /var/vcap/packages/batlight/bin/batlight
       /var/vcap/packages/batarang/bin/batarang
@@ -121,7 +121,7 @@ describe "deployment" do
       bosh("delete release #{@previous.name} #{@previous.version}")
     end
 
-    it "should drain when updating" do
+    it "should drain when updating", ssh: true do
       deployment = with_deployment
       bosh("deployment #{deployment.to_path}")
       bosh("deploy").should succeed_with DEPLOYED_REGEXP
@@ -134,7 +134,7 @@ describe "deployment" do
       end
     end
 
-    it "should drain dynamically when updating" do
+    it "should drain dynamically when updating", ssh: true do
       use_dynamic_drain
       deployment = with_deployment
       bosh("deployment #{deployment.to_path}")
@@ -182,7 +182,7 @@ describe "deployment" do
   describe "network" do
     it "should deploy using dynamic network"
 
-    it "should deploy using a static network" do
+    it "should deploy using a static network", ssh: true do
       pending "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
       use_static_ip
       with_deployment do

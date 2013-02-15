@@ -59,7 +59,7 @@ describe "dns" do
   end
 
   context "internal" do
-    it "should be able to lookup of its own name" do
+    it "should be able to lookup of its own name", ssh: true do
       pending "director not configured with dns" unless dns?
       cmd = "dig +short 0.batlight.static.bat.bosh a 0.batlight.static.bat.microbosh a"
       ssh(static_ip, "vcap", password, cmd).should match /#{static_ip}/
