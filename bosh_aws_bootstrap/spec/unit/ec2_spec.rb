@@ -205,9 +205,40 @@ describe Bosh::Aws::EC2 do
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
       end
 
-      it "should remove the EC2 keypair" do
+      it "should remove the EC2 keypair if it exists" do
         key_pair.should_receive(:delete)
         ec2.remove_key_pair("name")
+      end
+
+      it "should not attempt to remove a non-existent keypair" do
+        key_pair.should_not_receive(:delete)
+        ec2.remove_key_pair("foobar")
+      end
+    end
+  end
+
+  describe "security groups" do
+    let (:fake_vpc_sg) { double("security group", :name => "bosh", :vpc_id => "vpc-123") }
+    let (:fake_default_sg) { double("security group", :name => "default", :vpc_id => false) }
+    let (:fake_security_groups) { [fake_vpc_sg, fake_default_sg] }
+    let (:fake_aws_ec2) { double("aws ec2", security_groups: fake_security_groups) }
+    let (:ip_permissions) { double("ip permissions").as_null_object}
+
+    before do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+    end
+
+    describe "deleting" do
+      it "should delete all" do
+        fake_aws_ec2.should_receive(:security_groups)
+        fake_vpc_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
+        fake_vpc_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
+        fake_vpc_sg.should_receive(:delete)
+        fake_default_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
+        fake_default_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
+        fake_default_sg.should_not_receive(:delete)
+
+        ec2.delete_all_security_groups
       end
     end
   end

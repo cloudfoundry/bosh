@@ -104,6 +104,7 @@ module Bosh::AwsCloud
             agent_id,
             network_spec,
             environment,
+            preformatted?(resource_pool),
             stemcell.root_device_name,
             @options["agent"] || {}
         )
@@ -111,6 +112,10 @@ module Bosh::AwsCloud
 
         instance.id
       end
+    end
+
+    def preformatted?(resource_pool)
+      resource_pool["preformatted"]
     end
 
     ##
@@ -633,13 +638,14 @@ module Bosh::AwsCloud
     # @param [Hash] environment
     # @param [String] root_device_name root device, e.g. /dev/sda1
     # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment, root_device_name, agent_properties)
+    def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
       settings = {
           "vm" => {
               "name" => "vm-#{UUIDTools::UUID.random_create}"
           },
           "agent_id" => agent_id,
           "networks" => network_spec,
+          "preformatted" => preformatted,
           "disks" => {
               "system" => root_device_name,
               "ephemeral" => "/dev/sdb",

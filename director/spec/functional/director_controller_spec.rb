@@ -87,7 +87,12 @@ describe Bosh::Director::ApiController do
           "uuid" => BD::Config.uuid,
           "user" => "admin",
           "cpi"  => "dummy",
-          "features" => {"dns" => false}
+          "features" => {
+            "dns" => {
+              "status" => true,
+              "extras" => { "domain_name" => "bosh" }
+            }
+          }
       }
 
       Yajl::Parser.parse(last_response.body).should == expected

@@ -5,7 +5,7 @@ class Stemcell
   attr_reader :version
 
   def self.from_path(path)
-    %r{/*(?<name>[\w-]+)-(?<cpi>[^-]+)-(?<version>[^-]+)\.tgz} =~ path
+    %r{/*(?<name>[\w-]+)-(?<cpi>[^-]+)-(?<version>[^-]+)(\.(?<timestamp>[^.]+))?\.tgz} =~ path
     Stemcell.new(name, version, cpi, path)
   end
 

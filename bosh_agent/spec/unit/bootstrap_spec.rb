@@ -17,7 +17,6 @@ describe Bosh::Agent::Bootstrap do
 
     # We just want to avoid this to accidently be invoked on dev systems
     Bosh::Agent::Util.stub(:update_file)
-    @processor.stub(:setup_data_disk)
     @processor.stub(:partition_disk)
     @processor.stub(:mem_total).and_return(3951616)
   end
@@ -114,6 +113,73 @@ describe Bosh::Agent::Bootstrap do
 
   it "should swap on data disk" do
     @processor.data_sfdisk_input.should == ",3859,S\n,,L\n"
+  end
+
+  describe "#setup_data_disk" do
+    let(:data_disk) { "/dev/sdx" }
+
+    before(:each) do
+      Bosh::Agent::Config.platform.stub(:get_data_disk_device_name => data_disk)
+      File.stub(:blockdev?).with(data_disk).and_return(true)
+      @processor.stub(:setup_data_sys)
+    end
+
+    context "format disk" do
+      before do
+        Bosh::Agent::Config.settings = {}
+      end
+
+      it "should partition the disk with one data and one swap partition (with lazy_itable_init)" do
+        Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
+          disk.should == data_disk
+        end
+        Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(true)
+
+        @processor.should_receive(:sh).with("mkswap #{data_disk}1")
+        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j -E lazy_itable_init=1 #{data_disk}2")
+        @processor.should_receive(:sh).with("swapon #{data_disk}1")
+
+        FileUtils.stub(:mkdir_p)
+        @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+        @processor.setup_data_disk
+      end
+
+      it "should partition the disk with one data and one swap partition (without lazy_itable_init)" do
+        Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
+          disk.should == data_disk
+        end
+        Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(false)
+
+        @processor.should_receive(:sh).with("mkswap #{data_disk}1")
+        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
+        @processor.should_receive(:sh).with("swapon #{data_disk}1")
+
+        FileUtils.stub(:mkdir_p)
+        @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+        @processor.setup_data_disk
+      end
+    end
+
+    context "pre-partitioned disk" do
+      before do
+        Bosh::Agent::Config.settings = {"preformatted" => "yes"}
+      end
+
+      it "should mount data disk without partitioning" do
+        Bosh::Agent::Util.should_not_receive(:partition_disk)
+        @processor.should_not_receive(:sh).with(%r{mkswap})
+        @processor.should_not_receive(:sh).with(%r{/sbin/mke2fs -t ext4 -j})
+
+        FileUtils.stub(:mkdir_p)
+        @processor.should_receive(:sh).with(%r[mount #{data_disk} .+/data])
+
+        @processor.setup_data_disk
+      end
+
+    end
+
   end
 
   def complete_settings

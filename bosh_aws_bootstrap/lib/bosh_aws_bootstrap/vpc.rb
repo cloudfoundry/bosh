@@ -59,7 +59,6 @@ module Bosh
               ports = range_match ? (range_match[1].to_i)..(range_match[2].to_i) : ingress["ports"].to_i
               security_group.authorize_ingress(ingress["protocol"], ports, ingress["sources"])
             end
-            #say "\tcreated security group #{group["name"]}".green
           end
         end
       end

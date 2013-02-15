@@ -132,7 +132,9 @@ module Bosh::Agent
 
           Bosh::Agent::Util.partition_disk(disk, full_disk)
 
-          `/sbin/mke2fs -t ext4 -j #{partition}`
+          mke2fs_options = ["-t ext4", "-j"]
+          mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
+          `/sbin/mke2fs #{mke2fs_options.join(" ")} #{partition}`
           unless $?.exitstatus == 0
             raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
           end

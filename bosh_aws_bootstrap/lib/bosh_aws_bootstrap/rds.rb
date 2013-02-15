@@ -39,7 +39,7 @@ module Bosh
       end
 
       def delete_databases
-        databases.each {|db| db.delete(skip_final_snapshot: true) }
+        databases.each {|db| db.delete(skip_final_snapshot: true) unless db.db_instance_status == "deleting" }
       end
 
       def database_names

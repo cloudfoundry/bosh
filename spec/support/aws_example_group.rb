@@ -15,6 +15,14 @@ module AwsSystemExampleGroup
     @bosh_config_path ||= Tempfile.new("bosh_config").path
   end
 
+  def latest_micro_bosh_stemcell_path
+    `readlink -nf #{ENV['WORKSPACE']}/../../aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz`
+  end
+
+  def latest_stemcell_path
+    `readlink -nf #{ENV['WORKSPACE']}/../../aws_bosh_stemcell/lastSuccessful/archive/*.tgz`
+  end
+
   def deployments_path
     File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
@@ -23,27 +31,37 @@ module AwsSystemExampleGroup
     File.join(deployments_path, "micro")
   end
 
+  def bat_deployment_path
+    File.join(deployments_path, "bat")
+  end
+
   def aws_configuration_template_path
     "#{ASSETS_DIR}/aws/aws_configuration_template.yml.erb"
   end
 
   def run(cmd, options = {})
-    r = true
+    cmd_out = ''
     Bundler.with_clean_env do
-    options[:return_output] ? (r=`#{cmd}`) : system(cmd)
-    unless $?.success?
-      err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}"
+      lines = []
+      IO.popen(cmd).each do |line|
+        puts line.chomp
+        lines << line.chomp
+      end.close # force the process to close so that $? is set
 
-      if options[:ignore_failures]
-        puts("#{err_msg}, continuing anyway")
-        r = false unless options[:return_output]
-      else
-        raise(err_msg)
+      cmd_out = lines.join("\n")
+      unless $?.success?
+        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}\n\n #{cmd_out}"
+
+        if options[:ignore_failures]
+          puts("#{err_msg}, continuing anyway")
+          r = false unless options[:return_output]
+        else
+          raise(err_msg)
+        end
+
       end
-    
     end
-    end
-    r
+    cmd_out
   end
 
   def run_bosh(cmd, options = {})
@@ -69,6 +87,7 @@ module AwsSystemExampleGroup
 
       FileUtils.rm_rf deployments_path
       FileUtils.mkdir_p micro_deployment_path
+      FileUtils.mkdir_p bat_deployment_path
 
       if ENV["NO_PROVISION"]
         puts "Not creating AWS resources, assuming we already have them"

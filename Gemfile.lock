@@ -72,6 +72,7 @@ PATH
   remote: bosh_cli
   specs:
     bosh_cli (1.5.0.pre)
+      archive-tar-minitar (~> 0.5)
       blobstore_client (~> 1.5.0.pre)
       bosh_common (~> 1.5.0.pre)
       highline (~> 1.6.2)
@@ -310,8 +311,8 @@ GEM
       eventmachine (= 0.12.10)
       json_pure (>= 1.7.3)
       thin (>= 1.4.1)
-    net-scp (1.0.6)
-      net-ssh (>= 2.6.5)
+    net-scp (1.0.4)
+      net-ssh (>= 1.99.1)
     net-ssh (2.6.5)
     net-ssh-gateway (1.1.2)
       net-ssh (>= 2.6.5)

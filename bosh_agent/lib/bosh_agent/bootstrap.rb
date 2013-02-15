@@ -10,6 +10,7 @@ require 'openssl'
 
 module Bosh::Agent
   class Bootstrap
+    include Bosh::Exec
 
     def initialize
       FileUtils.mkdir_p(File.join(base_dir, 'bosh'))
@@ -153,10 +154,18 @@ module Bosh::Agent
 
     def setup_data_disk
       data_disk = Bosh::Agent::Config.platform.get_data_disk_device_name
-      swap_partition = "#{data_disk}1"
-      data_partition = "#{data_disk}2"
 
-      if File.blockdev?(data_disk)
+      unless File.blockdev?(data_disk)
+        logger.warn("Data disk is not a block device: #{data_disk}")
+        return
+      end
+
+      if preformatted?
+        data_partition = data_disk
+        logger.info("Using pre-formatted disk #{data_disk} - skipping partitioning & formatting")
+      else
+        swap_partition = "#{data_disk}1"
+        data_partition = "#{data_disk}2"
 
         if Dir["#{data_disk}[1-9]"].empty?
           logger.info("Found unformatted drive")
@@ -164,21 +173,32 @@ module Bosh::Agent
           Bosh::Agent::Util.partition_disk(data_disk, data_sfdisk_input)
 
           logger.info("Create swap and data partitions")
-          %x[mkswap #{swap_partition}]
-          %x[/sbin/mke2fs -t ext4 -j #{data_partition}]
+          sh "mkswap #{swap_partition}"
+
+          mke2fs_options = ["-t ext4", "-j"]
+          mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
+          sh "/sbin/mke2fs #{mke2fs_options.join(" ")} #{data_partition}"
         end
 
-        logger.info("Swapon and mount data partition")
-        %x[swapon #{swap_partition}]
-        %x[mkdir -p #{base_dir}/data]
-
-        data_mount = "#{base_dir}/data"
-        unless Pathname.new(data_mount).mountpoint?
-          %x[mount #{data_partition} #{data_mount}]
-        end
-
-        setup_data_sys
+        logger.info("Swapon partition #{swap_partition}")
+        sh "swapon #{swap_partition}"
       end
+
+      data_mount = File.join(base_dir, "data")
+      FileUtils.mkdir_p(data_mount)
+
+      unless Pathname.new(data_mount).mountpoint?
+        logger.info("Mount data partition #{data_partition} to #{data_mount}")
+        sh "mount #{data_partition} #{data_mount}"
+      end
+
+      setup_data_sys
+    end
+
+    # for AWS we have a special setting to allow you to skip partitioning
+    # the ephemeral disk, as it comes pre-formatted from EC2
+    def preformatted?
+      Bosh::Agent::Config.settings["preformatted"]
     end
 
     def data_sfdisk_input

@@ -1,9 +1,8 @@
-require File.expand_path(File.dirname(__FILE__) + "/../../spec_helper")
+require "spec_helper"
+require "bosh_agent/version"
 
 describe "AWS" do
-  STEMCELL_AMI = "ami-42cf592b"
-  STEMCELL_VERSION = "1.5.0.pre"
-  CF_STEMCELL = "bosh-stemcell-aws-#{STEMCELL_VERSION}.tgz"
+  STEMCELL_VERSION = Bosh::Agent::VERSION
 
   # we always need a microbosh to deploy whatever the next step is
   before do
@@ -18,23 +17,35 @@ describe "AWS" do
         puts "MICRO_BOSH.YML:"
         puts ERB.new(File.read("micro/micro_bosh.yml")).result
 
-        puts ""
+        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell_path}"
         run_bosh "micro deployment micro"
-        run_bosh "micro deploy #{STEMCELL_AMI}"
+        run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
       end
-      run_bosh "target micro.#{ENV["VPC_SUBDOMAIN"]}.cf-app.com"
+      run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
       run_bosh "login admin admin"
     end
   end
 
   it "should be able to launch a MicroBosh from existing stemcell" do
     run_bosh "status"
-
     puts "DEPLOYMENT FINISHED!"
-    puts "Ideally we'd run BAT tests now and mark this successful"
 
-    #puts "Press enter to continue and cleanup your resources"
-    #gets
+    puts "Uploading latest stemcell from #{latest_stemcell_path}"
+    run_bosh "upload stemcell #{latest_stemcell_path}"
+
+    puts "Running BAT Tests"
+    unless ENV["NO_PROVISION"]
+      Dir.chdir(bat_deployment_path) do
+        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{vpc_outfile_path}' '#{STEMCELL_VERSION}'"
+      end
+    end
+    bat_env = {
+        'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
+        'BAT_STEMCELL' => stemcell_path,
+        'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
+        'BAT_VCAP_PASSWORD' => 'c1oudc0w'
+    }
+    system(bat_env, "rake bat").should be_true
   end
 
   it "should be able to deploy CF-release on top of microbosh", cf: true do
@@ -44,15 +55,9 @@ describe "AWS" do
         puts "Deleting existing stemcell bosh-stemcell"
         run_bosh "delete stemcell bosh-stemcell #{STEMCELL_VERSION}"
       end
-      if ENV["STEMCELL_DIR"]
-        stemcell_path = "#{ENV["STEMCELL_DIR"]}/#{CF_STEMCELL}"
-        puts "Using existing stemcell on this machine: #{stemcell_path}"
-        run_bosh "upload stemcell #{stemcell_path}"
-      else
-        puts "Downloading public stemcell: #{CF_STEMCELL}"
-        run_bosh "download public stemcell #{CF_STEMCELL}"
-        run_bosh "upload stemcell #{CF_STEMCELL}"
-      end
+
+      puts "Using existing stemcell on this machine: #{latest_stemcell_path}"
+      run_bosh "upload stemcell #{latest_stemcell_path}"
     end
 
     Dir.chdir cf_release_path do
@@ -72,6 +77,9 @@ describe "AWS" do
       run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
       run_bosh "deploy"
     end
+
+    # We should also run some tests and make assertions against this deployment of CF (rather than just having
+    # "not blowing up" as passing criteria for the test)
   end
 
   def cf_release_path

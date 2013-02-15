@@ -19,6 +19,12 @@ namespace :spec do
     end
   end
 
+  desc "Tests requiring external access (i.e. AWS, vCenter, etc)"
+  RSpec::Core::RakeTask.new(:external) do |t|
+    t.pattern = "spec/external/**/*_spec.rb"
+    t.rspec_opts = %w(--format documentation --color)
+  end
+
   namespace :system do
     namespace :aws do
       desc "Run AWS MicroBOSH deployment suite"

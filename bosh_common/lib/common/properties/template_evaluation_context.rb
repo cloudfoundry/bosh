@@ -90,11 +90,12 @@ module Bosh::Common
     def if_p(*names)
       values = names.map do |name|
         value = lookup_property(@raw_properties, name)
-        return if value.nil?
+        return ActiveElseBlock.new(self) if value.nil?
         value
       end
 
       yield *values
+      InactiveElseBlock.new
     end
 
     # @return [Object] Object representation where all hashes are unrolled
@@ -115,6 +116,30 @@ module Bosh::Common
     def extract_value(name)
       spec_property = lookup_property(@raw_properties, name)
       spec_property.is_a?(Hash) ? spec_property["default"] : spec_property
+    end
+
+    private
+    class ActiveElseBlock
+      def initialize(template_context)
+        @context = template_context
+      end
+
+      def else
+        yield
+      end
+
+      def else_if_p(*names, &block)
+        @context.if_p(*names, &block)
+      end
+    end
+
+    class InactiveElseBlock
+      def else
+      end
+
+      def else_if_p(*names)
+        InactiveElseBlock.new
+      end
     end
   end
 end
