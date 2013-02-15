@@ -26,6 +26,12 @@ gem install bosh_agent --no-rdoc --no-ri -l
 
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent
 
+if [ ${mcf_enabled:-no} == "yes" ]; then
+  mv $chroot/etc/sv/agent/mcf_run $chroot/etc/sv/agent/run
+else
+  rm $chroot/etc/sv/agent/mcf_run
+fi
+
 # runit
 run_in_bosh_chroot $chroot "
 chmod +x /etc/sv/agent/run /etc/sv/agent/log/run

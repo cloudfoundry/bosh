@@ -23,9 +23,9 @@ update:
 networks:
 - name: default
   type: dynamic
-  <% if properties.dns_nameserver %>
+  <% if_p('dns_nameserver') do |dns_nameserver| %>
   dns:
-    - <%= properties.dns_nameserver %>
+    - <%= dns_nameserver %>
   <% end %>
   <% if properties.security_group %>
   cloud_properties:

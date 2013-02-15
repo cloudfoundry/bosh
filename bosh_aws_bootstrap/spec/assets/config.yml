@@ -38,8 +38,19 @@ elastic_ips:
   router:
     instances: 2
     dns_record: "*"
+    ttl: 3000
   micro:
     instances: 1
     dns_record: micro
 key_pairs:
   dev102: /tmp/somekey
+rds:
+  - name: ccdb
+    tag: cc
+  - name: uaadb
+    tag: uaa
+s3:
+  - bucket_name: b1
+    tag: blobstore
+  - bucket_name: b2
+    tag: other

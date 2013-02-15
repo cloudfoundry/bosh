@@ -7,6 +7,12 @@ require "release"
 require "deployment"
 require "vm"
 
+require 'tempfile'
+
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+ASSETS_DIR = File.join(SPEC_ROOT, "assets")
+BAT_RELEASE_DIR = File.join(ASSETS_DIR, "bat-release")
+
 helper_regex = File.join(File.expand_path(File.dirname(__FILE__)),"helpers", "*_helper.rb")
 helpers = Dir.glob(helper_regex)
 helpers.each do |helper|
@@ -25,6 +31,7 @@ RSpec.configure do |config|
 
   # bosh helper isn't available, so it has to be rolled by hand
   config.before(:suite) do
+    BH::bosh_cli_config_path = Tempfile.new("bosh_config").path
     director = BH::read_environment('BAT_DIRECTOR')
     director.should_not be_nil
     cmd = "bundle exec bosh --config #{BH::bosh_cli_config_path} --user admin " +

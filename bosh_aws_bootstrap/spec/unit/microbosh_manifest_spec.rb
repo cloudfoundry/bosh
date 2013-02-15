@@ -24,9 +24,9 @@ describe Bosh::Aws::MicroboshManifest do
     manifest.to_y
   end
 
-  it 'does not warn when availability_zone is missing' do
+  it 'warns when availability_zone is missing' do
     config['vpc']['subnets']['bosh'].delete('availability_zone')
-    manifest.should_not_receive(:warning)
+    manifest.should_receive(:warning).with('Missing availability zone in vpc.subnets.bosh').at_least(1).times
     manifest.to_y
   end
 
@@ -49,8 +49,8 @@ describe Bosh::Aws::MicroboshManifest do
   end
 
   it 'warns when private_key is missing' do
-    config['key_pairs'].delete(config['name'])
-    manifest.should_receive(:warning).with("Missing keypair 'dev102'").at_least(1).times
+    config['key_pairs'] = {}
+    manifest.should_receive(:warning).with("Missing key_pairs field, must have at least 1 keypair").at_least(1).times
     manifest.to_y
   end
 

@@ -256,7 +256,7 @@ module Bosh::Cli::Command
     usage "micro apply"
     desc  "Apply spec"
     def apply(spec)
-      deployer.apply(load_yaml_file(spec))
+      deployer.apply(Bosh::Deployer::Specification.new(load_yaml_file(spec)))
     end
 
     private

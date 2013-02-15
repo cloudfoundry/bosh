@@ -17,9 +17,6 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
   s.require_paths = ["lib", "config"]
 
-  s.bindir       = "bin"
-  s.executables  = %w(stemcell-copy)
-
   s.add_dependency "bosh_cli", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
   s.add_dependency "bosh_vcloud_cpi", "~>#{version}"

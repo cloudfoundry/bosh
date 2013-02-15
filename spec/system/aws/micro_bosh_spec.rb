@@ -1,27 +1,107 @@
-require File.expand_path(File.dirname(__FILE__) + "/../../spec_helper")
+require "spec_helper"
+require "bosh_agent/version"
 
 describe "AWS" do
-  STEMCELL_AMI = "ami-42cf592b"
-  it "should be able to launch a MicroBosh from existing stemcell" do
-    Dir.chdir(File.join(ASSETS_DIR, "aws", "deployments")) do
-      FileUtils.rm_f("aws_registry.log")
-      FileUtils.rm_f("bosh-deployments.yml")
-      FileUtils.rm_f("micro/bosh_micro_deploy.log")
+  STEMCELL_VERSION = Bosh::Agent::VERSION
 
-      puts "MICRO_BOSH.YML:"
-      puts ERB.new(File.read("micro/micro_bosh.yml")).result
+  # we always need a microbosh to deploy whatever the next step is
+  before do
+    unless ENV["NO_PROVISION"]
+      Dir.chdir(micro_deployment_path) do
+        run_bosh "aws generate micro_bosh '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+      end
+    end
 
-      puts ""
-      run_bosh "micro deployment micro"
-      run_bosh "micro deploy #{STEMCELL_AMI}"
+    Dir.chdir(deployments_path) do
+      unless ENV["NO_PROVISION"]
+        puts "MICRO_BOSH.YML:"
+        puts ERB.new(File.read("micro/micro_bosh.yml")).result
+
+        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell_path}"
+        run_bosh "micro deployment micro"
+        run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
+      end
+      run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
+      run_bosh "login admin admin"
     end
   end
 
-  def run(cmd)
-    system(cmd) || raise("Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?}")
+  it "should be able to launch a MicroBosh from existing stemcell" do
+    run_bosh "status"
+    puts "DEPLOYMENT FINISHED!"
+
+    puts "Uploading latest stemcell from #{latest_stemcell_path}"
+    run_bosh "upload stemcell #{latest_stemcell_path}"
+
+    puts "Running BAT Tests"
+    unless ENV["NO_PROVISION"]
+      Dir.chdir(bat_deployment_path) do
+        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{vpc_outfile_path}' '#{STEMCELL_VERSION}'"
+      end
+    end
+    bat_env = {
+        'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
+        'BAT_STEMCELL' => stemcell_path,
+        'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
+        'BAT_VCAP_PASSWORD' => 'c1oudc0w'
+    }
+    system(bat_env, "rake bat").should be_true
   end
 
-  def run_bosh(cmd)
-    run "bundle exec bosh -n --config #{bosh_config_path} #{cmd}"
+  it "should be able to deploy CF-release on top of microbosh", cf: true do
+    Dir.chdir deployments_path do
+      existing_stemcells = run_bosh "stemcells", :return_output => true, :ignore_failures => true
+      if existing_stemcells.include?("bosh-stemcell")
+        puts "Deleting existing stemcell bosh-stemcell"
+        run_bosh "delete stemcell bosh-stemcell #{STEMCELL_VERSION}"
+      end
+
+      puts "Using existing stemcell on this machine: #{latest_stemcell_path}"
+      run_bosh "upload stemcell #{latest_stemcell_path}"
+    end
+
+    Dir.chdir cf_release_path do
+      existing_releases = run_bosh "releases", :return_output => true, :ignore_failures => true
+      if existing_releases.include?("bosh-release")
+        puts "Deleting existing bosh-release"
+        run_bosh "delete release bosh-release"
+      end
+      run_bosh "create release"
+      run_bosh "upload release"
+    end
+
+    Dir.chdir deployments_path do
+      run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}' '#{aws_configuration_template_path}'"
+      FileUtils.cp("cf-aws-stub.yml", "cf-aws.yml")
+      run_bosh "deployment cf-aws.yml"
+      run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
+      run_bosh "deploy"
+    end
+
+    # We should also run some tests and make assertions against this deployment of CF (rather than just having
+    # "not blowing up" as passing criteria for the test)
+  end
+
+  def cf_release_path
+    @cf_release_path ||= begin
+      path = File.join(BOSH_TMP_DIR, "spec", "cf-release")
+      puts "Cloning CF-RELEASE"
+      if !File.exist? path
+        run "git clone git://github.com/cloudfoundry/cf-release.git '#{path}'"
+      end
+      run "cd '#{path}' && git checkout staging && git reset --hard origin/staging"
+      run "cd '#{path}' && ./update"
+      path
+    end
+  end
+
+  def deployments_aws_path
+    @deployments_aws_path ||= begin
+      path = File.join(BOSH_TMP_DIR, "spec", "deployments-aws")
+      puts "Cloning DEPLOYMENTS-AWS"
+      run "rm -rf #{path}"
+      run "git clone --recursive git@github.com:cloudfoundry/deployments-aws.git '#{path}'"
+      path
+    end
   end
 end

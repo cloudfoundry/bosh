@@ -104,6 +104,7 @@ module Bosh::AwsCloud
             agent_id,
             network_spec,
             environment,
+            preformatted?(resource_pool),
             stemcell.root_device_name,
             @options["agent"] || {}
         )
@@ -111,6 +112,10 @@ module Bosh::AwsCloud
 
         instance.id
       end
+    end
+
+    def preformatted?(resource_pool)
+      resource_pool["preformatted"]
     end
 
     ##
@@ -375,10 +380,15 @@ module Bosh::AwsCloud
         TagManager.tag(instance, key, value)
       end
 
-      # should deployment name be included too?
       job = metadata[:job]
       index = metadata[:index]
-      TagManager.tag(instance, "Name", "#{job}/#{index}") if job && index
+
+      if job && index
+        name = "#{job}/#{index}"
+      elsif metadata[:compiling]
+        name = "compiling/#{metadata[:compiling]}"
+      end
+      TagManager.tag(instance, "Name", name) if name
     rescue AWS::EC2::Errors::TagLimitExceeded => e
       @logger.error("could not tag #{instance.id}: #{e.message}")
     end
@@ -526,6 +536,12 @@ module Bosh::AwsCloud
     # The stemcell-copy script must be in the PATH of the user running
     # the director, and needs sudo privileges to execute without
     # password.
+
+    # TODO we require sudo to write to the EBS volume device.
+    #  Luckly on aws ubuntu we have passwordless sudo for everything
+    #  We should really fix this so we either don't need sudo or give
+    #   the user more warning / explanation for the
+    #   possible sudo password prompt
     def copy_root_image(image_path, ebs_volume)
       path = ENV["PATH"]
 
@@ -533,10 +549,11 @@ module Bosh::AwsCloud
         @logger.debug("copying stemcell using stemcell-copy script")
         # note that is is a potentially dangerous operation, but as the
         # stemcell-copy script sets PATH to a sane value this is safe
-        out = `sudo #{stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
+        out = `sudo -n #{stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       else
-        @logger.info("falling back to using dd to copy stemcell")
-        out = `tar -xzf #{image_path} -O root.img | dd of=#{ebs_volume} 2>&1`
+        @logger.info("falling back to using included copy stemcell")
+        included_stemcell_copy = File.expand_path("../../../../scripts/stemcell-copy.sh", __FILE__)
+        out = `sudo -n #{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1`
       end
 
       unless $?.exitstatus == 0
@@ -578,7 +595,7 @@ module Bosh::AwsCloud
     #
     def validate_options
       required_keys = {
-          "aws" => ["access_key_id", "secret_access_key", "region"],
+          "aws" => ["access_key_id", "secret_access_key", "region", "default_key_name"],
           "registry" => ["endpoint", "user", "password"],
       }
 
@@ -621,13 +638,14 @@ module Bosh::AwsCloud
     # @param [Hash] environment
     # @param [String] root_device_name root device, e.g. /dev/sda1
     # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment, root_device_name, agent_properties)
+    def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
       settings = {
           "vm" => {
               "name" => "vm-#{UUIDTools::UUID.random_create}"
           },
           "agent_id" => agent_id,
           "networks" => network_spec,
+          "preformatted" => preformatted,
           "disks" => {
               "system" => root_device_name,
               "ephemeral" => "/dev/sdb",

@@ -21,3 +21,7 @@ find / -xdev -perm +6000 -a -type f \
   -a -not \( -name sudo -o -name su -o -name sudoedit \) \
   -exec chmod ug-s {} \;
 "
+
+# No root ssh
+sed "/^ *PermitRootLogin/d" -i $chroot/etc/ssh/sshd_config
+echo 'PermitRootLogin no' >> $chroot/etc/ssh/sshd_config

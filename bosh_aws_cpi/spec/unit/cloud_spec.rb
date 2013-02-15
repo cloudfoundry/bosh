@@ -39,7 +39,7 @@ describe Bosh::AwsCloud::Cloud do
                 }
             }
         )
-      }.to raise_error(ArgumentError, "missing configuration parameters > aws:region, registry:endpoint, registry:user, registry:password")
+      }.to raise_error(ArgumentError, "missing configuration parameters > aws:region, aws:default_key_name, registry:endpoint, registry:user, registry:password")
     end
 
     it "doesn't raise an error if all the required configuraitons are present" do
@@ -49,7 +49,8 @@ describe Bosh::AwsCloud::Cloud do
                 "aws" => {
                     "access_key_id" => "keys to my heart",
                     "secret_access_key" => "open sesame",
-                    "region" => "fupa"
+                    "region" => "fupa",
+                    "default_key_name" => "sesame"
                 },
                 "registry" => {
                     "user" => "abuser",

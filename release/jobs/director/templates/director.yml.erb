@@ -33,11 +33,17 @@ dns:
     pool_timeout: 10
 <% end %>
 blobstore:
-  plugin: simple
+  plugin: <%= properties.blobstore.plugin || 'simple' %>
   properties:
+<% if properties.blobstore.plugin == "s3" %>
+    bucket_name: <%= properties.blobstore.bucket_name %>
+    access_key_id: <%= properties.blobstore.access_key_id %>
+    secret_access_key: <%= properties.blobstore.secret_access_key %>
+<% else %>
     endpoint: http://<%= properties.blobstore.address %>:<%= properties.blobstore.port %>
     user: <%= properties.blobstore.director.user %>
     password: <%= properties.blobstore.director.password %>
+<% end %>
 cloud:
 <%
 if properties.aws
@@ -57,14 +63,20 @@ end
     agent:
       ntp: [<%= properties.ntp ? properties.ntp.join(", ") : "" %>]
       blobstore:
-        plugin: simple
+        plugin: <%= properties.blobstore.plugin || 'simple' %>
         properties:
 <% agent = properties.agent %>
-<% blobstore = agent ? agent.blobstore : nil %>
+<% blobstore = agent ? agent.blobstore : properties.blobstore %>
+      <% if properties.blobstore.plugin == "s3" %>
+          bucket_name: <%= properties.blobstore.bucket_name %>
+          access_key_id: <%= blobstore.access_key_id %>
+          secret_access_key: <%= blobstore.secret_access_key %>
+      <% else %>
 <% address = blobstore ? blobstore.address : properties.blobstore.address %>
           endpoint: 'http://<%= address %>:<%= properties.blobstore.port %>'
           user: <%= properties.blobstore.agent.user %>
           password: <%= properties.blobstore.agent.password %>
+      <% end %>
 <% nats = agent ? agent.nats : nil %>
 <% address = nats ? nats.address : properties.nats.address %>
       mbus: nats://<%= properties.nats.user %>:<%= properties.nats.password %>@<%= address %>:<%= properties.nats.port %>

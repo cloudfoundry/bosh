@@ -1,1 +1,0 @@
-bosh: travis.check cloudfoundry bosh

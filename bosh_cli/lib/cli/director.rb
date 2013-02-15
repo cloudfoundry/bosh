@@ -141,7 +141,14 @@ module Bosh
 
       def delete_stemcell(name, version, options = {})
         options = options.dup
-        request_and_track(:delete, "/stemcells/#{name}/#{version}", options)
+        force = options.delete(:force)
+
+        url = "/stemcells/#{name}/#{version}"
+
+        extras = []
+        extras << "force=true" if force
+
+        request_and_track(:delete, add_query_string(url, extras), options)
       end
 
       def delete_deployment(name, options = {})

@@ -46,7 +46,8 @@ namespace :stemcell do
     options[:bosh_users_password] = 'micr0cloud'
 
     options = options.merge(bosh_agent_options)
-    options = options.merge(bosh_micro_options(args[:mainfest],args[:tarball]))
+    options = options.merge(bosh_micro_options(args[:manifest],args[:tarball]))
+    options[:mcf_enabled] = "yes"
 
     build("stemcell-mcf", options)
   end
@@ -54,6 +55,7 @@ namespace :stemcell do
   def build_micro_bosh_release
     release_tarball = nil
     Dir.chdir('release') do
+      sh('cp config/microbosh-dev-template.yml config/dev.yml')
       sh('bosh create release --force --with-tarball')
       release_tarball = `ls -1t dev_releases/micro-bosh*.tgz | head -1`
     end
@@ -79,7 +81,8 @@ namespace :stemcell do
       :TW_LOCAL_PASSPHRASE => ENV["TW_LOCAL_PASSPHRASE"],
       :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
       :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
-      :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__)
+      :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__),
+      :mcf_enabled => "no"
     }
 
     # Pass OVFTOOL environment variable when targeting vsphere
@@ -106,7 +109,7 @@ namespace :stemcell do
   end
 
   def get_working_dir
-    "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{$$}"
+    ENV["BUILD_PATH"] || "/var/tmp/bosh/bosh_agent-#{Bosh::Agent::VERSION}-#{$$}"
   end
 
   def get_hypervisor(infrastructure)
