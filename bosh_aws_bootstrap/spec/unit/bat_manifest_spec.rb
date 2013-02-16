@@ -57,6 +57,6 @@ YAML
 
   def mock_director_uuid(uuid)
     URI.should_receive(:parse).and_return('foo')
-    Net::HTTP.should_receive(:get).with('foo').and_return({'uuid' => uuid}.to_yaml)
+    Net::HTTP.should_receive(:get).with('foo').and_return({'uuid' => uuid}.to_json)
   end
 end
