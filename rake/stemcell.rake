@@ -147,8 +147,8 @@ namespace :stemcell do
   def build(spec, options)
     root = get_working_dir
     mkdir_p root
-	puts "MADE ROOT: #{root}"
-	puts "PWD: #{Dir.pwd}"
+    puts "MADE ROOT: #{root}"
+    puts "PWD: #{Dir.pwd}"
 
     build_path = File.join(root, "build")
 
@@ -172,7 +172,7 @@ namespace :stemcell do
     # Run builder
     STDOUT.puts "building in #{work_path}..."
     cmd = "sudo #{env} #{builder_path} #{work_path} #{spec_path} #{settings_path}"
-	puts cmd
+    puts cmd
     system(cmd)
   end
 
