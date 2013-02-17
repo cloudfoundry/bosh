@@ -1,3 +1,0 @@
-Common blobstore API.
-
-Lets BOSH access multiple blobstores using a unified API.
