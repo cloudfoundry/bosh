@@ -1,14 +1,14 @@
 # Configuration file for /sbin/dhclient, which is included in Debian's
-#	dhcp3-client package.
+# dhcp3-client package.
 #
 # This is a sample configuration file for dhclient. See dhclient.conf's
-#	man page for more information about the syntax of this file
-#	and a more comprehensive list of the parameters understood by
-#	dhclient.
+# man page for more information about the syntax of this file
+# and a more comprehensive list of the parameters understood by
+# dhclient.
 #
 # Normally, if the DHCP server provides reasonable information and does
-#	not leave anything out (like the domain name, for example), then
-#	few changes must be made to this file, if any.
+# not leave anything out (like the domain name, for example), then
+# few changes must be made to this file, if any.
 #
 
 option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
@@ -18,9 +18,9 @@ send host-name "<hostname>";
 #send dhcp-lease-time 3600;
 #supersede domain-name "fugue.com home.vix.com";
 request subnet-mask, broadcast-address, time-offset, routers,
-	domain-name, domain-name-servers, domain-search, host-name,
-	netbios-name-servers, netbios-scope, interface-mtu,
-	rfc3442-classless-static-routes, ntp-servers;
+  domain-name, domain-name-servers, domain-search, host-name,
+  netbios-name-servers, netbios-scope, interface-mtu,
+  rfc3442-classless-static-routes, ntp-servers;
 <% if @dns -%>
 <% @dns.reverse.each do |server| -%>
 prepend domain-name-servers <%= server %>;
