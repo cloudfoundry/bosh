@@ -1,9 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'fileutils'
-require 'sys/filesystem'
-include Sys
-
 module Bosh::Agent
   module Message
 
@@ -267,10 +263,10 @@ module Bosh::Agent
         def get_usage
           usage = {
               :system =>      {:percent => fs_usage_safe('/')},
-              :ephemeral =>   {:percent => fs_usage_safe(File.join(base_dir, "data"))}
+              :ephemeral =>   {:percent => fs_usage_safe(File.join(base_dir, 'data'))}
           }
-          persistent_percent = fs_usage_safe(File.join(base_dir, "store"))
-          usage[:persistent] = {:percent => persistent_percent} unless persistent_percent.nil?
+          persistent_percent = fs_usage_safe(File.join(base_dir, 'store'))
+          usage[:persistent] = {:percent => persistent_percent} if persistent_percent
 
           usage
         end
@@ -278,13 +274,14 @@ module Bosh::Agent
         private
         # Calculate file_system_usage
         def fs_usage_safe(path)
-          usage_percent = nil
-          begin
-            stat = Filesystem.stat(path)
-            usage_percent = ((1 - (stat.blocks_available.to_f/stat.blocks.to_f)) * 100).to_i.to_s
-          rescue Sys::Filesystem::Error => e
-          end
-          usage_percent
+          sigar = Sigar.new
+          fs_list = sigar.file_system_list
+
+          fs = fs_list.find {|fs| fs.dir_name == path}
+          return unless fs
+
+          usage = sigar.file_system_usage(path)
+          (usage.use_percent * 100).to_i.to_s
         end
 
       end
