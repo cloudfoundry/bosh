@@ -6,7 +6,7 @@ require "rbconfig"
 namespace :stemcell do
 
   desc "Build stemcell"
-  task :basic, [ :infrastructure] => "all:build_with_deps"  do |t, args|
+  task :basic, [:infrastructure] => "all:build_with_deps"  do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
