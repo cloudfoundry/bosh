@@ -1,11 +1,14 @@
 module Bosh
   module Aws
     class MicroboshManifest
-      attr_reader :config, :receipt
+      attr_reader :receipt
 
-      def initialize(config, receipt)
-        @config = config
+      def initialize(receipt)
         @receipt = receipt
+      end
+
+      def config
+        receipt['original_configuration']
       end
 
       def name

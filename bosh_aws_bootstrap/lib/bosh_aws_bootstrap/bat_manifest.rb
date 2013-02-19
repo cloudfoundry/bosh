@@ -6,8 +6,8 @@ module Bosh
 
       attr_reader :stemcell_version
 
-      def initialize(config, receipt, stemcell_version)
-        super(config,receipt)
+      def initialize(receipt, stemcell_version)
+        super(receipt)
         @stemcell_version = stemcell_version
       end
 
