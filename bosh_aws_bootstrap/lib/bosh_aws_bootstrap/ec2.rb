@@ -75,7 +75,7 @@ module Bosh
 
       def instance_names
         terminatable_instances.inject({}) do |memo, instance|
-          memo[instance.instance_id] = instance.tags["Name"]
+          memo[instance.instance_id] = instance.tags["Name"] || '<unnamed instance>'
           memo
         end
       end

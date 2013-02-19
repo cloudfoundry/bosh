@@ -105,11 +105,12 @@ describe Bosh::Aws::EC2 do
         instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: false, status: :pending)
         instance_3 = double("instance", instance_id: "id_3", tags: {"Name" => "instance3"}, api_termination_disabled?: true, status: :running)
         instance_4 = double("instance", instance_id: "id_4", tags: {"Name" => "instance4"}, api_termination_disabled?: false, status: :terminated)
-        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3, instance_4])
+        instance_5 = double("instance", instance_id: "id_5", tags: {}, api_termination_disabled?: false, status: :running)
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3, instance_4, instance_5])
 
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
 
-        ec2.instance_names.should == {"id_1" => "instance1", "id_2" => "instance2"}
+        ec2.instance_names.should == {"id_1" => "instance1", "id_2" => "instance2", "id_5" => "<unnamed instance>"}
       end
     end
 
