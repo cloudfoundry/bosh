@@ -18,6 +18,7 @@ require "fileutils"
 require "resolv"
 require "ipaddr"
 require 'httpclient'
+require 'sigar'
 
 require "common/exec"
 require "common/properties"

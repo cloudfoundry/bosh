@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../spec_helper'
-require 'fileutils'
+require 'spec_helper'
 
 describe Bosh::Agent::Message::MigrateDisk do
   it 'should migrate disk' do
@@ -55,4 +54,37 @@ describe Bosh::Agent::Message::ListDisk do
     Bosh::Agent::Message::ListDisk.process([]).should == [199]
   end
 
+end
+
+describe Bosh::Agent::Message::DiskUtil do
+  describe '#get_usage' do
+    it 'should return the disk usage' do
+      base = Bosh::Agent::Config.base_dir
+
+      fs_list = [
+          double('system', :dir_name => '/'),
+          double('ephermal', :dir_name => File.join(base, 'data')),
+          double('persistent', :dir_name => File.join(base, 'store'))
+      ]
+
+      sigar = double('sigar', :file_system_list => fs_list)
+
+      u1 = double('usage', :use_percent => 0.69)
+      sigar.should_receive(:file_system_usage).with('/').and_return(u1)
+
+      u2 = double('usage', :use_percent => 0.73)
+      sigar.should_receive(:file_system_usage).with(File.join(base, 'data')).and_return(u2)
+
+      u3 = double('usage', :use_percent => 0.11)
+      sigar.should_receive(:file_system_usage).with(File.join(base, 'store')).and_return(u3)
+
+      Sigar.stub(:new => sigar)
+
+      described_class.get_usage.should == {
+          :system => {:percent => '69'},
+          :ephemeral => {:percent => '73'},
+          :persistent => {:percent => '11'}
+      }
+    end
+  end
 end

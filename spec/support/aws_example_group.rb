@@ -40,7 +40,6 @@ module AwsSystemExampleGroup
   end
 
   def run(cmd, options = {})
-    cmd_out = ''
     Bundler.with_clean_env do
       lines = []
       IO.popen(cmd).each do |line|
@@ -50,18 +49,16 @@ module AwsSystemExampleGroup
 
       cmd_out = lines.join("\n")
       unless $?.success?
-        err_msg = "Couldn't run '#{cmd}' from #{Dir.pwd}, failed with exit status #{$?.to_i}\n\n #{cmd_out}"
+        err_msg = "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
 
         if options[:ignore_failures]
           puts("#{err_msg}, continuing anyway")
-          r = false unless options[:return_output]
         else
           raise(err_msg)
         end
-
       end
+      cmd_out
     end
-    cmd_out
   end
 
   def run_bosh(cmd, options = {})
@@ -105,7 +102,7 @@ module AwsSystemExampleGroup
         puts "Not cleaning up AWS resources"
       else
         puts "Using VPC output: #{vpc_outfile_path}"
-        run_bosh "aws terminate_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
+        run_bosh "aws delete_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
         run_bosh "aws delete_all volumes '#{vpc_outfile_path}'", :ignore_failures => true
         run_bosh "aws delete vpc '#{vpc_outfile_path}'"
         puts "CLEANUP SUCCESSFUL"

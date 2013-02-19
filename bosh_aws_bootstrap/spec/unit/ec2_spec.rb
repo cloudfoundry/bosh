@@ -44,6 +44,37 @@ describe Bosh::Aws::EC2 do
 
         ec2.release_elastic_ips ["1.2.3.4"]
       end
+
+      it "can release all IPs" do
+        instance_1 = double("instance", id: "i-test", api_termination_disabled?: false)
+        elastic_ip_1 = double("elastic_ip", public_ip: "1.2.3.4", instance_id: nil)
+        elastic_ip_2 = double("elastic_ip", public_ip: "5.6.7.8", instance_id: "i-test")
+        fake_aws_ec2 = double("aws_ec2", elastic_ips: [elastic_ip_1, elastic_ip_2])
+
+        ec2.should_receive(:terminatable_instances).and_return([instance_1])
+
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+
+        elastic_ip_1.should_receive :release
+        elastic_ip_2.should_receive :release
+
+        ec2.release_all_elastic_ips
+      end
+
+      it "should not release an IP associated to a termination protected instance" do
+        elastic_ip_1 = double("elastic_ip", public_ip: "1.2.3.4", instance_id: nil)
+        elastic_ip_2 = double("elastic_ip", public_ip: "5.6.7.8", instance_id: "i-test")
+        fake_aws_ec2 = double("aws_ec2", elastic_ips: [elastic_ip_1, elastic_ip_2])
+
+        ec2.should_receive(:terminatable_instances).and_return([])
+
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+
+        elastic_ip_1.should_receive :release
+        elastic_ip_2.should_not_receive :release
+
+        ec2.release_all_elastic_ips
+      end
     end
   end
 
@@ -74,11 +105,12 @@ describe Bosh::Aws::EC2 do
         instance_2 = double("instance", instance_id: "id_2", tags: {"Name" => "instance2"}, api_termination_disabled?: false, status: :pending)
         instance_3 = double("instance", instance_id: "id_3", tags: {"Name" => "instance3"}, api_termination_disabled?: true, status: :running)
         instance_4 = double("instance", instance_id: "id_4", tags: {"Name" => "instance4"}, api_termination_disabled?: false, status: :terminated)
-        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3, instance_4])
+        instance_5 = double("instance", instance_id: "id_5", tags: {}, api_termination_disabled?: false, status: :running)
+        fake_aws_ec2 = double("aws_ec2", instances: [instance_1, instance_2, instance_3, instance_4, instance_5])
 
         ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
 
-        ec2.instance_names.should == {"id_1" => "instance1", "id_2" => "instance2"}
+        ec2.instance_names.should == {"id_1" => "instance1", "id_2" => "instance2", "id_5" => "<unnamed instance>"}
       end
     end
 
@@ -215,6 +247,33 @@ describe Bosh::Aws::EC2 do
         ec2.remove_key_pair("foobar")
       end
     end
+
+    describe "removing all" do
+      let(:fake_key_pair1) { double("key pair") }
+      let(:fake_key_pair2) { double("key pair") }
+      let(:fake_key_pairs) { [fake_key_pair1, fake_key_pair2] }
+      let(:fake_aws_ec2) { double("aws ec2", key_pairs: fake_key_pairs) }
+
+      before do
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      end
+
+      it "should remove all key pairs" do
+        ec2.should_receive(:key_pair_in_use?).and_return(false)
+        fake_key_pair1.should_receive(:delete)
+        ec2.should_receive(:key_pair_in_use?).and_return(false)
+        fake_key_pair2.should_receive(:delete)
+        ec2.remove_all_key_pairs
+      end
+
+      it "should not remove a key pair in use" do
+        ec2.should_receive(:key_pair_in_use?).and_return(false)
+        fake_key_pair1.should_receive(:delete)
+        ec2.should_receive(:key_pair_in_use?).and_return(true)
+        fake_key_pair2.should_not_receive(:delete)
+        ec2.remove_all_key_pairs
+      end
+    end
   end
 
   describe "security groups" do
@@ -231,9 +290,25 @@ describe Bosh::Aws::EC2 do
     describe "deleting" do
       it "should delete all" do
         fake_aws_ec2.should_receive(:security_groups)
+        ec2.should_receive(:security_group_in_use?).and_return(false)
         fake_vpc_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
         fake_vpc_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
         fake_vpc_sg.should_receive(:delete)
+        ec2.should_receive(:security_group_in_use?).and_return(false)
+        fake_default_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
+        fake_default_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
+        fake_default_sg.should_not_receive(:delete)
+
+        ec2.delete_all_security_groups
+      end
+
+      it "should not delete security groups in use" do
+        fake_aws_ec2.should_receive(:security_groups)
+        ec2.should_receive(:security_group_in_use?).and_return(true)
+        fake_vpc_sg.should_not_receive(:ingress_ip_permissions)
+        fake_vpc_sg.should_not_receive(:egress_ip_permissions)
+        fake_vpc_sg.should_not_receive(:delete)
+        ec2.should_receive(:security_group_in_use?).and_return(false)
         fake_default_sg.should_receive(:ingress_ip_permissions).and_return(ip_permissions)
         fake_default_sg.should_receive(:egress_ip_permissions).and_return(ip_permissions)
         fake_default_sg.should_not_receive(:delete)

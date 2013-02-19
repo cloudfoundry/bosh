@@ -199,14 +199,13 @@ module Bosh::Director
       ##
       # @return [Hash<String, String>] dns record hash of dns name and IP
       def dns_record_info
-        return @dns_record_info if @dns_record_info
-        @dns_record_info = {}
+        dns_record_info = {}
         network_settings.each do |network_name, network|
           name = [index, job.canonical_name, canonical(network_name),
                   job.deployment.canonical_name, dns_domain_name].join(".")
-          @dns_record_info[name] = network["ip"]
+          dns_record_info[name] = network["ip"]
         end
-        @dns_record_info
+        dns_record_info
       end
 
       ##

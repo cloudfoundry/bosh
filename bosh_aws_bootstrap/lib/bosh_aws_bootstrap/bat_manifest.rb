@@ -6,13 +6,13 @@ module Bosh
 
       attr_reader :stemcell_version
 
-      def initialize(config, receipt, stemcell_version)
-        super(config,receipt)
+      def initialize(receipt, stemcell_version)
+        super(receipt)
         @stemcell_version = stemcell_version
       end
 
       def director_uuid
-        YAML.load(Net::HTTP.get(URI.parse("http://micro.#{domain}:25555/info")))["uuid"]
+        JSON.parse(Net::HTTP.get(URI.parse("http://micro.#{domain}:25555/info")))["uuid"]
       end
 
       def domain
@@ -23,6 +23,7 @@ module Bosh
         ERB.new(File.read(get_template("bat.yml.erb"))).result(binding)
       end
 
+      #TODO DELETE ME
       def get_template(template)
         File.expand_path("../../../templates/#{template}", __FILE__)
       end

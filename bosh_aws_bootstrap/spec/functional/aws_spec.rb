@@ -12,7 +12,7 @@ describe Bosh::Cli::Command::AWS do
       around do |test|
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
-            aws.create_micro_bosh_manifest(config_file, create_vpc_output_yml)
+            aws.create_micro_bosh_manifest(create_vpc_output_yml)
             test.run
           end
         end
@@ -144,6 +144,7 @@ describe Bosh::Cli::Command::AWS do
         aws.output_state["elastic_ips"]["router"]["ips"].should == ["1.2.3.4", "5.6.7.8"]
         aws.output_state["elastic_ips"]["router"]["dns_record"].should == "*"
         aws.output_state["key_pairs"].should == ["dev102"]
+        aws.output_state["original_configuration"].should == YAML.load_file(config_file)
       end
 
       context "when the VPC is not immediately available" do

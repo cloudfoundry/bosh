@@ -74,7 +74,7 @@ describe "property" do
       end
     end
 
-    it "should render correct properties" do
+    it "should render correct properties", ssh: true do
       use_static_ip
       with_deployment do
         props = "/var/vcap/jobs/batlight/config/properties"

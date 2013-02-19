@@ -28,7 +28,7 @@ describe "persistent disk" do
     end
   end
 
-  it "should migrate disk contents" do
+  it "should migrate disk contents", ssh: true do
     use_static_ip
     use_job("batarang")
     size = nil

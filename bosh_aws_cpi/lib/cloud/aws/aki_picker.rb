@@ -1,9 +1,9 @@
 module Bosh::AwsCloud
   class AKIPicker
 
-    # @param [AWS::Core::ServiceInterface] ec2
-    def initialize(ec2)
-      @ec2 = ec2
+    # @param [AWS::Core::ServiceInterface] region
+    def initialize(region)
+      @region = region
     end
 
     # finds the correct aki for the current region
@@ -22,7 +22,7 @@ module Bosh::AwsCloud
 
     def fetch_akis(architecture)
       filter = aki_filter(architecture)
-      @ec2.client.describe_images(:filters => filter).images_set
+      @region.client.describe_images(:filters => filter).images_set
     end
 
     # @return [Hash] search filter

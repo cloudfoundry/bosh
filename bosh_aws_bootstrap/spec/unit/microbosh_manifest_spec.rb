@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe Bosh::Aws::MicroboshManifest do
-  let(:config) { YAML.load_file(asset "config.yml") }
   let(:receipt) { YAML.load_file(asset "test-output.yml") }
-  let(:manifest) { Bosh::Aws::MicroboshManifest.new(config, receipt) }
+  let(:config) { receipt['original_configuration'] }
+  let(:manifest) { Bosh::Aws::MicroboshManifest.new(receipt) }
 
   it 'warns when name is missing' do
     config['name'] = nil
