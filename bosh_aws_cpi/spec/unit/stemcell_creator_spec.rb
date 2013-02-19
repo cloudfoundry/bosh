@@ -90,4 +90,34 @@ describe Bosh::AwsCloud::StemcellCreator do
     end
   end
 
+  describe '#copy_root_image' do
+    let(:creator) do
+      creator = described_class.new(region, stemcell_properties)
+      creator.stub(:image_path => '/path/to/image')
+      creator.stub(:ebs_volume => '/dev/volume')
+      creator
+    end
+
+    it 'should call stemcell-copy found in the PATH' do
+      creator.stub(:find_in_path => '/path/to/stemcell-copy')
+      result = double('result', :output => 'output')
+
+      cmd = 'sudo -n /path/to/stemcell-copy /path/to/image /dev/volume 2>&1'
+      creator.should_receive(:sh).with(cmd).and_return(result)
+
+      creator.copy_root_image
+    end
+
+    it 'should call the bundled stemcell-copy if not found in the PATH' do
+      creator.stub(:find_in_path => nil)
+      result = double('result', :output => 'output')
+
+      stemcell_copy = File.expand_path("../../../../bosh_aws_cpi/scripts/stemcell-copy.sh", __FILE__)
+      cmd = "sudo -n #{stemcell_copy} /path/to/image /dev/volume 2>&1"
+      creator.should_receive(:sh).with(cmd).and_return(result)
+
+      creator.copy_root_image
+    end
+  end
+
 end

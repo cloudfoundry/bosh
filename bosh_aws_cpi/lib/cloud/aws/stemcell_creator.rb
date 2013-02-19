@@ -1,6 +1,7 @@
 module Bosh::AwsCloud
   class StemcellCreator
     include Bosh::Exec
+    include Helpers
 
     attr_reader :region, :stemcell_properties
     attr_reader :volume, :ebs_volume, :image_path
@@ -68,7 +69,7 @@ module Bosh::AwsCloud
         command = "sudo -n #{included_stemcell_copy} #{image_path} #{ebs_volume} 2>&1"
       end
 
-      sh(command)
+      result = sh(command)
 
       logger.debug("stemcell copy output:\n#{result.output}")
     rescue Bosh::Exec::Error => e
@@ -109,6 +110,10 @@ module Bosh::AwsCloud
       end
 
       params
+    end
+
+    def task_checkpoint
+      Bosh::Clouds::Config.task_checkpoint
     end
 
     def logger
