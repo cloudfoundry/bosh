@@ -25,17 +25,17 @@ module Bosh::Cli::Command
 
     usage "aws generate micro_bosh"
     desc "generate micro_bosh.yml"
-    def create_micro_bosh_manifest(config_file, receipt_file)
+    def create_micro_bosh_manifest(receipt_file)
       File.open("micro_bosh.yml", "w+") do |f|
-        f.write(Bosh::Aws::MicroboshManifest.new(load_yaml_file(config_file), load_yaml_file(receipt_file)).to_yaml)
+        f.write(Bosh::Aws::MicroboshManifest.new(load_yaml_file(receipt_file)).to_yaml)
       end
     end
 
     usage "aws generate bat_manifest"
     desc "generate bat.yml"
-    def create_bat_manifest(config_file, receipt_file, stemcell_version)
+    def create_bat_manifest(receipt_file, stemcell_version)
       File.open("bat.yml", "w+") do |f|
-        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(config_file), load_yaml_file(receipt_file), stemcell_version).to_yaml)
+        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version).to_yaml)
       end
     end
 
@@ -109,6 +109,8 @@ module Bosh::Cli::Command
 
       vpc = Bosh::Aws::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
       @output_state["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
+
+      @output_state["original_configuration"] = config
 
       if was_vpc_eventually_available?(vpc)
         say "creating internet gateway"

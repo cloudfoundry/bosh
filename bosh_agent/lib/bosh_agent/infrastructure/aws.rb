@@ -2,7 +2,6 @@
 
 module Bosh::Agent
   class Infrastructure::Aws
-    require 'sigar'
     require 'bosh_agent/infrastructure/aws/settings'
     require 'bosh_agent/infrastructure/aws/registry'
 

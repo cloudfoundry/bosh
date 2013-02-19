@@ -33,29 +33,29 @@ module Bosh::Agent
 
         @log_file = "#{@base_dir}/data/tmp/#{Bosh::Agent::Config.agent_id}"
         @logger = Logger.new(@log_file)
-	@logger.level = Logger::DEBUG
+        @logger.level = Logger::DEBUG
         @compile_base = "#{@base_dir}/data/compile"
         @install_base = "#{@base_dir}/data/packages"
       end
 
       def start
-	begin
-	  # TODO implement sha1 verification
-	  # TODO propagate errors
-	  install_dependencies
-	  get_source_package
-	  unpack_source_package
-	  compile
-	  pack
-	  result = upload
-	  clear_log_file(@log_file)
-	  return { "result" => result }
-	rescue RuntimeError => e
-	  @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
-	  raise Bosh::Agent::MessageHandlerError, e
-	ensure
-	  delete_tmp_files
-	end
+        begin
+          # TODO implement sha1 verification
+          # TODO propagate errors
+          install_dependencies
+          get_source_package
+          unpack_source_package
+          compile
+          pack
+          result = upload
+          clear_log_file(@log_file)
+          return { "result" => result }
+        rescue RuntimeError => e
+          @logger.warn("%s\n%s" % [e.message, e.backtrace.join("\n")])
+          raise Bosh::Agent::MessageHandlerError, e
+        ensure
+          delete_tmp_files
+        end
       end
 
 
@@ -111,10 +111,10 @@ module Bosh::Agent
         Dir.chdir(compile_dir) do
           # TODO: error handling
           output = `tar -zxf #{@source_file} 2>&1`
-	  @logger.info(output)
+          @logger.info(output)
           # stick the output in the blobstore
           unless $?.exitstatus == 0
-	    STDOUT.puts(output)
+            STDOUT.puts(output)
             raise Bosh::Agent::MessageHandlerError.new(
               "Compile Package Unpack Source Failure (exit code: #{$?.exitstatus})",
               output)

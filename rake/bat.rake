@@ -1,8 +1,10 @@
-
 require "rspec"
 require "rspec/core/rake_task"
 
 SPEC_OPTS = %w(--format documentation --color)
+
+SPEC_OPTS << '--fail-fast' if (ENV['BAT_FAIL_FAST'] || "false").downcase == 'true'
+SPEC_OPTS << '--tag ~ssh' if (ENV['BAT_SKIP_SSH'] || "false").downcase == 'true'
 
 desc "Run BAT tests"
 RSpec::Core::RakeTask.new(:bat) do |t|

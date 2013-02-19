@@ -1,7 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../spec_helper'
-require 'sys/filesystem'
+require 'spec_helper'
 
 describe Bosh::Agent::Heartbeat do
 
@@ -76,18 +75,12 @@ describe Bosh::Agent::Heartbeat do
     Bosh::Agent::Monit.stub!(:retry_monit_request).and_yield(client)
     Bosh::Agent::Monit.enabled = true
 
-    class StubStat
-      attr_accessor :blocks, :blocks_available
-
-      def initialize(remaining)
-        @blocks = 1
-        @blocks_available = 1 - remaining
-      end
-    end
-
-    Sys::Filesystem.stub!(:stat).with('/'){ StubStat.new(0.87) }
-    Sys::Filesystem.stub!(:stat).with(File.join(Bosh::Agent::Config.base_dir, "data")){ StubStat.new(0.04) }
-    Sys::Filesystem.stub!(:stat).with(File.join(Bosh::Agent::Config.base_dir, "store")){ StubStat.new(0.03) }
+    fake_disk_usage = {
+        :system => {:percent => '87'},
+        :ephemeral => {:percent => '4'},
+        :persistent => {:percent => '3'}
+    }
+    Bosh::Agent::Message::DiskUtil.stub(:get_usage).and_return(fake_disk_usage)
 
     expected_payload = {
       "job" => "mutator",

@@ -36,7 +36,7 @@ module Bosh
       end
 
       def release_all_elastic_ips
-        aws_ec2.elastic_ips.map(&:release)
+        releasable_elastic_ips.map(&:release)
       end
 
       def create_internet_gateway
@@ -75,7 +75,7 @@ module Bosh
 
       def instance_names
         terminatable_instances.inject({}) do |memo, instance|
-          memo[instance.instance_id] = instance.tags["Name"]
+          memo[instance.instance_id] = instance.tags["Name"] || '<unnamed instance>'
           memo
         end
       end
@@ -120,18 +120,20 @@ module Bosh
       end
 
       def remove_all_key_pairs
-        aws_ec2.key_pairs.map(&:delete)
+        deletable_key_pairs.map(&:delete)
       end
 
       def delete_all_security_groups
+        dsg = deletable_security_groups
+
         # Revoke all permissions before deleting because a permission can reference
         # another security group, causing a delete to fail
-        aws_ec2.security_groups.each do |sg|
+        dsg.each do |sg|
           sg.ingress_ip_permissions.map(&:revoke)
           sg.egress_ip_permissions.map(&:revoke)
         end
 
-        aws_ec2.security_groups.each do |sg|
+        dsg.each do |sg|
           sg.delete unless (sg.name == "default" && !sg.vpc_id)
         end
       end
@@ -144,6 +146,27 @@ module Bosh
 
       def terminatable_instances
         aws_ec2.instances.reject{|i| i.api_termination_disabled? || i.status.to_s == "terminated"}
+      end
+
+      def releasable_elastic_ips
+        ti = terminatable_instances.map(&:id)
+        aws_ec2.elastic_ips.select { |eip| eip.instance_id.nil? || ti.include?(eip.instance_id) }
+      end
+
+      def deletable_key_pairs
+        aws_ec2.key_pairs.reject { |kp| key_pair_in_use?(kp) }
+      end
+
+      def key_pair_in_use?(kp)
+        aws_ec2.instances.filter('key-name', kp.name).count > 0
+      end
+
+      def deletable_security_groups
+        aws_ec2.security_groups.reject{ |sg| security_group_in_use?(sg) }
+      end
+
+      def security_group_in_use?(sg)
+        aws_ec2.instances.filter('group-id', sg.id).count > 0
       end
 
       def unattached_volumes

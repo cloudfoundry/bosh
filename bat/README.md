@@ -14,7 +14,9 @@ Before you can run BAT, you need to set the following environment variables:
 * **BAT_STEMCELL**: path to the stemcell you want to use for testing
 * **BAT_DEPLOYMENT_SPEC**: path to the bat yaml file which is used to generate the deployment manifest (see bat/templates)
 * **BAT_VCAP_PASSWORD**: password used to ssh to the stemcells
-* **BAT_DNS_HOST** _optional_: DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
+* **BAT_DNS_HOST**: DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
+* **BAT_FAIL_FAST**: Stop running tests after the first failure
+* **BAT_SKIP_SSH**: Skip tests that log in with SSH
 
   
 ## Optional Environment Variables

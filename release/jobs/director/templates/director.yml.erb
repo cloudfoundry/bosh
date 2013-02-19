@@ -1,133 +1,119 @@
 ---
-name: <%= properties.director.name %>
-port: <%= properties.director.port %>
-encryption: <%= properties.director.encryption %>
+name: <%= p('director.name') %>
+port: <%= p('director.port') %>
+encryption: <%= p('director.encryption') %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
-<% if properties.redis %>
 redis:
-  host: <%= properties.redis.address %>
-  port: <%= properties.redis.port %>
-  password: <%= properties.redis.password %>
-<% end %>
-mbus: nats://<%= properties.nats.user %>:<%= properties.nats.password %>@<%= properties.nats.address %>:<%= properties.nats.port %>
+  host: <%= p('redis.address') %>
+  port: <%= p('redis.port') %>
+  password: <%= p('redis.password') %>
+mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p('nats.address') %>:<%= p('nats.port') %>
 dir: /var/vcap/store/director
 db:
-  <% if properties.postgres %>
-  database: postgres://<%= properties.postgres.user %>:<%= properties.postgres.password %>@<%= properties.postgres.address %>/<%= properties.postgres.database %>
+  <% has_postgres = false %>
+  <% if_p('postgres.user', 'postgres.password', 'postgres.address', 'postgres.port',
+          'postgres.database') do |user, password, address, port, database| %>
+    <% has_postgres = true %>
+  database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= port %>/<%= database %>
   max_connections: 32
   pool_timeout: 10
-  <% else %>
+  <% end %>
+  <% unless has_postgres %>
   database: sqlite:///var/vcap/store/director/director.db
   <% end %>
-<% if dns = properties.dns %>
+
+<% if_p('dns.address', 'dns.user', 'dns.password', 'dns.database.port', 'dns.database.name') do |address, user, password, db_port, db_name| %>
 dns:
-  server: <%= dns.address %>
-  <% if dns.domain_name %>
-  domain_name: <%= dns.domain_name %>
+  server: <%= address %>
+  <% if_p('dns.domain_name') do |domain_name| %>
+  domain_name: <%= domain_name %>
   <% end %>
   db:
-    database: postgres://<%= dns.user %>:<%= dns.password %>@<%= dns.address %>:<%= dns.database.port || "5432" %>/<%= dns.database.name %>
+    database: postgres://<%= user %>:<%= password %>@<%= address %>:<%= db_port %>/<%= db_name %>
     max_connections: 32
     pool_timeout: 10
 <% end %>
 blobstore:
-  plugin: <%= properties.blobstore.plugin || 'simple' %>
+  plugin: <%= p('blobstore.plugin') %>
   properties:
-<% if properties.blobstore.plugin == "s3" %>
-    bucket_name: <%= properties.blobstore.bucket_name %>
-    access_key_id: <%= properties.blobstore.access_key_id %>
-    secret_access_key: <%= properties.blobstore.secret_access_key %>
+<% if p('blobstore.plugin') == "s3" %>
+    bucket_name: <%= p('blobstore.bucket_name') %>
+    access_key_id: <%= p('blobstore.access_key_id') %>
+    secret_access_key: <%= p('blobstore.secret_access_key') %>
 <% else %>
-    endpoint: http://<%= properties.blobstore.address %>:<%= properties.blobstore.port %>
-    user: <%= properties.blobstore.director.user %>
-    password: <%= properties.blobstore.director.password %>
+    endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
+    user: <%= p('blobstore.director.user') %>
+    password: <%= p('blobstore.director.password') %>
 <% end %>
 cloud:
-<%
-if properties.aws
-  plugin = "aws"
-elsif properties.openstack
-  plugin = "openstack"
-elsif properties.vcenter
-  plugin = "vsphere"
-elsif properties.vcd
-  plugin = "vcloud"
-else
-  raise "Unknown cloud plugin"
-end
-%>
-  plugin: <%= plugin %>
+<% plugin = nil %>
+<% if_p('aws.access_key_id', 'aws.secret_access_key',
+        'aws.default_key_name', 'aws.default_security_groups',
+        'aws.region', 'aws_registry.address',
+        'aws_registry.http.port', 'aws_registry.http.user',
+        'aws_registry.http.password') do |access_key_id, secret_access_key,
+                                          default_key_name, default_security_groups,
+                                          region, reg_address,
+                                          reg_port, reg_user,
+                                          reg_password| %>
+  plugin: aws <% plugin = "aws" %>
   properties:
-    agent:
-      ntp: [<%= properties.ntp ? properties.ntp.join(", ") : "" %>]
-      blobstore:
-        plugin: <%= properties.blobstore.plugin || 'simple' %>
-        properties:
-<% agent = properties.agent %>
-<% blobstore = agent ? agent.blobstore : properties.blobstore %>
-      <% if properties.blobstore.plugin == "s3" %>
-          bucket_name: <%= properties.blobstore.bucket_name %>
-          access_key_id: <%= blobstore.access_key_id %>
-          secret_access_key: <%= blobstore.secret_access_key %>
-      <% else %>
-<% address = blobstore ? blobstore.address : properties.blobstore.address %>
-          endpoint: 'http://<%= address %>:<%= properties.blobstore.port %>'
-          user: <%= properties.blobstore.agent.user %>
-          password: <%= properties.blobstore.agent.password %>
-      <% end %>
-<% nats = agent ? agent.nats : nil %>
-<% address = nats ? nats.address : properties.nats.address %>
-      mbus: nats://<%= properties.nats.user %>:<%= properties.nats.password %>@<%= address %>:<%= properties.nats.port %>
-<%
-case plugin
-when "aws"
-%>
     aws:
-      access_key_id: <%= properties.aws.access_key_id %>
-      secret_access_key: <%= properties.aws.secret_access_key %>
-      default_key_name: <%= properties.aws.default_key_name %>
-      default_security_groups: <%= properties.aws.default_security_groups %>
-      region: <%= properties.aws.region %>
+      access_key_id: <%= access_key_id %>
+      secret_access_key: <%= secret_access_key %>
+      default_key_name: <%= default_key_name %>
+      default_security_groups: <%= default_security_groups %>
+      region: <%= region %>
     registry:
-      endpoint: http://<%= properties.aws_registry.address %>:<%= properties.aws_registry.http.port %>
-      user: <%= properties.aws_registry.http.user %>
-      password: <%= properties.aws_registry.http.password %>
-    <% if properties.aws.stemcell %>
+      endpoint: http://<%= reg_address %>:<%= reg_port %>
+      user: <%= reg_user %>
+      password: <%= reg_password %>
+    <% if_p('aws.stemcell.kernel_id') do |kernel_id| %>
     stemcell:
-      kernel_id: <%= properties.aws.stemcell.kernel_id %>
+      kernel_id: <%= kernel_id %>
     <% end %>
-<%
-when "openstack"
-%>
+<% end %>
+<% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
+        'openstack.tenant', 'openstack.default_key_name',
+        'openstack.default_security_groups', 'openstack_registry.address',
+        'openstack_registry.http.port', 'openstack_registry.http.user',
+        'openstack_registry.http.password') do |auth_url, username, api_key,
+                                                tenant, default_key_name,
+                                                default_security_groups, reg_address,
+                                                reg_port, reg_user,
+                                                reg_password| %>
+  plugin: openstack <% plugin = "openstack" %>
+  properties:
     openstack:
-      auth_url: <%= properties.openstack.auth_url %>
-      username: <%= properties.openstack.username %>
-      api_key: <%= properties.openstack.api_key %>
-      tenant: <%= properties.openstack.tenant %>
-      default_key_name: <%= properties.openstack.default_key_name %>
-      default_security_groups: <%= properties.openstack.default_security_groups %>
+      auth_url: <%= auth_url %>
+      username: <%= username %>
+      api_key: <%= api_key %>
+      tenant: <%= tenant %>
+      default_key_name: <%= default_key_name %>
+      default_security_groups: <%= default_security_groups %>
     registry:
-      endpoint: http://<%= properties.openstack_registry.address %>:<%= properties.openstack_registry.http.port %>
-      user: <%= properties.openstack_registry.http.user %>
-      password: <%= properties.openstack_registry.http.password %>
-    <% if properties.openstack.stemcell %>
+      endpoint: http://<%= reg_address %>:<%= reg_port %>
+      user: <%= reg_user %>
+      password: <%= reg_password %>
+    <% if_p('openstack.stemcell.kernel_id', 'openstack.stemcell.ramdisk_id') do |kernel_id, ramdisk_id| %>
     stemcell:
-      kernel_id: <%= properties.openstack.stemcell.kernel_id %>
-      ramdisk_id: <%= properties.openstack.stemcell.ramdisk_id %>
+      kernel_id: <%= kernel_id %>
+      ramdisk_id: <%= ramdisk_id %>
     <% end %>
-<%
-when "vsphere"
-%>
+<% end %>
+<% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
+  plugin: vsphere <% plugin = "vsphere" %>
+  properties:
     mem_overcommit_ratio: 0.7
     cpi_log: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.cpi.log
     vcenters:
-      - host: <%= properties.vcenter.address %>
-        user: <%= properties.vcenter.user %>
-        password: <%= properties.vcenter.password %>
+      - host: <%= address %>
+        user: <%= user %>
+        password: <%= password %>
         datacenters:
-          <% properties.vcenter.datacenters.each do |dc| %>
+          <% datacenters.each do |dc| %>
           - name: <%= dc.name %>
             vm_folder: <%= dc.vm_folder || "BOSH_VMs" %>
             template_folder: <%= dc.template_folder || "BOSH_Templates" %>
@@ -152,18 +138,41 @@ when "vsphere"
                 <% end %>
               <% end %>
           <% end %>
-<%
-when "vcloud"
-%>
-    vcds:
-      - url: <%= properties.vcd.url %>
-        user: <%= properties.vcd.user %>
-        password: <%= properties.vcd.password %>
-        entities:
-          organization: <%= properties.vcd.entities.organization %>
-          virtual_datacenter: <%= properties.vcd.entities.virtual_datacenter %>
-          vapp_catalog: <%= properties.vcd.entities.vapp_catalog %>
-          media_catalog: <%= properties.vcd.entities.media_catalog %>
-          vm_metadata_key: <%= properties.vcd.entities.vm_metadata_key || "vcd-cf" %>
-          description: <%= properties.vcd.entities.description || "vcd-cf" %>
 <% end %>
+<% if_p('vcd.url', 'vcd.user', 'vcd.password',
+        'vcd.entities.organization', 'vcd.entities.virtual_datacenter',
+        'vcd.entities.vapp_catalog', 'vcd.entities.media_catalog',
+        'vcd.entities.vm_metadata_key', 'vcd.entities.description') do |url, user, password,
+                                                                        organization, datacenter,
+                                                                        vapp_catalog, media_catalog,
+                                                                        vm_metadata_key, description| %>
+  plugin: vcloud <% plugin = "vcloud" %>
+  properties:
+    vcds:
+      - url: <%= url %>
+        user: <%= user %>
+        password: <%= password %>
+        entities:
+          organization: <%= organization %>
+          virtual_datacenter: <%= datacenter %>
+          vapp_catalog: <%= vapp_catalog %>
+          media_catalog: <%= media_catalog %>
+          vm_metadata_key: <%= vm_metadata_key %>
+          description: <%= description %>
+<% end %>
+<% raise "Could not find cloud plugin" if plugin.nil? %>
+    agent:
+      ntp: [<%= p('ntp').join(", ") %>]
+      blobstore:
+        plugin: <%= p('blobstore.plugin') %>
+        properties:
+      <% if p('blobstore.plugin') == "s3" %>
+          bucket_name: <%= p('blobstore.bucket_name') %>
+          access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
+          secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
+      <% else %>
+          endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
+          user: <%= p('blobstore.agent.user') %>
+          password: <%= p('blobstore.agent.password') %>
+      <% end %>
+      mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p(['agent.nats.address', 'nats.address']) %>:<%= p('nats.port') %>

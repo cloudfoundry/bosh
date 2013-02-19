@@ -13,99 +13,91 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   describe "EBS-volume based flow" do
+    let(:creator) { double(Bosh::AwsCloud::StemcellCreator) }
 
-    it "creates stemcell by copying an image to a new EBS volume" do
-      volume = double("volume", :id => "v-foo")
-      current_instance = double("instance",
-                                :id => "i-current",
-                                :availability_zone => "us-nowhere-2b")
-      attachment = double("attachment",
-                          :device => "/dev/sdh",
-                          :volume => volume)
+    before(:each) do
+      Bosh::AwsCloud::StemcellCreator.stub(:new => creator)
+    end
 
-      snapshot = double("snapshot", :id => "s-baz", :delete => nil)
-      image = double("image", :id => "i-bar")
-
-      UUIDTools::UUID.stub(:random_create).and_return("rand0m").to_s
-
-      image_params = {
-        :name => "BOSH-rand0m",
-        :architecture => "x86_64",
-        :kernel_id => "aki-b4aa75dd",
-        :root_device_name => "/dev/sda1",
-        :description => "bosh-stemcell 1.2.3",
-        :block_device_mappings => {
-          "/dev/sda" => { :snapshot_id => "s-baz" },
-          "/dev/sdb" => "ephemeral0"
+    context "fake stemcell" do
+      let(:stemcell_properties) do
+        {
+            "root_device_name" => "/dev/sda1",
+            "architecture" => "x86_64",
+            "name" => "bosh-stemcell",
+            "version" => "1.2.3",
+            "ami" => {
+                "us-east-1" => "ami-xxxxxxxx"
+            }
         }
-      }
-
-
-      image.should_receive(:add_tag).with("Name", {:value=>"bosh-stemcell 1.2.3"})
-
-      cloud = mock_cloud do |ec2|
-        ec2.volumes.stub(:[]).with("v-foo").and_return(volume)
-        ec2.instances.stub(:[]).with("i-current").and_return(current_instance)
-        ec2.images.should_receive(:create).with(image_params).and_return(image)
       end
 
-      cloud.should_receive(:find_aki).with("x86_64", "/dev/sda1")
-        .and_return("aki-b4aa75dd")
+      it "should return a fake stemcell" do
+        cloud = mock_cloud do |ec2|
+        end
 
-      cloud.stub(:current_instance_id).and_return("i-current")
+        creator.should_receive(:fake?).and_return(true)
+        creator.should_receive(:fake).and_return(double("ami", :id => "ami-xxxxxxxx"))
 
-      old_mappings = {
-        "/dev/sdf" => double("attachment",
-                             :volume => double("volume",
-                                               :id => "v-zb")),
-        "/dev/sdg" => double("attachment",
-                             :volume => double("volume",
-                                               :id => "v-ppc"))
-      }
+        cloud.create_stemcell("/tmp/foo", stemcell_properties).should == "ami-xxxxxxxx"
+      end
 
-      extra_mapping = {
-        "/dev/sdh" => attachment
-      }
+    end
 
-      new_mappings = old_mappings.merge(extra_mapping)
+    context "real stemcell" do
+      let(:stemcell_properties) do
+        {
+            "root_device_name" => "/dev/sda1",
+            "architecture" => "x86_64",
+            "name" => "bosh-stemcell",
+            "version" => "1.2.3"
+        }
+      end
+      let(:volume) { double("volume", :id => "vol-xxxxxxxx") }
+      let(:stemcell) { double("stemcell", :id => "ami-xxxxxxxx") }
+      let(:instance) { double("instance") }
 
-      current_instance.stub(:block_device_mappings).
-        and_return(old_mappings, new_mappings)
+      it "should create a stemcell" do
+        cloud = mock_cloud do |ec2|
+          ec2.volumes.stub(:[]).with("vol-xxxxxxxx").and_return(volume)
+          ec2.instances.stub(:[]).with("i-xxxxxxxx").and_return(instance)
+        end
 
-      cloud.should_receive(:create_disk).with(2048, "i-current").
-        and_return("v-foo")
+        creator.should_receive(:fake?).and_return(false)
+        creator.should_not_receive(:fake)
 
-      volume.should_receive(:attach_to).with(current_instance, "/dev/sdh").
-        and_return(attachment)
+        cloud.should_receive(:current_instance_id).twice.and_return("i-xxxxxxxx")
 
-      cloud.should_receive(:wait_resource).with(attachment, :attached)
+        cloud.should_receive(:create_disk).with(2048, "i-xxxxxxxx").and_return("vol-xxxxxxxx")
+        cloud.should_receive(:attach_ebs_volume).with(instance, volume).and_return("/dev/sdh")
+        cloud.should_receive(:find_ebs_device).with("/dev/sdh").and_return("ebs")
 
-      cloud.stub(:sleep)
+        creator.should_receive(:create).with(volume, "ebs", "/tmp/foo").and_return(stemcell)
 
-      File.stub(:blockdev?).with("/dev/sdh").and_return(false, false, false)
-      File.stub(:blockdev?).with("/dev/xvdh").and_return(false, false, true)
+        cloud.should_receive(:detach_ebs_volume).with(instance, volume)
+        cloud.should_receive(:delete_disk).with("vol-xxxxxxxx")
 
-      cloud.should_receive(:copy_root_image).with("/tmp/foo", "/dev/xvdh")
+        cloud.create_stemcell("/tmp/foo", stemcell_properties).should == "ami-xxxxxxxx"
+      end
+    end
 
-      volume.should_receive(:create_snapshot).and_return(snapshot)
-      cloud.should_receive(:wait_resource).with(snapshot, :completed)
+    describe "#find_ebs_device" do
+      it "should locate ebs volume on the current instance and return the device name" do
+        cloud = mock_cloud
 
-      cloud.should_receive(:wait_resource).with(image, :available, :state)
+        File.stub(:blockdev?).with("/dev/sdf").and_return(true)
 
-      volume.should_receive(:detach_from).with(current_instance, "/dev/sdh").
-        and_return(attachment)
+        cloud.find_ebs_device("/dev/sdf").should == "/dev/sdf"
+      end
 
-      cloud.should_receive(:wait_resource).with(attachment, :detached)
+      it "should locate ebs volume on the current instance and return the virtual device name" do
+        cloud = mock_cloud
 
-      cloud.should_receive(:delete_disk).with("v-foo")
+        File.stub(:blockdev?).with("/dev/sdf").and_return(false)
+        File.stub(:blockdev?).with("/dev/xvdf").and_return(true)
 
-      cloud_properties = {
-          "root_device_name" => "/dev/sda1",
-          "architecture" => "x86_64",
-          "name" => "bosh-stemcell",
-          "version" => "1.2.3"
-      }
-      cloud.create_stemcell("/tmp/foo", cloud_properties).should == "i-bar"
+        cloud.find_ebs_device("/dev/sdf").should == "/dev/xvdf"
+      end
     end
 
   end
