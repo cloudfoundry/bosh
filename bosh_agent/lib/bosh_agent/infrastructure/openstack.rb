@@ -2,7 +2,6 @@
 
 module Bosh::Agent
   class Infrastructure::Openstack
-    require 'sigar'
     require 'bosh_agent/infrastructure/openstack/settings'
     require 'bosh_agent/infrastructure/openstack/registry'
 

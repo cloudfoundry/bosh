@@ -3,6 +3,7 @@
 require "spec_helper"
 
 describe "persistent disk" do
+  SAVE_FILE = "/var/vcap/store/batarang/save"
 
   before(:all) do
     requirement stemcell

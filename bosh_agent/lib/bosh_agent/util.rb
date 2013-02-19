@@ -77,6 +77,10 @@ module Bosh::Agent
         end
       end
 
+      def lazy_itable_init_enabled?
+        File.exists?("/sys/fs/ext4/features/lazy_itable_init")
+      end
+
       def block_device_size(block_device)
         unless File.blockdev?(block_device)
           raise Bosh::Agent::MessageHandlerError, "Not a blockdevice"

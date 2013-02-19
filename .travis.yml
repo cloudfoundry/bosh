@@ -1,13 +1,10 @@
-script: "./ci_build.rb"
+script: 'bundle exec rake spec:$SUITE'
+bundler_args: "--local --without development"
 rvm:
-  - 1.9.3
+  - ruby-1.9.3
 env:
-  global:
-    - secure: "tS1rXSEDk71HuMuhUj0k07jLb0DhMPl5Fys5MnDvMlhgOOUZ8ViD+0niExhP\nA3WWYtbUkty+ugo+iuPg5IZ7Z1oviqc35fLfWZRPYqZ5W4hjpEb3U/2mwFZv\nvqIbUjyjRxIG6d0whG/HTEWvEcgFUa0qjH70mdOMGoS1CHCyzuw="
-    - secure: "Yj71gGd+cXCJEFedU2fU0S/Be/mgqpIxcR2J0oFgZQp7T0DQwI1Fyht+4sYJ\nW63fcRIazzJmQQdlXgD/mrZd8nW+1HidwJ2+Q/XjmosAM1tBptLtpSHociaR\nk2/J/f2miZ9SWEdp35vs8094+66mhZ3u5wVohzacgTqZWiOgWUw="
-  matrix:
-    - SUITE=unit
-    - SUITE=integration
+  - SUITE=unit
+  - SUITE=integration
 notifications:
   email:
     recipients:

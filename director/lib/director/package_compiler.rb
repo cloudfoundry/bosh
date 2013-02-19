@@ -21,7 +21,7 @@ module Bosh::Director
       @director_job = Config.current_job
 
       @tasks_mutex = Mutex.new
-      @networks_mutex = Mutex.new
+      @network_mutex = Mutex.new
       @counter_mutex = Mutex.new
 
       compilation_config = @deployment_plan.compilation
@@ -65,9 +65,7 @@ module Bosh::Director
       if @ready_tasks.empty?
         @logger.info("All packages are already compiled")
       else
-        reserve_networks
         compile_packages
-        release_networks
         director_job_checkpoint
       end
     end
@@ -140,26 +138,25 @@ module Bosh::Director
       task
     end
 
-    def reserve_networks
-      @network_reservations = []
-      num_workers = @deployment_plan.compilation.workers
-      num_stemcells = @ready_tasks.map { |task| task.stemcell }.uniq.size
-      # If we're reusing VMs, we allow up to num_stemcells * num_workers VMs.
-      # This is the simplest approach to dealing with a deployment that has more
-      # than 1 stemcell.
-      num_networks = @deployment_plan.compilation.reuse_compilation_vms ?
-        num_stemcells * num_workers : num_workers
+    def reserve_network
+      reservation = NetworkReservation.new_dynamic
 
-      num_networks.times do
-        reservation = NetworkReservation.new_dynamic
+      @network_mutex.synchronize do
         @network.reserve(reservation)
-        unless reservation.reserved?
-          raise PackageCompilationNetworkNotReserved,
-                "Could not reserve network for package compilation: " +
-                  reservation.error.to_s
-        end
+      end
 
-        @network_reservations << reservation
+      if !reservation.reserved?
+        raise PackageCompilationNetworkNotReserved,
+          "Could not reserve network for package compilation: " +
+          reservation.error.to_s
+      end
+
+      reservation
+    end
+
+    def release_network(reservation)
+      @network_mutex.synchronize do
+        @network.release(reservation)
       end
     end
 
@@ -265,12 +262,6 @@ module Bosh::Director
       end
     end
 
-    def release_networks
-      @network_reservations.each do |reservation|
-        @network.release(reservation)
-      end
-    end
-
     # This method will create a VM for each stemcell in the stemcells array
     # passed in.  The VMs are yielded and their destruction is ensured.
     # @param [Models::Stemcell] stemcell The stemcells that need to have
@@ -302,10 +293,8 @@ module Bosh::Director
       end
 
       @logger.info("Creating compilation VM for stemcell `#{stemcell.desc}'")
-      reservation = nil
-      @networks_mutex.synchronize do
-        reservation = @network_reservations.shift
-      end
+
+      reservation = reserve_network
 
       network_settings = {
         @network.name => @network.network_settings(reservation)
@@ -342,9 +331,7 @@ module Bosh::Director
       @logger.info("Deleting compilation VM: #{vm.cid}")
       @cloud.delete_vm(vm.cid)
       vm.destroy
-      @networks_mutex.synchronize do
-        @network_reservations << reservation
-      end
+      release_network(reservation)
     end
 
     # @param [CompileTask] task

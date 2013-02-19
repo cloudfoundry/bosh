@@ -35,12 +35,53 @@ module Bosh
         aws_ec2.elastic_ips.each { |ip| ip.release if ips.include? ip.public_ip }
       end
 
+      def release_all_elastic_ips
+        releasable_elastic_ips.map(&:release)
+      end
+
+      def create_internet_gateway
+        aws_ec2.internet_gateways.create
+      end
+
+      def internet_gateway_ids
+        aws_ec2.internet_gateways.map &:id
+      end
+
+      def delete_internet_gateways(ids)
+        Array(ids).each do |id|
+          gw = aws_ec2.internet_gateways[id]
+          gw.attachments.map &:delete
+          gw.delete
+        end
+      end
+
       def terminate_instances
-        aws_ec2.instances.each &:terminate
+        terminatable_instances.each(&:terminate)
+        retries = 100
+        until !terminatable_instances.any? || terminatable_instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
+          sleep 4
+          retries -= 1
+        end
+        retries > 0
+      end
+
+      def delete_volumes
+        unattached_volumes.each &:delete
+      end
+
+      def volume_count
+        unattached_volumes.count
       end
 
       def instance_names
-        aws_ec2.instances.inject({}) do |memo, instance|
+        terminatable_instances.inject({}) do |memo, instance|
+          memo[instance.instance_id] = instance.tags["Name"]
+          memo
+        end
+      end
+
+      def terminatable_instance_names
+        terminatable_instances.inject({}) do |memo, instance|
           memo[instance.instance_id] = instance.tags["Name"]
           memo
         end
@@ -57,11 +98,79 @@ module Bosh
         snap
       end
 
+      def add_key_pair(name, path_to_public_private_key)
+        private_key_path = path_to_public_private_key.gsub(/\.pub$/, '')
+        public_key_path = "#{private_key_path}.pub"
+        if !File.exist?(private_key_path)
+          system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
+        end
+
+        aws_ec2.key_pairs.import(name, File.read(public_key_path))
+      rescue AWS::EC2::Errors::InvalidKeyPair::Duplicate => e
+        err "Key pair #{name} already exists on AWS".red
+      end
+
+      def force_add_key_pair(name, path_to_public_private_key)
+        remove_key_pair(name)
+        add_key_pair(name, path_to_public_private_key)
+      end
+
+      def remove_key_pair(name)
+        aws_ec2.key_pairs[name].delete if aws_ec2.key_pairs[name]
+      end
+
+      def remove_all_key_pairs
+        deletable_key_pairs.map(&:delete)
+      end
+
+      def delete_all_security_groups
+        dsg = deletable_security_groups
+
+        # Revoke all permissions before deleting because a permission can reference
+        # another security group, causing a delete to fail
+        dsg.each do |sg|
+          sg.ingress_ip_permissions.map(&:revoke)
+          sg.egress_ip_permissions.map(&:revoke)
+        end
+
+        dsg.each do |sg|
+          sg.delete unless (sg.name == "default" && !sg.vpc_id)
+        end
+      end
 
       private
 
       def aws_ec2
         @aws_ec2 ||= ::AWS::EC2.new(@credentials)
+      end
+
+      def terminatable_instances
+        aws_ec2.instances.reject{|i| i.api_termination_disabled? || i.status.to_s == "terminated"}
+      end
+
+      def releasable_elastic_ips
+        ti = terminatable_instances.map(&:id)
+        aws_ec2.elastic_ips.select { |eip| eip.instance_id.nil? || ti.include?(eip.instance_id) }
+      end
+
+      def deletable_key_pairs
+        aws_ec2.key_pairs.reject { |kp| key_pair_in_use?(kp) }
+      end
+
+      def key_pair_in_use?(kp)
+        aws_ec2.instances.filter('key-name', kp.name).count > 0
+      end
+
+      def deletable_security_groups
+        aws_ec2.security_groups.reject{ |sg| security_group_in_use?(sg) }
+      end
+
+      def security_group_in_use?(sg)
+        aws_ec2.instances.filter('group-id', sg.id).count > 0
+      end
+
+      def unattached_volumes
+        aws_ec2.volumes.reject{|v| v.attachments.any? }
       end
 
       def tag(taggable, key, value)

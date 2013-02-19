@@ -17,3 +17,5 @@ then
 fi
 
 cp -rvH $bosh_release_src_dir/package_compiler $assets_dir/gems
+
+persist_value mcf_enabled

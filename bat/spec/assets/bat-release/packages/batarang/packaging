@@ -1,0 +1,7 @@
+# abort script on any command that exit with a non zero value
+set -e
+
+cp -a batarang/* ${BOSH_INSTALL_TARGET}
+
+cd ${BOSH_INSTALL_TARGET}
+/var/vcap/packages/ruby/bin/bundle install --local --deployment --without=development test

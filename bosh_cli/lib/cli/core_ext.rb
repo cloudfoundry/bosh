@@ -66,8 +66,8 @@ module BoshExtensions
   end
 
   def load_yaml_file(path, expected_type = Hash)
-    err("Cannot find file `#{path}'") unless File.exists?(path)
-    yaml = YAML.load_file(path)
+    err("Cannot find file `#{path}'".red) unless File.exist?(path)
+    yaml = YAML::load(ERB.new(File.read(path)).result)
 
     if expected_type && !yaml.is_a?(expected_type)
       err("Incorrect file format in `#{path}', #{expected_type} expected")
@@ -77,7 +77,7 @@ module BoshExtensions
 
     yaml
   rescue SystemCallError => e
-    err("Cannot load YAML file at `#{path}': #{e}")
+    err("Cannot load YAML file at `#{path}': #{e}".red)
   end
 
   def dump_yaml_to_file(obj, file)
@@ -89,6 +89,10 @@ module BoshExtensions
   # @return [Fixnum]
   def terminal_width
     STDIN.tty? ? [HighLine::SystemExtensions.terminal_size[0], 120].min : 80
+  end
+
+  def warning(message)
+    warn("[WARNING] #{message}".yellow)
   end
 end
 

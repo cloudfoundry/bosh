@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+
+FOREVAH=true
+
+while [ $FOREVAH ]; do
+  sleep 1
+done
+

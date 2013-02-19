@@ -24,7 +24,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
             "default_availability_zone" => "foo",
             "region" => "bar",
             "access_key_id" => "access",
-            "secret_access_key" => "secret"
+            "secret_access_key" => "secret",
+            "default_key_name" => "sesame"
         },
         "registry" => {
             "endpoint" => "endpoint",
@@ -36,6 +37,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         }
     }
   }
+
   let(:cloud) { described_class.new(options) }
 
   before do
@@ -65,6 +67,9 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         stub(:new).
         with(networks_spec).
         and_return(network_configurator)
+
+    resource_pool.stub(:[]).and_return(false)
+    cloud.stub(:task_checkpoint)
   end
 
   it "should create an EC2 instance and return its id" do
@@ -92,6 +97,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         },
         "agent_id" => agent_id,
         "networks" => networks_spec,
+        "preformatted" => false,
         "disks" => {
             "system" => "root name",
             "ephemeral" => "/dev/sdb",

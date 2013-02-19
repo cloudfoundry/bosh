@@ -1,7 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'fileutils'
-
 module Bosh::Agent
   module Message
 
@@ -130,7 +128,9 @@ module Bosh::Agent
 
           Bosh::Agent::Util.partition_disk(disk, full_disk)
 
-          `/sbin/mke2fs -t ext4 -j #{partition}`
+          mke2fs_options = ["-t ext4", "-j"]
+          mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
+          `/sbin/mke2fs #{mke2fs_options.join(" ")} #{partition}`
           unless $?.exitstatus == 0
             raise Bosh::Agent::MessageHandlerError, "Failed create file system (#{$?.exitstatus})"
           end
@@ -261,42 +261,27 @@ module Bosh::Agent
         end
 
         def get_usage
-          result = {
-            "system" => { "percent" => nil },
-            "ephemeral" => { "percent" => nil },
+          usage = {
+              :system =>      {:percent => fs_usage_safe('/')},
+              :ephemeral =>   {:percent => fs_usage_safe(File.join(base_dir, 'data'))}
           }
+          persistent_percent = fs_usage_safe(File.join(base_dir, 'store'))
+          usage[:persistent] = {:percent => persistent_percent} if persistent_percent
 
-          disk_usage = `#{disk_usage_command}`
-
-          if $?.to_i != 0
-            logger.error("Failed to get disk usage data, df exit code = #{$?.to_i}")
-            return result
-          end
-
-          disk_usage.split("\n")[1..-1].each do |line|
-            usage, mountpoint = line.split(/\s+/)
-            usage.gsub!(/%$/, '')
-
-            case mountpoint
-            when "/"
-              result["system"]["percent"] = usage
-            when File.join("#{base_dir}", "data")
-              result["ephemeral"]["percent"] = usage
-            when File.join("#{base_dir}", "store")
-              # Only include persistent disk data if
-              # persistent disk is there
-              result["persistent"] = { }
-              result["persistent"]["percent"] = usage
-            end
-          end
-
-          result
+          usage
         end
 
-        def disk_usage_command
-          # '-l' excludes non-local partitions.
-          # This allows us not to worry about NFS.
-          "df -l -P | awk '{print $5, $6}'"
+        private
+        # Calculate file_system_usage
+        def fs_usage_safe(path)
+          sigar = Sigar.new
+          fs_list = sigar.file_system_list
+
+          fs = fs_list.find {|fs| fs.dir_name == path}
+          return unless fs
+
+          usage = sigar.file_system_usage(path)
+          (usage.use_percent * 100).to_i.to_s
         end
 
       end

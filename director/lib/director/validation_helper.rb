@@ -41,7 +41,7 @@ module Bosh::Director
 
       elsif !options[:optional]
         raise ValidationMissingField,
-              "Required property `#{property}' was not specified"
+              "Required property `#{property}' was not specified in #{self.class.name}"
       end
       result
     end

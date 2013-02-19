@@ -115,7 +115,13 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "allows deleting the stemcell" do
-      @director.should_receive(:delete_stemcell).with("foo", "123")
+      @director.should_receive(:delete_stemcell).with("foo", "123", :force => false)
+      @cmd.delete("foo", "123")
+    end
+
+    it "allows deleting a stemcell with force" do
+      @director.should_receive(:delete_stemcell).with("foo", "123", :force => true)
+      @cmd.add_option(:force, true)
       @cmd.delete("foo", "123")
     end
 

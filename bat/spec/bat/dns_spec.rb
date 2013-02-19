@@ -34,24 +34,34 @@ describe "dns" do
   # raises Resolv::ResolvError if not found
   # Errno::ECONNREFUSED if not running
   # Resolv::ResolvTimeout
+
+  # Have to look up both BOSH and MicroBOSH tld in these tests since we don't know what type of BOSH
+  # we're testing against (*.bosh and *.microbosh)
   context "external" do
     it "should to forward lookups" do
       pending "director not configured with dns" unless dns?
-      address = @dns.getaddress("0.batlight.static.bat.bosh")
-      address.to_s.should == static_ip
+      begin
+        address_on_bosh = @dns.getaddress("0.batlight.static.bat.bosh").to_s
+      rescue Resolv::ResolvError
+        begin
+          address_on_microbosh = @dns.getaddress("0.batlight.static.bat.microbosh").to_s
+        rescue Resolv::ResolvError
+        end
+      end
+      [address_on_bosh, address_on_microbosh].should include static_ip
     end
 
     it "should do reverse lookups" do
       pending "director not configured with dns" unless dns?
       name = @dns.getname(static_ip)
-      name.to_s.should == "0.batlight.static.bat.bosh"
+      ["0.batlight.static.bat.bosh", "0.batlight.static.bat.microbosh"].should include name.to_s
     end
   end
 
   context "internal" do
     it "should be able to lookup of its own name" do
       pending "director not configured with dns" unless dns?
-      cmd = "nslookup 0.batlight.static.bat.bosh"
+      cmd = "dig +short 0.batlight.static.bat.bosh a 0.batlight.static.bat.microbosh a"
       ssh(static_ip, "vcap", password, cmd).should match /#{static_ip}/
     end
   end

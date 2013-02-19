@@ -3,14 +3,10 @@
 module Bosh::Agent
   class Platform::Ubuntu::Password
 
-    def update(settings)
-      if bosh_settings = settings['env']['bosh']
-
-        # TODO - also support user/password hash override
-        if bosh_settings['password']
-          update_passwords(bosh_settings['password'])
-        end
-
+    def update(settings)      
+      # TODO - also support user/password hash override
+      if settings['env'] && settings['env']['bosh'] && settings['env']['bosh']['password']
+        update_passwords(settings['env']['bosh']['password'])
       end
     end
 

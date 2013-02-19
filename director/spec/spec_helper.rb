@@ -67,10 +67,15 @@ module SpecHelper
 
       Sequel.extension :migration
 
-      # Sequel with in-memory sqlite database is not thread-safe, using
-      # file seems to fix that
-      db = "sqlite://#{File.join(@temp_dir, "director.db")}"
-      dns_db = "sqlite://#{File.join(@temp_dir, "dns.db")}"
+      connect_database(@temp_dir)
+
+      run_migrations
+    end
+
+    def connect_database(path)
+      # Sequel with in-memory sqlite database is not thread-safe, using file seems to fix that
+      db = "sqlite://#{File.join(path, "director.db")}"
+      dns_db = "sqlite://#{File.join(path, "dns.db")}"
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
       @db = Sequel.connect(db, db_opts)
@@ -80,8 +85,18 @@ module SpecHelper
       @dns_db = Sequel.connect(dns_db, db_opts)
       @dns_db.loggers << @logger
       Bosh::Director::Config.dns_db = @dns_db
+    end
 
-      run_migrations
+    def disconnect_database
+      if @db
+        @db.disconnect
+        @db = nil
+      end
+
+      if @dns_db
+        @dns_db.disconnect
+        @dns_db = nil
+      end
     end
 
     def run_migrations
@@ -91,18 +106,30 @@ module SpecHelper
     end
 
     def reset_database
-      [@db, @dns_db].each do |db|
-        db.execute("PRAGMA foreign_keys = OFF")
-        db.tables.each do |table|
-          db.drop_table(table)
-        end
-        db.execute("PRAGMA foreign_keys = ON")
+      disconnect_database
+
+      if @db_dir && File.directory?(@db_dir)
+        FileUtils.rm_rf(@db_dir)
+      end
+
+      @db_dir = Dir.mktmpdir(nil, @temp_dir)
+      FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
+
+      connect_database(@db_dir)
+
+      Bosh::Director::Models.constants.each do |e|
+        c = Bosh::Director::Models.const_get(e)
+        c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
+
+      Bosh::Director::Models::Dns.constants.each do |e|
+        c = Bosh::Director::Models::Dns.const_get(e)
+        c.db = @dns_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 
     def reset
       reset_database
-      run_migrations
 
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @db

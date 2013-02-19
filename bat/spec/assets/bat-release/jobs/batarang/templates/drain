@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# fake drain script
+
+FLAG=/tmp/drain
+
+if [ -f $FLAG ]; then
+  echo "0"
+else
+  touch $FLAG
+  echo "2"
+fi

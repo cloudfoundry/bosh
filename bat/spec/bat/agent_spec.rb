@@ -32,7 +32,7 @@ describe "agent" do
 
     Dir.mktmpdir do |tmpdir|
       with_deployment do
-        ssh(static_ip, "root", password, "pkill -9 agent")
+        ssh(static_ip, "vcap", 'foobar', "sudo pkill -9 agent")
         # wait for agent to restart
         sleep(5)
         bosh("logs batlight 0 --agent --dir #{tmpdir}")

@@ -19,7 +19,27 @@ namespace :spec do
     end
   end
 
+  desc "Tests requiring external access (i.e. AWS, vCenter, etc)"
+  RSpec::Core::RakeTask.new(:external) do |t|
+    t.pattern = "spec/external/**/*_spec.rb"
+    t.rspec_opts = %w(--format documentation --color)
+  end
+
   namespace :system do
+    namespace :aws do
+      desc "Run AWS MicroBOSH deployment suite"
+      RSpec::Core::RakeTask.new(:micro) do |t|
+        t.pattern = "spec/system/aws/**/*_spec.rb"
+        t.rspec_opts = %w(--format documentation --color --tag ~cf --tag ~full)
+      end
+
+      desc "Run AWS CF deployment suite"
+      RSpec::Core::RakeTask.new(:cf) do |t|
+        t.pattern = "spec/system/aws/**/*_spec.rb"
+        t.rspec_opts = %w(--format documentation --color --tag cf)
+      end
+    end
+
     desc "Run AWS system-wide suite"
     RSpec::Core::RakeTask.new(:aws) do |t|
       t.pattern = "spec/system/aws/**/*_spec.rb"
@@ -28,5 +48,5 @@ namespace :spec do
   end
 end
 
-desc "Run unit, integration, and AWS system specs"
-task :spec => ["spec:unit", "spec:integration", "spec:system:aws"]
+desc "Run unit and integration specs"
+task :spec => ["spec:unit", "spec:integration"]

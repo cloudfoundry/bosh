@@ -1,0 +1,6 @@
+check process batarang
+  with pidfile /var/vcap/sys/run/batarang/batarang.pid
+  start program "/var/vcap/jobs/batarang/bin/batarang_ctl start"
+  stop program "/var/vcap/jobs/batarang/bin/batarang_ctl stop"
+  group vcap
+

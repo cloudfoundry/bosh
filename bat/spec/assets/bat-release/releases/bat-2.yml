@@ -1,0 +1,31 @@
+--- 
+packages: 
+- name: batarang
+  version: 1
+  sha1: 943d6eb3c624edfc5de3034a841d6fe4dc8f639f
+  fingerprint: 869bcfd61957538ba956d70ba4933b929fd11b86
+  dependencies: 
+  - ruby
+- name: batlight
+  version: 1
+  sha1: d6729d3e9fd7004aef244f8e22c80545d33866df
+  fingerprint: f5a6120744b1564fc3d55809ac78ec1d7ecb76cd
+  dependencies: []
+
+- name: ruby
+  version: 1
+  sha1: 6c4932613bd1576f7ab26e75db226bd33c805c71
+  fingerprint: 35096e6f2bff58d2df17aaf506bb8c72ed4103fb
+  dependencies: []
+
+jobs: 
+- name: batarang
+  version: 1
+  fingerprint: af342a0b564d2b27f121fe43fc108c88473e9508
+  sha1: 6519439be14be6ee52fd41428d3fd12f81f03ed2
+- name: batlight
+  version: 2
+  fingerprint: b5ca595925b699b8a2d54ee57a814307af6c2355
+  sha1: 9d2a435d9d7910a9cc4ab608313b13c63e793612
+name: bat
+version: 2
