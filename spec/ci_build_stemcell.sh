@@ -2,6 +2,8 @@
 
 set -e
 
+source .rvmrc
+
 if [ $1 == 'micro' ]
 then
   task='micro'
