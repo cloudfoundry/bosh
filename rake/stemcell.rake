@@ -2,6 +2,8 @@
 
 require "bosh_agent"
 require "rbconfig"
+require "atmos"
+require "json"
 
 namespace :stemcell do
 
