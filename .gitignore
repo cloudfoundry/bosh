@@ -55,3 +55,4 @@ create-rds-output*.yml
 /release/jobs/micro_*/templates/
 /release/src/bosh/*
 /tmp/*
+stemcell-ami.txt

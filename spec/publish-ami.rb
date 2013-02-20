@@ -46,7 +46,8 @@ Dir.mktmpdir do |dir|
   stemcell_properties = YAML.load_file('stemcell.MF')['cloud_properties']
   ami = cloud.create_stemcell("#{dir}/image", stemcell_properties)
 
-  puts "created AMI: #{ami}"
-
   cloud.ec2.images[ami].public = true
+
+  puts "created AMI: #{ami}"
+  File.open('stemcell-ami.txt', "w") { |f| f << ami }
 end
