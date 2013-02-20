@@ -42,6 +42,9 @@ elastic_ips:
   micro:
     instances: 1
     dns_record: micro
+  bosh:
+    instances: 1
+    dns_record: bosh
 key_pairs:
   dev102: /tmp/somekey
 rds:

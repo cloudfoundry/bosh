@@ -31,11 +31,21 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "aws generate bosh"
+    desc "generate bosh.yml stub manifest for use with 'bosh diff'"
+    def create_bosh_manifest(receipt_file)
+      target_required
+      File.open("bosh.yml", "w+") do |f|
+        f.write(Bosh::Aws::BoshManifest.new(load_yaml_file(receipt_file), director.uuid).to_yaml)
+      end
+    end
+
     usage "aws generate bat_manifest"
     desc "generate bat.yml"
     def create_bat_manifest(receipt_file, stemcell_version)
+      target_required
       File.open("bat.yml", "w+") do |f|
-        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version).to_yaml)
+        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version, director.uuid).to_yaml)
       end
     end
 

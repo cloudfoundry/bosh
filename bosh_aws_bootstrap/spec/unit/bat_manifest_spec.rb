@@ -4,17 +4,13 @@ describe Bosh::Aws::BatManifest do
   let(:receipt) { YAML.load_file(asset "test-output.yml") }
   let(:config) { receipt['original_configuration'] }
   let(:stemcell_version) { '1.1.1.pre' }
-  let(:manifest) { Bosh::Aws::BatManifest.new(receipt, stemcell_version) }
+  let(:manifest) { Bosh::Aws::BatManifest.new(receipt, stemcell_version, 'deadbeef') }
 
   it 'returns the stemcell_version' do
     manifest.stemcell_version.should == stemcell_version
   end
 
   context "mocked director uuid call" do
-
-    before do
-      mock_director_uuid('deadbeef')
-    end
 
     it 'warns when domain is missing' do
       receipt["vpc"]["domain"] = nil
@@ -55,8 +51,4 @@ YAML
     end
   end
 
-  def mock_director_uuid(uuid)
-    URI.should_receive(:parse).and_return('foo')
-    Net::HTTP.should_receive(:get).with('foo').and_return({'uuid' => uuid}.to_json)
-  end
 end
