@@ -12,7 +12,7 @@ unless ARGV.length == 1
   exit(1)
 end
 
-stemcell_tgz = ARGV[1]
+stemcell_tgz = ARGV[0]
 
 region = Net::HTTP.get('169.254.169.254', '/latest/meta-data/placement/availability-zone').chop
 
