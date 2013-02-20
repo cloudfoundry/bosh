@@ -62,5 +62,5 @@ Dir.mktmpdir do |dir|
     YAML.dump(stemcell_properties, out )
   end
 
-  %{tar cvzf light-#{stemcell_tgz} #{dir}}
+  %x{tar cvzf light-#{stemcell_tgz} #{dir}}
 end
