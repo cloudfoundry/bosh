@@ -143,6 +143,6 @@ namespace :all do
     sh "git push origin #{branch}"
   end
 
-  desc "Meta taks to build all gems, commit a release message, create a git branch and push the gems to rubygems"
+  desc "Meta task to build all gems, commit a release message, create a git branch and push the gems to rubygems"
   task :release => %w(ensure_clean_state build commit branch push)
 end
