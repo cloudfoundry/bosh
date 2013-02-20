@@ -2,7 +2,7 @@
 
 module Bosh
   module Agent
-    VERSION = '1.5.0.pre'
+    VERSION = '1.5.0.pre1'
     BOSH_PROTOCOL = "1"
   end
 end
