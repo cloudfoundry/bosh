@@ -28,7 +28,7 @@ WORK_PATH=/mnt/$directory/work \
     $WORKSPACE/spec/ci_build.sh stemcell:$task[aws]
 
 stemcell=`ls /mnt/$directory/work/work/*.tgz`
-stemcell_base=`basename $stemcell tgz`
+stemcell_base=`basename $stemcell .tgz`
 
 cp $stemcell $WORKSPACE/$stemcell_base.tgz
 

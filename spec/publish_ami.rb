@@ -42,7 +42,7 @@ Bosh::Clouds::Config.configure(cloud_config)
 cloud = Bosh::Clouds::Provider.create("aws", options)
 
 Dir.mktmpdir do |dir|
-  %x{tar xzf #{stemcell_tgz} --directory=#{dir}}
+  %x{tar xzf #{stemcell_tgz} --directory=#{dir}} || raise("Failed to untar stemcell")
   stemcell_manifest = "#{dir}/stemcell.MF"
   stemcell_properties = YAML.load_file(stemcell_manifest)
   image = "#{dir}/image"
@@ -62,5 +62,6 @@ Dir.mktmpdir do |dir|
     YAML.dump(stemcell_properties, out )
   end
 
-  %x{tar cvzf light-#{stemcell_tgz} #{dir}}
+  light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
+  %x{tar cvzf #{light_stemcell_name} #{dir}}  || raise("Failed to build light stemcell")
 end
