@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
+require "logger"
+require "sequel"
 require "openstack_registry"
+require "optparse"
 
 config_file = nil
 
