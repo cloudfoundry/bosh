@@ -42,12 +42,25 @@ Bosh::Clouds::Config.configure(cloud_config)
 cloud = Bosh::Clouds::Provider.create("aws", options)
 
 Dir.mktmpdir do |dir|
-  %x{tar xzf #{stemcell_tgz}}
-  stemcell_properties = YAML.load_file('stemcell.MF')['cloud_properties']
-  ami = cloud.create_stemcell("#{dir}/image", stemcell_properties)
+  %x{tar xzf #{stemcell_tgz} --directory=#{dir}}
+  stemcell_manifest = "#{dir}/stemcell.MF"
+  stemcell_properties = YAML.load_file(stemcell_manifest)
+  image = "#{dir}/image"
 
+  ami = cloud.create_stemcell(image, stemcell_properties['cloud_properties'])
   cloud.ec2.images[ami].public = true
 
   puts "created AMI: #{ami}"
   File.open('stemcell-ami.txt', "w") { |f| f << ami }
+
+  stemcell_properties["cloud_properties"]["ami"] = { region => ami }
+
+  FileUtils.rm_rf(image)
+  FileUtils.touch(image)
+
+  File.open(stemcell_manifest, 'w' ) do |out|
+    YAML.dump(stemcell_properties, out )
+  end
+
+  %{tar cvzf light-#{stemcell_tgz} #{dir}}
 end
