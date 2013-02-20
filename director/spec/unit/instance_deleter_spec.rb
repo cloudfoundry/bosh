@@ -12,6 +12,23 @@ describe BD::InstanceDeleter do
   end
 
   describe :delete_instances do
+    it "should delete the instances with the config max threads option" do
+      instances = []
+      5.times { instances << mock("instance") }
+
+      BD::Config.stub!(:max_threads).and_return(5)
+      pool = mock("pool")
+      BD::ThreadPool.stub!(:new).with(:max_threads => 5).and_return(pool)
+      pool.stub!(:wrap).and_yield(pool)
+      pool.stub!(:process).and_yield
+
+      5.times do |index|
+        @deleter.should_receive(:delete_instance).with(instances[index])
+      end
+
+      @deleter.delete_instances(instances)
+    end
+
     it "should delete the instances with the respected max threads option" do
       instances = []
       5.times { instances << mock("instance") }
