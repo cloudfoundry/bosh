@@ -4,6 +4,8 @@ set -e
 
 source .rvmrc
 
+rm -f stemcell-ami.txt
+
 if [ $1 == 'micro' ]
 then
   task='micro'
