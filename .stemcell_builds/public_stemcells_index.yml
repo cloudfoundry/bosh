@@ -217,3 +217,28 @@ bosh-stemcell-openstack-kvm-1.5.0.pre1.tgz:
   tags:
   - openstack
   - kvm
+micro-bosh-stemcell-aws-1.5.0.pre1.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNTEyNjNj%0ANWI5Yjc1NiIsInNpZyI6IkNrSndpTXZneGdEcWFKRFpvUFhVc1g4eVVFUT0i%0AfQ==%0A
+  url: https://blob.cfblob.com/rest/objects/4e4e78bca41e122004e4e8ec65f67f051263c5b9b756?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=CkJwiMvgxgDqaJDZoPXUsX8yUEQ=
+  sha: cd8931f7ac096653c1ab5e30fea858492d4e823e
+  size: 481576995
+  tags:
+  - aws
+  - micro
+micro-bosh-stemcell-vsphere-1.5.0.pre1.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNTEyNjQx%0AM2FhN2I0NyIsInNpZyI6InVveFdjWk1ZT0dMSWVVMFpUalArK2xlSE5lcz0i%0AfQ==%0A
+  url: https://blob.cfblob.com/rest/objects/4e4e78bca41e122004e4e8ec65f67f05126413aa7b47?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=uoxWcZMYOGLIeU0ZTjP++leHNes=
+  sha: 608d13b42f1ba15e0e8c1135557f7768d140e103
+  size: 515486443
+  tags:
+  - vsphere
+  - micro
+micro-bosh-stemcell-openstack-kvm-1.5.0.pre1.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2ExMWUxMjIyMDRlNGU5ODYzOGI3NjMwNTEyNjQ5%0AZjZlNjkyMiIsInNpZyI6IlYzaEpXSzFiUml3OWs5RU5VVUR2SXJRNWJyUT0i%0AfQ==%0A
+  url: https://blob.cfblob.com/rest/objects/4e4e78bca11e122204e4e98638b7630512649f6e6922?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=V3hJWK1bRiw9k9ENUUDvIrQ5brQ=
+  sha: eb5127fe545015fd6f425ed090230f58e1882dcd
+  size: 482069766
+  tags:
+  - openstack
+  - kvm
+  - micro
