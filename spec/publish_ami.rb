@@ -63,5 +63,7 @@ Dir.mktmpdir do |dir|
   end
 
   light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
-  %x{tar cvzf #{light_stemcell_name} #{dir}}  || raise("Failed to build light stemcell")
+  Dir.chdir(dir) do
+    %x{tar cvzf #{light_stemcell_name} *}  || raise("Failed to build light stemcell")
+  end
 end
