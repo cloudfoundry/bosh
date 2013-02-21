@@ -127,18 +127,6 @@ module Bosh::Cli::Command
         ec2.create_internet_gateway
         vpc.attach_internet_gateway(ec2.internet_gateway_ids.first)
 
-        subnets = config["vpc"]["subnets"]
-        say "creating subnets: #{subnets.keys.join(", ")}"
-        vpc.create_subnets(subnets)
-        @output_state["vpc"]["subnets"] = vpc.subnets
-
-        say "creating route"
-        vpc.make_route_for_internet_gateway(vpc.subnets["bosh"], ec2.internet_gateway_ids.first)
-
-        dhcp_options = config["vpc"]["dhcp_options"]
-        say "creating DHCP options"
-        vpc.create_dhcp_options(dhcp_options)
-
         security_groups = config["vpc"]["security_groups"]
         say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
         vpc.create_security_groups(security_groups)
@@ -149,6 +137,15 @@ module Bosh::Cli::Command
           ec2.force_add_key_pair(name, path)
           @output_state["key_pairs"] << name
         end
+
+        subnets = config["vpc"]["subnets"]
+        say "creating subnets: #{subnets.keys.join(", ")}"
+        vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
+        @output_state["vpc"]["subnets"] = vpc.subnets
+
+        dhcp_options = config["vpc"]["dhcp_options"]
+        say "creating DHCP options"
+        vpc.create_dhcp_options(dhcp_options)
 
         count = config["elastic_ips"].values.reduce(0) { |total, job| total += job["instances"] }
         say "allocating #{count} elastic IP(s)"
@@ -244,8 +241,10 @@ module Bosh::Cli::Command
             dhcp_options = vpc.dhcp_options
 
             vpc.delete_security_groups
-            vpc.delete_subnets
             ec2.delete_internet_gateways(ec2.internet_gateway_ids)
+            vpc.delete_network_interfaces
+            vpc.delete_subnets
+            vpc.delete_route_tables
             vpc.delete_vpc
             dhcp_options.delete
           end

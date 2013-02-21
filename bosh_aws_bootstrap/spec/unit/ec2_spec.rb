@@ -277,11 +277,11 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "security groups" do
-    let (:fake_vpc_sg) { double("security group", :name => "bosh", :vpc_id => "vpc-123") }
-    let (:fake_default_sg) { double("security group", :name => "default", :vpc_id => false) }
-    let (:fake_security_groups) { [fake_vpc_sg, fake_default_sg] }
-    let (:fake_aws_ec2) { double("aws ec2", security_groups: fake_security_groups) }
-    let (:ip_permissions) { double("ip permissions").as_null_object}
+    let (:fake_vpc_sg) {double("security group", :name => "bosh", :vpc_id => "vpc-123")}
+    let (:fake_default_sg) {double("security group", :name => "default", :vpc_id => false)}
+    let (:fake_security_groups) {[fake_vpc_sg, fake_default_sg]}
+    let (:fake_aws_ec2) {double("aws ec2", security_groups: fake_security_groups)}
+    let (:ip_permissions) {double("ip permissions").as_null_object}
 
     before do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
@@ -335,6 +335,32 @@ describe Bosh::Aws::EC2 do
       fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2, vol3])
 
       ec2.delete_volumes
+    end
+  end
+
+  describe "#create_instance" do
+    before do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+    end
+
+    let(:fake_aws_ec2) { double("aws_ec2", :instances => mock("instances")) }
+    it "should create an instance with the provided options" do
+      fake_aws_ec2.instances.should_receive(:create).with({:some => "opts"})
+      ec2.create_instance(:some => "opts")
+    end
+  end
+
+  describe "#disable_src_dest_checking" do
+    let(:ec2_client) { mock('client') }
+    let(:fake_aws_ec2) { double("aws_ec2", :client => ec2_client) }
+
+    it "should invoke the EC2 client to modify instance attributes" do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      ec2_client.should_receive(:modify_instance_attribute).with({
+                                                                     :instance_id => "i123",
+                                                                     :source_dest_check => {:value => false}
+                                                                 })
+      ec2.disable_src_dest_checking("i123")
     end
   end
 end

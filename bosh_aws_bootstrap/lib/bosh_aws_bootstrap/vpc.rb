@@ -5,6 +5,12 @@ module Bosh
       def task_checkpoint; end
 
       DEFAULT_CIDR = "10.0.0.0/16"
+      DEFAULT_ROUTE = "0.0.0.0/0"
+      NAT_INSTANCE_DEFAULTS = {
+          :key_name => "bosh",
+          :image_id => "ami-f619c29f",
+          :instance_type => "m1.small"
+      }
 
       def initialize(ec2, aws_vpc)
         @ec2 = ec2
@@ -68,18 +74,65 @@ module Bosh
       end
 
       def create_subnets(subnets)
-        subnets.each_pair do |name, subnet|
+        nat_instances = {}
+        subnets.each_pair do |name, subnet_spec|
+          yield "Making subnet #{name} #{subnet_spec['cidr']}:" if block_given?
           options = {}
-          options[:availability_zone] = subnet["availability_zone"] if subnet["availability_zone"]
-          subnet = @aws_vpc.subnets.create(subnet["cidr"], options)
+          options[:availability_zone] = subnet_spec["availability_zone"] if subnet_spec["availability_zone"]
+
+          subnet = @aws_vpc.subnets.create(subnet_spec["cidr"], options)
           wait_resource(subnet, :available, :state)
+
+          if subnet_spec["default_route"]
+            yield "  Making routing table" if block_given?
+            route_table = @aws_vpc.route_tables.create
+            subnet.route_table = route_table
+            yield "  Binding default route to #{subnet_spec["default_route"]}" if block_given?
+            if subnet_spec["default_route"] == "igw"
+              route_table.create_route(DEFAULT_ROUTE, :internet_gateway => @aws_vpc.internet_gateway)
+            else
+              nat_box_name = subnet_spec["default_route"]
+              nat_inst = nat_instances[nat_box_name] || raise("cannot find nat instance #{nat_box_name}")
+              route_table.create_route(DEFAULT_ROUTE, :instance => nat_inst)
+            end
+          end
+
+          if subnet_spec["nat_instance"]
+            nat_instance_options = NAT_INSTANCE_DEFAULTS.merge(
+                {
+                    :security_groups => [subnet_spec["nat_instance"]["security_group"]] ||
+                        raise("nat_instance in subnet #{name} needs a 'security_group' key"),
+                    :subnet => subnet.id,
+                    :private_ip_address => subnet_spec["nat_instance"]["ip"] ||
+                        raise("nat_instance in subnet #{name} needs an 'ip' key")
+                })
+            yield "  Booting nat instance" if block_given?
+            inst = @ec2.create_instance(nat_instance_options)
+            eip = @ec2.allocate_elastic_ip
+            yield "  Waiting for nat instance to be running" if block_given?
+            wait_resource(inst, :running, :status)
+            inst.add_tag("Name", {:value => subnet_spec["nat_instance"]["name"]})
+            yield "  Attaching elastic IP" if block_given?
+            inst.associate_elastic_ip(eip)
+            @ec2.disable_src_dest_checking(inst.id)
+            nat_instances[subnet_spec["nat_instance"]["name"] || raise("nat_instance in subnet #{name} needs a 'name' key")] = inst
+          end
+
           subnet.add_tag("Name", :value => name)
-          #say "\tdone creating subnet: #{subnet["cidr"]}".green
+          yield "  Done" if block_given?
         end
       end
 
       def delete_subnets
         @aws_vpc.subnets.each(&:delete)
+      end
+
+      def delete_route_tables
+        @aws_vpc.route_tables.reject(&:main?).each(&:delete)
+      end
+
+      def delete_network_interfaces
+        @aws_vpc.network_interfaces.each(&:delete)
       end
 
       def create_dhcp_options(options)

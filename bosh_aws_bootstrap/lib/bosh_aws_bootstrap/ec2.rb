@@ -25,10 +25,13 @@ module Bosh
 
       def allocate_elastic_ips(count)
         count.times do
-          elastic_ip = aws_ec2.elastic_ips.allocate(vpc: true)
-          @elastic_ips << elastic_ip.public_ip
+          @elastic_ips << allocate_elastic_ip.public_ip
         end
         #say "\tallocated #{eip.public_ip}".green
+      end
+
+      def allocate_elastic_ip
+        aws_ec2.elastic_ips.allocate(vpc: true)
       end
 
       def release_elastic_ips(ips)
@@ -53,6 +56,17 @@ module Bosh
           gw.attachments.map &:delete
           gw.delete
         end
+      end
+
+      def create_instance(options)
+        aws_ec2.instances.create(options)
+      end
+
+      def disable_src_dest_checking(instance_id)
+        aws_ec2.client.modify_instance_attribute(
+            :instance_id => instance_id,
+            :source_dest_check => {:value => false}
+        )
       end
 
       def terminate_instances
