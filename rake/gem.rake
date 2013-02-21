@@ -7,7 +7,7 @@ COMPONENTS_WITH_PG = %w( director bosh_aws_registry bosh_openstack_registry )
 
 root    = File.expand_path('../../', __FILE__)
 version = File.read("#{root}/BOSH_VERSION").strip
-branch     = "v#{version}"
+branch  = "v#{version}"
 
 directory "pkg"
 
@@ -16,10 +16,6 @@ COMPONENTS.each do |component|
     gem     = "pkg/#{component}-#{version}.gem"
     gemspec = "#{component}.gemspec"
 
-    task :clean do
-      rm_f gem
-    end
-
     task :update_version_rb do
       glob = root.dup
       glob << "/#{component}/lib/**/version.rb"
@@ -27,17 +23,20 @@ COMPONENTS.each do |component|
       file = Dir[glob].first
       ruby = File.read(file)
 
-      ruby.gsub!(/^(\s*)VERSION = .*?$/, "\\1VERSION = '#{version}'")
-      raise "Could not insert VERSION in #{file}" unless $1
+      ruby.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{version}'")
+      white_space = $1
+      read_version = $2.gsub('"','').gsub("'","")
+      raise "Could not insert VERSION in #{file}" unless white_space
 
-      File.open(file, 'w') { |f| f.write ruby }
+      File.open(file, 'w') { |f| f.write ruby } unless read_version == version
     end
 
     task :gem => [:update_version_rb, :pkg] do
-      cmd = ""
-      cmd << "cd #{component} && "
-      cmd << "gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/"
-      sh cmd
+      if component_needs_update(component, root, version)
+        sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/"
+      else
+        sh "cp '#{last_released_component(component, root, version)}' #{root}/pkg/"
+      end
     end
 
     task :gem_with_deps => 'all:prepare_all_gems' do
@@ -46,7 +45,7 @@ COMPONENTS.each do |component|
       mkdir_p dirname
       Dir.chdir dirname do
         Bundler::Resolver.resolve(
-            Bundler.definition.send(:expand_dependencies, Bundler.definition.dependencies.select{|d| d.name == component}),
+            Bundler.definition.send(:expand_dependencies, Bundler.definition.dependencies.select { |d| d.name == component }),
             Bundler.definition.index
         ).each do |spec|
           sh "cp /tmp/all_the_gems/#{spec.name}-*.gem ."
@@ -55,16 +54,13 @@ COMPONENTS.each do |component|
       end
     end
 
-    task :build => [:clean, :gem]
-    task :build_with_deps => [:clean, :gem_with_deps]
-
-    task :install => :build do
+    task :install => :gem do
       sh "gem install #{gem}"
     end
 
-    task :prep_release => [:ensure_clean_state, :build]
+    task :prep_release => [:ensure_clean_state, :gem]
 
-    task :push => :build do
+    task :push => :gem do
       sh "gem push #{gem}"
     end
   end
@@ -85,7 +81,7 @@ namespace :changelog do
   task :release_summary do
     COMPONENTS.each do |fw|
       puts "## #{fw}"
-      fname    = File.join fw, 'CHANGELOG.md'
+      fname = File.join fw, 'CHANGELOG.md'
       contents = File.readlines fname
       contents.shift
       changes = []
@@ -98,18 +94,18 @@ end
 
 namespace :all do
   desc "Build all gems"
-  task :build   => COMPONENTS.map { |f| "#{f}:build"   }
+  task :gem => COMPONENTS.map { |f| "#{f}:gem" }
 
   desc "Build all gems into bosh release/src with their dependencies"
-  task :build_with_deps   => COMPONENTS.map { |f| "#{f}:build_with_deps"   }
+  task :gem_with_deps => COMPONENTS.map { |f| "#{f}:gem_with_deps" }
 
   desc "Install all gems"
   task :install => COMPONENTS.map { |f| "#{f}:install" }
 
   desc "Push all gems to rubygems"
-  task :push    => COMPONENTS.map { |f| "#{f}:push"    }
+  task :push => COMPONENTS.map { |f| "#{f}:push" }
 
-  task :prepare_all_gems => :build do
+  task :prepare_all_gems => :gem do
     rm_rf "/tmp/all_the_gems"
     mkdir_p "/tmp/all_the_gems"
     sh "cp #{root}/pkg/*.gem /tmp/all_the_gems"
@@ -144,5 +140,23 @@ namespace :all do
   end
 
   desc "Meta task to build all gems, commit a release message, create a git branch and push the gems to rubygems"
-  task :release => %w(ensure_clean_state build commit branch push)
+  task :release => %w(ensure_clean_state gem commit branch push)
+end
+
+def component_needs_update(component, root, version)
+  Dir.chdir File.join(root, component) do
+    gemspec = Gem::Specification.load File.join(root, component, "#{component}.gemspec")
+    last_code_change_time = gemspec.files.map { |file| File::Stat.new(file).mtime }.max
+
+    last_released_component = File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
+    last_released_time = File::Stat.new(last_released_component).mtime
+
+    last_code_change_time > last_released_time
+  end
+end
+
+def last_released_component(component, root, version)
+  Dir.chdir File.join(root, component) do
+    File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
+  end
 end

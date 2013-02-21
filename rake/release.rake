@@ -1,6 +1,6 @@
 namespace :release do
   desc 'Create bosh dev release'
-  task :create_dev_release => :'all:build_with_deps' do
+  task :create_dev_release => :'all:gem_with_deps' do
     create_release
   end
 
