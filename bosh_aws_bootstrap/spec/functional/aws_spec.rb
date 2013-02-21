@@ -37,6 +37,8 @@ describe Bosh::Cli::Command::AWS do
       around do |test|
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
+            aws.stub(:target_required)
+            aws.stub_chain(:director, :uuid).and_return("deadbeef")
             aws.create_bosh_manifest(create_vpc_output_yml)
             test.run
           end
