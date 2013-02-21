@@ -17,21 +17,18 @@ COMPONENTS.each do |component|
     gemspec = "#{component}.gemspec"
 
     task :update_version_rb do
-      glob = root.dup
-      glob << "/#{component}/lib/**/version.rb"
+      glob = File.join(root, component, "lib", "**", "version.rb")
 
-      file = Dir[glob].first
-      ruby = File.read(file)
+      version_file_path = Dir[glob].first
+      file_contents = File.read(version_file_path)
 
-      ruby.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{version}'")
-      white_space = $1
-      read_version = $2.gsub('"','').gsub("'","")
-      raise "Could not insert VERSION in #{file}" unless white_space
+      file_contents.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{version}'")
+      read_version = $2.gsub(/\A['"]|['"]\Z/, '') # remove only leading and trailing single or double quote
 
-      File.open(file, 'w') { |f| f.write ruby } unless read_version == version
+      File.open(version_file_path, 'w') { |f| f.write file_contents } unless read_version == version
     end
 
-    task :gem => [:update_version_rb, :pkg] do
+    task :pre_stage_latest => [:update_version_rb, :pkg] do
       if component_needs_update(component, root, version)
         sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/"
       else
@@ -39,7 +36,7 @@ COMPONENTS.each do |component|
       end
     end
 
-    task :gem_with_deps => 'all:prepare_all_gems' do
+    task :finalize_release_directory => 'all:stage_with_dependencies' do
       dirname = "#{root}/release/src/bosh/#{component}"
       rm_rf dirname
       mkdir_p dirname
@@ -54,13 +51,13 @@ COMPONENTS.each do |component|
       end
     end
 
-    task :install => :gem do
+    task :install => :pre_stage_latest do
       sh "gem install #{gem}"
     end
 
-    task :prep_release => [:ensure_clean_state, :gem]
+    task :prep_release => [:ensure_clean_state, :pre_stage_latest]
 
-    task :push => :gem do
+    task :push => :pre_stage_latest do
       sh "gem push #{gem}"
     end
   end
@@ -93,11 +90,11 @@ namespace :changelog do
 end
 
 namespace :all do
-  desc "Build all gems"
-  task :gem => COMPONENTS.map { |f| "#{f}:gem" }
+  desc "Prepare latest gem versions for staging"
+  task :pre_stage_latest => COMPONENTS.map { |f| "#{f}:pre_stage_latest" }
 
-  desc "Build all gems into bosh release/src with their dependencies"
-  task :gem_with_deps => COMPONENTS.map { |f| "#{f}:gem_with_deps" }
+  desc "Copy all staged gems into appropriate release subdirectories"
+  task :finalize_release_directory => COMPONENTS.map { |f| "#{f}:finalize_release_directory" }
 
   desc "Install all gems"
   task :install => COMPONENTS.map { |f| "#{f}:install" }
@@ -105,7 +102,7 @@ namespace :all do
   desc "Push all gems to rubygems"
   task :push => COMPONENTS.map { |f| "#{f}:push" }
 
-  task :prepare_all_gems => :gem do
+  task :stage_with_dependencies => :pre_stage_latest do
     rm_rf "/tmp/all_the_gems"
     mkdir_p "/tmp/all_the_gems"
     sh "cp #{root}/pkg/*.gem /tmp/all_the_gems"
@@ -140,7 +137,7 @@ namespace :all do
   end
 
   desc "Meta task to build all gems, commit a release message, create a git branch and push the gems to rubygems"
-  task :release => %w(ensure_clean_state gem commit branch push)
+  task :release => %w(ensure_clean_state pre_stage_latest commit branch push)
 end
 
 def component_needs_update(component, root, version)
@@ -148,10 +145,7 @@ def component_needs_update(component, root, version)
     gemspec = Gem::Specification.load File.join(root, component, "#{component}.gemspec")
     last_code_change_time = gemspec.files.map { |file| File::Stat.new(file).mtime }.max
 
-    last_released_component = File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
-    last_released_time = File::Stat.new(last_released_component).mtime
-
-    last_code_change_time > last_released_time
+    last_code_change_time > File::Stat.new(last_released_component(component, root, version)).mtime
   end
 end
 
