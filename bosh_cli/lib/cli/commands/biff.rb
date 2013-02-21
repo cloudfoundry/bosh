@@ -20,7 +20,7 @@ module Bosh::Cli::Command
       template_to_fill = ERB.new(File.read(@template_file), 0, "%<>-")
       begin
         @template_output = template_to_fill.result(binding)
-      rescue Exception => ex
+      rescue ArgumentError => ex
         say(ex.message)
         say(ex.backtrace.join("\n"))
         err("Error rendering ERB")
