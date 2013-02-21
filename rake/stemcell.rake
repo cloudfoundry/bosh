@@ -8,7 +8,7 @@ require "json"
 namespace :stemcell do
 
   desc "Build stemcell"
-  task :basic, [:infrastructure] => "all:build_with_deps"  do |t, args|
+  task :basic, [:infrastructure] => "all:finalize_release_directory"  do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -20,7 +20,7 @@ namespace :stemcell do
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, [:infrastructure] => "all:build_with_deps" do |t, args|
+  task :micro, [:infrastructure] => "all:finalize_release_directory" do |t, args|
     release_tarball = build_micro_bosh_release
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", "micro","#{args[:infrastructure]}.yml")
 
@@ -37,7 +37,7 @@ namespace :stemcell do
   end
 
   desc "Build Micro Cloud Foundry"
-  task :mcf, [:infrastructure, :manifest, :tarball] => "all:build_with_deps" do |t, args|
+  task :mcf, [:infrastructure, :manifest, :tarball] => "all:finalize_release_directory" do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "mcf-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
