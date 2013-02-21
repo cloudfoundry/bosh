@@ -228,6 +228,8 @@ describe Bosh::AwsCloud::InstanceManager do
     let(:instance_manager) { described_class.new(region, registry) }
 
     it "should terminate an instance given the id" do
+      instance_manager.stub(:remove_from_load_balancers)
+
       fake_aws_instance.should_receive(:terminate)
       registry.should_receive(:delete_settings).with(instance_id)
 
@@ -238,6 +240,8 @@ describe Bosh::AwsCloud::InstanceManager do
     end
 
     it "should ignore AWS::EC2::Errors::InvalidInstanceID::NotFound exception from wait_resource" do
+      instance_manager.stub(:remove_from_load_balancers)
+
       fake_aws_instance.should_receive(:terminate)
       registry.should_receive(:delete_settings).with(instance_id)
 
@@ -251,6 +255,8 @@ describe Bosh::AwsCloud::InstanceManager do
 
     describe "fast path deletion" do
       it "should do a fast path delete when requested" do
+        instance_manager.stub(:remove_from_load_balancers)
+
         region.stub(:instances).and_return({instance_id => fake_aws_instance})
         fake_aws_instance.stub(:terminate)
         registry.stub(:delete_settings)
@@ -275,6 +281,37 @@ end
       region.stub(:instances).and_return({instance_id => fake_aws_instance})
 
       instance_manager.reboot(instance_id)
+    end
+  end
+
+  context 'load balancers' do
+    let(:instance_manager) { described_class.new(region, registry) }
+    let(:instance) { double('instance', :id => 'i-xxxxxxxx', :exists? => true) }
+    let(:instances) { double('instances', :[] => instance) }
+    let(:lb) { double('lb', :instances => instances) }
+    let(:elb) { double('ELB', :load_balancers => [lb]) }
+
+    before(:each) do
+      AWS::ELB.stub(:new => elb)
+      elb.stub(:[] => lb)
+      instance_manager.stub(:instance => instance)
+    end
+
+    describe '#remove_from_load_balancers' do
+      it 'should remove the instance from all load balancers' do
+        instances.should_receive(:deregister).with('i-xxxxxxxx')
+
+        instance_manager.remove_from_load_balancers
+      end
+    end
+
+    describe '#attach_to_load_balancers' do
+      it 'should attach the instance the list of load balancers in the resource pool' do
+        instance_manager.stub(:elbs => %w[lb])
+        instances.should_receive(:register).with('i-xxxxxxxx')
+
+        instance_manager.attach_to_load_balancers
+      end
     end
   end
 end

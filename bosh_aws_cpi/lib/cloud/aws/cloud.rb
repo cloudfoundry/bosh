@@ -56,7 +56,9 @@ module Bosh::AwsCloud
       # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
       # so we need to trigger eager autoload while constructing CPI
       AWS.eager_autoload!
-      @ec2 = AWS::EC2.new(aws_params)
+
+      AWS.config(aws_params)
+      @ec2 = AWS::EC2.new
 
       # Registry updates are not really atomic in relation to
       # EC2 API calls, so they might get out of sync. Cloudcheck
