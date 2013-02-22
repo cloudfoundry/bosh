@@ -46,7 +46,9 @@ describe "AWS" do
         'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
         'BAT_VCAP_PASSWORD' => 'c1oudc0w',
         'BAT_FAST' => 'true',
-        'BAT_SKIP_SSH' => 'true'
+        'BAT_SKIP_SSH' => 'true',
+        'BAT_DEBUG' => 'verbose',
+        'BAT_FAIL_FAST' => 'true'
     }
     system(bat_env, "rake bat").should be_true
   end
