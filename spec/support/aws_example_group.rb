@@ -1,3 +1,5 @@
+require 'tempfile'
+
 module AwsSystemExampleGroup
   def vpc_outfile_path
     `ls #{ASSETS_DIR}/aws/create-vpc-output-*.yml`.strip
@@ -15,12 +17,20 @@ module AwsSystemExampleGroup
     @bosh_config_path ||= Tempfile.new("bosh_config").path
   end
 
-  def latest_micro_bosh_stemcell_path
-    `readlink -nf #{ENV['WORKSPACE']}/../../aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz`
+  def latest_micro_bosh_stemcell
+    raise "set CI_PASSWORD and CI_SERVER environment variables to retrieve stemcell ami id" unless ENV['CI_PASSWORD'] && ENV['CI_SERVER']
+    `curl -sk https://ci:#{ENV['CI_PASSWORD']}@#{ENV['CI_SERVER']}/job/aws_micro_bosh_stemcell/lastSuccessfulBuild/artifact/stemcell-ami.txt`
   end
 
   def latest_stemcell_path
-    `readlink -nf #{ENV['WORKSPACE']}/../../aws_bosh_stemcell/lastSuccessful/archive/*.tgz`
+    raise "set CI_PASSWORD and CI_SERVER environment variables to retrieve stemcell ami id" unless ENV['CI_PASSWORD'] && ENV['CI_SERVER']
+    build_data = JSON.parse(`curl -sk https://ci:#{ENV['CI_PASSWORD']}@#{ENV['CI_SERVER']}/job/aws_bosh_stemcell/lastSuccessfulBuild/api/json`)
+    stemcell = build_data['artifacts'].map { |f| f['fileName'] }.detect { |f| f =~ /light/ }
+    dir = Dir.mktmpdir
+    Dir.chdir(dir) do
+      `curl -skO https://ci:#{ENV['CI_PASSWORD']}@bosh-jenkins.cf-app.com/job/aws_bosh_stemcell/lastSuccessfulBuild/artifact/#{stemcell}`
+    end
+    "#{dir}/#{stemcell}"
   end
 
   def deployments_path

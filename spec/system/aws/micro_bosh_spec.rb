@@ -17,9 +17,9 @@ describe "AWS" do
         puts "MICRO_BOSH.YML:"
         puts ERB.new(File.read("micro/micro_bosh.yml")).result
 
-        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell_path}"
+        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell}"
         run_bosh "micro deployment micro"
-        run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
+        run_bosh "micro deploy #{latest_micro_bosh_stemcell}"
       end
       run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
       run_bosh "login admin admin"
