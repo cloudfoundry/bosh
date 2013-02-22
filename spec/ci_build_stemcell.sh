@@ -16,10 +16,6 @@ else
 fi
 
 sudo rm -rf /mnt/$directory
-if [ -f $WORKSPACE/*.tgz ]
-then
-  rm $WORKSPACE/*.tgz
-fi
 
 WORK_PATH=/mnt/$directory/work \
     BUILD_PATH=/mnt/$directory/build \

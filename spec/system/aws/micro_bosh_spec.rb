@@ -41,9 +41,11 @@ describe "AWS" do
     end
     bat_env = {
         'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
-        'BAT_STEMCELL' => stemcell_path,
+        'BAT_STEMCELL' => latest_stemcell_path,
         'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
-        'BAT_VCAP_PASSWORD' => 'c1oudc0w'
+        'BAT_VCAP_PASSWORD' => 'c1oudc0w',
+        'BAT_FAST' => 'true',
+        'BAT_SKIP_SSH' => 'true'
     }
     system(bat_env, "rake bat").should be_true
   end

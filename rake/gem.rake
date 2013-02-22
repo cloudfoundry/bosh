@@ -144,13 +144,12 @@ def component_needs_update(component, root, version)
   Dir.chdir File.join(root, component) do
     gemspec = Gem::Specification.load File.join(root, component, "#{component}.gemspec")
     last_code_change_time = gemspec.files.map { |file| File::Stat.new(file).mtime }.max
+    gem_file_name = last_released_component(component, root, version)
 
-    last_code_change_time > File::Stat.new(last_released_component(component, root, version)).mtime
+    !File.exists?(gem_file_name) || last_code_change_time > File::Stat.new(gem_file_name).mtime
   end
 end
 
 def last_released_component(component, root, version)
-  Dir.chdir File.join(root, component) do
-    File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
-  end
+  File.join(root, "release", "src", "bosh", component, "#{component}-#{version}.gem")
 end
