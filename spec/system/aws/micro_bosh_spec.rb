@@ -37,7 +37,7 @@ describe "AWS" do
     unless ENV["NO_PROVISION"]
       st_version = stemcell_version(latest_stemcell_path)
       Dir.chdir(bat_deployment_path) do
-        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{st_version}'"
+        run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
       end
     end
     bat_env = {
