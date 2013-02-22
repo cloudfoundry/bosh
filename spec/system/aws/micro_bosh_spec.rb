@@ -35,8 +35,9 @@ describe "AWS" do
 
     puts "Running BAT Tests"
     unless ENV["NO_PROVISION"]
+      st_version = stemcell_version(latest_stemcell_path)
       Dir.chdir(bat_deployment_path) do
-        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{vpc_outfile_path}' '#{STEMCELL_VERSION}'"
+        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{st_version}'"
       end
     end
     bat_env = {

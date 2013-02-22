@@ -33,6 +33,15 @@ module AwsSystemExampleGroup
     "#{dir}/#{stemcell}"
   end
 
+  def stemcell_version(stemcell_path)
+    Dir.mktmpdir do |dir|
+      %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
+      stemcell_manifest = "#{dir}/stemcell.MF"
+      st = YAML.load_file(stemcell_manifest)
+      return st["version"]
+    end
+  end
+
   def deployments_path
     File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
