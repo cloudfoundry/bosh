@@ -131,20 +131,21 @@ describe Bosh::Cli::Command::AWS do
           args.length.should == 2
           args.first.keys.should =~ %w[name ingress]
         end
-        fake_ec2.should_receive(:allocate_elastic_ips).with(4)
+        fake_ec2.should_receive(:allocate_elastic_ips).with(5)
         fake_ec2.should_receive(:force_add_key_pair).with("dev102", "/tmp/somekey")
         fake_ec2.should_receive(:create_internet_gateway)
         fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_vpc.should_receive(:attach_internet_gateway).with("id1")
 
         fake_vpc.stub(:subnets).and_return("bosh" => "amz-sub1id")
-        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76", "123.45.6.7", "123.45.6.8"])
+        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76", "123.45.6.7", "123.45.6.8", "123.4.5.9"])
         fake_vpc.stub(:flush_output_state)
         fake_vpc.stub(:state).and_return(:available)
 
         fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["107.23.46.162", "107.23.53.76"], {ttl: 3000})
         fake_route53.should_receive(:add_record).with("micro", "dev102.cf.com", ["123.45.6.7"], {ttl: nil})
         fake_route53.should_receive(:add_record).with("bosh", "dev102.cf.com", ["123.45.6.8"], {ttl: nil})
+        fake_route53.should_receive(:add_record).with("bat", "dev102.cf.com", ["123.4.5.9"], {ttl: nil})
 
         aws.create_vpc config_file
       end
@@ -227,9 +228,11 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
         fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.7"]
         fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.8"]
+        fake_ec2.should_receive(:release_elastic_ips).with ["123.4.5.9"]
         fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
         fake_route53.should_receive(:delete_record).with("micro", "cfdev.com")
         fake_route53.should_receive(:delete_record).with("bosh", "cfdev.com")
+        fake_route53.should_receive(:delete_record).with("bat", "cfdev.com")
 
         aws.delete_vpc output_file
       end

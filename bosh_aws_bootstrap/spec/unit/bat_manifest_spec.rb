@@ -10,6 +10,18 @@ describe Bosh::Aws::BatManifest do
     manifest.stemcell_version.should == stemcell_version
   end
 
+  it "sets the correct elastic ip" do
+    manifest.vip.should == "123.4.5.9"
+  end
+
+  it "warns when vip is missing" do
+    receipt['elastic_ips']['bat']['ips'] = []
+
+    manifest = Bosh::Aws::BatManifest.new(receipt, stemcell_version, 'deadbeef')
+    manifest.should_receive(:warning).with("Missing vip field")
+    manifest.to_y
+  end
+
   context "mocked director uuid call" do
 
     it 'warns when domain is missing' do
@@ -28,7 +40,7 @@ describe Bosh::Aws::BatManifest do
 ---
 cpi: aws
 properties:
-  static_ip: bat.cfdev.com
+  static_ip: 123.4.5.9
   uuid: deadbeef
   pool_size: 1
   stemcell:

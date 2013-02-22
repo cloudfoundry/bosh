@@ -16,6 +16,10 @@ module Bosh
         @receipt["vpc"]["domain"] || warning('Missing domain field')
       end
 
+      def vip
+        receipt['elastic_ips']['bat']['ips'][0] || warning('Missing vip field')
+      end
+
       def to_y
         ERB.new(File.read(get_template("bat.yml.erb"))).result(binding)
       end

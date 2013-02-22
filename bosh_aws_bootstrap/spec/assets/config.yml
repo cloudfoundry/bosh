@@ -45,6 +45,9 @@ elastic_ips:
   bosh:
     instances: 1
     dns_record: bosh
+  bat:
+    instances: 1
+    dns_record: bat
 key_pairs:
   dev102: /tmp/somekey
 rds:

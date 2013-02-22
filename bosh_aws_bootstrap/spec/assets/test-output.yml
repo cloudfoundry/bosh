@@ -23,6 +23,10 @@ elastic_ips:
   dns_record: bosh
   ips:
   - 123.45.6.8
+ bat:
+  dns_record: bat
+  ips:
+  - 123.4.5.9
 key_pairs:
 - somenamez
 original_configuration:
@@ -72,6 +76,9 @@ original_configuration:
     bosh:
       instances: 1
       dns_record: bosh
+    bat:
+      instances: 1
+      dns_record: bat
   key_pairs:
     dev102: /tmp/somekey
   rds:
