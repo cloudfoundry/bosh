@@ -19,7 +19,7 @@ else
   infrastructure='aws'
 fi
 
-directory = "$infrastructure-$task"
+directory="$infrastructure-$task"
 
 sudo rm -rf /mnt/$directory
 
