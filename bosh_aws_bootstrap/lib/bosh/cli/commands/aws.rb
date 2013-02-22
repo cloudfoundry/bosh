@@ -371,7 +371,7 @@ module Bosh::Cli::Command
             end
           end
         else
-          err "RDS was not available within 10 minutes, giving up"
+          err "RDS was not available within 20 minutes, giving up"
         end
 
       ensure
@@ -462,7 +462,7 @@ module Bosh::Cli::Command
 
     def was_rds_eventually_available?(rds)
       return true if all_rds_instances_available?(rds, :silent => true)
-      (1..60).any? do |attempt|
+      (1..120).any? do |attempt|
         sleep 10
         all_rds_instances_available?(rds)
       end
