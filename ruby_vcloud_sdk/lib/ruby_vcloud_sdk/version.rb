@@ -1,3 +1,3 @@
 module VCloudSdk
-  VERSION = '1.5.0.pre1'
+  VERSION = '1.5.0.pre2'
 end
