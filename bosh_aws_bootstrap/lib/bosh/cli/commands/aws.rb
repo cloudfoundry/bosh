@@ -449,8 +449,8 @@ module Bosh::Cli::Command
         begin
           sleep 1 unless attempt == 1
           vpc.state.to_s == "available"
-        rescue AWS::EC2::Errors::InvalidVpcID::NotFound
-          # try again
+        rescue Exception => e
+          say("Waiting for vpc, continuing after #{e.class}: #{e.message}")
         end
       end
     end
