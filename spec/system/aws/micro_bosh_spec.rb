@@ -8,7 +8,7 @@ describe "AWS" do
   before do
     unless ENV["NO_PROVISION"]
       Dir.chdir(micro_deployment_path) do
-        run_bosh "aws generate micro_bosh '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+        run_bosh "aws generate micro_bosh '#{vpc_outfile_path}'"
       end
     end
 
