@@ -12,7 +12,7 @@ module Bosh
       end
 
       def instances_count
-        aws_ec2.instances.count
+        terminatable_instances.size
       end
 
       def vpcs
@@ -71,12 +71,11 @@ module Bosh
 
       def terminate_instances
         terminatable_instances.each(&:terminate)
-        retries = 100
-        until !terminatable_instances.any? || terminatable_instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
+        1.upto(100) do
+          break if terminatable_instances.empty?
           sleep 4
-          retries -= 1
         end
-        retries > 0
+        terminatable_instances.empty?
       end
 
       def delete_volumes
