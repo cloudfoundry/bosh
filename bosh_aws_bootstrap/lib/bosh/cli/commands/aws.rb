@@ -325,13 +325,16 @@ module Bosh::Cli::Command
 
     usage "aws create rds"
     desc "create all RDS database instances"
-    def create_rds_dbs(config_file)
+    def create_rds_dbs(config_file, receipt_file = nil)
       config = load_yaml_file(config_file)
 
       if !config["rds"]
         say "rds not set in config.  Skipping"
         return
       end
+
+      receipt = receipt_file ? load_yaml_file(receipt_file) : @output_state
+      vpc_subnets = receipt["vpc"]["subnets"]
 
       begin
         credentials = config["aws"]
@@ -340,13 +343,15 @@ module Bosh::Cli::Command
         config["rds"].each do |rds_db_config|
           name = rds_db_config["name"]
           tag = rds_db_config["tag"]
+          subnets = rds_db_config["subnets"]
 
+          subnet_ids = subnets.map { |s| vpc_subnets[s] }
           unless rds.database_exists?(name)
             # This is a bit odd, and the naturual way would be to just pass creation_opts
             # in directly, but it makes this easier to mock.  Once could argue that the
             # params to create_database should change to just a hash instead of a name +
             # a hash.
-            creation_opts = [name]
+            creation_opts = [name, subnet_ids]
             creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
             response = rds.create_database(*creation_opts)
             output_rds_properties(name, tag, response)

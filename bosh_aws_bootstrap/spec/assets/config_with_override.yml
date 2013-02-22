@@ -49,8 +49,14 @@ key_pairs:
 rds:
   - name: ccdb
     tag: cc
+    subnets:
+      - cf
+      - cf_az2
     aws_creation_options:
       db_instance_class: db.m2.x4.large
       allocated_storage: 7
   - name: uaadb
     tag: uaa
+    subnets:
+      - cf
+      - cf_az2

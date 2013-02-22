@@ -21,10 +21,9 @@ vpc:
       cidr: 10.10.1.0/24
       availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || "us-east-1d" %>
       default_route: cf_nat_box
-#    cf_az2:
-#      cidr: 10.10.2.0/24
-#      availability_zone: <%= ENV["BOSH_VPC_SECONDARY_AZ"] || "us-east-1c" %>
-#      default_route: cf_nat_box2
+    cf_az2:
+      cidr: 10.10.2.0/24
+      availability_zone: <%= ENV["BOSH_VPC_SECONDARY_AZ"] || "us-east-1c" %>
   dhcp_options:
     domain_name_servers:
       - 10.10.0.5  # IP of the BOSH DNS server?
@@ -90,6 +89,9 @@ s3:
 rds:
   - name: ccdb
     tag: cc
+    subnets:
+      - cf
+      - cf_az2
     # aws_creation_options:
     #   # These are passed on directly to the AWS API call.
     #   # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
@@ -98,4 +100,6 @@ rds:
     #   multi_az: true
   - name: uaadb
     tag: uaa
-
+    subnets:
+      - cf
+      - cf_az2

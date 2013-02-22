@@ -56,8 +56,14 @@ key_pairs:
 rds:
   - name: ccdb
     tag: cc
+    subnets:
+      - cf
+      - cf_az2
   - name: uaadb
     tag: uaa
+    subnets:
+      - cf
+      - cf_az2
 s3:
   - bucket_name: b1
     tag: blobstore

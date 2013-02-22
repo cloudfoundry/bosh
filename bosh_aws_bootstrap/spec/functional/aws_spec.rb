@@ -594,6 +594,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create rds databases" do
       let(:config_file) { asset "config.yml" }
+      let(:receipt_file) { asset "test-output.yml" }
 
       def make_fake_rds!(opts = {})
         retries_needed = opts[:retries_needed] || 0
@@ -603,7 +604,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_aws_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
-        create_database_params = ["ccdb"]
+        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"]]
         create_database_params << creation_options if creation_options
         fake_aws_rds.should_receive(:create_database).with(*create_database_params).and_return(
           :engine => "mysql",
@@ -612,7 +613,7 @@ describe Bosh::Cli::Command::AWS do
         )
 
         fake_aws_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
-        fake_aws_rds.should_receive(:create_database).with("uaadb").and_return(
+        fake_aws_rds.should_receive(:create_database).with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"]).and_return(
           :engine => "mysql",
           :master_username => "uaa_user",
           :master_user_password => "uaa_password"
@@ -636,7 +637,7 @@ describe Bosh::Cli::Command::AWS do
 
       it "should create all rds databases" do
         fake_aws_rds = make_fake_rds!
-        aws.create_rds_dbs config_file
+        aws.create_rds_dbs(config_file, receipt_file)
       end
 
       it "should do nothing if rds config is empty" do
@@ -644,7 +645,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("rds not set in config.  Skipping")
 
-        aws.create_rds_dbs(config_file)
+        aws.create_rds_dbs(config_file, receipt_file)
       end
 
       context "when the config file has option overrides" do
@@ -652,7 +653,7 @@ describe Bosh::Cli::Command::AWS do
         it "should create all rds databases with option overrides" do
           ccdb_opts = YAML.load_file(config_file)["rds"].find { |db_opts| db_opts["name"] == "ccdb" }
           fake_aws_rds = make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
-          aws.create_rds_dbs config_file
+          aws.create_rds_dbs(config_file, receipt_file)
         end
       end
 
@@ -663,7 +664,7 @@ describe Bosh::Cli::Command::AWS do
           args.should match(/create-rds-output-\d{14}.yml/)
         end
 
-        aws.create_rds_dbs config_file
+        aws.create_rds_dbs(config_file, receipt_file)
 
         aws.output_state["deployment_manifest"]["properties"]["ccdb"].should == {
           "db_scheme" => "mysql",
@@ -707,12 +708,12 @@ describe Bosh::Cli::Command::AWS do
       context "when the RDS is not immediately available" do
         it "should try several times and continue when available" do
           fake_aws_rds = make_fake_rds!(retries_needed: 3)
-          aws.create_rds_dbs config_file
+          aws.create_rds_dbs(config_file, receipt_file)
         end
 
         it "should fail after 60 attempts when not available" do
           fake_aws_rds = make_fake_rds!(retries_needed: 61)
-          expect { aws.create_rds_dbs config_file }.to raise_error
+          expect { aws.create_rds_dbs(config_file, receipt_file) }.to raise_error
         end
       end
     end
