@@ -22,6 +22,12 @@ properties:
   director.encryption:
     description: Enable/Disable agent-director encryption (true|false)
     default: false
+  director.max_tasks:
+    description: Max number of tasks to keep in disk
+    default: 500
+  director.max_threads:
+    description: Max number of director concurrent threads
+    default: 32
   redis.address:
     description: Address of the redis server
   redis.port:
