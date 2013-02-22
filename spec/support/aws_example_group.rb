@@ -97,9 +97,13 @@ module AwsSystemExampleGroup
       FileUtils.mkdir_p bat_deployment_path
 
       if ENV["NO_PROVISION"]
-        puts "Not creating AWS resources, assuming we already have them"
+        puts "Not deleting and recreating AWS resources, assuming we already have them"
       else
-        system "rm -f #{ASSETS_DIR}/aws/create-vpc-output-*.yml"
+        puts "Using configuration template: #{aws_configuration_template_path}"
+        run_bosh "aws destroy '#{aws_configuration_template_path}'"
+        puts "CLEANUP SUCCESSFUL"
+
+        system "rm -f #{ASSETS_DIR}/aws/create-*-output-*.yml"
 
         run_bosh "aws create vpc '#{aws_configuration_template_path}'"
 
@@ -108,15 +112,6 @@ module AwsSystemExampleGroup
     end
 
     base.after(:each) do
-      if ENV["NO_CLEANUP"]
-        puts "Not cleaning up AWS resources"
-      else
-        puts "Using VPC output: #{vpc_outfile_path}"
-        run_bosh "aws delete_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
-        run_bosh "aws delete_all volumes '#{vpc_outfile_path}'", :ignore_failures => true
-        run_bosh "aws delete vpc '#{vpc_outfile_path}'"
-        puts "CLEANUP SUCCESSFUL"
-      end
     end
   end
 end
