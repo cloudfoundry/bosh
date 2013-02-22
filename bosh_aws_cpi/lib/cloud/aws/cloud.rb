@@ -194,7 +194,18 @@ module Bosh::AwsCloud
         end
 
         @logger.info("Deleting volume `#{volume.id}'")
-        volume.delete
+        # even though the contract is that we don't get here until AWS
+        # reports that the volume is detached, the "eventual consistency"
+        # might throw a spanner in the machinery and report that it still
+        # is in use
+
+        begin
+          task_checkpoint
+          volume.delete
+        rescue AWS::EC2::Errors::Client::VolumeInUse => e
+          sleep(1)
+          retry
+        end
 
         if @fast_path_delete
           TagManager.tag(volume, "Name", "to be deleted")
