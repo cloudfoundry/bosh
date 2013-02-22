@@ -121,7 +121,9 @@ describe Bosh::Cli::Command::AWS do
 
         fake_vpc.should_receive(:create_subnets).with({
                                                           "bosh" => {"cidr" => "10.10.0.0/24", "availability_zone" => "us-east-1a"},
-                                                          "other" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1b"}
+                                                          "cf" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1a"},
+                                                          "cf_az2" => {"cidr" => "10.10.2.0/24", "availability_zone" => "us-east-1b"},
+
                                                       })
         fake_vpc.should_receive(:create_dhcp_options).with(
             "domain_name" => "dev102.cf.com",
