@@ -81,7 +81,8 @@ module Bosh::AwsCloud
       elb = AWS::ELB.new
 
       elbs.each do |load_balancer|
-        elb[load_balancer].instances.register(instance.id)
+        lb = elb.load_balancers[load_balancer]
+        lb.instances.register(instance)
       end
     end
 
@@ -89,7 +90,11 @@ module Bosh::AwsCloud
       elb = AWS::ELB.new
 
       elb.load_balancers.each do |load_balancer|
-        load_balancer.instances.deregister(instance.id)
+        begin
+          load_balancer.instances.deregister(instance)
+        rescue AWS::ELB::Errors::InvalidInstance
+          # ignore this, as it just means it wasn't registered
+        end
       end
     end
 

@@ -284,12 +284,17 @@ end
     end
   end
 
-  context 'load balancers' do
+  context 'ELBs' do
     let(:instance_manager) { described_class.new(region, registry) }
     let(:instance) { double('instance', :id => 'i-xxxxxxxx', :exists? => true) }
     let(:instances) { double('instances', :[] => instance) }
     let(:lb) { double('lb', :instances => instances) }
-    let(:elb) { double('ELB', :load_balancers => [lb]) }
+    let(:load_balancers) do
+      l = [lb]
+      l.stub(:[] => lb)
+      l
+    end
+    let(:elb) { double(AWS::ELB, :load_balancers => load_balancers) }
 
     before(:each) do
       AWS::ELB.stub(:new => elb)
@@ -299,7 +304,7 @@ end
 
     describe '#remove_from_load_balancers' do
       it 'should remove the instance from all load balancers' do
-        instances.should_receive(:deregister).with('i-xxxxxxxx')
+        instances.should_receive(:deregister).with(instance)
 
         instance_manager.remove_from_load_balancers
       end
@@ -308,7 +313,7 @@ end
     describe '#attach_to_load_balancers' do
       it 'should attach the instance the list of load balancers in the resource pool' do
         instance_manager.stub(:elbs => %w[lb])
-        instances.should_receive(:register).with('i-xxxxxxxx')
+        instances.should_receive(:register).with(instance)
 
         instance_manager.attach_to_load_balancers
       end
