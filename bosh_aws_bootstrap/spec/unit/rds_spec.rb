@@ -10,6 +10,30 @@ describe Bosh::Aws::RDS do
     rds.stub(:aws_rds).and_return(fake_aws_rds)
   end
 
+  describe "subnet_group_exists?" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should return false if the db subnet group does not exist" do
+      fake_aws_rds_client.should_receive(:describe_db_subnet_groups).
+        with(:db_subnet_group_name => "subnetgroup").
+        and_raise AWS::RDS::Errors::DBSubnetGroupNotFoundFault
+
+      rds.subnet_group_exists?("subnetgroup").should be_false
+    end
+
+    it "should return true if the db subnet group exists" do
+      fake_aws_rds_client.should_receive(:describe_db_subnet_groups).
+        with(:db_subnet_group_name => "subnetgroup").
+        and_return("not_used")
+
+      rds.subnet_group_exists?("subnetgroup").should be_true
+    end
+  end
+
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
     let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }

@@ -49,6 +49,13 @@ module Bosh
         end
       end
 
+      def subnet_group_exists?(name)
+        aws_rds_client.describe_db_subnet_groups(:db_subnet_group_name => name)
+        return true
+      rescue AWS::RDS::Errors::DBSubnetGroupNotFoundFault
+        return false
+      end
+
       def aws_rds
         @aws_rds ||= ::AWS::RDS.new(@credentials)
       end
