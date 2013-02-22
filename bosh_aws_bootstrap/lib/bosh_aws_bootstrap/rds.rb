@@ -56,6 +56,14 @@ module Bosh
         return false
       end
 
+      def create_subnet_group(name, subnet_ids)
+        aws_rds_client.create_db_subnet_group(
+          :db_subnet_group_name => name,
+          :db_subnet_group_description => name,
+          :subnet_ids => subnet_ids
+        )
+      end
+
       def aws_rds
         @aws_rds ||= ::AWS::RDS.new(@credentials)
       end

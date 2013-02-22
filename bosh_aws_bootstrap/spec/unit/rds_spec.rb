@@ -34,6 +34,23 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "create_database_subnet_group" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should create the RDS subnet group" do
+      fake_aws_rds_client.should_receive(:create_db_subnet_group).
+        with(:db_subnet_group_name => "somedb",
+             :db_subnet_group_description => "somedb",
+             :subnet_ids => ["id1", "id2"])
+
+      rds.create_subnet_group("somedb", ["id1", "id2"])
+    end
+  end
+
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
     let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }
