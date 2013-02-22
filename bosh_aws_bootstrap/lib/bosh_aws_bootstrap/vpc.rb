@@ -53,7 +53,7 @@ module Bosh
       def delete_vpc
         @aws_vpc.delete
       rescue ::AWS::EC2::Errors::DependencyViolation => e
-        err "#{@aws_vpc.id} has dependencies that this tool does not delete"
+        err "#{@aws_vpc.id} has dependencies that this tool does not delete: #{e.message}"
       end
 
       def create_security_groups(groups_specs)
