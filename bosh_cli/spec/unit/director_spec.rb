@@ -8,6 +8,7 @@ describe Bosh::Cli::Director do
 
   before do
     @director = Bosh::Cli::Director.new(DUMMY_TARGET, "user", "pass")
+    @director.stub(retry_wait_interval: 0)
   end
 
   describe "fetching status" do
@@ -458,11 +459,12 @@ describe Bosh::Cli::Director do
       }.should raise_error Bosh::Cli::DirectorError
     end
 
-    it "retries the HTTP request the given number of times" do
+    it "retries the HTTP request the given number of times with given wait intervals" do
       @director.should_receive(:perform_http_request).exactly(3).times.and_raise(URI::Error)
+      @director.should_receive(:sleep).with(2).exactly(2).times
 
       expect {
-        @director.try_to_perform_http_request(:get, "/stuff/app/zb", "payload", { }, 3)
+        @director.try_to_perform_http_request(:get, "/stuff/app/zb", "payload", { }, 3, 2)
       }.to raise_error(Bosh::Cli::DirectorInaccessible)
     end
 

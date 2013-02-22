@@ -497,7 +497,7 @@ module Bosh
           response_reader = nil
         end
 
-        response = try_to_perform_http_request(method, @director_uri + uri, payload, headers, num_retries, &response_reader)
+        response = try_to_perform_http_request(method, @director_uri + uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
 
         if options[:file]
           tmp_file.close
@@ -567,13 +567,14 @@ module Bosh
         err("REST API call exception: #{e}")
       end
 
-      def try_to_perform_http_request(method, uri, payload, headers, num_retries, &response_reader)
+      def try_to_perform_http_request(method, uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
         num_retries.downto(1) do |n|
           begin
             return perform_http_request(method, uri, payload, headers, &response_reader)
           rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
             warning("cannot access director, trying #{n-1} more times...") if n != 1
             raise DirectorInaccessible, "cannot access director (#{e.message})" if n == 1
+            sleep retry_wait_interval
           end
         end
       end
@@ -604,6 +605,8 @@ module Bosh
       end
 
       def num_retries; 5; end
+
+      def retry_wait_interval; 5; end
     end
 
     class FileWithProgressBar < ::File
