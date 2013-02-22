@@ -105,7 +105,7 @@ PATH
       bosh_aws_registry (~> 1.5.0.pre1)
       bosh_cli (~> 1.5.0.pre1)
       bosh_cpi (~> 1.5.0.pre1)
-      bosh_openstack_cpi (~> 0.0.7)
+      bosh_openstack_cpi (~> 1.5.0.pre1)
       bosh_openstack_registry (~> 1.5.0.pre1)
       bosh_vcloud_cpi (~> 1.5.0.pre1)
       bosh_vsphere_cpi (~> 1.5.0.pre1)
@@ -118,6 +118,17 @@ PATH
       gibberish (~> 1.2.0)
       uuidtools (~> 2.1.3)
       yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh_openstack_cpi
+  specs:
+    bosh_openstack_cpi (1.5.0.pre1)
+      bosh_common (~> 1.5.0.pre1)
+      bosh_cpi (~> 1.5.0.pre1)
+      fog (~> 1.9.0)
+      httpclient (= 2.2.4)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (>= 0.8.2)
 
 PATH
   remote: bosh_openstack_registry
@@ -160,7 +171,7 @@ PATH
       bosh_common (~> 1.5.0.pre1)
       bosh_cpi (~> 1.5.0.pre1)
       bosh_encryption (~> 1.5.0.pre1)
-      bosh_openstack_cpi (~> 0.0.7)
+      bosh_openstack_cpi (~> 1.5.0.pre1)
       bosh_vcloud_cpi (~> 1.5.0.pre1)
       bosh_vsphere_cpi (~> 1.5.0.pre1)
       eventmachine (~> 0.12.9)
@@ -241,13 +252,6 @@ GEM
       nokogiri (>= 1.4.4)
       uuidtools (~> 2.1)
     bcrypt-ruby (3.0.1)
-    bosh_openstack_cpi (0.0.7)
-      bosh_common (>= 0.5.1)
-      bosh_cpi (>= 0.5.1)
-      fog (>= 1.9.0)
-      httpclient (>= 2.2.0)
-      uuidtools (>= 2.1.2)
-      yajl-ruby (>= 0.8.2)
     builder (3.1.4)
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
@@ -409,6 +413,7 @@ DEPENDENCIES
   bosh_cpi!
   bosh_deployer!
   bosh_encryption!
+  bosh_openstack_cpi!
   bosh_openstack_registry!
   bosh_vcloud_cpi!
   bosh_vsphere_cpi!
