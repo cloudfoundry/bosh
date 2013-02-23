@@ -28,7 +28,7 @@ module Bosh::Director
           # Make sure it wasn't deleted
           deployment = find_deployment(@deployment_name)
 
-          ThreadPool.new(:max_threads => 32).wrap do |pool|
+          ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
             delete_instances(deployment, pool)
             pool.wait
             delete_vms(deployment, pool)

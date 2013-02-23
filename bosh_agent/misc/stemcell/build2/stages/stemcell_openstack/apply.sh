@@ -9,12 +9,16 @@ source $base_dir/lib/prelude_apply.bash
 
 pushd $work/stemcell
 
+# compute checksum of the image file
+stemcell_checksum=`shasum -a 1 image | cut -f1 -d' '`
+
 $ruby_bin <<EOS
 require "yaml"
 
 stemcell_name = "$stemcell_name"
 version = "$stemcell_version"
 bosh_protocol = "$bosh_protocol_version".to_i
+stemcell_checksum = "$stemcell_checksum"
 stemcell_infrastructure = "$stemcell_infrastructure"
 hypervisor = "${stemcell_hypervisor:-kvm}"
 
@@ -31,6 +35,7 @@ manifest = {
     "name" => stemcell_name,
     "version" => version,
     "bosh_protocol" => bosh_protocol,
+    "sha1" => stemcell_checksum,
     "cloud_properties" => {
         "name" => stemcell_name,
         "version" => version,

@@ -32,11 +32,25 @@ module Bosh::AwsCloud
       # so no need to disassociate manually. Also, we don't check
       # if this IP is actually an allocated EC2 elastic IP, as
       # API call will fail in that case.
-      # TODO: wrap error for non-existing elastic IP?
-      # TODO: poll instance until this IP is returned as its public IP?
-      instance.associate_elastic_ip(elastic_ip)
+
+      retry_until_ready do
+        instance.associate_elastic_ip(elastic_ip)
+      end
     end
 
+    def retry_until_ready
+      task_checkpoint
+      yield
+    rescue AWS::EC2::Errors::IncorrectInstanceState => e
+      @logger.warn("not ready yet: #{e.message}")
+      sleep(1)
+      # should we have a limited number of retries?
+      retry
+    end
+
+    def task_checkpoint
+      Bosh::Clouds::Config.task_checkpoint
+    end
   end
 end
 

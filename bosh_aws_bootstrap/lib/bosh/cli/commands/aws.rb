@@ -31,11 +31,21 @@ module Bosh::Cli::Command
       end
     end
 
+    usage "aws generate bosh"
+    desc "generate bosh.yml stub manifest for use with 'bosh diff'"
+    def create_bosh_manifest(receipt_file)
+      target_required
+      File.open("bosh.yml", "w+") do |f|
+        f.write(Bosh::Aws::BoshManifest.new(load_yaml_file(receipt_file), director.uuid).to_yaml)
+      end
+    end
+
     usage "aws generate bat_manifest"
     desc "generate bat.yml"
     def create_bat_manifest(receipt_file, stemcell_version)
+      target_required
       File.open("bat.yml", "w+") do |f|
-        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version).to_yaml)
+        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version, director.uuid).to_yaml)
       end
     end
 
@@ -117,18 +127,6 @@ module Bosh::Cli::Command
         ec2.create_internet_gateway
         vpc.attach_internet_gateway(ec2.internet_gateway_ids.first)
 
-        subnets = config["vpc"]["subnets"]
-        say "creating subnets: #{subnets.keys.join(", ")}"
-        vpc.create_subnets(subnets)
-        @output_state["vpc"]["subnets"] = vpc.subnets
-
-        say "creating route"
-        vpc.make_route_for_internet_gateway(vpc.subnets["bosh"], ec2.internet_gateway_ids.first)
-
-        dhcp_options = config["vpc"]["dhcp_options"]
-        say "creating DHCP options"
-        vpc.create_dhcp_options(dhcp_options)
-
         security_groups = config["vpc"]["security_groups"]
         say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
         vpc.create_security_groups(security_groups)
@@ -139,6 +137,15 @@ module Bosh::Cli::Command
           ec2.force_add_key_pair(name, path)
           @output_state["key_pairs"] << name
         end
+
+        subnets = config["vpc"]["subnets"]
+        say "creating subnets: #{subnets.keys.join(", ")}"
+        vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
+        @output_state["vpc"]["subnets"] = vpc.subnets
+
+        dhcp_options = config["vpc"]["dhcp_options"]
+        say "creating DHCP options"
+        vpc.create_dhcp_options(dhcp_options)
 
         count = config["elastic_ips"].values.reduce(0) { |total, job| total += job["instances"] }
         say "allocating #{count} elastic IP(s)"
@@ -234,8 +241,10 @@ module Bosh::Cli::Command
             dhcp_options = vpc.dhcp_options
 
             vpc.delete_security_groups
-            vpc.delete_subnets
             ec2.delete_internet_gateways(ec2.internet_gateway_ids)
+            vpc.delete_network_interfaces
+            vpc.delete_subnets
+            vpc.delete_route_tables
             vpc.delete_vpc
             dhcp_options.delete
           end
@@ -316,13 +325,16 @@ module Bosh::Cli::Command
 
     usage "aws create rds"
     desc "create all RDS database instances"
-    def create_rds_dbs(config_file)
+    def create_rds_dbs(config_file, receipt_file = nil)
       config = load_yaml_file(config_file)
 
       if !config["rds"]
         say "rds not set in config.  Skipping"
         return
       end
+
+      receipt = receipt_file ? load_yaml_file(receipt_file) : @output_state
+      vpc_subnets = receipt["vpc"]["subnets"]
 
       begin
         credentials = config["aws"]
@@ -331,13 +343,15 @@ module Bosh::Cli::Command
         config["rds"].each do |rds_db_config|
           name = rds_db_config["name"]
           tag = rds_db_config["tag"]
+          subnets = rds_db_config["subnets"]
 
+          subnet_ids = subnets.map { |s| vpc_subnets[s] }
           unless rds.database_exists?(name)
             # This is a bit odd, and the naturual way would be to just pass creation_opts
             # in directly, but it makes this easier to mock.  Once could argue that the
             # params to create_database should change to just a hash instead of a name +
             # a hash.
-            creation_opts = [name]
+            creation_opts = [name, subnet_ids]
             creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
             response = rds.create_database(*creation_opts)
             output_rds_properties(name, tag, response)
@@ -357,7 +371,7 @@ module Bosh::Cli::Command
             end
           end
         else
-          err "RDS was not available within 10 minutes, giving up"
+          err "RDS was not available within 20 minutes, giving up"
         end
 
       ensure
@@ -440,15 +454,15 @@ module Bosh::Cli::Command
         begin
           sleep 1 unless attempt == 1
           vpc.state.to_s == "available"
-        rescue AWS::EC2::Errors::InvalidVpcID::NotFound
-          # try again
+        rescue Exception => e
+          say("Waiting for vpc, continuing after #{e.class}: #{e.message}")
         end
       end
     end
 
     def was_rds_eventually_available?(rds)
       return true if all_rds_instances_available?(rds, :silent => true)
-      (1..60).any? do |attempt|
+      (1..120).any? do |attempt|
         sleep 10
         all_rds_instances_available?(rds)
       end

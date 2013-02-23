@@ -1,5 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module VimSdk
-  VERSION = '1.5.0.pre'
+  VERSION = '1.5.0.pre2'
 end

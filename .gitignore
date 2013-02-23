@@ -5,6 +5,7 @@ TAGS
 .\#*
 .bundle
 .pt
+.stemcell_builds/public_stemcell_config.yml
 .yardoc
 doc
 cov
@@ -55,3 +56,4 @@ create-rds-output*.yml
 /release/jobs/micro_*/templates/
 /release/src/bosh/*
 /tmp/*
+stemcell-ami.txt

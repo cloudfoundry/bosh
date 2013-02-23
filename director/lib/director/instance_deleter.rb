@@ -17,8 +17,7 @@ module Bosh::Director
     # @param [Hash] options optional list of options controlling concurrency
     # @return [void]
     def delete_instances(instances, options = {})
-      # TODO: make default externally configurable?
-      max_threads = options[:max_threads] || 10
+      max_threads = options[:max_threads] || Config.max_threads
       ThreadPool.new(:max_threads => max_threads).wrap do |pool|
         instances.each do |instance|
           pool.process { delete_instance(instance) }

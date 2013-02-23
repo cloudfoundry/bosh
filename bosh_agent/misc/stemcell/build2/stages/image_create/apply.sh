@@ -5,7 +5,6 @@
 set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
-echo "BASE_DIR $base_dir"
 source $base_dir/lib/prelude_apply.bash
 
 disk_image_name=root.img
@@ -20,6 +19,9 @@ dd if=/dev/null of=$work/$disk_image_name bs=1M seek=$disk_size 2> /dev/null
 parted --script $work/$disk_image_name mklabel msdos
 parted --script $work/$disk_image_name mkpart primary ext2 $part_offset $part_size
 
+# unmap the loop device in case it's already mapped
+kpartx -dv $work/$disk_image_name
+
 # Map partition in image to loopback
 dev=$(kpartx -av $work/$disk_image_name | grep "^add" | cut -d" " -f3)
 
@@ -29,7 +31,6 @@ mkfs.$part_fs /dev/mapper/$dev
 # Mount partition
 mnt=$work/mnt
 mkdir -p $mnt
-echo "MOUNT /DEV/MAPPER/$dev $mnt"
 mount /dev/mapper/$dev $mnt
 
 # Copy root

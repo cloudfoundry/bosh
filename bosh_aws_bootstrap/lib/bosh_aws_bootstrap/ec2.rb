@@ -12,7 +12,7 @@ module Bosh
       end
 
       def instances_count
-        aws_ec2.instances.count
+        terminatable_instances.size
       end
 
       def vpcs
@@ -25,10 +25,13 @@ module Bosh
 
       def allocate_elastic_ips(count)
         count.times do
-          elastic_ip = aws_ec2.elastic_ips.allocate(vpc: true)
-          @elastic_ips << elastic_ip.public_ip
+          @elastic_ips << allocate_elastic_ip.public_ip
         end
         #say "\tallocated #{eip.public_ip}".green
+      end
+
+      def allocate_elastic_ip
+        aws_ec2.elastic_ips.allocate(vpc: true)
       end
 
       def release_elastic_ips(ips)
@@ -55,14 +58,24 @@ module Bosh
         end
       end
 
+      def create_instance(options)
+        aws_ec2.instances.create(options)
+      end
+
+      def disable_src_dest_checking(instance_id)
+        aws_ec2.client.modify_instance_attribute(
+            :instance_id => instance_id,
+            :source_dest_check => {:value => false}
+        )
+      end
+
       def terminate_instances
         terminatable_instances.each(&:terminate)
-        retries = 100
-        until !terminatable_instances.any? || terminatable_instances.map(&:status).map(&:to_s).uniq == ["terminated"] || retries == 0
+        1.upto(100) do
+          break if terminatable_instances.empty?
           sleep 4
-          retries -= 1
         end
-        retries > 0
+        terminatable_instances.empty?
       end
 
       def delete_volumes

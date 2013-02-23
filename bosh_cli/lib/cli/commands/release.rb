@@ -34,8 +34,7 @@ module Bosh::Cli::Command
 
     # bosh create release
     usage "create release"
-    desc "Create release (assumes current directory " +
-         "to be a release repository)"
+    desc "Create release (assumes current directory to be a release repository)"
     option "--force", "bypass git dirty state check"
     option "--final", "create final release"
     option "--with-tarball", "create release tarball"
@@ -87,20 +86,17 @@ module Bosh::Cli::Command
       auth_required
 
       upload_options = {
-        :rebase => options[:rebase],
-        :repack => true
+          :rebase => options[:rebase],
+          :repack => true
       }
 
       if release_file.nil?
         check_if_release_dir
         release_file = release.latest_release_filename
         if release_file.nil?
-          err("The information about latest generated release is missing, " +
-              "please provide release filename")
+          err("The information about latest generated release is missing, please provide release filename")
         end
-        unless confirmed?("Upload release " +
-                          "`#{File.basename(release_file).green}' " +
-                          "to `#{target_name.green}'")
+        unless confirmed?("Upload release `#{File.basename(release_file).green}' to `#{target_name.green}'")
           err("Canceled upload")
         end
       end
@@ -184,8 +180,7 @@ module Bosh::Cli::Command
       end
 
       if confirmed?
-        status, task_id = director.delete_release(
-          name, :force => force, :version => version)
+        status, task_id = director.delete_release(name, force: force, version: version)
         task_report(status, task_id, "Deleted `#{desc}'")
       else
         say("Canceled deleting release".green)
@@ -202,8 +197,7 @@ module Bosh::Cli::Command
       blobstore = release.blobstore
       tmpdir = Dir.mktmpdir
 
-      compiler = Bosh::Cli::ReleaseCompiler.new(
-        manifest_path, blobstore, package_matches)
+      compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, package_matches)
       need_repack = true
 
       unless compiler.exists?
@@ -234,7 +228,7 @@ module Bosh::Cli::Command
         remote_release = get_remote_release(tarball.release_name) rescue nil
 
         if remote_release && !rebase &&
-          remote_release["versions"].include?(tarball.version)
+            remote_release["versions"].include?(tarball.version)
           err("This release version has already been uploaded")
         end
 
@@ -246,8 +240,7 @@ module Bosh::Cli::Command
           if repacked_path.nil?
             say("Uploading the whole release".green)
           else
-            say("Release repacked " +
-                "(new size is #{pretty_size(repacked_path)})".green)
+            say("Release repacked (new size is #{pretty_size(repacked_path)})".green)
             tarball_path = repacked_path
           end
         end
@@ -279,10 +272,63 @@ module Bosh::Cli::Command
       manifest_only = !options[:with_tarball]
       dry_run = options[:dry_run]
 
-      if final && !release.has_blobstore_secret?
-        err("Can't create final release without blobstore secret")
+      err("Can't create final release without blobstore secret") if final && !release.has_blobstore_secret?
+
+      dirty_blob_check(force)
+
+      raise_dirty_state_error if dirty_state? && !force
+
+      if final
+        confirm_final_release(dry_run)
+        save_final_release_name if release.final_name.blank?
+        header("Building FINAL release".green)
+      else
+        save_dev_release_name if release.dev_name.blank?
+        header("Building DEV release".green)
       end
 
+      if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
+        err("You should use CLI >= #{release.min_cli_version} with this release, you have #{Bosh::Cli::VERSION}")
+      end
+
+      header("Building packages")
+      packages = build_packages(dry_run, final)
+
+      header("Building jobs")
+      jobs = build_jobs(packages.map(&:name), dry_run, final)
+
+      header("Building release")
+      release_builder = build_release(dry_run, final, jobs, manifest_only, packages)
+
+      header("Release summary")
+      show_summary(release_builder)
+      nl
+
+      return nil if dry_run
+
+      say("Release version: #{release_builder.version.to_s.green}")
+      say("Release manifest: #{release_builder.manifest_path.green}")
+
+      unless manifest_only
+        say("Release tarball (#{pretty_size(release_builder.tarball_path)}): " +
+                release_builder.tarball_path.green)
+      end
+
+      release.min_cli_version = Bosh::Cli::VERSION
+      release.save_config
+
+      release_builder.manifest_path
+    end
+
+    def confirm_final_release(dry_run)
+      confirmed = non_interactive? || agree("Are you sure you want to generate #{'final'.red} version? ")
+      if !dry_run && !confirmed
+        say("Canceled release generation".green)
+        exit(1)
+      end
+    end
+
+    def dirty_blob_check(force)
       blob_manager.sync
       if blob_manager.dirty?
         blob_manager.print_status
@@ -292,50 +338,14 @@ module Bosh::Cli::Command
           err("Please use '--force' or upload new blobs")
         end
       end
+    end
 
-      check_if_dirty_state unless force
-
-      confirmation = "Are you sure you want to " +
-        "generate #{'final'.red} version? "
-
-      if final && !dry_run && !confirmed?(confirmation)
-        say("Canceled release generation".green)
-        exit(1)
-      end
-
-      if final
-        header("Building FINAL release".green)
-        release_name = release.final_name
-      else
-        release_name = release.dev_name
-        header("Building DEV release".green)
-      end
-
-      if version_greater(release.min_cli_version, Bosh::Cli::VERSION)
-        err("You should use CLI >= #{release.min_cli_version} " +
-              "with this release, you have #{Bosh::Cli::VERSION}")
-      end
-
-      if release_name.blank?
-        confirmation = "Please enter %s release name: " % [
-          final ? "final" : "development"]
-        name = interactive? ? ask(confirmation).to_s : DEFAULT_RELEASE_NAME
-        err("Canceled release creation, no name given") if name.blank?
-        if final
-          release.final_name = name
-        else
-          release.dev_name = name
-        end
-        release.save_config
-      end
-
-      header("Building packages")
-
+    def build_packages(dry_run, final)
       packages = Bosh::Cli::PackageBuilder.discover(
-        work_dir,
-        :final => final,
-        :blobstore => release.blobstore,
-        :dry_run => dry_run
+          work_dir,
+          :final => final,
+          :blobstore => release.blobstore,
+          :dry_run => dry_run
       )
 
       packages.each do |package|
@@ -358,15 +368,31 @@ module Bosh::Cli::Command
         nl
       end
 
-      built_package_names = packages.map { |package| package.name }
+      packages
+    end
 
-      header("Building jobs")
+    def build_release(dry_run, final, jobs, manifest_only, packages)
+      release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages,
+                                                      jobs, :final => final)
+
+      unless dry_run
+        if manifest_only
+          release_builder.build(:generate_tarball => false)
+        else
+          release_builder.build(:generate_tarball => true)
+        end
+      end
+
+      release_builder
+    end
+
+    def build_jobs(built_package_names, dry_run, final)
       jobs = Bosh::Cli::JobBuilder.discover(
-        work_dir,
-        :final => final,
-        :blobstore => release.blobstore,
-        :dry_run => dry_run,
-        :package_names => built_package_names
+          work_dir,
+          :final => final,
+          :blobstore => release.blobstore,
+          :dry_run => dry_run,
+          :package_names => built_package_names
       )
 
       jobs.each do |job|
@@ -375,35 +401,25 @@ module Bosh::Cli::Command
         nl
       end
 
-      builder = Bosh::Cli::ReleaseBuilder.new(release, packages,
-                                              jobs, :final => final)
+      jobs
+    end
 
-      unless dry_run
-        if manifest_only
-          builder.build(:generate_tarball => false)
-        else
-          builder.build(:generate_tarball => true)
-        end
+    def save_final_release_name
+      release.final_name = DEFAULT_RELEASE_NAME
+      if interactive?
+        release.final_name = ask("Please enter final release name: ").to_s
+        err("Canceled release creation, no name given") if release.final_name.blank?
       end
-
-      header("Release summary")
-      show_summary(builder)
-      nl
-
-      return nil if dry_run
-
-      say("Release version: #{builder.version.to_s.green}")
-      say("Release manifest: #{builder.manifest_path.green}")
-
-      unless manifest_only
-        say("Release tarball (#{pretty_size(builder.tarball_path)}): " +
-              builder.tarball_path.green)
-      end
-
-      release.min_cli_version = Bosh::Cli::VERSION
       release.save_config
+    end
 
-      builder.manifest_path
+    def save_dev_release_name
+      release.dev_name = DEFAULT_RELEASE_NAME
+      if interactive?
+        release.dev_name = ask("Please enter development release name: ").to_s
+        err("Canceled release creation, no name given") if release.dev_name.blank?
+      end
+      release.save_config
     end
 
     def git_init
@@ -503,8 +519,7 @@ module Bosh::Cli::Command
           release.has_key?("jobs") &&
           release.has_key?("packages")
         raise Bosh::Cli::DirectorError,
-              "Cannot find version, jobs and packages info " +
-              "in the director response, maybe old director?"
+              "Cannot find version, jobs and packages info in the director response, maybe old director?"
       end
 
       release
@@ -514,9 +529,9 @@ module Bosh::Cli::Command
       director.match_packages(manifest_yaml)
     rescue Bosh::Cli::DirectorError
       msg = "You are using CLI >= 0.20 with director that doesn't support " +
-        "package matches.\nThis will result in uploading all packages " +
-        "and jobs to your director.\nIt is recommended to update your " +
-        "director or downgrade your CLI to 0.19.6"
+          "package matches.\nThis will result in uploading all packages " +
+          "and jobs to your director.\nIt is recommended to update your " +
+          "director or downgrade your CLI to 0.19.6"
 
       say(msg.yellow)
       exit(1) unless confirmed?

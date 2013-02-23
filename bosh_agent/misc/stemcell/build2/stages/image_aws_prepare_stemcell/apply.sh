@@ -5,7 +5,6 @@
 set -e
 
 base_dir=$(readlink -nf $(dirname $0)/../..)
-echo "BASE_DIR $base_dir"
 source $base_dir/lib/prelude_apply.bash
 
 disk_image_name=root.img

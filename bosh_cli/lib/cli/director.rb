@@ -490,18 +490,14 @@ module Bosh
         headers["Content-Type"] = content_type if content_type
 
         if options[:file]
-          tmp_file = File.open(File.join(Dir.mktmpdir, "streamed-response"),
-                               "w")
+          tmp_file = File.open(File.join(Dir.mktmpdir, "streamed-response"), "w")
 
-          response_reader = lambda do |part|
-            tmp_file.write(part)
-          end
+          response_reader = lambda { |part| tmp_file.write(part) }
         else
           response_reader = nil
         end
 
-        response = perform_http_request(method, @director_uri + uri,
-                                        payload, headers, &response_reader)
+        response = try_to_perform_http_request(method, @director_uri + uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
 
         if options[:file]
           tmp_file.close
@@ -528,9 +524,7 @@ module Bosh
 
         [response.code, body, headers]
 
-      rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
-        raise DirectorInaccessible,
-              "cannot access director (#{e.message})"
+
       rescue SystemCallError => e
         raise DirectorError, "System call error while talking to director: #{e}"
       end
@@ -545,8 +539,6 @@ module Bosh
           "HTTP %s: %s" % [status, body]
         end
       end
-
-      private
 
       def perform_http_request(method, uri, payload = nil, headers = {}, &block)
         http_client = HTTPClient.new
@@ -575,6 +567,20 @@ module Bosh
         err("REST API call exception: #{e}")
       end
 
+      def try_to_perform_http_request(method, uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
+        num_retries.downto(1) do |n|
+          begin
+            return perform_http_request(method, uri, payload, headers, &response_reader)
+          rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
+            warning("cannot access director, trying #{n-1} more times...") if n != 1
+            raise DirectorInaccessible, "cannot access director (#{e.message})" if n == 1
+            sleep retry_wait_interval
+          end
+        end
+      end
+
+      private
+
       def get_json(url)
         status, body = get_json_with_status(url)
         raise AuthError if status == 401
@@ -598,6 +604,9 @@ module Bosh
         end
       end
 
+      def num_retries; 5; end
+
+      def retry_wait_interval; 5; end
     end
 
     class FileWithProgressBar < ::File

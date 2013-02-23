@@ -49,7 +49,7 @@ module Bosh::Cli
 
       def director
         @director ||= Bosh::Cli::Director.new(
-          target, username, password, @options.select {|k,v| k == :no_track})
+            target, username, password, @options.select { |k, _| k == :no_track })
       end
 
       def release
@@ -185,24 +185,21 @@ module Bosh::Cli
 
       def check_if_release_dir
         unless in_release_dir?
-          err("Sorry, your current directory doesn't look " +
-              "like release directory")
+          err("Sorry, your current directory doesn't look like release directory")
         end
       end
 
-      def check_if_dirty_state
-        if dirty_state?
-          say("\n%s\n" % [`git status`])
-          err("Your current directory has some local modifications, " +
-              "please discard or commit them first.\n\n" +
-              "Use the --force option to skip this check.")
-        end
+      def raise_dirty_state_error
+        say("\n%s\n" % [`git status`])
+        err("Your current directory has some local modifications, " +
+                "please discard or commit them first.\n\n" +
+                "Use the --force option to skip this check.")
       end
 
       def in_release_dir?
         File.directory?("packages") &&
-          File.directory?("jobs") &&
-          File.directory?("src")
+            File.directory?("jobs") &&
+            File.directory?("src")
       end
 
       def dirty_state?

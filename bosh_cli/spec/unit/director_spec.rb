@@ -8,6 +8,7 @@ describe Bosh::Cli::Director do
 
   before do
     @director = Bosh::Cli::Director.new(DUMMY_TARGET, "user", "pass")
+    @director.stub(retry_wait_interval: 0)
   end
 
   describe "fetching status" do
@@ -441,6 +442,7 @@ describe Bosh::Cli::Director do
     end
 
     it "wraps director access exceptions" do
+      @director.stub(num_retries: 1)
       [URI::Error, SocketError, Errno::ECONNREFUSED].each do |err|
         @director.should_receive(:perform_http_request).
           and_raise(err.new("err message"))
@@ -455,6 +457,15 @@ describe Bosh::Cli::Director do
       lambda {
         @director.request(:get, "/stuff", "app/zb", "payload", { })
       }.should raise_error Bosh::Cli::DirectorError
+    end
+
+    it "retries the HTTP request the given number of times with given wait intervals" do
+      @director.should_receive(:perform_http_request).exactly(3).times.and_raise(URI::Error)
+      @director.should_receive(:sleep).with(2).exactly(2).times
+
+      expect {
+        @director.try_to_perform_http_request(:get, "/stuff/app/zb", "payload", { }, 3, 2)
+      }.to raise_error(Bosh::Cli::DirectorInaccessible)
     end
 
     it "streams file" do

@@ -35,19 +35,13 @@ stage bosh_clean
 stage bosh_harden
 stage bosh_harden_ssh
 stage bosh_tripwire
-echo "DOING: bosh_dpkg_list"
 stage bosh_dpkg_list
 
 # Image/bootloader
-echo "DOING: image_create"
 stage image_create
-echo "DOING: image_install_grub"
 stage image_install_grub
-echo "DOING: image_aws_update_grub"
 stage image_aws_update_grub
-echo "DOING: image_aws_prepare_stemcell"
 stage image_aws_prepare_stemcell
 
 # Final stemcell
-echo "DOING: stemcell"
 stage stemcell

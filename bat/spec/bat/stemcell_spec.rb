@@ -13,6 +13,7 @@ describe "stemcell" do
   # if it isn't uploaded, it uploads it and then deletes it
   # i.e. the state is the same as before the test is run
   it "should upload and delete a stemcell" do
+    pending "broken on AWS" if aws? # https://www.pivotaltracker.com/projects/727945/stories/44334049
     if stemcells.include?(stemcell)
       deployments.should_not include(release.name)
       bosh("delete stemcell #{stemcell.name} #{stemcell.version}").should succeed_with /Deleted stemcell/

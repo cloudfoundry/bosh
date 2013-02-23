@@ -18,7 +18,13 @@ module Bosh::Cli::Command
       setup(template)
 
       template_to_fill = ERB.new(File.read(@template_file), 0, "%<>-")
-      @template_output = template_to_fill.result(binding)
+      begin
+        @template_output = template_to_fill.result(binding)
+      rescue ArgumentError => ex
+        say(ex.message)
+        say(ex.backtrace.join("\n"))
+        err("Error rendering ERB")
+      end
 
       if @errors == 0
         print_string_diff(File.read(@deployment_file), @template_output)

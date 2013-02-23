@@ -16,6 +16,7 @@ module Bosh::Director
         :event_log,
         :logger,
         :max_tasks,
+        :max_threads,
         :name,
         :process_uuid,
         :redis_options,
@@ -64,6 +65,11 @@ module Bosh::Director
         @max_tasks = 500 # by default keep only last 500 tasks in disk
         if config["max_tasks"]
           @max_tasks = config["max_tasks"].to_i
+        end
+
+        @max_threads = 32
+        if config["max_threads"]
+          @max_threads = config["max_threads"].to_i
         end
 
         self.redis_options= {

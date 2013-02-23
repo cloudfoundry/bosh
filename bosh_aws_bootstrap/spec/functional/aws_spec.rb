@@ -5,8 +5,7 @@ describe Bosh::Cli::Command::AWS do
   before { aws.stub(:sleep)  }
 
   describe "command line tools" do
-    describe "create_micro_bosh_manifest" do
-      let(:config_file) { asset "config.yml" }
+    describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
 
       around do |test|
@@ -30,6 +29,28 @@ describe Bosh::Cli::Command::AWS do
         @micro_bosh_yaml['cloud']['properties']['aws']['secret_access_key'].should == "..."
         @micro_bosh_yaml['cloud']['properties']['aws']['region'].should == "us-east-1"
       end
+    end
+
+    describe "aws generate bosh" do
+      let(:create_vpc_output_yml) { asset "test-output.yml" }
+
+      around do |test|
+        Dir.mktmpdir do |dir|
+          Dir.chdir(dir) do
+            aws.stub(:target_required)
+            aws.stub_chain(:director, :uuid).and_return("deadbeef")
+            aws.create_bosh_manifest(create_vpc_output_yml)
+            test.run
+          end
+        end
+      end
+
+      it "generates required bosh deployment keys" do
+        @bosh_yaml = YAML.load_file("bosh.yml")
+
+        @bosh_yaml['name'].should == "vpc-bosh-dev102"
+      end
+
     end
 
     describe "aws create" do
@@ -77,7 +98,6 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_subnets)
         fake_vpc.stub(:subnets).and_return({'bosh' => "amz-subnet1", 'name2' => "amz-subnet2"})
         fake_vpc.stub(:attach_internet_gateway)
-        fake_vpc.stub(:make_route_for_internet_gateway)
         fake_ec2.stub(:allocate_elastic_ips)
         fake_ec2.stub(:force_add_key_pair)
         fake_ec2.stub(:create_internet_gateway)
@@ -101,7 +121,9 @@ describe Bosh::Cli::Command::AWS do
 
         fake_vpc.should_receive(:create_subnets).with({
                                                           "bosh" => {"cidr" => "10.10.0.0/24", "availability_zone" => "us-east-1a"},
-                                                          "other" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1b"}
+                                                          "cf" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1a"},
+                                                          "cf_az2" => {"cidr" => "10.10.2.0/24", "availability_zone" => "us-east-1b"},
+
                                                       })
         fake_vpc.should_receive(:create_dhcp_options).with(
             "domain_name" => "dev102.cf.com",
@@ -111,20 +133,21 @@ describe Bosh::Cli::Command::AWS do
           args.length.should == 2
           args.first.keys.should =~ %w[name ingress]
         end
-        fake_ec2.should_receive(:allocate_elastic_ips).with(3)
+        fake_ec2.should_receive(:allocate_elastic_ips).with(5)
         fake_ec2.should_receive(:force_add_key_pair).with("dev102", "/tmp/somekey")
         fake_ec2.should_receive(:create_internet_gateway)
         fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_vpc.should_receive(:attach_internet_gateway).with("id1")
-        fake_vpc.should_receive(:make_route_for_internet_gateway).with("amz-sub1id", "id1")
 
         fake_vpc.stub(:subnets).and_return("bosh" => "amz-sub1id")
-        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76", "123.45.6.7"])
+        fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76", "123.45.6.7", "123.45.6.8", "123.4.5.9"])
         fake_vpc.stub(:flush_output_state)
         fake_vpc.stub(:state).and_return(:available)
 
         fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["107.23.46.162", "107.23.53.76"], {ttl: 3000})
         fake_route53.should_receive(:add_record).with("micro", "dev102.cf.com", ["123.45.6.7"], {ttl: nil})
+        fake_route53.should_receive(:add_record).with("bosh", "dev102.cf.com", ["123.45.6.8"], {ttl: nil})
+        fake_route53.should_receive(:add_record).with("bat", "dev102.cf.com", ["123.4.5.9"], {ttl: nil})
 
         aws.create_vpc config_file
       end
@@ -206,8 +229,12 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.should_receive(:remove_key_pair).with "somenamez"
         fake_ec2.should_receive(:release_elastic_ips).with ["107.23.46.162", "107.23.53.76"]
         fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.7"]
+        fake_ec2.should_receive(:release_elastic_ips).with ["123.45.6.8"]
+        fake_ec2.should_receive(:release_elastic_ips).with ["123.4.5.9"]
         fake_route53.should_receive(:delete_record).with("*", "cfdev.com")
         fake_route53.should_receive(:delete_record).with("micro", "cfdev.com")
+        fake_route53.should_receive(:delete_record).with("bosh", "cfdev.com")
+        fake_route53.should_receive(:delete_record).with("bat", "cfdev.com")
 
         aws.delete_vpc output_file
       end
@@ -567,6 +594,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create rds databases" do
       let(:config_file) { asset "config.yml" }
+      let(:receipt_file) { asset "test-output.yml" }
 
       def make_fake_rds!(opts = {})
         retries_needed = opts[:retries_needed] || 0
@@ -576,7 +604,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_aws_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
-        create_database_params = ["ccdb"]
+        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"]]
         create_database_params << creation_options if creation_options
         fake_aws_rds.should_receive(:create_database).with(*create_database_params).and_return(
           :engine => "mysql",
@@ -585,7 +613,7 @@ describe Bosh::Cli::Command::AWS do
         )
 
         fake_aws_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
-        fake_aws_rds.should_receive(:create_database).with("uaadb").and_return(
+        fake_aws_rds.should_receive(:create_database).with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"]).and_return(
           :engine => "mysql",
           :master_username => "uaa_user",
           :master_user_password => "uaa_password"
@@ -609,7 +637,7 @@ describe Bosh::Cli::Command::AWS do
 
       it "should create all rds databases" do
         fake_aws_rds = make_fake_rds!
-        aws.create_rds_dbs config_file
+        aws.create_rds_dbs(config_file, receipt_file)
       end
 
       it "should do nothing if rds config is empty" do
@@ -617,7 +645,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("rds not set in config.  Skipping")
 
-        aws.create_rds_dbs(config_file)
+        aws.create_rds_dbs(config_file, receipt_file)
       end
 
       context "when the config file has option overrides" do
@@ -625,7 +653,7 @@ describe Bosh::Cli::Command::AWS do
         it "should create all rds databases with option overrides" do
           ccdb_opts = YAML.load_file(config_file)["rds"].find { |db_opts| db_opts["name"] == "ccdb" }
           fake_aws_rds = make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
-          aws.create_rds_dbs config_file
+          aws.create_rds_dbs(config_file, receipt_file)
         end
       end
 
@@ -636,7 +664,7 @@ describe Bosh::Cli::Command::AWS do
           args.should match(/create-rds-output-\d{14}.yml/)
         end
 
-        aws.create_rds_dbs config_file
+        aws.create_rds_dbs(config_file, receipt_file)
 
         aws.output_state["deployment_manifest"]["properties"]["ccdb"].should == {
           "db_scheme" => "mysql",
@@ -680,12 +708,12 @@ describe Bosh::Cli::Command::AWS do
       context "when the RDS is not immediately available" do
         it "should try several times and continue when available" do
           fake_aws_rds = make_fake_rds!(retries_needed: 3)
-          aws.create_rds_dbs config_file
+          aws.create_rds_dbs(config_file, receipt_file)
         end
 
-        it "should fail after 60 attempts when not available" do
-          fake_aws_rds = make_fake_rds!(retries_needed: 61)
-          expect { aws.create_rds_dbs config_file }.to raise_error
+        it "should fail after 120 attempts when not available" do
+          fake_aws_rds = make_fake_rds!(retries_needed: 121)
+          expect { aws.create_rds_dbs(config_file, receipt_file) }.to raise_error
         end
       end
     end

@@ -2,6 +2,12 @@
 name: <%= p('director.name') %>
 port: <%= p('director.port') %>
 encryption: <%= p('director.encryption') %>
+<% if_p("director.max_tasks") do |max_tasks| %>
+max_tasks: <%= max_tasks %>
+<% end %>
+<% if_p("director.max_threads") do |max_threads| %>
+max_threads: <%= max_threads %>
+ <% end %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
@@ -91,6 +97,9 @@ cloud:
       username: <%= username %>
       api_key: <%= api_key %>
       tenant: <%= tenant %>
+      <% if_p("openstack.region") do |region| %>
+      region: <%= region %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
     registry:

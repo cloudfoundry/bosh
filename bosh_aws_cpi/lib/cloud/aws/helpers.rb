@@ -87,13 +87,15 @@ module Bosh::AwsCloud
     rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
         AWS::EC2::Errors::InvalidInstanceID::NotFound,
         AWS::EC2::Errors::InvalidSubnetID::NotFound,
-        AWS::Core::Resource::NotFound => e
+        AWS::Core::Resource::NotFound,
+        AWS::EC2::Errors::Unavailable => e
       # ugly workaround for AWS race conditions:
       # 1) sometimes when we upload a stemcell and proceed to create a VM
       #    from it, AWS reports that the AMI is missing
       # 2) sometimes when we create a new EC2 instance, AWS reports that
       #    the instance it returns is missing
-      # in both cases we just catch the exception, wait a little and retry...
+      # 3) sometimes AWS just isn't there at all
+      # in all cases we just catch the exception, wait a little and try, try again...
       yield e
     end
   end

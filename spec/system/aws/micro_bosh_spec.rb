@@ -8,7 +8,7 @@ describe "AWS" do
   before do
     unless ENV["NO_PROVISION"]
       Dir.chdir(micro_deployment_path) do
-        run_bosh "aws generate micro_bosh '#{aws_configuration_template_path}' '#{vpc_outfile_path}'"
+        run_bosh "aws generate micro_bosh '#{vpc_outfile_path}'"
       end
     end
 
@@ -17,9 +17,9 @@ describe "AWS" do
         puts "MICRO_BOSH.YML:"
         puts ERB.new(File.read("micro/micro_bosh.yml")).result
 
-        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell_path}"
+        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell}"
         run_bosh "micro deployment micro"
-        run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
+        run_bosh "micro deploy #{latest_micro_bosh_stemcell}"
       end
       run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
       run_bosh "login admin admin"
@@ -30,20 +30,25 @@ describe "AWS" do
     run_bosh "status"
     puts "DEPLOYMENT FINISHED!"
 
-    puts "Uploading latest stemcell from #{latest_stemcell_path}"
-    run_bosh "upload stemcell #{latest_stemcell_path}"
-
     puts "Running BAT Tests"
     unless ENV["NO_PROVISION"]
+      puts "Uploading latest stemcell from #{latest_stemcell_path}"
+      run_bosh "upload stemcell #{latest_stemcell_path}"
+
+      st_version = stemcell_version(latest_stemcell_path)
       Dir.chdir(bat_deployment_path) do
-        run_bosh "aws generate bat_manifest '#{aws_configuration_template_path}' '#{vpc_outfile_path}' '#{STEMCELL_VERSION}'"
+        run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
       end
     end
     bat_env = {
         'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
-        'BAT_STEMCELL' => stemcell_path,
+        'BAT_STEMCELL' => latest_stemcell_path,
         'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
-        'BAT_VCAP_PASSWORD' => 'c1oudc0w'
+        'BAT_VCAP_PASSWORD' => 'c1oudc0w',
+        'BAT_FAST' => 'true',
+        'BAT_SKIP_SSH' => 'true',
+        'BAT_DEBUG' => 'verbose',
+        'BAT_FAIL_FAST' => 'true'
     }
     system(bat_env, "rake bat").should be_true
   end

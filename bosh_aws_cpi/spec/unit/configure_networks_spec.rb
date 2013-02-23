@@ -30,6 +30,7 @@ describe Bosh::AwsCloud::Cloud do
     instance = double("instance",
                       :id => "i-foobar",
                       :security_groups => [sec_grp])
+    Bosh::Clouds::Config.stub(:task_checkpoint)
 
     cloud = mock_cloud do |ec2|
       ec2.instances.stub(:[]).

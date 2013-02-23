@@ -22,6 +22,12 @@ properties:
   director.encryption:
     description: Enable/Disable agent-director encryption (true|false)
     default: false
+  director.max_tasks:
+    description: Max number of tasks to keep in disk
+    default: 500
+  director.max_threads:
+    description: Max number of director concurrent threads
+    default: 32
   redis.address:
     description: Address of the redis server
   redis.port:
@@ -118,29 +124,31 @@ properties:
   aws_registry.http.password:
     description: Password of aws registry server (used to configure agents on aws)
   openstack.auth_url:
-    description: TODO
+    description: URL of the OpenStack Identity endpoint to connect to
   openstack.username:
-    description: TODO
+    description: OpenStack user name
   openstack.api_key:
-    description: TODO
+    description: OpenStack API key
   openstack.tenant:
-    description: TODO
+    description: OpenStack tenant name
+  openstack.region:
+    description: OpenStack region (optional)
   openstack.default_key_name:
-    description: TODO
+    description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:
-    description: TODO
+    description: Default OpenStack security groups to use when spinning up new vms
   openstack_registry.address:
-    description: TODO
+    description: Address of the OpenStack Registry to connect to
   openstack_registry.http.port:
-    description: TODO
+    description: Port of the OpenStack Registry to connect to
   openstack_registry.http.user:
-    description: TODO
+    description: User to access the OpenStack Registry
   openstack_registry.http.password:
-    description: TODO
+    description: Password to access the OpenStack Registry
   openstack.stemcell.kernel_id:
-    description: TODO
+    description: Kernel ID to use when spinning up new vms (optional)
   openstack.stemcell.ramdisk_id:
-    description: TODO
+    description: Ramdisk ID to use when spinning up new vms (optional)
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:
