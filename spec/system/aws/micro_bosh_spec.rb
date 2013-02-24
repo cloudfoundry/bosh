@@ -36,10 +36,12 @@ describe "AWS" do
       run_bosh "upload stemcell #{latest_stemcell_path}"
 
       st_version = stemcell_version(latest_stemcell_path)
-      Dir.chdir(bat_deployment_path) do
-        run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
-      end
     end
+
+    Dir.chdir(bat_deployment_path) do
+      run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
+    end
+
     bat_env = {
         'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
         'BAT_STEMCELL' => latest_stemcell_path,
