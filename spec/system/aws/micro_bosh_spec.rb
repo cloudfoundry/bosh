@@ -42,15 +42,17 @@ describe "AWS" do
       run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
     end
 
+    director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
     bat_env = {
-        'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
+        'BAT_DIRECTOR' => director,
         'BAT_STEMCELL' => latest_stemcell_path,
         'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
         'BAT_VCAP_PASSWORD' => 'c1oudc0w',
         'BAT_FAST' => 'true',
         'BAT_SKIP_SSH' => 'true',
         'BAT_DEBUG' => 'verbose',
-        'BAT_FAIL_FAST' => 'true'
+        'BAT_FAIL_FAST' => 'true',
+        'BAT_DNS_HOST' => director,
     }
     system(bat_env, "rake bat").should be_true
   end
