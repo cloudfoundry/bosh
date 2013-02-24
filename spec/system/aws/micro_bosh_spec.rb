@@ -1,5 +1,6 @@
 require "spec_helper"
 require "bosh_agent/version"
+require 'resolv'
 
 describe "AWS" do
   STEMCELL_VERSION = Bosh::Agent::VERSION
@@ -52,7 +53,7 @@ describe "AWS" do
         'BAT_SKIP_SSH' => 'true',
         'BAT_DEBUG' => 'verbose',
         'BAT_FAIL_FAST' => 'true',
-        'BAT_DNS_HOST' => director,
+        'BAT_DNS_HOST' => Resolv.getaddress(director),
     }
     system(bat_env, "rake bat").should be_true
   end
