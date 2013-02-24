@@ -35,11 +35,11 @@ describe "AWS" do
     unless ENV["NO_PROVISION"]
       puts "Uploading latest stemcell from #{latest_stemcell_path}"
       run_bosh "upload stemcell #{latest_stemcell_path}"
-
-      st_version = stemcell_version(latest_stemcell_path)
     end
 
+
     Dir.chdir(bat_deployment_path) do
+      st_version = stemcell_version(latest_stemcell_path)
       run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
     end
 
