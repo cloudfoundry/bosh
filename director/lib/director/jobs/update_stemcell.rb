@@ -36,11 +36,9 @@ module Bosh::Director
           stemcell_manifest = YAML.load_file(stemcell_manifest_file)
 
           @name = safe_property(stemcell_manifest, "name", :class => String)
-          @version =
-            safe_property(stemcell_manifest, "version", :class => String)
-          @cloud_properties =
-            safe_property(stemcell_manifest, "cloud_properties",
-                          :class => Hash, :optional => true)
+          @version = safe_property(stemcell_manifest, "version", :class => String)
+          @cloud_properties = safe_property(stemcell_manifest, "cloud_properties", :class => Hash, :optional => true)
+          @sha1 = safe_property(stemcell_manifest, "sha1", :class => String)
 
           logger.info("Found stemcell image `#{@name}/#{@version}', " +
                       "cloud properties are #{@cloud_properties.inspect}")
@@ -62,6 +60,7 @@ module Bosh::Director
         stemcell = Models::Stemcell.new
         stemcell.name = @name
         stemcell.version = @version
+        stemcell.sha1 = @sha1
 
         track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
           stemcell.cid =

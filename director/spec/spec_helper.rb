@@ -213,13 +213,14 @@ def gzip(string)
   result.string
 end
 
-def create_stemcell(name, version, cloud_properties, image)
+def create_stemcell(name, version, cloud_properties, image, sha1)
   io = StringIO.new
 
   manifest = {
     "name" => name,
     "version" => version,
-    "cloud_properties" => cloud_properties
+    "cloud_properties" => cloud_properties,
+    "sha1" => sha1
   }
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
