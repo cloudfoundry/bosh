@@ -1,5 +1,6 @@
 require "spec_helper"
 require "bosh_agent/version"
+require 'resolv'
 
 describe "AWS" do
   STEMCELL_VERSION = Bosh::Agent::VERSION
@@ -34,21 +35,24 @@ describe "AWS" do
     unless ENV["NO_PROVISION"]
       puts "Uploading latest stemcell from #{latest_stemcell_path}"
       run_bosh "upload stemcell #{latest_stemcell_path}"
-
-      st_version = stemcell_version(latest_stemcell_path)
-      Dir.chdir(bat_deployment_path) do
-        run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
-      end
     end
+
+
+    Dir.chdir(bat_deployment_path) do
+      st_version = stemcell_version(latest_stemcell_path)
+      run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
+    end
+
+    director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
     bat_env = {
-        'BAT_DIRECTOR' => "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com",
+        'BAT_DIRECTOR' => director,
         'BAT_STEMCELL' => latest_stemcell_path,
         'BAT_DEPLOYMENT_SPEC' => "#{bat_deployment_path}/bat.yml",
         'BAT_VCAP_PASSWORD' => 'c1oudc0w',
         'BAT_FAST' => 'true',
         'BAT_SKIP_SSH' => 'true',
         'BAT_DEBUG' => 'verbose',
-        'BAT_FAIL_FAST' => 'true'
+        'BAT_DNS_HOST' => Resolv.getaddress(director),
     }
     system(bat_env, "rake bat").should be_true
   end
@@ -77,7 +81,7 @@ describe "AWS" do
 
     Dir.chdir deployments_path do
       run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}' '#{aws_configuration_template_path}'"
-      FileUtils.cp("cf-aws-stub.yml", "cf-aws.yml")
+      FileUtils.cp("#{deployments_aws_path}/cf-aws-stub.yml", "cf-aws.yml")
       run_bosh "deployment cf-aws.yml"
       run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
       run_bosh "deploy"
@@ -94,7 +98,7 @@ describe "AWS" do
       if !File.exist? path
         run "git clone git://github.com/cloudfoundry/cf-release.git '#{path}'"
       end
-      run "cd '#{path}' && git checkout staging && git reset --hard origin/staging"
+      run "cd '#{path}' && git checkout master && git reset --hard origin/master"
       run "cd '#{path}' && ./update"
       path
     end

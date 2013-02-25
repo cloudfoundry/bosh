@@ -38,7 +38,9 @@ module AwsSystemExampleGroup
       %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
       stemcell_manifest = "#{dir}/stemcell.MF"
       st = YAML.load_file(stemcell_manifest)
-      return st["version"]
+      p "STEMCELL VERSION"*30
+      p st
+      st["version"]
     end
   end
 
@@ -118,9 +120,6 @@ module AwsSystemExampleGroup
 
         puts "AWS RESOURCES CREATED SUCCESSFULLY!"
       end
-    end
-
-    base.after(:each) do
     end
   end
 end
