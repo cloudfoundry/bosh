@@ -52,7 +52,6 @@ describe "AWS" do
         'BAT_FAST' => 'true',
         'BAT_SKIP_SSH' => 'true',
         'BAT_DEBUG' => 'verbose',
-        'BAT_FAIL_FAST' => 'true',
         'BAT_DNS_HOST' => Resolv.getaddress(director),
     }
     system(bat_env, "rake bat").should be_true
