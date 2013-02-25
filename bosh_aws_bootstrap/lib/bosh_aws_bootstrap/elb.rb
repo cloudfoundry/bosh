@@ -22,6 +22,10 @@ module Bosh::Aws
       })
     end
 
+    def names
+      aws_elb.load_balancers.map(&:name)
+    end
+
     def delete_elbs
       aws_elb.load_balancers.each(&:delete)
     end

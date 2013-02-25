@@ -76,6 +76,7 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_vpcs).with(config_file)
         aws.should_receive(:delete_all_security_groups).with(config_file)
         aws.should_receive(:delete_all_route53_records).with(config_file)
+        aws.should_receive(:delete_all_elbs).with(config_file)
         aws.destroy config_file
       end
     end
@@ -809,6 +810,19 @@ describe Bosh::Cli::Command::AWS do
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.delete_all_rds_dbs(config_file)
         end
+      end
+    end
+
+    describe "aws delete_all elbs" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should remove all ELBs" do
+        fake_elb = mock("elb")
+        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
+        fake_elb.should_receive :delete_elbs
+        fake_elb.should_receive(:names).and_return(%w(one two))
+        aws.should_receive(:confirmed?).and_return(true)
+        aws.delete_all_elbs(config_file)
       end
     end
   end

@@ -49,4 +49,17 @@ describe Bosh::Aws::ELB do
       elb.delete_elbs
     end
   end
+
+  describe "names" do
+    before do
+      elb.stub(:aws_elb).and_return(fake_aws_elb)
+    end
+
+    it "returns the names of the running ELBs" do
+      elb1 = mock("elb1", name: 'one')
+      elb2 = mock("elb2", name: 'two')
+      fake_aws_elb.should_receive(:load_balancers).and_return([elb1, elb2])
+      elb.names.should == ["one", "two"]
+    end
+  end
 end

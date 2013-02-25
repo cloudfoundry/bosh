@@ -99,6 +99,7 @@ module Bosh::Cli::Command
     usage "aws destroy"
     desc "destroy everything in an AWS account"
     def destroy(config_file)
+      delete_all_elbs(config_file)
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
@@ -325,6 +326,18 @@ module Bosh::Cli::Command
         end
       else
         say("No EC2 instances found")
+      end
+    end
+
+    usage "aws delete_all elbs"
+    desc "terminates all Elastic Load Balancers in the account"
+    def delete_all_elbs(config_file)
+      config = load_yaml_file(config_file)
+      credentials = config["aws"]
+      elb = Bosh::Aws::ELB.new(credentials)
+      elb_names = elb.names
+      if elb_names.any? && confirmed?("Are you sure you want to delete all ELBs (#{elb_names.join(", ")})?")
+        elb.delete_elbs
       end
     end
 
