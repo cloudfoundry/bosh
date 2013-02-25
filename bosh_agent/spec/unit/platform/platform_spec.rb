@@ -30,4 +30,14 @@ describe Bosh::Agent::Platform::Linux do
     end
   end
 
+  context "Network" do
+    it "should detect mac addresses" do
+      mac_addresses = platform.network.detect_mac_addresses
+      mac_addresses.each do |mac, interface|
+        out = `ifconfig #{interface} | head -n 1`
+        $?.should == 0
+      end
+    end
+  end
+
 end
