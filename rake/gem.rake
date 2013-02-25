@@ -40,10 +40,14 @@ COMPONENTS.each do |component|
       dirname = "#{root}/release/src/bosh/#{component}"
       rm_rf dirname
       mkdir_p dirname
+      gemfile_lock_path = File.join(root, 'Gemfile.lock')
+      lockfile = Bundler::LockfileParser.new(File.read(gemfile_lock_path))
       Dir.chdir dirname do
         Bundler::Resolver.resolve(
             Bundler.definition.send(:expand_dependencies, Bundler.definition.dependencies.select { |d| d.name == component }),
-            Bundler.definition.index
+            Bundler.definition.index,
+            {},
+            lockfile.specs
         ).each do |spec|
           sh "cp /tmp/all_the_gems/#{Process.pid}/#{spec.name}-*.gem ."
           sh "cp /tmp/all_the_gems/#{Process.pid}/pg*.gem ." if COMPONENTS_WITH_PG.include?(component)
