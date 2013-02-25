@@ -121,8 +121,5 @@ module AwsSystemExampleGroup
         puts "AWS RESOURCES CREATED SUCCESSFULLY!"
       end
     end
-
-    base.after(:each) do
-    end
   end
 end
