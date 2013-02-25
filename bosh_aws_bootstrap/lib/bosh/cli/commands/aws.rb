@@ -145,9 +145,17 @@ module Bosh::Cli::Command
         vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
         @output_state["vpc"]["subnets"] = vpc.subnets
 
+        route53 = Bosh::Aws::Route53.new(config["aws"])
+
         elbs = config["vpc"]["elbs"]
         say "creating load balancers: #{elbs.keys.join(", ")}"
-        elbs.each { |name, settings| elb.create(name, vpc, settings) }
+        elbs.each do |name, settings|
+          e = elb.create(name, vpc, settings)
+          if settings["dns_record"]
+            say "adding CNAME record for #{settings["dns_record"]}.#{config["vpc"]["domain"]}"
+            route53.add_record(settings["dns_record"], config["vpc"]["domain"], [e.dns_name], {ttl: settings["ttl"], type: 'CNAME'})
+          end
+        end
 
         dhcp_options = config["vpc"]["dhcp_options"]
         say "creating DHCP options"
@@ -158,7 +166,6 @@ module Bosh::Cli::Command
         ec2.allocate_elastic_ips(count)
 
         elastic_ips = ec2.elastic_ips
-        route53 = Bosh::Aws::Route53.new(config["aws"])
 
         config["elastic_ips"].each do |name, job|
           @output_state["elastic_ips"] ||= {}

@@ -71,16 +71,14 @@ vpc:
           sources: 0.0.0.0/0
   elbs:
     cfrouter:
+      dns_record: "*"
+      ttl: 60
       subnets:
       - bosh
       security_group: web
 
 elastic_ips:
   # each NAT box automatically reserves 1 elastic IP, which is not listed below
-  router:
-    instances: 1
-    dns_record: "*"
-    ttl: 60
   micro:
     instances: 1
     dns_record: "micro"

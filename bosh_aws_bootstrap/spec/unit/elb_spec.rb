@@ -14,13 +14,21 @@ describe Bosh::Aws::ELB do
   end
 
   describe "creation" do
+    let(:new_elb) {mock("a new elb")}
     before do
       elb.stub(:aws_elb).and_return(fake_aws_elb)
+      new_elb.should_receive(:configure_health_check).with({
+                                                               :healthy_threshold => 5,
+                                                               :unhealthy_threshold => 2,
+                                                               :interval => 5,
+                                                               :timeout => 2,
+                                                               :target => "TCP:80"
+                                                           })
+      vpc.should_receive(:subnets).and_return({"sub_name1" => "sub_id1", "sub_name2" => "sub_id2"})
+      vpc.should_receive(:security_group_by_name).with("security_group_name").and_return(fake_aws_security_group)
     end
 
     it "can create an ELB given a name and a vpc and a CIDR block" do
-      vpc.should_receive(:subnets).and_return({"sub_name1" => "sub_id1", "sub_name2" => "sub_id2"})
-      vpc.should_receive(:security_group_by_name).with("security_group_name").and_return(fake_aws_security_group)
       fake_aws_elb.load_balancers.should_receive(:create).with("my elb name", {
           :listeners => [{
                              :port => 80,
@@ -30,8 +38,8 @@ describe Bosh::Aws::ELB do
                          }],
           :subnets => ["sub_id1", "sub_id2"],
           :security_groups => ["sg_id"]
-      })
-      elb.create("my elb name", vpc, "subnets" => %w(sub_name1 sub_name2), "security_group" => "security_group_name")
+      }).and_return(new_elb)
+      elb.create("my elb name", vpc, "subnets" => %w(sub_name1 sub_name2), "security_group" => "security_group_name").should == new_elb
     end
   end
 
