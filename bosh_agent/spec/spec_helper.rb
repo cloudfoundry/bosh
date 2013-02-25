@@ -93,3 +93,16 @@ def get_free_port
   # race condition, but good enough for now
   port
 end
+
+def detect_platform
+  # TODO rename platform rhel to redhat
+  if File.exist? "/etc/redhat-release"
+    return "rhel"
+  end
+
+  if File.exist? "/etc/lsb-release"
+    return "ubuntu"
+  end
+
+  "unknown"
+end
