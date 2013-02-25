@@ -38,7 +38,7 @@ describe "dns" do
   # Have to look up both BOSH and MicroBOSH tld in these tests since we don't know what type of BOSH
   # we're testing against (*.bosh and *.microbosh)
   context "external" do
-    it "should to forward lookups" do
+    it "should do forward lookups" do
       pending "director not configured with dns" unless dns?
       begin
         address_on_bosh = @dns.getaddress("0.batlight.static.bat.bosh").to_s

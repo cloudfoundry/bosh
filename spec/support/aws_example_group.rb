@@ -38,7 +38,6 @@ module AwsSystemExampleGroup
       %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
       stemcell_manifest = "#{dir}/stemcell.MF"
       st = YAML.load_file(stemcell_manifest)
-      p "STEMCELL VERSION"*30
       p st
       st["version"]
     end
