@@ -37,7 +37,7 @@ describe Bosh::Cli::Command::AWS do
       around do |test|
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
-            aws.stub(:target_required)
+            aws.stub!(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
             aws.create_bosh_manifest(create_vpc_output_yml)
             test.run
@@ -86,11 +86,13 @@ describe Bosh::Cli::Command::AWS do
       def make_fake_vpc!(overrides = {})
         fake_ec2 = mock("ec2")
         fake_vpc = mock("vpc")
+        fake_elb = mock("elb")
         fake_route53 = mock("route53")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
         Bosh::Aws::VPC.stub(:create).and_return(fake_vpc)
         Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
+        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
 
         fake_vpc.stub(:vpc_id).and_return("vpc id")
         fake_vpc.stub(:create_dhcp_options)
@@ -98,6 +100,7 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_subnets)
         fake_vpc.stub(:subnets).and_return({'bosh' => "amz-subnet1", 'name2' => "amz-subnet2"})
         fake_vpc.stub(:attach_internet_gateway)
+        fake_elb.stub(:create)
         fake_ec2.stub(:allocate_elastic_ips)
         fake_ec2.stub(:force_add_key_pair)
         fake_ec2.stub(:create_internet_gateway)
@@ -111,9 +114,11 @@ describe Bosh::Cli::Command::AWS do
       it "should create all the components of the vpc" do
         fake_ec2 = mock("ec2")
         fake_vpc = mock("vpc")
+        fake_elb = mock("elb")
         fake_route53 = mock("route53")
 
         Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
         Bosh::Aws::VPC.stub(:create).with(fake_ec2, "10.10.0.0/16", "default").and_return(fake_vpc)
         Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
 
@@ -139,6 +144,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:internet_gateway_ids).and_return(["id1", "id2"])
         fake_vpc.should_receive(:attach_internet_gateway).with("id1")
 
+        fake_elb.should_receive(:create).with("external-elb-1", fake_vpc, {"subnets" => ['bosh'], "security_group" => "open"}).once
         fake_vpc.stub(:subnets).and_return("bosh" => "amz-sub1id")
         fake_ec2.stub(:elastic_ips).and_return(["107.23.46.162", "107.23.53.76", "123.45.6.7", "123.45.6.8", "123.4.5.9"])
         fake_vpc.stub(:flush_output_state)

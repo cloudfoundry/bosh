@@ -61,6 +61,20 @@ vpc:
         - protocol: udp
           ports: '0 - 65535'
           sources: 0.0.0.0/0
+    - name: web
+      ingress:
+        - protocol: tcp
+          ports: '80'
+          sources: 0.0.0.0/0
+        - protocol: tcp
+          ports: '443'
+          sources: 0.0.0.0/0
+  elbs:
+    cfrouter:
+      subnets:
+      - bosh
+      security_group: web
+
 elastic_ips:
   # each NAT box automatically reserves 1 elastic IP, which is not listed below
   router:

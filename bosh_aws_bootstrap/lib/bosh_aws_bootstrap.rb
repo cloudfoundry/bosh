@@ -9,6 +9,7 @@ require "cloud/aws/helpers"
 
 require "bosh_aws_bootstrap/vpc"
 require "bosh_aws_bootstrap/rds"
+require "bosh_aws_bootstrap/elb"
 require "bosh/cli/commands/aws"
 require "bosh_aws_bootstrap/microbosh_manifest"
 require "bosh_aws_bootstrap/bat_manifest"

@@ -37,6 +37,11 @@ vpc:
         - protocol: tcp
           ports: 22
           sources: 0.0.0.0/0
+  elbs:
+    external-elb-1:
+      subnets:
+      - bosh
+      security_group: open
 elastic_ips:
   router:
     instances: 2

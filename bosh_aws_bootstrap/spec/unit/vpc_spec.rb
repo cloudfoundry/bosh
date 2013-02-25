@@ -246,6 +246,16 @@ describe Bosh::Aws::VPC do
             delete_security_groups
       end
     end
+
+    describe "finding" do
+      it 'can find security groups by name' do
+        security_group1 = mock("sg1", name: "sg_name_1", id: "sg_id_1")
+        security_group2 = mock("sg2", name: "sg_name_2", id: "sg_id_2")
+        vpc = Bosh::Aws::VPC.new(mock("ec2"), mock("aws_vpc", security_groups: [security_group1, security_group2]))
+
+        vpc.security_group_by_name("sg_name_2").should == security_group2
+      end
+    end
   end
 
   describe "route tables" do

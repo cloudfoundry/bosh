@@ -91,7 +91,6 @@ module Bosh::Cli::Command
     usage "aws create"
     desc "create everything in config file"
     def create(config_file)
-
       create_vpc(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)
@@ -120,6 +119,8 @@ module Bosh::Cli::Command
       vpc = Bosh::Aws::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
       @output_state["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
 
+      elb = Bosh::Aws::ELB.new(config["aws"])
+
       @output_state["original_configuration"] = config
 
       if was_vpc_eventually_available?(vpc)
@@ -142,6 +143,10 @@ module Bosh::Cli::Command
         say "creating subnets: #{subnets.keys.join(", ")}"
         vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
         @output_state["vpc"]["subnets"] = vpc.subnets
+
+        elbs = config["vpc"]["elbs"]
+        say "creating load balancers: #{elbs.keys.join(", ")}"
+        elbs.each { |name, settings| elb.create(name, vpc, settings) }
 
         dhcp_options = config["vpc"]["dhcp_options"]
         say "creating DHCP options"
