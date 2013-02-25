@@ -98,7 +98,7 @@ describe "AWS" do
       if !File.exist? path
         run "git clone git://github.com/cloudfoundry/cf-release.git '#{path}'"
       end
-      run "cd '#{path}' && git checkout staging && git reset --hard origin/staging"
+      run "cd '#{path}' && git checkout master && git reset --hard origin/master"
       run "cd '#{path}' && ./update"
       path
     end
