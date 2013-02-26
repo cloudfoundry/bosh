@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Rhel::Disk < Platform::Linux::Disk
+  class Platform::Redhat::Disk < Platform::Linux::Disk
 
     def detect_block_device(disk_id)
       rescan_scsi_bus

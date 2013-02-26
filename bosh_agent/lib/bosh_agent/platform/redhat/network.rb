@@ -1,10 +1,10 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Rhel::Network < Platform::Linux::Network
+  class Platform::Redhat::Network < Platform::Linux::Network
 
     def write_network_interfaces
-      template = ERB.new(load_erb("rhel-ifcfg.erb"), 0, '%<>-')
+      template = ERB.new(load_erb("redhat-ifcfg.erb"), 0, '%<>-')
       result = template.result(binding)
       network_updated = Bosh::Agent::Util::update_file(result, '/etc/sysconfig/network-scripts/ifcfg-eth0')
 
