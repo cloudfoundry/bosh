@@ -319,9 +319,7 @@ describe Bosh::Director::PackageCompiler do
     end
   end
 
-  it "should make sure a parallel deployment did not compile a " +
-         "package already" do
-
+  it "should make sure a parallel deployment did not compile a package already" do
     package = BDM::Package.make
     stemcell = BDM::Stemcell.make
 

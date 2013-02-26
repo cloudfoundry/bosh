@@ -32,6 +32,7 @@ require "uuidtools"
 require "yajl"
 require "nats/client"
 require "securerandom"
+require "fog"
 
 require "common/thread_formatter"
 require "encryption/encryption_handler"
