@@ -24,6 +24,7 @@ module Bosh
         creation_options = DEFAULT_RDS_OPTIONS.merge(options)
         creation_options[:db_instance_identifier] = name
         creation_options[:db_name] = name
+        creation_options[:db_security_groups] = [name]
         creation_options[:db_subnet_group_name] = name
         creation_options[:master_username] ||= generate_user
         creation_options[:master_user_password] ||= generate_password

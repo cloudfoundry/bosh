@@ -109,6 +109,7 @@ describe Bosh::Aws::RDS do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 5
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
@@ -136,6 +137,7 @@ describe Bosh::Aws::RDS do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 16
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
@@ -157,6 +159,7 @@ describe Bosh::Aws::RDS do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 16
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
@@ -178,6 +181,7 @@ describe Bosh::Aws::RDS do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 16
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
