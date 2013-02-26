@@ -28,7 +28,18 @@ module Bosh::AwsCloud
       )
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
-      @instance = @region.instances.create(instance_params)
+      total_time = 5 * 60
+      sleep_time = 30
+      retries = total_time / sleep_time
+      begin
+        @instance = @region.instances.create(instance_params)
+      rescue AWS::EC2::Errors::InvalidIPAddress::InUse => e
+        @logger.warn("IP address was in use: #{e}")
+        sleep sleep_time
+        retries -= 1
+        retry if retries > 0
+        raise
+      end
 
       @elbs = resource_pool['elbs']
       attach_to_load_balancers if elbs

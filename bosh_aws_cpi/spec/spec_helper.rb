@@ -63,12 +63,12 @@ def mock_cloud(options = nil)
 end
 
 def mock_ec2
-  region = double("region")
+  region = double(AWS::EC2::Region)
   ec2 = double(AWS::EC2,
-               :instances => double("instances"),
-               :volumes => double("volumes"),
-               :images => double("images"),
-               :regions => double("regions", :[] => region))
+               :instances => double(AWS::EC2::InstanceCollection),
+               :volumes => double(AWS::EC2::VolumeCollection),
+               :images => double(AWS::EC2::ImageCollection),
+               :regions => double(AWS::EC2::RegionCollection, :[] => region))
 
   yield ec2, region if block_given?
 
