@@ -2,7 +2,7 @@ require 'tempfile'
 
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    `ls #{ASSETS_DIR}/aws/create-vpc-output-*.yml`.strip
+    `ls #{ASSETS_DIR}/aws/aws_vpc_receipt.yml`.strip
   end
 
   def vpc_outfile
