@@ -2,7 +2,7 @@ require 'tempfile'
 
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    File.join(BOSH_ROOT_DIR, "aws_vpc_receipt.yml")
+    "#{deployments_path}/aws_vpc_receipt.yml"
   end
 
   def vpc_outfile
@@ -41,10 +41,6 @@ module AwsSystemExampleGroup
       p st
       st["version"]
     end
-  end
-
-  def deployments_path
-    File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
 
   def micro_deployment_path
@@ -97,6 +93,10 @@ module AwsSystemExampleGroup
     end
   end
 
+  def deployments_path
+    File.join(BOSH_TMP_DIR, "spec", "deployments")
+  end
+
   def self.included(base)
     base.before(:each) do
       ENV['BOSH_KEY_PAIR_NAME'] = "bosh"
@@ -109,12 +109,13 @@ module AwsSystemExampleGroup
       if ENV["NO_PROVISION"]
         puts "Not deleting and recreating AWS resources, assuming we already have them"
       else
+        puts "Using configuration template: #{aws_configuration_template_path}"
         run_bosh "aws destroy"
         puts "CLEANUP SUCCESSFUL"
 
         FileUtils.rm_rf(vpc_outfile_path)
 
-        Dir.chdir(BOSH_ROOT_DIR) do
+        Dir.chdir deployments_path do
           run_bosh "aws create vpc '#{aws_configuration_template_path}'"
         end
 
