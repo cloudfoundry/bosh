@@ -26,7 +26,7 @@ describe Bosh::Agent::Platform::Linux do
 
       block_device = platform.disk.detect_block_device(0)
 
-      File.stat("/dev/#{block_device}").ftype.should == "blockSpecial"
+      File.blockdev?("/dev/#{block_device}").should == true
     end
   end
 
