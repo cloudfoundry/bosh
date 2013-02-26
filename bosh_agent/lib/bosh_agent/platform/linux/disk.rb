@@ -34,10 +34,7 @@ module Bosh::Agent
 
     def mount(partition, path)
       logger.info("Mount #{partition} #{path}")
-      `mount #{partition} #{path}`
-      unless $?.exitstatus == 0
-        raise Bosh::Agent::FatalError, "Failed to mount: #{partition} #{path}"
-      end
+      Bosh::Exec.sh "mount #{partition} #{path}"
     end
 
     def mount_entry(partition)
