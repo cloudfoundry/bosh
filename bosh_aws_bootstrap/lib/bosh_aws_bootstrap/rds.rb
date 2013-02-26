@@ -68,6 +68,13 @@ module Bosh
         )
       end
 
+      def security_group_exists?(name)
+        aws_rds_client.describe_db_security_groups(:db_security_group_name => name)
+        return true
+      rescue AWS::RDS::Errors::DBSecurityGroupNotFound
+        return false
+      end
+
       def aws_rds
         @aws_rds ||= ::AWS::RDS.new(@credentials)
       end

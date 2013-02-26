@@ -51,6 +51,31 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "security_group_exists?" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should return false if the db security group does not exist" do
+      fake_aws_rds_client.should_receive(:describe_db_security_groups).
+        with(:db_security_group_name => "securitygroup").
+        and_raise AWS::RDS::Errors::DBSecurityGroupNotFound
+
+      rds.security_group_exists?("securitygroup").should be_false
+    end
+
+    it "should return true if the db security group exists" do
+      fake_aws_rds_client.should_receive(:describe_db_security_groups).
+        with(:db_security_group_name => "securitygroup").
+        and_return("not_used")
+
+      rds.security_group_exists?("securitygroup").should be_true
+    end
+  end
+
+
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
     let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }
