@@ -39,6 +39,8 @@ describe Bosh::Agent::Platform::Linux do
       mac_addresses.each do |mac, interface|
         out = `ifconfig #{interface} | head -n 1`
         $?.should == 0
+
+        mac.should match /^([0-9a-e]{2}:){5}[0-9a-e]{2}$/
       end
     end
   end
