@@ -2,6 +2,11 @@ require 'spec_helper'
 
 describe Bosh::Cli::Command::AWS do
   let(:aws) { subject }
+  let(:default_config_filename) do
+    File.expand_path(File.join(
+                         File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+                     ))
+  end
   before { aws.stub(:sleep)  }
 
   describe "command line tools" do
@@ -77,21 +82,11 @@ describe Bosh::Cli::Command::AWS do
 
       it "should default the configuration file when not passed in" do
         stub_required_environment_variables
-
-        default_config_filename = File.expand_path(File.join(
-            File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
-        ))
         File.exist?(default_config_filename).should == true
         aws.should_receive(:create_vpc).with(default_config_filename)
         aws.should_receive(:create_rds_dbs).with(default_config_filename)
         aws.should_receive(:create_s3).with(default_config_filename)
         aws.create
-      end
-
-      it "should fail if the configuration file does not exist" do
-        expect {
-          aws.create "/tmp/doesnotexist.yml"
-        }.to raise_error(/Cannot find file/)
       end
     end
 
@@ -108,6 +103,18 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_route53_records).with(config_file)
         aws.should_receive(:delete_all_elbs).with(config_file)
         aws.destroy config_file
+      end
+
+      it "should use a default config file when none is provided" do
+        aws.should_receive(:delete_all_ec2).with(default_config_filename)
+        aws.should_receive(:delete_all_ebs).with(default_config_filename)
+        aws.should_receive(:delete_all_rds_dbs).with(default_config_filename)
+        aws.should_receive(:delete_all_s3).with(default_config_filename)
+        aws.should_receive(:delete_all_vpcs).with(default_config_filename)
+        aws.should_receive(:delete_all_security_groups).with(default_config_filename)
+        aws.should_receive(:delete_all_route53_records).with(default_config_filename)
+        aws.should_receive(:delete_all_elbs).with(default_config_filename)
+        aws.destroy
       end
     end
 

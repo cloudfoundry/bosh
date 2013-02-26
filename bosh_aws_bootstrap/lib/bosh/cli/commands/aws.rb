@@ -91,10 +91,7 @@ module Bosh::Cli::Command
     usage "aws create"
     desc "create everything in config file"
     def create(config_file = nil)
-      config_file ||= File.expand_path(File.join(
-        File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
-      ))
-      load_yaml_file(config_file)
+      config_file ||= default_config_file
       create_vpc(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)
@@ -102,7 +99,8 @@ module Bosh::Cli::Command
 
     usage "aws destroy"
     desc "destroy everything in an AWS account"
-    def destroy(config_file)
+    def destroy(config_file = nil)
+      config_file ||= default_config_file
       delete_all_elbs(config_file)
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
@@ -546,6 +544,12 @@ module Bosh::Cli::Command
     def check_volume_count(config)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       err("#{ec2.volume_count} volume(s) present.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.") if ec2.volume_count > 20
+    end
+
+    def default_config_file
+      File.expand_path(File.join(
+                           File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+                       ))
     end
 
   end
