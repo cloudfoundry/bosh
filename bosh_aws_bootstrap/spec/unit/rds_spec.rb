@@ -123,6 +123,7 @@ describe Bosh::Aws::RDS do
       end
 
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(true)
 
       # The contract is that create_database passes back the aws
       # response directly, but merges in the password that it generated.
@@ -147,6 +148,8 @@ describe Bosh::Aws::RDS do
       end
 
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(true)
+
       rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "4.4.4.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
     end
 
@@ -167,6 +170,29 @@ describe Bosh::Aws::RDS do
 
       rds.should_receive(:create_subnet_group).with("mydb", ["subnet1", "subnet2"])
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(false)
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(true)
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "5.5.5.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
+    end
+
+    it "should create the security group for the DB if it does not exist" do
+      fake_aws_rds_client.should_receive(:create_db_instance) do |options|
+        options[:db_instance_identifier].should == "mydb"
+        options[:db_name].should == "mydb"
+        options[:allocated_storage].should == 16
+        options[:db_instance_class].should == "db.t1.micro"
+        options[:engine].should == "mysql"
+        options[:master_username].should be_kind_of(String)
+        options[:master_username].length.should be >= 8
+        options[:master_user_password].should == "swordfish"
+        options[:db_subnet_group_name].should == "mydb"
+
+        fake_response
+      end
+
+      rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
+      rds.should_receive(:create_security_group).with("mydb", "vpc-1234", "5.5.5.0/28")
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(false)
+
       rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "5.5.5.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
     end
   end

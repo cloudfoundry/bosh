@@ -16,6 +16,7 @@ module Bosh
 
       def create_database(name, subnet_ids, vpc_id, vpc_cidr, options = {})
         create_subnet_group(name, subnet_ids) unless subnet_group_exists?(name)
+        create_security_group(name, vpc_id, vpc_cidr) unless security_group_exists?(name)
 
         # symbolize options keys
         options = options.inject({}) { |memo, (k,v)| memo[k.to_sym] = v; memo }
