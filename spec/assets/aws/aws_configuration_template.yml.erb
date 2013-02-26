@@ -104,10 +104,10 @@ rds:
     subnets:
       - cf
       - cf_az2
-    # aws_creation_options:
+    aws_creation_options:
+      db_instance_class: db.m1.small
     #   # These are passed on directly to the AWS API call.
     #   # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
-    #   db_instance_class: db.m2.x4.large
     #   allocated_storage: 7
     #   multi_az: true
   - name: uaadb
@@ -115,3 +115,5 @@ rds:
     subnets:
       - cf
       - cf_az2
+    aws_creation_options:
+      db_instance_class: db.m1.small
