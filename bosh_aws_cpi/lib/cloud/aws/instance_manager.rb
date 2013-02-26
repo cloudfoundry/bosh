@@ -22,7 +22,7 @@ module Bosh::AwsCloud
       set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
       set_vpc_parameters(networks_spec)
       set_availability_zone_parameter(
-          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone },
+          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
           resource_pool["availability_zone"],
           (@instance_params[:subnet].availability_zone_name if @instance_params[:subnet])
       )
