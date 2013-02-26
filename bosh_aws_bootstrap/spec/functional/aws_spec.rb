@@ -647,7 +647,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_aws_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
-        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"]]
+        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16"]
         create_database_params << creation_options if creation_options
         fake_aws_rds.should_receive(:create_database).with(*create_database_params).and_return(
           :engine => "mysql",
@@ -656,11 +656,11 @@ describe Bosh::Cli::Command::AWS do
         )
 
         fake_aws_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
-        fake_aws_rds.should_receive(:create_database).with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"]).and_return(
-          :engine => "mysql",
-          :master_username => "uaa_user",
-          :master_user_password => "uaa_password"
-        )
+        fake_aws_rds.should_receive(:create_database).
+          with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16").and_return(
+            :engine => "mysql",
+            :master_username => "uaa_user",
+            :master_user_password => "uaa_password")
 
         fake_ccdb_rds = mock("ccdb", db_name: "ccdb", endpoint_port: 1234, db_instance_status: :irrelevant)
         fake_uaadb_rds = mock("uaadb", db_name: "uaadb", endpoint_port: 5678, db_instance_status: :irrelevant)

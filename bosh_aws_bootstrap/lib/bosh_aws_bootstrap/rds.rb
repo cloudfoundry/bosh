@@ -14,7 +14,7 @@ module Bosh
         @credentials = credentials
       end
 
-      def create_database(name, subnet_ids, options = {})
+      def create_database(name, subnet_ids, vpc_id, vpc_cidr, options = {})
         create_subnet_group(name, subnet_ids) unless subnet_group_exists?(name)
 
         # symbolize options keys

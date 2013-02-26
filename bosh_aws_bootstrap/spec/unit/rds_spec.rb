@@ -126,7 +126,7 @@ describe Bosh::Aws::RDS do
 
       # The contract is that create_database passes back the aws
       # response directly, but merges in the password that it generated.
-      response = rds.create_database("mydb", ["subnet1", "subnet2"])
+      response = rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "3.3.3.0/28")
       response[:aws_key].should == "test_val"
       response[:master_user_password].should == generated_password
     end
@@ -147,7 +147,7 @@ describe Bosh::Aws::RDS do
       end
 
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
-      rds.create_database("mydb", ["subnet1", "subnet2"], :allocated_storage => 16, :master_user_password => "swordfish")
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "4.4.4.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
     end
 
     it "should create the subnet group for the DB if it does not exist" do
@@ -167,7 +167,7 @@ describe Bosh::Aws::RDS do
 
       rds.should_receive(:create_subnet_group).with("mydb", ["subnet1", "subnet2"])
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(false)
-      rds.create_database("mydb", ["subnet1", "subnet2"], :allocated_storage => 16, :master_user_password => "swordfish")
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "5.5.5.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
     end
   end
 

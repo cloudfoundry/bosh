@@ -369,6 +369,9 @@ module Bosh::Cli::Command
       receipt = receipt_file ? load_yaml_file(receipt_file) : @output_state
       vpc_subnets = receipt["vpc"]["subnets"]
 
+      vpc_id = receipt["vpc"]["id"]
+      vpc_cidr = config["vpc"]["cidr"]
+
       begin
         credentials = config["aws"]
         rds = Bosh::Aws::RDS.new(credentials)
@@ -384,7 +387,7 @@ module Bosh::Cli::Command
             # in directly, but it makes this easier to mock.  Once could argue that the
             # params to create_database should change to just a hash instead of a name +
             # a hash.
-            creation_opts = [name, subnet_ids]
+            creation_opts = [name, subnet_ids, vpc_id, vpc_cidr]
             creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
             response = rds.create_database(*creation_opts)
             output_rds_properties(name, tag, response)
