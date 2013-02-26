@@ -186,7 +186,7 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:state).and_return(:available)
 
         aws.should_receive(:flush_output_state) do |args|
-          args.should match(/create-vpc-output-\d{14}.yml/)
+          args.should match(/aws_vpc_receipt.yml/)
         end
 
         aws.create_vpc config_file

@@ -57,3 +57,4 @@ create-rds-output*.yml
 /release/src/bosh/*
 /tmp/*
 stemcell-ami.txt
+aws_vpc_receipt.yml

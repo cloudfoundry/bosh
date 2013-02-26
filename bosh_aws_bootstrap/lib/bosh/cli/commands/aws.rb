@@ -3,7 +3,7 @@ require_relative "../../../bosh_aws_bootstrap"
 module Bosh::Cli::Command
   class AWS < Base
     DEFAULT_CIDR = "10.0.0.0/16" # KILL
-    OUTPUT_VPC_FILE_BASE = "create-vpc-output-%s.yml"
+    OUTPUT_VPC_FILE = "aws_vpc_receipt.yml"
     OUTPUT_RDS_FILE_BASE = "create-rds-output-%s.yml"
 
     attr_reader :output_state, :config_dir, :ec2
@@ -193,7 +193,7 @@ module Bosh::Cli::Command
         err "VPC #{vpc.vpc_id} was not available within 60 seconds, giving up"
       end
     ensure
-      file_path = File.join(File.dirname(config_file), OUTPUT_VPC_FILE_BASE % Time.now.strftime("%Y%m%d%H%M%S"))
+      file_path = File.join(File.dirname(config_file), OUTPUT_VPC_FILE)
       flush_output_state file_path
 
       say "details in #{file_path}"
