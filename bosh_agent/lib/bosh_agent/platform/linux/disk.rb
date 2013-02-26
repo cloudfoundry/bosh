@@ -27,7 +27,7 @@ module Bosh::Agent
       FileUtils.mkdir_p(store_path)
       disk = lookup_disk_by_cid(cid)
       partition = "#{disk}1"
-      if File.blockdev?(partition) && !mount_entry(partition)
+      if File.blockdev?(partition) && !partition_mounted?(partition)
         mount(partition, store_path)
       end
     end
@@ -37,8 +37,12 @@ module Bosh::Agent
       Bosh::Exec.sh "mount #{partition} #{path}"
     end
 
-    def mount_entry(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+    def partition_mounted?(partition)
+      fs_list = Sigar.new.file_system_list
+
+      fs = fs_list.find { |fs| fs.dev_name == partition }
+
+      !!fs
     end
 
     def lookup_disk_by_cid(cid)
