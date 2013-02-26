@@ -26,7 +26,7 @@ module Bosh::Agent
     def mount_persistent_disk(cid)
       FileUtils.mkdir_p(store_path)
       disk = lookup_disk_by_cid(cid)
-      partition = "#{disk}1"
+      partition = disk_partition(disk)
       if File.blockdev?(partition) && !partition_mounted?(partition)
         mount(partition, store_path)
       end
@@ -68,6 +68,10 @@ module Bosh::Agent
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
       end
+    end
+
+    def disk_partition(disk)
+      "#{disk}1"
     end
 
     # Note: This is not cross-platform (works in Ubuntu and RHEL)

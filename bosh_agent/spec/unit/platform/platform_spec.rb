@@ -20,13 +20,16 @@ describe Bosh::Agent::Platform::Linux do
   end
 
   context "Disk" do
-    it "should detect block device" do
+    it "should detect block device and partition" do
       # Assume rescan_scsi_bus is working on every OS
       platform.disk.stub(:rescan_scsi_bus)
 
       block_device = platform.disk.detect_block_device(0)
+      device_path = "/dev/#{block_device}"
+      partition_path = platform.disk.disk_partition(device_path)
 
-      File.blockdev?("/dev/#{block_device}").should == true
+      File.blockdev?(device_path).should == true
+      File.blockdev?(partition_path).should == true
     end
   end
 

@@ -15,7 +15,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
 
       File.stub(:blockdev?).and_return(true)
       Bosh::Exec.should_receive(:sh) do |cmd|
-        cmd.should == "mount /dev/sdy1 #{disk_wrapper.store_path}"
+        cmd.should == "mount #{disk_wrapper.disk_partition("/dev/sdy")} #{disk_wrapper.store_path}"
       end
 
       disk_wrapper.mount_persistent_disk(2)
