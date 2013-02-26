@@ -75,6 +75,22 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "create_security_group" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should create the security group" do
+      fake_aws_rds_client.should_receive(:create_db_security_group).
+        with(:db_security_group_name => "test",
+             :db_security_group_description => "test",
+             :ec2_vpc_id => "vpc-123456")
+
+      rds.create_security_group("test", "vpc-123456")
+    end
+  end
 
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
