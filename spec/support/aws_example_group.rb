@@ -114,6 +114,7 @@ module AwsSystemExampleGroup
         puts "CLEANUP SUCCESSFUL"
 
         system "rm -f #{ASSETS_DIR}/aws/create-*-output-*.yml"
+        system "rm -f #{ASSETS_DIR}/aws/aws_vpc_receipt.yml"
 
         run_bosh "aws create vpc '#{aws_configuration_template_path}'"
 
