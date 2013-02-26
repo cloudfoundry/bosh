@@ -85,7 +85,8 @@ module Bosh
       def get_zone_id(name)
         zones_response = aws_route53.client.list_hosted_zones
         zone = zones_response.data[:hosted_zones].find { |zone| zone[:name] == name }
-        zone[:id]
+        raise "Zone not found for #{name} in route53 zones response #{zones_response.inspect}" if zone.nil?
+        zone.fetch(:id)
       end
 
       def aws_route53
