@@ -241,6 +241,7 @@ module Bosh::Cli::Command
 
       ec2 = Bosh::Aws::EC2.new(config["aws"])
       vpc_ids = ec2.vpcs.map { |vpc| vpc.id }
+      dhcp_options = []
 
       unless vpc_ids.empty?
         say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
@@ -251,7 +252,7 @@ module Bosh::Cli::Command
             vpc = Bosh::Aws::VPC.find(ec2, vpc_id)
             err("#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first") if vpc.instances_count > 0
 
-            dhcp_options = vpc.dhcp_options
+            dhcp_options << vpc.dhcp_options
 
             vpc.delete_security_groups
             ec2.delete_internet_gateways(ec2.internet_gateway_ids)
@@ -259,8 +260,8 @@ module Bosh::Cli::Command
             vpc.delete_subnets
             vpc.delete_route_tables
             vpc.delete_vpc
-            dhcp_options.delete
           end
+          dhcp_options.uniq(&:id).map(&:delete)
         end
       else
         say("No VPCs found")
