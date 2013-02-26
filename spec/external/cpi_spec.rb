@@ -13,7 +13,7 @@ describe Bosh::AwsCloud::Cloud do
         {
             "aws" => {
                 "region" => "us-east-1",
-                "default_key_name" => "bosh_ci",
+                "default_key_name" => "bosh",
                 "fast_path_delete" => "yes",
                 "access_key_id" => ENV["BOSH_AWS_ACCESS_KEY_ID"],
                 "secret_access_key" => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],

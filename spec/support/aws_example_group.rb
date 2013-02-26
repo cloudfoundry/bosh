@@ -99,8 +99,8 @@ module AwsSystemExampleGroup
 
   def self.included(base)
     base.before(:each) do
-      ENV['BOSH_KEY_PAIR_NAME'] = "bosh_ci"
-      ENV['BOSH_KEY_PATH'] = "/tmp/id_bosh_ci"
+      ENV['BOSH_KEY_PAIR_NAME'] = "bosh"
+      ENV['BOSH_KEY_PATH'] = "/tmp/id_rsa_bosh"
 
       FileUtils.rm_rf deployments_path
       FileUtils.mkdir_p micro_deployment_path
