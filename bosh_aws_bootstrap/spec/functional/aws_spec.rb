@@ -61,6 +61,13 @@ describe Bosh::Cli::Command::AWS do
         aws.stub(:create_s3)
       end
 
+      def stub_required_environment_variables
+        ENV.stub(:[]).with(anything()).and_call_original
+        ENV.stub(:[]).with("BOSH_AWS_SECRET_ACCESS_KEY").and_return('fake secret access key')
+        ENV.stub(:[]).with("BOSH_AWS_ACCESS_KEY_ID").and_return('fake access key id')
+        ENV.stub(:[]).with("BOSH_VPC_SUBDOMAIN").and_return('fake vpc subdomain')
+      end
+
       it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
         aws.should_receive(:create_vpc).with(config_file)
         aws.should_receive(:create_rds_dbs).with(config_file)
@@ -69,6 +76,8 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should default the configuration file when not passed in" do
+        stub_required_environment_variables
+
         default_config_filename = File.expand_path(File.join(
             File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
         ))
