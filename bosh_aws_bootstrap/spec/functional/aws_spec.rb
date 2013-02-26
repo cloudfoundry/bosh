@@ -55,6 +55,11 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create" do
       let(:config_file) {asset "create_all.yml"}
+      before do
+        aws.stub(:create_vpc)
+        aws.stub(:create_rds_dbs)
+        aws.stub(:create_s3)
+      end
 
       it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
         aws.should_receive(:create_vpc).with(config_file)
@@ -63,6 +68,22 @@ describe Bosh::Cli::Command::AWS do
         aws.create config_file
       end
 
+      it "should default the configuration file when not passed in" do
+        default_config_filename = File.expand_path(File.join(
+            File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+        ))
+        File.exist?(default_config_filename).should == true
+        aws.should_receive(:create_vpc).with(default_config_filename)
+        aws.should_receive(:create_rds_dbs).with(default_config_filename)
+        aws.should_receive(:create_s3).with(default_config_filename)
+        aws.create
+      end
+
+      it "should fail if the configuration file does not exist" do
+        expect {
+          aws.create "/tmp/doesnotexist.yml"
+        }.to raise_error(/Cannot find file/)
+      end
     end
 
     describe "aws destroy" do

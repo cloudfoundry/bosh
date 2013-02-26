@@ -90,7 +90,11 @@ module Bosh::Cli::Command
 
     usage "aws create"
     desc "create everything in config file"
-    def create(config_file)
+    def create(config_file = nil)
+      config_file ||= File.expand_path(File.join(
+        File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+      ))
+      load_yaml_file(config_file)
       create_vpc(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)
