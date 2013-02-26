@@ -101,7 +101,7 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_subnets)
         fake_vpc.stub(:subnets).and_return({'bosh' => "amz-subnet1", 'name2' => "amz-subnet2"})
         fake_vpc.stub(:attach_internet_gateway)
-        fake_elb.stub(:create)
+        fake_elb.stub(:create).and_return(mock("fakeelb", dns_name: 'elb.example.com'))
         fake_ec2.stub(:allocate_elastic_ips)
         fake_ec2.stub(:force_add_key_pair)
         fake_ec2.stub(:create_internet_gateway)
@@ -172,8 +172,6 @@ describe Bosh::Cli::Command::AWS do
 
         aws.output_state["vpc"]["id"].should == "vpc id"
         aws.output_state["vpc"]["subnets"].should == { "bosh" => "amz-subnet1", "name2" => "amz-subnet2" }
-        aws.output_state["elastic_ips"]["router"]["ips"].should == ["1.2.3.4", "5.6.7.8"]
-        aws.output_state["elastic_ips"]["router"]["dns_record"].should == "*"
         aws.output_state["key_pairs"].should == ["dev102"]
         aws.output_state["original_configuration"].should == YAML.load_file(config_file)
       end
