@@ -88,7 +88,10 @@ describe Bosh::Aws::RDS do
              :db_security_group_description => "test",
              :ec2_vpc_id => "vpc-123456")
 
-      rds.create_security_group("test", "vpc-123456")
+      fake_aws_rds_client.should_receive(:authorize_db_security_group_ingress).
+        with(:db_security_group_name => "test", :cidrip => "2.2.2.0/24")
+
+      rds.create_security_group("test", "vpc-123456", "2.2.2.0/24")
     end
   end
 

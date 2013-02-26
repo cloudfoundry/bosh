@@ -75,12 +75,14 @@ module Bosh
         return false
       end
 
-      def create_security_group(name, vpc_id)
+      def create_security_group(name, vpc_id, cidrip)
         aws_rds_client.create_db_security_group(
           :db_security_group_name => name,
           :db_security_group_description => name,
           :ec2_vpc_id => vpc_id
         )
+
+        aws_rds_client.authorize_db_security_group_ingress(:db_security_group_name => name, :cidrip => cidrip)
       end
 
       def aws_rds
