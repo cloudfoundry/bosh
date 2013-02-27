@@ -103,6 +103,10 @@ module Bosh
         aws_rds_client.describe_db_security_groups.data[:db_security_groups].map { |sg| sg[:db_security_group_name] }
       end
 
+      def delete_security_group(name)
+        aws_rds_client.delete_db_security_group(:db_security_group_name => name)
+      end
+
       def aws_rds
         @aws_rds ||= ::AWS::RDS.new(@credentials)
       end

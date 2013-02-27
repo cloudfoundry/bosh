@@ -159,6 +159,19 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "delete_security_group" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should delete the security group" do
+      fake_aws_rds_client.should_receive(:delete_db_security_group).with(:db_security_group_name => "ccdb")
+      rds.delete_security_group("ccdb")
+    end
+  end
+
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
     let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }
