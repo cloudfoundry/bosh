@@ -10,6 +10,34 @@ describe Bosh::Cli::Command::AWS do
   before { aws.stub(:sleep)  }
 
   describe "command line tools" do
+    describe "aws bootstrap micro" do
+      around do |example|
+        Dir.mktmpdir do |dirname|
+          Dir.chdir dirname do
+            FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
+            example.run
+          end
+        end
+      end
+
+      it "should generate a microbosh.yml in the right location" do
+        File.exist?("deployments/micro/micro_bosh.yml").should == false
+        aws.bootstrap_micro
+        File.exist?("deployments/micro/micro_bosh.yml").should == true
+      end
+
+      it "should remove any existing deployment artifacts first" do
+        FileUtils.mkdir_p("deployments/micro")
+        File.open("deployments/leftover.yml", "w") {|f| f.write("old stuff!")}
+        File.open("deployments/micro/leftover.yml", "w") {|f| f.write("old stuff!")}
+        File.exist?("deployments/leftover.yml").should == true
+        File.exist?("deployments/micro/leftover.yml").should == true
+        aws.bootstrap_micro
+        File.exist?("deployments/leftover.yml").should == false
+        File.exist?("deployments/micro/leftover.yml").should == false
+      end
+    end
+
     describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
 

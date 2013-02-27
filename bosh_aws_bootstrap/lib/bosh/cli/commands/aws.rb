@@ -23,6 +23,17 @@ module Bosh::Cli::Command
       Bosh::Cli::Command::Help.list_commands(commands)
     end
 
+    usage "aws bootstrap micro"
+    desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
+    def bootstrap_micro
+      receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+      FileUtils.rm_rf "deployments"
+      FileUtils.mkdir_p "deployments/micro"
+      Dir.chdir("deployments/micro") do
+        create_micro_bosh_manifest(receipt_filename)
+      end
+    end
+
     usage "aws generate micro_bosh"
     desc "generate micro_bosh.yml"
     def create_micro_bosh_manifest(receipt_file)
