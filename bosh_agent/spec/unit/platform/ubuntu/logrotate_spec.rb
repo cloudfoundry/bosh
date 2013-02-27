@@ -28,11 +28,17 @@ describe Bosh::Agent::Platform::Ubuntu::Logrotate do
   end
 
   it 'should update logrotate from platform' do
-    default_max_log_file_size = Bosh::Agent::Platform::Ubuntu::Logrotate::DEFAULT_MAX_LOG_FILE_SIZE
-    spec_properties = {}
+    max_log_file_size = "#{rand(100)}M"
+    spec_properties = {
+      "properties" => {
+        "logging" => {
+          "max_log_file_size" => max_log_file_size
+        }
+      }
+    }
 
     Bosh::Agent::Config.platform.update_logging(spec_properties)
-    match_expression = %r|size=#{default_max_log_file_size}|
+    match_expression = %r|size=#{max_log_file_size}|
     File.read(File.join(@logrotate_path, Bosh::Agent::BOSH_APP_GROUP)).should match(match_expression)
   end
 
