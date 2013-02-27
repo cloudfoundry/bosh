@@ -67,11 +67,6 @@ describe "AWS" do
     end
 
     Dir.chdir cf_release_path do
-      existing_releases = run_bosh "releases", :ignore_failures => true
-      if existing_releases.include?("bosh-release")
-        puts "Deleting existing bosh-release"
-        run_bosh "delete release bosh-release"
-      end
       run_bosh "create release"
       run_bosh "upload release"
     end
