@@ -60,13 +60,10 @@ describe "AWS" do
   it "should be able to deploy CF-release on top of microbosh", cf: true do
     Dir.chdir deployments_path do
       existing_stemcells = run_bosh "stemcells", :ignore_failures => true
-      if existing_stemcells.include?("bosh-stemcell")
-        puts "Deleting existing stemcell bosh-stemcell"
-        run_bosh "delete stemcell bosh-stemcell #{STEMCELL_VERSION}"
+      unless existing_stemcells.include?("bosh-stemcell")
+        puts "Using existing stemcell on this machine: #{latest_stemcell_path}"
+        run_bosh "upload stemcell #{latest_stemcell_path}"
       end
-
-      puts "Using existing stemcell on this machine: #{latest_stemcell_path}"
-      run_bosh "upload stemcell #{latest_stemcell_path}"
     end
 
     Dir.chdir cf_release_path do
