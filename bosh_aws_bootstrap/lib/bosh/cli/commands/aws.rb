@@ -5,6 +5,7 @@ module Bosh::Cli::Command
     DEFAULT_CIDR = "10.0.0.0/16" # KILL
     OUTPUT_VPC_FILE = "aws_vpc_receipt.yml"
     OUTPUT_RDS_FILE = "aws_rds_receipt.yml"
+    AWS_JENKINS_BUCKET = "bosh-jenkins-artifacts"
 
     attr_reader :output_state, :config_dir, :ec2
     attr_accessor :vpc
@@ -526,11 +527,11 @@ module Bosh::Cli::Command
       route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
     end
 
-    private
-
     def latest_micro_ami
-      "ami-f23fad9b"
+      Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
     end
+
+    private
 
     def was_vpc_eventually_available?(vpc)
       (1..60).any? do |attempt|

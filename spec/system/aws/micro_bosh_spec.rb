@@ -7,24 +7,13 @@ describe "AWS" do
 
   # we always need a microbosh to deploy whatever the next step is
   before do
-    unless ENV["NO_PROVISION"]
-      Dir.chdir(micro_deployment_path) do
-        run_bosh "aws generate micro_bosh '#{vpc_outfile_path}'"
-      end
+    Dir.chdir(spec_tmp_path) do
+      run_bosh "aws bootstrap micro"
     end
+  end
 
-    Dir.chdir(deployments_path) do
-      unless ENV["NO_PROVISION"]
-        puts "MICRO_BOSH.YML:"
-        puts ERB.new(File.read("micro/micro_bosh.yml")).result
-
-        puts "Deploying latest microbosh stemcell from #{latest_micro_bosh_stemcell}"
-        run_bosh "micro deployment micro"
-        run_bosh "micro deploy #{latest_micro_bosh_stemcell}"
-      end
-      run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
-      run_bosh "login admin admin"
-    end
+  it "should work" do
+    run_bosh("status", :capture_output => true).should =~ /User\s*admin/
   end
 
   it "should be able to launch a MicroBosh from existing stemcell" do

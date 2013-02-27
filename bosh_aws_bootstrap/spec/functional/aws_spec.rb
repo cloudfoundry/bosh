@@ -955,4 +955,11 @@ describe Bosh::Cli::Command::AWS do
       end
     end
   end
+
+  describe "latest_micro_ami" do
+    it "returns the content from S3" do
+      Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").and_return("ami-david")
+      aws.latest_micro_ami.should == "ami-david"
+    end
+  end
 end

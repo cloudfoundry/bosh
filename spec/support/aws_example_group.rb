@@ -43,6 +43,14 @@ module AwsSystemExampleGroup
     end
   end
 
+  def spec_tmp_path
+    File.join(BOSH_TMP_DIR, "spec")
+  end
+
+  def deployments_path
+    File.join(BOSH_TMP_DIR, "spec", "deployments")
+  end
+
   def micro_deployment_path
     File.join(deployments_path, "micro")
   end
@@ -130,7 +138,10 @@ module AwsSystemExampleGroup
 
         FileUtils.rm_rf(vpc_outfile_path)
 
-        Dir.chdir deployments_path do
+        Dir.chdir spec_tmp_path do
+          FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
+          FileUtils.rm_rf(vpc_outfile_path)
+
           run_bosh "aws create vpc '#{aws_configuration_template_path}'"
         end
 
