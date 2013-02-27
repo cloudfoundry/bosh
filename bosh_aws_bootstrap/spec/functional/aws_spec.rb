@@ -881,6 +881,17 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe "aws delete_all rds security_groups" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should remove all RDS subnet grops" do
+        fake_rds = mock("rds")
+        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+        fake_rds.should_receive :delete_security_groups
+        aws.delete_all_rds_security_groups(config_file)
+      end
+    end
+
     describe "aws delete_all elbs" do
       let(:config_file) { asset "config.yml" }
 

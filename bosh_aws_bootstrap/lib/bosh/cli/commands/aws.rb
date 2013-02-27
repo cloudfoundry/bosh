@@ -448,6 +448,15 @@ module Bosh::Cli::Command
       rds.delete_subnet_groups
     end
 
+    usage "aws delete_all rds security_groups"
+    desc "delete all RDS security groups"
+    def delete_all_rds_security_groups(config_file)
+      config = load_yaml_file(config_file)
+      credentials = config["aws"]
+      rds = Bosh::Aws::RDS.new(credentials)
+      rds.delete_security_groups
+    end
+
     usage "aws delete_all volumes"
     desc "delete all EBS volumes"
     def delete_all_ebs(config_file)
