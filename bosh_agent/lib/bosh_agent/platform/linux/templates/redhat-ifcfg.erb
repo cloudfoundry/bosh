@@ -1,3 +1,4 @@
+<% @networks.each do |name, n| -%>
 DEVICE=<%= n["interface"] %>
 BOOTPROTO=static
 IPADDR=<%= n["ip"]%>
@@ -5,3 +6,4 @@ NETMASK=<%= n["netmask"]%>
 BROADCAST=<%= n["broadcast"] %>
 GATEWAY=<%= n["gateway"] %>
 ONBOOT=yes
+<% end -%>
