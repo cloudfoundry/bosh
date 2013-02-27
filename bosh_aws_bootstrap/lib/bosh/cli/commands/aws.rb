@@ -9,8 +9,8 @@ module Bosh::Cli::Command
     attr_reader :output_state, :config_dir, :ec2
     attr_accessor :vpc
 
-    def initialize(args=[])
-      super(args)
+    def initialize(runner = [])
+      super(runner)
       @output_state = {}
     end
 
@@ -32,6 +32,17 @@ module Bosh::Cli::Command
       Dir.chdir("deployments/micro") do
         create_micro_bosh_manifest(receipt_filename)
       end
+
+      Dir.chdir("deployments") do
+        micro = Bosh::Cli::Command::Micro.new(runner)
+        micro.options = self.options
+        micro.micro_deployment("micro")
+        micro.perform(latest_micro_ami)
+      end
+
+      misc = Bosh::Cli::Command::Misc.new(runner)
+      misc.options = self.options
+      misc.login("admin", "admin")
     end
 
     usage "aws generate micro_bosh"
@@ -516,6 +527,10 @@ module Bosh::Cli::Command
     end
 
     private
+
+    def latest_micro_ami
+      "ami-f23fad9b"
+    end
 
     def was_vpc_eventually_available?(vpc)
       (1..60).any? do |attempt|

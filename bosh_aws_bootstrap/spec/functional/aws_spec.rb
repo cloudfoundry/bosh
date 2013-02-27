@@ -20,6 +20,13 @@ describe Bosh::Cli::Command::AWS do
         end
       end
 
+      before do
+        Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)
+        Bosh::Cli::Command::Micro.any_instance.stub(:perform)
+        Bosh::Cli::Command::Misc.any_instance.stub(:login)
+        aws.stub(:latest_micro_ami).and_return("ami-123456")
+      end
+
       it "should generate a microbosh.yml in the right location" do
         File.exist?("deployments/micro/micro_bosh.yml").should == false
         aws.bootstrap_micro
@@ -35,6 +42,17 @@ describe Bosh::Cli::Command::AWS do
         aws.bootstrap_micro
         File.exist?("deployments/leftover.yml").should == false
         File.exist?("deployments/micro/leftover.yml").should == false
+      end
+
+      it "should deploy a micro bosh" do
+        Bosh::Cli::Command::Micro.any_instance.should_receive(:micro_deployment).with("micro")
+        Bosh::Cli::Command::Micro.any_instance.should_receive(:perform).with("ami-123456")
+        aws.bootstrap_micro
+      end
+
+      it "should login as admin:admin" do
+        Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("admin", "admin")
+        aws.bootstrap_micro
       end
     end
 

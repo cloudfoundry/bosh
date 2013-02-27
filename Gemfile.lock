@@ -44,6 +44,7 @@ PATH
     bosh_aws_bootstrap (1.5.0.pre2)
       bosh_aws_cpi (~> 1.5.0.pre2)
       bosh_cli (~> 1.5.0.pre2)
+      bosh_deployer (~> 1.5.0.pre2)
       uuidtools (~> 2.1.3)
 
 PATH

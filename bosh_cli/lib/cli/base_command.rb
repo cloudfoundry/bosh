@@ -5,7 +5,7 @@ module Bosh::Cli
     class Base
       extend Bosh::Cli::CommandDiscovery
 
-      attr_reader :options
+      attr_accessor :options
       attr_reader :work_dir
       attr_reader :runner
 
