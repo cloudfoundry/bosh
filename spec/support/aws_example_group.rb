@@ -102,13 +102,13 @@ module AwsSystemExampleGroup
       ENV['BOSH_KEY_PAIR_NAME'] = "bosh"
       ENV['BOSH_KEY_PATH'] = "/tmp/id_rsa_bosh"
 
-      FileUtils.rm_rf deployments_path
-      FileUtils.mkdir_p micro_deployment_path
-      FileUtils.mkdir_p bat_deployment_path
-
       if ENV["NO_PROVISION"]
         puts "Not deleting and recreating AWS resources, assuming we already have them"
       else
+        FileUtils.rm_rf deployments_path
+        FileUtils.mkdir_p micro_deployment_path
+        FileUtils.mkdir_p bat_deployment_path
+
         puts "Using configuration template: #{aws_configuration_template_path}"
         run_bosh "aws destroy"
         puts "CLEANUP SUCCESSFUL"
