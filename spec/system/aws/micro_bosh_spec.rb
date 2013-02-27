@@ -75,6 +75,8 @@ describe "AWS" do
     Dir.chdir deployments_path do
       run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}'"
       FileUtils.cp("#{deployments_path}/cf-aws-stub.yml", "cf-aws.yml")
+      run_bosh "target micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com" #should not be necessary
+      run_bosh "status"
       run_bosh "deployment cf-aws.yml"
       run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
       run_bosh "deploy"
