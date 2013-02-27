@@ -10,13 +10,13 @@ end
 
 describe Bosh::Agent::Platform::Linux do
   let(:platform) do
-    Bosh::Agent::Config.platform_name = detect_platform
+    platform_name = detect_platform
 
-    if Bosh::Agent::Config.platform_name == "unknown"
+    if platform_name == "unknown"
       pending("Do Not test unknown platform")
     end
 
-    Bosh::Agent::Config.platform
+    Bosh::Agent::Platform.new(platform_name).platform
   end
 
   context "Disk" do

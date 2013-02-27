@@ -2,9 +2,6 @@
 
 require File.dirname(__FILE__) + '/../../../spec_helper'
 
-Bosh::Agent::Config.platform_name = "redhat"
-Bosh::Agent::Config.platform
-
 describe Bosh::Agent::Platform::Redhat::Network do
 
   describe "vsphere" do

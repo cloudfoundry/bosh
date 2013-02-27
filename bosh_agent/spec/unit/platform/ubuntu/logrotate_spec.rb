@@ -2,12 +2,10 @@
 
 require File.dirname(__FILE__) + '/../../../spec_helper'
 
-Bosh::Agent::Config.platform_name = "ubuntu"
-Bosh::Agent::Config.platform
-
 describe Bosh::Agent::Platform::Ubuntu::Logrotate do
 
   before(:each) do
+    @platform = Bosh::Agent::Platform.new("ubuntu").platform
     system_root = Bosh::Agent::Config.system_root
     @logrotate_path = File.join(system_root, 'etc', 'logrotate.d')
     FileUtils.mkdir_p(@logrotate_path)
@@ -37,7 +35,7 @@ describe Bosh::Agent::Platform::Ubuntu::Logrotate do
       }
     }
 
-    Bosh::Agent::Config.platform.update_logging(spec_properties)
+    @platform.update_logging(spec_properties)
     match_expression = %r|size=#{max_log_file_size}|
     File.read(File.join(@logrotate_path, Bosh::Agent::BOSH_APP_GROUP)).should match(match_expression)
   end

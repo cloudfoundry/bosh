@@ -37,6 +37,10 @@ RSpec.configure do |rspec_config|
   end
 end
 
+["ubuntu", "redhat"].each do |name|
+  Bosh::Agent::Platform.new(name).platform
+end
+
 def use_dummy_logger
   Bosh::Agent::Config.logger = Logger.new(StringIO.new)
 end
