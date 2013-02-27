@@ -129,36 +129,87 @@ describe Bosh::Agent::Bootstrap do
         Bosh::Agent::Config.settings = {}
       end
 
-      it "should partition the disk with one data and one swap partition (with lazy_itable_init)" do
-        Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
-          disk.should == data_disk
+      context "without anything mounted or formatted" do
+
+        before do
+          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1").and_return('')
+          @processor.should_receive(:sh).with("mount | grep #{data_disk}2").and_return('')
         end
-        Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(true)
 
-        @processor.should_receive(:sh).with("mkswap #{data_disk}1")
-        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j -E lazy_itable_init=1 #{data_disk}2")
-        @processor.should_receive(:sh).with("swapon #{data_disk}1")
+        it "should partition the disk with one data and one swap partition (with lazy_itable_init)" do
+          Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
+            disk.should == data_disk
+          end
+          Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(true)
 
-        FileUtils.stub(:mkdir_p)
-        @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+          @processor.should_receive(:sh).with("mkswap #{data_disk}1")
+          @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j -E lazy_itable_init=1 #{data_disk}2")
+          @processor.should_receive(:sh).with("swapon #{data_disk}1")
 
-        @processor.setup_data_disk
+          FileUtils.stub(:mkdir_p)
+          @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+          @processor.setup_data_disk
+        end
+
+        it "should partition the disk with one data and one swap partition (without lazy_itable_init)" do
+          Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
+            disk.should == data_disk
+          end
+          Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(false)
+
+          @processor.should_receive(:sh).with("mkswap #{data_disk}1")
+          @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
+          @processor.should_receive(:sh).with("swapon #{data_disk}1")
+
+          FileUtils.stub(:mkdir_p)
+          @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+          @processor.setup_data_disk
+        end
       end
 
-      it "should partition the disk with one data and one swap partition (without lazy_itable_init)" do
-        Bosh::Agent::Util.should_receive(:partition_disk) do |disk, _|
-          disk.should == data_disk
+      context "with swap mounted" do
+
+        before do
+          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1").and_return('/dev/xvdb1                              partition	1702884	0	-1')
+          @processor.should_receive(:sh).with("mount | grep #{data_disk}2").and_return('')
+          Dir.should_receive(:glob).with("#{data_disk}[1-2]").and_return(["#{data_disk}1", "#{data_disk}2"])
         end
-        Bosh::Agent::Util.should_receive(:lazy_itable_init_enabled?).and_return(false)
 
-        @processor.should_receive(:sh).with("mkswap #{data_disk}1")
-        @processor.should_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
-        @processor.should_receive(:sh).with("swapon #{data_disk}1")
+        it 'should skip the swapon' do
 
-        FileUtils.stub(:mkdir_p)
-        @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+          @processor.should_not_receive(:sh).with("mkswap #{data_disk}1")
+          @processor.should_not_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
+          @processor.should_not_receive(:sh).with("swapon #{data_disk}1")
 
-        @processor.setup_data_disk
+          FileUtils.stub(:mkdir_p)
+          @processor.should_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+          @processor.setup_data_disk
+        end
+      end
+
+      context "with data partition mounted" do
+
+        before do
+          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1").and_return('')
+          @processor.should_receive(:sh).with("mount | grep #{data_disk}2").and_return('/dev/xvdb2 on /var/vcap/data type ext4 (rw)')
+          Dir.should_receive(:glob).with("#{data_disk}[1-2]").and_return(["#{data_disk}1", "#{data_disk}2"])
+        end
+
+        it 'should skip the data partition format and mount' do
+
+          @processor.should_not_receive(:sh).with("mkswap #{data_disk}1")
+          @processor.should_not_receive(:sh).with("/sbin/mke2fs -t ext4 -j #{data_disk}2")
+
+          @processor.should_receive(:sh).with("swapon #{data_disk}1")
+
+          FileUtils.stub(:mkdir_p)
+          @processor.should_not_receive(:sh).with(%r[mount #{data_disk}2 .+/data])
+
+          @processor.setup_data_disk
+        end
       end
     end
 
