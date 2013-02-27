@@ -99,6 +99,10 @@ module Bosh
         aws_rds_client.authorize_db_security_group_ingress(:db_security_group_name => name, :cidrip => cidrip)
       end
 
+      def security_group_names
+        aws_rds_client.describe_db_security_groups.data[:db_security_groups].map { |sg| sg[:db_security_group_name] }
+      end
+
       def aws_rds
         @aws_rds ||= ::AWS::RDS.new(@credentials)
       end

@@ -140,6 +140,25 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "security_group_names" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should return the subnet group names" do
+      default_security_group_info = { :db_security_group_name => "default" }
+      ccdb_security_group_info = { :db_security_group_name => "ccdb" }
+      uaadb_security_group_info = { :db_security_group_name => "uaadb" }
+      aws_response = mock(:aws_response, :data => { :db_security_groups => [
+        default_security_group_info, ccdb_security_group_info, uaadb_security_group_info]})
+
+      fake_aws_rds_client.should_receive(:describe_db_security_groups).and_return(aws_response)
+      rds.security_group_names.should == ["default", "ccdb", "uaadb"]
+    end
+  end
+
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
     let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }
