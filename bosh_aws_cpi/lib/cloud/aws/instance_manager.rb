@@ -1,3 +1,5 @@
+require 'retryable'
+
 module Bosh::AwsCloud
   class InstanceManager
     include Helpers
@@ -28,17 +30,10 @@ module Bosh::AwsCloud
       )
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
-      total_time = 5 * 60
-      sleep_time = 30
-      retries = total_time / sleep_time
-      begin
+
+      Retryable.retryable(sleep: 30, tries: 10, on: [AWS::EC2::Errors::InvalidIPAddress::InUse]) do |tries, e|
+        @logger.warn("IP address was in use: #{e}") if tries > 0
         @instance = @region.instances.create(instance_params)
-      rescue AWS::EC2::Errors::InvalidIPAddress::InUse => e
-        @logger.warn("IP address was in use: #{e}")
-        sleep sleep_time
-        retries -= 1
-        retry if retries > 0
-        raise
       end
 
       @elbs = resource_pool['elbs']

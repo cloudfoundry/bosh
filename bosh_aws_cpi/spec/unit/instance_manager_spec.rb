@@ -59,7 +59,7 @@ describe Bosh::AwsCloud::InstanceManager do
       aws_instances.should_receive(:create).with(aws_instance_params).once
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
-      instance_manager.stub(:sleep)
+      Retryable.stub(:sleep)
 
       agent_id = "agent-id"
       stemcell_id = "stemcell-id"
