@@ -122,6 +122,10 @@ module Bosh::Director
         @lock = Monitor.new
       end
 
+      def use_global_blobstore?
+        !@global_blobstore_options.nil?
+      end
+
       def get_revision
         Dir.chdir(File.expand_path("../../../..", __FILE__))
         revision_command = "(cat REVISION 2> /dev/null || " +

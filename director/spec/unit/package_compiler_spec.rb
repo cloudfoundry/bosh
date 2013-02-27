@@ -28,6 +28,7 @@ describe Bosh::Director::PackageCompiler do
                   :env => {}, :cloud_properties => {}, :workers => @n_workers,
                   :reuse_compilation_vms => false)
 
+    BD::Config.stub(:use_global_blobstore?).and_return(false)
     @all_packages = []
   end
 
@@ -341,5 +342,76 @@ describe Bosh::Director::PackageCompiler do
 
     task.compiled_package.should == compiled_package
   end
+
+  describe "the global blobstore" do
+    let(:package) { BDM::Package.make }
+    let(:stemcell) { BDM::Stemcell.make }
+    let(:task) { BD::CompileTask.new(package, stemcell) }
+    let(:compiler) { make(@plan) }
+
+    before(:each) do
+      package.fingerprint = "fingerprint"
+      package.save
+      stemcell.sha1 = "shawone"
+      stemcell.save
+
+      task.dependency_key = "[]"
+
+      BD::Config.stub(:use_global_blobstore?).and_return(true)
+    end
+
+    it "should check if compiled package is in global blobstore" do
+      callback = nil
+      compiler.should_receive(:with_compile_lock).
+          with(package.id, stemcell.id) do |&block|
+        callback = block
+      end
+
+      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package.name, package.fingerprint, stemcell.sha1).and_return(true)
+      BD::BlobUtil.should_not_receive(:save_to_global_cache)
+      compiler.stub(:prepare_vm)
+      BDM::CompiledPackage.stub(:create)
+
+      compiler.compile_package(task)
+      callback.call
+    end
+
+    it "should save compiled package to global cache if not exists" do
+      callback = nil
+      compiler.should_receive(:with_compile_lock).
+          with(package.id, stemcell.id) do |&block|
+        callback = block
+      end
+
+      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package.name, package.fingerprint, stemcell.sha1).and_return(false)
+      BD::BlobUtil.should_receive(:save_to_global_cache).with(package.name, package.fingerprint, stemcell.sha1, "some blobstore id")
+      compiler.stub(:prepare_vm)
+      BDM::CompiledPackage.stub(:create).and_return(mock("compiled package", blobstore_id: "some blobstore id"))
+
+      compiler.compile_package(task)
+      callback.call
+    end
+
+    it "only checks the global cache if Config.use_global_blobstore? is set" do
+      BD::Config.stub(:use_global_blobstore?).and_return(false)
+
+      callback = nil
+      compiler.should_receive(:with_compile_lock).
+          with(package.id, stemcell.id) do |&block|
+        callback = block
+      end
+
+      BD::BlobUtil.should_not_receive(:exists_in_global_cache?)
+      BD::BlobUtil.should_not_receive(:save_to_global_cache)
+      compiler.stub(:prepare_vm)
+      BDM::CompiledPackage.stub(:create)
+
+      compiler.compile_package(task)
+      callback.call
+    end
+  end
+
+
+
 
 end
