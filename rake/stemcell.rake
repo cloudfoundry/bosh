@@ -37,7 +37,7 @@ namespace :stemcell do
   end
 
   desc "Build Micro Cloud Foundry"
-  task :mcf, [:infrastructure, :manifest, :tarball] => "all:finalize_release_directory" do |t, args|
+  task :mcf, [:infrastructure, :manifest, :tarball, :micro_src] => "all:finalize_release_directory" do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "mcf-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION

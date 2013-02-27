@@ -7,7 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source ${base_dir}/lib/prelude_apply.bash
 
-micro_src=${HOME}/micro
 dest_dir=mcf/$build_time
 archive_dir_name=micro
 archive_dir=${dest_dir}/${archive_dir_name}
