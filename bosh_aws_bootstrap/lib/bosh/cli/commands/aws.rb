@@ -433,6 +433,7 @@ module Bosh::Cli::Command
         say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
         rds.delete_databases if confirmed?("Are you sure you want to delete all databases?")
+        err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
       else
         say("No RDS databases found")
       end
@@ -510,6 +511,18 @@ module Bosh::Cli::Command
       rds.databases.all? do |db_instance|
         say("  #{db_instance.db_name} #{db_instance.db_instance_status} #{db_instance.endpoint_address}") unless silent
         !db_instance.endpoint_address.nil?
+      end
+    end
+
+    def all_rds_instances_deleted?(rds)
+      return true if rds.databases.count == 0
+      (1..120).any? do |attempt|
+        say "waiting for RDS deletion..."
+        sleep 10
+        rds.databases.each do |db_instance|
+          say "  #{db_instance.db_name} #{db_instance.db_instance_status}"
+        end
+        rds.databases.count == 0
       end
     end
 

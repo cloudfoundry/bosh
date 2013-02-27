@@ -770,6 +770,7 @@ describe Bosh::Cli::Command::AWS do
         fake_ec2.stub(:instances_count).and_return(20)
         fake_rds = mock("rds")
         fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
+        fake_rds.stub(:databases).and_return([])
 
         Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
 
@@ -807,6 +808,7 @@ describe Bosh::Cli::Command::AWS do
             aws.stub(:say).twice
             aws.stub(:confirmed?).and_return(true)
             fake_rds.stub(:database_names).and_return(%w[foo bar])
+            fake_rds.stub(:databases).and_return([])
 
             fake_rds.should_receive :delete_databases
 
@@ -828,6 +830,24 @@ describe Bosh::Cli::Command::AWS do
             aws.delete_all_rds_dbs(config_file)
           end
         end
+
+        context "when not all instances could be deleted" do
+          it "throws a nice error message" do
+            fake_rds = mock("rds")
+            Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+            fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
+            fake_bosh_rds = mock("instance1", db_name: "bosh_db", endpoint_port: 1234, db_instance_status: :irrelevant)
+            fake_rds.stub(:databases).and_return([fake_bosh_rds])
+
+            ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
+
+            fake_rds.should_receive :delete_databases
+
+            expect {
+              aws.delete_all_rds_dbs(config_file)
+            }.to raise_error(Bosh::Cli::CliError, "not all rds instances could be deleted")
+          end
+        end
       end
 
       context "non-interactive mode" do
@@ -840,6 +860,7 @@ describe Bosh::Cli::Command::AWS do
           Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
           aws.stub(:say).twice
           fake_rds.stub_chain(:database_names, :map).and_return(["database_name: foo"])
+          fake_rds.stub(:databases).and_return([])
 
           fake_rds.should_receive :delete_databases
 
