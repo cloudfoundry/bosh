@@ -754,7 +754,7 @@ describe Bosh::Cli::Command::AWS do
         fake_aws_rds = make_fake_rds!
 
         aws.should_receive(:flush_output_state) do |args|
-          args.should match(/create-rds-output-\d{14}.yml/)
+          args.should match(/aws_rds_receipt.yml/)
         end
 
         aws.create_rds_dbs(config_file, receipt_file)
