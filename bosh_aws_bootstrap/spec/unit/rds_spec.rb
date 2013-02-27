@@ -81,6 +81,20 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "delete_subnet_groups" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should delete all the subnet groups" do
+      rds.should_receive(:subnet_group_names).and_return(["ccdb", "uaadb"])
+      rds.should_receive(:delete_subnet_group).with("ccdb")
+      rds.should_receive(:delete_subnet_group).with("uaadb")
+      rds.delete_subnet_groups
+    end
+  end
 
   describe "security_group_exists?" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
