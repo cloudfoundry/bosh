@@ -24,4 +24,10 @@ describe Bosh::Cli::VersionCalc do
     @obj.version_cmp("0.2.3-dev", "0.2.3.0.3-dev").should == -1
   end
 
+  it 'can compare version correctly when they are timestamps' do
+    @obj.version_cmp("2013-02-26_01-26-46", "2013-02-26_01-26-46").should == 0
+    @obj.version_cmp("2013-02-26_01-26-46", "2013-02-27_21-38-27").should == -1
+    @obj.version_cmp("2013-02-27_21-38-27", "2013-02-26_01-26-46").should == 1
+  end
+
 end

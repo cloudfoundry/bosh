@@ -10,6 +10,10 @@ module Bosh::Cli
       vp1 = components(v1)
       vp2 = components(v2)
 
+      if vp1.size == 1 && vp2.size == 1
+        return vp1.first <=> vp2.first
+      end
+
       [vp1.size, vp2.size].max.times do |i|
         result = vp1[i].to_i <=> vp2[i].to_i
         return result unless result == 0
