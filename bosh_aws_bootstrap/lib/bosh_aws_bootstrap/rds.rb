@@ -70,6 +70,10 @@ module Bosh
         )
       end
 
+      def subnet_group_names
+        aws_rds_client.describe_db_subnet_groups.data[:db_subnet_groups].map { |sg| sg[:db_subnet_group_name] }
+      end
+
       def security_group_exists?(name)
         aws_rds_client.describe_db_security_groups(:db_security_group_name => name)
         return true
