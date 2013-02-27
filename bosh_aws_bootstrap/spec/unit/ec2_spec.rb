@@ -320,7 +320,8 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "deleting all EBS volumes" do
-    let(:fake_aws_ec2) { double("aws_ec2") }
+    let(:fake_aws_volumes) { double(AWS::EC2::VolumeCollection) }
+    let(:fake_aws_ec2) { double(AWS::EC2, volumes: fake_aws_volumes) }
     let(:vol1) { double("vol1", attachments: []) }
     let(:vol2) { double("vol2", attachments: []) }
     let(:vol3) { double("vol3", attachments: ["something"]) }
@@ -333,7 +334,7 @@ describe Bosh::Aws::EC2 do
       vol1.should_receive(:delete)
       vol2.should_receive(:delete)
       vol3.should_not_receive(:delete)
-      fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2, vol3])
+      fake_aws_volumes.should_receive(:filter).and_return([vol1, vol2, vol3])
 
       ec2.delete_volumes
     end
