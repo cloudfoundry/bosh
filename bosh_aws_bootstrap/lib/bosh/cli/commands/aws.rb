@@ -110,6 +110,8 @@ module Bosh::Cli::Command
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
+      delete_all_rds_subnet_groups(config_file)
+      delete_all_rds_security_groups(config_file)
       delete_all_s3(config_file)
       delete_all_vpcs(config_file)
       delete_all_security_groups(config_file)
