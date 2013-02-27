@@ -13,6 +13,7 @@ unless ARGV.length == 1
 end
 
 stemcell_tgz = ARGV[0]
+BUCKET_NAME = 'bosh-jenkins-artifacts'
 
 region = Net::HTTP.get('169.254.169.254', '/latest/meta-data/placement/availability-zone').chop
 
@@ -47,13 +48,21 @@ Dir.mktmpdir do |dir|
   stemcell_properties = YAML.load_file(stemcell_manifest)
   image = "#{dir}/image"
 
-  ami = cloud.create_stemcell(image, stemcell_properties['cloud_properties'])
-  cloud.ec2.images[ami].public = true
+  ami_id = cloud.create_stemcell(image, stemcell_properties['cloud_properties'])
+  cloud.ec2.images[ami_id].public = true
 
-  puts "created AMI: #{ami}"
-  File.open('stemcell-ami.txt', "w") { |f| f << ami }
+  puts "created AMI: #{ami_id}"
+  File.open('stemcell-ami.txt', "w") { |f| f << ami_id }
 
-  stemcell_properties["cloud_properties"]["ami"] = { region => ami }
+  stemcell_properties["cloud_properties"]["ami"] = { region => ami_id }
+
+  s3 = AWS::S3.new
+  s3.buckets.create(BUCKET_NAME)    # doesn't fail if already exists in your account
+  bucket = s3.buckets[BUCKET_NAME]
+  obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_ami"]
+  obj.write(ami_id)
+  obj.acl = :public_read
+  puts "AMI name written to: #{obj.public_url}"
 
   FileUtils.rm_rf(image)
   FileUtils.touch(image)
