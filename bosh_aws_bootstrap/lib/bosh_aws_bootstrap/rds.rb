@@ -107,6 +107,12 @@ module Bosh
         aws_rds_client.delete_db_security_group(:db_security_group_name => name)
       end
 
+      def delete_security_groups
+        security_group_names.each do |name|
+          delete_security_group(name) unless name == "default"
+        end
+      end
+
       def aws_rds
         @aws_rds ||= ::AWS::RDS.new(@credentials)
       end
