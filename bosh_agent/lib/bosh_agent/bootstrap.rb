@@ -167,8 +167,8 @@ module Bosh::Agent
         swap_partition = "#{data_disk}1"
         data_partition = "#{data_disk}2"
 
-        swap_turned_on = !sh("cat /proc/swaps | grep #{swap_partition}").empty?
-        data_partition_mounted = !sh("mount | grep #{data_partition}").empty?
+        swap_turned_on = !sh("cat /proc/swaps | grep #{swap_partition}", :on_error => :return).empty?
+        data_partition_mounted = !sh("mount | grep #{data_partition}", :on_error => :return).empty?
 
         if Dir.glob("#{data_disk}[1-2]").empty?
           logger.info("Found unformatted drive")

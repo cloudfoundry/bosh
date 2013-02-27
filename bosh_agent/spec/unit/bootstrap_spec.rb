@@ -132,8 +132,8 @@ describe Bosh::Agent::Bootstrap do
       context "without anything mounted or formatted" do
 
         before do
-          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1").and_return('')
-          @processor.should_receive(:sh).with("mount | grep #{data_disk}2").and_return('')
+          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1", :on_error => :return).and_return('')
+          @processor.should_receive(:sh).with("mount | grep #{data_disk}2", :on_error => :return).and_return('')
         end
 
         it "should partition the disk with one data and one swap partition (with lazy_itable_init)" do
@@ -172,8 +172,8 @@ describe Bosh::Agent::Bootstrap do
       context "with swap mounted" do
 
         before do
-          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1").and_return('/dev/xvdb1                              partition	1702884	0	-1')
-          @processor.should_receive(:sh).with("mount | grep #{data_disk}2").and_return('')
+          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1", :on_error => :return).and_return('/dev/xvdb1                              partition	1702884	0	-1')
+          @processor.should_receive(:sh).with("mount | grep #{data_disk}2", :on_error => :return).and_return('')
           Dir.should_receive(:glob).with("#{data_disk}[1-2]").and_return(["#{data_disk}1", "#{data_disk}2"])
         end
 
@@ -193,8 +193,8 @@ describe Bosh::Agent::Bootstrap do
       context "with data partition mounted" do
 
         before do
-          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1").and_return('')
-          @processor.should_receive(:sh).with("mount | grep #{data_disk}2").and_return('/dev/xvdb2 on /var/vcap/data type ext4 (rw)')
+          @processor.should_receive(:sh).with("cat /proc/swaps | grep #{data_disk}1", :on_error => :return).and_return('')
+          @processor.should_receive(:sh).with("mount | grep #{data_disk}2", :on_error => :return).and_return('/dev/xvdb2 on /var/vcap/data type ext4 (rw)')
           Dir.should_receive(:glob).with("#{data_disk}[1-2]").and_return(["#{data_disk}1", "#{data_disk}2"])
         end
 
