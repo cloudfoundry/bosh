@@ -758,8 +758,8 @@ describe Bosh::Cli::Command::AWS do
           aws.create_rds_dbs(config_file, receipt_file)
         end
 
-        it "should fail after 120 attempts when not available" do
-          fake_aws_rds = make_fake_rds!(retries_needed: 121)
+        it "should fail after 180 attempts when not available" do
+          fake_aws_rds = make_fake_rds!(retries_needed: 181)
           expect { aws.create_rds_dbs(config_file, receipt_file) }.to raise_error
         end
       end
