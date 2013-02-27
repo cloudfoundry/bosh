@@ -2,7 +2,7 @@ require 'tempfile'
 
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    `ls #{ASSETS_DIR}/aws/aws_vpc_receipt.yml`.strip
+    File.expand_path("aws_vpc_receipt.yml")
   end
 
   def vpc_outfile
@@ -109,12 +109,11 @@ module AwsSystemExampleGroup
       if ENV["NO_PROVISION"]
         puts "Not deleting and recreating AWS resources, assuming we already have them"
       else
-        puts "Using configuration template: #{aws_configuration_template_path}"
-        run_bosh "aws destroy '#{aws_configuration_template_path}'"
+        run_bosh "aws destroy"
         puts "CLEANUP SUCCESSFUL"
 
-        system "rm -f #{ASSETS_DIR}/aws/create-*-output-*.yml"
-        system "rm -f #{ASSETS_DIR}/aws/aws_vpc_receipt.yml"
+        FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
+        FileUtils.rm_rf(vpc_outfile_path)
 
         run_bosh "aws create vpc '#{aws_configuration_template_path}'"
 
