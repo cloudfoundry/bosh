@@ -74,6 +74,10 @@ module Bosh
         aws_rds_client.describe_db_subnet_groups.data[:db_subnet_groups].map { |sg| sg[:db_subnet_group_name] }
       end
 
+      def delete_subnet_group(name)
+        aws_rds_client.delete_db_subnet_group(:db_subnet_group_name => name)
+      end
+
       def security_group_exists?(name)
         aws_rds_client.describe_db_security_groups(:db_security_group_name => name)
         return true
