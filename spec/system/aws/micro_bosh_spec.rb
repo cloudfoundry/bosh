@@ -68,7 +68,8 @@ describe "AWS" do
 
     Dir.chdir cf_release_path do
       run_bosh "create release"
-      run_bosh "upload release"
+      upload_result = run_bosh "upload release", :ignore_failures => true
+      upload_result.should match(/Release has been created|This release version has already been uploaded/)
     end
 
     Dir.chdir deployments_path do
