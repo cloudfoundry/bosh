@@ -80,7 +80,7 @@ describe "AWS" do
     end
 
     Dir.chdir deployments_path do
-      run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}' '#{aws_configuration_template_path}'"
+      run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}'"
       FileUtils.cp("#{deployments_aws_path}/cf-aws-stub.yml", "cf-aws.yml")
       run_bosh "deployment cf-aws.yml"
       run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
