@@ -2,7 +2,7 @@ require 'tempfile'
 
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    File.expand_path("aws_vpc_receipt.yml")
+    File.join(BOSH_ROOT_DIR, "aws_vpc_receipt.yml")
   end
 
   def vpc_outfile
@@ -112,10 +112,11 @@ module AwsSystemExampleGroup
         run_bosh "aws destroy"
         puts "CLEANUP SUCCESSFUL"
 
-        FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
         FileUtils.rm_rf(vpc_outfile_path)
 
-        run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+        Dir.chdir(BOSH_ROOT_DIR) do
+          run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+        end
 
         puts "AWS RESOURCES CREATED SUCCESSFULLY!"
       end
