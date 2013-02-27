@@ -90,8 +90,13 @@ module Bosh::Cli::Command
 
     usage "aws create"
     desc "create everything in config file"
+    option "--trace", "print all HTTP traffic"
     def create(config_file = nil)
       config_file ||= default_config_file
+      if !!options[:trace]
+         require 'logger'
+         ::AWS.config(:logger => Logger.new($stdout), :http_wire_trace => true)
+      end
       create_vpc(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)
