@@ -128,8 +128,8 @@ module Bosh::Cli::Command
 
       if was_vpc_eventually_available?(vpc)
         say "creating internet gateway"
-        ec2.create_internet_gateway
-        vpc.attach_internet_gateway(ec2.internet_gateway_ids.first)
+        igw = ec2.create_internet_gateway
+        vpc.attach_internet_gateway(igw.id)
 
         security_groups = config["vpc"]["security_groups"]
         say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"

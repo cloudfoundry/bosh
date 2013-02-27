@@ -148,9 +148,10 @@ describe Bosh::Aws::EC2 do
     describe "creating" do
       it "should create an internet gateway" do
         fake_gateway_collection = double("internet_gateways")
+        fake_gateway = double(AWS::EC2::InternetGateway, id: 'igw-1234')
         ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: fake_gateway_collection))
-        fake_gateway_collection.should_receive(:create)
-        ec2.create_internet_gateway
+        fake_gateway_collection.should_receive(:create).and_return(fake_gateway)
+        ec2.create_internet_gateway.should == fake_gateway
       end
     end
 
