@@ -11,7 +11,7 @@ module Bosh::Agent
       @logger = Bosh::Agent::Config.logger
       @cdrom_retry_wait = DEFAULT_CDROM_RETRY_WAIT
       @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
-      cd_drive = `cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}'`.strip
+      cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
       @cdrom_device = "/dev/#{cd_drive}"
     end
 
