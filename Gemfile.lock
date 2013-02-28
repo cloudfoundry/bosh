@@ -89,6 +89,7 @@ PATH
   remote: bosh_common
   specs:
     bosh_common (1.5.0.pre2)
+      retryable (~> 1.3.2)
 
 PATH
   remote: bosh_cpi
@@ -347,6 +348,7 @@ GEM
       vegas (~> 0.1.2)
     rest-client (1.6.7)
       mime-types (>= 1.16)
+    retryable (1.3.2)
     rspec (2.12.0)
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)
@@ -438,6 +440,7 @@ DEPENDENCIES
   rake (~> 10.0)
   redis
   rest-client
+  retryable (= 1.3.2)
   rspec
   ruby-debug19
   ruby_gntp

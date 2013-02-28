@@ -16,4 +16,6 @@ Gem::Specification.new do |s|
 
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = "lib"
+
+  s.add_dependency "retryable", "~> 1.3.2"
 end
