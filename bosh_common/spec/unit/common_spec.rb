@@ -6,21 +6,21 @@ require "common/common"
 
 describe Bosh::Common do
 
-  describe "#symbolize_keys" do
+  describe "::symbolize_keys" do
     ORIGINAL = {
-      "foo1" => "bar",
-      :foo2 => "bar",
-      "foo3" => {
-        "foo4" => "bar"
-      }
+        "foo1" => "bar",
+        :foo2 => "bar",
+        "foo3" => {
+            "foo4" => "bar"
+        }
     }.freeze
 
     EXPECTED = {
-      :foo1 => "bar",
-      :foo2 => "bar",
-      :foo3 => {
-        :foo4 => "bar"
-      }
+        :foo1 => "bar",
+        :foo2 => "bar",
+        :foo3 => {
+            :foo4 => "bar"
+        }
     }.freeze
 
     it "should not modify the original hash" do
@@ -34,7 +34,7 @@ describe Bosh::Common do
     end
   end
 
-  describe "#which" do
+  describe "::which" do
     let(:path) {
       path = ENV["PATH"]
       path += ":#{File.expand_path('../../assets', __FILE__)}"
@@ -54,6 +54,51 @@ describe Bosh::Common do
 
     it "should return nil when it doesn't find an executable" do
       Bosh::Common.which("foo1").should be_nil
+    end
+  end
+
+  describe "::retryable" do
+    it "should retry the given number of times" do
+      Bosh::Common.stub(:sleep)
+
+      count = 0
+
+      Bosh::Common.retryable(tries: 2) do |tries|
+        count += 1
+        raise StandardError if tries == 0
+      end
+
+      count.should == 2
+    end
+
+    it "should sleep on each retry the given number of seconds" do
+      Bosh::Common.should_receive(:sleep).with(5).twice
+
+      Bosh::Common.retryable(tries: 3, sleep: 5) do |tries|
+        raise StandardError if tries < 2
+      end
+    end
+
+    it "should retry when given error is raised" do
+      Bosh::Common.stub(:sleep)
+
+      count = 0
+
+      Bosh::Common.retryable(tries: 3, on: [ArgumentError, RuntimeError]) do |tries|
+        count += 1
+        raise ArgumentError if tries == 0
+        raise RuntimeError if tries == 1
+      end
+
+      count.should == 3
+    end
+
+    it "should raise an error if that error is raised and isn't in the specified list" do
+      expect {
+        Bosh::Common.retryable(on: [ArgumentError]) do
+          1/0
+        end
+      }.to raise_error(ZeroDivisionError)
     end
   end
 end

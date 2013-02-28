@@ -1,4 +1,4 @@
-require 'retryable'
+require "common/common"
 
 module Bosh::AwsCloud
   class InstanceManager
@@ -31,7 +31,7 @@ module Bosh::AwsCloud
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
 
-      Retryable.retryable(sleep: 30, tries: 10, on: [AWS::EC2::Errors::InvalidIPAddress::InUse]) do |tries, e|
+      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: [AWS::EC2::Errors::InvalidIPAddress::InUse]) do |tries, e|
         @logger.warn("IP address was in use: #{e}") if tries > 0
         @instance = @region.instances.create(instance_params)
       end
@@ -146,5 +146,6 @@ module Bosh::AwsCloud
       Bosh::Clouds::Config.task_checkpoint
     end
 
+    def instance_create_wait_time; 30; end
   end
 end

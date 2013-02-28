@@ -1,9 +1,11 @@
 # Copyright (c) 2012 VMware, Inc.
+require 'retryable'
 
 module Bosh
 
   # Module for common methods used throughout the BOSH code.
   module Common
+    extend Retryable::Methods
 
     # Converts all keys of a [Hash] to symbols. Performs deep conversion.
     #
