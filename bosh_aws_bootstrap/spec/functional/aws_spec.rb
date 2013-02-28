@@ -7,7 +7,7 @@ describe Bosh::Cli::Command::AWS do
                          File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
                      ))
   end
-  before { aws.stub(:sleep)  }
+  before { aws.stub(:sleep) }
 
   describe "command line tools" do
     describe "aws bootstrap micro" do
@@ -35,8 +35,8 @@ describe Bosh::Cli::Command::AWS do
 
       it "should remove any existing deployment artifacts first" do
         FileUtils.mkdir_p("deployments/micro")
-        File.open("deployments/leftover.yml", "w") {|f| f.write("old stuff!")}
-        File.open("deployments/micro/leftover.yml", "w") {|f| f.write("old stuff!")}
+        File.open("deployments/leftover.yml", "w") { |f| f.write("old stuff!") }
+        File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
         File.exist?("deployments/leftover.yml").should == true
         File.exist?("deployments/micro/leftover.yml").should == true
         aws.bootstrap_micro
@@ -85,27 +85,20 @@ describe Bosh::Cli::Command::AWS do
     describe "aws generate bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
 
-      around do |test|
+      it "generates required bosh deployment keys" do
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
-            aws.stub!(:target_required)
+            aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
             aws.create_bosh_manifest(create_vpc_output_yml)
-            test.run
+            YAML.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
           end
         end
       end
-
-      it "generates required bosh deployment keys" do
-        @bosh_yaml = YAML.load_file("bosh.yml")
-
-        @bosh_yaml['name'].should == "vpc-bosh-dev102"
-      end
-
     end
 
     describe "aws create" do
-      let(:config_file) {asset "create_all.yml"}
+      let(:config_file) { asset "create_all.yml" }
       before do
         aws.stub(:create_vpc)
         aws.stub(:create_rds_dbs)
@@ -258,7 +251,7 @@ describe Bosh::Cli::Command::AWS do
         aws.create_vpc config_file
 
         aws.output_state["vpc"]["id"].should == "vpc id"
-        aws.output_state["vpc"]["subnets"].should == { "bosh" => "amz-subnet1", "name2" => "amz-subnet2" }
+        aws.output_state["vpc"]["subnets"].should == {"bosh" => "amz-subnet1", "name2" => "amz-subnet2"}
         aws.output_state["key_pairs"].should == ["dev102"]
         aws.output_state["original_configuration"].should == YAML.load_file(config_file)
       end
@@ -352,7 +345,7 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create s3" do
       let(:config_file) { asset "config.yml" }
-      let(:fake_s3) { mock("s3")}
+      let(:fake_s3) { mock("s3") }
 
       it "should create all configured buckets" do
 
@@ -623,11 +616,11 @@ describe Bosh::Cli::Command::AWS do
 
       it "should snapshot EBS volumes in all deployments" do
         bat_vm_fixtures = [
-            {"agent_id" => "a1b2", "cid" => "i-a1b2c3" ,"job" => "director", "index" => 0},
-            {"agent_id" => "a3b4", "cid" => "i-d4e5f6" ,"job" => "postgres", "index" => 0}
+            {"agent_id" => "a1b2", "cid" => "i-a1b2c3", "job" => "director", "index" => 0},
+            {"agent_id" => "a3b4", "cid" => "i-d4e5f6", "job" => "postgres", "index" => 0}
         ]
         bosh_vm_fixtures = [
-            {"agent_id" => "a1b2", "cid" => "i-g1h2i3" ,"job" => "director", "index" => 0}
+            {"agent_id" => "a1b2", "cid" => "i-g1h2i3", "job" => "director", "index" => 0}
         ]
 
         fake_director = mock("director", :uuid => "dir-uuid")
@@ -660,7 +653,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.should_receive(:say).with("    instance: `i-a1b2c3'")
         fake_instance.should_receive(:block_device_mappings).
-            and_return({"/dev/sda" => fake_attachment,"/dev/sdb" => fake_attachment})
+            and_return({"/dev/sda" => fake_attachment, "/dev/sdb" => fake_attachment})
         aws.should_receive(:say).with("      volume: `v-a1b2c3' device: `/dev/sda'")
         fake_attachment.should_receive(:volume).twice.and_return(mock_volume("v-a1b2c3"))
         aws.should_receive(:say).with("      volume: `v-a4b5c6' device: `/dev/sdb'")
@@ -700,14 +693,14 @@ describe Bosh::Cli::Command::AWS do
         create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16"]
         create_database_params << creation_options if creation_options
         fake_aws_rds.should_receive(:create_database).with(*create_database_params).and_return(
-          :engine => "mysql",
-          :master_username => "ccdb_user",
-          :master_user_password => "ccdb_password"
+            :engine => "mysql",
+            :master_username => "ccdb_user",
+            :master_user_password => "ccdb_password"
         )
 
         fake_aws_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
         fake_aws_rds.should_receive(:create_database).
-          with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16").and_return(
+            with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16").and_return(
             :engine => "mysql",
             :master_username => "uaa_user",
             :master_user_password => "uaa_password")
@@ -760,41 +753,41 @@ describe Bosh::Cli::Command::AWS do
         aws.create_rds_dbs(config_file, receipt_file)
 
         aws.output_state["deployment_manifest"]["properties"]["ccdb"].should == {
-          "db_scheme" => "mysql",
-          "address" => "1.2.3.4",
-          "port" => 1234,
-          "roles" => [
-            {
-              "tag" => "admin",
-              "name" => "ccdb_user",
-              "password" => "ccdb_password"
-            }
-          ],
-          "databases" => [
-            {
-              "tag" => "cc",
-              "name" => "ccdb"
-            }
-          ]
+            "db_scheme" => "mysql",
+            "address" => "1.2.3.4",
+            "port" => 1234,
+            "roles" => [
+                {
+                    "tag" => "admin",
+                    "name" => "ccdb_user",
+                    "password" => "ccdb_password"
+                }
+            ],
+            "databases" => [
+                {
+                    "tag" => "cc",
+                    "name" => "ccdb"
+                }
+            ]
         }
 
         aws.output_state["deployment_manifest"]["properties"]["uaadb"].should == {
-          "db_scheme" => "mysql",
-          "address" => "5.6.7.8",
-          "port" => 5678,
-          "roles" => [
-            {
-              "tag" => "admin",
-              "name" => "uaa_user",
-              "password" => "uaa_password"
-            }
-          ],
-          "databases" => [
-            {
-              "tag" => "uaa",
-              "name" => "uaadb"
-            }
-          ]
+            "db_scheme" => "mysql",
+            "address" => "5.6.7.8",
+            "port" => 5678,
+            "roles" => [
+                {
+                    "tag" => "admin",
+                    "name" => "uaa_user",
+                    "password" => "uaa_password"
+                }
+            ],
+            "databases" => [
+                {
+                    "tag" => "uaa",
+                    "name" => "uaadb"
+                }
+            ]
         }
       end
 

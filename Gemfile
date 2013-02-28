@@ -36,7 +36,6 @@ end
 
 group :development do
   gem "ruby_gntp"
-  gem "ruby-debug19"
 end
 
 group :bat do
@@ -47,13 +46,13 @@ group :bat do
 end
 
 group :development, :test do
-
   gem "rack-test"
   gem "guard"
   gem "guard-bundler"
   gem "guard-rspec"
   gem "ci_reporter"
   gem "rspec"
+  gem "debugger"
 
   gem "simplecov"
   gem "simplecov-rcov"
