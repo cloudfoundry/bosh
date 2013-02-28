@@ -17,7 +17,7 @@ module Bosh::Agent
     def cdrom_device
       unless @cdrom_device
         # only do this when not already done
-        cd_drive = `cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}'`
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
         @cdrom_device = "/dev/#{cd_drive.strip}"
       end
       @cdrom_device
@@ -129,11 +129,11 @@ module Bosh::Agent
     end
 
     def umount_cdrom
-      `umount #@cdrom_settings_mount_point 2>&1`
+      Bosh::Exec.sh "umount #@cdrom_settings_mount_point 2>&1"
     end
 
     def eject_cdrom
-      `eject #{cdrom_device}`
+      Bosh::Exec.sh "eject #{cdrom_device}"
     end
 
   end
