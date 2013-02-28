@@ -12,10 +12,6 @@ describe "AWS" do
     end
   end
 
-  it "should work" do
-    run_bosh("status", :capture_output => true).should =~ /User\s*admin/
-  end
-
   it "should be able to launch a MicroBosh from existing stemcell" do
     run_bosh "status"
     puts "DEPLOYMENT FINISHED!"
