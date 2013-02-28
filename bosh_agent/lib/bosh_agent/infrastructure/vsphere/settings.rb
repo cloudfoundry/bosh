@@ -11,6 +11,8 @@ module Bosh::Agent
       @logger = Bosh::Agent::Config.logger
       @cdrom_retry_wait = DEFAULT_CDROM_RETRY_WAIT
       @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
+      cd_drive = `cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}'`
+      @cdrom_device = "/dev/#{cd_drive}"
     end
 
     def load_settings
@@ -51,7 +53,7 @@ module Bosh::Agent
           read_cdrom_byte
           break
         rescue => e
-          @logger.info("Waiting for /dev/cdrom (ENOMEDIUM): #{e.inspect}")
+          @logger.info("Waiting for #@cdrom_device (ENOMEDIUM): #{e.inspect}")
         end
         sleep @cdrom_retry_wait
       end
@@ -75,7 +77,7 @@ module Bosh::Agent
           @logger.info("Waiting for udev cdrom-id (EBUSY)")
           # do nothing
         rescue Errno::ENOTBLK, Errno::ENOMEDIUM # 1.8: Errno::E123
-          @logger.info("Waiting for /dev/cdrom (ENOMEDIUM or ENOTBLK)")
+          @logger.info("Waiting for #@cdrom_device (ENOMEDIUM or ENOTBLK)")
           # do nothing
         end
         sleep @cdrom_retry_wait
@@ -99,10 +101,10 @@ module Bosh::Agent
     end
 
     def read_cdrom_byte
-      if File.blockdev?("/dev/cdrom")
-        File.read("/dev/cdrom", 1)
+      if File.blockdev?(@cdrom_device)
+        File.read(@cdrom_device, 1)
       else
-        @logger.info("/dev/cdrom not a blockdev")
+        @logger.info("#@cdrom_device not a blockdev")
         raise Errno::ENOTBLK
       end
     end
@@ -113,17 +115,17 @@ module Bosh::Agent
     end
 
     def mount_cdrom
-      output = `mount /dev/cdrom #{@cdrom_settings_mount_point} 2>&1`
+      output = `mount #@cdrom_device #@cdrom_settings_mount_point 2>&1`
       raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #{@cdrom_settings_mount_point}: #{output}" unless $?.exitstatus == 0
+        "Failed to mount settings on #@cdrom_settings_mount_point: #{output}" unless $?.exitstatus == 0
     end
 
     def umount_cdrom
-      `umount #{@cdrom_settings_mount_point} 2>&1`
+      `umount #@cdrom_settings_mount_point 2>&1`
     end
 
     def eject_cdrom
-      `eject /dev/cdrom`
+      `eject #@cdrom_device`
     end
 
   end
