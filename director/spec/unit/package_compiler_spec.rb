@@ -51,7 +51,8 @@ describe Bosh::Director::PackageCompiler do
     deps = package.dependency_set.map do |dep_name|
       BD::Models::Package.find(:name => dep_name)
     end
-    dep_key = BD::Models::CompiledPackage.generate_dependency_key(deps)
+    task = BD::CompileTask.new(package, stemcell, deps)
+    dep_key = task.dependency_key
 
     BD::Models::CompiledPackage.make(:package => package,
                                      :dependency_key => dep_key,
@@ -324,8 +325,7 @@ describe Bosh::Director::PackageCompiler do
     package = BDM::Package.make
     stemcell = BDM::Stemcell.make
 
-    task = BD::CompileTask.new(package, stemcell)
-    task.dependency_key = "[]"
+    task = BD::CompileTask.new(package, stemcell, [])
 
     compiler = make(@plan)
     callback = nil
@@ -346,8 +346,9 @@ describe Bosh::Director::PackageCompiler do
   describe "the global blobstore" do
     let(:package) { BDM::Package.make }
     let(:stemcell) { BDM::Stemcell.make }
-    let(:task) { BD::CompileTask.new(package, stemcell) }
+    let(:task) { BD::CompileTask.new(package, stemcell, []) }
     let(:compiler) { make(@plan) }
+    let(:cache_key) { "cache key" }
 
     before(:each) do
       package.fingerprint = "fingerprint"
@@ -356,6 +357,7 @@ describe Bosh::Director::PackageCompiler do
       stemcell.save
 
       task.dependency_key = "[]"
+      task.stub(:cache_key).and_return(cache_key)
 
       BD::Config.stub(:use_global_blobstore?).and_return(true)
     end
@@ -367,7 +369,7 @@ describe Bosh::Director::PackageCompiler do
         callback = block
       end
 
-      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, stemcell).and_return(true)
+      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
       BD::BlobUtil.should_not_receive(:save_to_global_cache)
       compiler.stub(:prepare_vm)
       BDM::CompiledPackage.stub(:create)
@@ -384,8 +386,8 @@ describe Bosh::Director::PackageCompiler do
       end
 
       compiled_package = mock("compiled package", package: package, stemcell: stemcell, blobstore_id: "some blobstore id")
-      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, stemcell).and_return(false)
-      BD::BlobUtil.should_receive(:save_to_global_cache).with(compiled_package)
+      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
+      BD::BlobUtil.should_receive(:save_to_global_cache).with(compiled_package, cache_key)
       compiler.stub(:prepare_vm)
       BDM::CompiledPackage.stub(:create).and_return(compiled_package)
 
@@ -411,8 +413,4 @@ describe Bosh::Director::PackageCompiler do
       callback.call
     end
   end
-
-
-
-
 end

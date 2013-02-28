@@ -117,9 +117,7 @@ module Bosh::Director
         job.release.get_package_model_by_name(name)
       end
 
-      task = CompileTask.new(package, stemcell)
-      task.dependency_key = generate_dependency_key(dependencies)
-      task.add_job(job)
+      task = CompileTask.new(package, stemcell, dependencies, job)
 
       compiled_package = find_compiled_package(task)
       if compiled_package
@@ -241,8 +239,8 @@ module Bosh::Director
           end
 
           if Config.use_global_blobstore?
-            unless Bosh::Director::BlobUtil.exists_in_global_cache?(package, stemcell)
-              Bosh::Director::BlobUtil.save_to_global_cache(compiled_package)
+            unless Bosh::Director::BlobUtil.exists_in_global_cache?(package, task.cache_key)
+              Bosh::Director::BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
             end
           end
 
@@ -380,15 +378,6 @@ module Bosh::Director
 
       vm.update(:apply_spec => state)
       agent.apply(state)
-    end
-
-    # Returns JSON-encoded stable representation of package dependencies. This
-    # representation doesn't include release name, so differentiating packages
-    # with the same name from different releases is up to the caller.
-    # @param [Array<Models::Package>] packages List of packages
-    # @return [String] JSON-encoded dependency key
-    def generate_dependency_key(packages)
-      Models::CompiledPackage.generate_dependency_key(packages)
     end
 
     def generate_build_number(package, stemcell)
