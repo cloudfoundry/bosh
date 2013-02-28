@@ -8,12 +8,16 @@ module Bosh::Agent
     require 'bosh_agent/platform/linux/logrotate'
     require 'bosh_agent/platform/linux/password'
     require 'bosh_agent/platform/linux/network'
+    require 'bosh_agent/platform/linux/service'
+
+    attr_reader :ssh_service
 
     def initialize
       @disk ||= Disk.new
       @logrotate ||= Logrotate.new
       @password ||= Password.new
       @network ||= Network.new
+      @ssh_service ||= Service.new("sshd")
     end
 
     def configure_disks(settings)
@@ -42,6 +46,14 @@ module Bosh::Agent
 
     def setup_networking
       @network.setup_networking
+    end
+
+    def start_ssh_and_wait(timeout)
+      @ssh_service.start_and_wait(timeout)
+    end
+
+    def stop_ssh_and_wait(timeout)
+      @ssh_service.stop_and_wait(timeout)
     end
 
   end

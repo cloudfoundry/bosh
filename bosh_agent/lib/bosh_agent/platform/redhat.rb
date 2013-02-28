@@ -11,6 +11,7 @@ module Bosh::Agent
     def initialize
       @disk ||= Disk.new
       @network ||= Network.new
+      @ssh_service ||= Service.new("ssh")
 
       super
     end
