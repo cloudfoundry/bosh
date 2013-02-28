@@ -17,7 +17,7 @@ module Bosh::Agent
     def cdrom_device
       unless @cdrom_device
         # only do this when not already done
-        cd_drive = `cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}'`
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
         @cdrom_device = "/dev/#{cd_drive.strip}"
       end
       @cdrom_device
@@ -84,7 +84,7 @@ module Bosh::Agent
         rescue Errno::EBUSY
           @logger.info("Waiting for udev cdrom-id (EBUSY)")
           # do nothing
-        rescue Errno::ENOTBLK, Errno::ENOMEDIUM # 1.8: Errno::E123
+        rescue Errno::ENOMEDIUM # 1.8: Errno::E123
           @logger.info("Waiting for #{cdrom_device} (ENOMEDIUM or ENOTBLK)")
           # do nothing
         end
@@ -93,7 +93,7 @@ module Bosh::Agent
 
       begin
         read_cdrom_byte
-      rescue Errno::ENOTBLK, Errno::EBUSY, Errno::ENOMEDIUM # 1.8: Errno::E123
+      rescue Errno::EBUSY, Errno::ENOMEDIUM # 1.8: Errno::E123
         raise Bosh::Agent::LoadSettingsError, "No bosh cdrom env: #{e.inspect}"
       end
     end
@@ -109,12 +109,7 @@ module Bosh::Agent
     end
 
     def read_cdrom_byte
-      if File.blockdev?(cdrom_device)
-        File.read(cdrom_device, 1)
-      else
-        @logger.info("#{cdrom_device} not a blockdev")
-        raise Errno::ENOTBLK
-      end
+      File.read(cdrom_device, 1)
     end
 
     def create_cdrom_settings_mount_point
@@ -129,11 +124,11 @@ module Bosh::Agent
     end
 
     def umount_cdrom
-      `umount #@cdrom_settings_mount_point 2>&1`
+      Bosh::Exec.sh "umount #@cdrom_settings_mount_point 2>&1"
     end
 
     def eject_cdrom
-      `eject #{cdrom_device}`
+      Bosh::Exec.sh "eject #{cdrom_device}"
     end
 
   end
