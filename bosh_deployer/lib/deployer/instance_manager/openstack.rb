@@ -89,7 +89,7 @@ module Bosh::Deployer
         begin
           http_client.head("http://127.0.0.1:#{@registry_port}")
           sleep 0.5
-        rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
+        rescue URI::Error, SocketError, Errno::ECONNREFUSED, HTTPClient::ReceiveTimeoutError => e
           if timeout_time - Time.now.to_f > 0
             retry
           else
