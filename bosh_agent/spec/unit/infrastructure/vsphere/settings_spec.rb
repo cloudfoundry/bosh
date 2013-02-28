@@ -17,6 +17,22 @@ describe Bosh::Agent::Infrastructure::Vsphere::Settings do
     @settings.stub!(:read_cdrom_byte)
   end
 
+  it "should parse the /proc/sys/dev/cdrom/info with newline correctly" do
+    @settings.should_receive(:`).with('cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk \'{print $3}\'').and_return("sr0\n")
+    @settings.cdrom_device.should eq "/dev/sr0"
+  end
+
+  it "should invoke commandline for /proc/sys/dev/cdrom/info just once" do
+    @settings.should_receive(:`).with('cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk \'{print $3}\'').and_return("sr0\n")
+    @settings.cdrom_device.should eq "/dev/sr0"
+    @settings.cdrom_device.should eq "/dev/sr0"
+  end
+
+  it "should parse the /proc/sys/dev/cdrom/info without a newline correctly" do
+    @settings.should_receive(:`).with('cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk \'{print $3}\'').and_return("sr0")
+    @settings.cdrom_device.should eq "/dev/sr0"
+  end
+
   it 'should load settings' do
     cdrom_dir = File.join(base_dir, 'bosh', 'settings')
     env = File.join(cdrom_dir, 'env')
