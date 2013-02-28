@@ -216,7 +216,7 @@ module Bosh::Director
         # Check if the package was compiled in a parallel deployment
         compiled_package = find_compiled_package(task)
         if compiled_package.nil?
-          build = generate_build_number(package, stemcell)
+          build = Models::CompiledPackage.generate_build_number(package, stemcell)
           task_result = nil
 
           prepare_vm(stemcell) do |vm_data|
@@ -239,11 +239,11 @@ module Bosh::Director
           end
 
           if Config.use_global_blobstore?
-            if Bosh::Director::BlobUtil.exists_in_global_cache?(package, task.cache_key)
+            if BlobUtil.exists_in_global_cache?(package, task.cache_key)
               @logger.info("Already exists in global package cache, skipping upload")
             else
               @logger.info("Uploading to global package cache")
-              Bosh::Director::BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
+              BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
             end
           else
             @logger.info("Global blobstore not configured, skipping upload")
@@ -383,15 +383,6 @@ module Bosh::Director
 
       vm.update(:apply_spec => state)
       agent.apply(state)
-    end
-
-    def generate_build_number(package, stemcell)
-      attrs = {
-        :package_id => package.id,
-        :stemcell_id => stemcell.id
-      }
-
-      Models::CompiledPackage.filter(attrs).max(:build).to_i + 1
     end
 
     def compilation_count
