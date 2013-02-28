@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Blobstore::AtmosBlobstoreClient do
 
@@ -33,6 +33,12 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
     object_info["oid"].should eql("test-key")
     object_info["sig"].should_not be_nil
+  end
+
+  it 'should raise an error if a object id is suggested' do
+    expect {
+      @client.create('data', 'foobar')
+    }.to raise_error Bosh::Blobstore::BlobstoreError
   end
 
   it "should delete an object" do
