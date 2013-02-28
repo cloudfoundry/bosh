@@ -7,7 +7,7 @@ cd /usr/src
 tar zxvf vmware-tools-vmxnet3-modules.tar.gz
 cd modules/vmware-tools-vmxnet3-modules/vmxnet3-only
 
-module_dir=`ls -d /lib/modules/2.6.*-virtual | tail -1`
+module_dir=`ls -d /lib/modules/3.*-virtual | tail -1`
 kernel_uname_r=`basename ${module_dir}`
 
 # Work around Makefile autodetection of environment - kernel version mismatch

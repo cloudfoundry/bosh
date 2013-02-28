@@ -10,7 +10,7 @@ source $base_dir/lib/prelude_bosh.bash
 
 if [ $DISTRIB_CODENAME == "lucid" ]
 then
-  variant="lts-backport-natty"
+  variant="lts-backport-oneiric"
 
   # Headers are needed for open-vm-tools
   apt_get install linux-image-virtual-${variant} linux-headers-virtual-${variant}
