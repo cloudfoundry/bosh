@@ -73,6 +73,10 @@ module Bosh
         @aws_vpc.security_groups.reject { |group| group.name == "default" }.each(&:delete)
       end
 
+      def security_group_by_name(name)
+        @aws_vpc.security_groups.detect {|sg| sg.name == name}
+      end
+
       def create_subnets(subnets)
         nat_instances = {}
         subnets.each_pair do |name, subnet_spec|

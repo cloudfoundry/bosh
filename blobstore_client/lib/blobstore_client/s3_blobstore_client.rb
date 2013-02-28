@@ -61,10 +61,10 @@ module Bosh
       end
 
       # @param [File] file file to store in S3
-      def create_file(file)
+      def create_file(object_id, file)
         raise BlobstoreError, "unsupported action" if @simple
 
-        object_id = generate_object_id
+        object_id ||= generate_object_id
 
         file = encrypt_file(file) if @encryption_key
 
@@ -136,8 +136,10 @@ module Bosh
       # @param [String] oid object id
       # @return [void]
       def store_in_s3(path, oid)
+        s3_object = get_object_from_s3(oid)
+        raise BlobstoreError, "object id #{oid} is already in use" if s3_object.exist?
         File.open(path, "r") do |temp_file|
-          @s3.buckets[bucket_name].objects[oid].write(temp_file)
+          s3_object.write(temp_file)
         end
       end
 

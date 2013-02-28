@@ -1,0 +1,164 @@
+--- 
+packages: 
+- name: nats
+  version: 2
+  sha1: a3597d50dd25f9ff9b4ed3fe02289246407e37f0
+  fingerprint: 5d2e8843f59dd01a96585a4c510639a574d58fbd
+  dependencies: 
+  - ruby
+- name: redis
+  version: 2
+  sha1: 122bb5c973965435a29b8a0c1f32f87644ca217a
+  fingerprint: d452d9a8fd83da5859a26f3beec97527d2c09c80
+  dependencies: []
+
+- name: nginx
+  version: 2
+  sha1: 53be85357454956099cd4039c5c6f060ae0004e5
+  fingerprint: bee81d4f6740ce88acc1894f17dbd3b2fab7c2c1
+  dependencies: []
+
+- name: aws_registry
+  version: 5
+  sha1: 80c4bd1f270f0ed5e69bde3480e89d24db89dd3c
+  fingerprint: f8b1e9034e3b2ddebe851258adecee2cca6bd74a
+  dependencies: 
+  - libpq
+  - ruby
+- name: libpq
+  version: 2
+  sha1: e3a6b45f6edf01d6c91c37497ef83d19fa423b85
+  fingerprint: aeb5aa4c222cb0650018170172dd3ac19f00e57d
+  dependencies: []
+
+- name: gonatsd
+  version: 1
+  sha1: 19f7dc69ccddcd3a73d46702de5d1eb802f28cc0
+  fingerprint: fdda10ed729b564f1610424b6f5a869f12c7f8ad
+  dependencies: 
+  - golang
+- name: director
+  version: 9
+  sha1: d43697389985087965a9b10d6ccc894c9573a05d
+  fingerprint: 0f4903ae60c4f50d85d865ff20342bbc36429fac
+  dependencies: 
+  - libpq
+  - ruby
+- name: common
+  version: 1
+  sha1: c084da854dcf932d000536855f22bc05b23e1b81
+  fingerprint: 839e46d49ddcbae39f15e722f0023d7ff015731a
+  dependencies: []
+
+- name: openstack_registry
+  version: 3
+  sha1: 0affa6865380d27e887d0fba2ff2d8dee3285d60
+  fingerprint: 88b52cf58e99f07676b6610a70497bfd3d935b2f
+  dependencies: 
+  - libpq
+  - ruby
+- name: golang
+  version: 1
+  sha1: 99b86ca31a9d53f8d8227cdd2296cc388290a156
+  fingerprint: ed7ccd2ee8bef45f5a91df1e9b229669ebc2f114
+  dependencies: []
+
+- name: postgres
+  version: 2
+  sha1: 59dff723a35967e7dc7065edaa157003f62a3849
+  fingerprint: d50272b289bc32c17c80fdb9f6471591a5adeb94
+  dependencies: []
+
+- name: health_monitor
+  version: 4
+  sha1: f0ef81b90c91fa74bd7c58b70dfe7e5754ff3801
+  fingerprint: 511b0acb6efe3194564699ba56a25f656ad87ca3
+  dependencies: 
+  - ruby
+- name: powerdns
+  version: 2
+  sha1: 0f1593aa18d25aa47462df893f28d535cd113c13
+  fingerprint: bd74e8714b2f1eb2441294ab4ae4cc7e83b5a92c
+  dependencies: []
+
+- name: ruby
+  version: 2
+  sha1: 3860fd160169fd34a56618e34d7e30c33d627aa8
+  fingerprint: 489ecf28c09dd54b6eb04563f7815deae02319a3
+  dependencies: []
+
+- name: blobstore
+  version: 3
+  sha1: ccdf74d2b4bd11ddc15b325a24e826b199455678
+  fingerprint: 96ed144182f7091f0dede07f3b3b326e38a1badd
+  dependencies: 
+  - ruby
+- name: genisoimage
+  version: 2
+  sha1: 87cb25d876244947e9fbbe07f4b76b1f77198f69
+  fingerprint: 365393ee6ceed42a8583c0833b10d9181b7dd4e8
+  dependencies: []
+
+jobs: 
+- name: nats
+  version: 4
+  fingerprint: 7f20b46b8609b97159a5f38f32afdb7519d975cb
+  sha1: a68fb9c1610257d069334a9c7ea9a556fc54ca21
+- name: redis
+  version: 2
+  fingerprint: 3d5767e5deec579dee61f2c131982a97975d405e
+  sha1: 8816f6c4663d0cd7c66eece593a7b2c4fe4c1eb4
+- name: micro_vsphere
+  version: 5
+  fingerprint: 0eade47206e1244441c7c2f9b00c109883b196c8
+  sha1: 71b427e63158603ea68a6148c83b5effa81cc187
+- name: aws_registry
+  version: 4
+  fingerprint: ef9679a460cd41b11d1009f62a84d3a5461dc3b1
+  sha1: aec9acc72b72eb4b4d58ee060e3dcbe87cb0ac88
+- name: micro_openstack
+  version: 3
+  fingerprint: ba3c61d0705c37ece45cb2e0043413672445399a
+  sha1: 4804a8150c1800b87bb21ef9e0c83f31ae4b2584
+- name: gonatsd
+  version: 1
+  fingerprint: 4758639ada8cea0d3450f6953e7fbf3595d9e536
+  sha1: f3b45d30133ee408ce6bcb7bd91893325f197970
+- name: director
+  version: 9
+  fingerprint: 334c550dfbbfa4aec09bedb86c0155c14bb4acae
+  sha1: b82406636fe4db39b257feee8e57ac438734b2df
+- name: openstack_registry
+  version: 2
+  fingerprint: 85645babd8e7729ed122799052d3e9e4cf459e9e
+  sha1: c10f4051ed7ab056d8068806915d6dcd6e3bb496
+- name: utility
+  version: 6
+  fingerprint: 50f19fb176a1a4f541cba838fbf0cc0e3e448e3c
+  sha1: 6a953c14ea21095a358087673e0761a0e8e4413c
+- name: postgres
+  version: 3
+  fingerprint: cdf5af070227a52b043a1b8fcc22d3a509232f29
+  sha1: a899105a3a5cc0bf513bbcef53d54eb64d8b5951
+- name: health_monitor
+  version: 3
+  fingerprint: dbf930643d2faace73d11f23c5f3345ad67d5535
+  sha1: 92085e83736af458c0513787b8804452f5fa1229
+- name: micro_vcloud
+  version: 1
+  fingerprint: 7f890f198e273c73def2c76cc59a451125621db9
+  sha1: a43d2f7e3eba3f0a3803549ee03130326cab64f2
+- name: micro_aws
+  version: 5
+  fingerprint: 1b4d03d38bfde2357e9301ed4959b6db8b100a62
+  sha1: 8e0e8fdf75a109f4e4c2d44738eb794237784c79
+- name: powerdns
+  version: 2
+  fingerprint: 1f4d0dde024e83cd66c48e07cf24dc2ee37c6a92
+  sha1: ab5334713048a351fc3072c4af8a7c854a88d3da
+- name: blobstore
+  version: 2
+  fingerprint: 321916b31deade9239ac13c4facd0f0b8279fe63
+  sha1: 667805889a4d5102751852d99b1b134840e76057
+name: bosh
+version: 11

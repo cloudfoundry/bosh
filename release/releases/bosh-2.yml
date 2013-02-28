@@ -1,0 +1,88 @@
+--- 
+packages: 
+- name: redis
+  version: 1
+  sha1: a7cb12a1af25fba8bd071b4e1a8bec5297042034
+  dependencies: []
+
+- name: ruby
+  version: 1
+  sha1: cbab7b06a703e5b0a407ab20e0d1ef91fa6119cc
+  dependencies: []
+
+- name: postgres
+  version: 1
+  sha1: 9d235b9e397d613c47d7cb629f858bed485f0631
+  dependencies: []
+
+- name: genisoimage
+  version: 1
+  sha1: d58271ba79a4325b8c8e84152aaafdb1a58aea63
+  dependencies: []
+
+- name: nginx
+  version: 1
+  sha1: c24ee33a4435af96e761be0ff6d499c7fdb1a2a9
+  dependencies: []
+
+- name: blobstore
+  version: 1
+  sha1: df2eb5ab5ee0de9729e6ff6951f41fc5b623f8b2
+  dependencies: 
+  - ruby
+- name: director
+  version: 1
+  sha1: b8a5b9cd3e6554056a4bee36d7da2a6bfc6df091
+  dependencies: 
+  - libpq
+  - ruby
+- name: libpq
+  version: 1
+  sha1: 1b2789a7122dd1c62aab138bc97966f75a34a040
+  dependencies: []
+
+- name: nats
+  version: 1
+  sha1: d5a042c08c70df1e32d9b75ee3872f04c2fd08c0
+  dependencies: 
+  - ruby
+- name: aws_registry
+  version: 1
+  sha1: ad310eb3cb0053b4317b2b8ae1db8499efc92797
+  dependencies: 
+  - ruby
+- name: health_monitor
+  version: 1
+  sha1: fcb2e863515be3359b5f230a41b1f5061f7132a8
+  dependencies: 
+  - ruby
+jobs: 
+- name: utility
+  version: 2
+  sha1: e9a9797ce961871dd261983ccb7c5c460097ec62
+- name: redis
+  version: 1
+  sha1: 5ade925cc933cbbf2fd203d7cf76da07d46d211a
+- name: postgres
+  version: 1
+  sha1: a3ffd42ea4f2f6e174b1c5fcc4374c99ea723df4
+- name: blobstore
+  version: 2
+  sha1: 667805889a4d5102751852d99b1b134840e76057
+- name: director
+  version: 2
+  sha1: b3741954ca0fb7c50ab9135173c057377e408f63
+- name: micro
+  version: 2
+  sha1: 016ee0385972ceb7dfb00bff17c9b29d4144d4f3
+- name: nats
+  version: 1
+  sha1: 8e903b443185d657933b9f085b9db807c12177a4
+- name: aws_registry
+  version: 2
+  sha1: 86f18ed03d3f70c807d93961af9804ed566bc1ff
+- name: health_monitor
+  version: 2
+  sha1: fd62479151032a6d25b75b89ae4fb99a8178a44c
+name: bosh
+version: 2

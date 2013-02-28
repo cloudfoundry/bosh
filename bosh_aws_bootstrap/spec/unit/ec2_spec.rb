@@ -148,9 +148,10 @@ describe Bosh::Aws::EC2 do
     describe "creating" do
       it "should create an internet gateway" do
         fake_gateway_collection = double("internet_gateways")
+        fake_gateway = double(AWS::EC2::InternetGateway, id: 'igw-1234')
         ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: fake_gateway_collection))
-        fake_gateway_collection.should_receive(:create)
-        ec2.create_internet_gateway
+        fake_gateway_collection.should_receive(:create).and_return(fake_gateway)
+        ec2.create_internet_gateway.should == fake_gateway
       end
     end
 
@@ -319,7 +320,8 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "deleting all EBS volumes" do
-    let(:fake_aws_ec2) { double("aws_ec2") }
+    let(:fake_aws_volumes) { double(AWS::EC2::VolumeCollection) }
+    let(:fake_aws_ec2) { double(AWS::EC2, volumes: fake_aws_volumes) }
     let(:vol1) { double("vol1", attachments: []) }
     let(:vol2) { double("vol2", attachments: []) }
     let(:vol3) { double("vol3", attachments: ["something"]) }
@@ -332,7 +334,7 @@ describe Bosh::Aws::EC2 do
       vol1.should_receive(:delete)
       vol2.should_receive(:delete)
       vol3.should_not_receive(:delete)
-      fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2, vol3])
+      fake_aws_volumes.should_receive(:filter).and_return([vol1, vol2, vol3])
 
       ec2.delete_volumes
     end

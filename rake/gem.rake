@@ -40,13 +40,17 @@ COMPONENTS.each do |component|
       dirname = "#{root}/release/src/bosh/#{component}"
       rm_rf dirname
       mkdir_p dirname
+      gemfile_lock_path = File.join(root, 'Gemfile.lock')
+      lockfile = Bundler::LockfileParser.new(File.read(gemfile_lock_path))
       Dir.chdir dirname do
         Bundler::Resolver.resolve(
             Bundler.definition.send(:expand_dependencies, Bundler.definition.dependencies.select { |d| d.name == component }),
-            Bundler.definition.index
+            Bundler.definition.index,
+            {},
+            lockfile.specs
         ).each do |spec|
-          sh "cp /tmp/all_the_gems/#{spec.name}-*.gem ."
-          sh "cp /tmp/all_the_gems/pg*.gem ." if COMPONENTS_WITH_PG.include?(component)
+          sh "cp /tmp/all_the_gems/#{Process.pid}/#{spec.name}-*.gem ."
+          sh "cp /tmp/all_the_gems/#{Process.pid}/pg*.gem ." if COMPONENTS_WITH_PG.include?(component)
         end
       end
     end
@@ -94,7 +98,9 @@ namespace :all do
   task :pre_stage_latest => COMPONENTS.map { |f| "#{f}:pre_stage_latest" }
 
   desc "Copy all staged gems into appropriate release subdirectories"
-  task :finalize_release_directory => COMPONENTS.map { |f| "#{f}:finalize_release_directory" }
+  task :finalize_release_directory => COMPONENTS.map { |f| "#{f}:finalize_release_directory" } do
+    rm_rf "/tmp/all_the_gems/#{Process.pid}"
+  end
 
   desc "Install all gems"
   task :install => COMPONENTS.map { |f| "#{f}:install" }
@@ -103,10 +109,9 @@ namespace :all do
   task :push => COMPONENTS.map { |f| "#{f}:push" }
 
   task :stage_with_dependencies => :pre_stage_latest do
-    rm_rf "/tmp/all_the_gems"
-    mkdir_p "/tmp/all_the_gems"
-    sh "cp #{root}/pkg/*.gem /tmp/all_the_gems"
-    sh "cp #{root}/vendor/cache/*.gem /tmp/all_the_gems"
+    mkdir_p "/tmp/all_the_gems/#{Process.pid}"
+    sh "cp #{root}/pkg/*.gem /tmp/all_the_gems/#{Process.pid}"
+    sh "cp #{root}/vendor/cache/*.gem /tmp/all_the_gems/#{Process.pid}"
   end
 
   task :ensure_clean_state do

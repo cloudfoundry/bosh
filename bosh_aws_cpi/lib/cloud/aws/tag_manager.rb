@@ -11,8 +11,19 @@ module Bosh::AwsCloud
       trimmed_value = value[0..(MAX_TAG_VALUE_LENGTH - 1)]
       taggable.add_tag(trimmed_key, :value => trimmed_value)
     rescue AWS::EC2::Errors::InvalidParameterValue => e
-      @logger.error("could not tag #{taggable.id}: #{e.message}")
+      logger.error("could not tag #{taggable.id}: #{e.message}")
+    rescue AWS::EC2::Errors::InvalidAMIID::NotFound,
+        AWS::EC2::Errors::InvalidInstanceID::NotFound=> e
+      # Due to the AWS eventual consistency, the taggable might not
+      # be there, even though we previous have waited until it is,
+      # so we wait again...
+      logger.warn("tagged object doesn't exist: #{taggable.id}")
+      sleep(1)
+      retry
     end
 
+    def self.logger
+      Bosh::Clouds::Config.logger
+    end
   end
 end

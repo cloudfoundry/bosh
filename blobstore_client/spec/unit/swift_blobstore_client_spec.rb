@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Blobstore::SwiftBlobstoreClient do
 
@@ -39,9 +39,7 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
     describe "with credentials" do
 
       before(:each) do
-        @client = swift_blobstore(swift_options("test-container",
-                                                "hp",
-                                                true))
+        @client = swift_blobstore(swift_options('test-container', 'hp', true))
       end
 
       it "should create an object" do
@@ -53,19 +51,17 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
 
         @client.should_receive(:generate_object_id).and_return("object_id")
         @swift.stub(:directories).and_return(directories)
-        directories.should_receive(:get).with("test-container") \
-                   .and_return(container)
+        directories.should_receive(:get).with("test-container").and_return(container)
         container.should_receive(:files).and_return(files)
-        files.should_receive(:create).with { |opt|
+        files.should_receive(:create) do |opt|
           opt[:key].should eql "object_id"
-          #opt[:body].should eql data
           opt[:public].should eql true
-        }.and_return(object)
+          object
+        end
         object.should_receive(:public_url).and_return("public-url")
 
         object_id = @client.create(data)
-        object_info = MultiJson.decode(Base64.decode64(
-                                         URI::unescape(object_id)))
+        object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
         object_info["oid"].should eql("object_id")
         object_info["purl"].should eql("public-url")
       end

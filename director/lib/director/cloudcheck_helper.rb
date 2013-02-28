@@ -90,31 +90,13 @@ module Bosh::Director
       # however we don't need to handle some advanced scenarios
       # such as disk migration.
 
-      if vm.apply_spec.nil?
-        handler_error("Unable to look up VM apply spec")
-      end
-
-      if vm.env.nil?
-        handler_error("Unable to look up VM environment")
-      end
-
-      spec = vm.apply_spec
-      env = vm.env
-
-      unless spec.kind_of?(Hash)
-        handler_error("Invalid apply spec format")
-      end
-
-      unless env.kind_of?(Hash)
-        handler_error("Invalid VM environment format")
-      end
+      spec = validate_spec(vm)
+      env = validate_env(vm)
 
       instance = vm.instance
-      deployment = vm.deployment
 
-      if deployment.nil?
-        handler_error("VM doesn't belong to any deployment")
-      end
+      deployment = vm.deployment
+      handler_error("VM doesn't belong to any deployment") unless deployment
 
       disk_cid = instance ? instance.persistent_disk_cid : nil
 
@@ -122,22 +104,9 @@ module Bosh::Director
       network_spec = spec["networks"]
 
       cloud_properties = resource_pool_spec["cloud_properties"] || {}
+
       stemcell_spec = resource_pool_spec["stemcell"] || {}
-
-      stemcell_name = stemcell_spec["name"]
-      stemcell_version = stemcell_spec["version"]
-
-      if stemcell_name.nil? || stemcell_version.nil?
-        handler_error("Unknown stemcell name and/or version")
-      end
-
-      stemcell = Models::Stemcell.find(:name => stemcell_name,
-                                       :version => stemcell_version)
-
-      if stemcell.nil?
-        handler_error("Unable to find stemcell " +
-                      "`#{stemcell_name} #{stemcell_version}'")
-      end
+      stemcell = find_stemcell(stemcell_spec)
 
       # One situation where this handler is actually useful is when
       # VM has already been deleted but something failed after that
@@ -151,7 +120,7 @@ module Bosh::Director
 
         cloud.delete_vm(vm.cid)
       rescue Bosh::Clouds::VMNotFound => e
-        @logger.warn("VM `#{vm.cid}' might have already been deleted from the cloud")
+        @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
       vm.db.transaction do
@@ -193,6 +162,45 @@ module Bosh::Director
     end
 
     private
+
+    def validate_spec(vm)
+      handler_error("Unable to look up VM apply spec") unless vm.apply_spec
+
+      spec = vm.apply_spec
+
+      unless spec.kind_of?(Hash)
+        handler_error("Invalid apply spec format")
+      end
+
+      spec
+    end
+
+    def validate_env(vm)
+      handler_error("Unable to look up VM environment") unless vm.env
+
+      env = vm.env
+
+      unless env.kind_of?(Hash)
+        handler_error("Invalid VM environment format")
+      end
+
+      env
+    end
+
+    def find_stemcell(stemcell_spec)
+      stemcell_name = stemcell_spec['name']
+      stemcell_version = stemcell_spec['version']
+
+      unless stemcell_name && stemcell_version
+        handler_error('Unknown stemcell name and/or version')
+      end
+
+      stemcell = Models::Stemcell.find(:name => stemcell_name, :version => stemcell_version)
+
+      handler_error("Unable to find stemcell '#{stemcell_name} #{stemcell_version}'") unless stemcell
+
+      stemcell
+    end
 
     def generate_agent_id
       UUIDTools::UUID.random_create.to_s

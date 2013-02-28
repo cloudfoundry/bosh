@@ -37,7 +37,7 @@ namespace :stemcell do
   end
 
   desc "Build Micro Cloud Foundry"
-  task :mcf, [:infrastructure, :manifest, :tarball] => "all:finalize_release_directory" do |t, args|
+  task :mcf, [:infrastructure, :manifest, :tarball, :micro_src] => "all:finalize_release_directory" do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "mcf-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -46,10 +46,11 @@ namespace :stemcell do
       Time.now.strftime('%Y%m%d.%H%M%S')
     options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
     options[:bosh_users_password] = 'micr0cloud'
-
+    
     options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(args[:manifest],args[:tarball]))
     options[:mcf_enabled] = "yes"
+    options[:micro_src] = args[:micro_src]
 
     build("stemcell-mcf", options)
   end

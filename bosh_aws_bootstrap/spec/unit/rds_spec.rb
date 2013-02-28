@@ -51,6 +51,143 @@ describe Bosh::Aws::RDS do
     end
   end
 
+  describe "subnet_group_names" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should return the subnet group names" do
+      ccdb_subnet_info = { :db_subnet_group_name => "ccdb" }
+      uaadb_subnet_info = { :db_subnet_group_name => "uaadb" }
+      aws_response = mock(:aws_response, :data => { :db_subnet_groups => [ccdb_subnet_info, uaadb_subnet_info]})
+
+      fake_aws_rds_client.should_receive(:describe_db_subnet_groups).and_return(aws_response)
+      rds.subnet_group_names.should == ["ccdb", "uaadb"]
+    end
+  end
+
+  describe "delete_subnet_group" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should delete the subnet group" do
+      fake_aws_rds_client.should_receive(:delete_db_subnet_group).with(:db_subnet_group_name => "ccdb")
+      rds.delete_subnet_group("ccdb")
+    end
+  end
+
+  describe "delete_subnet_groups" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should delete all the subnet groups" do
+      rds.should_receive(:subnet_group_names).and_return(["ccdb", "uaadb"])
+      rds.should_receive(:delete_subnet_group).with("ccdb")
+      rds.should_receive(:delete_subnet_group).with("uaadb")
+      rds.delete_subnet_groups
+    end
+  end
+
+  describe "security_group_exists?" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should return false if the db security group does not exist" do
+      fake_aws_rds_client.should_receive(:describe_db_security_groups).
+        with(:db_security_group_name => "securitygroup").
+        and_raise AWS::RDS::Errors::DBSecurityGroupNotFound
+
+      rds.security_group_exists?("securitygroup").should be_false
+    end
+
+    it "should return true if the db security group exists" do
+      fake_aws_rds_client.should_receive(:describe_db_security_groups).
+        with(:db_security_group_name => "securitygroup").
+        and_return("not_used")
+
+      rds.security_group_exists?("securitygroup").should be_true
+    end
+  end
+
+  describe "create_security_group" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should create the security group" do
+      fake_aws_rds_client.should_receive(:create_db_security_group).
+        with(:db_security_group_name => "test",
+             :db_security_group_description => "test",
+             :ec2_vpc_id => "vpc-123456")
+
+      fake_aws_rds_client.should_receive(:authorize_db_security_group_ingress).
+        with(:db_security_group_name => "test", :cidrip => "2.2.2.0/24")
+
+      rds.create_security_group("test", "vpc-123456", "2.2.2.0/24")
+    end
+  end
+
+  describe "security_group_names" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should return the subnet group names" do
+      default_security_group_info = { :db_security_group_name => "default" }
+      ccdb_security_group_info = { :db_security_group_name => "ccdb" }
+      uaadb_security_group_info = { :db_security_group_name => "uaadb" }
+      aws_response = mock(:aws_response, :data => { :db_security_groups => [
+        default_security_group_info, ccdb_security_group_info, uaadb_security_group_info]})
+
+      fake_aws_rds_client.should_receive(:describe_db_security_groups).and_return(aws_response)
+      rds.security_group_names.should == ["default", "ccdb", "uaadb"]
+    end
+  end
+
+  describe "delete_security_group" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should delete the security group" do
+      fake_aws_rds_client.should_receive(:delete_db_security_group).with(:db_security_group_name => "ccdb")
+      rds.delete_security_group("ccdb")
+    end
+  end
+
+  describe "delete_security_groups" do
+    let(:fake_aws_rds_client) { mock("aws_rds_client") }
+
+    before(:each) do
+      rds.stub(:aws_rds_client).and_return(fake_aws_rds_client)
+    end
+
+    it "should delete all the non-default security groups" do
+      rds.should_receive(:security_group_names).and_return(["default", "ccdb", "uaadb"])
+      # note: default is not included
+      rds.should_receive(:delete_security_group).with("ccdb")
+      rds.should_receive(:delete_security_group).with("uaadb")
+      rds.delete_security_groups
+    end
+  end
+
   describe "creation" do
     let(:fake_aws_rds_client) { mock("aws_rds_client") }
     let(:fake_response) { mock("response", data: {:aws_key => "test_val"}) }
@@ -65,6 +202,7 @@ describe Bosh::Aws::RDS do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 5
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
@@ -79,10 +217,11 @@ describe Bosh::Aws::RDS do
       end
 
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(true)
 
       # The contract is that create_database passes back the aws
       # response directly, but merges in the password that it generated.
-      response = rds.create_database("mydb", ["subnet1", "subnet2"])
+      response = rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "3.3.3.0/28")
       response[:aws_key].should == "test_val"
       response[:master_user_password].should == generated_password
     end
@@ -91,6 +230,7 @@ describe Bosh::Aws::RDS do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 16
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
@@ -103,13 +243,16 @@ describe Bosh::Aws::RDS do
       end
 
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
-      rds.create_database("mydb", ["subnet1", "subnet2"], :allocated_storage => 16, :master_user_password => "swordfish")
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(true)
+
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "4.4.4.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
     end
 
     it "should create the subnet group for the DB if it does not exist" do
       fake_aws_rds_client.should_receive(:create_db_instance) do |options|
         options[:db_instance_identifier].should == "mydb"
         options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
         options[:allocated_storage].should == 16
         options[:db_instance_class].should == "db.t1.micro"
         options[:engine].should == "mysql"
@@ -123,7 +266,31 @@ describe Bosh::Aws::RDS do
 
       rds.should_receive(:create_subnet_group).with("mydb", ["subnet1", "subnet2"])
       rds.should_receive(:subnet_group_exists?).with("mydb").and_return(false)
-      rds.create_database("mydb", ["subnet1", "subnet2"], :allocated_storage => 16, :master_user_password => "swordfish")
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(true)
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "5.5.5.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
+    end
+
+    it "should create the security group for the DB if it does not exist" do
+      fake_aws_rds_client.should_receive(:create_db_instance) do |options|
+        options[:db_instance_identifier].should == "mydb"
+        options[:db_name].should == "mydb"
+        options[:db_security_groups].should == ["mydb"]
+        options[:allocated_storage].should == 16
+        options[:db_instance_class].should == "db.t1.micro"
+        options[:engine].should == "mysql"
+        options[:master_username].should be_kind_of(String)
+        options[:master_username].length.should be >= 8
+        options[:master_user_password].should == "swordfish"
+        options[:db_subnet_group_name].should == "mydb"
+
+        fake_response
+      end
+
+      rds.should_receive(:subnet_group_exists?).with("mydb").and_return(true)
+      rds.should_receive(:create_security_group).with("mydb", "vpc-1234", "5.5.5.0/28")
+      rds.should_receive(:security_group_exists?).with("mydb").and_return(false)
+
+      rds.create_database("mydb", ["subnet1", "subnet2"], "vpc-1234", "5.5.5.0/28", :allocated_storage => 16, :master_user_password => "swordfish")
     end
   end
 

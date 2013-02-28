@@ -92,6 +92,10 @@ module BoshHelper
     info["features"] && info["features"]["dns"]
   end
 
+  def bosh_tld
+    info["features"]["dns"]["extras"]["domain_name"] if dns?
+  end
+
   def tasks_processing?
     # `bosh tasks` exit code is 1 if no tasks running
     bosh("tasks", :on_error => :return).output =~ /\| processing \|/

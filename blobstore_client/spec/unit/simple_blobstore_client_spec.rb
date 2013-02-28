@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Blobstore::SimpleBlobstoreClient do
 
@@ -27,20 +27,37 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
   describe "operations" do
 
     it "should create an object" do
-      response = mock("response")
+      response = mock('response')
       response.stub!(:status).and_return(200)
-      response.stub!(:content).and_return("content_id")
-      @httpclient.should_receive(:post).with { |*args|
+      response.stub!(:content).and_return('content_id')
+      @httpclient.should_receive(:post) do |*args|
         uri, body, _ = args
-        uri.should eql("http://localhost/resources")
+        uri.should eql('http://localhost/resources')
         body.should be_kind_of(Hash)
         body[:content].should be_kind_of(File)
-        body[:content].read.should eql("some object")
-        true
-      }.and_return(response)
+        body[:content].read.should eql('some object')
+        response
+      end
 
-      @client = Bosh::Blobstore::SimpleBlobstoreClient.new({"endpoint" => "http://localhost"})
-      @client.create("some object").should eql("content_id")
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new('endpoint' => 'http://localhost')
+      @client.create('some object').should eql('content_id')
+    end
+
+    it 'should accept object id suggestion' do
+      response = mock('response')
+      response.stub!(:status).and_return(200)
+      response.stub!(:content).and_return('foobar')
+      @httpclient.should_receive(:post) do |*args|
+        uri, body, _ = args
+        uri.should eql('http://localhost/resources/foobar')
+        body.should be_kind_of(Hash)
+        body[:content].should be_kind_of(File)
+        body[:content].read.should eql('some object')
+        response
+      end
+
+      @client = Bosh::Blobstore::SimpleBlobstoreClient.new('endpoint' => 'http://localhost')
+      @client.create('some object', 'foobar').should eql('foobar')
     end
 
     it "should raise an exception when there is an error creating an object" do

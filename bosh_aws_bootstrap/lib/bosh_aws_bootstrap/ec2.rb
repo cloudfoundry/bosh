@@ -183,7 +183,9 @@ module Bosh
       end
 
       def unattached_volumes
-        aws_ec2.volumes.reject{|v| v.attachments.any? }
+        # only check volumes that don't have status 'deleting' and 'deleted'
+        aws_ec2.volumes.filter('status', %w[available creating in_use error]).
+            reject { |v| v.attachments.any? }
       end
 
       def tag(taggable, key, value)

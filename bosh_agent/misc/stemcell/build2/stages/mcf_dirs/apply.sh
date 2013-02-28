@@ -10,7 +10,6 @@ source ${base_dir}/lib/prelude_bosh.bash
 
 apt_get --assume-yes install console-data dnsmasq nfs-kernel-server git-core
 
-micro_src=${HOME}/micro
 micro_dest=${bosh_app_dir}/micro
 shared_dir=${bosh_app_dir}/shared
 

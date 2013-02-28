@@ -11,4 +11,4 @@ source ${base_dir}/lib/prelude_apply.bash
 sed \
     --in-place=.prev \
     "s/VERSION = \".*\"$/VERSION = \"${version}\"/" \
-    ${HOME}/micro/micro/lib/micro/version.rb
+    ${micro_src}/micro/lib/micro/version.rb

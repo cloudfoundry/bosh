@@ -110,4 +110,15 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end
+
+  it 'should clean up after itself if something fails' do
+    network_configurator.stub(:configure)
+    registry.stub(:update_settings).and_raise(ArgumentError)
+
+    instance_manager.should_receive(:terminate)
+
+    expect {
+      cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
+    }.to raise_error(ArgumentError)
+  end
 end

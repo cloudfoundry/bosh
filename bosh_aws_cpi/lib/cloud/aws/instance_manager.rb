@@ -22,13 +22,24 @@ module Bosh::AwsCloud
       set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
       set_vpc_parameters(networks_spec)
       set_availability_zone_parameter(
-          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone },
+          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
           resource_pool["availability_zone"],
           (@instance_params[:subnet].availability_zone_name if @instance_params[:subnet])
       )
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
-      @instance = @region.instances.create(instance_params)
+      total_time = 5 * 60
+      sleep_time = 30
+      retries = total_time / sleep_time
+      begin
+        @instance = @region.instances.create(instance_params)
+      rescue AWS::EC2::Errors::InvalidIPAddress::InUse => e
+        @logger.warn("IP address was in use: #{e}")
+        sleep sleep_time
+        retries -= 1
+        retry if retries > 0
+        raise
+      end
 
       @elbs = resource_pool['elbs']
       attach_to_load_balancers if elbs

@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-source :rubygems
+source 'https://rubygems.org' 
 
 gem "agent_client", path: "agent_client"
 gem "blobstore_client", path: "blobstore_client"

@@ -2,7 +2,7 @@ require 'tempfile'
 
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    `ls #{ASSETS_DIR}/aws/create-vpc-output-*.yml`.strip
+    "#{deployments_path}/aws_vpc_receipt.yml"
   end
 
   def vpc_outfile
@@ -38,8 +38,13 @@ module AwsSystemExampleGroup
       %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
       stemcell_manifest = "#{dir}/stemcell.MF"
       st = YAML.load_file(stemcell_manifest)
-      return st["version"]
+      p st
+      st["version"]
     end
+  end
+
+  def spec_tmp_path
+    File.join(BOSH_TMP_DIR, "spec")
   end
 
   def deployments_path
@@ -96,31 +101,52 @@ module AwsSystemExampleGroup
     end
   end
 
+  def deployments_path
+    File.join(BOSH_TMP_DIR, "spec", "deployments")
+  end
+  
+  def copy_keys(global_path, local_path)
+    global_private_key_path = global_path.gsub(/\.pub$/, '')
+    global_public_key_path = "#{global_private_key_path}.pub"
+
+    local_private_key_path = local_path.gsub(/\.pub$/, '')
+    local_public_key_path = "#{local_private_key_path}.pub"
+
+    FileUtils.cp global_private_key_path, local_private_key_path
+    FileUtils.cp global_public_key_path, local_public_key_path
+  end
+
   def self.included(base)
     base.before(:each) do
-      ENV['BOSH_KEY_PAIR_NAME'] = "bosh_ci"
-      ENV['BOSH_KEY_PATH'] = "/tmp/id_bosh_ci"
+      ENV['BOSH_KEY_PAIR_NAME'] ||= "bosh"
+      ENV['BOSH_KEY_PATH'] ||= "/tmp/id_rsa_bosh"
 
-      FileUtils.rm_rf deployments_path
-      FileUtils.mkdir_p micro_deployment_path
-      FileUtils.mkdir_p bat_deployment_path
+      if ENV['GLOBAL_BOSH_KEY_PATH'] && File.exist?(ENV['GLOBAL_BOSH_KEY_PATH'])
+        copy_keys ENV['GLOBAL_BOSH_KEY_PATH'], ENV['BOSH_KEY_PATH']
+      end
 
       if ENV["NO_PROVISION"]
         puts "Not deleting and recreating AWS resources, assuming we already have them"
       else
+        FileUtils.rm_rf deployments_path
+        FileUtils.mkdir_p micro_deployment_path
+        FileUtils.mkdir_p bat_deployment_path
+
         puts "Using configuration template: #{aws_configuration_template_path}"
-        run_bosh "aws destroy '#{aws_configuration_template_path}'"
+        run_bosh "aws destroy"
         puts "CLEANUP SUCCESSFUL"
 
-        system "rm -f #{ASSETS_DIR}/aws/create-*-output-*.yml"
+        FileUtils.rm_rf(vpc_outfile_path)
 
-        run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+        Dir.chdir spec_tmp_path do
+          FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
+          FileUtils.rm_rf(vpc_outfile_path)
+
+          run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+        end
 
         puts "AWS RESOURCES CREATED SUCCESSFULLY!"
       end
-    end
-
-    base.after(:each) do
     end
   end
 end

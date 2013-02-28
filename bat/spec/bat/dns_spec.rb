@@ -5,18 +5,18 @@ require "resolv"
 
 describe "dns" do
   before(:all) do
-    requirement stemcell
-    requirement release
+    if dns?
+      requirement stemcell
+      requirement release
 
-    @dns = Resolv::DNS.new(:nameserver => bosh_director)
+      @dns = Resolv::DNS.new(:nameserver => bosh_director)
 
-    load_deployment_spec
-    # TODO skip deployment if dns isn't enabled as this slows
-    # down the testing
-    use_static_ip
-    @deployment = with_deployment
-    bosh("deployment #{@deployment.to_path}")
-    bosh("deploy")
+      load_deployment_spec
+      use_static_ip
+      @deployment = with_deployment
+      bosh("deployment #{@deployment.to_path}")
+      bosh("deploy")
+    end
   end
 
   after(:all) do
@@ -35,26 +35,17 @@ describe "dns" do
   # Errno::ECONNREFUSED if not running
   # Resolv::ResolvTimeout
 
-  # Have to look up both BOSH and MicroBOSH tld in these tests since we don't know what type of BOSH
-  # we're testing against (*.bosh and *.microbosh)
   context "external" do
-    it "should to forward lookups" do
+    it "should do forward lookups" do
       pending "director not configured with dns" unless dns?
-      begin
-        address_on_bosh = @dns.getaddress("0.batlight.static.bat.bosh").to_s
-      rescue Resolv::ResolvError
-        begin
-          address_on_microbosh = @dns.getaddress("0.batlight.static.bat.microbosh").to_s
-        rescue Resolv::ResolvError
-        end
-      end
-      [address_on_bosh, address_on_microbosh].should include static_ip
+      address = @dns.getaddress("0.batlight.static.bat.#{bosh_tld}").to_s
+      address.should == static_ip
     end
 
     it "should do reverse lookups" do
       pending "director not configured with dns" unless dns?
       name = @dns.getname(static_ip)
-      ["0.batlight.static.bat.bosh", "0.batlight.static.bat.microbosh"].should include name.to_s
+      name.to_s.should == "0.batlight.static.bat.#{bosh_tld}"
     end
   end
 

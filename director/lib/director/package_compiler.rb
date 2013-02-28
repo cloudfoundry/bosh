@@ -219,7 +219,7 @@ module Bosh::Director
         compiled_package = find_compiled_package(task)
         if compiled_package.nil?
           build = generate_build_number(package, stemcell)
-          agent_task = nil
+          task_result = nil
 
           prepare_vm(stemcell) do |vm_data|
             update_vm_metadata(vm_data.vm, :compiling => package.name)
@@ -228,9 +228,8 @@ module Bosh::Director
                                             package.sha1, package.name,
                                             "#{package.version}.#{build}",
                                             task.dependency_spec)
+            task_result = agent_task["result"]
           end
-
-          task_result = agent_task["result"]
 
           compiled_package = Models::CompiledPackage.create do |p|
             p.package = package
@@ -239,6 +238,12 @@ module Bosh::Director
             p.build = build
             p.blobstore_id = task_result["blobstore_id"]
             p.dependency_key = task.dependency_key
+          end
+
+          if Config.use_global_blobstore?
+            unless Bosh::Director::BlobUtil.exists_in_global_cache?(package, stemcell)
+              Bosh::Director::BlobUtil.save_to_global_cache(compiled_package)
+            end
           end
 
           @counter_mutex.synchronize { @compilations_performed += 1 }

@@ -90,6 +90,12 @@ properties:
     description: Username agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
+  global_blobstore.bucket:
+    description: TODO
+  global_blobstore.secret_access_key:
+    description: TODO
+  global_blobstore.access_key_id:
+    description: TODO
   ntp:
     description: List of ntp server IPs
     default: []

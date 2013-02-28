@@ -59,7 +59,7 @@ properties:
     name: bosh-stemcell
     version: 1.5.0.pre
   instances: 1
-  key_name: bosh_ci
+  key_name: bosh
   mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
   network:
     cidr: 10.10.0.0/24

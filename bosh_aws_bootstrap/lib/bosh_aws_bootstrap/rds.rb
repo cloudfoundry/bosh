@@ -14,8 +14,9 @@ module Bosh
         @credentials = credentials
       end
 
-      def create_database(name, subnet_ids, options = {})
+      def create_database(name, subnet_ids, vpc_id, vpc_cidr, options = {})
         create_subnet_group(name, subnet_ids) unless subnet_group_exists?(name)
+        create_security_group(name, vpc_id, vpc_cidr) unless security_group_exists?(name)
 
         # symbolize options keys
         options = options.inject({}) { |memo, (k,v)| memo[k.to_sym] = v; memo }
@@ -23,6 +24,7 @@ module Bosh
         creation_options = DEFAULT_RDS_OPTIONS.merge(options)
         creation_options[:db_instance_identifier] = name
         creation_options[:db_name] = name
+        creation_options[:db_security_groups] = [name]
         creation_options[:db_subnet_group_name] = name
         creation_options[:master_username] ||= generate_user
         creation_options[:master_user_password] ||= generate_password
@@ -66,6 +68,49 @@ module Bosh
           :db_subnet_group_description => name,
           :subnet_ids => subnet_ids
         )
+      end
+
+      def subnet_group_names
+        aws_rds_client.describe_db_subnet_groups.data[:db_subnet_groups].map { |sg| sg[:db_subnet_group_name] }
+      end
+
+      def delete_subnet_group(name)
+        aws_rds_client.delete_db_subnet_group(:db_subnet_group_name => name)
+      end
+
+      def delete_subnet_groups
+        subnet_group_names.each { |name| delete_subnet_group(name) }
+      end
+
+      def security_group_exists?(name)
+        aws_rds_client.describe_db_security_groups(:db_security_group_name => name)
+        return true
+      rescue AWS::RDS::Errors::DBSecurityGroupNotFound
+        return false
+      end
+
+      def create_security_group(name, vpc_id, cidrip)
+        aws_rds_client.create_db_security_group(
+          :db_security_group_name => name,
+          :db_security_group_description => name,
+          :ec2_vpc_id => vpc_id
+        )
+
+        aws_rds_client.authorize_db_security_group_ingress(:db_security_group_name => name, :cidrip => cidrip)
+      end
+
+      def security_group_names
+        aws_rds_client.describe_db_security_groups.data[:db_security_groups].map { |sg| sg[:db_security_group_name] }
+      end
+
+      def delete_security_group(name)
+        aws_rds_client.delete_db_security_group(:db_security_group_name => name)
+      end
+
+      def delete_security_groups
+        security_group_names.each do |name|
+          delete_security_group(name) unless name == "default"
+        end
       end
 
       def aws_rds

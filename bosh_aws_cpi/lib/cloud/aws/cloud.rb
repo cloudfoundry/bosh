@@ -93,25 +93,32 @@ module Bosh::AwsCloud
         # do this early to fail fast
         stemcell = Stemcell.find(@region, stemcell_id)
 
-        instance = InstanceManager.
-            new(@region, registry, az_selector).
+        instance_manager = InstanceManager.new(@region, registry, az_selector)
+        instance = instance_manager.
             create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
-        @logger.info("Creating new instance `#{instance.id}'")
-        wait_resource(instance, :running)
 
-        NetworkConfigurator.new(network_spec).configure(@region, instance)
+        begin
+          @logger.info("Creating new instance '#{instance.id}'")
+          wait_resource(instance, :running)
 
-        registry_settings = initial_agent_settings(
-            agent_id,
-            network_spec,
-            environment,
-            preformatted?(resource_pool),
-            stemcell.root_device_name,
-            @options["agent"] || {}
-        )
-        registry.update_settings(instance.id, registry_settings)
+          NetworkConfigurator.new(network_spec).configure(@region, instance)
 
-        instance.id
+          registry_settings = initial_agent_settings(
+              agent_id,
+              network_spec,
+              environment,
+              preformatted?(resource_pool),
+              stemcell.root_device_name,
+              @options['agent'] || {}
+          )
+          registry.update_settings(instance.id, registry_settings)
+
+          instance.id
+        rescue => e
+          @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
+          instance_manager.terminate(instance.id, @fast_path_delete)
+          raise e
+        end
       end
     end
 

@@ -37,14 +37,18 @@ vpc:
         - protocol: tcp
           ports: 22
           sources: 0.0.0.0/0
+  elbs:
+    external-elb-1:
+      dns_record: "*"
+      ttl: 60
+      subnets:
+      - bosh
+      security_group: open
 elastic_ips:
-  router:
-    instances: 2
-    dns_record: "*"
-    ttl: 3000
   micro:
     instances: 1
     dns_record: micro
+    ttl: 60
   bosh:
     instances: 1
     dns_record: bosh

@@ -1,0 +1,96 @@
+--- 
+packages: 
+- name: redis
+  version: 1
+  sha1: a7cb12a1af25fba8bd071b4e1a8bec5297042034
+  dependencies: []
+
+- name: ruby
+  version: 1
+  sha1: cbab7b06a703e5b0a407ab20e0d1ef91fa6119cc
+  dependencies: []
+
+- name: postgres
+  version: 1
+  sha1: 9d235b9e397d613c47d7cb629f858bed485f0631
+  dependencies: []
+
+- name: genisoimage
+  version: 2
+  sha1: 87cb25d876244947e9fbbe07f4b76b1f77198f69
+  dependencies: []
+
+- name: nginx
+  version: 1
+  sha1: c24ee33a4435af96e761be0ff6d499c7fdb1a2a9
+  dependencies: []
+
+- name: blobstore
+  version: 2
+  sha1: ef7ad26eb202b9cbf5f8ff6ed8b7ad51249b2fee
+  dependencies: 
+  - ruby
+- name: director
+  version: 2
+  sha1: 6568cb22b34f53ddb6f692ccd2fab3196bdd76d8
+  dependencies: 
+  - libpq
+  - ruby
+- name: libpq
+  version: 1
+  sha1: 1b2789a7122dd1c62aab138bc97966f75a34a040
+  dependencies: []
+
+- name: nats
+  version: 1
+  sha1: d5a042c08c70df1e32d9b75ee3872f04c2fd08c0
+  dependencies: 
+  - ruby
+- name: aws_registry
+  version: 2
+  sha1: 56790b8c899fa0b12626a7ff65f50f9ef3b35194
+  dependencies: 
+  - ruby
+- name: health_monitor
+  version: 2
+  sha1: 746743e6e1d62d907db9977e924383c6a806007d
+  dependencies: 
+  - ruby
+- name: powerdns
+  version: 1
+  sha1: f3da319aa64381a9bdf6bfa7436471baab62a5b8
+  dependencies: []
+
+jobs: 
+- name: utility
+  version: 2
+  sha1: e9a9797ce961871dd261983ccb7c5c460097ec62
+- name: redis
+  version: 1
+  sha1: 5ade925cc933cbbf2fd203d7cf76da07d46d211a
+- name: postgres
+  version: 1
+  sha1: a3ffd42ea4f2f6e174b1c5fcc4374c99ea723df4
+- name: blobstore
+  version: 2
+  sha1: 667805889a4d5102751852d99b1b134840e76057
+- name: director
+  version: 3
+  sha1: 6be5dbc64309c7d0a55f2864f48d14824e53d7cc
+- name: micro
+  version: 3
+  sha1: 7abac9ba19b6f96d6b893128c68323be120bff30
+- name: nats
+  version: 1
+  sha1: 8e903b443185d657933b9f085b9db807c12177a4
+- name: aws_registry
+  version: 2
+  sha1: 86f18ed03d3f70c807d93961af9804ed566bc1ff
+- name: health_monitor
+  version: 2
+  sha1: fd62479151032a6d25b75b89ae4fb99a8178a44c
+- name: powerdns
+  version: 1
+  sha1: c9820a7c516541e5452a099c64c3061169da3f60
+name: bosh
+version: 3

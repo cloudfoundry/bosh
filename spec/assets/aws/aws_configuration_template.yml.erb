@@ -61,12 +61,24 @@ vpc:
         - protocol: udp
           ports: '0 - 65535'
           sources: 0.0.0.0/0
+    - name: web
+      ingress:
+        - protocol: tcp
+          ports: '80'
+          sources: 0.0.0.0/0
+        - protocol: tcp
+          ports: '443'
+          sources: 0.0.0.0/0
+  elbs:
+    cfrouter:
+      dns_record: "*"
+      ttl: 60
+      subnets:
+      - bosh
+      security_group: web
+
 elastic_ips:
   # each NAT box automatically reserves 1 elastic IP, which is not listed below
-  router:
-    instances: 1
-    dns_record: "*"
-    ttl: 60
   micro:
     instances: 1
     dns_record: "micro"
@@ -92,10 +104,10 @@ rds:
     subnets:
       - cf
       - cf_az2
-    # aws_creation_options:
+    aws_creation_options:
+      db_instance_class: db.m1.small
     #   # These are passed on directly to the AWS API call.
     #   # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
-    #   db_instance_class: db.m2.x4.large
     #   allocated_storage: 7
     #   multi_az: true
   - name: uaadb
@@ -103,3 +115,5 @@ rds:
     subnets:
       - cf
       - cf_az2
+    aws_creation_options:
+      db_instance_class: db.m1.small

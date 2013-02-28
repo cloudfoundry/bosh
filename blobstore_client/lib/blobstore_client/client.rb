@@ -3,7 +3,7 @@
 module Bosh
   module Blobstore
     class Client
-      PROVIDER_NAMES = ["simple", "s3", "swift", "atmos", "local"]
+      PROVIDER_NAMES = %w[simple s3 swift atmos local]
 
       def self.create(blobstore_provider, options = {})
         unless PROVIDER_NAMES.include? blobstore_provider
@@ -11,15 +11,6 @@ module Bosh
         end
 
         blobstore_client_constantize(blobstore_provider).new(options)
-      end
-
-      def create(contents)
-      end
-
-      def get(id, file = nil)
-      end
-
-      def delete(id)
       end
 
       private
