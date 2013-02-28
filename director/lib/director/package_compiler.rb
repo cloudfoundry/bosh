@@ -241,8 +241,8 @@ module Bosh::Director
           end
 
           if Config.use_global_blobstore?
-            unless Bosh::Director::BlobUtil.exists_in_global_cache?(package.name, package.fingerprint, stemcell.sha1)
-              Bosh::Director::BlobUtil.save_to_global_cache(package.name, package.fingerprint, stemcell.sha1, compiled_package.blobstore_id)
+            unless Bosh::Director::BlobUtil.exists_in_global_cache?(package, stemcell)
+              Bosh::Director::BlobUtil.save_to_global_cache(compiled_package)
             end
           end
 

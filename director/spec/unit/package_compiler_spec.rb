@@ -367,7 +367,7 @@ describe Bosh::Director::PackageCompiler do
         callback = block
       end
 
-      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package.name, package.fingerprint, stemcell.sha1).and_return(true)
+      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, stemcell).and_return(true)
       BD::BlobUtil.should_not_receive(:save_to_global_cache)
       compiler.stub(:prepare_vm)
       BDM::CompiledPackage.stub(:create)
@@ -383,10 +383,11 @@ describe Bosh::Director::PackageCompiler do
         callback = block
       end
 
-      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package.name, package.fingerprint, stemcell.sha1).and_return(false)
-      BD::BlobUtil.should_receive(:save_to_global_cache).with(package.name, package.fingerprint, stemcell.sha1, "some blobstore id")
+      compiled_package = mock("compiled package", package: package, stemcell: stemcell, blobstore_id: "some blobstore id")
+      BD::BlobUtil.should_receive(:exists_in_global_cache?).with(package, stemcell).and_return(false)
+      BD::BlobUtil.should_receive(:save_to_global_cache).with(compiled_package)
       compiler.stub(:prepare_vm)
-      BDM::CompiledPackage.stub(:create).and_return(mock("compiled package", blobstore_id: "some blobstore id"))
+      BDM::CompiledPackage.stub(:create).and_return(compiled_package)
 
       compiler.compile_package(task)
       callback.call

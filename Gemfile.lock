@@ -267,7 +267,7 @@ GEM
       eventmachine (>= 0.12.9)
     escape_utils (0.2.4)
     eventmachine (0.12.10)
-    excon (0.18.3)
+    excon (0.18.5)
     ffi (1.4.0)
     fog (1.9.0)
       builder
