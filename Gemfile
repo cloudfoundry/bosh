@@ -26,7 +26,7 @@ gem "ruby_vim_sdk", path: "ruby_vim_sdk"
 gem "simple_blobstore_server", path: "simple_blobstore_server"
 
 gem "rake", "~>10.0"
-gem "retryable", :git => "git://github.com/cloudfoundry/retryable.git"
+gem "retryable", "=1.3.2"
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
