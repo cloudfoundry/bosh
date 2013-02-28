@@ -5,6 +5,8 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::Bootstrap do
 
   before(:each) do
+    base_dir = Bosh::Agent::Config.base_dir
+
     Bosh::Agent::Config.infrastructure_name = "dummy"
     Bosh::Agent::Config.platform_name = "dummy"
 

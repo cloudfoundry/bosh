@@ -65,10 +65,6 @@ def disable_monit
   Bosh::Agent::Monit.enabled = false
 end
 
-def base_dir
-  Bosh::Agent::Config.base_dir
-end
-
 def asset(filename)
   File.join(File.dirname(__FILE__), 'assets', filename)
 end

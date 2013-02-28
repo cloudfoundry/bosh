@@ -9,6 +9,7 @@ module Bosh::Agent
 
     def install(spec)
       size = max_log_file_size(spec['properties'])
+      base_dir = Bosh::Agent::Config.base_dir
 
       Template.write do |t|
         t.src File.join(File.dirname(__FILE__), 'templates/logrotate.erb')

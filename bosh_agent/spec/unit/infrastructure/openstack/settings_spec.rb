@@ -11,6 +11,7 @@ describe Bosh::Agent::Infrastructure::Openstack::Settings do
   end
 
   before(:each) do
+    base_dir = Bosh::Agent::Config.base_dir
     Bosh::Agent::Config.settings_file = File.join(base_dir, 'settings.json')
     @settings = {"vm" => "test_vm", "disks" => "test_disks"}
   end
