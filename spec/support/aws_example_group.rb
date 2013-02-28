@@ -96,11 +96,26 @@ module AwsSystemExampleGroup
   def deployments_path
     File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
+  
+  def copy_keys(global_path, local_path)
+    global_private_key_path = global_path.gsub(/\.pub$/, '')
+    global_public_key_path = "#{global_private_key_path}.pub"
+
+    local_private_key_path = local_path.gsub(/\.pub$/, '')
+    local_public_key_path = "#{local_private_key_path}.pub"
+
+    FileUtils.cp global_private_key_path, local_private_key_path
+    FileUtils.cp global_public_key_path, local_public_key_path
+  end
 
   def self.included(base)
     base.before(:each) do
-      ENV['BOSH_KEY_PAIR_NAME'] = "bosh"
-      ENV['BOSH_KEY_PATH'] = "/tmp/id_rsa_bosh"
+      ENV['BOSH_KEY_PAIR_NAME'] ||= "bosh"
+      ENV['BOSH_KEY_PATH'] ||= "/tmp/id_rsa_bosh"
+
+      if ENV['GLOBAL_BOSH_KEY_PATH'] && File.exist?(ENV['GLOBAL_BOSH_KEY_PATH'])
+        copy_keys ENV['GLOBAL_BOSH_KEY_PATH'], ENV['BOSH_KEY_PATH']
+      end
 
       if ENV["NO_PROVISION"]
         puts "Not deleting and recreating AWS resources, assuming we already have them"
