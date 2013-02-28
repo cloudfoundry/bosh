@@ -7,12 +7,12 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
   describe "common" do
     it 'should mount persistent disk' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
-      disk_wrapper.stub(:lookup_disk_by_cid).and_return('/dev/sdy')
+      disk_wrapper.stub(:lookup_disk_by_cid).and_return(['/dev/sdy', '/dev/sdy1'])
       disk_wrapper.stub(:partition_mounted?).and_return(false)
 
       File.stub(:blockdev?).and_return(true)
       Bosh::Exec.should_receive(:sh) do |cmd|
-        cmd.should == "mount #{disk_wrapper.disk_partition("/dev/sdy")} #{disk_wrapper.store_path}"
+        cmd.should == "mount /dev/sdy1 #{disk_wrapper.store_path}"
       end
 
       disk_wrapper.mount_persistent_disk(2)
@@ -28,7 +28,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
     it 'should look up disk by cid' do
       disk_wrapper = Bosh::Agent::Platform::Ubuntu::Disk.new
       disk_wrapper.stub(:detect_block_device).and_return('sdy')
-      disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdy'
+      disk_wrapper.lookup_disk_by_cid(2).should == ['/dev/sdy', '/dev/sdy1']
     end
 
     it 'should get data disk device name' do

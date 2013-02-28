@@ -25,8 +25,7 @@ module Bosh::Agent
 
     def mount_persistent_disk(cid)
       FileUtils.mkdir_p(store_path)
-      disk = lookup_disk_by_cid(cid)
-      partition = disk_partition(disk)
+      disk, partition = lookup_disk_by_cid(cid)
       if File.blockdev?(partition) && !partition_mounted?(partition)
         mount(partition, store_path)
       end
@@ -53,6 +52,7 @@ module Bosh::Agent
         raise Bosh::Agent::FatalError, "Unknown persistent disk: #{cid}"
       end
 
+      disk = \
       case Bosh::Agent::Config.infrastructure_name
       when "vsphere"
         # VSphere passes in scsi disk id
@@ -68,6 +68,8 @@ module Bosh::Agent
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
       end
+
+      [disk, disk_partition(disk)]
     end
 
     def disk_partition(disk)

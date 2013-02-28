@@ -38,8 +38,7 @@ module Bosh::Agent
       end
 
       def mount_store(cid, options="")
-        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-        partition = "#{disk}1"
+        disk, partition = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
         logger.info("Mounting: #{partition} #{store_path}")
         `mount #{options} #{partition} #{store_path}`
         unless $?.exitstatus == 0
@@ -62,8 +61,7 @@ module Bosh::Agent
         end
 
         cids.each_key do |cid|
-          disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-          partition = "#{disk}1"
+          disk, partition = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
           disk_info << cid unless DiskUtil.mount_entry(partition).nil?
         end
         disk_info
@@ -93,8 +91,7 @@ module Bosh::Agent
       end
 
       def setup_disk
-        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(@cid)
-        partition = "#{disk}1"
+        disk, partition = Bosh::Agent::Config.platform.lookup_disk_by_cid(@cid)
 
         logger.info("setup disk settings: #{settings.inspect}")
 
@@ -179,8 +176,7 @@ module Bosh::Agent
 
       def unmount(args)
         cid = args.first
-        disk = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
-        partition = "#{disk}1"
+        disk, partition = Bosh::Agent::Config.platform.lookup_disk_by_cid(cid)
 
         if DiskUtil.mount_entry(partition)
           @block, @mountpoint = DiskUtil.mount_entry(partition).split
