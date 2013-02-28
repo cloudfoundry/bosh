@@ -155,7 +155,7 @@ namespace :stemcell do
 
     build_path = File.join(root, "build")
 
-    cp_r File.expand_path("../../bosh_agent/misc/stemcell/build2", __FILE__), build_path, :preserve => true
+    cp_r File.expand_path("../../stemcell_builder", __FILE__), build_path, :preserve => true
 
     work_path = ENV["WORK_PATH"] || File.join(root, "work")
     mkdir_p work_path
