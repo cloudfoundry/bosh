@@ -37,7 +37,6 @@ describe Bosh::Agent::Platform::Ubuntu::Logrotate do
 
     @platform.update_logging(spec_properties)
     match_expression = %r|size=#{max_log_file_size}|
-puts File.read(File.join(@logrotate_path, Bosh::Agent::BOSH_APP_GROUP))
     File.read(File.join(@logrotate_path, Bosh::Agent::BOSH_APP_GROUP)).should match(match_expression)
   end
 
