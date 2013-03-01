@@ -9,11 +9,32 @@ describe Bosh::Clouds::Provider do
 
   end
 
+  it "should successfully load an aws cloud plugin" do
+
+    aws_options =  {
+        "aws" => {
+            "access_key_id" =>'foo_key_id' ,
+            "secret_access_key"=>'foo_secret_key',
+            "region"=> 'us',
+            "default_key_name"=> 'foo'
+        },
+        "registry" => {
+            "endpoint"=>'foo',
+            "user"=>'foouser',
+            "password"=>'foopass'
+        }
+    }
+    provider = Bosh::Clouds::Provider.create("aws", aws_options)
+    provider.should be_kind_of(Bosh::Clouds::Aws)
+
+  end
+
+
   it "should fail to create an invalid provider" do
 
-    lambda {
+    expect {
       Bosh::Clouds::Provider.create("enoent", {})
-    }.should raise_error(Bosh::Clouds::CloudError)
+    }.to raise_error(Bosh::Clouds::CloudError, /Could not load Cloud Provider Plugin: enoent/)
 
   end
 end
