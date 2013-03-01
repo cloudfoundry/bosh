@@ -159,11 +159,11 @@ module Bosh::Cli
 
     def load_gem_plugins
       get_gem_plugins.each do |plugin_path|
-        next if Gem.loaded_path?(plugin_path)
+        #next if Gem.loaded_path?(plugin_path)
         original_commands = Config.commands.size
 
         begin
-          require_plugin plugin_path
+          next unless require_plugin plugin_path
         rescue Exception => e
           err("Failed to load plugin #{plugin_path}: #{e.message}".red)
         end

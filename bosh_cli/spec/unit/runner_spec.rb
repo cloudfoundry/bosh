@@ -73,17 +73,6 @@ describe Bosh::Cli::Runner do
       runner.load_gem_plugins
     end
 
-    it "should not require a loaded plugin" do
-      Gem.stub(:loaded_path?).with(@unique_plugin_1).and_return(false)
-      runner.should_receive(:require_plugin).with(@unique_plugin_1).once
-      Gem.stub(:loaded_path?).with(@unique_plugin_2).and_return(false)
-      runner.should_receive(:require_plugin).with(@unique_plugin_2).once
-      Gem.stub(:loaded_path?).with(@common_plugin).and_return(true)
-      runner.should_not_receive(:require_plugin).with(@common_plugin)
-
-      runner.load_gem_plugins
-    end
-
     pending "raises an error if a plugin fails to load"
     pending "warns the user if a loaded plugin doesn't result in any new CLI commands"
   end
