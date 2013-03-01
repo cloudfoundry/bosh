@@ -130,7 +130,6 @@ module AwsSystemExampleGroup
       else
         FileUtils.rm_rf deployments_path
         FileUtils.mkdir_p micro_deployment_path
-        FileUtils.mkdir_p bat_deployment_path
 
         puts "Using configuration template: #{aws_configuration_template_path}"
         run_bosh "aws destroy"

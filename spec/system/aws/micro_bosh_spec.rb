@@ -10,18 +10,19 @@ describe "AWS" do
     Dir.chdir(spec_tmp_path) do
       run_bosh "aws bootstrap micro"
     end
-  end
 
-  it "should be able to launch a MicroBosh from existing stemcell" do
     run_bosh "status"
     puts "DEPLOYMENT FINISHED!"
+  end
 
+  it "should launch a MicroBOSH which passes the BATs" do
     puts "Running BAT Tests"
     unless ENV["NO_PROVISION"]
       puts "Uploading latest stemcell from #{latest_stemcell_path}"
       run_bosh "upload stemcell #{latest_stemcell_path}"
     end
 
+    FileUtils.mkdir_p bat_deployment_path
 
     Dir.chdir(bat_deployment_path) do
       st_version = stemcell_version(latest_stemcell_path)
