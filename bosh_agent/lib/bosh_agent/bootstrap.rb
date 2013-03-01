@@ -244,7 +244,7 @@ module Bosh::Agent
         root_tmp = File.join(base_dir, 'data', 'root_tmp')
 
         # If it's not mounted on /tmp - we don't care - blow it away
-        %x[/usr/bin/truncate -s #{tmp_size}M #{root_tmp}]
+        File.open(root_tmp, "w") { |f| f.truncate(tmp_size * 1024 * 1024) }
         %x[chmod 0700 #{root_tmp}]
         %x[mke2fs -t ext4 -m 1 -F #{root_tmp}]
 
