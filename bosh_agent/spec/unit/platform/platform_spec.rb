@@ -45,7 +45,9 @@ describe Bosh::Agent::Platform::Linux do
         out = `ifconfig #{interface} | head -n 1`
         $?.should == 0
 
-        mac.should match /^([0-9a-e]{2}:){5}[0-9a-e]{2}$/
+        if interface == "lo" || interface =~ /eth\d/
+          mac.should match /^([0-9a-e]{2}:){5}[0-9a-e]{2}$/
+        end
       end
     end
   end
