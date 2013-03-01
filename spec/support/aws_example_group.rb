@@ -2,7 +2,7 @@ require 'tempfile'
 
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    "#{deployments_path}/aws_vpc_receipt.yml"
+    "#{spec_tmp_path}/aws_vpc_receipt.yml"
   end
 
   def vpc_outfile
@@ -10,7 +10,7 @@ module AwsSystemExampleGroup
   end
 
   def rds_outfile_path
-    "#{deployments_path}/aws_rds_receipt.yml"
+    "#{spec_tmp_path}/aws_rds_receipt.yml"
   end
 
   def microbosh_ip
