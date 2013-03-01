@@ -159,7 +159,6 @@ module Bosh::Cli
 
     def load_gem_plugins
       get_gem_plugins.each do |plugin_path|
-        #next if Gem.loaded_path?(plugin_path)
         original_commands = Config.commands.size
 
         begin
