@@ -63,11 +63,8 @@ module Bosh::Agent
     end
 
     def iptables(cmd)
-      output = %x{iptables #{cmd} 2> /dev/null}
-      if $?.exitstatus != 0
-        raise Bosh::Agent::Error, "`iptables #{cmd}` failed"
-      end
-      output
+      result = sh "iptables #{cmd} 2> /dev/null"
+      result.output
     end
 
     def update_iptables
