@@ -108,7 +108,7 @@ module AwsSystemExampleGroup
   def deployments_path
     File.join(BOSH_TMP_DIR, "spec", "deployments")
   end
-  
+
   def copy_keys(global_path, local_path)
     global_private_key_path = global_path.gsub(/\.pub$/, '')
     global_public_key_path = "#{global_private_key_path}.pub"
@@ -129,27 +129,14 @@ module AwsSystemExampleGroup
         copy_keys ENV['GLOBAL_BOSH_KEY_PATH'], ENV['BOSH_KEY_PATH']
       end
 
-      if ENV["NO_PROVISION"]
-        puts "Not deleting and recreating AWS resources, assuming we already have them"
-      else
-        FileUtils.rm_rf deployments_path
-        FileUtils.mkdir_p micro_deployment_path
+      FileUtils.rm_rf deployments_path
+      FileUtils.mkdir_p micro_deployment_path
 
-        puts "Using configuration template: #{aws_configuration_template_path}"
-        run_bosh "aws destroy"
-        puts "CLEANUP SUCCESSFUL"
+      run_bosh "aws destroy"
 
-        FileUtils.rm_rf(vpc_outfile_path)
-
-        Dir.chdir spec_tmp_path do
-          FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
-          FileUtils.rm_rf(vpc_outfile_path)
-
-          run_bosh "aws create vpc '#{aws_configuration_template_path}'"
-        end
-
-        puts "AWS RESOURCES CREATED SUCCESSFULLY!"
-      end
+      FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
+      FileUtils.rm_rf(vpc_outfile_path)
+      FileUtils.rm_rf(rds_outfile_path) if File.exists?(rds_outfile_path)
     end
   end
 end
