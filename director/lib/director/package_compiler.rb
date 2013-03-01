@@ -358,12 +358,21 @@ module Bosh::Director
       if compiled_package
         @logger.info("Found compiled version of package `#{package.desc}' " +
                      "for stemcell `#{stemcell.desc}'")
-        return compiled_package
       else
-        @logger.info("Package `#{package.desc}' " +
-                         "needs to be compiled on `#{stemcell.desc}'")
-        return nil
+        if Config.use_global_blobstore?
+          compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
+        end
+
+        if compiled_package
+          @logger.info("Package `Found compiled version of package `#{package.desc}'" +
+                       "for stemcell `#{stemcell.desc}' in global cache")
+        else
+          @logger.info("Package `#{package.desc}' " +
+                       "needs to be compiled on `#{stemcell.desc}'")
+        end
       end
+
+      compiled_package
     end
 
     def director_job_cancelled?
