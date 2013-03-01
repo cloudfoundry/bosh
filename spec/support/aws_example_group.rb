@@ -9,6 +9,10 @@ module AwsSystemExampleGroup
     YAML.load_file vpc_outfile_path
   end
 
+  def rds_outfile_path
+    "#{deployments_path}/aws_rds_receipt.yml"
+  end
+
   def microbosh_ip
     vpc_outfile["elastic_ips"]["bosh"]["ips"][0]
   end
