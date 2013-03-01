@@ -161,6 +161,19 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe "aws delete_all security_groups" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should retry if it can not delete security groups due to eventual consistency" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        aws.stub(aws_retry_wait_time: 0)
+        fake_ec2.should_receive(:delete_all_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+        fake_ec2.should_receive(:delete_all_security_groups).ordered.once.and_return(true)
+        aws.delete_all_security_groups(config_file)
+      end
+    end
+
     describe "aws create vpc" do
       let(:config_file) { asset "config.yml" }
 

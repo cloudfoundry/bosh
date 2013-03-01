@@ -1,3 +1,4 @@
+require "aws-sdk"
 require_relative "../../../bosh_aws_bootstrap"
 
 module Bosh::Cli::Command
@@ -505,7 +506,12 @@ module Bosh::Cli::Command
     def delete_all_security_groups(config_file)
       config = load_yaml_file(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
-      ec2.delete_all_security_groups
+
+      Bosh::Common.retryable(sleep: aws_retry_wait_time,
+                             tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
+        say("unable to delete security groups: #{e}") if tries > 0
+        ec2.delete_all_security_groups
+      end
     end
 
     usage "aws delete_all route53 records"
@@ -619,6 +625,8 @@ module Bosh::Cli::Command
                            File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
                        ))
     end
+
+    def aws_retry_wait_time; 10; end
 
   end
 end
