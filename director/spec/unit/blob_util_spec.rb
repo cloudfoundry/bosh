@@ -17,7 +17,6 @@ describe Bosh::Director::BlobUtil do
       fake_local_blobstore = mock("local blobstore")
       Bosh::Director::Config.should_receive(:blobstore).and_return(fake_local_blobstore)
       Bosh::Director::Config.should_receive(:global_blobstore).and_return(fake_global_blobstore)
-      BD::BlobUtil.should_receive(:compiled_package_cache_key).with(package, stemcell).and_return("cache_sha1")
 
       fake_local_blobstore.should_receive(:get).with('blob_id', an_instance_of(File))
       fake_global_blobstore.should_receive(:create).with({
@@ -25,7 +24,7 @@ describe Bosh::Director::BlobUtil do
         body: an_instance_of(File)
       })
 
-      Bosh::Director::BlobUtil.save_to_global_cache(compiled_package)
+      Bosh::Director::BlobUtil.save_to_global_cache(compiled_package, "cache_sha1")
     end
   end
 
@@ -34,48 +33,18 @@ describe Bosh::Director::BlobUtil do
       fake_global_blobstore = mock("global blobstore")
       Bosh::Director::Config.should_receive(:global_blobstore).and_return(fake_global_blobstore)
 
-      BD::BlobUtil.should_receive(:compiled_package_cache_key).with(package, stemcell).and_return("cache_sha1")
       fake_global_blobstore.should_receive(:head).with('package_name-cache_sha1').and_return(Object.new)
 
-      Bosh::Director::BlobUtil.exists_in_global_cache?(package, stemcell).should == true
+      Bosh::Director::BlobUtil.exists_in_global_cache?(package, "cache_sha1").should == true
     end
 
     it 'returns false when the object does not exist' do
       fake_global_blobstore = mock("global blobstore")
       Bosh::Director::Config.should_receive(:global_blobstore).and_return(fake_global_blobstore)
 
-      BD::BlobUtil.should_receive(:compiled_package_cache_key).with(package, stemcell).and_return("cache_sha1")
       fake_global_blobstore.should_receive(:head).with('package_name-cache_sha1').and_return(nil)
 
-      Bosh::Director::BlobUtil.exists_in_global_cache?(package, stemcell).should == false
-    end
-
-  end
-
-  describe '.compiled_package_cache_key' do
-    it 'should generate a unique cache key for a package and stemcell' do
-      package.stub(:dependency_set).and_return([])
-      hash_input = [package_fingerprint, stemcell_sha1].join("")
-      BDM::Package.should_not_receive(:filter)
-      Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
-      BD::BlobUtil.compiled_package_cache_key(package, stemcell).should == 'a new sha'
-    end
-
-    it 'should handle multiple dependent packages and use their fingerprints sorted by package name' do
-      package.stub(:dependency_set).and_return(["other_dependent_package", "dependent_package"])
-      hash_input = [package_fingerprint, stemcell_sha1, "dp_fingerprint1", "dp_fingerprint2"].join("")
-      BDM::Package.should_receive(:filter).with(name: "dependent_package").and_return([dep_pkg1])
-      BDM::Package.should_receive(:filter).with(name: "other_dependent_package").and_return([dep_pkg2])
-      Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
-      BD::BlobUtil.compiled_package_cache_key(package, stemcell).should == 'a new sha'
-    end
-
-    it 'should use the fingerprints from the latest dependent packages' do
-      package.stub(:dependency_set).and_return(["dependent_package"])
-      hash_input = [package_fingerprint, stemcell_sha1, "dp_fingerprint1"].join("")
-      BDM::Package.should_receive(:filter).with(name: "dependent_package").and_return([dep_pkg2, dep_pkg1])
-      Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
-      BD::BlobUtil.compiled_package_cache_key(package, stemcell).should == 'a new sha'
+      Bosh::Director::BlobUtil.exists_in_global_cache?(package, "cache_sha1").should == false
     end
 
   end

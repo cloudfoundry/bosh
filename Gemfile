@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-source 'https://rubygems.org' 
+source 'https://rubygems.org'
 
 gem "agent_client", path: "agent_client"
 gem "blobstore_client", path: "blobstore_client"
@@ -26,6 +26,7 @@ gem "ruby_vim_sdk", path: "ruby_vim_sdk"
 gem "simple_blobstore_server", path: "simple_blobstore_server"
 
 gem "rake", "~>10.0"
+gem "retryable", "=1.3.2"
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
@@ -35,7 +36,6 @@ end
 
 group :development do
   gem "ruby_gntp"
-  gem "ruby-debug19"
 end
 
 group :bat do
@@ -46,13 +46,13 @@ group :bat do
 end
 
 group :development, :test do
-
   gem "rack-test"
   gem "guard"
   gem "guard-bundler"
   gem "guard-rspec"
   gem "ci_reporter"
   gem "rspec"
+  gem "debugger"
 
   gem "simplecov"
   gem "simplecov-rcov"

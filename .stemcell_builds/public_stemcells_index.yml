@@ -289,3 +289,11 @@ micro-bosh-stemcell-openstack-kvm-1.5.0.pre2.tgz:
   - openstack
   - kvm
   - micro
+bosh-stemcell-vsphere-0.8.0.tgz:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEwMDRlNGU3ZDUxNzYxOGYwNTEyZjlj%0ANTdjYzE3MiIsInNpZyI6InlwUXZsdmpVdVJiVURBakl0akFsL2xuczFOQT0i%0AfQ==%0A
+  url: https://blob.cfblob.com/rest/objects/4e4e78bca41e121004e4e7d517618f0512f9c57cc172?uid=bb6a0c89ef4048a8a0f814e25385d1c5/user1&expires=1893484800&signature=ypQvlvjUuRbUDAjItjAl/lns1NA=
+  sha: 9b26076b31c4c6bb4bf8e750d609ffc223b62c81
+  size: 421190865
+  tags:
+  - vpshere
+  - test

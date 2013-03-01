@@ -53,12 +53,16 @@ blobstore:
     user: <%= p('blobstore.director.user') %>
     password: <%= p('blobstore.director.password') %>
 <% end %>
+<% if_p('global_blobstore.bucket',
+        'global_blobstore.access_key_id',
+        'global_blobstore.secret_access_key') do |bucket, access_key_id, secret_access_key| %>
 global_blobstore:
-  bucket: <%= p('global_blobstore.bucket') %>
+  bucket: <%= bucket %>
   properties:
     provider: AWS
-    aws_access_key_id: <%= p('global_blobstore.access_key_id')%>
-    aws_secret_access_key: <%= p('global_blobstore.secret_access_key') %>
+    aws_access_key_id: <%= access_key_id %>
+    aws_secret_access_key: <%= secret_access_key %>
+<% end %>
 cloud:
 <% plugin = nil %>
 <% if_p('aws.access_key_id', 'aws.secret_access_key',

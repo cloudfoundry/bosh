@@ -11,8 +11,16 @@ module Bosh::Agent
       @logger = Bosh::Agent::Config.logger
       @cdrom_retry_wait = DEFAULT_CDROM_RETRY_WAIT
       @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
-      cd_drive = `cat /proc/sys/dev/cdrom/info | grep "drive name:" | awk '{print $3}'`
-      @cdrom_device = "/dev/#{cd_drive}"
+      @cdrom_device = nil
+    end
+
+    def cdrom_device
+      unless @cdrom_device
+        # only do this when not already done
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
+        @cdrom_device = "/dev/#{cd_drive.strip}"
+      end
+      @cdrom_device
     end
 
     def load_settings
@@ -53,7 +61,7 @@ module Bosh::Agent
           read_cdrom_byte
           break
         rescue => e
-          @logger.info("Waiting for #@cdrom_device (ENOMEDIUM): #{e.inspect}")
+          @logger.info("Waiting for #{cdrom_device} (ENOMEDIUM): #{e.inspect}")
         end
         sleep @cdrom_retry_wait
       end
@@ -77,7 +85,7 @@ module Bosh::Agent
           @logger.info("Waiting for udev cdrom-id (EBUSY)")
           # do nothing
         rescue Errno::ENOMEDIUM # 1.8: Errno::E123
-          @logger.info("Waiting for #@cdrom_device (ENOMEDIUM or ENOTBLK)")
+          @logger.info("Waiting for #{cdrom_device} (ENOMEDIUM or ENOTBLK)")
           # do nothing
         end
         sleep @cdrom_retry_wait
@@ -101,7 +109,7 @@ module Bosh::Agent
     end
 
     def read_cdrom_byte
-      File.read(@cdrom_device, 1)
+      File.read(cdrom_device, 1)
     end
 
     def create_cdrom_settings_mount_point
@@ -110,17 +118,17 @@ module Bosh::Agent
     end
 
     def mount_cdrom
-      output = `mount #@cdrom_device #@cdrom_settings_mount_point 2>&1`
+      result = Bosh::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
       raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #@cdrom_settings_mount_point: #{output}" unless $?.exitstatus == 0
+        "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
     end
 
     def umount_cdrom
-      `umount #@cdrom_settings_mount_point 2>&1`
+      Bosh::Exec.sh "umount #@cdrom_settings_mount_point 2>&1"
     end
 
     def eject_cdrom
-      `eject #@cdrom_device`
+      Bosh::Exec.sh "eject #{cdrom_device}"
     end
 
   end

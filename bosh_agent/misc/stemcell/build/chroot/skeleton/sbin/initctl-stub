@@ -1,3 +1,0 @@
-#!/bin/sh
-echo
-echo "Warning: Fake initctl called, doing nothing"

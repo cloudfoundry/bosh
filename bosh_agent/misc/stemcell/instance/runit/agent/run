@@ -1,4 +1,0 @@
-#!/bin/bash
-export PATH=/var/vcap/bosh/bin:$PATH
-exec 2>&1
-exec /var/vcap/bosh/bosh_agent/bin/bosh_agent -c
