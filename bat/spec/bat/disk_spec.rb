@@ -19,8 +19,7 @@ describe "persistent disk" do
     load_deployment_spec
   end
 
-  xit "should create a disk" do
-    pending "failing on ci - Address 10.10.0.32 is in use."
+  it "should create a disk" do
     use_static_ip
     use_job("batarang")
     use_persistent_disk(2048)
