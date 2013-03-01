@@ -10,6 +10,14 @@ module Bosh::Agent
       Bosh::Agent::Config.logger
     end
 
+    def update_hostname(hostname)
+      template = ERB.new(load_erb("etc_hosts.erb"), 0, '%<>-')
+      result = template.result(binding)
+      Bosh::Agent::Util::update_file(result, "/etc/hosts")
+      Bosh::Exec.sh "hostname #{hostname}"
+      Bosh::Agent::Util::update_file(hostname, "/etc/hostname")
+    end
+
     def setup_networking
       case Bosh::Agent::Config.infrastructure_name
       when "vsphere"

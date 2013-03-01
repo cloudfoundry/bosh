@@ -48,6 +48,10 @@ module Bosh::Agent
       @network.setup_networking
     end
 
+    def update_hostname(hostname)
+      @network.update_hostname(hostname)
+    end
+
     def start_ssh_and_wait(timeout)
       @ssh_service.start_and_wait(timeout)
     end

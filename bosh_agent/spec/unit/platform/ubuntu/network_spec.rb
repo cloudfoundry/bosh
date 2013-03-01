@@ -4,6 +4,27 @@ require File.dirname(__FILE__) + '/../../../spec_helper'
 
 describe Bosh::Agent::Platform::Ubuntu::Network do
 
+  describe "common" do
+    let(:network) { Bosh::Agent::Platform::Ubuntu::Network.new }
+
+    it "should update hostname" do
+      hostname = "example.com"
+      Bosh::Exec.should_receive(:sh).with("hostname #{hostname}")
+      Bosh::Agent::Util.should_receive(:update_file).twice do |data, file|
+        case file
+        when "/etc/hostname"
+          data.should == hostname
+        when "/etc/hosts"
+          data.should =~ /127\.0\.0\.1 localhost #{hostname}/
+        else
+          raise "#{file} cannot be updated"
+        end
+      end
+
+      network.update_hostname(hostname)
+    end
+  end
+
   describe "vsphere" do
     before(:each) do
       Bosh::Agent::Config.infrastructure_name = "vsphere"
