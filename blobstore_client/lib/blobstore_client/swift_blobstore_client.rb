@@ -4,7 +4,7 @@ require "base64"
 require "fog"
 require "multi_json"
 require "uri"
-require "uuidtools"
+require "httpclient"
 
 module Bosh
   module Blobstore
@@ -38,8 +38,8 @@ module Bosh
         @container
       end
 
-      def create_file(file)
-        object_id = generate_object_id
+      def create_file(object_id, file)
+        object_id ||= generate_object_id
         object = container.files.create(:key => object_id,
                                         :body => file,
                                         :public => true)

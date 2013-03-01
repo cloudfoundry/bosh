@@ -5,31 +5,61 @@ describe Bosh::AwsCloud::InstanceManager do
   let(:region) { mock_ec2 }
 
   describe "#create" do
-    let(:availability_zone_selector) { double("availability zone selector") }
+    let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector, common_availability_zone: "us-east-1a") }
+    let(:fake_aws_subnet) { double(AWS::EC2::Subnet).as_null_object }
+    let(:aws_instance_params) do
+      {
+          count: 1,
+          image_id: "stemcell-id",
+          instance_type: "m1.small",
+          user_data: "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}",
+          key_name: "bar",
+          security_groups: ["baz"],
+          subnet: fake_aws_subnet,
+          private_ip_address: "1.2.3.4",
+          availability_zone: "us-east-1a"
+      }
+    end
+    let(:aws_instances) { double(AWS::EC2::InstanceCollection) }
 
     it "should ask AWS to create an instance in the given region, with parameters built up from the given arguments" do
-      instances = double("instances")
-      fake_aws_subnet = double("aws_subnet").as_null_object
-
-      region.stub(:instances).and_return(instances)
+      region.stub(:instances).and_return(aws_instances)
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
-      availability_zone_selector.stub(:common_availability_zone).and_return("us-east-1a")
 
-      instances.should_receive(:create).with(
-      {
-              count: 1,
-              image_id: "stemcell-id",
-              instance_type: "m1.small",
-              user_data: "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}",
-              key_name: "bar",
-              security_groups: ["baz"],
-              subnet: fake_aws_subnet,
-              private_ip_address: "1.2.3.4",
-              availability_zone: "us-east-1a"
-          }
-      )
+      aws_instances.should_receive(:create).with(aws_instance_params)
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
+
+      agent_id = "agent-id"
+      stemcell_id = "stemcell-id"
+      resource_pool = {"instance_type" => "m1.small", "key_name" => "bar"}
+      networks_spec = {
+          "default" => {
+              "type" => "dynamic",
+              "dns" => "foo",
+              "cloud_properties" => {"security_groups" => "baz"}
+          },
+          "other" => {
+              "type" => "manual",
+              "cloud_properties" => {"subnet" => "sub-123456"},
+              "ip" => "1.2.3.4"
+          }
+      }
+      disk_locality = nil
+      environment = nil
+      options = {"aws" => {"region" => "us-east-1"}}
+      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
+    end
+
+    it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
+      region.stub(:instances).and_return(aws_instances)
+      region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
+
+      aws_instances.should_receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
+      aws_instances.should_receive(:create).with(aws_instance_params).once
+
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+      instance_manager.stub(instance_create_wait_time: 0)
 
       agent_id = "agent-id"
       stemcell_id = "stemcell-id"
@@ -54,8 +84,6 @@ describe Bosh::AwsCloud::InstanceManager do
   end
 
   describe "setting instance parameters" do
-    let(:availability_zone_selector) { double("availability zone selector") }
-
     describe "#set_key_name_parameter" do
       it "should set the key name instance parameter to the first non-null argument" do
         instance_manager = described_class.new(region, registry)
@@ -166,6 +194,8 @@ describe Bosh::AwsCloud::InstanceManager do
     end
 
     describe "#set_availability_zone_parameter" do
+      let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector) }
+
       context "if there is a common availability zone specified" do
         before do
           availability_zone_selector.stub(:common_availability_zone).and_return("danger zone")
@@ -228,6 +258,8 @@ describe Bosh::AwsCloud::InstanceManager do
     let(:instance_manager) { described_class.new(region, registry) }
 
     it "should terminate an instance given the id" do
+      instance_manager.stub(:remove_from_load_balancers)
+
       fake_aws_instance.should_receive(:terminate)
       registry.should_receive(:delete_settings).with(instance_id)
 
@@ -238,6 +270,8 @@ describe Bosh::AwsCloud::InstanceManager do
     end
 
     it "should ignore AWS::EC2::Errors::InvalidInstanceID::NotFound exception from wait_resource" do
+      instance_manager.stub(:remove_from_load_balancers)
+
       fake_aws_instance.should_receive(:terminate)
       registry.should_receive(:delete_settings).with(instance_id)
 
@@ -251,6 +285,8 @@ describe Bosh::AwsCloud::InstanceManager do
 
     describe "fast path deletion" do
       it "should do a fast path delete when requested" do
+        instance_manager.stub(:remove_from_load_balancers)
+
         region.stub(:instances).and_return({instance_id => fake_aws_instance})
         fake_aws_instance.stub(:terminate)
         registry.stub(:delete_settings)
@@ -275,6 +311,42 @@ end
       region.stub(:instances).and_return({instance_id => fake_aws_instance})
 
       instance_manager.reboot(instance_id)
+    end
+  end
+
+  context 'ELBs' do
+    let(:instance_manager) { described_class.new(region, registry) }
+    let(:instance) { double('instance', :id => 'i-xxxxxxxx', :exists? => true) }
+    let(:instances) { double('instances', :[] => instance) }
+    let(:lb) { double('lb', :instances => instances) }
+    let(:load_balancers) do
+      l = [lb]
+      l.stub(:[] => lb)
+      l
+    end
+    let(:elb) { double(AWS::ELB, :load_balancers => load_balancers) }
+
+    before(:each) do
+      AWS::ELB.stub(:new => elb)
+      elb.stub(:[] => lb)
+      instance_manager.stub(:instance => instance)
+    end
+
+    describe '#remove_from_load_balancers' do
+      it 'should remove the instance from all load balancers' do
+        instances.should_receive(:deregister).with(instance)
+
+        instance_manager.remove_from_load_balancers
+      end
+    end
+
+    describe '#attach_to_load_balancers' do
+      it 'should attach the instance the list of load balancers in the resource pool' do
+        instance_manager.stub(:elbs => %w[lb])
+        instances.should_receive(:register).with(instance)
+
+        instance_manager.attach_to_load_balancers
+      end
     end
   end
 end

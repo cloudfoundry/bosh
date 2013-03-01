@@ -16,6 +16,7 @@ module Bosh::Director
         :event_log,
         :logger,
         :max_tasks,
+        :max_threads,
         :name,
         :process_uuid,
         :redis_options,
@@ -41,6 +42,7 @@ module Bosh::Director
         end
 
         @blobstore = nil
+        @global_blobstore = nil
         @nats = nil
         @nats_rpc = nil
         @cloud = nil
@@ -64,6 +66,11 @@ module Bosh::Director
         @max_tasks = 500 # by default keep only last 500 tasks in disk
         if config["max_tasks"]
           @max_tasks = config["max_tasks"].to_i
+        end
+
+        @max_threads = 32
+        if config["max_threads"]
+          @max_threads = config["max_threads"].to_i
         end
 
         self.redis_options= {
@@ -93,9 +100,12 @@ module Bosh::Director
 
         @cloud_options = config["cloud"]
         @blobstore_options = config["blobstore"]
+
+        @global_blobstore_options = config["global_blobstore"]
         @name = config["name"] || ""
 
         @blobstore = nil
+        @global_blobstore = nil
 
         @db = configure_db(config["db"])
         @dns = config["dns"]
@@ -110,6 +120,10 @@ module Bosh::Director
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+      end
+
+      def use_global_blobstore?
+        !@global_blobstore_options.nil?
       end
 
       def get_revision
@@ -143,6 +157,16 @@ module Bosh::Director
           end
         end
         @blobstore
+      end
+
+      def global_blobstore
+        @lock.synchronize do
+          if @global_blobstore.nil?
+            properties = @global_blobstore_options["properties"].reduce({}) { |hsh,(k,v)| hsh[k.to_sym] = v; hsh }
+            @global_blobstore = Fog::Storage.new(properties).directories.get(@global_blobstore_options["bucket"]).files
+          end
+        end
+        @global_blobstore
       end
 
       def cloud_type

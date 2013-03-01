@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 require "base64"
 
@@ -44,26 +44,49 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
   describe "Creating resources" do
 
-    it "should create a token for a new resource" do
-
-      resource_file = Tempfile.new("resource")
-      begin
-        resource_file.write("test contents")
-        resource_file.close
-        post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
-             {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
-        object_id = last_response.body
-
-        get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
-        last_response.body.should == "test contents"
-      ensure
-        resource_file.delete
-      end
-
+    before(:each) do
+      @resource_file = Tempfile.new("resource")
+      @resource_file.write("test contents")
+      @resource_file.close
     end
 
+    after(:each) do
+      @resource_file.delete
+    end
+
+    it "should create a token for a new resource" do
+      post "/resources", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
+           {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+      object_id = last_response.body
+
+      get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+      last_response.body.should == "test contents"
+    end
+
+    it 'should accept object id suggestion' do
+      post "/resources/foobar", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
+           {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+      object_id = last_response.body
+
+      object_id.should == "foobar"
+
+      get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+      last_response.body.should == "test contents"
+    end
+
+    it 'should return a 409 error if the suggested id is taken' do
+      post "/resources/foobar", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
+           {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+
+      post "/resources/foobar", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
+           {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 409
+    end
   end
 
   describe "Fetching resources" do

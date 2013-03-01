@@ -117,9 +117,7 @@ module Bosh::Director
         job.release.get_package_model_by_name(name)
       end
 
-      task = CompileTask.new(package, stemcell)
-      task.dependency_key = generate_dependency_key(dependencies)
-      task.add_job(job)
+      task = CompileTask.new(package, stemcell, dependencies, job)
 
       compiled_package = find_compiled_package(task)
       if compiled_package
@@ -218,8 +216,8 @@ module Bosh::Director
         # Check if the package was compiled in a parallel deployment
         compiled_package = find_compiled_package(task)
         if compiled_package.nil?
-          build = generate_build_number(package, stemcell)
-          agent_task = nil
+          build = Models::CompiledPackage.generate_build_number(package, stemcell)
+          task_result = nil
 
           prepare_vm(stemcell) do |vm_data|
             update_vm_metadata(vm_data.vm, :compiling => package.name)
@@ -228,9 +226,8 @@ module Bosh::Director
                                             package.sha1, package.name,
                                             "#{package.version}.#{build}",
                                             task.dependency_spec)
+            task_result = agent_task["result"]
           end
-
-          task_result = agent_task["result"]
 
           compiled_package = Models::CompiledPackage.create do |p|
             p.package = package
@@ -239,6 +236,17 @@ module Bosh::Director
             p.build = build
             p.blobstore_id = task_result["blobstore_id"]
             p.dependency_key = task.dependency_key
+          end
+
+          if Config.use_global_blobstore?
+            if BlobUtil.exists_in_global_cache?(package, task.cache_key)
+              @logger.info("Already exists in global package cache, skipping upload")
+            else
+              @logger.info("Uploading to global package cache")
+              BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
+            end
+          else
+            @logger.info("Global blobstore not configured, skipping upload")
           end
 
           @counter_mutex.synchronize { @compilations_performed += 1 }
@@ -375,24 +383,6 @@ module Bosh::Director
 
       vm.update(:apply_spec => state)
       agent.apply(state)
-    end
-
-    # Returns JSON-encoded stable representation of package dependencies. This
-    # representation doesn't include release name, so differentiating packages
-    # with the same name from different releases is up to the caller.
-    # @param [Array<Models::Package>] packages List of packages
-    # @return [String] JSON-encoded dependency key
-    def generate_dependency_key(packages)
-      Models::CompiledPackage.generate_dependency_key(packages)
-    end
-
-    def generate_build_number(package, stemcell)
-      attrs = {
-        :package_id => package.id,
-        :stemcell_id => stemcell.id
-      }
-
-      Models::CompiledPackage.filter(attrs).max(:build).to_i + 1
     end
 
     def compilation_count

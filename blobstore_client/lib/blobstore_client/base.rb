@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "tmpdir"
+require 'tmpdir'
+require 'uuidtools'
 
 module Bosh
   module Blobstore
@@ -14,20 +15,22 @@ module Bosh
       # Saves a file or a string to the blobstore.
       # if it is a String, it writes it to a temp file
       # then calls create_file() with the (temp) file
-      # @overload create(contents)
+      # @overload create(contents, id=nil)
       #   @param [String] contents contents to upload
-      # @overload create(file)
+      #   @param [String] id suggested object id, if nil a uuid is generated
+      # @overload create(file, id=nil)
       #   @param [File] file file to upload
+      #   @param [String] id suggested object id, if nil a uuid is generated
       # @return [String] object id of the created blobstore object
-      def create(contents)
+      def create(contents, id=nil)
         if contents.kind_of?(File)
-          create_file(contents)
+          create_file(id, contents)
         else
           temp_path do |path|
             File.open(path, "w") do |file|
               file.write(contents)
             end
-            return create_file(File.open(path, "r"))
+            return create_file(id, File.open(path, "r"))
           end
         end
       rescue BlobstoreError => e
@@ -68,7 +71,7 @@ module Bosh
 
       protected
 
-      def create_file(file)
+      def create_file(id, file)
         # needs to be implemented in each subclass
       end
 

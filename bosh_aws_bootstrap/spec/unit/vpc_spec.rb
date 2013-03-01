@@ -49,26 +49,100 @@ describe Bosh::Aws::VPC do
 
   describe "subnets" do
     describe "creation" do
+      let(:fake_aws_vpc) { mock("aws_vpc", subnets: mock("subnets")) }
+      let(:fake_aws_ec2) { mock('ec2', internet_gateways: mock("igws")) }
+      let(:vpc) { Bosh::Aws::VPC.new(fake_aws_ec2, fake_aws_vpc).tap { |v| v.stub(:sleep) } }
+      let(:sub1) { mock("sub1", id: 'amz-sub1') }
+      let(:tables) { mock("route_tables") }
+      let(:new_table) { mock("route_table") }
+
+      before do
+        sub1.should_receive(:state).and_return(:pending, :available)
+        sub1.should_receive(:add_tag).with("Name", :value => "sub1")
+      end
+
       it "can create subnets with the specified CIDRs and, optionally, AZs" do
         subnet_1_specs = {"cidr" => "cider", "availability_zone" => "canada"}
         subnet_2_specs = {"cidr" => "cedar"}
-        sub1 = mock("sub1")
         sub2 = mock("sub2")
 
-        sub1.should_receive(:add_tag).with("Name", :value => "sub1")
         sub2.should_receive(:add_tag).with("Name", :value => "sub2")
-        sub1.should_receive(:state).and_return(:pending, :available)
         sub2.should_receive(:state).and_return(:pending, :available)
-
-        fake_aws_vpc = mock("aws_vpc", subnets: mock("subnets"))
 
         fake_aws_vpc.subnets.should_receive(:create).with("cider", {availability_zone: "canada"}).and_return(sub1)
         fake_aws_vpc.subnets.should_receive(:create).with("cedar", {}).and_return(sub2)
 
-        vpc = Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc)
-        vpc.stub(:sleep)
         vpc.create_subnets({"sub1" => subnet_1_specs, "sub2" => subnet_2_specs})
       end
+
+      it "can set the default route to the internet gateway" do
+        fake_aws_vpc.stub(:route_tables).and_return(tables)
+        tables.should_receive(:create).and_return(new_table)
+
+        igw = mock("igw")
+        fake_aws_vpc.stub(:internet_gateway).and_return(igw)
+        new_table.should_receive(:create_route).with('0.0.0.0/0', :internet_gateway => igw)
+
+        sub1.should_receive(:route_table=).with(new_table)
+
+        fake_aws_vpc.subnets.should_receive(:create).with("cider", {}).and_return(sub1)
+        vpc.create_subnets({"sub1" => {"cidr" => "cider", "default_route" => "igw"}})
+      end
+
+      it "can set the default route to an existing NAT instance" do
+        nat_inst_config = {"name" => "cf_nat_box", "ip" => "10.10.0.10", "security_group" => "nat"}
+        nat_inst = mock("nat_instance", :id => "i-123")
+        nat_inst.should_receive(:status).and_return(:pending, :pending, :running)
+        nat_inst.should_receive(:add_tag).with("Name", :value => "cf_nat_box")
+        fake_aws_ec2.should_receive(:disable_src_dest_checking).with("i-123")
+        eip = mock("eip")
+        nat_inst.should_receive(:associate_elastic_ip).with(eip)
+
+        fake_aws_vpc.stub(:internet_gateway).and_return(mock("igw"))
+        sub2 = mock("sub2", :add_tag => nil, :route_table => mock("sub2_route_table"), :state => :available)
+        fake_aws_vpc.stub(:route_tables).and_return(tables)
+        tables.stub(:create).and_return(new_table)
+
+        fake_aws_vpc.subnets.should_receive(:create).with("1.2.3.4/5", {}).and_return(sub1)
+        fake_aws_ec2.stub(:create_instance).and_return(nat_inst)
+        fake_aws_ec2.stub(:allocate_elastic_ip).and_return(eip)
+
+        fake_aws_vpc.subnets.should_receive(:create).with("6.7.8.9/0", {}).and_return(sub2)
+        new_table.should_receive(:create_route).with('0.0.0.0/0', :instance => nat_inst)
+        sub2.should_receive(:route_table=).with(new_table)
+
+        vpc.create_subnets({
+                               "sub1" => {"cidr" => "1.2.3.4/5",
+                                          "nat_instance" => nat_inst_config},
+                               "sub2" => {"cidr" => "6.7.8.9/0",
+                                          "default_route" => "cf_nat_box"}
+                           })
+      end
+
+      it "can create a NAT instance" do
+        nat_inst_config = {"name" => "cf_nat_box", "ip" => "10.10.0.10", "security_group" => "nat"}
+        nat_inst = mock("nat_instance", :id => "i-nat123")
+        nat_inst.should_receive(:status).and_return(:pending, :pending, :running)
+        nat_inst.should_receive(:add_tag).with("Name", :value => "cf_nat_box")
+        fake_aws_ec2.should_receive(:disable_src_dest_checking).with("i-nat123")
+        fake_aws_ec2.should_receive(:create_instance).with({
+                                                               :key_name => "bosh",
+                                                               :image_id => "ami-f619c29f",
+                                                               :security_groups => ["nat"],
+                                                               :instance_type => "m1.small",
+                                                               :subnet => "amz-sub1",
+                                                               :private_ip_address => "10.10.0.10"
+                                                           }).and_return(nat_inst)
+        fake_aws_vpc.subnets.should_receive(:create).with("1.2.3.4/5", {}).and_return(sub1)
+        eip = mock("eip")
+        fake_aws_ec2.should_receive(:allocate_elastic_ip).and_return(eip)
+        nat_inst.should_receive(:associate_elastic_ip).with(eip)
+
+        vpc.create_subnets({"sub1" => {"cidr" => "1.2.3.4/5",
+                                       "nat_instance" => nat_inst_config}
+                           })
+      end
+
     end
 
     describe "deletion" do
@@ -172,8 +246,31 @@ describe Bosh::Aws::VPC do
             delete_security_groups
       end
     end
+
+    describe "finding" do
+      it 'can find security groups by name' do
+        security_group1 = mock("sg1", name: "sg_name_1", id: "sg_id_1")
+        security_group2 = mock("sg2", name: "sg_name_2", id: "sg_id_2")
+        vpc = Bosh::Aws::VPC.new(mock("ec2"), mock("aws_vpc", security_groups: [security_group1, security_group2]))
+
+        vpc.security_group_by_name("sg_name_2").should == security_group2
+      end
+    end
   end
 
+  describe "route tables" do
+    it "should be able to delete them all" do
+      table1 = mock("table1", :main? => false)
+      table2 = mock("table2", :main? => false)
+      table3 = mock("table3", :main? => true)
+      fake_aws_vpc = mock("aws_vpc", :route_tables => [table1, table2, table3])
+
+      table1.should_receive(:delete)
+      table2.should_receive(:delete)
+
+      Bosh::Aws::VPC.new(mock('ec2'), fake_aws_vpc).delete_route_tables
+    end
+  end
 
   describe "dhcp_options" do
     describe "creation" do

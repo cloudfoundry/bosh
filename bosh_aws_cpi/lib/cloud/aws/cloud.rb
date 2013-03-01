@@ -56,7 +56,9 @@ module Bosh::AwsCloud
       # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
       # so we need to trigger eager autoload while constructing CPI
       AWS.eager_autoload!
-      @ec2 = AWS::EC2.new(aws_params)
+
+      AWS.config(aws_params)
+      @ec2 = AWS::EC2.new
 
       # Registry updates are not really atomic in relation to
       # EC2 API calls, so they might get out of sync. Cloudcheck
@@ -91,25 +93,32 @@ module Bosh::AwsCloud
         # do this early to fail fast
         stemcell = Stemcell.find(@region, stemcell_id)
 
-        instance = InstanceManager.
-            new(@region, registry, az_selector).
+        instance_manager = InstanceManager.new(@region, registry, az_selector)
+        instance = instance_manager.
             create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
-        @logger.info("Creating new instance `#{instance.id}'")
-        wait_resource(instance, :running)
 
-        NetworkConfigurator.new(network_spec).configure(@region, instance)
+        begin
+          @logger.info("Creating new instance '#{instance.id}'")
+          wait_resource(instance, :running)
 
-        registry_settings = initial_agent_settings(
-            agent_id,
-            network_spec,
-            environment,
-            preformatted?(resource_pool),
-            stemcell.root_device_name,
-            @options["agent"] || {}
-        )
-        registry.update_settings(instance.id, registry_settings)
+          NetworkConfigurator.new(network_spec).configure(@region, instance)
 
-        instance.id
+          registry_settings = initial_agent_settings(
+              agent_id,
+              network_spec,
+              environment,
+              preformatted?(resource_pool),
+              stemcell.root_device_name,
+              @options['agent'] || {}
+          )
+          registry.update_settings(instance.id, registry_settings)
+
+          instance.id
+        rescue => e
+          @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
+          instance_manager.terminate(instance.id, @fast_path_delete)
+          raise e
+        end
       end
     end
 
@@ -192,7 +201,18 @@ module Bosh::AwsCloud
         end
 
         @logger.info("Deleting volume `#{volume.id}'")
-        volume.delete
+        # even though the contract is that we don't get here until AWS
+        # reports that the volume is detached, the "eventual consistency"
+        # might throw a spanner in the machinery and report that it still
+        # is in use
+
+        begin
+          task_checkpoint
+          volume.delete
+        rescue AWS::EC2::Errors::Client::VolumeInUse => e
+          sleep(1)
+          retry
+        end
 
         if @fast_path_delete
           TagManager.tag(volume, "Name", "to be deleted")

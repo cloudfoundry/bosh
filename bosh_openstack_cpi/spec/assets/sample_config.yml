@@ -1,0 +1,14 @@
+---
+openstack:
+  auth_url: http://127.0.0.1:5000/v2.0/tokens
+  username: foo
+  api_key: bar
+  tenant: bosh
+  region:
+  default_key_name: default
+  default_security_groups: ["default"]
+
+registry:
+  endpoint: http://127.0.0.1:25695
+  user: admin
+  password: admin

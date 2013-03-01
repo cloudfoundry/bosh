@@ -1,7 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "uuidtools"
-
 module Bosh
   module Blobstore
     class LocalClient < BaseClient
@@ -14,9 +12,10 @@ module Bosh
         FileUtils.mkdir_p(@blobstore_path) unless File.directory?(@blobstore_path)
       end
 
-      def create_file(file)
-        id = UUIDTools::UUID.random_create.to_s
+      def create_file(id, file)
+        id ||= UUIDTools::UUID.random_create.to_s
         dst = File.join(@blobstore_path, id)
+        raise BlobstoreError, "object id #{id} is already in use" if File.exist?(dst)
         File.open(dst, 'w') do |fh|
           until file.eof?
             fh.write(file.read(CHUNK_SIZE))

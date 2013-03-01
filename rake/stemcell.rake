@@ -2,11 +2,13 @@
 
 require "bosh_agent"
 require "rbconfig"
+require "atmos"
+require "json"
 
 namespace :stemcell do
 
   desc "Build stemcell"
-  task :basic, [:infrastructure] => "all:build_with_deps"  do |t, args|
+  task :basic, [:infrastructure] => "all:finalize_release_directory"  do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "bosh-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -18,7 +20,7 @@ namespace :stemcell do
   end
 
   desc "Build micro bosh stemcell"
-  task :micro, [:infrastructure] => "all:build_with_deps" do |t, args|
+  task :micro, [:infrastructure] => "all:finalize_release_directory" do |t, args|
     release_tarball = build_micro_bosh_release
     manifest = File.join(File.expand_path(File.dirname(__FILE__)), "..", "release", "micro","#{args[:infrastructure]}.yml")
 
@@ -35,7 +37,7 @@ namespace :stemcell do
   end
 
   desc "Build Micro Cloud Foundry"
-  task :mcf, [:infrastructure, :manifest, :tarball] => "all:build_with_deps" do |t, args|
+  task :mcf, [:infrastructure, :manifest, :tarball, :micro_src] => "all:finalize_release_directory" do |t, args|
     options = default_options(args)
     options[:stemcell_name] ||= "mcf-stemcell"
     options[:stemcell_version] ||= Bosh::Agent::VERSION
@@ -44,10 +46,11 @@ namespace :stemcell do
       Time.now.strftime('%Y%m%d.%H%M%S')
     options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
     options[:bosh_users_password] = 'micr0cloud'
-
+    
     options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(args[:manifest],args[:tarball]))
     options[:mcf_enabled] = "yes"
+    options[:micro_src] = args[:micro_src]
 
     build("stemcell-mcf", options)
   end
@@ -152,7 +155,7 @@ namespace :stemcell do
 
     build_path = File.join(root, "build")
 
-    cp_r File.expand_path("../../bosh_agent/misc/stemcell/build2", __FILE__), build_path, :preserve => true
+    cp_r File.expand_path("../../stemcell_builder", __FILE__), build_path, :preserve => true
 
     work_path = ENV["WORK_PATH"] || File.join(root, "work")
     mkdir_p work_path

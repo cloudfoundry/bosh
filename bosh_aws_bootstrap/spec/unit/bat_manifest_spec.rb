@@ -4,17 +4,25 @@ describe Bosh::Aws::BatManifest do
   let(:receipt) { YAML.load_file(asset "test-output.yml") }
   let(:config) { receipt['original_configuration'] }
   let(:stemcell_version) { '1.1.1.pre' }
-  let(:manifest) { Bosh::Aws::BatManifest.new(receipt, stemcell_version) }
+  let(:manifest) { Bosh::Aws::BatManifest.new(receipt, stemcell_version, 'deadbeef') }
 
   it 'returns the stemcell_version' do
     manifest.stemcell_version.should == stemcell_version
   end
 
-  context "mocked director uuid call" do
+  it "sets the correct elastic ip" do
+    manifest.vip.should == "123.4.5.9"
+  end
 
-    before do
-      mock_director_uuid('deadbeef')
-    end
+  it "warns when vip is missing" do
+    receipt['elastic_ips']['bat']['ips'] = []
+
+    manifest = Bosh::Aws::BatManifest.new(receipt, stemcell_version, 'deadbeef')
+    manifest.should_receive(:warning).with("Missing vip field")
+    manifest.to_y
+  end
+
+  context "mocked director uuid call" do
 
     it 'warns when domain is missing' do
       receipt["vpc"]["domain"] = nil
@@ -32,7 +40,7 @@ describe Bosh::Aws::BatManifest do
 ---
 cpi: aws
 properties:
-  static_ip: bat.cfdev.com
+  static_ip: 123.4.5.9
   uuid: deadbeef
   pool_size: 1
   stemcell:
@@ -55,8 +63,4 @@ YAML
     end
   end
 
-  def mock_director_uuid(uuid)
-    URI.should_receive(:parse).and_return('foo')
-    Net::HTTP.should_receive(:get).with('foo').and_return({'uuid' => uuid}.to_json)
-  end
 end

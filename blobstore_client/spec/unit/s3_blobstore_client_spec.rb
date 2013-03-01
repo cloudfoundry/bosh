@@ -81,6 +81,23 @@ describe Bosh::Blobstore::S3BlobstoreClient do
         file = File.open(asset("file"))
         client.create(file)
       end
+
+      it 'should accept object id suggestion' do
+        client.should_receive(:store_in_s3) do |_, id|
+          id.should == 'foobar'
+        end
+        file = File.open(asset("file"))
+        client.create(file, 'foobar')
+      end
+
+      it 'should raise an error if the same object id is used' do
+        client.should_receive(:get_object_from_s3).and_return(double('s3_object', :exist? => true))
+
+        file = File.open(asset("file"))
+        expect {
+          client.create(file, 'foobar')
+        }.to raise_error Bosh::Blobstore::BlobstoreError
+      end
     end
   end
 

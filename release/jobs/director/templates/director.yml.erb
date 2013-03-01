@@ -2,6 +2,12 @@
 name: <%= p('director.name') %>
 port: <%= p('director.port') %>
 encryption: <%= p('director.encryption') %>
+<% if_p("director.max_tasks") do |max_tasks| %>
+max_tasks: <%= max_tasks %>
+<% end %>
+<% if_p("director.max_threads") do |max_threads| %>
+max_threads: <%= max_threads %>
+ <% end %>
 logging:
   level: DEBUG
   file: /var/vcap/sys/log/director/<%%= ENV["COMPONENT"] %>.debug.log
@@ -47,6 +53,16 @@ blobstore:
     user: <%= p('blobstore.director.user') %>
     password: <%= p('blobstore.director.password') %>
 <% end %>
+<% if_p('global_blobstore.bucket',
+        'global_blobstore.access_key_id',
+        'global_blobstore.secret_access_key') do |bucket, access_key_id, secret_access_key| %>
+global_blobstore:
+  bucket: <%= bucket %>
+  properties:
+    provider: AWS
+    aws_access_key_id: <%= access_key_id %>
+    aws_secret_access_key: <%= secret_access_key %>
+<% end %>
 cloud:
 <% plugin = nil %>
 <% if_p('aws.access_key_id', 'aws.secret_access_key',
@@ -91,6 +107,9 @@ cloud:
       username: <%= username %>
       api_key: <%= api_key %>
       tenant: <%= tenant %>
+      <% if_p("openstack.region") do |region| %>
+      region: <%= region %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
     registry:

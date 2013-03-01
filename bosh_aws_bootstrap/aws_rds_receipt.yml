@@ -1,0 +1,21 @@
+--- 
+deployment_manifest: 
+  properties: 
+    ccdb: 
+      db_scheme: mysql
+      roles: 
+      - tag: admin
+        name: ccdb_user
+        password: ccdb_password
+      databases: 
+      - tag: cc
+        name: ccdb
+    uaadb: 
+      db_scheme: mysql
+      roles: 
+      - tag: admin
+        name: uaa_user
+        password: uaa_password
+      databases: 
+      - tag: uaa
+        name: uaadb

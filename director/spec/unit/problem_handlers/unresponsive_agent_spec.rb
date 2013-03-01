@@ -168,7 +168,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
       lambda {
         handler.apply_resolution(:recreate_vm)
       }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Unable to find stemcell `bosh-stemcell 3.0.2'")
+                           "Unable to find stemcell 'bosh-stemcell 3.0.2'")
     end
 
     it "recreates VM (w/persistent disk)" do

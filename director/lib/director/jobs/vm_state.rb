@@ -15,7 +15,7 @@ module Bosh::Director
 
       def perform
         vms = Models::Vm.filter(:deployment_id => @deployment_id)
-        ThreadPool.new(:max_threads => 32).wrap do |pool|
+        ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           vms.each do |vm|
             pool.process do
               vm_state = process_vm(vm)

@@ -82,7 +82,7 @@ module Bosh::Director
       end
 
       def update_resource_pools
-        ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
+        ThreadPool.new(:max_threads => Config.max_threads).wrap do |thread_pool|
           # Delete extra VMs across resource pools
           event_log.begin_stage("Deleting extra VMs",
                                 sum_across_pools(:extra_vm_count))
@@ -123,7 +123,7 @@ module Bosh::Director
 
         event_log.begin_stage("Refilling resource pools",
                               sum_across_pools(:missing_vm_count))
-        ThreadPool.new(:max_threads => 32).wrap do |thread_pool|
+        ThreadPool.new(:max_threads => Config.max_threads).wrap do |thread_pool|
           # Create missing VMs across resource pools phase 2:
           # should be called after all instance updaters are finished to
           # create additional VMs in order to balance resource pools

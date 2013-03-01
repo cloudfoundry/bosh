@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Blobstore::LocalClient do
 
@@ -38,7 +38,7 @@ describe Bosh::Blobstore::LocalClient do
 
     describe "create" do
       it "should store a file" do
-        test_file = File.join(File.dirname(__FILE__), "../assets/file")
+        test_file = asset('file')
         client = Bosh::Blobstore::LocalClient.new(@options)
         fh = File.open(test_file)
         id = client.create(fh)
@@ -54,6 +54,24 @@ describe Bosh::Blobstore::LocalClient do
         id = client.create(string)
         stored = File.new(File.join(@tmp, id)).readlines
         stored.should == [string]
+      end
+
+      it 'should accept object id suggestion' do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        string = 'foobar'
+        id = client.create(string, 'foobar')
+        id.should == 'foobar'
+        stored = File.new(File.join(@tmp, id)).readlines
+        stored.should == [string]
+      end
+
+      it 'should raise an error' do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        string = 'foobar'
+        client.create(string, 'foobar').should == 'foobar'
+        expect {
+          client.create(string, 'foobar')
+        }.to raise_error Bosh::Blobstore::BlobstoreError
       end
     end
 

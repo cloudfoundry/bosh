@@ -1,10 +1,16 @@
+require 'tempfile'
+
 module AwsSystemExampleGroup
   def vpc_outfile_path
-    `ls #{ASSETS_DIR}/aws/create-vpc-output-*.yml`.strip
+    "#{spec_tmp_path}/aws_vpc_receipt.yml"
   end
 
   def vpc_outfile
     YAML.load_file vpc_outfile_path
+  end
+
+  def rds_outfile_path
+    "#{spec_tmp_path}/aws_rds_receipt.yml"
   end
 
   def microbosh_ip
@@ -15,12 +21,34 @@ module AwsSystemExampleGroup
     @bosh_config_path ||= Tempfile.new("bosh_config").path
   end
 
-  def latest_micro_bosh_stemcell_path
-    `readlink -nf #{ENV['WORKSPACE']}/../../aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz`
+  def latest_micro_bosh_stemcell
+    raise "set CI_PASSWORD and CI_SERVER environment variables to retrieve stemcell ami id" unless ENV['CI_PASSWORD'] && ENV['CI_SERVER']
+    `curl -sk https://ci:#{ENV['CI_PASSWORD']}@#{ENV['CI_SERVER']}/job/aws_micro_bosh_stemcell/lastSuccessfulBuild/artifact/stemcell-ami.txt`
   end
 
   def latest_stemcell_path
-    `readlink -nf #{ENV['WORKSPACE']}/../../aws_bosh_stemcell/lastSuccessful/archive/*.tgz`
+    raise "set CI_PASSWORD and CI_SERVER environment variables to retrieve stemcell ami id" unless ENV['CI_PASSWORD'] && ENV['CI_SERVER']
+    build_data = JSON.parse(`curl -sk https://ci:#{ENV['CI_PASSWORD']}@#{ENV['CI_SERVER']}/job/aws_bosh_stemcell/lastSuccessfulBuild/api/json`)
+    stemcell = build_data['artifacts'].map { |f| f['fileName'] }.detect { |f| f =~ /light/ }
+    dir = Dir.mktmpdir
+    Dir.chdir(dir) do
+      `curl -skO https://ci:#{ENV['CI_PASSWORD']}@bosh-jenkins.cf-app.com/job/aws_bosh_stemcell/lastSuccessfulBuild/artifact/#{stemcell}`
+    end
+    "#{dir}/#{stemcell}"
+  end
+
+  def stemcell_version(stemcell_path)
+    Dir.mktmpdir do |dir|
+      %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
+      stemcell_manifest = "#{dir}/stemcell.MF"
+      st = YAML.load_file(stemcell_manifest)
+      p st
+      st["version"]
+    end
+  end
+
+  def spec_tmp_path
+    File.join(BOSH_TMP_DIR, "spec")
   end
 
   def deployments_path
@@ -77,36 +105,38 @@ module AwsSystemExampleGroup
     end
   end
 
+  def deployments_path
+    File.join(BOSH_TMP_DIR, "spec", "deployments")
+  end
+
+  def copy_keys(global_path, local_path)
+    global_private_key_path = global_path.gsub(/\.pub$/, '')
+    global_public_key_path = "#{global_private_key_path}.pub"
+
+    local_private_key_path = local_path.gsub(/\.pub$/, '')
+    local_public_key_path = "#{local_private_key_path}.pub"
+
+    FileUtils.cp global_private_key_path, local_private_key_path
+    FileUtils.cp global_public_key_path, local_public_key_path
+  end
+
   def self.included(base)
     base.before(:each) do
-      ENV['BOSH_KEY_PAIR_NAME'] = "bosh_ci"
-      ENV['BOSH_KEY_PATH'] = "/tmp/id_bosh_ci"
+      ENV['BOSH_KEY_PAIR_NAME'] ||= "bosh"
+      ENV['BOSH_KEY_PATH'] ||= "/tmp/id_rsa_bosh"
+
+      if ENV['GLOBAL_BOSH_KEY_PATH'] && File.exist?(ENV['GLOBAL_BOSH_KEY_PATH'])
+        copy_keys ENV['GLOBAL_BOSH_KEY_PATH'], ENV['BOSH_KEY_PATH']
+      end
 
       FileUtils.rm_rf deployments_path
       FileUtils.mkdir_p micro_deployment_path
-      FileUtils.mkdir_p bat_deployment_path
 
-      if ENV["NO_PROVISION"]
-        puts "Not creating AWS resources, assuming we already have them"
-      else
-        system "rm -f #{ASSETS_DIR}/aws/create-vpc-output-*.yml"
+      run_bosh "aws destroy"
 
-        run_bosh "aws create vpc '#{aws_configuration_template_path}'"
-
-        puts "AWS RESOURCES CREATED SUCCESSFULLY!"
-      end
-    end
-
-    base.after(:each) do
-      if ENV["NO_CLEANUP"]
-        puts "Not cleaning up AWS resources"
-      else
-        puts "Using VPC output: #{vpc_outfile_path}"
-        run_bosh "aws delete_all ec2 '#{vpc_outfile_path}'", :ignore_failures => true
-        run_bosh "aws delete_all volumes '#{vpc_outfile_path}'", :ignore_failures => true
-        run_bosh "aws delete vpc '#{vpc_outfile_path}'"
-        puts "CLEANUP SUCCESSFUL"
-      end
+      FileUtils.rm_rf("#{ASSETS_DIR}/aws/create-*-output-*.yml")
+      FileUtils.rm_rf(vpc_outfile_path)
+      FileUtils.rm_rf(rds_outfile_path) if File.exists?(rds_outfile_path)
     end
   end
 end

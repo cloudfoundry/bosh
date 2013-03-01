@@ -54,6 +54,7 @@ properties:
     description: Address of the NATS message bus to connect to
   nats.port:
     description: Port of the NATS message bus port to connect to
+    default: 4222
   nats.user:
     description: User for the NATS message bus connection
   nats.password:
@@ -66,6 +67,7 @@ properties:
     description: Address of the Bosh Director to connect to
   director.port:
     description: Port of the Bosh Director to connect to
+    default: 25555
   hm.director_account.user:
     description: User to access Bosh Director
   hm.director_account.password:

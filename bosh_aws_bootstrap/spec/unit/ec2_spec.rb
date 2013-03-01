@@ -148,9 +148,10 @@ describe Bosh::Aws::EC2 do
     describe "creating" do
       it "should create an internet gateway" do
         fake_gateway_collection = double("internet_gateways")
+        fake_gateway = double(AWS::EC2::InternetGateway, id: 'igw-1234')
         ec2.stub(:aws_ec2).and_return(double("fake_aws_ec2", internet_gateways: fake_gateway_collection))
-        fake_gateway_collection.should_receive(:create)
-        ec2.create_internet_gateway
+        fake_gateway_collection.should_receive(:create).and_return(fake_gateway)
+        ec2.create_internet_gateway.should == fake_gateway
       end
     end
 
@@ -277,11 +278,11 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "security groups" do
-    let (:fake_vpc_sg) { double("security group", :name => "bosh", :vpc_id => "vpc-123") }
-    let (:fake_default_sg) { double("security group", :name => "default", :vpc_id => false) }
-    let (:fake_security_groups) { [fake_vpc_sg, fake_default_sg] }
-    let (:fake_aws_ec2) { double("aws ec2", security_groups: fake_security_groups) }
-    let (:ip_permissions) { double("ip permissions").as_null_object}
+    let (:fake_vpc_sg) {double("security group", :name => "bosh", :vpc_id => "vpc-123")}
+    let (:fake_default_sg) {double("security group", :name => "default", :vpc_id => false)}
+    let (:fake_security_groups) {[fake_vpc_sg, fake_default_sg]}
+    let (:fake_aws_ec2) {double("aws ec2", security_groups: fake_security_groups)}
+    let (:ip_permissions) {double("ip permissions").as_null_object}
 
     before do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
@@ -319,7 +320,8 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "deleting all EBS volumes" do
-    let(:fake_aws_ec2) { double("aws_ec2") }
+    let(:fake_aws_volumes) { double(AWS::EC2::VolumeCollection) }
+    let(:fake_aws_ec2) { double(AWS::EC2, volumes: fake_aws_volumes) }
     let(:vol1) { double("vol1", attachments: []) }
     let(:vol2) { double("vol2", attachments: []) }
     let(:vol3) { double("vol3", attachments: ["something"]) }
@@ -332,9 +334,35 @@ describe Bosh::Aws::EC2 do
       vol1.should_receive(:delete)
       vol2.should_receive(:delete)
       vol3.should_not_receive(:delete)
-      fake_aws_ec2.should_receive(:volumes).and_return([vol1, vol2, vol3])
+      fake_aws_volumes.should_receive(:filter).and_return([vol1, vol2, vol3])
 
       ec2.delete_volumes
+    end
+  end
+
+  describe "#create_instance" do
+    before do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+    end
+
+    let(:fake_aws_ec2) { double("aws_ec2", :instances => mock("instances")) }
+    it "should create an instance with the provided options" do
+      fake_aws_ec2.instances.should_receive(:create).with({:some => "opts"})
+      ec2.create_instance(:some => "opts")
+    end
+  end
+
+  describe "#disable_src_dest_checking" do
+    let(:ec2_client) { mock('client') }
+    let(:fake_aws_ec2) { double("aws_ec2", :client => ec2_client) }
+
+    it "should invoke the EC2 client to modify instance attributes" do
+      ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      ec2_client.should_receive(:modify_instance_attribute).with({
+                                                                     :instance_id => "i123",
+                                                                     :source_dest_check => {:value => false}
+                                                                 })
+      ec2.disable_src_dest_checking("i123")
     end
   end
 end

@@ -167,7 +167,10 @@ module Bosh::Agent
         swap_partition = "#{data_disk}1"
         data_partition = "#{data_disk}2"
 
-        if Dir["#{data_disk}[1-9]"].empty?
+        swap_turned_on = sh("cat /proc/swaps | grep #{swap_partition}", :on_error => :return).success?
+        data_partition_mounted = sh("mount | grep #{data_partition}", :on_error => :return).success?
+
+        if Dir.glob("#{data_disk}[1-2]").empty?
           logger.info("Found unformatted drive")
           logger.info("Partition #{data_disk}")
           Bosh::Agent::Util.partition_disk(data_disk, data_sfdisk_input)
@@ -179,20 +182,24 @@ module Bosh::Agent
           mke2fs_options << "-E lazy_itable_init=1" if Bosh::Agent::Util.lazy_itable_init_enabled?
           sh "/sbin/mke2fs #{mke2fs_options.join(" ")} #{data_partition}"
         end
+      end
 
+      unless swap_turned_on
         logger.info("Swapon partition #{swap_partition}")
         sh "swapon #{swap_partition}"
       end
 
-      data_mount = File.join(base_dir, "data")
-      FileUtils.mkdir_p(data_mount)
+      unless data_partition_mounted
+        data_mount = File.join(base_dir, "data")
+        FileUtils.mkdir_p(data_mount)
 
-      unless Pathname.new(data_mount).mountpoint?
-        logger.info("Mount data partition #{data_partition} to #{data_mount}")
-        sh "mount #{data_partition} #{data_mount}"
+        unless Pathname.new(data_mount).mountpoint?
+          logger.info("Mount data partition #{data_partition} to #{data_mount}")
+          sh "mount #{data_partition} #{data_mount}"
+        end
+
+        setup_data_sys
       end
-
-      setup_data_sys
     end
 
     # for AWS we have a special setting to allow you to skip partitioning

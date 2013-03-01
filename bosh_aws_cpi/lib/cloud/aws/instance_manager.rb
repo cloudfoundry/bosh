@@ -1,8 +1,12 @@
+require "common/common"
+
 module Bosh::AwsCloud
   class InstanceManager
     include Helpers
 
+    attr_reader :instance
     attr_reader :instance_params
+    attr_reader :elbs
 
     def initialize(region, registry, az_selector=nil)
       @region = region
@@ -20,17 +24,28 @@ module Bosh::AwsCloud
       set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
       set_vpc_parameters(networks_spec)
       set_availability_zone_parameter(
-          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone },
+          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
           resource_pool["availability_zone"],
           (@instance_params[:subnet].availability_zone_name if @instance_params[:subnet])
       )
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
-      @region.instances.create instance_params
+
+      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: [AWS::EC2::Errors::InvalidIPAddress::InUse]) do |tries, e|
+        @logger.warn("IP address was in use: #{e}") if tries > 0
+        @instance = @region.instances.create(instance_params)
+      end
+
+      @elbs = resource_pool['elbs']
+      attach_to_load_balancers if elbs
+
+      instance
     end
 
     def terminate(instance_id, fast=false)
-      instance = @region.instances[instance_id]
+      @instance = @region.instances[instance_id]
+
+      remove_from_load_balancers
 
       instance.terminate
 
@@ -60,7 +75,33 @@ module Bosh::AwsCloud
       # There is no trackable status change for the instance being
       # rebooted, so it's up to CPI client to keep track of agent
       # being ready after reboot.
+      # Due to this, we can't deregister the instance from any load
+      # balancers it might be attached to, and reattach once the
+      # reboot is complete, so we just have to let the load balancers
+      # take the instance out of rotation, and put it back in once it
+      # is back up again.
       instance.reboot
+    end
+
+    def attach_to_load_balancers
+      elb = AWS::ELB.new
+
+      elbs.each do |load_balancer|
+        lb = elb.load_balancers[load_balancer]
+        lb.instances.register(instance)
+      end
+    end
+
+    def remove_from_load_balancers
+      elb = AWS::ELB.new
+
+      elb.load_balancers.each do |load_balancer|
+        begin
+          load_balancer.instances.deregister(instance)
+        rescue AWS::ELB::Errors::InvalidInstance
+          # ignore this, as it just means it wasn't registered
+        end
+      end
     end
 
     def set_key_name_parameter(resource_pool_key_name, default_aws_key_name)
@@ -78,7 +119,7 @@ module Bosh::AwsCloud
     end
 
     def set_vpc_parameters(network_spec)
-      manual_network_spec = network_spec.values.select{ |spec| ["manual", nil].include? spec["type"] }.first
+      manual_network_spec = network_spec.values.select { |spec| ["manual", nil].include? spec["type"] }.first
       if manual_network_spec
         instance_params[:subnet] = @region.subnets[manual_network_spec["cloud_properties"]["subnet"]]
         instance_params[:private_ip_address] = manual_network_spec["ip"]
@@ -105,5 +146,6 @@ module Bosh::AwsCloud
       Bosh::Clouds::Config.task_checkpoint
     end
 
+    def instance_create_wait_time; 30; end
   end
 end
