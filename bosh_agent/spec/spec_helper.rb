@@ -95,9 +95,8 @@ def get_free_port
 end
 
 def detect_platform
-  # TODO rename platform rhel to redhat
   if File.exist? "/etc/redhat-release"
-    return "rhel"
+    return "redhat"
   end
 
   if File.exist? "/etc/lsb-release"
