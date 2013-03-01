@@ -31,7 +31,7 @@ module Bosh::AwsRegistry
 
     delete "/instances/:instance_id/settings" do
       protected!
-      @instance_manager.delete_settings(params[:instance_id])
+      @instance_manager.delete_settings(params[:instance_id]) rescue InstanceNotFound
       json(:status => "ok")
     end
 

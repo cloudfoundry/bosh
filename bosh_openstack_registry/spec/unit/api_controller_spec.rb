@@ -56,19 +56,32 @@ describe Bosh::OpenstackRegistry::ApiController do
                          { "status" => "ok" })
   end
 
-  it "deletes settings" do
-    @session.delete("/servers/foo/settings")
-    expect_json_response(@session.last_response, 401,
-                         { "status" => "access_denied" })
+  context "deletes settings" do
+    it "deletes settings" do
+      @session.delete("/servers/foo/settings")
+      expect_json_response(@session.last_response, 401,
+                           { "status" => "access_denied" })
 
-    @server_manager.should_receive(:delete_settings).
-      with("foo").and_return(true)
+      @server_manager.should_receive(:delete_settings).
+        with("foo").and_return(true)
 
-    @session.basic_authorize("admin", "admin")
-    @session.delete("/servers/foo/settings")
+      @session.basic_authorize("admin", "admin")
+      @session.delete("/servers/foo/settings")
 
-    expect_json_response(@session.last_response, 200,
-                         { "status" => "ok" })
+      expect_json_response(@session.last_response, 200,
+                           { "status" => "ok" })
+    end
+
+    it "doesn't error when an instance isn't found" do
+      @server_manager.should_receive(:delete_settings).
+        with("foo").and_raise Bosh::OpenstackRegistry::ServerNotFound
+
+      @session.basic_authorize("admin", "admin")
+      @session.delete("/servers/foo/settings")
+
+      expect_json_response(@session.last_response, 200,
+                           { "status" => "ok" })
+    end
   end
 
 end
