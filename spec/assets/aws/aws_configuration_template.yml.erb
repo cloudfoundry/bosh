@@ -93,7 +93,7 @@ elastic_ips:
     ttl: 60
 
 key_pairs:
-  <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_bosh_rsa" %>
+  <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_rsa_bosh" %>
 
 s3:
   - bucket_name: <%= (ENV["BOSH_VPC_SUBDOMAIN"] || raise("Missing ENV variable BOSH_VPC_SUBDOMAIN")) + "-bosh-blobstore" %>
