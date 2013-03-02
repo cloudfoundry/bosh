@@ -242,23 +242,27 @@ module Bosh::Cli::Command
 
       dhcp_options = vpc.dhcp_options
 
-      vpc.delete_security_groups
-      vpc.delete_subnets
-      ec2.delete_internet_gateways(ec2.internet_gateway_ids)
-      vpc.delete_vpc
-      dhcp_options.delete
+      Bosh::Common.retryable(sleep: aws_retry_wait_time,
+                             tries: 120, on: [::AWS::Errors::Base]) do |tries, e|
+        say("unable to delete resource: #{e}") if tries > 0
+        vpc.delete_security_groups
+        vpc.delete_subnets
+        ec2.delete_internet_gateways(ec2.internet_gateway_ids)
+        vpc.delete_vpc
+        dhcp_options.delete
 
-      if details["key_pairs"]
-        details["key_pairs"].each do |name|
-          ec2.remove_key_pair name
+        if details["key_pairs"]
+          details["key_pairs"].each do |name|
+            ec2.remove_key_pair name
+          end
         end
-      end
 
-      if details["elastic_ips"]
-        details["elastic_ips"].values.each do |job|
-          ec2.release_elastic_ips(job["ips"])
-          if job["dns_record"]
-            route53.delete_record(job["dns_record"], details["vpc"]["domain"])
+        if details["elastic_ips"]
+          details["elastic_ips"].values.each do |job|
+            ec2.release_elastic_ips(job["ips"])
+            if job["dns_record"]
+              route53.delete_record(job["dns_record"], details["vpc"]["domain"])
+            end
           end
         end
       end
