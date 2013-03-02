@@ -19,10 +19,18 @@ namespace :spec do
     end
   end
 
-  desc "Tests requiring external access (i.e. AWS, vCenter, etc)"
-  RSpec::Core::RakeTask.new(:external) do |t|
-    t.pattern = "spec/external/**/*_spec.rb"
-    t.rspec_opts = %w(--format documentation --color)
+  namespace :external do
+    desc "AWS CPI can exercise the VM lifecycle"
+    RSpec::Core::RakeTask.new(:vm_lifecycle) do |t|
+      t.pattern = "spec/external/cpi_spec.rb"
+      t.rspec_opts = %w(--format documentation --color)
+    end
+
+    desc "AWS bootstrap CLI can provision and destroy resources"
+    RSpec::Core::RakeTask.new(:aws_bootstrap) do |t|
+      t.pattern = "spec/external/aws_bootstrap_spec.rb"
+      t.rspec_opts = %w(--format documentation --color)
+    end
   end
 
   namespace :system do
