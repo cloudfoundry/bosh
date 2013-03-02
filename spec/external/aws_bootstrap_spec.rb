@@ -55,7 +55,7 @@ describe 'bosh_aws_bootstrap_external' do
 
       cf_routes = cf_subnet.route_table.routes
       cf_default_route = cf_routes.select { |route| route.destination_cidr_block == "0.0.0.0/0" }.first
-      cf_default_route.target.should == ec2.instances.first
+      cf_default_route.target.should == bosh_subnet.instances.first
       cf_local_route = cf_routes.select { |route| route.destination_cidr_block == "10.10.0.0/16" }.first
       cf_local_route.target.id.should == "local"
 
