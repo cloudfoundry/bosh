@@ -179,7 +179,7 @@ module Bosh
       end
 
       def security_group_in_use?(sg)
-        aws_ec2.instances.filter('group-id', sg.id).count > 0
+        sg.instances.any? { |s| s.api_termination_disabled? }
       end
 
       def unattached_volumes

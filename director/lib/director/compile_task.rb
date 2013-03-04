@@ -30,7 +30,7 @@ module Bosh::Director
     # @param [Models::Package] package What package is being compiled
     #   by this task
     # @param [Models::Stemcell] stemcell What stemcell package is compiled for
-    # @param [String] dependency_key JSON string representing dependent packages+versions
+    # @param [Array<Models::Package>] dependent_packages Package models that this task depends on
     # @param [DeploymentPlan::Job] initial_job The first job that this task is associate with
     def initialize(package, stemcell, dependent_packages, initial_job = nil)
       @package = package

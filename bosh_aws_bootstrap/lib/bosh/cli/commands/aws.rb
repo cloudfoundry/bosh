@@ -1,3 +1,4 @@
+require "aws-sdk"
 require_relative "../../../bosh_aws_bootstrap"
 
 module Bosh::Cli::Command
@@ -241,23 +242,27 @@ module Bosh::Cli::Command
 
       dhcp_options = vpc.dhcp_options
 
-      vpc.delete_security_groups
-      vpc.delete_subnets
-      ec2.delete_internet_gateways(ec2.internet_gateway_ids)
-      vpc.delete_vpc
-      dhcp_options.delete
+      Bosh::Common.retryable(sleep: aws_retry_wait_time,
+                             tries: 120, on: [::AWS::Errors::Base]) do |tries, e|
+        say("unable to delete resource: #{e}") if tries > 0
+        vpc.delete_security_groups
+        vpc.delete_subnets
+        ec2.delete_internet_gateways(ec2.internet_gateway_ids)
+        vpc.delete_vpc
+        dhcp_options.delete
 
-      if details["key_pairs"]
-        details["key_pairs"].each do |name|
-          ec2.remove_key_pair name
+        if details["key_pairs"]
+          details["key_pairs"].each do |name|
+            ec2.remove_key_pair name
+          end
         end
-      end
 
-      if details["elastic_ips"]
-        details["elastic_ips"].values.each do |job|
-          ec2.release_elastic_ips(job["ips"])
-          if job["dns_record"]
-            route53.delete_record(job["dns_record"], details["vpc"]["domain"])
+        if details["elastic_ips"]
+          details["elastic_ips"].values.each do |job|
+            ec2.release_elastic_ips(job["ips"])
+            if job["dns_record"]
+              route53.delete_record(job["dns_record"], details["vpc"]["domain"])
+            end
           end
         end
       end
@@ -505,7 +510,12 @@ module Bosh::Cli::Command
     def delete_all_security_groups(config_file)
       config = load_yaml_file(config_file)
       ec2 = Bosh::Aws::EC2.new(config["aws"])
-      ec2.delete_all_security_groups
+
+      Bosh::Common.retryable(sleep: aws_retry_wait_time,
+                             tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
+        say("unable to delete security groups: #{e}") if tries > 0
+        ec2.delete_all_security_groups
+      end
     end
 
     usage "aws delete_all route53 records"
@@ -619,6 +629,8 @@ module Bosh::Cli::Command
                            File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
                        ))
     end
+
+    def aws_retry_wait_time; 10; end
 
   end
 end

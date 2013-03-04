@@ -7,6 +7,7 @@ end
 
 require "fog"
 require "httpclient"
+require "json"
 require "pp"
 require "set"
 require "tmpdir"
@@ -19,7 +20,9 @@ require "common/thread_formatter"
 require "cloud"
 require "cloud/openstack/helpers"
 require "cloud/openstack/cloud"
+require "cloud/openstack/connection"
 require "cloud/openstack/registry_client"
+require "cloud/openstack/tag_manager"
 require "cloud/openstack/version"
 
 require "cloud/openstack/network_configurator"

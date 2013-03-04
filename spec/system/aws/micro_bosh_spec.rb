@@ -8,9 +8,10 @@ describe "AWS" do
   describe "microBOSH" do
     describe "acceptance tests:" do
       before do
-        run_bosh "aws create vpc '#{aws_configuration_template_path}'"
-
-        Dir.chdir(spec_tmp_path) { run_bosh "aws bootstrap micro" }
+        Dir.chdir(spec_tmp_path) do
+          run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+          run_bosh "aws bootstrap micro"
+        end
       end
 
       it "should pass BATs" do
@@ -40,9 +41,10 @@ describe "AWS" do
 
     describe "deploying" do
       before do
-        run_bosh "aws create '#{aws_configuration_template_path}'"
-
-        Dir.chdir(spec_tmp_path) { run_bosh "aws bootstrap micro" }
+        Dir.chdir(spec_tmp_path) do
+          run_bosh "aws create '#{aws_configuration_template_path}'"
+          run_bosh "aws bootstrap micro"
+        end
       end
 
       it "should successfully deploy a CF release", cf: true do

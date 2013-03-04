@@ -161,6 +161,19 @@ describe Bosh::Cli::Command::AWS do
       end
     end
 
+    describe "aws delete_all security_groups" do
+      let(:config_file) { asset "config.yml" }
+
+      it "should retry if it can not delete security groups due to eventual consistency" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        aws.stub(aws_retry_wait_time: 0)
+        fake_ec2.should_receive(:delete_all_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+        fake_ec2.should_receive(:delete_all_security_groups).ordered.once.and_return(true)
+        aws.delete_all_security_groups(config_file)
+      end
+    end
+
     describe "aws create vpc" do
       let(:config_file) { asset "config.yml" }
 
@@ -322,6 +335,38 @@ describe Bosh::Cli::Command::AWS do
         fake_route53.should_receive(:delete_record).with("bosh", "cfdev.com")
         fake_route53.should_receive(:delete_record).with("bat", "cfdev.com")
 
+        aws.delete_vpc output_file
+      end
+
+      it "should retry on AWS errors" do
+        fake_ec2 = mock("ec2")
+        fake_vpc = mock("vpc")
+        fake_route_53 = mock("route53")
+        fake_dhcp_options = mock("dhcp_options")
+
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        Bosh::Aws::VPC.stub(:find).and_return(fake_vpc)
+        Bosh::Aws::Route53.stub(:new).and_return(fake_vpc)
+
+        fake_vpc.stub(:instances_count).and_return(0)
+        fake_vpc.stub(:dhcp_options).and_return(fake_dhcp_options)
+        fake_vpc.stub(:delete_security_groups)
+        fake_vpc.stub(:delete_subnets)
+        fake_vpc.stub(:delete_vpc)
+        fake_vpc.stub(:remove_key_pair)
+        fake_vpc.stub(:delete_record)
+
+        fake_ec2.stub(:internet_gateway_ids)
+        fake_ec2.stub(:delete_internet_gateways)
+        fake_ec2.stub(:remove_key_pair)
+        fake_ec2.stub(:release_elastic_ips)
+
+        fake_dhcp_options.stub(:delete)
+
+        aws.stub(aws_retry_wait_time: 0)
+
+        fake_vpc.should_receive(:delete_security_groups).ordered.exactly(119).times.and_raise(::AWS::EC2::Errors::InvalidGroup::InUse)
+        fake_vpc.should_receive(:delete_security_groups).ordered.once.and_return(true)
         aws.delete_vpc output_file
       end
 

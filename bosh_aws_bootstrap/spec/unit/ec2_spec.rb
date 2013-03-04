@@ -288,6 +288,26 @@ describe Bosh::Aws::EC2 do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
     end
 
+    describe "#security_group_in_use?" do
+      it "should return false if no instances use it" do
+        sg = mock("security group", :name => "sg", :instances => [])
+        ec2.send(:security_group_in_use?, sg).should == false
+      end
+
+      it "should return false if no protected instances use it" do
+        instance = mock("instance", :api_termination_disabled? => false)
+        sg = mock("security group", :name => "sg", :instances => [instance])
+        ec2.send(:security_group_in_use?, sg).should == false
+      end
+
+      it "should return true if a protected instances use it" do
+        instance = mock("instance", :api_termination_disabled? => false)
+        protected_instance = mock("instance", :api_termination_disabled? => true)
+        sg = mock("security group", :name => "sg", :instances => [instance, protected_instance])
+        ec2.send(:security_group_in_use?, sg).should == true
+      end
+    end
+
     describe "deleting" do
       it "should delete all" do
         fake_aws_ec2.should_receive(:security_groups)

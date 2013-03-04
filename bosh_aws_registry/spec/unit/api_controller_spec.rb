@@ -56,19 +56,32 @@ describe Bosh::AwsRegistry::ApiController do
                          { "status" => "ok" })
   end
 
-  it "deletes settings" do
-    @session.delete("/instances/foo/settings")
-    expect_json_response(@session.last_response, 401,
-                         { "status" => "access_denied" })
+  context "deletes settings" do
+    it "deletes settings" do
+      @session.delete("/instances/foo/settings")
+      expect_json_response(@session.last_response, 401,
+                           { "status" => "access_denied" })
 
-    @instance_manager.should_receive(:delete_settings).
-      with("foo").and_return(true)
+      @instance_manager.should_receive(:delete_settings).
+        with("foo").and_return(true)
 
-    @session.basic_authorize("admin", "admin")
-    @session.delete("/instances/foo/settings")
+      @session.basic_authorize("admin", "admin")
+      @session.delete("/instances/foo/settings")
 
-    expect_json_response(@session.last_response, 200,
-                         { "status" => "ok" })
+      expect_json_response(@session.last_response, 200,
+                           { "status" => "ok" })
+    end
+
+    it "doesn't error when an instance isn't found" do
+      @instance_manager.should_receive(:delete_settings).
+        with("foo").and_raise Bosh::AwsRegistry::InstanceNotFound
+
+      @session.basic_authorize("admin", "admin")
+      @session.delete("/instances/foo/settings")
+
+      expect_json_response(@session.last_response, 200,
+                           { "status" => "ok" })
+    end
   end
 
 end
