@@ -80,7 +80,7 @@ require "cli/runner"
 require "cli/base_command"
 
 if defined?(YAML::ENGINE.yamler)
-  YAML::ENGINE.yamler = "syck"
+  YAML::ENGINE.yamler = RUBY_VERSION >= "2.0.0" ? "psych" : "syck"
 end
 
 tmpdir = Dir.mktmpdir

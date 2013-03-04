@@ -41,7 +41,7 @@ module Bosh::OpenStackCloud
         :openstack_tenant => @openstack_properties["tenant"],
         :openstack_region => @openstack_properties["region"]
       }
-      @openstack = Fog::Compute.new(openstack_params)
+      @openstack = Connection.new(:compute, openstack_params)
 
       glance_params = {
         :provider => "OpenStack",
@@ -53,7 +53,7 @@ module Bosh::OpenStackCloud
         :openstack_endpoint_type => @openstack_properties["endpoint_type"] ||
                                     "publicURL"
       }
-      @glance = Fog::Image.new(glance_params)
+      @glance = Connection.new(:image, glance_params)
 
       registry_endpoint = @registry_properties["endpoint"]
       registry_user = @registry_properties["user"]
@@ -499,8 +499,7 @@ module Bosh::OpenStackCloud
         end
 
         metadata.each do |name, value|
-          value = "" if value.nil? # value is required
-          server.metadata.update(name => value)
+          TagManager.tag(server, name, value)
         end
       end
     end
@@ -774,10 +773,6 @@ module Bosh::OpenStackCloud
           @options["registry"]["password"]
         raise ArgumentError, "Invalid registry configuration parameters"
       end
-    end
-
-    def task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
     end
 
   end

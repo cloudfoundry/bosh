@@ -31,7 +31,7 @@ module Bosh::OpenstackRegistry
 
     delete "/servers/:server_id/settings" do
       protected!
-      @server_manager.delete_settings(params[:server_id])
+      @server_manager.delete_settings(params[:server_id]) rescue ServerNotFound
       json(:status => "ok")
     end
 

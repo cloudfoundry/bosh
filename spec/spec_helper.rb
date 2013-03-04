@@ -57,6 +57,8 @@ RSpec.configure do |c|
   c.include AwsSystemExampleGroup, :example_group => {
       :file_path => /\/system\/aws\/micro_bosh_spec\.rb/
   }
+
+  c.include Bosh::Spec::CommandHelper, example_group: { file_path: /\/external\/aws_boostrap_spec\.rb/ }
 end
 
 def spec_asset(name)
