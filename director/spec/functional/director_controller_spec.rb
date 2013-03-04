@@ -91,6 +91,10 @@ describe Bosh::Director::ApiController do
             "dns" => {
               "status" => true,
               "extras" => { "domain_name" => "bosh" }
+            },
+            "compiled_package_cache" => {
+                "status" => true,
+                "bucket_name" => "compiled_packages"
             }
           }
       }
