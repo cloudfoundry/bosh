@@ -499,8 +499,7 @@ module Bosh::OpenStackCloud
         end
 
         metadata.each do |name, value|
-          value = "" if value.nil? # value is required
-          server.metadata.update(name => value)
+          TagManager.tag(server, name, value)
         end
       end
     end
