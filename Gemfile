@@ -36,6 +36,7 @@ end
 
 group :development do
   gem "ruby_gntp"
+  gem "debugger" if RUBY_VERSION < "2.0.0"
 end
 
 group :bat do
@@ -52,7 +53,6 @@ group :development, :test do
   gem "guard-rspec"
   gem "ci_reporter"
   gem "rspec"
-  gem "debugger" if RUBY_VERSION < "2.0.0"
 
   gem "simplecov"
   gem "simplecov-rcov"
