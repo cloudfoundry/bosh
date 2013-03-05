@@ -137,7 +137,7 @@ module Bosh
       end
 
       def remove_all_key_pairs
-        deletable_key_pairs.map(&:delete)
+        aws_ec2.key_pairs.each(&:delete)
       end
 
       def delete_all_security_groups
@@ -168,14 +168,6 @@ module Bosh
       def releasable_elastic_ips
         ti = terminatable_instances.map(&:id)
         aws_ec2.elastic_ips.select { |eip| eip.instance_id.nil? || ti.include?(eip.instance_id) }
-      end
-
-      def deletable_key_pairs
-        aws_ec2.key_pairs.reject { |kp| key_pair_in_use?(kp) }
-      end
-
-      def key_pair_in_use?(kp)
-        aws_ec2.instances.filter('key-name', kp.name).count > 0
       end
 
       def deletable_security_groups

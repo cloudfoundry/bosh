@@ -182,9 +182,11 @@ describe Bosh::Aws::EC2 do
   describe "key pairs" do
     let(:key_pairs) { double("key pairs", :[] => nil) }
     let(:fake_aws_ec2) { double("aws_ec2", key_pairs: key_pairs) }
+    let(:aws_key_pair) { double("key pair") }
 
     before do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      key_pairs.stub(:[]).with("aws_key_pair").and_return(aws_key_pair, nil)
     end
 
     describe "adding" do
@@ -221,11 +223,6 @@ describe Bosh::Aws::EC2 do
       end
 
       describe "when the key pair name exists on AWS" do
-        let(:aws_key_pair) { double("key pair") }
-
-        before do
-          key_pairs.stub(:[]).with("aws_key_pair").and_return(aws_key_pair, nil)
-        end
 
         context "adding forcibly" do
           it "should remove the key pair on AWS and add the local one" do
@@ -252,47 +249,24 @@ describe Bosh::Aws::EC2 do
     end
 
     describe "removing" do
-      let(:key_pair) { double("key pair") }
-      let(:fake_aws_ec2) { double("aws_ec2", key_pairs: {"name" => key_pair}) }
-
-      before do
-        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
-      end
-
       it "should remove the EC2 keypair if it exists" do
-        key_pair.should_receive(:delete)
-        ec2.remove_key_pair("name")
+        aws_key_pair.should_receive(:delete)
+        ec2.remove_key_pair("aws_key_pair")
       end
 
       it "should not attempt to remove a non-existent keypair" do
-        key_pair.should_not_receive(:delete)
-        ec2.remove_key_pair("foobar")
-      end
-    end
-
-    describe "removing all" do
-      let(:fake_key_pair1) { double("key pair") }
-      let(:fake_key_pair2) { double("key pair") }
-      let(:fake_key_pairs) { [fake_key_pair1, fake_key_pair2] }
-      let(:fake_aws_ec2) { double("aws ec2", key_pairs: fake_key_pairs) }
-
-      before do
-        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+        expect {
+          ec2.remove_key_pair("foobar")
+        }.not_to raise_error
       end
 
       it "should remove all key pairs" do
-        ec2.should_receive(:key_pair_in_use?).and_return(false)
-        fake_key_pair1.should_receive(:delete)
-        ec2.should_receive(:key_pair_in_use?).and_return(false)
-        fake_key_pair2.should_receive(:delete)
-        ec2.remove_all_key_pairs
-      end
+        another_key_pair = double("key pair")
+        fake_aws_ec2.stub(key_pairs: [another_key_pair, aws_key_pair])
 
-      it "should not remove a key pair in use" do
-        ec2.should_receive(:key_pair_in_use?).and_return(false)
-        fake_key_pair1.should_receive(:delete)
-        ec2.should_receive(:key_pair_in_use?).and_return(true)
-        fake_key_pair2.should_not_receive(:delete)
+        aws_key_pair.should_receive :delete
+        another_key_pair.should_receive :delete
+
         ec2.remove_all_key_pairs
       end
     end
