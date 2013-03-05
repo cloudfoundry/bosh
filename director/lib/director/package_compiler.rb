@@ -238,7 +238,7 @@ module Bosh::Director
             p.dependency_key = task.dependency_key
           end
 
-          if Config.use_global_blobstore?
+          if Config.use_compiled_package_cache?
             if BlobUtil.exists_in_global_cache?(package, task.cache_key)
               @logger.info("Already exists in global package cache, skipping upload")
             else
@@ -359,7 +359,7 @@ module Bosh::Director
         @logger.info("Found compiled version of package `#{package.desc}' " +
                      "for stemcell `#{stemcell.desc}'")
       else
-        if Config.use_global_blobstore?
+        if Config.use_compiled_package_cache?
           compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
         end
 
