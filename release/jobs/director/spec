@@ -1,0 +1,185 @@
+---
+name: director
+templates:
+  director_ctl: bin/director_ctl
+  director.yml.erb: config/director.yml.erb
+  worker_ctl: bin/worker_ctl
+  drain: bin/drain
+  sudoers: config/sudoers
+  stemcell-copy.sh: bin/stemcell-copy
+packages:
+- director
+- genisoimage
+- libpq
+- ruby
+
+properties:
+  director.name:
+    description: Name of the director
+  director.port:
+    description: Port that the dirctor listens on
+    default: 25555
+  director.encryption:
+    description: Enable/Disable agent-director encryption (true|false)
+    default: false
+  director.max_tasks:
+    description: Max number of tasks to keep in disk
+    default: 500
+  director.max_threads:
+    description: Max number of director concurrent threads
+    default: 32
+  redis.address:
+    description: Address of the redis server
+  redis.port:
+    description: Port that the redis server listens on
+    default: 6379
+  redis.password:
+    description: Password of the redis server
+  nats.user:
+    description: Username to connect to nats with
+    default: nats
+  nats.password:
+    description: Password to connect to nats with
+  nats.address:
+    description: Address of the nats server
+  nats.port:
+    description: Port that the nats server listens on
+    default: 4222
+  postgres.user:
+    description: Username used for the director database (postgres)
+  postgres.password:
+    description: Password used for the director database (postgres)
+  postgres.address:
+    description: Address of the director database (postges)
+  postgres.port:
+    description: Port of the director database (postgres)
+    default: 5432
+  postgres.database:
+    description: Name of the director database (postgres)
+  dns.address:
+    description: Address of the powerdns server
+  dns.domain_name:
+    description: TLD of the dns zone used by bosh
+  dns.user:
+    description: DNS Database user (postgres in powerdns job)
+  dns.password:
+    description: DNS Database password (postgres in powerdns job)
+  dns.database.port:
+    description: Port that the powerdns database listens on (postgres in powerdns job)
+    default: 5432
+  dns.database.name:
+    description: Name of the powerdns database (postgres in powerdns job)
+  blobstore.plugin:
+    description: Plugin of the blobstore used by director and agent (simple|s3)
+    default: 'simple'
+  blobstore.bucket_name:
+    description: AWS S3 Bucket used by s3 blobstore plugin
+  blobstore.access_key_id:
+    description: AWS access_key_id used by s3 blobstore plugin
+  blobstore.secret_access_key:
+    description: AWS secret_access_key used by s3 blobstore plugin
+  blobstore.address:
+    description: Addess of blobstore server used by simple blobstore plugin
+  blobstore.port:
+    description: Port of blobstore server used by simple blobstore plugin
+  blobstore.director.user:
+    description: Username director uses to connect to blobstore used by simple blobstore plugin
+  blobstore.director.password:
+    description: Password director uses to connect to blobstore used by simple blobstore plugin
+  blobstore.agent.user:
+    description: Username agent uses to connect to blobstore used by simple blobstore plugin
+  blobstore.agent.password:
+    description: Password agent uses to connect to blobstore used by simple blobstore plugin
+  compiled_package_cache.bucket:
+    description: S3 bucket to use for the compiled package cache
+  compiled_package_cache.secret_access_key:
+    description: S3 secret_access_key for compiled package cache
+  compiled_package_cache.access_key_id:
+    description: S3 access_key_id for compiled package cache
+  ntp:
+    description: List of ntp server IPs
+    default: []
+  agent.blobstore.access_key_id:
+    description: AWS access_key_id for agent used by s3 blobstore plugin
+  agent.blobstore.secret_access_key:
+    description: AWS secret_access_key for agent used by s3 blobstore plugin
+  agent.blobstore.address:
+    description: Address for agent to connect to blobstore server used by simple blobstore plugin
+  agent.blobstore.port:
+    description: Port for agent to connect to blobstore server used by simple blobstore plugin
+  agent.nats.address:
+    description: Address for agent to connect to nats
+  aws.access_key_id:
+    description: AWS access_key_id for aws cpi
+  aws.secret_access_key:
+    description: AWS secret_access_key for aws cpi
+  aws.default_key_name:
+    description: Default ssh keypair used by aws cpi when creating vms
+  aws.default_security_groups:
+    description: Default security group used by aws cpi
+  aws.region:
+    description: AWS Region used by aws cpi
+  aws.stemcell.kernel_id:
+    description: AWS kernel id used by aws cpi
+  aws_registry.address:
+    description: Address of aws registry server (used to configure agents on aws)
+  aws_registry.http.port:
+    description: Port of aws registry server (used to configure agents on aws)
+  aws_registry.http.user:
+    description: Address of aws registry server (used to configure agents on aws)
+  aws_registry.http.password:
+    description: Password of aws registry server (used to configure agents on aws)
+  openstack.auth_url:
+    description: URL of the OpenStack Identity endpoint to connect to
+  openstack.username:
+    description: OpenStack user name
+  openstack.api_key:
+    description: OpenStack API key
+  openstack.tenant:
+    description: OpenStack tenant name
+  openstack.region:
+    description: OpenStack region (optional)
+  openstack.default_key_name:
+    description: Default OpenStack keypair to use when spinning up new vms
+  openstack.default_security_groups:
+    description: Default OpenStack security groups to use when spinning up new vms
+  openstack_registry.address:
+    description: Address of the OpenStack Registry to connect to
+  openstack_registry.http.port:
+    description: Port of the OpenStack Registry to connect to
+  openstack_registry.http.user:
+    description: User to access the OpenStack Registry
+  openstack_registry.http.password:
+    description: Password to access the OpenStack Registry
+  openstack.stemcell.kernel_id:
+    description: Kernel ID to use when spinning up new vms (optional)
+  openstack.stemcell.ramdisk_id:
+    description: Ramdisk ID to use when spinning up new vms (optional)
+  vcenter.address:
+    description: Address of vCenter server used by vsphere cpi
+  vcenter.user:
+    description: User to connect to vCenter server used by vsphere cpi
+  vcenter.password:
+    description: Password to connect to vCenter server used by vspher cpi
+  vcenter.datacenters:
+    description: Datacenters in vCenter to use (value is an array of Hashes representing datacenters and clusters, See director.yml.erb)
+  vcd.url:
+    description: TODO
+  vcd.user:
+    description: TODO
+  vcd.password:
+    description: TODO
+  vcd.entities.organization:
+    description: TODO
+  vcd.entities.virtual_datacenter:
+    description: TODO
+  vcd.entities.vapp_catalog:
+    description: TODO
+  vcd.entities.media_catalog:
+    description: TODO
+  vcd.entities.vm_metadata_key:
+    description: TODO
+    default: vcd-cf
+  vcd.entities.description:
+    description: TODO
+    default: vcd-cf

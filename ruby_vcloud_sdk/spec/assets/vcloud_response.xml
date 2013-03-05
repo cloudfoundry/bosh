@@ -1,0 +1,56 @@
+        <VCloud xmlns="http://www.vmware.com/vcloud/v1.5" name="VMware vCloud Director" type="application/vnd.vmware.admin.vcloud+xml" href="%s/api/admin/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+            <Description>0.0.1.123456 Fri Jan 08 12:15:16 PST 2010</Description>
+            <OrganizationReferences>
+                <OrganizationReference type="application/vnd.vmware.admin.organization+xml" name="%s" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            </OrganizationReferences>
+            <RightReferences>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Create / Reconfigure" href="%s/api/admin/right/11"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Delete" href="%s/api/admin/right/12"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Edit Properties" href="%s/api/admin/right/13"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Power Operations" href="%s/api/admin/right/18"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Sharing" href="%s/api/admin/right/20"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Copy" href="%s/api/admin/right/21"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Use Console" href="%s/api/admin/right/22"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Change Owner" href="%s/api/admin/right/24"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Edit VM Properties" href="%s/api/admin/right/31"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Edit VM Memory" href="%s/api/admin/right/32"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Edit VM CPU" href="%s/api/admin/right/33"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Edit VM Network" href="%s/api/admin/right/34"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Edit VM Hard Disk" href="%s/api/admin/right/35"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp: Manage VM Password Settings" href="%s/api/admin/right/36"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: Create / Delete a Catalog" href="%s/api/admin/right/71"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: Edit Properties" href="%s/api/admin/right/73"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: Add vApp from My Cloud" href="%s/api/admin/right/74"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: Publish" href="%s/api/admin/right/76"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: Sharing" href="%s/api/admin/right/77"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: View Private and Shared Catalogs" href="%s/api/admin/right/78"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: View Published Catalogs" href="%s/api/admin/right/79"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Catalog: Change Owner" href="%s/api/admin/right/80"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp Template / Media: Edit" href="%s/api/admin/right/102"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp Template / Media: Create / Upload" href="%s/api/admin/right/103"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp Template: Download" href="%s/api/admin/right/104"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp Template / Media: Copy" href="%s/api/admin/right/105"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp Template / Media: View" href="%s/api/admin/right/106"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="vApp Template: Checkout" href="%s/api/admin/right/107"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization: Edit Properties" href="%s/api/admin/right/201"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization: Edit SMTP Settings" href="%s/api/admin/right/202"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization: Edit Quotas Policy" href="%s/api/admin/right/203"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization: View" href="%s/api/admin/right/204"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization Network: Edit Properties" href="%s/api/admin/right/207"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization Network: View" href="%s/api/admin/right/208"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization: Edit Leases Policy" href="%s/api/admin/right/209"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization: Edit Password Policy" href="%s/api/admin/right/210"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Organization vDC: View" href="%s/api/admin/right/254"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="Group / User: View" href="%s/api/admin/right/304"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="General: Send Notification" href="%s/api/admin/right/382"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="General: Administrator Control" href="%s/api/admin/right/383"/>
+                <RightReference type="application/vnd.vmware.admin.right+xml" name="General: Administrator View" href="%s/api/admin/right/384"/>
+            </RightReferences>
+            <RoleReferences>
+                <RoleReference type="application/vnd.vmware.admin.role+xml" name="Organization Administrator" href="%s/api/admin/role/a08a8798-7d9b-34d6-8dad-48c7182c5f66"/>
+                <RoleReference type="application/vnd.vmware.admin.role+xml" name="Catalog Author" href="%s/api/admin/role/9de271ec-be55-31e8-8d56-2a097e4e3856"/>
+                <RoleReference type="application/vnd.vmware.admin.role+xml" name="vApp Author" href="%s/api/admin/role/1bf4457f-a253-3cf1-b163-f319f1a31802"/>
+                <RoleReference type="application/vnd.vmware.admin.role+xml" name="vApp User" href="%s/api/admin/role/ff1e0c91-1288-3664-82b7-a6fa303af4d1"/>
+                <RoleReference type="application/vnd.vmware.admin.role+xml" name="Console Access Only" href="%s/api/admin/role/ae910740-cbde-34ae-9d84-ef5c53880afe"/>
+            </RoleReferences>
+        </VCloud>

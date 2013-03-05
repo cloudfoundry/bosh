@@ -2,8 +2,66 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 describe Bosh::Director::CompileTask do
 
-  def make(package, stemcell)
-    BD::CompileTask.new(package, stemcell)
+  def make(package, stemcell, dependencies = nil)
+    BD::CompileTask.new(package, stemcell, dependencies || [])
+  end
+
+  describe "creation" do
+    let(:package_name) { 'package_name'}
+    let(:package_fingerprint) {'fingerprint'}
+    let(:stemcell_sha1) {'sha1'}
+    let(:stemcell) { mock("stemcell", sha1: stemcell_sha1)}
+    let(:package) { mock("package", name: package_name, fingerprint: package_fingerprint)}
+    let(:dep_pkg2) { mock("dependent package 2", fingerprint: "dp_fingerprint2", version: "9.2-dev", name: "zyx")}
+    let(:dep_pkg1) { mock("dependent package 1", fingerprint: "dp_fingerprint1", version: "10.1-dev", name: "abc")}
+
+    it 'can create without an initial job' do
+      task = BD::CompileTask.new(package, stemcell, [])
+      task.jobs.should be_empty
+    end
+
+    it 'can create with an initial job' do
+      job = mock("job")
+      task = BD::CompileTask.new(package, stemcell, [], job)
+      task.jobs.should == [job]
+    end
+
+    describe 'dependency key' do
+      it 'correctly handles the "no dependencies" case' do
+        task = BD::CompileTask.new(package, stemcell, [])
+        task.dependency_key.should == "[]"
+      end
+
+      it 'generates a list of (name, version) of dependent packages' do
+        task = BD::CompileTask.new(package, stemcell, [dep_pkg1])
+        task.dependency_key.should == '[["abc","10.1-dev"]]'
+      end
+
+      it 'sorts the dependency keys by package name' do
+        task = BD::CompileTask.new(package, stemcell, [dep_pkg2, dep_pkg1])
+        task.dependency_key.should == '[["abc","10.1-dev"],["zyx","9.2-dev"]]'
+      end
+    end
+
+    describe 'cache key' do
+      it 'should generate a unique cache key for a package and stemcell' do
+        hash_input = [package_fingerprint, stemcell_sha1].join("")
+        Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
+        task = BD::CompileTask.new(package, stemcell, [])
+        task.cache_key.should == 'a new sha'
+      end
+
+      it 'should handle multiple dependent packages and use their fingerprints sorted by package name' do
+        hash_input = [package_fingerprint, stemcell_sha1, "dp_fingerprint1", "dp_fingerprint2"].join("")
+
+
+        Digest::SHA1.should_receive(:hexdigest).with(hash_input).and_return('a new sha')
+        task = BD::CompileTask.new(package, stemcell, [dep_pkg2, dep_pkg1])
+        task.cache_key.should == 'a new sha'
+      end
+    end
+
+
   end
 
   describe "compilation readiness" do

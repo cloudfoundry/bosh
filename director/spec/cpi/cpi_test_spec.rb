@@ -8,7 +8,7 @@ require 'rack/test'
 require "ruby_vim_sdk"
 require "cloud/vsphere"
 
-describe Bosh::Clouds do
+describe Bosh::Clouds, :requires_vsphere => true do
   include Rack::Test::Methods
   include Bosh::Director::IpUtil
   include VimSdk

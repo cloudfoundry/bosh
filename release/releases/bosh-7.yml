@@ -1,0 +1,99 @@
+--- 
+packages: 
+- name: aws_registry
+  version: 3
+  sha1: 4a03511d924539c65a6d6b032220d67811e25ba9
+  dependencies: 
+  - ruby
+- name: blobstore
+  version: 2
+  sha1: ef7ad26eb202b9cbf5f8ff6ed8b7ad51249b2fee
+  dependencies: 
+  - ruby
+- name: director
+  version: 5
+  sha1: 3b923e1584e76ac3613923cedbe56c48d0cebb65
+  dependencies: 
+  - libpq
+  - ruby
+- name: genisoimage
+  version: 2
+  sha1: 87cb25d876244947e9fbbe07f4b76b1f77198f69
+  dependencies: []
+
+- name: health_monitor
+  version: 3
+  sha1: fe13eb20123be351f14487a1a45945d95763f5c9
+  dependencies: 
+  - ruby
+- name: libpq
+  version: 1
+  sha1: 1b2789a7122dd1c62aab138bc97966f75a34a040
+  dependencies: []
+
+- name: nats
+  version: 1
+  sha1: d5a042c08c70df1e32d9b75ee3872f04c2fd08c0
+  dependencies: 
+  - ruby
+- name: nginx
+  version: 1
+  sha1: c24ee33a4435af96e761be0ff6d499c7fdb1a2a9
+  dependencies: []
+
+- name: postgres
+  version: 1
+  sha1: 9d235b9e397d613c47d7cb629f858bed485f0631
+  dependencies: []
+
+- name: powerdns
+  version: 1
+  sha1: f3da319aa64381a9bdf6bfa7436471baab62a5b8
+  dependencies: []
+
+- name: redis
+  version: 1
+  sha1: a7cb12a1af25fba8bd071b4e1a8bec5297042034
+  dependencies: []
+
+- name: ruby
+  version: 1
+  sha1: cbab7b06a703e5b0a407ab20e0d1ef91fa6119cc
+  dependencies: []
+
+jobs: 
+- name: aws_registry
+  version: 3
+  sha1: fbd3fb6309d4cce986f4a443f7d06d53002970d7
+- name: blobstore
+  version: 2
+  sha1: 667805889a4d5102751852d99b1b134840e76057
+- name: director
+  version: 6
+  sha1: 07c4338c3d5ff39f1f1677b944adb59be73774f1
+- name: health_monitor
+  version: 3
+  sha1: 92085e83736af458c0513787b8804452f5fa1229
+- name: micro_aws
+  version: 2
+  sha1: 902d2cae9ca6182e2f2809934082626ecb18acc4
+- name: micro_vsphere
+  version: 2
+  sha1: fb894424358b171424102de3e95011c0f4e8d1c7
+- name: nats
+  version: 3
+  sha1: 3571c0cfde6fb94b58b5f9ba0ca3a38cd3fd83f6
+- name: postgres
+  version: 2
+  sha1: 290834e32664873218cd9b661e89d4a7767e5416
+- name: powerdns
+  version: 1
+  sha1: c9820a7c516541e5452a099c64c3061169da3f60
+- name: redis
+  version: 2
+  sha1: 8816f6c4663d0cd7c66eece593a7b2c4fe4c1eb4
+- name: utility
+  version: 5
+  sha1: afb95c1d82ef599fd57daad2c2694fb2da526218
+name: bosh
+version: 7

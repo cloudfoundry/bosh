@@ -1,0 +1,6 @@
+name: nats
+dependencies:
+  - ruby
+files:
+  - nats/**/*
+

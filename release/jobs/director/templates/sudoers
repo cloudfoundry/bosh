@@ -1,0 +1,1 @@
+vcap ALL= NOPASSWD: /var/vcap/jobs/director/bin/stemcell-copy

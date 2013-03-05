@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "httpclient"
+require 'base64'
+require 'httpclient'
 
 module Bosh
   module Blobstore
@@ -24,8 +25,8 @@ module Bosh
         ["#{@endpoint}/#{@bucket}", id].compact.join("/")
       end
 
-      def create_file(file)
-        response = @client.post(url, {:content => file}, @headers)
+      def create_file(id, file)
+        response = @client.post(url(id), {:content => file}, @headers)
         if response.status != 200
           raise BlobstoreError,
             "Could not create object, #{response.status}/#{response.content}"

@@ -1,0 +1,3 @@
+<DiskAttachOrDetachParams xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:vcloud="http://www.vmware.com/vcloud/v1.5">
+  <Disk type="application/vnd.vmware.vcloud.disk+xml" href="%s"> </Disk>
+</DiskAttachOrDetachParams>

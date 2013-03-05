@@ -5,22 +5,30 @@ require "tempfile"
 require "set"
 require "yaml"
 require "nats/client"
-require "sandbox"
-require "deployments"
 require "redis"
 require "restclient"
-require File.expand_path("../../director/lib/director/version", __FILE__)
+require "director"
 
-ASSETS_DIR = File.expand_path("../assets", __FILE__)
+
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+ASSETS_DIR = File.join(SPEC_ROOT, "assets")
+BOSH_ROOT_DIR = File.expand_path File.join(SPEC_ROOT, "..")
+BOSH_TMP_DIR = File.expand_path File.join(BOSH_ROOT_DIR, "tmp")
+
+Dir.glob("#{SPEC_ROOT}/support/**/*.rb") do |filename|
+  require filename
+end
 
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, "test_release_template")
 TEST_RELEASE_DIR = File.join(ASSETS_DIR, "test_release")
 
 CLOUD_DIR      = "/tmp/bosh_test_cloud"
-CLI_DIR        = File.expand_path("../../cli", __FILE__)
+CLI_DIR        = File.expand_path("../../../cli", __FILE__)
 BOSH_CACHE_DIR = Dir.mktmpdir
 BOSH_WORK_DIR  = File.join(ASSETS_DIR, "bosh_work_dir")
 BOSH_CONFIG    = File.join(ASSETS_DIR, "bosh_config.yml")
+
+STDOUT.sync = true
 
 module Bosh
   module Spec
@@ -33,7 +41,6 @@ end
 
 RSpec.configure do |c|
   c.before(:each) do |example|
-    reset_sandbox(example)
     cleanup_bosh
     FileUtils.rm_rf(TEST_RELEASE_DIR)
     FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
@@ -44,26 +51,18 @@ RSpec.configure do |c|
   end
 
   c.filter_run :focus => true if ENV["FOCUS"]
+  c.include IntegrationExampleGroup, :example_group => {
+      :file_path => /\/integration\//
+  }
+  c.include AwsSystemExampleGroup, :example_group => {
+      :file_path => /\/system\/aws\/micro_bosh_spec\.rb/
+  }
+
+  c.include Bosh::Spec::CommandHelper, example_group: { file_path: /\/external\/aws_boostrap_spec\.rb/ }
 end
 
 def spec_asset(name)
   File.expand_path("../assets/#{name}", __FILE__)
-end
-
-def start_sandbox
-  puts "Starting sandboxed environment for BOSH tests..."
-  Bosh::Spec::Sandbox.start
-end
-
-def stop_sandbox
-  puts "\nStopping sandboxed environment for BOSH tests..."
-  Bosh::Spec::Sandbox.stop
-  cleanup_bosh
-end
-
-def reset_sandbox(example)
-  desc = example ? example.example.metadata[:description] : ""
-  Bosh::Spec::Sandbox.reset(desc)
 end
 
 def save_task_logs(example)
@@ -83,23 +82,14 @@ def director_version
   "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
 end
 
-def run_bosh(cmd, work_dir = nil)
-  Dir.chdir(work_dir || BOSH_WORK_DIR) do
-    ENV["BUNDLE_GEMFILE"] = "#{CLI_DIR}/Gemfile"
-    `#{CLI_DIR}/bin/bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
-  end
-end
-
 def cleanup_bosh
   [
    BOSH_CONFIG,
    CLOUD_DIR,
    BOSH_CACHE_DIR,
-   TEST_RELEASE_DIR,
+   TEST_RELEASE_DIR
   ].each do |item|
     FileUtils.rm_rf(item)
   end
 end
 
-start_sandbox
-at_exit { stop_sandbox }

@@ -1,0 +1,17 @@
+script: 'bundle exec rake spec:$SUITE'
+bundler_args: "--local --without development"
+rvm:
+  - ruby-1.9.3
+  - ruby-2.0.0
+env:
+  - SUITE=unit
+  - SUITE=integration
+notifications:
+  email:
+    recipients:
+      - martin@englund.nu
+    on_success: change
+    on_failure: always
+matrix:
+  allow_failures:
+    - rvm: ruby-2.0.0

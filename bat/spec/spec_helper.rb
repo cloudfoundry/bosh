@@ -1,10 +1,5 @@
 # Copyright (c) 2012 VMware, Inc.
 
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
-require "bundler"
-Bundler.setup(:default, :test)
-
 require "rspec"
 
 require "stemcell"
@@ -12,10 +7,19 @@ require "release"
 require "deployment"
 require "vm"
 
-helpers = Dir.glob("spec/helpers/*_helper.rb")
+require 'tempfile'
+
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+ASSETS_DIR = File.join(SPEC_ROOT, "assets")
+BAT_RELEASE_DIR = File.join(ASSETS_DIR, "bat-release")
+
+helper_regex = File.join(File.expand_path(File.dirname(__FILE__)),"helpers", "*_helper.rb")
+helpers = Dir.glob(helper_regex)
 helpers.each do |helper|
   require File.expand_path(helper)
 end
+
+BH = BoshHelper
 
 RSpec.configure do |config|
   config.include(BoshHelper)
@@ -27,15 +31,23 @@ RSpec.configure do |config|
 
   # bosh helper isn't available, so it has to be rolled by hand
   config.before(:suite) do
-    director = ENV['BAT_DIRECTOR']
+    BH::bosh_cli_config_path = Tempfile.new("bosh_config").path
+    director = BH::read_environment('BAT_DIRECTOR')
     director.should_not be_nil
-    output = %x{bosh target #{director} 2>&1}
+    cmd = "bundle exec bosh --config #{BH::bosh_cli_config_path} --user admin " +
+      "--password admin target #{director} 2>&1"
+    output = %x{#{cmd}}
     $?.exitstatus.should == 0
     output.should match /Target \w*\s*set/
   end
 
   config.after(:suite) do
-    # any suite cleanup should go here
+    config_path = BH::bosh_cli_config_path
+    File.delete(config_path) if File.exists?(config_path)
+  end
+
+  config.before(:each) do
+    requirement :no_tasks_processing unless example.metadata[:skip_task_check]
   end
 end
 

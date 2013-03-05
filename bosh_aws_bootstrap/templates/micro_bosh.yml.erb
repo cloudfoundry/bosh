@@ -1,0 +1,47 @@
+---
+name: micro-<%= name %>
+
+logging:
+  level: DEBUG
+
+network:
+  type: manual
+  vip:  <%= vip %>
+  ip: 10.10.0.5
+  cloud_properties:
+    subnet: <%= subnet %>
+
+resources:
+  persistent_disk: 20000
+  cloud_properties:
+    instance_type: m1.small
+    availability_zone: <%= availability_zone %>
+
+cloud:
+  plugin: aws
+  properties:
+    aws:
+      access_key_id: <%= access_key_id %>
+      secret_access_key: <%= secret_access_key %>
+      default_key_name: <%= key_pair_name %>
+      default_security_groups: ["bosh"]
+      region: <%= region %>
+      ec2_private_key: <%= private_key_path %>
+
+apply_spec:
+  agent:
+    blobstore:
+      address: 10.10.0.5
+    nats:
+      address: 10.10.0.5
+  properties:
+    aws_registry:
+      address: 10.10.0.5
+    aws:
+      access_key_id: <%= access_key_id %>
+      secret_access_key: <%= secret_access_key %>
+      default_key_name: <%= key_pair_name %>
+      default_security_groups: ["bosh"]
+      ec2_endpoint: ec2.<%= region %>.amazonaws.com
+      region: <%= region %>
+

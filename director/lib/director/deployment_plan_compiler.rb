@@ -39,7 +39,7 @@ module Bosh::Director
     # @return [void]
     def bind_existing_deployment
       lock = Mutex.new
-      ThreadPool.new(:max_threads => 32).wrap do |pool|
+      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         @deployment_plan.vms.each do |vm|
           pool.process do
             with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
@@ -333,12 +333,12 @@ module Bosh::Director
     end
 
     def bind_dns
-      domain = Models::Dns::Domain.find_or_create(:name => "bosh",
+      domain = Models::Dns::Domain.find_or_create(:name => dns_domain_name,
                                                   :type => "NATIVE")
       @deployment_plan.dns_domain = domain
 
       soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                                      :name => "bosh",
+                                                      :name => dns_domain_name,
                                                       :type => "SOA")
       # TODO increment SOA serial
       # TODO: make configurable?
@@ -348,12 +348,12 @@ module Bosh::Director
 
       # add NS record
       Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                         :name => "bosh",
+                                         :name => dns_domain_name,
                                          :type =>'NS', :ttl => TTL_4H,
-                                         :content => "ns.bosh")
+                                         :content => dns_ns_record)
       # add A record for name server
       Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                         :name => "ns.bosh",
+                                         :name => dns_ns_record,
                                          :type =>'A', :ttl => TTL_4H,
                                          :content => Config.dns["address"])
     end
@@ -375,7 +375,7 @@ module Bosh::Director
 
       @event_log.begin_stage("Binding instance VMs", unbound_instances.size)
 
-      ThreadPool.new(:max_threads => 32).wrap do |pool|
+      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         unbound_instances.each do |instance|
           pool.process do
             bind_instance_vm(instance)
@@ -412,8 +412,7 @@ module Bosh::Director
 
       @event_log.begin_stage("Deleting unneeded VMs", unneeded_vms.size)
 
-      # TODO: make pool size configurable?
-      ThreadPool.new(:max_threads => 10).wrap do |pool|
+      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         unneeded_vms.each do |vm|
           pool.process do
             @event_log.track(vm.cid) do

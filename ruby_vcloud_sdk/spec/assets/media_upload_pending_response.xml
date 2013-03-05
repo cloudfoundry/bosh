@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Media xmlns="http://www.vmware.com/vcloud/v1.5" size="833536" imageType="iso" status="0" name="%s" id="urn:vcloud:media:%s" type="application/vnd.vmware.vcloud.media+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s"/>
+    <Link rel="remove" href="%s/api/media/%s"/>
+    <Files>
+        <File size="833536" bytesTransferred="0" name="file">
+            <Link rel="upload:default" href="%s"/>
+        </File>
+    </Files>
+    <Owner type="application/vnd.vmware.vcloud.owner+xml">
+        <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    </Owner>
+</Media>

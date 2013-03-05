@@ -1,0 +1,101 @@
+---
+http:
+  port: <%= p("hm.http.port") %>
+  user: <%= p("hm.http.user") %>
+  password: <%= p("hm.http.password") %>
+
+mbus:
+  endpoint: nats://<%= p("nats.address") %>:<%= p("nats.port") %>
+  user: <%= p("nats.user") %>
+  password: <%= p("nats.password") %>
+
+director:
+  endpoint: http://<%= p("director.address") %>:<%= p("director.port") %>
+  user: <%= p("hm.director_account.user") %>
+  password: <%= p("hm.director_account.password") %>
+
+intervals:
+  prune_events: <%= p("hm.intervals.prune_events") %>
+  poll_director: <%= p("hm.intervals.poll_director") %>
+  poll_grace_period: <%= p("hm.intervals.poll_grace_period") %>
+  log_stats: <%= p("hm.intervals.log_stats") %>
+  analyze_agents: <%= p("hm.intervals.analyze_agents") %>
+  agent_timeout: <%= p("hm.intervals.agent_timeout") %>
+  rogue_agent_alert: <%= p("hm.intervals.rogue_agent_alert") %>
+
+logfile: /var/vcap/sys/log/health_monitor/health_monitor.log
+loglevel: <%= p("hm.loglevel") %>
+
+plugins:
+
+  - name: logger
+    events:
+      - alert
+
+  <% if p("event_nats_enabled") %>
+  - name: nats
+    events:
+      - alert
+      - heartbeat
+    options:
+      endpoint: nats://<%= p("event_nats.address") %>:<%= p("event_nats.port") %>
+      user: <%= p("event_nats.user") %>
+      password: <%= p("event_nats.password") %>
+  <% end %>
+
+  <% if p("hm.email_notifications") %>
+  - name: email
+    events:
+      - alert
+    options:
+      recipients:
+        <% for recipient in p("hm.email_recipients").to_a %>
+        - <%= recipient %>
+        <% end %>
+      smtp:
+        from: <%= p("hm.smtp.from") %>
+        host: <%= p("hm.smtp.host") %>
+        port: <%= p("hm.smtp.port") %>
+        domain: <%= p("hm.smtp.domain") %>
+        <% if_p("hm.smtp.tls") do |smtp_tls| %>
+        tls: <%= smtp_tls %>
+        <% end %>
+        <% if_p("hm.smtp.auth",
+                "hm.smtp.user",
+                "hm.smtp.password") do |smtp_auth, smtp_user, smtp_password| %>
+        auth: <%= smtp_auth %>
+        user: <%= smtp_user %>
+        password: <%= smtp_password %>
+        <% end %>
+      <% if_p("hm.email_interval") do |email_interval| %>
+      interval: <%= email_interval %>
+      <% end %>
+  <% end %>
+
+  <% if p("hm.tsdb_enabled") %>
+  - name: tsdb
+    events:
+      - alert
+      - heartbeat
+    options:
+      host: <%= p("hm.tsdb.address") %>
+      port: <%= p("hm.tsdb.port") %>
+  <% end %>
+
+  <% if p("hm.pagerduty_enabled") %>
+  - name: pagerduty
+    events:
+      - alert
+    options:
+      service_key: <%= p("hm.pagerduty.service_key") %>
+      <% if_p("hm.pagerduty.http_proxy") do |pd_http_proxy| %>
+      http_proxy: <%= pd_http_proxy %>
+      <% end %>
+  <% end %>
+
+  <% if p("hm.varz_enabled") %>
+  - name: varz
+    events:
+      - alert
+      - heartbeat
+  <% end %>

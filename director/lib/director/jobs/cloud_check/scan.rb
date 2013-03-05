@@ -75,7 +75,7 @@ module Bosh::Director
           lock = Mutex.new
 
           track_and_log("Checking VM states") do
-            ThreadPool.new(:max_threads => 32).wrap do |pool|
+            ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
               vms.each do |vm|
                 pool.process do
                   scan_result = scan_vm(vm)

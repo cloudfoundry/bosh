@@ -1,0 +1,183 @@
+---
+name: appcloud-17
+target: http://localhost:25555
+release:
+  name: appcloud
+  version: 17
+
+network:
+  default:
+    ip: 192.168.130.66
+    netmask: 255.255.255.192
+    cloud_properties:
+      name: vcd-org-network
+    default:
+    - dns
+    - gateway
+    dns:
+    - 192.168.115.1
+    - 192.168.115.2
+    gateway: 192.168.130.126
+
+networks:
+- name: default
+  subnets:
+  - reserved:
+    - 192.168.130.90 - 192.168.130.94
+    static:
+    - 192.168.130.95 - 192.168.130.99
+    range: 192.168.130.64/26
+    gateway: 192.168.130.126
+    dns:
+    - 192.168.115.1
+    - 192.168.115.2
+    cloud_properties:
+      name: vcd-org-network
+- name: dmz
+  subnets:
+  - static:
+    - 192.168.130.100 - 192.168.130.104
+    range: 192.168.130.64/26
+    dns:
+    - 192.168.115.1
+    - 192.168.115.2
+    cloud_properties:
+      name: vcd-org-network
+
+resource_pools:
+- name: small
+  stemcell:
+    name: bosh-stemcell
+    version: 0.2.24
+  network: default
+  size: 0
+  cloud_properties:
+    ram: 1024
+    disk: 4096
+    cpu: 1
+- name: medium
+  stemcell:
+    name: bosh-stemcell
+    version: 0.2.24
+  network: default
+  size: 0
+  cloud_properties:
+    ram: 2048
+    disk: 4096
+    cpu: 2
+- name: large
+  stemcell:
+    name: bosh-stemcell
+    version: 0.2.24
+  network: default
+  size: 0
+  cloud_properties:
+    ram: 8192
+    disk: 16384
+    cpu: 4
+- name: deas
+  stemcell:
+    name: bosh-stemcell
+    version: 0.2.24
+  network: default
+  size: 1
+  cloud_properties:
+    ram: 16384
+    disk: 32768
+    cpu: 4
+
+compilation:
+  workers: 1
+  network: default
+  cloud_properties:
+    ram: 2048
+    disk: 4048
+    cpu: 4
+
+update:
+  canaries: 1
+  canary_watch_time: 60000
+  update_watch_time: 60000
+  max_in_flight: 1
+  max_errors: 1
+
+jobs:
+
+- name: dea
+  template: dea
+  instances: 1
+  resource_pool: deas
+  update:
+    max_in_flight: 2
+  networks:
+  - name: default
+
+properties:
+  domain: ud-03.eng.vmware.com
+
+  env:
+    http_proxy: "http://10.16.67.187:3128"
+    https_proxy: "http://10.16.67.187:3128"
+    no_proxy: "localhost, 127.0.0.1"
+
+  networks:
+    apps: default
+    management: default
+
+  nats:
+    user: nats
+    password: 0b450ada9f830085e2cdeff6
+    address: 192.168.130.68
+    port: 4222
+
+  ccdb:
+    user: root
+    password: a7a33139c8e3f34bc201351b
+    address:  192.168.130.105
+    port: 2544
+    dbname: appcloud
+
+  cc:
+    srv_api_uri: http://localhost
+    password: 34d39fe37c9933d46d1d294e6233195b55838871a59287fd534b6ea7ed77
+    token: 67d1269e92783716cc9d63703cf6451287540d60014b457243fedf4e0f68
+    local_register_only: false
+    admins:
+    - foo@eng.vmware.com
+
+  dea:
+    max_memory: 8192
+
+  nfs_server:
+    address: 192.168.130.106
+    network: 192.168.130.64/26
+
+  mysql_gateway:
+    token: 63943e597947eba06b2f5cfa233c73099eb42bb390d93be2cf75f46f2bcb
+  mysql_node:
+    available_storage: 4096
+    max_db_size: 20
+    password: efcaa7bef3023e03f181b47b
+    production: true
+
+  rabbit_gateway:
+    token: 058e1a6398cbe0113e16c0f2f80251da03f46d5fb6fee1361913eda3e516
+  rabbit_node:
+    available_memory: 4096
+    max_memory: 4096
+
+  redis_gateway:
+    token: 2859854d27ecd84af53b05d2fe28515cafad6713d23a862832ab83acd967
+  redis_node:
+    available_memory: 4096
+
+  mongodb_gateway:
+    token: ed586c58cfb2fbb74f775ec00290965415e5097f68b2f50d2bcef7f09fc6
+  mongodb_node:
+    available_memory: 4096
+
+  rabbit_node:
+    available_memory: 4096
+    max_memory: 4096
+  rabbit_gateway:
+    token: e188ee08396cdf25ff04ea0b8aee49d3d0ceb1c041ddf7d44391d0c3b409

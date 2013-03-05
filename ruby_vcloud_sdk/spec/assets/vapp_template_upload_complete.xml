@@ -1,0 +1,28 @@
+        <VAppTemplate xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" ovfDescriptorUploaded="true" goldMaster="false" status="0" name="%s" id="urn:vcloud:vapptemplate:%s" type="application/vnd.vmware.vcloud.vAppTemplate+xml" href="%s/api/vAppTemplate/vappTemplate-%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.dmtf.org/ovf/envelope/1 http://schemas.dmtf.org/ovf/envelope/1/dsp8023_1.1.0.xsd http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/%s"/>
+            <Link rel="remove" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+            <Description/>
+            <Tasks>
+                <Task status="success" startTime="2011-08-08T11:13:07.757-07:00" operationName="vdcUploadOvfContents" operation="Finalizing upload of Virtual Application Template %s(%s)" expiryTime="2011-11-06T11:13:07.757-08:00" name="task" id="urn:vcloud:task:91bd4b57-598e-4753-8274-1172c7195468" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/91bd4b57-598e-4753-8274-1172c7195468">
+                    <Link rel="task:cancel" href="%s/api/task/91bd4b57-598e-4753-8274-1172c7195468/action/cancel"/>
+                    <Owner type="application/vnd.vmware.vcloud.vAppTemplate+xml" name="%s" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+                    <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+                    <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+                    <Progress>1</Progress>
+                </Task>
+            </Tasks>
+            <Owner type="application/vnd.vmware.vcloud.owner+xml">
+                <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            </Owner>
+            <Children/>
+            <LeaseSettingsSection type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/leaseSettingsSection/" ovf:required="false">
+                <ovf:Info>Lease settings section</ovf:Info>
+                <Link rel="edit" type="application/vnd.vmware.vcloud.leaseSettingsSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/leaseSettingsSection/"/>
+                <StorageLeaseInSeconds>7776000</StorageLeaseInSeconds>
+                <StorageLeaseExpiration>2011-11-06T10:12:46.547-08:00</StorageLeaseExpiration>
+            </LeaseSettingsSection>
+            <CustomizationSection type="application/vnd.vmware.vcloud.customizationSection+xml" href="%s/api/vAppTemplate/vappTemplate-%s/customizationSection/" ovf:required="false">
+                <ovf:Info>VApp template customization section</ovf:Info>
+                <CustomizeOnInstantiate>true</CustomizeOnInstantiate>
+            </CustomizationSection>
+        </VAppTemplate>

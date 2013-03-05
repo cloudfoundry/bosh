@@ -1,0 +1,8 @@
+*.pid
+*.db
+aws/deployments/bosh-deployments.yml
+test_release
+bosh_config.yml
+bosh_work_dir/tmp
+logs/*
+*.log

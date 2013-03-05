@@ -1,0 +1,5 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="success" startTime="2011-08-18T13:29:19.328-07:00" operationName="vdcDeleteTemplate" operation="Deleting Virtual Application Template (%s)" expiryTime="2011-11-16T13:29:19.328-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+    <Owner type="application/vnd.vmware.vcloud.vAppTemplate+xml" name="" href="%s/api/vAppTemplate/vappTemplate-6ce96611-43fa-4efd-8571-2804447a21c4"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="vcap" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+</Task>

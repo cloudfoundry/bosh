@@ -1,0 +1,24 @@
+data_directory = /var/vcap/store/postgres
+hba_file = '/var/vcap/jobs/postgres/config/pg_hba.conf'
+ident_file = '/var/vcap/jobs/postgres/config/pg_ident.conf'
+external_pid_file = '/var/vcap/sys/run/postgres/postgres.pid'
+
+listen_addresses = '*'
+port = 5432
+max_connections = 100
+unix_socket_directory = '/var/vcap/sys/run/postgres'
+
+ssl = false
+
+shared_buffers = 24MB
+
+log_line_prefix = '%t '
+
+datestyle = 'iso, mdy'
+
+lc_messages = 'en_US.UTF-8'
+lc_monetary = 'en_US.UTF-8'
+lc_numeric = 'en_US.UTF-8'
+lc_time = 'en_US.UTF-8'
+
+default_text_search_config = 'pg_catalog.english'

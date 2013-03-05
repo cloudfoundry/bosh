@@ -12,6 +12,9 @@ compilation:
   reuse_compilation_vms: true
   cloud_properties:
     instance_type: m1.small
+    <% if properties.key_name %>
+    key_name: <%= properties.key_name %>
+    <% end %>
 
 update:
   canaries: <%= properties.canaries || 1 %>
@@ -21,12 +24,49 @@ update:
   max_errors: 1
 
 networks:
-- name: default
-  type: dynamic
-  cloud_properties: {}
+
 - name: static
   type: vip
   cloud_properties: {}
+
+- name: default
+<% if p('network.subnet', false) %>
+  type: manual
+  subnets:
+  - range: <%= properties.network.cidr %>
+    reserved:
+      <% properties.network.reserved.each do |range| %>
+      - <%= range %>
+      <% end %>
+    static:
+      <% properties.network.static.each do |range| %>
+      - <%= range %>
+      <% end %>
+    gateway: <%= properties.network.gateway %>
+    dns:
+      <% if_p('dns_nameserver') do |dns_nameserver| %>
+      - <%= dns_nameserver %>
+      <% end %>
+      <% if_p('network.dns') do |dns| %>
+      - <%= dns %>
+      <% end %>
+    cloud_properties:
+      security_groups: <%= p('network.security_groups') %>
+      subnet: <%= p('network.subnet') %>
+<% else %>
+  type: dynamic
+  <% if_p('dns_nameserver') do |dns_nameserver| %>
+  dns:
+    - <%= dns_nameserver %>
+  <% end %>
+  <% if properties.security_groups %>
+  cloud_properties:
+    security_groups:
+      - <%= properties.security_groups %>
+  <% else %>
+  cloud_properties: {}
+  <% end %>
+<% end %>
 
 resource_pools:
   - name: common
@@ -37,11 +77,19 @@ resource_pools:
       version: <%= properties.stemcell.version %>
     cloud_properties:
       instance_type: m1.small
+      <% if properties.key_name %>
+      key_name: <%= properties.key_name %>
+      <% end %>
+    <% if properties.password %>
+    env:
+      bosh:
+        password: <%= properties.password %>
+    <% end %>
 
 jobs:
   - name: <%= properties.job || "batlight" %>
-    template: <%= properties.job || "batlight" %>
-    instances: <%= properties.jobs %>
+    template: <%= properties.template || properties.job || "batlight" %>
+    instances: <%= properties.instances %>
     resource_pool: common
     <% if properties.persistent_disk %>
     persistent_disk: <%= properties.persistent_disk %>
@@ -57,3 +105,13 @@ jobs:
 
 properties:
   mbus: <%= properties.mbus %>
+  batlight:
+    <% if properties.batlight.fail %>
+    fail: <%= properties.batlight.fail %>
+    <% end %>
+    <% if properties.batlight.missing %>
+    missing: <%= properties.batlight.missing %>
+    <% end %>
+    <% if properties.batlight.drain_type %>
+    drain_type: <%= properties.batlight.drain_type %>
+    <% end %>

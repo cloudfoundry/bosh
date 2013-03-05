@@ -12,7 +12,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
     Bosh::Director::Config.stub!(:base_dir).and_return(@tmpdir)
 
-    stemcell_contents = create_stemcell("jeos", 5, {"ram" => "2gb"}, "image contents")
+    stemcell_contents = create_stemcell("jeos", 5, {"ram" => "2gb"}, "image contents", "shawone")
     @stemcell_file = Tempfile.new("stemcell_contents")
     File.open(@stemcell_file.path, "w") { |f| f.write(stemcell_contents) }
   end
@@ -35,6 +35,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
     stemcell.should_not be_nil
     stemcell.cid.should == "stemcell-cid"
+    stemcell.sha1.should == "shawone"
   end
 
   it "should cleanup the stemcell file" do

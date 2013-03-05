@@ -3,6 +3,7 @@ require "fileutils"
 require "set"
 require "optparse"
 require "pp"
+require "yaml"
 
 require "sinatra"
 require "uuidtools"
@@ -58,38 +59,49 @@ module Bosh
         @auth.provided? && @auth.basic? && @auth.credentials && @users.include?(@auth.credentials)
       end
 
+      def create_file(object_id)
+        object_id ||= generate_object_id
+        file_name = get_file_name(object_id)
+
+        error(409) if File.exist?(file_name)
+
+        FileUtils.mkdir_p(File.dirname(file_name))
+
+        yield file_name
+
+        status(200)
+        content_type(:text)
+        object_id
+      end
+
+      def create(params)
+        if params[:content] && params[:content][:tempfile]
+          # Process uploads coming directly to the simple blobstore
+          create_file(params[:id]) do |file_name|
+            tempfile = params[:content][:tempfile]
+            FileUtils.copy_file(tempfile.path, file_name)
+          end
+        elsif params["content.name"] && params["content.path"]
+          # Process uploads arriving via nginx
+          create_file(params[:id]) do |file_name|
+            FileUtils.mv(params["content.path"], file_name)
+          end
+        else
+          error(400)
+        end
+
+      end
+
       before do
         protected!
       end
 
+      post "/resources/:id" do
+        create(params)
+      end
+
       post "/resources" do
-        if params[:content] && params[:content][:tempfile]
-          # Process uploads coming directly to the simple blobstore
-          object_id = generate_object_id
-          file_name = get_file_name(object_id)
-
-          tempfile = params[:content][:tempfile]
-
-          FileUtils.mkdir_p(File.dirname(file_name))
-          FileUtils.copy_file(tempfile.path, file_name)
-
-          status(200)
-          content_type(:text)
-          object_id
-        elsif params["content.name"] && params["content.path"]
-          # Process uploads arriving via nginx
-          object_id = generate_object_id
-          file_name = get_file_name(object_id)
-
-          FileUtils.mkdir_p(File.dirname(file_name))
-          FileUtils.mv(params["content.path"], file_name)
-
-          status(200)
-          content_type(:text)
-          object_id
-        else
-          error(400)
-        end
+        create(params)
       end
 
       get "/resources/:id" do

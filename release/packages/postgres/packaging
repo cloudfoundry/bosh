@@ -1,0 +1,32 @@
+set -e
+
+if [[ `uname -a` =~ "x86_64" ]] ; then
+  archive="postgres-9.0.3-1.amd64.tar.gz"
+  echo "Using 64-bit version"
+else
+  archive="postgres-9.0.3-1.i386.tar.gz"
+  echo "Using 32-bit version"
+fi
+
+if [[ -f postgres/$archive ]] ; then
+  echo "Archive found"
+else
+  echo "Archive not found"
+  exit 1
+fi
+
+echo "Extracting archive..."
+mkdir unpacked
+
+(
+  set -e
+  cd unpacked
+  tar xzf ../postgres/$archive
+
+  if [[ $? != 0 ]] ; then
+    echo "Cannot unpack PostgreSQL"
+    exit 1
+  fi
+)
+
+cp -a unpacked/* ${BOSH_INSTALL_TARGET}

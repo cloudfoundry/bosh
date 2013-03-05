@@ -1,18 +1,10 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-$:.unshift(File.expand_path("../../lib", __FILE__))
-
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
 require "digest/sha1"
 require "fileutils"
 require "logger"
 require "tmpdir"
 require "zlib"
-
-require "rubygems"
-require "bundler"
-Bundler.setup(:default, :test)
 
 require "archive/tar/minitar"
 require "rspec"
@@ -41,7 +33,7 @@ module SpecHelper
       if ENV["DEBUG"]
         @logger = Logger.new(STDOUT)
       else
-        path = File.expand_path("../spec.log", __FILE__)
+        path = File.expand_path("/tmp/spec.log", __FILE__)
         log_file = File.open(path, "w")
         log_file.sync = true
         @logger = Logger.new(log_file)
@@ -52,7 +44,18 @@ module SpecHelper
       @temp_dir = Dir.mktmpdir
       ENV["TMPDIR"] = @temp_dir
       FileUtils.mkdir_p(@temp_dir)
-      at_exit { FileUtils.rm_rf(@temp_dir) }
+      at_exit do
+        begin
+          if $!
+            status = $!.is_a?(::SystemExit) ? $!.status : 1
+          else
+            status = 0
+          end
+          FileUtils.rm_rf(@temp_dir)
+        ensure
+          exit status
+        end
+      end
     end
 
     def init_database
@@ -64,10 +67,15 @@ module SpecHelper
 
       Sequel.extension :migration
 
-      # Sequel with in-memory sqlite database is not thread-safe, using
-      # file seems to fix that
-      db = "sqlite://#{File.join(@temp_dir, "director.db")}"
-      dns_db = "sqlite://#{File.join(@temp_dir, "dns.db")}"
+      connect_database(@temp_dir)
+
+      run_migrations
+    end
+
+    def connect_database(path)
+      # Sequel with in-memory sqlite database is not thread-safe, using file seems to fix that
+      db = "sqlite://#{File.join(path, "director.db")}"
+      dns_db = "sqlite://#{File.join(path, "dns.db")}"
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
       @db = Sequel.connect(db, db_opts)
@@ -77,8 +85,18 @@ module SpecHelper
       @dns_db = Sequel.connect(dns_db, db_opts)
       @dns_db.loggers << @logger
       Bosh::Director::Config.dns_db = @dns_db
+    end
 
-      run_migrations
+    def disconnect_database
+      if @db
+        @db.disconnect
+        @db = nil
+      end
+
+      if @dns_db
+        @dns_db.disconnect
+        @dns_db = nil
+      end
     end
 
     def run_migrations
@@ -88,18 +106,30 @@ module SpecHelper
     end
 
     def reset_database
-      [@db, @dns_db].each do |db|
-        db.execute("PRAGMA foreign_keys = OFF")
-        db.tables.each do |table|
-          db.drop_table(table)
-        end
-        db.execute("PRAGMA foreign_keys = ON")
+      disconnect_database
+
+      if @db_dir && File.directory?(@db_dir)
+        FileUtils.rm_rf(@db_dir)
+      end
+
+      @db_dir = Dir.mktmpdir(nil, @temp_dir)
+      FileUtils.cp(Dir.glob(File.join(@temp_dir, "*.db")), @db_dir)
+
+      connect_database(@db_dir)
+
+      Bosh::Director::Models.constants.each do |e|
+        c = Bosh::Director::Models.const_get(e)
+        c.db = @db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+      end
+
+      Bosh::Director::Models::Dns.constants.each do |e|
+        c = Bosh::Director::Models::Dns.const_get(e)
+        c.db = @dns_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 
     def reset
       reset_database
-      run_migrations
 
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @db
@@ -117,6 +147,24 @@ BDM = BD::Models
 
 RSpec.configure do |rspec|
   rspec.before(:each) do
+    unless $redis_63790_started
+      redis_pid = fork { exec("redis-server  --port 63790") }
+      $redis_63790_started = true
+
+      at_exit do
+        begin
+          if $!
+            status = $!.is_a?(::SystemExit) ? $!.status : 1
+          else
+            status = 0
+          end
+          Process.kill("KILL", redis_pid)
+        ensure
+          exit status
+        end
+      end
+    end
+
     SpecHelper.reset
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog.new(@event_buffer)
@@ -165,13 +213,14 @@ def gzip(string)
   result.string
 end
 
-def create_stemcell(name, version, cloud_properties, image)
+def create_stemcell(name, version, cloud_properties, image, sha1)
   io = StringIO.new
 
   manifest = {
     "name" => name,
     "version" => version,
-    "cloud_properties" => cloud_properties
+    "cloud_properties" => cloud_properties,
+    "sha1" => sha1
   }
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|

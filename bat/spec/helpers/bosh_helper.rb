@@ -11,29 +11,48 @@ require "common/exec"
 module BoshHelper
   include Archive::Tar
 
-  # TODO use BOSH_BIN ?
   def bosh(arguments, options={})
-    command = "bosh --non-interactive #{arguments} 2>&1"
+    command = "#{bosh_bin} --non-interactive --config " +
+      "#{BH::bosh_cli_config_path} --user admin --password admin " +
+      "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log
     result = Bosh::Exec.sh(command, options)
+    puts(result.output) if verbose?
     yield result if block_given?
     result
-  rescue Bosh::Exec::Error => e
-    msg = "failed to execute '#{command}':\n#{e.output}"
-    raise Bosh::Exec::Error.new(e.status, msg, e.output)
+  end
+
+  def self.bosh_cli_config_path
+    @bosh_cli_config_path
+  end
+
+  def self.bosh_cli_config_path=(new_path)
+    @bosh_cli_config_path = new_path
+  end
+
+  def bosh_bin
+    BH.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
   end
 
   def bosh_director
-    read_environment('BAT_DIRECTOR')
+    BH.read_environment('BAT_DIRECTOR')
   end
 
   def password
-    read_environment('BAT_VCAP_PASSWORD')
+    BH.read_environment('BAT_VCAP_PASSWORD')
+  end
+
+  def bosh_dns_host
+    ENV.has_key?('BAT_DNS_HOST') ? BH.read_environment('BAT_DNS_HOST') : nil
   end
 
   def debug?
     ENV.has_key?('BAT_DEBUG')
+  end
+
+  def verbose?
+    ENV["BAT_DEBUG"] == "verbose"
   end
 
   def fast?
@@ -69,12 +88,23 @@ module BoshHelper
     info["cpi"] == "vsphere"
   end
 
+  def dns?
+    info["features"] && info["features"]["dns"]
+  end
 
-  def read_environment(variable)
-    if ENV[variable]
-      ENV[variable]
-    else
-      raise "#{variable} not set"
+  def bosh_tld
+    info["features"]["dns"]["extras"]["domain_name"] if dns?
+  end
+
+  def tasks_processing?
+    # `bosh tasks` exit code is 1 if no tasks running
+    bosh("tasks", :on_error => :return).output =~ /\| processing \|/
+  end
+
+  def self.read_environment(variable, default=nil)
+    ENV.fetch(variable) do |v|
+      return default if default
+      raise "#{v} not set"
     end
   end
 
@@ -108,11 +138,11 @@ module BoshHelper
 
   def ssh(host, user, password, command)
     output = nil
-    puts "--> ssh: vcap@#{host} '#{command}'" if debug?
+    puts "--> ssh: #{user}@#{host} '#{command}'" if debug?
     Net::SSH.start(host, user, :password => password, :user_known_hosts_file => %w[/dev/null]) do |ssh|
       output = ssh.exec!(command)
     end
-    puts "--> ssh output: '#{output}'" if debug?
+    puts "--> ssh output: '#{output}'" if verbose?
     output
   end
 

@@ -4,6 +4,7 @@ module Bosh::Director
   class Config
 
     class << self
+      include DnsHelper
 
       CONFIG_OPTIONS = [
         :base_dir,
@@ -11,9 +12,11 @@ module Bosh::Director
         :db,
         :dns,
         :dns_db,
+        :dns_domain_name,
         :event_log,
         :logger,
         :max_tasks,
+        :max_threads,
         :name,
         :process_uuid,
         :redis_options,
@@ -39,6 +42,7 @@ module Bosh::Director
         end
 
         @blobstore = nil
+        @compiled_package_cache = nil
         @nats = nil
         @nats_rpc = nil
         @cloud = nil
@@ -55,14 +59,14 @@ module Bosh::Director
         @logger.level = Logger.const_get(config["logging"]["level"].upcase)
         @logger.formatter = ThreadFormatter.new
 
-        # Event logger supposed to be overriden per task,
+        # Event logger supposed to be overridden per task,
         # the default one does nothing
         @event_log = EventLog.new
 
-        @max_tasks = 500 # by default keep only last 500 tasks in disk
-        if config["max_tasks"]
-          @max_tasks = config["max_tasks"].to_i
-        end
+        # by default keep only last 500 tasks in disk
+        @max_tasks = config.fetch("max_tasks", 500).to_i
+
+        @max_threads = config.fetch("max_threads", 32).to_i
 
         self.redis_options= {
           :host     => config["redis"]["host"],
@@ -91,14 +95,19 @@ module Bosh::Director
 
         @cloud_options = config["cloud"]
         @blobstore_options = config["blobstore"]
+
+        @compiled_package_cache_options = config["compiled_package_cache"]
         @name = config["name"] || ""
 
         @blobstore = nil
+        @compiled_package_cache = nil
 
         @db = configure_db(config["db"])
         @dns = config["dns"]
-        if @dns && @dns["db"]
-          @dns_db = configure_db(@dns["db"])
+        @dns_domain_name = "bosh"
+        if @dns
+          @dns_db = configure_db(@dns["db"]) if @dns["db"]
+          @dns_domain_name = canonical(@dns["domain_name"]) if @dns["domain_name"]
         end
 
         @encryption = config["encryption"]
@@ -106,6 +115,14 @@ module Bosh::Director
         Bosh::Clouds::Config.configure(self)
 
         @lock = Monitor.new
+      end
+
+      def use_compiled_package_cache?
+        !@compiled_package_cache_options.nil?
+      end
+
+      def compiled_package_cache_bucket
+        @compiled_package_cache_options['bucket'] if use_compiled_package_cache?
       end
 
       def get_revision
@@ -139,6 +156,16 @@ module Bosh::Director
           end
         end
         @blobstore
+      end
+
+      def compiled_package_cache
+        @lock.synchronize do
+          if @compiled_package_cache.nil? && use_compiled_package_cache?
+            properties = @compiled_package_cache_options["properties"].reduce({}) { |hsh,(k,v)| hsh[k.to_sym] = v; hsh }
+            @compiled_package_cache = Fog::Storage.new(properties).directories.get(compiled_package_cache_bucket).files
+          end
+        end
+        @compiled_package_cache
       end
 
       def cloud_type

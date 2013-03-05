@@ -1,0 +1,107 @@
+#!/usr/bin/env ruby
+#
+require 'fileutils'
+require 'yaml'
+require 'erb'
+
+TEMPLATES = "templates"
+OVERRIDE = "override"
+
+
+def job_dir(job)
+  File.expand_path("../../#{job}", __FILE__)
+end
+
+# Order of jobs, implicitly specifies the order in which they are started
+jobs = %w[ nats blobstore ]
+
+spec = {
+  "name" => "utility",
+  "templates" => {
+    "post_install" => "bin/post_install"
+  },
+  "packages" => []
+}
+
+monit = []
+
+# make sure we start with an empty directory, as it will stop if
+# there are any conflicts when populating the template dir
+FileUtils.rm_rf(TEMPLATES)
+FileUtils.mkdir(TEMPLATES)
+
+jobs.each do |job|
+  # concatenate monit file
+  override = File.join(OVERRIDE, "monit", job)
+  if File.exist?(override)
+    monit_file = override
+  else
+    monit_file = "#{job_dir(job)}/monit"
+  end
+  File.open(monit_file) do |file|
+    monit += file.readlines
+    monit << "\n"
+  end
+
+  # copy templates
+  Dir.glob("#{job_dir(job)}/templates/*").each do |file|
+    name = File.basename(file)
+    override = File.join(OVERRIDE, job, name)
+    dest = File.join(TEMPLATES, job)
+    FileUtils.mkdir_p(dest) unless File.directory?(dest)
+
+    if File.exist?(File.join(dest, name))
+      puts "File conflict for job #{job}: #{name}"
+      exit 1
+    elsif File.exist?(override)
+      FileUtils.cp(override, dest)
+    else
+      FileUtils.cp(file, dest)
+    end
+  end
+
+  # build spec
+  s = YAML.load_file("#{job_dir(job)}/spec")
+  spec["packages"] += s["packages"]
+  s["templates"].each do |src, dst|
+    spec["templates"]["#{job}/#{src}"] = "#{job}/#{dst}"
+  end
+end
+
+# write out the concatenated monit file
+File.open("monit", "w") do |file|
+  file.puts monit.join
+end
+
+
+# write out spec file
+spec["packages"] = spec["packages"].uniq
+File.open("spec", "w") do |file|
+  file.puts spec.to_yaml
+end
+
+# generate post_install file with all jobs
+# it creates links from
+# jobs/micro/<job>/bin/foo to jobs/<job>/bin/foo
+# jobs/micro/<job>/config/bar to jobs/<job>/config/bar
+post_install = <<POST_INSTALL
+#!/bin/sh
+
+for DIR in /var/vcap/jobs /var/vcap/data/jobs; do
+  cd $DIR
+  for JOB in <%= jobs.join(" ") %>; do
+    mkdir -p ${JOB}/bin ${JOB}/config
+    for FILE in micro/$JOB/bin/*; do
+      ln -nsf ../../$FILE $JOB/bin
+    done
+    for FILE in micro/$JOB/config/*; do
+      ln -nsf ../../$FILE $JOB/config
+    done
+  done
+done
+POST_INSTALL
+
+File.open("templates/post_install", "w") do |file|
+  template = ERB.new(post_install)
+  file.puts template.result
+end

@@ -3,6 +3,7 @@
 module Bosh::Director
   class PackageCompiler
     include LockHelper
+    include MetadataHelper
 
     # TODO Support nested dependencies
     # TODO Decouple tsort from the actual compilation
@@ -20,7 +21,7 @@ module Bosh::Director
       @director_job = Config.current_job
 
       @tasks_mutex = Mutex.new
-      @networks_mutex = Mutex.new
+      @network_mutex = Mutex.new
       @counter_mutex = Mutex.new
 
       compilation_config = @deployment_plan.compilation
@@ -64,9 +65,7 @@ module Bosh::Director
       if @ready_tasks.empty?
         @logger.info("All packages are already compiled")
       else
-        reserve_networks
         compile_packages
-        release_networks
         director_job_checkpoint
       end
     end
@@ -118,9 +117,7 @@ module Bosh::Director
         job.release.get_package_model_by_name(name)
       end
 
-      task = CompileTask.new(package, stemcell)
-      task.dependency_key = generate_dependency_key(dependencies)
-      task.add_job(job)
+      task = CompileTask.new(package, stemcell, dependencies, job)
 
       compiled_package = find_compiled_package(task)
       if compiled_package
@@ -139,26 +136,25 @@ module Bosh::Director
       task
     end
 
-    def reserve_networks
-      @network_reservations = []
-      num_workers = @deployment_plan.compilation.workers
-      num_stemcells = @ready_tasks.map { |task| task.stemcell }.uniq.size
-      # If we're reusing VMs, we allow up to num_stemcells * num_workers VMs.
-      # This is the simplest approach to dealing with a deployment that has more
-      # than 1 stemcell.
-      num_networks = @deployment_plan.compilation.reuse_compilation_vms ?
-        num_stemcells * num_workers : num_workers
+    def reserve_network
+      reservation = NetworkReservation.new_dynamic
 
-      num_networks.times do
-        reservation = NetworkReservation.new_dynamic
+      @network_mutex.synchronize do
         @network.reserve(reservation)
-        unless reservation.reserved?
-          raise PackageCompilationNetworkNotReserved,
-                "Could not reserve network for package compilation: " +
-                  reservation.error.to_s
-        end
+      end
 
-        @network_reservations << reservation
+      if !reservation.reserved?
+        raise PackageCompilationNetworkNotReserved,
+          "Could not reserve network for package compilation: " +
+          reservation.error.to_s
+      end
+
+      reservation
+    end
+
+    def release_network(reservation)
+      @network_mutex.synchronize do
+        @network.release(reservation)
       end
     end
 
@@ -220,18 +216,18 @@ module Bosh::Director
         # Check if the package was compiled in a parallel deployment
         compiled_package = find_compiled_package(task)
         if compiled_package.nil?
-          build = generate_build_number(package, stemcell)
-          agent_task = nil
+          build = Models::CompiledPackage.generate_build_number(package, stemcell)
+          task_result = nil
 
           prepare_vm(stemcell) do |vm_data|
+            update_vm_metadata(vm_data.vm, :compiling => package.name)
             agent_task =
               vm_data.agent.compile_package(package.blobstore_id,
                                             package.sha1, package.name,
                                             "#{package.version}.#{build}",
                                             task.dependency_spec)
+            task_result = agent_task["result"]
           end
-
-          task_result = agent_task["result"]
 
           compiled_package = Models::CompiledPackage.create do |p|
             p.package = package
@@ -240,6 +236,17 @@ module Bosh::Director
             p.build = build
             p.blobstore_id = task_result["blobstore_id"]
             p.dependency_key = task.dependency_key
+          end
+
+          if Config.use_compiled_package_cache?
+            if BlobUtil.exists_in_global_cache?(package, task.cache_key)
+              @logger.info("Already exists in global package cache, skipping upload")
+            else
+              @logger.info("Uploading to global package cache")
+              BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
+            end
+          else
+            @logger.info("Global blobstore not configured, skipping upload")
           end
 
           @counter_mutex.synchronize { @compilations_performed += 1 }
@@ -260,12 +267,6 @@ module Bosh::Director
             @ready_tasks << dep_task
           end
         end
-      end
-    end
-
-    def release_networks
-      @network_reservations.each do |reservation|
-        @network.release(reservation)
       end
     end
 
@@ -300,10 +301,8 @@ module Bosh::Director
       end
 
       @logger.info("Creating compilation VM for stemcell `#{stemcell.desc}'")
-      reservation = nil
-      @networks_mutex.synchronize do
-        reservation = @network_reservations.shift
-      end
+
+      reservation = reserve_network
 
       network_settings = {
         @network.name => @network.network_settings(reservation)
@@ -340,9 +339,7 @@ module Bosh::Director
       @logger.info("Deleting compilation VM: #{vm.cid}")
       @cloud.delete_vm(vm.cid)
       vm.destroy
-      @networks_mutex.synchronize do
-        @network_reservations << reservation
-      end
+      release_network(reservation)
     end
 
     # @param [CompileTask] task
@@ -361,12 +358,21 @@ module Bosh::Director
       if compiled_package
         @logger.info("Found compiled version of package `#{package.desc}' " +
                      "for stemcell `#{stemcell.desc}'")
-        return compiled_package
       else
-        @logger.info("Package `#{package.desc}' " +
-                         "needs to be compiled on `#{stemcell.desc}'")
-        return nil
+        if Config.use_compiled_package_cache?
+          compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
+        end
+
+        if compiled_package
+          @logger.info("Package `Found compiled version of package `#{package.desc}'" +
+                       "for stemcell `#{stemcell.desc}' in global cache")
+        else
+          @logger.info("Package `#{package.desc}' " +
+                       "needs to be compiled on `#{stemcell.desc}'")
+        end
       end
+
+      compiled_package
     end
 
     def director_job_cancelled?
@@ -386,24 +392,6 @@ module Bosh::Director
 
       vm.update(:apply_spec => state)
       agent.apply(state)
-    end
-
-    # Returns JSON-encoded stable representation of package dependencies. This
-    # representation doesn't include release name, so differentiating packages
-    # with the same name from different releases is up to the caller.
-    # @param [Array<Models::Package>] packages List of packages
-    # @return [String] JSON-encoded dependency key
-    def generate_dependency_key(packages)
-      Models::CompiledPackage.generate_dependency_key(packages)
-    end
-
-    def generate_build_number(package, stemcell)
-      attrs = {
-        :package_id => package.id,
-        :stemcell_id => stemcell.id
-      }
-
-      Models::CompiledPackage.filter(attrs).max(:build).to_i + 1
     end
 
     def compilation_count

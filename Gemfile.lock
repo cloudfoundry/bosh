@@ -1,0 +1,447 @@
+PATH
+  remote: agent_client
+  specs:
+    agent_client (1.5.0.pre2)
+      httpclient (= 2.2.4)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: blobstore_client
+  specs:
+    blobstore_client (1.5.0.pre2)
+      aws-sdk (~> 1.8.3)
+      bosh_common (~> 1.5.0.pre2)
+      fog (~> 1.9.0)
+      httpclient (= 2.2.4)
+      multi_json (~> 1.1)
+      ruby-atmos-pure (~> 1.0.5)
+      uuidtools (~> 2.1.2)
+
+PATH
+  remote: bosh_agent
+  specs:
+    bosh_agent (1.5.0.pre2)
+      blobstore_client (~> 1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      bosh_encryption (~> 1.5.0.pre2)
+      highline (~> 1.6.2)
+      httpclient (= 2.2.4)
+      monit_api (~> 1.5.0.pre2)
+      nats (~> 0.4.28)
+      netaddr (~> 1.5.0)
+      posix-spawn (~> 0.3.6)
+      ruby-atmos-pure (~> 1.0.5)
+      sigar (>= 0.7.2)
+      sinatra (~> 1.2.8)
+      sys-filesystem (~> 1.1.0)
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh_aws_bootstrap
+  specs:
+    bosh_aws_bootstrap (1.5.0.pre2)
+      bosh_aws_cpi (~> 1.5.0.pre2)
+      bosh_cli (~> 1.5.0.pre2)
+      bosh_deployer (~> 1.5.0.pre2)
+      uuidtools (~> 2.1.3)
+
+PATH
+  remote: bosh_aws_cpi
+  specs:
+    bosh_aws_cpi (1.5.0.pre2)
+      aws-sdk (~> 1.8.3)
+      bosh_common (~> 1.5.0.pre2)
+      bosh_cpi (~> 1.5.0.pre2)
+      httpclient (= 2.2.4)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (>= 0.8.2)
+
+PATH
+  remote: bosh_aws_registry
+  specs:
+    bosh_aws_registry (1.5.0.pre2)
+      aws-sdk (~> 1.8.3)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.2.8)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh_cli
+  specs:
+    bosh_cli (1.5.0.pre2)
+      archive-tar-minitar (~> 0.5)
+      blobstore_client (~> 1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      highline (~> 1.6.2)
+      httpclient (= 2.2.4)
+      json_pure (~> 1.7.6)
+      net-scp (~> 1.0.4)
+      net-ssh (>= 2.2.1)
+      net-ssh-gateway (~> 1.1.0)
+      netaddr (~> 1.5.0)
+      progressbar (~> 0.9.0)
+      terminal-table (~> 1.4.3)
+
+PATH
+  remote: bosh_common
+  specs:
+    bosh_common (1.5.0.pre2)
+      retryable (~> 1.3.2)
+
+PATH
+  remote: bosh_cpi
+  specs:
+    bosh_cpi (1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+
+PATH
+  remote: bosh_deployer
+  specs:
+    bosh_deployer (1.5.0.pre2)
+      agent_client (~> 1.5.0.pre2)
+      bosh_aws_cpi (~> 1.5.0.pre2)
+      bosh_aws_registry (~> 1.5.0.pre2)
+      bosh_cli (~> 1.5.0.pre2)
+      bosh_cpi (~> 1.5.0.pre2)
+      bosh_openstack_cpi (~> 1.5.0.pre2)
+      bosh_openstack_registry (~> 1.5.0.pre2)
+      bosh_vcloud_cpi (~> 1.5.0.pre2)
+      bosh_vsphere_cpi (~> 1.5.0.pre2)
+      sqlite3 (~> 1.3.7)
+
+PATH
+  remote: bosh_encryption
+  specs:
+    bosh_encryption (1.5.0.pre2)
+      gibberish (~> 1.2.0)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh_openstack_cpi
+  specs:
+    bosh_openstack_cpi (1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      bosh_cpi (~> 1.5.0.pre2)
+      fog (~> 1.9.0)
+      httpclient (= 2.2.4)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (>= 0.8.2)
+
+PATH
+  remote: bosh_openstack_registry
+  specs:
+    bosh_openstack_registry (1.5.0.pre2)
+      fog (~> 1.9.0)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.2.8)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: bosh_vcloud_cpi
+  specs:
+    bosh_vcloud_cpi (1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      bosh_cpi (~> 1.5.0.pre2)
+      ruby_vcloud_sdk (~> 1.5.0.pre2)
+      uuidtools (~> 2.1)
+      yajl-ruby (>= 0.8.2)
+
+PATH
+  remote: bosh_vsphere_cpi
+  specs:
+    bosh_vsphere_cpi (1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      bosh_cpi (~> 1.5.0.pre2)
+      membrane (~> 0.0.2)
+      ruby_vim_sdk (~> 1.5.0.pre2)
+      sequel (~> 3.43.0)
+      uuidtools (~> 2.1.3)
+
+PATH
+  remote: director
+  specs:
+    director (1.5.0.pre2)
+      bcrypt-ruby (~> 3.0.1)
+      blobstore_client (~> 1.5.0.pre2)
+      bosh_aws_cpi (~> 1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      bosh_cpi (~> 1.5.0.pre2)
+      bosh_encryption (~> 1.5.0.pre2)
+      bosh_openstack_cpi (~> 1.5.0.pre2)
+      bosh_vcloud_cpi (~> 1.5.0.pre2)
+      bosh_vsphere_cpi (~> 1.5.0.pre2)
+      eventmachine (~> 0.12.9)
+      fog (~> 1.9.0)
+      httpclient (= 2.2.4)
+      nats (~> 0.4.28)
+      netaddr (~> 1.5.0)
+      rack-test (~> 0.6.2)
+      rake (~> 10.0.3)
+      redis (~> 3.0.2)
+      resque (~> 1.23.0)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.2.8)
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: health_monitor
+  specs:
+    health_monitor (1.5.0.pre2)
+      em-http-request (~> 0.3.0)
+      eventmachine (~> 0.12.10)
+      logging (~> 1.5.0)
+      nats (~> 0.4.28)
+      sinatra (~> 1.2.8)
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1.3)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: monit_api
+  specs:
+    monit_api (1.5.0.pre2)
+      crack (~> 0.3.2)
+
+PATH
+  remote: package_compiler
+  specs:
+    package_compiler (1.5.0.pre2)
+      agent_client (~> 1.5.0.pre2)
+      blobstore_client (~> 1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre2)
+      trollop (~> 1.16)
+      yajl-ruby (~> 1.1.0)
+
+PATH
+  remote: ruby_vcloud_sdk
+  specs:
+    ruby_vcloud_sdk (1.5.0.pre2)
+      builder (~> 3.1.4)
+      httpclient (= 2.2.4)
+      nokogiri (~> 1.5.6)
+      rest-client (~> 1.6.7)
+
+PATH
+  remote: ruby_vim_sdk
+  specs:
+    ruby_vim_sdk (1.5.0.pre2)
+      builder (~> 3.1.4)
+      httpclient (= 2.2.4)
+      nokogiri (~> 1.5.6)
+
+PATH
+  remote: simple_blobstore_server
+  specs:
+    simple_blobstore_server (1.5.0.pre2)
+      sinatra (~> 1.2.8)
+      thin (~> 1.5.0)
+      uuidtools (~> 2.1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.3.3)
+    archive-tar-minitar (0.5.2)
+    aws-sdk (1.8.3.1)
+      json (~> 1.4)
+      nokogiri (>= 1.4.4)
+      uuidtools (~> 2.1)
+    bcrypt-ruby (3.0.1)
+    builder (3.1.4)
+    ci_reporter (1.8.4)
+      builder (>= 2.1.2)
+    coderay (1.0.9)
+    columnize (0.3.6)
+    crack (0.3.2)
+    daemons (1.1.9)
+    debugger (1.3.3)
+      columnize (>= 0.3.1)
+      debugger-linecache (~> 1.1.1)
+      debugger-ruby_core_source (~> 1.2.0)
+    debugger-linecache (1.1.2)
+      debugger-ruby_core_source (>= 1.1.1)
+    debugger-ruby_core_source (1.2.0)
+    diff-lcs (1.1.3)
+    em-http-request (0.3.0)
+      addressable (>= 2.0.0)
+      escape_utils
+      eventmachine (>= 0.12.9)
+    escape_utils (0.2.4)
+    eventmachine (0.12.10)
+    excon (0.18.5)
+    ffi (1.4.0)
+    fog (1.9.0)
+      builder
+      excon (~> 0.14)
+      formatador (~> 0.2.0)
+      mime-types
+      multi_json (~> 1.0)
+      net-scp (~> 1.0.4)
+      net-ssh (>= 2.1.3)
+      nokogiri (~> 1.5.0)
+      ruby-hmac
+    formatador (0.2.4)
+    gibberish (1.2.1)
+    guard (1.6.2)
+      listen (>= 0.6.0)
+      lumberjack (>= 1.0.2)
+      pry (>= 0.9.10)
+      terminal-table (>= 1.4.3)
+      thor (>= 0.14.6)
+    guard-bundler (1.0.0)
+      bundler (~> 1.0)
+      guard (~> 1.1)
+    guard-rspec (2.4.1)
+      guard (>= 1.1)
+      rspec (~> 2.11)
+    highline (1.6.15)
+    httpclient (2.2.4)
+    json (1.7.7)
+    json_pure (1.7.7)
+    listen (0.7.2)
+    little-plugger (1.1.3)
+    log4r (1.1.10)
+    logging (1.5.2)
+      little-plugger (>= 1.1.2)
+    lumberjack (1.0.2)
+    machinist (1.0.6)
+    membrane (0.0.2)
+    method_source (0.8.1)
+    mime-types (1.21)
+    minitar (0.5.4)
+    multi_json (1.6.1)
+    nats (0.4.28)
+      daemons (>= 1.1.5)
+      eventmachine (= 0.12.10)
+      json_pure (>= 1.7.3)
+      thin (>= 1.4.1)
+    net-scp (1.0.4)
+      net-ssh (>= 1.99.1)
+    net-ssh (2.6.5)
+    net-ssh-gateway (1.1.2)
+      net-ssh (>= 2.6.5)
+    netaddr (1.5.0)
+    nokogiri (1.5.6)
+    nokogiri-diff (0.1.2)
+      nokogiri (~> 1.5)
+      tdiff (~> 0.3, >= 0.3.2)
+    pg (0.14.1)
+    posix-spawn (0.3.6)
+    progressbar (0.9.2)
+    pry (0.9.12)
+      coderay (~> 1.0.5)
+      method_source (~> 0.8)
+      slop (~> 3.4)
+    rack (1.5.2)
+    rack-test (0.6.2)
+      rack (>= 1.0)
+    rake (10.0.3)
+    redis (3.0.2)
+    redis-namespace (1.2.1)
+      redis (~> 3.0.0)
+    resque (1.23.0)
+      multi_json (~> 1.0)
+      redis-namespace (~> 1.0)
+      sinatra (>= 0.9.2)
+      vegas (~> 0.1.2)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
+    retryable (1.3.2)
+    rspec (2.12.0)
+      rspec-core (~> 2.12.0)
+      rspec-expectations (~> 2.12.0)
+      rspec-mocks (~> 2.12.0)
+    rspec-core (2.12.2)
+    rspec-expectations (2.12.1)
+      diff-lcs (~> 1.1.3)
+    rspec-mocks (2.12.2)
+    ruby-atmos-pure (1.0.5)
+      log4r (>= 1.1.9)
+      ruby-hmac (>= 0.4.0)
+    ruby-hmac (0.4.0)
+    ruby_gntp (0.3.4)
+    sequel (3.43.0)
+    sigar (0.7.2)
+    simplecov (0.7.1)
+      multi_json (~> 1.0)
+      simplecov-html (~> 0.7.1)
+    simplecov-html (0.7.1)
+    simplecov-rcov (0.2.3)
+      simplecov (>= 0.4.1)
+    sinatra (1.2.8)
+      rack (~> 1.1)
+      tilt (>= 1.2.2, < 2.0)
+    slop (3.4.3)
+    sqlite3 (1.3.7)
+    sys-filesystem (1.1.0)
+      ffi
+    tdiff (0.3.3)
+    terminal-table (1.4.5)
+    thin (1.5.0)
+      daemons (>= 1.0.9)
+      eventmachine (>= 0.12.6)
+      rack (>= 1.0.0)
+    thor (0.17.0)
+    tilt (1.3.3)
+    trollop (1.16.2)
+    uuidtools (2.1.3)
+    vegas (0.1.11)
+      rack (>= 1.0.0)
+    yajl-ruby (1.1.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  agent_client!
+  blobstore_client!
+  bosh_agent!
+  bosh_aws_bootstrap!
+  bosh_aws_cpi!
+  bosh_aws_registry!
+  bosh_cli!
+  bosh_common!
+  bosh_cpi!
+  bosh_deployer!
+  bosh_encryption!
+  bosh_openstack_cpi!
+  bosh_openstack_registry!
+  bosh_vcloud_cpi!
+  bosh_vsphere_cpi!
+  ci_reporter
+  debugger
+  director!
+  guard
+  guard-bundler
+  guard-rspec
+  health_monitor!
+  httpclient
+  json
+  machinist (~> 1.0)
+  minitar
+  monit_api!
+  nats
+  net-ssh
+  nokogiri-diff
+  package_compiler!
+  pg
+  rack-test
+  rake (~> 10.0)
+  redis
+  rest-client
+  retryable (= 1.3.2)
+  rspec
+  ruby_gntp
+  ruby_vcloud_sdk!
+  ruby_vim_sdk!
+  simple_blobstore_server!
+  simplecov
+  simplecov-rcov
+  sqlite3

@@ -1,0 +1,11 @@
+=== 0.0.5 - 2012-12-27
+
+* Log Not Found Errors
+* Fix get list of IPs belonging to a server
+
+=== 0.0.4 - 2012-12-10
+
+* verify IP if no auth credentials are provided
+* added basic documentation
+* added OpenStack regions support
+* fixed EM error handling

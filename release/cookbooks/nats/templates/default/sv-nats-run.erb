@@ -1,6 +1,0 @@
-#!/bin/bash
-ulimit -n 65536
-PATH=<%= node[:ruby][:path] %>/bin:$PATH
-
-exec 2>&1
-exec chpst -u <%= node[:nats][:runner] %> nats-server -c <%= node[:nats][:path] %>/nats.yml

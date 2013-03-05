@@ -1,0 +1,7 @@
+<Task xmlns="http://www.vmware.com/vcloud/v1.5" status="running" startTime="2011-08-29T11:21:36.483-07:00" operationName="vdcInstantiateVapp" operation="Creating Virtual Application %s(%s)" expiryTime="2011-11-27T11:21:36.483-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="task:cancel" href="%s/api/task/%s/action/cancel"/>
+    <Owner type="application/vnd.vmware.vcloud.vApp+xml" name="%s" href="%s/api/vApp/vapp-%s"/>
+    <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+    <Organization type="application/vnd.vmware.vcloud.org+xml" name="%s" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+    <Progress>1</Progress>
+</Task>

@@ -1,0 +1,7 @@
+        <Task xmlns="http://www.vmware.com/vcloud/v1.5" status="running" startTime="2011-08-18T13:27:38.407-07:00" operationName="vdcUploadOvfContents" operation="Finalizing upload of Virtual Application Template %s(%s)" expiryTime="2011-11-16T13:27:38.407-08:00" name="task" id="urn:vcloud:task:%s" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+          <Link rel="task:cancel" href="%s/api/task/%s/action/cancel"/>
+          <Owner type="application/vnd.vmware.vcloud.vAppTemplate+xml" name="%s" href="%s/api/vAppTemplate/vappTemplate-%s"/>
+          <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+          <Organization type="application/vnd.vmware.vcloud.org+xml" name="vcap" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+          <Progress>50</Progress>
+        </Task>

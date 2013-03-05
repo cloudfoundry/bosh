@@ -1,0 +1,10 @@
+check process blobstore
+  with pidfile /var/vcap/sys/run/blobstore/blobstore.pid
+  start program "/var/vcap/jobs/blobstore/bin/blobstore_ctl start"
+  stop program "/var/vcap/jobs/blobstore/bin/blobstore_ctl stop"
+  group vcap
+check process nginx
+  with pidfile /var/vcap/sys/run/nginx/nginx.pid
+  start program "/var/vcap/jobs/blobstore/bin/nginx_ctl start"
+  stop program "/var/vcap/jobs/blobstore/bin/nginx_ctl stop"
+  group vcap

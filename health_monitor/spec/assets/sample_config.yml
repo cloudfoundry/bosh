@@ -59,3 +59,8 @@ plugins:
     options:
       host: localhost
       port: 4242
+
+  - name: varz
+    events:
+      - alert
+      - heartbeat
