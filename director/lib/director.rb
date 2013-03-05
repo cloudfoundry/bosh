@@ -652,8 +652,9 @@ module Bosh::Director
           },
           "compiled_package_cache" => {
             "status" => Config.use_compiled_package_cache?,
-            "bucket_name" => Config.compiled_package_cache_bucket
-          }
+            "extras" => {
+              "bucket_name" => Config.compiled_package_cache_bucket
+}          }
         }
       }
       content_type(:json)
