@@ -179,7 +179,7 @@ PATH
       bosh_cpi
       sequel
       warden-client
-      warden-protocol (>= 0.0.12)
+      warden-protocol
       yajl-ruby
 
 PATH
@@ -467,4 +467,5 @@ DEPENDENCIES
   simplecov
   simplecov-rcov
   sqlite3
+  warden-client!
   warden-protocol!

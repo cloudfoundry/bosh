@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency "bosh_common"
   s.add_dependency "bosh_cpi"
-  s.add_dependency "warden-protocol", ">= 0.0.12"
+  s.add_dependency "warden-protocol"
   s.add_dependency "warden-client"
   s.add_dependency "sequel"
   s.add_dependency "yajl-ruby"
