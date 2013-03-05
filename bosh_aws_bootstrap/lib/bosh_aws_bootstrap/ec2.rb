@@ -114,13 +114,16 @@ module Bosh
       def add_key_pair(name, path_to_public_private_key)
         private_key_path = path_to_public_private_key.gsub(/\.pub$/, '')
         public_key_path = "#{private_key_path}.pub"
+
         if !File.exist?(private_key_path)
           system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
         end
 
+        unless aws_ec2.key_pairs[name].nil?
+          err "Key pair #{name} already exists on AWS".red
+        end
+
         aws_ec2.key_pairs.import(name, File.read(public_key_path))
-      rescue AWS::EC2::Errors::InvalidKeyPair::Duplicate => e
-        err "Key pair #{name} already exists on AWS".red
       end
 
       def force_add_key_pair(name, path_to_public_private_key)
@@ -129,7 +132,8 @@ module Bosh
       end
 
       def remove_key_pair(name)
-        aws_ec2.key_pairs[name].delete if aws_ec2.key_pairs[name]
+        key_pair = aws_ec2.key_pairs[name]
+        key_pair.delete unless key_pair.nil?
       end
 
       def remove_all_key_pairs
