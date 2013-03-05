@@ -19,6 +19,9 @@ module Bosh::Cli
 
       # @return [Bosh::Cli::Cache] CLI cache (to save task logs etc.)
       attr_accessor :cache
+
+      # @return [Integer] CLI polling interval
+      attr_accessor :poll_interval
     end
 
     @commands = {}

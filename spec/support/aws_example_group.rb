@@ -95,7 +95,7 @@ module AwsSystemExampleGroup
 
   def run_bosh(cmd, options = {})
     @run_bosh_failures ||= 0
-    run "#{binstubs_path}/bosh -v -n --config '#{bosh_config_path}' #{cmd}", options
+    run "#{binstubs_path}/bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
   rescue
     @run_bosh_failures += 1
     if @run_bosh_failures == 1
