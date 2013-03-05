@@ -96,7 +96,8 @@ module AwsSystemExampleGroup
   end
 
   def run_bosh(cmd, options = {})
-    debug_on_fail = options.delete(:debug_on_fail) || true
+    debug_on_fail = options.fetch(:debug_on_fail, true)
+    options.delete(:debug_on_fail)
     @run_bosh_failures ||= 0
     run "#{binstubs_path}/bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
   rescue
