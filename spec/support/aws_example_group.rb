@@ -75,7 +75,9 @@ module AwsSystemExampleGroup
         lines << line.chomp
       end.close # force the process to close so that $? is set
       if options[:last_number]
-        cmd_out = lines[-options[:last_number]..-1].join("\n")
+        line_number = options[:last_number]
+        line_number = lines.size if lines.size < options[:last_number]
+        cmd_out = lines[-line_number..-1].join("\n")
       else
         cmd_out = lines.join("\n")
       end
