@@ -9,17 +9,32 @@ describe Bosh::Agent::Platform::Linux::Disk do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'persistent' => { 2 => '333'} } }
       Bosh::Agent::Config.infrastructure_name = "vsphere"
+
+
     end
+    let(:disk_wrapper) {
+      disk_w = Bosh::Agent::Platform::Linux::Disk.new
+      disk_w.stub(:rescan_scsi_bus)
+      disk_w
+    }
+    let(:dev_path) { '/sys/bus/scsi/devices/2:0:333:0/block/*' }
+
 
     it 'should look up disk by cid' do
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
-      disk_wrapper.stub(:detect_block_device).and_return('sdy')
-      disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdy'
+      Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])
+      disk_wrapper.lookup_disk_by_cid(2).should eq '/dev/sdy'
+    end
+
+    it 'should retry disk lookup by cid' do
+      disk_wrapper.instance_variable_set(:@disk_retry_timeout, 2)
+      Dir.should_receive(:glob).with(dev_path, 0).exactly(2).and_return([])
+      lambda {
+        disk_wrapper.lookup_disk_by_cid(2)
+      }.should raise_error Bosh::Agent::DiskNotFoundError
     end
 
     it 'should get data disk device name' do
-      disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
-      disk_wrapper.get_data_disk_device_name.should == '/dev/sdb'
+      disk_wrapper.get_data_disk_device_name.should eq '/dev/sdb'
     end
 
     it "should raise exception if persistent disk cid is unknown" do
@@ -27,7 +42,6 @@ describe Bosh::Agent::Platform::Linux::Disk do
       Bosh::Agent::Config.settings = settings
 
       lambda {
-        disk_wrapper = Bosh::Agent::Platform::Linux::Disk.new
         disk_wrapper.lookup_disk_by_cid(200)
       }.should raise_error(Bosh::Agent::FatalError, /Unknown persistent disk/)
     end
