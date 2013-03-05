@@ -2,10 +2,28 @@
 
 require File.dirname(__FILE__) + '/../../../spec_helper'
 
-Bosh::Agent::Config.platform_name = "ubuntu"
-Bosh::Agent::Config.platform
-
 describe Bosh::Agent::Platform::Ubuntu::Network do
+
+  describe "common" do
+    let(:network) { Bosh::Agent::Platform::Ubuntu::Network.new }
+
+    it "should update hostname" do
+      hostname = "example.com"
+      Bosh::Exec.should_receive(:sh).with("hostname #{hostname}")
+      Bosh::Agent::Util.should_receive(:update_file).twice do |data, file|
+        case file
+        when "/etc/hostname"
+          data.should == hostname
+        when "/etc/hosts"
+          data.should =~ /127\.0\.0\.1 localhost #{hostname}/
+        else
+          raise "#{file} cannot be updated"
+        end
+      end
+
+      network.update_hostname(hostname)
+    end
+  end
 
   describe "vsphere" do
     before(:each) do
@@ -15,14 +33,9 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
 
       @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
       # We just want to avoid this to accidentally be invoked on dev systems
-      Bosh::Agent::Util.stub(:update_file)
-      @network_wrapper.stub(:restart_networking_service)
-      @network_wrapper.stub(:gratuitous_arp)
-    end
-
-    it 'should setup networking' do
       @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-      @network_wrapper.setup_networking
+      @network_wrapper.should_receive(:restart_networking_service)
+      @network_wrapper.should_receive(:gratuitous_arp)
     end
 
     # FIXME: pending network config refactoring
@@ -33,15 +46,17 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     #end
 
     it "should generate ubuntu network files" do
-      @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-      @network_wrapper.stub!(:update_file) do |data, file|
-        # FIMXE: clean this mess up
+      Bosh::Agent::Util.stub(:update_file) do |data, file|
         case file
         when '/etc/network/interfaces'
           data.should == "auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\n    address 172.30.40.115\n    network 172.30.40.0\n    netmask 255.255.248.0\n    broadcast 172.30.47.255\n    gateway 172.30.40.1\n\n"
         when '/etc/resolv.conf'
           data.should == "nameserver 172.30.22.153\nnameserver 172.30.22.154\n"
+        else
+          raise "#{file} cannot be updated"
         end
+
+        true
       end
 
       @network_wrapper.setup_networking

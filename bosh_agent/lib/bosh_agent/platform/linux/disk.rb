@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Platform::Ubuntu::Disk
+  class Platform::Linux::Disk
 
     def initialize
     end
@@ -25,23 +25,23 @@ module Bosh::Agent
 
     def mount_persistent_disk(cid)
       FileUtils.mkdir_p(store_path)
-      disk = lookup_disk_by_cid(cid)
-      partition = "#{disk}1"
-      if File.blockdev?(partition) && !mount_entry(partition)
+      disk, partition = lookup_disk_by_cid(cid)
+      if File.blockdev?(partition) && !partition_mounted?(partition)
         mount(partition, store_path)
       end
     end
 
     def mount(partition, path)
       logger.info("Mount #{partition} #{path}")
-      `mount #{partition} #{path}`
-      unless $?.exitstatus == 0
-        raise Bosh::Agent::FatalError, "Failed to mount: #{partition} #{path}"
-      end
+      Bosh::Exec.sh "mount #{partition} #{path}"
     end
 
-    def mount_entry(partition)
-      File.read('/proc/mounts').lines.select { |l| l.match(/#{partition}/) }.first
+    def partition_mounted?(partition)
+      fs_list = Sigar.new.file_system_list
+
+      fs = fs_list.find { |fs| fs.dev_name == partition }
+
+      !!fs
     end
 
     def lookup_disk_by_cid(cid)
@@ -52,11 +52,11 @@ module Bosh::Agent
         raise Bosh::Agent::FatalError, "Unknown persistent disk: #{cid}"
       end
 
+      disk = \
       case Bosh::Agent::Config.infrastructure_name
       when "vsphere"
         # VSphere passes in scsi disk id
-        sys_path = detect_block_device(disk_id)
-        blockdev = File.basename(sys_path)
+        blockdev = detect_block_device(disk_id)
         File.join('/dev', blockdev)
       when "aws"
         # AWS passes in the device name
@@ -68,15 +68,20 @@ module Bosh::Agent
         raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure " \
                                        "#{Bosh::Agent::Config.infrastructure_name}"
       end
+
+      [disk, disk_partition(disk)]
     end
 
+    def disk_partition(disk)
+      "#{disk}1"
+    end
+
+    # Note: This is not cross-platform (works in Ubuntu and RHEL)
     def rescan_scsi_bus
-      `/sbin/rescan-scsi-bus.sh`
-      unless $?.exitstatus == 0
-        raise Bosh::Agent::FatalError, "Failed to run /sbin/rescan-scsi-bus.sh (exit code #{$?.exitstatus})"
-      end
+      Bosh::Exec.sh "rescan-scsi-bus.sh"
     end
 
+    # Note: This is not cross-platform (only works in Ubuntu)
     def detect_block_device(disk_id)
       rescan_scsi_bus
       dev_path = "/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"
@@ -84,7 +89,7 @@ module Bosh::Agent
         logger.info("Waiting for #{dev_path}")
         sleep 0.1
       end
-      Dir[dev_path].first
+      File.basename(Dir[dev_path].first)
     end
 
     def get_dev_paths(dev_path)

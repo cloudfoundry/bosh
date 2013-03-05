@@ -6,6 +6,8 @@ require 'fileutils'
 describe Bosh::Agent::Message::Apply do
 
   before(:each) do
+    base_dir = Bosh::Agent::Config.base_dir
+
     Bosh::Agent::Config.state = Bosh::Agent::State.new(Tempfile.new("state").path)
 
     Bosh::Agent::Config.blobstore_provider = "simple"
@@ -88,9 +90,9 @@ describe Bosh::Agent::Message::Apply do
   it "should clean up old packages" do
     state = Bosh::Agent::Message::State.new
 
-    job_dir = File.join(base_dir, 'data', 'jobs', 'bubba', '77', 'packages')
+    job_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'jobs', 'bubba', '77', 'packages')
     FileUtils.mkdir_p(job_dir)
-    pkg_base = File.join(base_dir, 'data', 'packages')
+    pkg_base = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages')
 
     get_args = [ "/resources/some_blobstore_id", {}, {} ]
     @httpclient.should_receive(:get).exactly(7).times.with(*get_args).and_yield(dummy_package_data).and_return(http_200_response_mock)

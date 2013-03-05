@@ -37,6 +37,10 @@ RSpec.configure do |rspec_config|
   end
 end
 
+["ubuntu", "redhat"].each do |name|
+  Bosh::Agent::Platform.new(name).platform
+end
+
 def use_dummy_logger
   Bosh::Agent::Config.logger = Logger.new(StringIO.new)
 end
@@ -59,10 +63,6 @@ end
 
 def disable_monit
   Bosh::Agent::Monit.enabled = false
-end
-
-def base_dir
-  Bosh::Agent::Config.base_dir
 end
 
 def asset(filename)
@@ -92,4 +92,16 @@ def get_free_port
   socket.close
   # race condition, but good enough for now
   port
+end
+
+def detect_platform
+  if File.exist? "/etc/redhat-release"
+    return "redhat"
+  end
+
+  if File.exist? "/etc/lsb-release"
+    return "ubuntu"
+  end
+
+  "unknown"
 end

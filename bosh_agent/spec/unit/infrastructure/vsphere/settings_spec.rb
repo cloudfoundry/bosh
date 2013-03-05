@@ -54,7 +54,7 @@ eos
   end
 
   it 'should load settings' do
-    cdrom_dir = File.join(base_dir, 'bosh', 'settings')
+    cdrom_dir = File.join(Bosh::Agent::Config.base_dir, 'bosh', 'settings')
     env = File.join(cdrom_dir, 'env')
 
     FileUtils.mkdir_p(cdrom_dir)

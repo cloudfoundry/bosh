@@ -6,6 +6,7 @@ describe Bosh::Agent::Template do
 
   it "should create a template" do
     dummy = "hubba"
+    base_dir = Bosh::Agent::Config.base_dir
     dst = File.join(base_dir, 'yabba.out')
 
     Bosh::Agent::Template.write do |t|
@@ -17,6 +18,7 @@ describe Bosh::Agent::Template do
   end
 
   it "should fail when variable is not in binding scope" do
+    base_dir = Bosh::Agent::Config.base_dir
     dst = File.join(base_dir, 'yabba.out')
 
     lambda {

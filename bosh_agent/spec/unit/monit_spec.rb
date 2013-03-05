@@ -5,6 +5,8 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::Monit do
 
   before(:each) do
+    base_dir = Bosh::Agent::Config.base_dir
+
     Bosh::Agent::Config.smtp_port = 55231
     Bosh::Agent::Monit.stub!(:monit_reload_cmd)
 

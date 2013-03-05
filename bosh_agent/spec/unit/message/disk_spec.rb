@@ -24,7 +24,7 @@ describe Bosh::Agent::Message::UnmountDisk do
   it "should fall through if mount is not present" do
     platform = mock(:platform)
     Bosh::Agent::Config.stub(:platform).and_return(platform)
-    platform.stub(:lookup_disk_by_cid).and_return("/dev/sdx")
+    platform.stub(:lookup_disk_by_cid).and_return(["/dev/sdx", "/dev/sdx1"])
     Bosh::Agent::Message::DiskUtil.stub!(:mount_entry).and_return(nil)
 
     handler = Bosh::Agent::Message::UnmountDisk.new

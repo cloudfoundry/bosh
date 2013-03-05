@@ -63,11 +63,8 @@ module Bosh::Agent
     end
 
     def iptables(cmd)
-      output = %x{iptables #{cmd} 2> /dev/null}
-      if $?.exitstatus != 0
-        raise Bosh::Agent::Error, "`iptables #{cmd}` failed"
-      end
-      output
+      result = sh "iptables #{cmd} 2> /dev/null"
+      result.output
     end
 
     def update_iptables
@@ -113,13 +110,11 @@ module Bosh::Agent
 
     def update_hostname
       agent_id = @settings['agent_id']
+      if agent_id.nil?
+        raise Bosh::Agent::FatalError, "no agent_id in settings"
+      end
 
-      template = ERB.new(ETC_HOST_TEMPATE, 0, '%<>-')
-      result = template.result(binding)
-      File.open('/etc/hosts', 'w') { |f| f.puts(result) }
-
-      `hostname #{agent_id}`
-      File.open('/etc/hostname', 'w') { |f| f.puts(agent_id) }
+      @platform.update_hostname(agent_id)
     end
 
     def update_mbus
@@ -251,7 +246,7 @@ module Bosh::Agent
         root_tmp = File.join(base_dir, 'data', 'root_tmp')
 
         # If it's not mounted on /tmp - we don't care - blow it away
-        %x[/usr/bin/truncate -s #{tmp_size}M #{root_tmp}]
+        File.open(root_tmp, "w") { |f| f.truncate(tmp_size * 1024 * 1024) }
         %x[chmod 0700 #{root_tmp}]
         %x[mke2fs -t ext4 -m 1 -F #{root_tmp}]
 
@@ -334,18 +329,6 @@ module Bosh::Agent
         File.open(file, 'w') { |fh| fh.puts(BOSH_APP_USER) }
       end
     end
-
-    ETC_HOST_TEMPATE = <<TEMPLATE
-127.0.0.1 localhost <%= agent_id %>
-
-# The following lines are desirable for IPv6 capable hosts
-::1 localhost ip6-localhost ip6-loopback <%= agent_id %>
-fe00::0 ip6-localnet
-ff00::0 ip6-mcastprefix
-ff02::1 ip6-allnodes
-ff02::2 ip6-allrouters
-ff02::3 ip6-allhosts
-TEMPLATE
 
   end
 end
