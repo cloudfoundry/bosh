@@ -5,19 +5,20 @@ require "bosh_aws_bootstrap"
 describe 'bosh_aws_bootstrap_external' do
   include Bosh::Spec::CommandHelper
 
-  let(:aws_params) do
-    {
-        :access_key_id => ENV["BOSH_AWS_ACCESS_KEY_ID"],
-        :secret_access_key => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
-        :ec2_endpoint => "ec2.us-east-1.amazonaws.com",
-        :max_retries => 2
-    }
+  before(:all) do
+    AWS.config(
+        {
+            :access_key_id => ENV["BOSH_AWS_ACCESS_KEY_ID"],
+            :secret_access_key => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
+            :ec2_endpoint => "ec2.us-east-1.amazonaws.com",
+            :max_retries => 2
+        }
+    )
   end
 
-  let(:ec2) do
-    AWS.config(aws_params)
-    AWS::EC2.new
-  end
+  let(:ec2)     {AWS::EC2.new}
+  let(:elb)     {AWS::ELB.new}
+  let(:route53) {AWS::Route53.new}
 
   let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..','assets','aws','aws_configuration_template.yml.erb') }
 
@@ -131,7 +132,18 @@ describe 'bosh_aws_bootstrap_external' do
       https_permissions.protocol.should == :tcp
     end
 
-    pending "ELBs"
+    it "configures ELBs" do
+      load_balancer = elb.load_balancers.detect { |lb| lb.name == "cfrouter" }
+      load_balancer.should_not be_nil
+      load_balancer.subnets.should == [bosh_subnet]
+      load_balancer.security_groups.map(&:name).should == ["web"]
+
+      hosted_zone = route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com." }
+      record_set = hosted_zone.resource_record_sets["\\052.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com.", 'CNAME'] # E.g. "*.midway.cf-app.com."
+      record_set.should_not be_nil
+      record_set.resource_records.first[:value] == load_balancer.dns_name
+      record_set.ttl.should == 60
+    end
   end
 
   describe "Route53" do
