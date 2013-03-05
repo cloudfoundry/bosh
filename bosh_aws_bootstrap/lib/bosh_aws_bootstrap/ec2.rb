@@ -119,11 +119,19 @@ module Bosh
           system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
         end
 
-        unless aws_ec2.key_pairs[name].nil?
+        unless key_pair_by_name(name).nil?
           err "Key pair #{name} already exists on AWS".red
         end
 
         aws_ec2.key_pairs.import(name, File.read(public_key_path))
+      end
+
+      def key_pair_by_name(name)
+        key_pairs.detect { |kp| kp.name == name }
+      end
+
+      def key_pairs
+        aws_ec2.key_pairs.to_a
       end
 
       def force_add_key_pair(name, path_to_public_private_key)
@@ -132,7 +140,7 @@ module Bosh
       end
 
       def remove_key_pair(name)
-        key_pair = aws_ec2.key_pairs[name]
+        key_pair = key_pair_by_name(name)
         key_pair.delete unless key_pair.nil?
       end
 

@@ -180,13 +180,13 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "key pairs" do
-    let(:key_pairs) { double("key pairs", :[] => nil) }
+    let(:key_pairs) { double("key pairs") }
     let(:fake_aws_ec2) { double("aws_ec2", key_pairs: key_pairs) }
-    let(:aws_key_pair) { double("key pair") }
+    let(:aws_key_pair) { double("key pair", name: "aws_key_pair") }
 
     before do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
-      key_pairs.stub(:[]).with("aws_key_pair").and_return(aws_key_pair, nil)
+      key_pairs.stub(:to_a).and_return([aws_key_pair], [])
     end
 
     describe "adding" do

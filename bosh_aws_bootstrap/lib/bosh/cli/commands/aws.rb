@@ -166,13 +166,6 @@ module Bosh::Cli::Command
         say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
         vpc.create_security_groups(security_groups)
 
-        @output_state["key_pairs"] = []
-        say "allocating #{config["key_pairs"].length} KeyPair(s)"
-        config["key_pairs"].each do |name, path|
-          ec2.force_add_key_pair(name, path)
-          @output_state["key_pairs"] << name
-        end
-
         subnets = config["vpc"]["subnets"]
         say "creating subnets: #{subnets.keys.join(", ")}"
         vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
@@ -230,7 +223,6 @@ module Bosh::Cli::Command
 
     usage "aws delete vpc"
     desc "delete a vpc"
-
     def delete_vpc(details_file)
       details = load_yaml_file details_file
 
@@ -272,7 +264,6 @@ module Bosh::Cli::Command
 
     usage "aws delete_all vpcs"
     desc "delete all VPCs in an AWS account"
-
     def delete_all_vpcs(config_file)
       config = load_yaml_file(config_file)
 
@@ -308,9 +299,20 @@ module Bosh::Cli::Command
       ec2.release_all_elastic_ips
     end
 
+    usage "aws create key_pairs"
+    desc "create key pairs"
+    def create_key_pairs(config_file)
+      config = load_yaml_file(config_file)
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+
+      say "allocating #{config["key_pairs"].length} KeyPair(s)"
+      config["key_pairs"].each do |name, path|
+        ec2.force_add_key_pair(name, path)
+      end
+    end
+
     usage "aws create s3"
     desc "create s3 buckets"
-
     def create_s3(config_file)
       config = load_yaml_file(config_file)
 

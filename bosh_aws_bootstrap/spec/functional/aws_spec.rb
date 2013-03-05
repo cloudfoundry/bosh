@@ -234,7 +234,6 @@ describe Bosh::Cli::Command::AWS do
           args.first.keys.should =~ %w[name ingress]
         end
         fake_ec2.should_receive(:allocate_elastic_ips).with(3)
-        fake_ec2.should_receive(:force_add_key_pair).with("dev102", "/tmp/somekey")
         fake_ec2.should_receive(:create_internet_gateway).and_return(fake_igw)
         fake_vpc.should_receive(:attach_internet_gateway).with("id2")
 
@@ -265,7 +264,6 @@ describe Bosh::Cli::Command::AWS do
 
         aws.output_state["vpc"]["id"].should == "vpc id"
         aws.output_state["vpc"]["subnets"].should == {"bosh" => "amz-subnet1", "name2" => "amz-subnet2"}
-        aws.output_state["key_pairs"].should == ["dev102"]
         aws.output_state["original_configuration"].should == YAML.load_file(config_file)
       end
 
