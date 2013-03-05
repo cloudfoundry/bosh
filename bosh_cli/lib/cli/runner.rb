@@ -37,6 +37,7 @@ module Bosh::Cli
 
       Config.interactive = !@options[:non_interactive]
       Config.cache = Bosh::Cli::Cache.new(@options[:cache_dir])
+      Config.poll_interval = @options[:poll_interval]
 
       load_plugins
       build_parse_tree
@@ -124,6 +125,9 @@ module Bosh::Cli
       end
       opts.on("-N", "--no-track", "Return Task ID and don't track") do
         @options[:no_track] = true
+      end
+      opts.on("-P", "--poll INTERVAL", "Director task polling interval") do |interval|
+        @options[:poll_interval] = Integer(interval)
       end
       opts.on("-t", "--target URL", "Override target") do |target|
         @options[:target] = target
