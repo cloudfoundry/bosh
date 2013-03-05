@@ -26,6 +26,9 @@ gem "ruby_vcloud_sdk", path: "ruby_vcloud_sdk"
 gem "ruby_vim_sdk", path: "ruby_vim_sdk"
 gem "simple_blobstore_server", path: "simple_blobstore_server"
 
+# for bosh_warden_cpi
+gem "warden-protocol", git: "https://github.com/cloudfoundry/warden.git"
+
 gem "rake", "~>10.0"
 gem "retryable", "=1.3.2"
 
