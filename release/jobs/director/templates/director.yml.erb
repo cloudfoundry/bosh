@@ -53,10 +53,10 @@ blobstore:
     user: <%= p('blobstore.director.user') %>
     password: <%= p('blobstore.director.password') %>
 <% end %>
-<% if_p('global_blobstore.bucket',
-        'global_blobstore.access_key_id',
-        'global_blobstore.secret_access_key') do |bucket, access_key_id, secret_access_key| %>
-global_blobstore:
+<% if_p('compiled_package_cache.bucket',
+        'compiled_package_cache.access_key_id',
+        'compiled_package_cache.secret_access_key') do |bucket, access_key_id, secret_access_key| %>
+compiled_package_cache:
   bucket: <%= bucket %>
   properties:
     provider: AWS

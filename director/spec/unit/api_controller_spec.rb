@@ -49,4 +49,28 @@ describe Bosh::Director::ApiController do
     last_response.body.should == "some data"
     File.exists?(tmp_file).should be_false
   end
+
+  it "responds with a json when requesting /info" do
+
+    get "/info"
+    JSON.parse(last_response.body).should == {
+      'name' => 'Test Director',
+      'uuid' => BD::Config.uuid,
+      'version' => "#{BD::VERSION} (#{BD::Config.revision})",
+      'user' => 'admin',
+      'cpi' => 'dummy',
+      'features' => {
+        'dns' => {
+          'status' => true,
+          'extras' => {
+            'domain_name' => 'bosh'
+          }
+        },
+        'compiled_package_cache' => {
+          'status' => true,
+          'bucket_name' => 'compiled_packages'
+        }
+      }
+    }
+  end
 end

@@ -649,6 +649,10 @@ module Bosh::Director
           "dns" => {
             "status" => Config.dns_enabled?,
             "extras" => { "domain_name" => dns_domain_name }
+          },
+          "compiled_package_cache" => {
+            "status" => Config.use_compiled_package_cache?,
+            "bucket_name" => Config.compiled_package_cache_bucket
           }
         }
       }
