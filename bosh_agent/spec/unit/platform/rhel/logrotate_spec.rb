@@ -9,6 +9,7 @@ describe Bosh::Agent::Platform::Rhel::Logrotate do
 
   it "refers to the correct template directory" do
     logrotate.instance_variable_get(:@template_src).should match %r|bosh_agent/platform/rhel/templates/logrotate.erb|
+    File.exists?(logrotate.instance_variable_get(:@template_src)).should be_true
   end
 
 end
