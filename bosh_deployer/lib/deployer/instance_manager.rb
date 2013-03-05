@@ -348,7 +348,9 @@ module Bosh::Deployer
       spec ||= @apply_spec
 
       step "Applying micro BOSH spec" do
+        # first update spec with infrastructure specific stuff
         update_spec(spec)
+        # then update spec with generic changes
         agent.run_task(:apply, spec.update(bosh_ip, service_ip))
       end
 

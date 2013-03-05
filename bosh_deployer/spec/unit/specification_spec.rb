@@ -47,4 +47,23 @@ describe Bosh::Deployer::Specification do
       spec.properties["agent"]["ntp"].should == %w[1.2.3.4]
     end
   end
+
+  describe 'compiled package cache' do
+    it 'should update the apply spec if enabled in micro_bosh.yml apply_spec' do
+      props = {
+          "compiled_package_cache" => {
+            "bucket" => "foo",
+            "access_key_id" => "bar",
+            "secret_access_key" => "baz"
+        }
+      }
+      Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+      Bosh::Deployer::Config.stub(:spec_properties).and_return(props)
+
+      spec = Bosh::Deployer::Specification.load_from_stemcell(spec_dir)
+
+      spec.update("1.1.1.1", "2.2.2.2")
+      spec.properties["compiled_package_cache"].should == props["compiled_package_cache"]
+    end
+  end
 end
