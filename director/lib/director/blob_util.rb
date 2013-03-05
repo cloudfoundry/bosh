@@ -31,7 +31,7 @@ module Bosh::Director
         File.open(temp_path, "wb") do |file|
           Bosh::Director::Config.blobstore.get(compiled_package.blobstore_id, file)
         end
-        Bosh::Director::Config.global_blobstore.create(
+        Bosh::Director::Config.compiled_package_cache.create(
           key:  global_cache_filename,
           body: File.open(temp_path, "rb")
         )
@@ -40,13 +40,13 @@ module Bosh::Director
 
     def self.exists_in_global_cache?(package, cache_key)
       global_cache_filename = [package.name, cache_key].join("-")
-      head = Bosh::Director::Config.global_blobstore.head(global_cache_filename)
+      head = Bosh::Director::Config.compiled_package_cache.head(global_cache_filename)
       ! head.nil?
     end
 
     def self.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
       global_cache_filename = [package.name, cache_key].join("-")
-      blobstore_file = Bosh::Director::Config.global_blobstore.get(global_cache_filename)
+      blobstore_file = Bosh::Director::Config.compiled_package_cache.get(global_cache_filename)
 
       return nil unless blobstore_file
 

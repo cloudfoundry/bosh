@@ -6,7 +6,7 @@ module Bosh
     class TaskTracker
 
       MAX_POLLS = nil # not limited
-      POLL_INTERVAL = 1 # second
+      DEFAULT_POLL_INTERVAL = 1 # second
 
       attr_reader :output
 
@@ -37,6 +37,8 @@ module Bosh
         else
           @renderer = Bosh::Cli::TaskLogRenderer.create_for_log_type(@log_type)
         end
+
+        @poll_interval = Config.poll_interval || DEFAULT_POLL_INTERVAL
       end
 
       # Tracks director task. Blocks until task is in one of the 'finished'
@@ -81,7 +83,7 @@ module Bosh
             return :track_timeout
           end
 
-          sleep(POLL_INTERVAL)
+          sleep(@poll_interval)
         end
 
         :unknown

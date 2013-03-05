@@ -74,8 +74,12 @@ module AwsSystemExampleGroup
         puts line.chomp
         lines << line.chomp
       end.close # force the process to close so that $? is set
+      if options[:last_number]
+        cmd_out = lines[-options[:last_number]..-1].join("\n")
+      else
+        cmd_out = lines.join("\n")
+      end
 
-      cmd_out = lines.join("\n")
       unless $?.success?
         err_msg = "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
 
@@ -90,7 +94,17 @@ module AwsSystemExampleGroup
   end
 
   def run_bosh(cmd, options = {})
-    run "#{binstubs_path}/bosh -v -n --config '#{bosh_config_path}' #{cmd}", options
+    @run_bosh_failures ||= 0
+    run "#{binstubs_path}/bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
+  rescue
+    @run_bosh_failures += 1
+    if @run_bosh_failures == 1
+      # get the debug log, but only for the first failure, in case "bosh task last"
+      # fails - or we'll end up in an endless loop
+      run_bosh "task last --debug", {:last_number => 100}
+      @run_bosh_failures = 0
+    end
+    raise
   end
 
   def binstubs_path
