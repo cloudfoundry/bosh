@@ -77,6 +77,13 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   describe "ec2" do
+    let(:ec2) do
+      Bosh::Aws::EC2.new(
+          access_key_id: ENV["BOSH_AWS_ACCESS_KEY_ID"],
+          secret_access_key: ENV["BOSH_AWS_SECRET_ACCESS_KEY"]
+      )
+    end
+
     let(:network_spec) do
       {
           "default" => {
@@ -84,6 +91,13 @@ describe Bosh::AwsCloud::Cloud do
               "cloud_properties" => {}
           }
       }
+    end
+
+    before do
+      ec2.force_add_key_pair(
+          cpi_options["aws"]["default_key_name"],
+          ENV["GLOBAL_BOSH_KEY_PATH"]
+      )
     end
 
     context "without existing disks" do
@@ -119,9 +133,7 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     before do
-      @ec2 = Bosh::Aws::EC2.new(access_key_id: ENV["BOSH_AWS_ACCESS_KEY_ID"], secret_access_key: ENV["BOSH_AWS_SECRET_ACCESS_KEY"])
-      @vpc = Bosh::Aws::VPC.create(@ec2)
-      @ec2.force_add_key_pair(cpi_options["aws"]["default_key_name"], ENV["GLOBAL_BOSH_KEY_PATH"])
+      @vpc = Bosh::Aws::VPC.create(ec2)
 
       subnet_configuration = {"vpc_subnet" => {"cidr" => "10.0.0.0/24", "availability_zone" => availability_zone}}
       @vpc.create_subnets(subnet_configuration)
