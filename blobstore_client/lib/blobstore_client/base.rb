@@ -69,18 +69,31 @@ module Bosh
         delete_object(oid)
       end
 
+      # @return [Boolean]
+      def exists?(oid)
+        object_exists?(oid)
+      end
+
       protected
 
       def create_file(id, file)
         # needs to be implemented in each subclass
+        raise "#create not implemented"
       end
 
       def get_file(id, file)
         # needs to be implemented in each subclass
+        raise "#get not implemented"
       end
 
       def delete_object(oid)
         # needs to be implemented in each subclass
+        raise "#delete not implemented"
+      end
+
+      def object_exists?(oid)
+        # needs to be implemented in each subclass
+        raise "#exists? not implemented"
       end
 
       def temp_path

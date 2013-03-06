@@ -14,7 +14,7 @@ module Bosh
       ENDPOINT = "https://s3.amazonaws.com"
       DEFAULT_CIPHER_NAME = "aes-128-cbc"
 
-      attr_reader :bucket_name, :encryption_key
+      attr_reader :bucket_name, :encryption_key, :simple
 
       # Blobstore client for S3 with optional object encryption
       # @param [Hash] options S3connection options
@@ -122,6 +122,12 @@ module Bosh
         raise BlobstoreError,
           "Failed to delete object '#{object_id}', " +
               "S3 response error: #{e.message}"
+      end
+
+      def object_exists?(object_id)
+        return simple.exists?(object_id) if simple
+
+        get_object_from_s3(object_id).exists?
       end
 
       protected
