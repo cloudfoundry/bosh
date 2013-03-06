@@ -4,6 +4,7 @@ require 'bosh_agent/platform'
 module Bosh::Agent
 
   class Platform::Linux
+    class DiskNotFoundError < StandardError; end
 
     def initialize(disk, logrotate, password, network)
       @disk = disk

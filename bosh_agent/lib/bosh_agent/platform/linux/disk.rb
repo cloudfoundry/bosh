@@ -2,6 +2,7 @@
 require 'bosh_agent/platform/linux'
 
 require 'sys/filesystem'
+require 'retryable'
 include Sys
 
 module Bosh::Agent
@@ -10,6 +11,7 @@ module Bosh::Agent
 
     VSPHERE_DATA_DISK = "/dev/sdb"
     DEV_PATH_TIMEOUT=180
+    DISK_RETRY_MAX_DEFAULT = 30
 
     def initialize
       @config   ||= Bosh::Agent::Config
@@ -17,6 +19,7 @@ module Bosh::Agent
       @logger   ||= @config.logger
       @store_dir ||= File.join(@config.base_dir, 'store')
       @dev_path_timeout ||= DEV_PATH_TIMEOUT
+      @disk_retry_timeout = DISK_RETRY_MAX_DEFAULT
     end
 
     def mount_persistent_disk(cid)
@@ -50,7 +53,6 @@ module Bosh::Agent
           raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #@infrastructure_name"
       end
     end
-
     def lookup_disk_by_cid(cid)
       settings = @config.settings
       disk_id = settings['disks']['persistent'][cid]
@@ -62,8 +64,7 @@ module Bosh::Agent
       case @config.infrastructure_name
         when "vsphere"
           # VSphere passes in scsi disk id
-          blockdev = detect_block_device(disk_id)
-          File.join('/dev', blockdev)
+          get_available_scsi_path(disk_id)
         when "aws"
           # AWS passes in the device name
           get_available_path(disk_id)
@@ -75,8 +76,21 @@ module Bosh::Agent
       end
     end
 
+    def get_available_scsi_path(disk_id)
+      rescan_scsi_bus
+      blockdev = nil
+      Retryable.retryable(:tries=> @disk_retry_timeout, :on => Bosh::Agent::DiskNotFoundError, :sleep => lambda{|n| [2**(n-1), 10].min }) do
+        blockdev = detect_block_device(disk_id)
+      end
+      File.join('/dev', blockdev)
+    end
+
     def detect_block_device(disk_id)
-      raise Bosh::Agent::UnimplementedMethod.new
+      device_path = "/sys/bus/scsi/devices/2:0:#{disk_id}:0/block/*"
+      dirs = Dir.glob(device_path, 0)
+      raise Bosh::Agent::DiskNotFoundError, "Unable to find disk #{device_path}" if dirs.empty?
+
+      File.basename(dirs.first)
     end
 
 protected
