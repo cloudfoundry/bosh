@@ -361,11 +361,17 @@ module Bosh::Cli::Command
     class DeployerRenderer < Bosh::Cli::EventLogRenderer
       attr_accessor :stage, :total, :index
 
+      DEFAULT_POLL_INTERVAL = 1
+
+      def interval_poll
+        Bosh::Cli::Config.poll_interval || DEFAULT_POLL_INTERVAL
+      end
+
       def start
         @thread = Thread.new do
           loop do
             refresh
-            sleep(1)
+            sleep(interval_poll)
           end
         end
       end

@@ -104,6 +104,11 @@ module Bosh
         create(params)
       end
 
+      head "/resources/:id" do
+        file_name = get_file_name(params[:id])
+        File.exists?(file_name) ? status(200) : status(404)
+      end
+
       get "/resources/:id" do
         file_name = get_file_name(params[:id])
         if File.exist?(file_name)

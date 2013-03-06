@@ -18,6 +18,26 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
   end
 
+  describe '#exists?' do
+    it 'should return true if the object already exists' do
+      object = mock(Atmos::Object)
+      @atmos.stub(:get).with(:id => 'id').and_return(object)
+
+      object.should_receive(:exists?).and_return(true)
+
+      @client.exists?('id').should be_true
+    end
+
+    it 'should return false if the object does not exist' do
+      object = mock(Atmos::Object)
+      @atmos.stub(:get).with(:id => 'id').and_return(object)
+
+      object.should_receive(:exists?).and_return(false)
+
+      @client.exists?('id').should be_false
+    end
+  end
+
   it "should create an object" do
     data = "some content"
     object = mock("object")

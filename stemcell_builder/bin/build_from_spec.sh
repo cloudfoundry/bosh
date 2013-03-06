@@ -106,6 +106,7 @@ fi
 
 # Generate settings for every stage in the spec
 function stage() {
+  echo "=== Configuring '$1' stage ==="
   if [ -x $stages_dir/$1/config.sh ]
   then
     $stages_dir/$1/config.sh $settings_file
@@ -118,6 +119,7 @@ source $spec
 previous_stage=
 
 function stage() {
+  echo "=== Applying '$1' stage ==="
   if [ "$mnt_type" == "btrfs" ]
   then
     stage_with_btrfs $1

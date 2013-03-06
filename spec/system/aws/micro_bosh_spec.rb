@@ -42,8 +42,8 @@ describe "AWS" do
     describe "deploying" do
       before do
         Dir.chdir(spec_tmp_path) do
-          run_bosh "aws create '#{aws_configuration_template_path}'"
-          run_bosh "aws bootstrap micro"
+          run_bosh "aws create '#{aws_configuration_template_path}'", debug_on_fail: false
+          run_bosh "aws bootstrap micro", debug_on_fail: false
         end
       end
 
