@@ -210,8 +210,9 @@ module Bosh::Deployer
         end
       end
     rescue => e
+      logger.err("create stemcell failed: #{e.message}:\n#{e.backtrace.join("\n")}")
       # make sure we clean up the stemcell if something goes wrong
-      delete_stemcell if is_tgz?(stemcell_tgz)
+      delete_stemcell if is_tgz?(stemcell_tgz) && state.stemcell_cid
       raise e
     end
 
