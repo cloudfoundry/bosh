@@ -3,6 +3,10 @@ module Bosh
     class EC2
       MAX_TAG_KEY_LENGTH = 127
       MAX_TAG_VALUE_LENGTH = 255
+      NAT_INSTANCE_DEFAULTS = {
+          :image_id => "ami-f619c29f",
+          :instance_type => "m1.small"
+      }
 
       attr_reader :elastic_ips
 
@@ -60,6 +64,10 @@ module Bosh
 
       def create_instance(options)
         aws_ec2.instances.create(options)
+      end
+
+      def create_nat_instance(options)
+        create_instance(options.merge(NAT_INSTANCE_DEFAULTS))
       end
 
       def disable_src_dest_checking(instance_id)

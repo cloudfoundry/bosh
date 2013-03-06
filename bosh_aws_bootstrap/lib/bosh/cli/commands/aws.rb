@@ -121,6 +121,7 @@ module Bosh::Cli::Command
          require 'logger'
          ::AWS.config(:logger => Logger.new($stdout), :http_wire_trace => true)
       end
+      create_key_pairs(config_file)
       create_vpc(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)

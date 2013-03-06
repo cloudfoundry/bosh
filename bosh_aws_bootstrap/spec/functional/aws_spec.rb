@@ -99,11 +99,6 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws create" do
       let(:config_file) { asset "create_all.yml" }
-      before do
-        aws.stub(:create_vpc)
-        aws.stub(:create_rds_dbs)
-        aws.stub(:create_s3)
-      end
 
       def stub_required_environment_variables
         ENV.stub(:[]).with(anything()).and_call_original
@@ -113,6 +108,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
+        aws.should_receive(:create_key_pairs).with(config_file)
         aws.should_receive(:create_vpc).with(config_file)
         aws.should_receive(:create_rds_dbs).with(config_file)
         aws.should_receive(:create_s3).with(config_file)
@@ -122,6 +118,7 @@ describe Bosh::Cli::Command::AWS do
       it "should default the configuration file when not passed in" do
         stub_required_environment_variables
         File.exist?(default_config_filename).should == true
+        aws.should_receive(:create_key_pairs).with(default_config_filename)
         aws.should_receive(:create_vpc).with(default_config_filename)
         aws.should_receive(:create_rds_dbs).with(default_config_filename)
         aws.should_receive(:create_s3).with(default_config_filename)
