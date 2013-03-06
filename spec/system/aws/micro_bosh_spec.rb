@@ -9,7 +9,7 @@ describe "AWS" do
     describe "acceptance tests:" do
       before do
         Dir.chdir(spec_tmp_path) do
-          run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+          run_bosh "aws create '#{aws_configuration_template_path}'"
           run_bosh "aws bootstrap micro"
         end
       end
