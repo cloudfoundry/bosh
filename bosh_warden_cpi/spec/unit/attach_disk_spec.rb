@@ -16,7 +16,10 @@ describe Bosh::WardenCloud::Cloud do
       "disk" => {
         "root" => @disk_root,
         "fs" => "ext4",
-      }
+      },
+      "stemcell" => {
+        "root" => @disk_root,
+      },
     }
 
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
@@ -25,18 +28,18 @@ describe Bosh::WardenCloud::Cloud do
       Warden::Client.any_instance.stub(op) {} # no-op
     end
 
-    vm = VM.new
+    vm = Bosh::WardenCloud::Models::VM.new
     vm.container_id = "1234"
     vm.save
     @vm_id = vm.id.to_s
 
-    disk = Disk.new
+    disk = Bosh::WardenCloud::Models::Disk.new
     disk.attached = false
     disk.image_path = "image_path"
     disk.save
     @disk_id = disk.id.to_s
 
-    attached_disk = Disk.new
+    attached_disk = Bosh::WardenCloud::Models::Disk.new
     attached_disk.attached = true
     attached_disk.device_num = 10
     attached_disk.vm = vm
@@ -49,7 +52,7 @@ describe Bosh::WardenCloud::Cloud do
 
   after :each do
     FileUtils.rm_rf @disk_root
-    Disk.dataset.delete
+    Bosh::WardenCloud::Models::Disk.dataset.delete
   end
 
   context "attach_disk" do
@@ -57,8 +60,8 @@ describe Bosh::WardenCloud::Cloud do
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
 
-        if request.instance_of? RunRequest
-          resp = RunResponse.new
+        if request.instance_of?(Warden::Protocol::RunRequest)
+          resp = Warden::Protocol::RunResponse.new
           resp.stdout = "/dev/sda1\n"
         else
           raise "not supported"
@@ -72,8 +75,8 @@ describe Bosh::WardenCloud::Cloud do
     it "can attach disk" do
       @cloud.attach_disk(@vm_id, @disk_id)
 
-      disk = Disk[@disk_id.to_i]
-      vm = VM[@vm_id.to_i]
+      disk = Bosh::WardenCloud::Models::Disk[@disk_id.to_i]
+      vm = Bosh::WardenCloud::Models::VM[@vm_id.to_i]
 
       disk.attached.should == true
       disk.device_path.should == "/dev/sda1"
@@ -99,8 +102,8 @@ describe Bosh::WardenCloud::Cloud do
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
 
-        if request.instance_of? RunRequest
-          resp = RunResponse.new
+        if request.instance_of?(Warden::Protocol::RunRequest)
+          resp = Warden::Protocol::RunResponse.new
         else
           raise "not supported"
         end
@@ -113,7 +116,7 @@ describe Bosh::WardenCloud::Cloud do
     it "can detach disk" do
       @cloud.detach_disk(@vm_id, @attached_disk_id)
 
-      disk = Disk[@attached_disk_id.to_i]
+      disk = Bosh::WardenCloud::Models::Disk[@attached_disk_id.to_i]
       disk.attached.should == false
       disk.device_path.should be_nil
       disk.vm.should be_nil
