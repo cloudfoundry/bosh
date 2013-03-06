@@ -930,6 +930,24 @@ describe Bosh::Cli::Command::AWS do
               aws.delete_all_rds_dbs(config_file)
             }.to raise_error(Bosh::Cli::CliError, "not all rds instances could be deleted")
           end
+
+          context "when a database goes away while printing status" do
+            it "should delete all databases" do
+              fake_rds = mock("rds")
+              Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+              fake_rds.stub(:database_names).and_return({"instance1" => "bosh_db", "instance2" => "important_db"})
+              fake_bosh_rds = mock("instance1", db_name: "bosh_db", endpoint_port: 1234, db_instance_status: :irrelevant)
+              fake_bosh_rds.should_receive(:db_name).and_raise(::AWS::RDS::Errors::DBInstanceNotFound)
+
+              fake_rds.should_receive(:databases).and_return([fake_bosh_rds], [fake_bosh_rds], [])
+
+              ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
+
+              fake_rds.should_receive :delete_databases
+
+              aws.delete_all_rds_dbs(config_file)
+            end
+          end
         end
       end
 
