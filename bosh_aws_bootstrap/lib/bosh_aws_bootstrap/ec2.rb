@@ -178,7 +178,7 @@ module Bosh
       end
 
       def terminatable_instances
-        aws_ec2.instances.reject{|i| i.api_termination_disabled? || i.status.to_s == "terminated"}
+        aws_ec2.instances.reject { |i| i.api_termination_disabled? || i.status.to_s == "terminated" }
       end
 
       def releasable_elastic_ips
@@ -187,7 +187,7 @@ module Bosh
       end
 
       def deletable_security_groups
-        aws_ec2.security_groups.reject{ |sg| security_group_in_use?(sg) }
+        aws_ec2.security_groups.reject { |sg| security_group_in_use?(sg) }
       end
 
       def security_group_in_use?(sg)

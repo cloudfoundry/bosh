@@ -28,12 +28,23 @@ describe 'bosh_aws_bootstrap_external' do
     let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
     let(:cf_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
 
+    # run some sample tests and make sure the test fails, then we can be sure there is existing instances on the machines
+
+
     before(:all) do
+      ec2.vpcs.count.should == 0
+
+      # creating key pairs here because VPC creation involves creating a NAT instance
+      # and instance creation requires an existing key pair.
       run_bosh "aws create key_pairs #{aws_configuration_template}"
       run_bosh "aws create vpc #{aws_configuration_template}"
     end
 
-    after(:all) { run_bosh "aws destroy" }
+    after(:all) do
+      run_bosh "aws destroy"
+
+      ec2.vpcs.count.should == 0
+    end
 
     it "builds the VPC" do
       vpc.should_not be_nil
