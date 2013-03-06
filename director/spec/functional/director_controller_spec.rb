@@ -93,10 +93,7 @@ describe Bosh::Director::ApiController do
               "extras" => { "domain_name" => "bosh" }
             },
             "compiled_package_cache" => {
-                "status" => true,
-                "extras" => {
-                  "bucket_name" => "compiled_packages"
-                }
+                "status" => true
             }
           }
       }
