@@ -55,7 +55,7 @@ describe Bosh::AwsCloud::Cloud do
     cpi.delete_vm(@instance_id) if @instance_id
 
     if @vpc
-      instance = @ec2.instances_for_ids([@instance_id]).first
+      instance = ec2.instances_for_ids([@instance_id]).first
       cpi.wait_resource(instance, :terminated)
       # wait_resource returns before the resource is freed. add sleep to ensure subnet has no more dependencies
       # and can be deleted safely
