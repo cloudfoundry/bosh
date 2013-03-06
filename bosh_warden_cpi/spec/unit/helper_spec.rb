@@ -1,7 +1,6 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Helpers do
-
   include Bosh::WardenCloud::Helpers
 
   context "uuid" do
