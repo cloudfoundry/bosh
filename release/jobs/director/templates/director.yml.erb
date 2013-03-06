@@ -133,22 +133,20 @@ cloud:
         password: <%= password %>
         datacenters:
           <% datacenters.each do |dc| %>
-          - name: <%= dc.name %>
-            vm_folder: <%= dc.vm_folder || "BOSH_VMs" %>
-            template_folder: <%= dc.template_folder || "BOSH_Templates" %>
-            disk_path: <%= dc.disk_path || "BOSH_Disks" %>
-            datastore_pattern: <%= dc.datastore_pattern %>
-            persistent_datastore_pattern: <%= dc.persistent_datastore_pattern %>
-            allow_mixed_datastores: <%= dc.allow_mixed_datastores || true %>
+          - name: <%= dc['name'] %>
+            vm_folder: <%= dc['vm_folder'] || "BOSH_VMs" %>
+            template_folder: <%= dc['template_folder'] || "BOSH_Templates" %>
+            disk_path: <%= dc['disk_path'] || "BOSH_Disks" %>
+            datastore_pattern: <%= dc['datastore_pattern'] %>
+            persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
+            allow_mixed_datastores: <%= dc['allow_mixed_datastores'] || true %>
             clusters:
-              <% dc.clusters.each do |cluster| %>
+              <% dc['clusters'].each do |cluster| %>
                 <% case cluster
-                   when OpenStruct %>
-                  <% cluster_hash = cluster.marshal_dump %>
-                  <% cluster_hash.each do |cluster_name, cluster_properties| %>
+                   when Hash %>
+                  <% cluster.each do |cluster_name, cluster_properties| %>
               - <%= cluster_name.to_s %>:
-                    <% properties_hash = cluster_properties.marshal_dump %>
-                    <% properties_hash.each do |k, v| %>
+                    <% cluster_properties.each do |k, v| %>
                   <%= "#{k.to_s}: #{v}" %>
                     <% end %>
                   <% end %>
