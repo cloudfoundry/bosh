@@ -5,35 +5,56 @@ require "tmpdir"
 require "sequel"
 require "sequel/adapters/sqlite"
 
-def cloud_options
-  {
-    "warden" => warden_options,
-    "stemcell" => stemcell_options,
-    "agent" => agent_options,
-  }
-end
+module Helper
+  def cloud_options
+    {
+      "agent" => agent_options,
+      "warden" => warden_options,
+      "stemcell" => stemcell_options,
+      "disk" => disk_options,
+    }
+  end
 
-def warden_options
-  {
-    "unix_domain_socket" => "/tmp/warden.sock",
-  }
-end
+  def agent_options
+    {
+      "blobstore" => {
+        "plugin" => "simple",
+        "properties" => {},
+      },
+      "mbus" => "nats://nats:nats@localhost:4222",
+      "ntp" => [],
+    }
+  end
 
-def stemcell_options
-  {
-    "root" => "/var/vcap/stemcell",
-  }
-end
+  def warden_options
+    {
+      "unix_domain_socket" => "/tmp/warden.sock",
+    }
+  end
 
-def agent_options
-  {
-    "blobstore" => {
-      "plugin" => "simple",
-      "properties" => {},
-    },
-    "mbus" => "nats://nats:nats@localhost:4222",
-    "ntp" => [],
-  }
+  def stemcell_options
+    @stemcell_root ||= File.join(tmpdir, "stemcell").tap do |e|
+      FileUtils.mkdir_p(e)
+    end
+
+    {
+      "root" => @stemcell_root,
+    }
+  end
+
+  def disk_options
+    @disk_root ||= File.join(tmpdir, "disk").tap do |e|
+      FileUtils.mkdir_p(e)
+    end
+
+    {
+      "root" => @disk_root,
+    }
+  end
+
+  def tmpdir
+    @tmpdir ||= Dir.mktmpdir
+  end
 end
 
 # DB migration
@@ -69,4 +90,8 @@ module Bosh::Clouds
   class Warden
     attr_accessor :delegate
   end
+end
+
+RSpec.configure do |config|
+  config.include(Helper)
 end
