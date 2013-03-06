@@ -126,6 +126,29 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
   end
 
+  describe 'checking if an object exists' do
+    it 'should return 200 if it exists' do
+      resource_file = Tempfile.new("resource")
+      begin
+        resource_file.write("test contents")
+        resource_file.close
+        post "/resources/foo", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
+             {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+        last_response.status.should == 200
+      ensure
+        resource_file.delete
+      end
+
+      head "/resources/foo", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+    end
+
+    it 'should return 404 if it does not exist' do
+      head "/resources/foo", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 404
+    end
+  end
+
   describe "Deleting resources" do
 
     it "should delete an existing resource" do

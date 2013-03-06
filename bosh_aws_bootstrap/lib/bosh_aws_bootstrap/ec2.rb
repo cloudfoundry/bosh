@@ -114,13 +114,24 @@ module Bosh
       def add_key_pair(name, path_to_public_private_key)
         private_key_path = path_to_public_private_key.gsub(/\.pub$/, '')
         public_key_path = "#{private_key_path}.pub"
+
         if !File.exist?(private_key_path)
           system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
         end
 
+        unless key_pair_by_name(name).nil?
+          err "Key pair #{name} already exists on AWS".red
+        end
+
         aws_ec2.key_pairs.import(name, File.read(public_key_path))
-      rescue AWS::EC2::Errors::InvalidKeyPair::Duplicate => e
-        err "Key pair #{name} already exists on AWS".red
+      end
+
+      def key_pair_by_name(name)
+        key_pairs.detect { |kp| kp.name == name }
+      end
+
+      def key_pairs
+        aws_ec2.key_pairs.to_a
       end
 
       def force_add_key_pair(name, path_to_public_private_key)
@@ -129,11 +140,12 @@ module Bosh
       end
 
       def remove_key_pair(name)
-        aws_ec2.key_pairs[name].delete if aws_ec2.key_pairs[name]
+        key_pair = key_pair_by_name(name)
+        key_pair.delete unless key_pair.nil?
       end
 
       def remove_all_key_pairs
-        deletable_key_pairs.map(&:delete)
+        aws_ec2.key_pairs.each(&:delete)
       end
 
       def delete_all_security_groups
@@ -164,14 +176,6 @@ module Bosh
       def releasable_elastic_ips
         ti = terminatable_instances.map(&:id)
         aws_ec2.elastic_ips.select { |eip| eip.instance_id.nil? || ti.include?(eip.instance_id) }
-      end
-
-      def deletable_key_pairs
-        aws_ec2.key_pairs.reject { |kp| key_pair_in_use?(kp) }
-      end
-
-      def key_pair_in_use?(kp)
-        aws_ec2.instances.filter('key-name', kp.name).count > 0
       end
 
       def deletable_security_groups

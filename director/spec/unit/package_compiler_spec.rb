@@ -28,7 +28,7 @@ describe Bosh::Director::PackageCompiler do
                   :env => {}, :cloud_properties => {}, :workers => @n_workers,
                   :reuse_compilation_vms => false)
 
-    BD::Config.stub(:use_global_blobstore?).and_return(false)
+    BD::Config.stub(:use_compiled_package_cache?).and_return(false)
     @all_packages = []
   end
 
@@ -359,7 +359,7 @@ describe Bosh::Director::PackageCompiler do
       task.dependency_key = "[]"
       task.stub(:cache_key).and_return(cache_key)
 
-      BD::Config.stub(:use_global_blobstore?).and_return(true)
+      BD::Config.stub(:use_compiled_package_cache?).and_return(true)
     end
 
     describe ".find_compiled_package" do
@@ -374,13 +374,13 @@ describe Bosh::Director::PackageCompiler do
       end
 
       it 'returns nil if could not find compiled package and not using global blobstore' do
-        BD::Config.stub(:use_global_blobstore?).and_return(false)
+        BD::Config.stub(:use_compiled_package_cache?).and_return(false)
         BD::BlobUtil.should_not_receive(:fetch_from_global_cache)
         compiler.find_compiled_package(task).should == nil
       end
 
       it 'returns nil if compiled_package not found in local or global blobstore' do
-        BD::Config.stub(:use_global_blobstore?).and_return(true)
+        BD::Config.stub(:use_compiled_package_cache?).and_return(true)
         BD::BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, cache_key, task.dependency_key).and_return(nil)
         compiler.find_compiled_package(task).should == nil
       end
@@ -391,7 +391,7 @@ describe Bosh::Director::PackageCompiler do
           stemcell: stemcell,
           dependency_key: "[]"
         )
-        BD::Config.stub(:use_global_blobstore?).and_return(true)
+        BD::Config.stub(:use_compiled_package_cache?).and_return(true)
         BD::BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, cache_key, task.dependency_key).and_return(compiled_package)
         compiler.find_compiled_package(task).should == compiled_package
       end
@@ -432,8 +432,8 @@ describe Bosh::Director::PackageCompiler do
       callback.call
     end
 
-    it "only checks the global cache if Config.use_global_blobstore? is set" do
-      BD::Config.stub(:use_global_blobstore?).and_return(false)
+    it "only checks the global cache if Config.use_compiled_package_cache? is set" do
+      BD::Config.stub(:use_compiled_package_cache?).and_return(false)
 
       callback = nil
       compiler.should_receive(:with_compile_lock).

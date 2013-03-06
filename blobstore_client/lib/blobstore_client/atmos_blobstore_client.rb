@@ -30,6 +30,8 @@ module Bosh
         @atmos ||= Atmos::Store.new(@atmos_options)
       end
 
+      protected
+
       def create_file(id, file)
         raise BlobstoreError, 'Atmos does not support supplying the object id' if id
         obj_conf = {:data => file, :length => File.size(file.path)}
@@ -57,12 +59,16 @@ module Bosh
         end
       end
 
-      def delete(object_id)
+      def delete_object(object_id)
         object_info = decode_object_id(object_id)
         oid = object_info["oid"]
         atmos_server.get(:id => oid).delete
       rescue Atmos::Exceptions::NoSuchObjectException => e
         raise NotFound, "Atmos object '#{object_id}' not found"
+      end
+
+      def object_exists?(object_id)
+        atmos_server.get(:id => object_id).exists?
       end
 
       private

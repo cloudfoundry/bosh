@@ -11,9 +11,9 @@ module Bosh::Deployer
       def update_spec(spec)
         properties = spec.properties
 
-        properties["aws"] =
-          Config.spec_properties["aws"] ||
-          Config.cloud_options["properties"]["aws"].dup
+        # pick from micro_bosh.yml the aws settings in `apply_spec` section (apply_spec.properties.aws),
+        # and if it doesn't exist, use the bosh deployer aws properties (cloud.properties.aws)
+        properties["aws"] = Config.spec_properties["aws"] || Config.cloud_options["properties"]["aws"].dup
 
         properties["aws"]["registry"] = Config.cloud_options["properties"]["registry"]
         properties["aws"]["stemcell"] = Config.cloud_options["properties"]["stemcell"]

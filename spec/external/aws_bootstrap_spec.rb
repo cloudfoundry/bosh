@@ -16,11 +16,11 @@ describe 'bosh_aws_bootstrap_external' do
     )
   end
 
-  let(:ec2)     {AWS::EC2.new}
-  let(:elb)     {AWS::ELB.new}
-  let(:route53) {AWS::Route53.new}
+  let(:ec2) { AWS::EC2.new }
+  let(:elb) { AWS::ELB.new }
+  let(:route53) { AWS::Route53.new }
 
-  let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..','assets','aws','aws_configuration_template.yml.erb') }
+  let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..', 'assets', 'aws', 'aws_configuration_template.yml.erb') }
 
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
@@ -30,7 +30,7 @@ describe 'bosh_aws_bootstrap_external' do
 
     before(:all) { run_bosh "aws create vpc #{aws_configuration_template}" }
 
-    after(:all) { run_bosh "aws destroy #{aws_configuration_template}" }
+    after(:all) { run_bosh "aws destroy" }
 
     it "builds the VPC" do
       vpc.should_not be_nil
@@ -143,6 +143,24 @@ describe 'bosh_aws_bootstrap_external' do
       record_set.should_not be_nil
       record_set.resource_records.first[:value] == load_balancer.dns_name
       record_set.ttl.should == 60
+    end
+  end
+
+  describe "key pairs" do
+    before do
+      ec2.key_pairs.map(&:name).should == []
+
+      run_bosh "aws create key_pairs #{aws_configuration_template}"
+    end
+
+    it "creates and deletes key pairs" do
+      ec2.key_pairs.map(&:name).should == [ENV["BOSH_KEY_PAIR_NAME"] || "bosh"]
+    end
+
+    after do
+      run_bosh "aws destroy"
+
+      ec2.key_pairs.map(&:name).should == []
     end
   end
 
