@@ -1,7 +1,6 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::DevicePool do
-
   context "initialize" do
     it "should initialize a pool of the right size" do
       pool = Bosh::WardenCloud::DevicePool.new(100)
@@ -50,5 +49,4 @@ describe Bosh::WardenCloud::DevicePool do
       pool.size.should == 50
     end
   end
-
 end
