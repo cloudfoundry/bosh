@@ -1,7 +1,6 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
-
   before :each do
     @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
   end

@@ -1,10 +1,7 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
-
-  include Warden::Protocol
   include Bosh::WardenCloud::Helpers
-  include Bosh::WardenCloud::Models
 
   attr_reader :logger
 
