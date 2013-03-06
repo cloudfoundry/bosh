@@ -39,3 +39,6 @@ cloud:
 
 apply_spec:
   properties: {}
+  agent:
+    blobstore: {}
+    nats: {}
