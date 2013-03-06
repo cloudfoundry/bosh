@@ -3,15 +3,7 @@ require "spec_helper"
 describe Bosh::WardenCloud::Cloud do
 
   before :each do
-    @stemcell_root = Dir.mktmpdir("warden-cpi-stemcell")
-
-    options = {
-      "stemcell" => {
-      "root" => @stemcell_root,
-    }
-    }
-
-    @cloud = Bosh::Clouds::Provider.create(:warden, options)
+    @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
   end
 
   after :each do
@@ -22,7 +14,6 @@ describe Bosh::WardenCloud::Cloud do
   let(:bad_image_path) { asset("stemcell-not-existed.tgz") }
 
   context "create_stemcell" do
-
     it "can create stemcell" do
       stemcell_id = @cloud.create_stemcell(image_path, nil)
 
@@ -45,7 +36,6 @@ describe Bosh::WardenCloud::Cloud do
       end
 
       Dir.chdir(@stemcell_root) do
-
         Dir.glob("*").should be_empty
 
         expect {
@@ -53,14 +43,11 @@ describe Bosh::WardenCloud::Cloud do
         }.to raise_error
 
         Dir.glob("*").should be_empty
-
       end
-
     end
   end
 
   context "delete_stemcell" do
-
     it "can delete stemcell" do
       Dir.chdir(@stemcell_root) do
         stemcell_id = @cloud.create_stemcell(image_path, nil)
@@ -74,7 +61,5 @@ describe Bosh::WardenCloud::Cloud do
         ret.should be_nil
       end
     end
-
   end
-
 end
