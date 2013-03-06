@@ -22,11 +22,9 @@ blobstore:
     user: admin
     password:
 compiled_package_cache:
-  bucket: compiled_packages
-  properties:
-    provider: AWS
-    aws_access_key_id: access key id
-    aws_secret_access_key: secret access key
+  provider: local
+  options:
+    blobstore_path: /path/to/some/bucket
 
 cloud:
   plugin: dummy
