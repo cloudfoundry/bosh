@@ -24,8 +24,8 @@ describe Bosh::Director::BlobUtil do
       BD::Config.should_receive(:blobstore).and_return(fake_local_blobstore)
 
       fake_local_blobstore.should_receive(:get).with('blob_id', an_instance_of(File))
-      compiled_package_cache_blobstore.should_receive(:create) do |path, cache_filename|
-        path.should match %r[/blob$]
+      compiled_package_cache_blobstore.should_receive(:create) do |file, cache_filename|
+        file.to_path.should match %r[/blob$]
         cache_filename.should == 'package_name-cache_sha1'
       end
 
@@ -74,9 +74,9 @@ describe Bosh::Director::BlobUtil do
       Digest::SHA1.stub_chain(:file, :hexdigest).and_return("cp sha1")
       BDM::CompiledPackage.stub(:generate_build_number)
 
-      compiled_package_cache_blobstore.should_receive(:get) do |sha, path|
+      compiled_package_cache_blobstore.should_receive(:get) do |sha, file|
         sha.should == 'package_name-cache_sha1'
-        path.should match %r[/blob$]
+        file.to_path.should match %r[/blob$]
       end
       BD::BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key).should == mock_compiled_package
     end

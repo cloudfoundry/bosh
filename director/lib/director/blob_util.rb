@@ -51,7 +51,7 @@ module Bosh::Director
       Dir.mktmpdir do |path|
         temp_path = File.join(path, 'blob')
         begin
-          File.new(temp_path, 'wb') do |temp_file|
+          File.open(temp_path, 'wb') do |temp_file|
             Bosh::Director::Config.compiled_package_cache_blobstore.get(global_cache_filename, temp_file)
           end
         rescue Bosh::Blobstore::NotFound => e
