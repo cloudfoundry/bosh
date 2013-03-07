@@ -1,8 +1,4 @@
 ---
-genisoimage/genisoimage:
-  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNGZiZDRm%0AMTExMTY3NyIsInNpZyI6IlNURWFDUXAzc2tndVBRVGVzU3haQmhxeVByVT0i%0AfQ==%0A
-  sha: 51b6b62e34161b4ac295d15b48c128ecbb52186d
-  size: 605096
 nats/vendor/cache/daemons-1.1.4.gem:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjIyMDRlNGU5ODY0M2Q5YWUwNGZiZDRm%0AMTJjMGMwMyIsInNpZyI6ImtqaWgzT1FaT1k0U205QmZZTlBGNzNVbjZQdz0i%0AfQ==%0A
   sha: 6603f661cc3b9f591db66b5fbb18d648288651a0
