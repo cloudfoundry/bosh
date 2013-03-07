@@ -53,15 +53,15 @@ blobstore:
     user: <%= p('blobstore.director.user') %>
     password: <%= p('blobstore.director.password') %>
 <% end %>
-<% if_p('compiled_package_cache.bucket',
+<% if_p('compiled_package_cache.bucket_name',
         'compiled_package_cache.access_key_id',
-        'compiled_package_cache.secret_access_key') do |bucket, access_key_id, secret_access_key| %>
+        'compiled_package_cache.secret_access_key') do |bucket_name, access_key_id, secret_access_key| %>
 compiled_package_cache:
-  bucket: <%= bucket %>
+  plugin: s3
   properties:
-    provider: AWS
-    aws_access_key_id: <%= access_key_id %>
-    aws_secret_access_key: <%= secret_access_key %>
+    bucket_name: <%= bucket_name %>
+    access_key_id: <%= access_key_id %>
+    secret_access_key: <%= secret_access_key %>
 <% end %>
 cloud:
 <% plugin = nil %>
