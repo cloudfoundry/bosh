@@ -9,7 +9,7 @@ templates:
   stemcell-copy.sh: bin/stemcell-copy
 packages:
 - director
-- genisoimage
+- cdrtools
 - libpq
 - ruby
 
