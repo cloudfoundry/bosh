@@ -28,7 +28,6 @@ module Bosh::Director
       options = {
           :deployment => deployment,
           :agent_id => agent_id,
-          :cid => vm_cid,
           :env => env
       }
 
@@ -41,6 +40,7 @@ module Bosh::Director
 
       vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
 
+      options[:cid] = vm_cid
       vm = Models::Vm.new(options)
 
       vm.save
