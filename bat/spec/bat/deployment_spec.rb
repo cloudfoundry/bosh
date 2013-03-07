@@ -136,14 +136,14 @@ describe "deployment" do
     end
 
     it "should drain dynamically when updating", ssh: true do
-      pending("Test currently broken")
       use_dynamic_drain
+      use_release("latest")
       deployment = with_deployment
       bosh("deployment #{deployment.to_path}")
       bosh("deploy").should succeed_with DEPLOYED_REGEXP
       deployment.delete
 
-      use_release("latest")
+      use_release(@previous.version)
       with_deployment do
         output = ssh(static_ip, "vcap", "cat /tmp/drain 2> /dev/null", ssh_options)
         drain_times = output.split.map { |time| time.to_i }
