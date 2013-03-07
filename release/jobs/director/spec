@@ -113,6 +113,14 @@ properties:
     description: Port for agent to connect to blobstore server used by simple blobstore plugin
   agent.nats.address:
     description: Address for agent to connect to nats
+  registry.address:
+    description: Address of the Registry to connect to
+  registry.http.port:
+    description: Port of the Registry to connect to
+  registry.http.user:
+    description: User to access the Registry
+  registry.http.password:
+    description: Password to access the Registry
   aws.access_key_id:
     description: AWS access_key_id for aws cpi
   aws.secret_access_key:
@@ -125,14 +133,6 @@ properties:
     description: AWS Region used by aws cpi
   aws.stemcell.kernel_id:
     description: AWS kernel id used by aws cpi
-  aws_registry.address:
-    description: Address of aws registry server (used to configure agents on aws)
-  aws_registry.http.port:
-    description: Port of aws registry server (used to configure agents on aws)
-  aws_registry.http.user:
-    description: Address of aws registry server (used to configure agents on aws)
-  aws_registry.http.password:
-    description: Password of aws registry server (used to configure agents on aws)
   openstack.auth_url:
     description: URL of the OpenStack Identity endpoint to connect to
   openstack.username:
@@ -147,14 +147,6 @@ properties:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:
     description: Default OpenStack security groups to use when spinning up new vms
-  openstack_registry.address:
-    description: Address of the OpenStack Registry to connect to
-  openstack_registry.http.port:
-    description: Port of the OpenStack Registry to connect to
-  openstack_registry.http.user:
-    description: User to access the OpenStack Registry
-  openstack_registry.http.password:
-    description: Password to access the OpenStack Registry
   openstack.stemcell.kernel_id:
     description: Kernel ID to use when spinning up new vms (optional)
   openstack.stemcell.ramdisk_id:
