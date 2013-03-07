@@ -5,7 +5,7 @@ Sequel.migration do
     # there is a bug in sequel where create_table? on postgres causes the transaction to abort with:
     # PG::Error: ERROR:  current transaction is aborted, commands ignored until end of transaction block
     # to work around this until it is fixed, transactions are disabled, which is fine as it is an atomic operation
-    no_transaction
+    no_transaction if database_type == "postgres"
     # This used to be included in the director migrations, so we should not fail (hence create_table?) if this table
     # already exists to allow old installations to keep working with the new migrations.
     create_table? :vsphere_disk do
