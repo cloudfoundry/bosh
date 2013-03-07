@@ -148,6 +148,17 @@ PATH
       yajl-ruby (~> 1.1.0)
 
 PATH
+  remote: bosh_registry
+  specs:
+    bosh_registry (1.5.0.pre2)
+      aws-sdk (~> 1.8.3)
+      fog (~> 1.9.0)
+      sequel (~> 3.43.0)
+      sinatra (~> 1.2.8)
+      thin (~> 1.5.0)
+      yajl-ruby (~> 1.1.0)
+
+PATH
   remote: bosh_vcloud_cpi
   specs:
     bosh_vcloud_cpi (1.5.0.pre2)
@@ -451,6 +462,7 @@ DEPENDENCIES
   bosh_encryption!
   bosh_openstack_cpi!
   bosh_openstack_registry!
+  bosh_registry!
   bosh_vcloud_cpi!
   bosh_vsphere_cpi!
   ci_reporter
