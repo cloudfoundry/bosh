@@ -304,7 +304,7 @@ namespace :stemcell do
     end
 
     INDEX_FILE_NAME = "public_stemcells_index.yml"
-    INDEX_FILE_DIR = ".stemcell_builds"
+    INDEX_FILE_DIR = "stemcell_builder/.stemcell_builds"
 
     desc "Deletes <stemcell_name> from the public repository."
     task "delete", :stemcell_name do |t, args|

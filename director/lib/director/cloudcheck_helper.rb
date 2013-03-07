@@ -128,8 +128,8 @@ module Bosh::Director
         vm.destroy
       end
 
-      new_vm = VmCreator.new.create(deployment, stemcell, cloud_properties,
-                                    network_spec, Array(disk_cid), env)
+      new_vm = VmCreator.create(deployment, stemcell, cloud_properties,
+                                network_spec, Array(disk_cid), env)
       new_vm.apply_spec = spec
       new_vm.save
 
