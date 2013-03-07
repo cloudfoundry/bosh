@@ -82,6 +82,7 @@ properties:
     description: Addess of blobstore server used by simple blobstore plugin
   blobstore.port:
     description: Port of blobstore server used by simple blobstore plugin
+    default: 25250
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
