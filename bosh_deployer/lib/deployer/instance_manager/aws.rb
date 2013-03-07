@@ -38,11 +38,11 @@ module Bosh::Deployer
         user, password = uri.userinfo.split(":", 2)
         @registry_port = uri.port
 
-        @registry_db = Tempfile.new("aws_registry_db")
+        @registry_db = Tempfile.new("bosh_registry_db")
         @registry_db_url = "sqlite://#{@registry_db.path}"
 
         registry_config = {
-          "logfile" => "./aws_registry.log",
+          "logfile" => "./bosh_registry.log",
           "http" => {
             "port" => uri.port,
             "user" => user,
@@ -51,10 +51,13 @@ module Bosh::Deployer
           "db" => {
             "database" => @registry_db_url
           },
-          "aws" => properties["aws"]
+          "cloud" => {
+            "plugin" => "aws",
+            "aws" => properties["aws"]
+          }
         }
 
-        @registry_config = Tempfile.new("aws_registry_yml")
+        @registry_config = Tempfile.new("bosh_registry_yml")
         @registry_config.write(YAML.dump(registry_config))
         @registry_config.close
       end
@@ -64,16 +67,16 @@ module Bosh::Deployer
 
         Sequel.connect(@registry_db_url) do |db|
           migrate(db)
-          instances = @deployments["aws_instances"]
-          db[:aws_instances].insert_multiple(instances) if instances
+          instances = @deployments["instances"]
+          db[:instances].insert_multiple(instances) if instances
         end
 
-        unless has_aws_registry?
-          err "aws_registry command not found - " +
-            "run 'gem install bosh_aws_registry'"
+        unless has_bosh_registry?
+          err "bosh_registry command not found - " +
+            "run 'gem install bosh_registry'"
         end
 
-        cmd = "aws_registry -c #{@registry_config.path}"
+        cmd = "bosh_registry -c #{@registry_config.path}"
 
         @registry_pid = spawn(cmd)
 
@@ -93,10 +96,10 @@ module Bosh::Deployer
           if timeout_time - Time.now.to_f > 0
             retry
           else
-            err "Cannot access aws_registry: #{e.message}"
+            err "Cannot access bosh_registry: #{e.message}"
           end
         end
-        logger.info("aws_registry is ready on port #{@registry_port}")
+        logger.info("bosh_registry is ready on port #{@registry_port}")
       ensure
         @registry_config.unlink if @registry_config
       end
@@ -110,7 +113,7 @@ module Bosh::Deployer
         return unless @registry_db_url
 
         Sequel.connect(@registry_db_url) do |db|
-          @deployments["aws_instances"] = db[:aws_instances].map {|row| row}
+          @deployments["instances"] = db[:instances].map {|row| row}
         end
 
         save_state
@@ -165,15 +168,15 @@ module Bosh::Deployer
 
       # TODO this code is similar to has_stemcell_copy?
       # move the two into bosh_common later
-      def has_aws_registry?(path=ENV['PATH'])
+      def has_bosh_registry?(path=ENV['PATH'])
         path.split(":").each do |dir|
-          return true if File.exist?(File.join(dir, "aws_registry"))
+          return true if File.exist?(File.join(dir, "bosh_registry"))
         end
         false
       end
 
       def migrate(db)
-        db.create_table :aws_instances do
+        db.create_table :instances do
           primary_key :id
           column :instance_id, :text, :unique => true, :null => false
           column :settings, :text, :null => false
