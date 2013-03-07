@@ -360,7 +360,9 @@ module Bosh::Director
                      "for stemcell `#{stemcell.desc}'")
       else
         if Config.use_compiled_package_cache?
-          compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
+          @event_log.track("Downloading '#{package.desc}' from global cache") do
+            compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
+          end
         end
 
         if compiled_package
