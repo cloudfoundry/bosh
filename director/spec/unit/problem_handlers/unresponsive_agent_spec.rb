@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
@@ -216,9 +216,9 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
 
       handler.apply_resolution(:recreate_vm)
 
-      lambda {
+      expect {
         @vm.reload
-      }.should raise_error(Sequel::Error, "Record not found")
+      }.to raise_error(Sequel::Error, "Record not found")
 
       @instance.reload
       @instance.vm.apply_spec.should == spec
@@ -273,20 +273,18 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
   describe "delete_vm_reference resolution" do
     it "skips delete_vm_reference if CID is present" do
       @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-      lambda {
+      expect {
         handler.apply_resolution(:delete_vm_reference)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           /has a cloud id/)
+      }.to raise_error(Bosh::Director::ProblemHandlerError, /has a cloud id/)
     end
 
     it "skips deleting VM ref if agent is now alive" do
       @vm.update(:cid => nil)
       @agent.should_receive(:ping).and_return(:pong)
 
-      lambda {
+      expect {
         handler.apply_resolution(:delete_vm_reference)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Agent is responding now, skipping resolution")
+      }.to raise_error(Bosh::Director::ProblemHandlerError, "Agent is responding now, skipping resolution")
     end
 
     it "deletes VM reference" do

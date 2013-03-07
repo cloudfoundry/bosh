@@ -12,7 +12,7 @@ module BoshHelper
   include Archive::Tar
 
   def bosh(arguments, options={})
-    command = "#{bosh_bin} --non-interactive --config " +
+    command = "#{bosh_bin} -P 10 --non-interactive --config " +
       "#{BH::bosh_cli_config_path} --user admin --password admin " +
       "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
