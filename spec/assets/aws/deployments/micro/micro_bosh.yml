@@ -35,6 +35,6 @@ apply_spec:
     nats:
       address: <%= ENV["MICROBOSH_IP"] %>
   properties:
-    aws_registry:
+    registry:
       address: <%= ENV["MICROBOSH_IP"] %>
 
