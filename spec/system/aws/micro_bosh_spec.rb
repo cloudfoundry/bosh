@@ -9,13 +9,13 @@ describe "AWS" do
     describe "acceptance tests:" do
       before do
         Dir.chdir(spec_tmp_path) do
-          run_bosh "aws create vpc '#{aws_configuration_template_path}'"
+          run_bosh "aws create '#{aws_configuration_template_path}'"
           run_bosh "aws bootstrap micro"
         end
       end
 
       it "should pass BATs" do
-        run_bosh "upload stemcell #{latest_stemcell_path}"
+        run_bosh "upload stemcell #{latest_stemcell_path}", debug_on_fail: true
 
         FileUtils.mkdir_p bat_deployment_path
 
@@ -42,8 +42,8 @@ describe "AWS" do
     describe "deploying" do
       before do
         Dir.chdir(spec_tmp_path) do
-          run_bosh "aws create '#{aws_configuration_template_path}'", debug_on_fail: false
-          run_bosh "aws bootstrap micro", debug_on_fail: false
+          run_bosh "aws create '#{aws_configuration_template_path}'"
+          run_bosh "aws bootstrap micro"
         end
       end
 
@@ -51,7 +51,7 @@ describe "AWS" do
         Dir.chdir deployments_path do
           existing_stemcells = run_bosh "stemcells", :ignore_failures => true
           unless existing_stemcells.include?("bosh-stemcell")
-            run_bosh "upload stemcell #{latest_stemcell_path}"
+            run_bosh "upload stemcell #{latest_stemcell_path}", debug_on_fail: true
           end
         end
 
@@ -72,7 +72,7 @@ describe "AWS" do
 
           run_bosh "deployment cf-aws.yml"
           run_bosh "diff #{deployments_aws_path}/templates/cf-min-aws-vpc.yml.erb"
-          run_bosh "deploy"
+          run_bosh "deploy", debug_on_fail: true
         end
       end
     end

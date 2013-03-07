@@ -8,27 +8,33 @@ require "bosh_aws_bootstrap/ec2"
 require "bosh_aws_bootstrap/vpc"
 
 describe Bosh::AwsCloud::Cloud do
-  let(:cpi) do
-    described_class.new(
-        {
-            "aws" => {
-                "region" => "us-east-1",
-                "default_key_name" => "bosh",
-                "fast_path_delete" => "yes",
-                "access_key_id" => ENV["BOSH_AWS_ACCESS_KEY_ID"],
-                "secret_access_key" => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
-            },
-            "registry" => {
-                "endpoint" => "fake",
-                "user" => "fake",
-                "password" => "fake"
-            }
-        }
-    )
+  let(:cpi_options) do
+      {
+          "aws" => {
+              "region" => "us-east-1",
+              "default_key_name" => "bosh",
+              "fast_path_delete" => "yes",
+              "access_key_id" => ENV["BOSH_AWS_ACCESS_KEY_ID"],
+              "secret_access_key" => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
+          },
+          "registry" => {
+              "endpoint" => "fake",
+              "user" => "fake",
+              "password" => "fake"
+          }
+      }
   end
+
+  let(:cpi) { described_class.new(cpi_options) }
   let(:ami) { "ami-809a48e9" }
   let(:ip) { "10.0.0.9" }
   let(:availability_zone) { "us-east-1d" }
+  let(:ec2) do
+    Bosh::Aws::EC2.new(
+        access_key_id: ENV["BOSH_AWS_ACCESS_KEY_ID"],
+        secret_access_key: ENV["BOSH_AWS_SECRET_ACCESS_KEY"]
+    )
+  end
 
   before do
     delegate = double("delegate", logger: double("logger").as_null_object)
@@ -38,6 +44,10 @@ describe Bosh::AwsCloud::Cloud do
 
     @instance_id = nil
     @volume_id = nil
+    ec2.force_add_key_pair(
+        cpi_options["aws"]["default_key_name"],
+        ENV["GLOBAL_BOSH_KEY_PATH"]
+    )
   end
 
   after do
@@ -45,7 +55,7 @@ describe Bosh::AwsCloud::Cloud do
     cpi.delete_vm(@instance_id) if @instance_id
 
     if @vpc
-      instance = @ec2.instances_for_ids([@instance_id]).first
+      instance = ec2.instances_for_ids([@instance_id]).first
       cpi.wait_resource(instance, :terminated)
       # wait_resource returns before the resource is freed. add sleep to ensure subnet has no more dependencies
       # and can be deleted safely
@@ -119,9 +129,7 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     before do
-      @ec2 = Bosh::Aws::EC2.new(access_key_id: ENV["BOSH_AWS_ACCESS_KEY_ID"], secret_access_key: ENV["BOSH_AWS_SECRET_ACCESS_KEY"])
-      @vpc = Bosh::Aws::VPC.create(@ec2)
-
+      @vpc = Bosh::Aws::VPC.create(ec2)
       subnet_configuration = {"vpc_subnet" => {"cidr" => "10.0.0.0/24", "availability_zone" => availability_zone}}
       @vpc.create_subnets(subnet_configuration)
       @subnet_id = @vpc.subnets.first[1]

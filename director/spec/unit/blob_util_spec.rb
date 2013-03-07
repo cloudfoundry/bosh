@@ -10,24 +10,24 @@ describe Bosh::Director::BlobUtil do
   let(:compiled_package) { mock(BDM::CompiledPackage, package: package, stemcell: stemcell, blobstore_id: blob_id) }
   let(:dep_pkg2) { mock(BDM::Package, fingerprint: "dp_fingerprint2", version: "9.2-dev") }
   let(:dep_pkg1) { mock(BDM::Package, fingerprint: "dp_fingerprint1", version: "10.1-dev") }
-  let(:compiled_package_cache) { mock("Fog::Storage::AWS::Files") }
+  let(:compiled_package_cache_blobstore) { mock(Bosh::Blobstore::BaseClient) }
   let(:cache_key) { "cache_sha1" }
   let(:dep_key) { "[]" }
 
   before(:each) do
-    BD::Config.stub(:compiled_package_cache).and_return(compiled_package_cache)
+    BD::Config.stub(:compiled_package_cache_blobstore).and_return(compiled_package_cache_blobstore)
   end
 
   describe '.save_to_global_cache' do
     it 'copies from the local blobstore to the compiled package cache' do
-      fake_local_blobstore = mock("local blobstore")
+      fake_local_blobstore = mock(Bosh::Blobstore::LocalClient)
       BD::Config.should_receive(:blobstore).and_return(fake_local_blobstore)
 
       fake_local_blobstore.should_receive(:get).with('blob_id', an_instance_of(File))
-      compiled_package_cache.should_receive(:create).with({
-        key: 'package_name-cache_sha1',
-        body: an_instance_of(File)
-      })
+      compiled_package_cache_blobstore.should_receive(:create) do |path, cache_filename|
+        path.should match %r[/blob$]
+        cache_filename.should == 'package_name-cache_sha1'
+      end
 
       BD::BlobUtil.save_to_global_cache(compiled_package, cache_key)
     end
@@ -35,12 +35,12 @@ describe Bosh::Director::BlobUtil do
 
   describe '.exists_in_global_cache?' do
     it 'returns true when the object exists' do
-      compiled_package_cache.should_receive(:head).with('package_name-cache_sha1').and_return(Object.new)
+      compiled_package_cache_blobstore.should_receive(:exists?).with('package_name-cache_sha1').and_return(true)
       BD::BlobUtil.exists_in_global_cache?(package, cache_key).should == true
     end
 
     it 'returns false when the object does not exist' do
-      compiled_package_cache.should_receive(:head).with('package_name-cache_sha1').and_return(nil)
+      compiled_package_cache_blobstore.should_receive(:exists?).with('package_name-cache_sha1').and_return(false)
       BD::BlobUtil.exists_in_global_cache?(package, cache_key).should == false
     end
 
@@ -48,7 +48,10 @@ describe Bosh::Director::BlobUtil do
 
   describe '.fetch_from_global_cache' do
     it 'returns nil if compiled package not in global cache' do
-      compiled_package_cache.should_receive(:get).with('package_name-cache_sha1').and_return(nil)
+      BD::Config.should_not_receive(:blobstore)
+
+      compiled_package_cache_blobstore.should_receive(:get).and_raise(Bosh::Blobstore::NotFound)
+
       BD::BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key).should be_nil
     end
 
@@ -71,7 +74,10 @@ describe Bosh::Director::BlobUtil do
       Digest::SHA1.stub_chain(:file, :hexdigest).and_return("cp sha1")
       BDM::CompiledPackage.stub(:generate_build_number)
 
-      compiled_package_cache.should_receive(:get).with('package_name-cache_sha1').and_return(mock('Fog::Storage::AWS::File', body: "body of the file"))
+      compiled_package_cache_blobstore.should_receive(:get) do |sha, path|
+        sha.should == 'package_name-cache_sha1'
+        path.should match %r[/blob$]
+      end
       BD::BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key).should == mock_compiled_package
     end
   end

@@ -32,7 +32,6 @@ require "uuidtools"
 require "yajl"
 require "nats/client"
 require "securerandom"
-require "fog"
 
 require "common/thread_formatter"
 require "encryption/encryption_handler"
@@ -651,10 +650,8 @@ module Bosh::Director
             "extras" => { "domain_name" => dns_domain_name }
           },
           "compiled_package_cache" => {
-            "status" => Config.use_compiled_package_cache?,
-            "extras" => {
-              "bucket_name" => Config.compiled_package_cache_bucket
-}          }
+            "status" => Config.use_compiled_package_cache?
+          }
         }
       }
       content_type(:json)

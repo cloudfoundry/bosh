@@ -121,6 +121,7 @@ module Bosh::Cli::Command
          require 'logger'
          ::AWS.config(:logger => Logger.new($stdout), :http_wire_trace => true)
       end
+      create_key_pairs(config_file)
       create_vpc(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)
@@ -579,7 +580,12 @@ module Bosh::Cli::Command
         say "waiting for RDS deletion..."
         sleep 10
         rds.databases.each do |db_instance|
-          say "  #{db_instance.db_name} #{db_instance.db_instance_status}"
+          begin
+            say "  #{db_instance.db_name} #{db_instance.db_instance_status}"
+          rescue ::AWS::RDS::Errors::DBInstanceNotFound
+            # it is possible for a db to be deleted between the time the
+            # each returns an instance and when we print out its info
+          end
         end
         rds.databases.count == 0
       end

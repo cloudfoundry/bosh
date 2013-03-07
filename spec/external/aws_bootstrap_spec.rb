@@ -28,9 +28,23 @@ describe 'bosh_aws_bootstrap_external' do
     let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
     let(:cf_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
 
-    before(:all) { run_bosh "aws create vpc #{aws_configuration_template}" }
+    # run some sample tests and make sure the test fails, then we can be sure there is existing instances on the machines
 
-    after(:all) { run_bosh "aws destroy" }
+
+    before(:all) do
+      ec2.vpcs.count.should == 0
+
+      # creating key pairs here because VPC creation involves creating a NAT instance
+      # and instance creation requires an existing key pair.
+      run_bosh "aws create key_pairs #{aws_configuration_template}"
+      run_bosh "aws create vpc #{aws_configuration_template}"
+    end
+
+    after(:all) do
+      run_bosh "aws destroy"
+
+      ec2.vpcs.count.should == 0
+    end
 
     it "builds the VPC" do
       vpc.should_not be_nil
@@ -176,10 +190,23 @@ describe 'bosh_aws_bootstrap_external' do
   end
 
   describe "S3" do
-    #before(:all) { run_bosh "aws create s3 #{aws_configuration_template}" }
-    #after(:all) { run_bosh "aws destroy #{aws_configuration_template}" }
+    let(:s3) { AWS::S3.new }
 
-    pending "can create and destroy an S3 configuration"
+    before do
+      s3.buckets.count.should == 0
+
+      run_bosh "aws create s3 #{aws_configuration_template}"
+    end
+
+    it "creates s3 buckets and deletes them" do
+      s3.buckets.map(&:name).should == ["#{ENV["BOSH_VPC_SUBDOMAIN"]}-bosh-blobstore"]
+    end
+
+    after do
+      run_bosh "aws destroy"
+
+      s3.buckets.count.should == 0
+    end
   end
 
   describe "all resources" do

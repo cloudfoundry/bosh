@@ -31,35 +31,30 @@ module Bosh::Director
         File.open(temp_path, "wb") do |file|
           Bosh::Director::Config.blobstore.get(compiled_package.blobstore_id, file)
         end
-        Bosh::Director::Config.compiled_package_cache.create(
-          key:  global_cache_filename,
-          body: File.open(temp_path, "rb")
-        )
+        Bosh::Director::Config.compiled_package_cache_blobstore.create(temp_path, global_cache_filename)
       end
     end
 
     def self.exists_in_global_cache?(package, cache_key)
       global_cache_filename = [package.name, cache_key].join("-")
-      head = Bosh::Director::Config.compiled_package_cache.head(global_cache_filename)
-      ! head.nil?
+      Bosh::Director::Config.compiled_package_cache_blobstore.exists?(global_cache_filename)
     end
 
     def self.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
       global_cache_filename = [package.name, cache_key].join("-")
-      blobstore_file = Bosh::Director::Config.compiled_package_cache.get(global_cache_filename)
-
-      return nil unless blobstore_file
 
       blobstore_id = nil
       compiled_package_sha1 = nil
       Dir.mktmpdir do |path|
         temp_path = File.join(path, "blob")
-        File.open(temp_path, "wb") do |local_file|
-          local_file.write(blobstore_file.body)
+        begin
+          Bosh::Director::Config.compiled_package_cache_blobstore.get(global_cache_filename, temp_path)
+        rescue Bosh::Blobstore::NotFound => e
+          # if the object is not found in the cache, we ignore it and return nil
+          return nil
         end
-        File.open(temp_path, "rb") do |file|
-          blobstore_id = Bosh::Director::Config.blobstore.create(file)
-        end
+
+        blobstore_id = Bosh::Director::Config.blobstore.create(temp_path)
         compiled_package_sha1 = Digest::SHA1.file(temp_path).hexdigest
       end
 

@@ -68,9 +68,6 @@ describe Bosh::Director::ApiController do
         },
         'compiled_package_cache' => {
           'status' => true,
-          'extras' => {
-            'bucket_name' => 'compiled_packages'
-          }
         }
       }
     }
