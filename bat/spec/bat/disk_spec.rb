@@ -38,14 +38,14 @@ describe "persistent disk" do
     bosh("deployment #{deployment.to_path}")
     bosh("deploy")
 
-    ssh(static_ip, "vcap", password, "echo 'foobar' > #{SAVE_FILE}")
+    ssh(static_ip, "vcap", "echo 'foobar' > #{SAVE_FILE}", ssh_options)
     size = persistent_disk(static_ip)
     size.should_not be_nil
 
     use_persistent_disk(4096)
     with_deployment do
       persistent_disk(static_ip).should_not == size
-      ssh(static_ip, "vcap", password, "cat #{SAVE_FILE}").should match /foobar/
+      ssh(static_ip, "vcap", "cat #{SAVE_FILE}", ssh_options).should match /foobar/
     end
     deployment.delete
   end

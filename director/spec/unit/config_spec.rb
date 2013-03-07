@@ -37,9 +37,6 @@ describe Bosh::Director::Config do
   context "compiled package cache" do
     context "is configured" do
       before(:each) do
-        Fog.mock!
-        fs = Fog::Storage.new(provider: 'AWS', aws_access_key_id: 'access key id', aws_secret_access_key: 'secret access key')
-        fs.directories.create(key: 'compiled_packages')
         described_class.configure(test_config)
       end
 
@@ -48,11 +45,8 @@ describe Bosh::Director::Config do
       end
 
       it "returns a compiled package cache blobstore" do
-        described_class.compiled_package_cache.class.should == Fog::Storage::AWS::Files
-      end
-
-      it "returns compiled_package_cache_bucket" do
-        described_class.compiled_package_cache_bucket.should == "compiled_packages"
+        Bosh::Blobstore::Client.should_receive(:create).with('local', 'blobstore_path' => '/path/to/some/bucket')
+        described_class.compiled_package_cache_blobstore
       end
     end
 
@@ -66,12 +60,8 @@ describe Bosh::Director::Config do
         described_class.use_compiled_package_cache?.should be_false
       end
 
-      it "returns nil for compiled_package_cache_bucket" do
-        described_class.compiled_package_cache_bucket.should be_nil
-      end
-
       it "returns nil for compiled_package_cache" do
-        described_class.compiled_package_cache.should be_nil
+        described_class.compiled_package_cache_blobstore.should be_nil
       end
     end
   end

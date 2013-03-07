@@ -17,18 +17,24 @@ module BoshHelper
       "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log
-    result = Bosh::Exec.sh(command, options)
+    begin
+      result = Bosh::Exec.sh(command, options)
+    rescue Bosh::Exec::Error => e
+      puts("Bosh command failed: #{e.output}")
+      raise
+    end
     puts(result.output) if verbose?
     yield result if block_given?
     result
   end
 
   def self.bosh_cli_config_path
-    @bosh_cli_config_path
+    @bosh_cli_config_tempfile ||= Tempfile.new("bosh_config")
+    @bosh_cli_config_tempfile.path
   end
 
-  def self.bosh_cli_config_path=(new_path)
-    @bosh_cli_config_path = new_path
+  def self.delete_bosh_cli_config
+    @bosh_cli_config_tempfile.delete if @bosh_cli_config_tempfile
   end
 
   def bosh_bin
@@ -43,8 +49,19 @@ module BoshHelper
     BH.read_environment('BAT_VCAP_PASSWORD')
   end
 
+  def private_key
+    ENV['BAT_VCAP_PRIVATE_KEY']
+  end
+
+  def ssh_options
+    {
+        private_key: private_key,
+        password: password
+    }
+  end
+
   def bosh_dns_host
-    ENV.has_key?('BAT_DNS_HOST') ? BH.read_environment('BAT_DNS_HOST') : nil
+    ENV['BAT_DNS_HOST']
   end
 
   def debug?
@@ -136,12 +153,23 @@ module BoshHelper
     JSON.parse(body)
   end
 
-  def ssh(host, user, password, command)
+  def ssh(host, user, command, options = {})
+    options = options.dup
     output = nil
     puts "--> ssh: #{user}@#{host} '#{command}'" if debug?
-    Net::SSH.start(host, user, :password => password, :user_known_hosts_file => %w[/dev/null]) do |ssh|
+
+    private_key = options.delete(:private_key)
+    options[:user_known_hosts_file] = %w[/dev/null]
+    options[:keys] = [private_key] unless private_key.nil?
+
+    if options[:keys].nil? && options[:password].nil?
+      raise "need to set ssh :password, :keys, or :private_key"
+    end
+
+    Net::SSH.start(host, user, options) do |ssh|
       output = ssh.exec!(command)
     end
+
     puts "--> ssh output: '#{output}'" if verbose?
     output
   end

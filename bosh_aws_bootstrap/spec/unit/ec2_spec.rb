@@ -142,6 +142,24 @@ describe Bosh::Aws::EC2 do
         ec2.snapshot_volume(fake_volume, "snapshot name", "description", {"tag1" => "value1", "tag2" => "value2"})
       end
     end
+
+    describe "#create_nat_instance" do
+      it "should create an instance with default NAT options for AMI and instance type" do
+        instances = double(AWS::EC2::InstanceCollection)
+        fake_aws_ec2 = double(AWS::EC2, instances: instances)
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+
+        instances.should_receive(:create).with(
+            {
+                foo: "bar",
+                :image_id => "ami-f619c29f",
+                :instance_type => "m1.small"
+            }
+        )
+
+        ec2.create_nat_instance({foo: "bar"})
+      end
+    end
   end
 
   describe "internet gateways" do

@@ -121,10 +121,6 @@ module Bosh::Director
         !@compiled_package_cache_options.nil?
       end
 
-      def compiled_package_cache_bucket
-        @compiled_package_cache_options['bucket'] if use_compiled_package_cache?
-      end
-
       def get_revision
         Dir.chdir(File.expand_path("../../../..", __FILE__))
         revision_command = "(cat REVISION 2> /dev/null || " +
@@ -158,14 +154,15 @@ module Bosh::Director
         @blobstore
       end
 
-      def compiled_package_cache
+      def compiled_package_cache_blobstore
         @lock.synchronize do
-          if @compiled_package_cache.nil? && use_compiled_package_cache?
-            properties = @compiled_package_cache_options["properties"].reduce({}) { |hsh,(k,v)| hsh[k.to_sym] = v; hsh }
-            @compiled_package_cache = Fog::Storage.new(properties).directories.get(compiled_package_cache_bucket).files
+          if @compiled_package_cache_blobstore.nil? && use_compiled_package_cache?
+            plugin = @compiled_package_cache_options["provider"]
+            properties = @compiled_package_cache_options["options"]
+            @compiled_package_cache_blobstore =  Bosh::Blobstore::Client.create(plugin, properties)
           end
         end
-        @compiled_package_cache
+        @compiled_package_cache_blobstore
       end
 
       def cloud_type
