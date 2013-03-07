@@ -32,7 +32,7 @@ properties:
     description: Address of the redis server
   redis.port:
     description: Port that the redis server listens on
-    default: 6379
+    default: 25255
   redis.password:
     description: Password of the redis server
   nats.user:
@@ -82,6 +82,7 @@ properties:
     description: Addess of blobstore server used by simple blobstore plugin
   blobstore.port:
     description: Port of blobstore server used by simple blobstore plugin
+    default: 25250
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
