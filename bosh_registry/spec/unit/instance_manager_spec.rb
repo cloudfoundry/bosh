@@ -8,7 +8,7 @@ describe Bosh::Registry::InstanceManager do
   end
 
   def create_instance(params)
-    Bosh::Registry::Models::Instance.create(params)
+    Bosh::Registry::Models::RegistryInstance.create(params)
   end
 
   describe "reading settings" do

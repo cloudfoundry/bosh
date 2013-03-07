@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 
 module Bosh::Registry::Models
-  class Instance < Sequel::Model
+  class RegistryInstance < Sequel::Model
 
     def validate
       validates_presence [:instance_id, :settings]

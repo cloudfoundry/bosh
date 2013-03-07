@@ -2,7 +2,7 @@
 
 Sequel.migration do
   change do
-    create_table :instances do
+    create_table :registry_instances do
       primary_key :id
 
       String :instance_id, :null => false, :unique => true

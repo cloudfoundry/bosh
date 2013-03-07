@@ -26,7 +26,7 @@ describe Bosh::Registry::InstanceManager do
   end
 
   def create_instance(params)
-    Bosh::Registry::Models::Instance.create(params)
+    Bosh::Registry::Models::RegistryInstance.create(params)
   end
 
   def actual_ip_is(private_ip, floating_ip = nil)

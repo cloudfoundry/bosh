@@ -14,7 +14,7 @@ module Bosh::Registry
         :instance_id => instance_id
       }
 
-      instance = Models::Instance[params] || Models::Instance.new(params)
+      instance = Models::RegistryInstance[params] || Models::RegistryInstance.new(params)
       instance.settings = settings
       instance.save
     end
@@ -51,7 +51,7 @@ module Bosh::Registry
     end
 
     def get_instance(instance_id)
-      instance = Models::Instance[:instance_id => instance_id]
+      instance = Models::RegistryInstance[:instance_id => instance_id]
 
       if instance.nil?
         raise InstanceNotFound, "Can't find instance `#{instance_id}'"
