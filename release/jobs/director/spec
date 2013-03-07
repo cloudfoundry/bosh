@@ -32,7 +32,7 @@ properties:
     description: Address of the redis server
   redis.port:
     description: Port that the redis server listens on
-    default: 6379
+    default: 25255
   redis.password:
     description: Password of the redis server
   nats.user:
