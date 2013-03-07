@@ -1,9 +1,9 @@
-COMPONENTS = %w( agent_client bosh_aws_bootstrap bosh_aws_cpi bosh_aws_registry blobstore_client
+COMPONENTS = %w( agent_client bosh_aws_bootstrap bosh_aws_cpi blobstore_client
                  bosh_agent bosh_cli bosh_common bosh_cpi bosh_deployer director bosh_encryption health_monitor
-                 monit_api bosh_openstack_cpi bosh_openstack_registry bosh_registry package_compiler ruby_vcloud_sdk ruby_vim_sdk
+                 monit_api bosh_openstack_cpi bosh_registry package_compiler ruby_vcloud_sdk ruby_vim_sdk
                  simple_blobstore_server bosh_vcloud_cpi bosh_vsphere_cpi)
 
-COMPONENTS_WITH_PG = %w( director bosh_aws_registry bosh_openstack_registry bosh_registry)
+COMPONENTS_WITH_PG = %w( director bosh_registry)
 
 root    = File.expand_path('../../', __FILE__)
 version = File.read("#{root}/BOSH_VERSION").strip
