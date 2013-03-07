@@ -67,8 +67,8 @@ module Bosh::Deployer
 
         Sequel.connect(@registry_db_url) do |db|
           migrate(db)
-          servers = @deployments["instances"]
-          db[:instances].insert_multiple(servers) if servers
+          instances = @deployments["registry_instances"]
+          db[:registry_instances].insert_multiple(instances) if instances
         end
 
         unless has_bosh_registry?
@@ -113,7 +113,7 @@ module Bosh::Deployer
         return unless @registry_db_url
 
         Sequel.connect(@registry_db_url) do |db|
-          @deployments["instances"] = db[:instances].map {|row| row}
+          @deployments["registry_instances"] = db[:registry_instances].map {|row| row}
         end
 
         save_state
@@ -193,7 +193,7 @@ module Bosh::Deployer
       end
 
       def migrate(db)
-        db.create_table :instances do
+        db.create_table :registry_instances do
           primary_key :id
           column :instance_id, :text, :unique => true, :null => false
           column :settings, :text, :null => false
