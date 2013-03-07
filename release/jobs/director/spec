@@ -90,12 +90,15 @@ properties:
     description: Username agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
-  compiled_package_cache.bucket:
-    description: S3 bucket to use for the compiled package cache
-  compiled_package_cache.secret_access_key:
-    description: S3 secret_access_key for compiled package cache
+  compiled_package_cache.plugin:
+      description: Plugin of the blobstore used for the compiled package cache
+  default: 's3'
+  compiled_package_cache.bucket_name:
+      description: AWS S3 Bucket used for the compiled package cache
   compiled_package_cache.access_key_id:
-    description: S3 access_key_id for compiled package cache
+      description: AWS access_key_id used for the compiled package cache
+  compiled_package_cache.secret_access_key:
+      description: AWS secret_access_key used for the compiled package cache
   ntp:
     description: List of ntp server IPs
     default: []

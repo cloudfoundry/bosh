@@ -7,7 +7,6 @@ module Bosh
       DEFAULT_CIDR = "10.0.0.0/16"
       DEFAULT_ROUTE = "0.0.0.0/0"
       NAT_INSTANCE_DEFAULTS = {
-          :key_name => "bosh",
           :image_id => "ami-f619c29f",
           :instance_type => "m1.small"
       }
@@ -74,7 +73,7 @@ module Bosh
       end
 
       def security_group_by_name(name)
-        @aws_vpc.security_groups.detect {|sg| sg.name == name}
+        @aws_vpc.security_groups.detect { |sg| sg.name == name }
       end
 
       def create_subnets(subnets)
@@ -102,24 +101,39 @@ module Bosh
           end
 
           if subnet_spec["nat_instance"]
+            key_pair_name = subnet_spec["nat_instance"]["key_name"]
+            if @ec2.key_pair_by_name(key_pair_name).nil?
+              raise "Key pair '#{key_pair_name}' specified for '#{subnet_spec["nat_instance"]["name"]}' does not exist on AWS."
+            end
+
+            security_groups = [subnet_spec["nat_instance"]["security_group"]]
+            raise("nat_instance in subnet #{name} needs a 'security_group' key") if security_groups.nil?
+
+            ip = subnet_spec["nat_instance"]["ip"]
+            raise("nat_instance in subnet #{name} needs an 'ip' key") if ip.nil?
+
             nat_instance_options = NAT_INSTANCE_DEFAULTS.merge(
                 {
-                    :security_groups => [subnet_spec["nat_instance"]["security_group"]] ||
-                        raise("nat_instance in subnet #{name} needs a 'security_group' key"),
+                    :security_groups => security_groups,
                     :subnet => subnet.id,
-                    :private_ip_address => subnet_spec["nat_instance"]["ip"] ||
-                        raise("nat_instance in subnet #{name} needs an 'ip' key")
+                    :private_ip_address => ip,
+                    :key_name => key_pair_name
                 })
+
             yield "  Booting nat instance" if block_given?
             inst = @ec2.create_instance(nat_instance_options)
             eip = @ec2.allocate_elastic_ip
+
             yield "  Waiting for nat instance to be running" if block_given?
             wait_resource(inst, :running, :status)
             inst.add_tag("Name", {:value => subnet_spec["nat_instance"]["name"]})
+
             yield "  Attaching elastic IP" if block_given?
             inst.associate_elastic_ip(eip)
-            @ec2.disable_src_dest_checking(inst.id)
             nat_instances[subnet_spec["nat_instance"]["name"] || raise("nat_instance in subnet #{name} needs a 'name' key")] = inst
+
+            yield "  Disabling source/destination checking for NAT instance" if block_given?
+            @ec2.disable_src_dest_checking(inst.id)
           end
 
           subnet.add_tag("Name", :value => name)

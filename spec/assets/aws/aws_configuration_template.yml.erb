@@ -17,6 +17,7 @@ vpc:
         name: cf_nat_box
         ip: 10.10.0.10  # spin up NAT instance at fixed IP of 10.10.0.10
         security_group: open
+        key_name: <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>
     cf:
       cidr: 10.10.1.0/24
       availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
@@ -97,7 +98,6 @@ key_pairs:
 
 s3:
   - bucket_name: <%= (ENV["BOSH_VPC_SUBDOMAIN"] || raise("Missing ENV variable BOSH_VPC_SUBDOMAIN")) + "-bosh-blobstore" %>
-    tag: blobstore
 rds:
   - name: ccdb
     tag: cc

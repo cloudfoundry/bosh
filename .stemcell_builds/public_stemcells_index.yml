@@ -295,5 +295,5 @@ bosh-stemcell-vsphere-0.8.0.tgz:
   sha: 9b26076b31c4c6bb4bf8e750d609ffc223b62c81
   size: 421190865
   tags:
-  - vpshere
-  - test
+  - vsphere
+  - stable
