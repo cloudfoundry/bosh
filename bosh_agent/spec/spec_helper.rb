@@ -1,8 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-
-require "rspec"
-
 ENV["RACK_ENV"] = "test"
+
+require "bundler/setup"
 
 require "bosh_agent"
 

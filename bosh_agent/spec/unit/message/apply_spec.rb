@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../spec_helper'
+require 'spec_helper'
 require 'fileutils'
 
 describe Bosh::Agent::Message::Apply do
@@ -11,6 +11,7 @@ describe Bosh::Agent::Message::Apply do
     Bosh::Agent::Config.blobstore_provider = "simple"
     Bosh::Agent::Config.blobstore_options = {}
     Bosh::Agent::Config.platform_name = "dummy"
+    Bosh::Agent::Config.infrastructure_name = "dummy"
 
     FileUtils.mkdir_p(File.join(base_dir, 'monit'))
     Bosh::Agent::Monit.setup_monit_user

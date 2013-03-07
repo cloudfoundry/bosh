@@ -1,20 +1,19 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-
-Bosh::Agent::Config.platform_name = "ubuntu"
-Bosh::Agent::Config.platform
+require 'spec_helper'
+require 'bosh_agent/platform/ubuntu/password'
 
 describe Bosh::Agent::Platform::Ubuntu::Password do
 
   it 'should update passwords' do
+    passwd = Bosh::Agent::Platform::Ubuntu::Password.new
     settings = { 'env' => { 'bosh' => { 'password' => '$6$salt$password' } } }
 
-    password_wrapper = Bosh::Agent::Platform::Ubuntu::Password.new
-    password_wrapper.stub!(:update_password)
-    password_wrapper.should_receive(:update_password).with('root', '$6$salt$password')
-    password_wrapper.should_receive(:update_password).with('vcap', '$6$salt$password')
-    password_wrapper.update(settings)
+    passwd.stub!(:update_password)
+    passwd.should_receive(:update_password).with('root', '$6$salt$password')
+    passwd.should_receive(:update_password).with('vcap', '$6$salt$password')
+
+    passwd.update(settings)
   end
 
 end
