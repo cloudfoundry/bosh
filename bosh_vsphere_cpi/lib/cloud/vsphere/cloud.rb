@@ -927,7 +927,7 @@ module VSphereCloud
     end
 
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})
