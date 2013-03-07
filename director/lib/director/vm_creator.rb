@@ -17,35 +17,54 @@ module Bosh::Director
 
     def create(deployment, stemcell, cloud_properties, network_settings,
                disks=nil, env={})
-      env ||= {}
+      vm = nil
+      vm_cid = nil
+
       env.extend(DeepCopy)
       env = env._deep_copy
 
       agent_id = self.class.generate_agent_id
 
+      options = {
+          :deployment => deployment,
+          :agent_id => agent_id,
+          :cid => vm_cid,
+          :env => env
+      }
+
       if Config.encryption?
         credentials = generate_agent_credentials
         env["bosh"] ||= {}
         env["bosh"]["credentials"] = credentials
+        options[:credentials] = credentials
       end
 
-      vm = Models::Vm.create(:deployment => deployment, :agent_id => agent_id)
-      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties,
-                                network_settings, disks, env)
-      vm.cid = vm_cid
-      vm.env = env
+      vm_cid = @cloud.create_vm(agent_id, stemcell.cid, cloud_properties, network_settings, disks, env)
 
-      if Config.encryption?
-        vm.credentials = credentials
-      end
+      vm = Models::Vm.new(options)
 
       vm.save
       update_vm_metadata(vm)
       vm
+    rescue => e
+      logger.error("error creating vm: #{e.message}")
+      delete_vm(vm_cid) if vm_cid
+      vm.destroy if vm
+      raise e
+    end
+
+    def delete_vm(vm_cid)
+      @cloud.delete_vm(vm_cid)
+    rescue => e
+      logger.err("error cleaning up #{vm_cid}: #{e.message}\n#{e.backtrace.join("\n")}")
     end
 
     def self.generate_agent_id
       UUIDTools::UUID.random_create.to_s
+    end
+
+    def logger
+      Config.logger
     end
 
   end
