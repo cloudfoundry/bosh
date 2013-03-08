@@ -56,7 +56,7 @@ module Bosh
         vpc_config['compiled_package_cache']['access_key_id'] || warning('Missing compiled_package_cache access_key_id field')
       end
 
-      def cache_cache_secret_access_key
+      def cache_secret_access_key
         vpc_config['compiled_package_cache']['secret_access_key'] || warning('Missing compiled_package_cache secret_access_key field')
       end
 
