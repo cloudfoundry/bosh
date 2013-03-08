@@ -77,7 +77,7 @@ module Bosh::Cli::Command
       File.open("bat.yml", "w+") do |f|
         vpc_config = load_yaml_file(vpc_receipt_file)
         route53_config = load_yaml_file(route53_receipt_file)
-        f.write(Bosh::Aws::BatManifest.new(vpc_receipt_file, route53_receipt_file, stemcell_version, director.uuid).to_yaml)
+        f.write(Bosh::Aws::BatManifest.new(vpc_config, route53_config, stemcell_version, director.uuid).to_yaml)
       end
     end
 
