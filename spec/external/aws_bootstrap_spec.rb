@@ -28,9 +28,6 @@ describe 'bosh_aws_bootstrap_external' do
     let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
     let(:cf_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
 
-    # run some sample tests and make sure the test fails, then we can be sure there is existing instances on the machines
-
-
     before(:all) do
       ec2.vpcs.count.should == 0
 
@@ -178,17 +175,6 @@ describe 'bosh_aws_bootstrap_external' do
     end
   end
 
-  describe "Route53" do
-    pending "should do something?"
-  end
-
-  describe "RDS" do
-    #before(:all) { run_bosh "aws create rds #{aws_configuration_template}" }
-    #after(:all) { run_bosh "aws destroy #{aws_configuration_template}" }
-
-    pending "can create and destroy an RDS configuration"
-  end
-
   describe "S3" do
     let(:s3) { AWS::S3.new }
 
@@ -209,7 +195,7 @@ describe 'bosh_aws_bootstrap_external' do
     end
   end
 
-  describe "all resources" do
-    pending "can create and destroy a configuration of VPC, RDS, Route53, and S3"
+  describe "Route53" do
+    pending "it creates instances and DNS records, and deletes records"
   end
 end
