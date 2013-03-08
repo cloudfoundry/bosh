@@ -196,6 +196,31 @@ describe 'bosh_aws_bootstrap_external' do
   end
 
   describe "Route53" do
-    pending "it creates instances and DNS records, and deletes records"
+    let(:route53) { AWS::Route53.new }
+    let(:hosted_zone) do
+      route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com."
+    end
+    let(:resource_record_sets) { hosted_zone.resource_record_sets }
+ 
+    before do
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
+
+      run_bosh "aws create route53 records #{aws_configuration_template}"
+    end
+
+    it "creates A records, allocates IPs, and deletes A records" do
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 3
+      resource_record_sets.map(&:name).should =~ ["bosh", "bat", "micro"]
+      resource_record_sets.map(&:ttl).uniq.should == [60]
+      resource_record_sets.each do |record_set|
+        record_set.resource_records.first[:value].should =~ /\d+\.\d+\.\d+\.\d+/ # should be an IP address
+      end
+    end
+
+    after do
+      run_bosh "aws_destroy"
+
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
+    end
   end
 end
