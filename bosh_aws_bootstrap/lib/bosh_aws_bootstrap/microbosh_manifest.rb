@@ -49,19 +49,19 @@ module Bosh
       end
 
       def compiled_package_cache?
-        !!config['compiled_package_cache']
+        !!vpc_config['compiled_package_cache']
       end
 
       def cache_access_key_id
-        config['compiled_package_cache']['access_key_id'] || warning('Missing compiled_package_cache access_key_id field')
+        vpc_config['compiled_package_cache']['access_key_id'] || warning('Missing compiled_package_cache access_key_id field')
       end
 
       def cache_cache_secret_access_key
-        config['compiled_package_cache']['secret_access_key'] || warning('Missing compiled_package_cache secret_access_key field')
+        vpc_config['compiled_package_cache']['secret_access_key'] || warning('Missing compiled_package_cache secret_access_key field')
       end
 
       def cache_bucket_name
-        config['compiled_package_cache']['bucket_name'] || warning('Missing compiled_package_cache bucket_name field')
+        vpc_config['compiled_package_cache']['bucket_name'] || warning('Missing compiled_package_cache bucket_name field')
       end
 
       def bucket_name
