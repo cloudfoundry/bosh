@@ -2,6 +2,7 @@
 
 module Bosh::Agent
   class Platform::Ubuntu::Network
+    include Bosh::Exec
 
     def initialize
     end
@@ -155,8 +156,16 @@ module Bosh::Agent
     # a conflict with the existing system dhclient process and dns changes will
     # be flip floping each lease time. So in order to refresh dhclient
     # configuration we need to restart networking.
+    #
+    # If dhclient3 cannot release a lease because it collides with a network
+    # restart (message "receive_packet failed on eth0: Network is down"
+    # appears at /var/log/syslog) then the old dhclient3 process won't be
+    # killed (see bug LP #38140), and there will be two dhclient3 process
+    # running (and dns changes will be flip floping each lease time). So
+    # before restarting the network, we first kill all dhclient3 process.
     def restart_dhclient
-      %x{/etc/init.d/networking restart}
+      sh("pkill dhclient3", :on_error => :return)
+      sh("/etc/init.d/networking restart", :on_error => :return)
     end
 
     def load_erb(file)
