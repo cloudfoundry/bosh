@@ -62,7 +62,7 @@ describe "AWS" do
         end
 
         Dir.chdir deployments_path do
-          run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}' '#{rds_outfile_path}'"
+          run "#{deployments_aws_path}/generators/generator.rb '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{rds_outfile_path}'"
           FileUtils.cp("#{deployments_path}/cf-aws-stub.yml", "cf-aws.yml")
 
           # why are these necessary?
