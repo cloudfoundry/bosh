@@ -48,6 +48,22 @@ module Bosh
         vpc_config['key_pairs'].any? ? vpc_config['key_pairs'].values[0].gsub(/\.pub$/, '') : warning("Missing key_pairs field, must have at least 1 keypair")
       end
 
+      def compiled_package_cache?
+        !!config['compiled_package_cache']
+      end
+
+      def cache_access_key_id
+        config['compiled_package_cache']['access_key_id'] || warning('Missing compiled_package_cache access_key_id field')
+      end
+
+      def cache_cache_secret_access_key
+        config['compiled_package_cache']['secret_access_key'] || warning('Missing compiled_package_cache secret_access_key field')
+      end
+
+      def cache_bucket_name
+        config['compiled_package_cache']['bucket_name'] || warning('Missing compiled_package_cache bucket_name field')
+      end
+
       def bucket_name
         blobstore = vpc_config["s3"].detect { |e| e["tag"] == "blobstore" }
         blobstore ? blobstore["bucket_name"] : warning("Missing bucket tagged as `blobstore'")
