@@ -198,7 +198,7 @@ describe 'bosh_aws_bootstrap_external' do
   describe "Route53" do
     let(:route53) { AWS::Route53.new }
     let(:hosted_zone) do
-      route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com."
+      route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com." }
     end
     let(:resource_record_sets) { hosted_zone.resource_record_sets }
  
@@ -209,16 +209,16 @@ describe 'bosh_aws_bootstrap_external' do
     end
 
     it "creates A records, allocates IPs, and deletes A records" do
-      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 3
-      resource_record_sets.map(&:name).should =~ ["bosh", "bat", "micro"]
-      resource_record_sets.map(&:ttl).uniq.should == [60]
-      resource_record_sets.each do |record_set|
-        record_set.resource_records.first[:value].should =~ /\d+\.\d+\.\d+\.\d+/ # should be an IP address
+      a_records = resource_record_sets.select { |record_set| record_set.type == "A" }
+      a_records.map { |record| record.name.split(".")[0] }.should =~ ["bosh", "bat", "micro"]
+      a_records.map(&:ttl).uniq.should == [60]
+      a_records.each do |record|
+        record.resource_records.first[:value].should =~ /\d+\.\d+\.\d+\.\d+/ # should be an IP address
       end
     end
 
     after do
-      run_bosh "aws_destroy"
+      run_bosh "aws destroy"
 
       resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
     end

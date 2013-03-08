@@ -1,54 +1,55 @@
 module Bosh
   module Aws
     class MicroboshManifest
-      attr_reader :receipt
+      attr_reader :vpc_receipt, :route53_receipt
 
-      def initialize(receipt)
-        @receipt = receipt
+      def initialize(vpc_receipt, route53_receipt)
+        @vpc_receipt = vpc_receipt
+        @route53_receipt = route53_receipt
       end
 
-      def config
-        receipt['original_configuration']
+      def vpc_config
+        vpc_receipt['original_configuration']
       end
 
       def name
-        config['name'] || warning('Missing name field')
+        vpc_config['name'] || warning('Missing name field')
       end
 
       def vip
-        receipt['elastic_ips']['micro']['ips'][0] || warning('Missing vip field')
+        route53_receipt['elastic_ips']['micro']['ips'][0] || warning('Missing vip field')
       end
 
       def subnet
-        receipt['vpc']['subnets']['bosh'] || warning('Missing bosh subnet field')
+        vpc_receipt['vpc']['subnets']['bosh'] || warning('Missing bosh subnet field')
       end
 
       def availability_zone
-        config['vpc']['subnets']['bosh']['availability_zone'] || warning('Missing availability zone in vpc.subnets.bosh')
+        vpc_config['vpc']['subnets']['bosh']['availability_zone'] || warning('Missing availability zone in vpc.subnets.bosh')
       end
 
       def access_key_id
-        config['aws']['access_key_id'] || warning('Missing aws access_key_id field')
+        vpc_config['aws']['access_key_id'] || warning('Missing aws access_key_id field')
       end
 
       def secret_access_key
-        config['aws']['secret_access_key'] || warning('Missing aws secret_access_key field')
+        vpc_config['aws']['secret_access_key'] || warning('Missing aws secret_access_key field')
       end
 
       def region
-        config['aws']['region'] || warning('Missing aws region field')
+        vpc_config['aws']['region'] || warning('Missing aws region field')
       end
 
       def key_pair_name
-        config['key_pairs'].any? ? config['key_pairs'].keys[0] : warning("Missing key_pairs field, must have at least 1 keypair")
+        vpc_config['key_pairs'].any? ? vpc_config['key_pairs'].keys[0] : warning("Missing key_pairs field, must have at least 1 keypair")
       end
 
       def private_key_path
-        config['key_pairs'].any? ? config['key_pairs'].values[0].gsub(/\.pub$/, '') : warning("Missing key_pairs field, must have at least 1 keypair")
+        vpc_config['key_pairs'].any? ? vpc_config['key_pairs'].values[0].gsub(/\.pub$/, '') : warning("Missing key_pairs field, must have at least 1 keypair")
       end
 
       def bucket_name
-        blobstore = config["s3"].detect { |e| e["tag"] == "blobstore" }
+        blobstore = vpc_config["s3"].detect { |e| e["tag"] == "blobstore" }
         blobstore ? blobstore["bucket_name"] : warning("Missing bucket tagged as `blobstore'")
       end
 

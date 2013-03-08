@@ -29,11 +29,12 @@ module Bosh::Cli::Command
     usage "aws bootstrap micro"
     desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
     def bootstrap_micro
-      receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+      vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+      route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
       FileUtils.rm_rf "deployments"
       FileUtils.mkdir_p "deployments/micro"
       Dir.chdir("deployments/micro") do
-        create_micro_bosh_manifest(receipt_filename)
+        create_micro_bosh_manifest(vpc_receipt_filename, route53_receipt_filename)
       end
 
       Dir.chdir("deployments") do
@@ -50,27 +51,33 @@ module Bosh::Cli::Command
 
     usage "aws generate micro_bosh"
     desc "generate micro_bosh.yml"
-    def create_micro_bosh_manifest(receipt_file)
+    def create_micro_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       File.open("micro_bosh.yml", "w+") do |f|
-        f.write(Bosh::Aws::MicroboshManifest.new(load_yaml_file(receipt_file)).to_yaml)
+        vpc_config = load_yaml_file(vpc_receipt_file)
+        route53_config = load_yaml_file(route53_receipt_file)
+        f.write(Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config).to_yaml)
       end
     end
 
     usage "aws generate bosh"
     desc "generate bosh.yml stub manifest for use with 'bosh diff'"
-    def create_bosh_manifest(receipt_file)
+    def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       target_required
       File.open("bosh.yml", "w+") do |f|
-        f.write(Bosh::Aws::BoshManifest.new(load_yaml_file(receipt_file), director.uuid).to_yaml)
+        vpc_config = load_yaml_file(vpc_receipt_file)
+        route53_config = load_yaml_file(route53_receipt_file)
+        f.write(Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid).to_yaml)
       end
     end
 
     usage "aws generate bat_manifest"
     desc "generate bat.yml"
-    def create_bat_manifest(receipt_file, stemcell_version)
+    def create_bat_manifest(vpc_receipt_file, route53_receipt_file, stemcell_version)
       target_required
       File.open("bat.yml", "w+") do |f|
-        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version, director.uuid).to_yaml)
+        vpc_config = load_yaml_file(vpc_receipt_file)
+        route53_config = load_yaml_file(route53_receipt_file)
+        f.write(Bosh::Aws::BatManifest.new(vpc_receipt_file, route53_receipt_file, stemcell_version, director.uuid).to_yaml)
       end
     end
 
@@ -521,7 +528,7 @@ module Bosh::Cli::Command
       elastic_ips = ec2.elastic_ips
 
       elastic_ip_specs.each do |name, job|
-        @output_state["elastic_ips"][name] = {"ips" => elastic_ips.shift(job["instances"].times)}
+        @output_state["elastic_ips"][name] = {"ips" => elastic_ips.shift(job["instances"])}
       end
 
       elastic_ip_specs.each do |name, job|
@@ -529,10 +536,10 @@ module Bosh::Cli::Command
           say "adding A record for #{job["dns_record"]}.#{config["name"]}"
           route53.add_record(
               job["dns_record"],
-              config["name"],
+              config["vpc"]["domain"],
               @output_state["elastic_ips"][name]["ips"],
               {ttl: job["ttl"]}
-          )
+          ) # shouldn't have to get domain from config["vpc"]["domain"]; should use config["name"]
           @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
         end
       end

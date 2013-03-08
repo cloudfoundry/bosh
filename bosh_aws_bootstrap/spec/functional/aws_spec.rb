@@ -15,6 +15,7 @@ describe Bosh::Cli::Command::AWS do
         Dir.mktmpdir do |dirname|
           Dir.chdir dirname do
             FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
+            FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
             example.run
           end
         end
@@ -58,11 +59,12 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
+      let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
 
       around do |test|
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
-            aws.create_micro_bosh_manifest(create_vpc_output_yml)
+            aws.create_micro_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
             test.run
           end
         end
@@ -72,7 +74,7 @@ describe Bosh::Cli::Command::AWS do
         @micro_bosh_yaml = YAML.load_file("micro_bosh.yml")
 
         @micro_bosh_yaml['name'].should == "micro-dev102"
-        @micro_bosh_yaml['network']['vip'].should == "123.45.6.7"
+        @micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
         @micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
         @micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
 
@@ -84,13 +86,14 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws generate bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
+      let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
 
       it "generates required bosh deployment keys" do
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
             aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
-            aws.create_bosh_manifest(create_vpc_output_yml)
+            aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
             YAML.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
           end
         end
