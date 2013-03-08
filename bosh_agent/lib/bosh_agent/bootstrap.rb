@@ -114,7 +114,7 @@ module Bosh::Agent
     def update_hostname
       agent_id = @settings['agent_id']
 
-      template = ERB.new(ETC_HOST_TEMPATE, 0, '%<>-')
+      template = ERB.new(ETC_HOST_TEMPLATE, 0, '%<>-')
       result = template.result(binding)
       File.open('/etc/hosts', 'w') { |f| f.puts(result) }
 
@@ -335,7 +335,7 @@ module Bosh::Agent
       end
     end
 
-    ETC_HOST_TEMPATE = <<TEMPLATE
+    ETC_HOST_TEMPLATE = <<TEMPLATE
 127.0.0.1 localhost <%= agent_id %>
 
 # The following lines are desirable for IPv6 capable hosts
