@@ -1,11 +1,9 @@
 # Copyright (c) 2012 VMware, Inc.
-require 'retryable'
 
 module Bosh
 
   # Module for common methods used throughout the BOSH code.
   module Common
-    extend Retryable::Methods
 
     # Converts all keys of a [Hash] to symbols. Performs deep conversion.
     #
@@ -45,5 +43,40 @@ module Bosh
     end
 
     module_function :which
+
+    def retryable(options = {}, &block)
+      opts = {:tries => 2, :sleep => 1, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
+      invalid_options = opts.merge(options).keys - opts.keys
+
+      raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?
+      opts.merge!(options)
+
+      return if opts[:tries] == 0
+
+      on_exception, tries = [ opts[:on] ].flatten, opts[:tries]
+      retries = 0
+      retry_exception = nil
+
+      begin
+        return yield retries, retry_exception
+      rescue *on_exception => exception
+        raise unless exception.message =~ opts[:matching]
+        raise if retries+1 >= tries
+
+        # Interrupt Exception could be raised while sleeping
+        begin
+          sleep opts[:sleep].respond_to?(:call) ? opts[:sleep].call(retries) : opts[:sleep]
+        rescue *on_exception
+        end
+
+        retries += 1
+        retry_exception = exception
+        retry
+      ensure
+        opts[:ensure].call(retries)
+      end
+    end
+
+    module_function :retryable
   end
 end
