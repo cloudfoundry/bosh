@@ -21,7 +21,7 @@ describe "AWS" do
 
         Dir.chdir(bat_deployment_path) do
           st_version = stemcell_version(latest_stemcell_path)
-          run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{st_version}'"
+          run_bosh "aws generate bat_manifest '#{vpc_outfile_path}' '#{route53_outfile_path}' '#{st_version}'"
         end
 
         director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
