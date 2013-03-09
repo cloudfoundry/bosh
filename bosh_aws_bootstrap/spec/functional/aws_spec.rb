@@ -138,8 +138,6 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_ec2).with(config_file)
         aws.should_receive(:delete_all_ebs).with(config_file)
         aws.should_receive(:delete_all_rds_dbs).with(config_file)
-        aws.should_receive(:delete_all_rds_subnet_groups).with(config_file)
-        aws.should_receive(:delete_all_rds_security_groups).with(config_file)
         aws.should_receive(:delete_all_s3).with(config_file)
         aws.should_receive(:delete_all_vpcs).with(config_file)
         aws.should_receive(:delete_all_security_groups).with(config_file)
@@ -152,8 +150,6 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_ec2).with(default_config_filename)
         aws.should_receive(:delete_all_ebs).with(default_config_filename)
         aws.should_receive(:delete_all_rds_dbs).with(default_config_filename)
-        aws.should_receive(:delete_all_rds_subnet_groups).with(default_config_filename)
-        aws.should_receive(:delete_all_rds_security_groups).with(default_config_filename)
         aws.should_receive(:delete_all_s3).with(default_config_filename)
         aws.should_receive(:delete_all_vpcs).with(default_config_filename)
         aws.should_receive(:delete_all_security_groups).with(default_config_filename)
@@ -868,6 +864,8 @@ describe Bosh::Cli::Command::AWS do
             fake_rds.stub(:databases).and_return([])
 
             fake_rds.should_receive :delete_databases
+            fake_rds.should_receive :delete_subnet_groups
+            fake_rds.should_receive :delete_security_groups
 
             aws.delete_all_rds_dbs(config_file)
           end
@@ -918,6 +916,8 @@ describe Bosh::Cli::Command::AWS do
               ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
 
               fake_rds.should_receive :delete_databases
+              fake_rds.should_receive :delete_subnet_groups
+              fake_rds.should_receive :delete_security_groups
 
               aws.delete_all_rds_dbs(config_file)
             end
@@ -938,6 +938,8 @@ describe Bosh::Cli::Command::AWS do
           fake_rds.stub(:databases).and_return([])
 
           fake_rds.should_receive :delete_databases
+          fake_rds.should_receive :delete_subnet_groups
+          fake_rds.should_receive :delete_security_groups
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.delete_all_rds_dbs(config_file)

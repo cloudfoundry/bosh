@@ -144,8 +144,6 @@ module Bosh::Cli::Command
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
-      delete_all_rds_subnet_groups(config_file)
-      delete_all_rds_security_groups(config_file)
       delete_all_s3(config_file)
       delete_all_vpcs(config_file)
       delete_all_security_groups(config_file)
@@ -450,8 +448,14 @@ module Bosh::Cli::Command
         say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-        rds.delete_databases if confirmed?("Are you sure you want to delete all databases?")
-        err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
+        if confirmed?("Are you sure you want to delete all databases?")
+          rds.delete_databases
+          err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
+
+          delete_all_rds_subnet_groups(config_file)
+          delete_all_rds_security_groups(config_file)
+        end
+
       else
         say("No RDS databases found")
       end
