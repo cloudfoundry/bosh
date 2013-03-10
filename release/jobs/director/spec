@@ -117,6 +117,7 @@ properties:
     description: Address of the Registry to connect to
   registry.http.port:
     description: Port of the Registry to connect to
+    default: 25777
   registry.http.user:
     description: User to access the Registry
   registry.http.password:
