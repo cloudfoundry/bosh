@@ -33,25 +33,16 @@ module Bosh::Agent
     end
 
     def get_data_disk_device_name
-      case @config.infrastructure_name
-        when "vsphere"
+      case @config.infrastructure.disk_type
+        when "scsi"
           VSPHERE_DATA_DISK
-        when "aws"
-          settings = @config.settings
-          dev_path = settings['disks']['ephemeral']
-          unless dev_path
-            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
-          end
-          get_available_path(dev_path)
-        when "openstack"
-          settings = @config.settings
-          dev_path = settings['disks']['ephemeral']
-          unless dev_path
-            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
-          end
-          get_available_path(dev_path)
         else
-          raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #@infrastructure_name"
+          settings = @config.settings
+          dev_path = settings['disks']['ephemeral']
+          unless dev_path
+            raise Bosh::Agent::FatalError, "Unknown data or ephemeral disk"
+          end
+          get_available_path(dev_path)
       end
     end
     def lookup_disk_by_cid(cid)
@@ -62,18 +53,12 @@ module Bosh::Agent
         raise Bosh::Agent::FatalError, "Unknown persistent disk: #{cid}"
       end
 
-      case @config.infrastructure_name
-        when "vsphere"
+      case @config.infrastructure.disk_type
+        when "scsi"
           # VSphere passes in scsi disk id
           get_available_scsi_path(disk_id)
-        when "aws"
-          # AWS passes in the device name
-          get_available_path(disk_id)
-        when "openstack"
-          # OpenStack passes in the device name
-          get_available_path(disk_id)
         else
-          raise Bosh::Agent::FatalError, "Lookup disk failed, unsupported infrastructure #@infrastructure_name"
+          get_available_path(disk_id)
       end
     end
 

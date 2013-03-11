@@ -17,5 +17,9 @@ module Bosh::Agent
       DHCP_NETWORK_TYPE
     end
 
+    def disk_type
+
+    end
+
   end
 end

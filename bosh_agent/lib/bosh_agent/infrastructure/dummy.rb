@@ -13,5 +13,8 @@ module Bosh::Agent
 
     def network_config_type
     end
+
+    def disk_type
+    end
   end
 end

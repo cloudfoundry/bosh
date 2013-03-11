@@ -19,6 +19,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'persistent' => { 2 => '333'} } }
       Bosh::Agent::Config.infrastructure_name = "vsphere"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
     end
 
     it 'should look up disk by cid' do
@@ -82,6 +83,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
                                                     'persistent' => { 2 => '/dev/sdf'} } }
       Bosh::Agent::Config.infrastructure_name = "aws"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
     end
 
     it 'should get data disk device name' do
@@ -106,6 +108,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
                                                     'persistent' => { 2 => '/dev/sdf'} } }
       Bosh::Agent::Config.infrastructure_name = "openstack"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
     end
 
     it 'should get data disk device name' do

@@ -203,7 +203,7 @@ module VCloudCloud
       stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"), {})
 
       cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
-      cloud.create_vm("test-vcloud-vm", stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"])
+      cloud.create_vm(Test::generate_unique_name, stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"])
     end
 
     it "can create a vm with disk locality" do
@@ -247,7 +247,7 @@ module VCloudCloud
 
       cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
-      cloud.create_vm("test-vm", stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"], disk_locality)
+      cloud.create_vm(Test::generate_unique_name, stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"], disk_locality)
     end
 
     it "can delete a vm" do
