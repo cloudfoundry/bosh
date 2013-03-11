@@ -1,6 +1,10 @@
 module Bosh
   module Aws
     class EC2
+      include Bosh::AwsCloud::Helpers
+
+      def task_checkpoint; end # required for wait_resource from included Helpers
+
       MAX_TAG_KEY_LENGTH = 127
       MAX_TAG_VALUE_LENGTH = 255
       NAT_INSTANCE_DEFAULTS = {
@@ -66,8 +70,22 @@ module Bosh
         aws_ec2.instances.create(options)
       end
 
-      def create_nat_instance(options)
-        create_instance(options.merge(NAT_INSTANCE_DEFAULTS))
+      def create_nat_instance(name, subnet_id, private_ip, security_group, key_pair = nil)
+        key_pair = select_key_pair_for_instance(name, key_pair)
+
+        instance_options = NAT_INSTANCE_DEFAULTS.merge(
+            subnet: subnet_id,
+            private_ip_address: private_ip,
+            security_groups: [security_group],
+            key_name: key_pair
+        )
+
+        create_instance(instance_options).tap do |instance|
+          wait_resource(instance, :running, :status)
+          instance.add_tag("Name", {value: name})
+          instance.associate_elastic_ip(allocate_elastic_ip)
+          disable_src_dest_checking(instance.id)
+        end
       end
 
       def disable_src_dest_checking(instance_id)
@@ -86,19 +104,17 @@ module Bosh
         terminatable_instances.empty?
       end
 
-      def delete_volumes
-        unattached_volumes.each &:delete
-      end
-
-      def volume_count
-        unattached_volumes.count
-      end
-
       def instance_names
         terminatable_instances.inject({}) do |memo, instance|
           memo[instance.instance_id] = instance.tags["Name"] || '<unnamed instance>'
           memo
         end
+      end
+
+      def get_running_instance_by_name(name)
+        instances = aws_ec2.instances.select { |instance| instance.tags["Name"] == name && instance.status == :running }
+        raise "More than one running instance with name '#{name}'." if instances.count > 1
+        instances.first
       end
 
       def terminatable_instance_names
@@ -110,6 +126,14 @@ module Bosh
 
       def instances_for_ids(ids)
         aws_ec2.instances.filter('instance-id', *ids)
+      end
+
+      def delete_volumes
+        unattached_volumes.each &:delete
+      end
+
+      def volume_count
+        unattached_volumes.count
       end
 
       def snapshot_volume(volume, snapshot_name, description = "", tags = {})
@@ -206,6 +230,24 @@ module Bosh
         taggable.add_tag(trimmed_key, :value => trimmed_value)
       rescue AWS::EC2::Errors::InvalidParameterValue => e
         say("could not tag #{taggable.id}: #{e.message}")
+      end
+
+      def select_key_pair_for_instance(name, key_pair)
+        if key_pair.nil?
+          if key_pairs.count > 1
+            raise "AWS key pair name unspecified for instance '#{name}', unable to select a default."
+          elsif key_pairs.count == 0
+            raise "AWS key pair name unspecified for instance '#{name}', no key pairs available to select a default."
+          else
+            key_pair = key_pairs.first.name
+          end
+        else
+          if key_pairs.none? { |kp| kp.name == key_pair }
+            raise "No such key pair '#{key_pair}' on AWS."
+          end
+        end
+
+        key_pair
       end
     end
   end

@@ -4,6 +4,7 @@ require 'bosh_agent/platform/rhel'
 
 module Bosh::Agent
   class Platform::Rhel::Network < Platform::Linux::Network
+    include Bosh::Exec
 
     def initialize
       super(File.join File.dirname(__FILE__), 'templates')
@@ -20,7 +21,7 @@ module Bosh::Agent
 
     def restart_networking_service
       @logger.info("Restarting network")
-      Bosh::Exec.sh "service network restart"
+      sh "service network restart"
     end
 
     def write_dhcp_conf
@@ -35,7 +36,7 @@ module Bosh::Agent
 
     def restart_dhclient
       @logger.info("Restarting network to restart dhclient")
-      Bosh::Exec.sh "service network restart"
+      sh "service network restart"
     end
 
   end

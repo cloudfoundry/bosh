@@ -28,9 +28,6 @@ describe 'bosh_aws_bootstrap_external' do
     let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
     let(:cf_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
 
-    # run some sample tests and make sure the test fails, then we can be sure there is existing instances on the machines
-
-
     before(:all) do
       ec2.vpcs.count.should == 0
 
@@ -178,17 +175,6 @@ describe 'bosh_aws_bootstrap_external' do
     end
   end
 
-  describe "Route53" do
-    pending "should do something?"
-  end
-
-  describe "RDS" do
-    #before(:all) { run_bosh "aws create rds #{aws_configuration_template}" }
-    #after(:all) { run_bosh "aws destroy #{aws_configuration_template}" }
-
-    pending "can create and destroy an RDS configuration"
-  end
-
   describe "S3" do
     let(:s3) { AWS::S3.new }
 
@@ -209,7 +195,32 @@ describe 'bosh_aws_bootstrap_external' do
     end
   end
 
-  describe "all resources" do
-    pending "can create and destroy a configuration of VPC, RDS, Route53, and S3"
+  describe "Route53" do
+    let(:route53) { AWS::Route53.new }
+    let(:hosted_zone) do
+      route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com." }
+    end
+    let(:resource_record_sets) { hosted_zone.resource_record_sets }
+ 
+    before do
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
+
+      run_bosh "aws create route53 records #{aws_configuration_template}"
+    end
+
+    it "creates A records, allocates IPs, and deletes A records" do
+      a_records = resource_record_sets.select { |record_set| record_set.type == "A" }
+      a_records.map { |record| record.name.split(".")[0] }.should =~ ["bosh", "bat", "micro"]
+      a_records.map(&:ttl).uniq.should == [60]
+      a_records.each do |record|
+        record.resource_records.first[:value].should =~ /\d+\.\d+\.\d+\.\d+/ # should be an IP address
+      end
+    end
+
+    after do
+      run_bosh "aws destroy"
+
+      resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
+    end
   end
 end

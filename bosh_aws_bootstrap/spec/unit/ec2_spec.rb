@@ -144,20 +144,137 @@ describe Bosh::Aws::EC2 do
     end
 
     describe "#create_nat_instance" do
-      it "should create an instance with default NAT options for AMI and instance type" do
-        instances = double(AWS::EC2::InstanceCollection)
-        fake_aws_ec2 = double(AWS::EC2, instances: instances)
-        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+      subject(:create_nat_instance) do
+        ec2.create_nat_instance("name", "subnet_id", "10.1.0.1", "sg", "bosh")
+      end
 
+      let(:fake_aws_client) { double(AWS::EC2::Client) }
+      let(:nat_instance) { double(AWS::EC2::Instance, status: :running, id: 'i-123') }
+      let(:instances) { double(AWS::EC2::InstanceCollection) }
+      let(:fake_aws_ec2) { double(AWS::EC2, instances: instances, client: fake_aws_client) }
+      let(:key_pair_1) { double(AWS::EC2::KeyPair, name: "bosh") }
+      let(:key_pair_2) { double(AWS::EC2::KeyPair, name: "cf") }
+
+      before do
+        fake_aws_ec2.stub(:key_pairs).and_return([key_pair_1])
+        ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
+        ec2.stub(:allocate_elastic_ip)
+        nat_instance.stub(:associate_elastic_ip)
+        nat_instance.stub(:add_tag)
+        fake_aws_client.stub(:modify_instance_attribute)
+        instances.stub(:create).and_return(nat_instance)
+      end
+
+      it "creates an instance with the given options and default NAT options" do
         instances.should_receive(:create).with(
-            {
-                foo: "bar",
-                :image_id => "ami-f619c29f",
-                :instance_type => "m1.small"
-            }
+           {
+             subnet: "subnet_id",
+             private_ip_address: "10.1.0.1",
+             security_groups: ["sg"],
+             key_name: "bosh",
+             image_id: "ami-f619c29f",
+             instance_type: "m1.small"
+           }
         )
 
-        ec2.create_nat_instance({foo: "bar"})
+        create_nat_instance
+      end
+
+      it "should tag the NAT instance with a name" do
+        nat_instance.should_receive(:add_tag).with("Name", {value: "name"})
+
+        create_nat_instance
+      end
+
+      it "should associate an elastic IP to the NAT instance" do
+        elastic_ip = mock('elastic_ip')
+
+        ec2.should_receive(:allocate_elastic_ip).and_return(elastic_ip)
+        nat_instance.should_receive(:associate_elastic_ip).with(elastic_ip)
+
+        create_nat_instance
+      end
+
+      it "should disable source/destination checking for the NAT instance" do
+        fake_aws_client.should_receive(:modify_instance_attribute).with(
+           {
+             instance_id: 'i-123',
+             source_dest_check: {value: false}
+           }
+        )
+
+        create_nat_instance
+      end
+
+      context "when no key pair name is given" do
+
+        subject(:create_nat_instance_without_key_pair) do
+          ec2.create_nat_instance("name", "subnet_id", "10.1.0.1", "sg")
+        end
+
+        it "uses the key pair name on AWS if only one exists" do
+          instances.should_receive(:create).with(
+              {
+                  subnet: "subnet_id",
+                  private_ip_address: "10.1.0.1",
+                  security_groups: ["sg"],
+                  key_name: "bosh",
+                  image_id: "ami-f619c29f",
+                  instance_type: "m1.small"
+              }
+          )
+          create_nat_instance_without_key_pair
+        end
+
+        it "raises an error if there is more than one key pair on AWS" do
+          fake_aws_ec2.stub(:key_pairs).and_return([key_pair_1, key_pair_2])
+
+          expect {
+            create_nat_instance_without_key_pair
+          }.to raise_error("AWS key pair name unspecified for instance 'name', " +
+               "unable to select a default.")
+        end
+
+        it "raises an error if there is no key pair on AWS" do
+          fake_aws_ec2.stub(:key_pairs).and_return([])
+
+          expect {
+            create_nat_instance_without_key_pair
+          }.to raise_error("AWS key pair name unspecified for instance 'name', " +
+               "no key pairs available to select a default.")
+        end
+      end
+
+      context "when a key pair name is given" do
+         it "raises an error if it doesn't exist on AWS" do
+          fake_aws_ec2.stub(key_pairs: [key_pair_2])
+
+          expect {
+            create_nat_instance
+          }.to raise_error("No such key pair 'bosh' on AWS.")
+        end
+      end
+    end
+
+    describe "#get_running_instance_by_name" do
+      it "should get the instance by tagged name" do
+        fake_aws_instance_1 = mock(AWS::EC2::Instance, tags: {"Name" => "foo"}, status: :running)
+        fake_aws_instance_2 = mock(AWS::EC2::Instance, tags: {"Name" => "bar"}, status: :running)
+
+        ec2.stub(:aws_ec2).and_return(mock("AWS::EC2", instances: [fake_aws_instance_1, fake_aws_instance_2]))
+
+        ec2.get_running_instance_by_name("foo").should == fake_aws_instance_1
+      end
+
+      it "raises an error if more than one running instance has the given name" do
+        fake_aws_instance_1 = mock(AWS::EC2::Instance, tags: {"Name" => "foo"}, status: :running)
+        fake_aws_instance_2 = mock(AWS::EC2::Instance, tags: {"Name" => "foo"}, status: :running)
+
+        ec2.stub(:aws_ec2).and_return(mock("AWS::EC2", instances: [fake_aws_instance_1, fake_aws_instance_2]))
+
+        expect {
+          ec2.get_running_instance_by_name("foo")
+        }.to raise_error("More than one running instance with name 'foo'.")
       end
     end
   end

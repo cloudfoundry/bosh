@@ -381,7 +381,7 @@ describe Bosh::Director::PackageCompiler do
 
       it 'returns nil if compiled_package not found in local or global blobstore' do
         BD::Config.stub(:use_compiled_package_cache?).and_return(true)
-        BD::BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, cache_key, task.dependency_key).and_return(nil)
+        BD::Config.stub(:compiled_package_cache_blobstore).and_return(double('cache', :exists? => false))
         compiler.find_compiled_package(task).should == nil
       end
 
@@ -392,6 +392,7 @@ describe Bosh::Director::PackageCompiler do
           dependency_key: "[]"
         )
         BD::Config.stub(:use_compiled_package_cache?).and_return(true)
+        BD::Config.stub(:compiled_package_cache_blobstore).and_return(double('cache', :exists? => true))
         BD::BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, cache_key, task.dependency_key).and_return(compiled_package)
         compiler.find_compiled_package(task).should == compiled_package
       end

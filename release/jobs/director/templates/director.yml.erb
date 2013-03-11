@@ -53,9 +53,9 @@ blobstore:
     user: <%= p('blobstore.director.user') %>
     password: <%= p('blobstore.director.password') %>
 <% end %>
-<% if_p('compiled_package_cache.bucket_name',
-        'compiled_package_cache.access_key_id',
-        'compiled_package_cache.secret_access_key') do |bucket_name, access_key_id, secret_access_key| %>
+<% if_p('compiled_package_cache.options.bucket_name',
+        'compiled_package_cache.options.access_key_id',
+        'compiled_package_cache.options.secret_access_key') do |bucket_name, access_key_id, secret_access_key| %>
 compiled_package_cache:
   provider: s3
   options:
