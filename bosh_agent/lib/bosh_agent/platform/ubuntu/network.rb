@@ -4,6 +4,7 @@ require 'bosh_agent/platform/linux/network'
 
 module Bosh::Agent
   class Platform::Ubuntu::Network < Platform::Linux::Network
+    include Bosh::Exec
 
     def initialize
       super(File.join File.dirname(__FILE__), 'templates')
@@ -41,7 +42,7 @@ module Bosh::Agent
     end
 
     def restart_dhclient
-      Bosh::Exec.sh "/etc/init.d/networking restart"
+      sh "/etc/init.d/networking restart"
     end
 
   end

@@ -95,7 +95,12 @@ elastic_ips:
 
 key_pairs:
   <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>: <%= ENV["BOSH_KEY_PATH"] || "#{ENV["HOME"]}/.ssh/id_rsa_bosh" %>
-
+<% if ENV['BOSH_CACHE_ACCESS_KEY_ID'] %>
+compiled_package_cache:
+  access_key_id: <%= ENV['BOSH_CACHE_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['BOSH_CACHE_SECRET_ACCESS_KEY'] || raise('Missing ENV variable BOSH_CACHE_SECRET_ACCESS_KEY') %>
+  bucket_name: <%= ENV['BOSH_CACHE_BUCKET_NAME'] || 'bosh-global-package-cache' %>
+<% end %>
 s3:
   - bucket_name: <%= (ENV["BOSH_VPC_SUBDOMAIN"] || raise("Missing ENV variable BOSH_VPC_SUBDOMAIN")) + "-bosh-blobstore" %>
 rds:

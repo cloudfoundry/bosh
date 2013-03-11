@@ -15,6 +15,7 @@ describe Bosh::Cli::Command::AWS do
         Dir.mktmpdir do |dirname|
           Dir.chdir dirname do
             FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
+            FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
             example.run
           end
         end
@@ -58,11 +59,12 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
+      let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
 
       around do |test|
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
-            aws.create_micro_bosh_manifest(create_vpc_output_yml)
+            aws.create_micro_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
             test.run
           end
         end
@@ -72,7 +74,7 @@ describe Bosh::Cli::Command::AWS do
         @micro_bosh_yaml = YAML.load_file("micro_bosh.yml")
 
         @micro_bosh_yaml['name'].should == "micro-dev102"
-        @micro_bosh_yaml['network']['vip'].should == "123.45.6.7"
+        @micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
         @micro_bosh_yaml['network']['cloud_properties']['subnet'].should == "subnet-4bdf6c26"
         @micro_bosh_yaml['resources']['cloud_properties']['availability_zone'].should == "us-east-1a"
 
@@ -84,13 +86,14 @@ describe Bosh::Cli::Command::AWS do
 
     describe "aws generate bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
+      let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
 
       it "generates required bosh deployment keys" do
         Dir.mktmpdir do |dir|
           Dir.chdir(dir) do
             aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
-            aws.create_bosh_manifest(create_vpc_output_yml)
+            aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
             YAML.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
           end
         end
@@ -110,6 +113,7 @@ describe Bosh::Cli::Command::AWS do
       it "should create the specified VPCs, RDS DBs, and S3 Volumes" do
         aws.should_receive(:create_key_pairs).with(config_file)
         aws.should_receive(:create_vpc).with(config_file)
+        aws.should_receive(:create_route53_records).with(config_file)
         aws.should_receive(:create_rds_dbs).with(config_file)
         aws.should_receive(:create_s3).with(config_file)
         aws.create config_file
@@ -120,6 +124,7 @@ describe Bosh::Cli::Command::AWS do
         File.exist?(default_config_filename).should == true
         aws.should_receive(:create_key_pairs).with(default_config_filename)
         aws.should_receive(:create_vpc).with(default_config_filename)
+        aws.should_receive(:create_route53_records).with(default_config_filename)
         aws.should_receive(:create_rds_dbs).with(default_config_filename)
         aws.should_receive(:create_s3).with(default_config_filename)
         aws.create
@@ -133,8 +138,6 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_ec2).with(config_file)
         aws.should_receive(:delete_all_ebs).with(config_file)
         aws.should_receive(:delete_all_rds_dbs).with(config_file)
-        aws.should_receive(:delete_all_rds_subnet_groups).with(config_file)
-        aws.should_receive(:delete_all_rds_security_groups).with(config_file)
         aws.should_receive(:delete_all_s3).with(config_file)
         aws.should_receive(:delete_all_vpcs).with(config_file)
         aws.should_receive(:delete_all_security_groups).with(config_file)
@@ -147,8 +150,6 @@ describe Bosh::Cli::Command::AWS do
         aws.should_receive(:delete_all_ec2).with(default_config_filename)
         aws.should_receive(:delete_all_ebs).with(default_config_filename)
         aws.should_receive(:delete_all_rds_dbs).with(default_config_filename)
-        aws.should_receive(:delete_all_rds_subnet_groups).with(default_config_filename)
-        aws.should_receive(:delete_all_rds_security_groups).with(default_config_filename)
         aws.should_receive(:delete_all_s3).with(default_config_filename)
         aws.should_receive(:delete_all_vpcs).with(default_config_filename)
         aws.should_receive(:delete_all_security_groups).with(default_config_filename)
@@ -190,6 +191,8 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc.stub(:create_dhcp_options)
         fake_vpc.stub(:create_security_groups)
         fake_vpc.stub(:create_subnets)
+        fake_vpc.stub(:create_nat_instances)
+        fake_vpc.stub(:setup_subnet_routes)
         fake_vpc.stub(:subnets).and_return({'bosh' => "amz-subnet1", 'name2' => "amz-subnet2"})
         fake_vpc.stub(:attach_internet_gateway)
         fake_ec2.stub(:allocate_elastic_ips)
@@ -202,52 +205,7 @@ describe Bosh::Cli::Command::AWS do
         fake_vpc
       end
 
-      it "should create all the components of the vpc" do
-        fake_ec2 = mock("ec2")
-        fake_vpc = mock("vpc")
-        fake_elb = mock("elb")
-        fake_route53 = mock("route53")
-        fake_igw = mock(AWS::EC2::InternetGateway, id: "id2")
-
-        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
-        Bosh::Aws::ELB.stub(:new).and_return(fake_elb)
-        Bosh::Aws::VPC.stub(:create).with(fake_ec2, "10.10.0.0/16", "default").and_return(fake_vpc)
-        Bosh::Aws::Route53.stub(:new).and_return(fake_route53)
-
-        fake_vpc.stub(:vpc_id)
-
-        fake_vpc.should_receive(:create_subnets).with({
-                                                          "bosh" => {"cidr" => "10.10.0.0/24", "availability_zone" => "us-east-1a"},
-                                                          "cf" => {"cidr" => "10.10.1.0/24", "availability_zone" => "us-east-1a"},
-                                                          "cf_az2" => {"cidr" => "10.10.2.0/24", "availability_zone" => "us-east-1b"},
-
-                                                      })
-        fake_vpc.should_receive(:create_dhcp_options).with(
-            "domain_name" => "dev102.cf.com",
-            "domain_name_servers" => ["10.10.0.5", "172.16.0.23"]
-        )
-        fake_vpc.should_receive(:create_security_groups) do |args|
-          args.length.should == 2
-          args.first.keys.should =~ %w[name ingress]
-        end
-        fake_ec2.should_receive(:allocate_elastic_ips).with(3)
-        fake_ec2.should_receive(:create_internet_gateway).and_return(fake_igw)
-        fake_vpc.should_receive(:attach_internet_gateway).with("id2")
-
-        new_elb = mock("new elb", dns_name: 'elb-123.example.com')
-        fake_elb.should_receive(:create).with("external-elb-1", fake_vpc, {"dns_record" => "*", "subnets" => ['bosh'], "security_group" => "open", "ttl" => 60}).once.and_return(new_elb)
-        fake_vpc.stub(:subnets).and_return("bosh" => "amz-sub1id")
-        fake_ec2.stub(:elastic_ips).and_return(["123.45.6.7", "123.45.6.8", "123.4.5.9"])
-        fake_vpc.stub(:flush_output_state)
-        fake_vpc.stub(:state).and_return(:available)
-
-        fake_route53.should_receive(:add_record).with("*", "dev102.cf.com", ["elb-123.example.com"], {type: 'CNAME', ttl: 60})
-        fake_route53.should_receive(:add_record).with("micro", "dev102.cf.com", ["123.45.6.7"], {ttl: 60})
-        fake_route53.should_receive(:add_record).with("bosh", "dev102.cf.com", ["123.45.6.8"], {ttl: nil})
-        fake_route53.should_receive(:add_record).with("bat", "dev102.cf.com", ["123.4.5.9"], {ttl: nil})
-
-        aws.create_vpc config_file
-      end
+      pending "should create all the components of a VPC"
 
       it "should flush the output to a YAML file" do
         fake_vpc = make_fake_vpc!
@@ -493,6 +451,18 @@ describe Bosh::Cli::Command::AWS do
           aws.delete_all_s3 config_file
         end
       end
+    end
+
+    describe "aws create route53 records" do
+      pending "should create the required instances and associate Elastic IPs"
+
+      pending "should create DNS records for the appropriate instances"
+    end
+
+    describe "aws delete_all route53 records" do
+      pending "should delete all route53 records except NS and SOA"
+
+      pending "can optionally omit deletion of other record types"
     end
 
     describe "aws terminate_all ec2" do
@@ -894,6 +864,8 @@ describe Bosh::Cli::Command::AWS do
             fake_rds.stub(:databases).and_return([])
 
             fake_rds.should_receive :delete_databases
+            fake_rds.should_receive :delete_subnet_groups
+            fake_rds.should_receive :delete_security_groups
 
             aws.delete_all_rds_dbs(config_file)
           end
@@ -944,6 +916,8 @@ describe Bosh::Cli::Command::AWS do
               ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
 
               fake_rds.should_receive :delete_databases
+              fake_rds.should_receive :delete_subnet_groups
+              fake_rds.should_receive :delete_security_groups
 
               aws.delete_all_rds_dbs(config_file)
             end
@@ -964,6 +938,8 @@ describe Bosh::Cli::Command::AWS do
           fake_rds.stub(:databases).and_return([])
 
           fake_rds.should_receive :delete_databases
+          fake_rds.should_receive :delete_subnet_groups
+          fake_rds.should_receive :delete_security_groups
 
           ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
           aws.delete_all_rds_dbs(config_file)

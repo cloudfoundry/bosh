@@ -6,6 +6,7 @@ module Bosh::Cli::Command
     DEFAULT_CIDR = "10.0.0.0/16" # KILL
     OUTPUT_VPC_FILE = "aws_vpc_receipt.yml"
     OUTPUT_RDS_FILE = "aws_rds_receipt.yml"
+    OUTPUT_ROUTE53_FILE = "aws_route53_receipt.yml"
     AWS_JENKINS_BUCKET = "bosh-jenkins-artifacts"
 
     attr_reader :output_state, :config_dir, :ec2
@@ -28,11 +29,12 @@ module Bosh::Cli::Command
     usage "aws bootstrap micro"
     desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
     def bootstrap_micro
-      receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+      vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+      route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
       FileUtils.rm_rf "deployments"
       FileUtils.mkdir_p "deployments/micro"
       Dir.chdir("deployments/micro") do
-        create_micro_bosh_manifest(receipt_filename)
+        create_micro_bosh_manifest(vpc_receipt_filename, route53_receipt_filename)
       end
 
       Dir.chdir("deployments") do
@@ -49,27 +51,33 @@ module Bosh::Cli::Command
 
     usage "aws generate micro_bosh"
     desc "generate micro_bosh.yml"
-    def create_micro_bosh_manifest(receipt_file)
+    def create_micro_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       File.open("micro_bosh.yml", "w+") do |f|
-        f.write(Bosh::Aws::MicroboshManifest.new(load_yaml_file(receipt_file)).to_yaml)
+        vpc_config = load_yaml_file(vpc_receipt_file)
+        route53_config = load_yaml_file(route53_receipt_file)
+        f.write(Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config).to_yaml)
       end
     end
 
     usage "aws generate bosh"
     desc "generate bosh.yml stub manifest for use with 'bosh diff'"
-    def create_bosh_manifest(receipt_file)
+    def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       target_required
       File.open("bosh.yml", "w+") do |f|
-        f.write(Bosh::Aws::BoshManifest.new(load_yaml_file(receipt_file), director.uuid).to_yaml)
+        vpc_config = load_yaml_file(vpc_receipt_file)
+        route53_config = load_yaml_file(route53_receipt_file)
+        f.write(Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid).to_yaml)
       end
     end
 
     usage "aws generate bat_manifest"
     desc "generate bat.yml"
-    def create_bat_manifest(receipt_file, stemcell_version)
+    def create_bat_manifest(vpc_receipt_file, route53_receipt_file, stemcell_version)
       target_required
       File.open("bat.yml", "w+") do |f|
-        f.write(Bosh::Aws::BatManifest.new(load_yaml_file(receipt_file), stemcell_version, director.uuid).to_yaml)
+        vpc_config = load_yaml_file(vpc_receipt_file)
+        route53_config = load_yaml_file(route53_receipt_file)
+        f.write(Bosh::Aws::BatManifest.new(vpc_config, route53_config, stemcell_version, director.uuid).to_yaml)
       end
     end
 
@@ -123,6 +131,7 @@ module Bosh::Cli::Command
       end
       create_key_pairs(config_file)
       create_vpc(config_file)
+      create_route53_records(config_file)
       create_rds_dbs(config_file)
       create_s3(config_file)
     end
@@ -135,8 +144,6 @@ module Bosh::Cli::Command
       delete_all_ec2(config_file)
       delete_all_ebs(config_file)
       delete_all_rds_dbs(config_file)
-      delete_all_rds_subnet_groups(config_file)
-      delete_all_rds_security_groups(config_file)
       delete_all_s3(config_file)
       delete_all_vpcs(config_file)
       delete_all_security_groups(config_file)
@@ -158,63 +165,40 @@ module Bosh::Cli::Command
 
       @output_state["original_configuration"] = config
 
-      if was_vpc_eventually_available?(vpc)
-        say "creating internet gateway"
-        igw = ec2.create_internet_gateway
-        vpc.attach_internet_gateway(igw.id)
-
-        security_groups = config["vpc"]["security_groups"]
-        say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
-        vpc.create_security_groups(security_groups)
-
-        subnets = config["vpc"]["subnets"]
-        say "creating subnets: #{subnets.keys.join(", ")}"
-        vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
-        @output_state["vpc"]["subnets"] = vpc.subnets
-
-        route53 = Bosh::Aws::Route53.new(config["aws"])
-
-        elbs = config["vpc"]["elbs"]
-        say "creating load balancers: #{elbs.keys.join(", ")}"
-        elbs.each do |name, settings|
-          e = elb.create(name, vpc, settings)
-          if settings["dns_record"]
-            say "adding CNAME record for #{settings["dns_record"]}.#{config["vpc"]["domain"]}"
-            route53.add_record(settings["dns_record"], config["vpc"]["domain"], [e.dns_name], {ttl: settings["ttl"], type: 'CNAME'})
-          end
-        end
-
-        dhcp_options = config["vpc"]["dhcp_options"]
-        say "creating DHCP options"
-        vpc.create_dhcp_options(dhcp_options)
-
-        count = config["elastic_ips"].values.reduce(0) { |total, job| total += job["instances"] }
-        say "allocating #{count} elastic IP(s)"
-        ec2.allocate_elastic_ips(count)
-
-        elastic_ips = ec2.elastic_ips
-
-        config["elastic_ips"].each do |name, job|
-          @output_state["elastic_ips"] ||= {}
-          @output_state["elastic_ips"][name] = {}
-          ips = []
-
-          job["instances"].times do
-            ips << elastic_ips.shift
-          end
-          @output_state["elastic_ips"][name]["ips"] = ips
-
-        end
-        config["elastic_ips"].each do |name, job|
-          if job["dns_record"]
-            say "adding A record for #{job["dns_record"]}.#{config["vpc"]["domain"]}"
-            route53.add_record(job["dns_record"], config["vpc"]["domain"], @output_state["elastic_ips"][name]["ips"], {ttl: job["ttl"]})
-            @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
-          end
-        end
-      else
+      unless was_vpc_eventually_available?(vpc)
         err "VPC #{vpc.vpc_id} was not available within 60 seconds, giving up"
       end
+
+      say "creating internet gateway"
+      igw = ec2.create_internet_gateway
+      vpc.attach_internet_gateway(igw.id)
+
+      security_groups = config["vpc"]["security_groups"]
+      say "creating security groups: #{security_groups.map { |group| group["name"] }.join(", ")}"
+      vpc.create_security_groups(security_groups)
+
+      subnets = config["vpc"]["subnets"]
+      say "creating subnets: #{subnets.keys.join(", ")}"
+      vpc.create_subnets(subnets) { |msg| say "  #{msg}" }
+      vpc.create_nat_instances(subnets)
+      vpc.setup_subnet_routes(subnets) { |msg| say "  #{msg}" }
+      @output_state["vpc"]["subnets"] = vpc.subnets
+
+      route53 = Bosh::Aws::Route53.new(config["aws"])
+
+      elbs = config["vpc"]["elbs"]
+      say "creating load balancers: #{elbs.keys.join(", ")}"
+      elbs.each do |name, settings|
+        e = elb.create(name, vpc, settings)
+        if settings["dns_record"]
+          say "adding CNAME record for #{settings["dns_record"]}.#{config["vpc"]["domain"]}"
+          route53.add_record(settings["dns_record"], config["vpc"]["domain"], [e.dns_name], {ttl: settings["ttl"], type: 'CNAME'})
+        end
+      end
+
+      dhcp_options = config["vpc"]["dhcp_options"]
+      say "creating DHCP options"
+      vpc.create_dhcp_options(dhcp_options)
     ensure
       file_path = File.join(Dir.pwd, OUTPUT_VPC_FILE)
       flush_output_state file_path
@@ -453,7 +437,6 @@ module Bosh::Cli::Command
 
     usage "aws delete_all rds"
     desc "delete all RDS database instances"
-
     def delete_all_rds_dbs(config_file)
       config = load_yaml_file(config_file)
       credentials = config["aws"]
@@ -465,8 +448,14 @@ module Bosh::Cli::Command
         say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
         say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-        rds.delete_databases if confirmed?("Are you sure you want to delete all databases?")
-        err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
+        if confirmed?("Are you sure you want to delete all databases?")
+          rds.delete_databases
+          err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
+
+          delete_all_rds_subnet_groups(config_file)
+          delete_all_rds_security_groups(config_file)
+        end
+
       else
         say("No RDS databases found")
       end
@@ -519,6 +508,50 @@ module Bosh::Cli::Command
         say("unable to delete security groups: #{e}") if tries > 0
         ec2.delete_all_security_groups
       end
+    end
+
+    usage "aws create route53 records"
+    desc "creates requested instances, allocates IPs, and creates A records"
+    def create_route53_records(config_file)
+      config = load_yaml_file(config_file)
+      elastic_ip_specs = config["elastic_ips"]
+
+      if elastic_ip_specs
+        @output_state["elastic_ips"] = {}
+      else
+        return
+      end
+
+      ec2 = Bosh::Aws::EC2.new(config["aws"])
+      route53 = Bosh::Aws::Route53.new(config["aws"])
+
+      count = elastic_ip_specs.map{|_, spec| spec["instances"]}.inject(:+)
+      say "allocating #{count} elastic IP(s)"
+      ec2.allocate_elastic_ips(count)
+
+      elastic_ips = ec2.elastic_ips
+
+      elastic_ip_specs.each do |name, job|
+        @output_state["elastic_ips"][name] = {"ips" => elastic_ips.shift(job["instances"])}
+      end
+
+      elastic_ip_specs.each do |name, job|
+        if job["dns_record"]
+          say "adding A record for #{job["dns_record"]}.#{config["name"]}"
+          route53.add_record(
+              job["dns_record"],
+              config["vpc"]["domain"],
+              @output_state["elastic_ips"][name]["ips"],
+              {ttl: job["ttl"]}
+          ) # shouldn't have to get domain from config["vpc"]["domain"]; should use config["name"]
+          @output_state["elastic_ips"][name]["dns_record"] = job["dns_record"]
+        end
+      end
+    ensure
+      file_path = File.join(Dir.pwd, OUTPUT_ROUTE53_FILE)
+      flush_output_state file_path
+
+      say "details in #{file_path}"
     end
 
     usage "aws delete_all route53 records"
@@ -639,6 +672,5 @@ module Bosh::Cli::Command
     end
 
     def aws_retry_wait_time; 10; end
-
   end
 end

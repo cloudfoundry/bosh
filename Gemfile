@@ -26,7 +26,6 @@ gem "ruby_vim_sdk", path: "ruby_vim_sdk"
 gem "simple_blobstore_server", path: "simple_blobstore_server"
 
 gem "rake", "~>10.0"
-gem "retryable", "=1.3.2"
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
@@ -69,6 +68,9 @@ group :development, :test do
   gem "nokogiri-diff"
 
   gem "sqlite3"
+
+  gem "bootstrap-vmc-plugin", github: "cloudfoundry/bootstrap-vmc-plugin"
+  gem "vmc", "~> 0.5.0"
 
   #  gem "guard-yard"
   #  gem "redcarpet"

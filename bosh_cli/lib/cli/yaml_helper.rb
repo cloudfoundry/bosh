@@ -49,12 +49,11 @@ module Bosh::Cli
                     "please check your Ruby installation"
         end
 
-        File.open(path) do |f|
-          begin
-            process_map(YAML.parse(f))
-          rescue => e
-            raise "Bad yaml file #{path}, " + e.message
-          end
+        begin
+          yaml = ERB.new(File.read(path)).result
+          process_map(YAML.parse(yaml))
+        rescue => e
+          raise "Bad yaml file #{path}, " + e.message
         end
       end
     end

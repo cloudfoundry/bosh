@@ -1,13 +1,13 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 require 'bosh_agent/platform/linux'
 
-require 'sys/filesystem'
+require 'sigar'
 require 'retryable'
-include Sys
 
 module Bosh::Agent
 
   class Platform::Linux::Disk
+    include Bosh::Exec
 
     VSPHERE_DATA_DISK = "/dev/sdb"
     DEV_PATH_TIMEOUT=180
@@ -20,6 +20,7 @@ module Bosh::Agent
       @store_dir ||= File.join(@config.base_dir, 'store')
       @dev_path_timeout ||= DEV_PATH_TIMEOUT
       @disk_retry_timeout = DISK_RETRY_MAX_DEFAULT
+      @sigar = Sigar.new
     end
 
     def mount_persistent_disk(cid)
@@ -27,7 +28,7 @@ module Bosh::Agent
       disk = lookup_disk_by_cid(cid)
       partition = "#{disk}1"
       if File.blockdev?(partition) && !mount_exists?(partition)
-        mount(partition, store_path)
+        mount(partition, @store_dir)
       end
     end
 
@@ -95,7 +96,7 @@ module Bosh::Agent
 
 protected
     def rescan_scsi_bus
-      Bosh::Exec.sh "rescan-scsi-bus.sh"
+      sh "rescan-scsi-bus.sh"
     end
 
     def get_dev_paths(dev_path)
@@ -124,11 +125,11 @@ protected
 private
     def mount(partition, path)
       @logger.info("Mount #{partition} #{path}")
-      Bosh::Exec.sh "mount #{partition} #{path}"
+      sh "mount #{partition} #{path}"
     end
 
     def mount_exists?(partition)
-      Filesystem.mounts.select{|mount| mount.name == partition}.any?
+      @sigar.file_system_list.select {|mount| mount.name == partition}.any?
     end
 
   end
