@@ -202,11 +202,11 @@ module VCloudCloud
       cloud.stub!(:client) {mc}
       stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"), {})
 
-      cloud.should_receive(:sh).with(/genisoimage/).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
       cloud.create_vm("test-vcloud-vm", stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"])
     end
 
-    it "can create a vm with disk locality", :genisoimage=> true do
+    it "can create a vm with disk locality" do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:upload_vapp_template).with(an_instance_of(String),
@@ -245,7 +245,7 @@ module VCloudCloud
       disk_locality << "test_disk_id_non_existent"
       stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"),{})
 
-      cloud.should_receive(:sh).with(/genisoimage/).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.create_vm("test-vm", stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"], disk_locality)
     end
@@ -342,7 +342,7 @@ module VCloudCloud
       cloud.reboot_vm(vapp.name)
     end
 
-    it "can re-configure vm networks", :genisoimage=> true do
+    it "can re-configure vm networks" do
       cloud = VCloudCloud::Cloud.new(cloud_properties)
 
       vapp = UnitTest::VApp.new
@@ -362,7 +362,7 @@ module VCloudCloud
       mc.should_receive(:get_metadata).with(anything, an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
 
       cloud.stub!(:client) { mc }
-      cloud.should_receive(:sh).with(/genisoimage/).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.configure_networks(vapp.name, test_manifest["network"])
     end
@@ -408,7 +408,7 @@ module VCloudCloud
       cloud.delete_disk("test_disk_id")
     end
 
-    it "can attach a disk to a vm", :genisoimage=> true do
+    it "can attach a disk to a vm" do
       cloud = VCloudCloud::Cloud.new(cloud_properties)
 
       vapp = UnitTest::VApp.new
@@ -425,12 +425,12 @@ module VCloudCloud
       mc.should_receive(:get_disk).with(an_instance_of(String)).and_return {vapp.vms[0].hardware_section.hard_disks.last }
 
       cloud.stub!(:client) { mc }
-      cloud.should_receive(:sh).with(/genisoimage/).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.attach_disk(vapp.name, "test_disk_id")
     end
 
-    it "can detach a disk from a vm", :genisoimage=> true do
+    it "can detach a disk from a vm" do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:get_vapp).at_least(:once).with(anything).and_return { vapp }
@@ -446,7 +446,7 @@ module VCloudCloud
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
-      cloud.should_receive(:sh).with(/genisoimage/).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.detach_disk(vapp.name, "test_disk_id")
     end
