@@ -1,22 +1,23 @@
 require 'spec_helper'
 
 describe Bosh::Aws::BoshManifest do
-  let(:receipt) { YAML.load_file(asset "test-output.yml") }
+  let(:vpc_receipt) { YAML.load_file(asset "test-output.yml") }
+  let(:route53_receipt) { YAML.load_file(asset "test-aws_route53_receipt.yml") }
 
   it "sets the correct elastic ip" do
-    described_class.new(receipt, 'deadbeef').vip.should == "123.45.6.8"
+    described_class.new(vpc_receipt, route53_receipt, 'deadbeef').vip.should == "50.200.100.3"
   end
 
   it "warns when vip is missing" do
-    receipt['elastic_ips']['bosh']['ips'] = []
+    route53_receipt['elastic_ips']['bosh']['ips'] = []
 
-    manifest = described_class.new(receipt, 'deadbeef')
+    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef')
     manifest.should_receive(:warning).with("Missing vip field")
     manifest.to_y
   end
 
   it "generates the template" do
-    manifest = described_class.new(receipt, 'deadbeef')
+    manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef')
     spec = manifest.to_y
     spec.should == <<YAML
 ---
@@ -47,7 +48,7 @@ jobs:
   networks:
   - name: vip_network
     static_ips:
-    - 123.45.6.8
+    - 50.200.100.3
 
 properties:
   template_only:

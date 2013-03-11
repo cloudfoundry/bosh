@@ -48,19 +48,22 @@ module Bosh::Director
 
       blobstore_id = nil
       compiled_package_sha1 = nil
+
       Dir.mktmpdir do |path|
-        temp_path = File.join(path, 'blob')
+        blob_path = File.join(path, 'blob')
         begin
-          File.open(temp_path, 'wb') do |temp_file|
-            Bosh::Director::Config.compiled_package_cache_blobstore.get(global_cache_filename, temp_file)
+          File.open(blob_path, 'wb') do |file|
+            Bosh::Director::Config.compiled_package_cache_blobstore.get(global_cache_filename, file)
           end
         rescue Bosh::Blobstore::NotFound => e
           # if the object is not found in the cache, we ignore it and return nil
           return nil
         end
 
-        blobstore_id = Bosh::Director::Config.blobstore.create(temp_path)
-        compiled_package_sha1 = Digest::SHA1.file(temp_path).hexdigest
+        File.open(blob_path) do |file|
+          blobstore_id = Bosh::Director::Config.blobstore.create(file)
+          compiled_package_sha1 = Digest::SHA1.file(blob_path).hexdigest
+        end
       end
 
       Models::CompiledPackage.create do |p|

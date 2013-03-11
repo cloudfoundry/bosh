@@ -4,13 +4,13 @@ module Bosh
 
       attr_reader :director_uuid
 
-      def initialize(receipt, director_uuid)
-        @receipt = receipt
+      def initialize(vpc_receipt, route53_receipt, director_uuid)
+        super(vpc_receipt, route53_receipt)
         @director_uuid = director_uuid
       end
 
       def vip
-        receipt['elastic_ips']['bosh']['ips'][0] || warning('Missing vip field')
+        route53_receipt['elastic_ips']['bosh']['ips'][0] || warning('Missing vip field')
       end
 
       # RSpec overloads to_yaml when you set up expectations on an object;

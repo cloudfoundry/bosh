@@ -6,18 +6,18 @@ module Bosh
 
       attr_reader :stemcell_version, :director_uuid
 
-      def initialize(receipt, stemcell_version, director_uuid)
-        super(receipt)
+      def initialize(vpc_receipt, route53_receipt, stemcell_version, director_uuid)
+        super(vpc_receipt, route53_receipt)
         @stemcell_version = stemcell_version
         @director_uuid = director_uuid
       end
 
       def domain
-        @receipt["vpc"]["domain"] || warning('Missing domain field')
+        vpc_receipt["vpc"]["domain"] || warning('Missing domain field')
       end
 
       def vip
-        receipt['elastic_ips']['bat']['ips'][0] || warning('Missing vip field')
+        route53_receipt['elastic_ips']['bat']['ips'][0] || warning('Missing vip field')
       end
 
       def to_y

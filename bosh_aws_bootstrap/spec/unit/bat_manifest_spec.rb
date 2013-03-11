@@ -1,23 +1,24 @@
 require 'spec_helper'
 
 describe Bosh::Aws::BatManifest do
-  let(:receipt) { YAML.load_file(asset "test-output.yml") }
-  let(:config) { receipt['original_configuration'] }
+  let(:vpc_receipt) { YAML.load_file(asset "test-output.yml") }
+  let(:vpc_config) { vpc_receipt['original_configuration'] }
+  let(:route53_receipt) { YAML.load_file(asset "test-aws_route53_receipt.yml") }
   let(:stemcell_version) { '1.1.1.pre' }
-  let(:manifest) { Bosh::Aws::BatManifest.new(receipt, stemcell_version, 'deadbeef') }
+  let(:manifest) { Bosh::Aws::BatManifest.new(vpc_receipt, route53_receipt, stemcell_version, 'deadbeef') }
 
   it 'returns the stemcell_version' do
     manifest.stemcell_version.should == stemcell_version
   end
 
   it "sets the correct elastic ip" do
-    manifest.vip.should == "123.4.5.9"
+    manifest.vip.should == "50.200.100.2"
   end
 
   it "warns when vip is missing" do
-    receipt['elastic_ips']['bat']['ips'] = []
+    route53_receipt['elastic_ips']['bat']['ips'] = []
 
-    manifest = Bosh::Aws::BatManifest.new(receipt, stemcell_version, 'deadbeef')
+    manifest = Bosh::Aws::BatManifest.new(vpc_receipt, route53_receipt, stemcell_version, 'deadbeef')
     manifest.should_receive(:warning).with("Missing vip field")
     manifest.to_y
   end
@@ -25,7 +26,7 @@ describe Bosh::Aws::BatManifest do
   context "mocked director uuid call" do
 
     it 'warns when domain is missing' do
-      receipt["vpc"]["domain"] = nil
+      vpc_receipt["vpc"]["domain"] = nil
       manifest.should_receive(:warning).with('Missing domain field').at_least(1).times
       manifest.to_y
     end
@@ -40,7 +41,7 @@ describe Bosh::Aws::BatManifest do
 ---
 cpi: aws
 properties:
-  static_ip: 123.4.5.9
+  static_ip: 50.200.100.2
   uuid: deadbeef
   pool_size: 1
   stemcell:

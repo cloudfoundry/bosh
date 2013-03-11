@@ -10,8 +10,8 @@ guardian=no
 max-tcp-connections=256
 module-dir=/usr/local/lib
 allow-recursion-override=yes
-<% if_p("dns.recursors") do |recursors| %>
-recursor=<%= recursors[spec.index.to_i % recursors.length] %>
+<% if_p("dns.recursor") do |recursor| %>
+recursor=<%= recursor %>
 <% end %>
 setgid=vcap
 setuid=vcap

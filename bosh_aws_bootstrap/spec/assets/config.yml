@@ -12,9 +12,16 @@ vpc:
     bosh:
       cidr: 10.10.0.0/24
       availability_zone: us-east-1a
+      default_route: igw
+      nat_instance:
+        name: cf_nat_box
+        ip: 10.10.0.10  # spin up NAT instance at fixed IP of 10.10.0.10
+        security_group: open
+        key_name: bosh
     cf:
       cidr: 10.10.1.0/24
       availability_zone: us-east-1a
+      default_route: cf_nat_box
     cf_az2:
       cidr: 10.10.2.0/24
       availability_zone: us-east-1b

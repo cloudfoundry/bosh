@@ -11,9 +11,14 @@ require "common/exec"
 module BoshHelper
   include Archive::Tar
 
+  DEFAULT_POLL_INTERVAL = 1
+
   def bosh(arguments, options={})
-    command = "#{bosh_bin} -P 10 --non-interactive --config " +
-      "#{BH::bosh_cli_config_path} --user admin --password admin " +
+    poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
+    command = "#{bosh_bin} --non-interactive " +
+      "-P #{poll_interval} " +
+      "--config #{BH::bosh_cli_config_path} " +
+      "--user admin --password admin " +
       "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log

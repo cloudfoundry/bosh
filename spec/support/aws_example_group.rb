@@ -9,6 +9,10 @@ module AwsSystemExampleGroup
     YAML.load_file vpc_outfile_path
   end
 
+  def route53_outfile_path
+    "#{spec_tmp_path}/aws_route53_receipt.yml"
+  end
+  
   def rds_outfile_path
     "#{spec_tmp_path}/aws_rds_receipt.yml"
   end
