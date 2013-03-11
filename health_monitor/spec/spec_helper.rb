@@ -22,6 +22,30 @@ def heartbeat_payload(attrs = {})
   }.merge(attrs)
 end
 
+def make_heartbeat(attrs = {})
+  defaults = {
+      :id => 1,
+      :timestamp => Time.now.to_i,
+      :deployment => "oleg-cloud",
+      :agent_id => "deadbeef",
+      :job => "mysql_node",
+      :index => "0",
+      :job_state => "running",
+      :vitals => {
+          "load" => [0.2, 0.3, 0.6],
+          "cpu" => { "user" => 22.3, "sys" => 23.4, "wait" => 33.22 },
+          "mem" => { "percent" => 32.2, "kb" => 512031 },
+          "swap" => { "percent" => 32.6, "kb" => 231312 },
+          "disk" => {
+              "system" => { "percent" => 74 },
+              "ephemeral" => { "percent" => 33 },
+              "persistent" => { "percent" => 97 },
+          }
+      }
+  }
+  Bhm::Events::Heartbeat.new(defaults.merge(attrs))
+end
+
 RSpec.configure do |c|
   c.color_enabled = true
 end
