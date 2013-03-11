@@ -9,8 +9,12 @@ module Bosh::Agent
       Settings.new.load_settings
     end
 
-    def get_network_settings(network_name, properties)
-      Settings.new.get_network_settings(network_name, properties)
+    def get_network_settings(_, properties)
+      Settings.new.get_network_settings(properties["type"])
+    end
+
+    def network_config_type
+      DHCP_NETWORK_TYPE
     end
 
   end

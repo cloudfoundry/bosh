@@ -4,12 +4,20 @@ module Bosh::Agent
   class Infrastructure::Vsphere
     require 'bosh_agent/infrastructure/vsphere/settings'
 
-    def load_settings
-      Settings.new.load_settings
+    def initialize
+      @settings = Settings.new
     end
 
-    def get_network_settings(network_name, properties)
-      # Nothing to do
+    def load_settings
+      @settings.load_settings
+    end
+
+    def network_config_type
+      MANUAL_NETWORK_TYPE
+    end
+
+    def get_network_settings(_, properties)
+      # Do nothing
     end
 
   end

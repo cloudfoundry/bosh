@@ -33,7 +33,7 @@ describe Bosh::Agent::Infrastructure::Openstack::Settings do
     Sigar.stub(new: sigar)
     settings_wrapper = Bosh::Agent::Infrastructure::Openstack::Settings.new
     network_properties = {"type" => "dynamic"}
-    properties = settings_wrapper.get_network_settings("test", network_properties)
+    properties = settings_wrapper.get_network_settings("dynamic")
 
     properties.should have_key("ip")
     properties.should have_key("netmask")
@@ -44,7 +44,7 @@ describe Bosh::Agent::Infrastructure::Openstack::Settings do
   it 'should get nothing for vip network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Openstack::Settings.new
     network_properties = {"type" => "vip"}
-    properties = settings_wrapper.get_network_settings("test", network_properties)
+    properties = settings_wrapper.get_network_settings("vip")
     properties.should be_nil
   end
 
@@ -52,7 +52,7 @@ describe Bosh::Agent::Infrastructure::Openstack::Settings do
     settings_wrapper = Bosh::Agent::Infrastructure::Openstack::Settings.new
     network_properties = {}
     lambda {
-      properties = settings_wrapper.get_network_settings("test", network_properties)
+      properties = settings_wrapper.get_network_settings("unknown")
     }.should raise_error(Bosh::Agent::StateError, /Unsupported network/)
   end
 

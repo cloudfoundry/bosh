@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Infrastructure::Vsphere::Settings
+  class Infrastructure::Vsphere::Settings < Infrastructure::Settings
     DEFAULT_CDROM_RETRY_WAIT = 0.5
 
     attr_accessor :cdrom_retry_wait
@@ -12,15 +12,6 @@ module Bosh::Agent
       @cdrom_retry_wait = DEFAULT_CDROM_RETRY_WAIT
       @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
       @cdrom_device = nil
-    end
-
-    def cdrom_device
-      unless @cdrom_device
-        # only do this when not already done
-        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
-        @cdrom_device = "/dev/#{cd_drive.strip}"
-      end
-      @cdrom_device
     end
 
     def load_settings
@@ -44,6 +35,15 @@ module Bosh::Agent
         eject_cdrom
       end
       @settings
+    end
+
+    def cdrom_device
+      unless @cdrom_device
+        # only do this when not already done
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
+        @cdrom_device = "/dev/#{cd_drive.strip}"
+      end
+      @cdrom_device
     end
 
     def check_cdrom
@@ -119,8 +119,7 @@ module Bosh::Agent
 
     def mount_cdrom
       result = Bosh::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
-      raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
+      raise Bosh::Agent::LoadSettingsError, "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
     end
 
     def umount_cdrom

@@ -5,28 +5,27 @@ module Bosh::Agent
   class Platform::Linux::Network
 
     def initialize(template_dir)
-      @template_dir = template_dir
-      @config   ||= Bosh::Agent::Config
-      @logger   ||= @config.logger
-      @networks   = []
+      @template_dir   = template_dir
+      @config         = Bosh::Agent::Config
+      @infrastructure = @config.infrastructure
+      @logger         = @config.logger
+      @networks       = []
       @dns        = []
     end
 
     def setup_networking
-      case @config.infrastructure_name
-      when "vsphere"
-        setup_networking_from_settings
-      when "aws"
-        setup_dhcp_from_settings
-      when "openstack"
-        setup_dhcp_from_settings
-      else
-        raise Bosh::Agent::FatalError, "Setup networking failed, unsupported infrastructure #{Bosh::Agent::Config.infrastructure_name}"
+      case @config.infrastructure.network_config_type
+        when "manual"
+          setup_manual_networking
+        when "dynamic"
+          setup_dhcp_networking
+        else
+          raise Bosh::Agent::FatalError, "Setup networking failed for infrastructure: #@infrastructure, network_types: #{network_types}"
       end
     end
 
 private
-    def setup_networking_from_settings
+    def setup_manual_networking
       mac_addresses = detect_mac_addresses
 
       @dns = []
@@ -57,7 +56,7 @@ private
       gratuitous_arp
     end
 
-    def setup_dhcp_from_settings
+    def setup_dhcp_networking
       @dns = []
       @networks = @config.settings["networks"]
       @networks.each do |_, settings|

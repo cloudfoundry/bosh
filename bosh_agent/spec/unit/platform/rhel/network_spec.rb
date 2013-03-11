@@ -8,6 +8,7 @@ describe Bosh::Agent::Platform::Rhel::Network do
   context "vSphere" do
     before(:each) do
       Bosh::Agent::Config.infrastructure_name = "vsphere"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
       Bosh::Agent::Config.settings = complete_settings
 
@@ -52,6 +53,7 @@ describe Bosh::Agent::Platform::Rhel::Network do
 
     it "should configure dhcp with dns server prepended" do
       Bosh::Agent::Config.infrastructure_name = "aws"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       settings = partial_settings
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
       Bosh::Agent::Config.settings = settings
@@ -75,6 +77,7 @@ describe Bosh::Agent::Platform::Rhel::Network do
 
     it "should configure dhcp with dns server prepended" do
       Bosh::Agent::Config.infrastructure_name = "openstack"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       settings = partial_settings
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
       Bosh::Agent::Config.settings = settings
