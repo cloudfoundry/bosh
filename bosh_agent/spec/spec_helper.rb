@@ -38,6 +38,7 @@ end
 
 def use_dummy_logger
   Bosh::Agent::Config.logger = Logger.new(StringIO.new)
+  Bosh::Agent::Config.logger.level = Logger::WARN
 end
 
 def setup_directories
