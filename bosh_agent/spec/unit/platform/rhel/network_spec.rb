@@ -23,13 +23,6 @@ describe Bosh::Agent::Platform::Rhel::Network do
       @network_wrapper.setup_networking
     end
 
-    # FIXME: pending network config refactoring
-    #it "should fail when network information is incomplete" do
-    #  @network_wrapper.load_settings
-    #  @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-    #  lambda { @processor.setup_networking }.should raise_error(Bosh::Agent::FatalError, /contains invalid characters/)
-    #end
-
     it "should generate ubuntu network files" do
       @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
       @network_wrapper.stub!(:update_file) do |data, file|
