@@ -1,7 +1,0 @@
----
-name: openstack_registry
-dependencies:
-- libpq
-- ruby
-files:
-- bosh/bosh_openstack_registry/*.gem

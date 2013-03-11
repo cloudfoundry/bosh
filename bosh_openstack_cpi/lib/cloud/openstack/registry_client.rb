@@ -64,7 +64,7 @@ module Bosh::OpenStackCloud
       end
 
       payload = Yajl::Encoder.encode(settings)
-      url = "#{@endpoint}/servers/#{server_id}/settings"
+      url = "#{@endpoint}/instances/#{server_id}/settings"
 
       response = @client.put(url, {:body => payload, :header => @headers})
       if response.status != 200
@@ -81,7 +81,7 @@ module Bosh::OpenStackCloud
     # @param [String] server_id OpenStack server id
     # @return [Hash] Agent settings
     def read_settings(server_id)
-      url = "#{@endpoint}/servers/#{server_id}/settings"
+      url = "#{@endpoint}/instances/#{server_id}/settings"
 
       response = @client.get(url, {:header => @headers})
       if response.status != 200
@@ -113,7 +113,7 @@ module Bosh::OpenStackCloud
     # @param [String] server_id OpenStack server id
     # @return [Boolean]
     def delete_settings(server_id)
-      url = "#{@endpoint}/servers/#{server_id}/settings"
+      url = "#{@endpoint}/instances/#{server_id}/settings"
 
       response = @client.delete(url, {:header => @headers})
       if response.status != 200

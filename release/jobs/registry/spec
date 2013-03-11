@@ -1,0 +1,59 @@
+---
+name: registry
+
+templates:
+  registry_ctl:     bin/registry_ctl
+  registry.yml.erb: config/registry.yml
+
+packages:
+  - registry
+  - libpq
+  - ruby
+
+properties:
+  registry.http.port:
+    description: TCP port Registry daemon listens on
+    default: 25777
+  registry.http.user:
+    description: Username clients must use to access Registry via HTTP Basic Auth
+  registry.http.password:
+    description: Password clients must use to access Registry via HTTP Basic Auth
+
+  registry.db.max_connections:
+    description: Maximum size of the connection pool
+    default: 32
+  registry.db.pool_timeout:
+    description: Number of seconds to wait if a connection cannot be acquired before raising an error
+    default: 10
+
+  postgres.user:
+    description: User for the Postgres database connection (optional, if not set registry will use a sqlite database)
+  postgres.password:
+    description: Password for the Postgres database connection (optional, if not set registry will use a sqlite database)
+  postgres.address:
+    description: Address of the Postgres database connection (optional, if not set registry will use a sqlite database)
+  postgres.database:
+    description: Database for the Postgres database connection (optional, if not set registry will use a sqlite database)
+
+  # For AWS
+  aws.access_key_id:
+    description: AWS IAM Access Key ID
+  aws.secret_access_key:
+    description: AWS IAM Secret Access Key
+  aws.region:
+    description: AWS EC2 Region
+  aws.max_retries:
+    description: Max number of retries to connect to AWS
+    default: 2
+
+  # For OpenStack
+  openstack.auth_url:
+    description: URL of the OpenStack Identity endpoint to connect to
+  openstack.username:
+    description: OpenStack user name
+  openstack.api_key:
+    description: OpenStack API key
+  openstack.tenant:
+    description: OpenStack tenant name
+  openstack.region:
+    description: OpenStack region (optional)

@@ -149,7 +149,7 @@ module Bosh::Agent
 
       def get_settings
         @registry_endpoint ||= get_registry_endpoint
-        url = "#{@registry_endpoint}/servers/#{current_server_id}/settings"
+        url = "#{@registry_endpoint}/instances/#{current_server_id}/settings"
         body = get_json_from_url(url)
 
         settings = Yajl::Parser.parse(body["settings"])
