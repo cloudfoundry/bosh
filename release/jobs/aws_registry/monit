@@ -1,5 +1,0 @@
-check process aws_registry
-  with pidfile /var/vcap/sys/run/aws_registry/aws_registry.pid
-  start program "/var/vcap/jobs/aws_registry/bin/aws_registry_ctl start"
-  stop program "/var/vcap/jobs/aws_registry/bin/aws_registry_ctl stop"
-  group vcap

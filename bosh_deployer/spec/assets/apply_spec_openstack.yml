@@ -39,7 +39,7 @@ properties:
     address: 127.0.0.1
     name: micro
     port: 25555
-  openstack_registry:
+  registry:
     http:
       port: 25778
       user: admin
@@ -111,8 +111,8 @@ packages:
     version: 0.2-dev
     sha1: f7d99e12ac65c4529db0b14d3b71e996bc2bc671
     blobstore_id: bdeff591-daaa-4a6b-a452-c37db8e913c0
-  openstack_registry:
-    name: openstack_registry
+  registry:
+    name: registry
     version: 0.1-dev
     sha1: 4c73b808faff4bbb959aeca9bb84ebe4a140d62b
     blobstore_id: 4082220e-acf6-427c-b0fb-56c8b47aae0c

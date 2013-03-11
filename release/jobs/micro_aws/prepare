@@ -14,7 +14,7 @@ def job_dir(job)
 end
 
 # Order of jobs, implicitly specifies the order in which they are started
-jobs = %w[ nats redis postgres powerdns blobstore director health_monitor aws_registry ]
+jobs = %w[ nats redis postgres powerdns blobstore director health_monitor registry ]
 
 spec = {
   "name" => MICRO,
