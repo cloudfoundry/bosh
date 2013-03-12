@@ -190,6 +190,7 @@ PATH
   remote: health_monitor
   specs:
     health_monitor (1.5.0.pre2)
+      aws-sdk (~> 1.8.3)
       em-http-request (~> 0.3.0)
       eventmachine (~> 0.12.10)
       logging (~> 1.5.0)
