@@ -27,7 +27,7 @@ describe Bosh::AwsCloud::Stemcell do
 
         stemcell.should_receive(:memoize_snapshots).ordered
         fake_aws_ami.should_receive(:deregister).ordered
-        stemcell.should_receive(:wait_resource).with(fake_aws_ami, :deleted).ordered
+        stemcell.should_receive(:wait_resource).with(fake_aws_ami, :deleted, :state).ordered
         stemcell.should_receive(:delete_snapshots).ordered
 
         stemcell.delete
