@@ -142,10 +142,6 @@ module Bosh::AwsCloud
 
     private
 
-    def task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
-    end
-
     def instance_create_wait_time; 30; end
   end
 end
