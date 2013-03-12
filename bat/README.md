@@ -83,7 +83,8 @@ Create a **bat** security group in the same VPC the BAT_DIRECTOR is running in. 
 
 ## Running BAT
 
-When all of the above is ready, running `rake bat:env` will verify environment variables are set correctly. To run the whole test suite, run `rake bat`.
+When all of the above is ready, running `bundle exec rake bat:env` will verify environment variables are set correctly.
+To run the whole test suite, run `bundle exec rake bat`.
 
 ## TODO
 * add rake task to download stemcell (for full automation)
