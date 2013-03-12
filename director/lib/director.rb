@@ -99,6 +99,8 @@ require "director/jobs/cloud_check/scan"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
 
+require "director/models/helpers/model_helper"
+
 module Bosh::Director
   autoload :Models, "director/models"
 
