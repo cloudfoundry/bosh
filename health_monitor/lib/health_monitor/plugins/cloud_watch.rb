@@ -1,20 +1,22 @@
+require 'aws-sdk'
+
 module Bosh::HealthMonitor
   module Plugins
     class CloudWatch < Base
-      attr_reader :aws_cloudwatch
-      def initialize(aws_cloudwatch)
-        @aws_cloudwatch=aws_cloudwatch
+      def initialize(options={})
+        @options = options
+      end
+
+      def aws_cloud_watch
+        @aws_cloud_watch ||= AWS::CloudWatch.new(@options)
       end
 
       def run
       end
 
       def process(event)
-        case event
-          when Bosh::HealthMonitor::Events::Heartbeat
-            aws_cloudwatch.put_metric_data(heartbeat_to_cloudwatch_metric(event))
-          else
-            raise "Unsupported Event type"
+        if event.is_a? Bosh::HealthMonitor::Events::Heartbeat
+          aws_cloud_watch.put_metric_data(heartbeat_to_cloudwatch_metric(event))
         end
       end
 

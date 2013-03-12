@@ -2,7 +2,11 @@ require 'spec_helper'
 
 describe Bhm::Plugins::CloudWatch do
   let(:aws_cloud_watch) { double('AWS CloudWatch') }
-  subject { described_class.new(aws_cloud_watch) }
+  subject { described_class.new }
+
+  before do
+    subject.stub(aws_cloud_watch: aws_cloud_watch)
+  end
 
   context "processing metrics" do
     it "sends CloudWatch metrics" do
@@ -54,6 +58,10 @@ describe Bhm::Plugins::CloudWatch do
   end
 
   context "processing alarms" do
-
+    it "does nothing" do
+      aws_cloud_watch.should_not_receive(:put_metric_data)
+      alert = make_alert
+      subject.process(alert)
+    end
   end
 end

@@ -23,7 +23,7 @@ module Bosh::HealthMonitor
         @deployment = @attributes["deployment"]
         @agent_id = @attributes["agent_id"]
         @job = @attributes["job"]
-        @index = @attributes["index"]
+        @index = @attributes["index"].to_s
         @job_state = @attributes["job_state"]
 
         @tags = {}
