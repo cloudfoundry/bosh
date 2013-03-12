@@ -211,6 +211,7 @@ module Bosh::Cli::Command
     # @return [Array] job, index, command
     def parse_args(args)
       job = args.shift
+      err("Please provide job name") if job.nil?
       job, index = job.split("/", 2)
 
       if index

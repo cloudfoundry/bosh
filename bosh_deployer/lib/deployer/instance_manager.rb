@@ -391,28 +391,22 @@ module Bosh::Deployer
       end
     end
 
-    def wait_until_ready
-      timeout_time = Time.now.to_f + (60 * 5)
-      begin
+    def wait_until_ready(component, wait_time = 1, retries = 300)
+      Bosh::Common.retryable(sleep: wait_time, tries: retries,
+                             on: [Bosh::Agent::Error, Errno::ECONNREFUSED]) do |tries, e|
+        logger.debug("Waiting for #{component} to be ready: #{e.inspect}") if tries > 0
         yield
-        sleep 0.5
-      rescue Bosh::Agent::Error, Errno::ECONNREFUSED => e
-        if timeout_time - Time.now.to_f > 0
-          retry
-        else
-          raise e
-        end
       end
     end
 
     def wait_until_agent_ready #XXX >> agent_client
-      wait_until_ready { agent.ping }
+      wait_until_ready("agent") { agent.ping }
     end
 
     def wait_until_director_ready
       port = @apply_spec.director_port
       url = "http://#{bosh_ip}:#{port}/info"
-      wait_until_ready do
+      wait_until_ready("director") do
         info = Yajl::Parser.parse(HTTPClient.new.get(url).body)
         logger.info("Director is ready: #{info.inspect}")
       end

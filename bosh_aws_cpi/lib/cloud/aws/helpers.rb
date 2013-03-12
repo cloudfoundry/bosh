@@ -80,6 +80,10 @@ module Bosh::AwsCloud
           uniq
     end
 
+    def task_checkpoint
+      Bosh::Clouds::Config.task_checkpoint
+    end
+
     private
 
     def get_state_for(resource, state_method)

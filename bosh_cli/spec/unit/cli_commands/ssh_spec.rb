@@ -64,11 +64,18 @@ describe Bosh::Cli::Command::Base do
       @interactive_shell.should == true && @execute_command.should == false
     end
 
+    it "should fail to setup interactive shell when a job name is not given" do
+      ssh = Bosh::Cli::Command::Ssh.new
+      lambda {
+        ssh.shell()
+      }.should raise_error(Bosh::Cli::CliError, /Please provide job name/)
+    end
+
     it "should fail to setup interactive shell when a job index is not given" do
       ssh = Bosh::Cli::Command::Ssh.new
       lambda {
         ssh.shell("dea")
-      }.should raise_error(Bosh::Cli::CliError)
+      }.should raise_error(Bosh::Cli::CliError, /Can't run interactive shell on more than one instance/)
     end
 
     it "should try to execute given command remotely" do
