@@ -63,7 +63,8 @@ module SpecHelper
 
       @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
       @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
-      @vsphere_cpi_migrations = File.expand_path("../../db/migrations/vsphere_cpi", __FILE__)
+      vsphere_cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, File.join("cloud", "vsphere"))) }
+      @vsphere_cpi_migrations = File.expand_path("../db/migrations", vsphere_cpi_path)
 
       Sequel.extension :migration
 
