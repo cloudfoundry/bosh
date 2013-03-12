@@ -3,10 +3,10 @@ require 'bosh_agent/platform/linux'
 
 describe Bosh::Agent::Platform::Linux do
 
-  let(:disk)      { Object.new }
-  let(:network)   { Object.new }
-  let(:logrotate) { Object.new }
-  let(:password)  { Object.new }
+  let(:disk)      { double("Disk") }
+  let(:network)   { double("Network") }
+  let(:logrotate) { double("Logrotate") }
+  let(:password)  { double("Password") }
   let(:platform)  { Bosh::Agent::Platform::Linux.new(disk, logrotate, password, network) }
 
   describe "Method delegation" do
