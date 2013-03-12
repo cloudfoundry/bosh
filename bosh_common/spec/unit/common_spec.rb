@@ -93,12 +93,36 @@ describe Bosh::Common do
       count.should == 3
     end
 
+    it "should pass error to sleep callback proc" do
+      Bosh::Common.stub(:sleep)
+
+      count = 0
+      sleep_cb = lambda { |retries, error|
+        error.is_a?(ArgumentError).should be_true if retries == 0
+        error.is_a?(RuntimeError).should be_true if retries == 1
+      }
+
+      Bosh::Common.retryable(tries: 3, on: [ArgumentError, RuntimeError], sleep: sleep_cb) do |tries|
+        count += 1
+        raise ArgumentError if tries == 0
+        raise RuntimeError if tries == 1
+      end
+    end
+
     it "should raise an error if that error is raised and isn't in the specified list" do
       expect {
         Bosh::Common.retryable(on: [ArgumentError]) do
           1/0
         end
       }.to raise_error(ZeroDivisionError)
+    end
+
+    it "should raise a RetryCountExceeded error if retries exceed" do
+      expect {
+        Bosh::Common.retryable(tries: 2) do
+          false
+        end
+      }.to raise_error(Bosh::Common::RetryCountExceeded)
     end
   end
 end
