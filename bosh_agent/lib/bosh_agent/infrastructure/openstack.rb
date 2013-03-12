@@ -1,9 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/infrastructure/openstack/settings'
+require 'bosh_agent/infrastructure/openstack/registry'
 
 module Bosh::Agent
   class Infrastructure::Openstack
-    require 'bosh_agent/infrastructure/openstack/settings'
-    require 'bosh_agent/infrastructure/openstack/registry'
 
     def load_settings
       Settings.new.load_settings

@@ -1,9 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/infrastructure/aws/settings'
+require 'bosh_agent/infrastructure/aws/registry'
 
 module Bosh::Agent
   class Infrastructure::Aws
-    require 'bosh_agent/infrastructure/aws/settings'
-    require 'bosh_agent/infrastructure/aws/registry'
 
     def load_settings
       Settings.new.load_settings

@@ -1,8 +1,8 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh_agent/infrastructure/vsphere/settings'
 
 module Bosh::Agent
   class Infrastructure::Vsphere
-    require 'bosh_agent/infrastructure/vsphere/settings'
 
     def initialize
       @settings = Settings.new
