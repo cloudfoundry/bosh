@@ -10,7 +10,7 @@ module Bosh::HealthMonitor
 
       SERVICE_AUXILIARY_JOBS = Set.new(%w(serialization_data_server backup_manager))
 
-      attr_reader :metrics
+      attr_reader :agent_id, :deployment, :job, :index, :metrics
 
       def initialize(attributes = {})
         super
