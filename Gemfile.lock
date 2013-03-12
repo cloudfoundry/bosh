@@ -1,10 +1,3 @@
-GIT
-  remote: git://github.com/cloudfoundry/bootstrap-vmc-plugin.git
-  revision: 458c0176fed1749c4dd67fc02ef330207e065e27
-  specs:
-    bootstrap-vmc-plugin (0.0.1)
-      bosh_aws_bootstrap (= 1.5.0.pre2)
-
 PATH
   remote: agent_client
   specs:
@@ -252,19 +245,8 @@ GEM
       uuidtools (~> 2.1)
     bcrypt-ruby (3.0.1)
     builder (3.1.4)
-    caldecott-client (0.0.2)
-      multi_json (~> 1.3)
-    cf-uaa-lib (1.3.7)
-      multi_json
-    cfoundry (0.5.2)
-      cf-uaa-lib (~> 1.3.3)
-      multi_json (~> 1.3)
-      multipart-post (~> 1.1)
-      rubyzip (~> 0.9)
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
-    clouseau (0.0.2)
-      rubyzip (~> 0.9.9)
     coderay (1.0.9)
     columnize (0.3.6)
     crack (0.3.2)
@@ -311,7 +293,6 @@ GEM
       rspec (~> 2.11)
     highline (1.6.15)
     httpclient (2.2.4)
-    interact (0.5.2)
     json (1.7.7)
     json_pure (1.7.7)
     listen (0.7.2)
@@ -321,15 +302,11 @@ GEM
       little-plugger (>= 1.1.2)
     lumberjack (1.0.2)
     machinist (1.0.6)
-    manifests-vmc-plugin (0.6.2)
-      cfoundry (~> 0.5.2)
     membrane (0.0.2)
     method_source (0.8.1)
     mime-types (1.21)
     minitar (0.5.4)
-    mothership (0.5.1)
     multi_json (1.6.1)
-    multipart-post (1.2.0)
     nats (0.4.28)
       daemons (>= 1.1.5)
       eventmachine (= 0.12.10)
@@ -379,7 +356,6 @@ GEM
       ruby-hmac (>= 0.4.0)
     ruby-hmac (0.4.0)
     ruby_gntp (0.3.4)
-    rubyzip (0.9.9)
     sequel (3.43.0)
     sigar (0.7.2)
     simplecov (0.7.1)
@@ -404,24 +380,9 @@ GEM
     thor (0.17.0)
     tilt (1.3.3)
     trollop (1.16.2)
-    tunnel-vmc-plugin (0.2.2)
-      addressable (~> 2.2)
-      caldecott-client (~> 0.0.2)
-      cfoundry (~> 0.5.2)
-      rest-client (~> 1.6)
-      uuidtools (~> 2.1)
     uuidtools (2.1.3)
     vegas (0.1.11)
       rack (>= 1.0.0)
-    vmc (0.5.0)
-      cfoundry (~> 0.5.2)
-      clouseau (~> 0.0)
-      interact (~> 0.5)
-      json_pure (~> 1.6)
-      manifests-vmc-plugin (~> 0.6.2)
-      mothership (>= 0.5.1, < 1.0)
-      multi_json (~> 1.3)
-      tunnel-vmc-plugin (~> 0.2.2)
     yajl-ruby (1.1.0)
 
 PLATFORMS
@@ -430,7 +391,6 @@ PLATFORMS
 DEPENDENCIES
   agent_client!
   blobstore_client!
-  bootstrap-vmc-plugin!
   bosh_agent!
   bosh_aws_bootstrap!
   bosh_aws_cpi!
@@ -472,4 +432,3 @@ DEPENDENCIES
   simplecov
   simplecov-rcov
   sqlite3
-  vmc (~> 0.5.0)
