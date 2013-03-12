@@ -112,10 +112,6 @@ module Bosh::AwsCloud
       params
     end
 
-    def task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
-    end
-
     def logger
       Bosh::Clouds::Config.logger
     end

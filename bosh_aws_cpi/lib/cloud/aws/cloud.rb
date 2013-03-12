@@ -541,10 +541,6 @@ module Bosh::AwsCloud
       end
     end
 
-    def task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
-    end
-
     # Generates initial agent settings. These settings will be read by agent
     # from AWS registry (also a BOSH component) on a target instance. Disk
     # conventions for amazon are:
