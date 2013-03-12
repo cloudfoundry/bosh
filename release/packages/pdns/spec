@@ -1,4 +1,0 @@
----
-name: powerdns
-files:
-- pdns/pdns-3.2.tar.gz
