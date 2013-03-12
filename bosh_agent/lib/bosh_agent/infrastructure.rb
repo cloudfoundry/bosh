@@ -29,41 +29,42 @@ module Bosh::Agent
       @name
     end
 
-  end
 
-  class Infrastructure::Settings
-    require 'sigar'
+    class Settings
+      require 'sigar'
 
-    def load_settings
-      raise Bosh::Agent::UnimplementedMethod.new
-    end
-
-    def get_network_settings(type)
-      unless type && supported_network_types.include?(type)
-        raise Bosh::Agent::StateError, "Unsupported network type '%s', valid types are: %s" % [type, supported_network_types]
+      def load_settings
+        raise Bosh::Agent::UnimplementedMethod.new
       end
 
-      # Nothing to do for "vip" networks
-      return nil if type == VIP_NETWORK_TYPE
+      def get_network_settings(type)
+        unless type && supported_network_types.include?(type)
+          raise Bosh::Agent::StateError, "Unsupported network type '%s', valid types are: %s" % [type, supported_network_types]
+        end
 
-      sigar = Sigar.new
-      net_info = sigar.net_info
-      ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
+        # Nothing to do for "vip" networks
+        return nil if type == VIP_NETWORK_TYPE
 
-      properties = {}
-      properties["ip"] = ifconfig.address
-      properties["netmask"] = ifconfig.netmask
-      properties["dns"] = []
-      properties["dns"] << net_info.primary_dns if net_info.primary_dns && !net_info.primary_dns.empty?
-      properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
-      properties["gateway"] = net_info.default_gateway
+        sigar = Sigar.new
+        net_info = sigar.net_info
+        ifconfig = sigar.net_interface_config(net_info.default_gateway_interface)
 
-      return properties
-    end
+        properties = {}
+        properties["ip"] = ifconfig.address
+        properties["netmask"] = ifconfig.netmask
+        properties["dns"] = []
+        properties["dns"] << net_info.primary_dns if net_info.primary_dns && !net_info.primary_dns.empty?
+        properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
+        properties["gateway"] = net_info.default_gateway
 
-    protected
-    def supported_network_types
-      [VIP_NETWORK_TYPE, DHCP_NETWORK_TYPE, MANUAL_NETWORK_TYPE]
+        return properties
+      end
+
+      protected
+      def supported_network_types
+        [VIP_NETWORK_TYPE, DHCP_NETWORK_TYPE, MANUAL_NETWORK_TYPE]
+      end
+
     end
 
   end
