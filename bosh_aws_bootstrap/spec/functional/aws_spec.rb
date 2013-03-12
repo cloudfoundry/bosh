@@ -695,21 +695,21 @@ describe Bosh::Cli::Command::AWS do
       def make_fake_rds!(opts = {})
         retries_needed = opts[:retries_needed] || 0
         creation_options = opts[:aws_creation_options]
-        fake_aws_rds = double("aws_rds")
-        Bosh::Aws::RDS.stub(:new).and_return(fake_aws_rds)
+        fake_rds = double(Bosh::Aws::RDS)
+        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
 
-        fake_aws_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
+        fake_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
         create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16"]
         create_database_params << creation_options if creation_options
-        fake_aws_rds.should_receive(:create_database).with(*create_database_params).and_return(
+        fake_rds.should_receive(:create_database).with(*create_database_params).and_return(
             :engine => "mysql",
             :master_username => "ccdb_user",
             :master_user_password => "ccdb_password"
         )
 
-        fake_aws_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
-        fake_aws_rds.should_receive(:create_database).
+        fake_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
+        fake_rds.should_receive(:create_database).
             with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16").and_return(
             :engine => "mysql",
             :master_username => "uaa_user",
@@ -717,7 +717,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_ccdb_rds = mock("ccdb", db_name: "ccdb", endpoint_port: 1234, db_instance_status: :irrelevant)
         fake_uaadb_rds = mock("uaadb", db_name: "uaadb", endpoint_port: 5678, db_instance_status: :irrelevant)
-        fake_aws_rds.should_receive(:databases).at_least(:once).and_return([fake_ccdb_rds, fake_uaadb_rds])
+        fake_rds.should_receive(:databases).at_least(:once).and_return([fake_ccdb_rds, fake_uaadb_rds])
 
         ccdb_endpoint_address_response = ([nil] * retries_needed) << "1.2.3.4"
         fake_ccdb_rds.stub(:endpoint_address).and_return(*ccdb_endpoint_address_response)
@@ -725,10 +725,10 @@ describe Bosh::Cli::Command::AWS do
         uaadb_endpoint_address_response = ([nil] * retries_needed) << "5.6.7.8"
         fake_uaadb_rds.stub(:endpoint_address).and_return(*uaadb_endpoint_address_response)
 
-        fake_aws_rds.stub(:database).with("ccdb").and_return(fake_ccdb_rds)
-        fake_aws_rds.stub(:database).with("uaadb").and_return(fake_uaadb_rds)
+        fake_rds.stub(:database).with("ccdb").and_return(fake_ccdb_rds)
+        fake_rds.stub(:database).with("uaadb").and_return(fake_uaadb_rds)
 
-        fake_aws_rds
+        fake_rds
       end
 
       it "should create all rds databases" do
@@ -754,7 +754,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should flush the output to a YAML file" do
-        fake_aws_rds = make_fake_rds!
+        make_fake_rds!
 
         aws.should_receive(:flush_output_state) do |args|
           args.should match(/aws_rds_receipt.yml/)
@@ -762,7 +762,9 @@ describe Bosh::Cli::Command::AWS do
 
         aws.create_rds_dbs(config_file, receipt_file)
 
-        aws.output_state["deployment_manifest"]["properties"]["ccdb"].should == {
+        deployment_manifest_properties = aws.output_state["deployment_manifest"]["properties"]
+
+        deployment_manifest_properties["ccdb"].should == {
             "db_scheme" => "mysql",
             "address" => "1.2.3.4",
             "port" => 1234,
@@ -781,7 +783,7 @@ describe Bosh::Cli::Command::AWS do
             ]
         }
 
-        aws.output_state["deployment_manifest"]["properties"]["uaadb"].should == {
+        deployment_manifest_properties["uaadb"].should == {
             "db_scheme" => "mysql",
             "address" => "5.6.7.8",
             "port" => 5678,
