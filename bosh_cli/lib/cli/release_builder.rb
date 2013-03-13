@@ -7,7 +7,7 @@ module Bosh::Cli
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
-    attr_reader :release, :packages, :jobs, :version, :build_dir
+    attr_reader :release, :packages, :jobs, :version, :build_dir, :commit_hash, :uncommitted_changes
 
     # @param [Bosh::Cli::Release] release Current release
     # @param [Array<Bosh::Cli::PackageBuilder>] packages Built packages
@@ -16,6 +16,8 @@ module Bosh::Cli
     def initialize(release, packages, jobs, options = { })
       @release = release
       @final = options.has_key?(:final) ? !!options[:final] : false
+      @commit_hash = options.fetch(:commit_hash, '00000000')
+      @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = packages
       @jobs = jobs
 
@@ -125,6 +127,9 @@ module Bosh::Cli
           "sha1" => job.checksum,
         }
       end
+
+      manifest["commit_hash"] = commit_hash
+      manifest["uncommitted_changes"] = uncommitted_changes
 
       manifest["name"] = release_name
 

@@ -235,7 +235,6 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     end
 
     out = run_bosh("releases")
-    out.should =~ /releases total: 1/i
     out.should =~ /bosh-release.+0\.1\-dev/
   end
 
@@ -277,13 +276,14 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     out = run_bosh("releases")
     out.should =~ /releases total: 1/i
-    out.should =~ /bosh-release.+0\.1\-dev, 0\.2\-dev/
+    out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
   end
 
   it "release lifecycle: create, upload, update (w/sparse upload), delete" do
     assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.yml")
     release_2 = spec_asset("test_release/dev_releases/bosh-release-0.2-dev.yml")
+    commit_hash = ''
 
     release_dir = File.join(assets_dir, "test_release")
 
@@ -310,19 +310,20 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       out.should_not =~ regexp("Checking if can repack")
       out.should_not =~ regexp("Release repacked")
       out.should =~ /Release uploaded/
+      commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
     end
 
     out = run_bosh("releases")
     out.should =~ /releases total: 1/i
-    out.should =~ /bosh-release.+0\.1\-dev, 0\.2\-dev/
+    out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
 
     run_bosh("delete release bosh-release 0.2-dev")
-    expect_output("releases", <<-OUT )
-    +--------------+----------+
-    | Name         | Versions |
-    +--------------+----------+
-    | bosh-release | 0.1-dev  |
-    +--------------+----------+
+    expect_output("releases", <<-OUT.gsub("XXXXXXXX",commit_hash))
+    +--------------+----------+-------------+
+    | Name         | Versions | Commit Hash |
+    +--------------+----------+-------------+
+    | bosh-release | 0.1-dev  | XXXXXXXX    |
+    +--------------+----------+-------------+
 
     Releases total: 1
     OUT

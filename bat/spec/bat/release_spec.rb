@@ -38,6 +38,23 @@ describe "release" do
     end
   end
 
+  describe "listing" do
+    it "should mark releases that have uncommitted changes" do
+      Dir.chdir(release.path) do |dir|
+        FileUtils.mkdir File.join(dir, ".git")
+        FileUtils.touch File.join("src/batlight/bin/dirty-file")
+        commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
+        bosh("create release --force")
+        bosh("upload release")
+        FileUtils.rm File.join("src/batlight/bin/dirty-file")
+        FileUtils.rmdir File.join(dir, ".git")
+        bosh("releases").should succeed_with /bosh-release.*#{commit_hash}\+.*Uncommitted changes/m
+        bosh("delete release bosh-release")
+        bosh("reset release")
+      end
+    end
+  end
+
   describe "delete" do
 
     before(:each) do

@@ -2,6 +2,7 @@ class Release
   attr_reader :name
   attr_reader :paths
   attr_reader :versions
+  attr_reader :path
 
   def self.from_path(path, name="bat")
     glob = File.join(path, "releases", "#{name}-*.yml")

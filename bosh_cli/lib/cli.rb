@@ -38,6 +38,7 @@ unless defined?(Bosh::Cli::VERSION)
 end
 
 require "common/common"
+require "common/exec"
 
 require "cli/config"
 require "cli/core_ext"

@@ -249,17 +249,15 @@ module Bosh::Director
 
     get "/releases" do
       releases = Models::Release.order_by(:name.asc).map do |release|
-        versions_in_use = []
-        versions = release.versions_dataset.order_by(:version.asc).map do |rv|
-          versions_in_use << rv.version.to_s unless rv.deployments.empty?
-          rv.version.to_s
+        release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
+          Hash["version", rv.version.to_s,
+               "commit_hash", rv.commit_hash,
+               "uncommitted_changes", rv.uncommitted_changes,
+               "currently_deployed", !rv.deployments.empty?]
         end
 
-        {
-          "name"     => release.name,
-          "versions" => versions,
-          "in_use"   => versions_in_use
-        }
+        Hash["name", release.name,
+             "release_versions", release_versions]
       end
 
       json_encode(releases)

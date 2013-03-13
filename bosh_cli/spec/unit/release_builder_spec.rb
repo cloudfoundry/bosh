@@ -30,6 +30,16 @@ describe Bosh::Cli::ReleaseBuilder do
     File.file?(expected_tarball_path).should be_true
   end
 
+  it 'should include git hash and uncommitted change state in manifest' do
+    options = {commit_hash: '12345678', uncommitted_changes: true}
+    builder = Bosh::Cli::ReleaseBuilder.new(@release, [], [], options)
+    builder.build
+
+    manifest = YAML.load_file(builder.manifest_path)
+    manifest['commit_hash'].should == '12345678'
+    manifest['uncommitted_changes'].should be_true
+  end
+
   it "doesn't build a new release if nothing has changed" do
     builder = new_builder
     builder.build
