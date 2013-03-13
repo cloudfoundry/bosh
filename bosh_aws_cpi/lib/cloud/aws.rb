@@ -33,6 +33,7 @@ require "cloud/aws/vip_network"
 require "cloud/aws/instance_manager"
 require "cloud/aws/tag_manager"
 require "cloud/aws/availability_zone_selector"
+require "cloud/aws/resource_wait"
 
 module Bosh
   module Clouds
