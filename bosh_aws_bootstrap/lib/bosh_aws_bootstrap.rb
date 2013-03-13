@@ -1,6 +1,6 @@
 require 'aws-sdk'
 
-require "cloud/aws/helpers"
+require "cloud/aws/resource_wait"
 
 require "bosh_aws_bootstrap/version"
 require "bosh_aws_bootstrap/ec2"
