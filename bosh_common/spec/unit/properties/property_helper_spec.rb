@@ -26,6 +26,27 @@ describe Bosh::Common::PropertyHelper do
     }
   end
 
+  it "should return the default value if the value not found in src" do
+    dst = {}
+    src = {}
+    @helper.copy_property(dst, src, "foo.bar", "foobar")
+    dst.should == {"foo" => {"bar" => "foobar"}}
+  end
+
+  it "should return the 'false' value when parsing a boolean false value" do
+    dst = {}
+    src = {"foo" => {"bar" => false}}
+    @helper.copy_property(dst, src, "foo.bar", true)
+    dst.should == {"foo" => {"bar" => false}}
+  end
+
+  it "should get a nil when value not found in src and no default value specified " do
+    dst = {}
+    src = {}
+    @helper.copy_property(dst, src, "foo.bar")
+    dst.should == {"foo" => {"bar" => nil}}
+  end
+
   it "can lookup the property in a Hash using dot-syntax" do
     properties = {
       "foo" => {"bar" => "baz"},
@@ -36,4 +57,5 @@ describe Bosh::Common::PropertyHelper do
     @helper.lookup_property(properties, "router").should == {"token" => "foo"}
     @helper.lookup_property(properties, "no.prop").should be_nil
   end
+
 end
