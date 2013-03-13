@@ -1,6 +1,12 @@
 require 'aws-sdk'
 
-require "cloud/aws/helpers"
+# since this plugin is abusing the AWS CPI, the following hack is needed so that
+# task_checkpoint is available when ResourceWait.for_resource is called
+require "cloud"
+Config = Struct.new(:task_checkpoint)
+Bosh::Clouds::Config.configure(Config.new)
+
+require "cloud/aws/resource_wait"
 
 require "bosh_aws_bootstrap/version"
 require "bosh_aws_bootstrap/ec2"

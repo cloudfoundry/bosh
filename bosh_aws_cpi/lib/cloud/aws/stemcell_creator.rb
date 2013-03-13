@@ -19,11 +19,11 @@ module Bosh::AwsCloud
       copy_root_image
 
       snapshot = volume.create_snapshot
-      wait_resource(snapshot, :completed)
+      ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
 
       params = image_params(snapshot.id)
       image = region.images.create(params)
-      wait_resource(image, :available, :state)
+      ResourceWait.for_image(image: image, state: :available)
 
       TagManager.tag(image, 'Name', params[:description]) if params[:description]
 

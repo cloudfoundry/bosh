@@ -1,9 +1,6 @@
 module Bosh
   module Aws
     class EC2
-      include Bosh::AwsCloud::Helpers
-
-      def task_checkpoint; end # required for wait_resource from included Helpers
 
       MAX_TAG_KEY_LENGTH = 127
       MAX_TAG_VALUE_LENGTH = 255
@@ -81,7 +78,7 @@ module Bosh
         )
 
         create_instance(instance_options).tap do |instance|
-          wait_resource(instance, :running, :status)
+          Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
           instance.add_tag("Name", {value: name})
           instance.associate_elastic_ip(allocate_elastic_ip)
           disable_src_dest_checking(instance.id)
