@@ -117,7 +117,7 @@ module Bosh::AwsCloud
       end
 
       state = nil
-      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do
+      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do |retries, e|
         Bosh::AwsCloud::ResourceWait.task_checkpoint # from config
         state = resource.call(state_method)
 
@@ -128,6 +128,7 @@ module Bosh::AwsCloud
         # the yielded block should return true if we have reached the target state
         yield state
       end
+      #  logger.debug("Waiting for #{desc} to be #{target_state} (#{duration}s)")
 
       Bosh::AwsCloud::ResourceWait.logger.info("#{desc} is now #{state}, took #{time_passed}s")
     end

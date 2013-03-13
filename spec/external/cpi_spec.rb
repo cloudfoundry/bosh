@@ -56,8 +56,8 @@ describe Bosh::AwsCloud::Cloud do
 
     if @vpc
       instance = ec2.instances_for_ids([@instance_id]).first
-      ResourceWait.for_instance(instance: instance, state: :terminated)
-      # this returns before the resource is freed. add sleep to ensure subnet has no more dependencies
+      cpi.wait_resource(instance, :terminated)
+      # wait_resource returns before the resource is freed. add sleep to ensure subnet has no more dependencies
       # and can be deleted safely
       sleep 8
       @vpc.delete_subnets

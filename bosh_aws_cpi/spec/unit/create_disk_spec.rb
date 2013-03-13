@@ -17,7 +17,7 @@ describe Bosh::AwsCloud::Cloud do
       region.stub(:availability_zones => zones)
     end
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    cloud.should_receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(2048).should == "v-foobar"
   end
@@ -33,7 +33,7 @@ describe Bosh::AwsCloud::Cloud do
       region.stub(:availability_zones => zones)
     end
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    cloud.should_receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(2049)
   end
@@ -65,7 +65,7 @@ describe Bosh::AwsCloud::Cloud do
       region.stub(:instances => double("instances", :[] =>instance))
     end
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    cloud.stub(:wait_resource)
 
     cloud.create_disk(1024, "i-test")
   end
@@ -81,7 +81,7 @@ describe Bosh::AwsCloud::Cloud do
       region.stub(:availability_zones => zones)
     end
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    cloud.stub(:wait_resource)
 
     cloud.create_disk(2048)
   end

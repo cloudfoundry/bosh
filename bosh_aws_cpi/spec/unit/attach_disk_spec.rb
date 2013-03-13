@@ -23,7 +23,7 @@ describe Bosh::AwsCloud::Cloud do
 
     instance.should_receive(:block_device_mappings).and_return({})
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :attached)
+    cloud.should_receive(:wait_resource).with(attachment, :attached)
 
     old_settings = { "foo" => "bar" }
     new_settings = {
@@ -60,7 +60,7 @@ describe Bosh::AwsCloud::Cloud do
     volume.should_receive(:attach_to).
       with(instance, "/dev/sdh").and_return(attachment)
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :attached)
+    cloud.should_receive(:wait_resource).with(attachment, :attached)
 
     old_settings = { "foo" => "bar" }
     new_settings = {
@@ -97,7 +97,7 @@ describe Bosh::AwsCloud::Cloud do
     volume.should_receive(:attach_to).
       with(instance, "/dev/sdh").and_return(attachment)
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :attached)
+    cloud.should_receive(:wait_resource).with(attachment, :attached)
 
     old_settings = { "foo" => "bar" }
     new_settings = {

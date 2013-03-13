@@ -27,7 +27,7 @@ describe Bosh::AwsCloud::Stemcell do
 
         stemcell.should_receive(:memoize_snapshots).ordered
         fake_aws_ami.should_receive(:deregister).ordered
-        Bosh::AwsCloud::ResourceWait.stub(:for_image).with(image: fake_aws_ami, state: :deleted)
+        stemcell.should_receive(:wait_resource).with(fake_aws_ami, :deleted, :state).ordered
         stemcell.should_receive(:delete_snapshots).ordered
 
         stemcell.delete
@@ -40,7 +40,7 @@ describe Bosh::AwsCloud::Stemcell do
 
         stemcell.stub(:memoize_snapshots)
         fake_aws_ami.should_receive(:deregister).and_raise(AWS::EC2::Errors::AuthFailure)
-        Bosh::AwsCloud::ResourceWait.should_not_receive(:for_image)
+        stemcell.should_not_receive(:wait_resource)
 
         stemcell.delete
       end

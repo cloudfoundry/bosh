@@ -23,7 +23,7 @@ module Bosh::AwsCloud
 
       # Wait for the AMI to be deregistered, or the snapshot deletion will fail,
       # as the AMI is still in use.
-      ResourceWait.for_image(image: ami, state: :deleted)
+      wait_resource(ami, :deleted, :state)
 
       delete_snapshots
       logger.info("deleted stemcell '#{id}'")

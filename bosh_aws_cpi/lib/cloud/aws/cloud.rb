@@ -93,13 +93,13 @@ module Bosh::AwsCloud
         # do this early to fail fast
         stemcell = Stemcell.find(@region, stemcell_id)
 
-        begin
-          instance_manager = InstanceManager.new(@region, registry, az_selector)
-          instance = instance_manager.
-              create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
+        instance_manager = InstanceManager.new(@region, registry, az_selector)
+        instance = instance_manager.
+            create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
 
+        begin
           @logger.info("Creating new instance '#{instance.id}'")
-          ResourceWait.for_instance(instance: instance, state: :running)
+          wait_resource(instance, :running)
 
           NetworkConfigurator.new(network_spec).configure(@region, instance)
 
@@ -114,7 +114,7 @@ module Bosh::AwsCloud
           registry.update_settings(instance.id, registry_settings)
 
           instance.id
-        rescue => e # is this rescuing too much?
+        rescue => e
           @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
           instance_manager.terminate(instance.id, @fast_path_delete)
           raise e
@@ -181,7 +181,7 @@ module Bosh::AwsCloud
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")
-        ResourceWait.for_volume(volume: volume, state: :available)
+        wait_resource(volume, :available)
 
         volume.id
       end
@@ -220,7 +220,11 @@ module Bosh::AwsCloud
           return
         end
 
-        ResourceWait.for_volume(volume: volume, state: :deleted)
+        begin
+          wait_resource(volume, :deleted)
+        rescue AWS::EC2::Errors::InvalidVolume::NotFound
+          # It's OK, just means the volume has already been deleted
+        end
 
         @logger.info("Volume `#{disk_id}' has been deleted")
       end
@@ -470,7 +474,7 @@ module Bosh::AwsCloud
       end
 
       @logger.info("Attaching `#{volume.id}' to `#{instance.id}'")
-      ResourceWait.for_attachment(attachment: new_attachment, state: :attached)
+      wait_resource(new_attachment, :attached)
 
       device_name = new_attachment.device
 
@@ -498,7 +502,12 @@ module Bosh::AwsCloud
       attachment = volume.detach_from(instance, device_map[volume.id])
       @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
-      ResourceWait.for_attachment(attachment: attachment, state: :detached)
+      wait_resource(attachment, :detached) do |error|
+        if error.is_a? AWS::Core::Resource::NotFound
+          @logger.info("attachment is no longer found, assuming it to be detached")
+          :detached
+        end
+      end
     end
 
     ##
