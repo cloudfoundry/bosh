@@ -4,7 +4,7 @@ set -e
 echo "Extracting PowerDNS archive ..."
 
 echo "Extracting PowerDNS ..."
-tar xzvf pdns-src/pdns-3.2.tar.gz
+tar xzvf powerdns/pdns-3.2.tar.gz
 
 if [[ $? != 0 ]] ; then
   echo "Cannot unpack PowerDNS"
