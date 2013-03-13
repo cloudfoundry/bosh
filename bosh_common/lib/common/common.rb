@@ -1,4 +1,5 @@
 # Copyright (c) 2012 VMware, Inc.
+require 'common/errors'
 
 module Bosh
 
@@ -44,6 +45,7 @@ module Bosh
 
     module_function :which
 
+    # this method will loop until the block returns a true value
     def retryable(options = {}, &block)
       opts = {:tries => 2, :sleep => 1, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
       invalid_options = opts.merge(options).keys - opts.keys
@@ -58,16 +60,18 @@ module Bosh
       retry_exception = nil
 
       begin
-        return yield retries, retry_exception
+        loop do
+          y = yield retries, retry_exception
+          return y if y
+          raise RetryCountExceeded if retries+1 >= tries
+          wait(opts[:sleep], retries, on_exception)
+          retries += 1
+        end
       rescue *on_exception => exception
         raise unless exception.message =~ opts[:matching]
         raise if retries+1 >= tries
 
-        # Interrupt Exception could be raised while sleeping
-        begin
-          sleep opts[:sleep].respond_to?(:call) ? opts[:sleep].call(retries) : opts[:sleep]
-        rescue *on_exception
-        end
+        wait(opts[:sleep], retries, on_exception, exception)
 
         retries += 1
         retry_exception = exception
@@ -77,6 +81,13 @@ module Bosh
       end
     end
 
-    module_function :retryable
+    def wait(sleeper, retries, exceptions, exception=nil)
+      sleep sleeper.respond_to?(:call) ? sleeper.call(retries, exception) : sleeper
+    rescue *exceptions
+      # SignalException could be raised while sleeping, so if you want to catch it,
+      # it need to be passed in the list of exceptions to ignore
+    end
+
+    module_function :retryable, :wait
   end
 end

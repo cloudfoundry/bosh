@@ -242,6 +242,7 @@ module Bosh::Cli::Command
             end
           end
         end
+        true # retryable block must yield true if we only want to retry on Exceptions
       end
 
       say "deleted VPC and all dependencies".green
@@ -507,6 +508,7 @@ module Bosh::Cli::Command
                              tries: 120, on: [::AWS::EC2::Errors::InvalidGroup::InUse]) do |tries, e|
         say("unable to delete security groups: #{e}") if tries > 0
         ec2.delete_all_security_groups
+        true # retryable block must yield true if we only want to retry on Exceptions
       end
     end
 

@@ -82,6 +82,15 @@ plugins:
       port: <%= p("hm.tsdb.port") %>
   <% end %>
 
+  <% if p("hm.cloud_watch_enabled") %>
+  - name: cloud_watch
+    events:
+      - heartbeat
+    options:
+      access_key_id: <%= p("aws.access_key_id") %>
+      secret_access_key: <%= p("aws.secret_access_key") %>
+  <% end %>
+
   <% if p("hm.pagerduty_enabled") %>
   - name: pagerduty
     events:

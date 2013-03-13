@@ -131,6 +131,7 @@ module Bosh::Deployer
 
       step "Creating VM from #{state.stemcell_cid}" do
         state.vm_cid = create_vm(state.stemcell_cid)
+        update_vm_metadata(state.vm_cid, {"Name" => state.name})
         discover_bosh_ip
       end
       save_state
@@ -221,6 +222,12 @@ module Bosh::Deployer
       networks  = Config.networks
       env = Config.env
       cloud.create_vm(state.uuid, stemcell_cid, resources, networks, nil, env)
+    end
+
+    def update_vm_metadata(vm, metadata)
+      cloud.set_vm_metadata(vm, metadata) if cloud.respond_to?(:set_vm_metadata)
+    rescue Bosh::Clouds::NotImplemented => e
+      logger.error(e)
     end
 
     def mount_disk(disk_cid)

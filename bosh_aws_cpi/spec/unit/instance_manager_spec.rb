@@ -26,7 +26,7 @@ describe Bosh::AwsCloud::InstanceManager do
       region.stub(:instances).and_return(aws_instances)
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
 
-      aws_instances.should_receive(:create).with(aws_instance_params)
+      aws_instances.should_receive(:create).with(aws_instance_params).and_return(true)
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
 
@@ -56,7 +56,7 @@ describe Bosh::AwsCloud::InstanceManager do
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
 
       aws_instances.should_receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
-      aws_instances.should_receive(:create).with(aws_instance_params).once
+      aws_instances.should_receive(:create).with(aws_instance_params).and_return(true)
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
       instance_manager.stub(instance_create_wait_time: 0)
