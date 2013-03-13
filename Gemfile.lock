@@ -35,7 +35,6 @@ PATH
       sigar (~> 0.7.2)
       sinatra (~> 1.2.8)
       thin (~> 1.5.0)
-      uuidtools (~> 2.1.3)
       yajl-ruby (~> 1.1.0)
 
 PATH
