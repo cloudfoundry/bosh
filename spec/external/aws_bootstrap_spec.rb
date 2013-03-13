@@ -20,7 +20,7 @@ describe 'bosh_aws_bootstrap_external' do
   let(:elb) { AWS::ELB.new }
   let(:route53) { AWS::Route53.new }
 
-  let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..', 'assets', 'aws', 'aws_configuration_template.yml.erb') }
+  let(:aws_configuration_template) { File.join(File.dirname(__FILE__), '..', '..', 'bosh_aws_bootstrap', 'templates', 'aws_configuration_template.yml.erb') }
 
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }

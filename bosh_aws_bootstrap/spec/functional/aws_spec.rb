@@ -4,7 +4,7 @@ describe Bosh::Cli::Command::AWS do
   let(:aws) { subject }
   let(:default_config_filename) do
     File.expand_path(File.join(
-                         File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+                         File.dirname(__FILE__), "..", "..", "templates", "aws_configuration_template.yml.erb"
                      ))
   end
   before { aws.stub(:sleep) }
@@ -846,6 +846,26 @@ describe Bosh::Cli::Command::AWS do
         expect {
           aws.delete_all_rds_dbs config_file
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
+      end
+
+      it "should delete db_subnets when dbs don't exist" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(20)
+
+        fake_rds = mock("rds")
+        fake_rds.should_receive(:database_names).and_return([])
+        fake_rds.should_receive(:databases).and_return([])
+        fake_rds.should_not_receive(:delete_databases)
+        fake_rds.should_receive(:delete_subnet_groups)
+        fake_rds.should_receive(:delete_security_groups)
+        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+
+        aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").
+            and_return(true)
+
+        aws.delete_all_rds_dbs config_file
+
       end
 
       context "interactive mode (default)" do

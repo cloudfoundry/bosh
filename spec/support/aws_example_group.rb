@@ -68,7 +68,7 @@ module AwsSystemExampleGroup
   end
 
   def aws_configuration_template_path
-    "#{ASSETS_DIR}/aws/aws_configuration_template.yml.erb"
+    File.join(File.dirname(__FILE__), '..', '..', 'bosh_aws_bootstrap', 'templates', 'aws_configuration_template.yml.erb')
   end
 
   def run(cmd, options = {})

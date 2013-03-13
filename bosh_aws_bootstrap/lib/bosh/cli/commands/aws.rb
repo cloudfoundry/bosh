@@ -445,20 +445,16 @@ module Bosh::Cli::Command
       rds = Bosh::Aws::RDS.new(credentials)
 
       formatted_names = rds.database_names.map { |instance, db| "#{instance}\t(database_name: #{db})" }
-      unless formatted_names.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-        say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-        if confirmed?("Are you sure you want to delete all databases?")
-          rds.delete_databases
-          err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-          delete_all_rds_subnet_groups(config_file)
-          delete_all_rds_security_groups(config_file)
-        end
+      if confirmed?("Are you sure you want to delete all databases?")
+        rds.delete_databases unless formatted_names.empty?
+        err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
 
-      else
-        say("No RDS databases found")
+        delete_all_rds_subnet_groups(config_file)
+        delete_all_rds_security_groups(config_file)
       end
     end
 
@@ -669,7 +665,7 @@ module Bosh::Cli::Command
 
     def default_config_file
       File.expand_path(File.join(
-                           File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+                           File.dirname(__FILE__), "..", "..", "..", "..", "templates", "aws_configuration_template.yml.erb"
                        ))
     end
 
