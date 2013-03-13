@@ -268,9 +268,9 @@ module Bosh::Cli::Command
 
             dhcp_options << vpc.dhcp_options
 
+            vpc.delete_network_interfaces
             vpc.delete_security_groups
             ec2.delete_internet_gateways(ec2.internet_gateway_ids)
-            vpc.delete_network_interfaces
             vpc.delete_subnets
             vpc.delete_route_tables
             vpc.delete_vpc
