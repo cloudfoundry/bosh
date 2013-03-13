@@ -66,6 +66,7 @@ describe Bosh::Common do
       Bosh::Common.retryable(tries: 2) do |tries|
         count += 1
         raise StandardError if tries == 0
+        true
       end
 
       count.should == 2
@@ -76,6 +77,7 @@ describe Bosh::Common do
 
       Bosh::Common.retryable(tries: 3, sleep: 5) do |tries|
         raise StandardError if tries < 2
+        true
       end
     end
 
@@ -88,6 +90,7 @@ describe Bosh::Common do
         count += 1
         raise ArgumentError if tries == 0
         raise RuntimeError if tries == 1
+        true
       end
 
       count.should == 3
@@ -106,6 +109,7 @@ describe Bosh::Common do
         count += 1
         raise ArgumentError if tries == 0
         raise RuntimeError if tries == 1
+        true
       end
     end
 
