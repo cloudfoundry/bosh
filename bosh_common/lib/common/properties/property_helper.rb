@@ -23,7 +23,7 @@ module Bosh::Common
       end
 
       dst_ref[keys[-1]] ||= {}
-      dst_ref[keys[-1]] = src_ref || default
+      dst_ref[keys[-1]] = src_ref.nil? ? default : src_ref
     end
 
     # @param [Hash] collection Property collection
