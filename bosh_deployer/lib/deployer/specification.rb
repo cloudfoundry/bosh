@@ -53,8 +53,7 @@ module Bosh::Deployer
 
       # TODO this override should be made more generic
       if Config.spec_properties.has_key?("ntp")
-        @properties["agent"] ||= {}
-        @properties["agent"]["ntp"] = Config.spec_properties["ntp"]
+        @properties["ntp"] = Config.spec_properties["ntp"]
       end
 
       if Config.spec_properties.has_key?("compiled_package_cache")
