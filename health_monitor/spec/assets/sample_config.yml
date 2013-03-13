@@ -26,6 +26,9 @@ intervals:
 plugins:
 
   - name: logger
+    events:
+      - alert
+      - heartbeat
 
   - name: nats
     events:
@@ -64,3 +67,10 @@ plugins:
     events:
       - alert
       - heartbeat
+
+  - name: cloud_watch
+    events:
+      - heartbeat
+    options:
+      access_key_id: access_key
+      secret_access_key: secret_access_key

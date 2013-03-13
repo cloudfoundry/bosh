@@ -137,3 +137,8 @@ properties:
   hm.varz_enabled:
     description: Enable /varz plugin
     default: false
+
+  # Send metrics to AWS CloudWatch
+  hm.cloud_watch_enabled:
+    description: Enable AWS CloudWatch Plugin
+    default: false

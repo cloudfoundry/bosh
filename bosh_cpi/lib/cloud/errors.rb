@@ -18,5 +18,6 @@ module Bosh::Clouds
   class NoDiskSpace < RetriableCloudError; end
   class DiskNotAttached < RetriableCloudError; end
   class DiskNotFound < RetriableCloudError; end
+  class VMCreationFailed < RetriableCloudError; end
 
 end

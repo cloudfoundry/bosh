@@ -31,8 +31,10 @@ module Bosh::AwsCloud
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
 
-      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: [AWS::EC2::Errors::InvalidIPAddress::InUse]) do |tries, e|
-        @logger.warn("IP address was in use: #{e}") if tries > 0
+      errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
+
+      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
+        @logger.warn("IP address was in use: #{error}") if tries > 0
         @instance = @region.instances.create(instance_params)
       end
 
