@@ -81,17 +81,6 @@ module Bosh::AwsCloud
       end
     end
 
-    def self.for_subnet(args)
-      subnet = args.fetch(:subnet) { raise ArgumentError, 'subnet object required' }
-      target_state = args.fetch(:state) { raise ArgumentError, 'state symbol required' }
-      valid_states = [:available]
-      validate_states(valid_states, target_state)
-
-      new.for_resource(resource: subnet, target_state: target_state, state_method: :state) do |current_state|
-        current_state == target_state
-      end
-    end
-
     def self.validate_states(valid_states, target_state)
       unless valid_states.include?(target_state)
         raise ArgumentError, "target state must be one of #{valid_states.join(', ')}, `#{target_state}' given"

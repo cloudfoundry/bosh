@@ -111,6 +111,9 @@ describe Bosh::AwsCloud::ResourceWait do
 
   describe '#for_snapshot' do
     let(:snapshot) { double(AWS::EC2::Snapshot, id: 'snap-123') }
+    # :pending
+    #:completed
+    #:error
     context 'creation' do
       it 'should wait until the state is completed' do
         snapshot.should_receive(:call).with(:status).and_return(:pending)
@@ -127,6 +130,7 @@ describe Bosh::AwsCloud::ResourceWait do
           described_class.for_snapshot(snapshot: snapshot, state: :completed)
         }.to raise_error Bosh::Clouds::CloudError, /state is error, expected completed/
       end
+
     end
   end
 
@@ -170,16 +174,4 @@ describe Bosh::AwsCloud::ResourceWait do
     end
   end
 
-  describe '#for_subnet' do
-    let(:subnet) { double(AWS::EC2::Subnet, id: 'subnet-123') }
-
-    context 'creation' do
-      it 'should wait until the state is completed' do
-        subnet.should_receive(:call).with(:state).and_return(:pending)
-        subnet.should_receive(:call).with(:state).and_return(:available)
-
-        described_class.for_subnet(subnet: subnet, state: :available)
-      end
-    end
-  end
 end

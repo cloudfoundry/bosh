@@ -79,10 +79,6 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "instances" do
-    before do
-      Bosh::AwsCloud::ResourceWait.stub(:for_instance)
-    end
-
     describe "termination" do
       it "should terminate all instances and wait until completed before returning" do
         instance_1 = double("instance", api_termination_disabled?: false)
