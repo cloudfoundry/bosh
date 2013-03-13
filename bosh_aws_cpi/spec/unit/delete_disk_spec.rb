@@ -15,7 +15,7 @@ describe Bosh::AwsCloud::Cloud do
     volume.should_receive(:state).and_return(:available)
     volume.should_receive(:delete)
 
-    cloud.should_receive(:wait_resource).with(volume, :deleted)
+    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :deleted)
 
     cloud.delete_disk("v-foo")
   end
@@ -48,7 +48,7 @@ describe Bosh::AwsCloud::Cloud do
     volume.should_receive(:delete)
 
     volume.should_receive(:add_tag).with("Name", {:value => "to be deleted"})
-    cloud.should_not_receive(:wait_resource)
+    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :deleted)
 
     cloud.delete_disk("v-foo")
   end

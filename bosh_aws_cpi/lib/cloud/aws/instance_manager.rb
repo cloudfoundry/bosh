@@ -63,7 +63,7 @@ module Bosh::AwsCloud
 
       begin
         @logger.info("Deleting instance '#{instance.id}'")
-        wait_resource(instance, :terminated)
+        ResourceWait.for_instance(instance: instance, state: :terminated)
       rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
         # It's OK, just means that instance has already been deleted
       end

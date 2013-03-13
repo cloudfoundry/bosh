@@ -75,12 +75,14 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   it "should create an EC2 instance and return its id" do
     network_configurator.stub(:configure)
     registry.stub(:update_settings)
+    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
 
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "expected instance id"
   end
 
   it "should configure the IP for the created instance according to the network specifications" do
     registry.stub(:update_settings)
+    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
 
     network_configurator.should_receive(:configure).with(region, instance)
 
@@ -89,6 +91,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
   it "should update the registry settings with the new instance" do
     network_configurator.stub(:configure)
+    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
     UUIDTools::UUID.stub(:random_create).and_return("rand0m")
 
     agent_settings = {
@@ -114,6 +117,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   it 'should clean up after itself if something fails' do
     network_configurator.stub(:configure)
     registry.stub(:update_settings).and_raise(ArgumentError)
+    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
 
     instance_manager.should_receive(:terminate)
 
