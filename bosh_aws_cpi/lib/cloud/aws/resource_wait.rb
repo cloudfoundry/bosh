@@ -1,6 +1,5 @@
 module Bosh::AwsCloud
   class ResourceWait
-    include Helpers
 
     DEFAULT_TRIES = 10
     MAX_SLEEP_EXPONENT = 8
@@ -105,6 +104,10 @@ module Bosh::AwsCloud
       Bosh::Clouds::Config.logger
     end
 
+    def self.task_checkpoint
+      Bosh::Clouds::Config.task_checkpoint
+    end
+
     def initialize
       @started_at = Time.now
     end
@@ -132,7 +135,7 @@ module Bosh::AwsCloud
 
       state = nil
       Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do
-        task_checkpoint
+        Bosh::AwsCloud::ResourceWait.task_checkpoint
 
         state = resource.method(state_method).call
 
