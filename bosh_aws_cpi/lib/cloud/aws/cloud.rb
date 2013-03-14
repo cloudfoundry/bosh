@@ -200,17 +200,31 @@ module Bosh::AwsCloud
         end
 
         @logger.info("Deleting volume `#{volume.id}'")
+
         # even though the contract is that we don't get here until AWS
         # reports that the volume is detached, the "eventual consistency"
         # might throw a spanner in the machinery and report that it still
         # is in use
 
-        begin
-          task_checkpoint
+        tries = 10
+        sleep_cb = lambda do |num_tries, error|
+          sleep_time = 2**[num_tries,8].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
+          @logger.debug("Waiting for #{desc} to be #{target_state}")
+          @logger.debug("#{error.class}: `#{error.message}'") if error
+          @logger.debug("Retrying in #{sleep_time} seconds - #{num_tries}/#{tries}")
+          sleep_time
+        end
+
+        ensure_cb = Proc.new do |retries|
+          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
+        end
+
+        errors = [AWS::EC2::Errors::Client::VolumeInUse]
+
+        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
+          Bosh::Clouds::Config.task_checkpoint
           volume.delete
-        rescue AWS::EC2::Errors::Client::VolumeInUse => e
-          sleep(1)
-          retry
+          true # return true to only retry on Exceptions
         end
 
         if @fast_path_delete
