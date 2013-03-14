@@ -134,7 +134,10 @@ module Bosh::AwsCloud
       state = nil
       Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do
         Bosh::AwsCloud::ResourceWait.task_checkpoint # from config
-        state = resource.call(state_method)
+
+        # for some obscure reason AWS::EC2::Subnet does not have the call method,
+        # so a little hackery is required :(
+        state = resource.instance_of?(AWS::EC2::Subnet) ? resource.__send__(state_method) : resource.call(state_method)
 
         if state == :error || state == :failed
           raise Bosh::Clouds::CloudError, "#{desc} state is #{state}, expected #{target_state}"
