@@ -25,6 +25,10 @@ module Bosh::AwsCloud
           sort.
           uniq
     end
+
+    def task_checkpoint
+      Bosh::Clouds::Config.task_checkpoint
+    end
   end
 end
 

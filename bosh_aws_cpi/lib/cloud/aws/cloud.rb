@@ -222,7 +222,7 @@ module Bosh::AwsCloud
         errors = [AWS::EC2::Errors::Client::VolumeInUse]
 
         Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
-          Bosh::Clouds::Config.task_checkpoint
+          task_checkpoint
           volume.delete
           true # return true to only retry on Exceptions
         end

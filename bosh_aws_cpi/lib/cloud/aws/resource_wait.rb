@@ -1,5 +1,6 @@
 module Bosh::AwsCloud
   class ResourceWait
+    include Helpers
 
     DEFAULT_TRIES = 10
     MAX_SLEEP_EXPONENT = 8
@@ -104,10 +105,6 @@ module Bosh::AwsCloud
       Bosh::Clouds::Config.logger
     end
 
-    def self.task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
-    end
-
     def initialize
       @started_at = Time.now
     end
@@ -124,9 +121,8 @@ module Bosh::AwsCloud
 
       sleep_cb = lambda do |num_tries, error|
         sleep_time = 2**[num_tries,MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
-        Bosh::AwsCloud::ResourceWait.logger.debug("Waiting for #{desc} to be #{target_state}")
         Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
-        Bosh::AwsCloud::ResourceWait.logger.debug("Retrying in #{sleep_time} seconds - #{num_tries}/#{tries}")
+        Bosh::AwsCloud::ResourceWait.logger.debug("Waiting for #{desc} to be #{target_state}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
         sleep_time
       end
 
@@ -136,7 +132,7 @@ module Bosh::AwsCloud
 
       state = nil
       Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do
-        Bosh::AwsCloud::ResourceWait.task_checkpoint # from config
+        task_checkpoint
 
         state = resource.method(state_method).call
 
