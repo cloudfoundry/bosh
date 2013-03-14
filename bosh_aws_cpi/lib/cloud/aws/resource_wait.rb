@@ -87,7 +87,9 @@ module Bosh::AwsCloud
       valid_states = [:available]
       validate_states(valid_states, target_state)
 
-      new.for_resource(resource: subnet, target_state: target_state, state_method: :state) do |current_state|
+      ignored_errors = [AWS::EC2::Errors::InvalidSubnetID::NotFound]
+
+      new.for_resource(resource: subnet, target_state: target_state, errors: ignored_errors, state_method: :state) do |current_state|
         current_state == target_state
       end
     end
