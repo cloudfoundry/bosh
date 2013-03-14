@@ -16,8 +16,8 @@ describe Bosh::Director::ApiController do
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     test_config["blobstore"] = {
-        "plugin" => "local",
-        "properties" => {"blobstore_path" => @blobstore_dir}
+        "provider" => "local",
+        "options" => {"blobstore_path" => @blobstore_dir}
     }
     BD::Config.configure(test_config)
   end

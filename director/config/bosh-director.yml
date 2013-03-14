@@ -12,8 +12,8 @@ db:
   max_connections: 32
   pool_timeout: 10
 blobstore:
-  plugin: simple
-  properties:
+  provider: simple
+  options:
     endpoint: http://127.0.0.1:9999
     user: admin
     password: admin
@@ -24,8 +24,8 @@ cloud:
       ntp:
         - ntp01.las01.emcatmos.com
       blobstore:
-        plugin: simple
-        properties:
+        provider: simple
+        options:
           endpoint: http://127.0.0.1:9999
           user: admin
           password: admin

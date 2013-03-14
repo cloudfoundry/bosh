@@ -146,9 +146,9 @@ module Bosh::Director
       def blobstore
         @lock.synchronize do
           if @blobstore.nil?
-            plugin = @blobstore_options["plugin"]
-            properties = @blobstore_options["properties"]
-            @blobstore = Bosh::Blobstore::Client.create(plugin, properties)
+            provider = @blobstore_options["provider"]
+            options = @blobstore_options["options"]
+            @blobstore = Bosh::Blobstore::Client.create(provider, options)
           end
         end
         @blobstore
@@ -157,9 +157,9 @@ module Bosh::Director
       def compiled_package_cache_blobstore
         @lock.synchronize do
           if @compiled_package_cache_blobstore.nil? && use_compiled_package_cache?
-            plugin = @compiled_package_cache_options["provider"]
-            properties = @compiled_package_cache_options["options"]
-            @compiled_package_cache_blobstore =  Bosh::Blobstore::Client.create(plugin, properties)
+            provider = @compiled_package_cache_options["provider"]
+            options = @compiled_package_cache_options["options"]
+            @compiled_package_cache_blobstore = Bosh::Blobstore::Client.create(provider, options)
           end
         end
         @compiled_package_cache_blobstore
