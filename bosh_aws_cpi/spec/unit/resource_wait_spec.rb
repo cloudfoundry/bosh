@@ -4,8 +4,7 @@ describe Bosh::AwsCloud::ResourceWait do
 
   before do
     Bosh::Common.stub(:sleep)
-    Bosh::Clouds::Config.stub(:task_checkpoint)
-    described_class.stub(:logger)
+    Bosh::Clouds::Config.stub(task_checkpoint: nil, logger: double("logger").as_null_object)
   end
 
   describe '#for_instance' do
