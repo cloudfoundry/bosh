@@ -21,12 +21,14 @@ describe Bosh::AwsCloud::InstanceManager do
       }
     end
     let(:aws_instances) { double(AWS::EC2::InstanceCollection) }
+    let(:instance) { double(AWS::EC2::Instance, id: 'i-12345678') }
 
     it "should ask AWS to create an instance in the given region, with parameters built up from the given arguments" do
       region.stub(:instances).and_return(aws_instances)
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
 
-      aws_instances.should_receive(:create).with(aws_instance_params).and_return(true)
+      aws_instances.should_receive(:create).with(aws_instance_params).and_return(instance)
+      Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
 
@@ -56,8 +58,9 @@ describe Bosh::AwsCloud::InstanceManager do
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
 
       aws_instances.should_receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
-      aws_instances.should_receive(:create).with(aws_instance_params).and_return(true)
-
+      aws_instances.should_receive(:create).with(aws_instance_params).and_return(instance)
+      Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
+      
       instance_manager = described_class.new(region, registry, availability_zone_selector)
       instance_manager.stub(instance_create_wait_time: 0)
 
