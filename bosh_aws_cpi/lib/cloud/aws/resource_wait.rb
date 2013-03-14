@@ -124,8 +124,9 @@ module Bosh::AwsCloud
 
       sleep_cb = lambda do |num_tries, error|
         sleep_time = 2**[num_tries,MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
+        Bosh::AwsCloud::ResourceWait.logger.debug("Waiting for #{desc} to be #{target_state}")
         Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
-        Bosh::AwsCloud::ResourceWait.logger.debug("Retrying in #{sleep_time} seconds")
+        Bosh::AwsCloud::ResourceWait.logger.debug("Retrying in #{sleep_time} seconds - #{num_tries}/#{tries}")
         sleep_time
       end
 
