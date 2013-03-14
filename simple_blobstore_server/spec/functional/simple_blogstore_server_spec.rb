@@ -35,7 +35,22 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
       last_response.status.should == 404
     end
 
-    it "should reject invalid users" do
+    it "should reject invalid password" do
+      get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "bad_password")}
+      last_response.status.should == 401
+    end
+
+    it "should reject invalid user" do
+      get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("bad_user", "doe")}
+      last_response.status.should == 401
+    end
+
+    it "should reject invalid user and password" do
+      get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("bad_user", "bad_password")}
+      last_response.status.should == 401
+    end
+
+    it "should reject unauthenticated users" do
       get "/resources/foo"
       last_response.status.should == 401
     end
