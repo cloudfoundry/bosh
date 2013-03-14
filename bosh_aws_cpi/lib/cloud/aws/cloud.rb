@@ -115,7 +115,7 @@ module Bosh::AwsCloud
           instance.id
         rescue => e # is this rescuing too much?
           @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
-          instance_manager.terminate(instance.id, @fast_path_delete)
+          instance_manager.terminate(instance.id, @fast_path_delete) if instance
           raise e
         end
       end
@@ -209,7 +209,7 @@ module Bosh::AwsCloud
         tries = 10
         sleep_cb = lambda do |num_tries, error|
           sleep_time = 2**[num_tries,8].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
-          @logger.debug("Waiting for #{desc} to be #{target_state}")
+          @logger.debug("Waiting for volume `#{volume.id}' to be deleted")
           @logger.debug("#{error.class}: `#{error.message}'") if error
           @logger.debug("Retrying in #{sleep_time} seconds - #{num_tries}/#{tries}")
           sleep_time
