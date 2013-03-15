@@ -491,7 +491,6 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       stemcell_filename = spec_asset("valid_stemcell.tgz")
 
       simple_blob_store_path = Bosh::Spec::Sandbox::BLOBSTORE_STORAGE_DIR
-      Dir.glob(File.join(simple_blob_store_path, "**/*")).should be_empty
 
       release_file = "test_release/dev_releases/bosh-release-0.1-dev.tgz"
       release_filename = spec_asset(release_file)
