@@ -39,6 +39,10 @@ module Bosh
         @aws_vpc.id
       end
 
+      def cidr_block
+        @aws_vpc.cidr_block
+      end
+
       def instances_count
         @aws_vpc.instances.count
       end
