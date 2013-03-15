@@ -268,9 +268,9 @@ module Bosh::Cli::Command
 
             dhcp_options << vpc.dhcp_options
 
+            vpc.delete_network_interfaces
             vpc.delete_security_groups
             ec2.delete_internet_gateways(ec2.internet_gateway_ids)
-            vpc.delete_network_interfaces
             vpc.delete_subnets
             vpc.delete_route_tables
             vpc.delete_vpc
@@ -387,9 +387,6 @@ module Bosh::Cli::Command
       receipt = receipt_file ? load_yaml_file(receipt_file) : @output_state
       vpc_subnets = receipt["vpc"]["subnets"]
 
-      vpc_id = receipt["vpc"]["id"]
-      vpc_cidr = config["vpc"]["cidr"]
-
       begin
         credentials = config["aws"]
         rds = Bosh::Aws::RDS.new(credentials)
@@ -405,7 +402,7 @@ module Bosh::Cli::Command
             # in directly, but it makes this easier to mock.  Once could argue that the
             # params to create_database should change to just a hash instead of a name +
             # a hash.
-            creation_opts = [name, subnet_ids, vpc_id, vpc_cidr]
+            creation_opts = [name, subnet_ids, receipt["vpc"]["id"]]
             creation_opts << rds_db_config["aws_creation_options"] if rds_db_config["aws_creation_options"]
             response = rds.create_database(*creation_opts)
             output_rds_properties(name, tag, response)
@@ -445,20 +442,16 @@ module Bosh::Cli::Command
       rds = Bosh::Aws::RDS.new(credentials)
 
       formatted_names = rds.database_names.map { |instance, db| "#{instance}\t(database_name: #{db})" }
-      unless formatted_names.empty?
-        say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
-        say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-        if confirmed?("Are you sure you want to delete all databases?")
-          rds.delete_databases
-          err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
+      say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".red)
+      say("Database Instances:\n\t#{formatted_names.join("\n\t")}")
 
-          delete_all_rds_subnet_groups(config_file)
-          delete_all_rds_security_groups(config_file)
-        end
+      if confirmed?("Are you sure you want to delete all databases?")
+        rds.delete_databases unless formatted_names.empty?
+        err("not all rds instances could be deleted") unless all_rds_instances_deleted?(rds)
 
-      else
-        say("No RDS databases found")
+        delete_all_rds_subnet_groups(config_file)
+        delete_all_rds_security_groups(config_file)
       end
     end
 
@@ -669,7 +662,7 @@ module Bosh::Cli::Command
 
     def default_config_file
       File.expand_path(File.join(
-                           File.dirname(__FILE__), "..", "..", "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+                           File.dirname(__FILE__), "..", "..", "..", "..", "templates", "aws_configuration_template.yml.erb"
                        ))
     end
 

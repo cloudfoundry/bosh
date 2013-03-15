@@ -1,8 +1,6 @@
 module Bosh
   module Aws
     class VPC
-      include Bosh::AwsCloud::Helpers
-      def task_checkpoint; end # required for wait_resource from included Helpers
 
       DEFAULT_CIDR = "10.0.0.0/16"
       DEFAULT_ROUTE = "0.0.0.0/0"
@@ -39,6 +37,10 @@ module Bosh
 
       def vpc_id
         @aws_vpc.id
+      end
+
+      def cidr_block
+        @aws_vpc.cidr_block
       end
 
       def instances_count
@@ -91,7 +93,7 @@ module Bosh
           options[:availability_zone] = subnet_spec["availability_zone"] if subnet_spec["availability_zone"]
 
           subnet = @aws_vpc.subnets.create(subnet_spec["cidr"], options)
-          wait_resource(subnet, :available, :state)
+          Bosh::AwsCloud::ResourceWait.for_subnet(subnet: subnet, state: :available)
 
           subnet.add_tag("Name", :value => name)
         end

@@ -37,7 +37,7 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   before do
-    delegate = double("delegate", logger: double("logger").as_null_object)
+    delegate = double("delegate", logger: Logger.new(STDOUT))
     delegate.stub(:task_checkpoint)
     Bosh::Clouds::Config.configure(delegate)
     Bosh::AwsCloud::RegistryClient.stub(:new).and_return(double("registry").as_null_object)
@@ -56,8 +56,8 @@ describe Bosh::AwsCloud::Cloud do
 
     if @vpc
       instance = ec2.instances_for_ids([@instance_id]).first
-      cpi.wait_resource(instance, :terminated)
-      # wait_resource returns before the resource is freed. add sleep to ensure subnet has no more dependencies
+      ::Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :terminated)
+      # this returns before the resource is freed. add sleep to ensure subnet has no more dependencies
       # and can be deleted safely
       sleep 8
       @vpc.delete_subnets

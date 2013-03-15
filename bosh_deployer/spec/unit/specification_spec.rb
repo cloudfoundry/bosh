@@ -44,7 +44,7 @@ describe Bosh::Deployer::Specification do
 
       spec = Bosh::Deployer::Specification.load_from_stemcell(spec_dir)
       spec.update("1.1.1.1", "2.2.2.2")
-      spec.properties["agent"]["ntp"].should == %w[1.2.3.4]
+      spec.properties["ntp"].should == %w[1.2.3.4]
     end
   end
 
