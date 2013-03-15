@@ -28,7 +28,7 @@ describe Bosh::AwsCloud::Cloud do
     instance.should_receive(:block_device_mappings).and_return(mappings)
 
     volume.should_receive(:detach_from).
-      with(instance, "/dev/sdf").and_return(attachment)
+      with(instance, "/dev/sdf", force: false).and_return(attachment)
 
     Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :detached)
 

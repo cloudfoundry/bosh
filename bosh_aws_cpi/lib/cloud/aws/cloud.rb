@@ -354,7 +354,7 @@ module Bosh::AwsCloud
           raise e
         ensure
           if instance && volume
-            detach_ebs_volume(instance, volume)
+            detach_ebs_volume(instance, volume, true)
             delete_disk(volume.id)
           end
         end
@@ -494,7 +494,7 @@ module Bosh::AwsCloud
       device_name
     end
 
-    def detach_ebs_volume(instance, volume)
+    def detach_ebs_volume(instance, volume, force=false)
       mappings = instance.block_device_mappings.to_hash
 
       device_map = mappings.inject({}) do |hash, (device_name, attachment)|
@@ -507,7 +507,7 @@ module Bosh::AwsCloud
                     "to instance `#{instance.id}'")
       end
 
-      attachment = volume.detach_from(instance, device_map[volume.id])
+      attachment = volume.detach_from(instance, device_map[volume.id], force: force)
       @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
       ResourceWait.for_attachment(attachment: attachment, state: :detached)

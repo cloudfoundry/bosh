@@ -74,7 +74,7 @@ describe Bosh::AwsCloud::Cloud do
 
         creator.should_receive(:create).with(volume, "ebs", "/tmp/foo").and_return(stemcell)
 
-        cloud.should_receive(:detach_ebs_volume).with(instance, volume)
+        cloud.should_receive(:detach_ebs_volume).with(instance, volume, true)
         cloud.should_receive(:delete_disk).with("vol-xxxxxxxx")
 
         cloud.create_stemcell("/tmp/foo", stemcell_properties).should == "ami-xxxxxxxx"
