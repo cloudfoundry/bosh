@@ -199,6 +199,20 @@ describe Bosh::Aws::EC2 do
         create_nat_instance
       end
 
+      it "should retry to associate the elastic IP if elastic ip not yet allocated" do
+        elastic_ip = mock('elastic_ip')
+
+        ec2.should_receive(:allocate_elastic_ip).and_return(elastic_ip)
+
+        nat_instance.
+          should_receive(:associate_elastic_ip).
+          with(elastic_ip).
+          and_raise(AWS::EC2::Errors::InvalidAddress::NotFound)
+        nat_instance.should_receive(:associate_elastic_ip).with(elastic_ip).and_return
+
+        create_nat_instance
+      end
+
       it "should disable source/destination checking for the NAT instance" do
         fake_aws_client.should_receive(:modify_instance_attribute).with(
            {
@@ -412,11 +426,11 @@ describe Bosh::Aws::EC2 do
   end
 
   describe "security groups" do
-    let (:fake_vpc_sg) { double("security group", :name => "bosh", :vpc_id => "vpc-123") }
-    let (:fake_default_sg) { double("security group", :name => "default", :vpc_id => false) }
-    let (:fake_security_groups) { [fake_vpc_sg, fake_default_sg] }
-    let (:fake_aws_ec2) { double("aws ec2", security_groups: fake_security_groups) }
-    let (:ip_permissions) { double("ip permissions").as_null_object }
+    let(:fake_vpc_sg) { double("security group", :name => "bosh", :vpc_id => "vpc-123") }
+    let(:fake_default_sg) { double("security group", :name => "default", :vpc_id => false) }
+    let(:fake_security_groups) { [fake_vpc_sg, fake_default_sg] }
+    let(:fake_aws_ec2) { double("aws ec2", security_groups: fake_security_groups) }
+    let(:ip_permissions) { double("ip permissions").as_null_object }
 
     before do
       ec2.stub(:aws_ec2).and_return(fake_aws_ec2)
