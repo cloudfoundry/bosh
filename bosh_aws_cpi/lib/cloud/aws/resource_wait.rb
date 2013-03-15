@@ -81,6 +81,19 @@ module Bosh::AwsCloud
       end
     end
 
+    def self.for_subnet(args)
+      subnet = args.fetch(:subnet) { raise ArgumentError, 'subnet object required' }
+      target_state = args.fetch(:state) { raise ArgumentError, 'state symbol required' }
+      valid_states = [:available]
+      validate_states(valid_states, target_state)
+
+      ignored_errors = [AWS::EC2::Errors::InvalidSubnetID::NotFound]
+
+      new.for_resource(resource: subnet, target_state: target_state, errors: ignored_errors, state_method: :state) do |current_state|
+        current_state == target_state
+      end
+    end
+
     def self.validate_states(valid_states, target_state)
       unless valid_states.include?(target_state)
         raise ArgumentError, "target state must be one of #{valid_states.join(', ')}, `#{target_state}' given"
@@ -89,6 +102,10 @@ module Bosh::AwsCloud
 
     def self.logger
       Bosh::Clouds::Config.logger
+    end
+
+    def self.task_checkpoint
+      Bosh::Clouds::Config.task_checkpoint
     end
 
     def initialize
@@ -108,7 +125,7 @@ module Bosh::AwsCloud
       sleep_cb = lambda do |num_tries, error|
         sleep_time = 2**[num_tries,MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
         Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
-        Bosh::AwsCloud::ResourceWait.logger.debug("Retrying in #{sleep_time} seconds")
+        Bosh::AwsCloud::ResourceWait.logger.debug("Waiting for #{desc} to be #{target_state}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
         sleep_time
       end
 
@@ -117,9 +134,10 @@ module Bosh::AwsCloud
       end
 
       state = nil
-      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do |retries, e|
-        Bosh::AwsCloud::ResourceWait.task_checkpoint # from config
-        state = resource.call(state_method)
+      Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb ) do
+        Bosh::AwsCloud::ResourceWait.task_checkpoint
+
+        state = resource.method(state_method).call
 
         if state == :error || state == :failed
           raise Bosh::Clouds::CloudError, "#{desc} state is #{state}, expected #{target_state}"
@@ -128,17 +146,12 @@ module Bosh::AwsCloud
         # the yielded block should return true if we have reached the target state
         yield state
       end
-      #  logger.debug("Waiting for #{desc} to be #{target_state} (#{duration}s)")
 
       Bosh::AwsCloud::ResourceWait.logger.info("#{desc} is now #{state}, took #{time_passed}s")
     end
 
     def time_passed
       Time.now - @started_at
-    end
-
-    def self.task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
     end
   end
 end

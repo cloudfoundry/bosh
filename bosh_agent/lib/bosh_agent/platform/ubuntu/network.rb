@@ -25,8 +25,8 @@ module Bosh::Agent
       @networks.each do |k, v|
         interface = v['interface']
         @logger.info("Restarting #{interface}")
-        output = `service network-interface stop INTERFACE=#{interface}`
-        output += `service network-interface start INTERFACE=#{interface}`
+        output = sh("service network-interface stop INTERFACE=#{interface}").output
+        output += sh("service network-interface start INTERFACE=#{interface}").output
         @logger.info("Restarted networking: #{output}")
       end
     end

@@ -79,7 +79,7 @@ module Bosh::Director
         File.open(state_json, File::RDWR|File::CREAT, 0644) do |file|
           file.flock(File::LOCK_EX)
           state = Yajl::Parser.parse(file.read) || {}
-          @uuid = state["uuid"] ||= UUIDTools::UUID.random_create.to_s
+          @uuid = state["uuid"] ||= SecureRandom.uuid
           file.rewind
           file.write(Yajl::Encoder.encode(state))
           file.flush
@@ -90,7 +90,7 @@ module Bosh::Director
 
         @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
 
-        @process_uuid = UUIDTools::UUID.random_create.to_s
+        @process_uuid = SecureRandom.uuid
         @nats_uri = config["mbus"]
 
         @cloud_options = config["cloud"]

@@ -4,27 +4,30 @@ module Bosh
   module Aws
     class RDS
       DEFAULT_RDS_OPTIONS = {
-        :allocated_storage => 5,
-        :db_instance_class => "db.t1.micro",
-        :engine => "mysql",
-        :multi_az => true
+          :allocated_storage => 5,
+          :db_instance_class => "db.t1.micro",
+          :engine => "mysql",
+          :multi_az => true
       }
+      DEFAULT_RDS_PROTOCOL = :tcp
+      DEFAULT_MYSQL_PORT = 3306
 
       def initialize(credentials)
         @credentials = credentials
       end
 
-      def create_database(name, subnet_ids, vpc_id, vpc_cidr, options = {})
+      def create_database(name, subnet_ids, vpc_id, options = {})
+        vpc = Bosh::Aws::VPC.find(Bosh::Aws::EC2.new(@credentials), vpc_id)
+        create_vpc_db_security_group(vpc, name) if vpc.security_group_by_name(name).nil?
         create_subnet_group(name, subnet_ids) unless subnet_group_exists?(name)
-        create_security_group(name, vpc_id, vpc_cidr) unless security_group_exists?(name)
 
         # symbolize options keys
-        options = options.inject({}) { |memo, (k,v)| memo[k.to_sym] = v; memo }
+        options = options.inject({}) { |memo, (k, v)| memo[k.to_sym] = v; memo }
 
         creation_options = DEFAULT_RDS_OPTIONS.merge(options)
         creation_options[:db_instance_identifier] = name
         creation_options[:db_name] = name
-        creation_options[:db_security_groups] = [name]
+        creation_options[:vpc_security_group_ids] = [vpc.security_group_by_name(name).id]
         creation_options[:db_subnet_group_name] = name
         creation_options[:master_username] ||= generate_user
         creation_options[:master_user_password] ||= generate_password
@@ -45,7 +48,7 @@ module Bosh
       end
 
       def delete_databases
-        databases.each {|db| db.delete(skip_final_snapshot: true) unless db.db_instance_status == "deleting" }
+        databases.each { |db| db.delete(skip_final_snapshot: true) unless db.db_instance_status == "deleting" }
       end
 
       def database_names
@@ -64,9 +67,9 @@ module Bosh
 
       def create_subnet_group(name, subnet_ids)
         aws_rds_client.create_db_subnet_group(
-          :db_subnet_group_name => name,
-          :db_subnet_group_description => name,
-          :subnet_ids => subnet_ids
+            :db_subnet_group_name => name,
+            :db_subnet_group_description => name,
+            :subnet_ids => subnet_ids
         )
       end
 
@@ -82,21 +85,19 @@ module Bosh
         subnet_group_names.each { |name| delete_subnet_group(name) }
       end
 
-      def security_group_exists?(name)
-        aws_rds_client.describe_db_security_groups(:db_security_group_name => name)
-        return true
-      rescue AWS::RDS::Errors::DBSecurityGroupNotFound
-        return false
-      end
+      def create_vpc_db_security_group(vpc, name)
+        group_spec = {
+            "name" => name,
+            "ingress" => [
+                {
+                    "ports" => DEFAULT_MYSQL_PORT,
+                    "protocol" => DEFAULT_RDS_PROTOCOL,
+                    "sources" => vpc.cidr_block,
+                },
+            ],
+        }
 
-      def create_security_group(name, vpc_id, cidrip)
-        aws_rds_client.create_db_security_group(
-          :db_security_group_name => name,
-          :db_security_group_description => name,
-          :ec2_vpc_id => vpc_id
-        )
-
-        aws_rds_client.authorize_db_security_group_ingress(:db_security_group_name => name, :cidrip => cidrip)
+        vpc.create_security_groups([group_spec])
       end
 
       def security_group_names

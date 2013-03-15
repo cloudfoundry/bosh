@@ -4,7 +4,7 @@ describe Bosh::Cli::Command::AWS do
   let(:aws) { subject }
   let(:default_config_filename) do
     File.expand_path(File.join(
-                         File.dirname(__FILE__), "..", "..", "..", "spec", "assets", "aws", "aws_configuration_template.yml.erb"
+                         File.dirname(__FILE__), "..", "..", "templates", "aws_configuration_template.yml.erb"
                      ))
   end
   before { aws.stub(:sleep) }
@@ -700,7 +700,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_rds.should_receive(:database_exists?).with("ccdb").and_return(false)
 
-        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16"]
+        create_database_params = ["ccdb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979"]
         create_database_params << creation_options if creation_options
         fake_rds.should_receive(:create_database).with(*create_database_params).and_return(
             :engine => "mysql",
@@ -710,7 +710,7 @@ describe Bosh::Cli::Command::AWS do
 
         fake_rds.should_receive(:database_exists?).with("uaadb").and_return(false)
         fake_rds.should_receive(:create_database).
-            with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979", "10.10.0.0/16").and_return(
+            with("uaadb", ["subnet-xxxxxxx1", "subnet-xxxxxxx2"], "vpc-13724979").and_return(
             :engine => "mysql",
             :master_username => "uaa_user",
             :master_user_password => "uaa_password")
@@ -746,9 +746,11 @@ describe Bosh::Cli::Command::AWS do
 
       context "when the config file has option overrides" do
         let(:config_file) { asset "config_with_override.yml" }
+
+        # TODO: Where are the assertions for this test?  Buried in `make_fake_rds!`?  Fix this!
         it "should create all rds databases with option overrides" do
           ccdb_opts = YAML.load_file(config_file)["rds"].find { |db_opts| db_opts["name"] == "ccdb" }
-          fake_aws_rds = make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
+          make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
           aws.create_rds_dbs(config_file, receipt_file)
         end
       end
@@ -804,13 +806,15 @@ describe Bosh::Cli::Command::AWS do
       end
 
       context "when the RDS is not immediately available" do
+
+        # TODO: Where are the assertions for this test?  Buried in `make_fake_rds!`?  Fix this!
         it "should try several times and continue when available" do
-          fake_aws_rds = make_fake_rds!(retries_needed: 3)
+          make_fake_rds!(retries_needed: 3)
           aws.create_rds_dbs(config_file, receipt_file)
         end
 
         it "should fail after 180 attempts when not available" do
-          fake_aws_rds = make_fake_rds!(retries_needed: 181)
+          make_fake_rds!(retries_needed: 181)
           expect { aws.create_rds_dbs(config_file, receipt_file) }.to raise_error
         end
       end
@@ -846,6 +850,26 @@ describe Bosh::Cli::Command::AWS do
         expect {
           aws.delete_all_rds_dbs config_file
         }.to raise_error(Bosh::Cli::CliError, "21 instance(s) running.  This isn't a dev account (more than 20) please make sure you want to do this, aborting.")
+      end
+
+      it "should delete db_subnets when dbs don't exist" do
+        fake_ec2 = mock("ec2")
+        Bosh::Aws::EC2.stub(:new).and_return(fake_ec2)
+        fake_ec2.stub(:instances_count).and_return(20)
+
+        fake_rds = mock("rds")
+        fake_rds.should_receive(:database_names).and_return([])
+        fake_rds.should_receive(:databases).and_return([])
+        fake_rds.should_not_receive(:delete_databases)
+        fake_rds.should_receive(:delete_subnet_groups)
+        fake_rds.should_receive(:delete_security_groups)
+        Bosh::Aws::RDS.stub(:new).and_return(fake_rds)
+
+        aws.should_receive(:confirmed?).with("Are you sure you want to delete all databases?").
+            and_return(true)
+
+        aws.delete_all_rds_dbs config_file
+
       end
 
       context "interactive mode (default)" do

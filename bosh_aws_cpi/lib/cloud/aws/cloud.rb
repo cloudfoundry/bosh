@@ -93,13 +93,12 @@ module Bosh::AwsCloud
         # do this early to fail fast
         stemcell = Stemcell.find(@region, stemcell_id)
 
-        instance_manager = InstanceManager.new(@region, registry, az_selector)
-        instance = instance_manager.
-            create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
-
         begin
+          instance_manager = InstanceManager.new(@region, registry, az_selector)
+          instance = instance_manager.
+              create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
+
           @logger.info("Creating new instance '#{instance.id}'")
-          wait_resource(instance, :running)
 
           NetworkConfigurator.new(network_spec).configure(@region, instance)
 
@@ -114,9 +113,9 @@ module Bosh::AwsCloud
           registry.update_settings(instance.id, registry_settings)
 
           instance.id
-        rescue => e
+        rescue => e # is this rescuing too much?
           @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
-          instance_manager.terminate(instance.id, @fast_path_delete)
+          instance_manager.terminate(instance.id, @fast_path_delete) if instance
           raise e
         end
       end
@@ -181,7 +180,7 @@ module Bosh::AwsCloud
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")
-        wait_resource(volume, :available)
+        ResourceWait.for_volume(volume: volume, state: :available)
 
         volume.id
       end
@@ -201,17 +200,31 @@ module Bosh::AwsCloud
         end
 
         @logger.info("Deleting volume `#{volume.id}'")
+
         # even though the contract is that we don't get here until AWS
         # reports that the volume is detached, the "eventual consistency"
         # might throw a spanner in the machinery and report that it still
         # is in use
 
-        begin
+        tries = 10
+        sleep_cb = lambda do |num_tries, error|
+          sleep_time = 2**[num_tries,8].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
+          @logger.debug("Waiting for volume `#{volume.id}' to be deleted")
+          @logger.debug("#{error.class}: `#{error.message}'") if error
+          @logger.debug("Retrying in #{sleep_time} seconds - #{num_tries}/#{tries}")
+          sleep_time
+        end
+
+        ensure_cb = Proc.new do |retries|
+          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
+        end
+
+        errors = [AWS::EC2::Errors::Client::VolumeInUse]
+
+        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
           task_checkpoint
           volume.delete
-        rescue AWS::EC2::Errors::Client::VolumeInUse => e
-          sleep(1)
-          retry
+          true # return true to only retry on Exceptions
         end
 
         if @fast_path_delete
@@ -220,11 +233,7 @@ module Bosh::AwsCloud
           return
         end
 
-        begin
-          wait_resource(volume, :deleted)
-        rescue AWS::EC2::Errors::InvalidVolume::NotFound
-          # It's OK, just means the volume has already been deleted
-        end
+        ResourceWait.for_volume(volume: volume, state: :deleted)
 
         @logger.info("Volume `#{disk_id}' has been deleted")
       end
@@ -474,7 +483,7 @@ module Bosh::AwsCloud
       end
 
       @logger.info("Attaching `#{volume.id}' to `#{instance.id}'")
-      wait_resource(new_attachment, :attached)
+      ResourceWait.for_attachment(attachment: new_attachment, state: :attached)
 
       device_name = new_attachment.device
 
@@ -502,12 +511,7 @@ module Bosh::AwsCloud
       attachment = volume.detach_from(instance, device_map[volume.id])
       @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
-      wait_resource(attachment, :detached) do |error|
-        if error.is_a? AWS::Core::Resource::NotFound
-          @logger.info("attachment is no longer found, assuming it to be detached")
-          :detached
-        end
-      end
+      ResourceWait.for_attachment(attachment: attachment, state: :detached)
     end
 
     ##
@@ -558,7 +562,7 @@ module Bosh::AwsCloud
     def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
       settings = {
           "vm" => {
-              "name" => "vm-#{UUIDTools::UUID.random_create}"
+              "name" => "vm-#{SecureRandom.uuid}"
           },
           "agent_id" => agent_id,
           "networks" => network_spec,

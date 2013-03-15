@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'securerandom'
 
 module Bosh
   module Blobstore
@@ -15,7 +16,7 @@ module Bosh
       protected
 
       def create_file(id, file)
-        id ||= UUIDTools::UUID.random_create.to_s
+        id ||= SecureRandom.uuid
         dst = object_file_path(id)
         raise BlobstoreError, "object id #{id} is already in use" if File.exist?(dst)
         File.open(dst, 'w') do |fh|

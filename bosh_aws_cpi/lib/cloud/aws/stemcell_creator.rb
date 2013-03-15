@@ -19,11 +19,11 @@ module Bosh::AwsCloud
       copy_root_image
 
       snapshot = volume.create_snapshot
-      wait_resource(snapshot, :completed)
+      ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
 
       params = image_params(snapshot.id)
       image = region.images.create(params)
-      wait_resource(image, :available, :state)
+      ResourceWait.for_image(image: image, state: :available)
 
       TagManager.tag(image, 'Name', params[:description]) if params[:description]
 
@@ -93,7 +93,7 @@ module Bosh::AwsCloud
       aki = AKIPicker.new(region).pick(architecture, root_device_name)
 
       params = {
-          :name => "BOSH-#{UUIDTools::UUID.random_create}",
+          :name => "BOSH-#{SecureRandom.uuid}",
           :architecture => architecture,
           :kernel_id => aki,
           :root_device_name => root_device_name,

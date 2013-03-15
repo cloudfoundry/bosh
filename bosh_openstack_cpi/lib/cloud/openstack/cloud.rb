@@ -555,7 +555,7 @@ module Bosh::OpenStackCloud
     #
     # @return [String] Unique name
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     ##
