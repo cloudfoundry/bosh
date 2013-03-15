@@ -93,7 +93,7 @@ module Bosh::AwsCloud
       aki = AKIPicker.new(region).pick(architecture, root_device_name)
 
       params = {
-          :name => "BOSH-#{UUIDTools::UUID.random_create}",
+          :name => "BOSH-#{SecureRandom.uuid}",
           :architecture => architecture,
           :kernel_id => aki,
           :root_device_name => root_device_name,

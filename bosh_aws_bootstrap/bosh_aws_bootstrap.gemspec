@@ -20,6 +20,5 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_cli", "~>#{version}"
   s.add_dependency "bosh_aws_cpi", "~>#{version}"
   s.add_dependency "bosh_deployer", "~>#{version}"
-  s.add_dependency "uuidtools", "~>2.1.3"
 
 end

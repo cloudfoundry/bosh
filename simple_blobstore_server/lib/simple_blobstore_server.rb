@@ -6,7 +6,7 @@ require "pp"
 require "yaml"
 
 require "sinatra"
-require "uuidtools"
+require "securerandom"
 
 module Bosh
   module Blobstore
@@ -44,7 +44,7 @@ module Bosh
       end
 
       def generate_object_id
-        UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
 
       def protected!

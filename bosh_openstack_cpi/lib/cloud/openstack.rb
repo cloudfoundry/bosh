@@ -11,7 +11,7 @@ require "json"
 require "pp"
 require "set"
 require "tmpdir"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 
 require "common/thread_pool"
