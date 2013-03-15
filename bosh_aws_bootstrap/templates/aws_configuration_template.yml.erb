@@ -19,11 +19,18 @@ vpc:
         security_group: open
         key_name: <%= ENV["BOSH_KEY_PAIR_NAME"] || "bosh" %>
     cf:
-      cidr: 10.10.1.0/24
+      cidr: 10.10.2.0/23
       availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
       default_route: cf_nat_box
-    cf_az2:
-      cidr: 10.10.2.0/24
+    services:
+      cidr: 10.10.4.0/23
+      availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
+      default_route: cf_nat_box
+    rds_1:
+      cidr: 10.10.1.0/28
+      availability_zone: <%= ENV["BOSH_VPC_PRIMARY_AZ"] || raise("Missing ENV variable BOSH_VPC_PRIMARY_AZ") %>
+    rds_2:
+      cidr: 10.10.1.16/28
       availability_zone: <%= ENV["BOSH_VPC_SECONDARY_AZ"] || raise("Missing ENV variable BOSH_VPC_SECONDARY_AZ") %>
   dhcp_options:
     domain_name_servers:
@@ -107,18 +114,18 @@ rds:
   - name: ccdb
     tag: cc
     subnets:
-      - cf
-      - cf_az2
+      - rds_1
+      - rds_2
     aws_creation_options:
       db_instance_class: db.m1.small
-    #   # These are passed on directly to the AWS API call.
-    #   # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
-    #   allocated_storage: 7
-    #   multi_az: true
+      # These are passed on directly to the AWS API call.
+      # http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/RDS/Client.html#create_db_instance-instance_method
+      allocated_storage: 7
+      multi_az: true
   - name: uaadb
     tag: uaa
     subnets:
-      - cf
-      - cf_az2
+      - rds_1
+      - rds_2
     aws_creation_options:
       db_instance_class: db.m1.small

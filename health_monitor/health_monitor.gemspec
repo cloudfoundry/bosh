@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   s.add_dependency "uuidtools", "~>2.1.3"
   s.add_dependency "thin", "~>1.5.0"
   s.add_dependency "sinatra", "~>1.2.8"
-  s.add_dependency "aws-sdk", "~>1.8.3"
+  s.add_dependency "aws-sdk", "~>1.8.5"
 
   s.bindir      = 'bin'
   s.executables << 'console'

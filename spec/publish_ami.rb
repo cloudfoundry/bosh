@@ -38,7 +38,7 @@ options = {
     }
 }
 
-cloud_config = OpenStruct.new(:logger => Logger.new("ami.log"))
+cloud_config = OpenStruct.new(:logger => Logger.new("ami.log"), :task_checkpoint => nil)
 Bosh::Clouds::Config.configure(cloud_config)
 
 cloud = Bosh::Clouds::Provider.create("aws", options)

@@ -38,6 +38,10 @@ module Bosh::AwsCloud
         @instance = @region.instances.create(instance_params)
       end
 
+      # need to wait here for the instance to be running, as if we are going to
+      # attach to a load balancer, the instance must be running
+      ResourceWait.for_instance(instance: instance, state: :running)
+
       @elbs = resource_pool['elbs']
       attach_to_load_balancers if elbs
 
@@ -63,7 +67,7 @@ module Bosh::AwsCloud
 
       begin
         @logger.info("Deleting instance '#{instance.id}'")
-        wait_resource(instance, :terminated)
+        ResourceWait.for_instance(instance: instance, state: :terminated)
       rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
         # It's OK, just means that instance has already been deleted
       end

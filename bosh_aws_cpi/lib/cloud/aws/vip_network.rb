@@ -1,8 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::AwsCloud
-  ##
-  #
+
   class VipNetwork < Network
 
     ##
@@ -33,19 +32,11 @@ module Bosh::AwsCloud
       # if this IP is actually an allocated EC2 elastic IP, as
       # API call will fail in that case.
 
-      retry_until_ready do
+      errors = [AWS::EC2::Errors::IncorrectInstanceState]
+      Bosh::Common.retryable(tries: 10, sleep: 1, on: errors) do
         instance.associate_elastic_ip(elastic_ip)
+        true # need to return true to end the retries
       end
-    end
-
-    def retry_until_ready
-      task_checkpoint
-      yield
-    rescue AWS::EC2::Errors::IncorrectInstanceState => e
-      @logger.warn("not ready yet: #{e.message}")
-      sleep(1)
-      # should we have a limited number of retries?
-      retry
     end
   end
 end

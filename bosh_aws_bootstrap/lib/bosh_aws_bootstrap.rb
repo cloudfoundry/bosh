@@ -1,6 +1,13 @@
 require 'aws-sdk'
+require 'logger'
 
-require "cloud/aws/helpers"
+# since this plugin is abusing the AWS CPI, the following hack is needed so that
+# task_checkpoint & logger is available when ResourceWait.for_resource is called
+require "cloud"
+Config = Struct.new(:task_checkpoint, :logger)
+Bosh::Clouds::Config.configure(Config.new(true, Logger.new(STDOUT)))
+
+require "cloud/aws/resource_wait"
 
 require "bosh_aws_bootstrap/version"
 require "bosh_aws_bootstrap/ec2"
