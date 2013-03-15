@@ -27,5 +27,10 @@ module Bosh::Agent
       FileUtils.chmod(0644, authorized_keys)
     end
 
+    protected
+    def network_type(properties)
+      super(properties) || NETWORK_TYPE[:manual]
+    end
+
   end
 end

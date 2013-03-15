@@ -12,14 +12,14 @@ module Bosh::Agent
     end
 
     def network_config_type
-      MANUAL_NETWORK_TYPE
+      NETWORK_TYPE[:manual]
     end
 
     def disk_type
-      "scsi"
+      DISK_TYPE[:scsi]
     end
 
-    def get_network_settings(_, properties)
+    def get_network_settings(network_name, properties)
       # Do nothing
     end
 

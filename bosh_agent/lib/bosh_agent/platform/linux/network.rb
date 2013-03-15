@@ -6,18 +6,18 @@ module Bosh::Agent
 
     def initialize(template_dir)
       @template_dir   = template_dir
-      @config         = Bosh::Agent::Config
-      @infrastructure = @config.infrastructure
-      @logger         = @config.logger
+      @config         ||= Bosh::Agent::Config
+      @infrastructure ||= @config.infrastructure
+      @logger         ||= @config.logger
       @networks       = []
-      @dns        = []
+      @dns            = []
     end
 
     def setup_networking
       case @config.infrastructure.network_config_type
-        when "manual"
+        when NETWORK_TYPE[:manual]
           setup_manual_networking
-        when "dynamic"
+        when NETWORK_TYPE[:dhcp]
           setup_dhcp_networking
         else
           raise Bosh::Agent::FatalError, "Setup networking failed for infrastructure: #@infrastructure, network_types: #{network_types}"

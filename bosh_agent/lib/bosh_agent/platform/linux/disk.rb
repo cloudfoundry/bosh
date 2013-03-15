@@ -54,7 +54,7 @@ module Bosh::Agent
       end
 
       case @config.infrastructure.disk_type
-        when "scsi"
+        when DISK_TYPE[:scsi]
           # VSphere passes in scsi disk id
           get_available_scsi_path(disk_id)
         else

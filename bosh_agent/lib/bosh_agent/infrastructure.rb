@@ -1,9 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  VIP_NETWORK_TYPE    = "vip"
-  DHCP_NETWORK_TYPE   = "dynamic"
-  MANUAL_NETWORK_TYPE = "manual"
+
+  NETWORK_TYPE  = { :vip => 'vip',   :dhcp => 'dynamic', :manual => 'manual' }
+  DISK_TYPE     = { :scsi => 'scsi', :other => 'nil' }
 
   class UnknownInfrastructure < StandardError; end
 
@@ -37,13 +37,14 @@ module Bosh::Agent
         raise Bosh::Agent::UnimplementedMethod.new
       end
 
-      def get_network_settings(type)
+      def get_network_settings(network_name, properties)
+        type = network_type(properties) || NETWORK_TYPE[:manual]
         unless type && supported_network_types.include?(type)
-          raise Bosh::Agent::StateError, "Unsupported network type '%s', valid types are: %s" % [type, supported_network_types]
+          raise Bosh::Agent::StateError, "Unsupported network type '%s', valid types are: %s" % [type, supported_network_types.join(', ')]
         end
 
         # Nothing to do for "vip" networks
-        return nil if type == VIP_NETWORK_TYPE
+        return nil if type == NETWORK_TYPE[:vip]
 
         sigar = Sigar.new
         net_info = sigar.net_info
@@ -57,14 +58,21 @@ module Bosh::Agent
         properties["dns"] << net_info.secondary_dns if net_info.secondary_dns && !net_info.secondary_dns.empty?
         properties["gateway"] = net_info.default_gateway
 
-        return properties
+        properties
       end
 
       protected
       def supported_network_types
-        [VIP_NETWORK_TYPE, DHCP_NETWORK_TYPE, MANUAL_NETWORK_TYPE]
+        [NETWORK_TYPE[:vip], NETWORK_TYPE[:dhcp], NETWORK_TYPE[:manual]]
       end
 
+      def network_type(properties)
+        type = properties["type"]
+        unless type && supported_network_types.include?(type)
+          raise Bosh::Agent::StateError, "Unsupported network type '%s', valid types are: %s" % [type, supported_network_types.join(', ')]
+        end
+        type
+      end
     end
 
   end

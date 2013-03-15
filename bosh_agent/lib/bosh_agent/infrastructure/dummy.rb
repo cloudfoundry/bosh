@@ -6,7 +6,7 @@ module Bosh::Agent
     def load_settings
     end
 
-    def get_network_settings(_, properties)
+    def get_network_settings(network_name, properties)
       # Nothing to do
     end
 

@@ -33,7 +33,7 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
     Sigar.stub(new: sigar)
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     network_properties = {"type" => "dynamic"}
-    properties = settings_wrapper.get_network_settings("dynamic")
+    properties = settings_wrapper.get_network_settings("test", network_properties)
 
     properties.should have_key("ip")
     properties.should have_key("netmask")
@@ -44,14 +44,14 @@ describe Bosh::Agent::Infrastructure::Aws::Settings do
   it 'should get nothing for vip network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     network_properties = {"type" => "vip"}
-    properties = settings_wrapper.get_network_settings("vip")
+    properties = settings_wrapper.get_network_settings("test", network_properties)
     properties.should be_nil
   end
 
   it 'should raise unsupported network exception for unknown network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Aws::Settings.new
     expect {
-      settings_wrapper.get_network_settings("unknown")
+      settings_wrapper.get_network_settings("test", {"type" => "unknown"})
     }.to raise_error(Bosh::Agent::StateError, /Unsupported network type 'unknown'/)
   end
 
