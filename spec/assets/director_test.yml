@@ -19,8 +19,14 @@ dns:
     max_connections: 32
     pool_timeout: 10
 blobstore:
-  plugin: simple
-  properties:
+  provider: simple
+  options:
+    endpoint: http://127.0.0.1:9590
+    user: bs_admin
+    password: bs_pass
+compiled_package_cache:
+  provider: simple
+  options:
     endpoint: http://127.0.0.1:9590
     user: bs_admin
     password: bs_pass

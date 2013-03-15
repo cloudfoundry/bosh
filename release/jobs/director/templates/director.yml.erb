@@ -42,9 +42,9 @@ dns:
     pool_timeout: 10
 <% end %>
 blobstore:
-  plugin: <%= p('blobstore.plugin') %>
-  properties:
-<% if p('blobstore.plugin') == "s3" %>
+  provider: <%= p('blobstore.provider') %>
+  options:
+<% if p('blobstore.provider') == "s3" %>
     bucket_name: <%= p('blobstore.bucket_name') %>
     access_key_id: <%= p('blobstore.access_key_id') %>
     secret_access_key: <%= p('blobstore.secret_access_key') %>
@@ -181,9 +181,9 @@ cloud:
     agent:
       ntp: [<%= p('ntp').join(", ") %>]
       blobstore:
-        plugin: <%= p('blobstore.plugin') %>
-        properties:
-      <% if p('blobstore.plugin') == "s3" %>
+        provider: <%= p('blobstore.provider') %>
+        options:
+      <% if p('blobstore.provider') == "s3" %>
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>

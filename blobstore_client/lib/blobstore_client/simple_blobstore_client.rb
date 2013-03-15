@@ -54,7 +54,7 @@ module Bosh
       end
 
       def object_exists?(id)
-        response = @client.head(url(id), @headers)
+        response = @client.head(url(id), :header => @headers)
         if response.status == 200
           true
         elsif response.status == 404

@@ -354,7 +354,7 @@ module Bosh::AwsCloud
           raise e
         ensure
           if instance && volume
-            detach_ebs_volume(instance, volume)
+            detach_ebs_volume(instance, volume, true)
             delete_disk(volume.id)
           end
         end
@@ -460,8 +460,6 @@ module Bosh::AwsCloud
     end
 
     def attach_ebs_volume(instance, volume)
-      # TODO once we upgrade the aws-sdk gem to > 1.3.9, we need to use:
-      # instance.block_device_mappings.to_hash.keys
       device_names = Set.new(instance.block_device_mappings.to_hash.keys)
       new_attachment = nil
 
@@ -473,7 +471,10 @@ module Bosh::AwsCloud
           @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
           next
         end
-        new_attachment = volume.attach_to(instance, dev_name)
+        # work around AWS eventual (in)consistency
+        Bosh::Common.retryable(tries: 10, on: AWS::EC2::Errors::IncorrectState) do
+          new_attachment = volume.attach_to(instance, dev_name)
+        end
         break
       end
 
@@ -493,9 +494,7 @@ module Bosh::AwsCloud
       device_name
     end
 
-    def detach_ebs_volume(instance, volume)
-      # TODO once we upgrade the aws-sdk gem to > 1.3.9, we need to use:
-      # instance.block_device_mappings.to_hash.keys
+    def detach_ebs_volume(instance, volume, force=false)
       mappings = instance.block_device_mappings.to_hash
 
       device_map = mappings.inject({}) do |hash, (device_name, attachment)|
@@ -508,7 +507,7 @@ module Bosh::AwsCloud
                     "to instance `#{instance.id}'")
       end
 
-      attachment = volume.detach_from(instance, device_map[volume.id])
+      attachment = volume.detach_from(instance, device_map[volume.id], force: force)
       @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
       ResourceWait.for_attachment(attachment: attachment, state: :detached)

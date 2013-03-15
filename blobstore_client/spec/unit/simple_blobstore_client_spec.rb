@@ -102,21 +102,21 @@ describe Bosh::Blobstore::SimpleBlobstoreClient do
       it 'should return true for an object that already exists' do
         response.stub(status: 200)
 
-        httpclient.should_receive(:head).with('http://localhost/resources/foobar', {}).and_return(response)
+        httpclient.should_receive(:head).with('http://localhost/resources/foobar', {:header => {}}).and_return(response)
         client.exists?('foobar').should be_true
       end
 
       it 'should return false for an object that does not exist' do
         response.stub(status: 404)
 
-        httpclient.should_receive(:head).with('http://localhost/resources/doesntexist', {}).and_return(response)
+        httpclient.should_receive(:head).with('http://localhost/resources/doesntexist', {:header => {}}).and_return(response)
         client.exists?('doesntexist').should be_false
       end
 
       it 'should raise a BlobstoreError if response status is neither 200 nor 404' do
         response.stub(status: 500, content: '')
 
-        httpclient.should_receive(:head).with('http://localhost/resources/foobar', {}).and_return(response)
+        httpclient.should_receive(:head).with('http://localhost/resources/foobar', {:header => {}}).and_return(response)
 
         expect {
           client.exists?('foobar')

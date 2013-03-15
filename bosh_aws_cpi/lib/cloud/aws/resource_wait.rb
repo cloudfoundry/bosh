@@ -11,7 +11,10 @@ module Bosh::AwsCloud
       valid_states = [:running, :terminated]
       validate_states(valid_states, target_state)
 
-      ignored_errors = [AWS::EC2::Errors::InvalidInstanceID::NotFound]
+      ignored_errors = [
+        AWS::EC2::Errors::InvalidInstanceID::NotFound,
+        AWS::Core::Resource::NotFound
+      ]
 
       new.for_resource(resource: instance, errors: ignored_errors, target_state: target_state) do |current_state|
         if target_state == :running && current_state == :terminated
