@@ -103,7 +103,7 @@ private
 
             arp_cmd = "arping -c 1 -U -I #{network['interface']} #{network['ip']}"
             @logger.info(arp_cmd)
-            `#{arp_cmd}`
+            Bosh::Exec.sh "#{arp_cmd}"
           end
           sleep 10
         end
