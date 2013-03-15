@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
-  class Infrastructure::Vsphere::Settings < Infrastructure::Settings
+  class Infrastructure::Vsphere::Settings
     DEFAULT_CDROM_RETRY_WAIT = 0.5
 
     attr_accessor :cdrom_retry_wait
