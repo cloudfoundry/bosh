@@ -485,4 +485,49 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   end
 
+  describe 'package compilation' do
+    it 'should compile a package' do
+      assets_dir = File.dirname(spec_asset("foo"))
+      stemcell_filename = spec_asset("valid_stemcell.tgz")
+
+      simple_blob_store_path = Bosh::Spec::Sandbox::BLOBSTORE_STORAGE_DIR
+
+      release_file = "test_release/dev_releases/bosh-release-0.1-dev.tgz"
+      release_filename = spec_asset(release_file)
+      Dir.chdir(File.join(assets_dir, "test_release")) do
+        FileUtils.rm_rf("dev_releases")
+        run_bosh("create release --with-tarball", Dir.pwd)
+      end
+
+      deployment_manifest = yaml_file(
+          "simple_manifest", Bosh::Spec::Deployments.simple_manifest)
+
+      run_bosh("target localhost:57523")
+      run_bosh("login admin admin")
+
+      run_bosh("deployment #{deployment_manifest.path}")
+      run_bosh("upload stemcell #{stemcell_filename}")
+      run_bosh("upload release #{release_filename}")
+      run_bosh("deploy")
+      dir_glob = Dir.glob(File.join(simple_blob_store_path, "**/*"))
+      dir_glob.detect do |cache_item|
+        cache_item =~ /foo-/
+      end.should be_true
+
+      # delete release so that the compiled packages are removed from the local blobstore
+      run_bosh("delete deployment simple")
+      run_bosh("delete release bosh-release")
+
+      # deploy again
+      run_bosh("upload release #{release_filename}")
+      run_bosh("deploy")
+
+      event_log = run_bosh("task last --event --raw")
+      event_log.should match /Downloading '.+' from global cache/
+      event_log.should_not match /Compiling packages/
+    end
+
+
+  end
+
 end

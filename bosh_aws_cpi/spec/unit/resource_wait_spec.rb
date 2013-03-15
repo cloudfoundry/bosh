@@ -21,12 +21,24 @@ describe Bosh::AwsCloud::ResourceWait do
     end
 
     context 'creation' do
-      it 'should wait until the state is running' do
-        instance.should_receive(:status).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
-        instance.should_receive(:status).and_return(:pending)
-        instance.should_receive(:status).and_return(:running)
+      context "when EC2 fails to find an instance" do
+        it 'should wait until the state is running' do
+          instance.should_receive(:status).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
+          instance.should_receive(:status).and_return(:pending)
+          instance.should_receive(:status).and_return(:running)
 
-        described_class.for_instance(instance: instance, state: :running)
+          described_class.for_instance(instance: instance, state: :running)
+        end
+      end
+
+      context "when resource is not found" do
+        it 'should wait until the state is running' do
+          instance.should_receive(:status).and_raise(AWS::Core::Resource::NotFound)
+          instance.should_receive(:status).and_return(:pending)
+          instance.should_receive(:status).and_return(:running)
+
+          described_class.for_instance(instance: instance, state: :running)
+        end
       end
 
       it 'should fail if AWS terminates the instance' do
