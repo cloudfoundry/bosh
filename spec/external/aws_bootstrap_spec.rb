@@ -87,10 +87,12 @@ describe 'bosh_aws_bootstrap_external' do
       cf_local_route = cf_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
       cf_local_route.target.id.should == "local"
 
-      cf2_routes = cf_subnet_2.route_table.routes
-      cf2_routes.any? { |route| route.destination_cidr_block == "0.0.0.0/0" }.should be_false
-      cf2_local_route = cf2_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
-      cf2_local_route.target.id.should == "local"
+      services_routes = services_subnet.route_table.routes
+      services_default_route = services_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
+      services_default_route.target.should == bosh_subnet.instances.first
+
+      services_local_route = services_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
+      services_local_route.target.id.should == "local"
     end
 
     it "assigns DHCP options" do
