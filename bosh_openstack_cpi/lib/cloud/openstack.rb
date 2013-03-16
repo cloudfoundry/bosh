@@ -28,6 +28,7 @@ require "cloud/openstack/version"
 require "cloud/openstack/network_configurator"
 require "cloud/openstack/network"
 require "cloud/openstack/dynamic_network"
+require "cloud/openstack/manual_network"
 require "cloud/openstack/vip_network"
 
 module Bosh

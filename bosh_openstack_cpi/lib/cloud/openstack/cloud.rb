@@ -39,7 +39,8 @@ module Bosh::OpenStackCloud
         :openstack_username => @openstack_properties["username"],
         :openstack_api_key => @openstack_properties["api_key"],
         :openstack_tenant => @openstack_properties["tenant"],
-        :openstack_region => @openstack_properties["region"]
+        :openstack_region => @openstack_properties["region"],
+        :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
       @openstack = Connection.new(:compute, openstack_params)
 
@@ -50,8 +51,7 @@ module Bosh::OpenStackCloud
         :openstack_api_key => @openstack_properties["api_key"],
         :openstack_tenant => @openstack_properties["tenant"],
         :openstack_region => @openstack_properties["region"],
-        :openstack_endpoint_type => @openstack_properties["endpoint_type"] ||
-                                    "publicURL"
+        :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
       @glance = Connection.new(:image, glance_params)
 
@@ -241,21 +241,19 @@ module Bosh::OpenStackCloud
         server_name = "vm-#{generate_unique_name}"
 
         network_configurator = NetworkConfigurator.new(network_spec)
-        security_groups =
-          network_configurator.security_groups(@default_security_groups)
+
+        security_groups = network_configurator.security_groups(@default_security_groups)
         @logger.debug("Using security groups: `#{security_groups.join(', ')}'")
 
+        nics = network_configurator.nics
+        @logger.debug("Using NICs: `#{nics.join(', ')}'")
+
         image = @openstack.images.find { |i| i.id == stemcell_id }
-        if image.nil?
-          cloud_error("Image `#{stemcell_id}' not found")
-        end
+        cloud_error("Image `#{stemcell_id}' not found") if image.nil?
         @logger.debug("Using image: `#{stemcell_id}'")
 
-        flavor = @openstack.flavors.find { |f|
-          f.name == resource_pool["instance_type"] }
-        if flavor.nil?
-          cloud_error("Flavor `#{resource_pool["instance_type"]}' not found")
-        end
+        flavor = @openstack.flavors.find { |f| f.name == resource_pool["instance_type"] }
+        cloud_error("Flavor `#{resource_pool["instance_type"]}' not found") if flavor.nil?
         @logger.debug("Using flavor: `#{resource_pool["instance_type"]}'")
 
         server_params = {
@@ -264,16 +262,14 @@ module Bosh::OpenStackCloud
           :flavor_ref => flavor.id,
           :key_name => resource_pool["key_name"] || @default_key_name,
           :security_groups => security_groups,
-          :user_data => Yajl::Encoder.encode(user_data(server_name,
-                                                       network_spec))
+          :nics => nics,
+          :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec))
         }
 
-        availability_zone = select_availability_zone(disk_locality,
-                              resource_pool["availability_zone"])
-        if availability_zone
-          server_params[:availability_zone] = availability_zone
-        end
+        availability_zone = select_availability_zone(disk_locality, resource_pool["availability_zone"])
+        server_params[:availability_zone] = availability_zone if availability_zone
 
+        @logger.debug("Using boot parms: `#{server_params.inspect}'")
         server = @openstack.servers.create(server_params)
 
         @logger.info("Creating new server `#{server.id}'...")
@@ -283,8 +279,7 @@ module Bosh::OpenStackCloud
         network_configurator.configure(@openstack, server)
 
         @logger.info("Updating settings for server `#{server.id}'...")
-        settings = initial_agent_settings(server_name, agent_id, network_spec,
-                                          environment)
+        settings = initial_agent_settings(server_name, agent_id, network_spec, environment)
         @registry.update_settings(server.name, settings)
 
         server.id.to_s
@@ -320,9 +315,8 @@ module Bosh::OpenStackCloud
     def reboot_vm(server_id)
       with_thread_name("reboot_vm(#{server_id})") do
         server = @openstack.servers.get(server_id)
-        unless server
-          cloud_error("Server `#{server_id}' not found")
-        end
+        cloud_error("Server `#{server_id}' not found") unless server
+
         soft_reboot(server)
       end
     end
@@ -372,17 +366,9 @@ module Bosh::OpenStackCloud
     # @return [String] OpenStack volume UUID
     def create_disk(size, server_id = nil)
       with_thread_name("create_disk(#{size}, #{server_id})") do
-        unless size.kind_of?(Integer)
-          raise ArgumentError, "Disk size needs to be an integer"
-        end
-
-        if (size < 1024)
-          cloud_error("Minimum disk size is 1 GiB")
-        end
-
-        if (size > 1024 * 1000)
-          cloud_error("Maximum disk size is 1 TiB")
-        end
+        raise ArgumentError, "Disk size needs to be an integer" unless size.kind_of?(Integer)
+        cloud_error("Minimum disk size is 1 GiB") if (size < 1024)
+        cloud_error("Maximum disk size is 1 TiB") if (size > 1024 * 1000)
 
         volume_params = {
           :name => "volume-#{generate_unique_name}",
@@ -440,13 +426,10 @@ module Bosh::OpenStackCloud
     def attach_disk(server_id, disk_id)
       with_thread_name("attach_disk(#{server_id}, #{disk_id})") do
         server = @openstack.servers.get(server_id)
-        unless server
-          cloud_error("Server `#{server_id}' not found")
-        end
+        cloud_error("Server `#{server_id}' not found") unless server
+
         volume = @openstack.volumes.get(disk_id)
-        unless server
-          cloud_error("Volume `#{disk_id}' not found")
-        end
+        cloud_error("Volume `#{disk_id}' not found") unless volume
 
         device_name = attach_volume(server, volume)
 
@@ -467,13 +450,10 @@ module Bosh::OpenStackCloud
     def detach_disk(server_id, disk_id)
       with_thread_name("detach_disk(#{server_id}, #{disk_id})") do
         server = @openstack.servers.get(server_id)
-        unless server
-          cloud_error("Server `#{server_id}' not found")
-        end
+        cloud_error("Server `#{server_id}' not found") unless server
+
         volume = @openstack.volumes.get(disk_id)
-        unless server
-          cloud_error("Volume `#{disk_id}' not found")
-        end
+        cloud_error("Volume `#{disk_id}' not found") unless volume
 
         detach_volume(server, volume)
 
@@ -494,9 +474,7 @@ module Bosh::OpenStackCloud
     def set_vm_metadata(server_id, metadata)
       with_thread_name("set_vm_metadata(#{server_id}, ...)") do
         server = @openstack.servers.get(server_id)
-        unless server
-          cloud_error("Server `#{server_id}' not found")
-        end
+        cloud_error("Server `#{server_id}' not found") unless server
 
         metadata.each do |name, value|
           TagManager.tag(server, name, value)
@@ -630,9 +608,7 @@ module Bosh::OpenStackCloud
     #
     # @param [Fog::Compute::OpenStack::Server] server OpenStack server
     def update_agent_settings(server)
-      unless block_given?
-        raise ArgumentError, "Block is not provided"
-      end
+      raise ArgumentError, "Block is not provided" unless block_given?
 
       @logger.info("Updating settings for server `#{server.id}'...")
       settings = @registry.read_settings(server.name)
@@ -688,10 +664,7 @@ module Bosh::OpenStackCloud
         end
         break
       end
-
-      if new_attachment.nil?
-        cloud_error("Server has too many disks attached")
-      end
+      cloud_error("Server has too many disks attached") if new_attachment.nil?
 
       new_attachment
     end
