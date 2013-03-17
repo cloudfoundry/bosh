@@ -63,6 +63,13 @@ describe Bosh::AwsCloud::ResourceWait do
 
        described_class.for_attachment(attachment: attachment, state: :attached)
       end
+
+     it 'should retry when AWS::Core::Resource::NotFound is raised' do
+        attachment.should_receive(:status).and_raise(AWS::Core::Resource::NotFound)
+        attachment.should_receive(:status).and_return(:attached)
+
+        described_class.for_attachment(attachment: attachment, state: :attached)
+      end
     end
 
     context 'detachment' do

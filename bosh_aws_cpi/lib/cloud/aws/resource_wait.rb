@@ -32,7 +32,12 @@ module Bosh::AwsCloud
       valid_states = [:attached, :detached]
       validate_states(valid_states, target_state)
 
-      new.for_resource(resource: attachment, target_state: target_state, description: attachment.to_s) do |current_state|
+      ignored_errors = []
+      if target_state == :attached
+        ignored_errors = [AWS::Core::Resource::NotFound]
+      end
+
+      new.for_resource(resource: attachment, errors: ignored_errors, target_state: target_state, description: attachment.to_s) do |current_state|
         current_state == target_state
       end
     rescue AWS::Core::Resource::NotFound
@@ -47,10 +52,9 @@ module Bosh::AwsCloud
       valid_states = [:available, :deleted]
       validate_states(valid_states, target_state)
 
+      ignored_errors = []
       if target_state == :available
         ignored_errors = [AWS::EC2::Errors::InvalidAMIID::NotFound]
-      else
-        ignored_errors = []
       end
 
       new.for_resource(resource: image, errors: ignored_errors, target_state: target_state, state_method: :state) do |current_state|
