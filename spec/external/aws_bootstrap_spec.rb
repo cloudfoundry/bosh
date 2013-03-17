@@ -25,8 +25,10 @@ describe 'bosh_aws_bootstrap_external' do
   describe "VPC" do
     let(:vpc) { ec2.vpcs.first }
     let(:bosh_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.0.0/24" } }
-    let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/24" } }
-    let(:cf_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/24" } }
+    let(:cf_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.2.0/23" } }
+    let(:services_subnet) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.4.0/23" } }
+    let(:rds_subnet_1) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.0/28" } }
+    let(:rds_subnet_2) { vpc.subnets.detect { |subnet| subnet.cidr_block == "10.10.1.16/28" } }
 
     before(:all) do
       ec2.vpcs.count.should == 0
@@ -54,8 +56,22 @@ describe 'bosh_aws_bootstrap_external' do
       cf_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
       cf_subnet.instances.count.should == 0
 
-      cf_subnet_2.availability_zone.name.should == ENV["BOSH_VPC_SECONDARY_AZ"]
-      cf_subnet_2.instances.count.should == 0
+      cf_subnet.route_table.routes.any? do |route|
+        route.instance && route.instance.private_ip_address == "10.10.0.10"
+      end.should be_true
+
+      services_subnet.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+      services_subnet.instances.count.should == 0
+
+      services_subnet.route_table.routes.any? do |route|
+        route.instance && route.instance.private_ip_address == "10.10.0.10"
+      end.should be_true
+
+      rds_subnet_1.availability_zone.name.should == ENV["BOSH_VPC_PRIMARY_AZ"]
+      rds_subnet_1.instances.count.should == 0
+
+      rds_subnet_2.availability_zone.name.should == ENV["BOSH_VPC_SECONDARY_AZ"]
+      rds_subnet_2.instances.count.should == 0
     end
 
     it "associates route tables with subnets" do
@@ -71,10 +87,12 @@ describe 'bosh_aws_bootstrap_external' do
       cf_local_route = cf_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
       cf_local_route.target.id.should == "local"
 
-      cf2_routes = cf_subnet_2.route_table.routes
-      cf2_routes.any? { |route| route.destination_cidr_block == "0.0.0.0/0" }.should be_false
-      cf2_local_route = cf2_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
-      cf2_local_route.target.id.should == "local"
+      services_routes = services_subnet.route_table.routes
+      services_default_route = services_routes.detect { |route| route.destination_cidr_block == "0.0.0.0/0" }
+      services_default_route.target.should == bosh_subnet.instances.first
+
+      services_local_route = services_routes.detect { |route| route.destination_cidr_block == "10.10.0.0/16" }
+      services_local_route.target.id.should == "local"
     end
 
     it "assigns DHCP options" do
@@ -201,7 +219,7 @@ describe 'bosh_aws_bootstrap_external' do
       route53.hosted_zones.detect { |hosted_zone| hosted_zone.name == "#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com." }
     end
     let(:resource_record_sets) { hosted_zone.resource_record_sets }
- 
+
     before do
       resource_record_sets.count { |record_set| record_set.type == "A" }.should == 0
 
