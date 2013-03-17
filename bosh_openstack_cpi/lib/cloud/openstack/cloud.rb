@@ -76,12 +76,8 @@ module Bosh::OpenStackCloud
     # @option cloud_properties [String] infrastructure Stemcell infraestructure
     # @option cloud_properties [String] disk_format Image disk format
     # @option cloud_properties [String] container_format Image container format
-    # @option cloud_properties [optional, String] kernel_id UUID of the kernel
-    #   image stored at OpenStack
     # @option cloud_properties [optional, String] kernel_file Name of the
     #   kernel image file provided at the stemcell archive
-    # @option cloud_properties [optional, String] ramdisk_id UUID of the
-    #   ramdisk image stored at OpenStack
     # @option cloud_properties [optional, String] ramdisk_file Name of the
     #   ramdisk image file provided at the stemcell archive
     # @return [String] OpenStack image UUID of the stemcell
@@ -98,9 +94,7 @@ module Bosh::OpenStackCloud
         
             # 2. If image contains a kernel file, upload it to glance service
             kernel_id = nil
-            if cloud_properties["kernel_id"]
-              kernel_id = cloud_properties["kernel_id"]
-            elsif cloud_properties["kernel_file"]
+            if cloud_properties["kernel_file"]
               kernel_image = File.join(tmp_dir, cloud_properties["kernel_file"])
               unless File.exists?(kernel_image)
                 cloud_error("Kernel image " \
@@ -122,9 +116,7 @@ module Bosh::OpenStackCloud
 
             # 3. If image contains a ramdisk file, upload it to glance service
             ramdisk_id = nil
-            if cloud_properties["ramdisk_id"]
-              ramdisk_id = cloud_properties["ramdisk_id"]
-            elsif cloud_properties["ramdisk_file"]
+            if cloud_properties["ramdisk_file"]
               ramdisk_image = File.join(tmp_dir, cloud_properties["ramdisk_file"])
               unless File.exists?(ramdisk_image)
                 cloud_error("Ramdisk image " \
