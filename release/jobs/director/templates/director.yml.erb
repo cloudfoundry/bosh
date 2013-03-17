@@ -110,6 +110,9 @@ cloud:
       <% if_p("openstack.region") do |region| %>
       region: <%= region %>
       <% end %>
+      <% if_p("openstack.endpoint_type") do |endpoint_type| %>
+      endpoint_type: <%= endpoint_type %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
     registry:

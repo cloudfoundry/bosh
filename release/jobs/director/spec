@@ -144,6 +144,9 @@ properties:
     description: OpenStack tenant name
   openstack.region:
     description: OpenStack region (optional)
+  openstack.endpoint_type:
+    description: OpenStack endpoint type (optional, by default publicURL)
+    default: publicURL
   openstack.default_key_name:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:
