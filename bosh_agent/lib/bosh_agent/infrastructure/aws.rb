@@ -13,5 +13,13 @@ module Bosh::Agent
       Settings.new.get_network_settings(network_name, properties)
     end
 
+    def network_config_type
+      NETWORK_TYPE[:dhcp]
+    end
+
+    def disk_type
+      DISK_TYPE[:other]
+    end
+
   end
 end

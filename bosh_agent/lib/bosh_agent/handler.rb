@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'securerandom'
 
 module Bosh::Agent
 
@@ -284,7 +285,7 @@ module Bosh::Agent
     end
 
     def generate_agent_task_id
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     def post_prepare_network_change

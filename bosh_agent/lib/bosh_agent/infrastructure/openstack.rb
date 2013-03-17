@@ -1,5 +1,4 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Agent
   class Infrastructure::Openstack
     require 'bosh_agent/infrastructure/openstack/settings'
@@ -13,5 +12,12 @@ module Bosh::Agent
       Settings.new.get_network_settings(network_name, properties)
     end
 
+    def network_config_type
+      NETWORK_TYPE[:dhcp]
+    end
+
+    def disk_type
+
+    end
   end
 end

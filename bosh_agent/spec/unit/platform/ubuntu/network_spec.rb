@@ -1,15 +1,14 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-
-Bosh::Agent::Config.platform_name = "ubuntu"
-Bosh::Agent::Config.platform
+require 'spec_helper'
+require 'bosh_agent/platform/ubuntu/network'
 
 describe Bosh::Agent::Platform::Ubuntu::Network do
 
-  describe "vsphere" do
+  context "vSphere" do
     before(:each) do
       Bosh::Agent::Config.infrastructure_name = "vsphere"
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
       Bosh::Agent::Config.settings = complete_settings
 
@@ -24,13 +23,6 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
       @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
       @network_wrapper.setup_networking
     end
-
-    # FIXME: pending network config refactoring
-    #it "should fail when network information is incomplete" do
-    #  @network_wrapper.load_settings
-    #  @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-    #  lambda { @processor.setup_networking }.should raise_error(Bosh::Agent::FatalError, /contains invalid characters/)
-    #end
 
     it "should generate ubuntu network files" do
       @network_wrapper.stub!(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
@@ -53,19 +45,21 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     end
   end
 
-  describe "aws" do
+  context "AWS" do
     def partial_settings
       json = %q[{"networks":{"default":{"dns":["1.2.3.4","5.6.7.8"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)
     end
 
-    it "should configure dhcp with dns server prepended" do
+    before(:each) do
       Bosh::Agent::Config.infrastructure_name = "aws"
-      settings = partial_settings
-      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
-      Bosh::Agent::Config.settings = settings
-
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
+      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
+      Bosh::Agent::Config.settings = partial_settings
       @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
+    end
+
+    it "should configure dhcp with dns server prepended" do
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 5\.6\.7\.8;\nprepend domain-name-servers 1\.2\.3\.4;$/
         file.should == "/etc/dhcp3/dhclient.conf"
@@ -76,19 +70,21 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     end
   end
 
-  describe "OpenStack" do
+  context "OpenStack" do
     def partial_settings
       json = %q[{"networks":{"default":{"dns":["1.2.3.4"],"default":["gateway","dns"]}}]
       Yajl::Parser.new.parse(json)
     end
 
-    it "should configure dhcp with dns server prepended" do
+    before(:each) do
       Bosh::Agent::Config.infrastructure_name = "openstack"
-      settings = partial_settings
-      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
-      Bosh::Agent::Config.settings = settings
-
+      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
+      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
+      Bosh::Agent::Config.settings = partial_settings
       @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
+    end
+
+    it "should configure dhcp with dns server prepended" do
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 1\.2\.3\.4;$/
         file.should == "/etc/dhcp3/dhclient.conf"

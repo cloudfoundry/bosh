@@ -476,7 +476,7 @@ module Bosh::Deployer
     end
 
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     def load_state(name)

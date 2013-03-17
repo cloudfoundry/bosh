@@ -4,10 +4,10 @@ require "ruby_vcloud_sdk"
 require "cloud/vcloud/const"
 require "cloud/vcloud/util"
 
+require "securerandom"
 require "digest/sha1"
 require "fileutils"
 require "logger"
-require "uuidtools"
 require "yajl"
 require "const"
 require "thread"
@@ -15,6 +15,7 @@ require "thread"
 module VCloudCloud
 
   class Cloud
+    include Bosh::Exec
 
     def initialize(options)
       @logger = Bosh::Clouds::Config.logger
@@ -60,12 +61,10 @@ module VCloudCloud
         result = nil
         Dir.mktmpdir do |temp_dir|
           @logger.info("Extracting stemcell to: #{temp_dir}")
-          output = `tar -C #{temp_dir} -xzf #{image} 2>&1`
-          raise "Corrupt image, tar exit status: #{$?.exitstatus} output:" +
-            "#{output}" if $?.exitstatus != 0
+          result = sh "tar -C #{temp_dir} -xzf #{image} 2>&1"
+          raise "Corrupt image, tar exit status: #{result.exit_status} output: #{result.output}" if result.failed?
 
-          ovf_file = Dir.entries(temp_dir).find {
-            |entry| File.extname(entry) == ".ovf" }
+          ovf_file = Dir.entries(temp_dir).find {|entry| File.extname(entry) == ".ovf" }
           raise "Missing OVF" unless ovf_file
           ovf_file = File.join(temp_dir, ovf_file)
 
@@ -450,7 +449,7 @@ module VCloudCloud
     end
 
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     def log_exception(op, e)
@@ -528,8 +527,8 @@ module VCloudCloud
         env_path = File.join(path, "env")
         iso_path = File.join(path, "env.iso")
         File.open(env_path, "w") { |f| f.write(env_json) }
-        output = `genisoimage -o #{iso_path} #{env_path} 2>&1`
-        raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
+        result = sh "#{genisoimage} -o #{iso_path} #{env_path} 2>&1"
+        raise "#{result.exit_status} - #{result.output}" if result.failed?
 
         @client.set_metadata(vm, @vcd["entities"]["vm_metadata_key"], env_json)
 
@@ -626,6 +625,21 @@ module VCloudCloud
         disks << @client.get_disk(disk_id)
       end
       disks
+    end
+
+    private
+    def genisoimage
+      @genisoimage ||= which(%w{genisoimage mkisofs})
+    end
+
+    def which(programs)
+      ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+        programs.each do |bin|
+          exe = File.join(path, bin)
+          return exe if File.exists?(exe)
+        end
+      end
+      programs.first
     end
 
   end

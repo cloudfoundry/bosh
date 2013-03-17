@@ -1,6 +1,10 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Agent
+
+  NETWORK_TYPE  = { :vip => 'vip',   :dhcp => 'dynamic', :manual => 'manual' }
+  DISK_TYPE     = { :scsi => 'scsi', :other => 'nil' }
+
   class UnknownInfrastructure < StandardError; end
 
   class Infrastructure

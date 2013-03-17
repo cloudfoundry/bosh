@@ -47,7 +47,7 @@ module Bosh::Director
     end
 
     def generate_request_id
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
   end

@@ -14,15 +14,6 @@ module Bosh::Agent
       @cdrom_device = nil
     end
 
-    def cdrom_device
-      unless @cdrom_device
-        # only do this when not already done
-        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
-        @cdrom_device = "/dev/#{cd_drive.strip}"
-      end
-      @cdrom_device
-    end
-
     def load_settings
       load_cdrom_settings
     end
@@ -44,6 +35,15 @@ module Bosh::Agent
         eject_cdrom
       end
       @settings
+    end
+
+    def cdrom_device
+      unless @cdrom_device
+        # only do this when not already done
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
+        @cdrom_device = "/dev/#{cd_drive.strip}"
+      end
+      @cdrom_device
     end
 
     def check_cdrom
@@ -118,9 +118,8 @@ module Bosh::Agent
     end
 
     def mount_cdrom
-      output = `mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1`
-      raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #@cdrom_settings_mount_point: #{output}" unless $?.exitstatus == 0
+      result = Bosh::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
+      raise Bosh::Agent::LoadSettingsError, "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
     end
 
     def umount_cdrom

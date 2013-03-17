@@ -52,11 +52,11 @@ describe Bosh::PackageCompiler::Compiler do
       compiler.compile.should include("director")
     end
 
-    context "when job uses job collocation" do
-      let(:manifest) { "micro_bosh_collo/micro_bosh_collo.yml" }
+    context "job uses job collocation" do
+      let(:manifest)    { "micro_bosh_collo/micro_bosh_collo.yml" }
       let(:release_tar) { "micro_bosh_collo/micro_bosh_collo.tgz" }
 
-      xit "should add collocated jobs in apply spec" do
+      pending "should add collocated jobs in apply spec" do
         compiler.compile
         spec = YAML.load_file(compiler.apply_spec)
 

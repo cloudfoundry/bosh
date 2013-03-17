@@ -6,7 +6,7 @@ require "spec_helper"
 describe Bosh::OpenStackCloud::Cloud do
 
   it "creates an OpenStack volume" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     disk_params = {
       :name => "volume-#{unique_name}",
       :description => "",
@@ -26,7 +26,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   it "rounds up disk size" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     disk_params = {
       :name => "volume-#{unique_name}",
       :description => "",
@@ -56,7 +56,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   it "puts disk in the same AZ as a server" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     disk_params = {
       :name => "volume-#{unique_name}",
       :description => "",

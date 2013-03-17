@@ -181,46 +181,32 @@ module VCloudCloud
       cloud.delete_stemcell("test_stemcell_name")
     end
 
-    it "can create a vm", :genisoimage=> true do
+    it "can create a vm" do
+      cloud = VCloudCloud::Cloud.new(cloud_properties)
       vapp = UnitTest::VApp.new
       mc = mock("client")
-      mc.should_receive(:upload_vapp_template).with(an_instance_of(String),
-        an_instance_of(String)).and_return { UnitTest::CatalogItem.new }
-      mc.should_receive(:instantiate_vapp_template).with(an_instance_of(String),
-        an_instance_of(String), an_instance_of(String), anything).and_return {
-          vapp }
-      mc.should_receive(:power_on_vapp).with(anything).and_return {}
-      mc.should_receive(:get_ovdc).at_least(:once).with().and_return {
-        UnitTest::Vdc.new("myOvdc") }
-      mc.should_receive(:add_network).with(anything, anything).and_return {}
-      mc.should_receive(:delete_networks).with(anything, anything).and_return {}
-      mc.should_receive(:reconfigure_vm).with(anything).and_return {
-        vapp.vms[0].add_hard_disk }
-      mc.should_receive(:delete_catalog_media).with(
-        an_instance_of(String)).and_return { raise VCloudSdk::CatalogMediaNotFoundError,
-          "ISO by name not found" }
-      mc.should_receive(:upload_catalog_media).with(
-        an_instance_of(String), an_instance_of(String), anything).and_return {}
-      mc.should_receive(:insert_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:eject_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:get_vapp).at_least(:once).with(anything).and_return {
-        vapp }
-      mc.should_receive(:set_metadata).with(anything, an_instance_of(String),
-        an_instance_of(String)).and_return {}
+      mc.should_receive(:upload_vapp_template).with(an_instance_of(String), an_instance_of(String)).and_return { UnitTest::CatalogItem.new }
+      mc.should_receive(:instantiate_vapp_template).with(an_instance_of(String), an_instance_of(String), an_instance_of(String), anything).and_return vapp
+      mc.should_receive(:power_on_vapp).with(anything)
+      mc.should_receive(:get_ovdc).at_least(:once).with().and_return UnitTest::Vdc.new("myOvdc")
+      mc.should_receive(:add_network).with(anything, anything)
+      mc.should_receive(:delete_networks).with(anything, anything)
+      mc.should_receive(:reconfigure_vm).with(anything).and_return {vapp.vms[0].add_hard_disk}
+      mc.should_receive(:delete_catalog_media).with(an_instance_of(String)).and_raise(VCloudSdk::CatalogMediaNotFoundError, "ISO by name not found")
+      mc.should_receive(:upload_catalog_media).with(an_instance_of(String), an_instance_of(String), anything)
+      mc.should_receive(:insert_catalog_media).with(anything, an_instance_of(String))
+      mc.should_receive(:eject_catalog_media).with(anything, an_instance_of(String))
+      mc.should_receive(:get_vapp).at_least(:once).with(anything).and_return vapp
+      mc.should_receive(:set_metadata).with(anything, an_instance_of(String), an_instance_of(String))
 
-      cloud = VCloudCloud::Cloud.new(cloud_properties)
-      cloud.stub!(:client) { mc }
+      cloud.stub!(:client) {mc}
+      stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"), {})
 
-      stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"),
-        {})
-      cloud.create_vm(Test::generate_unique_name, stemcell,
-        test_manifest["resource_pools"][0]["cloud_properties"],
-        test_manifest["network"])
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+      cloud.create_vm(Test::generate_unique_name, stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"])
     end
 
-    it "can create a vm with disk locality", :genisoimage=> true do
+    it "can create a vm with disk locality" do
       vapp = UnitTest::VApp.new
       mc = mock("client")
       mc.should_receive(:upload_vapp_template).with(an_instance_of(String),
@@ -257,11 +243,11 @@ module VCloudCloud
       disk_locality = []
       disk_locality << "test_disk_id"
       disk_locality << "test_disk_id_non_existent"
-      stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"),
-        {})
-      cloud.create_vm(Test::generate_unique_name, stemcell,
-        test_manifest["resource_pools"][0]["cloud_properties"],
-        test_manifest["network"], disk_locality)
+      stemcell = cloud.create_stemcell(Test::spec_asset("valid_stemcell.tgz"),{})
+
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
+
+      cloud.create_vm(Test::generate_unique_name, stemcell, test_manifest["resource_pools"][0]["cloud_properties"], test_manifest["network"], disk_locality)
     end
 
     it "can delete a vm" do
@@ -356,33 +342,27 @@ module VCloudCloud
       cloud.reboot_vm(vapp.name)
     end
 
-    it "can re-configure vm networks", :genisoimage=> true do
+    it "can re-configure vm networks" do
+      cloud = VCloudCloud::Cloud.new(cloud_properties)
+
       vapp = UnitTest::VApp.new
       mc = mock("client")
-      mc.should_receive(:get_vapp).at_least(:once).with(
-        anything).and_return { vapp }
+      mc.should_receive(:get_vapp).at_least(:once).with(anything).and_return { vapp }
       mc.should_receive(:power_off_vapp).with(vapp).and_return {}
       mc.should_receive(:power_on_vapp).with(anything).and_return {}
       mc.should_receive(:reconfigure_vm).with(anything).and_return {}
-      mc.should_receive(:get_ovdc).at_least(:once).with().and_return {
-        UnitTest::Vdc.new("myOvdc") }
+      mc.should_receive(:get_ovdc).at_least(:once).with().and_return { UnitTest::Vdc.new("myOvdc") }
       mc.should_receive(:delete_networks).with(anything, anything).and_return {}
       mc.should_receive(:add_network).with(anything, anything).and_return {}
-      mc.should_receive(:delete_catalog_media).with(
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:upload_catalog_media).with(an_instance_of(String),
-        an_instance_of(String), anything).and_return {}
-      mc.should_receive(:insert_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:eject_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:set_metadata).with(anything, an_instance_of(String),
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:get_metadata).with(anything,
-        an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
+      mc.should_receive(:delete_catalog_media).with( an_instance_of(String)).and_return {}
+      mc.should_receive(:upload_catalog_media).with(an_instance_of(String), an_instance_of(String), anything).and_return {}
+      mc.should_receive(:insert_catalog_media).with(anything, an_instance_of(String)).and_return {}
+      mc.should_receive(:eject_catalog_media).with(anything, an_instance_of(String)).and_return {}
+      mc.should_receive(:set_metadata).with(anything, an_instance_of(String), an_instance_of(String)).and_return {}
+      mc.should_receive(:get_metadata).with(anything, an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
 
-      cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.configure_networks(vapp.name, test_manifest["network"])
     end
@@ -428,64 +408,45 @@ module VCloudCloud
       cloud.delete_disk("test_disk_id")
     end
 
-    it "can attach a disk to a vm", :genisoimage=> true do
+    it "can attach a disk to a vm" do
+      cloud = VCloudCloud::Cloud.new(cloud_properties)
+
       vapp = UnitTest::VApp.new
       mc = mock("client")
-      mc.should_receive(:get_vapp).at_least(:once).with(
-        anything).and_return { vapp }
-      mc.should_receive(:delete_catalog_media).with(
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:upload_catalog_media).with(an_instance_of(String),
-        an_instance_of(String), anything).and_return {}
-      mc.should_receive(:insert_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:eject_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:set_metadata).with(anything, an_instance_of(String),
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:get_metadata).with(anything,
-        an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
-      mc.should_receive(:get_ovdc).at_least(:once).with().and_return {
-        UnitTest::Vdc.new("myOvdc") }
-      mc.should_receive(:attach_disk).with(
-        an_instance_of(UnitTest::Vm::HardDisk), anything).and_return {
-        vapp.vms[0].add_hard_disk }
-      mc.should_receive(:get_disk).with(an_instance_of(String)).and_return {
-        vapp.vms[0].hardware_section.hard_disks.last }
+      mc.should_receive(:get_vapp).at_least(:once).with(anything).and_return { vapp }
+      mc.should_receive(:delete_catalog_media).with(an_instance_of(String)).and_return {}
+      mc.should_receive(:upload_catalog_media).with(an_instance_of(String),an_instance_of(String), anything).and_return {}
+      mc.should_receive(:insert_catalog_media).with(anything,an_instance_of(String)).and_return {}
+      mc.should_receive(:eject_catalog_media).with(anything,an_instance_of(String)).and_return {}
+      mc.should_receive(:set_metadata).with(anything, an_instance_of(String),an_instance_of(String)).and_return {}
+      mc.should_receive(:get_metadata).with(anything,an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
+      mc.should_receive(:get_ovdc).at_least(:once).with().and_return {UnitTest::Vdc.new("myOvdc") }
+      mc.should_receive(:attach_disk).with(an_instance_of(UnitTest::Vm::HardDisk), anything).and_return {vapp.vms[0].add_hard_disk }
+      mc.should_receive(:get_disk).with(an_instance_of(String)).and_return {vapp.vms[0].hardware_section.hard_disks.last }
 
-      cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.attach_disk(vapp.name, "test_disk_id")
     end
 
-    it "can detach a disk from a vm", :genisoimage=> true do
+    it "can detach a disk from a vm" do
       vapp = UnitTest::VApp.new
       mc = mock("client")
-      mc.should_receive(:get_vapp).at_least(:once).with(
-        anything).and_return { vapp }
-      mc.should_receive(:delete_catalog_media).with(
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:upload_catalog_media).with(an_instance_of(String),
-        an_instance_of(String), anything).and_return {}
-      mc.should_receive(:insert_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:eject_catalog_media).with(anything,
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:set_metadata).with(anything, an_instance_of(String),
-        an_instance_of(String)).and_return {}
-      mc.should_receive(:get_metadata).with(anything,
-        an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
-      mc.should_receive(:get_ovdc).at_least(:once).with().and_return {
-        UnitTest::Vdc.new("myOvdc") }
-      mc.should_receive(:detach_disk).with(
-        an_instance_of(UnitTest::Vm::HardDisk), anything).and_return {
-          vapp.vms[0].del_hard_disk }
-      mc.should_receive(:get_disk).with(an_instance_of(String)).and_return {
-        vapp.vms[0].hardware_section.hard_disks.last }
+      mc.should_receive(:get_vapp).at_least(:once).with(anything).and_return { vapp }
+      mc.should_receive(:delete_catalog_media).with(an_instance_of(String)).and_return {}
+      mc.should_receive(:upload_catalog_media).with(an_instance_of(String),an_instance_of(String), anything).and_return {}
+      mc.should_receive(:insert_catalog_media).with(anything, an_instance_of(String)).and_return {}
+      mc.should_receive(:eject_catalog_media).with(anything,an_instance_of(String)).and_return {}
+      mc.should_receive(:set_metadata).with(anything, an_instance_of(String),an_instance_of(String)).and_return {}
+      mc.should_receive(:get_metadata).with(anything,an_instance_of(String)).and_return { UnitTest::AGENT_ENV }
+      mc.should_receive(:get_ovdc).at_least(:once).with().and_return {UnitTest::Vdc.new("myOvdc") }
+      mc.should_receive(:detach_disk).with(an_instance_of(UnitTest::Vm::HardDisk), anything).and_return {vapp.vms[0].del_hard_disk }
+      mc.should_receive(:get_disk).with(an_instance_of(String)).and_return {vapp.vms[0].hardware_section.hard_disks.last }
 
       cloud = VCloudCloud::Cloud.new(cloud_properties)
       cloud.stub!(:client) { mc }
+      cloud.should_receive(:sh).and_return(Bosh::Exec::Result.new(nil, "output", 0))
 
       cloud.detach_disk(vapp.name, "test_disk_id")
     end

@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'time'
 
 module Bosh::Agent
   class Alert
@@ -81,16 +82,16 @@ module Bosh::Agent
     end
 
     def timestamp
-      Time.rfc822(@date).utc.to_i
+      (Time.rfc2822(@date) rescue Time.parse(@date)).utc.to_i # As per comments in 'time.rb'
     rescue ArgumentError => e
-      @logger.warn("Cannot parse monit alert date `#{@date}', using current time instead")
+      @logger.warn("Cannot parse monit alert date '#{@date}', using current time instead")
       Time.now.utc.to_i
     end
 
     def calculate_severity
       known_severity = SEVERITY_MAP[@event.to_s.downcase]
       if known_severity.nil?
-        @logger.warn("Unknown monit event name `#{@event}', using default severity #{DEFAULT_SEVERITY}")
+        @logger.warn("Unknown monit event name '#{@event}', using default severity #{DEFAULT_SEVERITY}")
         DEFAULT_SEVERITY
       else
         known_severity

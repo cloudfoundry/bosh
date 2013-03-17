@@ -1,13 +1,13 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require File.dirname(__FILE__) + '/../../../spec_helper'
-
-Bosh::Agent::Config.infrastructure_name = "vsphere"
-Bosh::Agent::Config.infrastructure
+require 'bosh_agent/infrastructure/vsphere'
 
 describe Bosh::Agent::Infrastructure::Vsphere::Settings do
 
   before(:each) do
+    Bosh::Agent::Config.infrastructure_name = "vsphere"
+    Bosh::Agent::Config.infrastructure
     @proc_contents = <<-eos
 CD-ROM information, Id: cdrom.c 3.20 2003/12/17
 

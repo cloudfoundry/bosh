@@ -1,28 +1,38 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Agent::Template do
 
+  before(:each) do
+    @tmp_dir = Dir.mktmpdir
+    @src = File.join(@tmp_dir, "dummy_template.erb")
+    File.open(@src, "w") { |f|
+      f.write("This is a dummy variable with <%= dummy %> value\n")
+    }
+    @dst = File.join(@tmp_dir, "yabba.out")
+  end
+
+  after(:each) do
+    FileUtils.rm_rf @tmp_dir
+  end
+
   it "should create a template" do
     dummy = "hubba"
-    dst = File.join(base_dir, 'yabba.out')
 
     Bosh::Agent::Template.write do |t|
-      t.src("platform/dummy/templates/dummy_template.erb")
-      t.dst(dst)
+      t.src @src
+      t.dst @dst
     end
 
-    File.read(dst).should == "This is a dummy variable with hubba value\n"
+    File.read(@dst).should == "This is a dummy variable with hubba value\n"
   end
 
   it "should fail when variable is not in binding scope" do
-    dst = File.join(base_dir, 'yabba.out')
-
     lambda {
       Bosh::Agent::Template.write do |t|
-        t.src("platform/dummy/templates/dummy_template.erb")
-        t.dst(dst)
+        t.src @src
+        t.dst @dst
       end
     }.should raise_error(NameError)
   end
@@ -43,7 +53,7 @@ describe Bosh::Agent::Template do
 
   it "should take a block" do
     dummy = "bubba"
-    block = lambda { |t| t.src("platform/dummy/templates/dummy_template.erb") }
+    block = lambda { |t| t.src(@src) }
     template = Bosh::Agent::Template.new(block)
     template.render.should == "This is a dummy variable with bubba value\n"
   end

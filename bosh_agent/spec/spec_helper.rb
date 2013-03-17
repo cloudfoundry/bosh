@@ -1,8 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-
-require "rspec"
-
 ENV["RACK_ENV"] = "test"
+
+require "bundler/setup"
 
 require "bosh_agent"
 
@@ -39,6 +38,7 @@ end
 
 def use_dummy_logger
   Bosh::Agent::Config.logger = Logger.new(StringIO.new)
+  Bosh::Agent::Config.logger.level = Logger::WARN
 end
 
 def setup_directories

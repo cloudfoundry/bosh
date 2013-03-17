@@ -561,7 +561,7 @@ module Bosh::AwsCloud
     def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
       settings = {
           "vm" => {
-              "name" => "vm-#{UUIDTools::UUID.random_create}"
+              "name" => "vm-#{SecureRandom.uuid}"
           },
           "agent_id" => agent_id,
           "networks" => network_spec,

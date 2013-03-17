@@ -203,7 +203,7 @@ module Bosh::Director
     end
 
     def generate_agent_id
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
   end

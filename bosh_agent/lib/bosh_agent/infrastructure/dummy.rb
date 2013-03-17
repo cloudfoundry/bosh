@@ -9,5 +9,12 @@ module Bosh::Agent
     def get_network_settings(network_name, properties)
       # Nothing to do
     end
+
+
+    def network_config_type
+    end
+
+    def disk_type
+    end
   end
 end
