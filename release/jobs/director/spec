@@ -151,10 +151,6 @@ properties:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:
     description: Default OpenStack security groups to use when spinning up new vms
-  openstack.stemcell.kernel_id:
-    description: Kernel ID to use when spinning up new vms (optional)
-  openstack.stemcell.ramdisk_id:
-    description: Ramdisk ID to use when spinning up new vms (optional)
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:

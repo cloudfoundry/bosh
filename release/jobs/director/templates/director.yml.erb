@@ -119,11 +119,6 @@ cloud:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
       password: <%= reg_password %>
-    <% if_p('openstack.stemcell.kernel_id', 'openstack.stemcell.ramdisk_id') do |kernel_id, ramdisk_id| %>
-    stemcell:
-      kernel_id: <%= kernel_id %>
-      ramdisk_id: <%= ramdisk_id %>
-    <% end %>
 <% end %>
 <% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
   plugin: vsphere <% plugin = "vsphere" %>
