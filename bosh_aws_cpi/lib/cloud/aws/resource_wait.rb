@@ -1,7 +1,7 @@
 module Bosh::AwsCloud
   class ResourceWait
 
-    DEFAULT_TRIES = 10
+    DEFAULT_TRIES = 15
     MAX_SLEEP_EXPONENT = 8
 
     def self.for_instance(args)
