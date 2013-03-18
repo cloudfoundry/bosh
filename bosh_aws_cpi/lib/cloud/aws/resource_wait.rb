@@ -158,7 +158,7 @@ module Bosh::AwsCloud
       end
 
       Bosh::AwsCloud::ResourceWait.logger.info("#{desc} is now #{state}, took #{time_passed}s")
-    rescue RetryCountExceeded => e
+    rescue Bosh::Common::RetryCountExceeded => e
       Bosh::AwsCloud::ResourceWait.logger.error("Timed out waiting for #{desc} state is #{state}, expected to be #{target_state}, took #{time_passed}s")
       raise e
     end

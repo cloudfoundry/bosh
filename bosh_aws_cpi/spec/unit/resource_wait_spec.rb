@@ -57,14 +57,14 @@ describe Bosh::AwsCloud::ResourceWait do
     let(:attachment) { double(AWS::EC2::Attachment, to_s: 'a-1234') }
 
     context 'attachment' do
-     it 'should wait until the state is attached' do
-       attachment.should_receive(:status).and_return(:attaching)
-       attachment.should_receive(:status).and_return(:attached)
+      it 'should wait until the state is attached' do
+        attachment.should_receive(:status).and_return(:attaching)
+        attachment.should_receive(:status).and_return(:attached)
 
-       described_class.for_attachment(attachment: attachment, state: :attached)
+        described_class.for_attachment(attachment: attachment, state: :attached)
       end
 
-     it 'should retry when AWS::Core::Resource::NotFound is raised' do
+      it 'should retry when AWS::Core::Resource::NotFound is raised' do
         attachment.should_receive(:status).and_raise(AWS::Core::Resource::NotFound)
         attachment.should_receive(:status).and_return(:attached)
 
@@ -199,6 +199,22 @@ describe Bosh::AwsCloud::ResourceWait do
 
         described_class.for_subnet(subnet: subnet, state: :available)
       end
+    end
+  end
+
+  describe "catching errors" do
+    it "should raise an error if the retry count is exceeded" do
+      resource = double("resource", status: :bar)
+      resource_arguments = {
+          resource: resource,
+          tries: 1,
+          description: "description",
+          target_state: :foo
+      }
+
+      expect {
+        subject.for_resource(resource_arguments) { |_| false }
+      }.to raise_error(Bosh::Common::RetryCountExceeded)
     end
   end
 end
