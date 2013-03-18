@@ -95,4 +95,3 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     end
   end
 end
-                                           w
