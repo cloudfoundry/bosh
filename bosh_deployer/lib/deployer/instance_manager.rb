@@ -400,9 +400,10 @@ module Bosh::Deployer
 
     def wait_until_ready(component, wait_time = 1, retries = 300)
       Bosh::Common.retryable(sleep: wait_time, tries: retries,
-                             on: [Bosh::Agent::Error, Errno::ECONNREFUSED]) do |tries, e|
+                             on: [Bosh::Agent::Error, Errno::ECONNREFUSED, Errno::ETIMEDOUT]) do |tries, e|
         logger.debug("Waiting for #{component} to be ready: #{e.inspect}") if tries > 0
         yield
+        true
       end
     end
 
