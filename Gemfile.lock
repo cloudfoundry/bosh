@@ -16,7 +16,7 @@ PATH
   remote: blobstore_client
   specs:
     blobstore_client (1.5.0.pre2)
-      aws-sdk (~> 1.8.5)
+      aws-sdk (= 1.8.5)
       bosh_common (~> 1.5.0.pre2)
       fog (~> 1.10.0)
       httpclient (= 2.2.4)
@@ -58,7 +58,7 @@ PATH
   remote: bosh_aws_cpi
   specs:
     bosh_aws_cpi (1.5.0.pre2)
-      aws-sdk (~> 1.8.5)
+      aws-sdk (= 1.8.5)
       bosh_common (~> 1.5.0.pre2)
       bosh_cpi (~> 1.5.0.pre2)
       httpclient (= 2.2.4)
@@ -130,7 +130,7 @@ PATH
   remote: bosh_registry
   specs:
     bosh_registry (1.5.0.pre2)
-      aws-sdk (~> 1.8.5)
+      aws-sdk (= 1.8.5)
       fog (~> 1.10.0)
       sequel (~> 3.43.0)
       sinatra (~> 1.2.8)
@@ -190,7 +190,7 @@ PATH
   remote: health_monitor
   specs:
     health_monitor (1.5.0.pre2)
-      aws-sdk (~> 1.8.5)
+      aws-sdk (= 1.8.5)
       em-http-request (~> 0.3.0)
       eventmachine (~> 0.12.10)
       logging (~> 1.5.0)

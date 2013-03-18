@@ -24,5 +24,5 @@ Gem::Specification.new do |s|
   s.add_dependency "thin", "~>1.5.0"
   s.add_dependency "yajl-ruby", "~>1.1.0"
   s.add_dependency "fog", "~>1.10.0"
-  s.add_dependency "aws-sdk", "~>1.8.5"
+  s.add_dependency "aws-sdk", "1.8.5"
 end

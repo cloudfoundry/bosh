@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.bindir       = "bin"
   s.executables  = %w(bosh_aws_console)
 
-  s.add_dependency "aws-sdk", "~>1.8.5"
+  s.add_dependency "aws-sdk", "1.8.5"
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
   s.add_dependency "httpclient", "=2.2.4"
