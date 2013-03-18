@@ -1,4 +1,0 @@
-# abort script on any command that exit with a non zero value
-set -e
-chmod +x genisoimage/genisoimage
-cp -a genisoimage/genisoimage $BOSH_INSTALL_TARGET
