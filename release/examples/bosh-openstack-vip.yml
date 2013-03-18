@@ -28,7 +28,7 @@ networks:
     type: dynamic
     cloud_properties:
       security_groups:
-      - default # CHANGE: Security Group
+        - default # CHANGE: Security Group
 
 resource_pools:
   - name: small
@@ -59,7 +59,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.226 # Change: Floating IP 1
+          - 192.168.1.226 # Change: Floating IP 1
 
   - name: nats
     template: nats
@@ -70,7 +70,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.228 # Change: Floating IP 2
+          - 192.168.1.228 # Change: Floating IP 2
 
   - name: postgres
     template: postgres
@@ -82,7 +82,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.229 # Change: Floating IP 3
+          - 192.168.1.229 # Change: Floating IP 3
 
   - name: redis
     template: redis
@@ -93,7 +93,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.230 # Change: Floating IP 4
+          - 192.168.1.230 # Change: Floating IP 4
 
   - name: director
     template: director
@@ -105,7 +105,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.227 # Change: Floating IP 5
+          - 192.168.1.227 # Change: Floating IP 5
 
   - name: blobstore
     template: blobstore
@@ -116,7 +116,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.231 # Change: Floating IP 6
+          - 192.168.1.231 # Change: Floating IP 6
 
   - name: registry
     template: registry
@@ -127,7 +127,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.232 # Change: Floating IP 7
+          - 192.168.1.232 # Change: Floating IP 7
 
   - name: health_monitor
     template: health_monitor
