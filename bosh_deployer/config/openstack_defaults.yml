@@ -29,6 +29,8 @@ cloud:
       username:
       api_key:
       tenant:
+      region:
+      endpoint_type: publicURL
       default_key_name:
       default_security_groups: []
       ssh_user: vcap
@@ -36,9 +38,6 @@ cloud:
       endpoint: http://admin:admin@localhost:25889
       user: admin
       password: admin
-    stemcell:
-      kernel_id:
-      disk: 4096
     agent:
       ntp: []
       blobstore:
