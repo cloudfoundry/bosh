@@ -32,7 +32,7 @@ module Bosh::HealthMonitor
         end
 
         event = klass.new(attributes)
-        event.id = UUIDTools::UUID.random_create.to_s if event.id.nil?
+        event.id = SecureRandom.uuid if event.id.nil?
         event
       end
 

@@ -2,7 +2,7 @@
 
 require "securerandom"
 require "gibberish"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 
 module Bosh
@@ -78,7 +78,7 @@ module Bosh
     end
 
     def start_session
-      @session_id = UUIDTools::UUID.random_create.to_s
+      @session_id = SecureRandom.uuid
     end
 
     def verify_signature(data)

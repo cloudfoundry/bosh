@@ -19,7 +19,7 @@ module Bosh::Director
       end
 
       def create_deployment(user, deployment_manifest, options = {})
-        random_name = "deployment-#{UUIDTools::UUID.random_create}"
+        random_name = "deployment-#{SecureRandom.uuid}"
         deployment_manifest_file = File.join(Dir::tmpdir, random_name)
 
         write_file(deployment_manifest_file, deployment_manifest)

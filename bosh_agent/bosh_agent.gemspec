@@ -19,7 +19,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'posix-spawn', "~>0.3.6"
   s.add_dependency 'ruby-atmos-pure', "~>1.0.5"
   s.add_dependency 'thin', "~>1.5.0"
-  s.add_dependency 'uuidtools', "~>2.1.3"
   s.add_dependency 'yajl-ruby', "~>1.1.0"
   s.add_dependency 'blobstore_client', "~>#{version}"
   s.add_dependency 'bosh_common', "~>#{version}"

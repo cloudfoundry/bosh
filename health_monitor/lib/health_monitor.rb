@@ -23,7 +23,7 @@ require "logging"
 require "nats/client"
 require "sinatra"
 require "thin"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 
 # Helpers

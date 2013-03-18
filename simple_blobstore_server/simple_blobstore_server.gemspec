@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = "lib"
 
-  s.add_dependency "uuidtools", "~>2.1"
   s.add_dependency "thin", "~>1.5.0"
   s.add_dependency "sinatra", "~> 1.2.8"
 

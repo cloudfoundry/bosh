@@ -23,7 +23,7 @@ module Bosh::Director
       end
 
       def create_stemcell(user, stemcell)
-        random_name = "stemcell-#{UUIDTools::UUID.random_create}"
+        random_name = "stemcell-#{SecureRandom.uuid}"
         stemcell_file = File.join(Dir::tmpdir, random_name)
         write_file(stemcell_file, stemcell)
         task = create_task(user, :update_stemcell, "create stemcell")
