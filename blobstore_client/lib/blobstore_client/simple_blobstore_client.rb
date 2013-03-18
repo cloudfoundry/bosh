@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require "httpclient"
+require 'base64'
+require 'httpclient'
 
 module Bosh
   module Blobstore
@@ -16,7 +17,7 @@ module Bosh
         password = @options[:password]
         if user && password
           @headers["Authorization"] = "Basic " +
-            Base64.encode64("#{user}:#{password}").strip
+              Base64.encode64("#{user}:#{password}").strip
         end
       end
 
@@ -24,11 +25,11 @@ module Bosh
         ["#{@endpoint}/#{@bucket}", id].compact.join("/")
       end
 
-      def create_file(file)
-        response = @client.post(url, {:content => file}, @headers)
+      def create_file(id, file)
+        response = @client.post(url(id), {:content => file}, @headers)
         if response.status != 200
           raise BlobstoreError,
-            "Could not create object, #{response.status}/#{response.content}"
+                "Could not create object, #{response.status}/#{response.content}"
         end
         response.content
       end
@@ -40,14 +41,26 @@ module Bosh
 
         if response.status != 200
           raise BlobstoreError,
-            "Could not fetch object, #{response.status}/#{response.content}"
+                "Could not fetch object, #{response.status}/#{response.content}"
         end
       end
 
-      def delete(id)
+      def delete_object(id)
         response = @client.delete(url(id), @headers)
         if response.status != 204
-          raise "Could not delete object, #{response.status}/#{response.content}"
+          raise BlobstoreError,
+                "Could not delete object, #{response.status}/#{response.content}"
+        end
+      end
+
+      def object_exists?(id)
+        response = @client.head(url(id), :header => @headers)
+        if response.status == 200
+          true
+        elsif response.status == 404
+          false
+        else
+          raise BlobstoreError, "Could not get object existence, #{response.status}/#{response.content}"
         end
       end
     end

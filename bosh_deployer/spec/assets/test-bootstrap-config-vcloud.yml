@@ -1,0 +1,49 @@
+---
+name: bosh-bootstrap-aws
+
+network:
+  type: dynamic
+
+env:
+  bosh:
+    password: $6$salt$password
+
+cloud:
+  plugin: vcloud
+  properties:
+    vcds:
+      - url: https://10.147.0.0:8443
+        user: cfadmin
+        password: default
+        entities:
+          organization: cf-org
+          virtual_datacenter: cf-vdc
+          vapp_catalog: cf-catalog
+          media_catalog: cf-catalog
+          vm_metadata_key: cf-agent-env
+          description: vcd-cf
+        control:
+          retries:
+            default: 5
+            upload_vapp_files: 7
+            cpi: 1
+          delay: 1
+          time_limit_sec:
+            default: 120
+            delete_vapp_template: 120
+            delete_vapp: 120
+            delete_media: 120
+            instantiate_vapp_template: 300
+            power_on: 600
+            power_off: 600
+            undeploy: 720
+            process_descriptor_vapp_template: 300
+            http_request: 240
+          backoff: 2
+          rest_throttle:
+            min: 0
+            max: 1
+        debug:
+          delete_vapp: true
+        testing:
+          cookies: fake-cookie

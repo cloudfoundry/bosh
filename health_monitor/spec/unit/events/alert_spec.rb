@@ -2,18 +2,6 @@ require "spec_helper"
 
 describe Bhm::Events::Alert do
 
-  def make_alert(attrs = {})
-    defaults = {
-      :id => 1,
-      :severity => 2,
-      :title => "Test Alert",
-      :summary => "Everything is down",
-      :source => "mysql_node/0",
-      :created_at => Time.now.to_i
-    }
-    Bhm::Events::Alert.new(defaults.merge(attrs))
-  end
-
   it "supports attributes validation" do
     make_alert.should be_valid
     make_alert.kind.should == :alert

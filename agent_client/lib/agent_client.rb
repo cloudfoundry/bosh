@@ -1,5 +1,7 @@
 module Bosh; module Agent; end; end
 
+require "httpclient"
+
 require "agent_client/version"
 require "agent_client/errors"
 require "agent_client/base"

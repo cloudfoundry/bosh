@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns7:MediaInsertOrEjectParams xmlns:ns7="http://www.vmware.com/vcloud/v1.5">
+  <ns7:Media type="application/vnd.vmware.vcloud.media+xml" href="" />
+</ns7:MediaInsertOrEjectParams>

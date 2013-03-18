@@ -1,13 +1,14 @@
 # Copyright (c) 2012 VMware, Inc.
+require "tmpdir"
 
 module DeploymentHelper
 
   def stemcell
-    @stemcell ||= Stemcell.from_path(read_environment('BAT_STEMCELL'))
+    @stemcell ||= Stemcell.from_path(BH::read_environment('BAT_STEMCELL'))
   end
 
   def release
-    @release ||= Release.from_path(read_environment('BAT_RELEASE_DIR'))
+    @release ||= Release.from_path(BAT_RELEASE_DIR)
   end
 
   # @return [Array[String]]
@@ -74,6 +75,10 @@ module DeploymentHelper
         puts "release not uploaded" if debug?
         bosh("upload release #{what.to_path}")
       end
+    when :no_tasks_processing
+      if tasks_processing?
+        raise "director `#{bosh_director}' is currently processing tasks"
+      end
     else
       raise "unknown requirement: #{what}"
     end
@@ -94,7 +99,12 @@ module DeploymentHelper
   end
 
   def load_deployment_spec
-    @spec ||= YAML.load_file(read_environment('BAT_DEPLOYMENT_SPEC'))
+    @spec ||= YAML.load_file(BH::read_environment('BAT_DEPLOYMENT_SPEC'))
+    # Always set the batlight.missing to something, or deployments will fail.
+    # It is used for negative testing.
+    @spec["properties"]["batlight"] ||= {}
+    @spec["properties"]["batlight"]["missing"] = "nope"
+    @spec["properties"]["dns_nameserver"] = bosh_dns_host if bosh_dns_host
   end
 
   # if with_deployment() is called without a block, it is up to the caller to
@@ -113,24 +123,55 @@ module DeploymentHelper
       yield
     elsif block.arity == 1
       yield deployment
+    elsif block.arity == 2
+      bosh("deployment #{deployment.to_path}").should succeed
+      result = bosh("deploy")
+      result.should succeed
+      deployed = true
+      yield deployment, result
     else
       raise "unknown arity: #{block.arity}"
     end
   ensure
     if block_given?
       deployment.delete if deployment
-      if block.arity == 0 && deployed
+      if deployed
         bosh("delete deployment #{deployment.name}").should succeed
       end
     end
+  end
+
+  def with_tmpdir
+    dir = nil
+    back = Dir.pwd
+    Dir.mktmpdir do |tmpdir|
+      dir = tmpdir
+      Dir.chdir(dir)
+      yield dir
+    end
+  ensure
+    Dir.chdir(back)
+    FileUtils.rm_rf(dir) if dir
   end
 
   def use_job(job)
     @spec["properties"]["job"] = job
   end
 
+  def use_template(template)
+    @spec["properties"]["template"] = if template.respond_to?(:each)
+      string = ""
+      template.each do |item|
+        string += "\n      - #{item}"
+      end
+      string
+    else
+      template
+    end
+  end
+
   def use_job_instances(count)
-    @spec["properties"]["jobs"] = count
+    @spec["properties"]["instances"] = count
   end
 
   def use_deployment_name(name)
@@ -165,15 +206,31 @@ module DeploymentHelper
     @spec["properties"]["pool_size"] = size
   end
 
-  def get_task_id(output)
-    match = output.match(/Task (\d+) done/)
+  def use_password(passwd)
+    @spec["properties"]["password"] = passwd
+  end
+
+  def use_failing_job(where="control")
+    @spec["properties"]["batlight"]["fail"] = where
+  end
+
+  def use_missing_property(property="missing")
+    @spec["properties"]["batlight"].delete(property)
+  end
+
+  def use_dynamic_drain
+    @spec["properties"]["batlight"]["drain_type"] = "dynamic"
+  end
+
+  def get_task_id(output, state="done")
+    match = output.match(/Task (\d+) #{state}/)
     match.should_not be_nil
     match[1]
   end
 
   def events(task_id)
     result = bosh("task #{task_id} --raw")
-    result.should succeed_with /Task \d+ done/
+    result.should succeed_with /Task \d+ \w+/
 
     event_list = []
     result.output.split("\n").each do |line|

@@ -1,0 +1,27 @@
+set -e
+
+tar xzf ruby/ruby-1.9.3-p327.tar.gz
+(
+  set -e
+  cd ruby-1.9.3-p327
+  ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc
+  make
+  make install
+)
+
+tar zxvf ruby/rubygems-1.8.24.tgz
+
+(
+  set -e
+  cd rubygems-1.8.24
+  patch -p1 < ../ruby/rubygems-datefix.patch
+
+  ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb
+
+  if [[ $? != 0 ]] ; then
+    echo "Cannot install rubygems"
+    exit 1
+  fi
+)
+
+${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.2.3.gem --no-ri --no-rdoc

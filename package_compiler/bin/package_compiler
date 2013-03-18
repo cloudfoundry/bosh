@@ -1,16 +1,9 @@
 #!/usr/bin/env ruby
-#
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../../Gemfile", __FILE__)
-
-require "rubygems"
-require "bundler/setup"
-
-$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), "..", "lib")))
 
 require "trollop"
 require "package_compiler"
 
-CPIS = %w[aws openstack vsphere]
+CPIS = %w[aws openstack vcloud vsphere]
 COMMANDS = %w[apply compile]
 
 def usage(msg=nil)

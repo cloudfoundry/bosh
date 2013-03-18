@@ -1,7 +1,7 @@
 module Bosh
   module Agent
     class Client
-      VERSION = "0.1.1"
+      VERSION = '1.5.0.pre2'
     end
   end
 end

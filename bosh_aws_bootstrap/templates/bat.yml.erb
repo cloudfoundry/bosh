@@ -1,0 +1,22 @@
+---
+cpi: aws
+properties:
+  static_ip: <%= vip %>
+  uuid: <%= director_uuid %>
+  pool_size: 1
+  stemcell:
+    name: bosh-stemcell
+    version: <%= stemcell_version %>
+  instances: 1
+  key_name:  <%= key_pair_name %>
+  mbus: nats://nats:0b450ada9f830085e2cdeff6@micro.<%= domain %>:4222
+  network:
+    cidr: 10.10.0.0/24
+    reserved:
+    - 10.10.0.2 - 10.10.0.9
+    static:
+    - 10.10.0.10 - 10.10.0.30
+    gateway: 10.10.0.1
+    subnet: <%= subnet %>
+    security_groups:
+    - bat

@@ -1,1 +1,0 @@
-vcap ALL= NOPASSWD: /var/vcap/bosh/bin/stemcell-copy

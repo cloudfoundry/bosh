@@ -231,6 +231,31 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       ip.should == NetAddr::CIDR.create("192.168.0.1").to_i
     end
 
+    # If a pool has many IP addresses, use every IP in the pool rather than
+    # rapidly acquiring and releasing the same IP over and over again.
+    it "should allocate the least recently released IP from the dynamic pool" do
+      subnet = subnet_spec(
+        "range" => "192.168.0.0/29",
+        "cloud_properties" => { "foo" => "bar" },
+      )
+
+      allocations = []
+      while ip = subnet.allocate_dynamic_ip
+        allocations << ip
+      end
+
+      # Release allocated IPs in random order
+      allocations.shuffle!
+      allocations.each do |ip|
+        subnet.release_ip(ip)
+      end
+
+      # Verify that re-acquiring the released IPs retains order
+      allocations.each do |ip|
+        subnet.allocate_dynamic_ip.should == ip
+      end
+    end
+
     it "should not allocate from the reserved pool" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/29",

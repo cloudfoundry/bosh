@@ -31,11 +31,11 @@ module Bosh::Director
         task
       end
 
-      def delete_stemcell(user, stemcell)
+      def delete_stemcell(user, stemcell, options={})
         task_name = "delete stemcell: #{stemcell.name}/#{stemcell.version}"
         task = create_task(user, :delete_stemcell, task_name)
         Resque.enqueue(Jobs::DeleteStemcell, task.id, stemcell.name,
-                       stemcell.version)
+                       stemcell.version, options)
         task
       end
     end

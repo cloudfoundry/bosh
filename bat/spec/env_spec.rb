@@ -2,14 +2,13 @@
 
 require "spec_helper"
 
-describe "initialization" do
+describe "initialization", :skip_task_check do
   describe "environment" do
     %w[
       BAT_DIRECTOR
       BAT_STEMCELL
       BAT_DEPLOYMENT_SPEC
       BAT_VCAP_PASSWORD
-      BAT_RELEASE_DIR
     ].each do |var|
       it "should have #{var} set" do
         ENV[var].should_not be_nil
@@ -17,6 +16,10 @@ describe "initialization" do
     end
 
     describe "requirements" do
+      it "should have bosh cli installed" do
+        %x{#{bosh_bin} --version}.should match %r{BOSH \d+\.\d+}
+      end
+
       it "should have a readable stemcell" do
         File.exist?(stemcell.to_path).should be_true
       end
@@ -39,8 +42,9 @@ describe "initialization" do
       bosh("target #{bosh_director}").should succeed_with /Target \w*\s*set/
     end
 
-    it "should fetch deployments" do
+    it "should not have 'bat' deployments" do
       deployments.should_not have_key("bat")
+      deployments.should_not have_key("bat2")
     end
 
     it "should fetch releases" do

@@ -28,7 +28,7 @@ module Bosh::Director
           # Make sure it wasn't deleted
           deployment = find_deployment(@deployment_name)
 
-          ThreadPool.new(:max_threads => 32).wrap do |pool|
+          ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
             delete_instances(deployment, pool)
             pool.wait
             delete_vms(deployment, pool)
@@ -158,7 +158,7 @@ module Bosh::Director
 
       def delete_dns(name)
         if Config.dns_enabled?
-          record_pattern = ["%", canonical(name), "bosh"].join(".")
+          record_pattern = ["%", canonical(name), dns_domain_name].join(".")
           delete_dns_records(record_pattern)
         end
       end

@@ -56,8 +56,10 @@ require "health_monitor/events/heartbeat"
 
 # Plugins
 require "health_monitor/plugins/base"
+require "health_monitor/plugins/cloud_watch"
 require "health_monitor/plugins/email"
 require "health_monitor/plugins/logger"
 require "health_monitor/plugins/nats"
 require "health_monitor/plugins/pagerduty"
 require "health_monitor/plugins/tsdb"
+require "health_monitor/plugins/varz"

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Blobstore::LocalClient do
 
@@ -25,6 +25,22 @@ describe Bosh::Blobstore::LocalClient do
 
   describe "operations" do
 
+    describe '#exists?' do
+      it 'should return true if the object already exists' do
+        File.open(File.join(@tmp, 'foo'), 'w') do |fh|
+          fh.puts("bar")
+        end
+
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        client.exists?("foo").should be_true
+      end
+
+      it "should return false if the object doesn't exists" do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        client.exists?("foo").should be_false
+      end
+    end
+
     describe "get" do
       it "should retrive the correct contents" do
         File.open(File.join(@tmp, 'foo'), 'w') do |fh|
@@ -38,7 +54,7 @@ describe Bosh::Blobstore::LocalClient do
 
     describe "create" do
       it "should store a file" do
-        test_file = File.join(File.dirname(__FILE__), "../assets/file")
+        test_file = asset('file')
         client = Bosh::Blobstore::LocalClient.new(@options)
         fh = File.open(test_file)
         id = client.create(fh)
@@ -54,6 +70,24 @@ describe Bosh::Blobstore::LocalClient do
         id = client.create(string)
         stored = File.new(File.join(@tmp, id)).readlines
         stored.should == [string]
+      end
+
+      it 'should accept object id suggestion' do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        string = 'foobar'
+        id = client.create(string, 'foobar')
+        id.should == 'foobar'
+        stored = File.new(File.join(@tmp, id)).readlines
+        stored.should == [string]
+      end
+
+      it 'should raise an error' do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        string = 'foobar'
+        client.create(string, 'foobar').should == 'foobar'
+        expect {
+          client.create(string, 'foobar')
+        }.to raise_error Bosh::Blobstore::BlobstoreError
       end
     end
 

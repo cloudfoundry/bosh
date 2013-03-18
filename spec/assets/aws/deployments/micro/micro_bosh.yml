@@ -1,0 +1,40 @@
+---
+name: aws
+
+logging:
+  level: DEBUG
+
+network:
+  type: manual
+  ip: 10.10.0.5
+  vip:  <%= ENV["MICROBOSH_IP"] %>
+  cloud_properties:
+    subnet: <%= ENV["BOSH_SUBNET_ID"] %>
+
+resources:
+  persistent_disk: 20000
+  cloud_properties:
+    instance_type: m1.small
+
+cloud:
+  plugin: aws
+  properties:
+    aws:
+      access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+      secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+      default_key_name: <%= ENV["BOSH_KEY_PAIR_NAME"] %>
+      default_security_groups: ["open"]
+      ec2_private_key: <%= ENV["BOSH_KEY_PATH"] %>
+      ec2_endpoint: ec2.us-east-1.amazonaws.com
+      region: us-east-1
+
+apply_spec:
+  agent:
+    blobstore:
+      address: <%= ENV["MICROBOSH_IP"] %>
+    nats:
+      address: <%= ENV["MICROBOSH_IP"] %>
+  properties:
+    registry:
+      address: <%= ENV["MICROBOSH_IP"] %>
+

@@ -1,0 +1,148 @@
+--- 
+packages: 
+- name: aws_registry
+  version: 6
+  sha1: 2f182715df641ddea4403575226cd36c4a47caf2
+  fingerprint: f6c0025fa83bbf825ca5aa3280a330a2ac951b16
+  dependencies: 
+  - libpq
+  - ruby
+- name: blobstore
+  version: 4
+  sha1: ef4c8a04b85c27466bbe00055a28acecbb223dab
+  fingerprint: b5340284cd62fbf3b0a931e274518d33cb46bc60
+  dependencies: 
+  - ruby
+- name: common
+  version: 2
+  sha1: 39fd3b5bc3df89014b2ecb95e7c7b53a0958fcc7
+  fingerprint: e1fb92256bfb85d0c14e0a6a98ce7469c4a9a5c7
+  dependencies: []
+
+- name: director
+  version: 11
+  sha1: 8b3872b1c3bade63d42dd8040e0434441535ba0c
+  fingerprint: b0ed305758bd13e38ec7029a5026a3a72d58c32b
+  dependencies: 
+  - libpq
+  - ruby
+- name: genisoimage
+  version: 2
+  sha1: 87cb25d876244947e9fbbe07f4b76b1f77198f69
+  fingerprint: 365393ee6ceed42a8583c0833b10d9181b7dd4e8
+  dependencies: []
+
+- name: health_monitor
+  version: 5
+  sha1: fab2f0e7b816ac77550021891df2b7feeaeddfef
+  fingerprint: 609095b5e5a5615ac4bd801a481eef108ca90116
+  dependencies: 
+  - ruby
+- name: libpq
+  version: 2
+  sha1: e3a6b45f6edf01d6c91c37497ef83d19fa423b85
+  fingerprint: aeb5aa4c222cb0650018170172dd3ac19f00e57d
+  dependencies: []
+
+- name: nats
+  version: 3
+  sha1: 6d10b2db48af6ff5d61fcb30c59a478509c13b7a
+  fingerprint: c340f326f020a4cfbe89077242e1778df024799a
+  dependencies: 
+  - ruby
+- name: nginx
+  version: 2
+  sha1: 53be85357454956099cd4039c5c6f060ae0004e5
+  fingerprint: bee81d4f6740ce88acc1894f17dbd3b2fab7c2c1
+  dependencies: []
+
+- name: openstack_registry
+  version: 5
+  sha1: d511be2bc010f45406fa67e22f3c47bcf71342e7
+  fingerprint: cfc31c131059abdbd55c02fc9d877f6864e9d786
+  dependencies: 
+  - libpq
+  - ruby
+- name: postgres
+  version: 2
+  sha1: 59dff723a35967e7dc7065edaa157003f62a3849
+  fingerprint: d50272b289bc32c17c80fdb9f6471591a5adeb94
+  dependencies: []
+
+- name: powerdns
+  version: 2
+  sha1: 0f1593aa18d25aa47462df893f28d535cd113c13
+  fingerprint: bd74e8714b2f1eb2441294ab4ae4cc7e83b5a92c
+  dependencies: []
+
+- name: redis
+  version: 3
+  sha1: fc4fca0b62779a69f5e469527d9975a41ca0ab16
+  fingerprint: d7695c8e18071e71c4f21f92418580441c638442
+  dependencies: []
+
+- name: ruby
+  version: 3
+  sha1: f1af4c344e95af6dceee0a5fdc5fb2a1991ac844
+  fingerprint: da7c7d4f6e3b8c701265ca3ee6fdfb3955e298b1
+  dependencies: []
+
+jobs: 
+- name: aws_registry
+  version: 6
+  fingerprint: 15ada4da779e89fba18056683d3aad42630a5bf8
+  sha1: 01c3359491dd80c753960377fde3b2fb8e409718
+- name: blobstore
+  version: 3
+  fingerprint: b26048fd1490b32e64a74c8014df6cfa27300d68
+  sha1: 71b093b7c4f4494db23f805488f6ce08b5fcc44e
+- name: director
+  version: 11
+  fingerprint: 1f3ec928aa65f43de8d00045d37cb3e92f3be2bb
+  sha1: dc717cd17e0e86b48ae0453ccf73c4d4388cfdd1
+- name: health_monitor
+  version: 5
+  fingerprint: d763a4876ee67bdd91fab4292d16af571e123ac4
+  sha1: 4c9dd4c353bd8453d20620ed5962f9d9ee59bf00
+- name: micro_aws
+  version: 7
+  fingerprint: f705f2d59bcbaba8d78dd1edc07017c5aa3eb491
+  sha1: d6a66a2784ab7295a6739a2e2a5fa66d38d2fe12
+- name: micro_openstack
+  version: 5
+  fingerprint: 79a470748d088eb3405e9a3b2362ede34a7364ce
+  sha1: 76dfacd5ea661fce15425edb1e50b5daac9a76b6
+- name: micro_vcloud
+  version: 3
+  fingerprint: 8fcd3e0afa9d532679e9aee421f97d745e5f9f07
+  sha1: 1b0e9b066314e142ccff0c55555be2e54aa31f95
+- name: micro_vsphere
+  version: 7
+  fingerprint: 67dd1629893d8ac6eec6d8124c090d1ed439bd22
+  sha1: 32143cca4b2ec9f93b7d5bd05b3ab2d426be4fda
+- name: nats
+  version: 5
+  fingerprint: 3cd9e026df21fa386a39e63e05873d7441abe4ba
+  sha1: 0bd349b6d9d2a4b39e7f90e9d83a0102cd01d8b2
+- name: openstack_registry
+  version: 4
+  fingerprint: e9bda5d0d0bf349c85d2ea51d5019100400abce2
+  sha1: beeadc7f0d9bea0f4571a0eb3189c2ed12f5144d
+- name: postgres
+  version: 4
+  fingerprint: 865166dbf4a8d681cd132f950eb54ec9f47aad79
+  sha1: dcd03ed280252e56d23474ac4bc00d5ef8b1c7b8
+- name: powerdns
+  version: 3
+  fingerprint: f6c542f1a0998c3a1ab936677e99d6b321c60054
+  sha1: 2fc55e5bba193c52c87faab1b45c11f46018814f
+- name: redis
+  version: 3
+  fingerprint: 7dec0ebdbb3bb18a4f04c9df7a399415da1ed051
+  sha1: 1a23f591c2904c8c47cddaace7130d973e9bb875
+- name: utility
+  version: 8
+  fingerprint: 39029ddb5d9b17410d70ba92d2952dee3776c37e
+  sha1: 14c991a3230c37d5d3e26973058b1513383ee1cb
+name: bosh
+version: 13

@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require "cli"
+
+begin
+  Thread.abort_on_exception = true
+  Bosh::Cli::Runner.run(ARGV.dup)
+rescue Errno::EPIPE
+  puts("pipe closed, exiting...")
+  exit(0)
+rescue Interrupt
+  puts "\nExiting..."
+  exit(1)
+end

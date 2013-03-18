@@ -3,6 +3,8 @@
 module Bosh::Director
   class InstanceUpdater
     include DnsHelper
+    include MetadataHelper
+
     MAX_ATTACH_DISK_TRIES = 3
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
@@ -62,6 +64,9 @@ module Bosh::Director
       step { update_persistent_disk }
       step { update_networks }
       step { update_dns }
+
+      update_vm_metadata(@vm)
+
       step { apply_state(@instance.spec) }
 
       if @target_state == "started"
@@ -189,15 +194,20 @@ module Bosh::Director
       stemcell = @resource_pool_spec.stemcell
       disks = [@instance.model.persistent_disk_cid, new_disk_id].compact
 
-      @vm = VmCreator.new.create(@deployment_plan.model, stemcell.model,
-                                 @resource_pool_spec.cloud_properties,
-                                 @instance.network_settings, disks,
-                                 @resource_pool_spec.env)
+      @vm = VmCreator.create(@deployment_plan.model, stemcell.model,
+                             @resource_pool_spec.cloud_properties,
+                             @instance.network_settings, disks,
+                             @resource_pool_spec.env)
       @instance.model.vm = @vm
       @instance.model.save
 
-      # TODO: delete the VM if it wasn't saved
       agent.wait_until_ready
+    rescue => e
+      if @vm
+        @logger.err("error during create_vm(), deleting vm #{@vm.cid}")
+        delete_vm
+      end
+      raise e
     end
 
     def apply_state(state)
@@ -292,6 +302,8 @@ module Bosh::Director
         state["persistent_disk"] = @instance.disk_size
       end
 
+      # if we have a failure above the new VM doesn't get any state,
+      # which makes it impossible to recreate it
       apply_state(state)
       @instance.current_state = agent.get_state
     end

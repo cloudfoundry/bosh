@@ -11,29 +11,70 @@ require "common/exec"
 module BoshHelper
   include Archive::Tar
 
-  # TODO use BOSH_BIN ?
+  DEFAULT_POLL_INTERVAL = 1
+
   def bosh(arguments, options={})
-    command = "bosh --non-interactive #{arguments} 2>&1"
+    poll_interval = options[:poll_interval] || DEFAULT_POLL_INTERVAL
+    command = "#{bosh_bin} --non-interactive " +
+      "-P #{poll_interval} " +
+      "--config #{BH::bosh_cli_config_path} " +
+      "--user admin --password admin " +
+      "#{arguments} 2>&1"
     puts("--> #{command}") if debug?
     # TODO write to log
-    result = Bosh::Exec.sh(command, options)
+    begin
+      result = Bosh::Exec.sh(command, options)
+    rescue Bosh::Exec::Error => e
+      puts("Bosh command failed: #{e.output}")
+      raise
+    end
+    puts(result.output) if verbose?
     yield result if block_given?
     result
-  rescue Bosh::Exec::Error => e
-    msg = "failed to execute '#{command}':\n#{e.output}"
-    raise Bosh::Exec::Error.new(e.status, msg, e.output)
+  end
+
+  def self.bosh_cli_config_path
+    @bosh_cli_config_tempfile ||= Tempfile.new("bosh_config")
+    @bosh_cli_config_tempfile.path
+  end
+
+  def self.delete_bosh_cli_config
+    @bosh_cli_config_tempfile.delete if @bosh_cli_config_tempfile
+  end
+
+  def bosh_bin
+    BH.read_environment('BAT_BOSH_BIN', 'bundle exec bosh')
   end
 
   def bosh_director
-    read_environment('BAT_DIRECTOR')
+    BH.read_environment('BAT_DIRECTOR')
   end
 
   def password
-    read_environment('BAT_VCAP_PASSWORD')
+    BH.read_environment('BAT_VCAP_PASSWORD')
+  end
+
+  def private_key
+    ENV['BAT_VCAP_PRIVATE_KEY']
+  end
+
+  def ssh_options
+    {
+        private_key: private_key,
+        password: password
+    }
+  end
+
+  def bosh_dns_host
+    ENV['BAT_DNS_HOST']
   end
 
   def debug?
     ENV.has_key?('BAT_DEBUG')
+  end
+
+  def verbose?
+    ENV["BAT_DEBUG"] == "verbose"
   end
 
   def fast?
@@ -69,12 +110,23 @@ module BoshHelper
     info["cpi"] == "vsphere"
   end
 
+  def dns?
+    info["features"] && info["features"]["dns"]
+  end
 
-  def read_environment(variable)
-    if ENV[variable]
-      ENV[variable]
-    else
-      raise "#{variable} not set"
+  def bosh_tld
+    info["features"]["dns"]["extras"]["domain_name"] if dns?
+  end
+
+  def tasks_processing?
+    # `bosh tasks` exit code is 1 if no tasks running
+    bosh("tasks", :on_error => :return).output =~ /\| processing \|/
+  end
+
+  def self.read_environment(variable, default=nil)
+    ENV.fetch(variable) do |v|
+      return default if default
+      raise "#{v} not set"
     end
   end
 
@@ -106,13 +158,24 @@ module BoshHelper
     JSON.parse(body)
   end
 
-  def ssh(host, user, password, command)
+  def ssh(host, user, command, options = {})
+    options = options.dup
     output = nil
-    puts "--> ssh: vcap@#{host} '#{command}'" if debug?
-    Net::SSH.start(host, user, :password => password, :user_known_hosts_file => %w[/dev/null]) do |ssh|
+    puts "--> ssh: #{user}@#{host} '#{command}'" if debug?
+
+    private_key = options.delete(:private_key)
+    options[:user_known_hosts_file] = %w[/dev/null]
+    options[:keys] = [private_key] unless private_key.nil?
+
+    if options[:keys].nil? && options[:password].nil?
+      raise "need to set ssh :password, :keys, or :private_key"
+    end
+
+    Net::SSH.start(host, user, options) do |ssh|
       output = ssh.exec!(command)
     end
-    puts "--> ssh output: '#{output}'" if debug?
+
+    puts "--> ssh output: '#{output}'" if verbose?
     output
   end
 

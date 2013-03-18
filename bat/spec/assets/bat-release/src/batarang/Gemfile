@@ -1,0 +1,9 @@
+# Copyright (c) 2009-2012 VMware, Inc.
+
+source :rubygems
+
+gem "sinatra"
+gem "nats"
+gem "thin"
+gem "json"
+gem "bosh_common"

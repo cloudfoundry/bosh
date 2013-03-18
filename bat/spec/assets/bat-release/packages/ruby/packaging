@@ -1,0 +1,21 @@
+RUBY_VERSION=1.9.2-p320
+GEM_VERSION=1.8.24
+BUNDLER_VERSION=1.1.5
+
+set -e
+
+tar xzf ruby/ruby-${RUBY_VERSION}.tar.gz
+cd ruby-${RUBY_VERSION}
+./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc
+make
+make install
+
+cd ..
+
+tar zxvf ruby/rubygems-${GEM_VERSION}.tgz
+cd rubygems-${GEM_VERSION}
+${BOSH_INSTALL_TARGET}/bin/ruby setup.rb
+
+cd ..
+
+${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-${BUNDLER_VERSION}.gem --no-ri --no-rdoc

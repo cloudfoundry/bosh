@@ -1,0 +1,9 @@
+--- 
+final_name: bat
+min_cli_version: 1.0.3
+blobstore: 
+  provider: atmos
+  options: 
+    tag: BAT
+    uid: 0559221ba3f64d73a60dced2912c9e6b/user1
+    url: https://blob.cfblob.com

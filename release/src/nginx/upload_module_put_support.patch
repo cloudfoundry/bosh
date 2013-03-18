@@ -1,0 +1,12 @@
+diff -rupN nginx_upload_module-2.2.0/ngx_http_upload_module.c nginx_upload_module-2.2.0-mod/ngx_http_upload_module.c
+--- nginx_upload_module-2.2.0/ngx_http_upload_module.c	2010-09-27 11:54:15.000000000 -0700
++++ nginx_upload_module-2.2.0-mod/ngx_http_upload_module.c	2011-08-13 16:54:51.703564429 -0700
+@@ -688,7 +688,7 @@ ngx_http_upload_handler(ngx_http_request
+     ngx_http_upload_ctx_t     *u;
+     ngx_int_t                 rc;
+ 
+-    if (!(r->method & NGX_HTTP_POST))
++    if (!(r->method & (NGX_HTTP_POST | NGX_HTTP_PUT)))
+         return NGX_HTTP_NOT_ALLOWED;
+ 
+     ulcf = ngx_http_get_module_loc_conf(r, ngx_http_upload_module);

@@ -1,0 +1,31 @@
+---
+name: blobstore
+
+templates:
+  nginx_ctl:          bin/nginx_ctl
+  blobstore_ctl:      bin/blobstore_ctl
+  blobstore.yml.erb:  config/blobstore.yml
+  nginx.conf.erb:     config/nginx.conf
+  blobstore.conf.erb: config/sites/blobstore.conf
+  mime.types:         config/mime.types
+
+packages:
+  - blobstore
+  - nginx
+  - ruby
+
+properties:
+  blobstore.port:
+    description: TCP port blobstore server (ngnix) listens on
+    default: 25250
+  blobstore.backend_port:
+    description: TCP port backend blobstore server (simple blobstore) listens on
+    default: 25251
+  blobstore.director.user:
+    description: Username director must use to access blobstore via HTTP Basic
+  blobstore.director.password:
+    description: Password director must use to access blobstore via HTTP Basic
+  blobstore.agent.user:
+    description: Username agents must use to access blobstore via HTTP Basic
+  blobstore.agent.password:
+    description: Password agents must use to access blobstore via HTTP Basic

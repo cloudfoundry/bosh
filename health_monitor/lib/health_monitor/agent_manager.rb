@@ -32,6 +32,10 @@ module Bosh::HealthMonitor
         plugin_class = Bhm::Plugins::Nats
       when "tsdb"
         plugin_class = Bhm::Plugins::Tsdb
+      when "varz"
+        plugin_class = Bhm::Plugins::Varz
+      when "cloud_watch"
+        plugin_class = Bhm::Plugins::CloudWatch
       else
         raise PluginError, "Cannot find `#{name}' plugin"
       end

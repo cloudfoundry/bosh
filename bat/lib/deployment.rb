@@ -21,7 +21,7 @@ class Deployment
 
   def delete
     puts "<-- rm #@path" if debug?
-    FileUtils.rm_rf(File.dirname(to_path))
+    FileUtils.rm_rf(File.dirname(to_path)) unless keep?
   end
 
   def generate_deployment_manifest(spec)
@@ -52,5 +52,9 @@ class Deployment
   private
   def debug?
     ENV['BAT_DEBUG'] == "verbose"
+  end
+
+  def keep?
+    ENV['BAT_MANIFEST'] == "keep"
   end
 end

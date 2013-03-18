@@ -14,15 +14,6 @@
 # irb(main):003:0> bsc.delete(oid)
 # => true
 
-gemfile = File.expand_path("../../Gemfile", __FILE__)
-
-if File.exists?(gemfile)
-  ENV["BUNDLE_GEMFILE"] = gemfile
-  require "rubygems"
-  require "bundler/setup"
-end
-
-$:.unshift(File.expand_path("../../lib", __FILE__))
 require "blobstore_client"
 require "irb"
 require "irb/completion"

@@ -1,0 +1,11 @@
+<Disk xmlns="http://www.vmware.com/vcloud/v1.5" size="#{INDY_DISK_SIZE * 1000000}" busType="6" busSubType="lsilogic" status="1" name="%s" id="urn:vcloud:disk:%s" type="application/vnd.vmware.vcloud.disk+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+    <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/7152945d-1041-4c08-9423-23b32c9be1f4"/>
+    <Link rel="remove" href="%s/api/disk/%s"/>
+    <Link rel="edit" type="application/vnd.vmware.vcloud.disk+xml" href="%s/api/disk/%s"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/disk/%s/owner"/>
+    <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/disk/%s/metadata"/>
+    <StorageClass type="application/vnd.vmware.vcloud.vdcStorageClass+xml" name="*" href="%s/api/vdcStorageClass/8fe92f5a-efb7-456e-af78-54a120c9cf8f"/>
+    <Owner type="application/vnd.vmware.vcloud.owner+xml">
+        <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/61150fcf-1eda-4cd3-a8a5-e51717a2806d"/>
+    </Owner>
+</Disk>

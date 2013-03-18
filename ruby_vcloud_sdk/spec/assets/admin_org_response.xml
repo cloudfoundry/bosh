@@ -1,0 +1,75 @@
+        <AdminOrg xmlns="http://www.vmware.com/vcloud/v1.5" name="%s" id="urn:vcloud:org:b689c06e-1de0-4fd1-a5a3-050c479546ac" type="application/vnd.vmware.admin.organization+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+            <Link rel="down" type="application/vnd.vmware.vcloud.tasksList+xml" href="%s/api/tasksList/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/metadata"/>
+            <Link rel="add" type="application/vnd.vmware.admin.catalog+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/catalogs"/>
+            <Link rel="add" type="application/vnd.vmware.admin.user+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/users"/>
+            <Link rel="add" type="application/vnd.vmware.admin.group+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/groups"/>
+            <Link rel="add" type="application/vnd.vmware.admin.orgNetwork+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/networks"/>
+            <Link rel="edit" type="application/vnd.vmware.admin.organization+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Link rel="remove" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Link rel="alternate" type="application/vnd.vmware.vcloud.org+xml" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Description/>
+            <FullName>%s</FullName>
+            <IsEnabled>true</IsEnabled>
+            <Settings type="application/vnd.vmware.admin.orgSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings">
+                <Link rel="down" type="application/vnd.vmware.admin.vAppTemplateLeaseSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/vAppTemplateLeaseSettings"/>
+                <Link rel="down" type="application/vnd.vmware.admin.organizationEmailSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/email"/>
+                <Link rel="down" type="application/vnd.vmware.admin.vAppLeaseSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/vAppLeaseSettings"/>
+                <Link rel="down" type="application/vnd.vmware.admin.organizationPasswordPolicySettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/passwordPolicy"/>
+                <Link rel="down" type="application/vnd.vmware.admin.organizationGeneralSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/general"/>
+                <Link rel="down" type="application/vnd.vmware.admin.organizationLdapSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/ldap"/>
+                <Link rel="edit" type="application/vnd.vmware.admin.orgSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings"/>
+                <OrgGeneralSettings type="application/vnd.vmware.admin.organizationGeneralSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/general">
+                    <Link rel="edit" type="application/vnd.vmware.admin.organizationGeneralSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/general"/>
+                    <CanPublishCatalogs>false</CanPublishCatalogs>
+                    <DeployedVMQuota>0</DeployedVMQuota>
+                    <StoredVmQuota>0</StoredVmQuota>
+                    <UseServerBootSequence>false</UseServerBootSequence>
+                    <DelayAfterPowerOnSeconds>0</DelayAfterPowerOnSeconds>
+                </OrgGeneralSettings>
+                <VAppLeaseSettings type="application/vnd.vmware.admin.vAppLeaseSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/vAppLeaseSettings">
+                    <Link rel="edit" type="application/vnd.vmware.admin.vAppLeaseSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/vAppLeaseSettings"/>
+                    <DeleteOnStorageLeaseExpiration>false</DeleteOnStorageLeaseExpiration>
+                    <DeploymentLeaseSeconds>604800</DeploymentLeaseSeconds>
+                    <StorageLeaseSeconds>2592000</StorageLeaseSeconds>
+                </VAppLeaseSettings>
+                <VAppTemplateLeaseSettings type="application/vnd.vmware.admin.vAppTemplateLeaseSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/vAppTemplateLeaseSettings">
+                    <Link rel="edit" type="application/vnd.vmware.admin.vAppTemplateLeaseSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/vAppTemplateLeaseSettings"/>
+                    <DeleteOnStorageLeaseExpiration>false</DeleteOnStorageLeaseExpiration>
+                    <StorageLeaseSeconds>7776000</StorageLeaseSeconds>
+                </VAppTemplateLeaseSettings>
+                <OrgLdapSettings type="application/vnd.vmware.admin.organizationLdapSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/ldap">
+                    <OrgLdapMode>NONE</OrgLdapMode>
+                </OrgLdapSettings>
+                <OrgEmailSettings type="application/vnd.vmware.admin.organizationEmailSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/email">
+                    <Link rel="edit" type="application/vnd.vmware.admin.organizationEmailSettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/email"/>
+                    <IsDefaultSmtpServer>true</IsDefaultSmtpServer>
+                    <IsDefaultOrgEmail>true</IsDefaultOrgEmail>
+                    <FromEmailAddress/>
+                    <DefaultSubjectPrefix/>
+                    <IsAlertEmailToAllAdmins>true</IsAlertEmailToAllAdmins>
+                    <SmtpServerSettings>
+                        <IsUseAuthentication>false</IsUseAuthentication>
+                        <Host/>
+                        <Username/>
+                    </SmtpServerSettings>
+                </OrgEmailSettings>
+                <OrgPasswordPolicySettings type="application/vnd.vmware.admin.organizationPasswordPolicySettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/passwordPolicy">
+                    <Link rel="edit" type="application/vnd.vmware.admin.organizationPasswordPolicySettings+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac/settings/passwordPolicy"/>
+                    <AccountLockoutEnabled>false</AccountLockoutEnabled>
+                    <InvalidLoginsBeforeLockout>5</InvalidLoginsBeforeLockout>
+                    <AccountLockoutIntervalMinutes>10</AccountLockoutIntervalMinutes>
+                </OrgPasswordPolicySettings>
+            </Settings>
+            <Users>
+                <UserReference type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            </Users>
+            <Groups/>
+            <Catalogs>
+                <CatalogReference type="application/vnd.vmware.admin.catalog+xml" name="%s" href="%s/api/admin/catalog/%s"/>
+            </Catalogs>
+            <Vdcs>
+                <Vdc type="application/vnd.vmware.vcloud.vdc+xml" name="%s" href="%s/api/vdc/%s"/>
+            </Vdcs>
+            <Networks/>
+        </AdminOrg>

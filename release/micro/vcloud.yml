@@ -1,0 +1,58 @@
+---
+deployment: micro
+release:
+  name: micro
+  version: 9
+configuration_hash: {}
+properties:
+  micro: true
+  domain: vcap.me
+  env:
+  networks:
+    apps: local
+    management: local
+  nats:
+    user: nats
+    password: nats
+    address: 127.0.0.1
+    port: 4222
+  redis:
+    address: 127.0.0.1
+    port: 25255
+    password: redis
+  postgres:
+    user: postgres
+    password: postgres
+    address: 127.0.0.1
+    port: 5432
+    database: bosh
+  blobstore:
+    address: 127.0.0.1
+    backend_port: 25251
+    port: 25250
+    director:
+      user: director
+      password: director
+    agent:
+      user: agent
+      password: agent
+  director:
+    address: 127.0.0.1
+    name: micro
+    port: 25555
+  hm:
+    http:
+      port: 25923
+      user: hm
+      password: hm
+    loglevel: info
+    director_account:
+      user: admin
+      password: admin
+    intervals:
+      poll_director: 60
+      poll_grace_period: 30
+      log_stats: 300
+      analyze_agents: 60
+      agent_timeout: 180
+      rogue_agent_alert: 180

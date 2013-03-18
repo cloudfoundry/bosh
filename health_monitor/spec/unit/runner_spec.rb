@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bhm::Runner do
 
   it "reads provided configuration file and sets Bhm singletons" do
-    runner = Bhm::Runner.new(spec_asset("sample_config.yml"))
+    runner = Bhm::Runner.new(sample_config)
 
     Bhm.logger.should be_kind_of(Logging::Logger)
     Bhm.director.should be_kind_of(Bhm::Director)
@@ -16,7 +16,7 @@ describe Bhm::Runner do
     Bhm.mbus.user.should be_nil
     Bhm.mbus.password.should be_nil
 
-    Bhm.plugins.size.should == 4
+    Bhm.plugins.size.should == 6
 
   end
 

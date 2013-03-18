@@ -16,11 +16,15 @@ db:
   max_connections: 32
   pool_timeout: 10
 blobstore:
-  plugin: simple
-  properties:
+  provider: simple
+  options:
     endpoint: http://127.0.0.1
     user: admin
     password:
+compiled_package_cache:
+  provider: local
+  options:
+    blobstore_path: /path/to/some/bucket
 
 cloud:
   plugin: dummy

@@ -34,7 +34,7 @@ module Bosh::Director
       end
     end
 
-    def wait_until_ready(deadline = 300)
+    def wait_until_ready(deadline = 600)
       old_timeout = @timeout
       @timeout = 1.0
       @deadline = Time.now.to_i + deadline

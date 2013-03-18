@@ -1,0 +1,3 @@
+== 0.0.3 - 11/28/12
+* fix "NoMethodError: undefined method `close_connections' for nil:NilClass"
+  that masked a real SoapException

@@ -42,14 +42,15 @@ require "director/errors"
 require "director/ext"
 require "director/ip_util"
 require "director/lock_helper"
+require "director/metadata_helper"
 require "director/validation_helper"
 
 require "director/version"
 require "director/config"
 require "director/event_log"
 require "director/task_result_file"
-require "director/blob_util"
 require "director/version_calc"
+require "director/blob_util"
 
 require "director/client"
 require "director/agent_client"
@@ -98,6 +99,8 @@ require "director/jobs/cloud_check/scan"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
 
+require "director/models/helpers/model_helper"
+
 module Bosh::Director
   autoload :Models, "director/models"
 
@@ -108,38 +111,12 @@ module Bosh::Director
     end
   end
 
-  class Controller
+  class ApiController < Sinatra::Base
     PUBLIC_URLS = ["/info"]
 
-    def call(env)
-      api_controller = ApiController.new
-
-      if perform_auth?(env)
-        app = Rack::Auth::Basic.new(api_controller) do |user, password|
-          api_controller.authenticate(user, password)
-        end
-
-        app.realm = "BOSH Director"
-      else
-        app = api_controller
-      end
-
-      status, headers, body = app.call(env)
-      headers["Date"] = Time.now.rfc822 # As thin doesn't inject date
-
-      [ status, headers, body ]
-    end
-
-    def perform_auth?(env)
-      auth_needed   = !PUBLIC_URLS.include?(env["PATH_INFO"])
-      auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect{ |key| env.has_key?(key) }
-      auth_needed || auth_provided
-    end
-  end
-
-  class ApiController < Sinatra::Base
     include Api::ApiHelper
     include Api::Http
+    include DnsHelper
 
     def initialize
       super
@@ -188,7 +165,29 @@ module Bosh::Director
         (task.state == "processing" || task.state == "cancelling") &&
           (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
       end
+
+      def protected!
+        unless authorized?
+          response['WWW-Authenticate'] = %(Basic realm="BOSH Director")
+          throw(:halt, [401, "Not authorized\n"])
+        end
+      end
+
+      def authorized?
+        @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+        @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
+      end
     end
+
+    before do
+      auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
+        request.env.has_key?(key)
+      end
+
+      protected! if auth_provided || !PUBLIC_URLS.include?(request.path_info)
+    end
+
+    after { headers("Date" => Time.now.rfc822) } # As thin doesn't inject date
 
     configure do
       set(:show_exceptions, false)
@@ -354,11 +353,19 @@ module Bosh::Director
     end
 
     get "/deployments" do
-      deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
-        {
-          "name" => deployment.name
+      deployments = Models::Deployment.order_by(:name.asc).map { |deployment|
+        name = deployment.name
+
+        releases = deployment.release_versions.map { |rv|
+          Hash["name", rv.release.name, "version", rv.version.to_s]
         }
-      end
+
+        stemcells = deployment.stemcells.map { |sc|
+          Hash["name", sc.name, "version", sc.version]
+        }
+
+        Hash["name", name, "releases", releases, "stemcells", stemcells]
+      }
 
       json_encode(deployments)
     end
@@ -409,8 +416,10 @@ module Bosh::Director
 
     delete "/stemcells/:name/:version" do
       name, version = params[:name], params[:version]
+      options = {}
+      options["force"] = true if params["force"] == "true"
       stemcell = @stemcell_manager.find_by_name_and_version(name, version)
-      task = @stemcell_manager.delete_stemcell(@user, stemcell)
+      task = @stemcell_manager.delete_stemcell(@user, stemcell, options)
       redirect "/tasks/#{task.id}"
     end
 
@@ -637,7 +646,15 @@ module Bosh::Director
         "version"  => "#{VERSION} (#{Config.revision})",
         "user"     => @user,
         "cpi"      => Config.cloud_type,
-        "features" => {"dns" => !!Config.dns}
+        "features" => {
+          "dns" => {
+            "status" => Config.dns_enabled?,
+            "extras" => { "domain_name" => dns_domain_name }
+          },
+          "compiled_package_cache" => {
+            "status" => Config.use_compiled_package_cache?
+          }
+        }
       }
       content_type(:json)
       json_encode(status)

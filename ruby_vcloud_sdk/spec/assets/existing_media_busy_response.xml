@@ -1,0 +1,19 @@
+        <Media xmlns="http://www.vmware.com/vcloud/v1.5" size="833536" imageType="iso" status="0" name="%s" id="urn:vcloud:media:%s" type="application/vnd.vmware.vcloud.media+xml" href="%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 http://10.20.46.172/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.vcloud.vdc+xml" href="%s/api/vdc/a974dae0-d10c-4f7c-9f4f-4bdaf7826a3a"/>
+            <Tasks>
+                <Task status="running" startTime="2011-09-22T13:12:25.343-07:00" operationName="vdcUploadMedia" operation="Finalizing upload of Media File %s(%s)" expiryTime="2011-12-21T13:12:25.343-08:00" name="task" id="urn:vcloud:task:025615cd-a591-4dec-89dc-331b322a3a75" type="application/vnd.vmware.vcloud.task+xml" href="%s/api/task/025615cd-a591-4dec-89dc-331b322a3a75">
+                    <Link rel="task:cancel" href="%s/api/task/025615cd-a591-4dec-89dc-331b322a3a75/action/cancel"/>
+                    <Owner type="application/vnd.vmware.vcloud.media+xml" name="%s" href="%s/api/media/%s"/>
+                    <User type="application/vnd.vmware.admin.user+xml" name="vcap" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+                    <Organization type="application/vnd.vmware.vcloud.org+xml" name="vcap" href="%s/api/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+                </Task>
+            </Tasks>
+            <Files>
+                <File size="833536" bytesTransferred="833536" name="file">
+                    <Link rel="upload:default" href="%s/transfer/2aebe7a1-e297-439d-83ac-dc66db6fc3ff/file"/>
+                </File>
+            </Files>
+            <Owner type="application/vnd.vmware.vcloud.owner+xml">
+                <User type="application/vnd.vmware.admin.user+xml" name="%s" href="%s/api/admin/user/42cbe98d-48da-4f5d-944e-596843a9fcb5"/>
+            </Owner>
+        </Media>

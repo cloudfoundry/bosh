@@ -1,0 +1,3 @@
+<ns7:MetadataValue xmlns="http://www.vmware.com/vcloud/extension/v1" xmlns:ns7="http://www.vmware.com/vcloud/v1.5">
+  <ns7:Value>%s</ns7:Value>
+</ns7:MetadataValue>

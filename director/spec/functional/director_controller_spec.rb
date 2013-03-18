@@ -4,7 +4,7 @@ require File.expand_path("../../spec_helper", __FILE__)
 
 require "rack/test"
 
-describe Bosh::Director::Controller do
+describe Bosh::Director::ApiController do
   include Rack::Test::Methods
 
   before(:each) do
@@ -16,8 +16,8 @@ describe Bosh::Director::Controller do
     test_config = YAML.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     test_config["blobstore"] = {
-        "plugin" => "local",
-        "properties" => {"blobstore_path" => @blobstore_dir}
+        "provider" => "local",
+        "options" => {"blobstore_path" => @blobstore_dir}
     }
     BD::Config.configure(test_config)
   end
@@ -27,7 +27,7 @@ describe Bosh::Director::Controller do
   end
 
   def app
-    @app ||= Bosh::Director::Controller.new
+    @app ||= Bosh::Director::ApiController.new
   end
 
   def login_as_admin
@@ -57,6 +57,11 @@ describe Bosh::Director::Controller do
     last_response.status.should == 401
   end
 
+  it "sets the date header" do
+    get "/"
+    last_response.headers['Date'].should_not be_nil
+  end
+
   it "allows Basic HTTP Auth with admin/admin credentials for " +
      "test purposes (even though user doesn't exist)" do
     basic_authorize "admin", "admin"
@@ -82,7 +87,15 @@ describe Bosh::Director::Controller do
           "uuid" => BD::Config.uuid,
           "user" => "admin",
           "cpi"  => "dummy",
-          "features" => {"dns" => false}
+          "features" => {
+            "dns" => {
+              "status" => true,
+              "extras" => { "domain_name" => "bosh" }
+            },
+            "compiled_package_cache" => {
+                "status" => true
+            }
+          }
       }
 
       Yajl::Parser.parse(last_response.body).should == expected
@@ -247,7 +260,7 @@ describe Bosh::Director::Controller do
            e.versions.map { |v| v.version.to_s }.join(" "),
            e.versions_dataset.order_by(:version.asc).reject { |rv|
              rv.deployments.empty?
-           }.map { |rv| rv.version }.join(" ")
+           }.map { |rv| rv.version.to_s }.join(" ")
           ]
         end
 
@@ -265,23 +278,44 @@ describe Bosh::Director::Controller do
 
     describe "listing deployments" do
       it "has API call that returns a list of deployments in JSON" do
-        deployments = (1..10).map do |i|
-          BD::Models::Deployment.create(:name => "deployment-#{i}")
-        end
+        num_dummies = Random.new.rand(3..7)
+        stemcells = (1..num_dummies).map { |i|
+          BD::Models::Stemcell.create(
+            :name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
+        }
+        releases = (1..num_dummies).map { |i|
+          release = BD::Models::Release.create(:name => "release-#{i}")
+          BD::Models::ReleaseVersion.create(:release => release, :version => i)
+          release
+        }
+        deployments = (1..num_dummies).map { |i|
+          d = BD::Models::Deployment.create(:name => "deployment-#{i}")
+          (0..rand(num_dummies)).each do |v|
+            d.add_stemcell(stemcells[v])
+            d.add_release_version(releases[v].versions.sample)
+          end
+          d
+        }
 
         get "/deployments", {}, {}
         last_response.status.should == 200
 
         body = Yajl::Parser.parse(last_response.body)
         body.kind_of?(Array).should be_true
-        body.size.should == 10
+        body.size.should == num_dummies
 
-        response_collection = body.map { |e| [e["name"]] }
-        expected_collection = deployments.sort_by { |e| e.name }.map do |e|
-          [e.name.to_s]
-        end
+        expected_collection = deployments.sort_by { |e| e.name }.map { |e|
+          name = e.name
+          releases = e.release_versions.map { |rv|
+            Hash["name", rv.release.name, "version", rv.version.to_s]
+          }
+          stemcells = e.stemcells.map { |sc|
+            Hash["name", sc.name, "version", sc.version]
+          }
+          Hash["name", name, "releases", releases, "stemcells", stemcells]
+        }
 
-        response_collection.should == expected_collection
+        body.should == expected_collection
       end
     end
 
@@ -551,25 +585,6 @@ describe Bosh::Director::Controller do
         get "/resources/#{id}"
         last_response.status.should == 200
         last_response.body.should == "some data"
-      end
-
-      it "cleans up temp file after serving it" do
-        tmp_file = File.join(Dir.tmpdir,
-            "resource-#{UUIDTools::UUID.random_create}")
-
-        File.open(tmp_file, "w") do |f|
-          f.write("some data")
-        end
-
-        FileUtils.touch(tmp_file)
-        manager = mock("manager")
-        BD::Api::ResourceManager.stub!(:new).and_return(manager)
-        manager.stub!(:get_resource_path).with("deadbeef").and_return(tmp_file)
-
-        File.exists?(tmp_file).should be_true
-        get "/resources/deadbeef"
-        last_response.body.should == "some data"
-        File.exists?(tmp_file).should be_false
       end
     end
 

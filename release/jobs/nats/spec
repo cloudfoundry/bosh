@@ -1,0 +1,44 @@
+---
+name: nats
+
+templates:
+  nats_ctl.erb: bin/nats_ctl
+  nats.yml.erb: config/nats.yml
+
+packages:
+  - nats
+  - ruby
+
+properties:
+  nats.listen_address:
+    description: IP address nats mbus listens on
+    default: 0.0.0.0
+  nats.port:
+    description: TCP port nats mbus listens on
+    default: 4222
+  nats.no_epoll:
+    description: Disable epoll (Linux)
+    default: false
+  nats.no_kqueue:
+    description: Disable kqueue (MacOSX and BSD)
+    default: true
+  nats.ping_interval:
+    description: Time interval (in seconds) pings from server
+    default: 5
+  nats.ping_max_outstanding:
+    description: Maximum number of pings before declaring a client unresponsive
+    default: 2
+  nats.user:
+    description: Username clients must use to access nats mbus
+  nats.password:
+    description: Password clients must use to access nats mbus
+  nats.auth_timeout:
+    description: Timeout (in seconds) for clients to send auth credentials
+    default: 1
+  nats.http.port:
+    description: TCP port NATS listens on for HTTP connections (optional)
+    default: 9222
+  nats.http.user:
+    description: Username clients must use to access nats mbus via HTTP connection (optional)
+  nats.http.password:
+    description: Password clients must use to access nats mbus via HTTP connection (optional)

@@ -3,6 +3,7 @@
 require "atmos"
 require "uri"
 require "multi_json"
+require "httpclient"
 
 module Bosh
   module Blobstore
@@ -29,7 +30,10 @@ module Bosh
         @atmos ||= Atmos::Store.new(@atmos_options)
       end
 
-      def create_file(file)
+      protected
+
+      def create_file(id, file)
+        raise BlobstoreError, 'Atmos does not support supplying the object id' if id
         obj_conf = {:data => file, :length => File.size(file.path)}
         obj_conf[:listable_metadata] = {@tag => true} if @tag
         object_id = atmos_server.create(obj_conf).aoid
@@ -55,12 +59,16 @@ module Bosh
         end
       end
 
-      def delete(object_id)
+      def delete_object(object_id)
         object_info = decode_object_id(object_id)
         oid = object_info["oid"]
         atmos_server.get(:id => oid).delete
       rescue Atmos::Exceptions::NoSuchObjectException => e
         raise NotFound, "Atmos object '#{object_id}' not found"
+      end
+
+      def object_exists?(object_id)
+        atmos_server.get(:id => object_id).exists?
       end
 
       private
@@ -69,8 +77,7 @@ module Bosh
         begin
           object_info = MultiJson.decode(Base64.decode64(URI::unescape(object_id)))
         rescue MultiJson::DecodeError => e
-          raise BlobstoreError, "Failed to parse object_id. " +
-            "Please try updating the release"
+          raise BlobstoreError, 'Failed to parse object_id. Please try updating the release'
         end
 
         if !object_info.kind_of?(Hash) || object_info["oid"].nil? ||
@@ -81,8 +88,7 @@ module Bosh
       end
 
       def encode_object_id(object_id)
-        hash_string = "GET" + "\n" + "/rest/objects/" + object_id + "\n" +
-                      @atmos_options[:uid] + "\n" + SHARE_URL_EXP
+        hash_string = "GET\n/rest/objects/#{object_id}\n#{@atmos_options[:uid]}\n#{SHARE_URL_EXP}"
         secret = Base64.decode64(@atmos_options[:secret])
         sig = HMAC::SHA1.digest(secret, hash_string)
         signature = Base64.encode64(sig.to_s).chomp

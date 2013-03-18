@@ -1,7 +1,0 @@
----
-bosh:
-  uri: git@github.com:cloudfoundry/bosh.git
-  roles:
-  - blobstore
-  - director
-  - health_monitor

@@ -37,7 +37,7 @@ module Bosh::Director
     end
 
     # build a list of dns servers to use
-    def dns_servers(network, spec)
+    def dns_servers(network, spec, add_default_dns = true)
       servers = nil
       dns_property = safe_property(spec, "dns",
                                    :class => Array, :optional => true)
@@ -53,7 +53,37 @@ module Bosh::Director
         end
       end
 
+      return servers unless add_default_dns
+
+      add_default_dns_server(servers)
+    end
+
+    # returns the default DNS server
+    def default_dns_server
+      Config.dns["server"] if Config.dns
+    end
+
+    # add default dns server to an array of dns servers
+    def add_default_dns_server(servers)
+      return servers unless Config.dns_enabled?
+
+      default_server = default_dns_server
+      if default_server && default_server != "127.0.0.1"
+        (servers ||= []) << default_server
+        servers.uniq!
+      end
+
       servers
+    end
+
+    # returns the DNS domain name
+    def dns_domain_name
+      Config.dns_domain_name
+    end
+
+    # returns the DNS name server record
+    def dns_ns_record
+      "ns.#{dns_domain_name}"
     end
 
     # create/update DNS A record
@@ -73,7 +103,7 @@ module Bosh::Director
     # create/update DNS PTR records (for reverse lookups)
     def update_dns_ptr_record(name, ip_address)
       reverse = reverse_domain(ip_address)
-      rdomain = Models::Dns::Domain.find_or_create(:name => reverse,
+      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse,
                                                    :type => "NATIVE")
       Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
                                          :name => reverse,
@@ -83,7 +113,7 @@ module Bosh::Director
       Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
                                          :name => reverse,
                                          :type =>'NS', :ttl => TTL_4H,
-                                         :content => "ns.bosh")
+                                         :content => dns_ns_record)
 
       record = Models::Dns::Record.find(:content => name, :type =>'PTR')
 

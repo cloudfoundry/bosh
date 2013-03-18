@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Blobstore::Client do
 
@@ -37,7 +37,7 @@ describe Bosh::Blobstore::Client do
 
   it "should raise an exception on an unknown client" do
     lambda {
-      bs = Bosh::Blobstore::Client.create('foobar', {})
+      Bosh::Blobstore::Client.create('foobar', {})
     }.should raise_error /^Invalid client provider/
   end
 

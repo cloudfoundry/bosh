@@ -1,0 +1,19 @@
+        <?xml version="1.0" encoding="UTF-8"?>
+        <AdminCatalog xmlns="http://www.vmware.com/vcloud/v1.5" name="%s" id="urn:vcloud:catalog:%s" type="application/vnd.vmware.admin.catalog+xml" href="%s/api/admin/catalog/%s" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vmware.com/vcloud/v1.5 %s/api/v1.5/schema/master.xsd">
+            <Link rel="up" type="application/vnd.vmware.admin.organization+xml" href="%s/api/admin/org/b689c06e-1de0-4fd1-a5a3-050c479546ac"/>
+            <Link rel="alternate" type="application/vnd.vmware.vcloud.catalog+xml" href="%s/api/catalog/%s"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.owner+xml" href="%s/api/admin/catalog/%s/owner"/>
+            <Link rel="add" type="application/vnd.vmware.vcloud.catalogItem+xml" href="%s"/>
+            <Link rel="edit" type="application/vnd.vmware.admin.catalog+xml" href="%s/api/admin/catalog/%s"/>
+            <Link rel="remove" href="%s/api/admin/catalog/%s"/>
+            <Link rel="down" type="application/vnd.vmware.vcloud.metadata+xml" href="%s/api/catalog/%s/metadata"/>
+            <Description/>
+            <Owner type="application/vnd.vmware.vcloud.owner+xml">
+                <User type="application/vnd.vmware.admin.user+xml" name="system" href="%s/api/admin/user/b95dbfb2-c864-4263-ac02-149a093939c0"/>
+            </Owner>
+            <CatalogItems>
+                <CatalogItem type="application/vnd.vmware.vcloud.catalogItem+xml" name="%s" href="%s/api/catalogItem/%s"/>
+                <CatalogItem type="application/vnd.vmware.vcloud.catalogItem+xml" name="%s" href="%s">
+            </CatalogItems>
+            <IsPublished>false</IsPublished>
+        </AdminCatalog>
