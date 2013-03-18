@@ -88,18 +88,17 @@ This is a sample of how OpenStack specific properties are used in a BOSH deploym
       - name: static
         type: manual
         subnets:
-          - range: 10.0.1.0/24
+          - name: private
+            range: 10.0.1.0/24
+            gateway: 10.0.1.1
             reserved:
-              - 10.0.0.2 - 10.0.0.9
+              - 10.0.1.2 - 10.0.1.9
             static:
-              - 10.0.0.10 - 10.0.0.30
-            gateway: 10.0.0.1
-            dns:
-              - 10.0.0.3
-        cloud_properties:
-          security_groups:
-            - default
-          net_id: 8d8b84b4-faa6-4605-9fbf-c179bdae4282
+              - 10.0.1.10 - 10.0.1.20
+            cloud_properties:
+              security_groups:
+                - default
+              net_id: 8d8b84b4-faa6-4605-9fbf-c179bdae4282
       - name: floating
         type: vip
         cloud_properties: {}
