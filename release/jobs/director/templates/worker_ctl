@@ -7,7 +7,7 @@ LOG_DIR=/var/vcap/sys/log/director
 PIDFILE=$RUN_DIR/worker_$INDEX.pid
 RUNAS=vcap
 
-PATH=/var/vcap/packages/ruby/bin:/var/vcap/packages/genisoimage:$PATH
+PATH=/var/vcap/packages/ruby/bin:/var/vcap/packages/cdrtools/bin:$PATH
 PATH=$PATH:/var/vcap/jobs/director/bin
 export PATH
 

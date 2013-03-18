@@ -1,14 +1,21 @@
+#!/bin/sh
 set -e
 
 echo "Extracting PowerDNS archive ..."
 
-mkdir -p target
-
-dpkg -x powerdns/pdns-static_3.0.1-1_amd64.deb target
+echo "Extracting PowerDNS ..."
+tar xzvf powerdns/pdns-3.2.tar.gz
 
 if [[ $? != 0 ]] ; then
   echo "Cannot unpack PowerDNS"
   exit 1
 fi
 
-cp -a target/usr/sbin/pdns_server ${BOSH_INSTALL_TARGET}
+echo "Building PowerDNS ..."
+cd pdns-3.2
+./configure --prefix=${BOSH_INSTALL_TARGET}
+make
+make install
+
+# Create symlink to actual thing
+ln -s ${BOSH_INSTALL_TARGET}/sbin/pdns_server ${BOSH_INSTALL_TARGET}/pdns_server
