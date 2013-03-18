@@ -240,21 +240,56 @@ describe Bosh::Cli::Command::Base do
       @cmd.delete("foo")
     end
 
-    it "lists releases" do
-      @cmd.stub(:nl)
-      release =
-          {"name" => "release-1",
-           "release_versions" => [
-               {"version" => "2.1-dev", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => true},
-               {"version" => "15", "commit_hash" => "1a2b3c4d", "uncommitted_changes" => true, "currently_deployed" => false},
-               {"version" => "2", "commit_hash" => "00000000", "uncommitted_changes" => true, "currently_deployed" => false},
-               {"version" => "1", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => false}
-           ]
+    describe "listing releases" do
+      before do
+        @cmd.stub :nl
+      end
+
+      context "when the director doesn't include commit hash information (version < 1.5)" do
+        let(:release) do
+          {
+              "name" => "release-1",
+              "versions" => ["2.1-dev", "15", "2", "1"],
+              "in_use" => ["2.1-dev"]
           }
+        end
 
-      @director.should_receive(:list_releases).and_return([release])
+        let(:releases_table) do
+          <<-OUT.gsub(/^\s*/, '').chomp
+      +-----------+--------------------+
+      | Name      | Versions           |
+      +-----------+--------------------+
+      | release-1 | 1, 2, 2.1-dev*, 15 |
+      +-----------+--------------------+
+          OUT
+        end
 
-      releases_table = <<-OUT.gsub(/^\s*/, '').chomp
+        it "lists releases in a nice table and include information about current deployments" do
+          @director.stub(list_releases: [release])
+
+          @cmd.should_receive(:say).with(releases_table)
+          @cmd.should_receive(:say).with("(*) Currently deployed")
+          @cmd.should_receive(:say).with("Releases total: 1")
+
+          @cmd.list
+        end
+      end
+
+      context "when the director includes commit hash information (version >= 1.5)" do
+        let(:release) do
+          {
+              "name" => "release-1",
+              "release_versions" => [
+                  {"version" => "2.1-dev", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => true},
+                  {"version" => "15", "commit_hash" => "1a2b3c4d", "uncommitted_changes" => true, "currently_deployed" => false},
+                  {"version" => "2", "commit_hash" => "00000000", "uncommitted_changes" => true, "currently_deployed" => false},
+                  {"version" => "1", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => false}
+              ]
+          }
+        end
+
+        let(:releases_table) do
+          <<-OUT.gsub(/^\s*/, '').chomp
       +-----------+----------+-------------+
       | Name      | Versions | Commit Hash |
       +-----------+----------+-------------+
@@ -263,14 +298,20 @@ describe Bosh::Cli::Command::Base do
       |           | 2.1-dev* | unknown     |
       |           | 15       | 1a2b3c4d+   |
       +-----------+----------+-------------+
-      OUT
+          OUT
+        end
 
-      @cmd.should_receive(:say).with(releases_table)
-      @cmd.should_receive(:say).with("(*) Currently deployed")
-      @cmd.should_receive(:say).with("(+) Uncommitted changes")
-      @cmd.should_receive(:say).with("Releases total: 1")
+        it "lists releases in a nice table and includes information about current deployments and uncommitted changes" do
+          @director.stub(list_releases: [release])
 
-      @cmd.list
+          @cmd.should_receive(:say).with(releases_table)
+          @cmd.should_receive(:say).with("(*) Currently deployed")
+          @cmd.should_receive(:say).with("(+) Uncommitted changes")
+          @cmd.should_receive(:say).with("Releases total: 1")
+
+          @cmd.list
+        end
+      end
     end
   end
 

@@ -22,7 +22,7 @@ module DeploymentHelper
   def releases
     result = []
     jbosh("/releases").each do |r|
-      result << Release.new(r["name"], r["release_versions"])
+      result << Release.new(r["name"], r["release_versions"].map { |v| v["version"] })
     end
     result
   end

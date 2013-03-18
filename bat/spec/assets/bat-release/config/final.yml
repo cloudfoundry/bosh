@@ -1,6 +1,6 @@
 --- 
 final_name: bat
-min_cli_version: 1.0.3
+min_cli_version: 1.5.0.pre2
 blobstore: 
   provider: atmos
   options: 

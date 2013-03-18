@@ -145,11 +145,10 @@ module Bosh::Cli::Command
 
       err("No releases") if releases.empty?
 
-      releases_table = if releases.first["release_versions"].first.is_a?(Hash)
-        build_releases_table(releases)
-      else
-        # Director version < 1.5
-        build_releases_table_for_old_director(releases)
+      if releases.first.has_key? "release_versions"
+        releases_table = build_releases_table(releases)
+      elsif releases.first.has_key? "versions"
+        releases_table = build_releases_table_for_old_director(releases)
       end
 
       nl
