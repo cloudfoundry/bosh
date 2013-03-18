@@ -1,9 +1,9 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'spec_helper'
-require 'bosh_agent/platform/ubuntu/network'
+require 'bosh_agent/platform/rhel/network'
 
-describe Bosh::Agent::Platform::Ubuntu::Network do
+describe Bosh::Agent::Platform::Rhel::Network do
 
   context "vSphere" do
     before(:each) do
@@ -12,7 +12,7 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
       Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(complete_settings)
       Bosh::Agent::Config.settings = complete_settings
 
-      @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
+      @network_wrapper = Bosh::Agent::Platform::Rhel::Network.new
       # We just want to avoid this to accidentally be invoked on dev systems
       Bosh::Agent::Util.stub(:update_file)
       @network_wrapper.stub(:restart_networking_service)
@@ -51,18 +51,17 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
       Yajl::Parser.new.parse(json)
     end
 
-    before(:each) do
+    it "should configure dhcp with dns server prepended" do
       Bosh::Agent::Config.infrastructure_name = "aws"
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
-      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
-      Bosh::Agent::Config.settings = partial_settings
-      @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
-    end
+      settings = partial_settings
+      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
+      Bosh::Agent::Config.settings = settings
 
-    it "should configure dhcp with dns server prepended" do
+      @network_wrapper = Bosh::Agent::Platform::Rhel::Network.new
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 5\.6\.7\.8;\nprepend domain-name-servers 1\.2\.3\.4;$/
-        file.should == "/etc/dhcp3/dhclient.conf"
+        file.should == "/etc/dhclient.conf"
         true # fake a change
       end
       @network_wrapper.should_receive(:restart_dhclient)
@@ -76,18 +75,17 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
       Yajl::Parser.new.parse(json)
     end
 
-    before(:each) do
+    it "should configure dhcp with dns server prepended" do
       Bosh::Agent::Config.infrastructure_name = "openstack"
       Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
-      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
-      Bosh::Agent::Config.settings = partial_settings
-      @network_wrapper = Bosh::Agent::Platform::Ubuntu::Network.new
-    end
+      settings = partial_settings
+      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(settings)
+      Bosh::Agent::Config.settings = settings
 
-    it "should configure dhcp with dns server prepended" do
+      @network_wrapper = Bosh::Agent::Platform::Rhel::Network.new
       Bosh::Agent::Util.should_receive(:update_file) do |contents, file|
         contents.should match /^prepend domain-name-servers 1\.2\.3\.4;$/
-        file.should == "/etc/dhcp3/dhclient.conf"
+        file.should == "/etc/dhclient.conf"
         true # fake a change
       end
       @network_wrapper.should_receive(:restart_dhclient)
@@ -95,4 +93,3 @@ describe Bosh::Agent::Platform::Ubuntu::Network do
     end
   end
 end
-                                           w
