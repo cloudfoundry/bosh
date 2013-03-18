@@ -84,7 +84,7 @@ describe Bosh::OpenStackCloud::Cloud do
       mock_cloud.configure_networks("i-test",
                                     "net_a" => vip_network_spec)
     }.to raise_error(Bosh::Clouds::CloudError,
-                     "At least one dynamic network should be defined")
+                     "At least one dynamic or manual network should be defined")
 
     expect {
       mock_cloud.configure_networks("i-test",
@@ -96,7 +96,19 @@ describe Bosh::OpenStackCloud::Cloud do
       mock_cloud.configure_networks("i-test",
                                     "net_a" => dynamic_network_spec,
                                     "net_b" => dynamic_network_spec)
-    }.to raise_error(Bosh::Clouds::CloudError, /More than one dynamic network/)
+    }.to raise_error(Bosh::Clouds::CloudError, /Must have exactly one dynamic or manual network per instance/)
+
+    expect {
+      mock_cloud.configure_networks("i-test",
+                                    "net_a" => manual_network_spec,
+                                    "net_b" => manual_network_spec)
+    }.to raise_error(Bosh::Clouds::CloudError, /Must have exactly one dynamic or manual network per instance/)
+
+    expect {
+      mock_cloud.configure_networks("i-test",
+                                    "net_a" => dynamic_network_spec,
+                                    "net_b" => manual_network_spec)
+    }.to raise_error(Bosh::Clouds::CloudError, /Must have exactly one dynamic or manual network per instance/)
 
     expect {
       mock_cloud.configure_networks("i-test",

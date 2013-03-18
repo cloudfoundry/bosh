@@ -118,9 +118,9 @@ module Bosh::Agent
     end
 
     def mount_cdrom
-      output = `mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1`
+      result = Bosh::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
       raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #@cdrom_settings_mount_point: #{output}" unless $?.exitstatus == 0
+        "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
     end
 
     def umount_cdrom

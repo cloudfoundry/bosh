@@ -106,6 +106,16 @@ def dynamic_network_spec
   }
 end
 
+def manual_network_spec
+  {
+    "type" => "manual",
+    "cloud_properties" => {
+      "security_groups" => %w[default],
+      "net_id" => "net"
+    }
+  }
+end
+
 def vip_network_spec
   {
     "type" => "vip",

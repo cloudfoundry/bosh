@@ -55,7 +55,8 @@ module Bosh
 
       return if opts[:tries] == 0
 
-      on_exception, tries = [ opts[:on] ].flatten, opts[:tries]
+      on_exception = [ opts[:on] ].flatten
+      tries = opts[:tries]
       retries = 0
       retry_exception = nil
 

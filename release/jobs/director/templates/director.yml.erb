@@ -110,17 +110,15 @@ cloud:
       <% if_p("openstack.region") do |region| %>
       region: <%= region %>
       <% end %>
+      <% if_p("openstack.endpoint_type") do |endpoint_type| %>
+      endpoint_type: <%= endpoint_type %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
       password: <%= reg_password %>
-    <% if_p('openstack.stemcell.kernel_id', 'openstack.stemcell.ramdisk_id') do |kernel_id, ramdisk_id| %>
-    stemcell:
-      kernel_id: <%= kernel_id %>
-      ramdisk_id: <%= ramdisk_id %>
-    <% end %>
 <% end %>
 <% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
   plugin: vsphere <% plugin = "vsphere" %>

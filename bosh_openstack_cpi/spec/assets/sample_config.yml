@@ -5,6 +5,7 @@ openstack:
   api_key: bar
   tenant: bosh
   region:
+  endpoint_type: publicURL
   default_key_name: default
   default_security_groups: ["default"]
 

@@ -52,13 +52,13 @@ module Bosh
       end
 
       def internet_gateway_ids
-        aws_ec2.internet_gateways.map &:id
+        aws_ec2.internet_gateways.map(&:id)
       end
 
       def delete_internet_gateways(ids)
         Array(ids).each do |id|
           gw = aws_ec2.internet_gateways[id]
-          gw.attachments.map &:delete
+          gw.attachments.map(&:delete)
           gw.delete
         end
       end
@@ -80,7 +80,11 @@ module Bosh
         create_instance(instance_options).tap do |instance|
           Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
           instance.add_tag("Name", {value: name})
-          instance.associate_elastic_ip(allocate_elastic_ip)
+          elastic_ip = allocate_elastic_ip
+          Bosh::Common.retryable(tries: 10, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
+            instance.associate_elastic_ip(elastic_ip)
+            true
+          end
           disable_src_dest_checking(instance.id)
         end
       end
@@ -126,7 +130,7 @@ module Bosh
       end
 
       def delete_volumes
-        unattached_volumes.each &:delete
+        unattached_volumes.each(&:delete)
       end
 
       def volume_count

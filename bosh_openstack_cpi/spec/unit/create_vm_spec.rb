@@ -25,13 +25,14 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }
   end
 
-  def openstack_params(unique_name, user_data, security_groups=[])
+  def openstack_params(unique_name, user_data, security_groups=[], nics=[])
     {
       :name => "vm-#{unique_name}",
       :image_ref => "sc-id",
       :flavor_ref => "f-test",
       :key_name => "test_key",
       :security_groups => security_groups,
+      :nics => nics,
       :user_data => Yajl::Encoder.encode(user_data),
       :availability_zone => "foobar-1a"
     }
@@ -59,7 +60,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, %w[default])).
+          with(openstack_params(unique_name, user_data, %w[default], [])).
           and_return(server)
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
@@ -94,17 +95,17 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
           "nameserver" => ["1.2.3.4"]
         }
     }
+    network_spec = dynamic_network_spec
+    network_spec["dns"] = ["1.2.3.4"]
     server = double("server", :id => "i-test", :name => "i-test")
     image = double("image", :id => "sc-id", :name => "sc-id")
     flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
     address = double("address", :id => "a-test", :ip => "10.0.0.1",
                      :instance_id => "i-test")
-    network_spec = dynamic_network_spec
-    network_spec["dns"] = ["1.2.3.4"]
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, %w[default])).
+          with(openstack_params(unique_name, user_data, %w[default], [])).
           and_return(server)
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
@@ -125,8 +126,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     vm_id.should == "i-test"
   end
 
-
-  it "creates an OpenStack server with security group" do
+  it "creates an OpenStack server with security groups" do
     unique_name = UUIDTools::UUID.random_create.to_s
     user_data = {
       "registry" => {
@@ -138,7 +138,8 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }
     security_groups = %w[bar foo]
     network_spec = dynamic_network_spec
-    network_spec["cloud_properties"] = { "security_groups" => security_groups }
+    network_spec["cloud_properties"] ||= {}
+    network_spec["cloud_properties"]["security_groups"] = security_groups
     server = double("server", :id => "i-test", :name => "i-test")
     image = double("image", :id => "sc-id", :name => "sc-id")
     flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
@@ -147,7 +148,92 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:create).
-          with(openstack_params(unique_name, user_data, security_groups)).
+          with(openstack_params(unique_name, user_data, security_groups, [])).
+          and_return(server)
+      openstack.images.should_receive(:find).and_return(image)
+      openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.addresses.should_receive(:each).and_yield(address)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(server, :active, :state)
+
+    @registry.should_receive(:update_settings).
+        with("i-test", agent_settings(unique_name, network_spec))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            resource_pool_spec,
+                            { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+    vm_id.should == "i-test"
+  end
+
+  it "creates an OpenStack server with nic for dynamic network" do
+    unique_name = UUIDTools::UUID.random_create.to_s
+    user_data = {
+      "registry" => {
+        "endpoint" => "http://registry:3333"
+      },
+      "server" => {
+        "name" => "vm-#{unique_name}"
+      }
+    }
+    server = double("server", :id => "i-test", :name => "i-test")
+    image = double("image", :id => "sc-id", :name => "sc-id")
+    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
+    address = double("address", :id => "a-test", :ip => "10.0.0.1",
+                     :instance_id => nil)
+    nic = { "net_id" => "foo" }
+    network_spec = dynamic_network_spec
+    network_spec["cloud_properties"] ||= {}
+    network_spec["cloud_properties"]["net_id"] = nic["net_id"]
+
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:create).
+          with(openstack_params(unique_name, user_data, %w[default], [nic])).
+          and_return(server)
+      openstack.images.should_receive(:find).and_return(image)
+      openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.addresses.should_receive(:each).and_yield(address)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(server, :active, :state)
+
+    @registry.should_receive(:update_settings).
+        with("i-test", agent_settings(unique_name, network_spec))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            resource_pool_spec,
+                            { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+    vm_id.should == "i-test"
+  end
+
+  it "creates an OpenStack server with nic for manual network" do
+    unique_name = UUIDTools::UUID.random_create.to_s
+    user_data = {
+      "registry" => {
+        "endpoint" => "http://registry:3333"
+      },
+      "server" => {
+        "name" => "vm-#{unique_name}"
+      }
+    }
+    server = double("server", :id => "i-test", :name => "i-test")
+    image = double("image", :id => "sc-id", :name => "sc-id")
+    flavor = double("flavor", :id => "f-test", :name => "m1.tiny")
+    address = double("address", :id => "a-test", :ip => "10.0.0.1",
+                     :instance_id => nil)
+    nic = { "net_id" => "foo", "v4_fixed_ip" => "10.0.0.5" }
+    network_spec = manual_network_spec
+    network_spec["ip"] = "10.0.0.5"
+    network_spec["cloud_properties"] ||= {}
+    network_spec["cloud_properties"]["net_id"] = nic["net_id"]
+
+    cloud = mock_cloud do |openstack|
+      openstack.servers.should_receive(:create).
+          with(openstack_params(unique_name, user_data, %w[default], [nic])).
           and_return(server)
       openstack.images.should_receive(:find).and_return(image)
       openstack.flavors.should_receive(:find).and_return(flavor)
