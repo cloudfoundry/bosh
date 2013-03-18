@@ -31,8 +31,8 @@ cloud:
     agent:
       ntp: []
       blobstore:
-        plugin: local
-        properties:
+        provider: local
+        options:
           blobstore_path: /var/vcap/micro_bosh/data/cache
       mbus:
     vcenters: []

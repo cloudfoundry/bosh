@@ -28,7 +28,7 @@ networks:
     type: dynamic
     cloud_properties:
       security_groups:
-      - default # CHANGE: Security Group
+        - default # CHANGE: Security Group
 
 resource_pools:
   - name: small
@@ -59,7 +59,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.11.212 # Change: Elastic IP 1
+          - 54.241.11.212 # Change: Elastic IP 1
 
   - name: nats
     template: nats
@@ -96,7 +96,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.12.117 # Change: Elastic IP 2
+          - 54.241.12.117 # Change: Elastic IP 2
 
   - name: blobstore
     template: blobstore
