@@ -28,7 +28,7 @@ networks:
     type: dynamic
     cloud_properties:
       security_groups:
-      - default # CHANGE: Security Group
+        - default # CHANGE: Security Group
 
 resource_pools:
   - name: small
@@ -59,7 +59,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.11.212 # Change: Elastic IP 1
+          - 54.241.11.212 # Change: Elastic IP 1
 
   - name: nats
     template: nats
@@ -70,7 +70,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 184.169.128.123 # Change: Elastic IP 2
+          - 184.169.128.123 # Change: Elastic IP 2
 
   - name: postgres
     template: postgres
@@ -82,7 +82,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.246.11 # Change: Elastic IP 3
+          - 54.241.246.11 # Change: Elastic IP 3
 
   - name: redis
     template: redis
@@ -93,7 +93,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.240.21 # Change: Elastic IP 4
+          - 54.241.240.21 # Change: Elastic IP 4
 
   - name: director
     template: director
@@ -105,7 +105,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.12.117 # Change: Elastic IP 5
+          - 54.241.12.117 # Change: Elastic IP 5
 
   - name: blobstore
     template: blobstore
@@ -116,7 +116,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.240.210 # Change: Elastic IP 6
+          - 54.241.240.210 # Change: Elastic IP 6
 
   - name: registry
     template: registry
@@ -127,7 +127,7 @@ jobs:
         default: [dns, gateway]
       - name: elastic
         static_ips:
-        - 54.241.246.14 # Change: Elastic IP 7
+          - 54.241.246.14 # Change: Elastic IP 7
 
   - name: health_monitor
     template: health_monitor

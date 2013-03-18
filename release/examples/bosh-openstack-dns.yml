@@ -28,7 +28,7 @@ networks:
     type: dynamic
     cloud_properties:
       security_groups:
-      - default # CHANGE: Security Group
+        - default # CHANGE: Security Group
 
 resource_pools:
   - name: small
@@ -59,7 +59,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.226 # Change: Floating IP 1
+          - 192.168.1.226 # Change: Floating IP 1
 
   - name: nats
     template: nats
@@ -96,7 +96,7 @@ jobs:
         default: [dns, gateway]
       - name: floating
         static_ips:
-        - 192.168.1.227 # Change: Floating IP 2
+          - 192.168.1.227 # Change: Floating IP 2
 
   - name: blobstore
     template: blobstore
