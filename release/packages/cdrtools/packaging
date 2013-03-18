@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+
+echo "Extracting cdrtools-3.01a13 ..."
+tar xzvf cdrtools/cdrtools-3.01a13.tar.gz
+
+if [[ $? != 0 ]] ; then
+  echo "Failed extracting cdrtools"
+  exit 1
+fi
+
+echo "Building cdrtools ..."
+cd cdrtools-3.01
+make INS_BASE=${BOSH_INSTALL_TARGET} install
