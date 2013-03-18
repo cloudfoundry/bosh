@@ -25,6 +25,23 @@ describe Bosh::Agent::Infrastructure::Openstack::Settings do
     settings.should == @settings
   end
 
+  it 'should get network settings for manual network' do
+    net_info = double('net_info', default_gateway_interface: 'eth0', default_gateway: '1.2.3.1',
+                      primary_dns: '1.1.1.1', secondary_dns: '2.2.2.2')
+    net_interface_config = double('net_interface_config', address:'1.2.3.4', netmask: '255.255.255.0')
+    sigar = double(Sigar, net_info: net_info, net_interface_config: net_interface_config)
+    Sigar.stub(new: sigar)
+    settings_wrapper = Bosh::Agent::Infrastructure::Openstack::Settings.new
+    network_properties = {}
+    properties = settings_wrapper.get_network_settings("test", network_properties)
+
+    properties.should have_key("ip")
+    properties.should have_key("netmask")
+    properties.should have_key("dns")
+    properties.should have_key("gateway")
+  end
+
+
   it 'should get network settings for dhcp network' do
     net_info = double('net_info', default_gateway_interface: 'eth0', default_gateway: '1.2.3.1',
                       primary_dns: '1.1.1.1', secondary_dns: '2.2.2.2')
@@ -48,11 +65,10 @@ describe Bosh::Agent::Infrastructure::Openstack::Settings do
     properties.should be_nil
   end
 
-  it 'should raise unsupported network exception for manual network' do
+  it 'should raise unsupported network exception for unknown  network' do
     settings_wrapper = Bosh::Agent::Infrastructure::Openstack::Settings.new
-    network_properties = {}
     lambda {
-      properties = settings_wrapper.get_network_settings("test", network_properties)
+      properties = settings_wrapper.get_network_settings("test", {"type" => "unknown"})
     }.should raise_error(Bosh::Agent::StateError, /Unsupported network/)
   end
 
