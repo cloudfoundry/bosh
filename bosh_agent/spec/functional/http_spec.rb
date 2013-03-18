@@ -74,6 +74,18 @@ describe "http messages" do
     end
   end
 
+  it "should respond to state message with vitals" do
+    http('state', ['full']) do |msg|
+      msg.should have_key('deployment')
+      msg.should have_key('networks')
+      msg.should have_key('resource_pool')
+      msg.should have_key('agent_id')
+      msg.should have_key('vm')
+      msg.should have_key('job_state')
+      msg.should have_key('vitals')
+    end
+  end
+
   it "should respond to ping message" do
     http('ping') do |msg|
       msg.should == 'pong'

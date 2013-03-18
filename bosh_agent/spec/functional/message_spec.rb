@@ -89,6 +89,19 @@ describe "messages" do
     end
   end
 
+  it "should respond to state message with vitals" do
+    nats('state', ['full']) do |msg|
+      value = get_value(msg)
+      value.should have_key('deployment')
+      value.should have_key('networks')
+      value.should have_key('resource_pool')
+      value.should have_key('agent_id')
+      value.should have_key('vm')
+      value.should have_key('job_state')
+      value.should have_key('vitals')
+    end
+  end
+
   it "should respond to ping message" do
     nats('ping') do |msg|
       value = get_value(msg)
