@@ -1,0 +1,4 @@
+---
+name: genisoimage
+files:
+- genisoimage/genisoimage
