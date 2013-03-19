@@ -57,11 +57,12 @@ namespace :stemcell do
 
 
   namespace :aws do
-    task :create_and_publish_ami, [:stemcell_tgz, :bucket_name] do |t,args|
+    task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
+      ami_id = args[:ami_id]
       stemcell_tgz = args[:stemcell_tgz]
       bucket_name = args[:bucket_name]
-      access_key_id = ENV['BOSH_AWS_ACCESS_KEY_ID']
-      secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY']
+      access_key_id = ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT']
+      secret_access_key = ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
       region = Net::HTTP.get('169.254.169.254', '/latest/meta-data/placement/availability-zone').chop
       aws = {
           "default_key_name" => "fake",
@@ -83,30 +84,13 @@ namespace :stemcell do
       cloud_config = OpenStruct.new(:logger => Logger.new("ami.log"), :task_checkpoint => nil)
       Bosh::Clouds::Config.configure(cloud_config)
 
-      cloud = Bosh::Clouds::Provider.create("aws", options)
-
       Dir.mktmpdir do |dir|
-        %x{tar xzf #{stemcell_tgz} --directory=#{dir}} || raise("Failed to untar stemcell")
+        light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
+
+        %x{tar xzf #{light_stemcell_name} --directory=#{dir}} || raise("Failed to untar stemcell")
         stemcell_manifest = "#{dir}/stemcell.MF"
         stemcell_properties = YAML.load_file(stemcell_manifest)
-        image = "#{dir}/image"
-
-        ami_id = cloud.create_stemcell(image, stemcell_properties['cloud_properties'])
-        cloud.ec2.images[ami_id].public = true
-
-        stemcell_properties["cloud_properties"]["ami"] = { region => ami_id }
-
-        FileUtils.rm_rf(image)
-        FileUtils.touch(image)
-
-        File.open(stemcell_manifest, 'w' ) do |out|
-          YAML.dump(stemcell_properties, out )
-        end
-
-        light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
-        Dir.chdir(dir) do
-          %x{tar cvzf #{light_stemcell_name} *}  || raise("Failed to build light stemcell")
-        end
+        ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
 
         s3 = AWS::S3.new
         s3.buckets.create(bucket_name)    # doesn't fail if already exists in your account

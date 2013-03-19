@@ -42,8 +42,8 @@ namespace :spec do
         puts ENV.inspect
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
-          Rake::Task['stemcells:aws:create_and_publish_ami'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
-          Rake::Task['stemcells:aws:create_and_publish_ami'].invoke(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+          Rake::Task['stemcells:aws:publish_to_s3'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
+          Rake::Task['stemcells:aws:publish_to_s3'].invoke(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
@@ -111,11 +111,11 @@ namespace :spec do
       end
 
       def latest_micro_bosh_stemcell_path
-        Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz").first
+        Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_micro_bosh_stemcell/lastSuccessful/archive/light-*.tgz").first
       end
 
       def latest_stemcell_path
-        Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_bosh_stemcell/lastSuccessful/archive/*.tgz").first
+        Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_bosh_stemcell/lastSuccessful/archive/light-*.tgz").first
       end
 
       def vpc_outfile_path

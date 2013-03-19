@@ -33,3 +33,7 @@ stemcell=`ls /mnt/$directory/work/work/*.tgz`
 stemcell_base=`basename $stemcell .tgz`
 
 cp $stemcell $WORKSPACE/$stemcell_base.tgz
+
+if [ $infrastructure == 'aws' ]; then
+    bundle exec $(dirname $0)/publish_ami.rb $WORKSPACE/$stemcell_base.tgz
+fi
