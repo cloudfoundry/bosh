@@ -118,11 +118,11 @@ namespace :spec do
       end
 
       def vpc_outfile_path
-        "#{ENV['JENKINS_HOME']}/jobs/deployments-aws/ci2/aws_vpc_receipt.yml"
+        "/mnt/deployments-aws/workspace/ci2/aws_vpc_receipt.yml"
       end
 
       def route53_outfile_path
-        "#{ENV['JENKINS_HOME']}/jobs/deployments-aws/ci2/aws_route53_receipt.yml"
+        "/mnt/deployments-aws/workspace/ci2/aws_route53_receipt.yml"
       end
 
       def bosh_config_path
