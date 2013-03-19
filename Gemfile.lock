@@ -1,24 +1,16 @@
-GIT
-  remote: git://github.com/cloudfoundry/bootstrap-vmc-plugin.git
-  revision: ccafed61f67214b8930316a82f7ecc7c067098bf
-  specs:
-    bootstrap-vmc-plugin (0.0.1)
-      bosh_aws_bootstrap (= 1.5.0.pre2)
-      vmc (~> 0.5)
-
 PATH
   remote: agent_client
   specs:
-    agent_client (1.5.0.pre2)
+    agent_client (1.5.0.pre.3)
       httpclient (= 2.2.4)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: blobstore_client
   specs:
-    blobstore_client (1.5.0.pre2)
+    blobstore_client (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
-      bosh_common (~> 1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre.3)
       fog (~> 1.10.0)
       httpclient (= 2.2.4)
       multi_json (~> 1.1)
@@ -27,13 +19,13 @@ PATH
 PATH
   remote: bosh_agent
   specs:
-    bosh_agent (1.5.0.pre2)
-      blobstore_client (~> 1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
-      bosh_encryption (~> 1.5.0.pre2)
+    bosh_agent (1.5.0.pre.3)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_encryption (~> 1.5.0.pre.3)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
-      monit_api (~> 1.5.0.pre2)
+      monit_api (~> 1.5.0.pre.3)
       nats (~> 0.4.28)
       netaddr (~> 1.5.0)
       posix-spawn (~> 0.3.6)
@@ -47,28 +39,28 @@ PATH
 PATH
   remote: bosh_aws_bootstrap
   specs:
-    bosh_aws_bootstrap (1.5.0.pre2)
-      bosh_aws_cpi (~> 1.5.0.pre2)
-      bosh_cli (~> 1.5.0.pre2)
-      bosh_deployer (~> 1.5.0.pre2)
+    bosh_aws_bootstrap (1.5.0.pre.3)
+      bosh_aws_cpi (~> 1.5.0.pre.3)
+      bosh_cli (~> 1.5.0.pre.3)
+      bosh_deployer (~> 1.5.0.pre.3)
 
 PATH
   remote: bosh_aws_cpi
   specs:
-    bosh_aws_cpi (1.5.0.pre2)
+    bosh_aws_cpi (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
-      bosh_common (~> 1.5.0.pre2)
-      bosh_cpi (~> 1.5.0.pre2)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
 
 PATH
   remote: bosh_cli
   specs:
-    bosh_cli (1.5.0.pre2)
+    bosh_cli (1.5.0.pre.3)
       archive-tar-minitar (~> 0.5)
-      blobstore_client (~> 1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
       json_pure (~> 1.7.6)
@@ -82,41 +74,41 @@ PATH
 PATH
   remote: bosh_common
   specs:
-    bosh_common (1.5.0.pre2)
+    bosh_common (1.5.0.pre.3)
 
 PATH
   remote: bosh_cpi
   specs:
-    bosh_cpi (1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
+    bosh_cpi (1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
 
 PATH
   remote: bosh_deployer
   specs:
-    bosh_deployer (1.5.0.pre2)
-      agent_client (~> 1.5.0.pre2)
-      bosh_aws_cpi (~> 1.5.0.pre2)
-      bosh_cli (~> 1.5.0.pre2)
-      bosh_cpi (~> 1.5.0.pre2)
-      bosh_openstack_cpi (~> 1.5.0.pre2)
-      bosh_registry (~> 1.5.0.pre2)
-      bosh_vcloud_cpi (~> 1.5.0.pre2)
-      bosh_vsphere_cpi (~> 1.5.0.pre2)
+    bosh_deployer (1.5.0.pre.3)
+      agent_client (~> 1.5.0.pre.3)
+      bosh_aws_cpi (~> 1.5.0.pre.3)
+      bosh_cli (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
+      bosh_openstack_cpi (~> 1.5.0.pre.3)
+      bosh_registry (~> 1.5.0.pre.3)
+      bosh_vcloud_cpi (~> 1.5.0.pre.3)
+      bosh_vsphere_cpi (~> 1.5.0.pre.3)
       sqlite3 (~> 1.3.7)
 
 PATH
   remote: bosh_encryption
   specs:
-    bosh_encryption (1.5.0.pre2)
+    bosh_encryption (1.5.0.pre.3)
       gibberish (~> 1.2.0)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: bosh_openstack_cpi
   specs:
-    bosh_openstack_cpi (1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
-      bosh_cpi (~> 1.5.0.pre2)
+    bosh_openstack_cpi (1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
       fog (~> 1.10.0)
       httpclient (= 2.2.4)
       yajl-ruby (>= 0.8.2)
@@ -124,7 +116,7 @@ PATH
 PATH
   remote: bosh_registry
   specs:
-    bosh_registry (1.5.0.pre2)
+    bosh_registry (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
       fog (~> 1.10.0)
       sequel (~> 3.43.0)
@@ -135,35 +127,35 @@ PATH
 PATH
   remote: bosh_vcloud_cpi
   specs:
-    bosh_vcloud_cpi (1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
-      bosh_cpi (~> 1.5.0.pre2)
-      ruby_vcloud_sdk (~> 1.5.0.pre2)
+    bosh_vcloud_cpi (1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
+      ruby_vcloud_sdk (~> 1.5.0.pre.3)
       yajl-ruby (>= 0.8.2)
 
 PATH
   remote: bosh_vsphere_cpi
   specs:
-    bosh_vsphere_cpi (1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
-      bosh_cpi (~> 1.5.0.pre2)
+    bosh_vsphere_cpi (1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
       membrane (~> 0.0.2)
-      ruby_vim_sdk (~> 1.5.0.pre2)
+      ruby_vim_sdk (~> 1.5.0.pre.3)
       sequel (~> 3.43.0)
 
 PATH
   remote: director
   specs:
-    director (1.5.0.pre2)
+    director (1.5.0.pre.3)
       bcrypt-ruby (~> 3.0.1)
-      blobstore_client (~> 1.5.0.pre2)
-      bosh_aws_cpi (~> 1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
-      bosh_cpi (~> 1.5.0.pre2)
-      bosh_encryption (~> 1.5.0.pre2)
-      bosh_openstack_cpi (~> 1.5.0.pre2)
-      bosh_vcloud_cpi (~> 1.5.0.pre2)
-      bosh_vsphere_cpi (~> 1.5.0.pre2)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh_aws_cpi (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
+      bosh_cpi (~> 1.5.0.pre.3)
+      bosh_encryption (~> 1.5.0.pre.3)
+      bosh_openstack_cpi (~> 1.5.0.pre.3)
+      bosh_vcloud_cpi (~> 1.5.0.pre.3)
+      bosh_vsphere_cpi (~> 1.5.0.pre.3)
       eventmachine (~> 0.12.9)
       fog (~> 1.10.0)
       httpclient (= 2.2.4)
@@ -181,7 +173,7 @@ PATH
 PATH
   remote: health_monitor
   specs:
-    health_monitor (1.5.0.pre2)
+    health_monitor (1.5.0.pre.3)
       aws-sdk (= 1.8.5)
       em-http-request (~> 0.3.0)
       eventmachine (~> 0.12.10)
@@ -194,23 +186,23 @@ PATH
 PATH
   remote: monit_api
   specs:
-    monit_api (1.5.0.pre2)
+    monit_api (1.5.0.pre.3)
       crack (~> 0.3.2)
 
 PATH
   remote: package_compiler
   specs:
-    package_compiler (1.5.0.pre2)
-      agent_client (~> 1.5.0.pre2)
-      blobstore_client (~> 1.5.0.pre2)
-      bosh_common (~> 1.5.0.pre2)
+    package_compiler (1.5.0.pre.3)
+      agent_client (~> 1.5.0.pre.3)
+      blobstore_client (~> 1.5.0.pre.3)
+      bosh_common (~> 1.5.0.pre.3)
       trollop (~> 1.16)
       yajl-ruby (~> 1.1.0)
 
 PATH
   remote: ruby_vcloud_sdk
   specs:
-    ruby_vcloud_sdk (1.5.0.pre2)
+    ruby_vcloud_sdk (1.5.0.pre.3)
       builder (~> 3.1.4)
       httpclient (= 2.2.4)
       nokogiri (~> 1.5.6)
@@ -219,7 +211,7 @@ PATH
 PATH
   remote: ruby_vim_sdk
   specs:
-    ruby_vim_sdk (1.5.0.pre2)
+    ruby_vim_sdk (1.5.0.pre.3)
       builder (~> 3.1.4)
       httpclient (= 2.2.4)
       nokogiri (~> 1.5.6)
@@ -227,7 +219,7 @@ PATH
 PATH
   remote: simple_blobstore_server
   specs:
-    simple_blobstore_server (1.5.0.pre2)
+    simple_blobstore_server (1.5.0.pre.3)
       sinatra (~> 1.2.8)
       thin (~> 1.5.0)
 
@@ -243,19 +235,8 @@ GEM
     backports (3.1.1)
     bcrypt-ruby (3.0.1)
     builder (3.1.4)
-    caldecott-client (0.0.2)
-      multi_json (~> 1.3)
-    cf-uaa-lib (1.3.7)
-      multi_json
-    cfoundry (0.5.2)
-      cf-uaa-lib (~> 1.3.3)
-      multi_json (~> 1.3)
-      multipart-post (~> 1.1)
-      rubyzip (~> 0.9)
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
-    clouseau (0.0.2)
-      rubyzip (~> 0.9.9)
     coderay (1.0.9)
     columnize (0.3.6)
     crack (0.3.2)
@@ -302,7 +283,6 @@ GEM
       rspec (~> 2.11)
     highline (1.6.16)
     httpclient (2.2.4)
-    interact (0.5.2)
     json (1.7.7)
     json_pure (1.7.7)
     listen (0.7.2)
@@ -312,15 +292,11 @@ GEM
       little-plugger (>= 1.1.2)
     lumberjack (1.0.2)
     machinist (1.0.6)
-    manifests-vmc-plugin (0.6.2)
-      cfoundry (~> 0.5.2)
     membrane (0.0.2)
     method_source (0.8.1)
     mime-types (1.21)
     minitar (0.5.4)
-    mothership (0.5.1)
     multi_json (1.7.1)
-    multipart-post (1.2.0)
     nats (0.4.28)
       daemons (>= 1.1.5)
       eventmachine (= 0.12.10)
@@ -370,7 +346,6 @@ GEM
       ruby-hmac (>= 0.4.0)
     ruby-hmac (0.4.0)
     ruby_gntp (0.3.4)
-    rubyzip (0.9.9)
     sequel (3.43.0)
     sigar (0.7.2)
     simplecov (0.7.1)
@@ -396,24 +371,9 @@ GEM
     thor (0.17.0)
     tilt (1.3.6)
     trollop (1.16.2)
-    tunnel-vmc-plugin (0.2.2)
-      addressable (~> 2.2)
-      caldecott-client (~> 0.0.2)
-      cfoundry (~> 0.5.2)
-      rest-client (~> 1.6)
-      uuidtools (~> 2.1)
     uuidtools (2.1.3)
     vegas (0.1.11)
       rack (>= 1.0.0)
-    vmc (0.5.0)
-      cfoundry (~> 0.5.2)
-      clouseau (~> 0.0)
-      interact (~> 0.5)
-      json_pure (~> 1.6)
-      manifests-vmc-plugin (~> 0.6.2)
-      mothership (>= 0.5.1, < 1.0)
-      multi_json (~> 1.3)
-      tunnel-vmc-plugin (~> 0.2.2)
     yajl-ruby (1.1.0)
 
 PLATFORMS
@@ -422,7 +382,6 @@ PLATFORMS
 DEPENDENCIES
   agent_client!
   blobstore_client!
-  bootstrap-vmc-plugin!
   bosh_agent!
   bosh_aws_bootstrap!
   bosh_aws_cpi!
@@ -464,4 +423,3 @@ DEPENDENCIES
   simplecov
   simplecov-rcov
   sqlite3
-  vmc (~> 0.5.0)

@@ -40,7 +40,7 @@ module AwsSystemExampleGroup
     stemcell = build_data['artifacts'].map { |f| f['fileName'] }.detect { |f| f =~ /light/ }
     dir = Dir.mktmpdir
     Dir.chdir(dir) do
-      `curl -skO https://ci:#{ENV['CI_PASSWORD']}@bosh-jenkins.cf-app.com/job/aws_bosh_stemcell/lastSuccessfulBuild/artifact/#{stemcell}`
+      `curl -sO https://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_bosh-stemcell_light.tgz`
     end
     "#{dir}/#{stemcell}"
   end
