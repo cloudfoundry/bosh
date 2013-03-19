@@ -43,7 +43,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server and polls until it's ready" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     user_data = {
       "registry" => {
         "endpoint" => "http://registry:3333"
@@ -82,7 +82,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "passes dns servers in server user data when present" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
 
     user_data = {
         "registry" => {
@@ -127,7 +127,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server with security groups" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     user_data = {
       "registry" => {
         "endpoint" => "http://registry:3333"
@@ -169,7 +169,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server with nic for dynamic network" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     user_data = {
       "registry" => {
         "endpoint" => "http://registry:3333"
@@ -211,7 +211,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   end
 
   it "creates an OpenStack server with nic for manual network" do
-    unique_name = UUIDTools::UUID.random_create.to_s
+    unique_name = SecureRandom.uuid
     user_data = {
       "registry" => {
         "endpoint" => "http://registry:3333"

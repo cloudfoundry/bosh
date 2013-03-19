@@ -13,7 +13,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
     it "creates stemcell using an image without kernel nor ramdisk" do
       image = double("image", :id => "i-bar", :name => "i-bar")
-      unique_name = UUIDTools::UUID.random_create.to_s
+      unique_name = SecureRandom.uuid
       image_params = {
         :name => "BOSH-#{unique_name}",
         :disk_format => "ami",
@@ -43,7 +43,7 @@ describe Bosh::OpenStackCloud::Cloud do
       image = double("image", :id => "i-bar", :name => "i-bar")
       kernel = double("image", :id => "k-img-id", :name => "k-img-id")
       ramdisk = double("image", :id => "r-img-id", :name => "r-img-id")
-      unique_name = UUIDTools::UUID.random_create.to_s
+      unique_name = SecureRandom.uuid
       kernel_params = {
         :name => "BOSH-#{unique_name}-AKI",
         :disk_format => "aki",
@@ -102,7 +102,7 @@ describe Bosh::OpenStackCloud::Cloud do
       image = double("image", :id => "i-bar", :name => "i-bar")
       kernel = double("image", :id => "k-img-id", :name => "k-img-id")
       ramdisk = double("image", :id => "r-img-id", :name => "r-img-id")
-      unique_name = UUIDTools::UUID.random_create.to_s
+      unique_name = SecureRandom.uuid
       kernel_params = {
         :name => "BOSH-#{unique_name}-AKI",
         :disk_format => "aki",

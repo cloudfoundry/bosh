@@ -20,6 +20,5 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
   s.add_dependency "ruby_vcloud_sdk", "~>#{version}"
-  s.add_dependency "uuidtools", "~>2.1"
   s.add_dependency "yajl-ruby", ">=0.8.2"
 end

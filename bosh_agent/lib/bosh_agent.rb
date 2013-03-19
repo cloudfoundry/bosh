@@ -10,15 +10,15 @@ require "set"
 
 require "nats/client"
 require "yajl"
-require "uuidtools"
+require "securerandom"
 require "ostruct"
 require "posix/spawn"
 require "monit_api"
 require "fileutils"
 require "resolv"
 require "ipaddr"
-require 'httpclient'
-require 'sigar'
+require "httpclient"
+require "sigar"
 
 require "common/exec"
 require "common/properties"

@@ -37,7 +37,7 @@ module Bosh::Director
       # Downloads template blob to a given path
       # @return [String] Path to downloaded blob
       def download_blob
-        uuid = UUIDTools::UUID.random_create
+        uuid = SecureRandom.uuid
         path = File.join(Dir.tmpdir, "template-#{uuid}")
 
         if Config.blobstore.nil?

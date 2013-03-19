@@ -92,7 +92,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   it "should update the registry settings with the new instance" do
     network_configurator.stub(:configure)
     Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-    UUIDTools::UUID.stub(:random_create).and_return("rand0m")
+    SecureRandom.stub(:uuid).and_return("rand0m")
 
     agent_settings = {
         "vm" => {
