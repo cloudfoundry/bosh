@@ -42,7 +42,6 @@ describe Bosh::AwsCloud::Cloud do
     cloud = mock_cloud(options) do |ec2|
       ec2.volumes.stub(:[]).with("v-foo").and_return(volume)
     end
-    cloud.stub(:task_checkpoint)
 
     volume.stub(:state => :available)
     volume.should_receive(:delete)
