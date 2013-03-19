@@ -38,12 +38,12 @@ PATH
       nats (~> 0.4.28)
       netaddr (~> 1.5.0)
       posix-spawn (~> 0.3.6)
+      retryable (~> 1.3.2)
       ruby-atmos-pure (~> 1.0.5)
-      sigar (>= 0.7.2)
+      sigar (~> 0.7.2)
       sinatra (~> 1.2.8)
-      sys-filesystem (~> 1.1.0)
       thin (~> 1.5.0)
-      uuidtools (~> 2.1.3)
+      uuidtools (~> 2.1.2)
       yajl-ruby (~> 1.1.0)
 
 PATH
@@ -286,7 +286,6 @@ GEM
     escape_utils (0.2.4)
     eventmachine (0.12.10)
     excon (0.20.0)
-    ffi (1.4.0)
     fog (1.10.0)
       builder
       excon (~> 0.14)
@@ -368,6 +367,7 @@ GEM
       vegas (~> 0.1.2)
     rest-client (1.6.7)
       mime-types (>= 1.16)
+    retryable (1.3.2)
     rspec (2.12.0)
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)
@@ -396,8 +396,6 @@ GEM
       tilt (>= 1.2.2, < 2.0)
     slop (3.4.3)
     sqlite3 (1.3.7)
-    sys-filesystem (1.1.0)
-      ffi
     tdiff (0.3.3)
     terminal-table (1.4.5)
     thin (1.5.1)
