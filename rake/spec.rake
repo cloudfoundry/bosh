@@ -56,9 +56,9 @@ namespace :spec do
       end
 
       task :deploy_micro do
-        directory("/tmp/deployments/micro")
-        Dir.chdir("/tmp/deployments") do
-          Dir.chdir("micro") do
+        mkdir_p("/tmp/deployments/micro")
+        chdir("/tmp/deployments") do
+          chdir("micro") do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
           end
           run_bosh "micro deployment micro"
@@ -72,7 +72,7 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        Dir.chdir("/tmp/deployments") do
+        chdir("/tmp/deployments") do
           run_bosh "micro delete"
         end
         rm_rf("/tmp/deployments")
