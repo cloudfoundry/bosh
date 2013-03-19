@@ -54,7 +54,9 @@ describe Bosh::AwsCloud::ResourceWait do
   end
 
   describe '#for_attachment' do
-    let(:attachment) { double(AWS::EC2::Attachment, to_s: 'a-1234') }
+    let(:volume) { double(AWS::EC2::Volume, id: 'vol-1234') }
+    let(:instance) { double(AWS::EC2::Instance, id: 'i-5678') }
+    let(:attachment) { double(AWS::EC2::Attachment, volume: volume, instance: instance, device: '/dev/sda1') }
 
     context 'attachment' do
       it 'should wait until the state is attached' do
