@@ -6,9 +6,9 @@ module Bosh::Agent
 
     def initialize(template_dir)
       @template_dir   = template_dir
-      @config         ||= Bosh::Agent::Config
-      @infrastructure ||= @config.infrastructure
-      @logger         ||= @config.logger
+      @config         = Bosh::Agent::Config
+      @infrastructure = @config.infrastructure
+      @logger         = @config.logger
       @networks       = []
       @dns            = []
     end

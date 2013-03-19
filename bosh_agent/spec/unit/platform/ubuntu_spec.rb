@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'bosh_agent/platform/ubuntu'
 
-describe Bosh::Agent::Platform::Ubuntu do
+describe Bosh::Agent::Platform::Ubuntu, dummy_infrastructure: true do
   let(:platform) { Bosh::Agent::Platform::Ubuntu.new }
 
   it "initializes the correct implementations" do

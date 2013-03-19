@@ -35,6 +35,8 @@ RSpec.configure do |rspec_config|
     setup_directories
     disable_monit
   end
+
+  rspec_config.before(:each, dummy_infrastructure: true) { setup_dummy_infrastructure }
 end
 
 def use_dummy_logger
@@ -92,4 +94,8 @@ def get_free_port
   socket.close
   # race condition, but good enough for now
   port
+end
+
+def setup_dummy_infrastructure
+  Bosh::Agent::Config.infrastructure_name = 'dummy'
 end
