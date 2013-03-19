@@ -55,6 +55,10 @@ postgres/postgresql-9.0.3.tar.gz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2E2MWUxMjEwMDRlNGU3ZDUxZDk1MGUwNGZiZDRm%0AMmNhMmQ4OSIsInNpZyI6Ik4yckpBMDVXSEVRTWRPMXBJUGRneXBaQWZuVT0i%0AfQ==%0A
   sha: c8fb5d1d7930e78211e554bb5751183a8148d0ee
   size: 18335858
+powerdns/pdns-static_3.0.1-1_amd64.deb:
+  object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjEyMDRlNGU4NmVlNTM5MjEwNGZiZDRm%0AMzM4ODdmMCIsInNpZyI6Ik0vbVV0UHN0Rkljc2ZPaGdDTllNVXA0eVZZRT0i%0AfQ==%0A
+  sha: 5f6cc7572479ea1ab21b517e6f79ad921623b489
+  size: 11180332
 redis/redis-2.2.4.tar.gz:
   object_id: eyJvaWQiOiI0ZTRlNzhiY2E0MWUxMjIwMDRlNGU4ZWM2NWY2N2YwNGZiZDRm%0AMzg4Nzg2ZSIsInNpZyI6IkNUNUoxYnJBd3pVRnVKZnByZGNiQlpIenZncz0i%0AfQ==%0A
   sha: 063e6e9f615ceda664d0691a6ea59befb22ebc40
