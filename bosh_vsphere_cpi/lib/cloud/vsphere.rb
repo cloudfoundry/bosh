@@ -1,6 +1,6 @@
 require "common/thread_pool"
 require "common/thread_formatter"
-require "uuidtools"
+require "securerandom"
 
 autoload :VSphereCloud, "cloud/vsphere/cloud"
 

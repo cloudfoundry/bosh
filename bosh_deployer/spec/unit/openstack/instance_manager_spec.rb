@@ -9,7 +9,7 @@ describe Bosh::Deployer::InstanceManager do
     @dir = Dir.mktmpdir("bdim_spec")
     @config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     @config["dir"] = @dir
-    @config["name"] = "spec-#{UUIDTools::UUID.random_create.to_s}"
+    @config["name"] = "spec-#{SecureRandom.uuid}"
     @config["logging"] = { "file" => "#{@dir}/bmim.log" }
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = mock("cloud")

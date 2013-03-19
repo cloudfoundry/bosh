@@ -89,7 +89,7 @@ module Bosh
       private
 
       def generate_object_id
-        UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
 
       def encode_object_id(object_id, public_url = nil)

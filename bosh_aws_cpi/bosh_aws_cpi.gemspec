@@ -23,6 +23,5 @@ Gem::Specification.new do |s|
   s.add_dependency "bosh_common", "~>#{version}"
   s.add_dependency "bosh_cpi", "~>#{version}"
   s.add_dependency "httpclient", "=2.2.4"
-  s.add_dependency "uuidtools", "~>2.1.3"
   s.add_dependency "yajl-ruby", ">=0.8.2"
 end

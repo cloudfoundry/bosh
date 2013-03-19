@@ -4,7 +4,7 @@ require "openssl"
 require "digest/sha1"
 require "base64"
 require "aws"
-require "uuidtools"
+require "securerandom"
 
 module Bosh
   module Blobstore
@@ -166,7 +166,7 @@ module Bosh
       end
 
       def generate_object_id
-        UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
 
       def read_only?

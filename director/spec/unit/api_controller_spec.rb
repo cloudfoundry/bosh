@@ -35,7 +35,7 @@ describe Bosh::Director::ApiController do
 
   it "cleans up temp file after serving it" do
     tmp_file = File.join(Dir.tmpdir,
-                         "resource-#{UUIDTools::UUID.random_create}")
+                         "resource-#{SecureRandom.uuid}")
 
     File.open(tmp_file, "w") do |f|
       f.write("some data")
