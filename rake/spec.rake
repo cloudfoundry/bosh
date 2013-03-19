@@ -63,6 +63,7 @@ namespace :spec do
           end
           run_bosh "micro deployment micro"
           run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
+          run_bosh "login -u admin -p admin"
 
           run_bosh "upload stemcell #{latest_stemcell_path}", debug_on_fail: true
 
