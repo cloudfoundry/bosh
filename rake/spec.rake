@@ -38,11 +38,11 @@ namespace :spec do
       desc "Run AWS MicroBOSH deployment suite"
       task :micro do
         begin
-          Rake::Task[:publish_gems].invoke
+          Rake::Task['spec:system:aws:publish_gems'].invoke
           Rake::Task['stemcells:aws:create_and_publish_ami'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
           Rake::Task['stemcells:aws:create_and_publish_ami'].invoke(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
         ensure
-          Rake::Task[:teardown_microbosh].invoke
+          Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
       end
 
