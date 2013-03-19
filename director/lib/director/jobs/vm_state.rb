@@ -8,9 +8,10 @@ module Bosh::Director
       @queue = :normal
 
       # @param [Integer] deployment_id Deployment id
-      def initialize(deployment_id)
+      def initialize(deployment_id, format)
         super
         @deployment_id = deployment_id
+        @format = format
       end
 
       def perform
@@ -33,11 +34,12 @@ module Bosh::Director
         job_name = nil
         job_state = nil
         resource_pool = nil
+        job_vitals = nil
         index = nil
 
         begin
           agent = AgentClient.new(vm.agent_id, :timeout => TIMEOUT)
-          agent_state = agent.get_state
+          agent_state = agent.get_state(@format)
           agent_state["networks"].each_value do |network|
             ips << network["ip"]
           end
@@ -46,6 +48,9 @@ module Bosh::Director
           job_state = agent_state["job_state"]
           if agent_state["resource_pool"]
             resource_pool = agent_state["resource_pool"]["name"]
+          end
+          if agent_state["vitals"]
+            job_vitals = agent_state["vitals"]
           end
         rescue Bosh::Director::RpcTimeout
           job_state = "unresponsive agent"
@@ -58,7 +63,8 @@ module Bosh::Director
           :job_name => job_name,
           :index => index,
           :job_state => job_state,
-          :resource_pool => resource_pool
+          :resource_pool => resource_pool,
+          :vitals => job_vitals
         }
       end
     end
