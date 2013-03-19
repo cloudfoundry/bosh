@@ -90,7 +90,7 @@ namespace :spec do
         Rake::Task['bat'].invoke
       end
 
-      task :publish_gems => :bat do
+      task :publish_gems => "spec:system:aws:bat" do
         build_number = ENV['BUILD_NUMBER']
         file_contents = File.read('BOSH_VERSION')
         file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
@@ -133,37 +133,36 @@ namespace :spec do
       end
 
       def run(cmd, options = {})
-        Bundler.with_clean_env do
-          lines = []
-          IO.popen(cmd).each do |line|
-            puts line.chomp
-            lines << line.chomp
-          end.close # force the process to close so that $? is set
-          if options[:last_number]
-            line_number = options[:last_number]
-            line_number = lines.size if lines.size < options[:last_number]
-            cmd_out = lines[-line_number..-1].join("\n")
-          else
-            cmd_out = lines.join("\n")
-          end
-
-          unless $?.success?
-            err_msg = "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
-
-            if options[:ignore_failures]
-              puts("#{err_msg}, continuing anyway")
-            else
-              raise(err_msg)
-            end
-          end
-          cmd_out
+        lines = []
+        IO.popen(cmd).each do |line|
+          puts line.chomp
+          lines << line.chomp
+        end.close # force the process to close so that $? is set
+        if options[:last_number]
+          line_number = options[:last_number]
+          line_number = lines.size if lines.size < options[:last_number]
+          cmd_out = lines[-line_number..-1].join("\n")
+        else
+          cmd_out = lines.join("\n")
         end
+
+        unless $?.success?
+          err_msg = "Failed: '#{cmd}' from #{Dir.pwd}, with exit status #{$?.to_i}\n\n #{cmd_out}"
+
+          if options[:ignore_failures]
+            puts("#{err_msg}, continuing anyway")
+          else
+            raise(err_msg)
+          end
+        end
+        cmd_out
       end
 
       def run_bosh(cmd, options = {})
         debug_on_fail = options.fetch(:debug_on_fail, false)
         options.delete(:debug_on_fail)
         @run_bosh_failures ||= 0
+        puts "bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}"
         run "bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
       rescue
         @run_bosh_failures += 1
