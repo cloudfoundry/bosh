@@ -62,7 +62,7 @@ namespace :spec do
             run_bosh "aws generate micro_bosh '#{vpc_outfile_path}' '#{route53_outfile_path}'"
           end
           run_bosh "micro deployment micro"
-          run_bosh "micro deploy"
+          run_bosh "micro deploy #{latest_micro_bosh_stemcell_path}"
 
           run_bosh "upload stemcell #{latest_stemcell_path}", debug_on_fail: true
 
