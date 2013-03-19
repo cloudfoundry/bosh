@@ -72,7 +72,9 @@ namespace :spec do
       end
 
       task :teardown_microbosh do
-        run_bosh "micro delete"
+        Dir.chdir("/tmp/deployments") do
+          run_bosh "micro delete"
+        end
         rm_rf("/tmp/deployments")
       end
 
@@ -108,19 +110,19 @@ namespace :spec do
       end
 
       def latest_micro_bosh_stemcell_path
-        Dir.glob("#{ENV['$JENKINS_HOME']}/aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz").first
+        Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_micro_bosh_stemcell/lastSuccessful/archive/*.tgz").first
       end
 
       def latest_stemcell_path
-        Dir.glob("#{ENV['$JENKINS_HOME']}/aws_bosh_stemcell/lastSuccessful/archive/*.tgz").first
+        Dir.glob("#{ENV['JENKINS_HOME']}/jobs/aws_bosh_stemcell/lastSuccessful/archive/*.tgz").first
       end
 
       def vpc_outfile_path
-        "#{ENV['$JENKINS_HOME']}/deployments-aws/ci2/aws_vpc_receipt.yml"
+        "#{ENV['JENKINS_HOME']}/jobs/deployments-aws/ci2/aws_vpc_receipt.yml"
       end
 
       def route53_outfile_path
-        "#{ENV['$JENKINS_HOME']}/deployments-aws/ci2/aws_route53_receipt.yml"
+        "#{ENV['JENKINS_HOME']}/jobs/deployments-aws/ci2/aws_route53_receipt.yml"
       end
 
       def bosh_config_path
