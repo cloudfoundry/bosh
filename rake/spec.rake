@@ -1,7 +1,9 @@
 require "rspec"
 require "rspec/core/rake_task"
+require 'tempfile'
 
 namespace :spec do
+
   desc "Run BOSH integration tests against a local sandbox"
   RSpec::Core::RakeTask.new(:integration) do |t|
     t.pattern = "spec/integration/**/*_spec.rb"
@@ -37,6 +39,7 @@ namespace :spec do
     namespace :aws do
       desc "Run AWS MicroBOSH deployment suite"
       task :micro do
+        puts ENV.inspect
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
           Rake::Task['stemcells:aws:create_and_publish_ami'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
@@ -118,6 +121,13 @@ namespace :spec do
 
       def route53_outfile_path
         "#{ENV['$JENKINS_HOME']}/deployments-aws/ci2/aws_route53_receipt.yml"
+      end
+
+      def bosh_config_path
+        # We should keep a reference to the tempfile, otherwise,
+        # when the object gets GC'd, the tempfile is deleted.
+        @bosh_config_tempfile ||= Tempfile.new("bosh_config")
+        @bosh_config_tempfile.path
       end
 
       def run(cmd, options = {})
