@@ -152,7 +152,7 @@ namespace :spec do
         debug_on_fail = options.fetch(:debug_on_fail, false)
         options.delete(:debug_on_fail)
         @run_bosh_failures ||= 0
-        run "#{binstubs_path}/bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
+        run "bundle exec bosh -v -n -P 10 --config '#{bosh_config_path}' #{cmd}", options
       rescue
         @run_bosh_failures += 1
         if @run_bosh_failures == 1 && debug_on_fail
