@@ -6,7 +6,7 @@ logging:
 
 network:
   type: manual
-  ip: 10.10.0.5
+  ip: 10.10.0.6
   vip:  <%= ENV["MICROBOSH_IP"] %>
   cloud_properties:
     subnet: <%= ENV["BOSH_SUBNET_ID"] %>
