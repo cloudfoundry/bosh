@@ -532,18 +532,7 @@ module Bosh::Director
         halt(204)
       end
 
-      if File.directory?(task.output)
-        # Backward compatbility from renaming `soap` log to `cpi` log.
-        # Old tasks might have been written to the file `soap` and we should
-        # still return them if log_type = cpi. Same goes for new task logs
-        # written to `cpi` but an old CLI has requested log_type = soap.
-        if %w(soap cpi).include?(log_type)
-          log_type = File.file?(File.join(task.output, "soap")) ? "soap" : "cpi"
-        end
-        log_file = File.join(task.output, log_type)
-      else
-        log_file = task.output # Backward compatibility
-      end
+      log_file = @task_manager.log_file(task, log_type)
 
       if File.file?(log_file)
         send_file(log_file, :type => "text/plain")
