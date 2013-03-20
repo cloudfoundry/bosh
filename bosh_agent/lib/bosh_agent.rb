@@ -68,7 +68,7 @@ require "bosh_agent/message/ssh"
 
 require "bosh_agent/handler"
 
-#YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
+YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
 
 module Bosh::Agent
 
