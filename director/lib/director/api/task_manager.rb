@@ -57,6 +57,7 @@ module Bosh::Director
             file.write gz.read
           end
         end
+        FileUtils.rm(src)
       end
     end
   end

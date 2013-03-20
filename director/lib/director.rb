@@ -18,6 +18,7 @@ require "thread"
 require "tmpdir"
 require "yaml"
 require "time"
+require "zlib"
 
 require "common/properties"
 

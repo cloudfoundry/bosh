@@ -7,6 +7,8 @@ templates:
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
+  task_logrotate.sh: bin/task_logrotate
+  task_logrotate.cron: config/task_logrotate.cron
 packages:
 - director
 - genisoimage
