@@ -120,8 +120,9 @@ module Bosh
           run_with_pid("bundle exec health_monitor -c #{HM_CONF}", HM_PID,
                        :output => hm_output)
 
+          # Wait till director is ready and listening on port 57523
           loop do
-            system "lsof -w -i :57523 | grep LISTEN"
+            `lsof -w -i :57523 | grep LISTEN`
             break if $?.exitstatus == 0
             sleep(0.5)
           end
