@@ -17,22 +17,22 @@ module Bosh
             :uid => @options[:uid],
             :secret => @options[:secret]
         }
-        # Add proxy if ENV has the variable
-        proxy = nil
-        unless @atmos_options[:url].nil?
-          case URI::parse(@atmos_options[:url]).scheme
-            when 'https'
-              proxy = ENV['HTTPS_PROXY'] || ENV['https_proxy']
-            when 'http'
-              proxy = ENV['HTTP_PROXY'] || ENV['http_proxy']
-            else
-              proxy = nil
-          end
-        end
-        @atmos_options[:proxy] = proxy unless proxy.nil?
-
         @tag = @options[:tag]
-        @http_client = HTTPClient.new
+
+        # Add proxy if ENV has the variable
+        proxy = case URI::parse(@atmos_options[:url] || '').scheme
+                  when 'https'
+                    ENV['HTTPS_PROXY'] || ENV['https_proxy']
+                  when 'http'
+                    ENV['HTTP_PROXY'] || ENV['http_proxy']
+                  else
+                    nil
+                end
+        if proxy
+          @atmos_options[:proxy] = proxy
+          @http_client = HTTPClient.new(:proxy => proxy)
+        end
+        @http_client ||= HTTPClient.new
         # TODO: Remove this line once we get the proper certificate for atmos
         @http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
