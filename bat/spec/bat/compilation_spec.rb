@@ -17,7 +17,7 @@ describe 'compilation' do
   end
 
   context 'when compiled package cache is enabled' do
-    it 'should download compiled package if it exist' do
+    xit 'should download compiled package if it exist' do
       pending 'global package cache not enabled' unless compiled_package_cache?
 
       with_deployment do
