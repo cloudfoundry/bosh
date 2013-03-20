@@ -5,7 +5,7 @@ namespace :spec do
   desc "Run BOSH integration tests against a local sandbox"
   RSpec::Core::RakeTask.new(:integration) do |t|
     t.pattern = "spec/integration/**/*_spec.rb"
-    t.rspec_opts = %w(--format documentation --color --fail-fast)
+    t.rspec_opts = %w(--format documentation --color)
   end
 
   desc "Run unit and functional tests for each BOSH component gem"
@@ -15,7 +15,7 @@ namespace :spec do
 
     builds.each do |build|
       puts "-----#{build}-----"
-      system("cd #{build} && bundle exec rspec spec --format documentation --color --fail-fast") || raise("#{build} failed to build unit tests")
+      system("cd #{build} && bundle exec rspec spec --format documentation --color") || raise("#{build} failed to build unit tests")
     end
   end
 
