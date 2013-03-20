@@ -41,7 +41,7 @@ module Bosh
         # FIXME: if there is a need to start this dummy cloud agent with alerts turned on
         # then port should be overriden for each agent, otherwise all but first won't start
         # (won't be able to bind to port)
-        agent_cmd = "bosh_agent -a #{agent_id} -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir} --no-alerts"
+        agent_cmd = "bosh_agent -a #{agent_id} -I dummy -P dummy -s bs_admin:bs_pass@http://127.0.0.1:9590 -p simple -b #{agent_base_dir} -n nats://localhost:42112 -r #{root_dir} --no-alerts"
 
         agent_pid = fork do
           # exec will actually fork off another process (due to shell expansion),
