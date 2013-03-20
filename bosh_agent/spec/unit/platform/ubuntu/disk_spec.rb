@@ -38,7 +38,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
   describe "AWS" do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
-                                                    'persistent' => { 2 => '/dev/sdf'} } }
+                                                    'persistent' => { 2 => '/dev/sdr'} } }
       Bosh::Agent::Config.infrastructure_name = "aws"
     end
 
@@ -55,14 +55,14 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
       disk_wrapper.stub(:dev_path_timeout).and_return(1)
       lambda {
         disk_wrapper.lookup_disk_by_cid(2).should == '/dev/sdf'
-      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdf", "\/dev\/vdf", "\/dev\/xvdf"/)
+      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdr", "\/dev\/vdr", "\/dev\/xvdr"/)
     end
   end
 
   describe "OpenStack" do
     before(:each) do
       Bosh::Agent::Config.settings = { 'disks' => { 'ephemeral' => "/dev/sdq",
-                                                    'persistent' => { 2 => '/dev/sdf'} } }
+                                                    'persistent' => { 2 => '/dev/sdr'} } }
       Bosh::Agent::Config.infrastructure_name = "openstack"
     end
 
@@ -79,7 +79,7 @@ describe Bosh::Agent::Platform::Ubuntu::Disk do
       disk_wrapper.stub(:dev_path_timeout).and_return(1)
       lambda {
         disk_wrapper.lookup_disk_by_cid(2).should == '/dev/vdf'
-      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdf", "\/dev\/vdf", "\/dev\/xvdf"/)
+      }.should raise_error(Bosh::Agent::FatalError, /"\/dev\/sdr", "\/dev\/vdr", "\/dev\/xvdr"/)
     end
   end
 
