@@ -1,3 +1,4 @@
 --color
 --format progress
 --profile
+--fail-fast
