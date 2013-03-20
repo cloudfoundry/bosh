@@ -5,13 +5,12 @@ class Stemcell
   attr_reader :version
 
   def self.from_path(path)
-    st = nil
     Dir.mktmpdir do |dir|
       %x{tar xzf #{path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
       stemcell_manifest = "#{dir}/stemcell.MF"
       st = YAML.load_file(stemcell_manifest)
+      Stemcell.new(st['name'], st['version'], st['cloud_properties']['infrastructure'], path)
     end
-    Stemcell.new(st['name'], st['version'], st['cloud_properties']['infrastructure'], path)
   end
 
   def initialize(name, version, cpi=nil, path=nil)
