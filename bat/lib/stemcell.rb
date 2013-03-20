@@ -6,7 +6,7 @@ class Stemcell
 
   def self.from_path(path)
     Dir.mktmpdir do |dir|
-      %x{tar xzf #{path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
+      sh("tar xzf #{path} --directory=#{dir} stemcell.MF}")
       stemcell_manifest = "#{dir}/stemcell.MF"
       st = YAML.load_file(stemcell_manifest)
       Stemcell.new(st['name'], st['version'], st['cloud_properties']['infrastructure'], path)
