@@ -201,8 +201,12 @@ class Object
   include Bosh::Director::DeepCopy
 end
 
+def asset(filename)
+  File.expand_path("../assets/#{filename}", __FILE__)
+end
+
 def spec_asset(filename)
-  File.read(File.expand_path("../assets/#{filename}", __FILE__))
+  File.read(asset(filename))
 end
 
 def gzip(string)
