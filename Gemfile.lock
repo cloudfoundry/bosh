@@ -207,7 +207,7 @@ PATH
     ruby_vcloud_sdk (1.5.0.pre.3)
       builder (~> 3.1.4)
       httpclient (= 2.2.4)
-      nokogiri (~> 1.5.6)
+      nokogiri (= 1.5.6)
       rest-client (~> 1.6.7)
 
 PATH
@@ -309,7 +309,7 @@ GEM
     net-ssh-gateway (1.1.2)
       net-ssh (>= 2.6.5)
     netaddr (1.5.0)
-    nokogiri (1.5.7)
+    nokogiri (1.5.6)
     nokogiri-diff (0.1.2)
       nokogiri (~> 1.5)
       tdiff (~> 0.3, >= 0.3.2)
