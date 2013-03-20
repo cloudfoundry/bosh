@@ -80,6 +80,7 @@ namespace :spec do
       end
 
       task :bat => :deploy_micro do
+        director = "micro.#{ENV["BOSH_VPC_SUBDOMAIN"]}.cf-app.com"
         ENV['BAT_DIRECTOR'] = director
         ENV['BAT_STEMCELL'] = latest_stemcell_path
         ENV['BAT_DEPLOYMENT_SPEC'] = "/tmp/deployments/bat.yml"
