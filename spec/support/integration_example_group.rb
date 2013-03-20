@@ -15,11 +15,11 @@ module IntegrationExampleGroup
     Bosh::Spec::Sandbox.reset(desc)
   end
 
-  def run_bosh(cmd, work_dir = nil)
+  def run_bosh(cmd, work_dir = nil, verbose=ENV['DEBUG'])
     lines = []
     Dir.chdir(work_dir || BOSH_WORK_DIR) do
       IO.popen("bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}").each do |line|
-        puts line.chomp
+        puts(line.chomp) if verbose
         lines << line.chomp
       end
     end
