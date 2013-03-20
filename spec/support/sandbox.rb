@@ -52,10 +52,9 @@ module Bosh
           FileUtils.rm_rf(TESTCASE_SQLITE_DB)
 
           Dir.chdir(DIRECTOR_PATH) do
-            output = `bundle exec bin/migrate -c #{DIRECTOR_CONF}`
+            system("bundle exec bin/migrate -c #{DIRECTOR_CONF}")
             unless $?.exitstatus == 0
-              puts "Failed to run migration:"
-              puts output
+              puts "Failed to run migration"
               exit 1
             end
           end
@@ -100,9 +99,10 @@ module Bosh
           if ENV['DEBUG']
             name = pick_unique_name(name)
             base_log_path = File.join(LOGS_PATH, name)
-            director_output = "#{base_log_path}.director.out"
-            worker_output = "#{base_log_path}.worker.out"
-            hm_output = "#{base_log_path}.health_monitor.out"
+            FileUtils.mkdir_p base_log_path
+            director_output = File.join base_log_path, "director.log"
+            worker_output = File.join base_log_path, "worker.log"
+            hm_output = File.join base_log_path, "health_monitor.log"
           else
             director_output = worker_output = hm_output = "/dev/null"
           end
@@ -121,7 +121,7 @@ module Bosh
                        :output => hm_output)
 
           loop do
-            `lsof -w -i :57523 | grep LISTEN`
+            system "lsof -w -i :57523 | grep LISTEN"
             break if $?.exitstatus == 0
             sleep(0.5)
           end

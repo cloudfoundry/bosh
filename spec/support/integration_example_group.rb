@@ -16,9 +16,14 @@ module IntegrationExampleGroup
   end
 
   def run_bosh(cmd, work_dir = nil)
+    lines = []
     Dir.chdir(work_dir || BOSH_WORK_DIR) do
-      `bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
+      IO.popen("bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}").each do |line|
+        puts line.chomp
+        lines << line.chomp
+      end
     end
+    lines.join("\n")
   end
 
   def self.included(base)
