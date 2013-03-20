@@ -11,6 +11,11 @@ module DeploymentHelper
     @release ||= Release.from_path(BAT_RELEASE_DIR)
   end
 
+  def deployment
+    load_deployment_spec
+    @deployment ||= Deployment.new(@spec)
+  end
+
   # @return [Array[String]]
   def deployments
     result = {}
@@ -61,26 +66,34 @@ module DeploymentHelper
 
   def requirement(what, present=true)
     case what
-    when Stemcell
-      if stemcells.include?(stemcell)
-        puts "stemcell already uploaded" if debug?
+      when Stemcell
+        if stemcells.include?(stemcell)
+          puts "stemcell already uploaded" if debug?
+        else
+          puts "stemcell not uploaded" if debug?
+          bosh("upload stemcell #{what.to_path}")
+        end
+      when Release
+        if releases.include?(release)
+          puts "release already uploaded" if debug?
+        else
+          puts "release not uploaded" if debug?
+          bosh("upload release #{what.to_path}")
+        end
+      when Deployment
+        if deployments.include?(deployment)
+          puts "deployment already deployed" if debug?
+        else
+          puts "deployment not deployed" if debug?
+          bosh("deployment #{@deployment.to_path}")
+          bosh("deploy")
+        end
+      when :no_tasks_processing
+        if tasks_processing?
+          raise "director `#{bosh_director}' is currently processing tasks"
+        end
       else
-        puts "stemcell not uploaded" if debug?
-        bosh("upload stemcell #{what.to_path}")
-      end
-    when Release
-      if releases.include?(release)
-        puts "release already uploaded" if debug?
-      else
-        puts "release not uploaded" if debug?
-        bosh("upload release #{what.to_path}")
-      end
-    when :no_tasks_processing
-      if tasks_processing?
-        raise "director `#{bosh_director}' is currently processing tasks"
-      end
-    else
-      raise "unknown requirement: #{what}"
+        raise "unknown requirement: #{what}"
     end
   end
 
@@ -89,12 +102,15 @@ module DeploymentHelper
     # preserved - this saves a lot of time!
     return if fast?
     case what
-    when Stemcell
-      bosh("delete stemcell #{what.name} #{what.version}")
-    when Release
-      bosh("delete release #{what.name}")
-    else
-      raise "unknown cleanup: #{what}"
+      when Stemcell
+        bosh("delete stemcell #{what.name} #{what.version}")
+      when Release
+        bosh("delete release #{what.name}")
+      when Deployment
+        bosh("delete deployment #{what.name}")
+        what.delete
+      else
+        raise "unknown cleanup: #{what}"
     end
   end
 
