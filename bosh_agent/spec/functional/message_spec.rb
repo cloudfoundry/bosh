@@ -62,6 +62,7 @@ describe "messages" do
     @user = "nats"
     @pass = "nats"
     @port = get_free_port
+    @smtp_port = get_free_port
     @nats_uri = "nats://#{@user}:#{@pass}@localhost:#{@port}"
     @agent_id = "rspec_agent"
 
@@ -72,7 +73,7 @@ describe "messages" do
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
     command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1"
-    command += " -b #{@basedir} -l ERROR"
+    command += " -b #{@basedir} -l ERROR -t #{@smtp_port}"
     @agent_pid = POSIX::Spawn::spawn(command)
     wait_for_nats
   end
