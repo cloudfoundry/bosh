@@ -1,4 +1,4 @@
-require "spect_helper"
+require "spec_helper"
 
 describe "with release and stemcell" do
 
