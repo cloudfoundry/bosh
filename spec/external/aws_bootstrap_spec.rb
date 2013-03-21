@@ -96,7 +96,7 @@ describe 'bosh_aws_bootstrap_external' do
     end
 
     it "assigns DHCP options" do
-      vpc.dhcp_options.configuration[:domain_name_servers].should =~ ['10.10.0.5', '10.10.0.2']
+      vpc.dhcp_options.configuration[:domain_name_servers].should =~ ['10.10.0.6', '10.10.0.2']
     end
 
     it "assigns security groups" do
