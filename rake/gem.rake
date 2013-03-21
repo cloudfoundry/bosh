@@ -110,7 +110,10 @@ namespace :all do
   end
 
   desc "Install all gems"
-  task :install => COMPONENTS.map { |f| "#{f}:install" }
+  task :install do
+    mkdir_p "pkg/gems"
+    COMPONENTS.map { |f| Rake::Task["#{f}:install"].invoke  }
+  end
 
   desc "Push all gems to rubygems"
   task :push => COMPONENTS.map { |f| "#{f}:push" }
