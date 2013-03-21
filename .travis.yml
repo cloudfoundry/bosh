@@ -1,7 +1,7 @@
 script: 'bundle exec rake spec:$SUITE'
 bundler_args: "--local --without development"
 rvm:
-  - 1.9.3
+  - 1.9.3-p392
   - 2.0.0
 env:
   - SUITE=unit
