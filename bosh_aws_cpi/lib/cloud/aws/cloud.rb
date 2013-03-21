@@ -146,6 +146,15 @@ module Bosh::AwsCloud
     end
 
     ##
+    # Has EC2 instance
+    # @param [String] instance_id EC2 instance id
+    def has_vm?(instance_id)
+      with_thread_name("has_vm?(#{instance_id})") do
+        InstanceManager.new(@region, registry).has_instance?(instance_id)
+      end
+    end
+
+    ##
     # Creates a new EBS volume
     # @param [Integer] size disk size in MiB
     # @param [optional, String] instance_id EC2 instance id

@@ -74,7 +74,7 @@ module Bosh::AwsCloud
     end
 
     # Soft reboots EC2 instance
-    # @param [AWS::EC2::Instance] instance EC2 instance
+    # @param [String] instance_id EC2 instance id
     def reboot(instance_id)
       instance = @region.instances[instance_id]
 
@@ -96,6 +96,14 @@ module Bosh::AwsCloud
         lb = elb.load_balancers[load_balancer]
         lb.instances.register(instance)
       end
+    end
+
+    # Determines if the instance exists.
+    # @param [String] instance_id EC2 instance id
+    def has_instance?(instance_id)
+      instance = @region.instances[instance_id]
+
+      instance.exists? && instance.status != :terminated
     end
 
     def remove_from_load_balancers

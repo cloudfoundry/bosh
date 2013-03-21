@@ -70,6 +70,10 @@ module Bosh
         raise NotImplemented, "reboot_vm"
       end
 
+      def has_vm?(vm)
+        raise NotImplemented, "has_vm?"
+      end
+
       def configure_networks(vm, networks)
         raise NotImplemented, "configure_networks"
       end
