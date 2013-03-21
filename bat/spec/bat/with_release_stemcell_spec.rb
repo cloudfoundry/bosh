@@ -106,7 +106,7 @@ describe "with release and stemcell and two deployments" do
       # using password 'foobar'
       use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
       use_static_ip
-      jobs = %w[
+      @jobs = %w[
         /var/vcap/packages/batlight/bin/batlight
         /var/vcap/packages/batarang/bin/batarang
       ]
@@ -127,7 +127,7 @@ describe "with release and stemcell and two deployments" do
     end
 
     it "should not change the deployment on a noop" do
-      deployment_result = run_bosh("deploy")
+      deployment_result = bosh("deploy")
       events(get_task_id(deployment_result.output)).each do |event|
         event["stage"].should_not match /^Updating/
       end
@@ -147,8 +147,8 @@ describe "with release and stemcell and two deployments" do
       end
     end
 
-    xit "should use job colocation", ssh: true do
-      jobs.each do |job|
+    it "should use job colocation", ssh: true do
+      @jobs.each do |job|
         grep = "pgrep -lf #{job}"
         ssh(static_ip, "vcap", grep, ssh_options).should match %r{#{job}}
       end
