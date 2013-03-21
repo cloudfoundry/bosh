@@ -300,6 +300,18 @@ module Bosh::OpenStackCloud
     end
 
     ##
+    # Checks if an OpenStack server exists
+    #
+    # @param [String] server_id OpenStack server UUID
+    # @return [Boolean] True if the vm exists
+    def vm_exists?(server_id)
+      with_thread_name("vm_exists?(#{server_id})") do
+        server = @openstack.servers.get(server_id)
+        return server ? true : false
+      end
+    end
+
+    ##
     # Reboots an OpenStack Server
     #
     # @param [String] server_id OpenStack server UUID
