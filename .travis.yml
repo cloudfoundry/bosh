@@ -14,4 +14,4 @@ notifications:
     on_failure: always
 matrix:
   allow_failures:
-    - rvm: ruby-2.0.0
+    - rvm: 2.0.0
