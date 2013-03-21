@@ -21,7 +21,7 @@ vpc:
   dhcp_options:
     domain_name: dev102.cf.com
     domain_name_servers:
-      - 10.10.0.5
+      - 10.10.0.6
       - 172.16.0.23
   security_groups:
     - name: open

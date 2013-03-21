@@ -34,7 +34,7 @@ vpc:
       availability_zone: <%= ENV["BOSH_VPC_SECONDARY_AZ"] || raise("Missing ENV variable BOSH_VPC_SECONDARY_AZ") %>
   dhcp_options:
     domain_name_servers:
-      - 10.10.0.5  # IP of the BOSH DNS server?
+      - 10.10.0.6  # IP of the BOSH DNS server?
       - 10.10.0.2  # local amazon public DNS server
   security_groups:
     - name: open
