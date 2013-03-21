@@ -44,7 +44,7 @@ describe "with release and stemcell and two deployments" do
   end
 
 
-  it "should cancel a deployment" do
+  xit "should cancel a deployment" do
 
     deployment = with_deployment
     bosh("deployment #{deployment.to_path}")
