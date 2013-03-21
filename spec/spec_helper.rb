@@ -42,7 +42,6 @@ end
 RSpec.configure do |c|
   c.before(:each) do |example|
     cleanup_bosh
-    FileUtils.rm_rf(TEST_RELEASE_DIR)
     FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
   end
 
