@@ -5,12 +5,14 @@ module Bosh::Cli::Command
     include Bosh::Cli::DeploymentHelper
 
     usage "vms"
-    desc  "List all VMs that in a deployment"
-    option "--full", "Return detailed VM information"
+    desc  "List all VMs in a deployment"
+    option "--details", "Return detailed VM information"
+    option "--vitals", "Return VM vitals information"
     def list(deployment_name = nil)
       auth_required
       no_track_unsupported
-      show_full_stats = options[:full]
+      show_details = options[:details]
+      show_vitals = options[:vitals]
 
       if deployment_name.nil?
         manifest = prepare_deployment_manifest
@@ -30,16 +32,52 @@ module Bosh::Cli::Command
 
       vms_table = table do |t|
         headings = ["Job/index", "State", "Resource Pool", "IPs"]
-        headings += ["CID", "Agent ID"] if show_full_stats
-
+        if show_details
+          headings += ["CID", "Agent ID"]
+        end
+        if show_vitals
+          headings += [{:value => "Load\n(avg01, avg05, avg15)", :alignment => :center}]
+          headings += ["CPU\nUser", "CPU\nSys", "CPU\nWait"]
+          headings += ["Memory Usage", "Swap Usage"]
+          headings += ["System\nDisk Usage", "Ephemeral\nDisk Usage", "Persistent\nDisk Usage"]
+        end
         t.headings = headings
 
         sorted.each do |vm|
           job = "#{vm["job_name"] || "unknown"}/#{vm["index"] || "unknown"}"
           ips = Array(vm["ips"]).join(", ")
+          vitals = vm["vitals"]
 
           row = [job, vm["job_state"], vm["resource_pool"], ips]
-          row += [vm["vm_cid"], vm["agent_id"]] if show_full_stats
+
+          if show_details
+            row += [vm["vm_cid"], vm["agent_id"]]
+          end
+
+          if show_vitals
+            if vitals
+              cpu =  vitals["cpu"]
+              mem =  vitals["mem"]
+              swap = vitals["swap"]
+              disk = vitals["disk"]
+
+              row << vitals["load"].map { |l| "#{l}%" }.join(", ")
+              row << "#{cpu["user"]}%"
+              row << "#{cpu["sys"]}%"
+              row << "#{cpu["wait"]}%"
+              row << "#{mem["percent"]}% (#{pretty_size(mem["kb"].to_i * 1024)})"
+              row << "#{swap["percent"]}% (#{pretty_size(swap["kb"].to_i * 1024)})"
+              row << "#{disk["system"]["percent"]}%"
+              row << "#{disk["ephemeral"]["percent"]}%"
+              if disk["persistent"].nil?
+                row << "n/a"
+              else
+                row << "#{disk["persistent"]["percent"]}%"
+              end
+            else
+              9.times { row << "n/a" }
+            end
+          end
 
           t << row
         end
