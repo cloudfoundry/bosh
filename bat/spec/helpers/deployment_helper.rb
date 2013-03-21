@@ -11,6 +11,10 @@ module DeploymentHelper
     @release ||= Release.from_path(BAT_RELEASE_DIR)
   end
 
+  def previous_release
+    @previous_release ||= release.previous
+  end
+
   def deployment
     load_deployment_spec
     @deployment ||= Deployment.new(@spec)
@@ -85,7 +89,8 @@ module DeploymentHelper
           puts "deployment already deployed" if debug?
         else
           puts "deployment not deployed" if debug?
-          bosh("deployment #{@deployment.to_path}")
+          deployment.generate_deployment_manifest(@spec)
+          bosh("deployment #{deployment.to_path}")
           bosh("deploy")
         end
       when :no_tasks_processing
@@ -112,6 +117,11 @@ module DeploymentHelper
       else
         raise "unknown cleanup: #{what}"
     end
+  end
+
+  def reload_deployment_spec
+    @spec = nil
+    load_deployment_spec
   end
 
   def load_deployment_spec

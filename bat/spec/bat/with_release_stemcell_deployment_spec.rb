@@ -4,26 +4,21 @@ describe "with release, stemcell and deployment" do
   before(:all) do
     requirement stemcell
     requirement release
+
+    load_deployment_spec
+    use_static_ip
     requirement deployment
   end
 
   after(:all) do
+    cleanup deployment
     cleanup release
     cleanup stemcell
-    cleanup deployment
   end
 
   context "agent" do
-    it "should set vcap password", ssh: true do
-      # using password 'foobar'
-      use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
-      use_static_ip
-      ssh(static_ip, "vcap", "echo foobar | sudo -S whoami", ssh_options.merge(password: "foobar")).should == "[sudo] password for vcap: root\n"
-    end
 
     it "should survive agent dying", ssh: true do
-      use_static_ip
-
       Dir.mktmpdir do |tmpdir|
         ssh(static_ip, "vcap", "echo #{password} | sudo -S pkill -9 agent", ssh_options)
         # wait for agent to restart
@@ -32,6 +27,12 @@ describe "with release, stemcell and deployment" do
         # TODO check log for 2 agent starts (first is initial start and second is after crash)
       end
     end
+  end
+
+  it "should return vms in a deployment" do
+    bat_vms = vms(deployment.name)
+    bat_vms.size.should == 1
+    bat_vms.first.name.should == "batlight/0"
   end
 
   context "dns" do
@@ -80,15 +81,6 @@ describe "with release, stemcell and deployment" do
       # TODO verify that the process gets a new pid
     end
 
-    it "should rename a job" do
-      use_job("batfoo")
-      use_template("batlight")
-      updated_job_manifest = with_deployment
-      bosh("deployment #{updated_job_manifest.to_path}").should succeed
-      bosh('rename job batlight batfoo').should succeed_with %r{Rename successful}
-      bosh('vms').should succeed_with %r{batfoo}
-      updated_job_manifest.delete
-    end
   end
 
   context "logs" do
@@ -149,8 +141,13 @@ describe "with release, stemcell and deployment" do
 
   context "release" do
     describe "upload" do
+
+      after do
+        bosh("delete release #{previous_release.name} #{previous_release.version}", :on_error => :return)
+      end
+
       it "should succeed when the release is valid" do
-        bosh("upload release #{@previous.to_path}").should
+        bosh("upload release #{previous_release.to_path}").should
         succeed_with /Release uploaded/
       end
 
@@ -165,18 +162,19 @@ describe "with release, stemcell and deployment" do
     end
 
     describe "listing" do
-      it "should mark releases that have uncommitted changes" do
-        Dir.chdir(release.path) do |dir|
-          FileUtils.mkdir File.join(dir, ".git")
+      after do
+        bosh("delete release bosh-release", :on_error => :return)
+      end
+
+      xit "should mark releases that have uncommitted changes" do
+        Dir.chdir(BAT_RELEASE_DIR) do |dir|
           FileUtils.touch File.join("src/batlight/bin/dirty-file")
           commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
           bosh("create release --force")
           bosh("upload release")
           FileUtils.rm File.join("src/batlight/bin/dirty-file")
-          FileUtils.rmdir File.join(dir, ".git")
-          bosh("releases").should succeed_with /bosh-release.*#{commit_hash}\+.*Uncommitted changes/m
-          bosh("delete release bosh-release")
           bosh("reset release")
+          bosh("releases").should succeed_with /bosh-release.*#{commit_hash}\+.*Uncommitted changes/m
         end
       end
     end
@@ -184,38 +182,32 @@ describe "with release, stemcell and deployment" do
     describe "delete" do
 
       before(:each) do
-        bosh("upload release #{@previous.to_path}")
+        bosh("upload release #{previous_release.to_path}")
       end
 
       context "in use" do
 
         it "should not be possible to delete" do
           expect {
-            bosh("delete release #{@previous.name}")
+            bosh("delete release #{previous_release.name}")
           }.to raise_error { |error|
             error.should be_a Bosh::Exec::Error
             error.output.should match /Error 30007/
           }
-          bosh("delete release #{@previous.name} #{@previous.version}")
+          bosh("delete release #{previous_release.name} #{previous_release.version}")
         end
 
         it "should be possible to delete a different version" do
-          bosh("delete release #{@previous.name} #{@previous.version}").should
+          bosh("delete release #{previous_release.name} #{previous_release.version}").should
           succeed_with /Deleted release/
         end
       end
 
       context "not in use" do
         it "should be possible to delete a single release" do
-          bosh("delete release #{@previous.name} #{@previous.version}").should
+          bosh("delete release #{previous_release.name} #{previous_release.version}").should
           succeed_with /Deleted release/
-          releases.should_not include(@previous)
-        end
-
-        it "should be possible to delete all releases" do
-          bosh("delete release #{release.name}").should succeed_with /Deleted `#{release.name}'/
-          releases.should_not include(release)
-          # TODO this fails when running in fast mode, as it tries to delete the release too
+          releases.should_not include(previous_release)
         end
       end
     end

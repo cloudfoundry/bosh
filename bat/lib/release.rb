@@ -19,7 +19,7 @@ class Release
   end
 
   def to_s
-    "#@name-#{version}"
+    "#{name}-#{version}"
   end
 
   def to_path

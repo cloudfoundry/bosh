@@ -10,6 +10,7 @@ require "vm"
 
 require 'tempfile'
 require 'common/exec'
+require 'resolv'
 
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 ASSETS_DIR = File.join(SPEC_ROOT, "assets")
