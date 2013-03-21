@@ -15,7 +15,7 @@ namespace :spec do
 
     builds.each do |build|
       puts "-----#{build}-----"
-      system("cd #{build} && bundle exec rspec spec --format documentation --color") || raise("#{build} failed to build unit tests")
+      system("cd #{build} && bundle exec rspec spec") || raise("#{build} failed to build unit tests")
     end
   end
 
