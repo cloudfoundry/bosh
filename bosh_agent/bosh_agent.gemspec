@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
   # Third party dependencies
   s.add_dependency          'highline',         '~>1.6.2'
   s.add_dependency          'netaddr',          '~>1.5.0'
-  s.add_dependency          'posix-spawn',      '~>0.3.6'
   s.add_dependency          'ruby-atmos-pure',  '~>1.0.5'
   s.add_dependency          'thin',             '~>1.5.0'
   s.add_dependency          'yajl-ruby',        '~>1.1.0'

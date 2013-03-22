@@ -2,7 +2,6 @@
 
 require 'spec_helper'
 
-require 'posix/spawn'
 require 'yajl'
 
 describe "http messages" do
@@ -52,7 +51,7 @@ describe "http messages" do
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
     command = "ruby #{agent} -n #{@http_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
-    @agent_pid = POSIX::Spawn::spawn(command)
+    @agent_pid = Process.spawn(command)
 
     counter = 0
     while !http_up?

@@ -292,15 +292,16 @@ module Bosh::Agent
     def exec_monit
       status = nil
 
-      pid, stdin, stdout, stderr = POSIX::Spawn.popen4(Monit.monit_bin, '-I', '-c', Monit.monitrc)
-      stdin.close
+      stdout_rd, stdout_wr = IO.pipe()
+      stderr_rd, stderr_wr = IO.pipe()
+      pid = Process.spawn("#{Monit.monit_bin} -I -c #{Monit.monitrc}", :in => :close, :out => stdout_wr, :err=> stderr_wr)
 
       at_exit {
         Process.kill('TERM', pid) rescue nil
         Process.waitpid(pid)      rescue nil
       }
 
-      log_monit_output(stdout, stderr)
+      log_monit_output(stdout_rd, stderr_rd)
 
       status = Process.waitpid(pid) rescue nil
     rescue => e

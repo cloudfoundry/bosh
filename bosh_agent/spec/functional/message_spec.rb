@@ -2,7 +2,6 @@
 
 require File.dirname(__FILE__) + "/../spec_helper"
 
-require "posix/spawn"
 require "nats/client"
 require "yajl"
 
@@ -67,14 +66,14 @@ describe "messages" do
     @agent_id = "rspec_agent"
 
     command = "nats-server --port #{@port} --user #{@user} --pass #{@pass}"
-    @nats_pid = POSIX::Spawn::spawn(command)
+    @nats_pid = Process.spawn(command)
 
     agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
     command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1"
     command += " -b #{@basedir} -l ERROR -t #{@smtp_port}"
-    @agent_pid = POSIX::Spawn::spawn(command)
+    @agent_pid = Process.spawn(command)
     wait_for_nats
   end
 
