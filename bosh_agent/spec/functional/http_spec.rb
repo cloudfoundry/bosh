@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
 require 'posix/spawn'
 require 'yajl'
@@ -61,6 +61,17 @@ describe "http messages" do
       raise "unable to connect to agent" if counter > 100
       sleep 0.1
     end
+  end
+
+  after(:all) do
+    if @agent_pid
+      puts "stopping agent"
+      Process.kill(:TERM, @agent_pid)
+      Process.waitpid(@agent_pid)
+    else
+      raise "unable to stop agent, you need to clean up by hand"
+    end
+    FileUtils.rm_rf(@basedir)
   end
 
   it "should respond to state message" do
@@ -164,13 +175,4 @@ describe "http messages" do
     end
   end
 
-  after(:all) do
-    if @agent_pid
-      puts "stopping agent"
-      Process.kill(:TERM, @agent_pid)
-    else
-      raise "unable to stop agent, you need to clean up by hand"
-    end
-    FileUtils.rm_rf(@basedir)
-  end
 end

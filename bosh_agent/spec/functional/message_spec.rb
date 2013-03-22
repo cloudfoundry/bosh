@@ -78,6 +78,16 @@ describe "messages" do
     wait_for_nats
   end
 
+
+
+  after(:all) do
+    Process.kill(:TERM, @agent_pid)
+    Process.waitpid(@agent_pid)
+    Process.kill(:TERM, @nats_pid)
+    Process.waitpid(@nats_pid)
+    FileUtils.rm_rf(@basedir)
+  end
+
   it "should respond to state message" do
     nats('state') do |msg|
       value = get_value(msg)
@@ -179,11 +189,5 @@ describe "messages" do
     nats('foobar') do |msg|
       msg.should have_key('exception')
     end
-  end
-
-  after(:all) do
-    Process.kill(:TERM, @agent_pid)
-    Process.kill(:TERM, @nats_pid)
-    FileUtils.rm_rf(@basedir)
   end
 end
