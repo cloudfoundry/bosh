@@ -58,7 +58,6 @@ namespace :stemcell do
 
   namespace :aws do
     task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
-      ami_id = args[:ami_id]
       stemcell_tgz = args[:stemcell_tgz]
       bucket_name = args[:bucket_name]
       access_key_id = ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT']

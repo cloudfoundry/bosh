@@ -39,7 +39,6 @@ namespace :spec do
     namespace :aws do
       desc "Run AWS MicroBOSH deployment suite"
       task :micro do
-        puts ENV.inspect
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
           Rake::Task['stemcells:aws:publish_to_s3'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
@@ -86,7 +85,7 @@ namespace :spec do
         ENV['BAT_DEPLOYMENT_SPEC'] = "/tmp/deployments/bat.yml"
         ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
         ENV['BAT_FAST'] = 'true'
-        ENV['BAT_SKIP_SSH'] = 'true'
+        #ENV['BAT_SKIP_SSH'] = 'true'
         ENV['BAT_DEBUG'] = 'verbose'
         ENV['BAT_DNS_HOST'] = Resolv.getaddress(director)
         Rake::Task['bat'].invoke
