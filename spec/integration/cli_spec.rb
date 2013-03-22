@@ -30,7 +30,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "whines on inaccessible target" do
-    out = run_bosh("target http://nowhere.com")
+    out = run_bosh("target http://localhost")
     out.should =~ /cannot access director/i
 
     expect_output("target", <<-OUT)
