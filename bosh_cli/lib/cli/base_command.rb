@@ -202,9 +202,17 @@ module Bosh::Cli
       end
 
       def dirty_state?
-        `which git`
-        return false unless $? == 0
-        File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
+        `git diff-index --quiet HEAD -- 2>&1`
+        case $?.exitstatus
+          when 128 # Not in a git repo
+            false
+          when 127 # Git command not found
+            false
+          when 0 # Clean repo
+            false
+        else
+          true
+        end
       end
 
       def normalize_url(url)
