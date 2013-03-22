@@ -130,15 +130,8 @@ module Bosh::AwsCloud
       tries = args.fetch(:tries, DEFAULT_TRIES).to_i
       target_state = args.fetch(:target_state)
 
+      sleep_cb = self.class.sleep_callback("Waiting for #{desc} to be #{target_state}", tries)
       errors << AWS::EC2::Errors::RequestLimitExceeded
-
-      sleep_cb = lambda do |num_tries, error|
-        sleep_time = 2**[num_tries,MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
-        Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
-        Bosh::AwsCloud::ResourceWait.logger.debug("Waiting for #{desc} to be #{target_state}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
-        sleep_time
-      end
-
       ensure_cb = Proc.new do |retries|
         cloud_error("Timed out waiting for #{desc} to be #{target_state}, took #{time_passed}s") if retries == tries
       end
@@ -165,6 +158,17 @@ module Bosh::AwsCloud
 
     def time_passed
       Time.now - @started_at
+    end
+
+    private
+
+    def self.sleep_callback(description, tries)
+      lambda do |num_tries, error|
+        sleep_time = 2**[num_tries, MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
+        Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
+        Bosh::AwsCloud::ResourceWait.logger.debug("#{description}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
+        sleep_time
+      end
     end
   end
 end

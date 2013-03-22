@@ -202,35 +202,17 @@ module Bosh::AwsCloud
     def delete_disk(disk_id)
       with_thread_name("delete_disk(#{disk_id})") do
         volume = @ec2.volumes[disk_id]
-        state = volume.state
-
-        if state != :available
-          cloud_error("Cannot delete volume `#{volume.id}', state is #{state}")
-        end
 
         @logger.info("Deleting volume `#{volume.id}'")
 
-        # even though the contract is that we don't get here until AWS
-        # reports that the volume is detached, the "eventual consistency"
-        # might throw a spanner in the machinery and report that it still
-        # is in use
-
         tries = 10
-        sleep_cb = lambda do |num_tries, error|
-          sleep_time = 2**[num_tries,8].min # Exp backoff: 1, 2, 4, 8 ... up to max 256
-          @logger.debug("Waiting for volume `#{volume.id}' to be deleted")
-          @logger.debug("#{error.class}: `#{error.message}'") if error
-          @logger.debug("Retrying in #{sleep_time} seconds - #{num_tries}/#{tries}")
-          sleep_time
-        end
-
+        sleep_cb = ResourceWait.sleep_callback("Waiting for volume `#{volume.id}' to be deleted", tries)
         ensure_cb = Proc.new do |retries|
-          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
+          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries+1 == tries
         end
+        error = AWS::EC2::Errors::Client::VolumeInUse
 
-        errors = [AWS::EC2::Errors::Client::VolumeInUse]
-
-        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
+        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: error, ensure: ensure_cb) do
           volume.delete
           true # return true to only retry on Exceptions
         end
