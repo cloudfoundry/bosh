@@ -55,6 +55,7 @@ namespace :spec do
       end
 
       task :deploy_micro do
+        rm_rf("/tmp/deployments")
         mkdir_p("/tmp/deployments/micro")
         chdir("/tmp/deployments") do
           chdir("micro") do
