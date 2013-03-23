@@ -60,28 +60,10 @@ namespace :stemcell do
     task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
       stemcell_tgz = args[:stemcell_tgz]
       bucket_name = args[:bucket_name]
-      access_key_id = ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT']
-      secret_access_key = ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
-      region = Net::HTTP.get('169.254.169.254', '/latest/meta-data/placement/availability-zone').chop
-      aws = {
-          "default_key_name" => "fake",
-          "region" => region,
-          "access_key_id" => access_key_id,
-          "secret_access_key" => secret_access_key
-      }
-
-      # just fake the registry struct, as we don't use it
-      options = {
-          "aws" => aws,
-          "registry" => {
-              "endpoint" => "http://fake.registry",
-              "user" => "fake",
-              "password" => "fake"
-          }
-      }
-
-      cloud_config = OpenStruct.new(:logger => Logger.new("ami.log"), :task_checkpoint => nil)
-      Bosh::Clouds::Config.configure(cloud_config)
+      AWS.config({
+          access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
+          secret_access_key:  ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
+      })
 
       Dir.mktmpdir do |dir|
         light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
