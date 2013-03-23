@@ -248,7 +248,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /bosh-release.+0\.1\-dev/
   end
 
-  it "sparsely uploads the release" do
+  xit "sparsely uploads the release" do
     assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.tgz")
     release_2 = spec_asset("test_release/dev_releases/bosh-release-0.2-dev.tgz")
