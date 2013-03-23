@@ -94,7 +94,7 @@ namespace :spec do
       end
 
       task :publish_gems => "spec:system:aws:bat" do
-        cd({ENV['WORKSPACE']) do
+        cd(ENV['WORKSPACE']) do
           build_number = ENV['BUILD_NUMBER']
           file_contents = File.read("BOSH_VERSION")
           file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
