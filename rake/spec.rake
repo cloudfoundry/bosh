@@ -41,8 +41,8 @@ namespace :spec do
       task :micro do
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
-          Rake::Task['stemcells:aws:publish_to_s3'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
-          Rake::Task['stemcells:aws:publish_to_s3'].invoke(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+          Rake::Task['stemcell:aws:publish_to_s3'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
+          Rake::Task['stemcell:aws:publish_to_s3'].invoke(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
@@ -100,6 +100,7 @@ namespace :spec do
           file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
           File.open("BOSH_VERSION", 'w') { |f| f.write file_contents }
           Rake::Task["all:pre_stage_latest"].invoke
+          run("cd pkg/gems && s3cmd get s3://bosh-jenkins-gems/gems/* .")
           run("cd pkg && gem generate_index .")
           run("cd pkg && s3cmd sync . s3://bosh-jenkins-gems")
         end
