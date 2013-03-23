@@ -73,6 +73,7 @@ namespace :spec do
 
       task :teardown_microbosh do
         chdir("/tmp/deployments") do
+          run_bosh "delete deployment bat"
           run_bosh "micro delete"
         end
         rm_rf("/tmp/deployments")
@@ -86,19 +87,19 @@ namespace :spec do
         ENV['BAT_VCAP_PASSWORD'] = 'c1oudc0w'
         ENV['BAT_FAST'] = 'true'
         #ENV['BAT_SKIP_SSH'] = 'true'
-        ENV['BAT_DEBUG'] = 'verbose'
+        #ENV['BAT_DEBUG'] = 'verbose'
         ENV['BAT_DNS_HOST'] = Resolv.getaddress(director)
-        Rake::Task['bat'].invoke
+        #Rake::Task['bat'].invoke
       end
 
       task :publish_gems => "spec:system:aws:bat" do
         build_number = ENV['BUILD_NUMBER']
-        file_contents = File.read('BOSH_VERSION')
+        file_contents = File.read("#{ENV['WORKSPACE']}/BOSH_VERSION")
         file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
-        File.open('BOSH_VERSION', 'w') { |f| f.write file_contents }
+        File.open("#{ENV['WORKSPACE']}/BOSH_VERSION", 'w') { |f| f.write file_contents }
         Rake::Task["all:pre_stage_latest"].invoke
-        run('cd pkg && gem generate_index .')
-        run('cd pkg && s3cmd sync . s3://bosh-jenkins-gems')
+        run("cd #{ENV['WORKSPACE']}/pkg && gem generate_index .")
+        run("cd #{ENV['WORKSPACE']}/pkg && s3cmd sync . s3://bosh-jenkins-gems")
       end
 
       def stemcell_version(stemcell_path)
