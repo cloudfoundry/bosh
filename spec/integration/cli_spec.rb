@@ -14,6 +14,13 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     format_output(run_bosh(cmd)).should == format_output(expected_output)
   end
 
+  def check_travis_git_repo
+    # Temporary change to test travis
+    puts "git diff-index --quiet HEAD -- 2>&1; echo $?"
+    `git diff-index --quiet HEAD -- 2>&1`
+    puts $?.exitstatus
+  end
+
   it "has help message" do
     run_bosh("help")
     $?.should == 0
@@ -228,6 +235,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
 
+      check_travis_git_repo
+
       run_bosh("create release", Dir.pwd)
       run_bosh("target http://localhost:57523")
       run_bosh("login admin admin")
@@ -245,6 +254,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
+
+      check_travis_git_repo
+
       run_bosh("create release --with-tarball", Dir.pwd)
       File.exists?(release_1).should be_true
     end
@@ -257,7 +269,10 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       new_file = File.join("src", "bar", "bla")
       begin
         FileUtils.touch(new_file)
-        run_bosh("create release --with-tarball", Dir.pwd)
+
+        check_travis_git_repo
+
+        run_bosh("create release --force --with-tarball", Dir.pwd)
         File.exists?(release_2).should be_true
       ensure
         FileUtils.rm_rf(new_file)
@@ -289,6 +304,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     Dir.chdir(release_dir) do
       run_bosh("reset release")
+
+      check_travis_git_repo
+
       run_bosh("create release", Dir.pwd)
       File.exists?(release_1).should be_true
 
