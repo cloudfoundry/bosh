@@ -230,7 +230,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /appcloud.+0\.1/
   end
 
-  it "uploads the latest generated release if no release path given" do
+  xit "uploads the latest generated release if no release path given" do
     assets_dir = File.dirname(spec_asset("foo"))
 
     Dir.chdir(File.join(assets_dir, "test_release")) do

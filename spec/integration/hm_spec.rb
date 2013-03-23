@@ -22,7 +22,7 @@ describe Bosh::Spec::IntegrationTest::HealthMonitor do
     run_bosh("deploy")
   end
 
-  it "HM can be queried for stats" do
+  xit "HM can be queried for stats" do
     deploy
 
     varz_json = RestClient.get("http://admin:admin@localhost:25932/varz")
