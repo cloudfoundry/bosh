@@ -70,7 +70,7 @@ namespace :stemcell do
       Dir.mktmpdir do |dir|
         light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
 
-        %x{tar xzf #{light_stemcell_name} --directory=#{dir}} || raise("Failed to untar stemcell")
+        %x{tar xzf #{light_stemcell_name} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
         stemcell_manifest = "#{dir}/stemcell.MF"
         stemcell_properties = YAML.load_file(stemcell_manifest)
         ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
