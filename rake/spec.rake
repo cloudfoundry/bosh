@@ -101,7 +101,10 @@ namespace :spec do
           File.open("BOSH_VERSION", 'w') { |f| f.write file_contents }
           Rake::Task["all:pre_stage_latest"].invoke
           run("cd pkg/gems && s3cmd get s3://bosh-jenkins-gems/gems/* .")
-          run("cd pkg && gem generate_index .")
+          Bundler.with_clean_env do
+            # We need to run this without Bundler as we generate an index for all dependant gems when run with bundler
+            run("cd pkg && gem generate_index .")
+          end
           run("cd pkg && s3cmd sync . s3://bosh-jenkins-gems")
         end
       end
