@@ -23,7 +23,7 @@ module Bosh::Director
 
         def perform
           begin
-            with_deployment_lock(@deployment, :timeout => 0) do
+            with_deployment_lock(deployment, :timeout => 0) do
               reset
               # TODO: decide if scanning procedures should be
               # extracted into their own classes (for clarity)
@@ -44,7 +44,7 @@ module Bosh::Director
 
         def scan_disks
           disks = Models::PersistentDisk.eager(:instance).all.select do |disk|
-            disk.instance && disk.instance.deployment_id == @deployment.id
+            disk.instance && disk.instance.deployment_id == deployment.id
           end
           results = Hash.new(0)
 
@@ -64,7 +64,7 @@ module Bosh::Director
 
         def scan_vms
           vms = Models::Vm.eager(:instance).
-            filter(:deployment_id => @deployment.id).all
+            filter(:deployment_id => deployment.id).all
 
           begin_stage("Scanning #{vms.size} VMs", 2)
           results = Hash.new(0)
@@ -83,6 +83,7 @@ module Bosh::Director
 
           track_and_log("#{results[:ok]} OK, " +
                         "#{results[:unresponsive]} unresponsive, " +
+                        "#{results[:missing]} missing, " +
                         "#{results[:unbound]} unbound, " +
                         "#{results[:out_of_sync]} out of sync")
         end
@@ -138,8 +139,6 @@ module Bosh::Director
           agent = AgentClient.new(vm.agent_id, agent_options)
           begin
             state = agent.get_state # TODO: handle invalid state
-            job = state["job"] ? state["job"]["name"] : nil
-            index = state["index"]
 
             # gather mounted disk info. (used by scan_disk)
             begin
@@ -150,24 +149,18 @@ module Bosh::Director
             end
             add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 
-            if state["deployment"] != @deployment.name ||
-                (instance && (instance.job != job || instance.index != index))
-              problem_found(:out_of_sync_vm, vm,
-                            :deployment => state["deployment"],
-                            :job => job, :index => index)
-              return :out_of_sync
-            end
-
-            if job && !instance
-              logger.info("Found unbound VM #{vm.agent_id}")
-              problem_found(:unbound_instance_vm, vm,
-                            :job => job, :index => index)
-              return :unbound
-            end
+            return :out_of_sync if is_out_of_sync_vm?(vm, instance, state)
+            return :unbound if is_unbound_instance_vm?(vm, instance, state)
             :ok
           rescue Bosh::Director::RpcTimeout
             # unresponsive disk, not invalid disk_info
             add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
+
+            unless cloud.has_vm?(vm.cid)
+              logger.info("Missing VM #{vm.cid}")
+              problem_found(:missing_vm, vm)
+              return :missing
+            end
 
             logger.info("Found unresponsive agent #{vm.agent_id}")
             problem_found(:unresponsive_agent, vm)
@@ -179,7 +172,7 @@ module Bosh::Director
           @problem_lock.synchronize do
             # TODO: audit trail
             similar_open_problems = Models::DeploymentProblem.
-              filter(:deployment_id => @deployment.id, :type => type.to_s,
+              filter(:deployment_id => deployment.id, :type => type.to_s,
                      :resource_id => resource.id, :state => "open").all
 
             if similar_open_problems.size > 1
@@ -191,7 +184,7 @@ module Bosh::Director
             if similar_open_problems.empty?
               problem = Models::DeploymentProblem.
                 create(:type => type.to_s, :resource_id => resource.id,
-                       :state => "open", :deployment_id => @deployment.id,
+                       :state => "open", :deployment_id => deployment.id,
                        :data => data, :counter => 1)
 
               logger.info("Created problem #{problem.id} (#{problem.type})")
@@ -209,7 +202,36 @@ module Bosh::Director
           end
         end
 
+
         private
+        attr_reader :deployment
+
+        def is_out_of_sync_vm?(vm, instance, state)
+          job = state["job"] ? state["job"]["name"] : nil
+          index = state["index"]
+          if state["deployment"] != deployment.name ||
+              (instance && (instance.job != job || instance.index != index))
+            problem_found(:out_of_sync_vm, vm,
+                          :deployment => state["deployment"],
+                          :job => job, :index => index)
+            true
+          else
+            false
+          end
+        end
+
+        def is_unbound_instance_vm?(vm, instance, state)
+          job = state["job"] ? state["job"]["name"] : nil
+          index = state["index"]
+          if job && !instance
+            logger.info("Found unbound VM #{vm.agent_id}")
+            problem_found(:unbound_instance_vm, vm,
+                          :job => job, :index => index)
+            true
+          else
+            false
+          end
+        end
 
         def add_disk_owner(disk_cid, vm_cid)
           @agent_disks[disk_cid] ||= []
@@ -218,6 +240,10 @@ module Bosh::Director
 
         def get_disk_owners(disk_cid)
           @agent_disks[disk_cid]
+        end
+
+        def cloud
+          Config.cloud
         end
       end
     end

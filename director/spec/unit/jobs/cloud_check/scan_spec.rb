@@ -294,6 +294,11 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         }
         agent_2.should_receive(:get_state).and_return(good_state)
         agent_2.should_receive(:list_disk).and_return([])
+        fake_cloud = double(Bosh::Cloud)
+        BD::Config.stub(:cloud).and_return(fake_cloud)
+        fake_cloud.should_receive(:has_vm?).with("vm-cid").and_return(true)
+        @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+        @job.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync")
 
         @job.scan_vms
         BDM::DeploymentProblem.count.should == 1
@@ -301,6 +306,50 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         problem = BDM::DeploymentProblem.first
         problem.state.should == "open"
         problem.type.should == "unresponsive_agent"
+        problem.deployment.should == @deployment
+        problem.resource_id.should == 1
+        problem.data.should == {}
+      end
+
+      it "scans for missing vm" do
+        2.times do |i|
+          vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}",
+                            :deployment => @deployment)
+          BDM::Instance.make(:vm => vm, :deployment => @deployment,
+                             :job => "job-#{i}", :index => i)
+        end
+
+        agent_1 = mock("agent-1")
+        agent_2 = mock("agent-2")
+
+        BD::AgentClient.stub!(:new).with("agent-0", anything).
+            and_return(agent_1)
+        BD::AgentClient.stub!(:new).with("agent-1", anything).
+            and_return(agent_2)
+
+        # Unresponsive agent
+        agent_1.should_receive(:get_state).and_raise(BD::RpcTimeout)
+
+        # Working agent
+        good_state = {
+            "deployment" => "mycloud",
+            "job" => {"name" => "job-1"},
+            "index" => 1
+        }
+        agent_2.should_receive(:get_state).and_return(good_state)
+        agent_2.should_receive(:list_disk).and_return([])
+        fake_cloud = double(Bosh::Cloud)
+        BD::Config.stub(:cloud).and_return(fake_cloud)
+        fake_cloud.should_receive(:has_vm?).with("vm-cid").and_return(false)
+        @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+        @job.should_receive(:track_and_log).with("1 OK, 0 unresponsive, 1 missing, 0 unbound, 0 out of sync")
+
+        @job.scan_vms
+        BDM::DeploymentProblem.count.should == 1
+
+        problem = BDM::DeploymentProblem.first
+        problem.state.should == "open"
+        problem.type.should == "missing_vm"
         problem.deployment.should == @deployment
         problem.resource_id.should == 1
         problem.data.should == {}
@@ -346,6 +395,8 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         }
         agent_3.should_receive(:get_state).and_return(unbound_vm_state)
         agent_3.should_receive(:list_disk).and_return([])
+        @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+        @job.should_receive(:track_and_log).with("2 OK, 0 unresponsive, 0 missing, 1 unbound, 0 out of sync")
 
         @job.scan_vms
 
@@ -376,6 +427,8 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
         agent.should_receive(:get_state).and_return(out_of_sync_state)
         agent.should_receive(:list_disk).and_return([])
+        @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+        @job.should_receive(:track_and_log).with("0 OK, 0 unresponsive, 0 missing, 0 unbound, 1 out of sync")
 
         @job.scan_vms
 
@@ -388,6 +441,7 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         problem.resource_id.should == vm.id
         problem.data.should == {"job" => "mysql_node", "index" => 4,
                                 "deployment" => "mycloud"}
+
       end
     end
   end
