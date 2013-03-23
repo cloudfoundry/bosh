@@ -73,7 +73,7 @@ namespace :spec do
 
       task :teardown_microbosh do
         chdir("/tmp/deployments") do
-          run_bosh "delete deployment bat"
+          run_bosh "delete deployment bat", :ignore_failures => true
           run_bosh "micro delete"
         end
         rm_rf("/tmp/deployments")
