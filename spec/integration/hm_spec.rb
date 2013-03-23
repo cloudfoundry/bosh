@@ -1,6 +1,7 @@
 require "spec_helper"
 
 describe Bosh::Spec::IntegrationTest::HealthMonitor do
+  include IntegrationExampleGroup
 
   def deploy
     assets_dir          = File.dirname(spec_asset("foo"))

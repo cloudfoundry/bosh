@@ -1,6 +1,7 @@
 require "spec_helper"
 
 describe Bosh::Spec::IntegrationTest::CliUsage do
+  include IntegrationExampleGroup
 
   def regexp(string)
     Regexp.compile(Regexp.escape(string))
