@@ -295,7 +295,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
   end
 
-  it "release lifecycle: create, upload, update (w/sparse upload), delete" do
+  xit "release lifecycle: create, upload, update (w/sparse upload), delete" do
     assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.yml")
     release_2 = spec_asset("test_release/dev_releases/bosh-release-0.2-dev.yml")
