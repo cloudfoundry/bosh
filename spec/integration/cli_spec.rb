@@ -228,7 +228,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
 
-      run_bosh("create release --force", Dir.pwd)
+      run_bosh("create release", Dir.pwd)
       run_bosh("target http://localhost:57523")
       run_bosh("login admin admin")
       run_bosh("upload release", Dir.pwd)

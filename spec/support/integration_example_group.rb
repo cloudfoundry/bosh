@@ -17,7 +17,11 @@ module IntegrationExampleGroup
 
   def run_bosh(cmd, work_dir = nil)
     Dir.chdir(work_dir || BOSH_WORK_DIR) do
-      `bundle exec bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
+      output = `bosh -n -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} #{cmd}`
+      if $?.exitstatus != 0
+        puts output
+      end
+      output
     end
   end
 
