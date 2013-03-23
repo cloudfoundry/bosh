@@ -11,7 +11,7 @@ def root
 end
 
 def version
-  @version ||= File.read("#{root}/BOSH_VERSION").strip
+  File.read("#{root}/BOSH_VERSION").strip
 end
 
 COMPONENTS.each do |component|
