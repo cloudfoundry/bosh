@@ -94,13 +94,15 @@ namespace :spec do
       end
 
       task :publish_gems => "spec:system:aws:bat" do
-        build_number = ENV['BUILD_NUMBER']
-        file_contents = File.read("#{ENV['WORKSPACE']}/BOSH_VERSION")
-        file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
-        File.open("#{ENV['WORKSPACE']}/BOSH_VERSION", 'w') { |f| f.write file_contents }
-        Rake::Task["all:pre_stage_latest"].invoke
-        run("cd #{ENV['WORKSPACE']}/pkg && gem generate_index .")
-        run("cd #{ENV['WORKSPACE']}/pkg && s3cmd sync . s3://bosh-jenkins-gems")
+        cd({ENV['WORKSPACE']) do
+          build_number = ENV['BUILD_NUMBER']
+          file_contents = File.read("BOSH_VERSION")
+          file_contents.gsub!(/^([\d\.]+)\.pre\.\d+$/, "\\1.pre.#{build_number}")
+          File.open("BOSH_VERSION", 'w') { |f| f.write file_contents }
+          Rake::Task["all:pre_stage_latest"].invoke
+          run("cd pkg && gem generate_index .")
+          run("cd pkg && s3cmd sync . s3://bosh-jenkins-gems")
+        end
       end
 
       def stemcell_version(stemcell_path)
