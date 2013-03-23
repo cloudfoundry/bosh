@@ -57,6 +57,8 @@ namespace :stemcell do
 
 
   namespace :aws do
+    require "aws-sdk"
+
     task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
       stemcell_tgz = args[:stemcell_tgz]
       bucket_name = args[:bucket_name]
