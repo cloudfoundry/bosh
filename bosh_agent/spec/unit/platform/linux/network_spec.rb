@@ -12,7 +12,7 @@ describe Bosh::Agent::Platform::Linux::Network do
                               {"network_a":{"netmask":"255.255.248.0","mac":"00:50:56:89:17:70",
                               "ip":"172.30.40.115","default":["gateway","dns"],"gateway":"172.30.40.1",
                               "dns":["172.30.22.153","172.30.22.154"],"cloud_properties":{"name":"VLAN440"}}},
-                              "blobstore":{"plugin":"simple","properties":{"password":"Ag3Nt","user":"agent",
+                              "blobstore":{"provider":"simple","options":{"password":"Ag3Nt","user":"agent",
                               "endpoint":"http://172.30.40.11:25250"}},
                               "ntp":["ntp01.las01.emcatmos.com","ntp02.las01.emcatmos.com"],
                               "agent_id":"a26efbe5-4845-44a0-9323-b8e36191a2c8"}]

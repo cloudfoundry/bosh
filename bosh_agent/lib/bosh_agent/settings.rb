@@ -35,6 +35,10 @@ module Bosh::Agent
       @settings[key]
     end
 
+    def fetch(*args)
+      @setting.fetch(*args)
+    end
+
     private
 
     def load_from_infrastructure
