@@ -90,7 +90,7 @@ namespace :spec do
         #ENV['BAT_SKIP_SSH'] = 'true'
         #ENV['BAT_DEBUG'] = 'verbose'
         ENV['BAT_DNS_HOST'] = Resolv.getaddress(director)
-        #Rake::Task['bat'].invoke
+        Rake::Task['bat'].invoke
       end
 
       task :publish_gems => "spec:system:aws:bat" do
