@@ -419,7 +419,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       out.should =~ regexp("Deployed `#{filename}' to `Test Director'")
     end
 
-    xit "generates release and deploys it via simple manifest" do
+    it "generates release and deploys it via simple manifest" do
       assets_dir = File.dirname(spec_asset("foo"))
       # Test release created with bosh (see spec/assets/test_release_template)
       release_file = "test_release/dev_releases/bosh-release-0.1-dev.tgz"
