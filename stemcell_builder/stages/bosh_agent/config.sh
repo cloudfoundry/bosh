@@ -14,6 +14,17 @@ then
   bosh_agent_src_dir=$(readlink -nf $base_dir/../bosh_agent)
 fi
 
+if [ -z "${bosh_release_src_dir:-}" ]
+then
+  # Use relative path to the BOSH release
+  bosh_release_src_dir=$(readlink -nf $base_dir/../release/src/bosh)
+fi
+
+if [ -z "${mcf_enabled:-}" ]
+then
+  mcf_enabled=no
+fi
+
 # Find `ruby` in PATH if needed
 if [ -z "${ruby_bin:-}" ]
 then
