@@ -18,6 +18,54 @@ describe Bosh::Blobstore::AtmosBlobstoreClient do
     @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
   end
 
+  describe "#initialize" do
+    it "initializes with http_proxy when using http endpoint" do
+      ENV['HTTPS_PROXY']  = ENV['https_proxy']  = 'https://proxy.example.com:8080'
+      ENV['HTTP_PROXY']   = ENV['http_proxy']   = 'http://proxy.example.com:8080'
+      atmos_opt = {:url => "http://localhost",
+                   :uid => "uid",
+                   :secret => "secret"}
+      @http_client = double("http-client")
+      ssl_opt = double("ssl-opt")
+      ssl_opt.stub!(:verify_mode=)
+      @http_client.stub!(:ssl_config).and_return(ssl_opt)
+
+      HTTPClient.should_receive(:new).with(:proxy => ENV['http_proxy']).and_return(@http_client)
+      @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
+    end
+
+    it "initializes with https_proxy when using https endpoint" do
+      ENV['HTTPS_PROXY']  = ENV['https_proxy']  = 'https://proxy.example.com:8080'
+      ENV['HTTP_PROXY']   = ENV['http_proxy']   = 'http://proxy.example.com:8080'
+      atmos_opt = {:url => "https://localhost",
+                   :uid => "uid",
+                   :secret => "secret"}
+      @http_client = double("http-client")
+      ssl_opt = double("ssl-opt")
+      ssl_opt.stub!(:verify_mode=)
+      @http_client.stub!(:ssl_config).and_return(ssl_opt)
+
+      HTTPClient.should_receive(:new).with(:proxy => ENV['https_proxy']).and_return(@http_client)
+      @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
+    end
+
+    it "initializes without proxy settings when env is not set" do
+      ENV['HTTPS_PROXY']  = ENV['https_proxy']  = nil
+      ENV['HTTP_PROXY']   = ENV['http_proxy']   = nil
+      atmos_opt = {:url => "https://localhost",
+                   :uid => "uid",
+                   :secret => "secret"}
+      @http_client = double("http-client")
+      ssl_opt = double("ssl-opt")
+      ssl_opt.stub!(:verify_mode=)
+      @http_client.stub!(:ssl_config).and_return(ssl_opt)
+
+      HTTPClient.should_receive(:new).and_return(@http_client)
+      @client = Bosh::Blobstore::AtmosBlobstoreClient.new(atmos_opt)
+    end
+
+  end
+
   describe '#exists?' do
     it 'should return true if the object already exists' do
       object = mock(Atmos::Object)
