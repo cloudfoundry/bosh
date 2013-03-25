@@ -132,9 +132,11 @@ This command should be used for bootstrapping bosh from scratch.
 
       stemcell = Tempfile.new "bosh_stemcell"
       stemcell.write bosh_stemcell
-      stemcell_command.upload(stemcell.path)
-      stemcell_command.options[:non_interactive] = true
       stemcell.close
+
+      stemcell_command.options[:non_interactive] = true
+      stemcell_command.upload(stemcell.path)
+
 
       deployment_command = Bosh::Cli::Command::Deployment.new
       deployment_command.options = self.options
@@ -683,7 +685,7 @@ This command should be used for bootstrapping bosh from scratch.
 
     def bosh_stemcell
       ENV["BOSH_OVERRIDE_BOSH_STEMCELL"] ||
-          Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz").strip
+          Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz")
     end
 
     private
