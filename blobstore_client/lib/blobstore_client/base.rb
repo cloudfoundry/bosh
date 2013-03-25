@@ -48,6 +48,7 @@ module Bosh
       def get(id, file = nil)
         if file
           get_file(id, file)
+          file.flush
         else
           result = nil
           temp_path do |path|
