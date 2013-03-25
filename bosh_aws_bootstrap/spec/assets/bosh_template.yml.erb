@@ -1,0 +1,179 @@
+---
+name: <%= find('name') %>
+director_uuid: <%= find('director_uuid') %>
+
+release:
+  name: bosh
+  version: latest
+
+networks:
+- name: default
+  type: manual
+  subnets:
+<%- find('networks.default.subnets').each do |subnet| -%>
+  - reserved:
+    - 10.10.0.2 - 10.10.0.5
+    static:
+    - 10.10.0.6 - 10.10.0.19
+    range: 10.10.0.0/24
+    gateway: 10.10.0.1
+    dns:
+    - 10.10.0.5
+    cloud_properties:
+      subnet: <%= find_in('cloud_properties.subnet', subnet) %>
+      security_groups:
+      - bosh
+<%- end -%>
+- name: vip_network
+  type: vip
+  # Fake network properties to satisfy bosh diff
+  subnets:
+  - range: 127.0.99.0/24
+    gateway: 127.0.99.1
+    dns:
+    - 127.0.99.250
+  cloud_properties:
+    security_groups:
+    - bosh
+
+resource_pools:
+- name: default
+  stemcell:
+    name: bosh-stemcell
+    version: latest
+  network: default
+  size: 1
+  cloud_properties:
+    instance_type: m1.small
+    availability_zone: <%= find('properties.template_only.aws.availability_zone') %>
+
+compilation:
+  reuse_compilation_vms: true
+  workers: 8
+  network: default
+  cloud_properties:
+    instance_type: c1.medium
+    availability_zone: <%= find('properties.template_only.aws.availability_zone') %>
+
+
+update:
+  canaries: 1
+  canary_watch_time: 30000 - 90000
+  update_watch_time: 30000 - 90000
+  max_in_flight: 1
+  max_errors: 1
+
+jobs:
+- name: bosh
+  template:
+  - nats
+  - blobstore
+  - postgres
+  - redis
+  - powerdns
+  - director
+  - registry
+  - health_monitor
+  instances: 1
+  resource_pool: default
+  persistent_disk: 20480
+  networks:
+  - name: default
+    default: [dns, gateway]
+    static_ips:
+    - 10.10.0.6
+  - name: vip_network
+    static_ips:
+    <%- find('jobs.bosh.networks.vip_network.static_ips').each do |bosh_ip| -%>
+    - <%= bosh_ip %>
+    <%- end -%>
+
+properties:
+  template_only:
+    <%= find("properties.template_only").to_yaml.split("\n")[1..-1].map{|line| " " * 4 + line}.join("\n").gsub(/\A\s{4}/, "") %>
+
+  blobstore:
+    address: 10.10.0.6
+    port: 25251
+    backend_port: 25552
+    agent:
+      user: agent
+      password: ldsjlkadsfjlj
+    director:
+      user: director
+      password: DirectoR
+
+  networks:
+    apps: default
+    management: default
+
+  nats:
+    user: nats
+    password: 0b450ada9f830085e2cdeff6
+    address: 10.10.0.6
+    port: 4222
+
+  postgres:
+    user: bosh
+    password: a7a33139c8e3f34bc201351b
+    address: 10.10.0.6
+    port: 5432
+    database: bosh
+
+  redis:
+    address: 10.10.0.6
+    port: 25255
+    password: R3d!S
+
+  director:
+    name: <%= find('name') %>
+    address: 10.10.0.6
+    port: 25555
+    encryption: false
+
+  hm:
+    http:
+      port: 25923
+      user: admin
+      password: admin
+    director_account:
+      user: admin
+      password: admin
+    intervals:
+      poll_director: 60
+      poll_grace_period: 30
+      log_stats: 300
+      analyze_agents: 60
+      agent_timeout: 180
+      rogue_agent_alert: 180
+    loglevel: info
+    email_notifications: false
+    tsdb_enabled: false
+    cloud_watch_enabled: true
+
+  registry:
+    address: 10.10.0.6
+    http:
+      port: 25777
+      user: awsreg
+      password: awsreg
+
+  aws:
+    access_key_id: <%= find('properties.aws.access_key_id') %>
+    secret_access_key: <%= find('properties.aws.secret_access_key') %>
+    ec2_endpoint: ec2.<%= find('properties.aws.region') %>.amazonaws.com
+    region: <%= find('properties.aws.region') %>
+    default_key_name: <%= find('properties.aws.default_key_name') %>
+    default_security_groups: ["bosh"]
+
+  dns:
+    user: powerdns
+    password: powerdns
+    address: 10.10.0.6
+    replication:
+      user: foo
+      password: bar
+      basic_auth: foo:nosuchuser
+    database:
+      name: powerdns
+      port: 5342

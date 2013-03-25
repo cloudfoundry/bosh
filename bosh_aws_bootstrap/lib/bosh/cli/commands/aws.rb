@@ -19,7 +19,6 @@ module Bosh::Cli::Command
 
     usage "aws"
     desc "show bosh aws sub-commands"
-
     def help
       say "bosh aws sub-commands:\n"
       commands = Bosh::Cli::Config.commands.values.find_all { |command| command.usage =~ /^aws/ }
@@ -62,6 +61,100 @@ module Bosh::Cli::Command
         misc.login(username, password)
       end
 
+    end
+
+    usage "aws bootstrap bosh"
+    desc "bootstrap full bosh deployment"
+    def bootstrap_bosh(release_path)
+      target_required
+
+      Dir.chdir(release_path) do
+        begin
+          check_if_release_dir
+        rescue => e
+          err("Please point to a valid release folder") if e.message =~ /doesn't look like release directory/
+        end
+      end
+
+      if !director.list_releases.empty?
+        err("This target already has a release.")
+      end
+
+      vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+      route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
+
+      vpc_config = load_yaml_file(vpc_receipt_filename)
+      route53_config = load_yaml_file(route53_receipt_filename)
+      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+
+      existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }
+
+      if existing_deployments.include? bosh_manifest.bosh_deployment_name
+        err(<<-MSG)
+Deployment `#{bosh_manifest.bosh_deployment_name}' already exists.
+This command should be used for bootstrapping bosh from scratch.
+        MSG
+      end
+
+      FileUtils.mkdir_p "deployments/bosh"
+
+      Dir.chdir("deployments/bosh") do
+        create_bosh_manifest(vpc_receipt_filename, route53_receipt_filename)
+
+        deployment_command = Bosh::Cli::Command::Deployment.new
+        deployment_command.options = self.options
+        deployment_command.options[:non_interactive] = true
+        deployment_command.set_current("bosh.yml")
+
+        biff_command = Bosh::Cli::Command::Biff.new
+        biff_command.options = self.options
+        biff_command.options[:non_interactive] = true
+
+        manifest_path = File.join(File.dirname(__FILE__), "..", "..", "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
+        biff_command.biff(File.expand_path(manifest_path))
+      end
+
+      # Bosh root path
+      Dir.chdir(File.join(File.dirname(__FILE__), "..", "..", "..", "..")) do
+        Bosh::Exec.sh "bundle exec rake release:create_dev_release"
+      end
+
+      Dir.chdir(release_path) do
+        release_command = Bosh::Cli::Command::Release.new
+        release_command.options = self.options
+        release_command.options[:non_interactive] = true
+
+        release_command.upload
+      end
+
+      stemcell_command = Bosh::Cli::Command::Stemcell.new
+      stemcell_command.options = self.options
+
+      stemcell = Tempfile.new "bosh_stemcell"
+      stemcell.write bosh_stemcell
+      stemcell_command.upload(stemcell.path)
+      stemcell_command.options[:non_interactive] = true
+      stemcell.close
+
+      deployment_command = Bosh::Cli::Command::Deployment.new
+      deployment_command.options = self.options
+      deployment_command.options[:non_interactive] = true
+      deployment_command.perform
+
+      target_command = Bosh::Cli::Command::Misc.new
+      target_command.options = self.options
+      target_command.set_target(bosh_manifest.vip)
+
+      config.target = target_command.config.target
+
+      say "For security purposes, please provide a username and password for BOSH Director"
+      username = ask("Enter username: ")
+      password = ask("Enter password: ")
+
+      user_command = Bosh::Cli::Command::User.new
+      user_command.options = self.options
+      user_command.options[:target] = config.target
+      user_command.create(username, password)
     end
 
     usage "aws generate micro_bosh"
@@ -586,6 +679,11 @@ module Bosh::Cli::Command
     def micro_ami
       ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] ||
           Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
+    end
+
+    def bosh_stemcell
+      ENV["BOSH_OVERRIDE_BOSH_STEMCELL"] ||
+          Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz").strip
     end
 
     private

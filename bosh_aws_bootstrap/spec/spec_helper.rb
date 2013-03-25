@@ -1,6 +1,7 @@
 require "cli"
 require "bosh/cli/commands/aws"
 require "bosh_aws_bootstrap"
+require 'webmock/rspec'
 
 def asset(filename)
   File.join(File.dirname(__FILE__), 'assets', filename)
