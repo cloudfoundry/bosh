@@ -14,8 +14,6 @@ namespace :stemcell do
     options[:stemcell_version] ||= Bosh::Agent::VERSION
     options[:image_create_disk_size] = 1380
 
-    options = options.merge(bosh_agent_options)
-
     build("stemcell-#{args[:infrastructure]}", options)
   end
 
@@ -29,7 +27,6 @@ namespace :stemcell do
     options[:stemcell_version] ||= "0.8.1"
     options[:image_create_disk_size] = 2048
 
-    options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(manifest, release_tarball))
     options[:non_interactive] = true
 
@@ -47,7 +44,6 @@ namespace :stemcell do
     options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
     options[:bosh_users_password] = 'micr0cloud'
     
-    options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(args[:manifest],args[:tarball]))
     options[:mcf_enabled] = "yes"
     options[:micro_src] = args[:micro_src]
@@ -128,6 +124,7 @@ namespace :stemcell do
       :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
       :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
       :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__),
+      :bosh_agent_src_dir => File.expand_path("../../bosh_agent", __FILE__),
       :mcf_enabled => "no"
     }
 
@@ -137,12 +134,6 @@ namespace :stemcell do
     end
 
     options
-  end
-
-  def bosh_agent_options
-    {
-      :bosh_agent_src_dir => File.expand_path("../../bosh_agent", __FILE__)
-    }
   end
 
   def bosh_micro_options(manifest, tarball)
