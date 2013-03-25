@@ -1,3 +1,5 @@
+require 'forwardable'
+
 module Bosh::Agent
   class Settings
     extend Forwardable
