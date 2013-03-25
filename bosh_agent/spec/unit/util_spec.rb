@@ -1,6 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
+require 'common/exec'
 
 describe Bosh::Agent::Util do
 
@@ -36,9 +37,9 @@ describe Bosh::Agent::Util do
     install_dir = File.join(Bosh::Agent::Config.base_dir, 'data', 'packages', 'foo', '2')
     blobstore_id = "some_blobstore_id"
 
-    lambda {
+    expect {
       Bosh::Agent::Util.unpack_blob(blobstore_id, "bogus_sha1", install_dir)
-    }.should raise_error(Bosh::Agent::MessageHandlerError, /Expected sha1/)
+    }.to raise_error(Bosh::Agent::MessageHandlerError, /Expected sha1/)
   end
 
   it "should return a binding with config variable" do
@@ -47,9 +48,9 @@ describe Bosh::Agent::Util do
 
     template = ERB.new("job name: <%= spec.job.name %>")
 
-    lambda {
+    expect {
       template.result(binding)
-    }.should raise_error(NameError)
+    }.to raise_error(NameError)
 
     template.result(config_binding).should == "job name: funky_job_name"
   end
@@ -70,12 +71,32 @@ describe Bosh::Agent::Util do
       fh.puts("#!/bin/bash\necho -n 'yay'") # sh echo doesn't support -n (at least on OSX)
     end
 
-    lambda {
+    expect {
       Bosh::Agent::Util.run_hook('post-install', job_name)
-    }.should raise_error(Bosh::Agent::MessageHandlerError, "`post-install' hook for `hubba' job is not an executable file")
+    }.to raise_error(Bosh::Agent::MessageHandlerError, "`post-install' hook for `hubba' job is not an executable file")
 
     FileUtils.chmod(0700, hook_file)
     Bosh::Agent::Util.run_hook('post-install', job_name).should == "yay"
+  end
+
+  it 'should return the block device size' do
+    block_device = "/dev/sda1"
+    File.should_receive(:blockdev?).with(block_device).and_return true
+    Bosh::Agent::Util.should_receive(:sh).with("/sbin/sfdisk -s #{block_device} 2>&1").and_return(Bosh::Exec::Result.new("/sbin/sfdisk -s #{block_device} 2>&1", '1024', 0))
+    Bosh::Agent::Util.block_device_size(block_device).should == 1024
+  end
+
+  it 'should raise exception when not a block device' do
+    block_device = "/dev/not_a_block_device"
+    File.should_receive(:blockdev?).with(block_device).and_return false
+    expect { Bosh::Agent::Util.block_device_size(block_device) }.to raise_error(Bosh::Agent::MessageHandlerError, "Not a blockdevice")
+  end
+
+  it 'should raise exception when output is not an integer' do
+    block_device = "/dev/not_a_block_device"
+    File.should_receive(:blockdev?).with(block_device).and_return true
+    Bosh::Agent::Util.should_receive(:sh).with("/sbin/sfdisk -s #{block_device} 2>&1").and_return(Bosh::Exec::Result.new("/sbin/sfdisk -s #{block_device} 2>&1", 'foobar', 0))
+    expect { Bosh::Agent::Util.block_device_size(block_device) }.to raise_error(Bosh::Agent::MessageHandlerError, "Unable to determine disk size")
   end
 
 end

@@ -2,6 +2,7 @@
 
 module Bosh::Agent
   class Util
+    include Bosh::Exec
 
     # TODO: convert to module?
     # TODO: don't use MessageHandlerError here?
@@ -86,13 +87,12 @@ module Bosh::Agent
           raise Bosh::Agent::MessageHandlerError, "Not a blockdevice"
         end
 
-        child = Process.spawn("/sbin/sfdisk -s #{block_device}")
-        result = child.out
-        unless result.match(/\A\d+\Z/) && child.status.exitstatus == 0
+        result = sh("/sbin/sfdisk -s #{block_device} 2>&1")
+        unless result.output.match(/\A\d+\Z/)
           raise Bosh::Agent::MessageHandlerError,
             "Unable to determine disk size"
         end
-        result.to_i
+        result.output.to_i
       end
 
       def run_hook(hook, job_template_name)
