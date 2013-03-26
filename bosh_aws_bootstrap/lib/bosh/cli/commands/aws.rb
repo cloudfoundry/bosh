@@ -68,138 +68,53 @@ module Bosh::Cli::Command
     def bootstrap_bosh(bosh_repository=nil)
       target_required
 
-      bosh_repository ||= ENV.fetch('BOSH_REPOSITORY') { err "A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable"}
-      release_path = File.join(bosh_repository, "release")
-
-      Dir.chdir(release_path) do
-        begin
-          check_if_release_dir
-        rescue => e
-          err("Please point to a valid release folder") if e.message =~ /doesn't look like release directory/
-        end
-      end
-
-      if !director.list_releases.empty?
-        err("This target already has a release.")
-      end
-
-      vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
-      route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
-
-      vpc_config = load_yaml_file(vpc_receipt_filename)
-      route53_config = load_yaml_file(route53_receipt_filename)
-      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
-
-      existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }
-
-      if existing_deployments.include? bosh_manifest.bosh_deployment_name
-        err(<<-MSG)
-Deployment `#{bosh_manifest.bosh_deployment_name}' already exists.
-This command should be used for bootstrapping bosh from scratch.
-        MSG
-      end
-
-      FileUtils.mkdir_p "deployments/bosh"
-
-      Dir.chdir("deployments/bosh") do
-        create_bosh_manifest(vpc_receipt_filename, route53_receipt_filename)
-
-        deployment_command = Bosh::Cli::Command::Deployment.new
-        deployment_command.options = self.options
-        deployment_command.options[:non_interactive] = true
-        deployment_command.set_current("bosh.yml")
-
-        biff_command = Bosh::Cli::Command::Biff.new
-        biff_command.options = self.options
-        biff_command.options[:non_interactive] = true
-
-        manifest_path = File.join(File.dirname(__FILE__), "..", "..", "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
-        biff_command.biff(File.expand_path(manifest_path))
-      end
-
-      # Bosh root path
-      Dir.chdir(File.join(File.dirname(__FILE__), "..", "..", "..", "..")) do
-        Bosh::Exec.sh "bundle exec rake release:create_dev_release"
-      end
-
-      Dir.chdir(release_path) do
-        release_command = Bosh::Cli::Command::Release.new
-        release_command.options = self.options
-        release_command.options[:non_interactive] = true
-
-        release_command.upload
-      end
-
-      stemcell_command = Bosh::Cli::Command::Stemcell.new
-      stemcell_command.options = self.options
-
-      stemcell = Tempfile.new "bosh_stemcell"
-      stemcell.write bosh_stemcell
-      stemcell.close
-
-      stemcell_command.options[:non_interactive] = true
-      stemcell_command.upload(stemcell.path)
-
-      deployment_command = Bosh::Cli::Command::Deployment.new
-      deployment_command.options = self.options
-      deployment_command.options[:non_interactive] = true
-      deployment_command.perform
-
-      misc_command = Bosh::Cli::Command::Misc.new
-      misc_command.options = self.options
-      misc_command.set_target(bosh_manifest.vip)
-      misc_command.options[:target] = bosh_manifest.vip
-      misc_command.login("admin", "admin")
-
-      config.target = misc_command.config.target
+      bootstrap = Bosh::Aws::BoshBootstrap.new(director, self.options)
+      bootstrap.start(bosh_repository)
 
       say "For security purposes, please provide a username and password for BOSH Director"
       username = ask("Enter username: ")
       password = ask("Enter password: ")
 
-      user_command = Bosh::Cli::Command::User.new
-      user_command.options = self.options
-      user_command.options[:target] = config.target
-      user_command.create(username, password)
-
-      misc_command = Bosh::Cli::Command::Misc.new
-      misc_command.options = self.options
-      misc_command.options[:target] = config.target
-      misc_command.login(username, password)
+      bootstrap.create_user(username, password)
 
       say "BOSH deployed successfully. You are logged in as #{username}."
+    rescue Bosh::Aws::BootstrapError => e
+      err "Unable to bootstrap bosh: #{e.message}"
     end
 
     usage "aws generate micro_bosh"
     desc "generate micro_bosh.yml"
     def create_micro_bosh_manifest(vpc_receipt_file, route53_receipt_file)
-      File.open("micro_bosh.yml", "w+") do |f|
-        vpc_config = load_yaml_file(vpc_receipt_file)
-        route53_config = load_yaml_file(route53_receipt_file)
-        f.write(Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config).to_yaml)
-      end
+      vpc_config = load_yaml_file(vpc_receipt_file)
+      route53_config = load_yaml_file(route53_receipt_file)
+
+      manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
+
+      write_yaml(manifest, "micro_bosh.yml")
     end
 
     usage "aws generate bosh"
     desc "generate bosh.yml stub manifest for use with 'bosh diff'"
     def create_bosh_manifest(vpc_receipt_file, route53_receipt_file)
       target_required
-      File.open("bosh.yml", "w+") do |f|
-        vpc_config = load_yaml_file(vpc_receipt_file)
-        route53_config = load_yaml_file(route53_receipt_file)
-        f.write(Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid).to_yaml)
-      end
+
+      vpc_config = load_yaml_file(vpc_receipt_file)
+      route53_config = load_yaml_file(route53_receipt_file)
+      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+
+      write_yaml(bosh_manifest, "bosh.yml")
     end
 
     usage "aws generate bat_manifest"
     desc "generate bat.yml"
     def create_bat_manifest(vpc_receipt_file, route53_receipt_file, stemcell_version)
       target_required
-      File.open("bat.yml", "w+") do |f|
-        vpc_config = load_yaml_file(vpc_receipt_file)
-        route53_config = load_yaml_file(route53_receipt_file)
-        f.write(Bosh::Aws::BatManifest.new(vpc_config, route53_config, stemcell_version, director.uuid).to_yaml)
-      end
+
+      vpc_config = load_yaml_file(vpc_receipt_file)
+      route53_config = load_yaml_file(route53_receipt_file)
+      manifest = Bosh::Aws::BatManifest.new(vpc_config, route53_config, stemcell_version, director.uuid)
+
+      write_yaml(manifest, "bat.yml")
     end
 
     usage "aws snapshot deployments"
@@ -692,11 +607,6 @@ This command should be used for bootstrapping bosh from scratch.
     def micro_ami
       ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] ||
           Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
-    end
-
-    def bosh_stemcell
-      ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"] ||
-          Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz")
     end
 
     private

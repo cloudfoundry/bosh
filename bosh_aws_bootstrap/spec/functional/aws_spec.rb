@@ -189,7 +189,7 @@ describe Bosh::Cli::Command::AWS do
         end
       end
 
-      context "when there release path is not an actual release" do
+      context "when the release path is not an actual release" do
         let(:tmpdir) { Dir.mktmpdir }
 
         before do
