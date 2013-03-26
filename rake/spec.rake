@@ -185,8 +185,7 @@ namespace :spec do
       end
 
     end
-
-
+  end
 end
 
 desc "Run unit and integration specs"
