@@ -64,7 +64,7 @@ namespace :stemcell do
       })
 
       Dir.mktmpdir do |dir|
-        stemcell_tgz = File.dirname(stemcell_tgz) + "/" + File.basename(stemcell_tgz).gsub('light-','')
+        stemcell_tgz = File.dirname(light_stemcell_tgz) + "/" + File.basename(light_stemcell_tgz).gsub('light-','')
 
         %x{tar xzf #{light_stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
         stemcell_manifest = "#{dir}/stemcell.MF"
