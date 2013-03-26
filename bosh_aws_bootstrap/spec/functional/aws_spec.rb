@@ -24,17 +24,20 @@ describe Bosh::Cli::Command::AWS do
       before do
         Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)
         Bosh::Cli::Command::Micro.any_instance.stub(:perform)
+        Bosh::Cli::Command::User.any_instance.stub(:create)
         Bosh::Cli::Command::Misc.any_instance.stub(:login)
         aws.stub(:micro_ami).and_return("ami-123456")
       end
 
       it "should generate a microbosh.yml in the right location" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         File.exist?("deployments/micro/micro_bosh.yml").should == false
         aws.bootstrap_micro
         File.exist?("deployments/micro/micro_bosh.yml").should == true
       end
 
       it "should remove any existing deployment artifacts first" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         FileUtils.mkdir_p("deployments/micro")
         File.open("deployments/leftover.yml", "w") { |f| f.write("old stuff!") }
         File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
@@ -46,13 +49,22 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should deploy a micro bosh" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         Bosh::Cli::Command::Micro.any_instance.should_receive(:micro_deployment).with("micro")
         Bosh::Cli::Command::Micro.any_instance.should_receive(:perform).with("ami-123456")
         aws.bootstrap_micro
       end
 
-      it "should login as admin:admin" do
+      it "should login with admin/admin with non-interactive mode" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("admin", "admin")
+        aws.bootstrap_micro
+      end
+
+      it "should login with created user with interactive mode" do
+        Bosh::Cli::Command::User.any_instance.should_receive(:create).with("foo", "foo")
+        Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("foo", "foo")
+        aws.stub(:ask).and_return("foo")
         aws.bootstrap_micro
       end
     end
