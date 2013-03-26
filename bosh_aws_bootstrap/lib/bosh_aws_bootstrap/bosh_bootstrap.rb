@@ -7,20 +7,8 @@ module Bosh
 
       def initialize(director, options)
         self.options = options
+        self.options[:non_interactive] = true
         self.director = director
-      end
-
-      def bosh_manifest
-        unless @bosh_manifest
-          vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
-          route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
-
-          vpc_config = load_yaml_file(vpc_receipt_filename)
-          route53_config = load_yaml_file(route53_receipt_filename)
-          @bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
-        end
-
-        @bosh_manifest
       end
 
       def validate_requirements(release_path)
@@ -50,59 +38,13 @@ This command should be used for bootstrapping bosh from scratch.
 
         validate_requirements(release_path)
 
-        FileUtils.mkdir_p "deployments/bosh"
+        create_deployment_manifest
+        create_and_upload_release(bosh_repository, release_path)
+        fetch_and_upload_stemcell
 
-        Dir.chdir("deployments/bosh") do
-          write_yaml(bosh_manifest, "bosh.yml")
+        deploy
 
-          deployment_command = Bosh::Cli::Command::Deployment.new
-          deployment_command.options = self.options
-          deployment_command.options[:non_interactive] = true
-          deployment_command.set_current("bosh.yml")
-
-          biff_command = Bosh::Cli::Command::Biff.new
-          biff_command.options = self.options
-          biff_command.options[:non_interactive] = true
-
-          manifest_path = File.join(File.dirname(__FILE__), "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
-          biff_command.biff(File.expand_path(manifest_path))
-        end
-
-        # Bosh root path
-        Dir.chdir(File.join(File.dirname(__FILE__), "..", "..", "..")) do
-          Bosh::Exec.sh "bundle exec rake release:create_dev_release"
-        end
-
-        Dir.chdir(release_path) do
-          release_command = Bosh::Cli::Command::Release.new
-          release_command.options = self.options
-          release_command.options[:non_interactive] = true
-
-          release_command.upload
-        end
-
-        stemcell_command = Bosh::Cli::Command::Stemcell.new
-        stemcell_command.options = self.options
-
-        stemcell = Tempfile.new "bosh_stemcell"
-        stemcell.write bosh_stemcell
-        stemcell.close
-
-        stemcell_command.options[:non_interactive] = true
-        stemcell_command.upload(stemcell.path)
-
-        deployment_command = Bosh::Cli::Command::Deployment.new
-        deployment_command.options = self.options
-        deployment_command.options[:non_interactive] = true
-        deployment_command.perform
-
-        misc_command = Bosh::Cli::Command::Misc.new
-        misc_command.options = self.options
-        misc_command.set_target(bosh_manifest.vip)
-        misc_command.options[:target] = bosh_manifest.vip
-        misc_command.login("admin", "admin")
-
-        self.options[:target] = misc_command.config.target
+        target_bosh_and_log_in
       end
 
       def create_user(username, password)
@@ -115,8 +57,77 @@ This command should be used for bootstrapping bosh from scratch.
         misc_command.login(username, password)
       end
 
-
       private
+
+      def bosh_manifest
+        unless @bosh_manifest
+          vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+          route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
+
+          vpc_config = load_yaml_file(vpc_receipt_filename)
+          route53_config = load_yaml_file(route53_receipt_filename)
+          @bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+        end
+
+        @bosh_manifest
+      end
+
+      def create_deployment_manifest
+        FileUtils.mkdir_p "deployments/bosh"
+
+        Dir.chdir("deployments/bosh") do
+          write_yaml(bosh_manifest, "bosh.yml")
+
+          deployment_command = Bosh::Cli::Command::Deployment.new
+          deployment_command.options = self.options
+          deployment_command.set_current("bosh.yml")
+
+          biff_command = Bosh::Cli::Command::Biff.new
+          biff_command.options = self.options
+
+          manifest_path = File.join(File.dirname(__FILE__), "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
+          biff_command.biff(File.expand_path(manifest_path))
+        end
+      end
+
+      def create_and_upload_release(bosh_repository, release_path)
+        Dir.chdir(bosh_repository) do
+          Bosh::Exec.sh "bundle exec rake release:create_dev_release"
+        end
+
+        Dir.chdir(release_path) do
+          release_command = Bosh::Cli::Command::Release.new
+          release_command.options = self.options
+          release_command.upload
+        end
+      end
+
+      def target_bosh_and_log_in
+        misc_command = Bosh::Cli::Command::Misc.new
+        misc_command.options = self.options
+        misc_command.set_target(bosh_manifest.vip)
+        misc_command.options[:target] = bosh_manifest.vip
+        misc_command.login("admin", "admin")
+
+        self.options[:target] = misc_command.config.target
+      end
+
+      def deploy
+        deployment_command = Bosh::Cli::Command::Deployment.new
+        deployment_command.options = self.options
+        deployment_command.perform
+      end
+
+      def fetch_and_upload_stemcell
+        stemcell_command = Bosh::Cli::Command::Stemcell.new
+        stemcell_command.options = self.options
+
+        stemcell = Tempfile.new "bosh_stemcell"
+        stemcell.write bosh_stemcell
+        stemcell.close
+
+        stemcell_command.upload(stemcell.path)
+      end
 
       def bosh_stemcell
         ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"] ||
