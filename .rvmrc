@@ -1,1 +1,1 @@
-rvm --create 1.9.3@bosh
+rvm --create 1.9.3-p327@bosh
