@@ -186,12 +186,7 @@ namespace :spec do
 
     end
 
-    desc "Run AWS system-wide suite"
-    RSpec::Core::RakeTask.new(:aws) do |t|
-      t.pattern = "spec/system/aws/**/*_spec.rb"
-      t.rspec_opts = %w(--format documentation --color)
-    end
-  end
+
 end
 
 desc "Run unit and integration specs"
