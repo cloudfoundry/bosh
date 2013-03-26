@@ -65,8 +65,11 @@ module Bosh::Cli::Command
 
     usage "aws bootstrap bosh"
     desc "bootstrap full bosh deployment"
-    def bootstrap_bosh(release_path)
+    def bootstrap_bosh(bosh_repository=nil)
       target_required
+
+      bosh_repository ||= ENV.fetch('BOSH_REPOSITORY') { err "A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable"}
+      release_path = File.join(bosh_repository, "release")
 
       Dir.chdir(release_path) do
         begin
@@ -137,17 +140,18 @@ This command should be used for bootstrapping bosh from scratch.
       stemcell_command.options[:non_interactive] = true
       stemcell_command.upload(stemcell.path)
 
-
       deployment_command = Bosh::Cli::Command::Deployment.new
       deployment_command.options = self.options
       deployment_command.options[:non_interactive] = true
       deployment_command.perform
 
-      target_command = Bosh::Cli::Command::Misc.new
-      target_command.options = self.options
-      target_command.set_target(bosh_manifest.vip)
+      misc_command = Bosh::Cli::Command::Misc.new
+      misc_command.options = self.options
+      misc_command.set_target(bosh_manifest.vip)
+      misc_command.options[:target] = bosh_manifest.vip
+      misc_command.login("admin", "admin")
 
-      config.target = target_command.config.target
+      config.target = misc_command.config.target
 
       say "For security purposes, please provide a username and password for BOSH Director"
       username = ask("Enter username: ")
@@ -157,6 +161,13 @@ This command should be used for bootstrapping bosh from scratch.
       user_command.options = self.options
       user_command.options[:target] = config.target
       user_command.create(username, password)
+
+      misc_command = Bosh::Cli::Command::Misc.new
+      misc_command.options = self.options
+      misc_command.options[:target] = config.target
+      misc_command.login(username, password)
+
+      say "BOSH deployed successfully. You are logged in as #{username}."
     end
 
     usage "aws generate micro_bosh"
@@ -684,7 +695,7 @@ This command should be used for bootstrapping bosh from scratch.
     end
 
     def bosh_stemcell
-      ENV["BOSH_OVERRIDE_BOSH_STEMCELL"] ||
+      ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"] ||
           Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz")
     end
 

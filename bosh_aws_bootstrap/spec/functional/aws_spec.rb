@@ -80,7 +80,7 @@ describe Bosh::Cli::Command::AWS do
     end
 
     describe "aws bootstrap bosh" do
-      let(:bosh_release_path) { File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..", "release")) }
+      let(:bosh_repository_path) { File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "..")) }
       let(:deployment_name) { 'vpc-bosh-test' }
       let(:stemcell_stub)  { File.expand_path(File.join(File.dirname(__FILE__), "..", "assets", "stemcell_stub.tgz")) }
 
@@ -107,8 +107,6 @@ describe Bosh::Cli::Command::AWS do
       end
 
       around do |example|
-        `bosh reset release`
-
         Dir.mktmpdir do |dirname|
           Dir.chdir dirname do
             FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
@@ -131,7 +129,7 @@ describe Bosh::Cli::Command::AWS do
         end
 
         it "raises an error" do
-          expect { aws.bootstrap_bosh(bosh_release_path) }.to raise_error(/Please choose target first/)
+          expect { aws.bootstrap_bosh(bosh_repository_path) }.to raise_error(/Please choose target first/)
         end
       end
 
@@ -160,18 +158,49 @@ describe Bosh::Cli::Command::AWS do
 
         it "raises an error" do
           expect do
-            aws.bootstrap_bosh(bosh_release_path)
+            aws.bootstrap_bosh(bosh_repository_path)
           end.to raise_error(/This target already has a release./)
         end
       end
 
-      context "when there release path is not an actual release" do
+      context "when bosh_repository is not specified" do
         before do
           aws.options[:target] = 'http://localhost:25555'
         end
 
         it "complains about its presence" do
-          expect { aws.bootstrap_bosh('/') }.to raise_error(/Please point to a valid release folder/)
+          expect { aws.bootstrap_bosh }.to raise_error(/A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable/)
+        end
+      end
+
+      context "when bosh_repository is specified via an env variable" do
+        before do
+          aws.options[:target] = 'http://localhost:25555'
+        end
+
+        after do
+          ENV.delete('BOSH_REPOSITORY')
+        end
+
+        it "does not fail on bosh repo path" do
+          ENV['BOSH_REPOSITORY'] = "/"
+
+          expect { aws.bootstrap_bosh }.to_not raise_error(/A path to a BOSH source repository must be given as an argument or set in the `BOSH_REPOSITORY' environment variable/)
+        end
+      end
+
+      context "when there release path is not an actual release" do
+        let(:tmpdir) { Dir.mktmpdir }
+
+        before do
+          aws.options[:target] = 'http://localhost:25555'
+          Dir.chdir(tmpdir) do
+            Dir.mkdir("release")
+          end
+        end
+
+        it "complains about its presence" do
+          expect { aws.bootstrap_bosh(tmpdir.to_s) }.to raise_error(/Please point to a valid release folder/)
         end
       end
 
@@ -192,7 +221,7 @@ describe Bosh::Cli::Command::AWS do
         end
 
         it "bails telling the user this command is only useful for the initial deployment" do
-          expect { aws.bootstrap_bosh(bosh_release_path) }.to raise_error(/Deployment `#{deployment_name}' already exists\./)
+          expect { aws.bootstrap_bosh(bosh_repository_path) }.to raise_error(/Deployment `#{deployment_name}' already exists\./)
         end
       end
 
@@ -202,6 +231,7 @@ describe Bosh::Cli::Command::AWS do
 
         before do
           Bosh::Cli::PackageBuilder.any_instance.stub(:resolve_globs).and_return([])
+          Bosh::Exec.should_receive(:sh).with("bundle exec rake release:create_dev_release")
 
           aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
           aws.config.set_alias('target', '1234', 'http://127.0.0.1:25555')
@@ -231,7 +261,7 @@ describe Bosh::Cli::Command::AWS do
           @upload_request = stub_request(:post, "http://127.0.0.1:25555/releases").
               to_return(:status => 200, :body => "")
 
-          @stemcell_upload_request = stub_request(:get, "http://127.0.0.1:25555/stemcells").
+          stub_request(:get, "http://127.0.0.1:25555/stemcells").
               to_return(:status => 200, :body => "[]").then.
               to_return(:status => 200, :body => '[{"name":"bosh-stemcell","version":"2013-03-21_01-53-17","cid":"ami-1c990175"}]')
 
@@ -253,7 +283,9 @@ describe Bosh::Cli::Command::AWS do
 
           stub_request(:get, "http://50.200.100.3:25555/info").
               with(:headers => {'Content-Type' => 'application/json'}).
-              to_return(:status => 200, :body => new_target_info.to_json)
+              to_return(:status => 200, :body => new_target_info.to_json).
+              to_return(:status => 200, :body => {"user" => "admin"}.to_json).
+              to_return(:status => 200, :body => {"user" => username}.to_json)
 
           aws.should_receive(:ask).with("Enter username: ").and_return(username)
           aws.should_receive(:ask).with("Enter password: ").and_return(password)
@@ -265,14 +297,14 @@ describe Bosh::Cli::Command::AWS do
 
         it "generates an updated manifest for bosh" do
           File.exist?("deployments/bosh/bosh.yml").should be_false
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
           File.exist?("deployments/bosh/bosh.yml").should be_true
         end
 
         it "creates a new release" do
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
 
-          releases = Dir["#{bosh_release_path}/dev_releases/*"]
+          releases = Dir["#{bosh_repository_path}/release/dev_releases/*"]
 
           releases.select do |release_file|
             release_file.include?("index.yml") &&
@@ -283,42 +315,56 @@ describe Bosh::Cli::Command::AWS do
         end
 
         it "uploads the newly created release" do
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
 
           @upload_request.should have_been_made
         end
 
         it "runs deployment diff" do
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
 
           generated_manifest = File.read("deployments/bosh/bosh.yml")
           generated_manifest.should include("# Fake network properties to satisfy bosh diff")
         end
 
         it "uploads the latest stemcell" do
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
 
           @stemcell_upload_request.should have_been_made
         end
 
         it "deploys bosh" do
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
 
           @deployment_request.should have_been_made
         end
 
         it "sets the target to the new bosh" do
-          aws.bootstrap_bosh(bosh_release_path)
+          aws.bootstrap_bosh(bosh_repository_path)
 
           config_file = File.read(@bosh_config.path)
           config = YAML.load(config_file)
           config["target"].should == "http://50.200.100.3:25555"
         end
 
-        it "prompts the user for new username and password" do
-          aws.bootstrap_bosh(bosh_release_path)
+        it "creates a new user in new bosh" do
+          aws.bootstrap_bosh(bosh_repository_path)
+
+          encoded_credentials = Base64.encode64("admin:admin").strip
+          a_request(:get, "50.200.100.3:25555/info").with(
+              :headers => {
+                'Authorization' => "Basic #{encoded_credentials}",
+                'Content-Type'=>'application/json'
+              }).should have_been_made.once
 
           @create_user_request.should have_been_made
+
+          encoded_credentials = Base64.encode64("#{username}:#{password}").strip
+          a_request(:get, "50.200.100.3:25555/info").with(
+              :headers => {
+                  'Authorization' => "Basic #{encoded_credentials}",
+                  'Content-Type'=>'application/json'
+              }).should have_been_made.once
         end
       end
     end
