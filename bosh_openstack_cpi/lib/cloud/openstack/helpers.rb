@@ -6,6 +6,8 @@ module Bosh::OpenStackCloud
   module Helpers
 
     DEFAULT_TIMEOUT = 600 # Default timeout for target state (in seconds)
+    MAX_RETRIES = 10 # Max number of retries
+    DEFAULT_RETRY_TIMEOUT = 1 # Default timeout before retrying a call (in seconds)
 
     ##
     # Raises CloudError exception
@@ -14,6 +16,33 @@ module Bosh::OpenStackCloud
     def cloud_error(message)
       @logger.error(message) if @logger
       raise Bosh::Clouds::CloudError, message
+    end
+
+    def with_openstack
+      retries = 0
+      begin
+        yield
+      rescue Excon::Errors::RequestEntityTooLarge => e
+        # If we find a rate limit error, parse message, wait, and retry
+        unless e.response.body.empty? || retries >= MAX_RETRIES
+          begin
+            message = JSON.parse(e.response.body)
+            overlimit = message["overLimit"] || message["overLimitFault"]
+            if overlimit
+              task_checkpoint
+              wait_time = overlimit["retryAfter"] || DEFAULT_RETRY_TIMEOUT
+              @logger.debug("OpenStack API overLimit, waiting #{wait_time} " +
+                                "seconds before retrying") if @logger
+              sleep(wait_time.to_i)
+              retries += 1
+              retry
+            end
+          rescue JSON::ParserError
+            # do nothing
+          end
+        end
+        raise e
+      end
     end
 
     ##

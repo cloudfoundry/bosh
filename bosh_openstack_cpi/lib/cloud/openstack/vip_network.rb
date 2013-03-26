@@ -29,19 +29,21 @@ module Bosh::OpenStackCloud
 
       # Check if the OpenStack floating IP is allocated. If true, disassociate
       # it from any server before associating it to the new server
-      address = openstack.addresses.find { |a| a.ip == @ip }
-      if address
-        unless address.instance_id.nil?
-          @logger.info("Disassociating floating IP `#{@ip}' " \
-                       "from server `#{address.instance_id}'")
-          address.server = nil
-        end
+      with_openstack do
+        address = openstack.addresses.find { |a| a.ip == @ip }
+        if address
+          unless address.instance_id.nil?
+            @logger.info("Disassociating floating IP `#{@ip}' " \
+                         "from server `#{address.instance_id}'")
+            address.server = nil
+          end
 
-        @logger.info("Associating server `#{server.id}' " \
-                     "with floating IP `#{@ip}'")
-        address.server = server
-      else
-        cloud_error("Floating IP #{@ip} not allocated")
+          @logger.info("Associating server `#{server.id}' " \
+                       "with floating IP `#{@ip}'")
+          address.server = server
+        else
+          cloud_error("Floating IP #{@ip} not allocated")
+        end
       end
     end
 

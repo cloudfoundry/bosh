@@ -42,7 +42,7 @@ module Bosh::OpenStackCloud
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
-      @openstack = Connection.new(:compute, openstack_params)
+      @openstack = Fog::Compute.new(openstack_params)
 
       glance_params = {
         :provider => "OpenStack",
@@ -53,7 +53,7 @@ module Bosh::OpenStackCloud
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"]
       }
-      @glance = Connection.new(:image, glance_params)
+      @glance = Fog::Image.new(glance_params)
 
       registry_endpoint = @registry_properties["endpoint"]
       registry_user = @registry_properties["user"]
@@ -175,15 +175,15 @@ module Bosh::OpenStackCloud
     def delete_stemcell(stemcell_id)
       with_thread_name("delete_stemcell(#{stemcell_id})") do
         @logger.info("Deleting stemcell `#{stemcell_id}'...")
-        image = @glance.images.find_by_id(stemcell_id)
+        image = with_openstack { @glance.images.find_by_id(stemcell_id) }
         if image
           kernel_id = image.properties["kernel_id"]
           if kernel_id
-            kernel = @glance.images.find_by_id(kernel_id)
+            kernel = with_openstack { @glance.images.find_by_id(kernel_id) }
             if kernel && kernel.properties["stemcell"]
               if kernel.properties["stemcell"] == image.name
                 @logger.info("Deleting kernel `#{kernel_id}'...")
-                kernel.destroy
+                with_openstack { kernel.destroy }
                 @logger.info("Kernel `#{kernel_id}' is now deleted")
               end
             end
@@ -191,17 +191,17 @@ module Bosh::OpenStackCloud
 
           ramdisk_id = image.properties["ramdisk_id"]
           if ramdisk_id
-            ramdisk = @glance.images.find_by_id(ramdisk_id)
+            ramdisk = with_openstack { @glance.images.find_by_id(ramdisk_id) }
             if ramdisk && ramdisk.properties["stemcell"]
               if ramdisk.properties["stemcell"] == image.name
                 @logger.info("Deleting ramdisk `#{ramdisk_id}'...")
-                ramdisk.destroy
+                with_openstack { ramdisk.destroy }
                 @logger.info("Ramdisk `#{ramdisk_id}' is now deleted")
               end
             end
           end
 
-          image.destroy
+          with_openstack { image.destroy }
           @logger.info("Stemcell `#{stemcell_id}' is now deleted")
         else
           @logger.info("Stemcell `#{stemcell_id}' not found. Skipping.")
@@ -240,11 +240,11 @@ module Bosh::OpenStackCloud
         nics = network_configurator.nics
         @logger.debug("Using NICs: `#{nics.join(', ')}'")
 
-        image = @openstack.images.find { |i| i.id == stemcell_id }
+        image = with_openstack { @openstack.images.find { |i| i.id == stemcell_id } }
         cloud_error("Image `#{stemcell_id}' not found") if image.nil?
         @logger.debug("Using image: `#{stemcell_id}'")
 
-        flavor = @openstack.flavors.find { |f| f.name == resource_pool["instance_type"] }
+        flavor = with_openstack { @openstack.flavors.find { |f| f.name == resource_pool["instance_type"] } }
         cloud_error("Flavor `#{resource_pool["instance_type"]}' not found") if flavor.nil?
         @logger.debug("Using flavor: `#{resource_pool["instance_type"]}'")
 
@@ -262,7 +262,7 @@ module Bosh::OpenStackCloud
         server_params[:availability_zone] = availability_zone if availability_zone
 
         @logger.debug("Using boot parms: `#{server_params.inspect}'")
-        server = @openstack.servers.create(server_params)
+        server = with_openstack { @openstack.servers.create(server_params) }
 
         @logger.info("Creating new server `#{server.id}'...")
         wait_resource(server, :active, :state)
@@ -286,9 +286,9 @@ module Bosh::OpenStackCloud
     def delete_vm(server_id)
       with_thread_name("delete_vm(#{server_id})") do
         @logger.info("Deleting server `#{server_id}'...")
-        server = @openstack.servers.get(server_id)
+        server = with_openstack { @openstack.servers.get(server_id) }
         if server
-          server.destroy
+          with_openstack { server.destroy }
           wait_resource(server, :terminated, :state, true)
 
           @logger.info("Deleting settings for server `#{server.id}'...")
@@ -306,7 +306,7 @@ module Bosh::OpenStackCloud
     # @return [Boolean] True if the vm exists
     def has_vm?(server_id)
       with_thread_name("has_vm?(#{server_id})") do
-        server = @openstack.servers.get(server_id)
+        server = with_openstack { @openstack.servers.get(server_id) }
         !server.nil?
       end
     end
@@ -318,7 +318,7 @@ module Bosh::OpenStackCloud
     # @return [void]
     def reboot_vm(server_id)
       with_thread_name("reboot_vm(#{server_id})") do
-        server = @openstack.servers.get(server_id)
+        server = with_openstack { @openstack.servers.get(server_id) }
         cloud_error("Server `#{server_id}' not found") unless server
 
         soft_reboot(server)
@@ -336,11 +336,12 @@ module Bosh::OpenStackCloud
       with_thread_name("configure_networks(#{server_id}, ...)") do
         @logger.info("Configuring `#{server_id}' to use the following " \
                      "network settings: #{network_spec.pretty_inspect}")
-
         network_configurator = NetworkConfigurator.new(network_spec)
-        server = @openstack.servers.get(server_id)
 
-        sg = @openstack.list_security_groups(server_id).body["security_groups"]
+        server = with_openstack { @openstack.servers.get(server_id) }
+        cloud_error("Server `#{server_id}' not found") unless server
+
+        sg = with_openstack { @openstack.list_security_groups(server_id).body["security_groups"] }
         actual = sg.collect { |s| s["name"] }.sort
         new = network_configurator.security_groups(@default_security_groups)
 
@@ -381,14 +382,14 @@ module Bosh::OpenStackCloud
         }
 
         if server_id
-          server = @openstack.servers.get(server_id)
+          server = with_openstack { @openstack.servers.get(server_id) }
           if server && server.availability_zone
             volume_params[:availability_zone] = server.availability_zone
           end
         end
 
         @logger.info("Creating new volume...")
-        volume = @openstack.volumes.create(volume_params)
+        volume = with_openstack { @openstack.volumes.create(volume_params) }
 
         @logger.info("Creating new volume `#{volume.id}'...")
         wait_resource(volume, :available)
@@ -406,14 +407,14 @@ module Bosh::OpenStackCloud
     def delete_disk(disk_id)
       with_thread_name("delete_disk(#{disk_id})") do
         @logger.info("Deleting volume `#{disk_id}'...")
-        volume = @openstack.volumes.get(disk_id)
+        volume = with_openstack { @openstack.volumes.get(disk_id) }
         if volume
           state = volume.status
           if state.to_sym != :available
             cloud_error("Cannot delete volume `#{disk_id}', state is #{state}")
           end
 
-          volume.destroy
+          with_openstack { volume.destroy }
           wait_resource(volume, :deleted, :status, true)
         else
           @logger.info("Volume `#{disk_id}' not found. Skipping.")
@@ -429,10 +430,10 @@ module Bosh::OpenStackCloud
     # @return [void]
     def attach_disk(server_id, disk_id)
       with_thread_name("attach_disk(#{server_id}, #{disk_id})") do
-        server = @openstack.servers.get(server_id)
+        server = with_openstack { @openstack.servers.get(server_id) }
         cloud_error("Server `#{server_id}' not found") unless server
 
-        volume = @openstack.volumes.get(disk_id)
+        volume = with_openstack { @openstack.volumes.get(disk_id) }
         cloud_error("Volume `#{disk_id}' not found") unless volume
 
         device_name = attach_volume(server, volume)
@@ -453,10 +454,10 @@ module Bosh::OpenStackCloud
     # @return [void]
     def detach_disk(server_id, disk_id)
       with_thread_name("detach_disk(#{server_id}, #{disk_id})") do
-        server = @openstack.servers.get(server_id)
+        server = with_openstack { @openstack.servers.get(server_id) }
         cloud_error("Server `#{server_id}' not found") unless server
 
-        volume = @openstack.volumes.get(disk_id)
+        volume = with_openstack { @openstack.volumes.get(disk_id) }
         cloud_error("Volume `#{disk_id}' not found") unless volume
 
         detach_volume(server, volume)
@@ -477,11 +478,13 @@ module Bosh::OpenStackCloud
     # @return [void]
     def set_vm_metadata(server_id, metadata)
       with_thread_name("set_vm_metadata(#{server_id}, ...)") do
-        server = @openstack.servers.get(server_id)
-        cloud_error("Server `#{server_id}' not found") unless server
+        with_openstack do
+          server = @openstack.servers.get(server_id)
+          cloud_error("Server `#{server_id}' not found") unless server
 
-        metadata.each do |name, value|
-          TagManager.tag(server, name, value)
+          metadata.each do |name, value|
+            TagManager.tag(server, name, value)
+          end
         end
       end
     end
@@ -506,7 +509,7 @@ module Bosh::OpenStackCloud
     # @note this is a private method that is public to make it easier to test
     def select_availability_zone(volumes, resource_pool_az)
       if volumes && !volumes.empty?
-        disks = volumes.map { |vid| @openstack.volumes.get(vid) }
+        disks = volumes.map { |vid| with_openstack { @openstack.volumes.get(vid) } }
         ensure_same_availability_zone(disks, resource_pool_az)
         disks.first.availability_zone
       else
@@ -627,7 +630,7 @@ module Bosh::OpenStackCloud
     # @return [void]
     def soft_reboot(server)
       @logger.info("Soft rebooting server `#{server.id}'...")
-      server.reboot
+      with_openstack { server.reboot }
       wait_resource(server, :active, :state)
     end
 
@@ -638,7 +641,7 @@ module Bosh::OpenStackCloud
     # @return [void]
     def hard_reboot(server)
       @logger.info("Hard rebooting server `#{server.id}'...")
-      server.reboot(type = 'HARD')
+      with_openstack { server.reboot(type = 'HARD') }
       wait_resource(server, :active, :state)
     end
 
@@ -649,8 +652,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [String] Device name
     def attach_volume(server, volume)
-      volume_attachments = @openstack.get_server_volumes(server.id).
-                           body['volumeAttachments']
+      volume_attachments = with_openstack { @openstack.get_server_volumes(server.id).body['volumeAttachments'] }
       device_names = Set.new(volume_attachments.collect! { |v| v["device"] })
 
       new_attachment = nil
@@ -662,10 +664,9 @@ module Bosh::OpenStackCloud
         end
         @logger.info("Attaching volume `#{volume.id}' to `#{server.id}', " \
                      "device name is `#{dev_name}'")
-        if volume.attach(server.id, dev_name)
-          wait_resource(volume, :"in-use")
-          new_attachment = dev_name
-        end
+        with_openstack { volume.attach(server.id, dev_name) }
+        wait_resource(volume, :"in-use")
+        new_attachment = dev_name
         break
       end
       cloud_error("Server has too many disks attached") if new_attachment.nil?
@@ -680,8 +681,7 @@ module Bosh::OpenStackCloud
     # @param [Fog::Compute::OpenStack::Volume] volume OpenStack volume
     # @return [void]
     def detach_volume(server, volume)
-      volume_attachments = @openstack.get_server_volumes(server.id).
-                           body['volumeAttachments']
+      volume_attachments = with_openstack { @openstack.get_server_volumes(server.id).body['volumeAttachments'] }
       device_map = volume_attachments.collect! { |v| v["volumeId"] }
 
       unless device_map.include?(volume.id)
@@ -690,7 +690,7 @@ module Bosh::OpenStackCloud
       end
 
       @logger.info("Detaching volume `#{volume.id}' from `#{server.id}'...")
-      volume.detach(server.id, volume.id)
+      with_openstack { volume.detach(server.id, volume.id) }
       wait_resource(volume, :available)
     end
 
@@ -702,7 +702,7 @@ module Bosh::OpenStackCloud
     def upload_image(image_params)
       @logger.info("Creating new image...")
       started_at = Time.now
-      image = @glance.images.create(image_params)
+      image = with_openstack { @glance.images.create(image_params) }
       total = Time.now - started_at
       @logger.info("Created new image `#{image.id}', took #{total}s")
 
