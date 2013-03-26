@@ -154,17 +154,6 @@ PATH
       sequel (~> 3.43.0)
 
 PATH
-  remote: bosh_warden_cpi
-  specs:
-    bosh_warden_cpi (0.0.1)
-      bosh_common
-      bosh_cpi
-      sequel
-      warden-client
-      warden-protocol
-      yajl-ruby
-
-PATH
   remote: director
   specs:
     director (1.5.0.pre.3)
@@ -414,7 +403,6 @@ DEPENDENCIES
   bosh_registry!
   bosh_vcloud_cpi!
   bosh_vsphere_cpi!
-  bosh_warden_cpi!
   ci_reporter
   debugger
   director!

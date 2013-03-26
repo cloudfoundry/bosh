@@ -1,13 +1,12 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
-  attr_reader :logger
+  let!(:disk_root) { Dir.mktmpdir("warden-cpi-disk") }
+  let(:logger) { Bosh::Clouds::Config.logger }
+  let(:cloud_options) { {"disk" => {"root" => disk_root, "fs" => "ext4" }}}
+  let(:cloud) { Bosh::Clouds::Provider.create(:warden, cloud_options) }
 
-  before :each do
-    @logger = Bosh::Clouds::Config.logger
-
-    @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
-
+  before do
     [:connect, :disconnect].each do |op|
       Warden::Client.any_instance.stub(op) do
         # no-op
@@ -15,9 +14,7 @@ describe Bosh::WardenCloud::Cloud do
     end
   end
 
-  after :each do
-    Bosh::WardenCloud::Models::Disk.dataset.delete
-  end
+  after { Bosh::WardenCloud::Models::Disk.dataset.delete }
 
   def mock_create_disk
     zero_exit_status = mock("Process::Status", :exit_status => 0)
@@ -67,7 +64,7 @@ describe Bosh::WardenCloud::Cloud do
       }.to raise_error
 
       Bosh::WardenCloud::Models::Disk.dataset.all.size.should == 0
-      Dir.chdir(@disk_root) do
+      Dir.chdir(disk_root) do
         Dir.glob("*").should be_empty
       end
     end
@@ -77,11 +74,11 @@ describe Bosh::WardenCloud::Cloud do
     before :each do
       mock_create_disk
 
-      @disk_id = @cloud.create_disk(1, nil)
+      @disk_id = cloud.create_disk(1, nil)
     end
 
     it "can delete disk" do
-      Dir.chdir(@disk_root) do
+      Dir.chdir(disk_root) do
         Dir.glob("*").should have(1).items
         Dir.glob("*").should include(image_file(@disk_id))
 

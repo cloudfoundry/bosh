@@ -1,17 +1,12 @@
 require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
-  before :each do
-    @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
-  end
-
-  after :each do
-    FileUtils.rm_rf @stemcell_root
-  end
-
   let(:image_path) { asset("stemcell-warden-test.tgz") }
   let(:bad_image_path) { asset("stemcell-not-existed.tgz") }
+  let(:stemcell_root) { Dir.mktmpdir("warden-cpi-stemcell") }
   let(:cloud) { Bosh::Clouds::Provider.create(:warden, {"stemcell" => {"root" => stemcell_root}}) }
+
+  after { FileUtils.rm_rf stemcell_root }
 
   context "create_stemcell" do
     it "can create stemcell" do
@@ -35,7 +30,7 @@ describe Bosh::WardenCloud::Cloud do
         raise "error"
       end
 
-      Dir.chdir(@stemcell_root) do
+      Dir.chdir(stemcell_root) do
         Dir.glob("*").should be_empty
 
         expect {
