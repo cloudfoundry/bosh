@@ -56,7 +56,7 @@ namespace :stemcell do
     require "aws-sdk"
 
     task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
-      stemcell_tgz = args[:stemcell_tgz]
+      light_stemcell_tgz = args[:stemcell_tgz]
       bucket_name = args[:bucket_name]
       AWS.config({
           access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
@@ -64,9 +64,9 @@ namespace :stemcell do
       })
 
       Dir.mktmpdir do |dir|
-        light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
+        stemcell_tgz = File.dirname(stemcell_tgz) + "/" + File.basename(stemcell_tgz).gsub('light-','')
 
-        %x{tar xzf #{light_stemcell_name} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
+        %x{tar xzf #{light_stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
         stemcell_manifest = "#{dir}/stemcell.MF"
         stemcell_properties = YAML.load_file(stemcell_manifest)
         ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
@@ -81,7 +81,7 @@ namespace :stemcell do
         puts "AMI name written to: #{obj.public_url :secure => false}"
 
         obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_light.tgz"]
-        obj.write(:file => light_stemcell_name)
+        obj.write(:file => light_stemcell_tgz)
         obj.acl = :public_read
         puts "Lite stemcell written to: #{obj.public_url :secure => false}"
 
