@@ -59,7 +59,7 @@ COMPONENTS.each do |component|
     end
 
     task :install => :pre_stage_latest do
-      sh "gem install #{gem}"
+      sh "gem install #{gem} --no-ri --no-rdoc"
     end
 
     task :prep_release => [:ensure_clean_state, :pre_stage_latest]
