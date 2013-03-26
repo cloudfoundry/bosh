@@ -341,8 +341,8 @@ module Bosh::OpenStackCloud
         server = with_openstack { @openstack.servers.get(server_id) }
         cloud_error("Server `#{server_id}' not found") unless server
 
-        sg = with_openstack { @openstack.list_security_groups(server_id).body["security_groups"] }
-        actual = sg.collect { |s| s["name"] }.sort
+        sg = with_openstack { server.security_groups }
+        actual = sg.collect { |s| s.name }.sort
         new = network_configurator.security_groups(@default_security_groups)
 
         # If the security groups change, we need to recreate the VM
