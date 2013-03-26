@@ -313,48 +313,96 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
         problem.data.should == {}
       end
 
-      it "scans for missing vm" do
-        2.times do |i|
-          vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}",
-                            :deployment => @deployment)
-          BDM::Instance.make(:vm => vm, :deployment => @deployment,
-                             :job => "job-#{i}", :index => i)
+      context "when cloud.has_vm? is implemented" do
+        it "scans for missing vm" do
+          2.times do |i|
+            vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}",
+                              :deployment => @deployment)
+            BDM::Instance.make(:vm => vm, :deployment => @deployment,
+                               :job => "job-#{i}", :index => i)
+          end
+
+          agent_1 = mock("agent-1")
+          agent_2 = mock("agent-2")
+
+          BD::AgentClient.stub!(:new).with("agent-0", anything).
+              and_return(agent_1)
+          BD::AgentClient.stub!(:new).with("agent-1", anything).
+              and_return(agent_2)
+
+          # Unresponsive agent
+          agent_1.should_receive(:get_state).and_raise(BD::RpcTimeout)
+
+          # Working agent
+          good_state = {
+              "deployment" => "mycloud",
+              "job" => {"name" => "job-1"},
+              "index" => 1
+          }
+          agent_2.should_receive(:get_state).and_return(good_state)
+          agent_2.should_receive(:list_disk).and_return([])
+          fake_cloud = double(Bosh::Cloud)
+          BD::Config.stub(:cloud).and_return(fake_cloud)
+          fake_cloud.should_receive(:has_vm?).with("vm-cid").and_return(false)
+          @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+          @job.should_receive(:track_and_log).with("1 OK, 0 unresponsive, 1 missing, 0 unbound, 0 out of sync")
+
+          @job.scan_vms
+          BDM::DeploymentProblem.count.should == 1
+
+          problem = BDM::DeploymentProblem.first
+          problem.state.should == "open"
+          problem.type.should == "missing_vm"
+          problem.deployment.should == @deployment
+          problem.resource_id.should == 1
+          problem.data.should == {}
         end
+      end
 
-        agent_1 = mock("agent-1")
-        agent_2 = mock("agent-2")
+      context "when cloud.has_vm? is not implemented" do
+        it "falls back to only identifying unresponsive agents" do
+          2.times do |i|
+            vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}",
+                              :deployment => @deployment)
+            BDM::Instance.make(:vm => vm, :deployment => @deployment,
+                               :job => "job-#{i}", :index => i)
+          end
 
-        BD::AgentClient.stub!(:new).with("agent-0", anything).
-            and_return(agent_1)
-        BD::AgentClient.stub!(:new).with("agent-1", anything).
-            and_return(agent_2)
+          agent_1 = mock("agent-1")
+          agent_2 = mock("agent-2")
 
-        # Unresponsive agent
-        agent_1.should_receive(:get_state).and_raise(BD::RpcTimeout)
+          BD::AgentClient.stub!(:new).with("agent-0", anything).
+              and_return(agent_1)
+          BD::AgentClient.stub!(:new).with("agent-1", anything).
+              and_return(agent_2)
 
-        # Working agent
-        good_state = {
-            "deployment" => "mycloud",
-            "job" => {"name" => "job-1"},
-            "index" => 1
-        }
-        agent_2.should_receive(:get_state).and_return(good_state)
-        agent_2.should_receive(:list_disk).and_return([])
-        fake_cloud = double(Bosh::Cloud)
-        BD::Config.stub(:cloud).and_return(fake_cloud)
-        fake_cloud.should_receive(:has_vm?).with("vm-cid").and_return(false)
-        @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
-        @job.should_receive(:track_and_log).with("1 OK, 0 unresponsive, 1 missing, 0 unbound, 0 out of sync")
+          # Unresponsive agent
+          agent_1.should_receive(:get_state).and_raise(BD::RpcTimeout)
 
-        @job.scan_vms
-        BDM::DeploymentProblem.count.should == 1
+          # Working agent
+          good_state = {
+              "deployment" => "mycloud",
+              "job" => {"name" => "job-1"},
+              "index" => 1
+          }
+          agent_2.should_receive(:get_state).and_return(good_state)
+          agent_2.should_receive(:list_disk).and_return([])
+          fake_cloud = double(Bosh::Cloud)
+          BD::Config.stub(:cloud).and_return(fake_cloud)
+          fake_cloud.should_receive(:has_vm?).with("vm-cid").and_raise(Bosh::Clouds::NotImplemented)
+          @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+          @job.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync")
 
-        problem = BDM::DeploymentProblem.first
-        problem.state.should == "open"
-        problem.type.should == "missing_vm"
-        problem.deployment.should == @deployment
-        problem.resource_id.should == 1
-        problem.data.should == {}
+          @job.scan_vms
+          BDM::DeploymentProblem.count.should == 1
+
+          problem = BDM::DeploymentProblem.first
+          problem.state.should == "open"
+          problem.type.should == "unresponsive_agent"
+          problem.deployment.should == @deployment
+          problem.resource_id.should == 1
+          problem.data.should == {}
+        end
       end
 
       it "scans for unbound instance vms" do

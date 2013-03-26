@@ -156,10 +156,13 @@ module Bosh::Director
             # unresponsive disk, not invalid disk_info
             add_disk_owner(mounted_disk_cid, vm.cid) if mounted_disk_cid
 
-            unless cloud.has_vm?(vm.cid)
-              logger.info("Missing VM #{vm.cid}")
-              problem_found(:missing_vm, vm)
-              return :missing
+            begin
+              unless cloud.has_vm?(vm.cid)
+                logger.info("Missing VM #{vm.cid}")
+                problem_found(:missing_vm, vm)
+                return :missing
+              end
+            rescue Bosh::Clouds::NotImplemented
             end
 
             logger.info("Found unresponsive agent #{vm.agent_id}")
