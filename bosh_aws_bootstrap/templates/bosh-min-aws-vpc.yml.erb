@@ -12,13 +12,13 @@ networks:
   subnets:
 <%- find('networks.default.subnets').each do |subnet| -%>
   - reserved:
-    - 10.10.0.2 - 10.10.0.5
+    - 10.10.0.2 - 10.10.0.6
     static:
-    - 10.10.0.6 - 10.10.0.19
+    - 10.10.0.7 - 10.10.0.19
     range: 10.10.0.0/24
     gateway: 10.10.0.1
     dns:
-    - 10.10.0.5
+    - 10.10.0.6
     cloud_properties:
       subnet: <%= find_in('cloud_properties.subnet', subnet) %>
       security_groups:
@@ -81,7 +81,7 @@ jobs:
   - name: default
     default: [dns, gateway]
     static_ips:
-    - 10.10.0.6
+    - 10.10.0.7
   - name: vip_network
     static_ips:
     <%- find('jobs.bosh.networks.vip_network.static_ips').each do |bosh_ip| -%>
@@ -93,7 +93,7 @@ properties:
     <%= find("properties.template_only").to_yaml.split("\n")[1..-1].map{|line| " " * 4 + line}.join("\n").gsub(/\A\s{4}/, "") %>
 
   blobstore:
-    address: 10.10.0.6
+    address: 10.10.0.7
     port: 25251
     backend_port: 25552
     agent:
@@ -110,24 +110,24 @@ properties:
   nats:
     user: nats
     password: 0b450ada9f830085e2cdeff6
-    address: 10.10.0.6
+    address: 10.10.0.7
     port: 4222
 
   postgres:
     user: bosh
     password: a7a33139c8e3f34bc201351b
-    address: 10.10.0.6
+    address: 10.10.0.7
     port: 5432
     database: bosh
 
   redis:
-    address: 10.10.0.6
+    address: 10.10.0.7
     port: 25255
     password: R3d!S
 
   director:
     name: <%= find('name') %>
-    address: 10.10.0.6
+    address: 10.10.0.7
     port: 25555
     encryption: false
 
@@ -152,7 +152,7 @@ properties:
     cloud_watch_enabled: true
 
   registry:
-    address: 10.10.0.6
+    address: 10.10.0.7
     http:
       port: 25777
       user: awsreg
@@ -169,7 +169,7 @@ properties:
   dns:
     user: powerdns
     password: powerdns
-    address: 10.10.0.6
+    address: 10.10.0.7
     replication:
       user: foo
       password: bar
