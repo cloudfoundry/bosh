@@ -79,7 +79,7 @@ module Bosh::Director
         File.open(state_json, File::RDWR|File::CREAT, 0644) do |file|
           file.flock(File::LOCK_EX)
           state = Yajl::Parser.parse(file.read) || {}
-          @uuid = state["uuid"] ||= UUIDTools::UUID.random_create.to_s
+          @uuid = state["uuid"] ||= SecureRandom.uuid
           file.rewind
           file.write(Yajl::Encoder.encode(state))
           file.flush
@@ -90,7 +90,7 @@ module Bosh::Director
 
         @logger.info("Starting BOSH Director: #{VERSION} (#{@revision})")
 
-        @process_uuid = UUIDTools::UUID.random_create.to_s
+        @process_uuid = SecureRandom.uuid
         @nats_uri = config["mbus"]
 
         @cloud_options = config["cloud"]
@@ -121,12 +121,8 @@ module Bosh::Director
         !@compiled_package_cache_options.nil?
       end
 
-      def compiled_package_cache_bucket
-        @compiled_package_cache_options['bucket'] if use_compiled_package_cache?
-      end
-
       def get_revision
-        Dir.chdir(File.expand_path("../../../..", __FILE__))
+        Dir.chdir(File.expand_path("../../../../..", __FILE__))
         revision_command = "(cat REVISION 2> /dev/null || " +
             "git show-ref --head --hash=8 2> /dev/null || " +
             "echo 00000000) | head -n1"
@@ -150,22 +146,23 @@ module Bosh::Director
       def blobstore
         @lock.synchronize do
           if @blobstore.nil?
-            plugin = @blobstore_options["plugin"]
-            properties = @blobstore_options["properties"]
-            @blobstore = Bosh::Blobstore::Client.create(plugin, properties)
+            provider = @blobstore_options["provider"]
+            options = @blobstore_options["options"]
+            @blobstore = Bosh::Blobstore::Client.create(provider, options)
           end
         end
         @blobstore
       end
 
-      def compiled_package_cache
+      def compiled_package_cache_blobstore
         @lock.synchronize do
-          if @compiled_package_cache.nil? && use_compiled_package_cache?
-            properties = @compiled_package_cache_options["properties"].reduce({}) { |hsh,(k,v)| hsh[k.to_sym] = v; hsh }
-            @compiled_package_cache = Fog::Storage.new(properties).directories.get(compiled_package_cache_bucket).files
+          if @compiled_package_cache_blobstore.nil? && use_compiled_package_cache?
+            provider = @compiled_package_cache_options["provider"]
+            options = @compiled_package_cache_options["options"]
+            @compiled_package_cache_blobstore = Bosh::Blobstore::Client.create(provider, options)
           end
         end
-        @compiled_package_cache
+        @compiled_package_cache_blobstore
       end
 
       def cloud_type

@@ -1,8 +1,13 @@
 module Bosh
   module Aws
     class EC2
+
       MAX_TAG_KEY_LENGTH = 127
       MAX_TAG_VALUE_LENGTH = 255
+      NAT_INSTANCE_DEFAULTS = {
+          :image_id => "ami-f619c29f",
+          :instance_type => "m1.small"
+      }
 
       attr_reader :elastic_ips
 
@@ -47,19 +52,41 @@ module Bosh
       end
 
       def internet_gateway_ids
-        aws_ec2.internet_gateways.map &:id
+        aws_ec2.internet_gateways.map(&:id)
       end
 
       def delete_internet_gateways(ids)
         Array(ids).each do |id|
           gw = aws_ec2.internet_gateways[id]
-          gw.attachments.map &:delete
+          gw.attachments.map(&:delete)
           gw.delete
         end
       end
 
       def create_instance(options)
         aws_ec2.instances.create(options)
+      end
+
+      def create_nat_instance(name, subnet_id, private_ip, security_group, key_pair = nil)
+        key_pair = select_key_pair_for_instance(name, key_pair)
+
+        instance_options = NAT_INSTANCE_DEFAULTS.merge(
+            subnet: subnet_id,
+            private_ip_address: private_ip,
+            security_groups: [security_group],
+            key_name: key_pair
+        )
+
+        create_instance(instance_options).tap do |instance|
+          Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
+          instance.add_tag("Name", {value: name})
+          elastic_ip = allocate_elastic_ip
+          Bosh::Common.retryable(tries: 10, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
+            instance.associate_elastic_ip(elastic_ip)
+            true
+          end
+          disable_src_dest_checking(instance.id)
+        end
       end
 
       def disable_src_dest_checking(instance_id)
@@ -78,19 +105,17 @@ module Bosh
         terminatable_instances.empty?
       end
 
-      def delete_volumes
-        unattached_volumes.each &:delete
-      end
-
-      def volume_count
-        unattached_volumes.count
-      end
-
       def instance_names
         terminatable_instances.inject({}) do |memo, instance|
           memo[instance.instance_id] = instance.tags["Name"] || '<unnamed instance>'
           memo
         end
+      end
+
+      def get_running_instance_by_name(name)
+        instances = aws_ec2.instances.select { |instance| instance.tags["Name"] == name && instance.status == :running }
+        raise "More than one running instance with name '#{name}'." if instances.count > 1
+        instances.first
       end
 
       def terminatable_instance_names
@@ -102,6 +127,14 @@ module Bosh
 
       def instances_for_ids(ids)
         aws_ec2.instances.filter('instance-id', *ids)
+      end
+
+      def delete_volumes
+        unattached_volumes.each(&:delete)
+      end
+
+      def volume_count
+        unattached_volumes.count
       end
 
       def snapshot_volume(volume, snapshot_name, description = "", tags = {})
@@ -119,11 +152,19 @@ module Bosh
           system "ssh-keygen", "-q", '-N', "", "-t", "rsa", "-f", private_key_path
         end
 
-        unless aws_ec2.key_pairs[name].nil?
+        unless key_pair_by_name(name).nil?
           err "Key pair #{name} already exists on AWS".red
         end
 
         aws_ec2.key_pairs.import(name, File.read(public_key_path))
+      end
+
+      def key_pair_by_name(name)
+        key_pairs.detect { |kp| kp.name == name }
+      end
+
+      def key_pairs
+        aws_ec2.key_pairs.to_a
       end
 
       def force_add_key_pair(name, path_to_public_private_key)
@@ -132,7 +173,7 @@ module Bosh
       end
 
       def remove_key_pair(name)
-        key_pair = aws_ec2.key_pairs[name]
+        key_pair = key_pair_by_name(name)
         key_pair.delete unless key_pair.nil?
       end
 
@@ -162,7 +203,7 @@ module Bosh
       end
 
       def terminatable_instances
-        aws_ec2.instances.reject{|i| i.api_termination_disabled? || i.status.to_s == "terminated"}
+        aws_ec2.instances.reject { |i| i.api_termination_disabled? || i.status.to_s == "terminated" }
       end
 
       def releasable_elastic_ips
@@ -171,7 +212,7 @@ module Bosh
       end
 
       def deletable_security_groups
-        aws_ec2.security_groups.reject{ |sg| security_group_in_use?(sg) }
+        aws_ec2.security_groups.reject { |sg| security_group_in_use?(sg) }
       end
 
       def security_group_in_use?(sg)
@@ -190,6 +231,24 @@ module Bosh
         taggable.add_tag(trimmed_key, :value => trimmed_value)
       rescue AWS::EC2::Errors::InvalidParameterValue => e
         say("could not tag #{taggable.id}: #{e.message}")
+      end
+
+      def select_key_pair_for_instance(name, key_pair)
+        if key_pair.nil?
+          if key_pairs.count > 1
+            raise "AWS key pair name unspecified for instance '#{name}', unable to select a default."
+          elsif key_pairs.count == 0
+            raise "AWS key pair name unspecified for instance '#{name}', no key pairs available to select a default."
+          else
+            key_pair = key_pairs.first.name
+          end
+        else
+          if key_pairs.none? { |kp| kp.name == key_pair }
+            raise "No such key pair '#{key_pair}' on AWS."
+          end
+        end
+
+        key_pair
       end
     end
   end

@@ -18,6 +18,7 @@ require "thread"
 require "tmpdir"
 require "yaml"
 require "time"
+require "zlib"
 
 require "common/properties"
 
@@ -28,11 +29,10 @@ require "netaddr"
 require "resque"
 require "sequel"
 require "sinatra/base"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 require "nats/client"
 require "securerandom"
-require "fog"
 
 require "common/thread_formatter"
 require "encryption/encryption_handler"
@@ -99,6 +99,8 @@ require "director/jobs/vm_state"
 require "director/jobs/cloud_check/scan"
 require "director/jobs/cloud_check/apply_resolutions"
 require "director/jobs/ssh"
+
+require "director/models/helpers/model_helper"
 
 module Bosh::Director
   autoload :Models, "director/models"
@@ -248,17 +250,15 @@ module Bosh::Director
 
     get "/releases" do
       releases = Models::Release.order_by(:name.asc).map do |release|
-        versions_in_use = []
-        versions = release.versions_dataset.order_by(:version.asc).map do |rv|
-          versions_in_use << rv.version.to_s unless rv.deployments.empty?
-          rv.version.to_s
+        release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
+          Hash["version", rv.version.to_s,
+               "commit_hash", rv.commit_hash,
+               "uncommitted_changes", rv.uncommitted_changes,
+               "currently_deployed", !rv.deployments.empty?]
         end
 
-        {
-          "name"     => release.name,
-          "versions" => versions,
-          "in_use"   => versions_in_use
-        }
+        Hash["name", release.name,
+             "release_versions", release_versions]
       end
 
       json_encode(releases)
@@ -379,7 +379,7 @@ module Bosh::Director
 
       format = params[:format]
       if format == "full"
-        task = @vm_state_manager.fetch_vm_state(@user, deployment)
+        task = @vm_state_manager.fetch_vm_state(@user, deployment, format)
         redirect "/tasks/#{task.id}"
       else
         @deployment_manager.deployment_vms_to_json(deployment)
@@ -533,18 +533,7 @@ module Bosh::Director
         halt(204)
       end
 
-      if File.directory?(task.output)
-        # Backward compatbility from renaming `soap` log to `cpi` log.
-        # Old tasks might have been written to the file `soap` and we should
-        # still return them if log_type = cpi. Same goes for new task logs
-        # written to `cpi` but an old CLI has requested log_type = soap.
-        if %w(soap cpi).include?(log_type)
-          log_type = File.file?(File.join(task.output, "soap")) ? "soap" : "cpi"
-        end
-        log_file = File.join(task.output, log_type)
-      else
-        log_file = task.output # Backward compatibility
-      end
+      log_file = @task_manager.log_file(task, log_type)
 
       if File.file?(log_file)
         send_file(log_file, :type => "text/plain")
@@ -651,10 +640,8 @@ module Bosh::Director
             "extras" => { "domain_name" => dns_domain_name }
           },
           "compiled_package_cache" => {
-            "status" => Config.use_compiled_package_cache?,
-            "extras" => {
-              "bucket_name" => Config.compiled_package_cache_bucket
-}          }
+            "status" => Config.use_compiled_package_cache?
+          }
         }
       }
       content_type(:json)

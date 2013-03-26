@@ -117,6 +117,13 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         @client.delete(oid)
       end
 
+      describe '#object_exists?' do
+        it 'should raise an error' do
+          expect {
+            @client.exists?('doesntexist')
+          }.to raise_error '#exists? not implemented'
+        end
+      end
     end
 
     describe "without credentials" do
@@ -165,8 +172,14 @@ describe Bosh::Blobstore::SwiftBlobstoreClient do
         }.should raise_error(Bosh::Blobstore::BlobstoreError)
       end
 
+      describe '#object_exists?' do
+        it 'should raise an error' do
+          expect {
+            @client.exists?('doesntexist')
+          }.to raise_error '#exists? not implemented'
+        end
+      end
     end
-
   end
 
   describe "on Rackspace Cloud Files" do

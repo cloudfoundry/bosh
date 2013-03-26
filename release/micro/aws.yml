@@ -36,18 +36,12 @@ properties:
     address: 127.0.0.1
     name: micro
     port: 25555
-  aws_registry:
+  registry:
     address: 127.0.0.1
     http:
       port: 25777
       user: admin
       password: admin
-    db:
-      database: postgres://postgres:postgres@localhost/bosh
-      max_connections: 32
-      pool_timeout: 10
-    aws:
-      max_retries: 2
   hm:
     http:
       port: 25923

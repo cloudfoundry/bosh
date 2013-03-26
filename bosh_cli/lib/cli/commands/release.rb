@@ -145,20 +145,16 @@ module Bosh::Cli::Command
 
       err("No releases") if releases.empty?
 
-      releases_table = table do |t|
-        t.headings = "Name", "Versions"
-        releases.each do |r|
-          versions = r["versions"].sort { |v1, v2|
-            version_cmp(v1, v2)
-          }.map { |v| ((r["in_use"] || []).include?(v)) ? "#{v}*" : v }
-
-          t << [r["name"], versions.join(", ")]
-        end
+      if releases.first.has_key? "release_versions"
+        releases_table = build_releases_table(releases)
+      elsif releases.first.has_key? "versions"
+        releases_table = build_releases_table_for_old_director(releases)
       end
 
       nl
-      say(releases_table)
+      say(releases_table.render)
       say("(*) Currently deployed") if releases_table.to_s =~ /\*/
+      say("(+) Uncommitted changes") if releases_table.to_s =~ /^\|.*\+{1}.*\|$/
       nl
       say("Releases total: %d" % releases.size)
     end
@@ -186,6 +182,7 @@ module Bosh::Cli::Command
         say("Canceled deleting release".green)
       end
     end
+
 
     protected
 
@@ -372,8 +369,8 @@ module Bosh::Cli::Command
     end
 
     def build_release(dry_run, final, jobs, manifest_only, packages)
-      release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages,
-                                                      jobs, :final => final)
+      release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, final: final,
+                                                      commit_hash: commit_hash, uncommitted_changes: dirty_state?)
 
       unless dry_run
         if manifest_only
@@ -450,6 +447,7 @@ module Bosh::Cli::Command
     rescue Errno::ENOENT
       say("Unable to run 'git init'".red)
     end
+
 
     private
 
@@ -535,6 +533,50 @@ module Bosh::Cli::Command
 
       say(msg.yellow)
       exit(1) unless confirmed?
+    end
+
+    def build_releases_table_for_old_director(releases)
+      table do |t|
+        t.headings = "Name", "Versions"
+        releases.each do |release|
+          versions = release["versions"].sort { |v1, v2|
+            version_cmp(v1, v2)
+          }.map { |v| ((release["in_use"] || []).include?(v)) ? "#{v}*" : v }
+
+          t << [release["name"], versions.join(", ")]
+        end
+      end
+    end
+
+    def build_releases_table(releases)
+      table do |t|
+        t.headings = "Name", "Versions", "Commit Hash"
+        releases.each do |release|
+          versions, commit_hashes = formatted_versions(release).transpose
+          t << [release["name"], versions.join("\n"), commit_hashes.join("\n")]
+        end
+      end
+    end
+
+    def formatted_versions(release)
+      sort_versions(release["release_versions"]).map { |v| formatted_version_and_commit_hash(v) }
+    end
+
+    def sort_versions(versions)
+      versions.sort { |v1, v2| version_cmp(v1["version"], v2["version"]) }
+    end
+
+    def formatted_version_and_commit_hash(version)
+      version_number = version["version"] + (version["currently_deployed"] ? "*" : "")
+      commit_hash = version["commit_hash"] + (version["uncommitted_changes"] ? "+" : "")
+      [version_number, commit_hash]
+    end
+
+    def commit_hash
+      status = Bosh::Exec.sh('git show-ref --head --hash=8 2> /dev/null')
+      status.output.split.first
+    rescue Bosh::Exec::Error => e
+      '00000000'
     end
   end
 end

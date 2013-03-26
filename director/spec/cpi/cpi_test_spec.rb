@@ -69,7 +69,7 @@ describe Bosh::Clouds, :requires_vsphere => true do
   # deploy a dummy VM to verify the stemcell.
   def stemcell_check
     result = false
-    agent_id = UUIDTools::UUID.random_create.to_s
+    agent_id = SecureRandom.uuid
     vm_ip = get_ip
     net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
       'netmask' => @net_conf['netmask'],
@@ -160,7 +160,7 @@ describe Bosh::Clouds, :requires_vsphere => true do
   end
 
   it "create/delete a VM" do
-    agent_id = UUIDTools::UUID.random_create.to_s
+    agent_id = SecureRandom.uuid
     vm_ip = get_ip
     net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
                              'netmask' => @net_conf['netmask'],
@@ -177,7 +177,7 @@ describe Bosh::Clouds, :requires_vsphere => true do
   end
 
   it "reconfigure vm ip address" do
-    agent_id = UUIDTools::UUID.random_create.to_s
+    agent_id = SecureRandom.uuid
     vm_ip_a = get_ip
     vm_ip_b = get_ip
     net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
@@ -214,7 +214,7 @@ describe Bosh::Clouds, :requires_vsphere => true do
   it "disk operations create/delete attach/detach and move disk" do
     disk_cid = nil
     2.times do
-      agent_id = UUIDTools::UUID.random_create.to_s
+      agent_id = SecureRandom.uuid
       vm_ip = get_ip
       net_config = {'test' => {'cloud_properties' => @net_conf['cloud_properties'],
         'netmask' => @net_conf['netmask'],

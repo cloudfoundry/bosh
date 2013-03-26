@@ -23,7 +23,7 @@ require "logging"
 require "nats/client"
 require "sinatra"
 require "thin"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 
 # Helpers
@@ -56,6 +56,7 @@ require "health_monitor/events/heartbeat"
 
 # Plugins
 require "health_monitor/plugins/base"
+require "health_monitor/plugins/cloud_watch"
 require "health_monitor/plugins/email"
 require "health_monitor/plugins/logger"
 require "health_monitor/plugins/nats"

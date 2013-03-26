@@ -12,9 +12,11 @@ module Bosh
         FileUtils.mkdir_p(@blobstore_path) unless File.directory?(@blobstore_path)
       end
 
+      protected
+
       def create_file(id, file)
-        id ||= UUIDTools::UUID.random_create.to_s
-        dst = File.join(@blobstore_path, id)
+        id ||= SecureRandom.uuid
+        dst = object_file_path(id)
         raise BlobstoreError, "object id #{id} is already in use" if File.exist?(dst)
         File.open(dst, 'w') do |fh|
           until file.eof?
@@ -25,7 +27,7 @@ module Bosh
       end
 
       def get_file(id, file)
-        src = File.join(@blobstore_path, id)
+        src = object_file_path(id)
 
         begin
           File.open(src, 'r') do |src_fh|
@@ -38,11 +40,21 @@ module Bosh
         raise NotFound, "Blobstore object '#{id}' not found"
       end
 
-      def delete(id)
-        file = File.join(@blobstore_path, id)
+      def delete_object(id)
+        file = object_file_path(id)
         FileUtils.rm(file)
       rescue Errno::ENOENT
         raise NotFound, "Blobstore object '#{id}' not found"
+      end
+
+      def object_exists?(oid)
+        File.exists?(object_file_path(oid))
+      end
+
+      private
+
+      def object_file_path(oid)
+        File.join(@blobstore_path, oid)
       end
 
     end

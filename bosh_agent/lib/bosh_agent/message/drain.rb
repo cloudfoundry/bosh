@@ -123,16 +123,22 @@ module Bosh::Agent
         # Drain contract: on success the drain script should return a number exit(0)
         options = { :unsetenv_others => options }
 
-        args = [  env, drain_script, job_updated, hash_updated, *updated_packages ]
-        args += [ :unsetenv_others => true ]
-        child = POSIX::Spawn::Child.new(*args)
+        stdout_rd, stdout_wr = IO.pipe
 
-        result = child.out
-        unless result.match(/\A-{0,1}\d+\Z/) && child.status.exitstatus == 0
+        args = [  env, drain_script, job_updated, hash_updated, *updated_packages ]
+        args += [ :out => stdout_wr, :unsetenv_others => true ]
+        Process.spawn(*args)
+        Process.wait
+        stdout_wr.close
+
+        exit_status = $?.exitstatus
+        output = stdout_rd.read
+
+        unless output.match(/\A-{0,1}\d+\Z/) && exit_status == 0
           raise Bosh::Agent::MessageHandlerError,
-            "Drain script exit #{child.status.exitstatus}: #{result}"
+            "Drain script exit #{exit_status}: #{result}"
         end
-        return result.to_i
+        return output.to_i
       end
 
       def updated_packages

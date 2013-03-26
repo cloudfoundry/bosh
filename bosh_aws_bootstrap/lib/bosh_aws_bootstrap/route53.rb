@@ -94,7 +94,7 @@ module Bosh
       end
 
       def generate_unique_name
-        ::UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
     end
   end

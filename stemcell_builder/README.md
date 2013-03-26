@@ -58,7 +58,7 @@ To create a full build, the build script can be used like this:
 
 ```
 work_dir=$(mktemp -d)
-specification_file=spec/stemcell-esxi.spec
+specification_file=spec/stemcell-vsphere.spec
 settings_file=etc/settings.bash
 $ bin/build_from_spec.sh $work_dir $specification_file $settings_file
 ```
@@ -143,7 +143,7 @@ its settings will trigger a rebuild of the stage.
 
 ```
 work_dir=/tmp/mnt
-specification_file=spec/stemcell-esxi.spec
+specification_file=spec/stemcell-vsphere.spec
 settings_file=etc/settings.bash
 $ sudo bin/build_from_spec.sh $work_dir $specification_file $settings_file
 ```

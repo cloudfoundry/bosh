@@ -4,7 +4,7 @@ require "openssl"
 require "digest/sha1"
 require "base64"
 require "aws"
-require "uuidtools"
+require "securerandom"
 
 module Bosh
   module Blobstore
@@ -14,7 +14,7 @@ module Bosh
       ENDPOINT = "https://s3.amazonaws.com"
       DEFAULT_CIPHER_NAME = "aes-128-cbc"
 
-      attr_reader :bucket_name, :encryption_key
+      attr_reader :bucket_name, :encryption_key, :simple
 
       # Blobstore client for S3 with optional object encryption
       # @param [Hash] options S3connection options
@@ -124,6 +124,12 @@ module Bosh
               "S3 response error: #{e.message}"
       end
 
+      def object_exists?(object_id)
+        return simple.exists?(object_id) if simple
+
+        get_object_from_s3(object_id).exists?
+      end
+
       protected
 
       # @param [String] oid object id
@@ -137,7 +143,7 @@ module Bosh
       # @return [void]
       def store_in_s3(path, oid)
         s3_object = get_object_from_s3(oid)
-        raise BlobstoreError, "object id #{oid} is already in use" if s3_object.exist?
+        raise BlobstoreError, "object id #{oid} is already in use" if s3_object.exists?
         File.open(path, "r") do |temp_file|
           s3_object.write(temp_file)
         end
@@ -160,7 +166,7 @@ module Bosh
       end
 
       def generate_object_id
-        UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
 
       def read_only?

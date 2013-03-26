@@ -1,8 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.dirname(__FILE__) + '/../spec_helper'
+require 'spec_helper'
 
-require 'posix/spawn'
 require 'yajl'
 
 describe "http messages" do
@@ -52,7 +51,7 @@ describe "http messages" do
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
     command = "ruby #{agent} -n #{@http_uri} -a #{@agent_id} -h 1 -b #{@basedir} -l ERROR"
-    @agent_pid = POSIX::Spawn::spawn(command)
+    @agent_pid = Process.spawn(command)
 
     counter = 0
     while !http_up?
@@ -63,6 +62,17 @@ describe "http messages" do
     end
   end
 
+  after(:all) do
+    if @agent_pid
+      puts "stopping agent"
+      Process.kill(:TERM, @agent_pid)
+      Process.waitpid(@agent_pid)
+    else
+      raise "unable to stop agent, you need to clean up by hand"
+    end
+    FileUtils.rm_rf(@basedir)
+  end
+
   it "should respond to state message" do
     http('state') do |msg|
       msg.should have_key('deployment')
@@ -71,6 +81,18 @@ describe "http messages" do
       msg.should have_key('agent_id')
       msg.should have_key('vm')
       msg.should have_key('job_state')
+    end
+  end
+
+  it "should respond to state message with vitals" do
+    http('state', ['full']) do |msg|
+      msg.should have_key('deployment')
+      msg.should have_key('networks')
+      msg.should have_key('resource_pool')
+      msg.should have_key('agent_id')
+      msg.should have_key('vm')
+      msg.should have_key('job_state')
+      msg.should have_key('vitals')
     end
   end
 
@@ -152,13 +174,4 @@ describe "http messages" do
     end
   end
 
-  after(:all) do
-    if @agent_pid
-      puts "stopping agent"
-      Process.kill(:TERM, @agent_pid)
-    else
-      raise "unable to stop agent, you need to clean up by hand"
-    end
-    FileUtils.rm_rf(@basedir)
-  end
 end

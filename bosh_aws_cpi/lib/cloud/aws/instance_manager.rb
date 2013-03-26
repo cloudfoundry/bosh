@@ -31,10 +31,16 @@ module Bosh::AwsCloud
 
       @logger.info("Creating new instance with: #{instance_params.inspect}")
 
-      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: [AWS::EC2::Errors::InvalidIPAddress::InUse]) do |tries, e|
-        @logger.warn("IP address was in use: #{e}") if tries > 0
+      errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
+
+      Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
+        @logger.warn("IP address was in use: #{error}") if tries > 0
         @instance = @region.instances.create(instance_params)
       end
+
+      # need to wait here for the instance to be running, as if we are going to
+      # attach to a load balancer, the instance must be running
+      ResourceWait.for_instance(instance: instance, state: :running)
 
       @elbs = resource_pool['elbs']
       attach_to_load_balancers if elbs
@@ -61,14 +67,14 @@ module Bosh::AwsCloud
 
       begin
         @logger.info("Deleting instance '#{instance.id}'")
-        wait_resource(instance, :terminated)
+        ResourceWait.for_instance(instance: instance, state: :terminated)
       rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
         # It's OK, just means that instance has already been deleted
       end
     end
 
     # Soft reboots EC2 instance
-    # @param [AWS::EC2::Instance] instance EC2 instance
+    # @param [String] instance_id EC2 instance id
     def reboot(instance_id)
       instance = @region.instances[instance_id]
 
@@ -90,6 +96,14 @@ module Bosh::AwsCloud
         lb = elb.load_balancers[load_balancer]
         lb.instances.register(instance)
       end
+    end
+
+    # Determines if the instance exists.
+    # @param [String] instance_id EC2 instance id
+    def has_instance?(instance_id)
+      instance = @region.instances[instance_id]
+
+      instance.exists? && instance.status != :terminated
     end
 
     def remove_from_load_balancers
@@ -141,10 +155,6 @@ module Bosh::AwsCloud
     end
 
     private
-
-    def task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
-    end
 
     def instance_create_wait_time; 30; end
   end

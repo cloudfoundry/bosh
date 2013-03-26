@@ -9,7 +9,7 @@ describe Bosh::Deployer::InstanceManager do
     @dir = Dir.mktmpdir("bdim_spec")
     @config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     @config["dir"] = @dir
-    @config["name"] = "spec-#{UUIDTools::UUID.random_create.to_s}"
+    @config["name"] = "spec-#{SecureRandom.uuid}"
     @config["logging"] = { "file" => "#{@dir}/bmim.log" }
     @deployer = Bosh::Deployer::InstanceManager.create(@config)
     @cloud = mock("cloud")
@@ -184,15 +184,15 @@ describe Bosh::Deployer::InstanceManager do
   require 'deployer/instance_manager/openstack'
 
   internal_to Bosh::Deployer::InstanceManager::Openstack do
-    it "should not find openstack_registry" do
+    it "should not find bosh_registry" do
       path = "/usr/bin:/bin"
-      @deployer.has_openstack_registry?(path).should be_false
+      @deployer.has_bosh_registry?(path).should be_false
     end
 
-    it "should find find openstack_registry" do
+    it "should find find bosh_registry" do
       path = ENV['PATH']
-      path += ":#{File.dirname(spec_asset('openstack_registry'))}"
-      @deployer.has_openstack_registry?(path).should be_true
+      path += ":#{File.dirname(spec_asset('bosh_registry'))}"
+      @deployer.has_bosh_registry?(path).should be_true
     end
   end
 end

@@ -14,8 +14,6 @@ namespace :stemcell do
     options[:stemcell_version] ||= Bosh::Agent::VERSION
     options[:image_create_disk_size] = 1380
 
-    options = options.merge(bosh_agent_options)
-
     build("stemcell-#{args[:infrastructure]}", options)
   end
 
@@ -29,7 +27,6 @@ namespace :stemcell do
     options[:stemcell_version] ||= "0.8.1"
     options[:image_create_disk_size] = 2048
 
-    options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(manifest, release_tarball))
     options[:non_interactive] = true
 
@@ -47,12 +44,54 @@ namespace :stemcell do
     options[:version] = ENV['MCF_VERSION'] || "9.9.9_#{options[:build_time]}"
     options[:bosh_users_password] = 'micr0cloud'
     
-    options = options.merge(bosh_agent_options)
     options = options.merge(bosh_micro_options(args[:manifest],args[:tarball]))
     options[:mcf_enabled] = "yes"
     options[:micro_src] = args[:micro_src]
 
     build("stemcell-mcf", options)
+  end
+
+
+  namespace :aws do
+    require "aws-sdk"
+
+    task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
+      light_stemcell_tgz = args[:stemcell_tgz]
+      bucket_name = args[:bucket_name]
+      AWS.config({
+          access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
+          secret_access_key:  ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
+      })
+
+      Dir.mktmpdir do |dir|
+        stemcell_tgz = File.dirname(light_stemcell_tgz) + "/" + File.basename(light_stemcell_tgz).gsub('light-','')
+
+        %x{tar xzf #{light_stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
+        stemcell_manifest = "#{dir}/stemcell.MF"
+        stemcell_properties = YAML.load_file(stemcell_manifest)
+        ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
+
+        s3 = AWS::S3.new
+        s3.buckets.create(bucket_name)    # doesn't fail if already exists in your account
+        bucket = s3.buckets[bucket_name]
+
+        obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_ami"]
+        obj.write(ami_id)
+        obj.acl = :public_read
+        puts "AMI name written to: #{obj.public_url :secure => false}"
+
+        obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_light.tgz"]
+        obj.write(:file => light_stemcell_tgz)
+        obj.acl = :public_read
+        puts "Lite stemcell written to: #{obj.public_url :secure => false}"
+
+        obj = bucket.objects["last_successful_#{stemcell_properties["name"]}.tgz"]
+        obj.write(:file => stemcell_tgz)
+        obj.acl = :public_read
+        puts "Stemcell written to: #{obj.public_url :secure => false}"
+      end
+
+    end
   end
 
   def build_micro_bosh_release
@@ -85,6 +124,7 @@ namespace :stemcell do
       :TW_SITE_PASSPHRASE => ENV["TW_SITE_PASSPHRASE"],
       :ruby_bin => ENV["RUBY_BIN"] || File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']),
       :bosh_release_src_dir => File.expand_path("../../release/src/bosh", __FILE__),
+      :bosh_agent_src_dir => File.expand_path("../../bosh_agent", __FILE__),
       :mcf_enabled => "no"
     }
 
@@ -94,12 +134,6 @@ namespace :stemcell do
     end
 
     options
-  end
-
-  def bosh_agent_options
-    {
-      :bosh_agent_src_dir => File.expand_path("../../bosh_agent", __FILE__)
-    }
   end
 
   def bosh_micro_options(manifest, tarball)
@@ -306,7 +340,7 @@ namespace :stemcell do
     end
 
     INDEX_FILE_NAME = "public_stemcells_index.yml"
-    INDEX_FILE_DIR = ".stemcell_builds"
+    INDEX_FILE_DIR = "stemcell_builder/.stemcell_builds"
 
     desc "Deletes <stemcell_name> from the public repository."
     task "delete", :stemcell_name do |t, args|

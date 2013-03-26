@@ -59,4 +59,31 @@ describe Bosh::Agent::Message::State do
     handler.state['job_state'].should == "failing"
   end
 
+  it "should report vitals" do
+    handler = Bosh::Agent::Message::State.new(['full'])
+
+    status = { "foo" => { :status => { :message => "running" }, :monitor => :yes }}
+    @monit_mock.should_receive(:status).and_return(status)
+
+    vitals = {
+      "foo" => {
+        :raw => {
+          "system" => {
+            "load" => {"avg01" => "1", "avg05" => "5", "avg15" => "15"},
+            "cpu" => {"user" => "u", "system" => "s", "wait" => "w"},
+            "memory" => {"percent" => "p", "kilobyte" => "k"},
+            "swap" => {"percent" => "p", "kilobyte" => "k"},
+          }
+        }
+      }
+    }
+    @monit_mock.should_receive(:status).and_return(vitals)
+
+    agent_vitals = handler.state['vitals']
+    agent_vitals['load'].should == ["1", "5", "15"] &&
+    agent_vitals['cpu']['user'].should == "u" &&
+    agent_vitals['mem']['percent'].should == "p" &&
+    agent_vitals['swap']['percent'].should == "p"
+  end
+
 end

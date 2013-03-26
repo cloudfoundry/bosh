@@ -143,16 +143,47 @@ describe Bosh::Blobstore::S3BlobstoreClient do
     end
   end
 
-  describe "delete" do
-    it "should delete an object" do
-      options = {
+  describe '#exists?' do
+    let(:options) {
+      {
         :encryption_key    => "bla",
         :bucket_name       => "test",
         :access_key_id     => "KEY",
         :secret_access_key => "SECRET"
       }
-      client = s3_blobstore(options)
-      blob = double("blob", :exists? => true)
+    }
+    let(:client) { s3_blobstore(options) }
+    let(:blob) { mock(AWS::S3::S3Object) }
+
+    it 'should return true if the object already exists' do
+      blob.should_receive(:exists?).and_return(true)
+      client.should_receive(:get_object_from_s3).with('fake-oid').and_return(blob)
+
+      client.exists?('fake-oid').should be_true
+    end
+
+    it 'should return false if the object does not exist' do
+      blob.should_receive(:exists?).and_return(false)
+      client.should_receive(:get_object_from_s3).with('fake-oid').and_return(blob)
+
+      client.exists?('fake-oid').should be_false
+    end
+  end
+
+  describe "delete" do
+    let(:options) {
+      {
+          :encryption_key    => "bla",
+          :bucket_name       => "test",
+          :access_key_id     => "KEY",
+          :secret_access_key => "SECRET"
+      }
+    }
+    let(:client) { s3_blobstore(options) }
+    let(:blob) { mock(AWS::S3::S3Object) }
+
+    it "should delete an object" do
+      blob.stub(exists?: true)
 
       client.should_receive(:get_object_from_s3).with("fake-oid").and_return(blob)
       blob.should_receive(:delete)
@@ -160,14 +191,7 @@ describe Bosh::Blobstore::S3BlobstoreClient do
     end
 
     it "should raise an error when the object is missing" do
-      options = {
-        :encryption_key    => "bla",
-        :bucket_name       => "test",
-        :access_key_id     => "KEY",
-        :secret_access_key => "SECRET"
-      }
-      client = s3_blobstore(options)
-      blob = double("blob", :exists? => false)
+      blob.stub(exists?: false)
 
       client.should_receive(:get_object_from_s3).with("fake-oid").and_return(blob)
       expect {

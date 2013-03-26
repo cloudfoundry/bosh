@@ -1,6 +1,7 @@
 require "spec_helper"
 
 describe Bosh::Spec::IntegrationTest::CliUsage do
+  include IntegrationExampleGroup
 
   def regexp(string)
     Regexp.compile(Regexp.escape(string))
@@ -12,6 +13,13 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   def expect_output(cmd, expected_output)
     format_output(run_bosh(cmd)).should == format_output(expected_output)
+  end
+
+  def check_travis_git_repo
+    # Temporary change to test travis
+    puts "git diff-index --quiet HEAD -- 2>&1; echo $?"
+    `git diff-index --quiet HEAD -- 2>&1`
+    puts $?.exitstatus
   end
 
   it "has help message" do
@@ -30,7 +38,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "whines on inaccessible target" do
-    out = run_bosh("target http://nowhere.com")
+    out = run_bosh("target http://localhost")
     out.should =~ /cannot access director/i
 
     expect_output("target", <<-OUT)
@@ -228,6 +236,8 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
 
+      check_travis_git_repo
+
       run_bosh("create release", Dir.pwd)
       run_bosh("target http://localhost:57523")
       run_bosh("login admin admin")
@@ -235,7 +245,6 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     end
 
     out = run_bosh("releases")
-    out.should =~ /releases total: 1/i
     out.should =~ /bosh-release.+0\.1\-dev/
   end
 
@@ -246,6 +255,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     Dir.chdir(File.join(assets_dir, "test_release")) do
       FileUtils.rm_rf("dev_releases")
+
+      check_travis_git_repo
+
       run_bosh("create release --with-tarball", Dir.pwd)
       File.exists?(release_1).should be_true
     end
@@ -258,7 +270,10 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       new_file = File.join("src", "bar", "bla")
       begin
         FileUtils.touch(new_file)
-        run_bosh("create release --with-tarball", Dir.pwd)
+
+        check_travis_git_repo
+
+        run_bosh("create release --force --with-tarball", Dir.pwd)
         File.exists?(release_2).should be_true
       ensure
         FileUtils.rm_rf(new_file)
@@ -277,18 +292,22 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
     out = run_bosh("releases")
     out.should =~ /releases total: 1/i
-    out.should =~ /bosh-release.+0\.1\-dev, 0\.2\-dev/
+    out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
   end
 
   it "release lifecycle: create, upload, update (w/sparse upload), delete" do
     assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.yml")
     release_2 = spec_asset("test_release/dev_releases/bosh-release-0.2-dev.yml")
+    commit_hash = ''
 
     release_dir = File.join(assets_dir, "test_release")
 
     Dir.chdir(release_dir) do
       run_bosh("reset release")
+
+      check_travis_git_repo
+
       run_bosh("create release", Dir.pwd)
       File.exists?(release_1).should be_true
 
@@ -310,19 +329,20 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       out.should_not =~ regexp("Checking if can repack")
       out.should_not =~ regexp("Release repacked")
       out.should =~ /Release uploaded/
+      commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
     end
 
     out = run_bosh("releases")
     out.should =~ /releases total: 1/i
-    out.should =~ /bosh-release.+0\.1\-dev, 0\.2\-dev/
+    out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
 
     run_bosh("delete release bosh-release 0.2-dev")
-    expect_output("releases", <<-OUT )
-    +--------------+----------+
-    | Name         | Versions |
-    +--------------+----------+
-    | bosh-release | 0.1-dev  |
-    +--------------+----------+
+    expect_output("releases", <<-OUT.gsub("XXXXXXXX",commit_hash))
+    +--------------+----------+-------------+
+    | Name         | Versions | Commit Hash |
+    +--------------+----------+-------------+
+    | bosh-release | 0.1-dev  | XXXXXXXX    |
+    +--------------+----------+-------------+
 
     Releases total: 1
     OUT
@@ -482,6 +502,51 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       props.should =~ regexp("nats.user\tadmin")
       props.should =~ regexp("nats.password\tpass")
     end
+
+  end
+
+  describe 'package compilation' do
+    it 'should compile a package' do
+      assets_dir = File.dirname(spec_asset("foo"))
+      stemcell_filename = spec_asset("valid_stemcell.tgz")
+
+      simple_blob_store_path = Bosh::Spec::Sandbox::BLOBSTORE_STORAGE_DIR
+
+      release_file = "test_release/dev_releases/bosh-release-0.1-dev.tgz"
+      release_filename = spec_asset(release_file)
+      Dir.chdir(File.join(assets_dir, "test_release")) do
+        FileUtils.rm_rf("dev_releases")
+        run_bosh("create release --with-tarball", Dir.pwd)
+      end
+
+      deployment_manifest = yaml_file(
+          "simple_manifest", Bosh::Spec::Deployments.simple_manifest)
+
+      run_bosh("target localhost:57523")
+      run_bosh("login admin admin")
+
+      run_bosh("deployment #{deployment_manifest.path}")
+      run_bosh("upload stemcell #{stemcell_filename}")
+      run_bosh("upload release #{release_filename}")
+      run_bosh("deploy")
+      dir_glob = Dir.glob(File.join(simple_blob_store_path, "**/*"))
+      dir_glob.detect do |cache_item|
+        cache_item =~ /foo-/
+      end.should be_true
+
+      # delete release so that the compiled packages are removed from the local blobstore
+      run_bosh("delete deployment simple")
+      run_bosh("delete release bosh-release")
+
+      # deploy again
+      run_bosh("upload release #{release_filename}")
+      run_bosh("deploy")
+
+      event_log = run_bosh("task last --event --raw")
+      event_log.should match /Downloading '.+' from global cache/
+      event_log.should_not match /Compiling packages/
+    end
+
 
   end
 

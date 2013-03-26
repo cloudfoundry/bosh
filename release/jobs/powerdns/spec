@@ -28,8 +28,8 @@ properties:
     description: Password for the PowerDNS database connection
   dns.database.name:
     description: Database for the PowerDNS database connection
-  dns.recursors:
-    description: Array of PowerDNS external recursors (optional, IP addresses)
+  dns.recursor:
+    description: If recursion is desired, IP address of a recursing nameserver (optional)
   dns.webserver.port:
     description: TCP port PowerDNS webserver listens on (optional)
     default: 8081

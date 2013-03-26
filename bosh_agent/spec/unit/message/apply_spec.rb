@@ -3,7 +3,7 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 require 'fileutils'
 
-describe Bosh::Agent::Message::Apply do
+describe Bosh::Agent::Message::Apply, dummy_infrastructure: true do
 
   before(:each) do
     Bosh::Agent::Config.state = Bosh::Agent::State.new(Tempfile.new("state").path)

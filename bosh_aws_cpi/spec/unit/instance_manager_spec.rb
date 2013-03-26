@@ -4,6 +4,35 @@ describe Bosh::AwsCloud::InstanceManager do
   let(:registry) { double("registry", :endpoint => "http://...", :update_settings => nil) }
   let(:region) { mock_ec2 }
 
+  describe "#has_instance?" do
+    let(:instance_id) { "instance id" }
+    let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector, common_availability_zone: "us-east-1a") }
+
+    let(:fake_aws_instance) { double("aws_instance", id: instance_id) }
+    let(:instance_manager) { described_class.new(region, registry, availability_zone_selector) }
+
+    before do
+      region.stub_chain(:instances, :[]).with(instance_id).and_return(fake_aws_instance)
+    end
+
+    it "returns false if instance does not exist" do
+      fake_aws_instance.should_receive(:exists?).and_return(false)
+      instance_manager.has_instance?(instance_id).should be_false
+    end
+
+    it "returns true if instance does exist" do
+      fake_aws_instance.should_receive(:exists?).and_return(true)
+      fake_aws_instance.should_receive(:status).and_return(:running)
+      instance_manager.has_instance?(instance_id).should be_true
+    end
+
+    it "returns false if instance exists but is terminated" do
+      fake_aws_instance.should_receive(:exists?).and_return(true)
+      fake_aws_instance.should_receive(:status).and_return(:terminated)
+      instance_manager.has_instance?(instance_id).should be_false
+    end
+  end
+
   describe "#create" do
     let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector, common_availability_zone: "us-east-1a") }
     let(:fake_aws_subnet) { double(AWS::EC2::Subnet).as_null_object }
@@ -21,12 +50,14 @@ describe Bosh::AwsCloud::InstanceManager do
       }
     end
     let(:aws_instances) { double(AWS::EC2::InstanceCollection) }
+    let(:instance) { double(AWS::EC2::Instance, id: 'i-12345678') }
 
     it "should ask AWS to create an instance in the given region, with parameters built up from the given arguments" do
       region.stub(:instances).and_return(aws_instances)
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
 
-      aws_instances.should_receive(:create).with(aws_instance_params)
+      aws_instances.should_receive(:create).with(aws_instance_params).and_return(instance)
+      Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
 
@@ -56,8 +87,9 @@ describe Bosh::AwsCloud::InstanceManager do
       region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
 
       aws_instances.should_receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
-      aws_instances.should_receive(:create).with(aws_instance_params).once
-
+      aws_instances.should_receive(:create).with(aws_instance_params).and_return(instance)
+      Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
+      
       instance_manager = described_class.new(region, registry, availability_zone_selector)
       instance_manager.stub(instance_create_wait_time: 0)
 
@@ -264,23 +296,9 @@ describe Bosh::AwsCloud::InstanceManager do
       registry.should_receive(:delete_settings).with(instance_id)
 
       region.stub(:instances).and_return({instance_id => fake_aws_instance})
-      instance_manager.stub(:wait_resource)
+      Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: fake_aws_instance, state: :terminated)
 
       instance_manager.terminate(instance_id)
-    end
-
-    it "should ignore AWS::EC2::Errors::InvalidInstanceID::NotFound exception from wait_resource" do
-      instance_manager.stub(:remove_from_load_balancers)
-
-      fake_aws_instance.should_receive(:terminate)
-      registry.should_receive(:delete_settings).with(instance_id)
-
-      region.stub(:instances).and_return({instance_id => fake_aws_instance})
-      instance_manager.stub(:wait_resource).and_raise AWS::EC2::Errors::InvalidInstanceID::NotFound
-
-      expect {
-        instance_manager.terminate(instance_id)
-      }.to_not raise_error
     end
 
     describe "fast path deletion" do
@@ -291,7 +309,7 @@ describe Bosh::AwsCloud::InstanceManager do
         fake_aws_instance.stub(:terminate)
         registry.stub(:delete_settings)
 
-        instance_manager.should_not_receive(:wait_resource)
+        Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(instrance: fake_aws_instance, state: :terminated)
         Bosh::AwsCloud::TagManager.should_receive(:tag).with(fake_aws_instance, "Name", "to be deleted")
 
         instance_manager.terminate(instance_id, true)

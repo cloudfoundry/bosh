@@ -2,7 +2,6 @@ module Bosh
   module Spec
     class Sandbox
 
-      #ASSETS_DIR = File.expand_path("../assets", __FILE__)
       LOGS_PATH   = File.join(ASSETS_DIR, "logs")
       REDIS_CONF  = File.join(ASSETS_DIR, "redis_test.conf")
       REDIS_PID   = File.join(ASSETS_DIR, "redis.pid")

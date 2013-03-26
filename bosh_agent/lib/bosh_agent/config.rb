@@ -48,12 +48,9 @@ module Bosh::Agent
         @configure = config["configure"]
 
         # it is the responsibillity of the caller to make sure the dir exist
-        unless log_dest = config["logging"]["file"]
-          log_dest = STDOUT
-        end
-
-        @logger       = Logger.new(log_dest)
-        @logger.level = Logger.const_get(config["logging"]["level"].upcase)
+        logging_config = config.fetch("logging", {})
+        @logger       = Logger.new(logging_config.fetch("file", STDOUT))
+        @logger.level = Logger.const_get(logging_config.fetch("level", "info").upcase)
 
         @base_dir = config["base_dir"] || DEFAULT_BASE_DIR
         @agent_id = config["agent_id"]

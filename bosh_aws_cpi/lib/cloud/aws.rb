@@ -9,7 +9,7 @@ require "httpclient"
 require "pp"
 require "set"
 require "tmpdir"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 
 require "common/exec"
@@ -33,6 +33,7 @@ require "cloud/aws/vip_network"
 require "cloud/aws/instance_manager"
 require "cloud/aws/tag_manager"
 require "cloud/aws/availability_zone_selector"
+require "cloud/aws/resource_wait"
 
 module Bosh
   module Clouds

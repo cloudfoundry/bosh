@@ -15,7 +15,7 @@ Sequel.migration do
 
   down do
     alter_table(:instances) do
-      remove_column(:state)
+      drop_column(:state)
     end
   end
 end

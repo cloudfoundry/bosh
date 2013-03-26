@@ -7,7 +7,7 @@ logging:
 network:
   type: manual
   vip:  <%= vip %>
-  ip: 10.10.0.5
+  ip: 10.10.0.6
   cloud_properties:
     subnet: <%= subnet %>
 
@@ -31,12 +31,12 @@ cloud:
 apply_spec:
   agent:
     blobstore:
-      address: 10.10.0.5
+      address: 10.10.0.6
     nats:
-      address: 10.10.0.5
+      address: 10.10.0.6
   properties:
-    aws_registry:
-      address: 10.10.0.5
+    registry:
+      address: 10.10.0.6
     aws:
       access_key_id: <%= access_key_id %>
       secret_access_key: <%= secret_access_key %>
@@ -44,4 +44,12 @@ apply_spec:
       default_security_groups: ["bosh"]
       ec2_endpoint: ec2.<%= region %>.amazonaws.com
       region: <%= region %>
+     <% if compiled_package_cache? %>
+    compiled_package_cache:
+      plugin: s3
+      properties:
+        access_key_id: <%= cache_access_key_id %>
+        secret_access_key: <%= cache_secret_access_key %>
+        bucket_name: <%= cache_bucket_name %>
+    <% end %>
 

@@ -2,12 +2,15 @@
 
 require "rspec"
 
+require "yaml"
 require "stemcell"
 require "release"
 require "deployment"
 require "vm"
 
 require 'tempfile'
+require 'common/exec'
+require 'resolv'
 
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 ASSETS_DIR = File.join(SPEC_ROOT, "assets")
@@ -31,7 +34,6 @@ RSpec.configure do |config|
 
   # bosh helper isn't available, so it has to be rolled by hand
   config.before(:suite) do
-    BH::bosh_cli_config_path = Tempfile.new("bosh_config").path
     director = BH::read_environment('BAT_DIRECTOR')
     director.should_not be_nil
     cmd = "bundle exec bosh --config #{BH::bosh_cli_config_path} --user admin " +
@@ -42,8 +44,7 @@ RSpec.configure do |config|
   end
 
   config.after(:suite) do
-    config_path = BH::bosh_cli_config_path
-    File.delete(config_path) if File.exists?(config_path)
+    BH::delete_bosh_cli_config
   end
 
   config.before(:each) do

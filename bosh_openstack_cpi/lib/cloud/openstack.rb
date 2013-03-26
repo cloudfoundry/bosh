@@ -11,7 +11,7 @@ require "json"
 require "pp"
 require "set"
 require "tmpdir"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 
 require "common/thread_pool"
@@ -28,6 +28,7 @@ require "cloud/openstack/version"
 require "cloud/openstack/network_configurator"
 require "cloud/openstack/network"
 require "cloud/openstack/dynamic_network"
+require "cloud/openstack/manual_network"
 require "cloud/openstack/vip_network"
 
 module Bosh

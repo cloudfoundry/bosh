@@ -75,7 +75,7 @@ module VSphereCloud
                                    cluster.datacenter.template_folder.mob)
           @logger.info("Waiting for NFC lease")
           state = wait_for_nfc_lease(lease)
-          raise "Could not acquire HTTP NFC lease" unless state == Vim::HttpNfcLease::State::READY
+          raise "Could not acquire HTTP NFC lease (state is: #{state})" unless state == Vim::HttpNfcLease::State::READY
 
           @logger.info("Uploading")
           vm = upload_ovf(ovf_file, lease, import_spec_result.file_item)
@@ -927,7 +927,7 @@ module VSphereCloud
     end
 
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})

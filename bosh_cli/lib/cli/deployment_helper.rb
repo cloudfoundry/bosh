@@ -199,6 +199,35 @@ module Bosh::Cli
       true
     end
 
+    def latest_release_versions
+      @_latest_release_versions ||= begin
+        director.list_releases.inject({}) do |hash, release|
+          name = release["name"]
+          versions = release["versions"] || release["release_versions"].map { |release_version| release_version["version"] }
+          latest_version = versions.sort { |v1, v2| version_cmp(v1, v2) }.last
+          hash[name] = latest_version
+          hash
+        end
+      end
+    end
+
+    # @param [Hash] manifest Deployment manifest (will be modified)
+    # @return [void]
+    def resolve_release_aliases(manifest)
+      releases = manifest["releases"] || [manifest["release"]]
+
+      releases.each do |release|
+        if release["version"] == "latest"
+          release["version"] = latest_release_versions[release["name"]]
+        end
+
+        # TODO: why do we care about casting to Integer when possible?
+        if release["version"].to_i.to_s == release["version"]
+          release["version"] = release["version"].to_i
+        end
+      end
+    end
+
     private
 
     def find_deployment(name)
@@ -308,37 +337,6 @@ module Bosh::Cli
 
     # @param [Hash] manifest Deployment manifest (will be modified)
     # @return [void]
-    def resolve_release_aliases(manifest)
-      if manifest["release"]
-        if manifest["releases"]
-          err("Manifest has both `release' and `releases', please fix it")
-        end
-        releases = [manifest["release"]]
-      else
-        releases = manifest["releases"]
-      end
-
-      unless releases.is_a?(Array)
-        err("Invalid release spec in the deployment manifest")
-      end
-
-      releases.each do |release|
-        if release["version"] == "latest"
-          latest_version = latest_releases[release["name"]]
-          if latest_version.nil?
-            err("Latest version for release `#{release["name"]}' is unknown")
-          end
-          # Avoiding Fixnum -> String noise in diff
-          if latest_version.to_s == latest_version.to_i.to_s
-            latest_version = latest_version.to_i
-          end
-          release["version"] = latest_version
-        end
-      end
-    end
-
-    # @param [Hash] manifest Deployment manifest (will be modified)
-    # @return [void]
     def resolve_stemcell_aliases(manifest)
       return if manifest["resource_pools"].nil?
 
@@ -381,22 +379,5 @@ module Bosh::Cli
         end
       end
     end
-
-    # @return [Array]
-    def latest_releases
-      @_latest_releases ||= begin
-        director.list_releases.inject({}) do |hash, release|
-          unless release["name"].is_a?(String) &&
-            release["versions"].is_a?(Array)
-            err("Invalid director release list format")
-          end
-          hash[release["name"]] = release["versions"].sort { |v1, v2|
-            version_cmp(v2, v1)
-          }.first
-          hash
-        end
-      end
-    end
-
   end
 end

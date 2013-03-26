@@ -38,7 +38,7 @@ options = {
     }
 }
 
-cloud_config = OpenStruct.new(:logger => Logger.new("ami.log"))
+cloud_config = OpenStruct.new(:logger => Logger.new("ami.log"), :task_checkpoint => nil)
 Bosh::Clouds::Config.configure(cloud_config)
 
 cloud = Bosh::Clouds::Provider.create("aws", options)
@@ -72,18 +72,4 @@ Dir.mktmpdir do |dir|
   Dir.chdir(dir) do
     %x{tar cvzf #{light_stemcell_name} *}  || raise("Failed to build light stemcell")
   end
-
-  s3 = AWS::S3.new
-  s3.buckets.create(BUCKET_NAME)    # doesn't fail if already exists in your account
-  bucket = s3.buckets[BUCKET_NAME]
-
-  obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_ami"]
-  obj.write(ami_id)
-  obj.acl = :public_read
-  puts "AMI name written to: #{obj.public_url :secure => false}"
-
-  obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_light.tgz"]
-  obj.write(:file => light_stemcell_name)
-  obj.acl = :public_read
-  puts "Lite stemcell written to: #{obj.public_url :secure => false}"
 end

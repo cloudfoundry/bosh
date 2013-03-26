@@ -26,7 +26,10 @@ module Bosh
           raise DirectorMissing, "no director URI given"
         end
 
-        @director_uri = director_uri
+        @director_uri = URI.parse(director_uri)
+        @director_ip = Resolv.getaddresses(@director_uri.host).last
+        @scheme = @director_uri.scheme
+        @port = @director_uri.port
         @user = user
         @password = password
         @track_tasks = !options.delete(:no_track)
@@ -482,6 +485,8 @@ module Bosh
         file.stop_progress_bar if file
       end
 
+      private
+
       def request(method, uri, content_type = nil, payload = nil,
                   headers = {}, options = {})
         headers = headers.dup
@@ -497,7 +502,7 @@ module Bosh
           response_reader = nil
         end
 
-        response = try_to_perform_http_request(method, @director_uri + uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
+        response = try_to_perform_http_request(method, "#{@scheme}://#{@director_ip}:#{@port}#{uri}", payload, headers, num_retries, retry_wait_interval, &response_reader)
 
         if options[:file]
           tmp_file.close
@@ -578,8 +583,6 @@ module Bosh
           end
         end
       end
-
-      private
 
       def get_json(url)
         status, body = get_json_with_status(url)

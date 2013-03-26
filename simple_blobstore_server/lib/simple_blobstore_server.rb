@@ -6,7 +6,7 @@ require "pp"
 require "yaml"
 
 require "sinatra"
-require "uuidtools"
+require "securerandom"
 
 module Bosh
   module Blobstore
@@ -44,7 +44,7 @@ module Bosh
       end
 
       def generate_object_id
-        UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
 
       def protected!
@@ -102,6 +102,11 @@ module Bosh
 
       post "/resources" do
         create(params)
+      end
+
+      head "/resources/:id" do
+        file_name = get_file_name(params[:id])
+        File.exists?(file_name) ? status(200) : status(404)
       end
 
       get "/resources/:id" do

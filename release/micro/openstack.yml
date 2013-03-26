@@ -36,15 +36,12 @@ properties:
     address: 127.0.0.1
     name: micro
     port: 25555
-  openstack_registry:
+  registry:
     address: 127.0.0.1
     http:
       port: 25777
       user: admin
       password: admin
-    db:
-      max_connections: 32
-      pool_timeout: 10
   hm:
     http:
       port: 25923

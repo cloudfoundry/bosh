@@ -7,6 +7,8 @@ templates:
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
+  task_logrotate.sh: bin/task_logrotate
+  task_logrotate.cron: config/task_logrotate.cron
 packages:
 - director
 - genisoimage
@@ -32,7 +34,7 @@ properties:
     description: Address of the redis server
   redis.port:
     description: Port that the redis server listens on
-    default: 6379
+    default: 25255
   redis.password:
     description: Password of the redis server
   nats.user:
@@ -69,8 +71,8 @@ properties:
     default: 5432
   dns.database.name:
     description: Name of the powerdns database (postgres in powerdns job)
-  blobstore.plugin:
-    description: Plugin of the blobstore used by director and agent (simple|s3)
+  blobstore.provider:
+    description: Provider of the blobstore used by director and agent (simple|s3)
     default: 'simple'
   blobstore.bucket_name:
     description: AWS S3 Bucket used by s3 blobstore plugin
@@ -82,6 +84,7 @@ properties:
     description: Addess of blobstore server used by simple blobstore plugin
   blobstore.port:
     description: Port of blobstore server used by simple blobstore plugin
+    default: 25250
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
@@ -90,12 +93,15 @@ properties:
     description: Username agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.agent.password:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
-  compiled_package_cache.bucket:
-    description: S3 bucket to use for the compiled package cache
-  compiled_package_cache.secret_access_key:
-    description: S3 secret_access_key for compiled package cache
+  compiled_package_cache.plugin:
+      description: Plugin of the blobstore used for the compiled package cache
+  default: 's3'
+  compiled_package_cache.bucket_name:
+      description: AWS S3 Bucket used for the compiled package cache
   compiled_package_cache.access_key_id:
-    description: S3 access_key_id for compiled package cache
+      description: AWS access_key_id used for the compiled package cache
+  compiled_package_cache.secret_access_key:
+      description: AWS secret_access_key used for the compiled package cache
   ntp:
     description: List of ntp server IPs
     default: []
@@ -109,6 +115,15 @@ properties:
     description: Port for agent to connect to blobstore server used by simple blobstore plugin
   agent.nats.address:
     description: Address for agent to connect to nats
+  registry.address:
+    description: Address of the Registry to connect to
+  registry.http.port:
+    description: Port of the Registry to connect to
+    default: 25777
+  registry.http.user:
+    description: User to access the Registry
+  registry.http.password:
+    description: Password to access the Registry
   aws.access_key_id:
     description: AWS access_key_id for aws cpi
   aws.secret_access_key:
@@ -121,14 +136,6 @@ properties:
     description: AWS Region used by aws cpi
   aws.stemcell.kernel_id:
     description: AWS kernel id used by aws cpi
-  aws_registry.address:
-    description: Address of aws registry server (used to configure agents on aws)
-  aws_registry.http.port:
-    description: Port of aws registry server (used to configure agents on aws)
-  aws_registry.http.user:
-    description: Address of aws registry server (used to configure agents on aws)
-  aws_registry.http.password:
-    description: Password of aws registry server (used to configure agents on aws)
   openstack.auth_url:
     description: URL of the OpenStack Identity endpoint to connect to
   openstack.username:
@@ -139,22 +146,13 @@ properties:
     description: OpenStack tenant name
   openstack.region:
     description: OpenStack region (optional)
+  openstack.endpoint_type:
+    description: OpenStack endpoint type (optional, by default publicURL)
+    default: publicURL
   openstack.default_key_name:
     description: Default OpenStack keypair to use when spinning up new vms
   openstack.default_security_groups:
     description: Default OpenStack security groups to use when spinning up new vms
-  openstack_registry.address:
-    description: Address of the OpenStack Registry to connect to
-  openstack_registry.http.port:
-    description: Port of the OpenStack Registry to connect to
-  openstack_registry.http.user:
-    description: User to access the OpenStack Registry
-  openstack_registry.http.password:
-    description: Password to access the OpenStack Registry
-  openstack.stemcell.kernel_id:
-    description: Kernel ID to use when spinning up new vms (optional)
-  openstack.stemcell.ramdisk_id:
-    description: Ramdisk ID to use when spinning up new vms (optional)
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:

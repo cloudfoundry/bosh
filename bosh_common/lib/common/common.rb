@@ -1,11 +1,10 @@
 # Copyright (c) 2012 VMware, Inc.
-require 'retryable'
+require 'common/errors'
 
 module Bosh
 
   # Module for common methods used throughout the BOSH code.
   module Common
-    extend Retryable::Methods
 
     # Converts all keys of a [Hash] to symbols. Performs deep conversion.
     #
@@ -45,5 +44,51 @@ module Bosh
     end
 
     module_function :which
+
+    # this method will loop until the block returns a true value
+    def retryable(options = {}, &block)
+      opts = {:tries => 2, :sleep => 1, :on => StandardError, :matching  => /.*/, :ensure => Proc.new {}}
+      invalid_options = opts.merge(options).keys - opts.keys
+
+      raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?
+      opts.merge!(options)
+
+      return if opts[:tries] == 0
+
+      on_exception = [ opts[:on] ].flatten
+      tries = opts[:tries]
+      retries = 0
+      retry_exception = nil
+
+      begin
+        loop do
+          y = yield retries, retry_exception
+          return y if y
+          raise RetryCountExceeded if retries+1 >= tries
+          wait(opts[:sleep], retries, on_exception)
+          retries += 1
+        end
+      rescue *on_exception => exception
+        raise unless exception.message =~ opts[:matching]
+        raise if retries+1 >= tries
+
+        wait(opts[:sleep], retries, on_exception, exception)
+
+        retries += 1
+        retry_exception = exception
+        retry
+      ensure
+        opts[:ensure].call(retries)
+      end
+    end
+
+    def wait(sleeper, retries, exceptions, exception=nil)
+      sleep sleeper.respond_to?(:call) ? sleeper.call(retries, exception) : sleeper
+    rescue *exceptions
+      # SignalException could be raised while sleeping, so if you want to catch it,
+      # it need to be passed in the list of exceptions to ignore
+    end
+
+    module_function :retryable, :wait
   end
 end

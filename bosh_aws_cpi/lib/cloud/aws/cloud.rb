@@ -93,13 +93,12 @@ module Bosh::AwsCloud
         # do this early to fail fast
         stemcell = Stemcell.find(@region, stemcell_id)
 
-        instance_manager = InstanceManager.new(@region, registry, az_selector)
-        instance = instance_manager.
-            create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
-
         begin
+          instance_manager = InstanceManager.new(@region, registry, az_selector)
+          instance = instance_manager.
+              create(agent_id, stemcell_id, resource_pool, network_spec, (disk_locality || []), environment, @options)
+
           @logger.info("Creating new instance '#{instance.id}'")
-          wait_resource(instance, :running)
 
           NetworkConfigurator.new(network_spec).configure(@region, instance)
 
@@ -114,9 +113,9 @@ module Bosh::AwsCloud
           registry.update_settings(instance.id, registry_settings)
 
           instance.id
-        rescue => e
+        rescue => e # is this rescuing too much?
           @logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
-          instance_manager.terminate(instance.id, @fast_path_delete)
+          instance_manager.terminate(instance.id, @fast_path_delete) if instance
           raise e
         end
       end
@@ -143,6 +142,15 @@ module Bosh::AwsCloud
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
         InstanceManager.new(@region, registry).reboot(instance_id)
+      end
+    end
+
+    ##
+    # Has EC2 instance
+    # @param [String] instance_id EC2 instance id
+    def has_vm?(instance_id)
+      with_thread_name("has_vm?(#{instance_id})") do
+        InstanceManager.new(@region, registry).has_instance?(instance_id)
       end
     end
 
@@ -181,7 +189,7 @@ module Bosh::AwsCloud
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")
-        wait_resource(volume, :available)
+        ResourceWait.for_volume(volume: volume, state: :available)
 
         volume.id
       end
@@ -194,24 +202,19 @@ module Bosh::AwsCloud
     def delete_disk(disk_id)
       with_thread_name("delete_disk(#{disk_id})") do
         volume = @ec2.volumes[disk_id]
-        state = volume.state
-
-        if state != :available
-          cloud_error("Cannot delete volume `#{volume.id}', state is #{state}")
-        end
 
         @logger.info("Deleting volume `#{volume.id}'")
-        # even though the contract is that we don't get here until AWS
-        # reports that the volume is detached, the "eventual consistency"
-        # might throw a spanner in the machinery and report that it still
-        # is in use
 
-        begin
-          task_checkpoint
+        tries = 10
+        sleep_cb = ResourceWait.sleep_callback("Waiting for volume `#{volume.id}' to be deleted", tries)
+        ensure_cb = Proc.new do |retries|
+          cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries+1 == tries
+        end
+        error = AWS::EC2::Errors::Client::VolumeInUse
+
+        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: error, ensure: ensure_cb) do
           volume.delete
-        rescue AWS::EC2::Errors::Client::VolumeInUse => e
-          sleep(1)
-          retry
+          true # return true to only retry on Exceptions
         end
 
         if @fast_path_delete
@@ -220,11 +223,7 @@ module Bosh::AwsCloud
           return
         end
 
-        begin
-          wait_resource(volume, :deleted)
-        rescue AWS::EC2::Errors::InvalidVolume::NotFound
-          # It's OK, just means the volume has already been deleted
-        end
+        ResourceWait.for_volume(volume: volume, state: :deleted)
 
         @logger.info("Volume `#{disk_id}' has been deleted")
       end
@@ -345,7 +344,7 @@ module Bosh::AwsCloud
           raise e
         ensure
           if instance && volume
-            detach_ebs_volume(instance, volume)
+            detach_ebs_volume(instance, volume, true)
             delete_disk(volume.id)
           end
         end
@@ -451,8 +450,6 @@ module Bosh::AwsCloud
     end
 
     def attach_ebs_volume(instance, volume)
-      # TODO once we upgrade the aws-sdk gem to > 1.3.9, we need to use:
-      # instance.block_device_mappings.to_hash.keys
       device_names = Set.new(instance.block_device_mappings.to_hash.keys)
       new_attachment = nil
 
@@ -464,7 +461,10 @@ module Bosh::AwsCloud
           @logger.warn("`#{dev_name}' on `#{instance.id}' is taken")
           next
         end
-        new_attachment = volume.attach_to(instance, dev_name)
+        # work around AWS eventual (in)consistency
+        Bosh::Common.retryable(tries: 10, on: AWS::EC2::Errors::IncorrectState) do
+          new_attachment = volume.attach_to(instance, dev_name)
+        end
         break
       end
 
@@ -474,7 +474,7 @@ module Bosh::AwsCloud
       end
 
       @logger.info("Attaching `#{volume.id}' to `#{instance.id}'")
-      wait_resource(new_attachment, :attached)
+      ResourceWait.for_attachment(attachment: new_attachment, state: :attached)
 
       device_name = new_attachment.device
 
@@ -484,9 +484,7 @@ module Bosh::AwsCloud
       device_name
     end
 
-    def detach_ebs_volume(instance, volume)
-      # TODO once we upgrade the aws-sdk gem to > 1.3.9, we need to use:
-      # instance.block_device_mappings.to_hash.keys
+    def detach_ebs_volume(instance, volume, force=false)
       mappings = instance.block_device_mappings.to_hash
 
       device_map = mappings.inject({}) do |hash, (device_name, attachment)|
@@ -499,15 +497,10 @@ module Bosh::AwsCloud
                     "to instance `#{instance.id}'")
       end
 
-      attachment = volume.detach_from(instance, device_map[volume.id])
+      attachment = volume.detach_from(instance, device_map[volume.id], force: force)
       @logger.info("Detaching `#{volume.id}' from `#{instance.id}'")
 
-      wait_resource(attachment, :detached) do |error|
-        if error.is_a? AWS::Core::Resource::NotFound
-          @logger.info("attachment is no longer found, assuming it to be detached")
-          :detached
-        end
-      end
+      ResourceWait.for_attachment(attachment: attachment, state: :detached)
     end
 
     ##
@@ -541,10 +534,6 @@ module Bosh::AwsCloud
       end
     end
 
-    def task_checkpoint
-      Bosh::Clouds::Config.task_checkpoint
-    end
-
     # Generates initial agent settings. These settings will be read by agent
     # from AWS registry (also a BOSH component) on a target instance. Disk
     # conventions for amazon are:
@@ -562,7 +551,7 @@ module Bosh::AwsCloud
     def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
       settings = {
           "vm" => {
-              "name" => "vm-#{UUIDTools::UUID.random_create}"
+              "name" => "vm-#{SecureRandom.uuid}"
           },
           "agent_id" => agent_id,
           "networks" => network_spec,

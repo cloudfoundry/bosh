@@ -35,7 +35,22 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
       last_response.status.should == 404
     end
 
-    it "should reject invalid users" do
+    it "should reject invalid password" do
+      get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "bad_password")}
+      last_response.status.should == 401
+    end
+
+    it "should reject invalid user" do
+      get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("bad_user", "doe")}
+      last_response.status.should == 401
+    end
+
+    it "should reject invalid user and password" do
+      get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("bad_user", "bad_password")}
+      last_response.status.should == 401
+    end
+
+    it "should reject unauthenticated users" do
       get "/resources/foo"
       last_response.status.should == 401
     end
@@ -124,6 +139,29 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
       end
     end
 
+  end
+
+  describe 'checking if an object exists' do
+    it 'should return 200 if it exists' do
+      resource_file = Tempfile.new("resource")
+      begin
+        resource_file.write("test contents")
+        resource_file.close
+        post "/resources/foo", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
+             {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+        last_response.status.should == 200
+      ensure
+        resource_file.delete
+      end
+
+      head "/resources/foo", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 200
+    end
+
+    it 'should return 404 if it does not exist' do
+      head "/resources/foo", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
+      last_response.status.should == 404
+    end
   end
 
   describe "Deleting resources" do

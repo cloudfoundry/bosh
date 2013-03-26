@@ -16,7 +16,7 @@ module Bosh::Director
     #   lock
     def initialize(name, opts = {})
       @name = name
-      @id = UUIDTools::UUID.random_create.to_s
+      @id = SecureRandom.uuid
       @timeout = opts[:timeout] || 1.0
       @expiration = opts[:expiration] || 10.0
       @logger = Config.logger

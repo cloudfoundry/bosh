@@ -38,6 +38,8 @@ module Bosh
         @container
       end
 
+      protected
+
       def create_file(object_id, file)
         object_id ||= generate_object_id
         object = container.files.create(:key => object_id,
@@ -71,7 +73,7 @@ module Bosh
               "Failed to find object '#{object_id}': #{e.message}"
       end
 
-      def delete(object_id)
+      def delete_object(object_id)
         object_info = decode_object_id(object_id)
         object = container.files.get(object_info["oid"])
         if object.nil?
@@ -87,7 +89,7 @@ module Bosh
       private
 
       def generate_object_id
-        UUIDTools::UUID.random_create.to_s
+        SecureRandom.uuid
       end
 
       def encode_object_id(object_id, public_url = nil)

@@ -74,7 +74,7 @@ module Bosh::Director
     # in the jobs defined by deployment plan
     # @return [void]
     def prepare_tasks
-      @event_log.begin_stage("Preparing package compilation", 1)
+      @event_log.begin_stage("Preparing package compilation")
 
       @event_log.track("Finding packages to compile") do
         @deployment_plan.jobs.each do |job|
@@ -182,8 +182,10 @@ module Bosh::Director
           # happen until everything was done compiling.
           if @deployment_plan.compilation.reuse_compilation_vms
             @vm_reuser.each do |vm_data|
-              tear_down_vm(vm_data)
+              pool.process { tear_down_vm(vm_data) }
             end
+
+            pool.wait
           end
         end
       end
@@ -360,7 +362,11 @@ module Bosh::Director
                      "for stemcell `#{stemcell.desc}'")
       else
         if Config.use_compiled_package_cache?
-          compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
+          if BlobUtil.exists_in_global_cache?(package, task.cache_key)
+            @event_log.track("Downloading '#{package.desc}' from global cache") do
+              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, task.cache_key, dependency_key)
+            end
+          end
         end
 
         if compiled_package

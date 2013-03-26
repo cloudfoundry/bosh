@@ -2,36 +2,33 @@
 
 source 'https://rubygems.org'
 
-gem "agent_client", path: "agent_client"
-gem "blobstore_client", path: "blobstore_client"
-gem "bosh_agent", path: "bosh_agent"
-gem "bosh_aws_bootstrap", path: "bosh_aws_bootstrap"
-gem "bosh_aws_cpi", path: "bosh_aws_cpi"
-gem "bosh_aws_registry", path: "bosh_aws_registry"
-gem "bosh_common", path: "bosh_common"
-gem "bosh_cpi", path: "bosh_cpi"
-gem "bosh_cli", path: "bosh_cli"
-gem "bosh_deployer", path: "bosh_deployer"
-gem "bosh_encryption", path: "bosh_encryption"
-gem "bosh_openstack_cpi", path: "bosh_openstack_cpi"
-gem "bosh_openstack_registry", path: "bosh_openstack_registry"
-gem "bosh_vcloud_cpi", path: "bosh_vcloud_cpi"
-gem "bosh_vsphere_cpi", path: "bosh_vsphere_cpi"
-gem "bosh_warden_cpi", path: "bosh_warden_cpi"
-gem "director", path: "director"
-gem "health_monitor", path: "health_monitor"
-gem "monit_api", path: "monit_api"
-gem "package_compiler", path: "package_compiler"
-gem "ruby_vcloud_sdk", path: "ruby_vcloud_sdk"
-gem "ruby_vim_sdk", path: "ruby_vim_sdk"
-gem "simple_blobstore_server", path: "simple_blobstore_server"
+gem "agent_client", :path => "agent_client"
+gem "blobstore_client", :path => "blobstore_client"
+gem "bosh_agent", :path => "bosh_agent"
+gem "bosh_aws_bootstrap", :path => "bosh_aws_bootstrap"
+gem "bosh_aws_cpi", :path => "bosh_aws_cpi"
+gem "bosh_common", :path => "bosh_common"
+gem "bosh_cpi", :path => "bosh_cpi"
+gem "bosh_cli", :path => "bosh_cli"
+gem "bosh_deployer", :path => "bosh_deployer"
+gem "bosh_encryption", :path => "bosh_encryption"
+gem "bosh_openstack_cpi", :path => "bosh_openstack_cpi"
+gem "bosh_registry", :path => "bosh_registry"
+gem "bosh_vcloud_cpi", :path => "bosh_vcloud_cpi"
+gem "bosh_vsphere_cpi", :path => "bosh_vsphere_cpi"
+gem "director", :path => "director"
+gem "health_monitor", :path => "health_monitor"
+gem "monit_api", :path => "monit_api"
+gem "package_compiler", :path => "package_compiler"
+gem "ruby_vcloud_sdk", :path => "ruby_vcloud_sdk"
+gem "ruby_vim_sdk", :path => "ruby_vim_sdk"
+gem "simple_blobstore_server", :path => "simple_blobstore_server"
 
 # for bosh_warden_cpi
 gem "warden-protocol", git: "https://github.com/cloudfoundry/warden.git"
 gem "warden-client", git: "https://github.com/cloudfoundry/warden.git"
 
 gem "rake", "~>10.0"
-gem "retryable", "=1.3.2"
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
@@ -74,8 +71,4 @@ group :development, :test do
   gem "nokogiri-diff"
 
   gem "sqlite3"
-
-  #  gem "guard-yard"
-  #  gem "redcarpet"
-  #  gem "rb-fsevent"
 end

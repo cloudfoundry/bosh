@@ -23,7 +23,7 @@ parted --script $work/$disk_image_name mkpart primary ext2 $part_offset $part_si
 kpartx -dv $work/$disk_image_name
 
 # Map partition in image to loopback
-dev=$(kpartx -av $work/$disk_image_name | grep "^add" | cut -d" " -f3)
+dev=$(kpartx -avs $work/$disk_image_name | grep "^add" | cut -d" " -f3)
 
 # Format partition
 mkfs.$part_fs /dev/mapper/$dev
@@ -37,7 +37,20 @@ mount /dev/mapper/$dev $mnt
 time rsync -aHA $chroot/ $mnt
 
 # Unmount partition
-umount $mnt
+echo "Unmounting $mnt"
+for try in $(seq 0 3); do
+  sleep $try
+  echo -n "."
+  umount $mnt || continue
+  break
+done
+echo
+
+if mountpoint -q $mnt; then
+  echo "Could not unmount $mnt after 4 tries"
+  exit 1
+fi
 
 # Unmap partition
+echo "Removing device mappings for $disk_image_name"
 kpartx -dv $work/$disk_image_name

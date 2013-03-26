@@ -72,7 +72,7 @@ properties:
     security_groups:
     - bat
 ```
-## Running BAT
+## EC2 Networking Config
 
 ### On EC2 with AWS-provided DHCP networking
 Add TCP port `4567` to the **default** security group.
@@ -81,7 +81,10 @@ Add TCP port `4567` to the **default** security group.
 Create a **bat** security group in the same VPC the BAT_DIRECTOR is running in. Allow inbound access to TCP ports
  `22` and `4567` to the bat security group.
 
-When all of the above is ready, you can run `rake bat` which will run the whole test suite.
+## Running BAT
+
+When all of the above is ready, running `bundle exec rake bat:env` will verify environment variables are set correctly.
+To run the whole test suite, run `bundle exec rake bat`.
 
 ## TODO
 * add rake task to download stemcell (for full automation)

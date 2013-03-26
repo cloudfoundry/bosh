@@ -103,7 +103,7 @@ module Bosh::Director
     # create/update DNS PTR records (for reverse lookups)
     def update_dns_ptr_record(name, ip_address)
       reverse = reverse_domain(ip_address)
-      rdomain = Models::Dns::Domain.find_or_create(:name => reverse,
+      rdomain = Models::Dns::Domain.safe_find_or_create(:name => reverse,
                                                    :type => "NATIVE")
       Models::Dns::Record.find_or_create(:domain_id => rdomain.id,
                                          :name => reverse,

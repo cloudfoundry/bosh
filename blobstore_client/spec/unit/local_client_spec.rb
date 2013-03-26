@@ -25,6 +25,22 @@ describe Bosh::Blobstore::LocalClient do
 
   describe "operations" do
 
+    describe '#exists?' do
+      it 'should return true if the object already exists' do
+        File.open(File.join(@tmp, 'foo'), 'w') do |fh|
+          fh.puts("bar")
+        end
+
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        client.exists?("foo").should be_true
+      end
+
+      it "should return false if the object doesn't exists" do
+        client = Bosh::Blobstore::LocalClient.new(@options)
+        client.exists?("foo").should be_false
+      end
+    end
+
     describe "get" do
       it "should retrive the correct contents" do
         File.open(File.join(@tmp, 'foo'), 'w') do |fh|

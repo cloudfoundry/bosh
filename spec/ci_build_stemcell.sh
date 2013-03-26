@@ -1,7 +1,6 @@
 #!/bin/bash --login
 
 set -e
-
 source .rvmrc
 
 rm -f *.tgz stemcell-ami.txt
@@ -20,6 +19,8 @@ else
 fi
 
 directory="$infrastructure-$task"
+sudo umount /mnt/$directory/work/work/mnt/tmp/grub/root.img 2>/dev/null || true
+sudo umount /mnt/$directory/work/work/mnt 2>/dev/null || true
 
 sudo rm -rf /mnt/$directory
 

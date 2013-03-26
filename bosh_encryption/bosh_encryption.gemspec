@@ -19,6 +19,5 @@ Gem::Specification.new do |s|
   s.require_path = "lib"
 
   s.add_dependency "gibberish", "~>1.2.0"
-  s.add_dependency "uuidtools", "~>2.1.3"
   s.add_dependency "yajl-ruby", "~>1.1.0"
 end
