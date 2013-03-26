@@ -19,7 +19,7 @@ describe Bosh::Aws::BoshManifest do
   it "generates the template" do
     manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef')
     spec = manifest.to_y
-    spec.should == <<YAML
+    spec.should == <<-YAML
 ---
 name: vpc-bosh-dev102
 director_uuid: deadbeef
@@ -60,6 +60,8 @@ properties:
     secret_access_key: ...
     region: us-east-1
     default_key_name: dev102
+
+   
 YAML
   end
 end
