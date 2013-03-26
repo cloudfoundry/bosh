@@ -47,6 +47,21 @@ module Bosh::Cli::Command
       misc = Bosh::Cli::Command::Misc.new(runner)
       misc.options = self.options
       misc.login("admin", "admin")
+
+      # Login required to create another user
+      # Only create new user in interactive mode
+      if interactive?
+        user = Bosh::Cli::Command::User.new(runner)
+        user.options = self.options
+        username = ask("Enter username: ")
+        password = ask("Enter password: ") { |q| q.echo = "*" }
+        if username.blank? || password.blank?
+          err("Please enter username and password")
+        end
+        user.create(username, password)
+        misc.login(username, password)
+      end
+
     end
 
     usage "aws generate micro_bosh"
