@@ -51,7 +51,6 @@ module Bosh
         say("Director task #{@task_id.to_s.yellow}")
 
         cached_output = get_cached_task_output
-
         if cached_output
           task_status = @task.state.to_sym
           output_received(cached_output)

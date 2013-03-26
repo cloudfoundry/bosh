@@ -70,8 +70,8 @@ module Bosh::Director
       end
     end
 
-    def delete_vm_reference(vm)
-      if vm.cid
+    def delete_vm_reference(vm, options={})
+      if vm.cid && !options[:skip_cid_check]
         handler_error("VM has a CID")
       end
 
@@ -93,20 +93,14 @@ module Bosh::Director
       spec = validate_spec(vm)
       env = validate_env(vm)
 
-      instance = vm.instance
+      resource_pool_spec = spec.fetch("resource_pool", {})
+      stemcell = find_stemcell(resource_pool_spec.fetch("stemcell", {}))
 
       deployment = vm.deployment
       handler_error("VM doesn't belong to any deployment") unless deployment
 
+      instance = vm.instance
       disk_cid = instance ? instance.persistent_disk_cid : nil
-
-      resource_pool_spec = spec["resource_pool"] || {}
-      network_spec = spec["networks"]
-
-      cloud_properties = resource_pool_spec["cloud_properties"] || {}
-
-      stemcell_spec = resource_pool_spec["stemcell"] || {}
-      stemcell = find_stemcell(stemcell_spec)
 
       # One situation where this handler is actually useful is when
       # VM has already been deleted but something failed after that
@@ -128,8 +122,9 @@ module Bosh::Director
         vm.destroy
       end
 
-      new_vm = VmCreator.create(deployment, stemcell, cloud_properties,
-                                network_spec, Array(disk_cid), env)
+      cloud_properties = resource_pool_spec.fetch("cloud_properties", {})
+      networks = spec["networks"]
+      new_vm = VmCreator.create(deployment, stemcell, cloud_properties, networks, Array(disk_cid), env)
       new_vm.apply_spec = spec
       new_vm.save
 

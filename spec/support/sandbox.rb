@@ -64,9 +64,8 @@ module Bosh
 
           raise "Please install redis on this machine" unless system("which redis-server > /dev/null")
           run_with_pid("redis-server #{REDIS_CONF}", REDIS_PID)
-          run_with_pid("bundle exec simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID)
-
-          run_with_pid("bundle exec nats-server -p #{NATS_PORT}", NATS_PID)
+          run_with_pid("simple_blobstore_server -c #{BLOBSTORE_CONF}", BLOBSTORE_PID)
+          start_nats
 
           if ENV["DEBUG"]
             FileUtils.rm_rf(LOGS_PATH)
@@ -107,18 +106,17 @@ module Bosh
             director_output = worker_output = hm_output = "/dev/null"
           end
 
+          FileUtils.rm_rf(DIRECTOR_TMP_PATH)
           FileUtils.mkdir_p(DIRECTOR_TMP_PATH)
 
           File.open(File.join(DIRECTOR_TMP_PATH, "state.json"), "w") do |f|
             f.write(Yajl::Encoder.encode({"uuid" => DIRECTOR_UUID}))
           end
 
-          run_with_pid("bundle exec director -c #{DIRECTOR_CONF}", DIRECTOR_PID,
-                       :output => director_output)
-          run_with_pid("bundle exec worker -c #{DIRECTOR_CONF}", WORKER_PID,
-                       :output => worker_output, :env => {"QUEUE" => "*"})
-          run_with_pid("bundle exec health_monitor -c #{HM_CONF}", HM_PID,
-                       :output => hm_output)
+          run_with_pid("director -c #{DIRECTOR_CONF}", DIRECTOR_PID, :output => director_output)
+          run_with_pid("worker -c #{DIRECTOR_CONF}", WORKER_PID, :output => worker_output, :env => {"QUEUE" => "*"})
+          sleep(0.5) # Need to give the director time to come up before health_monitor tries to query it
+          run_with_pid("health_monitor -c #{HM_CONF}", HM_PID, :output => hm_output)
 
           loop do
             `lsof -w -i :57523 | grep LISTEN`
@@ -150,6 +148,10 @@ module Bosh
           FileUtils.rm_rf(DIRECTOR_TMP_PATH)
           FileUtils.rm_rf(AGENT_TMP_PATH)
           FileUtils.rm_rf(BLOBSTORE_STORAGE_DIR)
+        end
+
+        def start_nats
+          run_with_pid("nats-server -p #{NATS_PORT}", NATS_PID)
         end
 
         private

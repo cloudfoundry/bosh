@@ -25,6 +25,15 @@ module IntegrationExampleGroup
     end
   end
 
+  def run_bosh_cck_ignore_errors(num_errors)
+    resolution_selections = "1\n"*num_errors + "yes"
+    output = `echo "#{resolution_selections}" | bosh -c #{BOSH_CONFIG} -C #{BOSH_CACHE_DIR} cloudcheck`
+    if $?.exitstatus != 0
+      puts output
+    end
+    output
+  end
+
   def self.included(base)
     base.before(:each) do |example|
       unless $sandbox_started

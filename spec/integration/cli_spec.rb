@@ -550,4 +550,58 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
 
   end
 
+  describe 'cloudcheck' do
+    require 'cloud/dummy'
+    let!(:dummy_cloud) do
+      director_config = YAML.load_file(Bosh::Spec::Sandbox::DIRECTOR_CONF)
+      Bosh::Clouds::Dummy.new("dir" => director_config['cloud']['properties']['dir'])
+    end
+
+    before do
+      run_bosh("target localhost:57523")
+      run_bosh("login admin admin")
+
+      release_dir = spec_asset("test_release")
+      run_bosh("reset release", release_dir)
+      run_bosh("create release --force", release_dir)
+      run_bosh("upload release", release_dir)
+
+      run_bosh("upload stemcell #{spec_asset("valid_stemcell.tgz")}")
+
+      deployment_manifest = yaml_file("simple", Bosh::Spec::Deployments.simple_manifest)
+      run_bosh("deployment #{deployment_manifest.path}")
+
+      run_bosh("deploy")
+
+      run_bosh("cloudcheck --report").should =~ regexp("No problems found")
+    end
+
+    after do
+      Bosh::Spec::Sandbox.start_nats
+    end
+
+    it "provides resolution options for missing VMs" do
+      cid = File.basename(Dir[File.join(Bosh::Spec::Sandbox::AGENT_TMP_PATH, "running_vms", "*")].first)
+      dummy_cloud.delete_vm(cid)
+
+      cloudcheck_response = run_bosh_cck_ignore_errors(1)
+      cloudcheck_response.should_not =~ regexp("No problems found")
+      cloudcheck_response.should =~ regexp("1 missing")
+      cloudcheck_response.should =~ regexp("1. Ignore problem
+  2. Recreate VM using last known apply spec
+  3. Delete VM reference (DANGEROUS!)")
+    end
+
+    it "provides resolution options for unresponsive agents" do
+      Process.kill("TERM", File.read(Bosh::Spec::Sandbox::NATS_PID).to_i)
+
+      cloudcheck_response = run_bosh_cck_ignore_errors(3)
+      cloudcheck_response.should_not =~ regexp("No problems found")
+      cloudcheck_response.should =~ regexp("3 unresponsive")
+      cloudcheck_response.should =~ regexp("1. Ignore problem
+  2. Reboot VM
+  3. Recreate VM using last known apply spec
+  4. Delete VM reference (DANGEROUS!)")
+    end
+  end
 end

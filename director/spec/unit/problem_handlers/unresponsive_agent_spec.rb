@@ -16,7 +16,7 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
     @agent = mock("agent")
     Bosh::Director::Config.stub!(:cloud).and_return(@cloud)
 
-    @vm = Bosh::Director::Models::Vm.make(:cid => "vm-cid")
+    @vm = Bosh::Director::Models::Vm.make(cid: "vm-cid", agent_id: "agent-007")
     @instance =
       Bosh::Director::Models::Instance.make(:job => "mysql_node",
                                             :index => 0, :vm_id => @vm.id)
@@ -78,195 +78,64 @@ describe Bosh::Director::ProblemHandlers::UnresponsiveAgent do
   end
 
   describe "recreate_vm resolution" do
-
     it "skips recreate if CID is not present" do
-      @vm.update(:cid => nil)
+      @vm.update(cid: nil)
       @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-      lambda {
+
+      expect {
         handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           /doesn't have a cloud id/)
+      }.to raise_error(Bosh::Director::ProblemHandlerError, /doesn't have a cloud id/)
     end
 
     it "doesn't recreate VM if agent is now alive" do
-      @agent.should_receive(:ping).and_return(:pong)
-
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Agent is responding now, skipping resolution")
-    end
-
-    it "doesn't recreate VM if apply spec is unknown" do
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Unable to look up VM apply spec")
-    end
-
-    it "doesn't recreate VM if apply spec is unknown" do
-      @vm.update(:apply_spec => {})
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Unable to look up VM environment")
-    end
-
-    it "whines on invalid spec format" do
-      @vm.update(:apply_spec => "foobar", :env => "bar")
-      handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Invalid apply spec format")
-    end
-
-    it "whines on invalid env format" do
-      @vm.update(:apply_spec => {}, :env => "bar")
-      handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Invalid VM environment format")
-    end
-
-    it "whines when stemcell is not in apply spec" do
-      spec = {"resource_pool" => {"stemcell" => {"name" => "foo"}}} # no version
-      env = {"key1" => "value1"}
-
-      @vm.update(:apply_spec => spec, :env => env)
-      handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Unknown stemcell name and/or version")
-    end
-
-    it "whines when stemcell is not in DB" do
-      spec = {
-        "resource_pool" => {
-          "stemcell" => {
-            "name" => "bosh-stemcell",
-            "version" => "3.0.2"
-          }
-        }
-      }
-      env = {"key1" => "value1"}
-
-      @vm.update(:apply_spec => spec, :env => env)
-      handler = make_handler(@vm, @cloud, @agent)
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-
-      lambda {
-        handler.apply_resolution(:recreate_vm)
-      }.should raise_error(Bosh::Director::ProblemHandlerError,
-                           "Unable to find stemcell 'bosh-stemcell 3.0.2'")
-    end
-
-    it "recreates VM (w/persistent disk)" do
-      spec = {
-        "resource_pool" => {
-          "stemcell" => {
-            "name" => "bosh-stemcell",
-            "version" => "3.0.2"
-          },
-          "cloud_properties" => { "foo" => "bar" },
-        },
-        "networks" => ["A", "B", "C"]
-      }
-      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-222")
-
-      disk = Bosh::Director::Models::PersistentDisk.make(:disk_cid => "disk-cid", :instance_id => @instance.id)
-      stemcell = Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
-
-      # SQLite resets autoincrement id when table becomes empty,
-      # so having this dummy record VM allows us to distinguish
-      # between deleted VM and new VM (otherwise they will have same id)
-      Bosh::Director::Models::Vm.make
-      @vm.update(:apply_spec => spec, :env => {"key1" => "value1"})
-
-      handler = make_handler(@vm, @cloud, @agent)
-      handler.stub!(:generate_agent_id).and_return("agent-222")
-
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-
-      new_agent = mock("agent")
-
-      @cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid").ordered
-      @cloud.should_receive(:delete_vm).with("vm-cid").ordered
-      @cloud.should_receive(:create_vm).
-        with("agent-222", "sc-302", { "foo" => "bar"}, ["A", "B", "C"], ["disk-cid"], { "key1" => "value1" }).
-        ordered.and_return("new-vm-cid")
-
-      Bosh::Director::AgentClient.stub!(:new).with("agent-222", anything).and_return(new_agent)
-      new_agent.should_receive(:wait_until_ready).ordered
-      @cloud.should_receive(:attach_disk).with("new-vm-cid", "disk-cid").ordered
-
-      new_agent.should_receive(:mount_disk).with("disk-cid").ordered
-      new_agent.should_receive(:apply).with(spec).ordered
-      new_agent.should_receive(:start).ordered
-
-      handler.apply_resolution(:recreate_vm)
+      @agent.stub(ping: :pong)
 
       expect {
-        @vm.reload
-      }.to raise_error(Sequel::Error, "Record not found")
-
-      @instance.reload
-      @instance.vm.apply_spec.should == spec
-      @instance.vm.cid.should == "new-vm-cid"
-      @instance.vm.agent_id.should == "agent-222"
-      @instance.persistent_disk.disk_cid.should == "disk-cid"
+        handler.apply_resolution(:recreate_vm)
+      }.to raise_error(Bosh::Director::ProblemHandlerError, "Agent is responding now, skipping resolution")
     end
 
-    it "recreates VM (no persistent disk)" do
-      spec = {
-        "resource_pool" => {
-          "stemcell" => {
-            "name" => "bosh-stemcell",
-            "version" => "3.0.2"
-          },
-          "cloud_properties" => { "foo" => "bar" },
-        },
-        "networks" => ["A", "B", "C"]
-      }
-      Bosh::Director::VmCreator.stub(:generate_agent_id).and_return("agent-222")
+    context "when no errors" do
+      let(:spec) do
+        {
+            "resource_pool" => {
+                "stemcell" => {
+                    "name" => "bosh-stemcell",
+                    "version" => "3.0.2"
+                },
+                "cloud_properties" => {"foo" => "bar"},
+            },
+            "networks" => ["A", "B", "C"]
+        }
+      end
+      let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
-      Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
-      @vm.update(:apply_spec => spec, :env => {"key1" => "value1"})
+      before do
+        Bosh::Director::Models::Stemcell.make(:name => "bosh-stemcell", :version => "3.0.2", :cid => "sc-302")
+        @vm.update(:apply_spec => spec, :env => {"key1" => "value1"})
+        Bosh::Director::AgentClient.stub(:new).with("agent-222", anything).and_return(fake_new_agent)
+        SecureRandom.stub(uuid: "agent-222")
+      end
 
-      handler = make_handler(@vm, @cloud, @agent)
-      handler.stub!(:generate_agent_id).and_return("agent-222")
 
-      @agent.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+      it "recreates the VM" do
+        @agent.stub(:ping).and_raise(Bosh::Director::RpcTimeout)
 
-      new_agent = mock("agent")
+        @cloud.should_receive(:delete_vm).with("vm-cid")
+        @cloud.
+            should_receive(:create_vm).
+            with("agent-222", "sc-302", {"foo" => "bar"}, ["A", "B", "C"], [], {"key1" => "value1"})
 
-      @cloud.should_receive(:delete_vm).with("vm-cid").ordered
-      @cloud.should_receive(:create_vm).
-        with("agent-222", "sc-302", { "foo" => "bar"}, ["A", "B", "C"], [], { "key1" => "value1" }).
-        ordered.and_return("new-vm-cid")
+        fake_new_agent.should_receive(:wait_until_ready).ordered
+        fake_new_agent.should_receive(:apply).with(spec).ordered
+        fake_new_agent.should_receive(:start).ordered
 
-      Bosh::Director::AgentClient.stub!(:new).with("agent-222", anything).and_return(new_agent)
+        Bosh::Director::Models::Vm.find(agent_id: "agent-007").should_not be_nil
 
-      new_agent.should_receive(:wait_until_ready).ordered
-      new_agent.should_receive(:apply).with(spec).ordered
-      new_agent.should_receive(:start).ordered
+        handler.apply_resolution(:recreate_vm)
 
-      handler.apply_resolution(:recreate_vm)
-
-      @instance.reload
-      @instance.vm.apply_spec.should == spec
-      @instance.vm.cid.should == "new-vm-cid"
-      @instance.vm.agent_id.should == "agent-222"
+        Bosh::Director::Models::Vm.find(agent_id: "agent-007").should be_nil
+      end
     end
   end
 

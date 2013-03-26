@@ -70,8 +70,13 @@ module Bosh
         raise NotImplemented, "reboot_vm"
       end
 
-      def has_vm?(vm)
-        raise NotImplemented, "has_vm?"
+      def has_vm?(pid)
+        begin
+          Process.kill(0, pid.to_i)
+          true
+        rescue Errno::ESRCH
+          false
+        end
       end
 
       def configure_networks(vm, networks)

@@ -71,6 +71,8 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
     describe "Mount info scan" do
       it "unresponsive agents should not be considered disk info mismatch" do
+        BD::Config.stub(:cloud).and_return(double(Bosh::Cloud, has_vm?: true))
+
         vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent",
                           :deployment => @deployment)
         instance = BDM::Instance.make(:vm => vm, :deployment => @deployment,
@@ -268,23 +270,21 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
 
     describe "VM scan" do
       it "scans for unresponsive agents" do
-        2.times do |i|
-          vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}",
-                            :deployment => @deployment)
-          BDM::Instance.make(:vm => vm, :deployment => @deployment,
-                             :job => "job-#{i}", :index => i)
+        (0..1).each do |i|
+          vm = BDM::Vm.make(:cid => "vm-cid", :agent_id => "agent-#{i}", :deployment => @deployment)
+          BDM::Instance.make(:vm => vm, :deployment => @deployment, :job => "job-#{i}", :index => i)
         end
 
+        agent_0 = mock("agent-0")
         agent_1 = mock("agent-1")
-        agent_2 = mock("agent-2")
 
         BD::AgentClient.stub!(:new).with("agent-0", anything).
-            and_return(agent_1)
+            and_return(agent_0)
         BD::AgentClient.stub!(:new).with("agent-1", anything).
-            and_return(agent_2)
+            and_return(agent_1)
 
         # Unresponsive agent
-        agent_1.should_receive(:get_state).and_raise(BD::RpcTimeout)
+        agent_0.stub(:get_state).and_raise(BD::RpcTimeout)
 
         # Working agent
         good_state = {
@@ -292,12 +292,14 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
             "job" => {"name" => "job-1"},
             "index" => 1
         }
-        agent_2.should_receive(:get_state).and_return(good_state)
-        agent_2.should_receive(:list_disk).and_return([])
+        agent_1.stub(:get_state).and_return(good_state)
+        agent_1.stub(:list_disk).and_return([])
+
         fake_cloud = double(Bosh::Cloud)
         BD::Config.stub(:cloud).and_return(fake_cloud)
-        fake_cloud.should_receive(:has_vm?).with("vm-cid").and_return(true)
-        @job.should_receive(:track_and_log).with("Checking VM states").and_call_original
+        fake_cloud.stub(:has_vm?).with("vm-cid").and_return(true)
+
+        @job.stub(:track_and_log).with("Checking VM states").and_call_original
         @job.should_receive(:track_and_log).with("1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync")
 
         @job.scan_vms
