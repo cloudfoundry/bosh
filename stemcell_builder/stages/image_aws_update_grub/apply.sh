@@ -13,7 +13,7 @@ disk_image_name=root.img
 kpartx -dv $work/$disk_image_name
 
 # Map partition in image to loopback
-dev=$(kpartx -av $work/$disk_image_name | grep "^add" | cut -d" " -f3)
+dev=$(kpartx -avs $work/$disk_image_name | grep "^add" | cut -d" " -f3)
 
 # Mount partition
 mnt=$work/mnt

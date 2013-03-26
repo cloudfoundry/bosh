@@ -110,6 +110,10 @@ module BoshHelper
     info["cpi"] == "vsphere"
   end
 
+  def compiled_package_cache?
+    info["features"] && info["features"]["compiled_package_cache"]
+  end
+
   def dns?
     info["features"] && info["features"]["dns"]
   end

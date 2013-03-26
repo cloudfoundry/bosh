@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'tmpdir'
-require 'uuidtools'
+require 'securerandom'
 
 module Bosh
   module Blobstore
@@ -48,6 +48,7 @@ module Bosh
       def get(id, file = nil)
         if file
           get_file(id, file)
+          file.flush
         else
           result = nil
           temp_path do |path|
@@ -97,7 +98,7 @@ module Bosh
       end
 
       def temp_path
-        path = File.join(Dir::tmpdir, "temp-path-#{UUIDTools::UUID.random_create}")
+        path = File.join(Dir::tmpdir, "temp-path-#{SecureRandom.uuid}")
         begin
           yield path if block_given?
           path

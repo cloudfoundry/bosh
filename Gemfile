@@ -67,11 +67,4 @@ group :development, :test do
   gem "nokogiri-diff"
 
   gem "sqlite3"
-
-  gem "bootstrap-vmc-plugin", :github => "cloudfoundry/bootstrap-vmc-plugin"
-  gem "vmc", "~> 0.5.0"
-
-  #  gem "guard-yard"
-  #  gem "redcarpet"
-  #  gem "rb-fsevent"
 end

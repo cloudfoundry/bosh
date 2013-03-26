@@ -41,12 +41,27 @@ module Bosh::Cli::Command
         micro = Bosh::Cli::Command::Micro.new(runner)
         micro.options = self.options
         micro.micro_deployment("micro")
-        micro.perform(latest_micro_ami)
+        micro.perform(micro_ami)
       end
 
       misc = Bosh::Cli::Command::Misc.new(runner)
       misc.options = self.options
       misc.login("admin", "admin")
+
+      # Login required to create another user
+      # Only create new user in interactive mode
+      if interactive?
+        user = Bosh::Cli::Command::User.new(runner)
+        user.options = self.options
+        username = ask("Enter username: ")
+        password = ask("Enter password: ") { |q| q.echo = "*" }
+        if username.blank? || password.blank?
+          err("Please enter username and password")
+        end
+        user.create(username, password)
+        misc.login(username, password)
+      end
+
     end
 
     usage "aws generate micro_bosh"
@@ -568,8 +583,9 @@ module Bosh::Cli::Command
       route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
     end
 
-    def latest_micro_ami
-      Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
+    def micro_ami
+      ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] ||
+          Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
     end
 
     private

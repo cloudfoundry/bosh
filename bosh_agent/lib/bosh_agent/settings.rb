@@ -1,5 +1,10 @@
+require 'forwardable'
+
 module Bosh::Agent
   class Settings
+    extend Forwardable
+
+    def_delegators :@settings, :fetch, :[]
 
     # Loads settings specific to the current infrastructure, and then caches
     # the result to disk. If it can't fetch settings, it will fall back to
@@ -29,10 +34,6 @@ module Bosh::Agent
       File.open(@cache_file, 'w') do |file|
         file.write(json)
       end
-    end
-
-    def [](key)
-      @settings[key]
     end
 
     private

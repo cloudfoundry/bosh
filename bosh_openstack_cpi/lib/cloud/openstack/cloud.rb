@@ -300,6 +300,18 @@ module Bosh::OpenStackCloud
     end
 
     ##
+    # Checks if an OpenStack server exists
+    #
+    # @param [String] server_id OpenStack server UUID
+    # @return [Boolean] True if the vm exists
+    def has_vm?(server_id)
+      with_thread_name("has_vm?(#{server_id})") do
+        server = @openstack.servers.get(server_id)
+        !server.nil?
+      end
+    end
+
+    ##
     # Reboots an OpenStack Server
     #
     # @param [String] server_id OpenStack server UUID
@@ -525,7 +537,7 @@ module Bosh::OpenStackCloud
     #
     # @return [String] Unique name
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     ##

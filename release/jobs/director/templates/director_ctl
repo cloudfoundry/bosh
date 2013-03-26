@@ -49,6 +49,8 @@ case $1 in
           exit 1
         fi
 
+    (crontab -l | sed /task_logrotate/d; cat /var/vcap/jobs/director/config/task_logrotate.cron) | sed /^$/d | crontab
+
     echo $$ > $PIDFILE
 
     exec chpst -u $RUNAS:$RUNAS \

@@ -182,8 +182,10 @@ module Bosh::Director
           # happen until everything was done compiling.
           if @deployment_plan.compilation.reuse_compilation_vms
             @vm_reuser.each do |vm_data|
-              tear_down_vm(vm_data)
+              pool.process { tear_down_vm(vm_data) }
             end
+
+            pool.wait
           end
         end
       end

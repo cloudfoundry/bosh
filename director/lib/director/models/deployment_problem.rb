@@ -41,5 +41,9 @@ module Bosh::Director::Models
       handler.description
     end
 
+    def open?
+      state == "open"
+    end
+
   end
 end

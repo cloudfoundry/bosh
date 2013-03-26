@@ -7,7 +7,7 @@ require "cloud/vcloud/util"
 require "digest/sha1"
 require "fileutils"
 require "logger"
-require "uuidtools"
+require "securerandom"
 require "yajl"
 require "const"
 require "thread"
@@ -450,7 +450,7 @@ module VCloudCloud
     end
 
     def generate_unique_name
-      UUIDTools::UUID.random_create.to_s
+      SecureRandom.uuid
     end
 
     def log_exception(op, e)

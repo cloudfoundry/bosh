@@ -5,15 +5,18 @@ COMPONENTS = %w( agent_client bosh_aws_bootstrap bosh_aws_cpi blobstore_client
 
 COMPONENTS_WITH_PG = %w( director bosh_registry)
 
-root    = File.expand_path('../../', __FILE__)
-version = File.read("#{root}/BOSH_VERSION").strip
-branch  = "v#{version}"
 
-directory "pkg"
+def root
+  @root ||= File.expand_path('../../', __FILE__)
+end
+
+def version
+  File.read("#{root}/BOSH_VERSION").strip
+end
 
 COMPONENTS.each do |component|
   namespace component do
-    gem     = "pkg/#{component}-#{version}.gem"
+    gem     = "pkg/gems/#{component}-#{version}.gem"
     gemspec = "#{component}.gemspec"
 
     task :update_version_rb do
@@ -30,9 +33,9 @@ COMPONENTS.each do |component|
 
     task :pre_stage_latest => [:update_version_rb, :pkg] do
       if component_needs_update(component, root, version)
-        sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/"
+        sh "cd #{component} && gem build #{gemspec} && mv #{component}-#{version}.gem #{root}/pkg/gems/"
       else
-        sh "cp '#{last_released_component(component, root, version)}' #{root}/pkg/"
+        sh "cp '#{last_released_component(component, root, version)}' #{root}/pkg/gems/"
       end
     end
 
@@ -95,7 +98,11 @@ end
 
 namespace :all do
   desc "Prepare latest gem versions for staging"
-  task :pre_stage_latest => COMPONENTS.map { |f| "#{f}:pre_stage_latest" }
+  task :pre_stage_latest do
+    rm_rf "pkg"
+    mkdir_p "pkg/gems"
+    COMPONENTS.map { |f| Rake::Task["#{f}:pre_stage_latest"].invoke  }
+  end
 
   desc "Copy all staged gems into appropriate release subdirectories"
   task :finalize_release_directory => COMPONENTS.map { |f| "#{f}:finalize_release_directory" } do
@@ -103,14 +110,17 @@ namespace :all do
   end
 
   desc "Install all gems"
-  task :install => COMPONENTS.map { |f| "#{f}:install" }
+  task :install do
+    mkdir_p "pkg/gems"
+    COMPONENTS.map { |f| Rake::Task["#{f}:install"].invoke  }
+  end
 
   desc "Push all gems to rubygems"
   task :push => COMPONENTS.map { |f| "#{f}:push" }
 
   task :stage_with_dependencies => :pre_stage_latest do
     mkdir_p "/tmp/all_the_gems/#{Process.pid}"
-    sh "cp #{root}/pkg/*.gem /tmp/all_the_gems/#{Process.pid}"
+    sh "cp #{root}/pkg/gems/*.gem /tmp/all_the_gems/#{Process.pid}"
     sh "cp #{root}/vendor/cache/*.gem /tmp/all_the_gems/#{Process.pid}"
   end
 
@@ -147,8 +157,10 @@ end
 
 def component_needs_update(component, root, version)
   Dir.chdir File.join(root, component) do
-    gemspec = Gem::Specification.load File.join(root, component, "#{component}.gemspec")
-    last_code_change_time = gemspec.files.map { |file| File::Stat.new(file).mtime }.max
+    gemspec_path = File.join(root, component, "#{component}.gemspec")
+    gemspec = Gem::Specification.load gemspec_path
+    files = gemspec.files + [gemspec_path]
+    last_code_change_time = files.map { |file| File::Stat.new(file).mtime }.max
     gem_file_name = last_released_component(component, root, version)
 
     !File.exists?(gem_file_name) || last_code_change_time > File::Stat.new(gem_file_name).mtime

@@ -38,12 +38,8 @@ module Bosh::Director
           end
         end
 
-        # Cleans up previous scan artifacts
         def reset
-          # TODO: finalize the approach we want to use:
-          # either close all open problems
-          # or update open ones that match by some criteria.
-          # In a latter case we don't actually want to reset anything.
+          Models::DeploymentProblem.where(state: "open").update(state: "closed")
         end
 
         def scan_disks

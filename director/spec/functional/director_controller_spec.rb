@@ -233,38 +233,28 @@ describe Bosh::Director::ApiController do
 
     describe "listing releases" do
       it "has API call that returns a list of releases in JSON" do
-        releases = (1..10).map do |i|
-          release = BD::Models::Release.create(:name => "release-#{i}")
-          (0..rand(3)).each do |v|
-            BD::Models::ReleaseVersion.
-                create(:release => release, :version => v)
-          end
-          d = BD::Models::Deployment.create(:name => "deployment-#{i}")
-          d.add_release_version(release.versions.sample)
-          release
-        end
+        release1 = BD::Models::Release.create(name: 'release-1')
+        BD::Models::ReleaseVersion.
+            create(release: release1, version: 1)
+        deployment1 = BD::Models::Deployment.create(name: 'deployment-1')
+        deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
+        release2 = BD::Models::Release.create(name: 'release-2')
+        BD::Models::ReleaseVersion.
+            create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
 
         get "/releases", {}, {}
         last_response.status.should == 200
+        body = last_response.body
 
-        body = Yajl::Parser.parse(last_response.body)
-        body.kind_of?(Array).should be_true
-        body.size.should == 10
-
-        response_collection = body.map do |e|
-          [e["name"], e["versions"].join(" "), e["in_use"].join(" ")]
-        end
-
-        expected_collection = releases.sort_by { |e| e.name }.map do |e|
-          [e.name.to_s,
-           e.versions.map { |v| v.version.to_s }.join(" "),
-           e.versions_dataset.order_by(:version.asc).reject { |rv|
-             rv.deployments.empty?
-           }.map { |rv| rv.version.to_s }.join(" ")
+        expected_collection =
+          [
+              {"name"=>"release-1",
+               "release_versions"=> [Hash["version", "1", "commit_hash", "unknown", "uncommitted_changes", false, "currently_deployed", true]]},
+              {"name"=>"release-2",
+               "release_versions"=> [Hash["version", "2", "commit_hash", "0b2c3d", "uncommitted_changes", true, "currently_deployed", false]]}
           ]
-        end
 
-        response_collection.should == expected_collection
+        body.should == Yajl::Encoder.encode(expected_collection)
       end
 
       it "returns empty collection if there are no releases" do

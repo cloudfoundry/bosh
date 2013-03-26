@@ -15,7 +15,7 @@ module Bosh::Director
       # @return [String] path to the contents of the blobstore id
       def get_resource_path(id)
         blobstore_resource(id) do |blobstore|
-          random_name = "resource-#{UUIDTools::UUID.random_create}"
+          random_name = "resource-#{SecureRandom.uuid}"
           path = File.join(Dir.tmpdir, random_name)
 
           File.open(path, "w") do |f|

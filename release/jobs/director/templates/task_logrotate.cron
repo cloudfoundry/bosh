@@ -1,0 +1,1 @@
+0 0 * * * /var/vcap/jobs/director/bin/task_logrotate >>/var/vcap/sys/log/director/task_logrotate.log 2>&1

@@ -20,6 +20,7 @@ require "optparse"
 require "ostruct"
 require "pathname"
 require "progressbar"
+require "resolv"
 require "set"
 require "tempfile"
 require "terminal-table/import"
@@ -38,6 +39,7 @@ unless defined?(Bosh::Cli::VERSION)
 end
 
 require "common/common"
+require "common/exec"
 
 require "cli/config"
 require "cli/core_ext"

@@ -2,6 +2,7 @@
 
 module Bosh::Agent
   class Util
+    include Bosh::Exec
 
     # TODO: convert to module?
     # TODO: don't use MessageHandlerError here?
@@ -86,13 +87,12 @@ module Bosh::Agent
           raise Bosh::Agent::MessageHandlerError, "Not a blockdevice"
         end
 
-        child = POSIX::Spawn::Child.new('/sbin/sfdisk', '-s', block_device)
-        result = child.out
-        unless result.match(/\A\d+\Z/) && child.status.exitstatus == 0
+        result = sh("/sbin/sfdisk -s #{block_device} 2>&1")
+        unless result.output.match(/\A\d+\Z/)
           raise Bosh::Agent::MessageHandlerError,
             "Unable to determine disk size"
         end
-        result.to_i
+        result.output.to_i
       end
 
       def run_hook(hook, job_template_name)
@@ -110,15 +110,22 @@ module Bosh::Agent
           'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin',
         }
 
-        child = POSIX::Spawn::Child.new(env, hook_file, :unsetenv_others => true)
+        stdout_rd, stdout_wr = IO.pipe
+        stderr_rd, stderr_wr = IO.pipe
+        Process.spawn(env, hook_file, :out => stdout_wr, :err => stderr_wr, :unsetenv_others => true)
+        Process.wait
+        exit_status = $?.exitstatus
+        stdout_wr.close
+        stderr_wr.close
+        result = stdout_rd.read
+        error_output = stderr_rd.read
 
-        result = child.out
         logger.info("Hook #{hook} for job #{job_template_name}: #{result}")
 
-        unless child.status.exitstatus == 0
+        unless exit_status == 0
           exception_message = "Hook #{hook} for #{job_template_name} failed "
-          exception_message += "(exit: #{child.status.exitstatus}) "
-          exception_message += " stderr: #{child.err}, stdout: #{result}"
+          exception_message += "(exit: #{exit_status}) "
+          exception_message += " stderr: #{error_output}, stdout: #{result}"
           logger.info(exception_message)
 
           raise Bosh::Agent::MessageHandlerError, exception_message

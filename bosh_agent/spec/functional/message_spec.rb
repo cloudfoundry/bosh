@@ -2,7 +2,6 @@
 
 require File.dirname(__FILE__) + "/../spec_helper"
 
-require "posix/spawn"
 require "nats/client"
 require "yajl"
 
@@ -62,19 +61,30 @@ describe "messages" do
     @user = "nats"
     @pass = "nats"
     @port = get_free_port
+    @smtp_port = get_free_port
     @nats_uri = "nats://#{@user}:#{@pass}@localhost:#{@port}"
     @agent_id = "rspec_agent"
 
     command = "nats-server --port #{@port} --user #{@user} --pass #{@pass}"
-    @nats_pid = POSIX::Spawn::spawn(command)
+    @nats_pid = Process.spawn(command)
 
     agent = File.expand_path("../../../bin/bosh_agent", __FILE__)
     @basedir = File.expand_path("../../../tmp", __FILE__)
     FileUtils.mkdir_p(@basedir) unless Dir.exist?(@basedir)
     command = "ruby #{agent} -n #{@nats_uri} -a #{@agent_id} -h 1"
-    command += " -b #{@basedir} -l ERROR"
-    @agent_pid = POSIX::Spawn::spawn(command)
+    command += " -b #{@basedir} -l ERROR -t #{@smtp_port}"
+    @agent_pid = Process.spawn(command)
     wait_for_nats
+  end
+
+
+
+  after(:all) do
+    Process.kill(:TERM, @agent_pid)
+    Process.waitpid(@agent_pid)
+    Process.kill(:TERM, @nats_pid)
+    Process.waitpid(@nats_pid)
+    FileUtils.rm_rf(@basedir)
   end
 
   it "should respond to state message" do
@@ -86,6 +96,19 @@ describe "messages" do
       value.should have_key('agent_id')
       value.should have_key('vm')
       value.should have_key('job_state')
+    end
+  end
+
+  it "should respond to state message with vitals" do
+    nats('state', ['full']) do |msg|
+      value = get_value(msg)
+      value.should have_key('deployment')
+      value.should have_key('networks')
+      value.should have_key('resource_pool')
+      value.should have_key('agent_id')
+      value.should have_key('vm')
+      value.should have_key('job_state')
+      value.should have_key('vitals')
     end
   end
 
@@ -165,11 +188,5 @@ describe "messages" do
     nats('foobar') do |msg|
       msg.should have_key('exception')
     end
-  end
-
-  after(:all) do
-    Process.kill(:TERM, @agent_pid)
-    Process.kill(:TERM, @nats_pid)
-    FileUtils.rm_rf(@basedir)
   end
 end

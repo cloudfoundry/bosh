@@ -4,9 +4,11 @@ require "spec_helper"
 
 describe Bosh::Cli::Director do
 
-  DUMMY_TARGET = "http://target"
+  DUMMY_TARGET = "http://target.example.com:8080"
 
   before do
+    URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
+    Resolv.should_receive(:getaddresses).with("target.example.com").and_return(["127.0.0.1"])
     @director = Bosh::Cli::Director.new(DUMMY_TARGET, "user", "pass")
     @director.stub(retry_wait_interval: 0)
   end
@@ -294,6 +296,8 @@ describe Bosh::Cli::Director do
       it "returns without tracking/polling task if request responded with a redirect to task URL" do
         options = { :arg1 => 1, :arg2 => 2 }
 
+        URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
+        Resolv.should_receive(:getaddresses).with("target.example.com").and_return(["127.0.0.1"])
         @director = Bosh::Cli::Director.new(DUMMY_TARGET, "user", "pass", :no_track => true)
 
         @director.should_receive(:request).
@@ -369,13 +373,14 @@ describe Bosh::Cli::Director do
         with(Bosh::Cli::Director::API_TIMEOUT)
       client.should_receive(:connect_timeout=).
         with(Bosh::Cli::Director::CONNECT_TIMEOUT)
+      URI.should_receive(:parse).with("http://nil-uri-given/").and_call_original
       HTTPClient.stub!(:new).and_return(client)
 
       client.should_receive(:request).
-        with(:get, "http://target/stuff", :body => "payload",
+        with(:get, "http:///127.0.0.1:8080/stuff", :body => "payload",
              :header => headers.merge("Authorization" => auth))
       @director.send(:perform_http_request, :get,
-                     "http://target/stuff", "payload", headers)
+                     "http:///127.0.0.1:8080/stuff", "payload", headers)
     end
   end
 
@@ -385,11 +390,11 @@ describe Bosh::Cli::Director do
                            :body => "test", :headers => {})
 
       @director.should_receive(:perform_http_request).
-        with(:get, "http://target/stuff", "payload", "h1" => "a",
+        with(:get, "http://127.0.0.1:8080/stuff", "payload", "h1" => "a",
              "h2" => "b", "Content-Type" => "app/zb").
         and_return(mock_response)
 
-      @director.request(:get, "/stuff", "app/zb", "payload",
+      @director.send(:request, :get, "/stuff", "app/zb", "payload",
                         { "h1" => "a", "h2" => "b"}).
           should == [200, "test", {}]
     end
@@ -408,7 +413,7 @@ describe Bosh::Cli::Director do
 
           @director.should_receive(:perform_http_request).
             and_return(mock_response)
-          @director.request(:get, "/stuff", "application/octet-stream",
+          @director.send(:request, :get, "/stuff", "application/octet-stream",
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
                              "Error 40422: Weird stuff happened")
@@ -420,7 +425,7 @@ describe Bosh::Cli::Director do
                                :headers => {})
           @director.should_receive(:perform_http_request).
             and_return(mock_response)
-          @director.request(:get, "/stuff", "application/octet-stream",
+          @director.send(:request, :get, "/stuff", "application/octet-stream",
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
                              "HTTP #{code}: " +
@@ -433,7 +438,7 @@ describe Bosh::Cli::Director do
                                :headers => {})
           @director.should_receive(:perform_http_request).
             and_return(mock_response)
-          @director.request(:get, "/stuff", "application/octet-stream",
+          @director.send(:request, :get, "/stuff", "application/octet-stream",
                             "payload", { :hdr1 => "a", :hdr2 => "b"})
         }.should raise_error(Bosh::Cli::DirectorError,
                              "HTTP #{code}: " +
@@ -447,7 +452,7 @@ describe Bosh::Cli::Director do
         @director.should_receive(:perform_http_request).
           and_raise(err.new("err message"))
         lambda {
-          @director.request(:get, "/stuff", "app/zb", "payload", { })
+          @director.send(:request, :get, "/stuff", "app/zb", "payload", { })
         }.should raise_error(Bosh::Cli::DirectorInaccessible)
       end
 
@@ -455,7 +460,7 @@ describe Bosh::Cli::Director do
         and_raise(SystemCallError.new("err message", 22))
 
       lambda {
-        @director.request(:get, "/stuff", "app/zb", "payload", { })
+        @director.send(:request, :get, "/stuff", "app/zb", "payload", { })
       }.should raise_error Bosh::Cli::DirectorError
     end
 
@@ -464,7 +469,7 @@ describe Bosh::Cli::Director do
       @director.should_receive(:sleep).with(2).exactly(2).times
 
       expect {
-        @director.try_to_perform_http_request(:get, "/stuff/app/zb", "payload", { }, 3, 2)
+        @director.send(:try_to_perform_http_request, :get, "/stuff/app/zb", "payload", { }, 3, 2)
       }.to raise_error(Bosh::Cli::DirectorInaccessible)
     end
 
@@ -475,7 +480,7 @@ describe Bosh::Cli::Director do
         and_yield("test body").and_return(mock_response)
 
       code, filename, headers =
-        @director.request(:get,
+        @director.send(:request, :get,
                           "/files/foo", nil, nil,
                           { }, { :file => true })
 

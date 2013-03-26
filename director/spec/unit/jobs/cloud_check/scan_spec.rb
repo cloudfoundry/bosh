@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require File.expand_path("../../../../spec_helper", __FILE__)
+require "spec_helper"
 
 describe Bosh::Director::Jobs::CloudCheck::Scan do
 
@@ -17,6 +17,23 @@ describe Bosh::Director::Jobs::CloudCheck::Scan do
       @job.should_receive(:scan_vms).ordered
       @job.should_receive(:scan_disks).ordered
       @job.perform.should == "scan complete"
+    end
+
+    describe "resetting previously encountered problems" do
+
+      it "should mark all open problems as closed" do
+        problem = BDM::DeploymentProblem.make({
+            :counter => 1,
+            :type => 'inactive_disk',
+            :deployment => @deployment,
+            :state => 'open'
+        })
+
+        @job.reset
+
+        BDM::DeploymentProblem.any?(&:open?).should be_false
+        BDM::DeploymentProblem[problem.id].state.should == "closed"
+      end
     end
 
     describe "disc scan" do

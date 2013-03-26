@@ -13,12 +13,26 @@ module Bosh
       def initialize(options)
         super(options)
         @atmos_options = {
-          :url => @options[:url],
-          :uid => @options[:uid],
-          :secret => @options[:secret]
+            :url => @options[:url],
+            :uid => @options[:uid],
+            :secret => @options[:secret]
         }
         @tag = @options[:tag]
-        @http_client = HTTPClient.new
+
+        # Add proxy if ENV has the variable
+        proxy = case URI::parse(@atmos_options[:url] || '').scheme
+                  when 'https'
+                    ENV['HTTPS_PROXY'] || ENV['https_proxy']
+                  when 'http'
+                    ENV['HTTP_PROXY'] || ENV['http_proxy']
+                  else
+                    nil
+                end
+        if proxy
+          @atmos_options[:proxy] = proxy
+          @http_client = HTTPClient.new(:proxy => proxy)
+        end
+        @http_client ||= HTTPClient.new
         # TODO: Remove this line once we get the proper certificate for atmos
         @http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end

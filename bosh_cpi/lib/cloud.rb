@@ -98,6 +98,15 @@ module Bosh
     end
 
     ##
+    # Checks if a VM exists
+    #
+    # @param [String] vm vm id that was once returned by {#create_vm}
+    # @return [Boolean] True if the vm exists
+    def has_vm?(vm_id)
+      not_implemented(:has_vm?)
+    end
+
+    ##
     # Reboots a VM
     #
     # @param [String] vm vm id that was once returned by {#create_vm}

@@ -24,17 +24,20 @@ describe Bosh::Cli::Command::AWS do
       before do
         Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)
         Bosh::Cli::Command::Micro.any_instance.stub(:perform)
+        Bosh::Cli::Command::User.any_instance.stub(:create)
         Bosh::Cli::Command::Misc.any_instance.stub(:login)
-        aws.stub(:latest_micro_ami).and_return("ami-123456")
+        aws.stub(:micro_ami).and_return("ami-123456")
       end
 
       it "should generate a microbosh.yml in the right location" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         File.exist?("deployments/micro/micro_bosh.yml").should == false
         aws.bootstrap_micro
         File.exist?("deployments/micro/micro_bosh.yml").should == true
       end
 
       it "should remove any existing deployment artifacts first" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         FileUtils.mkdir_p("deployments/micro")
         File.open("deployments/leftover.yml", "w") { |f| f.write("old stuff!") }
         File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
@@ -46,13 +49,22 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "should deploy a micro bosh" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         Bosh::Cli::Command::Micro.any_instance.should_receive(:micro_deployment).with("micro")
         Bosh::Cli::Command::Micro.any_instance.should_receive(:perform).with("ami-123456")
         aws.bootstrap_micro
       end
 
-      it "should login as admin:admin" do
+      it "should login with admin/admin with non-interactive mode" do
+        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
         Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("admin", "admin")
+        aws.bootstrap_micro
+      end
+
+      it "should login with created user with interactive mode" do
+        Bosh::Cli::Command::User.any_instance.should_receive(:create).with("foo", "foo")
+        Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("foo", "foo")
+        aws.stub(:ask).and_return("foo")
         aws.bootstrap_micro
       end
     end
@@ -1009,10 +1021,29 @@ describe Bosh::Cli::Command::AWS do
     end
   end
 
-  describe "latest_micro_ami" do
-    it "returns the content from S3" do
-      Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").and_return("ami-david")
-      aws.latest_micro_ami.should == "ami-david"
+  describe "micro_ami" do
+    context "when the environment provides an override AMI" do
+      before(:all) do
+        ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] = 'ami-tgupta'
+      end
+
+      after(:all) do
+        ENV.delete "BOSH_OVERRIDE_MICRO_STEMCELL_AMI"
+      end
+
+      it "uses the given AMI" do
+        aws.micro_ami.should == 'ami-tgupta'
+      end
+    end
+
+    context "when the environment does not provide an override AMI" do
+      before do
+        Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").and_return("ami-david")
+      end
+
+      it "returns the content from S3" do
+        aws.micro_ami.should == "ami-david"
+      end
     end
   end
 end

@@ -85,7 +85,7 @@ describe Bosh::Cli::Command::Base do
 
     it "respects director checks option when logging in" do
       @director.stub!(:get_status).
-        and_return({ "user" => "user", "name" => "ZB" })
+          and_return({"user" => "user", "name" => "ZB"})
       @director.stub(:authenticated?).and_return(true)
 
       @cmd.set_target("test")
@@ -102,7 +102,7 @@ describe Bosh::Cli::Command::Base do
     before :each do
       @director = mock(Bosh::Cli::Director)
       @director.stub(:list_stemcells).
-          and_return([{ "name" => "foo", "version" => "123" }])
+          and_return([{"name" => "foo", "version" => "123"}])
       @director.should_receive(:list_stemcells)
 
       @cmd = Bosh::Cli::Command::Stemcell.new
@@ -158,7 +158,7 @@ describe Bosh::Cli::Command::Base do
 
     it "allows deleting the deployment" do
       @director.should_receive(:delete_deployment).
-        with("foo", :force => false)
+          with("foo", :force => false)
 
       @cmd.stub!(:interactive?).and_return(false)
       @cmd.delete("foo")
@@ -174,7 +174,7 @@ describe Bosh::Cli::Command::Base do
 
     it "lists deployments and doesn't fetch manifest on new director" do
       @director.should_receive(:list_deployments).
-        and_return([{ "name" => "foo", "releases" => [], "stemcells" => [] }])
+          and_return([{"name" => "foo", "releases" => [], "stemcells" => []}])
       @director.should_not_receive(:get_deployment)
 
       @cmd.list
@@ -182,7 +182,7 @@ describe Bosh::Cli::Command::Base do
 
     it "lists deployments and fetches manifest on old director" do
       @director.should_receive(:list_deployments).
-        and_return([{ "name" => "foo" }])
+          and_return([{"name" => "foo"}])
       @director.should_receive(:get_deployment).with("foo").and_return({})
 
       @cmd.list
@@ -240,17 +240,90 @@ describe Bosh::Cli::Command::Base do
       @cmd.delete("foo")
     end
 
+    describe "listing releases" do
+      before do
+        @cmd.stub :nl
+      end
+
+      context "when the director doesn't include commit hash information (version < 1.5)" do
+        let(:release) do
+          {
+              "name" => "release-1",
+              "versions" => ["2.1-dev", "15", "2", "1"],
+              "in_use" => ["2.1-dev"]
+          }
+        end
+
+        let(:releases_table) do
+          <<-OUT.gsub(/^\s*/, '').chomp
+      +-----------+--------------------+
+      | Name      | Versions           |
+      +-----------+--------------------+
+      | release-1 | 1, 2, 2.1-dev*, 15 |
+      +-----------+--------------------+
+          OUT
+        end
+
+        it "lists releases in a nice table and include information about current deployments" do
+          @director.stub(list_releases: [release])
+
+          @cmd.should_receive(:say).with(releases_table)
+          @cmd.should_receive(:say).with("(*) Currently deployed")
+          @cmd.should_receive(:say).with("Releases total: 1")
+
+          @cmd.list
+        end
+      end
+
+      context "when the director includes commit hash information (version >= 1.5)" do
+        let(:release) do
+          {
+              "name" => "release-1",
+              "release_versions" => [
+                  {"version" => "2.1-dev", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => true},
+                  {"version" => "15", "commit_hash" => "1a2b3c4d", "uncommitted_changes" => true, "currently_deployed" => false},
+                  {"version" => "2", "commit_hash" => "00000000", "uncommitted_changes" => true, "currently_deployed" => false},
+                  {"version" => "1", "commit_hash" => "unknown", "uncommitted_changes" => false, "currently_deployed" => false}
+              ]
+          }
+        end
+
+        let(:releases_table) do
+          <<-OUT.gsub(/^\s*/, '').chomp
+      +-----------+----------+-------------+
+      | Name      | Versions | Commit Hash |
+      +-----------+----------+-------------+
+      | release-1 | 1        | unknown     |
+      |           | 2        | 00000000+   |
+      |           | 2.1-dev* | unknown     |
+      |           | 15       | 1a2b3c4d+   |
+      +-----------+----------+-------------+
+          OUT
+        end
+
+        it "lists releases in a nice table and includes information about current deployments and uncommitted changes" do
+          @director.stub(list_releases: [release])
+
+          @cmd.should_receive(:say).with(releases_table)
+          @cmd.should_receive(:say).with("(*) Currently deployed")
+          @cmd.should_receive(:say).with("(+) Uncommitted changes")
+          @cmd.should_receive(:say).with("Releases total: 1")
+
+          @cmd.list
+        end
+      end
+    end
   end
 
   describe Bosh::Cli::Command::JobManagement do
     before :each do
       @manifest_path = spec_asset("deployment.MF")
-      @manifest_yaml = YAML.dump({ "name" => "foo" })
+      @manifest_yaml = YAML.dump({"name" => "foo"})
 
       @cmd = Bosh::Cli::Command::JobManagement.new
       @cmd.add_option(:non_interactive, true)
       @cmd.stub!(:prepare_deployment_manifest).
-        with(:yaml => true).and_return(@manifest_yaml)
+          with(:yaml => true).and_return(@manifest_yaml)
       @cmd.stub!(:deployment).and_return(@manifest_path)
       @cmd.stub!(:target).and_return("test.com")
       @cmd.stub!(:target_name).and_return("dev2")
@@ -262,62 +335,62 @@ describe Bosh::Cli::Command::Base do
 
     it "allows starting jobs" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", nil, "started")
+          with("foo", @manifest_yaml, "dea", nil, "started")
       @cmd.start_job("dea")
     end
 
     it "allows starting job instances" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", 3, "started")
+          with("foo", @manifest_yaml, "dea", 3, "started")
       @cmd.start_job("dea", 3)
     end
 
     it "allows stopping jobs" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", nil, "stopped")
+          with("foo", @manifest_yaml, "dea", nil, "stopped")
       @cmd.stop_job("dea")
     end
 
     it "allows stopping job instances" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", 3, "stopped")
+          with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.stop_job("dea", 3)
     end
 
     it "allows restarting jobs" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", nil, "restart")
+          with("foo", @manifest_yaml, "dea", nil, "restart")
       @cmd.restart_job("dea")
     end
 
     it "allows restart job instances" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", 3, "restart")
+          with("foo", @manifest_yaml, "dea", 3, "restart")
       @cmd.restart_job("dea", 3)
     end
 
     it "allows recreating jobs" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", nil, "recreate")
+          with("foo", @manifest_yaml, "dea", nil, "recreate")
       @cmd.recreate_job("dea")
     end
 
     it "allows recreating job instances" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", 3, "recreate")
+          with("foo", @manifest_yaml, "dea", 3, "recreate")
       @cmd.recreate_job("dea", 3)
     end
 
     it "allows hard stop" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", 3, "detached")
+          with("foo", @manifest_yaml, "dea", 3, "detached")
       @cmd.add_option(:hard, true)
       @cmd.stop_job("dea", 3)
     end
 
     it "allows soft stop (= regular stop)" do
       @director.should_receive(:change_job_state).
-        with("foo", @manifest_yaml, "dea", 3, "stopped")
+          with("foo", @manifest_yaml, "dea", 3, "stopped")
       @cmd.add_option(:soft, true)
       @cmd.stop_job("dea", 3)
     end
@@ -335,7 +408,7 @@ describe Bosh::Cli::Command::Base do
       @cmd.should_receive(:check_if_release_dir)
       Bosh::Cli::Release.stub!(:new).and_return(@release)
       Bosh::Cli::BlobManager.stub!(:new).with(@release).
-        and_return(@blob_manager)
+          and_return(@blob_manager)
     end
 
     it "prints blobs status" do

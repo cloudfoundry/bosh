@@ -5,7 +5,13 @@ module Bosh::Agent
     class State < Base
 
       def self.process(args)
-        self.new.state
+        self.new(args).state
+      end
+
+      def initialize(args = nil)
+        if args.is_a?(Array)
+          @full_format = true if args.include?("full")
+        end
       end
 
       def state
@@ -21,6 +27,11 @@ module Bosh::Agent
         response["job_state"] = job_state
         response["bosh_protocol"] = Bosh::Agent::BOSH_PROTOCOL
         response["ntp"] = Bosh::Agent::NTP.offset
+
+        if @full_format
+          response["vitals"] = Bosh::Agent::Monit.get_vitals
+          response["vitals"]["disk"] = Bosh::Agent::Message::DiskUtil.get_usage
+        end
 
         response
 

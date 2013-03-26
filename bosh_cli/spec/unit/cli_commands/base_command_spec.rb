@@ -72,7 +72,7 @@ describe Bosh::Cli::Command::Base do
 
     cmd = make
     cmd.director.should be_kind_of(Bosh::Cli::Director)
-    cmd.director.director_uri.should == "http://localhost:8080"
+    cmd.director.director_uri.should == URI.parse("http://localhost:8080")
   end
 
   it "has logged_in? helper" do

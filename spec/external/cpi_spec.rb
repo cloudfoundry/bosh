@@ -9,20 +9,20 @@ require "bosh_aws_bootstrap/vpc"
 
 describe Bosh::AwsCloud::Cloud do
   let(:cpi_options) do
-      {
-          "aws" => {
-              "region" => "us-east-1",
-              "default_key_name" => "bosh",
-              "fast_path_delete" => "yes",
-              "access_key_id" => ENV["BOSH_AWS_ACCESS_KEY_ID"],
-              "secret_access_key" => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
-          },
-          "registry" => {
-              "endpoint" => "fake",
-              "user" => "fake",
-              "password" => "fake"
-          }
-      }
+    {
+        "aws" => {
+            "region" => "us-east-1",
+            "default_key_name" => "bosh",
+            "fast_path_delete" => "yes",
+            "access_key_id" => ENV["BOSH_AWS_ACCESS_KEY_ID"],
+            "secret_access_key" => ENV["BOSH_AWS_SECRET_ACCESS_KEY"],
+        },
+        "registry" => {
+            "endpoint" => "fake",
+            "user" => "fake",
+            "password" => "fake"
+        }
+    }
   end
 
   let(:cpi) { described_class.new(cpi_options) }
@@ -52,11 +52,16 @@ describe Bosh::AwsCloud::Cloud do
 
   after do
     cpi.delete_disk(@volume_id) if @volume_id
-    cpi.delete_vm(@instance_id) if @instance_id
+    if @instance_id
+      cpi.delete_vm(@instance_id)
 
-    if @vpc
       instance = ec2.instances_for_ids([@instance_id]).first
       ::Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :terminated)
+
+      cpi.has_vm?(@instance_id).should be_false
+    end
+
+    if @vpc
       # this returns before the resource is freed. add sleep to ensure subnet has no more dependencies
       # and can be deleted safely
       sleep 8
@@ -76,6 +81,8 @@ describe Bosh::AwsCloud::Cloud do
 
     @instance_id.should_not be_nil
 
+    cpi.has_vm?(@instance_id).should be_true
+
     vm_metadata = {:job => "cpi_spec", :index => "0"}
     cpi.set_vm_metadata(@instance_id, vm_metadata)
 
@@ -83,6 +90,7 @@ describe Bosh::AwsCloud::Cloud do
     @volume_id.should_not be_nil
 
     cpi.attach_disk(@instance_id, @volume_id)
+    # can attempt to detach before API consistently finishes attaching
     cpi.detach_disk(@instance_id, @volume_id)
   end
 
