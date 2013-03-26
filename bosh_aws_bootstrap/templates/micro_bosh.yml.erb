@@ -47,7 +47,7 @@ apply_spec:
      <% if compiled_package_cache? %>
     compiled_package_cache:
       plugin: s3
-      properties:
+      options:
         access_key_id: <%= cache_access_key_id %>
         secret_access_key: <%= cache_secret_access_key %>
         bucket_name: <%= cache_bucket_name %>
