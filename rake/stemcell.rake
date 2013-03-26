@@ -159,6 +159,8 @@ namespace :stemcell do
         hypervisor = "xen"
       when "openstack"
         hypervisor = "kvm"
+      when "warden"
+        hypervisor = "warden"
       else
         raise "Unknown infrastructure: #{infrastructure}"
     end

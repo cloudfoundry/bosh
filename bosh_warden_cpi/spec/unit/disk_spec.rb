@@ -2,11 +2,12 @@ require "spec_helper"
 
 describe Bosh::WardenCloud::Cloud do
   attr_reader :logger
-  
-  let!(:disk_root) { Dir.mktmpdir("warden-cpi-disk") }
-  let(:cloud) { Bosh::Clouds::Provider.create(:warden, {"disk" => {"root" => disk_root, "fs" => "ext4"}}) }
-  
-  before do
+
+  before :each do
+    @logger = Bosh::Clouds::Config.logger
+
+    @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
+
     [:connect, :disconnect].each do |op|
       Warden::Client.any_instance.stub(op) do
         # no-op
@@ -14,14 +15,25 @@ describe Bosh::WardenCloud::Cloud do
     end
   end
 
-  after do
-    FileUtils.rm_rf disk_root
+  after :each do
     Bosh::WardenCloud::Models::Disk.dataset.delete
+  end
+
+  def mock_create_disk
+    zero_exit_status = mock("Process::Status", :exit_status => 0)
+    Bosh::Exec.should_receive(:sh).with(%r!\bmkfs -t ext4\b!).ordered.and_return(zero_exit_status)
+    Bosh::Exec.should_receive(:sh).with(%r!\bsudo .* losetup /dev/loop\d+\b!).ordered.and_return(zero_exit_status)
+  end
+
+  def attach_disk(disk_id)
+    disk = Bosh::WardenCloud::Models::Disk[disk_id.to_i]
+    disk.attached = true
+    disk.save
   end
 
   context "create_disk" do
     it "can create disk" do
-      cloud.delegate.should_receive(:sudo).with(/losetup \/dev\/loop[0-9]* .*/)
+      mock_create_disk
 
       disk_id  = cloud.create_disk(1, nil)
 
@@ -32,8 +44,6 @@ describe Bosh::WardenCloud::Cloud do
         Dir.glob("*").should include(image)
 
         File.stat(image).size.should == 1 << 20
-        Bosh::Exec.sh("fsck.ext4 -a #{image}").exit_status.should == 0
-
       end
     end
 
@@ -57,7 +67,7 @@ describe Bosh::WardenCloud::Cloud do
       }.to raise_error
 
       Bosh::WardenCloud::Models::Disk.dataset.all.size.should == 0
-      Dir.chdir(disk_root) do
+      Dir.chdir(@disk_root) do
         Dir.glob("*").should be_empty
       end
     end
@@ -65,14 +75,13 @@ describe Bosh::WardenCloud::Cloud do
 
   context "delete_disk" do
     before :each do
-      cloud.delegate.stub(:sudo) { }
-      @disk_id = cloud.create_disk(1, nil)
+      mock_create_disk
+
+      @disk_id = @cloud.create_disk(1, nil)
     end
 
     it "can delete disk" do
-
-      Dir.chdir(disk_root) do
-
+      Dir.chdir(@disk_root) do
         Dir.glob("*").should have(1).items
         Dir.glob("*").should include(image_file(@disk_id))
 
@@ -98,11 +107,4 @@ describe Bosh::WardenCloud::Cloud do
       }.to raise_error Bosh::Clouds::CloudError
     end
   end
-end
-
-def attach_disk(disk_id)
-  disk = Bosh::WardenCloud::Models::Disk[disk_id.to_i]
-  disk.attached = true
-
-  disk.save
 end

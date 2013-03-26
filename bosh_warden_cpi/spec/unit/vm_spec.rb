@@ -13,16 +13,15 @@ describe Bosh::WardenCloud::Cloud do
   end
 
   before :all do
-    @stemcell_root = Dir.mktmpdir("warden-cpi")
+    @stemcell_root = cloud_options["stemcell"]["root"]
     @stemcell_path = File.join(@stemcell_root, DEFAULT_STEMCELL_ID)
     FileUtils.mkdir_p(@stemcell_path)
   end
 
   after(:all) { FileUtils.rm_rf(@stemcell_root) }
 
-  before do
-    Bosh::WardenCloud::Models::Disk.dataset.delete
-    Bosh::WardenCloud::Models::VM.dataset.delete
+  before :each do
+    @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
 
     [:connect, :disconnect].each do |op|
       Warden::Client.any_instance.stub(op) do
@@ -31,20 +30,26 @@ describe Bosh::WardenCloud::Cloud do
     end
   end
 
+  before :each do
+    Bosh::WardenCloud::Models::Disk.dataset.delete
+    Bosh::WardenCloud::Models::VM.dataset.delete
+  end
+
   context "create_vm" do
-    before do
+    before :each do
+      Warden::Client.any_instance.stub(:call) do |req|
+        res = req.create_response
 
-      Warden::Client.any_instance.stub(:call) do |request|
-        resp = nil
-        if request.instance_of? Warden::Protocol::CreateRequest
-          request.network.should == "1.1.1.1"
-          request.rootfs.should == @stemcell_path
+        case req
+        when Warden::Protocol::CreateRequest
+          req.network.should == "1.1.1.1"
+          req.rootfs.should == @stemcell_path
 
-          resp = Warden::Protocol::CreateResponse.new
-          resp.handle = DEFAULT_HANDLE
-        elsif request.instance_of? Warden::Protocol::CopyInRequest
-          raise "Container not found" unless request.handle == DEFAULT_HANDLE
-          env = Yajl::Parser.parse(File.read(request.src_path))
+          res.handle = DEFAULT_HANDLE
+
+        when Warden::Protocol::CopyInRequest
+          raise "Container not found" unless req.handle == DEFAULT_HANDLE
+          env = Yajl::Parser.parse(File.read(req.src_path))
           env["agent_id"].should == DEFAULT_AGENT_ID
           env["vm"]["name"].should_not == nil
           env["vm"]["id"].should_not == nil
@@ -52,24 +57,25 @@ describe Bosh::WardenCloud::Cloud do
           env["ntp"].should be_instance_of Array
           env["blobstore"].should be_instance_of Hash
 
-          resp = Warden::Protocol::CopyInResponse.new
-        elsif request.instance_of? Warden::Protocol::RunRequest
-          resp = Warden::Protocol::RunResponse.new
-        elsif request.instance_of? Warden::Protocol::SpawnRequest
-          request.script.should == "/usr/sbin/runsvdir-start"
-          request.privileged.should == true
+          res = req.create_response
 
-          resp = Warden::Protocol::SpawnResponse.new
-        elsif request.instance_of? Warden::Protocol::DestroyRequest
+        when Warden::Protocol::RunRequest
+          # Ignore
+
+        when Warden::Protocol::SpawnRequest
+          req.script.should == "/usr/sbin/runsvdir-start"
+          req.privileged.should == true
+
+        when Warden::Protocol::DestroyRequest
+          req.handle.should == DEFAULT_HANDLE
+
           @destroy_called = true
-          request.handle.should == DEFAULT_AGENT_ID
 
-          resp = Warden::Protocol::DestroyResponse.new
         else
-          raise "not supported"
+          raise "#{req} not supported"
         end
 
-        resp
+        res
       end
     end
 
@@ -104,16 +110,23 @@ describe Bosh::WardenCloud::Cloud do
     end
 
     it "should clean up DB and warden when an error raised" do
-      cloud.delegate.stub(:sudo) { raise 'error' }
+      class FakeError < StandardError; end
+
+      @cloud.delegate.stub(:sudo) { raise FakeError.new }
 
       network_spec = {
         "nic1" => { "ip" => "1.1.1.1", "type" => "static" },
       }
-      expect {
-        cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
-      }.to raise_error
+
+      begin
+        @cloud.create_vm(DEFAULT_AGENT_ID, DEFAULT_STEMCELL_ID, nil, network_spec)
+      rescue FakeError
+      else
+        raise "Expected FakeError"
+      end
 
       Bosh::WardenCloud::Models::VM.dataset.all.size.should == 0
+
       @destroy_called.should be_true
     end
   end
@@ -126,17 +139,18 @@ describe Bosh::WardenCloud::Cloud do
 
       Bosh::WardenCloud::Models::VM.dataset.all.size.should == 1
 
-      Warden::Client.any_instance.stub(:call) do |request|
-        resp = nil
-        if request.instance_of? Warden::Protocol::DestroyRequest
-          request.handle.should == DEFAULT_HANDLE
+      Warden::Client.any_instance.stub(:call) do |req|
+        res = req.create_response
 
-          resp = Warden::Protocol::DestroyResponse.new
+        case req
+        when Warden::Protocol::DestroyRequest
+          req.handle.should == DEFAULT_HANDLE
+
         else
-          raise "not supported"
+          raise "#{req} not supported"
         end
 
-        resp
+        res
       end
 
       cloud.delete_vm(vm.id.to_s)

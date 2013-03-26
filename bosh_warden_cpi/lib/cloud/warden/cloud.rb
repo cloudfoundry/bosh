@@ -60,7 +60,7 @@ module Bosh::WardenCloud
         stemcell_id
       end
     rescue => e
-      sudo "rm -rf #{stemcell_dir}" rescue nil
+      sudo "rm -rf #{stemcell_dir}"
 
       raise e
     end
@@ -159,10 +159,10 @@ module Bosh::WardenCloud
             request.handle = vm.container_id
 
             client.call(request)
-          end rescue nil
+          end
         end
 
-        vm.destroy rescue nil
+        vm.destroy
       end
       raise e
     end
@@ -244,11 +244,11 @@ module Bosh::WardenCloud
       end
     rescue => e
       if number
-        sudo "losetup -d /dev/loop#{number}" rescue nil
+        sudo "losetup -d /dev/loop#{number}"
         @pool.release(number)
       end
-      FileUtils.rm_f image_file if image_file rescue nil
-      disk.destroy if disk rescue nil
+      FileUtils.rm_f image_file if image_file
+      disk.destroy if disk
 
       raise e
     end

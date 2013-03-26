@@ -12,7 +12,10 @@ describe Bosh::WardenCloud::Cloud do
       "disk" => {
         "root" => @disk_root,
         "fs" => "ext4",
-      }
+      },
+      "stemcell" => {
+        "root" => @disk_root,
+      },
     }
 
     @cloud = Bosh::Clouds::Provider.create(:warden, options)
@@ -53,7 +56,7 @@ describe Bosh::WardenCloud::Cloud do
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
 
-        if request.instance_of? Warden::Protocol::RunRequest
+        if request.instance_of?(Warden::Protocol::RunRequest)
           resp = Warden::Protocol::RunResponse.new
           resp.stdout = "/dev/sda1\n"
         else
@@ -95,7 +98,11 @@ describe Bosh::WardenCloud::Cloud do
       Warden::Client.any_instance.stub(:call) do |request|
         resp = nil
 
+<<<<<<< HEAD:warden_cpi/spec/unit/attach_disk_spec.rb
         if request.instance_of? Warden::Protocol::RunRequest
+=======
+        if request.instance_of?(Warden::Protocol::RunRequest)
+>>>>>>> warden-cpi-wip:bosh_warden_cpi/spec/unit/attach_disk_spec.rb
           resp = Warden::Protocol::RunResponse.new
         else
           raise "not supported"
