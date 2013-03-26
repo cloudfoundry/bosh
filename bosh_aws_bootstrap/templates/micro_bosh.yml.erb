@@ -44,11 +44,11 @@ apply_spec:
       default_security_groups: ["bosh"]
       ec2_endpoint: ec2.<%= region %>.amazonaws.com
       region: <%= region %>
-     <%- if compiled_package_cache? %>
+     <% if compiled_package_cache? %>
     compiled_package_cache:
       plugin: s3
       options:
         access_key_id: <%= cache_access_key_id %>
         secret_access_key: <%= cache_secret_access_key %>
         bucket_name: <%= cache_bucket_name %>
-    <%- end %>
+    <% end %>
