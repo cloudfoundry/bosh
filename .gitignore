@@ -32,7 +32,7 @@ director/director.db
 micro/tmp
 health_monitor/spec/assets/dev*.yml
 ci_result/
-**/vendor/
+/*/vendor/
 **/Gemfile
 **/Gemfile.lock
 /bin/
