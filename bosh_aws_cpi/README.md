@@ -52,6 +52,8 @@ These options are specified under `cloud_options` in the `resource_pools` sectio
   the EC2 availability zone the VMs should be created in
 * `instance_type` (required)  
   which [type of instance](http://aws.amazon.com/ec2/instance-types/) the VMs should belong to
+* `provisioned_iops` (optional)
+  the [provisioned iops] EBS (http://aws.amazon.com/ebs/) the VMs should be using
 
 ### Network options
 

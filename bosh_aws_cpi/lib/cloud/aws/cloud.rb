@@ -10,6 +10,7 @@ module Bosh::AwsCloud
     DEFAULT_EC2_ENDPOINT = "ec2.amazonaws.com"
     METADATA_TIMEOUT = 5 # in seconds
     DEVICE_POLL_TIMEOUT = 60 # in seconds
+    EBS_IOPS_TYPE = "io1"
 
     attr_reader :ec2
     attr_reader :registry
@@ -108,7 +109,8 @@ module Bosh::AwsCloud
               environment,
               preformatted?(resource_pool),
               stemcell.root_device_name,
-              @options['agent'] || {}
+              @options['agent'] || {},
+              resource_pool["provisioned_iops"]
           )
           registry.update_settings(instance.id, registry_settings)
 
@@ -186,6 +188,19 @@ module Bosh::AwsCloud
             :size => (size / 1024.0).ceil,
             :availability_zone => az
         }
+
+        settings = registry.read_settings(instance_id)
+        iops = settings["provisioned_iops"]
+
+        unless iops.nil?
+          cloud_error("EBS minimal provisioned IOPS is 100") if iops < 100
+          cloud_error("EBS maximal provisioned IOPS is 10000") if iops > 10000
+          iops_params = {
+              :volume_type => EBS_IOPS_TYPE,
+              :iops => iops
+          }
+          volume_params.merge!(iops_params)
+        end
 
         volume = @ec2.volumes.create(volume_params)
         @logger.info("Creating volume `#{volume.id}'")
@@ -548,7 +563,7 @@ module Bosh::AwsCloud
     # @param [Hash] environment
     # @param [String] root_device_name root device, e.g. /dev/sda1
     # @return [Hash]
-    def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties)
+    def initial_agent_settings(agent_id, network_spec, environment, preformatted, root_device_name, agent_properties, provisioned_iops)
       settings = {
           "vm" => {
               "name" => "vm-#{SecureRandom.uuid}"
@@ -563,6 +578,7 @@ module Bosh::AwsCloud
           }
       }
 
+      settings["provisioned_iops"] = provisioned_iops if provisioned_iops
       settings["env"] = environment if environment
       settings.merge(agent_properties)
     end
