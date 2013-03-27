@@ -80,10 +80,10 @@ module BoshExtensions
     err("Cannot load YAML file at `#{path}': #{e}".red)
   end
 
-  def dump_yaml_to_file(obj, file)
-    yaml = YAML.dump(obj)
-    file.write(yaml.gsub(" \n", "\n"))
-    file.flush
+  def write_yaml(manifest, path)
+    File.open(path, "w+") do |f|
+      f.write(manifest.to_yaml)
+    end
   end
 
   # @return [Fixnum]

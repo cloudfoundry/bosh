@@ -7,68 +7,10 @@ describe Bosh::Cli::Command::AWS do
                          File.dirname(__FILE__), "..", "..", "templates", "aws_configuration_template.yml.erb"
                      ))
   end
+
   before { aws.stub(:sleep) }
 
   describe "command line tools" do
-    describe "aws bootstrap micro" do
-      around do |example|
-        Dir.mktmpdir do |dirname|
-          Dir.chdir dirname do
-            FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
-            FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
-            example.run
-          end
-        end
-      end
-
-      before do
-        Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)
-        Bosh::Cli::Command::Micro.any_instance.stub(:perform)
-        Bosh::Cli::Command::User.any_instance.stub(:create)
-        Bosh::Cli::Command::Misc.any_instance.stub(:login)
-        aws.stub(:micro_ami).and_return("ami-123456")
-      end
-
-      it "should generate a microbosh.yml in the right location" do
-        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-        File.exist?("deployments/micro/micro_bosh.yml").should == false
-        aws.bootstrap_micro
-        File.exist?("deployments/micro/micro_bosh.yml").should == true
-      end
-
-      it "should remove any existing deployment artifacts first" do
-        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-        FileUtils.mkdir_p("deployments/micro")
-        File.open("deployments/leftover.yml", "w") { |f| f.write("old stuff!") }
-        File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
-        File.exist?("deployments/leftover.yml").should == true
-        File.exist?("deployments/micro/leftover.yml").should == true
-        aws.bootstrap_micro
-        File.exist?("deployments/leftover.yml").should == false
-        File.exist?("deployments/micro/leftover.yml").should == false
-      end
-
-      it "should deploy a micro bosh" do
-        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-        Bosh::Cli::Command::Micro.any_instance.should_receive(:micro_deployment).with("micro")
-        Bosh::Cli::Command::Micro.any_instance.should_receive(:perform).with("ami-123456")
-        aws.bootstrap_micro
-      end
-
-      it "should login with admin/admin with non-interactive mode" do
-        ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-        Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("admin", "admin")
-        aws.bootstrap_micro
-      end
-
-      it "should login with created user with interactive mode" do
-        Bosh::Cli::Command::User.any_instance.should_receive(:create).with("foo", "foo")
-        Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("foo", "foo")
-        aws.stub(:ask).and_return("foo")
-        aws.bootstrap_micro
-      end
-    end
-
     describe "aws generate micro_bosh" do
       let(:create_vpc_output_yml) { asset "test-output.yml" }
       let(:route53_receipt_yml) { asset "test-aws_route53_receipt.yml" }
@@ -1017,32 +959,6 @@ describe Bosh::Cli::Command::AWS do
         fake_elb.should_receive(:names).and_return(%w(one two))
         aws.should_receive(:confirmed?).and_return(true)
         aws.delete_all_elbs(config_file)
-      end
-    end
-  end
-
-  describe "micro_ami" do
-    context "when the environment provides an override AMI" do
-      before(:all) do
-        ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] = 'ami-tgupta'
-      end
-
-      after(:all) do
-        ENV.delete "BOSH_OVERRIDE_MICRO_STEMCELL_AMI"
-      end
-
-      it "uses the given AMI" do
-        aws.micro_ami.should == 'ami-tgupta'
-      end
-    end
-
-    context "when the environment does not provide an override AMI" do
-      before do
-        Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").and_return("ami-david")
-      end
-
-      it "returns the content from S3" do
-        aws.micro_ami.should == "ami-david"
       end
     end
   end

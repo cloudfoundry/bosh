@@ -41,6 +41,7 @@ COMPONENTS.each do |component|
 
     task :finalize_release_directory => 'all:stage_with_dependencies' do
       dirname = "#{root}/release/src/bosh/#{component}"
+
       rm_rf dirname
       mkdir_p dirname
       gemfile_lock_path = File.join(root, 'Gemfile.lock')

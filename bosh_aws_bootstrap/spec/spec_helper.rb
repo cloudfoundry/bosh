@@ -1,6 +1,7 @@
 require "cli"
 require "bosh/cli/commands/aws"
 require "bosh_aws_bootstrap"
+require 'webmock/rspec'
 
 def asset(filename)
   File.join(File.dirname(__FILE__), 'assets', filename)
@@ -11,6 +12,10 @@ def mock_volume(id)
   volume.stub(:id => id)
   volume.stub(:create_snapshot => nil)
   volume
+end
+
+def encoded_credentials(username, password)
+  Base64.encode64("#{username}:#{password}").strip
 end
 
 RSpec.configure do |config|
