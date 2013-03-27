@@ -74,7 +74,7 @@ describe "AWS Bootstrap commands" do
     end
 
     before do
-      Bosh::Cli::Config.output = $stdout
+      Bosh::Cli::Config.output = File.open("/dev/null", "w")
       Bosh::Cli::Config.cache = Bosh::Cli::Cache.new(Dir.mktmpdir)
     end
 
@@ -214,8 +214,9 @@ describe "AWS Bootstrap commands" do
         stub_request(:post, %r{packages/matches}).
             to_return(:status => 200, :body => "[]")
 
-        @upload_request = stub_request(:post, "http://127.0.0.1:25555/releases").
-            to_return(:status => 200, :body => "")
+        # Stub out the release creation to make the tests MUCH faster,
+        # instead of actually building the tarball.
+        Bosh::Cli::Command::Release.any_instance.should_receive(:upload)
 
         stub_request(:get, "http://127.0.0.1:25555/stemcells").
             to_return(:status => 200, :body => "[]").then.
@@ -268,12 +269,6 @@ describe "AWS Bootstrap commands" do
         end
 
         releases.size.should >= 2
-      end
-
-      it "uploads the newly created release" do
-        aws.bootstrap_bosh(bosh_repository_path)
-
-        @upload_request.should have_been_made
       end
 
       it "runs deployment diff" do

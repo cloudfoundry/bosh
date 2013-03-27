@@ -3,7 +3,6 @@ require "spec_helper"
 describe Bosh::Aws::MicroBoshBootstrap do
   let(:bootstrap) { described_class.new(nil, nil) }
 
-
   describe "micro_ami" do
     context "when the environment provides an override AMI" do
       before(:all) do
