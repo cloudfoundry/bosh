@@ -46,6 +46,7 @@ module Bosh::Cli::Command
     desc "bootstrap full bosh deployment"
     def bootstrap_bosh(bosh_repository=nil)
       target_required
+      err "To bootstrap BOSH, first log in to `#{config.target}'" unless logged_in?
 
       bootstrap = Bosh::Aws::BoshBootstrap.new(director, self.options)
       bootstrap.start(bosh_repository)

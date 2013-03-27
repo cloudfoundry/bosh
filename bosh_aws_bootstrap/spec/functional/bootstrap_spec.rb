@@ -71,11 +71,12 @@ describe "AWS Bootstrap commands" do
 
       stub_request(:get, /last_successful_bosh-stemcell_light\.tgz$/).
           to_return(:status => 200, :body => File.read(stemcell_stub))
-    end
 
-    before do
       Bosh::Cli::Config.output = File.open("/dev/null", "w")
       Bosh::Cli::Config.cache = Bosh::Cli::Cache.new(Dir.mktmpdir)
+
+      aws.options[:username] = "bosh_user"
+      aws.options[:password] = "bosh_password"
     end
 
     context "when the target is not set" do
