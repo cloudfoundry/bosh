@@ -27,7 +27,7 @@ module Bosh::Cli::Command
     usage "aws bootstrap micro"
     desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
     def bootstrap_micro
-      bootstrap = Bosh::Aws::MicroBoshBootstrap.new(options, runner)
+      bootstrap = Bosh::Aws::MicroBoshBootstrap.new(runner, options)
       bootstrap.start
 
       if interactive?

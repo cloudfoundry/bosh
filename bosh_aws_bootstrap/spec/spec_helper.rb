@@ -14,6 +14,10 @@ def mock_volume(id)
   volume
 end
 
+def encoded_credentials(username, password)
+  Base64.encode64("#{username}:#{password}").strip
+end
+
 RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true

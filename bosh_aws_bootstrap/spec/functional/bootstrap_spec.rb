@@ -5,6 +5,8 @@ describe "AWS Bootstrap commands" do
   let(:bosh_config)  { File.expand_path(File.join(File.dirname(__FILE__), "..", "assets", "bosh_config.yml")) }
 
   before do
+    aws.options[:non_interactive] = true
+
     WebMock.disable_net_connect!
     aws.stub(:sleep)
   end
@@ -13,74 +15,38 @@ describe "AWS Bootstrap commands" do
     @bosh_config = Tempfile.new("bosh_config")
     @bosh_config.puts File.read(bosh_config)
     aws.add_option(:config, @bosh_config.path)
-    example.run
-    @bosh_config.close
-  end
 
-  describe "aws bootstrap micro" do
-    around do |example|
-      Dir.mktmpdir do |dirname|
-        Dir.chdir dirname do
-          FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
-          FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
-          example.run
-        end
+    FileUtils.cp(asset("id_spec_rsa"), "/tmp/somekey")
+
+    Dir.mktmpdir do |dirname|
+      Dir.chdir dirname do
+        FileUtils.cp(asset("test-output.yml"), "aws_vpc_receipt.yml")
+        FileUtils.cp(asset("test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
+
+        example.run
       end
     end
 
-    before do
-      Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)
-      Bosh::Cli::Command::Micro.any_instance.stub(:perform)
-      Bosh::Cli::Command::User.any_instance.stub(:create)
-      Bosh::Cli::Command::Misc.any_instance.stub(:login)
-      Bosh::Aws::MicroBoshBootstrap.any_instance.stub(:micro_ami).and_return("ami-123456")
-    end
+    FileUtils.rm("/tmp/somekey")
 
-    it "should generate a microbosh.yml in the right location" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      File.exist?("deployments/micro/micro_bosh.yml").should == false
-      aws.bootstrap_micro
-      File.exist?("deployments/micro/micro_bosh.yml").should == true
-    end
+    @bosh_config.close
+  end
 
-    it "should remove any existing deployment artifacts first" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      FileUtils.mkdir_p("deployments/micro")
-      File.open("deployments/bosh_registry.log", "w") { |f| f.write("old stuff!") }
-      File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
-      File.exist?("deployments/bosh_registry.log").should == true
-      File.exist?("deployments/micro/leftover.yml").should == true
-      aws.bootstrap_micro
-      File.exist?("deployments/bosh_registry.log").should == false
-      File.exist?("deployments/micro/leftover.yml").should == false
-    end
+  it "should bootstrap microbosh" do
+    stemcell_ami_request = stub_request(:get, "http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful_micro-bosh-stemcell_ami").
+        to_return(:status => 200, :body => "ami-0e3da467", :headers => {})
 
-    it "should deploy a micro bosh" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      Bosh::Cli::Command::Micro.any_instance.should_receive(:micro_deployment).with("micro")
-      Bosh::Cli::Command::Micro.any_instance.should_receive(:perform).with("ami-123456")
-      aws.bootstrap_micro
-    end
+    credentials = encoded_credentials("admin", "admin")
+    stub_request(:get, "http://10.10.0.6:25555/info").
+        with(:headers => {'Authorization' => "Basic #{credentials}"}).
+        to_return(:status => 200, :body => {"user" => "admin"}.to_json, :headers => {})
 
-    it "should login with admin/admin with non-interactive mode" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("admin", "admin")
-      aws.bootstrap_micro
-    end
+    Bosh::Deployer::InstanceManager.any_instance.should_receive(:with_lifecycle)
 
-    it "should login with created user with interactive mode" do
-      misc_admin = double('Misc command for admin', :options= => nil)
-      misc_foo = double('Misc command for foo', :options= => nil)
+    aws.bootstrap_micro
 
-      misc_admin.should_receive(:login).with('admin', 'admin')
-      misc_foo.should_receive(:login).with('foo', 'foo')
-
-      Bosh::Cli::Command::User.any_instance.should_receive(:create).with("foo", "foo")
-      Bosh::Cli::Command::Misc.should_receive(:new).and_return(misc_admin, misc_foo)
-
-      aws.stub(:ask).and_return("foo")
-      aws.bootstrap_micro
-    end
+    stemcell_ami_request.should have_been_made
+    a_request(:get, "http://10.10.0.6:25555/info").should have_been_made
   end
 
   describe "aws bootstrap bosh" do
@@ -105,17 +71,6 @@ describe "AWS Bootstrap commands" do
 
       stub_request(:get, /last_successful_bosh-stemcell_light\.tgz$/).
           to_return(:status => 200, :body => File.read(stemcell_stub))
-    end
-
-    around do |example|
-      Dir.mktmpdir do |dirname|
-        Dir.chdir dirname do
-          FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-output.yml"), "aws_vpc_receipt.yml")
-          FileUtils.cp(File.join(File.dirname(__FILE__), "..", "assets", "test-aws_route53_receipt.yml"), "aws_route53_receipt.yml")
-          example.run
-
-        end
-      end
     end
 
     before do
@@ -351,19 +306,19 @@ describe "AWS Bootstrap commands" do
       it "creates a new user in new bosh" do
         aws.bootstrap_bosh(bosh_repository_path)
 
-        encoded_credentials = Base64.encode64("admin:admin").strip
+        credentials = encoded_credentials("admin", "admin")
         a_request(:get, "50.200.100.3:25555/info").with(
             :headers => {
-                'Authorization' => "Basic #{encoded_credentials}",
+                'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
             }).should have_been_made.once
 
         @create_user_request.should have_been_made
 
-        encoded_credentials = Base64.encode64("#{username}:#{password}").strip
+        credentials = encoded_credentials(username, password)
         a_request(:get, "50.200.100.3:25555/info").with(
             :headers => {
-                'Authorization' => "Basic #{encoded_credentials}",
+                'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
             }).should have_been_made.once
       end

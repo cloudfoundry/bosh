@@ -14,10 +14,17 @@ module Bosh
         user = Bosh::Cli::Command::User.new(runner)
         user.options = self.options
         user.create(username, password)
+        login(username, password)
+      end
 
+      def login(username, password)
         misc = Bosh::Cli::Command::Misc.new(runner)
         misc.options = self.options
         misc.login(username, password)
+      end
+
+      def manifest
+        raise NotImplementedError
       end
     end
   end

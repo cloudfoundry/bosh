@@ -26,9 +26,9 @@ module Bosh
 
         existing_deployments = director.list_deployments.map { |deployment| deployment["name"] }
 
-        if existing_deployments.include? bosh_manifest.bosh_deployment_name
+        if existing_deployments.include? manifest.bosh_deployment_name
           raise BootstrapError, <<-MSG
-Deployment `#{bosh_manifest.bosh_deployment_name}' already exists.
+Deployment `#{manifest.bosh_deployment_name}' already exists.
 This command should be used for bootstrapping bosh from scratch.
           MSG
         end
@@ -51,36 +51,40 @@ This command should be used for bootstrapping bosh from scratch.
 
       private
 
-      def bosh_manifest
-        unless @bosh_manifest
+      def manifest
+        unless @manifest
           vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
           route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
 
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
-          @bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
+          @manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
         end
 
-        @bosh_manifest
+        @manifest
       end
 
       def create_deployment_manifest
-        deployment_folder = "deployments/#{bosh_manifest.deployment_name}"
+        generate_manifest
+
+        manifest_path = File.join(File.dirname(__FILE__), "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
+
+        biff_command = Bosh::Cli::Command::Biff.new
+        biff_command.options = self.options
+        biff_command.biff(File.expand_path(manifest_path))
+      end
+
+      def generate_manifest
+        deployment_folder = File.join("deployments", manifest.deployment_name)
+
         FileUtils.mkdir_p deployment_folder
-
         Dir.chdir(deployment_folder) do
-          write_yaml(bosh_manifest, bosh_manifest.file_name)
-
-          deployment_command = Bosh::Cli::Command::Deployment.new
-          deployment_command.options = self.options
-          deployment_command.set_current(bosh_manifest.file_name)
-
-          biff_command = Bosh::Cli::Command::Biff.new
-          biff_command.options = self.options
-
-          manifest_path = File.join(File.dirname(__FILE__), "..", "..", "templates", "bosh-min-aws-vpc.yml.erb")
-          biff_command.biff(File.expand_path(manifest_path))
+          write_yaml(manifest, manifest.file_name)
         end
+
+        deployment_command = Bosh::Cli::Command::Deployment.new
+        deployment_command.options = self.options
+        deployment_command.set_current(File.join(deployment_folder, manifest.file_name))
       end
 
       def create_and_upload_release(bosh_repository, release_path)
@@ -98,8 +102,8 @@ This command should be used for bootstrapping bosh from scratch.
       def target_bosh_and_log_in
         misc_command = Bosh::Cli::Command::Misc.new
         misc_command.options = self.options
-        misc_command.set_target(bosh_manifest.vip)
-        misc_command.options[:target] = bosh_manifest.vip
+        misc_command.set_target(manifest.vip)
+        misc_command.options[:target] = manifest.vip
         misc_command.login("admin", "admin")
 
         self.options[:target] = misc_command.config.target

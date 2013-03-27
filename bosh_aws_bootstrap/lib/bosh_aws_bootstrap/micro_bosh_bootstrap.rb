@@ -4,30 +4,48 @@ module Bosh
   module Aws
     class MicroBoshBootstrap < Bootstrap
       def start
-        vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
-        route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
+        cleanup_previous_deployments
+        generate_deployment_manifest
+        deploy
 
-        vpc_config = load_yaml_file(vpc_receipt_filename)
-        route53_config = load_yaml_file(route53_receipt_filename)
+        login("admin", "admin")
+      end
 
-        rm_files = %w[bosh-deployments.yml micro bosh_registry.log]
-        rm_files.each { |file| FileUtils.rm_rf File.join("deployments", file) }
-        FileUtils.mkdir_p "deployments/micro"
-        Dir.chdir("deployments/micro") do
-          manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
-          write_yaml(manifest, "micro_bosh.yml")
-        end
-
+      def deploy
         Dir.chdir("deployments") do
           micro = Bosh::Cli::Command::Micro.new(runner)
           micro.options = self.options
           micro.micro_deployment("micro")
           micro.perform(micro_ami)
         end
+      end
 
-        misc = Bosh::Cli::Command::Misc.new(runner)
-        misc.options = self.options
-        misc.login("admin", "admin")
+      def manifest
+        unless @manifest
+          vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
+          route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
+
+          vpc_config = load_yaml_file(vpc_receipt_filename)
+          route53_config = load_yaml_file(route53_receipt_filename)
+
+          @manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
+        end
+
+        @manifest
+      end
+
+      def generate_deployment_manifest
+        deployment_folder = File.join("deployments", manifest.deployment_name)
+
+        FileUtils.mkdir_p deployment_folder
+        Dir.chdir(deployment_folder) do
+          write_yaml(manifest, manifest.file_name)
+        end
+      end
+
+      def cleanup_previous_deployments
+        rm_files = %w[bosh-deployments.yml micro bosh_registry.log]
+        rm_files.each { |file| FileUtils.rm_rf File.join("deployments", file) }
       end
 
       def micro_ami
