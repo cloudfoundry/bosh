@@ -108,9 +108,14 @@ module Bosh::Director
       # to ignore "VM not found" errors in `delete_vm' and let the method
       # proceed creating a new VM. Other errors are not forgiven.
       begin
-        if disk_cid
-          cloud.detach_disk(vm.cid, disk_cid)
+        begin
+          if disk_cid
+            cloud.detach_disk(vm.cid, disk_cid)
+          end
+        rescue Bosh::Clouds::DiskNotAttached => e
+          @logger.warn("Disk '#{disk_cid}' was already detached from '#{vm.cid}'")
         end
+
 
         cloud.delete_vm(vm.cid)
       rescue Bosh::Clouds::VMNotFound => e

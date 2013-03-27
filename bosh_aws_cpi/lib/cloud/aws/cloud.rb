@@ -493,8 +493,8 @@ module Bosh::AwsCloud
       end
 
       if device_map[volume.id].nil?
-        cloud_error("Disk `#{volume.id}' is not attached " \
-                    "to instance `#{instance.id}'")
+        raise Bosh::Clouds::DiskNotAttached.new(true),
+              "Disk `#{volume.id}' is not attached to instance `#{instance.id}'"
       end
 
       attachment = volume.detach_from(instance, device_map[volume.id], force: force)

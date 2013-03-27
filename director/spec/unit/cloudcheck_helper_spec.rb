@@ -120,31 +120,63 @@ describe Bosh::Director::CloudcheckHelper do
           Bosh::Director::Models::PersistentDisk.make(disk_cid: "disk-cid", instance_id: instance.id)
         end
 
-        it "recreates VM (w/persistent disk)" do
-          fake_cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid").ordered
-          fake_cloud.should_receive(:delete_vm).with("vm-cid").ordered
-          fake_cloud.should_receive(:create_vm).
-              with("agent-222", "sc-302", {"foo" => "bar"}, ["A", "B", "C"], ["disk-cid"], {"key1" => "value1"}).
-              ordered.and_return("new-vm-cid")
+        context "and the disk is attached" do
 
-          fake_new_agent.should_receive(:wait_until_ready).ordered
-          fake_cloud.should_receive(:attach_disk).with("new-vm-cid", "disk-cid").ordered
+          it "recreates VM (w/persistent disk)" do
+            fake_cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid").ordered
+            fake_cloud.should_receive(:delete_vm).with("vm-cid").ordered
+            fake_cloud.should_receive(:create_vm).
+                with("agent-222", "sc-302", {"foo" => "bar"}, ["A", "B", "C"], ["disk-cid"], {"key1" => "value1"}).
+                ordered.and_return("new-vm-cid")
 
-          fake_new_agent.should_receive(:mount_disk).with("disk-cid").ordered
-          fake_new_agent.should_receive(:apply).with(spec).ordered
-          fake_new_agent.should_receive(:start).ordered
+            fake_new_agent.should_receive(:wait_until_ready).ordered
+            fake_cloud.should_receive(:attach_disk).with("new-vm-cid", "disk-cid").ordered
 
-          fake_job_context
+            fake_new_agent.should_receive(:mount_disk).with("disk-cid").ordered
+            fake_new_agent.should_receive(:apply).with(spec).ordered
+            fake_new_agent.should_receive(:start).ordered
 
-          expect {
-            test_problem_handler.apply_resolution(:recreate_vm)
-          }.to change { Bosh::Director::Models::Vm.where(agent_id: "agent-007").count }.from(1).to(0)
+            fake_job_context
 
-          instance.reload
-          instance.vm.apply_spec.should == spec
-          instance.vm.cid.should == "new-vm-cid"
-          instance.vm.agent_id.should == "agent-222"
-          instance.persistent_disk.disk_cid.should == "disk-cid"
+            expect {
+              test_problem_handler.apply_resolution(:recreate_vm)
+            }.to change { Bosh::Director::Models::Vm.where(agent_id: "agent-007").count }.from(1).to(0)
+
+            instance.reload
+            instance.vm.apply_spec.should == spec
+            instance.vm.cid.should == "new-vm-cid"
+            instance.vm.agent_id.should == "agent-222"
+            instance.persistent_disk.disk_cid.should == "disk-cid"
+          end
+        end
+
+        context "and the disk is already detached" do
+          it "recreates VM (w/persistent disk)" do
+            fake_cloud.should_receive(:detach_disk).with("vm-cid", "disk-cid").ordered.and_raise(Bosh::Clouds::DiskNotAttached.new(true))
+            fake_cloud.should_receive(:delete_vm).with("vm-cid").ordered
+            fake_cloud.should_receive(:create_vm).
+                with("agent-222", "sc-302", {"foo" => "bar"}, ["A", "B", "C"], ["disk-cid"], {"key1" => "value1"}).
+                ordered.and_return("new-vm-cid")
+
+            fake_new_agent.should_receive(:wait_until_ready).ordered
+            fake_cloud.should_receive(:attach_disk).with("new-vm-cid", "disk-cid").ordered
+
+            fake_new_agent.should_receive(:mount_disk).with("disk-cid").ordered
+            fake_new_agent.should_receive(:apply).with(spec).ordered
+            fake_new_agent.should_receive(:start).ordered
+
+            fake_job_context
+
+            expect {
+              test_problem_handler.apply_resolution(:recreate_vm)
+            }.to change { Bosh::Director::Models::Vm.where(agent_id: "agent-007").count }.from(1).to(0)
+
+            instance.reload
+            instance.vm.apply_spec.should == spec
+            instance.vm.cid.should == "new-vm-cid"
+            instance.vm.agent_id.should == "agent-222"
+            instance.persistent_disk.disk_cid.should == "disk-cid"
+          end
         end
       end
 
