@@ -12,6 +12,14 @@ module Bosh
         @director_uuid = director_uuid
       end
 
+      def file_name
+        "bat.yml"
+      end
+
+      def deployment_name
+        "bat"
+      end
+
       def domain
         vpc_receipt["vpc"]["domain"] || warning('Missing domain field')
       end

@@ -8,6 +8,14 @@ module Bosh
         @route53_receipt = route53_receipt
       end
 
+      def file_name
+        "micro_bosh.yml"
+      end
+
+      def deployment_name
+        "micro"
+      end
+
       def vpc_config
         vpc_receipt['original_configuration']
       end

@@ -7,7 +7,6 @@ module Bosh::Cli::Command
     OUTPUT_VPC_FILE = "aws_vpc_receipt.yml"
     OUTPUT_RDS_FILE = "aws_rds_receipt.yml"
     OUTPUT_ROUTE53_FILE = "aws_route53_receipt.yml"
-    AWS_JENKINS_BUCKET = "bosh-jenkins-artifacts"
 
     attr_reader :output_state, :config_dir, :ec2
     attr_accessor :vpc
@@ -28,39 +27,19 @@ module Bosh::Cli::Command
     usage "aws bootstrap micro"
     desc "rm deployments dir, creates a deployments/micro/micro_bosh.yml and deploys the microbosh"
     def bootstrap_micro
-      vpc_receipt_filename = File.expand_path("aws_vpc_receipt.yml")
-      route53_receipt_filename = File.expand_path("aws_route53_receipt.yml")
-      FileUtils.rm_rf "deployments"
-      FileUtils.mkdir_p "deployments/micro"
-      Dir.chdir("deployments/micro") do
-        create_micro_bosh_manifest(vpc_receipt_filename, route53_receipt_filename)
-      end
+      bootstrap = Bosh::Aws::MicroBoshBootstrap.new(options, runner)
+      bootstrap.start
 
-      Dir.chdir("deployments") do
-        micro = Bosh::Cli::Command::Micro.new(runner)
-        micro.options = self.options
-        micro.micro_deployment("micro")
-        micro.perform(micro_ami)
-      end
-
-      misc = Bosh::Cli::Command::Misc.new(runner)
-      misc.options = self.options
-      misc.login("admin", "admin")
-
-      # Login required to create another user
-      # Only create new user in interactive mode
       if interactive?
-        user = Bosh::Cli::Command::User.new(runner)
-        user.options = self.options
         username = ask("Enter username: ")
         password = ask("Enter password: ") { |q| q.echo = "*" }
+
         if username.blank? || password.blank?
           err("Please enter username and password")
         end
-        user.create(username, password)
-        misc.login(username, password)
-      end
 
+        bootstrap.create_user(username, password)
+      end
     end
 
     usage "aws bootstrap bosh"
@@ -90,7 +69,7 @@ module Bosh::Cli::Command
 
       manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config)
 
-      write_yaml(manifest, "micro_bosh.yml")
+      write_yaml(manifest, manifest.file_name)
     end
 
     usage "aws generate bosh"
@@ -102,7 +81,7 @@ module Bosh::Cli::Command
       route53_config = load_yaml_file(route53_receipt_file)
       bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid)
 
-      write_yaml(bosh_manifest, "bosh.yml")
+      write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
 
     usage "aws generate bat_manifest"
@@ -114,7 +93,7 @@ module Bosh::Cli::Command
       route53_config = load_yaml_file(route53_receipt_file)
       manifest = Bosh::Aws::BatManifest.new(vpc_config, route53_config, stemcell_version, director.uuid)
 
-      write_yaml(manifest, "bat.yml")
+      write_yaml(manifest, manifest.file_name)
     end
 
     usage "aws snapshot deployments"
@@ -602,11 +581,6 @@ module Bosh::Cli::Command
       end
 
       route53.delete_all_records(omit_types: omit_types) if confirmed?(msg)
-    end
-
-    def micro_ami
-      ENV["BOSH_OVERRIDE_MICRO_STEMCELL_AMI"] ||
-          Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_micro-bosh-stemcell_ami").strip
     end
 
     private

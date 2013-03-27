@@ -4,7 +4,10 @@ describe "AWS Bootstrap commands" do
   let(:aws) { Bosh::Cli::Command::AWS.new }
   let(:bosh_config)  { File.expand_path(File.join(File.dirname(__FILE__), "..", "assets", "bosh_config.yml")) }
 
-  before { aws.stub(:sleep) }
+  before do
+    WebMock.disable_net_connect!
+    aws.stub(:sleep)
+  end
 
   around do |example|
     @bosh_config = Tempfile.new("bosh_config")
@@ -30,7 +33,7 @@ describe "AWS Bootstrap commands" do
       Bosh::Cli::Command::Micro.any_instance.stub(:perform)
       Bosh::Cli::Command::User.any_instance.stub(:create)
       Bosh::Cli::Command::Misc.any_instance.stub(:login)
-      aws.stub(:micro_ami).and_return("ami-123456")
+      Bosh::Aws::MicroBoshBootstrap.any_instance.stub(:micro_ami).and_return("ami-123456")
     end
 
     it "should generate a microbosh.yml in the right location" do
@@ -43,12 +46,12 @@ describe "AWS Bootstrap commands" do
     it "should remove any existing deployment artifacts first" do
       ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
       FileUtils.mkdir_p("deployments/micro")
-      File.open("deployments/leftover.yml", "w") { |f| f.write("old stuff!") }
+      File.open("deployments/bosh_registry.log", "w") { |f| f.write("old stuff!") }
       File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
-      File.exist?("deployments/leftover.yml").should == true
+      File.exist?("deployments/bosh_registry.log").should == true
       File.exist?("deployments/micro/leftover.yml").should == true
       aws.bootstrap_micro
-      File.exist?("deployments/leftover.yml").should == false
+      File.exist?("deployments/bosh_registry.log").should == false
       File.exist?("deployments/micro/leftover.yml").should == false
     end
 
@@ -66,8 +69,15 @@ describe "AWS Bootstrap commands" do
     end
 
     it "should login with created user with interactive mode" do
+      misc_admin = double('Misc command for admin', :options= => nil)
+      misc_foo = double('Misc command for foo', :options= => nil)
+
+      misc_admin.should_receive(:login).with('admin', 'admin')
+      misc_foo.should_receive(:login).with('foo', 'foo')
+
       Bosh::Cli::Command::User.any_instance.should_receive(:create).with("foo", "foo")
-      Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("foo", "foo")
+      Bosh::Cli::Command::Misc.should_receive(:new).and_return(misc_admin, misc_foo)
+
       aws.stub(:ask).and_return("foo")
       aws.bootstrap_micro
     end
@@ -89,9 +99,6 @@ describe "AWS Bootstrap commands" do
     end
 
     before do
-
-      WebMock.disable_net_connect!
-
       stub_request(:get, "http://127.0.0.1:25555/info").
           with(:headers => {'Content-Type' => 'application/json'}).
           to_return(:status => 200, :body => '{"uuid": "1234abc"}')

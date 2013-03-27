@@ -1,9 +1,11 @@
+require_relative "bootstrap"
+
 module Bosh
   module Aws
     BootstrapError = Class.new(StandardError)
 
-    class BoshBootstrap
-      attr_accessor :options, :director
+    class BoshBootstrap < Bootstrap
+      attr_accessor :director
 
       def initialize(director, options)
         self.options = options
@@ -47,16 +49,6 @@ This command should be used for bootstrapping bosh from scratch.
         target_bosh_and_log_in
       end
 
-      def create_user(username, password)
-        user_command = Bosh::Cli::Command::User.new
-        user_command.options = self.options
-        user_command.create(username, password)
-
-        misc_command = Bosh::Cli::Command::Misc.new
-        misc_command.options = self.options
-        misc_command.login(username, password)
-      end
-
       private
 
       def bosh_manifest
@@ -73,14 +65,15 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def create_deployment_manifest
-        FileUtils.mkdir_p "deployments/bosh"
+        deployment_folder = "deployments/#{bosh_manifest.deployment_name}"
+        FileUtils.mkdir_p deployment_folder
 
-        Dir.chdir("deployments/bosh") do
-          write_yaml(bosh_manifest, "bosh.yml")
+        Dir.chdir(deployment_folder) do
+          write_yaml(bosh_manifest, bosh_manifest.file_name)
 
           deployment_command = Bosh::Cli::Command::Deployment.new
           deployment_command.options = self.options
-          deployment_command.set_current("bosh.yml")
+          deployment_command.set_current(bosh_manifest.file_name)
 
           biff_command = Bosh::Cli::Command::Biff.new
           biff_command.options = self.options
@@ -131,7 +124,7 @@ This command should be used for bootstrapping bosh from scratch.
 
       def bosh_stemcell
         ENV["BOSH_OVERRIDE_LIGHT_STEMCELL_URL"] ||
-            Net::HTTP.get("#{Bosh::Cli::Command::AWS::AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz")
+            Net::HTTP.get("#{AWS_JENKINS_BUCKET}.s3.amazonaws.com", "/last_successful_bosh-stemcell_light.tgz")
       end
     end
   end

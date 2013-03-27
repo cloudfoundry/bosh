@@ -9,6 +9,14 @@ module Bosh
         @director_uuid = director_uuid
       end
 
+      def file_name
+        "bosh.yml"
+      end
+
+      def deployment_name
+        "bosh"
+      end
+
       def vip
         route53_receipt['elastic_ips']['bosh']['ips'][0] || warning('Missing vip field')
       end
