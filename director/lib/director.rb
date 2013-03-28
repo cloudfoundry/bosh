@@ -20,6 +20,7 @@ require "yaml"
 require "time"
 require "zlib"
 
+require "common/exec"
 require "common/properties"
 
 require "bcrypt"

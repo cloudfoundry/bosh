@@ -62,6 +62,8 @@ module Bosh::Director
         File.open(path, "w") do |file|
           file.write(buffer) until stream.read(chunk_size, buffer).nil?
         end
+      rescue SystemCallError => e
+        raise SystemError, e.message
       end
     end
   end
