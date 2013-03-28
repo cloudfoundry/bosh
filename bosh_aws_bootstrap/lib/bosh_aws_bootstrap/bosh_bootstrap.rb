@@ -89,7 +89,9 @@ This command should be used for bootstrapping bosh from scratch.
 
       def create_and_upload_release(bosh_repository, release_path)
         Dir.chdir(bosh_repository) do
-          Bosh::Exec.sh "bundle exec rake release:create_dev_release"
+          Bundler.with_clean_env do
+            Bosh::Exec.sh "bundle exec rake release:create_dev_release"
+          end
         end
 
         Dir.chdir(release_path) do
