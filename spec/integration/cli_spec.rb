@@ -15,13 +15,6 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     format_output(run_bosh(cmd)).should == format_output(expected_output)
   end
 
-  def check_travis_git_repo
-    # Temporary change to test travis
-    puts "git diff-index --quiet HEAD -- 2>&1; echo $?"
-    `git diff-index --quiet HEAD -- 2>&1`
-    puts $?.exitstatus
-  end
-
   it "has help message" do
     run_bosh("help")
     $?.should == 0
@@ -230,13 +223,43 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /appcloud.+0\.1/
   end
 
+  it "should mark releases that have uncommitted changes" do
+    release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.yml")
+    commit_hash = ''
+
+    Dir.chdir(TEST_RELEASE_DIR) do
+      commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
+
+      new_file = File.join("src", "bar", "bla")
+      FileUtils.touch(new_file)
+      run_bosh("create release --force", Dir.pwd)
+      FileUtils.rm_rf(new_file)
+      File.exists?(release_1).should be_true
+      release_manifest = YAML.load_file(release_1)
+      release_manifest['commit_hash'].should == commit_hash
+      release_manifest['uncommitted_changes'].should be_true
+
+      run_bosh("target http://localhost:57523")
+      run_bosh("login admin admin")
+      run_bosh("upload release", Dir.pwd)
+
+    end
+
+    expect_output("releases", <<-OUT)
+    +--------------+----------+-------------+
+    | Name         | Versions | Commit Hash |
+    +--------------+----------+-------------+
+    | bosh-release | 0.1-dev  | #{commit_hash}+   |
+    +--------------+----------+-------------+
+    (+) Uncommitted changes
+
+    Releases total: 1
+    OUT
+  end
+
   it "uploads the latest generated release if no release path given" do
-    assets_dir = File.dirname(spec_asset("foo"))
-
-    Dir.chdir(File.join(assets_dir, "test_release")) do
+    Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf("dev_releases")
-
-      check_travis_git_repo
 
       run_bosh("create release", Dir.pwd)
       run_bosh("target http://localhost:57523")
@@ -249,14 +272,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "sparsely uploads the release" do
-    assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.tgz")
     release_2 = spec_asset("test_release/dev_releases/bosh-release-0.2-dev.tgz")
 
-    Dir.chdir(File.join(assets_dir, "test_release")) do
+    Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf("dev_releases")
-
-      check_travis_git_repo
 
       run_bosh("create release --with-tarball", Dir.pwd)
       File.exists?(release_1).should be_true
@@ -266,12 +286,10 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     run_bosh("login admin admin")
     run_bosh("upload release #{release_1}")
 
-    Dir.chdir(File.join(assets_dir, "test_release")) do
+    Dir.chdir(TEST_RELEASE_DIR) do
       new_file = File.join("src", "bar", "bla")
       begin
         FileUtils.touch(new_file)
-
-        check_travis_git_repo
 
         run_bosh("create release --force --with-tarball", Dir.pwd)
         File.exists?(release_2).should be_true
@@ -296,17 +314,12 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   end
 
   it "release lifecycle: create, upload, update (w/sparse upload), delete" do
-    assets_dir = File.dirname(spec_asset("foo"))
     release_1 = spec_asset("test_release/dev_releases/bosh-release-0.1-dev.yml")
     release_2 = spec_asset("test_release/dev_releases/bosh-release-0.2-dev.yml")
     commit_hash = ''
 
-    release_dir = File.join(assets_dir, "test_release")
-
-    Dir.chdir(release_dir) do
-      run_bosh("reset release")
-
-      check_travis_git_repo
+    Dir.chdir(TEST_RELEASE_DIR) do
+      commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
       run_bosh("create release", Dir.pwd)
       File.exists?(release_1).should be_true
@@ -318,6 +331,9 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       new_file = File.join("src", "bar", "bla")
       begin
         FileUtils.touch(new_file)
+        # In an ephemeral git repo
+        `git add .`
+        `git commit -m "second dev release"`
         run_bosh("create release", Dir.pwd)
         File.exists?(release_2).should be_true
       ensure
@@ -329,7 +345,6 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       out.should_not =~ regexp("Checking if can repack")
       out.should_not =~ regexp("Release repacked")
       out.should =~ /Release uploaded/
-      commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
     end
 
     out = run_bosh("releases")
@@ -337,11 +352,11 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
     out.should =~ /bosh-release.+0\.1\-dev.*0\.2\-dev/m
 
     run_bosh("delete release bosh-release 0.2-dev")
-    expect_output("releases", <<-OUT.gsub("XXXXXXXX",commit_hash))
+    expect_output("releases", <<-OUT)
     +--------------+----------+-------------+
     | Name         | Versions | Commit Hash |
     +--------------+----------+-------------+
-    | bosh-release | 0.1-dev  | XXXXXXXX    |
+    | bosh-release | 0.1-dev  | #{commit_hash}    |
     +--------------+----------+-------------+
 
     Releases total: 1

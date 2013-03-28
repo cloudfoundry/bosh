@@ -42,7 +42,7 @@ end
 RSpec.configure do |c|
   c.before(:each) do |example|
     cleanup_bosh
-    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
+    setup_test_release_dir
   end
 
   c.after(:each) do |example|
@@ -71,6 +71,33 @@ end
 def director_version
   version = `(git show-ref --head --hash=8 2> /dev/null || echo 00000000)`
   "Ver: #{Bosh::Director::VERSION} (#{version.lines.first.strip})"
+end
+
+def setup_test_release_dir
+  FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
+  Dir.chdir(TEST_RELEASE_DIR) do
+    ignore = %w(r
+        blobs
+        dev-releases
+        config/dev.yml
+        config/private.yml
+        releases/*.tgz
+        dev_releases
+        .dev_builds
+        .final_builds/jobs/**/*.tgz
+        .final_builds/packages/**/*.tgz
+        blobs
+        .blobs
+    )
+    File.open('.gitignore', 'w+') do |f|
+      f.write(ignore.join("\n") + "\n")
+    end
+    `git init`
+    `git config user.name "John Doe"`
+    `git config user.email "john.doe@example.org"`
+    `git add .`
+    `git commit -m "Initial Test Commit"`
+  end
 end
 
 def cleanup_bosh
