@@ -202,15 +202,9 @@ module Bosh::Cli
       end
 
       def dirty_state?
-        git_status = `git status 2>&1`
-        case $?.exitstatus
-          when 128 # Not in a git repo
-            false
-          when 127 # git command not found
-            false
-          else
-            !git_status.lines.to_a.last.include?("working directory clean")
-        end
+        `which git`
+        return false unless $? == 0
+        File.directory?(".git") && `git status --porcelain | wc -l`.to_i > 0
       end
 
       def normalize_url(url)
