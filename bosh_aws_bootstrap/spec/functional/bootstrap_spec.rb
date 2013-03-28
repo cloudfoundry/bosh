@@ -123,6 +123,12 @@ describe "AWS Bootstrap commands" do
     context "when bosh_repository is not specified" do
       before do
         aws.options[:target] = 'http://localhost:25555'
+        @bosh_repo = ENV['BOSH_REPOSITORY']
+        ENV.delete('BOSH_REPOSITORY')
+      end
+
+      after do
+        ENV['BOSH_REPOSITORY'] = @bosh_repo
       end
 
       it "complains about its presence" do
@@ -257,19 +263,6 @@ describe "AWS Bootstrap commands" do
         File.exist?("deployments/bosh/bosh.yml").should be_false
         aws.bootstrap_bosh(bosh_repository_path)
         File.exist?("deployments/bosh/bosh.yml").should be_true
-      end
-
-      it "creates a new release" do
-        aws.bootstrap_bosh(bosh_repository_path)
-
-        releases = Dir["#{bosh_repository_path}/release/dev_releases/*"]
-
-        releases.select do |release_file|
-          release_file.include?("index.yml") &&
-              release_file.include?(".1-dev.yml")
-        end
-
-        releases.size.should >= 2
       end
 
       it "runs deployment diff" do
