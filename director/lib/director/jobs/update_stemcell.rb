@@ -23,11 +23,11 @@ module Bosh::Director
         stemcell_dir = Dir.mktmpdir("stemcell")
 
         track_and_log("Extracting stemcell archive") do
-          output = `tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1`
-          if $?.exitstatus != 0
+          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1", :on_error => :return)
+          if result.failed?
             raise StemcellInvalidArchive,
-                  "Invalid stemcell archive, tar returned #{$?.exitstatus}, " +
-                  "output: #{output}"
+                  "Invalid stemcell archive, tar returned #{result.exit_status}, " +
+                  "output: #{result.output}"
           end
         end
 
