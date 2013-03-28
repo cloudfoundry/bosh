@@ -51,49 +51,6 @@ namespace :stemcell do
     build("stemcell-mcf", options)
   end
 
-
-  namespace :aws do
-    require "aws-sdk"
-
-    task :publish_to_s3, [:stemcell_tgz, :bucket_name] do |t,args|
-      light_stemcell_tgz = args[:stemcell_tgz]
-      bucket_name = args[:bucket_name]
-      AWS.config({
-          access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
-          secret_access_key:  ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
-      })
-
-      Dir.mktmpdir do |dir|
-        stemcell_tgz = File.dirname(light_stemcell_tgz) + "/" + File.basename(light_stemcell_tgz).gsub('light-','')
-
-        %x{tar xzf #{light_stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
-        stemcell_manifest = "#{dir}/stemcell.MF"
-        stemcell_properties = YAML.load_file(stemcell_manifest)
-        ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
-
-        s3 = AWS::S3.new
-        s3.buckets.create(bucket_name)    # doesn't fail if already exists in your account
-        bucket = s3.buckets[bucket_name]
-
-        obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_ami"]
-        obj.write(ami_id)
-        obj.acl = :public_read
-        puts "AMI name written to: #{obj.public_url :secure => false}"
-
-        obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_light.tgz"]
-        obj.write(:file => light_stemcell_tgz)
-        obj.acl = :public_read
-        puts "Lite stemcell written to: #{obj.public_url :secure => false}"
-
-        obj = bucket.objects["last_successful_#{stemcell_properties["name"]}.tgz"]
-        obj.write(:file => stemcell_tgz)
-        obj.acl = :public_read
-        puts "Stemcell written to: #{obj.public_url :secure => false}"
-      end
-
-    end
-  end
-
   def build_micro_bosh_release
     release_tarball = nil
     Dir.chdir('release') do

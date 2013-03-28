@@ -41,8 +41,8 @@ namespace :spec do
       task :micro do
         begin
           Rake::Task['spec:system:aws:publish_gems'].invoke
-          Rake::Task['stemcell:aws:publish_to_s3'].invoke(latest_stemcell_path, 'bosh-jenkins-artifacts')
-          Rake::Task['stemcell:aws:publish_to_s3'].invoke(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
+          publish_stemcell_to_s3(latest_stemcell_path, 'bosh-jenkins-artifacts')
+          publish_stemcell_to_s3(latest_micro_bosh_stemcell_path, 'bosh-jenkins-artifacts')
         ensure
           Rake::Task['spec:system:aws:teardown_microbosh'].invoke
         end
@@ -106,6 +106,43 @@ namespace :spec do
             run("cd pkg && gem generate_index .")
           end
           run("cd pkg && s3cmd sync . s3://bosh-jenkins-gems")
+        end
+      end
+
+      def publish_stemcell_to_s3(light_stemcell_tgz, bucket_name)
+        require "aws-sdk"
+
+        AWS.config({
+                       access_key_id: ENV['AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT'],
+                       secret_access_key:  ENV['AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT']
+                   })
+
+        Dir.mktmpdir do |dir|
+          stemcell_tgz = File.dirname(light_stemcell_tgz) + "/" + File.basename(light_stemcell_tgz).gsub('light-','')
+
+          %x{tar xzf #{light_stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
+          stemcell_manifest = "#{dir}/stemcell.MF"
+          stemcell_properties = YAML.load_file(stemcell_manifest)
+          ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
+
+          s3 = AWS::S3.new
+          s3.buckets.create(bucket_name)    # doesn't fail if already exists in your account
+          bucket = s3.buckets[bucket_name]
+
+          obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_ami"]
+          obj.write(ami_id)
+          obj.acl = :public_read
+          puts "AMI name written to: #{obj.public_url :secure => false}"
+
+          obj = bucket.objects["last_successful_#{stemcell_properties["name"]}_light.tgz"]
+          obj.write(:file => light_stemcell_tgz)
+          obj.acl = :public_read
+          puts "Lite stemcell written to: #{obj.public_url :secure => false}"
+
+          obj = bucket.objects["last_successful_#{stemcell_properties["name"]}.tgz"]
+          obj.write(:file => stemcell_tgz)
+          obj.acl = :public_read
+          puts "Stemcell written to: #{obj.public_url :secure => false}"
         end
       end
 
