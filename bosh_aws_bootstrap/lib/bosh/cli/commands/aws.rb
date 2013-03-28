@@ -53,7 +53,7 @@ module Bosh::Cli::Command
 
       say "For security purposes, please provide a username and password for BOSH Director"
       username = ask("Enter username: ")
-      password = ask("Enter password: ")
+      password = ask("Enter password: ") { |q| q.echo = "*" }
 
       bootstrap.create_user(username, password)
 
