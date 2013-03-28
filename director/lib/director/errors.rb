@@ -190,4 +190,6 @@ module Bosh::Director
 
   RpcRemoteException = err(450001)
   RpcTimeout = err(450002)
+
+  SystemError = err(500000, INTERNAL_SERVER_ERROR)
 end

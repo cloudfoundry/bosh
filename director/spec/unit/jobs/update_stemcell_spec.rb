@@ -59,4 +59,14 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     lambda { update_stemcell_job.perform }.should raise_exception(Bosh::Director::StemcellAlreadyExists)
   end
 
+  it "should fail if cannot extract stemcell" do
+    result = Bosh::Exec::Result.new("cmd", "output", 1)
+    Bosh::Exec.should_receive(:sh).and_return(result)
+
+    update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
+
+    expect {
+      update_stemcell_job.perform
+    }.to raise_exception(Bosh::Director::StemcellInvalidArchive)
+  end
 end
