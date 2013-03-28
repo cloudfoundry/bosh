@@ -73,6 +73,21 @@ describe Bosh::Cli::Command::Base do
       @cmd.password.should == "pass"
     end
 
+    it "logs user in with highline" do
+      @director.should_receive(:authenticated?).and_return(true)
+      @director.should_receive(:user=).with("user")
+      @director.should_receive(:password=).with("pass")
+      @cmd.set_target("test")
+      @cmd.login(HighLine::String.new("user"), HighLine::String.new("pass"))
+      @cmd.logged_in?.should be_true
+      @cmd.username.should == "user"
+      @cmd.password.should == "pass"
+      config_file = File.read(File.expand_path(@config))
+      config_file.should_not match /HighLine::String/
+      config_file.should include("username: user")
+      config_file.should include("password: pass")
+    end
+
     it "logs user out" do
       @cmd.set_target("test")
       @director.should_receive(:authenticated?).and_return(true)

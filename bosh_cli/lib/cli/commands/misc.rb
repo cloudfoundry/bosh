@@ -106,6 +106,10 @@ module Bosh::Cli::Command
       end
       logged_in = false
 
+      #Converts HighLine::String to String
+      username = username.to_s
+      password = password.to_s
+
       director.user = username
       director.password = password
 
