@@ -49,9 +49,10 @@ describe Bosh::Cli::BlobManager do
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
         Psych.dump("string", f)
       end
+
       expect {
         make_manager(@release)
-      }.to raise_error(/Incorrect file format/)
+      }.to raise_error(/Incorrect YAML structure/)
     end
 
     it "migrates legacy index file" do

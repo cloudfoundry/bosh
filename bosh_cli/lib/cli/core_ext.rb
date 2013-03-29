@@ -67,17 +67,25 @@ module BoshExtensions
 
   def load_yaml_file(path, expected_type = Hash)
     err("Cannot find file `#{path}'".red) unless File.exist?(path)
-    yaml = Psych::load(ERB.new(File.read(path)).result)
 
-    if expected_type && !yaml.is_a?(expected_type)
-      err("Incorrect file format in `#{path}', #{expected_type} expected")
+    begin
+      yaml_str = ERB.new(File.read(path)).result
+    rescue SystemCallError => e
+      err("Cannot load YAML file at `#{path}': #{e}".red)
     end
 
-    Bosh::Cli::YamlHelper.check_duplicate_keys(path)
+    begin
+      Bosh::Cli::YamlHelper.check_duplicate_keys(yaml_str)
+    rescue => e
+      err("Incorrect YAML structure in `#{path}': #{e}".red)
+    end
+
+    yaml = Psych::load(yaml_str)
+    if expected_type && !yaml.is_a?(expected_type)
+      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".red)
+    end
 
     yaml
-  rescue SystemCallError => e
-    err("Cannot load YAML file at `#{path}': #{e}".red)
   end
 
   def write_yaml(manifest, path)
