@@ -6,15 +6,11 @@ describe Bosh::Cli::YamlHelper do
   subject { Bosh::Cli::YamlHelper }
 
   describe "#check_duplicate_keys" do
-    context "when yaml contains anchors" do
+    context "when YAML contains aliases and anchors" do
       it "does not raise an error" do
-        subject.check_duplicate_keys("key1: &key1")
-      end
-    end
-
-    context "when yaml contains aliases" do
-      it "does not raise an error" do
-        subject.check_duplicate_keys("key1: *key1")
+        expect {
+          subject.check_duplicate_keys("ccdb: &ccdb\n  db_scheme: mysql\nccdb_ng: *ccdb")
+        }.not_to raise_error
       end
     end
   end
