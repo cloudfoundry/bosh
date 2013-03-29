@@ -31,6 +31,7 @@ networks:
   - range: 10.10.0.0/24
     gateway: 10.10.0.1
     dns:
+    - 10.10.0.2
     - 10.10.0.6
     cloud_properties:
       subnet: subnet-4bdf6c26

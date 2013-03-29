@@ -106,26 +106,6 @@ describe Bosh::Agent::Platform::Linux::Network do
     end
   end
 
-  context "dhcp network settings" do
-    context "when there's a single network" do
-      it "sets network settings" do
-        network_wrapper.setup_dhcp_from_settings
-        network_wrapper.wrote_dhcp_conf.should be_true
-        network_wrapper.dns.should == ["172.30.22.153", "172.30.22.154"]
-      end
-    end
-
-    context "when there are multiple networks" do
-      it "picks the dns from the 'default' network" do
-        Bosh::Agent::Config.settings["networks"].merge!(partial_settings["networks"])
-        Bosh::Agent::Config.settings["networks"]["network_a"].delete("default")
-        network_wrapper.setup_dhcp_from_settings
-        network_wrapper.wrote_dhcp_conf.should be_true
-        network_wrapper.dns.should == ["1.2.3.4", "5.6.7.8"]
-      end
-    end
-  end
-
   context "Unsupported Infrastructure" do
     before do
       Bosh::Agent::Config.infrastructure_name = "something not supported"
@@ -138,10 +118,23 @@ describe Bosh::Agent::Platform::Linux::Network do
     end
   end
 
+  shared_examples_for "network interfaces with resolv.conf" do
+    it "should update the resolv.conf file" do
+      Bosh::Agent::Util.should_receive(:update_file) do |result, file_path|
+        result.should == "nameserver 172.30.22.153\nnameserver 172.30.22.154\n"
+        file_path.should == '/etc/resolv.conf'
+      end
+      network_wrapper.setup_networking
+    end
+  end
+
   context "vSphere" do
     before do
+      Bosh::Agent::Config.infrastructure_name = "vsphere"
       network_wrapper.stub(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
     end
+
+    it_behaves_like "network interfaces with resolv.conf"
 
     it "should fail when the mac address in the spec does not match the instance" do
       complete_network["mac"] = "foobar"
@@ -161,37 +154,21 @@ describe Bosh::Agent::Platform::Linux::Network do
       network_wrapper.setup_networking
       network_wrapper.wrote_network_interfaces.should be_true
     end
-
-    it "should update the resolv.conf file" do
-      Bosh::Agent::Util.should_receive(:update_file) do |result, file_path|
-        result.should == "nameserver 172.30.22.153\nnameserver 172.30.22.154\n"
-        file_path.should == '/etc/resolv.conf'
-      end
-      network_wrapper.setup_networking
-    end
   end
 
   context "AWS" do
-    it "should delegate DHCP configuration to platform implementation" do
+    before do
       Bosh::Agent::Config.infrastructure_name = "aws"
-      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
-      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
-      Bosh::Agent::Config.settings = partial_settings
-
-      network_wrapper.setup_networking
-      network_wrapper.wrote_dhcp_conf.should be_true
     end
+
+    it_behaves_like "network interfaces with resolv.conf"
   end
 
   context "OpenStack" do
-    it "should delegate DHCP configuration to platform implementation" do
+    before do
       Bosh::Agent::Config.infrastructure_name = "openstack"
-      Bosh::Agent::Config.instance_variable_set :@infrastructure, nil
-      Bosh::Agent::Config.infrastructure.stub(:load_settings).and_return(partial_settings)
-      Bosh::Agent::Config.settings = partial_settings
-
-      network_wrapper.setup_networking
-      network_wrapper.wrote_dhcp_conf.should be_true
     end
+
+    it_behaves_like "network interfaces with resolv.conf"
   end
 end
