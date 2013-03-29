@@ -111,14 +111,8 @@ module Bosh::Cli
     end
 
     def save_config
-      # TODO: introduce write_yaml helper
-      File.open(@dev_config_file, "w") do |f|
-        Psych.dump(@dev_config, f)
-      end
-
-      File.open(@final_config_file, "w") do |f|
-        Psych.dump(@final_config, f)
-      end
+      write_yaml(@dev_config_file, @dev_config)
+      write_yaml(@final_config_file, @final_config)
     end
 
     private
@@ -221,6 +215,14 @@ module Bosh::Cli
         load_yaml_file(file)
       else
         {}
+      end
+    end
+
+    def write_yaml(file, hash)
+      unless hash == load_config(file)
+        File.open(file, "w+") do |f|
+          Psych.dump(hash, f)
+        end
       end
     end
 
