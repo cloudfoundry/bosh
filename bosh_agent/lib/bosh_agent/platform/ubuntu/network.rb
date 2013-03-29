@@ -22,7 +22,7 @@ module Bosh::Agent
 
     def restart_networking_service
       # ubuntu 10.04 networking startup/upstart stuff is quite borked
-      @networks.each do |k, v|
+      networks.each do |k, v|
         interface = v['interface']
         @logger.info("Restarting #{interface}")
         output = sh("service network-interface stop INTERFACE=#{interface}").output

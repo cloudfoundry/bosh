@@ -12,7 +12,7 @@ module Bosh::Agent
 
     def write_network_interfaces
       template = ERB.new(load_erb("rhel-ifcfg.erb"), 0, '%<>-')
-      @networks.each do |name, network|
+      networks.each do |name, network|
         result = template.result(binding)
         Bosh::Agent::Util::update_file(result, "/etc/sysconfig/network-scripts/ifcfg-#{name}")
       end
