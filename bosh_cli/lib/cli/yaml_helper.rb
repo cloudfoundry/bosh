@@ -11,6 +11,9 @@ module Bosh::Cli
           when Psych::Nodes::Sequence
             process_sequence(o)
           when Psych::Nodes::Scalar
+            # noop
+          when Psych::Nodes::Alias
+            # noop
           else
             err("Unhandled class #{o.class}, fix yaml duplicate check")
         end
@@ -29,7 +32,7 @@ module Bosh::Cli
         m.children.each_with_index do |key_or_value, index|
           next if index.odd? # skip the values
           key = key_or_value.value # Sorry this is confusing, Psych mappings don't behave nicely like maps
-          raise "Found duplicate key #{key}" if s.include?(key)
+          raise "Found duplicate key '#{key}'" if s.include?(key)
           s.add(key)
         end
 
@@ -40,19 +43,10 @@ module Bosh::Cli
       end
 
       public
-      def check_duplicate_keys(path)
-        begin
-          string_with_erb = File.read(path)
-          yaml = ERB.new(string_with_erb).result
-          document = Psych.parse(yaml)
-          process_mapping(document.root) if document
-        rescue => e
-          if e.message.include? "Found duplicate key"
-            raise "Bad YAML file when parsing file: #{path}\n#{e.message}"
-          else
-            raise e
-          end
-        end
+
+      def check_duplicate_keys(yaml_str)
+        document = Psych.parse(yaml_str)
+        process_mapping(document.root) if document
       end
     end
   end
