@@ -11,6 +11,9 @@ module Bosh::Cli
           when Psych::Nodes::Sequence
             process_sequence(o)
           when Psych::Nodes::Scalar
+            # noop
+          when Psych::Nodes::Alias
+            # noop
           else
             err("Unhandled class #{o.class}, fix yaml duplicate check")
         end
