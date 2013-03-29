@@ -234,7 +234,7 @@ module Bosh::Cli::Command
       if status_code != HTTP::Status::OK
         err("Received HTTP #{status_code} from #{PUBLIC_STEMCELL_INDEX_URL}.")
       end
-      YAML.load(response.body)
+      Psych.load(response.body)
     end
 
   end

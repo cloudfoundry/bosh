@@ -90,7 +90,7 @@ module Bosh::Agent
       end
 
       def apply_spec
-        YAML.load_file(release_apply_spec)
+        Psych.load_file(release_apply_spec)
       end
     end
   end

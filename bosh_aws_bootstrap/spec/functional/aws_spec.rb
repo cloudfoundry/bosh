@@ -25,7 +25,7 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it "uses some of the normal director keys" do
-        @micro_bosh_yaml = YAML.load_file("micro_bosh.yml")
+        @micro_bosh_yaml = Psych.load_file("micro_bosh.yml")
 
         @micro_bosh_yaml['name'].should == "micro-dev102"
         @micro_bosh_yaml['network']['vip'].should == "50.200.100.1"
@@ -48,7 +48,7 @@ describe Bosh::Cli::Command::AWS do
             aws.stub(:target_required)
             aws.stub_chain(:director, :uuid).and_return("deadbeef")
             aws.create_bosh_manifest(create_vpc_output_yml, route53_receipt_yml)
-            YAML.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
+            Psych.load_file("bosh.yml")['name'].should == "vpc-bosh-dev102"
           end
         end
       end
@@ -173,7 +173,7 @@ describe Bosh::Cli::Command::AWS do
 
         aws.output_state["vpc"]["id"].should == "vpc id"
         aws.output_state["vpc"]["subnets"].should == {"bosh" => "amz-subnet1", "name2" => "amz-subnet2"}
-        aws.output_state["original_configuration"].should == YAML.load_file(config_file)
+        aws.output_state["original_configuration"].should == Psych.load_file(config_file)
       end
 
       context "when the VPC is not immediately available" do
@@ -703,7 +703,7 @@ describe Bosh::Cli::Command::AWS do
 
         # TODO: Where are the assertions for this test?  Buried in `make_fake_rds!`?  Fix this!
         it "should create all rds databases with option overrides" do
-          ccdb_opts = YAML.load_file(config_file)["rds"].find { |db_opts| db_opts["name"] == "ccdb" }
+          ccdb_opts = Psych.load_file(config_file)["rds"].find { |db_opts| db_opts["name"] == "ccdb" }
           make_fake_rds!(aws_creation_options: ccdb_opts["aws_creation_options"])
           aws.create_rds_dbs(config_file, receipt_file)
         end

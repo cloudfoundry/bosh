@@ -12,7 +12,7 @@ module Bosh::Deployer
       unless File.exist?(apply_spec)
         err "this isn't a micro bosh stemcell - #{file} missing"
       end
-      YAML.load_file(apply_spec)
+      Psych.load_file(apply_spec)
     end
 
     attr_accessor :spec

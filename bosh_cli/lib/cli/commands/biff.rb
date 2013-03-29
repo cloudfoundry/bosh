@@ -210,7 +210,7 @@ module Bosh::Cli::Command
       temp_data = File.read(@template_file)
       temp_data.gsub!(/<%=.*%>/, "INSERT_DATA_HERE")
       temp_data.gsub!(/[ ]*<%.*%>[ ]*\n/, "")
-      YAML::load(temp_data)
+      Psych::load(temp_data)
     end
 
     # Gets the network's network/mask for configuring things such as the

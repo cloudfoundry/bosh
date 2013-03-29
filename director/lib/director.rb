@@ -457,7 +457,7 @@ module Bosh::Director
     end
 
     post "/packages/matches", :consumes => :yaml do
-      manifest = YAML.load(request.body)
+      manifest = Psych.load(request.body)
       unless manifest.is_a?(Hash) && manifest["packages"].is_a?(Array)
         raise BadManifest, "Manifest doesn't have a usable packages section"
       end

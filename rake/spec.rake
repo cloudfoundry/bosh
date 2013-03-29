@@ -122,7 +122,7 @@ namespace :spec do
 
           %x{tar xzf #{light_stemcell_tgz} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
           stemcell_manifest = "#{dir}/stemcell.MF"
-          stemcell_properties = YAML.load_file(stemcell_manifest)
+          stemcell_properties = Psych.load_file(stemcell_manifest)
           ami_id = stemcell_properties['cloud_properties']['ami']['us-east-1']
 
           s3 = AWS::S3.new
@@ -150,7 +150,7 @@ namespace :spec do
         Dir.mktmpdir do |dir|
           %x{tar xzf #{stemcell_path} --directory=#{dir} stemcell.MF} || raise("Failed to untar stemcell")
           stemcell_manifest = "#{dir}/stemcell.MF"
-          st = YAML.load_file(stemcell_manifest)
+          st = Psych.load_file(stemcell_manifest)
           st["version"]
         end
       end

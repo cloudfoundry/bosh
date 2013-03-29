@@ -42,7 +42,7 @@ module Bosh::Cli
           hash
         end
 
-        manifest = YAML.load(compiler.result)
+        manifest = Psych.load(compiler.result)
       end
 
       if manifest["name"].blank? || manifest["director_uuid"].blank?
@@ -62,7 +62,7 @@ module Bosh::Cli
       resolve_release_aliases(manifest)
       resolve_stemcell_aliases(manifest)
 
-      options[:yaml] ? YAML.dump(manifest) : manifest
+      options[:yaml] ? Psych.dump(manifest) : manifest
     end
 
     # Check if the 2 deployments are different.
@@ -106,7 +106,7 @@ module Bosh::Cli
       # but it turned out to be confusing to many users and thus has
       # been removed.
       return if current_deployment["manifest"].nil?
-      current_manifest = YAML.load(current_deployment["manifest"])
+      current_manifest = Psych.load(current_deployment["manifest"])
 
       unless current_manifest.is_a?(Hash)
         err("Current deployment manifest format is invalid, " +

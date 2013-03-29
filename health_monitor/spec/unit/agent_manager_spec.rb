@@ -165,7 +165,7 @@ describe Bhm::AgentManager do
     let(:mock_nats) { mock('nats') }
 
     before do
-      Bhm::config=YAML.load_file(sample_config)
+      Bhm::config=Psych.load_file(sample_config)
       mock_nats.stub(:subscribe)
       Bhm.stub(:nats).and_return(mock_nats)
     end

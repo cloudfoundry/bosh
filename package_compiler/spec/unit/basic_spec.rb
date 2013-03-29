@@ -58,7 +58,7 @@ describe Bosh::PackageCompiler::Compiler do
 
       xit "should add collocated jobs in apply spec" do
         compiler.compile
-        spec = YAML.load_file(compiler.apply_spec)
+        spec = Psych.load_file(compiler.apply_spec)
 
         spec_jobs = spec["job"]["templates"]
         spec_jobs.size.should eq(3)
@@ -71,7 +71,7 @@ describe Bosh::PackageCompiler::Compiler do
     context "when job does NOT use job collocation" do
       it "should put only this job in apply spec" do
         compiler.compile
-        spec = YAML.load_file(compiler.apply_spec)
+        spec =Psych.load_file(compiler.apply_spec)
         spec["job"]["templates"].size.should eq(1)
 
         micro_job_spec = spec["job"]["templates"][0]

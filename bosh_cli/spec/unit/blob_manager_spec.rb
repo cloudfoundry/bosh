@@ -47,7 +47,7 @@ describe Bosh::Cli::BlobManager do
 
     it "doesn't like bad index file'" do
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
-        YAML.dump("string", f)
+        Psych.dump("string", f)
       end
       expect {
         make_manager(@release)
@@ -59,12 +59,12 @@ describe Bosh::Cli::BlobManager do
       test_hash = { "foo" => "bar" }
 
       File.open(legacy_file, "w") do |f|
-        YAML.dump({ "foo" => "bar" }, f)
+        Psych.dump({ "foo" => "bar" }, f)
       end
 
       make_manager(@release)
       File.exists?(legacy_file).should be_false
-      YAML.load_file(File.join(@config_dir, "blobs.yml")).should == test_hash
+      Psych.load_file(File.join(@config_dir, "blobs.yml")).should == test_hash
     end
   end
 
@@ -163,7 +163,7 @@ describe Bosh::Cli::BlobManager do
       }
 
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
-        YAML.dump(index, f)
+        Psych.dump(index, f)
       end
 
       @manager = make_manager(@release)
@@ -264,7 +264,7 @@ describe Bosh::Cli::BlobManager do
       }
 
       File.open(File.join(@config_dir, "blobs.yml"), "w") do |f|
-        YAML.dump(index, f)
+        Psych.dump(index, f)
       end
 
       foo = Tempfile.new("foo")

@@ -73,7 +73,7 @@ describe Bosh::Director::Jobs::DeleteRelease do
       rv1 = BDM::ReleaseVersion.make(:release => release, :version => "1")
       rv2 = BDM::ReleaseVersion.make(:release => release, :version => "2")
 
-      manifest = YAML.dump(
+      manifest = Psych.dump(
           "release" => {"name" => "test_release", "version" => "2"})
 
       deployment = BDM::Deployment.make(:name => "test_deployment",

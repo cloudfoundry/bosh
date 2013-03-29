@@ -41,9 +41,9 @@ if erb
 
   template = ERB.new(File.read(config_file), 0, "%<>-")
   contents = template.result(ConfigBindingHelper.new(index).get_binding)
-  config = YAML.load(contents)
+  config = Psych.load(contents)
 else
-  config = YAML.load_file(config_file)
+  config = Psych.load_file(config_file)
 end
 
 Bosh::Director::Config.configure(config)

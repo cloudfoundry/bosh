@@ -87,8 +87,8 @@ module Bosh::Agent
         FileUtils.mkdir_p(bin_dir)
 
         begin
-          manifest = YAML.load_file(manifest_path)
-        rescue ArgumentError
+          manifest = Psych.load_file(manifest_path)
+        rescue Psych::SyntaxError
           install_failed("malformed job manifest #{manifest_path}")
         end
 

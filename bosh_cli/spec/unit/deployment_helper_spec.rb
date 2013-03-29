@@ -197,7 +197,7 @@ describe Bosh::Cli::DeploymentHelper do
       }
 
       manifest_file = Tempfile.new("manifest")
-      YAML.dump(manifest, manifest_file)
+      Psych.dump(manifest, manifest_file)
       manifest_file.close
       director = mock(Bosh::Cli::Director)
 
@@ -225,7 +225,7 @@ describe Bosh::Cli::DeploymentHelper do
       }
 
       manifest_file = Tempfile.new("manifest")
-      YAML.dump(manifest, manifest_file)
+      Psych.dump(manifest, manifest_file)
       manifest_file.close
       director = mock(Bosh::Cli::Director, :uuid => "deadbeef")
 

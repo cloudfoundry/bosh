@@ -13,7 +13,7 @@ describe Bosh::Director::ApiController do
     FileUtils.mkdir_p(@blobstore_dir)
     FileUtils.mkdir_p(@temp_dir)
 
-    test_config = YAML.load(spec_asset('test-director-config.yml'))
+    test_config = Psych.load(spec_asset('test-director-config.yml'))
     test_config['dir'] = @temp_dir
     test_config['blobstore'] = {
         'provider' => 'local',

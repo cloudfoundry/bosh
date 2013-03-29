@@ -45,7 +45,7 @@ module Bosh::Cli
       @work_dir = work_dir
 
       unless File.exists?(@filename)
-        File.open(@filename, "w") { |f| YAML.dump({}, f) }
+        File.open(@filename, "w") { |f| Psych.dump({}, f) }
         File.chmod(0600, @filename)
       end
 
@@ -191,7 +191,7 @@ module Bosh::Cli
 
     def save
       File.open(@filename, "w") do |f|
-        YAML.dump(@config_file, f)
+        Psych.dump(@config_file, f)
       end
 
     rescue SystemCallError => e

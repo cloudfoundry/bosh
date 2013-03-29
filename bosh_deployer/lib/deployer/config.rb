@@ -146,7 +146,7 @@ module Bosh::Deployer
 
       def load_defaults(provider)
         file = File.join(File.dirname(File.expand_path(__FILE__)), "../../config/#{provider}_defaults.yml")
-        YAML.load_file(file)
+        Psych.load_file(file)
       end
     end
   end

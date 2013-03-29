@@ -67,7 +67,7 @@ module BoshExtensions
 
   def load_yaml_file(path, expected_type = Hash)
     err("Cannot find file `#{path}'".red) unless File.exist?(path)
-    yaml = YAML::load(ERB.new(File.read(path)).result)
+    yaml = Psych::load(ERB.new(File.read(path)).result)
 
     if expected_type && !yaml.is_a?(expected_type)
       err("Incorrect file format in `#{path}', #{expected_type} expected")

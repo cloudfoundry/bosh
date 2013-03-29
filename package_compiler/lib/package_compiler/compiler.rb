@@ -50,14 +50,14 @@ module Bosh
       def compile
         @logger.info("Compiling #{@options["manifest"]} with tarball #{@options["release"]}")
         connect_to_agent
-        deployment_mf = YAML.load_file(File.expand_path(@options["manifest"]))
+        deployment_mf = Psych.load_file(File.expand_path(@options["manifest"]))
         @spec = prep_spec(deployment_mf)
 
         @packages = {}
         @spec["job"] = { "name" => @options[:job] }
 
         untar(@options["release"]) do |dir|
-          release_mf = YAML.load_file("release.MF")
+          release_mf = Psych.load_file("release.MF")
           jobs = []
 
           jobs_to_compile(@options[:job], deployment_mf).each do |spec_job|
@@ -73,7 +73,7 @@ module Bosh
             end
 
             untar(job_path) do
-              job = YAML.load_file("job.MF")
+              job = Psych.load_file("job.MF")
 
               # add default job spec properties to apply spec
               add_default_properties(@spec["properties"], job["properties"])
@@ -89,7 +89,7 @@ module Bosh
 
         # save apply spec
         FileUtils.mkdir_p(File.dirname(apply_spec))
-        File.open(apply_spec, 'w') { |f| f.write(YAML.dump(@spec)) }
+        File.open(apply_spec, 'w') { |f| f.write(Psych.dump(@spec)) }
 
         @spec["packages"]
       rescue => e
@@ -228,7 +228,7 @@ module Bosh
           @logger.warn("Ignoring error to stop services #{e.inspect}")
         end
 
-        @spec = YAML.load_file(@options["apply_spec"])
+        @spec = Psych.load_file(@options["apply_spec"])
         @logger.info("#{@spec.inspect}")
         update_bosh_spec
         @agent.run_task(:apply, @spec)

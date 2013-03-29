@@ -91,7 +91,7 @@ module Bosh::Cli::Command
         :yaml => true, :resolve_properties => true)
 
       if interactive?
-        inspect_deployment_changes(YAML.load(manifest_yaml))
+        inspect_deployment_changes(Psych.load(manifest_yaml))
         say("Please review all changes carefully".yellow)
       end
 
@@ -273,7 +273,7 @@ module Bosh::Cli::Command
     def row_for_deployments_table_by_manifest(deployment_name)
       raw_manifest = director.get_deployment(deployment_name)
       if (raw_manifest.has_key?("manifest"))
-        manifest = YAML.load(raw_manifest["manifest"])
+        manifest = Psych.load(raw_manifest["manifest"])
 
         stemcells = manifest["resource_pools"].map { |rp|
           rp["stemcell"].values_at("name", "version").join("/")

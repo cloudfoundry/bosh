@@ -353,7 +353,7 @@ module ReleaseHelper
         "packages" => job["packages"]
       }
       File.open(File.join(job_dir, "job.MF"), "w") do |f|
-        YAML.dump(spec, f)
+        Psych.dump(spec, f)
       end
 
       templates_dir = File.join(job_dir, "templates")
@@ -402,7 +402,7 @@ module ReleaseHelper
     end
 
     File.open(File.join(tmp_dir, "release.MF"), "w") do |f|
-      YAML.dump(manifest, f)
+      Psych.dump(manifest, f)
     end
 
     Dir.chdir(release_dir) do

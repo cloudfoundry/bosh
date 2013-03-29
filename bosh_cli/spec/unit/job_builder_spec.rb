@@ -211,7 +211,7 @@ describe Bosh::Cli::JobBuilder do
       "packages"   => ["bar", "baz"],
       "templates"  => ["a.conf", "b.yml"]
     }
-    spec_yaml = YAML.dump(spec)
+    spec_yaml = Psych.dump(spec)
 
     script = <<-SCRIPT.gsub(/^\s*/, "")
     #!/bin/sh

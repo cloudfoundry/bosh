@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Aws::BoshManifest do
-  let(:vpc_receipt) { YAML.load_file(asset "test-output.yml") }
-  let(:route53_receipt) { YAML.load_file(asset "test-aws_route53_receipt.yml") }
+  let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
+  let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
 
   it "sets the correct elastic ip" do
     described_class.new(vpc_receipt, route53_receipt, 'deadbeef').vip.should == "50.200.100.3"

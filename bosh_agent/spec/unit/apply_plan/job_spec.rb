@@ -106,7 +106,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       }
 
       mock_template("beefdad", "badcafe", job.install_path) do |template|
-        template.add_file("job.MF", YAML.dump(manifest))
+        template.add_file("job.MF", Psych.dump(manifest))
         template.add_file("templates/foo.erb", "<%= spec.key1 %>")
         template.add_file("templates/bar.erb", "<%= spec.key2 %>")
         template.add_file("templates/test", "<%= \"\#{name}, \#{index}\" %>")
@@ -211,7 +211,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         }
 
         template_for(job) do |template|
-          template.add_file("job.MF", YAML.dump(manifest))
+          template.add_file("job.MF", Psych.dump(manifest))
         end
 
         expect {
@@ -230,7 +230,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         }
 
         template_for(job) do |template|
-          template.add_file("job.MF", YAML.dump(manifest))
+          template.add_file("job.MF", Psych.dump(manifest))
         end
 
         template_path = File.join(job.install_path, "templates", "foo.erb")
@@ -250,7 +250,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         }
 
         template_for(job) do |template|
-          template.add_file("job.MF", YAML.dump(manifest))
+          template.add_file("job.MF", Psych.dump(manifest))
           template.add_file("templates/foo.erb", "<%= properties.foo.bar %>")
         end
 
@@ -273,7 +273,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         }
 
         template_for(job) do |template|
-          template.add_file("job.MF", YAML.dump(manifest))
+          template.add_file("job.MF", Psych.dump(manifest))
           template.add_file("templates/foo.erb", "<%= p('foo.bar') %>")
         end
 
@@ -303,7 +303,7 @@ describe Bosh::Agent::ApplyPlan::Job do
       job = make_job(JOB_NAME, valid_spec["name"], valid_spec, config_binding)
 
       mock_template("beefdad", "badcafe", job.install_path) do |template|
-        template.add_file("job.MF", YAML.dump({}))
+        template.add_file("job.MF", Psych.dump({}))
         template.add_file("monit", "check process ccdb\nmode manual\n" +
                           "<%= properties.foo %>")
         template.add_file("extra.monit", "check process ccdb_extra\n")
@@ -343,7 +343,7 @@ describe Bosh::Agent::ApplyPlan::Job do
         job = make_job(JOB_NAME, valid_spec["name"], valid_spec, config_binding)
 
         mock_template("beefdad", "badcafe", job.install_path) do |template|
-          template.add_file("job.MF", YAML.dump({}))
+          template.add_file("job.MF", Psych.dump({}))
           template.add_file("monit", "check process ccdb\nmode manual\n" +
                             "<%= properties.foo.bar %>")
         end

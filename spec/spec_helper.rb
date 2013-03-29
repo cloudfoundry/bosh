@@ -63,7 +63,7 @@ end
 
 def yaml_file(name, object)
   f = Tempfile.new(name)
-  f.write(YAML.dump(object))
+  f.write(Psych.dump(object))
   f.close
   f
 end

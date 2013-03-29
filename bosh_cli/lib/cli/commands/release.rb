@@ -26,7 +26,7 @@ module Bosh::Cli::Command
 
       # Initialize an empty blobs index
       File.open(File.join("config", "blobs.yml"), "w") do |f|
-        YAML.dump({}, f)
+        Psych.dump({}, f)
       end
 
       say("Release directory initialized".green)

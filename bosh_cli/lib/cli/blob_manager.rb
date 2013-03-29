@@ -352,7 +352,7 @@ module Bosh::Cli
 
     # Updates blobs index
     def update_index
-      yaml = YAML.dump(@index).gsub(/\s*$/, "")
+      yaml = Psych.dump(@index).gsub(/\s*$/, "")
 
       index_file = Tempfile.new("blob_index")
       index_file.puts(yaml)

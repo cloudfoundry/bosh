@@ -14,7 +14,7 @@ REGIONS = %w[
 ]
 
 config_file = ARGV[0]
-config = YAML.load_file(config_file)
+config = Psych.load_file(config_file)
 
 fog = Bosh::Ami::Fog.new(config)
 
@@ -24,9 +24,9 @@ end
 
 begin
   File.open(config_file, "w") do |file|
-    YAML.dump(config, file)
+    Psych.dump(config, file)
   end
 rescue => e
   puts "failed to save host file: #{e.message}"
-  puts YAML.dump(config)
+  puts Psych.dump(config)
 end

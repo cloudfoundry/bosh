@@ -79,122 +79,27 @@ describe Bosh::Cli::Command::Base do
     end
 
     def old_manifest_yaml
-      <<-eos
-      ---
-      name: test
-      resource_pools:
-      - name: rp
-      networks:
-      - name: default
-      jobs:
-      - name: job1
-        template: xyz
-        networks:
-        - name: default
-      - name: old_job
-        template: xyz
-        networks:
-        - name: default
-      eos
+      File.read(spec_asset("manifests/old_manifest.yml"))
     end
 
     def new_manifest_with_some_deletions
-      <<-eos
-      ---
-      name: test
-      resource_pools:
-      - name: rp
-      networks:
-      - name: default
-      jobs:
-      - name: job1
-        networks:
-        - name: default
-      - name: new_job
-        template: xyz
-        networks:
-        - name: default
-      eos
+      File.read(spec_asset("manifests/new_manifest_with_some_deletions.yml"))
     end
 
     def new_manifest_yaml
-      <<-eos
-      ---
-      name: test
-      networks:
-      - name: default
-      resource_pools:
-      - name: rp
-      jobs:
-      - name: job1
-        template: xyz
-        networks:
-        - name: default
-      - name: new_job
-        template: xyz
-        networks:
-        - name: default
-      eos
+      File.read(spec_asset("manifests/new_manifest.yml"))
     end
 
     def new_extra_changes_manifest
-      <<-eos
-      ---
-      name: test
-      networks:
-      - name: default
-      resource_pools:
-      - name: rp
-      jobs:
-      - name: job1
-        template: xyz
-        networks:
-        - name: default
-      - name: new_job
-        template: changed_templated_causing_failure
-        networks:
-        - name: default
-      eos
+      File.read(spec_asset("manifests/new_extra_changes_manifest.yml"))
     end
 
     def new_extra_job_rename_manifest
-      <<-eos
-      ---
-      name: test
-      networks:
-      - name: default
-      resource_pools:
-      - name: rp
-      jobs:
-      - name: new_job1
-        template: xyz
-        networks:
-        - name: default
-      - name: new_job
-        template: changed_templated_causing_failure
-        networks:
-        - name: default
-      eos
+      File.read(spec_asset("manifests/new_extra_job_rename_manifest.yml"))
     end
 
     def new_missing_new_job
-      <<-eos
-      ---
-      name: test
-      networks:
-      - name: default
-      resource_pools:
-      - name: rp
-      jobs:
-      - name: job1
-        template: xyz
-        networks:
-        - name: default
-      - name: old_job
-        template: xyz
-        networks:
-        - name: default
-      eos
+      File.read(spec_asset("manifests/new_manifest_missing_new_job.yml"))
     end
   end
 end

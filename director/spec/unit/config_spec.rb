@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::Config do
-  let(:test_config) { YAML.load(spec_asset("test-director-config.yml")) }
+  let(:test_config) { Psych.load(spec_asset("test-director-config.yml")) }
 
   context "max_tasks" do
     it "can set max_tasks in config" do

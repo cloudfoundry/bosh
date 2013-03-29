@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe Bosh::Aws::BatManifest do
-  let(:vpc_receipt) { YAML.load_file(asset "test-output.yml") }
+  let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
   let(:vpc_config) { vpc_receipt['original_configuration'] }
-  let(:route53_receipt) { YAML.load_file(asset "test-aws_route53_receipt.yml") }
+  let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
   let(:stemcell_version) { '1.1.1.pre' }
   let(:manifest) { Bosh::Aws::BatManifest.new(vpc_receipt, route53_receipt, stemcell_version, 'deadbeef') }
 

@@ -28,7 +28,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       f.write("manifest")
     end
 
-    YAML.stub!(:load).with("manifest").and_return(@manifest)
+    Psych.stub!(:load).with("manifest").and_return(@manifest)
 
     Bosh::Director::DeploymentPlan.stub!(:new).with(@manifest, "recreate" => false, "job_states" => { },
                                                     "job_rename" => { }).and_return(@deployment_plan)

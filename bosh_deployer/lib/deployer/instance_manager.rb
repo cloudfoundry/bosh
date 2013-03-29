@@ -450,7 +450,7 @@ module Bosh::Deployer
     def load_deployments
       if File.exists?(@state_yml)
         logger.info("Loading existing deployment data from: #{@state_yml}")
-        YAML.load_file(@state_yml)
+        Psych.load_file(@state_yml)
       else
         logger.info("No existing deployments found (will save to #{@state_yml})")
         { "instances" => [], "disks" => [] }
@@ -473,7 +473,7 @@ module Bosh::Deployer
     def load_spec(file)
       yield unless File.exist?(file)
       logger.info("Loading yaml from #{file}")
-      YAML.load_file(file)
+      Psych.load_file(file)
     end
 
     def generate_unique_name
@@ -503,7 +503,7 @@ module Bosh::Deployer
       @deployments["disks"] = disk_model.map { |disk| disk.values } if disk_model
 
       File.open(@state_yml, "w") do |file|
-        file.write(YAML.dump(@deployments))
+        file.write(Psych.dump(@deployments))
       end
     end
 

@@ -58,7 +58,7 @@ module Bosh::Deployer
         }
 
         @registry_config = Tempfile.new("bosh_registry_yml")
-        @registry_config.write(YAML.dump(registry_config))
+        @registry_config.write(Psych.dump(registry_config))
         @registry_config.close
       end
 

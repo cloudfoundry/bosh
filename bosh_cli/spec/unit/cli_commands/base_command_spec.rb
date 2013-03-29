@@ -12,7 +12,7 @@ describe Bosh::Cli::Command::Base do
 
   def add_config(object)
     File.open(@config_file, "w") do |f|
-      f.write(YAML.dump(object))
+      f.write(Psych.dump(object))
     end
   end
 

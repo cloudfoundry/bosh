@@ -113,11 +113,11 @@ module Bosh::Cli
     def save_config
       # TODO: introduce write_yaml helper
       File.open(@dev_config_file, "w") do |f|
-        YAML.dump(@dev_config, f)
+        Psych.dump(@dev_config, f)
       end
 
       File.open(@final_config_file, "w") do |f|
-        YAML.dump(@final_config, f)
+        Psych.dump(@final_config, f)
       end
     end
 
@@ -184,7 +184,7 @@ module Bosh::Cli
         @dev_config = new_dev_config
 
         File.open(@dev_config_file, "w") do |f|
-          YAML.dump(@dev_config, f)
+          Psych.dump(@dev_config, f)
         end
         say("Migrated dev config file format".green)
       end
@@ -211,7 +211,7 @@ module Bosh::Cli
 
         @final_config = new_final_config
 
-        File.open(@final_config_file, "w") { |f| YAML.dump(@final_config, f) }
+        File.open(@final_config_file, "w") { |f| Psych.dump(@final_config, f) }
         say("Migrated final config file format".green)
       end
     end

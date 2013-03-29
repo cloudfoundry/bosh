@@ -25,7 +25,7 @@ unless config_file
   exit(1)
 end
 
-@config = YAML.load_file(config_file)
+@config = Psych.load_file(config_file)
 
 module ConsoleHelpers
   def cpi

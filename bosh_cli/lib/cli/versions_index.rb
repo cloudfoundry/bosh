@@ -82,7 +82,7 @@ module Bosh::Cli
       end
 
       File.open(@index_file, "w") do |f|
-        f.write(YAML.dump(@data))
+        f.write(Psych.dump(@data))
       end
 
       File.expand_path(filename(version))

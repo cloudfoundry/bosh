@@ -13,7 +13,7 @@ describe Bosh::Director::ApiController do
     FileUtils.mkdir_p(@blobstore_dir)
     FileUtils.mkdir_p(@temp_dir)
 
-    test_config = YAML.load(spec_asset("test-director-config.yml"))
+    test_config = Psych.load(spec_asset("test-director-config.yml"))
     test_config["dir"] = @temp_dir
     test_config["blobstore"] = {
         "provider" => "local",
@@ -150,7 +150,7 @@ describe Bosh::Director::ApiController do
     describe "job management" do
       it "allows putting jobs into different states" do
         BD::Models::Deployment.
-            create(:name => "foo", :manifest => YAML.dump({"foo" => "bar"}))
+            create(:name => "foo", :manifest => Psych.dump({"foo" => "bar"}))
         put "/deployments/foo/jobs/nats?state=stopped", {},
             payload("text/yaml", spec_asset("test_conf.yaml"))
         expect_redirect_to_queued_task(last_response)
@@ -158,7 +158,7 @@ describe Bosh::Director::ApiController do
 
       it "allows putting job instances into different states" do
         BD::Models::Deployment.
-            create(:name => "foo", :manifest => YAML.dump({"foo" => "bar"}))
+            create(:name => "foo", :manifest => Psych.dump({"foo" => "bar"}))
         put "/deployments/foo/jobs/dea/2?state=stopped", {},
             payload("text/yaml", spec_asset("test_conf.yaml"))
         expect_redirect_to_queued_task(last_response)
@@ -174,7 +174,7 @@ describe Bosh::Director::ApiController do
     describe "log management" do
       it "allows fetching logs from a particular instance" do
         deployment = BD::Models::Deployment.
-            create(:name => "foo", :manifest => YAML.dump({"foo" => "bar"}))
+            create(:name => "foo", :manifest => Psych.dump({"foo" => "bar"}))
         instance = BD::Models::Instance.
             create(:deployment => deployment, :job => "nats",
                    :index => "0", :state => "started")
@@ -189,7 +189,7 @@ describe Bosh::Director::ApiController do
 
       it "404 if no deployment" do
         deployment = BD::Models::Deployment.
-            create(:name => "bar", :manifest => YAML.dump({"foo" => "bar"}))
+            create(:name => "bar", :manifest => Psych.dump({"foo" => "bar"}))
         get "/deployments/bar/jobs/nats/0/logs", {}
         last_response.status.should == 404
       end
@@ -313,12 +313,12 @@ describe Bosh::Director::ApiController do
       it "returns manifest" do
         deployment = BD::Models::Deployment.
             create(:name => "test_deployment",
-                   :manifest => YAML.dump({"foo" => "bar"}))
+                   :manifest => Psych.dump({"foo" => "bar"}))
         get "/deployments/test_deployment"
 
         last_response.status.should == 200
         body = Yajl::Parser.parse(last_response.body)
-        YAML.load(body["manifest"]).should == {"foo" => "bar"}
+        Psych.load(body["manifest"]).should == {"foo" => "bar"}
       end
     end
 
@@ -326,7 +326,7 @@ describe Bosh::Director::ApiController do
       it "returns a list of agent_ids, jobs and indices" do
         deployment = BD::Models::Deployment.
             create(:name => "test_deployment",
-                   :manifest => YAML.dump({"foo" => "bar"}))
+                   :manifest => Psych.dump({"foo" => "bar"}))
         vms = []
 
         15.times do |i|

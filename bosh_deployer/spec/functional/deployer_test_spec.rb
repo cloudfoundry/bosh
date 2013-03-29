@@ -7,7 +7,7 @@ describe Bosh::Deployer do
   def setup(config_yml)
     @stemcell_tgz = ENV['BOSH_STEMCELL_TGZ']
     @dir = ENV['BOSH_DEPLOYER_DIR'] || Dir.mktmpdir("bd_spec")
-    config = YAML.load_file(spec_asset(config_yml))
+    config = Psych.load_file(spec_asset(config_yml))
     config["dir"] = @dir
     @deployer = Bosh::Deployer::InstanceManager.new(config)
   end

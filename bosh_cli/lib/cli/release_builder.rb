@@ -150,7 +150,7 @@ module Bosh::Cli
       end
 
       manifest["version"] = @version
-      manifest_yaml = YAML.dump(manifest)
+      manifest_yaml = Psych.dump(manifest)
 
       say("Writing manifest...")
       File.open(File.join(build_dir, "release.MF"), "w") do |f|

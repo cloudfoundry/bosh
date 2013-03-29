@@ -10,7 +10,7 @@ describe Bosh::Registry::Runner do
 
   def write_config(file, config)
     File.open(file, "w") do |f|
-      YAML.dump(config, f)
+      Psych.dump(config, f)
     end
   end
 
@@ -44,7 +44,7 @@ describe Bosh::Registry::Runner do
       config_file = Tempfile.new("config")
       write_config(config_file.path, { "foo" => "bar" })
 
-      YAML.stub!(:load_file).and_raise(SystemCallError.new("baz"))
+      Psych.stub!(:load_file).and_raise(SystemCallError.new("baz"))
 
       expect {
         make_runner(config_file.path)

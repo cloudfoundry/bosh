@@ -33,7 +33,7 @@ module Bosh::Director
 
         track_and_log("Verifying stemcell manifest") do
           stemcell_manifest_file = File.join(stemcell_dir, "stemcell.MF")
-          stemcell_manifest = YAML.load_file(stemcell_manifest_file)
+          stemcell_manifest = Psych.load_file(stemcell_manifest_file)
 
           @name = safe_property(stemcell_manifest, "name", :class => String)
           @version = safe_property(stemcell_manifest, "version", :class => String)

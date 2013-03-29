@@ -205,7 +205,7 @@ namespace :stemcell do
       unless File.exists?("#{INDEX_FILE_DIR}/public_stemcell_config.yml")
         raise "#{INDEX_FILE_DIR}/public_stemcell_config.yml does not exist."
       end
-      cfg = YAML.load_file("#{INDEX_FILE_DIR}/public_stemcell_config.yml")
+      cfg = Psych.load_file("#{INDEX_FILE_DIR}/public_stemcell_config.yml")
       [cfg["stemcells_index_id"], cfg["atmos_url"], cfg["expiration"],
        cfg["uid"], cfg["secret"]]
     end
@@ -216,7 +216,7 @@ namespace :stemcell do
     # @return [Array] An array of the index file and it's YAML as a Hash.
     def get_index_file(store, stemcells_index_id)
       index_file = store.get(:id => decode_object_id(stemcells_index_id)["oid"])
-      index_yaml = YAML.load(index_file.data)
+      index_yaml = Psych.load(index_file.data)
       index_yaml = index_yaml.is_a?(Hash) ? index_yaml : {}
       [index_file, index_yaml]
     end
@@ -240,7 +240,7 @@ namespace :stemcell do
     # @param [String] url The new URL.
     def update_index_file(stemcell_index, yaml, url)
       yaml = change_all_urls(yaml, url)
-      yaml_dump = YAML.dump(yaml)
+      yaml_dump = Psych.dump(yaml)
 
       File.open("#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}", "w") do |f|
         f.write(yaml_dump)
@@ -434,7 +434,7 @@ namespace :stemcell do
       index_file, index_yaml = get_index_file(store, stemcells_index_id)
 
       File.open("#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}", "w") do |f|
-        f.write(YAML.dump(index_yaml))
+        f.write(Psych.dump(index_yaml))
       end
 
       puts("Downloaded to #{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}.")
@@ -444,7 +444,7 @@ namespace :stemcell do
     task "upload_index_file" do
       if agree("Are you sure you want to upload your " +
                    "public_stemcell_config.yml over the existing one?")
-        yaml = YAML.load_file("#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}")
+        yaml = Psych.load_file("#{INDEX_FILE_DIR}/#{INDEX_FILE_NAME}")
         stemcells_index_id, url, expiration, uid, secret = load_stemcell_config
         store = Atmos::Store.new(:url => url, :uid => uid, :secret => secret)
         index_file, index_yaml = get_index_file(store, stemcells_index_id)

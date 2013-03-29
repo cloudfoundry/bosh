@@ -49,7 +49,7 @@ manifest = {
 }
 
 File.open("stemcell.MF", "w") do |f|
-  f.write(YAML.dump(manifest))
+  f.write(Psych.dump(manifest))
 end
 EOS
 

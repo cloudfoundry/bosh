@@ -67,8 +67,6 @@ require "bosh_agent/message/ssh"
 
 require "bosh_agent/handler"
 
-YAML::ENGINE.yamler = 'syck' if defined?(YAML::ENGINE.yamler)
-
 module Bosh::Agent
 
   BOSH_APP = BOSH_APP_USER = BOSH_APP_GROUP = "vcap"

@@ -333,7 +333,7 @@ describe Bosh::Cli::Command::Base do
   describe Bosh::Cli::Command::JobManagement do
     before :each do
       @manifest_path = spec_asset("deployment.MF")
-      @manifest_yaml = YAML.dump({"name" => "foo"})
+      @manifest_yaml = Psych.dump({"name" => "foo"})
 
       @cmd = Bosh::Cli::Command::JobManagement.new
       @cmd.add_option(:non_interactive, true)

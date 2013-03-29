@@ -89,7 +89,7 @@ module Bosh::Director
           raise ReleaseManifestNotFound, "Release manifest not found"
         end
 
-        @manifest = YAML.load_file(manifest_file)
+        @manifest = Psych.load_file(manifest_file)
         normalize_manifest
 
         @name = @manifest["name"]
@@ -508,7 +508,7 @@ module Bosh::Director
                 "Missing job manifest for `#{template.name}'"
         end
 
-        job_manifest = YAML.load_file(manifest_file)
+        job_manifest = Psych.load_file(manifest_file)
 
         if job_manifest["templates"]
           job_manifest["templates"].each_key do |relative_path|

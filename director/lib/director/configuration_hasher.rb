@@ -30,7 +30,7 @@ module Bosh::Director
     # @param [DeploymentPlan::Template]
     def process_template(job_template)
       template_dir = extract_template(job_template)
-      manifest = YAML.load_file(File.join(template_dir, "job.MF"))
+      manifest = Psych.load_file(File.join(template_dir, "job.MF"))
 
       monit_template = erb(File.join(template_dir, "monit"))
       monit_template.filename = File.join(job_template.name, "monit")

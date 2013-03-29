@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Aws::MicroboshManifest do
-  let(:vpc_receipt) { YAML.load_file(asset "test-output.yml") }
-  let(:route53_receipt) { YAML.load_file(asset "test-aws_route53_receipt.yml") }
+  let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
+  let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
   let(:vpc_config) { vpc_receipt['original_configuration'] }
   let(:manifest) { Bosh::Aws::MicroboshManifest.new(vpc_receipt, route53_receipt) }
 

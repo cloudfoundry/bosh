@@ -6,7 +6,7 @@ describe Bosh::Agent::Heartbeat do
 
   before(:each) do
     state_file = Tempfile.new("state")
-    state_file.write(YAML.dump({ "job" => {"name" => "mutator" }, "index" => 3, "configuration_hash" => "deadbeef" }))
+    state_file.write(Psych.dump({ "job" => {"name" => "mutator" }, "index" => 3, "configuration_hash" => "deadbeef" }))
     state_file.close
 
     @state = Bosh::Agent::State.new(state_file.path)

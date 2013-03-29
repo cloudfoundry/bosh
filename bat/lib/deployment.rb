@@ -29,7 +29,7 @@ class Deployment
     erb = ERB.new(load_template(@context.spec.cpi))
     result = erb.result(@context.get_binding)
     puts result if debug?
-    @yaml = YAML::load(result)
+    @yaml = Psych::load(result)
     store_manifest(result)
   end
 

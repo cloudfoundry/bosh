@@ -7,7 +7,7 @@ describe Bosh::Agent::Message::Drain do
 
   def set_state(state)
     state_file = Tempfile.new("agent-state")
-    state_file.write(YAML.dump(state))
+    state_file.write(Psych.dump(state))
     state_file.close
     Bosh::Agent::Config.state = Bosh::Agent::State.new(state_file.path)
   end

@@ -19,7 +19,7 @@ describe Bosh::Deployer::Config do
   end
 
   it "should default agent properties" do
-    config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
+    config = Psych.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     config["dir"] = @dir
     Bosh::Deployer::Config.configure(config)
 
@@ -30,7 +30,7 @@ describe Bosh::Deployer::Config do
   end
 
   it "should map network properties" do
-    config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
+    config = Psych.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     config["dir"] = @dir
     Bosh::Deployer::Config.configure(config)
 
@@ -70,7 +70,7 @@ describe Bosh::Deployer::Config do
   end
 
   it "should configure agent using mbus property" do
-    config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
+    config = Psych.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     config["dir"] = @dir
     Bosh::Deployer::Config.configure(config)
     agent = Bosh::Deployer::Config.agent
@@ -78,7 +78,7 @@ describe Bosh::Deployer::Config do
   end
 
   it "should have openstack and registry object access" do
-    config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
+    config = Psych.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     config["dir"] = @dir
     Bosh::Deployer::Config.configure(config)
     openstack = double(Fog::Compute)

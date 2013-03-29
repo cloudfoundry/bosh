@@ -26,7 +26,7 @@ module Bosh::Director
           "job_rename" => options["job_rename"] || {}
         }
 
-        manifest_as_hash = YAML.load(@manifest)
+        manifest_as_hash = Psych.load(@manifest)
         @deployment_plan = DeploymentPlan.new(manifest_as_hash, plan_options)
         @deployment_plan.parse
         logger.info("Created deployment plan")

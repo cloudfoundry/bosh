@@ -7,7 +7,7 @@ BOSH_STEMCELL_TGZ ||= "bosh-instance-1.0.tgz"
 describe Bosh::Deployer::InstanceManager do
   before(:each) do
     @dir = Dir.mktmpdir("bdim_spec")
-    @config = YAML.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
+    @config = Psych.load_file(spec_asset("test-bootstrap-config-openstack.yml"))
     @config["dir"] = @dir
     @config["name"] = "spec-#{SecureRandom.uuid}"
     @config["logging"] = { "file" => "#{@dir}/bmim.log" }
@@ -46,7 +46,7 @@ describe Bosh::Deployer::InstanceManager do
 
   it "should create a Bosh instance" do
     @deployer.stub!(:service_ip).and_return("10.0.0.10")
-    spec = YAML.load_file(spec_asset("apply_spec_openstack.yml"))
+    spec = Psych.load_file(spec_asset("apply_spec_openstack.yml"))
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
 
     @deployer.stub!(:run_command)
@@ -109,7 +109,7 @@ describe Bosh::Deployer::InstanceManager do
 
   it "should update a Bosh instance" do
     @deployer.stub!(:service_ip).and_return("10.0.0.10")
-    spec = YAML.load_file(spec_asset("apply_spec_openstack.yml"))
+    spec = Psych.load_file(spec_asset("apply_spec_openstack.yml"))
     Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
 
     disk_cid = "22"

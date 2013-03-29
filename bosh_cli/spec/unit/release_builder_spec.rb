@@ -35,7 +35,7 @@ describe Bosh::Cli::ReleaseBuilder do
     builder = Bosh::Cli::ReleaseBuilder.new(@release, [], [], options)
     builder.build
 
-    manifest = YAML.load_file(builder.manifest_path)
+    manifest = Psych.load_file(builder.manifest_path)
     manifest['commit_hash'].should == '12345678'
     manifest['uncommitted_changes'].should be_true
   end
@@ -121,7 +121,7 @@ describe Bosh::Cli::ReleaseBuilder do
 
     builder.build
 
-    manifest = YAML.load_file(builder.manifest_path)
+    manifest = Psych.load_file(builder.manifest_path)
 
     manifest["jobs"][0]["fingerprint"].should == "deadbeef"
     manifest["packages"][0]["fingerprint"].should == "deadcafe"

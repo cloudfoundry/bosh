@@ -18,7 +18,7 @@ end
 opts.parse!(ARGV.dup)
 
 config_file ||= ::File.expand_path("../../config/bosh-director.yml", __FILE__)
-config = YAML.load_file(config_file)
+config = Psych.load_file(config_file)
 
 Bosh::Director::Config.configure(config)
 

@@ -13,7 +13,7 @@ describe "AWS Bootstrap commands" do
 
   around do |example|
     @bosh_config = Tempfile.new("bosh_config")
-    @bosh_config.puts File.read(bosh_config)
+    FileUtils.cp(bosh_config, @bosh_config.path)
     aws.add_option(:config, @bosh_config.path)
 
     FileUtils.cp(asset("id_spec_rsa"), "/tmp/somekey")
@@ -288,7 +288,7 @@ describe "AWS Bootstrap commands" do
         aws.bootstrap_bosh(bosh_repository_path)
 
         config_file = File.read(@bosh_config.path)
-        config = YAML.load(config_file)
+        config = Psych.load(config_file)
         config["target"].should == "http://50.200.100.3:25555"
       end
 

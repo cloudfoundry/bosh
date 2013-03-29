@@ -81,10 +81,6 @@ require "cli/command_handler"
 require "cli/runner"
 require "cli/base_command"
 
-if defined?(YAML::ENGINE.yamler)
-  YAML::ENGINE.yamler = RUBY_VERSION >= "2.0.0" ? "psych" : "syck"
-end
-
 tmpdir = Dir.mktmpdir
 at_exit { FileUtils.rm_rf(tmpdir) }
 ENV["TMPDIR"] = tmpdir

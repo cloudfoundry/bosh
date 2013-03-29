@@ -48,7 +48,7 @@ module Bosh::Agent
     def read
       @lock.synchronize do
         if File.exists?(@state_file)
-          state = YAML.load_file(@state_file) || default_state
+          state = Psych.load_file(@state_file) || default_state
           unless state.kind_of?(Hash)
             raise_format_error(state)
           end
@@ -61,7 +61,7 @@ module Bosh::Agent
       self
     rescue SystemCallError => e
       raise StateError, "Cannot read agent state file `#{@state_file}': #{e}"
-    rescue YAML::Error
+    rescue Psych::SyntaxError
       raise StateError, "Malformed agent state: #{e}"
     end
 
@@ -74,13 +74,13 @@ module Bosh::Agent
 
       @lock.synchronize do
         File.open(@state_file, "w") do |f|
-          f.puts(YAML.dump(new_state))
+          f.puts(Psych.dump(new_state))
         end
         @data = new_state
       end
 
       true
-    rescue SystemCallError, YAML::Error => e
+    rescue SystemCallError, Psych::SyntaxError => e
       raise StateError, "Cannot write agent state file `#{@state_file}': #{e}"
     end
 

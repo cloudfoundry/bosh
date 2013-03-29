@@ -43,7 +43,7 @@ module Bosh::Cli::Command
     def change_job_state(operation, job, index)
       auth_required
       manifest_yaml = prepare_deployment_manifest(:yaml => true)
-      manifest = YAML.load(manifest_yaml)
+      manifest = Psych.load(manifest_yaml)
 
       unless [:start, :stop, :restart, :recreate].include?(operation)
         err("Unknown operation `#{operation}': supported operations are " +

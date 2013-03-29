@@ -98,7 +98,7 @@ describe Object do
     end
 
     it "gives a nice error when the parsed YAML produces a hash with repeated keys" do
-      expect { load_yaml_file(spec_asset("duplicate_keys.yml")) }.to raise_error(RuntimeError, /Bad yaml file/)
+      expect { load_yaml_file(spec_asset("duplicate_keys.yml")) }.to raise_error(RuntimeError, /Bad YAML file/)
     end
   end
 end

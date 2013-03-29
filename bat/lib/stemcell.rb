@@ -11,7 +11,7 @@ class Stemcell
     Dir.mktmpdir do |dir|
       sh("tar xzf #{path} --directory=#{dir} stemcell.MF")
       stemcell_manifest = "#{dir}/stemcell.MF"
-      st = YAML.load_file(stemcell_manifest)
+      st = Psych.load_file(stemcell_manifest)
       Stemcell.new(st['name'], st['version'], st['cloud_properties']['infrastructure'], path)
     end
   end

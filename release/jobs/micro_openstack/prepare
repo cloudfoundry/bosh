@@ -63,7 +63,7 @@ jobs.each do |job|
   end
 
   # build spec
-  s = YAML.load_file("#{job_dir(job)}/spec")
+  s = Psych.load_file("#{job_dir(job)}/spec")
   spec["packages"] += s["packages"]
   s["templates"].each do |src, dst|
     spec["templates"]["#{job}/#{src}"] = "#{job}/#{dst}"

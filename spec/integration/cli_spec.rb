@@ -235,7 +235,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
       run_bosh("create release --force", Dir.pwd)
       FileUtils.rm_rf(new_file)
       File.exists?(release_1).should be_true
-      release_manifest = YAML.load_file(release_1)
+      release_manifest = Psych.load_file(release_1)
       release_manifest['commit_hash'].should == commit_hash
       release_manifest['uncommitted_changes'].should be_true
 
@@ -568,7 +568,7 @@ describe Bosh::Spec::IntegrationTest::CliUsage do
   describe 'cloudcheck' do
     require 'cloud/dummy'
     let!(:dummy_cloud) do
-      director_config = YAML.load_file(Bosh::Spec::Sandbox::DIRECTOR_CONF)
+      director_config = Psych.load_file(Bosh::Spec::Sandbox::DIRECTOR_CONF)
       Bosh::Clouds::Dummy.new("dir" => director_config['cloud']['properties']['dir'])
     end
 

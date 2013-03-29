@@ -46,7 +46,7 @@ cloud = Bosh::Clouds::Provider.create("aws", options)
 Dir.mktmpdir do |dir|
   %x{tar xzf #{stemcell_tgz} --directory=#{dir}} || raise("Failed to untar stemcell")
   stemcell_manifest = "#{dir}/stemcell.MF"
-  stemcell_properties = YAML.load_file(stemcell_manifest)
+  stemcell_properties = Psych.load_file(stemcell_manifest)
   image = "#{dir}/image"
 
   if AWS_TEST_MODE
@@ -65,7 +65,7 @@ Dir.mktmpdir do |dir|
   FileUtils.touch(image)
 
   File.open(stemcell_manifest, 'w' ) do |out|
-    YAML.dump(stemcell_properties, out )
+    Psych.dump(stemcell_properties, out )
   end
 
   light_stemcell_name = File.dirname(stemcell_tgz) + "/light-" + File.basename(stemcell_tgz)
