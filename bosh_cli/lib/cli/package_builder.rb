@@ -213,6 +213,8 @@ module Bosh::Cli
     private
 
     def make_fingerprint
+      ensure_relative_gitdir
+
       contents = ""
 
       signatures = glob_matches.map do |match|
@@ -239,6 +241,24 @@ module Bosh::Cli
       contents << @dependencies.sort.join(",")
 
       Digest::SHA1.hexdigest(contents)
+    end
+
+    def ensure_relative_gitdir()
+      %x{git ls-files --error-unmatch --stage}.split("\n").each do |line|
+        value  = line.split(" ")
+        if value[0] == "160000"
+          FileUtils.cd(value[3]) do
+            gitfile = ".git"
+            if File.file?(gitfile) && open(gitfile).read.match(/^gitdir: (.*)$/) && Pathname.new($1).absolute?
+              %x{git config --local core.worktree #{Pathname.new(FileUtils.pwd).relative_path_from(Pathname.new($1))}}
+              open(gitfile, "w") do |file|
+                file.puts("gitdir: #{Pathname.new($1).relative_path_from(Pathname.new(FileUtils.pwd))}")
+              end
+              ensure_relative_gitdir()
+            end
+          end
+        end
+      end
     end
 
     # @return Array<GlobMatch>
